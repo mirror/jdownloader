@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.appwork.storage.Storable;
-import org.jdownloader.extensions.extraction.ArchiveSettings.BooleanStatus;
+import org.jdownloader.extensions.extraction.BooleanStatus;
 
 public class ArchiveInfoStorable implements Storable {
 

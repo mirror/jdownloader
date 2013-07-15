@@ -6,7 +6,7 @@ import jd.controlling.linkcrawler.CrawledLink;
 import jd.plugins.DownloadLink;
 
 import org.appwork.storage.Storable;
-import org.jdownloader.extensions.extraction.ArchiveSettings.BooleanStatus;
+import org.jdownloader.extensions.extraction.BooleanStatus;
 
 public class CrawledLinkStorable implements Storable {
 

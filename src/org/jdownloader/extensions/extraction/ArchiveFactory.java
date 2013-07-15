@@ -3,7 +3,6 @@ package org.jdownloader.extensions.extraction;
 import java.io.File;
 import java.util.Collection;
 
-import org.jdownloader.extensions.extraction.ArchiveSettings.BooleanStatus;
 
 public interface ArchiveFactory extends ArchiveFile {
     public static final String SUBFOLDER   = "%SUBFOLDER%";

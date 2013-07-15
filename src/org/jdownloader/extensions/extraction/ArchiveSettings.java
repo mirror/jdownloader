@@ -1,65 +1,114 @@
 package org.jdownloader.extensions.extraction;
 
+import java.util.ArrayList;
 import java.util.HashSet;
 
-import org.appwork.storage.config.ConfigInterface;
-import org.appwork.storage.config.annotations.DefaultEnumValue;
+import org.appwork.storage.Storable;
 
-public interface ArchiveSettings extends ConfigInterface {
-    public static enum BooleanStatus {
-        UNSET,
-        TRUE,
-        FALSE;
+public class ArchiveSettings implements Storable {
+    private ArchiveController      archiveController;
+    private ArrayList<ArchiveItem> archiveItems;
+    private BooleanStatus          autoExtract                        = BooleanStatus.UNSET;
+    private ExtractionInfo         extractionInfo;
+    private String                 extractPath;
+    private String                 finalPassword;
+    private BooleanStatus          getOverwriteFiles                  = BooleanStatus.UNSET;
+    private HashSet<String>        passwords;
+    private BooleanStatus          removeDownloadLinksAfterExtraction = BooleanStatus.UNSET;
+    private BooleanStatus          removeFilesAfterExtraction         = BooleanStatus.UNSET;
 
-        public Boolean getBoolean() {
-            switch (this) {
-            case FALSE:
-                return Boolean.FALSE;
-            case TRUE:
-                return Boolean.TRUE;
-            default:
-                return null;
-            }
-        }
+    public ArchiveSettings(/* Storable */) {
+
     }
 
-    public HashSet<String> getPasswords();
+    public void assignController(ArchiveController archiveController) {
+        this.archiveController = archiveController;
+    }
 
-    public void setPasswords(HashSet<String> passwords);
+    public ArrayList<ArchiveItem> getArchiveItems() {
+        return archiveItems;
+    }
 
-    public void setFinalPassword(String password);
+    public BooleanStatus getAutoExtract() {
+        return autoExtract;
+    }
 
-    public String getFinalPassword();
+    public ExtractionInfo getExtractionInfo() {
+        return extractionInfo;
+    }
 
-    public String getExtractPath();
+    public String getExtractPath() {
+        return extractPath;
+    }
 
-    public void setExtractPath(String extractPath);
+    public String getFinalPassword() {
+        return finalPassword;
+    }
 
-    @DefaultEnumValue("UNSET")
-    public BooleanStatus getOverwriteFiles();
+    public BooleanStatus getOverwriteFiles() {
+        return getOverwriteFiles;
+    }
 
-    public void setOverwriteFiles(BooleanStatus overwriteFiles);
+    public HashSet<String> getPasswords() {
+        return passwords;
+    }
 
-    @DefaultEnumValue("UNSET")
-    public BooleanStatus getAutoExtract();
+    public BooleanStatus getRemoveDownloadLinksAfterExtraction() {
 
-    public void setAutoExtract(BooleanStatus overwriteFiles);
+        return removeDownloadLinksAfterExtraction;
+    }
 
-    @DefaultEnumValue("UNSET")
-    public BooleanStatus getRemoveFilesAfterExtraction();
+    public BooleanStatus getRemoveFilesAfterExtraction() {
+        return removeFilesAfterExtraction;
+    }
 
-    public void setRemoveFilesAfterExtraction(BooleanStatus overwriteFiles);
+    public void setArchiveItems(ArrayList<ArchiveItem> files) {
+        this.archiveItems = files;
+        fireUpdate();
 
-    @DefaultEnumValue("UNSET")
-    public BooleanStatus getRemoveDownloadLinksAfterExtraction();
+    }
 
-    public void setRemoveDownloadLinksAfterExtraction(BooleanStatus overwriteFiles);
+    private void fireUpdate() {
+        if (archiveController != null) archiveController.update(this);
+    }
 
-    public void setExtractionInfo(ExtractionInfo extractionInfo);
+    public void setAutoExtract(BooleanStatus overwriteFiles) {
+        this.autoExtract = overwriteFiles;
+        fireUpdate();
+    }
 
-    public ExtractionInfo getExtractionInfo();
+    public void setExtractionInfo(ExtractionInfo extractionInfo) {
+        this.extractionInfo = extractionInfo;
+        fireUpdate();
+    }
 
-    public java.util.List<ArchiveItem> getArchiveItems();
+    public void setExtractPath(String extractPath) {
+        this.extractPath = extractPath;
+        fireUpdate();
+    }
 
-    public void setArchiveItems(java.util.List<ArchiveItem> files);
+    public void setFinalPassword(String password) {
+        this.finalPassword = password;
+        fireUpdate();
+    }
+
+    public void setOverwriteFiles(BooleanStatus overwriteFiles) {
+        this.getOverwriteFiles = overwriteFiles;
+        fireUpdate();
+    }
+
+    public void setPasswords(HashSet<String> passwords) {
+        this.passwords = passwords;
+        fireUpdate();
+    }
+
+    public void setRemoveDownloadLinksAfterExtraction(BooleanStatus overwriteFiles) {
+        this.removeDownloadLinksAfterExtraction = overwriteFiles;
+        fireUpdate();
+    }
+
+    public void setRemoveFilesAfterExtraction(BooleanStatus overwriteFiles) {
+        this.removeFilesAfterExtraction = overwriteFiles;
+        fireUpdate();
+    }
 }

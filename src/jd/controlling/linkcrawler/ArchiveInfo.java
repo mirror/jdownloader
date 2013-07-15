@@ -3,7 +3,7 @@ package jd.controlling.linkcrawler;
 import java.util.Collection;
 import java.util.HashSet;
 
-import org.jdownloader.extensions.extraction.ArchiveSettings.BooleanStatus;
+import org.jdownloader.extensions.extraction.BooleanStatus;
 
 public class ArchiveInfo {
     public ArchiveInfo() {

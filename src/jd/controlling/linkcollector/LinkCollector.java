@@ -64,7 +64,7 @@ import org.jdownloader.controlling.UniqueAlltimeID;
 import org.jdownloader.controlling.filter.LinkFilterController;
 import org.jdownloader.controlling.filter.LinkFilterSettings;
 import org.jdownloader.controlling.packagizer.PackagizerController;
-import org.jdownloader.extensions.extraction.ArchiveSettings.BooleanStatus;
+import org.jdownloader.extensions.extraction.BooleanStatus;
 import org.jdownloader.extensions.extraction.ExtractionExtension;
 import org.jdownloader.extensions.extraction.bindings.crawledlink.CrawledLinkFactory;
 import org.jdownloader.gui.translate._GUI;

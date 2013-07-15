@@ -32,7 +32,7 @@ import org.jdownloader.controlling.FileCreationListener;
 import org.jdownloader.controlling.FileCreationManager;
 import org.jdownloader.controlling.filter.NoDownloadLinkException;
 import org.jdownloader.extensions.extraction.ArchiveFile;
-import org.jdownloader.extensions.extraction.ArchiveSettings.BooleanStatus;
+import org.jdownloader.extensions.extraction.BooleanStatus;
 import org.jdownloader.extensions.extraction.ExtractionController;
 import org.jdownloader.extensions.extraction.bindings.downloadlink.DownloadLinkArchive;
 import org.jdownloader.extensions.extraction.bindings.downloadlink.DownloadLinkArchiveFile;

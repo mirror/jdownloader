@@ -22,7 +22,7 @@ import org.jdownloader.controlling.Priority;
 import org.jdownloader.controlling.UniqueAlltimeID;
 import org.jdownloader.controlling.filter.FilterRule;
 import org.jdownloader.controlling.packagizer.PackagizerController;
-import org.jdownloader.extensions.extraction.ArchiveSettings.BooleanStatus;
+import org.jdownloader.extensions.extraction.BooleanStatus;
 
 public class CrawledLink implements AbstractPackageChildrenNode<CrawledPackage>, CheckableLink, AbstractNodeNotifier {
 

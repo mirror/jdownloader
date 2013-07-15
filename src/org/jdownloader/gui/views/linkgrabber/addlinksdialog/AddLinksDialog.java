@@ -66,7 +66,7 @@ import org.appwork.utils.swing.dialog.locator.RememberRelativeDialogLocator;
 import org.jdownloader.controlling.PasswordUtils;
 import org.jdownloader.controlling.Priority;
 import org.jdownloader.controlling.packagizer.PackagizerController;
-import org.jdownloader.extensions.extraction.ArchiveSettings.BooleanStatus;
+import org.jdownloader.extensions.extraction.BooleanStatus;
 import org.jdownloader.gui.helpdialogs.HelpDialog;
 import org.jdownloader.gui.laf.jddefault.LAFOptions;
 import org.jdownloader.gui.translate._GUI;

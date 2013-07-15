@@ -7,7 +7,7 @@ import jd.controlling.packagecontroller.AbstractPackageNode;
 
 import org.appwork.utils.swing.dialog.Dialog;
 import org.jdownloader.extensions.extraction.Archive;
-import org.jdownloader.extensions.extraction.ArchiveSettings.BooleanStatus;
+import org.jdownloader.extensions.extraction.BooleanStatus;
 import org.jdownloader.extensions.extraction.contextmenu.downloadlist.AbstractExtractionAction;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.views.SelectionInfo;

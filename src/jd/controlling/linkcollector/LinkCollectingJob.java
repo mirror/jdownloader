@@ -4,7 +4,7 @@ import java.io.File;
 import java.util.Set;
 
 import org.jdownloader.controlling.Priority;
-import org.jdownloader.extensions.extraction.ArchiveSettings.BooleanStatus;
+import org.jdownloader.extensions.extraction.BooleanStatus;
 
 public class LinkCollectingJob {
     private String   text;

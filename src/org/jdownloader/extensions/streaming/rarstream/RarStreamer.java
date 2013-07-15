@@ -585,7 +585,7 @@ public class RarStreamer implements Runnable {
     private void updateContentView(ISimpleInArchive simpleInterface) {
         try {
             ContentView newView = new ContentView();
-            java.util.List<ArchiveItem> files = new ArrayList<ArchiveItem>();
+            ArrayList<ArchiveItem> files = new ArrayList<ArchiveItem>();
             for (ISimpleInArchiveItem item : simpleInterface.getArchiveItems()) {
                 try {
                     files.add(ArchiveItem.create(item));
