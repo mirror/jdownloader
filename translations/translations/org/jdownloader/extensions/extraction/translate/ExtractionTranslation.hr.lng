@@ -27,6 +27,7 @@ dummyarchivedialog_title=Arhiva %s1
 exists=Status linka
 extract_to2=Raspakiraj arhivu(e) u...
 extracting=Raspakiranje... onemogućeno
+extracting_archive=Raspakiranje arhive: %s1
 extracting_wait=Molimo pričekajte: Raspakiravanje arhive: %s1
 extraction_failed=Raspakiranje %s1 nije uspjelo
 extractprogress_label=%s1 raspakirano: %s2 datoteka
