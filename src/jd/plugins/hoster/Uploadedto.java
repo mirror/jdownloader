@@ -841,7 +841,7 @@ public class Uploadedto extends PluginForHost {
     @Override
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
         usePremiumDownloadAPI = this.getPluginConfig().getBooleanProperty(PREFER_PREMIUM_DOWNLOAD_API, default_ppda);
-        if (usePremiumAPI.get() && usePremiumDownloadAPI) {
+        if (usePremiumAPI.get() && usePremiumDownloadAPI && !downloadLink.getBooleanProperty("preDlPass", false)) {
             handlePremium_API(downloadLink, account);
             return;
         } else {
@@ -856,6 +856,18 @@ public class Uploadedto extends PluginForHost {
                 String id = getID(downloadLink);
                 br.getPage(baseURL + "file/" + id + "/ddl");
                 if (br.containsHTML("<title>[^<].*?- Wartungsarbeiten</title>")) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "ServerMaintenance", 10 * 60 * 1000);
+                String passCode = null;
+                if (br.containsHTML("<h2>Authentification</h2>")) {
+                    logger.info("Password protected link");
+                    passCode = getPassword(downloadLink);
+                    if (passCode == null || passCode.equals("")) { throw new PluginException(LinkStatus.ERROR_RETRY, "Password wrong!"); }
+                    br.postPage(br.getURL(), "pw=" + Encoding.urlEncode(passCode));
+                    if (br.containsHTML("<h2>Authentification</h2>")) {
+                        downloadLink.setProperty("pass", null);
+                        throw new PluginException(LinkStatus.ERROR_RETRY, "Password wrong!");
+                    }
+                    downloadLink.setProperty("pass", passCode);
+                }
                 String error = new Regex(br.getRedirectLocation(), "https?://uploaded\\.net/\\?view=(.*)").getMatch(0);
                 if (error == null) {
                     error = new Regex(br.getRedirectLocation(), "\\?view=(.*?)&i").getMatch(0);
@@ -965,6 +977,10 @@ public class Uploadedto extends PluginForHost {
         logger.info("Premium Account, API download method in use!");
         String id = getID(downloadLink);
         br.postPage(getProtocol() + "api.uploaded.net/api/download/jdownloader", "access_token=" + token + "&auth=" + id);
+        if (br.containsHTML("\"err\":\\{\"code\":403")) {
+            downloadLink.setProperty("preDlPass", true);
+            throw new PluginException(LinkStatus.ERROR_RETRY);
+        }
         String url = br.getRegex("link\":\\s*?\"(http.*?)\"").getMatch(0);
         if (url == null) {
             url = br.getRegex("link\":\\s*?\"(\\\\/dl.*?)\"").getMatch(0);
