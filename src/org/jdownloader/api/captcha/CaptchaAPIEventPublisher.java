@@ -8,7 +8,7 @@ import org.appwork.remoteapi.events.EventsSender;
 import org.appwork.remoteapi.events.SimpleEventObject;
 import org.jdownloader.captcha.v2.solverjob.SolverJob;
 
-class CaptchaAPIEventPublisher implements EventPublisher {
+public class CaptchaAPIEventPublisher implements EventPublisher {
 
     private enum EVENTID {
         NEW,
@@ -24,7 +24,7 @@ class CaptchaAPIEventPublisher implements EventPublisher {
     /**
      * access this publisher view CaptchaAPISolver.getInstance().getEventPublisher
      */
-    protected CaptchaAPIEventPublisher() {
+    public CaptchaAPIEventPublisher() {
         eventIDs = new String[] { EVENTID.NEW.name() };
     }
 

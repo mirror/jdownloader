@@ -213,6 +213,9 @@ public class DownloadsAPIImpl implements DownloadsAPI {
             if (queryParams._getQueryParam("running", Boolean.class, false)) {
                 infomap.put("running", dwd.getRunningDownloadLinks().contains(dl));
             }
+            if (queryParams.fieldRequested("url")) {
+                infomap.put("url", dl.getBrowserUrl());
+            }
             if (queryParams.fieldRequested("enabled")) infomap.put("enabled", dl.isEnabled());
 
             infomap.put("packageUUID", dl.getParentNode().getUniqueID().getID());
@@ -228,6 +231,11 @@ public class DownloadsAPIImpl implements DownloadsAPI {
     public int speed() {
         DownloadWatchDog dwd = DownloadWatchDog.getInstance();
         return dwd.getDownloadSpeedManager().getSpeed();
+    }
+
+    @Override
+    public int packageCount() {
+        return DownloadController.getInstance().getPackages().size();
     }
 
     @Override
@@ -264,6 +272,20 @@ public class DownloadsAPIImpl implements DownloadsAPI {
     }
 
     @Override
+    public boolean renamePackage(Long packageId, String newName) {
+        DownloadController dlc = DownloadController.getInstance();
+        dlc.writeLock();
+        for (FilePackage fp : dlc.getPackages()) {
+            if (packageId.equals(fp.getUniqueID().getID())) {
+                fp.setName(newName);
+                break;
+            }
+        }
+        dlc.writeUnlock();
+        return true;
+    }
+
+    @Override
     public boolean enableLinks(final List<Long> linkIds) {
         if (linkIds == null) return true;
         return enableLinks(linkIds, null);
@@ -271,7 +293,6 @@ public class DownloadsAPIImpl implements DownloadsAPI {
 
     @Override
     public boolean enableLinks(final List<Long> linkIds, final List<Long> packageIds) {
-        DownloadController dlc = DownloadController.getInstance();
         List<DownloadLink> sdl = getAllTheLinks(linkIds, packageIds);
         for (DownloadLink dl : sdl) {
             dl.setEnabled(true);
@@ -287,7 +308,6 @@ public class DownloadsAPIImpl implements DownloadsAPI {
 
     @Override
     public boolean disableLinks(final List<Long> linkIds, final List<Long> packageIds) {
-        DownloadController dlc = DownloadController.getInstance();
         List<DownloadLink> sdl = getAllTheLinks(linkIds, packageIds);
         for (DownloadLink dl : sdl) {
             dl.setEnabled(false);
@@ -358,6 +378,29 @@ public class DownloadsAPIImpl implements DownloadsAPI {
         }
 
         dlc.move(selectedLinks, destPackage, afterDestLink);
+        return true;
+    }
+
+    @Override
+    public boolean resetLinks(List<Long> linkIds) {
+        return resetLinks(linkIds, null);
+    }
+
+    @Override
+    public boolean resetLinks(List<Long> linkIds, List<Long> packageIds) {
+        for (DownloadLink link : getAllTheLinks(linkIds, packageIds)) {
+            if (link.getLinkStatus().isPluginActive()) {
+                /*
+                 * download is still active, let DownloadWatchdog handle the reset
+                 */
+                DownloadWatchDog.getInstance().resetSingleDownloadController(link.getDownloadLinkController());
+            } else {
+                /* we can do the reset ourself */
+                DownloadWatchDog.getInstance().removeIPBlockTimeout(link);
+                DownloadWatchDog.getInstance().removeTempUnavailTimeout(link);
+                link.reset();
+            }
+        }
         return true;
     }
 

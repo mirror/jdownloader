@@ -82,6 +82,12 @@ public interface DownloadsAPI extends RemoteAPIInterface {
 
     boolean disableLinks(List<Long> linkIds, List<Long> packageIds);
 
+    boolean resetLinks(List<Long> linkIds);
+
+    boolean resetLinks(List<Long> linkIds, List<Long> packageIds);
+
+    boolean renamePackage(Long packageId, String newName);
+
     /*
      * Sorting
      */
@@ -93,6 +99,8 @@ public interface DownloadsAPI extends RemoteAPIInterface {
      * Info
      */
     int speed();
+
+    int packageCount();
 
     /*
      * Changed?

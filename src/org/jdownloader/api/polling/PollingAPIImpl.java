@@ -6,6 +6,8 @@ import java.util.List;
 import jd.controlling.downloadcontroller.DownloadController;
 import jd.controlling.downloadcontroller.DownloadWatchDog;
 import jd.controlling.linkcollector.LinkCollector;
+import jd.controlling.linkcrawler.CrawledLink;
+import jd.controlling.linkcrawler.CrawledPackage;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
@@ -14,6 +16,7 @@ import org.appwork.remoteapi.QueryResponseMap;
 import org.jdownloader.api.captcha.CaptchaAPI;
 import org.jdownloader.api.captcha.CaptchaAPISolver;
 import org.jdownloader.api.jd.AggregatedNumbersAPIStorable;
+import org.jdownloader.controlling.AggregatedCrawlerNumbers;
 import org.jdownloader.controlling.AggregatedNumbers;
 import org.jdownloader.gui.views.SelectionInfo;
 
@@ -21,6 +24,7 @@ public class PollingAPIImpl implements PollingAPI {
 
     private DownloadWatchDog   dwd = DownloadWatchDog.getInstance();
     private DownloadController dc  = DownloadController.getInstance();
+    private LinkCollector      lc  = LinkCollector.getInstance();
     private APIQuery           queryParams;
 
     @Override
@@ -53,11 +57,15 @@ public class PollingAPIImpl implements PollingAPI {
         prs.setEventName("aggregatedNumbers");
 
         boolean dcrl = dc.readLock();
-        SelectionInfo<FilePackage, DownloadLink> sel = new SelectionInfo<FilePackage, DownloadLink>(null, dc.getPackages(), null, null, null, null);
+        SelectionInfo<FilePackage, DownloadLink> selDc = new SelectionInfo<FilePackage, DownloadLink>(null, dc.getPackages(), null, null, null, null);
         dc.readUnlock(dcrl);
 
+        boolean lcrl = lc.readLock();
+        SelectionInfo<CrawledPackage, CrawledLink> selLc = new SelectionInfo<CrawledPackage, CrawledLink>(null, lc.getPackages(), null, null, null, null);
+        lc.readUnlock(lcrl);
+
         QueryResponseMap eventData = new QueryResponseMap();
-        eventData.put("data", new AggregatedNumbersAPIStorable(new AggregatedNumbers(sel)));
+        eventData.put("data", new AggregatedNumbersAPIStorable(new AggregatedNumbers(selDc), new AggregatedCrawlerNumbers(selLc)));
         prs.setEventData(eventData);
 
         return prs;

@@ -56,7 +56,7 @@ public class CaptchaAPISolver extends ChallengeSolver<Object> implements Captcha
 
     }
 
-    private CaptchaAPISolver() {
+    public CaptchaAPISolver() {
         // 0: no threadpool
         super(0);
         eventPublisher = new CaptchaAPIEventPublisher();

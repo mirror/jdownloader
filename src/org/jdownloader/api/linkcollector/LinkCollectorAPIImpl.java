@@ -1,5 +1,6 @@
 package org.jdownloader.api.linkcollector;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -17,6 +18,8 @@ import jd.plugins.FilePackage;
 import org.appwork.remoteapi.APIQuery;
 import org.appwork.remoteapi.QueryResponseMap;
 import org.jdownloader.controlling.Priority;
+import org.jdownloader.gui.views.linkgrabber.addlinksdialog.DownloadPath;
+import org.jdownloader.settings.GeneralSettings;
 
 public class LinkCollectorAPIImpl implements LinkCollectorAPI {
 
@@ -64,6 +67,16 @@ public class LinkCollectorAPIImpl implements LinkCollectorAPI {
                 }
                 if (queryParams._getQueryParam("availability", Boolean.class, false)) {
                     infomap.put("availability", pkg.getChildren().get(0).getLinkState());
+                }
+                if (queryParams.fieldRequested("enabled")) {
+                    boolean enabled = false;
+                    for (CrawledLink dl : pkg.getChildren()) {
+                        if (dl.isEnabled()) {
+                            enabled = true;
+                            break;
+                        }
+                    }
+                    infomap.put("enabled", enabled);
                 }
                 cps.setInfoMap(infomap);
 
@@ -152,28 +165,40 @@ public class LinkCollectorAPIImpl implements LinkCollectorAPI {
             if (queryParams._getQueryParam("availability", Boolean.class, false)) {
                 infomap.put("availability", cl.getLinkState().toString());
             }
+            if (queryParams._getQueryParam("url", Boolean.class, false)) {
+                infomap.put("url", cl.getURL());
+            }
+            if (queryParams.fieldRequested("enabled")) infomap.put("enabled", cl.isEnabled());
             infomap.put("packageUUID", cl.getParentNode().getUniqueID().getID());
 
             cls.setInfoMap(infomap);
             result.add(cls);
         }
 
-        simulateLatency();
-
         return result;
     }
 
     @Override
+    public int packageCount() {
+        return LinkCollector.getInstance().getPackages().size();
+    }
+
+    @Override
+    public Boolean addLinks(String links, String packageName, String extractPassword, String downloadPassword, String destinationFolder) {
+        return addLinks(links, packageName, extractPassword, downloadPassword, destinationFolder, false);
+    }
+
+    @Override
     public Boolean addLinks(String links, String packageName, String extractPassword, String downloadPassword) {
-        return addLinks(links, packageName, extractPassword, downloadPassword, false);
+        return addLinks(links, packageName, extractPassword, downloadPassword, null, false);
     }
 
     @Override
     public Boolean addLinksAndStartDownload(String links, String packageName, String extractPassword, String downloadPassword) {
-        return addLinks(links, packageName, extractPassword, downloadPassword, true);
+        return addLinks(links, packageName, extractPassword, downloadPassword, null, true);
     }
 
-    private Boolean addLinks(String links, String packageName, String extractPassword, String downloadPassword, boolean autostart) {
+    private Boolean addLinks(String links, String packageName, String extractPassword, String downloadPassword, String destinationFolder, boolean autostart) {
         LinkCollector lc = LinkCollector.getInstance();
 
         LinkCollectingJob lcj = new LinkCollectingJob(links);
@@ -190,6 +215,9 @@ public class LinkCollectorAPIImpl implements LinkCollectorAPI {
             Set<String> passwords = new HashSet<String>();
             passwords.add(extractPassword);
             lcj.setExtractPasswords(passwords);
+        }
+        if (destinationFolder != null) {
+            lcj.setOutputFolder(new File(destinationFolder));
         }
 
         lc.addCrawlerJob(lcj);
@@ -257,13 +285,83 @@ public class LinkCollectorAPIImpl implements LinkCollectorAPI {
         return true;
     }
 
-    // should be commented out in production
-    public void simulateLatency() {
-        // try {
-        // Thread.sleep(1000l);
-        // } catch (InterruptedException e) {
-        // e.printStackTrace();
-        // }
+    @Override
+    public boolean renameLink(Long packageId, Long linkId, String newName) {
+        LinkCollector lc = LinkCollector.getInstance();
+        try {
+            lc.writeLock();
+            for (CrawledPackage fp : lc.getPackages()) {
+                if (packageId.equals(fp.getUniqueID().getID())) {
+                    for (CrawledLink cl : fp.getChildren()) {
+                        if (linkId.equals(cl.getUniqueID().getID())) {
+                            cl.setName(newName);
+                        }
+                        break;
+                    }
+                    break;
+                }
+            }
+        } finally {
+            lc.writeUnlock();
+        }
+        return true;
+    }
+
+    @Override
+    public boolean renamePackage(Long packageId, String newName) {
+        LinkCollector lc = LinkCollector.getInstance();
+        try {
+            lc.writeLock();
+            for (CrawledPackage fp : lc.getPackages()) {
+                if (packageId.equals(fp.getUniqueID().getID())) {
+                    fp.setName(newName);
+                    break;
+                }
+            }
+        } finally {
+            lc.writeUnlock();
+        }
+        return true;
+    }
+
+    @Override
+    public boolean enableLinks(final List<Long> linkIds) {
+        if (linkIds == null) return true;
+        return enableLinks(linkIds, null);
+    }
+
+    @Override
+    public boolean enableLinks(final List<Long> linkIds, final List<Long> packageIds) {
+        try {
+            LinkCollector.getInstance().writeLock();
+            List<CrawledLink> sdl = getAllTheLinks(linkIds, packageIds);
+            for (CrawledLink dl : sdl) {
+                dl.setEnabled(true);
+            }
+        } finally {
+            LinkCollector.getInstance().writeUnlock();
+        }
+        return true;
+    }
+
+    @Override
+    public boolean disableLinks(final List<Long> linkIds) {
+        if (linkIds == null) return true;
+        return disableLinks(linkIds, null);
+    }
+
+    @Override
+    public boolean disableLinks(final List<Long> linkIds, final List<Long> packageIds) {
+        try {
+            LinkCollector.getInstance().writeLock();
+            List<CrawledLink> sdl = getAllTheLinks(linkIds, packageIds);
+            for (CrawledLink dl : sdl) {
+                dl.setEnabled(false);
+            }
+        } finally {
+            LinkCollector.getInstance().writeUnlock();
+        }
+        return true;
     }
 
     @Override
@@ -357,7 +455,6 @@ public class LinkCollectorAPIImpl implements LinkCollectorAPI {
                 return linkIds != null && linkIds.contains(node.getUniqueID().getID());
             }
         });
-
         if (packageIds != null) {
             for (final CrawledPackage cp : lc.getPackages()) {
                 if (packageIds.contains(cp.getUniqueID().getID())) {
@@ -370,7 +467,14 @@ public class LinkCollectorAPIImpl implements LinkCollectorAPI {
                 }
             }
         }
-
         return lks;
+    }
+
+    @Override
+    public List<String> getDownloadFolderHistorySelectionBase() {
+        List<String> ret = new ArrayList<String>();
+        List<String> paths = DownloadPath.loadList(org.appwork.storage.config.JsonConfig.create(GeneralSettings.class).getDefaultDownloadFolder());
+        ret.addAll(paths);
+        return ret;
     }
 }

@@ -557,7 +557,7 @@ public class JDownloaderToolBarAPIImpl implements JDownloaderToolBarAPI, StateEv
         new Thread() {
             public void run() {
                 // runUpdateChecker is synchronized and may block
-                UpdateController.getInstance().setGuiVisible(true);
+                UpdateController.getInstance().setGuiVisible(false);
                 UpdateController.getInstance().runUpdateChecker(true);
             }
         }.start();

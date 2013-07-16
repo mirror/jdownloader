@@ -60,6 +60,8 @@ public interface LinkCollectorAPI extends RemoteAPIInterface {
      * @param linkPassword
      * @return
      */
+    Boolean addLinks(String links, String packageName, String extractPassword, String downloadPassword, String destinationFolder);
+
     Boolean addLinks(String link, String packageName, String archivePassword, String linkPassword);
 
     /**
@@ -83,6 +85,18 @@ public interface LinkCollectorAPI extends RemoteAPIInterface {
 
     Boolean removeLinks(List<Long> packageIds, List<Long> linkIds);
 
+    boolean enableLinks(List<Long> linkIds);
+
+    boolean enableLinks(List<Long> linkIds, List<Long> packageIds);
+
+    boolean disableLinks(List<Long> linkIds);
+
+    boolean disableLinks(List<Long> linkIds, List<Long> packageIds);
+
+    boolean renameLink(Long packageId, Long linkId, String newName);
+
+    boolean renamePackage(Long packageId, String newName);
+
     /*
      * Sorting
      */
@@ -94,4 +108,15 @@ public interface LinkCollectorAPI extends RemoteAPIInterface {
      * Changed?
      */
     Long getChildrenChanged(Long structureWatermark);
+
+    /*
+     * Selection bases
+     */
+    List<String> getDownloadFolderHistorySelectionBase();
+
+    /*
+     * Status
+     */
+
+    int packageCount();
 }
