@@ -45,7 +45,7 @@ import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "flashdrive.uk.com" }, urls = { "https?://(www\\.)?flashdrive\\.(uk\\.com|it)/upload/[a-z0-9]{12}" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "flashdrive.uk.com" }, urls = { "https?://(www\\.)?flashdrive\\.(uk\\.com|it)(/upload)?/[a-z0-9]{12}" }, flags = { 0 })
 public class FlashDriveUkCom extends PluginForHost {
 
     private String               correctedBR                  = "";

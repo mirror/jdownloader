@@ -43,10 +43,18 @@ public class Rpdshrknt extends PluginForDecrypt {
             logger.info("Link offline: " + parameter);
             return decryptedLinks;
         }
-        final String finallink = br.getRegex("src=\"(http[^<>\"]*?)\"></iframe>").getMatch(0);
+        String finallink = br.getRegex("src=\"(http[^<>\"]*?)\"></iframe>").getMatch(0);
         if (finallink == null) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
+        }
+        if (finallink.contains("cdn.share.net.ua/")) {
+            br.getPage(finallink);
+            finallink = br.getRegex("\"(http://cdn\\.share\\.net\\.ua/temp/[^<>\"]*?)\"").getMatch(0);
+            if (finallink == null) {
+                logger.warning("Decrypter broken for link: " + parameter);
+                return null;
+            }
         }
         decryptedLinks.add(createDownloadlink(finallink));
         return decryptedLinks;

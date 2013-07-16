@@ -42,7 +42,7 @@ import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "odimusic.net" }, urls = { "http://(www\\.)?odimusic\\.net/load/\\?d=[A-Z0-9]+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "odimusic.net", "megabox.ro" }, urls = { "fbvihj549uzj0sklncnkovdesnirohionrsoDELETE_MEfgztjm", "http://(www\\.)?(odimusic\\.net|megabox\\.ro)/load/\\?d=[A-Z0-9]+" }, flags = { 0, 2 })
 public class OdiMusicNet extends PluginForHost {
 
     public OdiMusicNet(PluginWrapper wrapper) {
@@ -55,7 +55,7 @@ public class OdiMusicNet extends PluginForHost {
         return COOKIE_HOST + "/rules.php";
     }
 
-    private static final String COOKIE_HOST     = "http://odimusic.net";
+    private static final String COOKIE_HOST     = "http://megabox.ro";
     private final int           DEFAULTWAITTIME = 30;
 
     // MhfScriptBasic 1.7
@@ -81,9 +81,12 @@ public class OdiMusicNet extends PluginForHost {
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception {
-        this.setBrowserExclusive();
+    public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
+        doFree(downloadLink);
+    }
+
+    public void doFree(final DownloadLink downloadLink) throws Exception {
         if (br.containsHTML("value=\"Free Users\""))
             br.postPage(downloadLink.getDownloadURL(), "Free=Free+Users");
         else if (br.getFormbyProperty("name", "entryform1") != null) br.submitForm(br.getFormbyProperty("name", "entryform1"));
@@ -115,12 +118,10 @@ public class OdiMusicNet extends PluginForHost {
         if (reconnectWaittime != null) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(reconnectWaittime) * 60 * 1001l);
         final String finalLink = findLink(ajaxBR);
         if (finalLink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        // int wait = DEFAULTWAITTIME;
-        // final String waittime =
-        // br.getRegex("countdown\\((\\d+)\\);").getMatch(0);
-        // if (waittime != null) wait = Integer.parseInt(waittime);
-        // Can be skipped
-        // sleep(wait * 1001l, downloadLink);
+        int wait = DEFAULTWAITTIME;
+        final String waittime = ajaxBR.getRegex("countdown\\((\\d+)\\);").getMatch(0);
+        if (waittime != null) wait = Integer.parseInt(waittime);
+        sleep(wait * 1001l, downloadLink);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, finalLink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
@@ -147,7 +148,7 @@ public class OdiMusicNet extends PluginForHost {
     private static Object LOCK = new Object();
 
     @SuppressWarnings("unchecked")
-    public void login(Account account, boolean force) throws Exception {
+    public void login(final Account account, final boolean force) throws Exception {
         synchronized (LOCK) {
             try {
                 /** Load cookies */
@@ -170,9 +171,16 @@ public class OdiMusicNet extends PluginForHost {
                 br.setCookie(COOKIE_HOST, "mfh_mylang", "en");
                 br.setCookie(COOKIE_HOST, "yab_mylang", "en");
                 br.getPage(COOKIE_HOST + "/load/en/login.php");
+                final String lang = System.getProperty("user.language");
                 Form form = br.getFormbyProperty("name", "loginfrm");
                 if (form == null) form = br.getForm(0);
-                if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                if (form == null) {
+                    if ("de".equalsIgnoreCase(lang)) {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin defekt, bitte den JDownloader Support kontaktieren!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    } else {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin broken, please contact the JDownloader Support!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    }
+                }
                 form.put("user", Encoding.urlEncode(account.getUser()));
                 form.put("pass", Encoding.urlEncode(account.getPass()));
                 // If the referer is still in the form (and if it is a valid
@@ -184,7 +192,18 @@ public class OdiMusicNet extends PluginForHost {
                 br.submitForm(form);
                 br.getPage(COOKIE_HOST + "/load/en/members.php");
                 final String premium = br.getRegex("return overlay\\(this, \\'package_details\\',\\'width=\\d+px,height=\\d+px,center=1,resize=1,scrolling=1\\'\\)\">(Premium)</a>").getMatch(0);
-                if (br.getCookie(COOKIE_HOST, "mfh_passhash") == null || "0".equals(br.getCookie(COOKIE_HOST, "mfh_uid")) || premium == null || !premium.equals("Premium")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                if (br.getCookie(COOKIE_HOST, "mfh_passhash") == null || "0".equals(br.getCookie(COOKIE_HOST, "mfh_uid"))) {
+                    if ("de".equalsIgnoreCase(lang)) {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    } else {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    }
+                }
+                if (premium == null) {
+                    account.setProperty("freeacc", true);
+                } else {
+                    account.setProperty("freeacc", false);
+                }
                 /** Save cookies */
                 final HashMap<String, String> cookies = new HashMap<String, String>();
                 final Cookies add = this.br.getCookies(COOKIE_HOST);
@@ -202,13 +221,13 @@ public class OdiMusicNet extends PluginForHost {
     }
 
     @Override
-    public AccountInfo fetchAccountInfo(Account account) throws Exception {
+    public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
         try {
             login(account, true);
         } catch (PluginException e) {
             account.setValid(false);
-            return ai;
+            throw e;
         }
         br.getPage(COOKIE_HOST + "/load/en/members.php");
         String expired = getData("Expired\\?");
@@ -220,9 +239,12 @@ public class OdiMusicNet extends PluginForHost {
         }
         String expires = getData("Package Expire Date");
         if (expires != null) {
-            String[] e = expires.split("/");
-            Calendar cal = new GregorianCalendar(Integer.parseInt("20" + e[2]), Integer.parseInt(e[0]) - 1, Integer.parseInt(e[1]));
-            ai.setValidUntil(cal.getTimeInMillis());
+            expires = expires.trim();
+            if (!expires.equals("Never")) {
+                String[] e = expires.split("/");
+                Calendar cal = new GregorianCalendar(Integer.parseInt("20" + e[2]), Integer.parseInt(e[0]) - 1, Integer.parseInt(e[1]));
+                ai.setValidUntil(cal.getTimeInMillis());
+            }
         }
         String create = getData("Register Date");
         if (create != null) {
@@ -234,56 +256,64 @@ public class OdiMusicNet extends PluginForHost {
         if (files != null) {
             ai.setFilesNum(Integer.parseInt(files.trim()));
         }
-        ai.setStatus("Premium User");
+        if (account.getBooleanProperty("freeacc")) {
+            ai.setStatus("Registered (free) User");
+        } else {
+            ai.setStatus("Premium User");
+        }
         account.setValid(true);
 
         return ai;
     }
 
-    public void handlePremium(DownloadLink parameter, Account account) throws Exception {
+    public void handlePremium(final DownloadLink parameter, final Account account) throws Exception {
         requestFileInformation(parameter);
         login(account, false);
         br.setFollowRedirects(false);
         br.setCookie(COOKIE_HOST, "mfh_mylang", "en");
         br.getPage(parameter.getDownloadURL());
-        String finalLink = null;
-        if (br.getRedirectLocation() != null && (br.getRedirectLocation().contains("access_key=") || br.getRedirectLocation().contains("getfile.php"))) {
-            finalLink = br.getRedirectLocation();
+        if (account.getBooleanProperty("freeacc")) {
+            doFree(parameter);
         } else {
-            if (br.containsHTML("You have got max allowed download sessions from the same IP")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, 10 * 60 * 1001l);
-            String passCode = null;
-            if (br.containsHTML("downloadpw")) {
-                logger.info("The file you're trying to download seems to be password protected...");
-                Form pwform = br.getFormbyProperty("name", "myform");
-                if (pwform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                if (parameter.getStringProperty("pass", null) == null) {
-                    passCode = Plugin.getUserInput("Password?", parameter);
-                } else {
-                    /* gespeicherten PassCode holen */
-                    passCode = parameter.getStringProperty("pass", null);
+            String finalLink = null;
+            if (br.getRedirectLocation() != null && (br.getRedirectLocation().contains("access_key=") || br.getRedirectLocation().contains("getfile.php"))) {
+                finalLink = br.getRedirectLocation();
+            } else {
+                if (br.containsHTML("You have got max allowed download sessions from the same IP")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, 10 * 60 * 1001l);
+                String passCode = null;
+                if (br.containsHTML("downloadpw")) {
+                    logger.info("The file you're trying to download seems to be password protected...");
+                    Form pwform = br.getFormbyProperty("name", "myform");
+                    if (pwform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    if (parameter.getStringProperty("pass", null) == null) {
+                        passCode = Plugin.getUserInput("Password?", parameter);
+                    } else {
+                        /* gespeicherten PassCode holen */
+                        passCode = parameter.getStringProperty("pass", null);
+                    }
+                    pwform.put("downloadpw", passCode);
+                    br.submitForm(pwform);
                 }
-                pwform.put("downloadpw", passCode);
-                br.submitForm(pwform);
-            }
-            if (br.containsHTML("You have got max allowed download sessions from the same IP")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, 10 * 60 * 1001l);
-            if (br.containsHTML("Password Error")) {
-                logger.warning("Wrong password!");
-                parameter.setProperty("pass", null);
-                throw new PluginException(LinkStatus.ERROR_RETRY);
-            }
+                if (br.containsHTML("You have got max allowed download sessions from the same IP")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, 10 * 60 * 1001l);
+                if (br.containsHTML("Password Error")) {
+                    logger.warning("Wrong password!");
+                    parameter.setProperty("pass", null);
+                    throw new PluginException(LinkStatus.ERROR_RETRY);
+                }
 
-            if (passCode != null) {
-                parameter.setProperty("pass", passCode);
+                if (passCode != null) {
+                    parameter.setProperty("pass", passCode);
+                }
+                finalLink = findLink(br);
             }
-            finalLink = findLink(br);
+            if (finalLink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, parameter, finalLink, true, 0);
+            if (dl.getConnection().getContentType().contains("html")) {
+                br.followConnection();
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            dl.startDownload();
         }
-        if (finalLink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, parameter, finalLink, true, 0);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        dl.startDownload();
     }
 
     @Override
