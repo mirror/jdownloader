@@ -30,6 +30,7 @@ downloadedok=El archivo ya existe
 dummyarchivedialog_title=Archivo %s1
 exists=Estado del link
 extract_to2=Extraer archivos a...
+extracting=Extrayendo... por lo tanto, deshabilitado
 extracting_archive=Extrayendo Archivo: %s1
 extracting_wait=Por favor espere: Extrayendo Archivo: %s1
 extraction_failed=La extracción de %s1 ha fallado
