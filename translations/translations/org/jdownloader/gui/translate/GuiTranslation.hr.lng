@@ -438,7 +438,6 @@ MyJDownloaderSettingsPanel_MyJDownloaderSettingsPanel_username_=Korisničko ime/
 MyJDownloaderSettingsPanel_runInEDT_account_badlogins=Vaš korisnički račun je onemogućen jer uneseno Korisničko ime/email ili lozinka nije ispravno.
 MyJDownloaderSettingsPanel_runInEDT_account_unconfirmed_=Vaš korisnički račun je onemogućen, jer vaša email adresa još nije potvrđena. Mi smo vam poslali email kako bi potvrdili svoju adresu. Molimo kliknite na link u e-mailu.
 MyJDownloaderSettingsPanel_runInEDT_account_unknown=Vaš korisnički račun je onemogućen zbog greške: %s1
-MyJDownloaderSettingsPanel_runInEDT_connected_=Veza je uspostavljena. Odlično! Račun: %s1
 MyJDownloaderSettingsPanel_runInEDT_disconnected_=Nije spojeno!
 NewPackageDialog_NewPackageDialog_=Novi paket
 NewPackageDialog_layoutDialogContent_newname_=Naziv paketa
