@@ -21,6 +21,7 @@ contextmenu_extract=Raspakiraj sada
 contextmenu_extract_to=Postavi putanju za raspakiranje
 contextmenu_main=Arhiva
 contextmenu_password=Postavite lozinku za raspakiranje
+crash_message=Čini se da je kod raspakiranja arhive došlo do rušenja.\r\nProvjerite detalje u nastavku. Želite li poslati izvješće o grešci?
 crash_title=JDownloader se srušio!
 date=Datum
 description=Raspakirava sve uobičajene vrste arhiva (zip,rar,7zip,...)
