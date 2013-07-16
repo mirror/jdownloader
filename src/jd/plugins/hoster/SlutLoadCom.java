@@ -80,9 +80,9 @@ public class SlutLoadCom extends PluginForHost {
         br.followConnection();
         if (br.getURL().equals("http://www.slutload.com/")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (!br.getURL().contains("slutload.com/")) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        String filename = br.getRegex("<title>([^<>\"]*?) ?\\-? SlutLoad \\&trade; ? ?-? ?</title>").getMatch(0);
+        String filename = br.getRegex("<title>([^<>\"]+) - SlutLoad &trade;.*?</title>").getMatch(0);
         if (filename == null) {
-            filename = br.getRegex("<h1  >Video: ([^<>\"]*?)</h1>").getMatch(0);
+            filename = br.getRegex("<h2[^>]*>([^<>\"]*?)</h2>").getMatch(0);
         }
         String filesize = br.getRegex(">Download \\((.*?)\\)").getMatch(0);
         if (filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
