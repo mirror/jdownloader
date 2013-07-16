@@ -118,9 +118,7 @@ public class FileArchiveFactory extends FileArchiveFile implements ArchiveFactor
                 dif = "";
             }
             path = path.replace(SUBFOLDER, dif);
-            path = path.replaceAll("[/]+", "\\\\");
-            path = path.replaceAll("[\\\\]+", "\\\\");
-            return path;
+            return CrossSystem.fixPathSeperators(path);
         } catch (Exception e) {
             Log.exception(e);
         }

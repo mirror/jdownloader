@@ -373,7 +373,8 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
             } else {
                 ret = ret.replace(PACKAGETAG, CrossSystem.alleviatePathParts(packageName));
             }
-            ret = ret.replace("//", "/").replace("\\\\", "\\");
+            ret = CrossSystem.fixPathSeperators(ret);
+
         }
         if (ret.contains(DATETAG)) {
             int start = ret.indexOf(DATETAG);

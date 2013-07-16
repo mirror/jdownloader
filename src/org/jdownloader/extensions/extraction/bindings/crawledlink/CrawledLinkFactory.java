@@ -148,9 +148,7 @@ public class CrawledLinkFactory extends CrawledLinkArchiveFile implements Archiv
                     path = path.replace(SUBFOLDER, "");
                 }
             }
-            path = path.replaceAll("[/]+", "\\\\");
-            path = path.replaceAll("[\\\\]+", "\\\\");
-            return path;
+            return CrossSystem.fixPathSeperators(path);
         } catch (Exception e) {
             Log.exception(e);
         }
