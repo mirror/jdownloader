@@ -120,7 +120,7 @@ public class CaptchaDialog extends AbstractCaptchaDialog implements ActionListen
 
     @Override
     public boolean isToFrontOnVisible() {
-        return false;
+        return true;
     }
 
     @Override
