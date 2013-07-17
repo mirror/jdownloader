@@ -88,7 +88,7 @@ public class EpicShareNet extends PluginForHost {
     private static final AtomicInteger totalMaxSimultanFreeDownload = new AtomicInteger(20);
 
     // DEV NOTES
-    // XfileShare Version 3.0.6.8
+    // XfileShare Version 3.0.6.9
     // last XfileSharingProBasic compare :: 2.6.2.1
     // mods:
     // protocol: has https
@@ -1134,7 +1134,7 @@ public class EpicShareNet extends PluginForHost {
             form.put("adcopy_challenge", chid);
             form.put("adcopy_response", "manual_challenge");
         } else if (form.containsHTML("id=\"capcode\" name= \"capcode\"")) {
-            logger.info("Detected captcha method \"Key Captca\"");
+            logger.info("Detected captcha method \"Key Captcha\"");
             final Browser captcha = br.cloneBrowser();
             cleanupBrowser(captcha, form.getHtmlCode());
             final PluginForDecrypt keycplug = JDUtilities.getPluginForDecrypt("linkcrypt.ws");

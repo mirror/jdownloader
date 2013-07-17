@@ -27,7 +27,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "tweetmymixtape.com", "tweetmysong.com" }, urls = { "http://(www\\.)?tweetmymixtape\\.com/[a-z0-9]+", "http://(www\\.)?tweetmysong\\.com/[a-z0-9]+" }, flags = { 0, 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "tweetmymixtape.com", "tweetmysong.com" }, urls = { "^http://(www\\.)?tweetmymixtape\\.com/(?i)[a-z0-9]{6}$", "^http://(www\\.)?tweetmysong\\.com/(?i)[a-z0-9]{6}$" }, flags = { 0, 0 })
 public class TweetMyMixTapeCom extends PluginForHost {
 
     public TweetMyMixTapeCom(PluginWrapper wrapper) {

@@ -87,7 +87,7 @@ public class HugeFilesNet extends PluginForHost {
     private static final AtomicInteger totalMaxSimultanFreeDownload = new AtomicInteger(20);
 
     // DEV NOTES
-    // XfileShare Version 3.0.6.8
+    // XfileShare Version 3.0.6.9
     // last XfileSharingProBasic compare :: 2.6.2.1
     // protocol: no https
     // captchatype: recaptcha
@@ -233,7 +233,7 @@ public class HugeFilesNet extends PluginForHost {
     private String[] scanInfo(final DownloadLink downloadLink, final String[] fileInfo) {
         // standard traits from base page
         if (inValidate(fileInfo[0])) {
-            fileInfo[0] = cbr.getRegex("You have requested.*?https?://(www\\.)?" + this.getHost() + "/" + fuid + "/(.*?)</font>").getMatch(1);
+            fileInfo[0] = cbr.getRegex("You have requested.*?https?://(www\\.)?" + DOMAINS + "/" + fuid + "/(.*?)</font>").getMatch(1);
             if (inValidate(fileInfo[0])) {
                 fileInfo[0] = cbr.getRegex("fname\"( type=\"hidden\")? value=\"(.*?)\"").getMatch(1);
                 if (inValidate(fileInfo[0])) {
@@ -1162,7 +1162,7 @@ public class HugeFilesNet extends PluginForHost {
             form.put("adcopy_challenge", chid);
             form.put("adcopy_response", "manual_challenge");
         } else if (form.containsHTML("id=\"capcode\" name= \"capcode\"")) {
-            logger.info("Detected captcha method \"Key Captca\"");
+            logger.info("Detected captcha method \"Key Captcha\"");
             final Browser captcha = br.cloneBrowser();
             cleanupBrowser(captcha, form.getHtmlCode());
             final PluginForDecrypt keycplug = JDUtilities.getPluginForDecrypt("linkcrypt.ws");

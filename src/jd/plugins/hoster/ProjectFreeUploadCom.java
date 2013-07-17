@@ -88,7 +88,7 @@ public class ProjectFreeUploadCom extends PluginForHost {
     private static final AtomicInteger totalMaxSimultanFreeDownload = new AtomicInteger(20);
 
     // DEV NOTES
-    // XfileShare Version 3.0.6.8
+    // XfileShare Version 3.0.6.9
     // last XfileSharingProBasic compare :: 2.6.2.1
     // protocol: no https
     // captchatype: solvemedia
@@ -234,7 +234,7 @@ public class ProjectFreeUploadCom extends PluginForHost {
     private String[] scanInfo(final DownloadLink downloadLink, final String[] fileInfo) {
         // standard traits from base page
         if (inValidate(fileInfo[0])) {
-            fileInfo[0] = cbr.getRegex("You have requested.*?https?://(www\\.)?" + this.getHost() + "/" + fuid + "/(.*?)</font>").getMatch(1);
+            fileInfo[0] = cbr.getRegex("You have requested.*?https?://(www\\.)?" + DOMAINS + "/" + fuid + "/(.*?)</font>").getMatch(1);
             if (inValidate(fileInfo[0])) {
                 fileInfo[0] = cbr.getRegex("fname\"( type=\"hidden\")? value=\"(.*?)\"").getMatch(1);
                 if (inValidate(fileInfo[0])) {

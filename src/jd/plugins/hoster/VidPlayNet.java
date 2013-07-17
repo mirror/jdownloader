@@ -62,20 +62,20 @@ import jd.utils.locale.JDL;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision: 19283 $", interfaceVersion = 2, names = { "vidto.me" }, urls = { "https?://(www\\.)?vidto\\.me/((vid)?embed\\-)?[a-z0-9]{12}" }, flags = { 2 })
+@HostPlugin(revision = "$Revision: 19496 $", interfaceVersion = 2, names = { "vidplay.net" }, urls = { "https?://(www\\.)?vidplay\\.net/((vid)?embed\\-)?[a-z0-9]{12}" }, flags = { 0 })
 @SuppressWarnings("deprecation")
-public class VidToMe extends PluginForHost {
+public class VidPlayNet extends PluginForHost {
 
     // Site Setters
     // primary website url, take note of redirects
-    private final String               COOKIE_HOST                  = "http://vidto.me";
+    private final String               COOKIE_HOST                  = "http://vidplay.net";
     // domain names used within download links.
-    private final String               DOMAINS                      = "(vidto\\.me)";
+    private final String               DOMAINS                      = "(vidplay\\.net)";
     private final String               PASSWORDTEXT                 = "<br><b>Passwor(d|t):</b> <input";
     private final String               MAINTENANCE                  = ">This server is in maintenance mode";
     private final String               dllinkRegex                  = "https?://(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|([\\w\\-]+\\.)?" + DOMAINS + ")(:\\d{1,5})?/(files(/(dl|download))?|d|cgi-bin/dl\\.cgi)/(\\d+/)?([a-z0-9]+/){1,4}[^\"'/<>]+";
-    private final boolean              useVidEmbed                  = false;
-    private final boolean              useAltEmbed                  = false;
+    private final boolean              useVidEmbed                  = true; // works no captcha
+    private final boolean              useAltEmbed                  = false; // also true... but solvemedia is required
     private final boolean              supportsHTTPS                = false;
     private final boolean              enforcesHTTPS                = false;
     private final boolean              useRUA                       = false;
@@ -90,16 +90,16 @@ public class VidToMe extends PluginForHost {
     // DEV NOTES
     // XfileShare Version 3.0.6.9
     // last XfileSharingProBasic compare :: 2.6.2.1
-    // mods: quality selection
     // protocol: no https
-    // captchatype: recaptcha, but never used as of vidembed
+    // captchatype: solvemedia
     // other: no redirects
+    // mods: scanInfo
 
     private void setConstants(final Account account) {
         if (account != null && account.getBooleanProperty("free")) {
             // free account
-            chunks = -2;
-            resumes = false;
+            chunks = -4; // not tested
+            resumes = true;
             acctype = "Free Account";
             directlinkproperty = "freelink2";
         } else if (account != null && !account.getBooleanProperty("free")) {
@@ -110,8 +110,8 @@ public class VidToMe extends PluginForHost {
             directlinkproperty = "premlink";
         } else {
             // non account
-            chunks = -2;
-            resumes = false;
+            chunks = -4; // seems to be the limit
+            resumes = true;
             acctype = "Non Account";
             directlinkproperty = "freelink";
         }
@@ -137,11 +137,11 @@ public class VidToMe extends PluginForHost {
     public boolean hasCaptcha(final DownloadLink downloadLink, final jd.plugins.Account acc) {
         if (acc == null) {
             /* no account, yes we can expect captcha */
-            return true;
+            return false;
         }
         if (Boolean.TRUE.equals(acc.getBooleanProperty("free"))) {
             /* free accounts also have captchas */
-            return true;
+            return false;
         }
         return false;
     }
@@ -151,10 +151,10 @@ public class VidToMe extends PluginForHost {
      * 
      * @category 'Experimental', Mods written July 2012 - 2013
      * */
-    public VidToMe(PluginWrapper wrapper) {
+    public VidPlayNet(PluginWrapper wrapper) {
         super(wrapper);
         setConfigElements();
-        this.enablePremium(COOKIE_HOST + "/premium.html");
+        // this.enablePremium(COOKIE_HOST + "/premium.html");
     }
 
     @Override
@@ -223,11 +223,8 @@ public class VidToMe extends PluginForHost {
             logger.warning("filename equals null, throwing \"plugin defect\"");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        fileInfo[0] = Encoding.htmlDecode(fileInfo[0].replaceAll("(</?b>|\\.html)", ""));
+        fileInfo[0] = fileInfo[0].replaceAll("(</?b>|\\.html)", "");
         downloadLink.setName(fileInfo[0].trim());
-        if (downloadLink.getStringProperty("OriginalFileName", null) == null) {
-            downloadLink.setProperty("OriginalFileName", fileInfo[0].trim());
-        }
         if (downloadLink.getAvailableStatus().toString().equals("UNCHECKED")) downloadLink.setAvailable(true);
         if (!inValidate(fileInfo[1])) downloadLink.setDownloadSize(SizeFormatter.getSize(fileInfo[1]));
         if (!inValidate(fileInfo[2])) downloadLink.setMD5Hash(fileInfo[2].trim());
@@ -237,20 +234,30 @@ public class VidToMe extends PluginForHost {
     private String[] scanInfo(final DownloadLink downloadLink, final String[] fileInfo) {
         // standard traits from base page
         if (inValidate(fileInfo[0])) {
-            fileInfo[0] = cbr.getRegex("<h2 class=\"video\\-page\\-head\">([^<>\"]*?)</h2>").getMatch(0);
+            fileInfo[0] = cbr.getRegex("You have requested.*?https?://(www\\.)?" + DOMAINS + "/" + fuid + "/(.*?)</font>").getMatch(1);
             if (inValidate(fileInfo[0])) {
-                fileInfo[0] = cbr.getRegex("name=\"fname\" value=\"([^<>\"]*?)\"").getMatch(0);
-                // String fileExtension = new Regex(correctedBR, "<META NAME=\"description\" CONTENT=\"[^>\"]+ ([^\"]+)\">").getMatch(0);
-                // if (fileExtension == null) fileExtension = new Regex(correctedBR,
-                // "<META NAME=\"keywords\"\\s+CONTENT=\"[^>\"]+ ([^\"]+)\">").getMatch(0);
-                // after uploading original files are no longer stored/kept, effectively they re-encode into formats they want for their
-                // flash
-                // player! All videos that i've seen have been changed into mp4 format,
+                fileInfo[0] = cbr.getRegex("fname\"( type=\"hidden\")? value=\"(.*?)\"").getMatch(1);
+                if (inValidate(fileInfo[0])) {
+                    fileInfo[0] = cbr.getRegex("<h4>(.*?)</h4>").getMatch(0);
+                    if (inValidate(fileInfo[0])) fileInfo[0] = cbr.getRegex("<META NAME=\"keywords\"\\s+CONTENT=\"Watch (.*?)\">").getMatch(0);
+                    if (inValidate(fileInfo[0])) {
+                        // can cause new line finds, so check if it matches.
+                        // fileInfo[0] = cbr.getRegex("Download File:? ?(<[^>]+> ?)+?([^<>\"\\']+)").getMatch(1);
+                        // traits from download1 page below.
+                        if (inValidate(fileInfo[0])) {
+                            fileInfo[0] = cbr.getRegex("Filename:? ?(<[^>]+> ?)+?([^<>\"']+)").getMatch(1);
+                            // next two are details from sharing box
+                            if (inValidate(fileInfo[0])) {
+                                fileInfo[0] = cbr.getRegex("<textarea[^\r\n]+>([^\r\n]+) - [\\d\\.]+ (KB|MB|GB)</a></textarea>").getMatch(0);
+                                if (inValidate(fileInfo[0])) {
+                                    fileInfo[0] = cbr.getRegex("<textarea[^\r\n]+>[^\r\n]+\\]([^\r\n]+) - [\\d\\.]+ (KB|MB|GB)\\[/URL\\]").getMatch(0);
+                                }
+                            }
+                        }
+                    }
+                }
             }
         }
-        String fileExtension = ".mp4";
-        if (!inValidate(fileInfo[0]) && !fileInfo[0].endsWith(".mp4")) fileInfo[0] = fileInfo[0].trim() + fileExtension.trim();
-
         if (inValidate(fileInfo[1])) {
             fileInfo[1] = cbr.getRegex("\\(([0-9]+ bytes)\\)").getMatch(0);
             if (inValidate(fileInfo[1])) {
@@ -260,7 +267,7 @@ public class VidToMe extends PluginForHost {
                     if (inValidate(fileInfo[1])) {
                         try {
                             // only needed in rare circumstances
-                            // altAvailStat(downloadLink, fileInfo);
+                            altAvailStat(downloadLink, fileInfo);
                         } catch (Exception e) {
                         }
                     }
@@ -304,7 +311,7 @@ public class VidToMe extends PluginForHost {
         // First, bring up saved final links
         dllink = checkDirectLink(downloadLink);
         // Second, check for streaming links on the first page
-        if (inValidate(dllink)) getDllink(downloadLink);
+        if (inValidate(dllink)) getDllink();
         // Third, do they provide video hosting?
         if (inValidate(dllink) && (useVidEmbed || (useAltEmbed && downloadLink.getName().matches(".+\\.(asf|avi|flv|m4u|m4v|mov|mkv|mpeg4?|mpg|ogm|vob|wmv|webm)$")))) {
             final Browser obr = br.cloneBrowser();
@@ -315,7 +322,7 @@ public class VidToMe extends PluginForHost {
                 // alternative embed format
                 getPage("/embed-" + fuid + ".html");
             }
-            getDllink(downloadLink);
+            getDllink();
             if (inValidate(dllink)) {
                 logger.warning("Failed to find 'embed dllink', trying normal download method.");
                 br = obr;
@@ -331,10 +338,9 @@ public class VidToMe extends PluginForHost {
                 download1 = cleanForm(download1);
                 // end of backward compatibility
                 download1.remove("method_premium");
-                waitTime(System.currentTimeMillis(), downloadLink);
                 sendForm(download1);
                 checkErrors(downloadLink, account, false);
-                getDllink(downloadLink);
+                getDllink();
             }
         }
         if (inValidate(dllink)) {
@@ -361,7 +367,7 @@ public class VidToMe extends PluginForHost {
                 sendForm(dlForm);
                 logger.info("Submitted DLForm");
                 checkErrors(downloadLink, account, true);
-                getDllink(downloadLink);
+                getDllink();
                 if (inValidate(dllink) && (getFormByKey(cbr, "op", "download2") == null || i == repeat)) {
                     if (i == repeat)
                         logger.warning("Exausted repeat count, after 'dllink == null'");
@@ -417,7 +423,7 @@ public class VidToMe extends PluginForHost {
         } else {
             // we can not 'rename' filename once the download started, could be problematic!
             if (downloadLink.getDownloadCurrent() == 0) {
-                // fixFilename(downloadLink);
+                fixFilename(downloadLink);
             }
             try {
                 // add a download slot
@@ -469,7 +475,7 @@ public class VidToMe extends PluginForHost {
         cleanupBrowser(cbr, toClean);
     }
 
-    private void getDllink(final DownloadLink dl) {
+    private void getDllink() {
         dllink = br.getRedirectLocation();
         if (inValidate(dllink) || (!inValidate(dllink) && !dllink.matches(dllinkRegex))) {
             dllink = regexDllink(cbr.toString());
@@ -477,7 +483,7 @@ public class VidToMe extends PluginForHost {
                 final String cryptedScripts[] = cbr.getRegex("p\\}\\((.*?)\\.split\\('\\|'\\)").getColumn(0);
                 if (cryptedScripts != null && cryptedScripts.length != 0) {
                     for (String crypted : cryptedScripts) {
-                        decodeDownloadLink(crypted, dl);
+                        decodeDownloadLink(crypted);
                         if (!inValidate(dllink)) break;
                     }
                 }
@@ -599,7 +605,7 @@ public class VidToMe extends PluginForHost {
             account.setValid(false);
             throw e;
         }
-        final String space[] = cbr.getRegex(">Used space:</td>.*?<td.*?b>([0-9\\.]+) of \\d+ ?(KB|MB|GB|TB)?</b>").getRow(0);
+        final String space[] = cbr.getRegex(">Used space:</td>.*?<td.*?b>([0-9\\.]+) ?(KB|MB|GB|TB)?</b>").getRow(0);
         if ((space != null && space.length != 0) && (!inValidate(space[0]) && !inValidate(space[1]))) {
             // free users it's provided by default
             ai.setUsedSpace(space[0] + " " + space[1]);
@@ -764,7 +770,7 @@ public class VidToMe extends PluginForHost {
                         throw new PluginException(LinkStatus.ERROR_RETRY);
                     }
                 }
-                getDllink(downloadLink);
+                getDllink();
                 if (inValidate(dllink)) {
                     checkErrors(downloadLink, account, true);
                     Form dlform = cbr.getFormbyProperty("name", "F1");
@@ -773,7 +779,7 @@ public class VidToMe extends PluginForHost {
                     else if (cbr.containsHTML(PASSWORDTEXT)) dlform = handlePassword(dlform, downloadLink);
                     sendForm(dlform);
                     checkErrors(downloadLink, account, true);
-                    getDllink(downloadLink);
+                    getDllink();
                     if (inValidate(dllink)) {
                         logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -888,7 +894,6 @@ public class VidToMe extends PluginForHost {
             // lets make sure preferhttps setting removed when hoster or we disable the plugin https ability.
             getPluginConfig().setProperty(preferHTTPS, Property.NULL);
         }
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX_INDEX, getPluginConfig(), quality, qualitylist, JDL.L("plugins.host.vidtome.qualityselection", "Select your prefered quality: ")).setDefaultValue(0));
     }
 
     /**
@@ -974,7 +979,6 @@ public class VidToMe extends PluginForHost {
     @Override
     public void resetDownloadlink(final DownloadLink downloadLink) {
         downloadLink.setProperty("retry", Property.NULL);
-        downloadLink.setProperty("OriginalFileName", Property.NULL);
     }
 
     private void getPage(final String page) throws Exception {
@@ -1186,7 +1190,7 @@ public class VidToMe extends PluginForHost {
      *            String for decoder to process
      * @return String result
      * */
-    private void decodeDownloadLink(final String s, final DownloadLink downloadLink) {
+    private void decodeDownloadLink(final String s) {
         String decoded = null;
 
         try {
@@ -1207,7 +1211,7 @@ public class VidToMe extends PluginForHost {
         }
 
         if (!inValidate(decoded)) {
-            dllink = getConfiguredQualityDownloadlink(downloadLink, decoded);
+            dllink = regexDllink(decoded);
         }
     }
 
@@ -1580,82 +1584,6 @@ public class VidToMe extends PluginForHost {
             logger.info("\r\ndirtyMD5sum = " + dMD5 + "\r\ncleanMD5sum = " + JDHash.getMD5(ibr.toString()) + "\r\n");
             System.out.println(ibr.toString());
         }
-    }
-
-    private void get720p(final DownloadLink dl, final String source) {
-        dllink = new Regex(source, "label:\"720p\",file:\"(http://[^<>\"]*?)\"").getMatch(0);
-        if (!inValidate(dllink)) addQualityToFilename(dl, "720p");
-    }
-
-    private void get360p(final DownloadLink dl, final String source) {
-        dllink = new Regex(source, "label:\"360p\",file:\"(http://[^<>\"]*?)\"").getMatch(0);
-        if (!inValidate(dllink)) addQualityToFilename(dl, "360p");
-    }
-
-    private void get240p(final DownloadLink dl, final String source) {
-        dllink = new Regex(source, "label:\"240p\",file:\"(http://[^<>\"]*?)\"").getMatch(0);
-        if (!inValidate(dllink)) addQualityToFilename(dl, "240p");
-    }
-
-    private void addQualityToFilename(final DownloadLink dl, final String quality) {
-        final String currentFilename = dl.getStringProperty("OriginalFileName", null);
-        String ext = null;
-        if (currentFilename.contains(".")) ext = currentFilename.substring(currentFilename.lastIndexOf("."));
-        if (!inValidate(ext))
-            dl.setFinalFileName(currentFilename.replace(ext, "") + "_" + quality + ext);
-        else
-            dl.setFinalFileName(currentFilename + "_" + quality);
-    }
-
-    private final String   quality     = "quality";
-
-    /** The list of server values displayed to the user */
-    private final String[] qualitylist = new String[] { "720p", "360p", "240p" };
-
-    private String getConfiguredQualityDownloadlink(final DownloadLink dl, final String source) {
-        switch (getPluginConfig().getIntegerProperty(quality, -1)) {
-        case 0:
-            logger.fine("Quality 720p is configured");
-            get720p(dl, source);
-            if (inValidate(dllink)) {
-                get360p(dl, source);
-                if (inValidate(dllink)) {
-                    get240p(dl, source);
-                }
-            }
-            break;
-        case 1:
-            logger.fine("Quality 360p is configured");
-            get360p(dl, source);
-            if (inValidate(dllink)) {
-                get720p(dl, source);
-                if (inValidate(dllink)) {
-                    get240p(dl, source);
-                }
-            }
-            break;
-        case 2:
-            logger.fine("Quality 240p is configured");
-            get240p(dl, source);
-            if (inValidate(dllink)) {
-                get360p(dl, source);
-                if (inValidate(dllink)) {
-                    get720p(dl, source);
-                }
-            }
-            break;
-        default:
-            logger.fine("No quality is configured, returning default quality (720p)");
-            get720p(dl, source);
-            if (inValidate(dllink)) {
-                get360p(dl, source);
-                if (inValidate(dllink)) {
-                    get240p(dl, source);
-                }
-            }
-            break;
-        }
-        return dllink;
     }
 
 }
