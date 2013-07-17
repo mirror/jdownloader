@@ -22,6 +22,7 @@ import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -62,10 +63,15 @@ public class WorldStarHipHopCom extends PluginForHost {
         if (br.getURL().contains("worldstaruncut.com/")) {
             if (br.getURL().equals("http://www.worldstarhiphop.com/videos/")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             getURLUniversal();
-            filename = br.getRegex("<title>([^<>\"]*?)\\(\\*Warning\\*").getMatch(0);
+            filename = br.getRegex("<title>([^<>\"]*?) \\- World Star Uncut</title>").getMatch(0);
             if (filename == null) filename = br.getRegex("<td width=\"607\" class=\"style4\">([^<>\"]*?) \\(\\*Warning\\*").getMatch(0);
         } else {
-            if (br.containsHTML("<title>Video: No Video </title>")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            if (br.containsHTML("<title>Video: No Video </title>") || br.getURL().equals("http://www.worldstarhiphop.com/videos/")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            if (br.containsHTML(">This video isn\\'t here right now\\.\\.\\.")) {
+                downloadLink.setName(new Regex(downloadLink.getDownloadURL(), "([a-zA-Z0-9]+)$").getMatch(0));
+                downloadLink.getLinkStatus().setStatusText("Video temporarily unavailable");
+                return AvailableStatus.TRUE;
+            }
             filename = br.getRegex("<meta name=\"title\" content=\"(.*?)\"").getMatch(0);
             if (filename == null) {
                 filename = br.getRegex("<title>Video: (.*?)</title>").getMatch(0);
@@ -117,7 +123,13 @@ public class WorldStarHipHopCom extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        if (br.containsHTML("videoplayer\\.vevo\\.com/embed/embedded\"")) { throw new PluginException(LinkStatus.ERROR_FATAL, "This video is blocked in your country"); }
+        if (br.containsHTML("videoplayer\\.vevo\\.com/embed/embedded\"")) throw new PluginException(LinkStatus.ERROR_FATAL, "This video is blocked in your country");
+        if (br.getURL().contains("worldstarhiphop.com/")) {
+            if (br.containsHTML(">This video isn\\'t here right now\\.\\.\\.")) {
+                downloadLink.getLinkStatus().setStatusText("Video temporarily unavailable");
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Video temporarily unavailable", 30 * 60 * 1000l);
+            }
+        }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();

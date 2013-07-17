@@ -35,7 +35,7 @@ import jd.plugins.PluginForHost;
 /**
  * @author typek_pb
  */
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "videoalbumy.azet.sk" }, urls = { "http://[\\w\\.]*?videoalbumy\\.azet\\.sk/[-a-z0=9]+/[0-9a-zA-Z]+/" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "videoalbumy.azet.sk" }, urls = { "http://(www\\.)?videoalbumy\\.azet\\.sk/[-a-z0=9]+/[0-9a-zA-Z]+/" }, flags = { 0 })
 public class VideoalbumyAzetSk extends PluginForHost {
     private String dlink = null;
 
@@ -86,19 +86,14 @@ public class VideoalbumyAzetSk extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws Exception {
         br.getPage(link.getDownloadURL());
-        String filename = br.getRegex("<title>VideoAlbumy - (.*?)</title>").getMatch(0);
+        String filename = br.getRegex("<title>VideoAlbumy \\- (.*?)</title>").getMatch(0);
         if (null == filename || filename.trim().length() == 0) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
 
-        StringBuilder linkSB = new StringBuilder("http://213.215.107.64/v/");
-        String dlinkPart = new Regex(link.getDownloadURL(), "http://videoalbumy.azet.sk/[-a-z0=9]+/(.*?)/").getMatch(0);
-        if (null == dlinkPart || dlinkPart.trim().length() == 0) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        linkSB.append(dlinkPart);
-        linkSB.append(".flv");
+        br.getPage("http://videoalbumy.azet.sk/players/jw/plConf.phtml?&h=" + new Regex(link.getDownloadURL(), "([0-9a-zA-Z]+)/$").getMatch(0));
+        dlink = br.getRegex("<file>(http://[^<>\"]*?)</file>").getMatch(0);
+        if (dlink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
 
-        dlink = linkSB.toString();
-        if (dlink == null || dlink.trim().length() == 0) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-
-        filename = iso88591ToWin1250(filename);
+        if (iso88591ToWin1250(filename) != null) filename = iso88591ToWin1250(filename);
         filename = filename.trim();
         link.setFinalFileName(filename + ".flv");
         br.setFollowRedirects(true);
