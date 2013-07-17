@@ -87,8 +87,8 @@ import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.swing.EDTHelper;
 import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.WindowManager;
+import org.appwork.utils.swing.WindowManager.FrameState;
 import org.appwork.utils.swing.WindowManager.WindowExtendedState;
-import org.appwork.utils.swing.WindowManager.WindowState;
 import org.appwork.utils.swing.dialog.AbstractDialog;
 import org.appwork.utils.swing.dialog.ConfirmDialog;
 import org.appwork.utils.swing.dialog.Dialog;
@@ -333,7 +333,7 @@ public class JDGui extends SwingGui implements UpdaterListener {
                         Window owner = ((InternDialog) w).getOwner();
 
                         if (owner == null && w.isVisible()) {
-                            WindowManager.getInstance().toFront(w, WindowState.FOCUS);
+                            WindowManager.getInstance().toFront(w, FrameState.FOCUS);
                         }
                         // ((InternDialog)w).getDialogModel() instanceof AbstractCaptchaDialog)
 
@@ -390,7 +390,7 @@ public class JDGui extends SwingGui implements UpdaterListener {
 
                                 JsonConfig.create(GraphicalUserInterfaceSettings.class).setLastFrameStatus(FrameStatus.create(mainFrame, JsonConfig.create(GraphicalUserInterfaceSettings.class).getLastFrameStatus()));
 
-                                JDGui.this.getMainFrame().setVisible(false);
+                                WindowManager.getInstance().setVisible(JDGui.this.getMainFrame(), false, FrameState.FOCUS);
                                 JDGui.this.getMainFrame().dispose();
                                 return null;
 
@@ -668,7 +668,7 @@ public class JDGui extends SwingGui implements UpdaterListener {
                     new EDTHelper<Object>() {
                         @Override
                         public Object edtRun() {
-                            JDGui.this.getMainFrame().setVisible(false);
+                            WindowManager.getInstance().setVisible(JDGui.this.getMainFrame(), false, FrameState.FOCUS);
                             return null;
                         }
                     }.start();
@@ -845,7 +845,7 @@ public class JDGui extends SwingGui implements UpdaterListener {
                 mainFrame.setPreferredSize(finalDim);
                 if (finalState != null) mainFrame.setExtendedState(finalState);
 
-                mainFrame.setVisible(true);
+                WindowManager.getInstance().setVisible(mainFrame, true, FrameState.FOCUS);
                 // 7. Why a JFrame hides the OS TaskBar when being displayed maximized via JFrame#setExtendedState()?
                 //
                 // The described problem is a Swing issue which appears only with non-native decorated frames by using
@@ -957,7 +957,7 @@ public class JDGui extends SwingGui implements UpdaterListener {
                 switch (id) {
                 case UIConstants.WINDOW_STATUS_MAXIMIZED:
                     mainFrame.setState(Frame.MAXIMIZED_BOTH);
-                    mainFrame.setVisible(true);
+                    WindowManager.getInstance().setVisible(mainFrame, true, FrameState.FOCUS);
                     break;
                 case UIConstants.WINDOW_STATUS_MINIMIZED:
                     mainFrame.setState(Frame.ICONIFIED);
@@ -965,9 +965,36 @@ public class JDGui extends SwingGui implements UpdaterListener {
                 case UIConstants.WINDOW_STATUS_NORMAL:
                     if (!GuiUtils.isActiveWindow(getMainFrame())) {
                         mainFrame.setState(Frame.NORMAL);
-                        mainFrame.setVisible(true);
+                        WindowManager.getInstance().setVisible(mainFrame, true, FrameState.FOCUS);
                     }
 
+                    break;
+                case UIConstants.WINDOW_STATUS_FOREGROUND_NO_FOCUS:
+                    if (!GuiUtils.isActiveWindow(getMainFrame())) {
+
+                        if (isSilentModeActive()) {
+                            flashTaskbar();
+                            return;
+                        }
+                        {
+                            // AbstractDialog captchaDialog = null;
+
+                            // if (finalCaptchaDialog != null) {
+                            // finalCaptchaDialog.getDialog().setFocusableWindowState(false);
+                            // }
+
+                            WindowManager.getInstance().setExtendedState(mainFrame, WindowExtendedState.NORMAL);
+                            WindowManager.getInstance().setVisible(mainFrame, true, FrameState.TO_FRONT);
+                            //
+                            if (tray.isEnabled()) {
+                                setWindowToTray(false);
+                            }
+
+                        }
+                    } else {
+
+                        logger.info("No To Top. We already have focus");
+                    }
                     break;
                 case UIConstants.WINDOW_STATUS_FOREGROUND:
                     if (!GuiUtils.isActiveWindow(getMainFrame())) {
@@ -984,7 +1011,7 @@ public class JDGui extends SwingGui implements UpdaterListener {
                             // }
 
                             WindowManager.getInstance().setExtendedState(mainFrame, WindowExtendedState.NORMAL);
-                            WindowManager.getInstance().setVisible(mainFrame, true, WindowState.FOCUS);
+                            WindowManager.getInstance().setVisible(mainFrame, true, FrameState.FOCUS);
                             //
                             if (tray.isEnabled()) {
                                 setWindowToTray(false);
@@ -1158,7 +1185,7 @@ public class JDGui extends SwingGui implements UpdaterListener {
                     @Override
                     public Object edtRun() {
                         /* set visible state */
-                        JDGui.this.getMainFrame().setVisible(false);
+                        WindowManager.getInstance().setVisible(JDGui.this.getMainFrame(), false, FrameState.FOCUS);
                         return null;
                     }
                 }.start();
@@ -1213,17 +1240,19 @@ public class JDGui extends SwingGui implements UpdaterListener {
                 /* set visible state */
 
                 if (!minimize) {
-                    getMainFrame().setVisible(true);
 
-                    WindowManager.getInstance().toFront(mainFrame, WindowState.FOCUS);
+                    if (!getMainFrame().isVisible()) {
+                        WindowManager.getInstance().setVisible(getMainFrame(), true, FrameState.FOCUS);
+                    }
+
                     if (trayIconChecker != null) {
                         trayIconChecker.interrupt();
                         trayIconChecker = null;
                     }
 
                 } else {
-                    getMainFrame().setVisible(false);
 
+                    WindowManager.getInstance().hide(getMainFrame());
                     trayIconChecker = new Thread() {
 
                         @Override

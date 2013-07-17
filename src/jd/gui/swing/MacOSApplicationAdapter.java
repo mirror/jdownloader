@@ -42,6 +42,8 @@ import org.appwork.storage.config.events.GenericConfigEventListener;
 import org.appwork.storage.config.handler.EnumKeyHandler;
 import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.utils.swing.EDTHelper;
+import org.appwork.utils.swing.WindowManager;
+import org.appwork.utils.swing.WindowManager.FrameState;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogNoAnswerException;
 import org.jdownloader.controlling.AggregatedNumbers;
@@ -287,7 +289,7 @@ public class MacOSApplicationAdapter implements QuitHandler, AboutHandler, Prefe
         if (swingGui == null || swingGui.getMainFrame() == null) return;
         final JFrame mainFrame = swingGui.getMainFrame();
         if (!mainFrame.isVisible()) {
-            mainFrame.setVisible(true);
+            WindowManager.getInstance().setVisible(mainFrame, true, FrameState.FOCUS);
         }
     }
 

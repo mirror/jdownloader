@@ -49,6 +49,9 @@ import jd.nutils.JDHash;
 import jd.nutils.io.JDIO;
 import jd.utils.JDUtilities;
 
+import org.appwork.utils.swing.WindowManager;
+import org.appwork.utils.swing.WindowManager.FrameState;
+
 public class Main {
 
     private static int                   BOTHRESIZE  = GridBagConstraints.BOTH;
@@ -476,7 +479,7 @@ public class Main {
         ((JComponent) frame.getContentPane()).setBorder(new EmptyBorder(n, n, n, n));
         frame.pack();
         frame.setLocationRelativeTo(null);
-        frame.setVisible(true);
+        WindowManager.getInstance().setVisible(frame, true, FrameState.FOCUS);
 
         new Thread() {
             @Override

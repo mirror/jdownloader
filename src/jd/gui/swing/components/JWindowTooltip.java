@@ -13,6 +13,8 @@ import javax.swing.SwingUtilities;
 import net.miginfocom.swing.MigLayout;
 
 import org.appwork.utils.swing.EDTHelper;
+import org.appwork.utils.swing.WindowManager;
+import org.appwork.utils.swing.WindowManager.FrameState;
 
 public abstract class JWindowTooltip extends JWindow {
 
@@ -30,7 +32,7 @@ public abstract class JWindowTooltip extends JWindow {
 
         addContent(panel);
 
-        this.setVisible(false);
+        WindowManager.getInstance().setVisible(this, false, FrameState.FOCUS);
         this.setAlwaysOnTop(true);
         this.add(panel);
         this.pack();
@@ -48,7 +50,7 @@ public abstract class JWindowTooltip extends JWindow {
 
             @Override
             public Object edtRun() {
-                if (isVisible()) setVisible(false);
+                if (isVisible()) WindowManager.getInstance().setVisible(JWindowTooltip.this, false, FrameState.FOCUS);
                 return null;
             }
 

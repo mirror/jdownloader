@@ -56,6 +56,8 @@ import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.os.DesktopSupportLinux;
 import org.appwork.utils.swing.EDTHelper;
 import org.appwork.utils.swing.EDTRunner;
+import org.appwork.utils.swing.WindowManager;
+import org.appwork.utils.swing.WindowManager.FrameState;
 import org.appwork.utils.swing.dialog.ConfirmDialog;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogNoAnswerException;
@@ -64,14 +66,14 @@ import org.jdownloader.extensions.AbstractExtension;
 import org.jdownloader.extensions.ExtensionConfigPanel;
 import org.jdownloader.extensions.StartException;
 import org.jdownloader.extensions.StopException;
-import org.jdownloader.gui.jdtrayicon.translate._TRAY;
 import org.jdownloader.gui.jdtrayicon.translate.TrayiconTranslation;
+import org.jdownloader.gui.jdtrayicon.translate._TRAY;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
-import org.jdownloader.updatev2.SmartRlyExitRequest;
 import org.jdownloader.updatev2.RestartController;
+import org.jdownloader.updatev2.SmartRlyExitRequest;
 
 public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTranslation> implements MouseListener, MouseMotionListener, WindowStateListener, ActionListener, MainFrameClosingHandler, CheckBoxedEntry {
 
@@ -386,7 +388,7 @@ public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTransla
                         if (!checkPassword()) return;
                         trayIconPopup = new TrayIconPopup(this);
                         calcLocation(trayIconPopup, e.getPoint());
-                        trayIconPopup.setVisible(true);
+                        WindowManager.getInstance().setVisible(trayIconPopup, true, FrameState.FOCUS);
                         trayIconPopup.startAutoHide();
                     }
                 }
@@ -403,7 +405,7 @@ public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTransla
                         Point pointOnScreen = e.getLocationOnScreen();
                         if (e.getX() > 0) pointOnScreen.x -= e.getPoint().x;
                         calcLocation(trayIconPopup, pointOnScreen);
-                        trayIconPopup.setVisible(true);
+                        WindowManager.getInstance().setVisible(trayIconPopup, true, FrameState.FOCUS);
                         trayIconPopup.startAutoHide();
                     }
                 }
@@ -645,7 +647,7 @@ public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTransla
                 @Override
                 public Object edtRun() {
                     /* set visible state */
-                    JDGui.getInstance().getMainFrame().setVisible(false);
+                    WindowManager.getInstance().setVisible(JDGui.getInstance().getMainFrame(), false, FrameState.FOCUS);
                     return null;
                 }
             }.start();

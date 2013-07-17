@@ -68,6 +68,8 @@ import org.appwork.utils.Files;
 import org.appwork.utils.Regex;
 import org.appwork.utils.ImageProvider.ImageProvider;
 import org.appwork.utils.logging2.LogSource;
+import org.appwork.utils.swing.WindowManager;
+import org.appwork.utils.swing.WindowManager.FrameState;
 import org.jdownloader.logging.LogController;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -746,7 +748,7 @@ public class JAntiCaptcha {
             }
         });
         w.pack();
-        w.setVisible(true);
+        WindowManager.getInstance().setVisible(w, true, FrameState.FOCUS);
     }
 
     public String getCodeFromFileName(String name) {
@@ -1581,7 +1583,7 @@ public class JAntiCaptcha {
         for (int i = 0; i < letters.length; i++) {
             bw2.add(new ImageComponent(letters[i].getImage((int) Math.ceil(jas.getDouble("simplifyFaktor")))), Utilities.getGBC(i * 2 + 2, 0, 2, 2));
         }
-        bw2.setVisible(true);
+        WindowManager.getInstance().setVisible(bw2, true, FrameState.FOCUS);
         bw2.pack();
         bw2.setSize(300, bw2.getSize().height);
 
@@ -1737,7 +1739,7 @@ public class JAntiCaptcha {
 
         f.setSize(1400, 800);
         f.pack();
-        f.setVisible(true);
+        WindowManager.getInstance().setVisible(f, true, FrameState.FOCUS);
 
         // Führe das Prepare aus
         // jas.executePrepareCommands(captcha);

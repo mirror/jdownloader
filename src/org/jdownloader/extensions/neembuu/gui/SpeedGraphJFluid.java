@@ -23,6 +23,8 @@ import java.awt.Container;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 
+import org.appwork.utils.swing.WindowManager;
+import org.appwork.utils.swing.WindowManager.FrameState;
 import org.jdownloader.extensions.neembuu.translate._NT;
 import org.netbeans.lib.profiler.charts.xy.synchronous.SynchronousXYChart;
 
@@ -97,13 +99,11 @@ public final class SpeedGraphJFluid extends JPanel {
 
     private static SynchronousXYChart findSynchronousXYChart(Container k, int depth) {
         /*
-         * for (int i = 0; i < depth; i++) { System.out.print("\t"); }
-         * System.out.println("+++++"+k+"+++++++");
+         * for (int i = 0; i < depth; i++) { System.out.print("\t"); } System.out.println("+++++"+k+"+++++++");
          */
         for (Component c : k.getComponents()) {
             /*
-             * for (int i = 0; i < depth; i++) { System.out.print("\t"); }
-             * System.out.println(c);
+             * for (int i = 0; i < depth; i++) { System.out.print("\t"); } System.out.println(c);
              */
 
             if (c instanceof SynchronousXYChart) return (SynchronousXYChart) c;
@@ -144,32 +144,19 @@ public final class SpeedGraphJFluid extends JPanel {
 
     private void changeHeight(double h) {
         /*
-         * try{ System.out.println("before="+actual_chart.getDataHeight());
-         * Field f =
-         * TransformableCanvasComponent.class.getDeclaredField("dataHeight");
-         * f.setAccessible(true); f.setLong(actual_chart, (long)h);
+         * try{ System.out.println("before="+actual_chart.getDataHeight()); Field f =
+         * TransformableCanvasComponent.class.getDeclaredField("dataHeight"); f.setAccessible(true); f.setLong(actual_chart, (long)h);
          * 
-         * Method m =
-         * ChartComponent.class.getDeclaredMethod("dataBoundsChanged",
-         * long.class,long.class,long.class,long.class
-         * ,long.class,long.class,long.class,long.class); m.setAccessible(true);
-         * m.invoke(actual_chart,
-         * actual_chart.getOffsetX(),actual_chart.getOffsetY(),
-         * actual_chart.getDataWidth(),(long)h,
-         * actual_chart.getOffsetX(),actual_chart.getOffsetY(),
-         * actual_chart.getDataWidth(),actual_chart.getDataHeight()); f =
-         * TransformableCanvasComponent.class.getDeclaredField("maxOffsetY");
-         * f.setAccessible(true); f.setLong(actual_chart, (long)h);
-         * //pendingDataHeight f =
-         * TransformableCanvasComponent.class.getDeclaredField
-         * ("pendingDataHeight"); f.setAccessible(true); f.setLong(actual_chart,
-         * (long)h);
+         * Method m = ChartComponent.class.getDeclaredMethod("dataBoundsChanged", long.class,long.class,long.class,long.class
+         * ,long.class,long.class,long.class,long.class); m.setAccessible(true); m.invoke(actual_chart,
+         * actual_chart.getOffsetX(),actual_chart.getOffsetY(), actual_chart.getDataWidth(),(long)h,
+         * actual_chart.getOffsetX(),actual_chart.getOffsetY(), actual_chart.getDataWidth(),actual_chart.getDataHeight()); f =
+         * TransformableCanvasComponent.class.getDeclaredField("maxOffsetY"); f.setAccessible(true); f.setLong(actual_chart, (long)h);
+         * //pendingDataHeight f = TransformableCanvasComponent.class.getDeclaredField ("pendingDataHeight"); f.setAccessible(true);
+         * f.setLong(actual_chart, (long)h);
          * 
-         * System.out.println("after="+actual_chart.getDataHeight());
-         * }catch(Exception a){ a.printStackTrace(System.err); }
-         * actual_chart.setDataBounds(actual_chart.getDataOffsetX(),
-         * actual_chart.getDataOffsetY(), actual_chart.getDataWidth(),
-         * (long)(h));
+         * System.out.println("after="+actual_chart.getDataHeight()); }catch(Exception a){ a.printStackTrace(System.err); }
+         * actual_chart.setDataBounds(actual_chart.getDataOffsetX(), actual_chart.getDataOffsetY(), actual_chart.getDataWidth(), (long)(h));
          */
     }
 
@@ -185,7 +172,7 @@ public final class SpeedGraphJFluid extends JPanel {
         fr.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         fr.setSize(600, 400);
         fr.getContentPane().add(new SpeedGraphJFluid());
-        fr.setVisible(true);
+        WindowManager.getInstance().setVisible(fr, true, FrameState.FOCUS);
     }
 
 }

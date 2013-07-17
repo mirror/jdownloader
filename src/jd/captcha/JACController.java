@@ -31,6 +31,9 @@ import jd.captcha.utils.Utilities;
 import jd.gui.swing.components.BrowseFile;
 import net.miginfocom.swing.MigLayout;
 
+import org.appwork.utils.swing.WindowManager;
+import org.appwork.utils.swing.WindowManager.FrameState;
+
 public class JACController {
     private static BrowseFile chooser;
     private static JComboBox  methods;
@@ -101,7 +104,7 @@ public class JACController {
         frame.add(btnOK, "span, right");
         frame.pack();
         frame.setResizable(false);
-        frame.setVisible(true);
+        WindowManager.getInstance().setVisible(frame, true, FrameState.FOCUS);
     }
 
     private final JAntiCaptcha jac;

@@ -29,6 +29,9 @@ import javax.swing.SwingUtilities;
 
 import jd.captcha.utils.Utilities;
 
+import org.appwork.utils.swing.WindowManager;
+import org.appwork.utils.swing.WindowManager.FrameState;
+
 /**
  * Die Klasse dient als Window Basis Klasse.
  * 
@@ -64,7 +67,7 @@ public class BasicWindow extends JFrame {
         w.setTitle(title);
         w.setLayout(new GridBagLayout());
         w.add(ic, Utilities.getGBC(0, 0, 1, 1));
-        w.setVisible(true);
+        WindowManager.getInstance().setVisible(w, true, FrameState.FOCUS);
         w.refreshUI();
         return w;
     }
@@ -113,7 +116,7 @@ public class BasicWindow extends JFrame {
             @Override
             public void windowClosing(WindowEvent event) {
                 // Window window = event.getWindow();
-                // window.setVisible(false);
+                // WindowManager.getInstance().setVisible(window,false,WindowState.FOCUS);
                 // window.dispose();
                 destroy();
             }

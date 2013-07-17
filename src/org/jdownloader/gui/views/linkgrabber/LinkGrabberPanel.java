@@ -39,7 +39,6 @@ import org.jdownloader.actions.AppAction;
 import org.jdownloader.gui.components.OverviewHeaderScrollPane;
 import org.jdownloader.gui.laf.jddefault.LAFOptions;
 import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.components.HeaderScrollPane;
 import org.jdownloader.gui.views.components.LinktablesSearchCategory;
 import org.jdownloader.gui.views.components.packagetable.SearchField;
@@ -146,14 +145,16 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
 
                                 break;
                             case MAINFRAME_IS_MAXIMIZED_OR_ICONIFIED_OR_TOTRAY:
-                                JDGui.getInstance().setFrameStatus(UIConstants.WINDOW_STATUS_FOREGROUND);
+                                JDGui.getInstance().setFrameStatus(UIConstants.WINDOW_STATUS_FOREGROUND_NO_FOCUS);
 
                                 break;
 
                             case MAINFRAME_IS_MAXIMIZED:
 
                                 if (JDGui.getInstance().getMainFrame().getState() != JFrame.ICONIFIED && JDGui.getInstance().getMainFrame().isVisible()) {
-                                    JDGui.getInstance().setFrameStatus(UIConstants.WINDOW_STATUS_FOREGROUND);
+
+                                    JDGui.getInstance().setFrameStatus(UIConstants.WINDOW_STATUS_FOREGROUND_NO_FOCUS);
+
                                 } else {
                                     JDGui.getInstance().flashTaskbar();
                                 }
@@ -162,7 +163,7 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
 
                             case MAINFRAME_IS_MAXIMIZED_OR_ICONIFIED:
                                 if (JDGui.getInstance().getMainFrame().isVisible()) {
-                                    JDGui.getInstance().setFrameStatus(UIConstants.WINDOW_STATUS_FOREGROUND);
+                                    JDGui.getInstance().setFrameStatus(UIConstants.WINDOW_STATUS_FOREGROUND_NO_FOCUS);
                                 } else {
                                     JDGui.getInstance().flashTaskbar();
                                 }

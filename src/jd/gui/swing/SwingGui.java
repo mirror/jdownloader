@@ -33,7 +33,7 @@ import org.appwork.app.gui.ActiveDialogException;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging.Log;
 import org.appwork.utils.swing.WindowManager;
-import org.appwork.utils.swing.WindowManager.WindowState;
+import org.appwork.utils.swing.WindowManager.FrameState;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogNoAnswerException;
 import org.jdownloader.gui.translate._GUI;
@@ -165,7 +165,7 @@ public abstract class SwingGui extends UserIF implements WindowListener, WindowS
                             if (mod && v) {
                                 Toolkit.getDefaultToolkit().beep();
                                 Log.exception(new ActiveDialogException(((JDialog) w)));
-                                WindowManager.getInstance().toFront(w, WindowState.FOCUS);
+                                WindowManager.getInstance().toFront(w, FrameState.FOCUS);
 
                                 return;
                             }

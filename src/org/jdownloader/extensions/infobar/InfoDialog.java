@@ -25,6 +25,8 @@ import net.miginfocom.swing.MigLayout;
 
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.swing.EDTHelper;
+import org.appwork.utils.swing.WindowManager;
+import org.appwork.utils.swing.WindowManager.FrameState;
 import org.jdownloader.extensions.infobar.translate.T;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings;
@@ -117,8 +119,8 @@ public class InfoDialog extends JWindow implements ActionListener, MouseListener
         if (updater != null) updater.interrupt();
         updater = new InfoUpdater();
         updater.start();
+        WindowManager.getInstance().setVisible(this, true, FrameState.FOCUS);
 
-        setVisible(true);
     }
 
     public void hideDialog() {
