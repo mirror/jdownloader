@@ -116,7 +116,7 @@ public class BasicWindow extends JFrame {
             @Override
             public void windowClosing(WindowEvent event) {
                 // Window window = event.getWindow();
-                // WindowManager.getInstance().setVisible(window,false,WindowState.FOCUS);
+                // WindowManager.getInstance().setVisible(window,false,FrameState.FOCUS);
                 // window.dispose();
                 destroy();
             }
