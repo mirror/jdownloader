@@ -1,12 +1,14 @@
 package jd.controlling.captcha;
 
 import java.awt.Image;
+import java.awt.event.WindowEvent;
+import java.awt.event.WindowListener;
 
 import jd.gui.swing.dialog.CaptchaDialog;
-import jd.gui.swing.dialog.CaptchaDialogInterface;
 import jd.gui.swing.dialog.DialogType;
 
 import org.appwork.uio.UserIODefinition.CloseReason;
+import org.appwork.utils.swing.EDTHelper;
 import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
@@ -16,9 +18,9 @@ import org.jdownloader.captcha.v2.challenge.stringcaptcha.BasicCaptchaChallenge;
 
 public class BasicCaptchaDialogHandler extends ChallengeDialogHandler<BasicCaptchaChallenge> {
 
-    private CaptchaDialogInterface dialog;
-    private String                 result;
-    private String                 suggest;
+    private CaptchaDialog dialog;
+    private String        result;
+    private String        suggest;
 
     public String getCaptchaCode() {
         return result;
@@ -42,19 +44,77 @@ public class BasicCaptchaDialogHandler extends ChallengeDialogHandler<BasicCaptc
         dialog = d;
         if (suggest != null) dialog.suggest(suggest);
 
-        CaptchaDialogInterface io = d.show();
-        result = io.getResult();
-        try {
-            if (io.getCloseReason() != CloseReason.OK) {
+        new EDTHelper<Object>() {
 
-                if (io.isHideCaptchasForHost()) throw new HideCaptchasByHostException();
-                if (io.isHideCaptchasForPackage()) throw new HideCaptchasByPackageException();
-                if (io.isStopDownloads()) throw new StopCurrentActionException();
-                if (io.isHideAllCaptchas()) throw new HideAllCaptchasException();
-                if (io.isStopCrawling()) throw new StopCurrentActionException();
-                if (io.isStopShowingCrawlerCaptchas()) throw new HideAllCaptchasException();
-                if (io.isRefresh()) throw new RefreshException();
-                io.throwCloseExceptions();
+            @Override
+            public Object edtRun() {
+                dialog.displayDialog();
+                dialog.getDialog().addWindowListener(new WindowListener() {
+
+                    @Override
+                    public void windowOpened(WindowEvent e) {
+                    }
+
+                    @Override
+                    public void windowIconified(WindowEvent e) {
+                    }
+
+                    @Override
+                    public void windowDeiconified(WindowEvent e) {
+                    }
+
+                    @Override
+                    public void windowDeactivated(WindowEvent e) {
+                    }
+
+                    @Override
+                    public void windowClosing(WindowEvent e) {
+                        synchronized (BasicCaptchaDialogHandler.this) {
+                            boolean v = dialog.getDialog().isVisible();
+                            BasicCaptchaDialogHandler.this.notifyAll();
+                        }
+
+                    }
+
+                    @Override
+                    public void windowClosed(WindowEvent e) {
+                        synchronized (BasicCaptchaDialogHandler.this) {
+                            boolean v = dialog.getDialog().isVisible();
+                            BasicCaptchaDialogHandler.this.notifyAll();
+                        }
+                    }
+
+                    @Override
+                    public void windowActivated(WindowEvent e) {
+                    }
+                });
+                return null;
+            }
+        }.waitForEDT();
+        try {
+            while (dialog.getDialog().isVisible()) {
+                synchronized (this) {
+
+                    this.wait();
+
+                }
+            }
+
+        } catch (InterruptedException e) {
+            throw new DialogClosedException(Dialog.RETURN_INTERRUPT);
+        }
+        result = dialog.getResult();
+        try {
+            if (dialog.getCloseReason() != CloseReason.OK) {
+
+                if (dialog.isHideCaptchasForHost()) throw new HideCaptchasByHostException();
+                if (dialog.isHideCaptchasForPackage()) throw new HideCaptchasByPackageException();
+                if (dialog.isStopDownloads()) throw new StopCurrentActionException();
+                if (dialog.isHideAllCaptchas()) throw new HideAllCaptchasException();
+                if (dialog.isStopCrawling()) throw new StopCurrentActionException();
+                if (dialog.isStopShowingCrawlerCaptchas()) throw new HideAllCaptchasException();
+                if (dialog.isRefresh()) throw new RefreshException();
+                dialog.throwCloseExceptions();
                 throw new DialogClosedException(Dialog.RETURN_CLOSED);
             }
         } catch (IllegalStateException e) {

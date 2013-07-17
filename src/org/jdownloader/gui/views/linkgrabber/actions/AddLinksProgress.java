@@ -2,7 +2,9 @@ package org.jdownloader.gui.views.linkgrabber.actions;
 
 import java.awt.Color;
 import java.awt.Component;
+import java.awt.Dialog.ModalityType;
 import java.awt.Point;
+import java.awt.Window;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
@@ -56,6 +58,16 @@ public class AddLinksProgress extends AbstractDialog<Object> {
     @Override
     protected Object createReturnValue() {
         return null;
+    }
+
+    @Override
+    public ModalityType getModalityType() {
+        return ModalityType.MODELESS;
+    }
+
+    @Override
+    public Window getOwner() {
+        return super.getOwner();
     }
 
     @Override
@@ -155,7 +167,7 @@ public class AddLinksProgress extends AbstractDialog<Object> {
                 public void run() {
                     IconedProcessIndicator iconComp = JDGui.getInstance().getStatusBar().getLinkGrabberIndicator();
                     Point loc = iconComp.getLocationOnScreen();
-                    HelpDialog.show(new Point(loc.x + iconComp.getWidth() / 2, loc.y + iconComp.getHeight() / 2), "linkcrawlerprogressdialog", Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI._.AddLinksProgress_setReturnmask_title_(), _GUI._.AddLinksProgress_setReturnmask_msg_(), NewTheme.I().getIcon("linkgrabber", 32));
+                    HelpDialog.show(false, false, new Point(loc.x + iconComp.getWidth() / 2, loc.y + iconComp.getHeight() / 2), "linkcrawlerprogressdialog", Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI._.AddLinksProgress_setReturnmask_title_(), _GUI._.AddLinksProgress_setReturnmask_msg_(), NewTheme.I().getIcon("linkgrabber", 32));
 
                 }
             }.start();

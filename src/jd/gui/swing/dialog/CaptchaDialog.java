@@ -21,7 +21,8 @@ import java.awt.event.ActionListener;
 import java.awt.event.FocusEvent;
 import java.awt.event.FocusListener;
 import java.awt.event.MouseListener;
-import java.awt.event.WindowListener;
+import java.awt.event.WindowEvent;
+import java.awt.event.WindowFocusListener;
 import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
@@ -47,16 +48,10 @@ import org.jdownloader.settings.SoundSettings;
 /**
  * This Dialog is used to display a Inputdialog for the captchas
  */
-public class CaptchaDialog extends AbstractCaptchaDialog implements ActionListener, WindowListener, MouseListener, CaptchaDialogInterface {
+public class CaptchaDialog extends AbstractCaptchaDialog implements ActionListener, MouseListener {
 
     private ExtTextField textField;
     private String       suggest;
-
-    public CaptchaDialogInterface show() {
-        final CaptchaDialogInterface ret = UIOManager.I().show(CaptchaDialogInterface.class, this);
-
-        return ret;
-    }
 
     public static void main(String[] args) {
         AbstractCaptchaDialog cp;
@@ -94,7 +89,6 @@ public class CaptchaDialog extends AbstractCaptchaDialog implements ActionListen
     @Override
     protected void packed() {
 
-        this.textField.requestFocusInWindow();
         textField.addFocusListener(new FocusListener() {
 
             public void focusLost(FocusEvent e) {
@@ -105,7 +99,28 @@ public class CaptchaDialog extends AbstractCaptchaDialog implements ActionListen
 
             }
         });
+        getDialog().addWindowFocusListener(new WindowFocusListener() {
 
+            @Override
+            public void windowLostFocus(WindowEvent windowevent) {
+            }
+
+            @Override
+            public void windowGainedFocus(WindowEvent windowevent) {
+                System.out.println("textfield.request");
+                textField.requestFocusInWindow();
+            }
+        });
+
+    }
+
+    public boolean isRequestFocusOnVisible() {
+        return true;
+    }
+
+    @Override
+    public boolean isToFrontOnVisible() {
+        return true;
     }
 
     @Override
@@ -130,17 +145,20 @@ public class CaptchaDialog extends AbstractCaptchaDialog implements ActionListen
 
             @Override
             public void focusLost(FocusEvent e) {
+                System.out.println(e);
             }
 
             @Override
             public void focusGained(FocusEvent e) {
+                System.out.println(e);
                 textField.selectAll();
             }
         });
         textField.setHelpText(getHelpText());
         if (suggest != null) textField.setText(suggest);
-        this.textField.requestFocusInWindow();
-        this.textField.selectAll();
+        // this.textField.requestFocusInWindow();
+        // this.textField.selectAll();
+
         // panel.add(new JLabel("HJ dsf"));
 
         return textField;
@@ -150,12 +168,10 @@ public class CaptchaDialog extends AbstractCaptchaDialog implements ActionListen
 
     }
 
-    @Override
     public String getResult() {
         return textField == null ? null : textField.getText();
     }
 
-    @Override
     public void suggest(String value) {
         suggest = value;
         if (textField != null && StringUtils.isEmpty(textField.getText())) {

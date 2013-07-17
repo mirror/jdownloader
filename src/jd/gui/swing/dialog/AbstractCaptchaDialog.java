@@ -4,11 +4,13 @@ import java.awt.AlphaComposite;
 import java.awt.Color;
 import java.awt.Composite;
 import java.awt.Cursor;
+import java.awt.Dialog.ModalityType;
 import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.Image;
 import java.awt.Point;
+import java.awt.Window;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
@@ -21,6 +23,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.List;
 
 import javax.imageio.ImageIO;
 import javax.sound.sampled.AudioFormat;
@@ -108,33 +111,24 @@ public abstract class AbstractCaptchaDialog extends AbstractDialog<Object> {
 
     }
 
-    @Override
-    public void onSetVisible(boolean b) {
-        super.onSetVisible(b);
-        if (b) {
-            playCaptchaSound();
-        }
-        boolean focus = false;
+    /**
+     * @return
+     */
+    public boolean isRequestFocusOnVisible() {
         switch (CFG_GUI.CFG.getFocusTriggerForCaptchaDialogs()) {
-        case NEVER:
 
-            break;
         case MAINFRAME_IS_MAXIMIZED_OR_ICONIFIED_OR_TOTRAY:
-            focus = true;
-            break;
-
+            return true;
         case MAINFRAME_IS_MAXIMIZED:
 
-            if (JDGui.getInstance().getMainFrame().getState() != JFrame.ICONIFIED && JDGui.getInstance().getMainFrame().isVisible()) {
-                focus = true;
-            }
+            if (JDGui.getInstance().getMainFrame().getState() != JFrame.ICONIFIED && JDGui.getInstance().getMainFrame().isVisible()) { return true; }
 
             break;
 
         case MAINFRAME_IS_MAXIMIZED_OR_ICONIFIED:
             if (JDGui.getInstance().getMainFrame().isVisible()) {
 
-                focus = true;
+            return true;
 
             }
             break;
@@ -142,58 +136,16 @@ public abstract class AbstractCaptchaDialog extends AbstractDialog<Object> {
         default:
             //
         }
+        JDGui.getInstance().flashTaskbar();
+        return false;
+    }
 
-        // this focus code is tested for windows 7 with java 1.7
-        if (!focus) {
-            System.out.println("Disable focus");
-            getDialog().toFront();
-            if (CFG_GUI.CFG.isCaptchaDialogAOTWorkaroundEnabled()) getDialog().setAlwaysOnTop(true);
-            getDialog().setFocusableWindowState(false);
-            getDialog().getOwner().setFocusableWindowState(false);
-            JDGui.getInstance().getMainFrame().setFocusableWindowState(false);
-            JDGui.getInstance().getMainFrame().setFocusable(false);
-            Timer timer = new Timer(1000, new ActionListener() {
-
-                @Override
-                public void actionPerformed(ActionEvent e) {
-
-                    //
-
-                    getDialog().setFocusableWindowState(true);
-                    getDialog().getOwner().setFocusableWindowState(true);
-                    JDGui.getInstance().getMainFrame().setFocusableWindowState(true);
-                    JDGui.getInstance().getMainFrame().setFocusable(true);
-                    System.out.println("Can Focus now");
-                    if (CFG_GUI.CFG.isCaptchaDialogAOTWorkaroundEnabled()) getDialog().setAlwaysOnTop(false);
-
-                }
-
-            });
-            timer.setRepeats(false);
-            timer.start();
-            JDGui.getInstance().flashTaskbar();
-
-        } else {
-            if (CFG_GUI.CFG.isCaptchaDebugModeEnabled()) {
-                // getDialog().toFront();
-
-                // if (CFG_GUI.CFG.isCaptchaDialogAOTWorkaroundEnabled()) getDialog().setAlwaysOnTop(true);
-                // getDialog().requestFocus();
-                // getDialog().requestFocusInWindow();
-                java.awt.EventQueue.invokeLater(new Runnable() {
-                    @Override
-                    public void run() {
-
-                        getDialog().toFront();
-                        getDialog().repaint();
-
-                    }
-                });
-            }
-
+    @Override
+    public void onSetVisible(boolean b) {
+        super.onSetVisible(b);
+        if (b) {
+            playCaptchaSound();
         }
-
-        // JDGui.getInstance().getMainFrame().requ
     }
 
     /**
@@ -959,6 +911,20 @@ public abstract class AbstractCaptchaDialog extends AbstractDialog<Object> {
 
     public void mouseReleased(final MouseEvent e) {
         this.cancel();
+    }
+
+    @Override
+    public ModalityType getModalityType() {
+        return ModalityType.MODELESS;
+    }
+
+    public List<? extends Image> getIconList() {
+        return JDGui.getInstance().getMainFrame().getIconImages();
+    }
+
+    @Override
+    public Window getOwner() {
+        return null;
     }
 
     public void pack() {

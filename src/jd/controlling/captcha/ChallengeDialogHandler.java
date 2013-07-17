@@ -20,7 +20,6 @@ import org.appwork.uio.UIOManager;
 import org.appwork.utils.images.IconIO;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.swing.EDTHelper;
-import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.appwork.utils.swing.dialog.DialogNoAnswerException;
@@ -28,7 +27,6 @@ import org.jdownloader.DomainInfo;
 import org.jdownloader.captcha.v2.challenge.stringcaptcha.ImageCaptchaChallenge;
 import org.jdownloader.controlling.UniqueAlltimeID;
 import org.jdownloader.logging.LogController;
-import org.jdownloader.settings.staticreferences.CFG_GUI;
 
 public abstract class ChallengeDialogHandler<T extends ImageCaptchaChallenge<?>> {
     private CaptchaDialogInterface textDialog;
@@ -107,35 +105,9 @@ public abstract class ChallengeDialogHandler<T extends ImageCaptchaChallenge<?>>
             }.getReturnValue();
 
             try {
-                if (!CFG_GUI.CFG.isCaptchaDebugModeEnabled()) {
-                    new EDTRunner() {
 
-                        @Override
-                        protected void runInEDT() {
-                            JDGui.getInstance().getMainFrame().setModalExclusionType(ModalExclusionType.TOOLKIT_EXCLUDE);
-                            /**
-                             * This may have no effect. we have to set the frame invisble and visible again
-                             * 
-                             */
-
-                            // this brings our frame to top..
-                            // JDGui.getInstance().getMainFrame().setVisible(!JDGui.getInstance().getMainFrame().isVisible());
-                            // JDGui.getInstance().getMainFrame().setVisible(!JDGui.getInstance().getMainFrame().isVisible());
-
-                        }
-                    }.waitForEDT();
-                }
                 showDialog(dialogType, f, images);
             } finally {
-                if (!CFG_GUI.CFG.isCaptchaDebugModeEnabled()) {
-                    new EDTRunner() {
-
-                        @Override
-                        protected void runInEDT() {
-                            JDGui.getInstance().getMainFrame().setModalExclusionType(orgEx);
-                        }
-                    }.waitForEDT();
-                }
 
             }
 

@@ -86,6 +86,7 @@ import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.swing.EDTHelper;
 import org.appwork.utils.swing.EDTRunner;
+import org.appwork.utils.swing.SwingUtils;
 import org.appwork.utils.swing.dialog.AbstractDialog;
 import org.appwork.utils.swing.dialog.ConfirmDialog;
 import org.appwork.utils.swing.dialog.Dialog;
@@ -93,8 +94,7 @@ import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.appwork.utils.swing.dialog.DialogHandler;
 import org.appwork.utils.swing.dialog.DialogNoAnswerException;
-import org.appwork.utils.swing.dialog.TimerDialog;
-import org.appwork.utils.swing.dialog.TimerDialog.InternDialog;
+import org.appwork.utils.swing.dialog.InternDialog;
 import org.appwork.utils.swing.dialog.locator.DialogLocator;
 import org.appwork.utils.swing.dialog.locator.RememberRelativeDialogLocator;
 import org.appwork.utils.swing.locator.AbstractLocator;
@@ -242,7 +242,6 @@ public class JDGui extends SwingGui implements UpdaterListener {
         this.setWindowIcon();
         this.layoutComponents();
         this.mainFrame.pack();
-        Dialog.getInstance().setParentOwner(this.mainFrame);
 
         initThread = new Thread("initLocationAndDimension") {
             @Override
@@ -296,8 +295,8 @@ public class JDGui extends SwingGui implements UpdaterListener {
 
                     for (final Window w : mainFrame.getOwnedWindows()) {
                         if (w.isShowing()) {
-                            if (w instanceof TimerDialog.InternDialog) {
-                                TimerDialog dialogModel = ((TimerDialog.InternDialog) w).getDialogModel();
+                            if (w instanceof InternDialog) {
+                                AbstractDialog dialogModel = ((InternDialog) w).getDialogModel();
                                 if (dialogModel instanceof AbstractCaptchaDialog) {
 
                                     w.toFront();
@@ -313,7 +312,7 @@ public class JDGui extends SwingGui implements UpdaterListener {
                     // from a different jd frame
 
                 }
-                Dialog.getInstance().setParentOwner(getMainFrame());
+                AbstractDialog.setRootFrame(getMainFrame());
 
             }
         });
@@ -326,6 +325,19 @@ public class JDGui extends SwingGui implements UpdaterListener {
 
             @Override
             public void windowGainedFocus(WindowEvent e) {
+
+                for (Window w : Window.getWindows()) {
+                    if (w instanceof InternDialog && !((InternDialog) w).getDialogModel().isDisposed()) {
+                        Window owner = ((InternDialog) w).getOwner();
+
+                        if (owner == null && w.isVisible()) {
+                            SwingUtils.getWindowManager().toFront(w, true);
+                        }
+                        // ((InternDialog)w).getDialogModel() instanceof AbstractCaptchaDialog)
+
+                    }
+
+                }
 
             }
         });
@@ -981,13 +993,13 @@ public class JDGui extends SwingGui implements UpdaterListener {
                             return;
                         }
                         if (!requestCaptchaDialogFocus()) {
-                            TimerDialog captchaDialog = null;
+                            AbstractDialog captchaDialog = null;
                             // if (!JsonConfig.create(GraphicalUserInterfaceSettings.class).isCaptchaDialogsRequestFocusEnabled()) {
                             //
                             // for (final Window w : mainFrame.getOwnedWindows()) {
                             // if (w.isShowing()) {
-                            // if (w instanceof TimerDialog.InternDialog) {
-                            // TimerDialog dialogModel = ((TimerDialog.InternDialog) w).getDialogModel();
+                            // if (w instanceof InternDialog) {
+                            // AbstractDialog dialogModel = ((InternDialog) w).getDialogModel();
                             // if (dialogModel instanceof AbstractCaptchaDialog) {
                             //
                             // captchaDialog = dialogModel;
@@ -998,7 +1010,7 @@ public class JDGui extends SwingGui implements UpdaterListener {
                             // }
                             // }
                             // }
-                            // final TimerDialog finalCaptchaDialog = captchaDialog;
+                            // final AbstractDialog finalCaptchaDialog = captchaDialog;
 
                             if (!JsonConfig.create(GraphicalUserInterfaceSettings.class).isWindowsRequestFocusOnActivationEnabled()) {
                                 mainFrame.setFocusableWindowState(false);
@@ -1126,8 +1138,8 @@ public class JDGui extends SwingGui implements UpdaterListener {
     public boolean requestCaptchaDialogFocusInternal() {
         for (final Window w : mainFrame.getOwnedWindows()) {
             if (w.isShowing()) {
-                if (w instanceof TimerDialog.InternDialog) {
-                    TimerDialog dialogModel = ((TimerDialog.InternDialog) w).getDialogModel();
+                if (w instanceof InternDialog) {
+                    AbstractDialog dialogModel = ((InternDialog) w).getDialogModel();
                     if (dialogModel instanceof AbstractCaptchaDialog) {
 
                         w.toFront();
@@ -1318,29 +1330,11 @@ public class JDGui extends SwingGui implements UpdaterListener {
                 if (!minimize) {
                     getMainFrame().setVisible(true);
 
-                    /* workaround for : toFront() */
-                    new EDTHelper<Object>() {
-                        @Override
-                        public Object edtRun() {
-                            if (trayIconChecker != null) {
-                                trayIconChecker.interrupt();
-                                trayIconChecker = null;
-                            }
-
-                            getMainFrame().setAlwaysOnTop(true);
-                            Timer timer = new Timer(2000, new ActionListener() {
-
-                                @Override
-                                public void actionPerformed(ActionEvent e) {
-                                    // if (getMainFrame().isAlwaysOnTop()) getMainFrame().setAlwaysOnTop(false);
-                                }
-                            });
-                            timer.setRepeats(false);
-                            timer.restart();
-                            getMainFrame().toFront();
-                            return null;
-                        }
-                    }.start();
+                    SwingUtils.getWindowManager().toFront(mainFrame, true);
+                    if (trayIconChecker != null) {
+                        trayIconChecker.interrupt();
+                        trayIconChecker = null;
+                    }
 
                 } else {
                     getMainFrame().setVisible(false);

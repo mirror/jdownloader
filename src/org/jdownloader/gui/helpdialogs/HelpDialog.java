@@ -14,6 +14,7 @@ import org.appwork.utils.swing.dialog.AbstractDialog;
 import org.appwork.utils.swing.dialog.ConfirmDialog;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.locator.DialogLocator;
+import org.appwork.utils.swing.locator.AbstractLocator;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings;
 import org.jdownloader.updatev2.RestartController;
@@ -48,7 +49,7 @@ public class HelpDialog {
                             if (Boolean.FALSE.equals(expandToRight)) {
                                 point.x -= abstractDialog.getPreferredSize().width;
                             }
-                            return point;
+                            return AbstractLocator.correct(point, abstractDialog.getDialog());
                         }
 
                         @Override

@@ -131,6 +131,17 @@ public class AddLinksDialog extends AbstractDialog<LinkCollectingJob> {
         setLocator(new RememberRelativeDialogLocator("AddLinksDialog", JDGui.getInstance().getMainFrame()));
     }
 
+    // @Override
+    // public ModalityType getModalityType() {
+    // return ModalityType.MODELESS;
+    // }
+    //
+    // @Override
+    // public Window getOwner() {
+    //
+    // return null;
+    // }
+
     @Override
     protected DefaultButtonPanel getDefaultButtonPanel() {
         final DefaultButtonPanel ret = new DefaultButtonPanel("ins 0 0 0 0", "[grow,fill][]0[][]", "0[fill]0");
