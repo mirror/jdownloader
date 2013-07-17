@@ -87,6 +87,7 @@ import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.swing.EDTHelper;
 import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.SwingUtils;
+import org.appwork.utils.swing.WindowManager.WindowState;
 import org.appwork.utils.swing.dialog.AbstractDialog;
 import org.appwork.utils.swing.dialog.ConfirmDialog;
 import org.appwork.utils.swing.dialog.Dialog;
@@ -331,7 +332,7 @@ public class JDGui extends SwingGui implements UpdaterListener {
                         Window owner = ((InternDialog) w).getOwner();
 
                         if (owner == null && w.isVisible()) {
-                            SwingUtils.getWindowManager().toFront(w, true);
+                            SwingUtils.getWindowManager().toFront(w, WindowState.FOCUS);
                         }
                         // ((InternDialog)w).getDialogModel() instanceof AbstractCaptchaDialog)
 
@@ -1330,7 +1331,7 @@ public class JDGui extends SwingGui implements UpdaterListener {
                 if (!minimize) {
                     getMainFrame().setVisible(true);
 
-                    SwingUtils.getWindowManager().toFront(mainFrame, true);
+                    SwingUtils.getWindowManager().toFront(mainFrame, WindowState.FOCUS);
                     if (trayIconChecker != null) {
                         trayIconChecker.interrupt();
                         trayIconChecker = null;
