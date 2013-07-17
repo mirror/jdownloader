@@ -18,8 +18,6 @@ package jd.gui.swing;
 
 import java.awt.Toolkit;
 import java.awt.Window;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowFocusListener;
 import java.awt.event.WindowListener;
@@ -27,7 +25,6 @@ import java.awt.event.WindowStateListener;
 
 import javax.swing.JDialog;
 import javax.swing.JFrame;
-import javax.swing.Timer;
 
 import jd.gui.UserIF;
 import jd.gui.swing.jdgui.interfaces.View;
@@ -35,6 +32,8 @@ import jd.gui.swing.jdgui.interfaces.View;
 import org.appwork.app.gui.ActiveDialogException;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging.Log;
+import org.appwork.utils.swing.WindowManager;
+import org.appwork.utils.swing.WindowManager.WindowState;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogNoAnswerException;
 import org.jdownloader.gui.translate._GUI;
@@ -93,15 +92,16 @@ public abstract class SwingGui extends UserIF implements WindowListener, WindowS
     }
 
     /**
-     * Invoked when the Window is set to be the focused Window, which means that the Window, or one of its subcomponents, will receive keyboard events.
+     * Invoked when the Window is set to be the focused Window, which means that the Window, or one of its subcomponents, will receive
+     * keyboard events.
      * 
      */
     public void windowGainedFocus(final WindowEvent e) {
     }
 
     /**
-     * Invoked when the Window is no longer the focused Window, which means that keyboard events will no longer be delivered to the Window or any of its
-     * subcomponents.
+     * Invoked when the Window is no longer the focused Window, which means that keyboard events will no longer be delivered to the Window
+     * or any of its subcomponents.
      * 
      */
     public void windowLostFocus(final WindowEvent e) {
@@ -127,18 +127,8 @@ public abstract class SwingGui extends UserIF implements WindowListener, WindowS
 
                 if (!isVisible()) return;
                 super.toFront();
-                setAlwaysOnTop(true);
-                Timer disableAlwaysonTop = new Timer(1000, new ActionListener() {
+                //
 
-                    public void actionPerformed(ActionEvent e) {
-                        setAlwaysOnTop(false);
-                    }
-                });
-                disableAlwaysonTop.setInitialDelay(1000);
-                disableAlwaysonTop.setRepeats(false);
-                disableAlwaysonTop.start();
-                // This repaint may cause a kind of flickering on some systems. we have reports from windows and linux users
-                // repaint();
             }
 
             public void setVisible(boolean b) {
@@ -175,8 +165,8 @@ public abstract class SwingGui extends UserIF implements WindowListener, WindowS
                             if (mod && v) {
                                 Toolkit.getDefaultToolkit().beep();
                                 Log.exception(new ActiveDialogException(((JDialog) w)));
-                                w.requestFocus();
-                                w.toFront();
+                                WindowManager.getInstance().toFront(w, WindowState.FOCUS);
+
                                 return;
                             }
                         }

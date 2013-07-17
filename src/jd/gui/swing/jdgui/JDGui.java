@@ -86,7 +86,8 @@ import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.swing.EDTHelper;
 import org.appwork.utils.swing.EDTRunner;
-import org.appwork.utils.swing.SwingUtils;
+import org.appwork.utils.swing.WindowManager;
+import org.appwork.utils.swing.WindowManager.WindowExtendedState;
 import org.appwork.utils.swing.WindowManager.WindowState;
 import org.appwork.utils.swing.dialog.AbstractDialog;
 import org.appwork.utils.swing.dialog.ConfirmDialog;
@@ -332,7 +333,7 @@ public class JDGui extends SwingGui implements UpdaterListener {
                         Window owner = ((InternDialog) w).getOwner();
 
                         if (owner == null && w.isVisible()) {
-                            SwingUtils.getWindowManager().toFront(w, WindowState.FOCUS);
+                            WindowManager.getInstance().toFront(w, WindowState.FOCUS);
                         }
                         // ((InternDialog)w).getDialogModel() instanceof AbstractCaptchaDialog)
 
@@ -402,24 +403,6 @@ public class JDGui extends SwingGui implements UpdaterListener {
 
         });
 
-        if (Application.getJavaVersion() >= 17000000) {
-            CFG_GUI.WINDOWS_REQUEST_FOCUS_ON_ACTIVATION_ENABLED.getEventSender().addListener(new GenericConfigEventListener<Boolean>() {
-                {
-                    getMainFrame().setAutoRequestFocus(CFG_GUI.WINDOWS_REQUEST_FOCUS_ON_ACTIVATION_ENABLED.isEnabled());
-                }
-
-                @Override
-                public void onConfigValidatorError(KeyHandler<Boolean> keyHandler, Boolean invalidValue, ValidationException validateException) {
-                }
-
-                @Override
-                public void onConfigValueModified(KeyHandler<Boolean> keyHandler, Boolean newValue) {
-                    getMainFrame().setAutoRequestFocus(CFG_GUI.WINDOWS_REQUEST_FOCUS_ON_ACTIVATION_ENABLED.isEnabled());
-                }
-            });
-        } else {
-            logger.warning("  CFG_GUI.WINDOWS_REQUEST_FOCUS_ON_ACTIVATION_ENABLED not working for java <1.7");
-        }
         // Hook into dialog System
 
         Dialog.getInstance().setHandler(new DialogHandler() {
@@ -993,74 +976,20 @@ public class JDGui extends SwingGui implements UpdaterListener {
                             flashTaskbar();
                             return;
                         }
-                        if (!requestCaptchaDialogFocus()) {
-                            AbstractDialog captchaDialog = null;
-                            // if (!JsonConfig.create(GraphicalUserInterfaceSettings.class).isCaptchaDialogsRequestFocusEnabled()) {
-                            //
-                            // for (final Window w : mainFrame.getOwnedWindows()) {
-                            // if (w.isShowing()) {
-                            // if (w instanceof InternDialog) {
-                            // AbstractDialog dialogModel = ((InternDialog) w).getDialogModel();
-                            // if (dialogModel instanceof AbstractCaptchaDialog) {
-                            //
-                            // captchaDialog = dialogModel;
-                            // break;
-                            //
-                            // }
-                            // }
-                            // }
-                            // }
-                            // }
-                            // final AbstractDialog finalCaptchaDialog = captchaDialog;
+                        {
+                            // AbstractDialog captchaDialog = null;
 
-                            if (!JsonConfig.create(GraphicalUserInterfaceSettings.class).isWindowsRequestFocusOnActivationEnabled()) {
-                                mainFrame.setFocusableWindowState(false);
-                            }
                             // if (finalCaptchaDialog != null) {
                             // finalCaptchaDialog.getDialog().setFocusableWindowState(false);
                             // }
-                            mainFrame.setState(Frame.NORMAL);
 
-                            mainFrame.setVisible(true);
-                            mainFrame.toFront();
+                            WindowManager.getInstance().setExtendedState(mainFrame, WindowExtendedState.NORMAL);
+                            WindowManager.getInstance().setVisible(mainFrame, true, WindowState.FOCUS);
                             //
                             if (tray.isEnabled()) {
                                 setWindowToTray(false);
                             }
-                            // if (finalCaptchaDialog != null) {
-                            // // it seems that we need this workaround on some systems. if we set the state to true imediatielly, this
-                            // // would
-                            // // not
-                            // // work on some systems
-                            // // http://stackoverflow.com/questions/4788953/is-it-possible-to-bring-jframe-to-front-but-not-focus
-                            // Timer timer = new Timer(500, new ActionListener() {
-                            //
-                            // @Override
-                            // public void actionPerformed(ActionEvent e) {
-                            // finalCaptchaDialog.getDialog().setFocusableWindowState(true);
-                            // }
-                            // });
-                            //
-                            // timer.setRepeats(false);
-                            // timer.start();
-                            // }
-                            if (!JsonConfig.create(GraphicalUserInterfaceSettings.class).isWindowsRequestFocusOnActivationEnabled()) {
-                                // it seems that we need this workaround on some systems. if we set the state to true imediatielly, this
-                                // would
-                                // not
-                                // work on some systems
-                                // http://stackoverflow.com/questions/4788953/is-it-possible-to-bring-jframe-to-front-but-not-focus
-                                Timer timer = new Timer(500, new ActionListener() {
 
-                                    @Override
-                                    public void actionPerformed(ActionEvent e) {
-                                        mainFrame.setFocusableWindowState(true);
-                                    }
-                                });
-
-                                timer.setRepeats(false);
-                                timer.start();
-                            }
                         }
                     } else {
 
@@ -1107,51 +1036,6 @@ public class JDGui extends SwingGui implements UpdaterListener {
         // at org.appwork.utils.logging2.sendlogs.AbstractLogAction$1.run(AbstractLogAction.java:68)
         // at org.appwork.utils.swing.dialog.ProgressDialog$3.run(ProgressDialog.java:217)
         if (ret == Boolean.TRUE) return true;
-        return false;
-    }
-
-    public boolean requestCaptchaDialogFocus() {
-
-        switch (CFG_GUI.CFG.getFocusTriggerForCaptchaDialogs()) {
-        case NEVER:
-
-            break;
-        case MAINFRAME_IS_MAXIMIZED_OR_ICONIFIED_OR_TOTRAY:
-            return requestCaptchaDialogFocusInternal();
-
-        case MAINFRAME_IS_MAXIMIZED:
-
-            if (getMainFrame().getState() != JFrame.ICONIFIED && JDGui.getInstance().getMainFrame().isVisible()) { return requestCaptchaDialogFocusInternal(); }
-
-            break;
-
-        case MAINFRAME_IS_MAXIMIZED_OR_ICONIFIED:
-            if (getMainFrame().isVisible()) { return requestCaptchaDialogFocusInternal(); }
-            break;
-
-        default:
-            //
-        }
-
-        return false;
-    }
-
-    public boolean requestCaptchaDialogFocusInternal() {
-        for (final Window w : mainFrame.getOwnedWindows()) {
-            if (w.isShowing()) {
-                if (w instanceof InternDialog) {
-                    AbstractDialog dialogModel = ((InternDialog) w).getDialogModel();
-                    if (dialogModel instanceof AbstractCaptchaDialog) {
-
-                        w.toFront();
-                        // w.requestFocus();
-                        logger.info("Request Focus: " + w);
-                        return true;
-
-                    }
-                }
-            }
-        }
         return false;
     }
 
@@ -1331,7 +1215,7 @@ public class JDGui extends SwingGui implements UpdaterListener {
                 if (!minimize) {
                     getMainFrame().setVisible(true);
 
-                    SwingUtils.getWindowManager().toFront(mainFrame, WindowState.FOCUS);
+                    WindowManager.getInstance().toFront(mainFrame, WindowState.FOCUS);
                     if (trayIconChecker != null) {
                         trayIconChecker.interrupt();
                         trayIconChecker = null;

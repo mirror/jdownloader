@@ -426,13 +426,6 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
 
     void setFocusTriggerForCaptchaDialogs(WindowState action);
 
-    @DefaultBooleanValue(false)
-    @DescriptionForConfigEntry("Requirment: Java 1.7 / Set to true if you want JDownloader to steal focus when the window pops up")
-    @AboutConfig
-    boolean isWindowsRequestFocusOnActivationEnabled();
-
-    void setWindowsRequestFocusOnActivationEnabled(boolean b);
-
     public static enum StartButtonAction {
         @EnumLabel("Add all Linkgrabber links and start Downloads.")
         ADD_ALL_LINKS_AND_START_DOWNLOADS,

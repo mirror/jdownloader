@@ -23,7 +23,7 @@ public class CFG_GUI {
     // wrong.
     // MAINFRAME_IS_MAXIMIZED
     /**
-     * Action that will be performed when the Linkgrabber adds new links.
+     * When should the Mainframe come to Front if new Links were added?
      **/
     public static final EnumKeyHandler                                 MAINFRAME_POPUP_TRIGGER_WHEN_NEW_LINKS_WERE_ADDED    = SH.getKeyHandler("MainframePopupTriggerWhenNewLinksWereAdded", EnumKeyHandler.class);
     // false
@@ -62,6 +62,8 @@ public class CFG_GUI {
     public static final StringKeyHandler                               ACTIVE_CONFIG_PANEL                                  = SH.getKeyHandler("ActiveConfigPanel", StringKeyHandler.class);
     // null
     public static final StringKeyHandler                               ACTIVE_PLUGIN_CONFIG_PANEL                           = SH.getKeyHandler("ActivePluginConfigPanel", StringKeyHandler.class);
+    // false
+    public static final BooleanKeyHandler                              CAPTCHA_DEBUG_MODE_ENABLED                           = SH.getKeyHandler("CaptchaDebugModeEnabled", BooleanKeyHandler.class);
     // standard
     /**
      * Icon Theme ID. Make sure that ./themes/<ID>/ exists
@@ -152,7 +154,7 @@ public class CFG_GUI {
     public static final IntegerKeyHandler                              TOOLTIP_DELAY                                        = SH.getKeyHandler("TooltipDelay", IntegerKeyHandler.class);
     // MAINFRAME_IS_MAXIMIZED
     /**
-     * Action that will be performed when the Linkgrabber adds new links.
+     * When should a Captcha Dialog get the Input Focus?
      **/
     public static final EnumKeyHandler                                 FOCUS_TRIGGER_FOR_CAPTCHA_DIALOGS                    = SH.getKeyHandler("FocusTriggerForCaptchaDialogs", EnumKeyHandler.class);
     // false
@@ -181,11 +183,6 @@ public class CFG_GUI {
      * If true, ETAColumn will show Premium Alerts in Free Download mode if JD thinks Premium would be better currently.
      **/
     public static final BooleanKeyHandler                              PREMIUM_ALERT_ETACOLUMN_ENABLED                      = SH.getKeyHandler("PremiumAlertETAColumnEnabled", BooleanKeyHandler.class);
-    // false
-    /**
-     * Requirment: Java 1.7 / Set to true if you want JDownloader to steal focus when the window pops up
-     **/
-    public static final BooleanKeyHandler                              WINDOWS_REQUEST_FOCUS_ON_ACTIVATION_ENABLED          = SH.getKeyHandler("WindowsRequestFocusOnActivationEnabled", BooleanKeyHandler.class);
     // true
     /**
      * Highlight Column in Downloadview if table is not in downloadsortorder
@@ -224,6 +221,8 @@ public class CFG_GUI {
      * If true, hostcolumn will also show full hostname
      **/
     public static final BooleanKeyHandler                              SHOW_FULL_HOSTNAME                                   = SH.getKeyHandler("ShowFullHostname", BooleanKeyHandler.class);
+    // false
+    public static final BooleanKeyHandler                              CAPTCHA_DIALOG_AOTWORKAROUND_ENABLED                 = SH.getKeyHandler("CaptchaDialogAOTWorkaroundEnabled", BooleanKeyHandler.class);
     // true
     public static final BooleanKeyHandler                              LINKGRABBER_SIDEBAR_VISIBLE                          = SH.getKeyHandler("LinkgrabberSidebarVisible", BooleanKeyHandler.class);
     // 20000

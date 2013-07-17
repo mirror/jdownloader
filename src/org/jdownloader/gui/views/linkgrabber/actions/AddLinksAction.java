@@ -3,8 +3,6 @@ package org.jdownloader.gui.views.linkgrabber.actions;
 import java.awt.event.ActionEvent;
 import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
-import java.io.File;
-import java.io.IOException;
 
 import jd.controlling.linkcollector.LinkCollectingJob;
 import jd.controlling.linkcollector.LinkCollector;
@@ -18,9 +16,6 @@ import org.jdownloader.actions.AppAction;
 import org.jdownloader.actions.CachableInterface;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.linkgrabber.addlinksdialog.AddLinksDialog;
-import org.seamless.util.io.IO;
-
-import com.sun.org.apache.xml.internal.security.utils.Base64;
 
 public class AddLinksAction extends AppAction implements CachableInterface {
     /**
@@ -39,15 +34,6 @@ public class AddLinksAction extends AppAction implements CachableInterface {
     public AddLinksAction() {
         this(_GUI._.AddLinksToLinkgrabberAction());
 
-    }
-
-    public static void main(String[] args) {
-
-        try {
-            System.out.println(Base64.encode(IO.readBytes(new File("C:\\Users\\Thomas\\Downloads\\logo (1).png")), 0));
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
     }
 
     public void actionPerformed(ActionEvent e) {
