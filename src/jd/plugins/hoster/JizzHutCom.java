@@ -21,6 +21,7 @@ import java.io.IOException;
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
+import jd.nutils.encoding.Encoding;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -70,11 +71,21 @@ public class JizzHutCom extends PluginForHost {
             }
         }
         if (filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        downloadLink.setFinalFileName(filename + ".flv");
         String Embed = br.getRegex("src=\\'(http://(www\\.)?jizzhut\\.com/videos/embed/[0-9]+)\\'").getMatch(0);
         br.getPage(Embed);
         dllink = br.getRegex("addVariable\\(\"file\",.*?\"(http://.*?\\.flv(\\?.*?)?)\"").getMatch(0);
-        if (dllink == null) dllink = br.getRegex("\"(http://(mediax|cdn[a-z]\\.videos)\\.jizzhut\\.com/[A-Z0-9]+\\.flv(\\?.*?)?)\"").getMatch(0);
+        if (dllink == null) {
+            dllink = br.getRegex("\"(http://(mediax|cdn[a-z]\\.videos)\\.jizzhut\\.com/[A-Z0-9]+\\.flv(\\?.*?)?)\"").getMatch(0);
+            if (dllink == null) {
+                String playlist = br.getRegex("so\\.addVariable\\(\"playlist\", \"(https?://(www\\.)?(jizzhut|youjizz)\\.com/playlist\\.php\\?id=\\d+)").getMatch(0);
+                if (playlist == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                Browser br2 = br.cloneBrowser();
+                br2.getPage(playlist);
+                // multiple qualities (low|med|high) grab highest for now, decrypter will be needed for others.
+                dllink = br2.getRegex("<level bitrate=\"\\d+\" file=\"(https?://(\\w+\\.){1,}(jizzhut|youjizz)\\.com/[^\"]+)\" ?></level>[\r\n\t ]+</levels>").getMatch(0);
+                if (dllink != null) dllink = dllink.replace("%252", "%2");
+            }
+        }
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         Browser br2 = br.cloneBrowser();
         // In case the link redirects to the finallink
@@ -82,9 +93,11 @@ public class JizzHutCom extends PluginForHost {
         URLConnectionAdapter con = null;
         try {
             con = br2.openGetConnection(dllink);
-            if (!con.getContentType().contains("html"))
+            if (!con.getContentType().contains("html")) {
+                String ext = getFileNameFromHeader(con).substring(getFileNameFromHeader(con).lastIndexOf("."));
+                downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + ext);
                 downloadLink.setDownloadSize(con.getLongContentLength());
-            else
+            } else
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             return AvailableStatus.TRUE;
         } finally {

@@ -37,7 +37,7 @@ import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "livemixtapes.com" }, urls = { "http://(www\\.)?(livemixtap\\.es/[a-z0-9]+|(indy\\.)?livemixtapes\\.com/(download(/mp3)?|mixtapes)/\\d+/.*?\\.html)" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "livemixtapes.com" }, urls = { "http://(www\\.)?(livemixtap\\.es/[a-z0-9]+|(\\w+\\.)?livemixtapes\\.com/(download(/mp3)?|mixtapes)/\\d+/.*?\\.html)" }, flags = { 2 })
 public class LiveMixTapesCom extends PluginForHost {
 
     private static final String CAPTCHATEXT            = "/captcha/captcha\\.gif\\?";
@@ -52,7 +52,7 @@ public class LiveMixTapesCom extends PluginForHost {
     }
 
     public void correctDownloadLink(DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replace("indy.", "").replace("/mixtapes/", "/download/"));
+        link.setUrlDownload(link.getDownloadURL().replace("/mixtapes/", "/download/"));
     }
 
     private void doFree(DownloadLink downloadLink) throws Exception, PluginException {
@@ -69,29 +69,38 @@ public class LiveMixTapesCom extends PluginForHost {
             if (dllink == null) throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.livemixtapescom.only4registered", ONLYREGISTEREDUSERTEXT));
         } else {
             final String timestamp = br.getRegex("name=\"timestamp\" value=\"(\\d+)\"").getMatch(0);
-            final String challengekey = br.getRegex("ACPuzzle\\.create\\(\\'(.*?)\\'").getMatch(0);
-            if (timestamp == null || challengekey == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            final PluginForDecrypt solveplug = JDUtilities.getPluginForDecrypt("linkcrypt.ws");
-            final jd.plugins.decrypter.LnkCrptWs.SolveMedia sm = ((jd.plugins.decrypter.LnkCrptWs) solveplug).getSolveMedia(br);
-            sm.setChallengeKey(challengekey);
-            final File cf = sm.downloadCaptcha(getLocalCaptchaFile());
-            final String code = getCaptchaCode(cf, downloadLink);
-            final String chid = sm.getChallenge(code);
-            // Usually we have a waittime here but it can be skipped
-            // int waittime = 40;
-            // String wait =
-            // br.getRegex("<span id=\"counter\">(\\d+)</span>").getMatch(0);
-            // if (wait == null) wait = br.getRegex("wait: (\\d+)").getMatch(0);
-            // if (wait != null) {
-            // waittime = Integer.parseInt(wait);
-            // if (waittime > 1000) waittime = waittime / 1000;
-            // sleep(waittime * 1001, downloadLink);
-            // }
-            try {
-                br.postPage(br.getURL(), "retries=0&timestamp=" + timestamp + "&adcopy_response=manual_challenge&adcopy_challenge=" + chid);
-            } catch (Exception e) {
+            if (timestamp == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (br.containsHTML("<img src=\"/captcha/captcha\\.gif\\?\\d+")) {
+                String captcha = br.getRegex("(/captcha/captcha\\.gif\\?\\d+)").getMatch(0);
+                String code = getCaptchaCode(captcha, downloadLink);
+                if (captcha == null || code == null || code.equals("")) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                br.postPage(br.getURL(), "retries=0&timestamp=" + timestamp + "&code=" + code);
+                if (br.containsHTML("<img src=\"/captcha/captcha\\.gif\\?\\d+")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+            } else if (br.containsHTML("solvemedia\\.com/papi/")) {
+                final String challengekey = br.getRegex("ACPuzzle\\.create\\(\\'(.*?)\\'").getMatch(0);
+                if (challengekey == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                final PluginForDecrypt solveplug = JDUtilities.getPluginForDecrypt("linkcrypt.ws");
+                final jd.plugins.decrypter.LnkCrptWs.SolveMedia sm = ((jd.plugins.decrypter.LnkCrptWs) solveplug).getSolveMedia(br);
+                sm.setChallengeKey(challengekey);
+                final File cf = sm.downloadCaptcha(getLocalCaptchaFile());
+                final String code = getCaptchaCode(cf, downloadLink);
+                final String chid = sm.getChallenge(code);
+                // Usually we have a waittime here but it can be skipped
+                // int waittime = 40;
+                // String wait =
+                // br.getRegex("<span id=\"counter\">(\\d+)</span>").getMatch(0);
+                // if (wait == null) wait = br.getRegex("wait: (\\d+)").getMatch(0);
+                // if (wait != null) {
+                // waittime = Integer.parseInt(wait);
+                // if (waittime > 1000) waittime = waittime / 1000;
+                // sleep(waittime * 1001, downloadLink);
+                // }
+                try {
+                    br.postPage(br.getURL(), "retries=0&timestamp=" + timestamp + "&adcopy_response=manual_challenge&adcopy_challenge=" + chid);
+                } catch (Exception e) {
+                }
+                if (br.containsHTML("solvemedia\\.com/papi/")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             }
-            if (br.containsHTML("solvemedia\\.com/papi/")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             dllink = br.getRedirectLocation();
             if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
