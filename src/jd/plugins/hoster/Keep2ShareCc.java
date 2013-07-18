@@ -73,6 +73,9 @@ public class Keep2ShareCc extends PluginForHost {
         }
         prepBr.getHeaders().put("User-Agent", agent.string);
         prepBr.getHeaders().put("Accept-Language", "en-gb, en;q=0.8");
+        prepBr.getHeaders().put("Accept-Charset", null);
+        prepBr.getHeaders().put("Cache-Control", null);
+        prepBr.getHeaders().put("Pragma", null);
         return prepBr;
     }
 
@@ -100,6 +103,10 @@ public class Keep2ShareCc extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
+        doFree(downloadLink);
+    }
+
+    private void doFree(final DownloadLink downloadLink) throws Exception {
         br.setFollowRedirects(false);
         if (br.containsHTML("File size to large\\!<") || br.containsHTML("Only <b>Premium</b> access<br>")) {
             try {
@@ -119,6 +126,8 @@ public class Keep2ShareCc extends PluginForHost {
                 final String uniqueID = br.getRegex("name=\"slow_id\" value=\"([^<>\"]*?)\"").getMatch(0);
                 if (uniqueID == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 br.postPage(br.getURL(), "yt0=&slow_id=" + uniqueID);
+                Browser br2 = br.cloneBrowser();
+                br2.getPage("http://static.keep2share.cc/ext/evercookie/evercookie.swf");
                 // can be here also, raztoki 20130521!
                 dllink = getDllink();
                 if (dllink == null) {
@@ -156,7 +165,7 @@ public class Keep2ShareCc extends PluginForHost {
                     if (waittime != null) wait = Integer.parseInt(waittime);
                     sleep(wait * 1001l, downloadLink);
                     br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-                    br.postPage(br.getURL(), "free=1&uniqueId=" + uniqueID);
+                    br.postPage(br.getURL(), "uniqueId=&free=1" + uniqueID);
                     br.getHeaders().put("X-Requested-With", null);
                     dllink = getDllink();
                     if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -275,22 +284,28 @@ public class Keep2ShareCc extends PluginForHost {
         // account.setValid(false);
         // return ai;
         // }
-        String availableTraffic = br.getRegex("Available traffic: ([^<>\"]*?)</a>").getMatch(0);
-        if (availableTraffic == null) availableTraffic = br.getRegex("Available traffic:[\r\n\t ]+<b><a href=\"/user/statistic\\.html\">(.*?)</a>").getMatch(0);
-        if (availableTraffic != null) {
-            ai.setTrafficLeft(SizeFormatter.getSize(availableTraffic));
+        if (br.containsHTML(">Account type:<a href=\"/premium\\.html\"[^>]+>[\r\n\t ]+Free<")) {
+            account.setProperty("free", true);
+            ai.setStatus("Registered Free User");
         } else {
-            ai.setUnlimitedTraffic();
-        }
-        String expire = br.getRegex("class=\"premium\">Premium:[\t\n\r ]+(\\d{4}\\.\\d{2}\\.\\d{2})").getMatch(0);
-        if (expire == null) expire = br.getRegex("Premium expires:\\s*?<b>(\\d{4}\\.\\d{2}\\.\\d{2})").getMatch(0);
-        if (expire == null) {
-            if (br.containsHTML(">Premium:[\t\n\r ]+LifeTime")) {
-                ai.setStatus("Premium Lifetime User");
+            String availableTraffic = br.getRegex("Available traffic: ([^<>\"]*?)</a>").getMatch(0);
+            if (availableTraffic == null) availableTraffic = br.getRegex("Available traffic:[\r\n\t ]+<b><a href=\"/user/statistic\\.html\">(.*?)</a>").getMatch(0);
+            if (availableTraffic != null) {
+                ai.setTrafficLeft(SizeFormatter.getSize(availableTraffic));
+            } else {
+                ai.setUnlimitedTraffic();
             }
-        } else {
-            ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "yyyy.MM.dd", Locale.ENGLISH));
-            ai.setStatus("Premium User");
+            String expire = br.getRegex("class=\"premium\">Premium:[\t\n\r ]+(\\d{4}\\.\\d{2}\\.\\d{2})").getMatch(0);
+            if (expire == null) expire = br.getRegex("Premium expires:\\s*?<b>(\\d{4}\\.\\d{2}\\.\\d{2})").getMatch(0);
+            if (expire == null) {
+                if (br.containsHTML(">Premium:[\t\n\r ]+LifeTime")) {
+                    ai.setStatus("Premium Lifetime User");
+                }
+            } else {
+                ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "yyyy.MM.dd", Locale.ENGLISH));
+                ai.setStatus("Premium User");
+            }
+            account.setProperty("free", false);
         }
         account.setValid(true);
         return ai;
@@ -300,6 +315,10 @@ public class Keep2ShareCc extends PluginForHost {
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         requestFileInformation(link);
         login(account, false);
+        if (account.getBooleanProperty("free")) {
+            br.getPage(link.getDownloadURL());
+            doFree(link);
+        }
         br.setFollowRedirects(false);
         br.getPage(link.getDownloadURL());
         if (br.containsHTML("Traffic limit exceed\\!<")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
