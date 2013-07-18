@@ -26,7 +26,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "textsnip.com" }, urls = { "http://(www\\.)?textsnip\\.com/(?!user|acc|about)[a-z0-9]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "textsnip.com" }, urls = { "http://(www\\.)?textsnip\\.com/(?!user|acc|about|terms)[a-z0-9]+" }, flags = { 0 })
 public class TextSnipCom extends PluginForDecrypt {
 
     public TextSnipCom(PluginWrapper wrapper) {

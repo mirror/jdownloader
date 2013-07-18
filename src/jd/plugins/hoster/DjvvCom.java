@@ -20,7 +20,6 @@ import java.io.IOException;
 
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -30,54 +29,42 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "yourupload.com" }, urls = { "http://((www\\.)?yourupload\\.com/(file|embed|watch)/[a-z0-9]+|embed\\.yourupload\\.com/[A-Za-z0-9]+)" }, flags = { 0 })
-public class YourUploadCom extends PluginForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "djvv.com" }, urls = { "http://(www\\.)?djvv\\.com/donw_0_\\d+\\.html" }, flags = { 0 })
+public class DjvvCom extends PluginForHost {
 
-    public YourUploadCom(PluginWrapper wrapper) {
+    public DjvvCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     @Override
     public String getAGBLink() {
-        return "http://yourupload.com/index.php?act=pages&page=terms-of-service";
-    }
-
-    public void correctDownloadLink(DownloadLink link) {
-        link.setUrlDownload("http://yourupload.com/file/" + new Regex(link.getDownloadURL(), "([A-Za-z0-9]+)$").getMatch(0));
+        return "http://djvv.com/";
     }
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        // Correct old links
-        correctDownloadLink(link);
+        // Slow servers
+        br.setConnectTimeout(3 * 60 * 1000);
+        br.setReadTimeout(3 * 60 * 1000);
         br.getPage(link.getDownloadURL());
-        if (br.containsHTML("(>System Error<|>could not find file|>File not found<)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex(">Name</b>[\r\n\t ]+</td>[\r\n\t ]+<td>([^<>\"]+)</td>").getMatch(0);
-        final String filesize = br.getRegex(">Size</b>[\r\n\t ]+</td>[\r\n\t ]+<td>([^<>\"]+)</td>").getMatch(0);
+        if (br.toString().length() < 100) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = br.getRegex("target=\"song\" />([^<>\"]*?)</a>").getMatch(0);
+        String filesize = br.getRegex(">文件大小：</td>[\t\n\r ]+<td   style=\"[^<>/]*?\">([^<>\"]*?)</td>").getMatch(0);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        filename = Encoding.htmlDecode(filename.trim());
-        String ext = null;
-        if (filename.contains(".")) ext = filename.substring(filename.lastIndexOf("."));
-        if (ext != null && ext.length() > 5) ext = null;
-        if (br.containsHTML("<td>video/mp4</td>") && ext == null) ext = ".mp4";
-        if (ext != null) {
-            link.setFinalFileName(filename + ext);
-        } else {
-            link.setName(filename);
-        }
-        link.setName(Encoding.htmlDecode(filename.trim()));
+        link.setFinalFileName(Encoding.htmlDecode(filename.trim()) + ".mp3");
         link.setDownloadSize(SizeFormatter.getSize(filesize));
         return AvailableStatus.TRUE;
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
+    public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        final String dllink = br.getRegex("(http://download\\.yourupload\\.com/[a-f0-9]{32}[^\"]+)").getMatch(0);
+        br.getPage(downloadLink.getDownloadURL());
+        final String dllink = br.getRegex("<div class=\"down_url\"> <a href=\"(http://[^<>\"]*?)\"").getMatch(0);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -95,7 +82,7 @@ public class YourUploadCom extends PluginForHost {
     }
 
     @Override
-    public void resetDownloadlink(DownloadLink link) {
+    public void resetDownloadlink(final DownloadLink link) {
     }
 
 }

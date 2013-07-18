@@ -136,10 +136,12 @@ public class NaughtyBlgOrg extends PluginForDecrypt {
     private String getFpName(String filePackageName) {
         switch (CATEGORY) {
         case CLIP:
-            int firstOccurrenceOfSeparator = filePackageName.indexOf(" - ");
-            StringBuffer sb = new StringBuffer(filePackageName);
-            sb.insert(firstOccurrenceOfSeparator, " - Clips");
-            filePackageName = sb.toString();
+            final int firstOccurrenceOfSeparator = filePackageName.indexOf(" - ");
+            if (firstOccurrenceOfSeparator > -1) {
+                StringBuffer sb = new StringBuffer(filePackageName);
+                sb.insert(firstOccurrenceOfSeparator, " - Clips");
+                filePackageName = sb.toString();
+            }
             break;
         case MOVIE:
             filePackageName += " - Movie";

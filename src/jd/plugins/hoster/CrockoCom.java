@@ -264,7 +264,10 @@ public class CrockoCom extends PluginForHost {
             } catch (Throwable e) {
             }
         }
+        // Offline links
         if (br.containsHTML("<title>Crocko\\.com 404</title>|>Requested file is deleted")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        // Invalid links
+        if (br.containsHTML(">you have no permission")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex(">Download: +<strong>(.*?)</strong>").getMatch(0);
         if (filename == null) filename = br.getRegex(">Download:</span> <br />[\t\n\r ]+<strong>(.*?)</strong>").getMatch(0);
         final String filesize = br.getRegex("<span class=\"tip1\"><span class=\"inner\">(.*?)</span></span>").getMatch(0);

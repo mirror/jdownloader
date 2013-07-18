@@ -54,9 +54,9 @@ public class UploadMbCom extends PluginForHost {
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
+    public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        br.postPage(downloadLink.getDownloadURL(), "turingno=0&id=" + new Regex(downloadLink.getDownloadURL(), "dw\\.php\\?id=(\\d+)").getMatch(0) + "&DownloadNow=Download+File");
+        br.postPage(downloadLink.getDownloadURL(), "turingno=15&id=" + new Regex(downloadLink.getDownloadURL(), "dw\\.php\\?id=(\\d+)").getMatch(0) + "&DownloadNow=Download+File&PHPSESSID=" + br.getCookie("http://uploadmb.com/", "PHPSESSID"));
         String dllink = br.getRegex("or <a href=\\'(/.*?)\\'").getMatch(0);
         if (dllink == null) dllink = br.getRegex("(\\'|\")(/file\\.php\\?id=\\d+\\&/.*?)(\\'|\")").getMatch(1);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

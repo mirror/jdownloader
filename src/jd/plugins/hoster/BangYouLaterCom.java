@@ -22,6 +22,7 @@ import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -29,7 +30,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "bangyoulater.com" }, urls = { "http://(www\\.)?bangyoulater\\.com/[a-z0-9]+/\\d+/.{1}" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "bangyoulater.com" }, urls = { "http://(www\\.)?bangyoulater\\.com/(embed\\.php\\?id=\\d+|[a-z0-9]+/\\d+/.{1})" }, flags = { 0 })
 public class BangYouLaterCom extends PluginForHost {
 
     public BangYouLaterCom(PluginWrapper wrapper) {
@@ -41,6 +42,12 @@ public class BangYouLaterCom extends PluginForHost {
     @Override
     public String getAGBLink() {
         return "http://www.bangyoulater.com/dmca/";
+    }
+
+    public void correctDownloadLink(final DownloadLink link) {
+        if (link.getDownloadURL().contains("embed.php?id=")) {
+            link.setUrlDownload("http://www.bangyoulater.com/milf/" + new Regex(link.getDownloadURL(), "(\\d+)$").getMatch(0) + "/x");
+        }
     }
 
     @Override

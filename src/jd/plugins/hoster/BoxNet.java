@@ -56,7 +56,7 @@ public class BoxNet extends PluginForHost {
 
     public void correctDownloadLink(DownloadLink link) {
         link.setUrlDownload(link.getDownloadURL().replaceAll("boxdecrypted\\.(net|com)/", "box.com/"));
-        link.setUrlDownload(link.getDownloadURL().replace("box\\.net/", "box.com/"));
+        link.setUrlDownload(link.getDownloadURL().replace("box.net/", "box.com/"));
     }
 
     @Override
@@ -78,12 +78,16 @@ public class BoxNet extends PluginForHost {
             }
         } else if (parameter.getDownloadURL().matches(DECRYPTEDFOLDERLINK)) {
             final String plainfilename = parameter.getStringProperty("plainfilename", null);
+            final Regex dlIds = new Regex(parameter.getDownloadURL(), "box\\.com/s/([a-z0-9]+)/\\d+/\\d+/(\\d+)/\\d+");
+            String sharedname = parameter.getStringProperty("sharedname", null);
+            String fileid = parameter.getStringProperty("fileid", null);
+            if (sharedname == null) sharedname = dlIds.getMatch(0);
+            if (fileid == null) fileid = dlIds.getMatch(1);
             br.getPage(parameter.getDownloadURL());
             br.getRequest().setHtmlCode(br.toString().replace("\\", ""));
             parameter.setFinalFileName(Encoding.htmlDecode(plainfilename.trim()));
             parameter.setDownloadSize(SizeFormatter.getSize(parameter.getStringProperty("plainfilesize", null)));
-            final Regex dlIds = new Regex(parameter.getDownloadURL(), "box\\.com/s/([a-z0-9]+)/\\d+/\\d+/(\\d+)/\\d+");
-            DLLINK = "https://www.box.com/index.php?rm=box_download_shared_file&shared_name=" + dlIds.getMatch(0) + "&file_id=f_" + dlIds.getMatch(1);
+            DLLINK = "https://www.box.com/index.php?rm=box_download_shared_file&shared_name=" + sharedname + "&file_id=f_" + fileid;
             return AvailableStatus.TRUE;
         } else if (parameter.getDownloadURL().matches(SLINK)) {
             br.getPage(parameter.getBrowserUrl());

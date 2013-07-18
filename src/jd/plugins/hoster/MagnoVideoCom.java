@@ -28,7 +28,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "magnovideo.com" }, urls = { "http://(www\\.)?magnovideo\\.com/[A-Z0-9]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "magnovideo.com" }, urls = { "http://(www\\.)?magnovideo\\.com/\\?v=[A-Z0-9]+" }, flags = { 0 })
 public class MagnoVideoCom extends PluginForHost {
 
     public MagnoVideoCom(PluginWrapper wrapper) {
@@ -46,7 +46,8 @@ public class MagnoVideoCom extends PluginForHost {
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
         if (br.containsHTML("<title>File share metatitle \\- New MagnoVideo</title>")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        final String filename = br.getRegex("property=\"og:title\" content=\"New MagnoVideo \\-([^<>\"]*?)\"").getMatch(0);
+        String filename = br.getRegex("property=\"og:title\" content=\" Magnovideo\\.com \\- Almacenamiento y uso compartido de vídeo gratis \\-([^<>\"]*?)\"").getMatch(0);
+        if (filename == null) filename = br.getRegex("<title>([^<>\"]*?)</title>").getMatch(0);
         if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         link.setName(Encoding.htmlDecode(filename.trim()));
         return AvailableStatus.TRUE;
@@ -56,17 +57,15 @@ public class MagnoVideoCom extends PluginForHost {
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
         final String fid = new Regex(downloadLink.getDownloadURL(), "([A-Z0-9]+)$").getMatch(0);
-        br.setCookie(br.getHost(), "prepage", fid.concat("2"));
-        br.getPage("/?v=" + fid);
-        String path = br.getRegex("flv=http://[^/]+/([^<>\"]*?)\\&").getMatch(0);
-        if (path == null) br.getPage("/?v=" + fid);
-        path = br.getRegex("flv=http://[^/]+/([^<>\"]*?)\\&").getMatch(0);
-        br.getPage("/player_config.php?mdid=" + fid);
-        String dlHost = br.getRegex("<storage_path>(.*?)</storage_path>").getMatch(0);
-        String burst = br.getRegex("<movie_burst>(\\d+)</movie_burst>").getMatch(0);
-        if (path == null || dlHost == null || burst == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        br.setCookie(br.getHost(), "prepage", fid);
+        br.setCookie(br.getHost(), "sharez_key", fid);
+        br.setCookie(br.getHost(), "user_timezone", "2");
+        br.getPage("http://www.magnovideo.com/player_config.php?mdid=" + fid);
+        final String firstFrame = br.getRegex("<first_frame>(http://[^<>\"]*?)</first_frame>").getMatch(0);
+        if (firstFrame == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        String dllink = firstFrame.replace("/large/1.jpg", "/1.mp4");
 
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dlHost + path + "?burst=" + burst, true, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
         fixFilename(downloadLink);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();

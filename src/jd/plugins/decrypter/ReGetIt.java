@@ -26,7 +26,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "reget.it" }, urls = { "http://(www\\.)?reget\\.it/[A-Za-z0-9]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "reget.it" }, urls = { "http://(www\\.)?reget\\.it/(?!abuse)[A-Za-z0-9]+" }, flags = { 0 })
 public class ReGetIt extends PluginForDecrypt {
 
     public ReGetIt(PluginWrapper wrapper) {
@@ -35,9 +35,10 @@ public class ReGetIt extends PluginForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        String parameter = param.toString();
+        final String parameter = param.toString();
+        br.setFollowRedirects(true);
         br.getPage(parameter);
-        if (br.containsHTML(">File not found<")) {
+        if (br.containsHTML("File not found")) {
             logger.info("Link offline: " + parameter);
             return decryptedLinks;
         }

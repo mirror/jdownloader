@@ -47,14 +47,13 @@ public class ZaycevNet extends PluginForHost {
     private static final String CAPTCHATEXT = "/captcha/";
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(false);
         br.getPage(link.getDownloadURL());
         if (br.getRedirectLocation() != null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("\\{ windowTitle:'Добавление комментария ([^']+)' \\}").getMatch(0);
-        if (filename == null) filename = br.getRegex("<h6>Загрузка mp3 : (.*?)</h6>").getMatch(0);
-        String filesize = br.getRegex("Б<meta content=\"(.*?)\" itemprop=\"contentSize\"/>").getMatch(0);
+        final String filename = br.getRegex("text download\\-link\">([^<>\"]*?)</a>").getMatch(0);
+        final String filesize = br.getRegex("Б<meta content=\"(.*?)\" itemprop=\"contentSize\"/>").getMatch(0);
         if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         link.setName(Encoding.htmlDecode(filename.trim()) + ".mp3");
         link.setDownloadSize(SizeFormatter.getSize(filesize));

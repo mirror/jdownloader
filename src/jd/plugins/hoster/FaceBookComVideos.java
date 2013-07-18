@@ -47,7 +47,7 @@ import jd.utils.locale.JDL;
 public class FaceBookComVideos extends PluginForHost {
 
     private String              FACEBOOKMAINPAGE           = "http://www.facebook.com";
-    private String              PREFERHD                   = "http://www.facebook.com";
+    private String              PREFERHD                   = "PREFERHD";
     private static Object       LOCK                       = new Object();
     public static String        Agent                      = "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:10.0.2) Gecko/20100101 Firefox/10.0.2";
     private boolean             pluginloaded               = false;
@@ -106,6 +106,23 @@ public class FaceBookComVideos extends PluginForHost {
         if (link.getDownloadURL().matches(PHOTOLINK)) {
             // Try if a downloadlink is available
             DLLINK = br.getRegex("class=\"fbPhotosPhotoActionsItem\" href=\"(https?://[^<>\"]*?\\?dl=1)\"").getMatch(0);
+            // Try to find original quality link
+            // final String setID = br.getRegex("\"set\":\"([^<>\"]*?)\"").getMatch(0);
+            // final String user = br.getRegex("\"user\":\"([^<>\"]*?)\"").getMatch(0);
+            // if (setID != null && user != null && DLLINK == null) {
+            // final String fbid = new Regex(link.getDownloadURL(), "(\\d+)$").getMatch(0);
+            // final Browser br2 = br.cloneBrowser();
+            // String theaterView = FACEBOOKMAINPAGE + "/photo.php?fbid=" + new Regex(link.getDownloadURL(), "(\\d+)$").getMatch(0) +
+            // "&set=" + setID +
+            // "&type=3&src=http%3A%2F%2Fsphotos-a.ak.fbcdn.net%2Fhphotos-ak-prn1%2F621123_4356832729269_1617797914_n.jpg&smallsrc=";
+            // theaterView = FACEBOOKMAINPAGE + "/ajax/pagelet/generic.php/PhotoViewerInitPagelet?no_script_path=1&data={%22fbid%22%3A%22" +
+            // fbid + "%22%2C%22set%22%3A%22" + setID +
+            // "%22%2C%22type%22%3A%221%22%2C%22firstLoad%22%3Atrue%2C%22ssid%22%3A1374160988631%7D&__user=" + user +
+            // "&__a=1&__dyn=7n8ahyj35CFUlgDxqihXzAu&__req=jsonp_3&__adt=3";
+            // br2.getHeaders().put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
+            // br2.getPage(theaterView);
+            // DLLINK = br.getRegex("\"url\":\"(http[^<>\"]*?)\"").getMatch(0);
+            // }
             // If no downloadlink is there, simply try to find the directlink to the picture
             if (DLLINK == null) DLLINK = br.getRegex("\"url\":\"(http[^<>\"]*?)\"").getMatch(0);
             if (DLLINK == null) DLLINK = br.getRegex("id=\"fbPhotoImage\" src=\"(https?://[^<>\"]*?)\"").getMatch(0);
@@ -116,7 +133,10 @@ public class FaceBookComVideos extends PluginForHost {
             final Regex urlSplit = new Regex(DLLINK, "(https?://[a-z0-9\\-\\.]+/hphotos\\-ak\\-[a-z0-9]+)/(q\\d+/)?s\\d+x\\d+(/.+)");
             final String partOne = urlSplit.getMatch(0);
             final String partTwo = urlSplit.getMatch(2);
-            if (partOne != null && partTwo != null) DLLINK = partOne + partTwo;
+            if (partOne != null && partTwo != null) {
+                // Usual part
+                DLLINK = partOne + partTwo;
+            }
 
             URLConnectionAdapter con = null;
             try {

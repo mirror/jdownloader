@@ -22,6 +22,7 @@ import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -29,7 +30,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vporn.com" }, urls = { "http://(www\\.)?vporn\\.com/[a-z0-9\\-_]+/[a-z0-9\\-_]+/\\d+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vporn.com" }, urls = { "http://(www\\.)?vporn\\.com/(embed/|[a-z0-9\\-_]+/[a-z0-9\\-_]+/)\\d+" }, flags = { 0 })
 public class VPornCom extends PluginForHost {
 
     public VPornCom(PluginWrapper wrapper) {
@@ -41,6 +42,12 @@ public class VPornCom extends PluginForHost {
     @Override
     public String getAGBLink() {
         return "http://www.vporn.com/terms";
+    }
+
+    public void correctDownloadLink(final DownloadLink link) {
+        if (link.getDownloadURL().contains("/embed/")) {
+            link.setUrlDownload("http://www.vporn.com/mature/x/" + new Regex(link.getDownloadURL(), "(\\d+)$").getMatch(0));
+        }
     }
 
     @Override

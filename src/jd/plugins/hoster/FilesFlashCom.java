@@ -122,8 +122,7 @@ public class FilesFlashCom extends PluginForHost {
         if (br.containsHTML("google.com/recaptcha")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         // Should never happen
         if (br.containsHTML(">Your link has expired")) throw new PluginException(LinkStatus.ERROR_FATAL, "Server error (link expired)");
-        String dllink = br.getRegex("<div id=\"link\" style=\"display:none\"><a href=\"(http://.*?)\"").getMatch(0);
-        if (dllink == null) dllink = br.getRegex("\"(http://[a-z0-9]+\\.filesflash\\.com/[a-z0-9]+/[a-z0-9]+/.*?)\"").getMatch(0);
+        String dllink = br.getRegex("(\"|\\')(http://[a-z0-9]+\\.filesflash\\.com/[a-z0-9]+/[a-z0-9]+/.*?)(\"|\\')").getMatch(1);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         String wait = br.getRegex("count=(\\d+);").getMatch(0);
         int waittime = 45;

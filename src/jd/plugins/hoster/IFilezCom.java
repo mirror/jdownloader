@@ -241,6 +241,8 @@ public class IFilezCom extends PluginForHost {
             logger.warning("File not found OR file removed from provider");
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
+        // Invalid links
+        if (br.containsHTML(">403 Forbidden</")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
     }
 
     @Override

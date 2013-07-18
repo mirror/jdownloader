@@ -23,12 +23,10 @@ import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
-import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
-import jd.utils.locale.JDL;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fotka.pl" }, urls = { "http://[\\w\\.]*?fotka\\.pl/(profil/\\w+/albumy/\\d+,\\w+(/\\d+)?|duza_fotka\\.php\\?fotka_id=\\d+\\&owner_id=\\d+)" }, flags = { 0 })
 public class FotkaPl extends PluginForDecrypt {
@@ -38,14 +36,18 @@ public class FotkaPl extends PluginForDecrypt {
     }
 
     private static final String MAINPAGE        = "http://www.fotka.pl";
-    private static final String FINALLINKREGEX1 = "id=\"zdjecie\" src=\"(http.*?)\"";
-    private static final String FINALLINKREGEX2 = "\"(http://\\w+\\.asteroid\\.pl/.*?fotka\\.pl\\.s\\d+.*?/.*?)\"";
+    private static final String FINALLINKREGEX1 = "property=\"og:image\" content=\"(http://[^<>\"]*?)\"";
+    private static final String FINALLINKREGEX2 = "\"(http://\\w+\\.asteroid\\.pl/.*?fotka\\.pl.*?)\"";
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
+        br.setFollowRedirects(true);
         br.getPage(parameter);
-        if (br.containsHTML("Nie ma profilu, którego szukasz")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
+        if (br.containsHTML("Nie ma profilu, którego szukasz") || br.getURL().contains("?back_url=")) {
+            logger.info("Link offline: " + parameter);
+            return decryptedLinks;
+        }
         String profileName = new Regex(parameter, "fotka\\.pl/profil/(.*?)/albumy").getMatch(0);
         if (parameter.matches(".*?fotka\\.pl/profil/\\w+/albumy/\\d+,.*?/\\d+")) {
             logger.info("The user added a link that contains only one picture, starting to decrypt...");

@@ -74,17 +74,25 @@ public class SourceForgeNet extends PluginForDecrypt {
                 return null;
             }
             link = Encoding.htmlDecode(link);
-            String urlPart = new Regex(link, "(http://downloads\\.sourceforge\\.net/project/.*?)(http://sourceforge\\.net/|\\?r=)").getMatch(0);
-            String secondUrlPart = new Regex(link, "(\\&ts=\\d+\\&use_mirror=.+)").getMatch(0);
-            if (urlPart == null || secondUrlPart == null) return null;
+            boolean getPage = false;
+            final String urlPart = new Regex(link, "(http://downloads\\.sourceforge\\.net/project/.*?)(http://sourceforge\\.net/|\\?r=)").getMatch(0);
+            final String secondUrlPart = new Regex(link, "(\\&ts=\\d+\\&use_mirror=.+)").getMatch(0);
+            // Either we already got the final link or we have to build it
+            if (urlPart != null && secondUrlPart != null) {
+                link = urlPart + "?r=" + secondUrlPart;
+                getPage = true;
+            }
             br.setFollowRedirects(false);
-            link = urlPart + "?r=" + secondUrlPart;
             String finallink = null;
             boolean failed = true;
             for (int i = 0; i <= 5; i++) {
-                br.getPage(link);
-                finallink = br.getRedirectLocation();
-                if (finallink == null) return null;
+                if (getPage) {
+                    br.getPage(link);
+                    finallink = br.getRedirectLocation();
+                    if (finallink == null) return null;
+                } else {
+                    finallink = link;
+                }
                 con = br.openGetConnection(finallink);
                 if (con.getContentType().contains("html")) {
                     logger.info("finallink is no file, continuing...");

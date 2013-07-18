@@ -18,6 +18,7 @@ package jd.plugins.decrypter;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Random;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
@@ -35,7 +36,6 @@ import org.appwork.utils.formatter.SizeFormatter;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "box.net" }, urls = { "https?://(www|[a-z0-9\\-_]+)\\.box\\.(net|com)/(shared|s)/(?!static)[a-z0-9]+(/\\d+/\\d+)?" }, flags = { 0 })
 public class BxNt extends PluginForDecrypt {
-    private static final String  BASE_URL_PATTERN             = "(https?://(www|[a-z0-9\\-_]+)\\.box\\.com/shared/\\w+)(#\\w*)?";
     private static final Pattern FEED_FILEINFO_PATTERN        = Pattern.compile("<item>(.*?)<\\/item>", Pattern.DOTALL);
     private static final Pattern FEED_FILETITLE_PATTERN       = Pattern.compile("<title>(.*?)<\\/title>", Pattern.DOTALL);
     private static final Pattern FEED_DL_LINK_PATTERN         = Pattern.compile("<media:content url=\\\"(.*?)\\\"\\s*/>", Pattern.DOTALL);
@@ -51,123 +51,127 @@ public class BxNt extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String cryptedlink = parameter.toString().replace("box.net/", "box.com/").replace("box.com/s/", "box.com/shared/");
         logger.finer("Decrypting: " + cryptedlink);
-        // check if page is a rss feed
         br.setCookie("http://box.com", "country_code", "US");
-        if (cryptedlink.endsWith("rss.xml")) {
-            if (feedExists(cryptedlink)) {
-                decryptFeed(cryptedlink, cryptedlink);
-            } else {
-                logger.warning("Invalid URL or URL no longer exists : " + cryptedlink);
+        br.setFollowRedirects(true);
+        br.getPage(cryptedlink);
+        if (br.getURL().equals("https://www.box.com/freeshare")) {
+            final DownloadLink dl = createDownloadlink(cryptedlink.replaceAll("box\\.com/shared", "boxdecrypted.com/shared"));
+            dl.setAvailable(false);
+            dl.setProperty("offline", true);
+            decryptedLinks.add(dl);
+            return decryptedLinks;
+        }
+        if (br.containsHTML("<title>Box \\| 404 Page Not Found</title>") || br.containsHTML("error_message_not_found")) {
+            final DownloadLink dl = createDownloadlink(cryptedlink.replaceAll("box\\.com/shared", "boxdecrypted.com/shared"));
+            dl.setAvailable(false);
+            dl.setProperty("offline", true);
+            decryptedLinks.add(dl);
+            return decryptedLinks;
+        }
+        String fpName = null;
+        if (br.containsHTML("id=\"name\" title=\"boxdocs\"")) {
+            fpName = new Regex(cryptedlink, "([a-z0-9]+)$").getMatch(0);
+            final String textArea = br.getRegex("<tr id=\"wrp_base\" style=\"height: 100%;\">(.*?)<tr id=\"wrp_footer\">").getMatch(0);
+            if (textArea == null) {
+                logger.warning("Decrypt failed for link: " + cryptedlink);
+                return null;
+            }
+            final String[] pictureLinks = HTMLParser.getHttpLinks(textArea, "");
+            if (pictureLinks != null && pictureLinks.length != 0) {
+                for (final String pictureLink : pictureLinks) {
+                    if (!pictureLink.contains("box.com/")) {
+                        final DownloadLink dl = createDownloadlink("directhttp://" + pictureLink);
+                        decryptedLinks.add(dl);
+                    }
+                }
             }
         } else {
-            // if it's not a rss feed, check if an rss feed exists
-            String baseUrl = new Regex(cryptedlink, BASE_URL_PATTERN).getMatch(0);
-            String feedUrl = baseUrl + "/rss.xml";
-            if (feedExists(feedUrl)) {
-                decryptedLinks = decryptFeed(feedUrl, cryptedlink);
-            }
-            if (decryptedLinks == null || decryptedLinks.size() == 0) {
-                logger.info("There is no RSS link so it might be a folder");
-                br.setFollowRedirects(true);
-                br.getPage(cryptedlink);
-                if (br.getURL().equals("https://www.box.com/freeshare")) {
-                    final DownloadLink dl = createDownloadlink(cryptedlink.replaceAll("box\\.com/shared", "boxdecrypted.com/shared"));
-                    dl.setAvailable(false);
-                    dl.setProperty("offline", true);
-                    decryptedLinks.add(dl);
+            // Folder or single link
+            if (br.containsHTML("id=\"shared_folder_files_tab_content\"")) {
+                br.getRequest().setHtmlCode(br.toString().replace("\\", ""));
+                final String pathValue = br.getRegex("\\{\"p_(\\d+)\"").getMatch(0);
+                fpName = br.getRegex("\"name\":\"([^<>\"]*?)\"").getMatch(0);
+                // Hmm maybe a single link
+                if (pathValue == null || fpName == null) {
+                    decryptedLinks.add(createSingleDownloadlink(cryptedlink));
                     return decryptedLinks;
                 }
-                if (br.containsHTML("<title>Box \\| 404 Page Not Found</title>") || br.containsHTML("error_message_not_found")) {
-                    final DownloadLink dl = createDownloadlink(cryptedlink.replaceAll("box\\.com/shared", "boxdecrypted.com/shared"));
-                    dl.setAvailable(false);
-                    dl.setProperty("offline", true);
-                    decryptedLinks.add(dl);
-                    return decryptedLinks;
-                }
-                String fpName = null;
-                if (br.containsHTML("id=\"name\" title=\"boxdocs\"")) {
-                    fpName = new Regex(cryptedlink, "([a-z0-9]+)$").getMatch(0);
-                    final String textArea = br.getRegex("<tr id=\"wrp_base\" style=\"height: 100%;\">(.*?)<tr id=\"wrp_footer\">").getMatch(0);
-                    if (textArea == null) {
-                        logger.warning("Decrypt failed for link: " + cryptedlink);
-                        return null;
-                    }
-                    final String[] pictureLinks = HTMLParser.getHttpLinks(textArea, "");
-                    if (pictureLinks != null && pictureLinks.length != 0) {
-                        for (final String pictureLink : pictureLinks) {
-                            if (!pictureLink.contains("box.com/")) {
-                                final DownloadLink dl = createDownloadlink("directhttp://" + pictureLink);
-                                decryptedLinks.add(dl);
-                            }
-                        }
-                    }
-                } else {
+                final String basicLink = br.getURL().replace("/shared/", "/s/");
+                final String pageCount = br.getRegex("\"page_count\":(\\d+)").getMatch(0);
+                final String linkID = new Regex(cryptedlink, "box\\.com/shared/([a-z0-9]+)").getMatch(0);
+                int pages = 1;
+                if (pageCount != null) pages = Integer.parseInt(pageCount);
+                for (int i = 1; i <= pages; i++) {
+                    logger.info("Decrypting page " + i + " of " + pages);
+                    br.getPage(basicLink + "/" + i + "/" + pathValue);
                     br.getRequest().setHtmlCode(br.toString().replace("\\", ""));
-                    final String pathValue = br.getRegex("\\{\"p_(\\d+)\"").getMatch(0);
-                    fpName = br.getRegex("\"name\":\"([^<>\"]*?)\"").getMatch(0);
+                    final String[] links = br.getRegex("\"nnttttdata\\-href=\"(/s/[a-z0-9]+/\\d+/\\d+/\\d+/\\d+)\"").getColumn(0);
+                    final String[] filenames = br.getRegex("data\\-downloadurl=\"[a-z0-9/]+:([^<>\"]*?):https://www\\.box").getColumn(0);
+                    final String[] filesizes = br.getRegex("class=\"item_size\">([^<>\"]*?)</li>").getColumn(0);
+                    final String[] folderLinks = br.getRegex("\"unidb\":\"folder_(\\d+)\"").getColumn(0);
                     // Hmm maybe a single link
-                    if (pathValue == null || fpName == null) {
-                        final DownloadLink dl = createDownloadlink(cryptedlink.replace("box.com/", "boxdecrypted.com/").replace("boxdecrypted.com/s/", "boxdecrypted.com/shared/"));
-                        decryptedLinks.add(dl);
+                    if ((links == null || links.length == 0 || filenames == null || filenames.length == 0 || filesizes == null || filesizes.length == 0) && (folderLinks == null || folderLinks.length == 0)) {
+                        decryptedLinks.add(createSingleDownloadlink(cryptedlink));
                         return decryptedLinks;
                     }
-                    final String basicLink = br.getURL().replace("/shared/", "/s/");
-                    final String pageCount = br.getRegex("\"page_count\":(\\d+)").getMatch(0);
-                    final String linkID = new Regex(cryptedlink, "box\\.com/shared/([a-z0-9]+)").getMatch(0);
-                    int pages = 1;
-                    if (pageCount != null) pages = Integer.parseInt(pageCount);
-                    for (int i = 1; i <= pages; i++) {
-                        logger.info("Decrypting page " + i + " of " + pages);
-                        br.getPage(basicLink + "/" + i + "/" + pathValue);
-                        br.getRequest().setHtmlCode(br.toString().replace("\\", ""));
-                        final String[] links = br.getRegex("\"nnttttdata\\-href=\"(/s/[a-z0-9]+/\\d+/\\d+/\\d+/\\d+)\"").getColumn(0);
-                        final String[] filenames = br.getRegex("data\\-downloadurl=\"[a-z0-9/]+:([^<>\"]*?):https://www\\.box").getColumn(0);
-                        final String[] filesizes = br.getRegex("class=\"item_size\">([^<>\"]*?)</li>").getColumn(0);
-                        final String[] folderLinks = br.getRegex("\"unidb\":\"folder_(\\d+)\"").getColumn(0);
-                        if ((links == null || links.length == 0 || filenames == null || filenames.length == 0 || filesizes == null || filesizes.length == 0) && (folderLinks == null || folderLinks.length == 0)) {
+                    if (folderLinks != null && folderLinks.length != 0) {
+                        for (final String folderLink : folderLinks) {
+                            final DownloadLink dl = createDownloadlink("https://www.box.com/shared/" + linkID + "/1/" + folderLink);
+                            decryptedLinks.add(dl);
+                        }
+                    }
+                    if (links != null && links.length != 0 && filenames != null && filenames.length != 0 && filesizes != null && filesizes.length != 0) {
+                        final int numberOfEntries = links.length;
+                        if (filenames.length != numberOfEntries || filesizes.length != numberOfEntries) {
                             logger.warning("Decrypt failed for link: " + cryptedlink);
                             return null;
                         }
-                        if (folderLinks != null && folderLinks.length != 0) {
-                            for (final String folderLink : folderLinks) {
-                                final DownloadLink dl = createDownloadlink("https://www.box.com/shared/" + linkID + "/1/" + folderLink);
-                                decryptedLinks.add(dl);
-                            }
-                        }
-                        if (links != null && links.length != 0 && filenames != null && filenames.length != 0 && filesizes != null && filesizes.length != 0) {
-                            final int numberOfEntries = links.length;
-                            if (filenames.length != numberOfEntries || filesizes.length != numberOfEntries) {
-                                logger.warning("Decrypt failed for link: " + cryptedlink);
-                                return null;
-                            }
-                            for (int count = 0; count < numberOfEntries; count++) {
-                                final String url = links[count];
-                                final String filename = filenames[count];
-                                final String filesize = filesizes[count];
-                                final DownloadLink dl = createDownloadlink("https://www.boxdecrypted.com" + url);
-                                dl.setProperty("plainfilename", filename);
-                                dl.setProperty("plainfilesize", filesize);
-                                dl.setName(Encoding.htmlDecode(filename.trim()));
-                                dl.setDownloadSize(SizeFormatter.getSize(filesize));
-                                dl.setAvailable(true);
-                                decryptedLinks.add(dl);
-                            }
+                        for (int count = 0; count < numberOfEntries; count++) {
+                            final String url = links[count];
+                            final String filename = filenames[count];
+                            final String filesize = filesizes[count];
+                            final DownloadLink dl = createDownloadlink("https://www.boxdecrypted.com" + url);
+                            dl.setProperty("plainfilename", filename);
+                            dl.setProperty("plainfilesize", filesize);
+                            dl.setName(Encoding.htmlDecode(filename.trim()));
+                            dl.setDownloadSize(SizeFormatter.getSize(filesize));
+                            dl.setAvailable(true);
+                            decryptedLinks.add(dl);
                         }
                     }
-
                 }
-                if (fpName != null) {
-                    final FilePackage fp = FilePackage.getInstance();
-                    fp.setName(Encoding.htmlDecode(fpName.trim()));
-                    fp.addLinks(decryptedLinks);
-                }
-                if (decryptedLinks.size() == 0) {
-                    logger.info("Haven't found any links to decrypt, now trying decryptSingleDLPage");
-                    decryptedLinks.add(createDownloadlink(cryptedlink.replaceAll("box\\.com/shared", "boxdecrypted.com/shared")));
-                }
+            } else {
+                final DownloadLink dl = createDownloadlink("https://www.boxdecrypted.com/shared/" + new Regex(cryptedlink, "([a-z0-9]+)$").getMatch(0));
+                decryptedLinks.add(dl);
+                return decryptedLinks;
             }
+
+        }
+        if (fpName != null) {
+            final FilePackage fp = FilePackage.getInstance();
+            fp.setName(Encoding.htmlDecode(fpName.trim()));
+            fp.addLinks(decryptedLinks);
+        }
+        if (decryptedLinks.size() == 0) {
+            logger.info("Haven't found any links to decrypt, now trying decryptSingleDLPage");
+            decryptedLinks.add(createDownloadlink(cryptedlink.replaceAll("box\\.com/shared", "boxdecrypted.com/shared")));
         }
         return decryptedLinks;
+    }
+
+    private DownloadLink createSingleDownloadlink(final String cryptedLink) {
+        final String fileID = br.getRegex("\"typed_id\":\"f_(\\d+)\"").getMatch(0);
+        final String fid = new Regex(cryptedLink, "([a-z0-9]+)$").getMatch(0);
+        String fsize = br.getRegex("\"size\":\"([^<>\"]*?)\"").getMatch(0);
+        if (fsize == null) fsize = "0b";
+        String singleFilename = br.getRegex("id=\"filename_\\d+\" name=\"([^<>\"]*?)\"").getMatch(0);
+        if (singleFilename == null) singleFilename = fid;
+        final DownloadLink dl = createDownloadlink("http://www.boxdecrypted.com/s/" + fid + "/1/1/1/" + new Random().nextInt(1000));
+        dl.setProperty("plainfilename", singleFilename);
+        dl.setProperty("plainfilesize", fsize);
+        if (fileID != null) dl.setProperty("fileid", fileID);
+        dl.setProperty("sharedname", fid);
+        return dl;
     }
 
     /**
@@ -219,19 +223,6 @@ public class BxNt extends PluginForDecrypt {
         }
         logger.info("Found " + decryptedLinks.size() + " links in feed: " + feedUrl);
         return decryptedLinks;
-    }
-
-    /**
-     * Checks if a rss feed exists.
-     * 
-     * @param feedUrl
-     *            the url of the rss feed
-     * @return true if the feed exists, false otherwise
-     * @throws IOException
-     */
-    private boolean feedExists(String feedUrl) throws IOException {
-        br.getPage(feedUrl);
-        return !br.containsHTML(ERROR);
     }
 
     /* NO OVERRIDE!! */

@@ -57,18 +57,21 @@ public class SevenTwoDjCom extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        String dllink = br.getRegex("var thunder_url= \"\"\\+durl\\+\"([^<>\"]*?)\"").getMatch(0);
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        br.setCookie("http://72dj.com", "uuauth", "ok");
-        Browser brc = br.cloneBrowser();
-        brc.getPage("http://data.72dj.com/getuuauthcode/");
-        String code = brc.getRegex("UUAuthCode=\"(.*?)\"").getMatch(0);
-        if (code != null) {
-            code = "?" + code;
-        } else {
-            code = "";
+        String dllink = br.getRegex("\"(http://[^<>\"]*?down_mp3[^<>\"]*?)\"").getMatch(0);
+        if (dllink == null) {
+            dllink = br.getRegex("var thunder_url= \"\"\\+durl\\+\"([^<>\"]*?)\"").getMatch(0);
+            if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            br.setCookie("http://72dj.com", "uuauth", "ok");
+            Browser brc = br.cloneBrowser();
+            brc.getPage("http://data.72dj.com/getuuauthcode/");
+            String code = brc.getRegex("UUAuthCode=\"(.*?)\"").getMatch(0);
+            if (code != null) {
+                code = "?" + code;
+            } else {
+                code = "";
+            }
+            dllink = "http://data.72dj.com/mp3/" + Encoding.htmlDecode(dllink) + code;
         }
-        dllink = "http://data.72dj.com/mp3/" + Encoding.htmlDecode(dllink) + code;
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();

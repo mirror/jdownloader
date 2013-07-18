@@ -44,7 +44,7 @@ public class Tnypst extends PluginForDecrypt {
         br.setFollowRedirects(true);
         String link = parameter.toString().replace("tinypaste.com/", "tny.cz/");
         br.getPage(link);
-        if (br.containsHTML(">404 \\- URL not found<|>The content has either been deleted|>Paste deleted<")) {
+        if (br.containsHTML(">404 \\- URL not found<|>The content has either been deleted|>Paste deleted<|>There does not seem to be anything here")) {
             logger.info("Link offline: " + parameter);
             return decryptedLinks;
         }

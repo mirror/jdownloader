@@ -15,7 +15,8 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 package jd.plugins.decrypter;
-import java.util.ArrayList;
+
+import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -27,7 +28,6 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
-
 //This decrypter is there to seperate folder- and hosterlinks as hosterlinks look the same as folderlinks
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "i-filez.com", "depfile.com" }, urls = { "rfh5ujnthUNUSED_REGEX_HAHHAHAHAHAdcj43z8hgto9vhr", "https?://(www\\.)?(i\\-filez|depfile)\\.com/(downloads/i/\\d+/f/[^\"\\']+|(?!downloads)[a-zA-Z0-9]+)" }, flags = { 0, 0 })
 public class IFilezComDecrypter extends PluginForDecrypt {
@@ -37,6 +37,7 @@ public class IFilezComDecrypter extends PluginForDecrypt {
     }
 
     private static final String DEPFILEDECRYPTED = "depfiledecrypted.com/";
+    private static final String INVALIDLINKS     = "https?://(www\\.)?depfile\\.com/(uploads|support|privacy|checkfiles|register|premium|terms)";
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
@@ -45,6 +46,10 @@ public class IFilezComDecrypter extends PluginForDecrypt {
         br.setCookie(this.getHost(), "sdlanguageid", "2");
         br.setFollowRedirects(true);
         br.getPage(parameter);
+        if (parameter.matches(INVALIDLINKS)) {
+            logger.info("Link invalid: " + parameter);
+            return decryptedLinks;
+        }
         handleErrors();
         String[] links = br.getRegex("(https?://(www\\.)?depfile\\.com/downloads/i/\\d+/f/[^\"' ><]+|https?://(www\\.)?depfile\\.com/[a-zA-Z0-9]{8}\\?cid=[a-z0-9]{32})").getColumn(0);
         if (links != null && links.length != 0) {
