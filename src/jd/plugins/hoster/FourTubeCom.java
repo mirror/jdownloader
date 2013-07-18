@@ -88,7 +88,7 @@ public class FourTubeCom extends PluginForHost {
             // jwplayer
             configUrl = br.getRegex("var playerConfigPlaylist =\\s+\\[(.*?)\\];").getMatch(0);
             if (configUrl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            playpath = new Regex(configUrl, "sources: \\[\\{\"file\":\"(http[^\"]+)").getMatch(0);
+            playpath = new Regex(configUrl, "sources: \\[\\{(\"default\":true,)?\"file\":\"(http[^\"]+)").getMatch(1);
         }
         if (playpath == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         playpath = playpath.replaceAll("\\\\/", "/");
