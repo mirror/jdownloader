@@ -53,7 +53,7 @@ public class ShaHidMbcNet extends PluginForHost {
     }
 
     private String convertRtmpUrlToHttpUrl(String url) throws Exception {
-        if (!url.matches("rtmp.+?://(.*?)/[0-9a-f]+/[0-9a-f]+-[0-9a-f]+/[\\w\\-]+\\.\\w+")) { return null; }
+        if (!url.matches("rtmp.+?://(.*?)/[0-9a-f]+/[0-9a-f]+(-|/)[0-9a-f]+/[\\w\\-]+\\.\\w+")) return null;
         final String ext = url.substring(url.lastIndexOf(".") + 1);
         url = url.substring(url.indexOf("//") + 2);
 
@@ -65,7 +65,7 @@ public class ShaHidMbcNet extends PluginForHost {
 
         url = "http://" + url.replaceAll("\\.csl\\.", ".cpl.");
         url = convertToMediaVaultUrl(url);
-        if (url == null) { return null; }
+        if (url == null) return null;
         return url;
     }
 
@@ -77,7 +77,7 @@ public class ShaHidMbcNet extends PluginForHost {
             time = getTime.getRegex("(\\d+)").getMatch(0);
         } catch (final Throwable e) {
         }
-        if (time == null) { return null; }
+        if (time == null) return null;
         final int e = (int) Math.floor(Double.parseDouble(time) + 1500);
         url = url + "?e=" + e;
         final String h = JDHash.getMD5(Encoding.Base64Decode("Z0RuU1lzQ0pTUkpOaVdIUGh6dkhGU0RqTFBoMTRtUWc=") + url);
@@ -103,7 +103,7 @@ public class ShaHidMbcNet extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         DLLINK = convertRtmpUrlToHttpUrl(downloadLink.getDownloadURL());
-        if (DLLINK == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+        if (DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
@@ -127,7 +127,7 @@ public class ShaHidMbcNet extends PluginForHost {
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
         if (getPluginConfig().getBooleanProperty("COMPLETE_SEASON")) { return AvailableStatus.TRUE; }
         DLLINK = convertRtmpUrlToHttpUrl(downloadLink.getDownloadURL());
-        if (DLLINK == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+        if (DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         prepareBrowser(br);
         br.setFollowRedirects(true);
         URLConnectionAdapter con = null;

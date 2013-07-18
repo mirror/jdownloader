@@ -256,7 +256,7 @@ public class ShaHidMbcNetDecrypter extends PluginForDecrypt {
                     // Einzellink oder Alles
                     if (fC.contains("rtmp")) {
 
-                        if (fC.contains(mediaId + "-") || completeSeason) {
+                        if (new Regex(fC, "/" + mediaId + "(\\-|/)").matches() || completeSeason) {
                             quality = fixedHexValue(JDHexUtils.getHexString(fC.substring(0, 2)));
                             if (quality != null && qStr.containsKey(quality)) {
                                 /*
