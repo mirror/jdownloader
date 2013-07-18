@@ -144,7 +144,7 @@ public class GrooveShark extends PluginForHost {
     public static boolean fetchingKeys(Browser br) throws Exception {
         Browser br2 = br.cloneBrowser();
         br2.getPage(APPJSURL.string); // ~2000ms
-        String jsKey = br2.getRegex(reqk(3)).getMatch(0);
+        String jsKey = br2.getRegex(reqk(3)).getMatch(1);
         SWFDecompressor swfd = new SWFDecompressor();
         byte[] swfdec = swfd.decompress(FLASHURL.string);
         if (swfdec == null || swfdec.length == 0) { return false; }
@@ -158,12 +158,16 @@ public class GrooveShark extends PluginForHost {
         String flashKey = new Regex(swfStr, reqk(0)).getMatch(0);
         String cKey = new Regex(swfStr, reqk(1)).getMatch(0);
         cKey = cKey == null ? flashKey : cKey;
-        if (jsKey == null || flashKey == null) { return false; }
+        flashKey = flashKey == null ? cKey : flashKey;
+        if (jsKey == null) return false;
+
+        if (flashKey == null) flashKey = "";
+        if (cKey == null) cKey = "";
 
         SubConfiguration cfg = SubConfiguration.getConfig("grooveshark.com");
         boolean jkey = jsKey.equals(cfg.getStringProperty("jskey"));
-        boolean fkey = flashKey.equals(cfg.getStringProperty("flashkey"));
-        boolean ckey = cKey.equals(cfg.getStringProperty("ckey"));
+        boolean fkey = flashKey.equals(cfg.getStringProperty("flashkey")) | "".equals(flashKey);
+        boolean ckey = cKey.equals(cfg.getStringProperty("ckey")) | "".equals(cKey);
 
         if (!jkey || !fkey || !ckey) {
             if (!jkey) {
@@ -208,7 +212,7 @@ public class GrooveShark extends PluginForHost {
         s[0] = "ff8cf9faf900cfe71996b4cedc5046fb2b9c72bb0b5fdbce19195c68103a85d65d88ff6e8c5be634224051bbeb271d2fe07f2ecbc1cd6565a873d3b56c5e356f5bf0ce2e5d7dfece25ae2eea5261";// flashkey
         s[1] = "fc8bfbf6fa00cce41b91b799dc0742fd289d75bc0c53db9d1b1d5b691165828759d8fc3b890ae338221150bdef201922e4212dcdc5c76760ac24d3e4";// ckey
         s[2] = "fd8bfba0fa0acde31bc1b799dd5742fd289271b60958d8c71a4c5f6e103d828c5ad9fe3b8c5de16d224754eeeb7c1d75";
-        s[3] = "fc8efbf2fb01c9e61a96b3c9da5746f02ac672ea0c59db9a1e485b32116e82d7";// jskey
+        s[3] = "f980ffa0fb50c8b41f9db79bde5443fa2d9470bd0d0fdccc1e125c69163982865adff8688c00e63e251b54efee261c74e07e";// jskey
         s[4] = "f8dcfff1fe0bceb51b90b2cfda5c46fa";
         JDUtilities.getPluginForDecrypt("linkcrypt.ws");
         return JDHexUtils.toString(jd.plugins.decrypter.LnkCrptWs.IMAGEREGEX(s[i]));
