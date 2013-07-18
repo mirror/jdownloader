@@ -25,7 +25,6 @@ import jd.config.Property;
 import jd.gui.swing.jdgui.views.settings.sidebar.AddonConfig;
 import jd.plugins.AddonPanel;
 import jd.plugins.ExtensionConfigInterface;
-import jd.update.JSonWrapper;
 
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.txtresource.TranslateInterface;
@@ -125,8 +124,7 @@ public abstract class AbstractExtension<ConfigType extends ExtensionConfigInterf
     }
 
     /**
-     * Returns the internal storage. Most of the configvalues are for internal use only. This config only contains values which are valid
-     * for all extensions
+     * Returns the internal storage. Most of the configvalues are for internal use only. This config only contains values which are valid for all extensions
      * 
      * @return
      */
@@ -151,8 +149,6 @@ public abstract class AbstractExtension<ConfigType extends ExtensionConfigInterf
     private String            name;
 
     private int               version        = -1;
-    @Deprecated
-    private JSonWrapper       classicConfig;
 
     private ConfigType        store;
     /**
@@ -180,8 +176,7 @@ public abstract class AbstractExtension<ConfigType extends ExtensionConfigInterf
      * 
      * @param translationInterface
      * @param contentType
-     *            name of this plugin. Until JD 2.* we should use null here to use the old defaultname. we used to sue this localized name
-     *            as config key.
+     *            name of this plugin. Until JD 2.* we should use null here to use the old defaultname. we used to sue this localized name as config key.
      * @throws
      * @throws StartException
      */
