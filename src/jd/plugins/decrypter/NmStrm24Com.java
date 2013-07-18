@@ -37,6 +37,9 @@ public class NmStrm24Com extends PluginForDecrypt {
         super(wrapper);
     }
 
+    private String filename = null;
+    private String fpName   = null;
+
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
@@ -48,21 +51,22 @@ public class NmStrm24Com extends PluginForDecrypt {
         }
         if (parameter.matches("http://(www\\.)?anime-stream24\\.info/s/[a-z0-9]+/[a-z0-9]+_\\d+\\.html")) {
             // So far only tested with a vidbux.com link
-            final String finallink = br.getRegex("flashvars=\\'plugins=/pl/plugins/proxy\\.swf\\&proxy\\.link=(http://[^<>\"]*?)\\&stretching=").getMatch(0);
+            final String finallink = br.getRegex("flashvars='plugins=/pl/plugins/proxy\\.swf\\&proxy\\.link=(http://[^<>\"]*?)\\&stretching=").getMatch(0);
             if (finallink == null) {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
             }
             decryptedLinks.add(createDownloadlink(finallink));
         } else {
-            String fpName = br.getRegex("\\'pageName\\': \\'([^<>\"\\']+)\\'").getMatch(0);
-            if (fpName == null) fpName = br.getRegex("class=\\'post\\-title entry\\-title\\'>[\t\n\r ]+<a href=\\'http://[^<>\"\\']+\\'>([^<>\"\\']+)</a>").getMatch(0);
+            fpName = br.getRegex("'pageName': '([^<>\"']+)'").getMatch(0);
+            if (fpName == null) fpName = br.getRegex("class='post-title entry-title'>[\t\n\r ]+<a href='http://[^<>\"']+'>([^<>\"']+)</a>").getMatch(0);
             if (fpName == null) {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
             }
             fpName = Encoding.htmlDecode(fpName.trim());
-            final String[] fragments = br.getRegex("<div id=\"fragment\\-\\d+\"(.*?)<br />").getColumn(0);
+            String[] fragments = br.getRegex("<div id=\"fragment-\\d+\"(.*?)[\r\n]+</script><br />[\r\n]+</div>").getColumn(0);
+            if (fragments == null || fragments.length == 0) fragments = br.getRegex("<div id=\"fragment-\\d+\"(.*?)<br />[\r\n]").getColumn(0);
             if ((fragments == null || fragments.length == 0) && !br.containsHTML(">Mirror")) {
                 logger.warning("Link doesn't contain any downloadable links: " + parameter);
                 return decryptedLinks;
@@ -81,9 +85,11 @@ public class NmStrm24Com extends PluginForDecrypt {
                     logger.info("A offline hoster was referenced. Continuing anyway....");
                 } else {
                     final DownloadLink dl = createDownloadlink(dllink);
-                    if (dl != null) decryptedLinks.add(dl);
+                    if (filename != null) dl.setFinalFileName(filename);
+                    decryptedLinks.add(dl);
                 }
             }
+            // not sure if this is still needed - raztoki
             final String[] specialFragments = br.getRegex("\"(http://embed\\.publicvideohost\\.org/v\\.php\\?w=\\d+\\&h=\\d+\\&v=\\d+)\"").getColumn(0);
             if (specialFragments != null && specialFragments.length != 0) {
                 for (final String specialFragment : specialFragments) {
@@ -106,10 +112,11 @@ public class NmStrm24Com extends PluginForDecrypt {
     }
 
     private String findLink(final String fragment) throws IOException {
+        filename = null;
         String externID = new Regex(fragment, "\"(http://dai\\.ly/[A-Za-z0-9]+)\"").getMatch(0);
         if (externID != null) {
             br.getPage(externID);
-            final String finallink = br.getRegex("\"stream_h264_url\":\"(http:[^<>\"\\']+)\"").getMatch(0);
+            final String finallink = br.getRegex("\"stream_h264_url\":\"(http:[^<>\"']+)\"").getMatch(0);
             if (finallink != null)
                 return ("directhttp://" + finallink.replace("\\", ""));
             else
@@ -123,7 +130,7 @@ public class NmStrm24Com extends PluginForDecrypt {
         }
         externID = new Regex(fragment, "/pl/y\\.php\\?id=([a-z0-9]+)\"").getMatch(0);
         if (externID != null) { return "http://yourupload.com/file/" + externID; }
-        externID = new Regex(fragment, "nowvideo\\.(eu|co)/embed\\.php\\?width=\\d+\\&height=\\d+\\&v=([a-z0-9]+)\\'").getMatch(1);
+        externID = new Regex(fragment, "nowvideo\\.(eu|co)/embed\\.php\\?width=\\d+\\&height=\\d+\\&v=([a-z0-9]+)'").getMatch(1);
         if (externID != null) { return "http://www.nowvideo.co/video/" + externID; }
         externID = br.getRegex("dwn\\.so/player/embed\\.php\\?v=([A-Z0-9]+)\\&width=\\d+.*?").getMatch(0);
         if (externID != null) {
@@ -144,10 +151,14 @@ public class NmStrm24Com extends PluginForDecrypt {
         externID = new Regex(fragment, "\"(http://(www\\.)?anime\\-stream24\\.tv/[^<>\"]*?)\" target=\"_blank\">Hier klicken um die Folge anzuschauen</a>").getMatch(0);
         if (externID != null) { return externID; }
         // Many directlinks or embed links are in here
-        externID = new Regex(fragment, "flashvars=\\'file=(http://[^<>\"]*?)\\&").getMatch(0);
-        if (externID != null) { return externID; }
+        externID = new Regex(fragment, "flashvars='file=(http://[^<>\"]*?)\\&").getMatch(0);
+        if (externID == null) externID = new Regex(fragment, "file: \"(http[^\"]+)").getMatch(0);
+        if (externID != null) {
+            filename = fpName + externID.substring(externID.lastIndexOf("."));
+            return externID;
+        }
         // Most links are in the iframes
-        externID = new Regex(fragment, Pattern.compile("<iframe(.*?)</iframe>", Pattern.CASE_INSENSITIVE)).getMatch(0);
+        externID = new Regex(fragment, Pattern.compile("<iframe.+(http[^\"'><]+)", Pattern.CASE_INSENSITIVE)).getMatch(0);
         if (externID != null) { return externID; }
         return null;
     }

@@ -62,24 +62,24 @@ import jd.utils.locale.JDL;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ezzfile.com" }, urls = { "https?://(www\\.)?ezzfile\\.(com|it|co\\.nz)/((vid)?embed\\-)?[a-z0-9]{12}" }, flags = { 0 })
+@HostPlugin(revision = "$Revision: 19496 $", interfaceVersion = 2, names = { "streamratio.com" }, urls = { "https?://(www\\.)?streamratio\\.com/((vid)?embed\\-)?[a-z0-9]{12}" }, flags = { 0 })
 @SuppressWarnings("deprecation")
-public class EzzFileCom extends PluginForHost {
+public class StreamRatioCom extends PluginForHost {
 
     // Site Setters
     // primary website url, take note of redirects
-    private final String               COOKIE_HOST                  = "http://ezzfile.co.nz";
+    private final String               COOKIE_HOST                  = "http://streamratio.com";
     // domain names used within download links.
-    private final String               DOMAINS                      = "(ezzfile\\.(com|it|co\\.nz))";
+    private final String               DOMAINS                      = "(streamratio\\.com)";
     private final String               PASSWORDTEXT                 = "<br><b>Passwor(d|t):</b> <input";
     private final String               MAINTENANCE                  = ">This server is in maintenance mode";
     private final String               dllinkRegex                  = "https?://(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|([\\w\\-]+\\.)?" + DOMAINS + ")(:\\d{1,5})?/(files(/(dl|download))?|d|cgi-bin/dl\\.cgi)/(\\d+/)?([a-z0-9]+/){1,4}[^\"'/<>]+";
-    private final boolean              useVidEmbed                  = false;
-    private final boolean              useAltEmbed                  = false;
+    private final boolean              useVidEmbed                  = true;
+    private final boolean              useAltEmbed                  = true;
     private final boolean              supportsHTTPS                = false;
     private final boolean              enforcesHTTPS                = false;
     private final boolean              useRUA                       = false;
-    private final boolean              useAltExpire                 = false;
+    private final boolean              useAltExpire                 = true;
     private final boolean              useAltLinkCheck              = false;
     private final boolean              skipableRecaptcha            = true;
 
@@ -90,15 +90,15 @@ public class EzzFileCom extends PluginForHost {
     // DEV NOTES
     // XfileShare Version 3.0.7.0
     // last XfileSharingProBasic compare :: 2.6.2.1
-    // mods:
     // protocol: no https
-    // captchatype: 4dignum
+    // captchatype: null
     // other: no redirects
+    // mods:
 
     private void setConstants(final Account account) {
         if (account != null && account.getBooleanProperty("free")) {
             // free account
-            chunks = -2;
+            chunks = 0;
             resumes = true;
             acctype = "Free Account";
             directlinkproperty = "freelink2";
@@ -110,7 +110,7 @@ public class EzzFileCom extends PluginForHost {
             directlinkproperty = "premlink";
         } else {
             // non account
-            chunks = -2;
+            chunks = 0;
             resumes = true;
             acctype = "Non Account";
             directlinkproperty = "freelink";
@@ -131,17 +131,17 @@ public class EzzFileCom extends PluginForHost {
     }
 
     public boolean hasAutoCaptcha() {
-        return true;
+        return false;
     }
 
     public boolean hasCaptcha(final DownloadLink downloadLink, final jd.plugins.Account acc) {
         if (acc == null) {
             /* no account, yes we can expect captcha */
-            return true;
+            return false;
         }
         if (Boolean.TRUE.equals(acc.getBooleanProperty("free"))) {
             /* free accounts also have captchas */
-            return true;
+            return false;
         }
         return false;
     }
@@ -151,7 +151,7 @@ public class EzzFileCom extends PluginForHost {
      * 
      * @category 'Experimental', Mods written July 2012 - 2013
      * */
-    public EzzFileCom(PluginWrapper wrapper) {
+    public StreamRatioCom(PluginWrapper wrapper) {
         super(wrapper);
         setConfigElements();
         // this.enablePremium(COOKIE_HOST + "/premium.html");
@@ -244,7 +244,7 @@ public class EzzFileCom extends PluginForHost {
                         // fileInfo[0] = cbr.getRegex("Download File:? ?(<[^>]+> ?)+?([^<>\"\\']+)").getMatch(1);
                         // traits from download1 page below.
                         if (inValidate(fileInfo[0])) {
-                            fileInfo[0] = cbr.getRegex("Filename:? ?(<[^>]+> ?)+?([^<>\"\\']+)").getMatch(1);
+                            fileInfo[0] = cbr.getRegex("Filename:? ?(<[^>]+> ?)+?([^<>\"']+)").getMatch(1);
                             // next two are details from sharing box
                             if (inValidate(fileInfo[0])) {
                                 fileInfo[0] = cbr.getRegex("<textarea[^\r\n]+>([^\r\n]+) - [\\d\\.]+ (KB|MB|GB)</a></textarea>").getMatch(0);
@@ -779,7 +779,8 @@ public class EzzFileCom extends PluginForHost {
                 if (inValidate(dllink)) {
                     checkErrors(downloadLink, account, true);
                     Form dlform = cbr.getFormbyProperty("name", "F1");
-                    if (dlform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    if (dlform == null)
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     else if (cbr.containsHTML(PASSWORDTEXT)) dlform = handlePassword(dlform, downloadLink);
                     sendForm(dlform);
                     checkErrors(downloadLink, account, true);
@@ -850,37 +851,37 @@ public class EzzFileCom extends PluginForHost {
     // ***************************************************************************************************** //
     // The components below doesn't require coder interaction, or configuration !
 
-    private Browser                                           cbr                          = new Browser();
+    private Browser                                           cbr                    = new Browser();
 
-    private String                                            acctype                      = null;
-    private String                                            directlinkproperty           = null;
-    private String                                            dllink                       = null;
-    private String                                            fuid                         = null;
-    private String                                            passCode                     = null;
-    private String                                            usedHost                     = null;
+    private String                                            acctype                = null;
+    private String                                            directlinkproperty     = null;
+    private String                                            dllink                 = null;
+    private String                                            fuid                   = null;
+    private String                                            passCode               = null;
+    private String                                            usedHost               = null;
 
-    private int                                               chunks                       = 1;
+    private int                                               chunks                 = 1;
 
-    private boolean                                           resumes                      = false;
-    private boolean                                           skipWaitTime                 = false;
+    private boolean                                           resumes                = false;
+    private boolean                                           skipWaitTime           = false;
 
-    private final String                                      language                     = System.getProperty("user.language");
-    private final String                                      preferHTTPS                  = "preferHTTPS";
-    private final String                                      ALLWAIT_SHORT                = JDL.L("hoster.xfilesharingprobasic.errors.waitingfordownloads", "Waiting till new downloads can be started");
-    private final String                                      MAINTENANCEUSERTEXT          = JDL.L("hoster.xfilesharingprobasic.errors.undermaintenance", "This server is under Maintenance");
+    private final String                                      language               = System.getProperty("user.language");
+    private final String                                      preferHTTPS            = "preferHTTPS";
+    private final String                                      ALLWAIT_SHORT          = JDL.L("hoster.xfilesharingprobasic.errors.waitingfordownloads", "Waiting till new downloads can be started");
+    private final String                                      MAINTENANCEUSERTEXT    = JDL.L("hoster.xfilesharingprobasic.errors.undermaintenance", "This server is under Maintenance");
 
-    private static AtomicInteger                              maxFree                      = new AtomicInteger(1);
-    private static AtomicInteger                              maxPrem                      = new AtomicInteger(1);
+    private static AtomicInteger                              maxFree                = new AtomicInteger(1);
+    private static AtomicInteger                              maxPrem                = new AtomicInteger(1);
     // connections you can make to a given 'host' file server, this assumes each file server is setup identically.
-    private static AtomicInteger                              maxNonAccSimDlPerHost        = new AtomicInteger(20);
-    private static AtomicInteger                              maxFreeAccSimDlPerHost       = new AtomicInteger(20);
-    private static AtomicInteger                              maxPremAccSimDlPerHost       = new AtomicInteger(20);
+    private static AtomicInteger                              maxNonAccSimDlPerHost  = new AtomicInteger(20);
+    private static AtomicInteger                              maxFreeAccSimDlPerHost = new AtomicInteger(20);
+    private static AtomicInteger                              maxPremAccSimDlPerHost = new AtomicInteger(20);
 
-    private static HashMap<Account, HashMap<String, Integer>> hostMap                      = new HashMap<Account, HashMap<String, Integer>>();
+    private static HashMap<Account, HashMap<String, Integer>> hostMap                = new HashMap<Account, HashMap<String, Integer>>();
 
-    private static Object                                     LOCK                         = new Object();
+    private static Object                                     LOCK                   = new Object();
 
-    private static StringContainer                            agent                        = new StringContainer();
+    private static StringContainer                            agent                  = new StringContainer();
 
     public static class StringContainer {
         public String string = null;
@@ -1551,7 +1552,6 @@ public class EzzFileCom extends PluginForHost {
         ret.setMethod(form.getMethod());
         return ret;
     }
-
 
     /**
      * This allows backward compatibility for design flaw in setHtmlCode(), It injects updated html into all browsers that share the same

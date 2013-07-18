@@ -94,7 +94,7 @@ public class RyuShareCom extends PluginForHost {
     private static final AtomicInteger totalMaxSimultanFreeDownload = new AtomicInteger(20);
 
     // DEV NOTES
-    // XfileShare Version 3.0.6.9
+    // XfileShare Version 3.0.7.0
     // last XfileSharingProBasic compare :: 2.6.2.1
     // protocol: no https
     // captchatype: keycaptcha
@@ -326,11 +326,17 @@ public class RyuShareCom extends PluginForHost {
             final Browser obrc = cbr.cloneBrowser();
             if (useVidEmbed) {
                 getPage("/vidembed-" + fuid);
-            } else if (useAltEmbed) {
+                getDllink();
+                if (inValidate(dllink) && useAltEmbed) {
+                    // this will set referrer info back
+                    br = obr.cloneBrowser();
+                }
+            }
+            if (inValidate(dllink) && useAltEmbed) {
                 // alternative embed format
                 getPage("/embed-" + fuid + ".html");
+                getDllink();
             }
-            getDllink();
             if (inValidate(dllink)) {
                 logger.warning("Failed to find 'embed dllink', trying normal download method.");
                 br = obr;

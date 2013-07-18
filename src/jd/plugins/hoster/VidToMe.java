@@ -88,7 +88,7 @@ public class VidToMe extends PluginForHost {
     private static final AtomicInteger totalMaxSimultanFreeDownload = new AtomicInteger(20);
 
     // DEV NOTES
-    // XfileShare Version 3.0.6.9
+    // XfileShare Version 3.0.7.0
     // last XfileSharingProBasic compare :: 2.6.2.1
     // mods: quality selection
     // protocol: no https

@@ -42,6 +42,10 @@ public class MangaReaderNet extends PluginForDecrypt {
         final String parameter = param.toString();
         br.setFollowRedirects(true);
         br.getPage(parameter);
+        if (br.containsHTML("> is not published yet\\. Once <")) {
+            logger.info("Non published release: " + parameter);
+            return decryptedLinks;
+        }
         final String maxPage = br.getRegex("</select> of (\\d+)</div>").getMatch(0);
         String fpName = br.getRegex("<h1>([^<>\"]*?)</h1>").getMatch(0);
         if (fpName == null || maxPage == null) {
