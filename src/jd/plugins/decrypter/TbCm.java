@@ -735,8 +735,8 @@ public class TbCm extends PluginForDecrypt {
                 if (ytID != null) ytID = ytID.toLowerCase(Locale.ENGLISH);
 
                 /*
-                 * We match against users resolution and file encoding type. This allows us to use their upper and lower limits. It will return multiple results
-                 * if they are in the same quality rating
+                 * We match against users resolution and file encoding type. This allows us to use their upper and lower limits. It will
+                 * return multiple results if they are in the same quality rating
                  */
                 if (best) {
                     final HashMap<Integer, String[]> bestFound = new HashMap<Integer, String[]>();
@@ -1236,6 +1236,15 @@ public class TbCm extends PluginForDecrypt {
             sb.append(s.substring(43, 79));
             sb.append(s.charAt(91));
             sb.append(s.substring(80, 83));
+        } else if (s.length() == 90) {
+            sb.append(s.charAt(25));
+            sb.append(s.substring(3, 25));
+            sb.append(s.charAt(2));
+            sb.append(s.substring(26, 40));
+            sb.append(s.charAt(77));
+            sb.append(s.substring(41, 77));
+            sb.append(s.charAt(89));
+            sb.append(s.substring(78, 81));
         } else if (s.length() == 88) {
             sb.append(s.charAt(48));
             sb.append(new StringBuilder(s.substring(68, 82)).reverse());
