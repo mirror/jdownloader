@@ -1,7 +1,5 @@
 package org.jdownloader.api.toolbar;
 
-import java.util.ArrayList;
-
 import org.appwork.storage.Storable;
 
 public class LinkCheckResult implements Storable {

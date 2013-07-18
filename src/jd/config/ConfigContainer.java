@@ -16,6 +16,7 @@
 
 package jd.config;
 
+import java.awt.event.ActionListener;
 import java.io.Serializable;
 import java.util.ArrayList;
 

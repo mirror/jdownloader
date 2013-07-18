@@ -2,7 +2,6 @@ package org.jdownloader.gui.views.downloads.table;
 
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.util.ArrayList;
 
 import javax.swing.ImageIcon;
 import javax.swing.JComponent;

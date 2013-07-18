@@ -20,7 +20,6 @@ import javax.swing.JRootPane;
 import javax.swing.border.Border;
 
 import jd.controlling.IOEQ;
-import jd.gui.swing.laf.LookAndFeelController;
 
 import org.appwork.scheduler.DelayedRunnable;
 import org.appwork.storage.config.JsonConfig;

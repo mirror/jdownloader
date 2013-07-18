@@ -9,7 +9,6 @@ import javax.swing.JButton;
 import javax.swing.JMenuItem;
 import javax.swing.JPopupMenu;
 
-
 import org.appwork.utils.swing.dialog.DefaultButtonPanel;
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.gui.laf.jddefault.LAFOptions;

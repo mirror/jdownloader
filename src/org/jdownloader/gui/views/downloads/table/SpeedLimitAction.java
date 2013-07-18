@@ -1,7 +1,6 @@
 package org.jdownloader.gui.views.downloads.table;
 
 import java.awt.event.ActionEvent;
-import java.util.ArrayList;
 
 import jd.controlling.packagecontroller.AbstractNode;
 

@@ -1,7 +1,5 @@
 package jd.controlling.reconnect;
 
-import java.util.ArrayList;
-
 import javax.swing.ImageIcon;
 import javax.swing.JComponent;
 

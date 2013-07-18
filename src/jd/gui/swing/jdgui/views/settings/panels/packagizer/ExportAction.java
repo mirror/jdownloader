@@ -3,7 +3,6 @@ package jd.gui.swing.jdgui.views.settings.panels.packagizer;
 import java.awt.event.ActionEvent;
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
 
 import javax.swing.filechooser.FileFilter;
 

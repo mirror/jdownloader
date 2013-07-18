@@ -22,7 +22,6 @@ import jd.controlling.packagecontroller.AbstractPackageChildrenNode;
 import jd.controlling.packagecontroller.AbstractPackageNode;
 import jd.controlling.packagecontroller.PackageController;
 import jd.gui.swing.jdgui.BasicJDTable;
-import jd.gui.swing.laf.LookAndFeelController;
 
 import org.appwork.exceptions.WTFException;
 import org.appwork.swing.exttable.ExtColumn;

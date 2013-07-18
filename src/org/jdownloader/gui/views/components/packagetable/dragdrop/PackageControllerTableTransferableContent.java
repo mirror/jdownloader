@@ -1,7 +1,5 @@
 package org.jdownloader.gui.views.components.packagetable.dragdrop;
 
-import java.util.ArrayList;
-
 import jd.controlling.packagecontroller.AbstractPackageChildrenNode;
 import jd.controlling.packagecontroller.AbstractPackageNode;
 

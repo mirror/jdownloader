@@ -23,6 +23,7 @@ import javax.swing.JFrame;
 
 import jd.gui.swing.SwingGui;
 
+import org.appwork.swing.ExtJFrame;
 import org.appwork.utils.Application;
 import org.jdownloader.images.NewTheme;
 
@@ -31,7 +32,7 @@ import org.jdownloader.images.NewTheme;
  * 
  * @author Coalado
  */
-public class DummyFrame extends JFrame {
+public class DummyFrame extends ExtJFrame {
 
     public static JFrame PARENT;
 

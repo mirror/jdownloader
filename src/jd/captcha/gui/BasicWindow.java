@@ -24,11 +24,11 @@ import java.awt.Image;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 
-import javax.swing.JFrame;
 import javax.swing.SwingUtilities;
 
 import jd.captcha.utils.Utilities;
 
+import org.appwork.swing.ExtJFrame;
 import org.appwork.utils.swing.WindowManager;
 import org.appwork.utils.swing.WindowManager.FrameState;
 
@@ -37,7 +37,7 @@ import org.appwork.utils.swing.WindowManager.FrameState;
  * 
  * @author JD-Team
  */
-public class BasicWindow extends JFrame {
+public class BasicWindow extends ExtJFrame {
 
     private static final long serialVersionUID = 8474181150357563979L;
 

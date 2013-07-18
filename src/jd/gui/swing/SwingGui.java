@@ -30,6 +30,7 @@ import jd.gui.UserIF;
 import jd.gui.swing.jdgui.interfaces.View;
 
 import org.appwork.app.gui.ActiveDialogException;
+import org.appwork.swing.ExtJFrame;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging.Log;
 import org.appwork.utils.swing.WindowManager;
@@ -41,7 +42,7 @@ import org.jdownloader.images.NewTheme;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
 
 public abstract class SwingGui extends UserIF implements WindowListener, WindowStateListener, WindowFocusListener {
-    protected JFrame mainFrame;
+    protected ExtJFrame mainFrame;
 
     /**
      * Invoked when a window has been opened.
@@ -111,7 +112,7 @@ public abstract class SwingGui extends UserIF implements WindowListener, WindowS
     private volatile boolean dialogShowing = false;
 
     public SwingGui(final String string) {
-        mainFrame = new JFrame(string) {
+        mainFrame = new ExtJFrame(string) {
 
             public void dispose() {
 

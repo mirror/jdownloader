@@ -1,7 +1,6 @@
 package jd.gui.swing.jdgui.views.settings.panels.basicauthentication;
 
 import java.awt.event.ActionEvent;
-import java.util.ArrayList;
 
 import jd.controlling.IOEQ;
 import jd.controlling.authentication.AuthenticationController;

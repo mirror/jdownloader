@@ -1,7 +1,6 @@
 package org.jdownloader.gui.views.linkgrabber.quickfilter;
 
 import java.awt.event.ActionEvent;
-import java.util.ArrayList;
 
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.gui.translate._GUI;

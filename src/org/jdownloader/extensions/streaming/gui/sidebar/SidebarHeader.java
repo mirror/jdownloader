@@ -4,8 +4,6 @@ import javax.swing.BorderFactory;
 import javax.swing.Box;
 import javax.swing.JLabel;
 
-import jd.gui.swing.laf.LookAndFeelController;
-
 import org.appwork.swing.MigPanel;
 import org.appwork.utils.swing.SwingUtils;
 import org.jdownloader.extensions.streaming.T;

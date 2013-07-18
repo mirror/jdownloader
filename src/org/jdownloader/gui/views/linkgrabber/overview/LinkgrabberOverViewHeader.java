@@ -14,8 +14,6 @@ import javax.swing.JLabel;
 import javax.swing.JPopupMenu;
 import javax.swing.JSeparator;
 
-import jd.gui.swing.laf.LookAndFeelController;
-
 import org.appwork.swing.MigPanel;
 import org.appwork.swing.components.ExtButton;
 import org.appwork.utils.ImageProvider.ImageProvider;

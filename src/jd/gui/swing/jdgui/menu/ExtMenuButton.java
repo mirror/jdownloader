@@ -14,7 +14,6 @@ import javax.swing.plaf.synth.SynthConstants;
 import javax.swing.plaf.synth.SynthContext;
 import javax.swing.plaf.synth.SynthStyle;
 
-
 import org.appwork.swing.components.ExtButton;
 import org.appwork.utils.logging2.LogSource;
 import org.jdownloader.actions.AppAction;

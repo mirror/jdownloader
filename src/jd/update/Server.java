@@ -17,7 +17,6 @@
 package jd.update;
 
 import java.io.Serializable;
-import java.util.ArrayList;
 
 public class Server implements Serializable {
 

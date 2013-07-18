@@ -1,7 +1,6 @@
 package jd.controlling.reconnect.pluginsinc.upnp;
 
 import java.awt.event.ActionEvent;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 

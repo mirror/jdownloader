@@ -20,7 +20,6 @@ import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledPackage;
 import jd.controlling.packagecontroller.AbstractNode;
 import jd.gui.swing.jdgui.BasicJDTable;
-import jd.gui.swing.laf.LookAndFeelController;
 
 import org.appwork.scheduler.DelayedRunnable;
 import org.appwork.storage.config.ValidationException;

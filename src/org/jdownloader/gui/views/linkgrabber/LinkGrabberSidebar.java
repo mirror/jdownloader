@@ -2,7 +2,6 @@ package org.jdownloader.gui.views.linkgrabber;
 
 import javax.swing.Box;
 
-
 import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.events.GenericConfigEventListener;
 import org.appwork.storage.config.handler.KeyHandler;

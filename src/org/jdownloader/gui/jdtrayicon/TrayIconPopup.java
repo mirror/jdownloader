@@ -38,7 +38,6 @@ import javax.swing.BorderFactory;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JComponent;
-import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.JSeparator;
 import javax.swing.JToggleButton;
@@ -51,6 +50,7 @@ import jd.gui.swing.jdgui.components.toolbar.actions.ExitToolbarAction;
 import jd.utils.JDUtilities;
 import net.miginfocom.swing.MigLayout;
 
+import org.appwork.swing.ExtJFrame;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.swing.EDTHelper;
 import org.jdownloader.actions.AppAction;
@@ -67,7 +67,7 @@ import org.jdownloader.images.NewTheme;
 
 //final, because the constructor calls Thread.start(),
 //see http://findbugs.sourceforge.net/bugDescriptions.html#SC_START_IN_CTOR
-public final class TrayIconPopup extends JFrame implements MouseListener {
+public final class TrayIconPopup extends ExtJFrame implements MouseListener {
 
     private static final long serialVersionUID  = 2623190748929934409L;
 

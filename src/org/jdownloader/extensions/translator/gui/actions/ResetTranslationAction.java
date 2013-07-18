@@ -1,7 +1,6 @@
 package org.jdownloader.extensions.translator.gui.actions;
 
 import java.awt.event.ActionEvent;
-import java.util.ArrayList;
 
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.extensions.translator.TranslateEntry;

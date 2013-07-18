@@ -3,7 +3,6 @@ package org.jdownloader.extensions.streaming.upnp;
 import java.io.IOException;
 import java.util.logging.LogManager;
 
-
 import org.fourthline.cling.UpnpServiceImpl;
 import org.fourthline.cling.binding.annotations.AnnotationLocalServiceBinder;
 import org.fourthline.cling.model.DefaultServiceManager;

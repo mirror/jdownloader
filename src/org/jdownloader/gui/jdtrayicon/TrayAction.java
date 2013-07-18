@@ -4,7 +4,6 @@ import java.awt.event.ActionEvent;
 
 import javax.swing.AbstractAction;
 
-
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.gui.toolbar.action.AbstractToolbarToggleAction;
 

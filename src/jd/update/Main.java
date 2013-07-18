@@ -49,6 +49,7 @@ import jd.nutils.JDHash;
 import jd.nutils.io.JDIO;
 import jd.utils.JDUtilities;
 
+import org.appwork.swing.ExtJFrame;
 import org.appwork.utils.swing.WindowManager;
 import org.appwork.utils.swing.WindowManager.FrameState;
 
@@ -62,7 +63,7 @@ public class Main {
     private static int                   REM         = GridBagConstraints.REMAINDER;
     private static JSonWrapper           guiConfig;
     private static StringBuilder         log;
-    private static JFrame                frame;
+    private static ExtJFrame             frame;
     private static JTextArea             logWindow;
     public static java.util.List<Server> clonePrefix = new ArrayList<Server>();
     public static boolean                clone       = false;
@@ -442,7 +443,7 @@ public class Main {
             }
         }
 
-        frame = new JFrame();
+        frame = new ExtJFrame();
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setTitle("JD Update");
         frame.setLayout(new GridBagLayout());
