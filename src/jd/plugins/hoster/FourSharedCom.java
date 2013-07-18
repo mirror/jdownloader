@@ -143,7 +143,7 @@ public class FourSharedCom extends PluginForHost {
     private String getDirectDownloadlink() {
         String url = br.getRegex("size=\"tall\" annotation=\"inline\" width=\"200\" count=\"false\"[\t\n\r ]+href=\"(http://[^<>\"\\']+)\"").getMatch(0);
         if (url == null) url = br.getRegex("<a href=\"(http://[^<>\"\\']+)\"  class=\"dbtn nt gaClick\" data\\-element").getMatch(0);
-        if (url == null) url = br.getRegex("(http://dc\\d+\\.4shared\\.com/download/[^<>\"']+)").getMatch(0);
+        if (url == null) url = br.getRegex("value=\"(http://dc\\d+\\.4shared\\.com/download/[^<>\"']+)").getMatch(0);
         return url;
     }
 
