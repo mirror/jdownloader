@@ -63,7 +63,7 @@ public class NkPlGallery extends PluginForDecrypt {
     @Override
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, final ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final String parameter = param.toString().replaceAll("%3D|%3d", "=").replaceAll("%3F|%3f", "?");
+        final String parameter = param.toString().replaceAll("%3D|%3d", "=").replaceAll("%3F|%3f", "?").replace("/profile/", "/#profile/");
         br.setCookiesExclusive(true);
         synchronized (LOCK) {
             if (!getUserLogin()) {
