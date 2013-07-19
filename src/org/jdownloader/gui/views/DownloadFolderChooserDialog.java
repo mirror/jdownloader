@@ -163,9 +163,13 @@ public class DownloadFolderChooserDialog extends ExtFileChooserDialog {
      */
     public static boolean isDownloadFolderValid(File file) {
         if (file == null || file.isFile()) return false;
-        if (file.isDirectory()) return true;
-        File parent = file.getParentFile();
-        if (parent != null && parent.isDirectory() && parent.exists()) return true;
+
+        if (!file.exists()) {
+            switch (CrossSystem.getOSFamily()) {
+
+            }
+
+        }
         return false;
     }
 

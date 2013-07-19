@@ -118,13 +118,23 @@ public class FolderChooser extends PathChooser implements SettingsComponent {
 
     public String getText() {
         File file = getFile();
-        if (file.getParentFile() != null && !file.getParentFile().exists() && !file.exists()) {
-            DownloadFolderChooserDialog.handleNonExistingFolders(file);
+        String path = file.getAbsolutePath();
+        int index = path.indexOf("<jd:");
+        if (index >= 0) {
+            path = path.substring(0, index);
+            File checkPath = new File(path);
+            if (!checkPath.exists()) {
+                DownloadFolderChooserDialog.handleNonExistingFolders(file);
+            }
+        } else {
+            if (file.getParentFile() != null && !file.getParentFile().exists() && !file.exists()) {
+                DownloadFolderChooserDialog.handleNonExistingFolders(file);
+            }
         }
+
         if (!DownloadFolderChooserDialog.isDownloadFolderValid(file)) return null;
         DownloadPath.saveList(file.getAbsolutePath());
 
         return file.getAbsolutePath();
     }
-
 }

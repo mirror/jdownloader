@@ -38,6 +38,7 @@ import org.appwork.uio.UIOManager;
 import org.appwork.utils.Application;
 import org.appwork.utils.IO;
 import org.appwork.utils.os.CrossSystem;
+import org.appwork.utils.os.CrossSystem.OperatingSystem;
 import org.appwork.utils.processes.ProcessBuilderFactory;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.jdownloader.controlling.contextmenu.ActionData;
@@ -84,17 +85,17 @@ public class ShutdownExtension extends AbstractExtension<ShutdownConfig, Shutdow
         LogController.CL().info("shutdown");
         DownloadWatchDog.getInstance().stopDownloads();
         LinkCollector.getInstance().abort();
-        int id = 0;
-        switch (id = CrossSystem.getID()) {
-        case CrossSystem.OS_WINDOWS_2003:
-        case CrossSystem.OS_WINDOWS_VISTA:
-        case CrossSystem.OS_WINDOWS_XP:
-        case CrossSystem.OS_WINDOWS_7:
-        case CrossSystem.OS_WINDOWS_8:
+
+        switch (CrossSystem.OS) {
+        case WINDOWS_2003:
+        case WINDOWS_VISTA:
+        case WINDOWS_XP:
+        case WINDOWS_7:
+        case WINDOWS_8:
             /* modern windows versions */
-        case CrossSystem.OS_WINDOWS_2000:
-        case CrossSystem.OS_WINDOWS_NT:
-        case CrossSystem.OS_WINDOWS_SERVER_2008:
+        case WINDOWS_2000:
+        case WINDOWS_NT:
+        case WINDOWS_SERVER_2008:
             /* not so modern windows versions */
             if (getSettings().isForceShutdownEnabled()) {
                 /* force shutdown */
@@ -121,7 +122,7 @@ public class ShutdownExtension extends AbstractExtension<ShutdownConfig, Shutdow
                     logger.log(e);
                 }
             }
-            if (id == CrossSystem.OS_WINDOWS_2000 || id == CrossSystem.OS_WINDOWS_NT) {
+            if (CrossSystem.OS == OperatingSystem.WINDOWS_2000 || CrossSystem.OS == OperatingSystem.WINDOWS_NT) {
                 /* also try extra methods for windows2000 and nt */
                 try {
 
@@ -139,7 +140,7 @@ public class ShutdownExtension extends AbstractExtension<ShutdownConfig, Shutdow
                 }
             }
             break;
-        case CrossSystem.OS_WINDOWS_OTHER:
+        case WINDOWS_OTHERS:
             /* older windows versions */
             try {
                 JDUtilities.runCommand("RUNDLL32.EXE", new String[] { "user,ExitWindows" }, null, 0);
@@ -152,7 +153,7 @@ public class ShutdownExtension extends AbstractExtension<ShutdownConfig, Shutdow
                 logger.log(e);
             }
             break;
-        case CrossSystem.OS_MAC_OTHER:
+        case MAC:
             /* mac os */
             if (getSettings().isForceShutdownEnabled()) {
                 /* force shutdown */
@@ -215,15 +216,15 @@ public class ShutdownExtension extends AbstractExtension<ShutdownConfig, Shutdow
     }
 
     private void hibernate() {
-        switch (CrossSystem.getID()) {
-        case CrossSystem.OS_WINDOWS_2003:
-        case CrossSystem.OS_WINDOWS_VISTA:
-        case CrossSystem.OS_WINDOWS_XP:
-        case CrossSystem.OS_WINDOWS_7:
-        case CrossSystem.OS_WINDOWS_8:
+        switch (CrossSystem.OS) {
+        case WINDOWS_2003:
+        case WINDOWS_VISTA:
+        case WINDOWS_XP:
+        case WINDOWS_7:
+        case WINDOWS_8:
             /* modern windows versions */
-        case CrossSystem.OS_WINDOWS_2000:
-        case CrossSystem.OS_WINDOWS_NT:
+        case WINDOWS_2000:
+        case WINDOWS_NT:
             /* not so modern windows versions */
             prepareHibernateOrStandby();
             try {
@@ -243,12 +244,12 @@ public class ShutdownExtension extends AbstractExtension<ShutdownConfig, Shutdow
                 }
             }
             break;
-        case CrossSystem.OS_WINDOWS_OTHER:
+        case WINDOWS_OTHERS:
             /* older windows versions */
             LogController.CL().info("no hibernate support, use shutdown");
             shutdown();
             break;
-        case CrossSystem.OS_MAC_OTHER:
+        case MAC:
             /* mac os */
             prepareHibernateOrStandby();
             LogController.CL().info("no hibernate support, use shutdown");
@@ -278,15 +279,15 @@ public class ShutdownExtension extends AbstractExtension<ShutdownConfig, Shutdow
     }
 
     private void standby() {
-        switch (CrossSystem.getID()) {
-        case CrossSystem.OS_WINDOWS_2003:
-        case CrossSystem.OS_WINDOWS_VISTA:
-        case CrossSystem.OS_WINDOWS_XP:
-        case CrossSystem.OS_WINDOWS_7:
-        case CrossSystem.OS_WINDOWS_8:
+        switch (CrossSystem.OS) {
+        case WINDOWS_2003:
+        case WINDOWS_VISTA:
+        case WINDOWS_XP:
+        case WINDOWS_7:
+        case WINDOWS_8:
             /* modern windows versions */
-        case CrossSystem.OS_WINDOWS_2000:
-        case CrossSystem.OS_WINDOWS_NT:
+        case WINDOWS_2000:
+        case WINDOWS_NT:
             /* not so modern windows versions */
             prepareHibernateOrStandby();
             try {
@@ -306,12 +307,12 @@ public class ShutdownExtension extends AbstractExtension<ShutdownConfig, Shutdow
                 }
             }
             break;
-        case CrossSystem.OS_WINDOWS_OTHER:
+        case WINDOWS_OTHERS:
             /* older windows versions */
             LogController.CL().info("no standby support, use shutdown");
             shutdown();
             break;
-        case CrossSystem.OS_MAC_OTHER:
+        case MAC:
             /* mac os */
             prepareHibernateOrStandby();
             try {
