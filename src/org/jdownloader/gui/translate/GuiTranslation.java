@@ -2836,4 +2836,16 @@ public interface GuiTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Load Proxy Setup" })
     String LoadProxyProfileAction_actionPerformed_();
+
+    @Default(lngs = { "en" }, values = { "Window Management" })
+    String GUISettings_GUISettings_object_frames();
+
+    @Default(lngs = { "en" }, values = { "Ever got annoyed by Dialog Popups, Windows coming to front, Captcha Dialogs that steal the focus from other Windows or anything else Window or focus related? Yes? We're sorry! Please take the following options as our apology." })
+    String GUISettings_GUISettings_object_frames_description();
+
+    @Default(lngs = { "en" }, values = { "Silent Mode" })
+    String GUISettings_GUISettings_sielntMode();
+
+    @Default(lngs = { "en" }, values = { "If the Silentmode is enabled, you will not get any Popup, Dialogs, Captcharequests or other notifications unless JDownloader is your active Window." })
+    String GUISettings_GUISettings_sielntMode_description();
 }

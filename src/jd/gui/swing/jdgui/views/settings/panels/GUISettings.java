@@ -33,6 +33,7 @@ import javax.swing.JList;
 
 import jd.gui.UserIF;
 import jd.gui.swing.jdgui.JDGui;
+import jd.gui.swing.jdgui.views.settings.components.Checkbox;
 import jd.gui.swing.jdgui.views.settings.components.ComboBox;
 import jd.gui.swing.jdgui.views.settings.components.SettingsButton;
 
@@ -46,6 +47,7 @@ import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.jdownloader.actions.AppAction;
+import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.jdtrayicon.CFG_TRAY_CONFIG;
 import org.jdownloader.gui.jdtrayicon.TrayIconMenuManager;
 import org.jdownloader.gui.mainmenu.MainMenuManager;
@@ -56,6 +58,7 @@ import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.downloads.contextmenumanager.DownloadListContextMenuManager;
 import org.jdownloader.gui.views.linkgrabber.contextmenu.LinkgrabberContextMenuManager;
 import org.jdownloader.images.NewTheme;
+import org.jdownloader.settings.staticreferences.CFG_SILENTMODE;
 import org.jdownloader.translate.JdownloaderTranslation;
 import org.jdownloader.updatev2.RestartController;
 import org.jdownloader.updatev2.SmartRlyRestartRequest;
@@ -289,9 +292,12 @@ public class GUISettings extends AbstractConfigPanel {
         this.addPair("", null, toolbarManager);
         this.addPair("", null, mainMenuManager);
         this.addPair("", null, trayMenuManager);
-
+        this.addHeader(_GUI._.GUISettings_GUISettings_object_frames(), NewTheme.I().getIcon(IconKey.ICON_DESKTOP, 32));
+        this.addDescription(_GUI._.GUISettings_GUISettings_object_frames_description());
         // this.addHeader(_GUI._.GUISettings_GUISettings_object_accessability(), NewTheme.I().getIcon("barrierfreesettings", 32));
         // this.addDescription(_JDT._.gui_settings_barrierfree_description());
+        this.addDescriptionPlain(_GUI._.GUISettings_GUISettings_sielntMode_description());
+        addPair(_GUI._.GUISettings_GUISettings_sielntMode(), null, new Checkbox(CFG_SILENTMODE.MANUAL_ENABLED));
 
     }
 
