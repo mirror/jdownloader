@@ -27,7 +27,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "tweetmymixtape.com", "tweetmysong.com" }, urls = { "^http://(www\\.)?tweetmymixtape\\.com/(?i)[a-z0-9]{6}$", "^http://(www\\.)?tweetmysong\\.com/(?i)[a-z0-9]{6}$" }, flags = { 0, 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "tweetmymixtape.com", "tweetmysong.com" }, urls = { "^http://(www\\.)?tweetmymixtape\\.com/(?i-)[a-z0-9]{6}$", "^http://(www\\.)?tweetmysong\\.com/(?i-)[a-z0-9]{6}$" }, flags = { 0, 0 })
 public class TweetMyMixTapeCom extends PluginForHost {
 
     public TweetMyMixTapeCom(PluginWrapper wrapper) {
@@ -69,9 +69,9 @@ public class TweetMyMixTapeCom extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
-        br.setFollowRedirects(false);
+        br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
-        if (br.getURL().contains("tweetmymixtape.com/Song-Removed.htm") || br.containsHTML("(>Default Page Title<|>This song was removed by us or the artist|>Song Removed\\!<|>You will redirected to the homepage in|>If you are not redirected,)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.getURL().contains("/Song-Removed.htm") || br.containsHTML("(>Default Page Title<|>This song was removed by us or the artist|>Song Removed\\!<|>You will redirected to the homepage in|>If you are not redirected,)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("src=\"/frontpages/images/leftside\\.png\" alt=\"\" /><h1>(.*?)</h1>").getMatch(0);
         if (filename == null) {
             filename = br.getRegex("<meta property=\"og:title\" content=\"(.*?)\" />").getMatch(0);
