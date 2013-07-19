@@ -17,10 +17,12 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
+import java.util.Random;
 
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.controlling.ProgressController;
+import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
@@ -34,8 +36,6 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
-import org.appwork.utils.formatter.SizeFormatter;
-
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "4shared.com" }, urls = { "https?://(www\\.)?4shared(\\-china)?\\.com/(dir|folder|minifolder)/[^\"' /]+(/[^\"' ]+\\?sID=[a-zA-z0-9]{16})?" }, flags = { 0 })
 public class FrShrdFldr extends PluginForDecrypt {
 
@@ -43,21 +43,28 @@ public class FrShrdFldr extends PluginForDecrypt {
         super(wrapper);
     }
 
+    private String                  sid            = null;
+    private String                  host           = null;
+    private String                  uid            = null;
+    private String                  parameter      = null;
+    private String                  pass           = null;
+    private Browser                 br2            = new Browser();
+    private ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+
     /**
      * TODO: Implement API: http://www.4shared.com/developer/ 19.12.12: Their support never responded so we don't know how to use the API...
      * */
     @Override
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, final ProgressController progress) throws Exception {
-        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        String uid = new Regex(param.toString(), "\\.com/(dir|folder|minifolder)/([^/#]+)").getMatch(1);
-        String parameter = new Regex(param.toString(), "(https?://(www\\.)?4shared(\\-china)?\\.com/)").getMatch(0);
+        host = new Regex(param.toString(), "(https?://[^/]+)").getMatch(0);
+        uid = new Regex(param.toString(), "\\.com/(dir|folder|minifolder)/([^/#]+)").getMatch(1);
+        parameter = new Regex(param.toString(), "(https?://(www\\.)?4shared(\\-china)?\\.com/)").getMatch(0);
         parameter = parameter + "folder/" + uid;
         br.setFollowRedirects(true);
         try {
             br.setCookie(this.getHost(), "4langcookie", "en");
         } catch (final Throwable e) {
         }
-        String pass = null;
 
         // check the folder/ page for password stuff and validity of url
         br.getPage(parameter);
@@ -99,77 +106,80 @@ public class FrShrdFldr extends PluginForDecrypt {
         if (fpName == null) fpName = br.getRegex("<h1 id=\"folderNameText\">(.*?)[\r\n\t ]+<h1>").getMatch(0);
         if (fpName == null) fpName = "4Shared - Folder";
 
-        FilePackage fp = FilePackage.getInstance();
-        fp.setName(Encoding.htmlDecode(fpName.trim()));
-        int currentFirstLink = 0;
-        String[] filter = null;
-        do {
-            // get minifolder page, contains all files and subfolders in one page
-            br.getPage(parameter.replace(".com/folder", ".com/minifolder") + "?firstFileToShow=" + currentFirstLink);
+        sid = br.getRegex("sId:'([a-zA-Z0-9]+)',").getMatch(0);
+        if (sid == null) sid = br.getRegex("<input type=\"hidden\" name=\"sId\" value=\"([a-zA-Z0-9]+)\"").getMatch(0);
+        if (sid == null) return null;
 
-            filter = br.getRegex("<tr valign=\"top\">[\r\n\t ]+<td width=\"\\d+\"(.*?)</td>[\r\n\t ]+</tr>").getColumn(0);
-            // different layouts/displays based on how many files within folder?
-            if (filter != null && filter.length == 0) filter = br.getRegex("(<a class=\"miniFolderItem\".*?</a>)").getColumn(0);
-            if (filter == null) {
-                logger.warning("Couldn't filter /minifolder/ page!");
-                if (decryptedLinks.size() > 0) {
-                    // might be caused because of filter.lenght = 99
-                    logger.warning("Possible empty page");
-                    break;
-                } else {
-                    logger.warning("Possible error");
-                    return null;
-                }
-            }
-            if (filter != null && filter.length > 0) {
-                for (final String entry : filter) {
-                    // sync folders share same uid but have ?sID=UID at the end, but this is done by JS from the main /folder/uid page...
-                    String subDir = new Regex(entry, "\"(https?://(www\\.)?4shared(\\-china)?\\.com/(dir|folder)/[^\"' ]+/[^\"' ]+(\\?sID=[a-zA-z0-9]{16})?)\"").getMatch(0);
-                    // prevent the UID from showing up in another url format structure
-                    if (subDir != null) {
-                        if (subDir.contains("?sID=") || !new Regex(subDir, "\\.com/(folder|dir)/([^/]+)").getMatch(1).equals(uid)) {
-                            decryptedLinks.add(createDownloadlink(subDir));
-                        }
-                    } else {
-                        final String dllink = new Regex(entry, "\"(http.*?4shared(\\-china)?\\.com/(?!folder/|dir/)[^\"]+\\.html)").getMatch(0);
-                        if (dllink == null) {
-                            // logger.warning("Couldn't find dllink!");
-                            continue;
-                        }
-                        final DownloadLink dlink = createDownloadlink(dllink.replace("https", "http"));
-                        if (pass != null && pass.length() != 0) {
-                            dlink.setProperty("pass", pass);
-                        }
-                        String fileName = new Regex(entry, "[^\\,]+, [\\d,]+ [^\"]+\">([^\"']+)</a>").getMatch(0);
-                        // minifolder layout
-                        if (fileName == null) fileName = new Regex(entry, "\"itemName\">(.*?)</div>").getMatch(0);
+        parsePage("0");
+        parseNextPage();
 
-                        final String fileSize = new Regex(entry, "[^\\,]+, ([\\d,]+ [^\"]+)").getMatch(0);
-
-                        if (fileName != null) {
-                            fileName = fileName.replace("<wbr>", "");
-                            dlink.setName(Encoding.htmlDecode(fileName));
-                        }
-                        if (fileSize != null) dlink.setDownloadSize(SizeFormatter.getSize(fileSize.replace(",", "")));
-                        dlink.setAvailable(true);
-                        fp.add(dlink);
-                        decryptedLinks.add(dlink);
-                    }
-                }
-            }
-
-            if (currentFirstLink >= 10000) {
-                logger.info("Fail safe triggered, quitting...");
-                break;
-            }
-
-            currentFirstLink += 100;
-            // they only show 99 results on the first page now.. 11/02/2013
-        } while (filter != null && (filter.length == 100 | filter.length == 99));
         if (decryptedLinks.size() == 0) {
             logger.warning("Possible empty folder, or plugin out of date for link: " + parameter);
         }
+
+        FilePackage fp = FilePackage.getInstance();
+        fp.setName(Encoding.htmlDecode(fpName.trim()));
+        fp.addLinks(decryptedLinks);
+
         return decryptedLinks;
+    }
+
+    private void parsePage(final String offset) throws Exception {
+        br2 = br.cloneBrowser();
+        br2.getHeaders().put("Accept", "text/html, */*; q=0.01");
+        br2.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+
+        String ran = Long.toString(new Random().nextLong()).substring(1, 11);
+        br2.getPage(host + "/pageDownload1/folderContent.jsp?ajax=true&sId=" + sid + "&firstFileToShow=" + offset + "&rnd=" + ran);
+
+        String[] filter = br2.getRegex("class=\"fnameCont\">(.*?)</td>").getColumn(0);
+        if (filter == null || filter.length == 0) {
+            logger.warning("Couldn't filter 'folderContent'");
+            if (decryptedLinks.size() > 0) {
+                logger.info("Possible empty page or last page");
+            } else {
+                logger.warning("Possible error");
+            }
+            return;
+        }
+        if (filter != null && filter.length > 0) {
+            for (final String entry : filter) {
+                // sync folders share same uid but have ?sID=UID at the end, but this is done by JS from the main /folder/uid page...
+                String subDir = new Regex(entry, "\"(https?://(www\\.)?4shared(\\-china)?\\.com/(dir|folder)/[^\"' ]+/[^\"' ]+(\\?sID=[a-zA-z0-9]{16})?)\"").getMatch(0);
+                // prevent the UID from showing up in another url format structure
+                if (subDir != null) {
+                    if (subDir.contains("?sID=") || !new Regex(subDir, "\\.com/(folder|dir)/([^/]+)").getMatch(1).equals(uid)) {
+                        decryptedLinks.add(createDownloadlink(subDir));
+                    }
+                } else {
+                    final String dllink = new Regex(entry, "\"(http.*?4shared(\\-china)?\\.com/(?!folder/|dir/)[^\"]+\\.html)").getMatch(0);
+                    if (dllink == null) {
+                        // logger.warning("Couldn't find dllink!");
+                        continue;
+                    }
+                    final DownloadLink dlink = createDownloadlink(dllink);
+                    if (pass != null && pass.length() != 0) {
+                        dlink.setProperty("pass", pass);
+                    }
+                    String fileName = new Regex(entry, "title=\"(.*?)\"").getMatch(0);
+                    if (fileName != null) {
+                        dlink.setName(Encoding.htmlDecode(fileName));
+                    }
+                    dlink.setAvailable(true);
+                    decryptedLinks.add(dlink);
+                }
+            }
+        }
+    }
+
+    private boolean parseNextPage() throws Exception {
+        String offset = br2.getRegex("id=\"pagerItemNext\" onclick=\"FolderActions.goToPage\\((\\d+)\\)").getMatch(0);
+        if (offset != null) {
+            parsePage(offset);
+            parseNextPage();
+            return true;
+        }
+        return false;
     }
 
     /* NO OVERRIDE!! */

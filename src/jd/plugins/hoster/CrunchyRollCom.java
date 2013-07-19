@@ -511,7 +511,8 @@ public class CrunchyRollCom extends PluginForHost {
                 final String contType = conn.getContentType();
                 if (respCode == 200 && contType.endsWith("xml")) {
                     // Check if the file is too small to be subtitles
-                    if (length < 200) { return AvailableStatus.FALSE; }
+                    // 20130719 length isn't given anymore so will equal -1
+                    if (length != -1 && length < 200) { return AvailableStatus.FALSE; }
 
                     // File valid, set details
                     downloadLink.setDownloadSize(length);
