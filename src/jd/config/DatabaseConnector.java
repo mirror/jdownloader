@@ -21,14 +21,18 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InvalidClassException;
 import java.io.ObjectInputStream;
-import java.sql.SQLException;
+import java.io.ObjectStreamClass;
+import java.lang.reflect.Field;
 import java.util.HashMap;
 
 import jd.utils.JDUtilities;
 
 import org.appwork.exceptions.WTFException;
 import org.appwork.utils.formatter.HexFormatter;
+import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.net.LimitedInputStream;
 import org.jdownloader.logging.LogController;
 import org.seamless.util.io.IO;
@@ -39,13 +43,16 @@ public class DatabaseConnector {
     private HashMap<String, Long[]> objectIndices = new HashMap<String, Long[]>();
 
     private String                  configpath    = JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath() + "/config/";
+    private final LogSource         logger;
 
-    public DatabaseConnector() throws SQLException {
-        if (!new File(configpath + "database.script").exists()) {
-            LogController.CL().finer("Found no old database to import!");
+    public DatabaseConnector() {
+        logger = LogController.CL(false);
+        File dataBase = null;
+        if (!(dataBase = new File(configpath + "database.script")).exists()) {
+            logger.info("Found no old database to import!");
             return;
         }
-        LogController.CL().finer("Import old database");
+        logger.info("Open old database: " + dataBase);
         CountingInputStream fis = null;
         String[] searchForEntries = new String[] { "INSERT INTO CONFIG VALUES('", "INSERT INTO LINKS VALUES('" };
         String[] searchForEntriesType = new String[] { "config_", "links_" };
@@ -53,7 +60,7 @@ public class DatabaseConnector {
         for (int searchForEntriesIndex = 0; searchForEntriesIndex < searchForEntries.length; searchForEntriesIndex++) {
             String searchForEntry = searchForEntries[searchForEntriesIndex];
             try {
-                fis = new CountingInputStream(new BufferedInputStream(new FileInputStream(configpath + "database.script"), 32767));
+                fis = new CountingInputStream(new BufferedInputStream(new FileInputStream(dataBase), 32767));
                 int read = -1;
                 int entryIndex = 0;
                 insertLoop: while ((read = fis.read()) != -1) {
@@ -87,6 +94,7 @@ public class DatabaseConnector {
                                     }
                                 }
                                 if (objectStopIndex == -1) { throw new WTFException(); }
+                                logger.info("Found Entry: " + name + "Start: " + objectStartIndex + " End: " + objectStopIndex + " Size: " + (objectStopIndex - objectStartIndex));
                                 objectIndices.put(searchForEntriesType[searchForEntriesIndex] + name, new Long[] { objectStartIndex, objectStopIndex });
                                 continue insertLoop;
                             }
@@ -94,7 +102,7 @@ public class DatabaseConnector {
                     }
                 }
             } catch (Throwable e) {
-                LogController.CL().log(e);
+                logger.log(e);
             } finally {
                 try {
                     fis.close();
@@ -134,7 +142,47 @@ public class DatabaseConnector {
             fis.skip(startIndex);
             LimitedInputStream is = new LimitedInputStream(fis, stopIndex - startIndex);
             byte[] hex = IO.readBytes(is);
-            return new ObjectInputStream(new ByteArrayInputStream(HexFormatter.hexToByteArray(new String(hex, "ASCII")))).readObject();
+            return new ObjectInputStream(new ByteArrayInputStream(HexFormatter.hexToByteArray(new String(hex, "ASCII")))) {
+                /*
+                 * IDEA from http://sanjitmohanty.wordpress.com/2011/11/23/making-jvm-to-ignore-serialversionuids-mismatch/
+                 * 
+                 * changed it to modify the suid in resultClassDescriptor to match local suid -> else deserializer broke for me
+                 * 
+                 * @see java.io.ObjectInputStream#readClassDescriptor()
+                 */
+                @Override
+                protected ObjectStreamClass readClassDescriptor() throws IOException, ClassNotFoundException {
+                    ObjectStreamClass resultClassDescriptor = super.readClassDescriptor(); // initially streams descriptor
+
+                    Class<?> localClass; // the class in the local JVM that this descriptor represents.
+                    try {
+                        localClass = Class.forName(resultClassDescriptor.getName());
+                    } catch (ClassNotFoundException e) {
+                        return resultClassDescriptor;
+                    }
+                    ObjectStreamClass localClassDescriptor = ObjectStreamClass.lookup(localClass);
+                    if (localClassDescriptor != null) {
+                        final long localSUID = localClassDescriptor.getSerialVersionUID();
+                        final long streamSUID = resultClassDescriptor.getSerialVersionUID();
+                        if (streamSUID != localSUID) {
+                            final StringBuffer s = new StringBuffer("Potentially Fatal Deserialization Operation. Overriding serialized class version mismatch: ");
+                            s.append(" class = ").append(localClassDescriptor.getName());
+                            s.append(" local serialVersionUID = ").append(localSUID);
+                            s.append(" stream serialVersionUID = ").append(streamSUID);
+                            Exception e = new InvalidClassException(s.toString());
+                            logger.log(e);
+                            try {
+                                final Field field = resultClassDescriptor.getClass().getDeclaredField("suid");
+                                field.setAccessible(true);
+                                field.set(resultClassDescriptor, Long.valueOf(localSUID));
+                            } catch (final Throwable e2) {
+                                logger.log(e2);
+                            }
+                        }
+                    }
+                    return resultClassDescriptor;
+                }
+            }.readObject();
         } catch (Throwable e) {
             e.printStackTrace();
             return null;
