@@ -38,12 +38,17 @@ public class WatTv extends PluginForHost {
         super(wrapper);
     }
 
-    private String computeToken(final String id, final String ts) {
+    private String getTS(long ts) {
+        int t = (int) Math.floor(ts / 1000);
+        return Integer.toString(t, 36);
+    }
+
+    private String computeToken(String id, final String ts) {
         String salt = String.valueOf(Integer.toHexString(Integer.parseInt(ts, 36)));
         while (salt.length() < 8) {
             salt = "0" + salt;
         }
-        final String key = "9b673b13fa4682ed14c3cfa5af5310274b514c4133e9b3a81e6e3aba00912564";
+        final String key = "9b673b13fa4682ed14c3cfa5af5310274b514c4133e9b3a81e6e3aba009l2564";
         return JDHash.getMD5(key + id + salt) + "/" + salt;
     }
 
@@ -62,23 +67,23 @@ public class WatTv extends PluginForHost {
         String getVideoLink = null;
         br2.setFollowRedirects(false);
         String swfLoaderUrl = br.getRegex("<meta property=\"og:video\" content=\"(.*?)\"").getMatch(0);
+
         if (swfLoaderUrl != null) {
             br2.getPage(swfLoaderUrl);
             swfLoaderUrl = br2.getRedirectLocation() == null ? null : br2.getRedirectLocation();
             if (swfLoaderUrl != null) {
+                String query = "&sitepage=WAT%2Ftv%2Ft%2Fcatchup%2Ftf1%2Fnos-chers-voisins-tf1";// SD
                 br2.getPage("http://www.wat.tv/interface/contentv4/" + videoID);
                 String quality = "/web/", country = "DE";
                 if (br2.containsHTML("\"hasHD\":true")) {
                     quality = "/webhd/";
+                    query = "&sitepage=WAT%2Ftv%2Ft%2Finedit%2Ftf1%2Flciwat";
                 }
                 if (br2.containsHTML("\"geolock\":true")) {
                     country = "FR";
                 }
-                final String token = computeToken(quality + videoID, new Regex(swfLoaderUrl, "&ts=(.*?)&").getMatch(0));
-                // from chrome 20130429,
-                // http://www.wat.tv/get/web/10481575?token=md5sum(32char)/517e4e96&domain=www.wat.tv&refererURL=www.wat.tv&revision=04.00.52&synd=0&helios=1&context=playerWat&pub=1&country=FR&sitepage=WAT%2Ftv%2Ft%2Fcatchup%2Ftf1%2Fnos-chers-voisins-tf1&lieu=wat&playerContext=CONTEXT_WAT&getURL=1&version=WIN%2011,7,700,179
-                // kept old request string
-                br2.getPage("http://www.wat.tv/get" + quality + videoID + "?token=" + token + "&domain=www.wat.tv&refererURL=www.wat.tv&revision=04.00.131%0A&synd=0&helios=1&context=playerWat&pub=5&country=" + country + "&sitepage=WAT%2Ftv%2Ft%2Fcatchup%2Ftf1%2Fnos-chers-voisins-tf1&lieu=wat&playerContext=CONTEXT_WAT&getURL=1&version=LNX%2011,2,202,291");
+                final String token = computeToken(quality + videoID, getTS(System.currentTimeMillis()));
+                br2.getPage("http://www.wat.tv/get" + quality + videoID + "?token=" + token + "&domain=www.wat.tv&refererURL=www.wat.tv&revision=04.00.131%0A&synd=0&helios=1&context=playerWat&pub=5&country=" + country + query + "&lieu=wat&playerContext=CONTEXT_WAT&getURL=1&version=LNX%2011,2,202,291");
                 if (br2.containsHTML("No htmlCode read")) { throw new PluginException(LinkStatus.ERROR_FATAL, "Video not available in your country!"); }
                 getVideoLink = br2.toString();
             }
@@ -171,4 +176,5 @@ public class WatTv extends PluginForHost {
     @Override
     public void resetPluginGlobals() {
     }
+
 }
