@@ -37,7 +37,6 @@ import javax.swing.event.ListSelectionListener;
 
 import jd.gui.swing.jdgui.interfaces.SwitchPanel;
 import jd.gui.swing.jdgui.views.settings.panels.advanced.AdvancedSettings;
-import jd.gui.swing.jdgui.views.settings.panels.extensionmanager.ExtensionManager;
 import net.miginfocom.swing.MigLayout;
 
 import org.appwork.controlling.SingleReachableState;
@@ -87,13 +86,6 @@ public class ConfigSidebar extends JPanel implements MouseMotionListener, MouseL
 
                     if (index >= 0 && getModel().getElementAt(index) instanceof ExtensionHeader) { return; }
                     if (index >= 0 && getModel().getElementAt(index) instanceof AdvancedSettings) {
-                        Point p = indexToLocation(index);
-                        if (p != null) {
-                            g2.fillRect(0, p.y, list.getWidth(), TreeRenderer.SMALL_DIMENSION.height);
-                            g2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 1.0f));
-                        }
-
-                    } else if (index >= 0 && getModel().getElementAt(index) instanceof ExtensionManager) {
                         Point p = indexToLocation(index);
                         if (p != null) {
                             g2.fillRect(0, p.y, list.getWidth(), TreeRenderer.SMALL_DIMENSION.height);

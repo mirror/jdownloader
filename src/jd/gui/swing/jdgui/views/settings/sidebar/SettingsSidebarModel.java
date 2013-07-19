@@ -14,7 +14,6 @@ import jd.gui.swing.jdgui.views.settings.panels.MyJDownloaderSettingsPanel;
 import jd.gui.swing.jdgui.views.settings.panels.ReconnectSettings;
 import jd.gui.swing.jdgui.views.settings.panels.accountmanager.AccountManagerSettings;
 import jd.gui.swing.jdgui.views.settings.panels.advanced.AdvancedSettings;
-import jd.gui.swing.jdgui.views.settings.panels.extensionmanager.ExtensionManager;
 import jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter.Linkgrabber;
 import jd.gui.swing.jdgui.views.settings.panels.packagizer.Packagizer;
 import jd.gui.swing.jdgui.views.settings.panels.pluginsettings.PluginSettings;
@@ -25,7 +24,6 @@ import org.appwork.storage.config.JsonConfig;
 import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.events.GenericConfigEventListener;
 import org.appwork.storage.config.handler.KeyHandler;
-import org.appwork.utils.Application;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.swing.EDTHelper;
 import org.appwork.utils.swing.EDTRunner;
@@ -49,7 +47,7 @@ public class SettingsSidebarModel extends DefaultListModel implements GenericCon
     private AdvancedSettings             ads;
     private Linkgrabber                  lg;
     private ExtensionHeader              eh;
-    private ExtensionManager             extm;
+
     private Object                       lock             = new Object();
 
     private SingleReachableState         TREE_COMPLETE    = new SingleReachableState("TREE_COMPLETE");
@@ -220,18 +218,6 @@ public class SettingsSidebarModel extends DefaultListModel implements GenericCon
         }.getReturnValue();
     }
 
-    private ExtensionManager getExtensionManager() {
-        if (extm != null) return extm;
-
-        return new EDTHelper<ExtensionManager>() {
-            public ExtensionManager edtRun() {
-                if (extm != null) return extm;
-                extm = new ExtensionManager();
-                return extm;
-            }
-        }.getReturnValue();
-    }
-
     private ExtensionHeader getExtensionHeader() {
         if (eh != null) return eh;
 
@@ -270,9 +256,7 @@ public class SettingsSidebarModel extends DefaultListModel implements GenericCon
                         getMyJDownloaderPanel();
                         getLinkgrabber();
                         getPackagizer();
-                        if (!Application.isJared(Application.class)) {
-                            getExtensionManager();
-                        }
+
                         getAdvancedSettings();
                         new EDTRunner() {
 
@@ -291,9 +275,7 @@ public class SettingsSidebarModel extends DefaultListModel implements GenericCon
                                 addElement(getPackagizer());
                                 if (finalExtract != null) addElement(finalExtract);
                                 addElement(JDGui.getInstance().getTray());
-                                if (!Application.isJared(Application.class)) {
-                                    addElement(getExtensionManager());
-                                }
+
                                 addElement(getAdvancedSettings());
                             }
                         }.waitForEDT();

@@ -32,7 +32,6 @@ import javax.swing.border.MatteBorder;
 
 import jd.gui.swing.jdgui.views.settings.ConfigPanel;
 import jd.gui.swing.jdgui.views.settings.panels.advanced.AdvancedSettings;
-import jd.gui.swing.jdgui.views.settings.panels.extensionmanager.ExtensionManager;
 import net.miginfocom.swing.MigLayout;
 
 import org.appwork.utils.ColorUtils;
@@ -131,23 +130,6 @@ public class TreeRenderer extends JPanel implements ListCellRenderer {
             } else {
                 lbl.setFont(orgFont);
             }
-            ret.setPreferredSize(null);
-            TreeRenderer.SMALL_DIMENSION.width = (int) Math.max(TreeRenderer.SMALL_DIMENSION.width, ret.getPreferredSize().width * _1_15);
-            ret.setPreferredSize(TreeRenderer.SMALL_DIMENSION);
-        } else if (value instanceof ExtensionManager) {
-            AbstractConfigPanel te = (AbstractConfigPanel) value;
-            setText(te.getTitle());
-            setIcon(te.getIcon());
-            lbl.setVerticalTextPosition(JLabel.CENTER);
-            lbl.setHorizontalTextPosition(JLabel.RIGHT);
-            lbl.setHorizontalAlignment(JLabel.CENTER);
-            ret = this;
-            if (isSelected) {
-                lbl.setFont(boldFont);
-            } else {
-                lbl.setFont(orgFont);
-            }
-            this.setBorder(matteBorder);
             ret.setPreferredSize(null);
             TreeRenderer.SMALL_DIMENSION.width = (int) Math.max(TreeRenderer.SMALL_DIMENSION.width, ret.getPreferredSize().width * _1_15);
             ret.setPreferredSize(TreeRenderer.SMALL_DIMENSION);
