@@ -2,6 +2,9 @@ package org.jdownloader.gui.views;
 
 import java.awt.event.ActionEvent;
 import java.io.File;
+import java.io.IOException;
+import java.util.HashSet;
+import java.util.LinkedList;
 
 import javax.swing.JButton;
 import javax.swing.JComponent;
@@ -9,6 +12,7 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JSeparator;
 
+import jd.gui.swing.jdgui.views.settings.components.FolderChooser;
 import net.miginfocom.swing.MigLayout;
 
 import org.appwork.storage.config.JsonConfig;
@@ -162,15 +166,66 @@ public class DownloadFolderChooserDialog extends ExtFileChooserDialog {
      * @return
      */
     public static boolean isDownloadFolderValid(File file) {
-        if (file == null || file.isFile()) return false;
 
         if (!file.exists()) {
-            switch (CrossSystem.getOSFamily()) {
+            try {
+                switch (CrossSystem.getOSFamily()) {
+                case LINUX:
+                    String[] folders;
 
+                    folders = getPathComponents(file);
+
+                    if (folders.length >= 2) {
+                        if ("media".equals(folders[0])) {
+                            if (!new File("/media/" + folders[1]).exists()) return false;
+                        }
+                    }
+                    break;
+                case MAC:
+
+                    folders = getPathComponents(file);
+
+                    if (folders.length >= 2) {
+                        if ("media".equals(folders[0])) {
+                            if (!new File("/media/" + folders[1]).exists()) return false;
+                        } else if ("Volumes".equals(folders[0])) {
+                            if (!new File("/Volumes/" + folders[1]).exists()) return false;
+                        }
+                    }
+                    break;
+                case WINDOWS:
+                    folders = getPathComponents(file);
+                    if (folders.length > 0) {
+                        if (!new File(folders[0]).exists()) return false;
+                    }
+
+                }
+                // System.out.println(1);
+            } catch (IOException e) {
+                e.printStackTrace();
+                return false;
             }
 
         }
-        return false;
+        return true;
+    }
+
+    private static String[] getPathComponents(File file) throws IOException {
+        LinkedList<String> ret = new LinkedList<String>();
+        HashSet<String> loopCheck = new HashSet<String>();
+
+        while (file != null && loopCheck.add(file.getCanonicalPath())) {
+            if (file.getPath().endsWith(File.separatorChar + "")) {
+                // for example c:\ file.getName() would be "" in this case.
+                ret.add(0, file.getPath());
+                break;
+            } else {
+                ret.add(0, file.getName());
+            }
+            file = file.getParentFile();
+        }
+
+        return ret.toArray(new String[] {});
     }
 
     public static File open(File path, boolean packager, String title) throws DialogClosedException, DialogCanceledException {
@@ -198,11 +253,10 @@ public class DownloadFolderChooserDialog extends ExtFileChooserDialog {
         d.setQuickSelectionList(DownloadPath.loadList(path != null ? path.getAbsolutePath() : null));
         d.setFileSelectionMode(FileChooserSelectionMode.DIRECTORIES_ONLY);
 
-        final File[] dest = Dialog.getInstance().showDialog(d);
-        if (dest[0].getParentFile() != null && !dest[0].getParentFile().exists() && !dest[0].exists()) {
-            handleNonExistingFolders(dest[0]);
-        }
-        if (!isDownloadFolderValid(dest[0])) { return null; }
+        File[] dest = Dialog.getInstance().showDialog(d);
+        if (dest.length == 0) return null;
+        dest[0] = FolderChooser.checkPath(dest[0]);
+        if (dest[0] == null) return null;
         DownloadPath.saveList(dest[0].getAbsolutePath());
         return dest[0];
     }
