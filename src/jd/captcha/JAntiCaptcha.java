@@ -748,7 +748,7 @@ public class JAntiCaptcha {
             }
         });
         w.pack();
-        WindowManager.getInstance().setVisible(w, true, FrameState.FOCUS);
+        WindowManager.getInstance().setVisible(w, true,FrameState.OS_DEFAULT);
     }
 
     public String getCodeFromFileName(String name) {
@@ -1583,7 +1583,7 @@ public class JAntiCaptcha {
         for (int i = 0; i < letters.length; i++) {
             bw2.add(new ImageComponent(letters[i].getImage((int) Math.ceil(jas.getDouble("simplifyFaktor")))), Utilities.getGBC(i * 2 + 2, 0, 2, 2));
         }
-        WindowManager.getInstance().setVisible(bw2, true, FrameState.FOCUS);
+        WindowManager.getInstance().setVisible(bw2, true,FrameState.OS_DEFAULT);
         bw2.pack();
         bw2.setSize(300, bw2.getSize().height);
 
@@ -1739,7 +1739,7 @@ public class JAntiCaptcha {
 
         f.setSize(1400, 800);
         f.pack();
-        WindowManager.getInstance().setVisible(f, true, FrameState.FOCUS);
+        WindowManager.getInstance().setVisible(f, true,FrameState.OS_DEFAULT);
 
         // Führe das Prepare aus
         // jas.executePrepareCommands(captcha);

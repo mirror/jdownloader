@@ -32,7 +32,7 @@ public abstract class JWindowTooltip extends JWindow {
 
         addContent(panel);
 
-        WindowManager.getInstance().setVisible(this, false, FrameState.FOCUS);
+        WindowManager.getInstance().setVisible(this, false,FrameState.OS_DEFAULT);
         this.setAlwaysOnTop(true);
         this.add(panel);
         this.pack();
@@ -50,7 +50,7 @@ public abstract class JWindowTooltip extends JWindow {
 
             @Override
             public Object edtRun() {
-                if (isVisible()) WindowManager.getInstance().setVisible(JWindowTooltip.this, false, FrameState.FOCUS);
+                if (isVisible()) WindowManager.getInstance().setVisible(JWindowTooltip.this, false,FrameState.OS_DEFAULT);
                 return null;
             }
 

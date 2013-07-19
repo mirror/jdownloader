@@ -388,7 +388,7 @@ public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTransla
                         if (!checkPassword()) return;
                         trayIconPopup = new TrayIconPopup(this);
                         calcLocation(trayIconPopup, e.getPoint());
-                        WindowManager.getInstance().setVisible(trayIconPopup, true, FrameState.FOCUS);
+                        WindowManager.getInstance().setVisible(trayIconPopup, true,FrameState.OS_DEFAULT);
                         trayIconPopup.startAutoHide();
                     }
                 }
@@ -405,7 +405,7 @@ public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTransla
                         Point pointOnScreen = e.getLocationOnScreen();
                         if (e.getX() > 0) pointOnScreen.x -= e.getPoint().x;
                         calcLocation(trayIconPopup, pointOnScreen);
-                        WindowManager.getInstance().setVisible(trayIconPopup, true, FrameState.FOCUS);
+                        WindowManager.getInstance().setVisible(trayIconPopup, true,FrameState.OS_DEFAULT);
                         trayIconPopup.startAutoHide();
                     }
                 }
@@ -647,7 +647,7 @@ public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTransla
                 @Override
                 public Object edtRun() {
                     /* set visible state */
-                    WindowManager.getInstance().setVisible(JDGui.getInstance().getMainFrame(), false, FrameState.FOCUS);
+                    WindowManager.getInstance().setVisible(JDGui.getInstance().getMainFrame(), false,FrameState.OS_DEFAULT);
                     return null;
                 }
             }.start();

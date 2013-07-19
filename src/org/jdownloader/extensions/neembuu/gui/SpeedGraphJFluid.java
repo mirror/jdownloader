@@ -172,7 +172,7 @@ public final class SpeedGraphJFluid extends JPanel {
         fr.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         fr.setSize(600, 400);
         fr.getContentPane().add(new SpeedGraphJFluid());
-        WindowManager.getInstance().setVisible(fr, true, FrameState.FOCUS);
+        WindowManager.getInstance().setVisible(fr, true,FrameState.OS_DEFAULT);
     }
 
 }

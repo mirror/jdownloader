@@ -119,7 +119,7 @@ public class InfoDialog extends JWindow implements ActionListener, MouseListener
         if (updater != null) updater.interrupt();
         updater = new InfoUpdater();
         updater.start();
-        WindowManager.getInstance().setVisible(this, true, FrameState.FOCUS);
+        WindowManager.getInstance().setVisible(this, true,FrameState.OS_DEFAULT);
 
     }
 

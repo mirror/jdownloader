@@ -67,7 +67,7 @@ public class BasicWindow extends ExtJFrame {
         w.setTitle(title);
         w.setLayout(new GridBagLayout());
         w.add(ic, Utilities.getGBC(0, 0, 1, 1));
-        WindowManager.getInstance().setVisible(w, true, FrameState.FOCUS);
+        WindowManager.getInstance().setVisible(w, true,FrameState.OS_DEFAULT);
         w.refreshUI();
         return w;
     }

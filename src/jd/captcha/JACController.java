@@ -104,7 +104,7 @@ public class JACController {
         frame.add(btnOK, "span, right");
         frame.pack();
         frame.setResizable(false);
-        WindowManager.getInstance().setVisible(frame, true, FrameState.FOCUS);
+        WindowManager.getInstance().setVisible(frame, true,FrameState.OS_DEFAULT);
     }
 
     private final JAntiCaptcha jac;

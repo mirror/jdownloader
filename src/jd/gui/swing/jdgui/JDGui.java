@@ -333,7 +333,7 @@ public class JDGui extends SwingGui implements UpdaterListener {
                         Window owner = ((InternDialog) w).getOwner();
 
                         if (owner == null && w.isVisible()) {
-                            WindowManager.getInstance().toFront(w, FrameState.FOCUS);
+                            WindowManager.getInstance().setZState(w, FrameState.TO_FRONT_FOCUSED);
                         }
                         // ((InternDialog)w).getDialogModel() instanceof AbstractCaptchaDialog)
 
@@ -390,7 +390,7 @@ public class JDGui extends SwingGui implements UpdaterListener {
 
                                 JsonConfig.create(GraphicalUserInterfaceSettings.class).setLastFrameStatus(FrameStatus.create(mainFrame, JsonConfig.create(GraphicalUserInterfaceSettings.class).getLastFrameStatus()));
 
-                                WindowManager.getInstance().setVisible(JDGui.this.getMainFrame(), false, FrameState.FOCUS);
+                                WindowManager.getInstance().setVisible(JDGui.this.getMainFrame(), false, FrameState.OS_DEFAULT);
                                 JDGui.this.getMainFrame().dispose();
                                 return null;
 
@@ -668,7 +668,7 @@ public class JDGui extends SwingGui implements UpdaterListener {
                     new EDTHelper<Object>() {
                         @Override
                         public Object edtRun() {
-                            WindowManager.getInstance().setVisible(JDGui.this.getMainFrame(), false, FrameState.FOCUS);
+                            WindowManager.getInstance().setVisible(JDGui.this.getMainFrame(), false, FrameState.OS_DEFAULT);
                             return null;
                         }
                     }.start();
@@ -845,7 +845,7 @@ public class JDGui extends SwingGui implements UpdaterListener {
                 mainFrame.setPreferredSize(finalDim);
                 if (finalState != null) mainFrame.setExtendedState(finalState);
 
-                WindowManager.getInstance().setVisible(mainFrame, true, FrameState.FOCUS);
+                WindowManager.getInstance().setVisible(mainFrame, true, FrameState.OS_DEFAULT);
                 // 7. Why a JFrame hides the OS TaskBar when being displayed maximized via JFrame#setExtendedState()?
                 //
                 // The described problem is a Swing issue which appears only with non-native decorated frames by using
@@ -957,7 +957,7 @@ public class JDGui extends SwingGui implements UpdaterListener {
                 switch (id) {
                 case UIConstants.WINDOW_STATUS_MAXIMIZED:
                     mainFrame.setState(Frame.MAXIMIZED_BOTH);
-                    WindowManager.getInstance().setVisible(mainFrame, true, FrameState.FOCUS);
+                    WindowManager.getInstance().setVisible(mainFrame, true, FrameState.OS_DEFAULT);
                     break;
                 case UIConstants.WINDOW_STATUS_MINIMIZED:
                     mainFrame.setState(Frame.ICONIFIED);
@@ -965,7 +965,7 @@ public class JDGui extends SwingGui implements UpdaterListener {
                 case UIConstants.WINDOW_STATUS_NORMAL:
                     if (!GuiUtils.isActiveWindow(getMainFrame())) {
                         mainFrame.setState(Frame.NORMAL);
-                        WindowManager.getInstance().setVisible(mainFrame, true, FrameState.FOCUS);
+                        WindowManager.getInstance().setVisible(mainFrame, true, FrameState.OS_DEFAULT);
                     }
 
                     break;
@@ -984,7 +984,7 @@ public class JDGui extends SwingGui implements UpdaterListener {
                             // }
 
                             WindowManager.getInstance().setExtendedState(mainFrame, WindowExtendedState.NORMAL);
-                            WindowManager.getInstance().setVisible(mainFrame, true, FrameState.TO_FRONT);
+                            WindowManager.getInstance().setVisible(mainFrame, true, FrameState.OS_DEFAULT);
                             //
                             if (tray.isEnabled()) {
                                 setWindowToTray(false);
@@ -1011,7 +1011,7 @@ public class JDGui extends SwingGui implements UpdaterListener {
                             // }
 
                             WindowManager.getInstance().setExtendedState(mainFrame, WindowExtendedState.NORMAL);
-                            WindowManager.getInstance().setVisible(mainFrame, true, FrameState.FOCUS);
+                            WindowManager.getInstance().setVisible(mainFrame, true, FrameState.OS_DEFAULT);
                             //
                             if (tray.isEnabled()) {
                                 setWindowToTray(false);
@@ -1185,7 +1185,7 @@ public class JDGui extends SwingGui implements UpdaterListener {
                     @Override
                     public Object edtRun() {
                         /* set visible state */
-                        WindowManager.getInstance().setVisible(JDGui.this.getMainFrame(), false, FrameState.FOCUS);
+                        WindowManager.getInstance().setVisible(JDGui.this.getMainFrame(), false, FrameState.OS_DEFAULT);
                         return null;
                     }
                 }.start();
@@ -1242,7 +1242,7 @@ public class JDGui extends SwingGui implements UpdaterListener {
                 if (!minimize) {
 
                     if (!getMainFrame().isVisible()) {
-                        WindowManager.getInstance().setVisible(getMainFrame(), true, FrameState.FOCUS);
+                        WindowManager.getInstance().setVisible(getMainFrame(), true, FrameState.OS_DEFAULT);
                     }
 
                     if (trayIconChecker != null) {

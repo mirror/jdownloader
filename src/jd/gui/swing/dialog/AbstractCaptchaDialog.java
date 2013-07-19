@@ -64,6 +64,8 @@ import org.appwork.utils.images.IconIO;
 import org.appwork.utils.images.Interpolation;
 import org.appwork.utils.logging.Log;
 import org.appwork.utils.swing.SwingUtils;
+import org.appwork.utils.swing.WindowManager;
+import org.appwork.utils.swing.WindowManager.FrameState;
 import org.appwork.utils.swing.dialog.AbstractDialog;
 import org.appwork.utils.swing.dialog.DefaultButtonPanel;
 import org.appwork.utils.swing.dialog.Dialog;
@@ -111,24 +113,26 @@ public abstract class AbstractCaptchaDialog extends AbstractDialog<Object> {
 
     }
 
-    /**
-     * @return
-     */
-    public boolean isRequestFocusOnVisible() {
+    @Override
+    protected FrameState getWindowStateOnVisible() {
+        for (Window w : Window.getWindows()) {
+            if (WindowManager.getInstance().hasFocus(w)) return FrameState.TO_FRONT_FOCUSED;
+        }
+
         switch (CFG_GUI.CFG.getFocusTriggerForCaptchaDialogs()) {
 
         case MAINFRAME_IS_MAXIMIZED_OR_ICONIFIED_OR_TOTRAY:
-            return true;
+            return FrameState.TO_FRONT_FOCUSED;
         case MAINFRAME_IS_MAXIMIZED:
 
-            if (JDGui.getInstance().getMainFrame().getState() != JFrame.ICONIFIED && JDGui.getInstance().getMainFrame().isVisible()) { return true; }
+            if (JDGui.getInstance().getMainFrame().getState() != JFrame.ICONIFIED && JDGui.getInstance().getMainFrame().isVisible()) { return FrameState.TO_FRONT_FOCUSED; }
 
             break;
 
         case MAINFRAME_IS_MAXIMIZED_OR_ICONIFIED:
             if (JDGui.getInstance().getMainFrame().isVisible()) {
 
-            return true;
+            return FrameState.TO_FRONT_FOCUSED;
 
             }
             break;
@@ -137,7 +141,7 @@ public abstract class AbstractCaptchaDialog extends AbstractDialog<Object> {
             //
         }
         JDGui.getInstance().flashTaskbar();
-        return false;
+        return FrameState.TO_BACK;
     }
 
     @Override

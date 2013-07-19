@@ -123,7 +123,7 @@ public class ShutdownDetect {
     public static void main(String[] args) {
         final JFrame frame = new JFrame("Shutdown Test");
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        WindowManager.getInstance().setVisible(frame, true, FrameState.FOCUS);
+        WindowManager.getInstance().setVisible(frame, true,FrameState.OS_DEFAULT);
 
         // register(frame, new IShutdownListener() {
         // @Override

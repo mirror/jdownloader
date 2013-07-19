@@ -166,7 +166,7 @@ public abstract class SwingGui extends UserIF implements WindowListener, WindowS
                             if (mod && v) {
                                 Toolkit.getDefaultToolkit().beep();
                                 Log.exception(new ActiveDialogException(((JDialog) w)));
-                                WindowManager.getInstance().toFront(w, FrameState.FOCUS);
+                                WindowManager.getInstance().setZState(w, FrameState.TO_FRONT_FOCUSED);
 
                                 return;
                             }

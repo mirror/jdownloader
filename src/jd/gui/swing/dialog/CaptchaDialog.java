@@ -114,15 +114,6 @@ public class CaptchaDialog extends AbstractCaptchaDialog implements ActionListen
 
     }
 
-    public boolean isRequestFocusOnVisible() {
-        return false;
-    }
-
-    @Override
-    public boolean isToFrontOnVisible() {
-        return true;
-    }
-
     @Override
     protected JComponent createInputComponent() {
 

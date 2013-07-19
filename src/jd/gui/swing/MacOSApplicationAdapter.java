@@ -289,7 +289,7 @@ public class MacOSApplicationAdapter implements QuitHandler, AboutHandler, Prefe
         if (swingGui == null || swingGui.getMainFrame() == null) return;
         final JFrame mainFrame = swingGui.getMainFrame();
         if (!mainFrame.isVisible()) {
-            WindowManager.getInstance().setVisible(mainFrame, true, FrameState.FOCUS);
+            WindowManager.getInstance().setVisible(mainFrame, true,FrameState.OS_DEFAULT);
         }
     }
 
