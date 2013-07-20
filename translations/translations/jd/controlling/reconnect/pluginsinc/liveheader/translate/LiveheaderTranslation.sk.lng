@@ -24,6 +24,7 @@ LiveHeaderDetectionWizard_runOnlineScan_notavailable_t=Služba nie je dostupná
 LiveHeaderDetectionWizard_runOnlineScan_warning_badhost=IP adresa routera '%s1' je neplatná!
 LiveHeaderDetectionWizard_runOnlineScan_warning_badip=Zdá sa, že neexistuje Web rozhranie na http://%s1.\nIP adresa routera môže byť neplatná.\n\nChcete napriek tomu pokračovať?
 LiveHeaderDetectionWizard_uploadData_sent_failed=Všimli sme si, že váš skript už existuje v databáze.\nVďaka.
+LiveHeaderDetectionWizard_uploadData_sent_ok=Ďakujem vám!\nVáš skript sme pridali sme do našej databázy routerov.
 LiveHeaderReconnect_getGUI_help_password=Zadajte heslo webového rozhrania...
 LiveHeaderReconnect_getGUI_help_user=Zadajte meno užívateľa webového rozhrania...
 ReconnectRecorderAction_ReconnectRecorderAction_=Vytvoriť nový skript
