@@ -88,7 +88,7 @@ public class BackinNet extends PluginForHost {
     private static final AtomicInteger totalMaxSimultanFreeDownload = new AtomicInteger(20);
 
     // DEV NOTES
-    // XfileShare Version 3.0.7.0
+    // XfileShare Version 3.0.7.1
     // last XfileSharingProBasic compare :: 2.6.2.1
     // protocol: no https
     // captchatype: recaptcha
@@ -611,7 +611,7 @@ public class BackinNet extends PluginForHost {
             account.setValid(false);
             throw e;
         }
-        final String space[] = cbr.getRegex(">Used space:</td>.*?<td.*?b>([0-9\\.]+) ?(KB|MB|GB|TB)?</b>").getRow(0);
+        final String space[] = cbr.getRegex("Used space:\\s*</td><td>\\s*([0-9\\.]+)\\s*(KB|MB|GB|TB)?\\s*</td>").getRow(0);
         if ((space != null && space.length != 0) && (!inValidate(space[0]) && !inValidate(space[1]))) {
             // free users it's provided by default
             ai.setUsedSpace(space[0] + " " + space[1]);
@@ -620,9 +620,9 @@ public class BackinNet extends PluginForHost {
             ai.setUsedSpace(space[0] + "Mb");
         }
         account.setValid(true);
-        final String availabletraffic = cbr.getRegex("Traffic available.*?:</TD><TD><b>([^<>\"']+)</b>").getMatch(0);
+        String availabletraffic = cbr.getRegex("Traffic available.*?:</TD><TD>([^<>\"']+)</td>").getMatch(0);
         if (!inValidate(availabletraffic) && !availabletraffic.contains("nlimited") && !availabletraffic.equalsIgnoreCase(" Mb")) {
-            availabletraffic.trim();
+            availabletraffic = availabletraffic.trim();
             // need to set 0 traffic left, as getSize returns positive result, even when negative value supplied.
             if (!availabletraffic.startsWith("-")) {
                 ai.setTrafficLeft(SizeFormatter.getSize(availabletraffic));

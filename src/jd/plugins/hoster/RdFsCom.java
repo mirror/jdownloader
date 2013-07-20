@@ -88,7 +88,7 @@ public class RdFsCom extends PluginForHost {
     private static final AtomicInteger totalMaxSimultanFreeDownload = new AtomicInteger(20);
 
     // DEV NOTES
-    // XfileShare Version 3.0.7.0
+    // XfileShare Version 3.0.7.1
     // last XfileSharingProBasic compare :: 2.6.2.1
     // protocol: no https
     // captchatype: null 4dignum recaptcha solvemedia keycaptcha
@@ -619,9 +619,9 @@ public class RdFsCom extends PluginForHost {
             ai.setUsedSpace(space[0] + "Mb");
         }
         account.setValid(true);
-        final String availabletraffic = cbr.getRegex("Traffic available.*?:</TD><TD><b>([^<>\"']+)</b>").getMatch(0);
+        String availabletraffic = cbr.getRegex("Traffic available.*?:</TD><TD><b>([^<>\"']+)</b>").getMatch(0);
         if (!inValidate(availabletraffic) && !availabletraffic.contains("nlimited") && !availabletraffic.equalsIgnoreCase(" Mb")) {
-            availabletraffic.trim();
+            availabletraffic = availabletraffic.trim();
             // need to set 0 traffic left, as getSize returns positive result, even when negative value supplied.
             if (!availabletraffic.startsWith("-")) {
                 ai.setTrafficLeft(SizeFormatter.getSize(availabletraffic));

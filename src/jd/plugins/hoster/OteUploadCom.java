@@ -95,7 +95,7 @@ public class OteUploadCom extends PluginForHost {
     private static AtomicInteger totalMaxSimultanFreeDownload = new AtomicInteger(20);
 
     // DEV NOTES
-    // XfileShare Version 3.0.7.0
+    // XfileShare Version 3.0.7.1
     // last XfileSharingProBasic compare :: 2.6.2.1
     // protocol: http && https
     // captchatype: 4dignum
@@ -683,9 +683,9 @@ public class OteUploadCom extends PluginForHost {
                 ai.setUsedSpace(space[0] + "Mb");
             }
             account.setValid(true);
-            final String availabletraffic = br.getRegex("Traffic available today:</TD><TD><b>([^<>\"']+)</b>").getMatch(0);
+            String availabletraffic = br.getRegex("Traffic available today:</TD><TD><b>([^<>\"']+)</b>").getMatch(0);
             if (!inValidate(availabletraffic) && !availabletraffic.contains("nlimited") && !availabletraffic.equalsIgnoreCase(" Mb")) {
-                availabletraffic.trim();
+                availabletraffic = availabletraffic.trim();
                 // need to set 0 traffic left, as getSize returns positive result, even when negative value supplied.
                 if (!availabletraffic.startsWith("-")) {
                     ai.setTrafficLeft(SizeFormatter.getSize(availabletraffic));

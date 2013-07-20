@@ -88,7 +88,7 @@ public class DdlStorageCom extends PluginForHost {
     private static final AtomicInteger totalMaxSimultanFreeDownload = new AtomicInteger(20);
 
     // DEV NOTES
-    // XfileShare Version 3.0.7.0
+    // XfileShare Version 3.0.7.1
     // last XfileSharingProBasic compare :: 2.6.2.1
     // protocol: no https
     // captchatype: recaptcha
