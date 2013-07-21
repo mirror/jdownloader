@@ -165,16 +165,18 @@ public class Keep2ShareCc extends PluginForHost {
                     if (waittime != null) wait = Integer.parseInt(waittime);
                     sleep(wait * 1001l, downloadLink);
                     br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-                    br.postPage(br.getURL(), "uniqueId=&free=1" + uniqueID);
+                    br.postPage(br.getURL(), "free=1&uniqueId=" + uniqueID);
                     br.getHeaders().put("X-Requested-With", null);
                     dllink = getDllink();
                     if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
             }
         }
+        logger.warning("dllink = " + dllink);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
+            logger.info(br.toString());
             dllink = br.getRegex("\"url\":\"(http:[^<>\"]*?)\"").getMatch(0);
             if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             dllink = dllink.replace("\\", "");
@@ -187,6 +189,7 @@ public class Keep2ShareCc extends PluginForHost {
 
     private String getDllink() throws PluginException {
         String dllink = br.getRegex("(\\'|\")(/file/url\\.html\\?file=[a-z0-9]+)(\\'|\")").getMatch(1);
+        if (dllink != null) dllink = "http://keep2share.cc" + dllink;
         return dllink;
     }
 
