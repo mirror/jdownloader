@@ -119,5 +119,5 @@ proxy_none=Direktna
 proxy_socks4=%s1:%s2 (Socks4 Proxy)
 proxy_socks5=%s1:%s2 (Socks5 Proxy)
 proxydialog_title=Nema veze na internet
-tableheader_tooltip_locked=%s1 (Zaključana promjena veličine)
+tableheader_tooltip_locked=%s1 (Zaključana širina stupca)
 tableheader_tooltip_normal=%s1
