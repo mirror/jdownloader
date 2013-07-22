@@ -64,6 +64,7 @@ public class ShareOnlineBiz extends PluginForHost {
     private static AtomicInteger                             maxChunksnew         = new AtomicInteger(-2);
     private char[]                                           FILENAMEREPLACES     = new char[] { '_', '&', 'ü' };
     private final String                                     SHARED_IP_WORKAROUND = "SHARED_IP_WORKAROUND";
+    private final String                                     TRAFFIC_WORKAROUND   = "TRAFFIC_WORKAROUND";
     private final String                                     PREFER_HTTPS         = "PREFER_HTTPS";
 
     public static class StringContainer {
@@ -164,6 +165,10 @@ public class ShareOnlineBiz extends PluginForHost {
         return getPluginConfig().getBooleanProperty(PREFER_HTTPS, false);
     }
 
+    private boolean userTrafficWorkaround() {
+        return getPluginConfig().getBooleanProperty(TRAFFIC_WORKAROUND, false);
+    }
+
     @Override
     public void correctDownloadLink(DownloadLink link) {
         // We do not have to change anything here, the regexp also works for egoshare links!
@@ -175,6 +180,7 @@ public class ShareOnlineBiz extends PluginForHost {
 
     private void setConfigElements() {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), SHARED_IP_WORKAROUND, JDL.L("plugins.hoster.shareonline.sharedipworkaround", "Enable shared IP workaround?")).setDefaultValue(false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), TRAFFIC_WORKAROUND, JDL.L("plugins.hoster.shareonline.trafficworkaround", "Enable traffic workaround?")).setDefaultValue(false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), PREFER_HTTPS, JDL.L("plugins.hoster.shareonline.preferhttps", "Prefer HTTPS communication? Not available for free download.")).setDefaultValue(false));
     }
 
@@ -324,6 +330,16 @@ public class ShareOnlineBiz extends PluginForHost {
         if (infos.containsKey("money")) ai.setAccountBalance(infos.get("money"));
         /* set account type */
         ai.setStatus(infos.get("group"));
+
+        if (userTrafficWorkaround()) {
+            long max = 100 * 1024 * 1024 * 1024l;// 100 GB per day - 420 GB per week
+            String traffic = infos.get("traffic_1d");// traffic_7d = week
+            String trafficdata[] = traffic.split(";");
+            long current = Long.parseLong(trafficdata[0].trim());
+            ai.setTrafficMax(Math.max(max, current));
+            ai.setTrafficLeft((max - current));
+        }
+
         return ai;
     }
 
@@ -625,7 +641,7 @@ public class ShareOnlineBiz extends PluginForHost {
                 br.setFollowRedirects(true);
                 String page = null;
                 try {
-                    page = br.getPage(userProtocol() + "://api.share-online.biz/cgi-bin?q=userdetails&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
+                    page = br.getPage(userProtocol() + "://api.share-online.biz/cgi-bin?q=userdetails&aux=traffic&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
                 } finally {
                     br.setFollowRedirects(follow);
                 }
