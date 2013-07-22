@@ -389,8 +389,8 @@ public class DirectHTTP extends PluginForHost {
                  * hotfix for synthetica license issues, as some java versions have broken aes support
                  */
                 /*
-                 * NOTE: This Licensee Information may only be used by AppWork UG. If you like to create derived creation based on this
-                 * sourcecode, you have to remove this license key. Instead you may use the FREE Version of synthetica found on javasoft.de
+                 * NOTE: This Licensee Information may only be used by AppWork UG. If you like to create derived creation based on this sourcecode, you have to
+                 * remove this license key. Instead you may use the FREE Version of synthetica found on javasoft.de
                  */
                 String[] li = { "Licensee=AppWork UG", "LicenseRegistrationNumber=289416475", "Product=Synthetica", "LicenseType=Small Business License", "ExpireDate=--.--.----", "MaxVersion=2.999.999" };
                 javax.swing.UIManager.put("Synthetica.license.info", li);
@@ -435,7 +435,11 @@ public class DirectHTTP extends PluginForHost {
         return "Basic " + Encoding.Base64Encode(username + ":" + password);
     }
 
-    public String getCustomFavIconURL() {
+    public String getCustomFavIconURL(DownloadLink link) {
+        if (link != null) {
+            String domain = Browser.getHost(link.getDownloadURL(), true);
+            if (domain != null) { return domain; }
+        }
         if (this.customFavIconHost != null) { return this.customFavIconHost; }
         return null;
     }
@@ -450,11 +454,6 @@ public class DirectHTTP extends PluginForHost {
      */
     public Recaptcha getReCaptcha(final Browser br) {
         return new Recaptcha(br);
-    }
-
-    public String getSessionInfo() {
-        if (this.customFavIconHost != null) { return this.customFavIconHost; }
-        return "";
     }
 
     @Override
@@ -688,8 +687,7 @@ public class DirectHTTP extends PluginForHost {
         if (custom != null && custom.size() > 0) {
             for (final Object header : custom) {
                 /*
-                 * this is needed because we no longer serialize the stuff, we use json as storage and it does not differ between String[]
-                 * and ArrayList<String>
+                 * this is needed because we no longer serialize the stuff, we use json as storage and it does not differ between String[] and ArrayList<String>
                  */
                 if (header instanceof ArrayList) {
                     br.getHeaders().put((String) ((ArrayList<?>) header).get(0), (String) ((ArrayList<?>) header).get(1));
@@ -742,6 +740,9 @@ public class DirectHTTP extends PluginForHost {
             }
             if (downloadLink.getDownloadURL().contains("tinypic.com/")) {
                 // they seem to block direct link access
+                br.getHeaders().put("Referer", downloadLink.getDownloadURL());
+            }
+            if (downloadLink.getDownloadURL().contains("photobucket.com")) {
                 br.getHeaders().put("Referer", downloadLink.getDownloadURL());
             }
         }
