@@ -36,12 +36,14 @@ import jd.gui.swing.jdgui.JDGui;
 import jd.gui.swing.jdgui.views.settings.components.Checkbox;
 import jd.gui.swing.jdgui.views.settings.components.ComboBox;
 import jd.gui.swing.jdgui.views.settings.components.SettingsButton;
+import jd.gui.swing.jdgui.views.settings.components.StateUpdateListener;
 
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.StorageException;
 import org.appwork.txtresource.TranslationFactory;
 import org.appwork.utils.Application;
 import org.appwork.utils.swing.EDTRunner;
+import org.appwork.utils.swing.WindowManager.FrameState;
 import org.appwork.utils.swing.dialog.AbstractDialog;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
@@ -58,25 +60,31 @@ import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.downloads.contextmenumanager.DownloadListContextMenuManager;
 import org.jdownloader.gui.views.linkgrabber.contextmenu.LinkgrabberContextMenuManager;
 import org.jdownloader.images.NewTheme;
+import org.jdownloader.settings.GraphicalUserInterfaceSettings.NewLinksInLinkgrabberAction;
+import org.jdownloader.settings.staticreferences.CFG_GUI;
 import org.jdownloader.settings.staticreferences.CFG_SILENTMODE;
 import org.jdownloader.translate.JdownloaderTranslation;
 import org.jdownloader.updatev2.RestartController;
 import org.jdownloader.updatev2.SmartRlyRestartRequest;
 
-public class GUISettings extends AbstractConfigPanel {
+public class GUISettings extends AbstractConfigPanel implements StateUpdateListener {
 
-    private static final long serialVersionUID = 1L;
+    private static final long                     serialVersionUID = 1L;
 
-    private ComboBox<String>  lng;
-    private String[]          languages;
-    private Thread            languageScanner;
-    private SettingsButton    resetDialogs;
-    private SettingsButton    contextMenuManagerDownloadList;
-    private SettingsButton    contextMenuManagerLinkgrabber;
-    private SettingsButton    toolbarManager;
-    private SettingsButton    mainMenuManager;
-    private SettingsButton    trayMenuManager;
-    private SettingsButton    resetDialogPosition;
+    private ComboBox<String>                      lng;
+    private String[]                              languages;
+    private Thread                                languageScanner;
+    private SettingsButton                        resetDialogs;
+    private SettingsButton                        contextMenuManagerDownloadList;
+    private SettingsButton                        contextMenuManagerLinkgrabber;
+    private SettingsButton                        toolbarManager;
+    private SettingsButton                        mainMenuManager;
+    private SettingsButton                        trayMenuManager;
+    private SettingsButton                        resetDialogPosition;
+
+    private ComboBox<FrameState>                  focus;
+
+    private ComboBox<NewLinksInLinkgrabberAction> linkgrabberfocus;
 
     public String getTitle() {
         return _GUI._.GUISettings_getTitle();
@@ -298,7 +306,19 @@ public class GUISettings extends AbstractConfigPanel {
         // this.addDescription(_JDT._.gui_settings_barrierfree_description());
         this.addDescriptionPlain(_GUI._.GUISettings_GUISettings_sielntMode_description());
         addPair(_GUI._.GUISettings_GUISettings_sielntMode(), null, new Checkbox(CFG_SILENTMODE.MANUAL_ENABLED));
+        // OS_DEFAULT,
+        // TO_FRONT,
+        // TO_BACK,
+        // TO_FRONT_FOCUSED;
+        focus = new ComboBox<FrameState>(new FrameState[] { FrameState.OS_DEFAULT, FrameState.TO_BACK, FrameState.TO_FRONT, FrameState.TO_FRONT_FOCUSED }, new String[] { _GUI._.GUISettings_GUISettings_framestate_os_default(System.getProperty("os.name")), _GUI._.GUISettings_GUISettings_framestate_back(), _GUI._.GUISettings_GUISettings_framestate_front(), _GUI._.GUISettings_GUISettings_framestate_focus() }) {
 
+        };
+        focus.addStateUpdateListener(this);
+        addPair(_GUI._.GUISettings_GUISettings_dialog_focus(), null, focus);
+
+        linkgrabberfocus = new ComboBox<NewLinksInLinkgrabberAction>(new NewLinksInLinkgrabberAction[] { NewLinksInLinkgrabberAction.NOTHING, NewLinksInLinkgrabberAction.TO_FRONT, NewLinksInLinkgrabberAction.FOCUS }, new String[] { _GUI._.GUISettings_GUISettings_newlinks_nothing(), _GUI._.GUISettings_GUISettings_newlinks_front(), _GUI._.GUISettings_GUISettings_newlinks_focus() });
+        linkgrabberfocus.addStateUpdateListener(this);
+        addPair(_GUI._.GUISettings_GUISettings_dialog_linkgrabber_on_new_links(), null, linkgrabberfocus);
     }
 
     @Override
@@ -308,11 +328,15 @@ public class GUISettings extends AbstractConfigPanel {
 
     @Override
     public void save() {
-
+        CFG_GUI.CFG.setNewDialogFrameState(focus.getSelectedItem());
+        CFG_GUI.CFG.setNewLinksAction(linkgrabberfocus.getSelectedItem());
+        // focus.setSelectedItem(CFG_GUI.CFG.getNewDialogFrameState());
     }
 
     @Override
     public void updateContents() {
+        focus.setSelectedItem(CFG_GUI.CFG.getNewDialogFrameState());
+        linkgrabberfocus.setSelectedItem(CFG_GUI.CFG.getNewLinksAction());
         // asynch loading, because listAvailableTranslations can take its time.
         if (languages == null && languageScanner == null) {
             languageScanner = new Thread("LanguageScanner") {
@@ -345,4 +369,8 @@ public class GUISettings extends AbstractConfigPanel {
 
     }
 
+    @Override
+    public void onStateUpdated() {
+        save();
+    }
 }

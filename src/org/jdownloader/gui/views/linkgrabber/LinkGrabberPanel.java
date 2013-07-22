@@ -9,7 +9,6 @@ import java.awt.event.KeyListener;
 import java.util.regex.Pattern;
 
 import javax.swing.JButton;
-import javax.swing.JFrame;
 import javax.swing.JScrollPane;
 import javax.swing.JToggleButton;
 import javax.swing.ScrollPaneConstants;
@@ -22,7 +21,6 @@ import jd.controlling.linkcollector.LinkCollectorHighlightListener;
 import jd.controlling.linkcollector.LinkCollectorListener;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledPackage;
-import jd.gui.UIConstants;
 import jd.gui.UserIF;
 import jd.gui.swing.jdgui.JDGui;
 import jd.gui.swing.jdgui.interfaces.SwitchPanel;
@@ -35,6 +33,7 @@ import org.appwork.swing.MigPanel;
 import org.appwork.swing.components.ExtButton;
 import org.appwork.utils.event.queue.Queue.QueuePriority;
 import org.appwork.utils.swing.EDTRunner;
+import org.appwork.utils.swing.WindowManager.FrameState;
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.gui.components.OverviewHeaderScrollPane;
 import org.jdownloader.gui.laf.jddefault.LAFOptions;
@@ -54,7 +53,7 @@ import org.jdownloader.gui.views.linkgrabber.contextmenu.LinkgrabberContextMenuM
 import org.jdownloader.gui.views.linkgrabber.overview.LinkgrabberOverViewHeader;
 import org.jdownloader.gui.views.linkgrabber.overview.LinkgrabberOverview;
 import org.jdownloader.images.NewTheme;
-import org.jdownloader.settings.WindowState;
+import org.jdownloader.settings.GraphicalUserInterfaceSettings.NewLinksInLinkgrabberAction;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
 
 public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListener, GenericConfigEventListener<Boolean> {
@@ -138,39 +137,51 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
                         try {
                             System.out.println("Highlight");
                             if (CFG_GUI.CFG.isSwitchToLinkgrabberTabOnNewLinksAddedEnabled()) JDGui.getInstance().requestPanel(UserIF.Panels.LINKGRABBER, null);
-                            switch (CFG_GUI.CFG.getMainframePopupTriggerWhenNewLinksWereAdded()) {
-                            case NEVER:
-
+                            switch (CFG_GUI.CFG.getNewLinksAction()) {
+                            case FOCUS:
+                                JDGui.getInstance().setFrameState(FrameState.TO_FRONT_FOCUSED);
+                                break;
+                            case NOTHING:
                                 JDGui.getInstance().flashTaskbar();
-
-                                break;
-                            case MAINFRAME_IS_MAXIMIZED_OR_ICONIFIED_OR_TOTRAY:
-                                JDGui.getInstance().setFrameStatus(UIConstants.WINDOW_STATUS_FOREGROUND_NO_FOCUS);
-
+                                return;
+                            case TO_FRONT:
+                                JDGui.getInstance().setFrameState(FrameState.TO_FRONT);
                                 break;
 
-                            case MAINFRAME_IS_MAXIMIZED:
-
-                                if (JDGui.getInstance().getMainFrame().getState() != JFrame.ICONIFIED && JDGui.getInstance().getMainFrame().isVisible()) {
-
-                                    JDGui.getInstance().setFrameStatus(UIConstants.WINDOW_STATUS_FOREGROUND_NO_FOCUS);
-
-                                } else {
-                                    JDGui.getInstance().flashTaskbar();
-                                }
-
-                                break;
-
-                            case MAINFRAME_IS_MAXIMIZED_OR_ICONIFIED:
-                                if (JDGui.getInstance().getMainFrame().isVisible()) {
-                                    JDGui.getInstance().setFrameStatus(UIConstants.WINDOW_STATUS_FOREGROUND_NO_FOCUS);
-                                } else {
-                                    JDGui.getInstance().flashTaskbar();
-                                }
-                                break;
-
-                            default:
-                                //
+                            //
+                            // case NEVER:
+                            //
+                            // JDGui.getInstance().flashTaskbar();
+                            //
+                            // break;
+                            // case MAINFRAME_IS_MAXIMIZED_OR_ICONIFIED_OR_TOTRAY:
+                            // JDGui.getInstance().setFrameStatus(UIConstants.WINDOW_STATUS_FOREGROUND_NO_FOCUS);
+                            //
+                            // break;
+                            //
+                            // case MAINFRAME_IS_MAXIMIZED:
+                            //
+                            // if (JDGui.getInstance().getMainFrame().getState() != JFrame.ICONIFIED &&
+                            // JDGui.getInstance().getMainFrame().isVisible()) {
+                            //
+                            // JDGui.getInstance().setFrameStatus(UIConstants.WINDOW_STATUS_FOREGROUND_NO_FOCUS);
+                            //
+                            // } else {
+                            // JDGui.getInstance().flashTaskbar();
+                            // }
+                            //
+                            // break;
+                            //
+                            // case MAINFRAME_IS_MAXIMIZED_OR_ICONIFIED:
+                            // if (JDGui.getInstance().getMainFrame().isVisible()) {
+                            // JDGui.getInstance().setFrameStatus(UIConstants.WINDOW_STATUS_FOREGROUND_NO_FOCUS);
+                            // } else {
+                            // JDGui.getInstance().flashTaskbar();
+                            // }
+                            // break;
+                            //
+                            // default:
+                            // //
                             }
 
                         } catch (Throwable e) {
@@ -182,7 +193,7 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
 
             @Override
             public boolean isThisListenerEnabled() {
-                return org.jdownloader.settings.staticreferences.CFG_GUI.CFG.isLinkgrabberAutoTabSwitchEnabled() || CFG_GUI.CFG.getMainframePopupTriggerWhenNewLinksWereAdded() != WindowState.NEVER;
+                return org.jdownloader.settings.staticreferences.CFG_GUI.CFG.isLinkgrabberAutoTabSwitchEnabled() || CFG_GUI.CFG.getNewLinksAction() != NewLinksInLinkgrabberAction.NOTHING;
             }
 
         });

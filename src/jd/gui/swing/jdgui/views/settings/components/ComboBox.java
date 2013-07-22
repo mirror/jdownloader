@@ -67,6 +67,11 @@ public class ComboBox<ContentType> extends JComboBox implements SettingsComponen
         }
     }
 
+    public ContentType getSelectedItem() {
+        return (ContentType) super.getSelectedItem();
+
+    }
+
     public ComboBox(ContentType[] values, String[] names) {
         super(values);
         orgRenderer = getRenderer();

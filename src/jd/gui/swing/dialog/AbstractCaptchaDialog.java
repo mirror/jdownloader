@@ -40,7 +40,6 @@ import javax.swing.BorderFactory;
 import javax.swing.Icon;
 import javax.swing.JButton;
 import javax.swing.JComponent;
-import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JMenuItem;
 import javax.swing.JPanel;
@@ -119,29 +118,15 @@ public abstract class AbstractCaptchaDialog extends AbstractDialog<Object> {
             if (WindowManager.getInstance().hasFocus(w)) return FrameState.TO_FRONT_FOCUSED;
         }
 
-        switch (CFG_GUI.CFG.getFocusTriggerForCaptchaDialogs()) {
-
-        case MAINFRAME_IS_MAXIMIZED_OR_ICONIFIED_OR_TOTRAY:
-            return FrameState.TO_FRONT_FOCUSED;
-        case MAINFRAME_IS_MAXIMIZED:
-
-            if (JDGui.getInstance().getMainFrame().getState() != JFrame.ICONIFIED && JDGui.getInstance().getMainFrame().isVisible()) { return FrameState.TO_FRONT_FOCUSED; }
-
-            break;
-
-        case MAINFRAME_IS_MAXIMIZED_OR_ICONIFIED:
-            if (JDGui.getInstance().getMainFrame().isVisible()) {
-
-            return FrameState.TO_FRONT_FOCUSED;
-
-            }
-            break;
-
-        default:
-            //
+        FrameState ret = (FrameState) CFG_GUI.NEW_DIALOG_FRAME_STATE.getValue();
+        if (ret == null) ret = FrameState.TO_FRONT;
+        switch (ret) {
+        case OS_DEFAULT:
+        case TO_BACK:
+            JDGui.getInstance().flashTaskbar();
         }
-        JDGui.getInstance().flashTaskbar();
-        return FrameState.TO_BACK;
+
+        return ret;
     }
 
     @Override

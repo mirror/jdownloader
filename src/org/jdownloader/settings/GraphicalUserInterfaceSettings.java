@@ -16,6 +16,7 @@ import org.appwork.storage.config.annotations.RequiresRestart;
 import org.appwork.storage.config.annotations.SpinnerValidator;
 import org.appwork.storage.config.annotations.ValidatorFactory;
 import org.appwork.utils.Application;
+import org.appwork.utils.swing.WindowManager.FrameState;
 import org.appwork.utils.swing.dialog.View;
 import org.jdownloader.gui.laf.jddefault.JDDefaultLookAndFeel;
 import org.jdownloader.gui.views.components.LinktablesSearchCategory;
@@ -394,13 +395,6 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
 
     void setMacDockProgressDisplay(MacDockProgressDisplay value);
 
-    @DefaultEnumValue("MAINFRAME_IS_MAXIMIZED")
-    @DescriptionForConfigEntry("When should the Mainframe come to Front if new Links were added?")
-    @AboutConfig
-    WindowState getMainframePopupTriggerWhenNewLinksWereAdded();
-
-    void setMainframePopupTriggerWhenNewLinksWereAdded(WindowState action);
-
     @DefaultBooleanValue(true)
     @AboutConfig
     boolean isTaskBarFlashEnabled();
@@ -412,19 +406,6 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
     boolean isCaptchaDebugModeEnabled();
 
     void setCaptchaDebugModeEnabled(boolean b);
-
-    @DefaultBooleanValue(false)
-    @AboutConfig
-    boolean isCaptchaDialogAOTWorkaroundEnabled();
-
-    void setCaptchaDialogAOTWorkaroundEnabled(boolean b);
-
-    @DefaultEnumValue("MAINFRAME_IS_MAXIMIZED_OR_ICONIFIED_OR_TOTRAY")
-    @DescriptionForConfigEntry("When should a Captcha Dialog get the Input Focus?")
-    @AboutConfig
-    WindowState getFocusTriggerForCaptchaDialogs();
-
-    void setFocusTriggerForCaptchaDialogs(WindowState action);
 
     public static enum StartButtonAction {
         @EnumLabel("Add all Linkgrabber links and start Downloads.")
@@ -534,4 +515,21 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
         }
     }
 
+    @AboutConfig
+    @DefaultEnumValue("TO_FRONT")
+    FrameState getNewDialogFrameState();
+
+    void setNewDialogFrameState(FrameState state);
+
+    public static enum NewLinksInLinkgrabberAction {
+        NOTHING,
+        TO_FRONT,
+        FOCUS
+    }
+
+    @AboutConfig
+    @DefaultEnumValue("TO_FRONT")
+    NewLinksInLinkgrabberAction getNewLinksAction();
+
+    void setNewLinksAction(NewLinksInLinkgrabberAction action);
 }

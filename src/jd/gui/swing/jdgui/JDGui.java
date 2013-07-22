@@ -36,7 +36,6 @@ import java.awt.event.KeyEvent;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowFocusListener;
 import java.awt.event.WindowListener;
-import java.awt.event.WindowStateListener;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -58,7 +57,6 @@ import jd.SecondLevelLaunch;
 import jd.config.ConfigContainer;
 import jd.gui.UIConstants;
 import jd.gui.swing.SwingGui;
-import jd.gui.swing.dialog.AbstractCaptchaDialog;
 import jd.gui.swing.jdgui.components.StatusBarImpl;
 import jd.gui.swing.jdgui.components.toolbar.MainToolBar;
 import jd.gui.swing.jdgui.interfaces.View;
@@ -180,64 +178,12 @@ public class JDGui extends SwingGui implements UpdaterListener {
     private JDGui() {
         super("JDownloader");
         updateTitle();
+        logger = LogController.getInstance().getLogger("Gui");
         // Important for unittests
         this.mainFrame.setName("MAINFRAME");
         UpdateController.getInstance().getEventSender().addListener(this, true);
-        RememberRelativeDialogLocator locator;
-        // set a default locator to remmber dialogs position
-        AbstractDialog.setDefaultLocator(locator = new RememberRelativeDialogLocator("", mainFrame) {
+        initDialogLocators();
 
-            @Override
-            public void onClose(AbstractDialog<?> abstractDialog) {
-                if (!abstractDialog.hasBeenMoved()) return;
-                super.onClose(abstractDialog);
-            }
-
-            @Override
-            protected String getID(Window frame) {
-                try {
-                    if (frame instanceof InternDialog) {
-
-                        AbstractDialog dialog = (AbstractDialog) ((InternDialog) frame).getDialogModel();
-
-                        String key = dialog.getTitle();
-                        if (StringUtils.isEmpty(key)) {
-                            key = dialog.toString();
-                        }
-                        return Hash.getMD5(key);
-                    }
-                } catch (Exception e) {
-                    logger.log(e);
-                }
-                return super.getID(frame);
-            }
-
-        });
-        locator.setFallbackLocator(new DialogLocator() {
-
-            @Override
-            public Point getLocationOnScreen(AbstractDialog<?> abstractDialog) {
-                if (abstractDialog.getDialog().getParent() != null && abstractDialog.getDialog().getParent().isShowing()) { return AbstractDialog.LOCATE_CENTER_OF_SCREEN.getLocationOnScreen(abstractDialog); }
-                GraphicsDevice gd = GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice();
-                Insets insets = Toolkit.getDefaultToolkit().getScreenInsets(gd.getDefaultConfiguration());
-                /* WARNING: this can cause deadlock under linux EDT/XAWT */
-                final Rectangle bounds = gd.getDefaultConfiguration().getBounds();
-                bounds.y += insets.top;
-                bounds.x += insets.left;
-                bounds.width -= insets.left + insets.right;
-                bounds.height -= insets.top + insets.bottom;
-
-                Point ret = AbstractLocator.validate(new Point(bounds.width - abstractDialog.getDialog().getSize().width, bounds.height - abstractDialog.getDialog().getSize().height), abstractDialog.getDialog());
-                return ret;
-            }
-
-            @Override
-            public void onClose(AbstractDialog<?> abstractDialog) {
-            }
-
-        });
-
-        logger = LogController.getInstance().getLogger("Gui");
         this.setWindowTitle("JDownloader");
         this.initDefaults();
         this.initComponents();
@@ -245,164 +191,37 @@ public class JDGui extends SwingGui implements UpdaterListener {
         this.layoutComponents();
         this.mainFrame.pack();
 
-        initThread = new Thread("initLocationAndDimension") {
-            @Override
-            public void run() {
-                try {
-                    initLocationAndDimension();
-                } finally {
-                    initThread = null;
-                }
-            }
-        };
-        initThread.start();
+        initLocationAndDimension();
 
         initToolTipSettings();
 
-        mainFrame.addWindowListener(new WindowListener() {
+        initUpdateFrameListener();
 
-            public void windowOpened(WindowEvent e) {
+        initCaptchaToFrontListener();
 
-                UpdateController.getInstance().setGuiToFront(mainFrame);
-
-            }
-
-            public void windowIconified(WindowEvent e) {
-
-            }
-
-            public void windowDeiconified(WindowEvent e) {
-
-                UpdateController.getInstance().setGuiToFront(mainFrame);
-
-            }
-
-            public void windowDeactivated(WindowEvent e) {
-
-            }
-
-            public void windowClosing(WindowEvent e) {
-
-            }
-
-            public void windowClosed(WindowEvent e) {
-
-            }
-
-            public void windowActivated(WindowEvent e) {
-
-                if (e.getOppositeWindow() == null) {
-                    // new activation
-                    // if (JsonConfig.create(GraphicalUserInterfaceSettings.class).isCaptchaDialogsRequestFocusEnabled()) {
-
-                    for (final Window w : mainFrame.getOwnedWindows()) {
-                        if (w.isShowing()) {
-                            if (w instanceof InternDialog) {
-                                AbstractDialog dialogModel = ((InternDialog) w).getDialogModel();
-                                if (dialogModel instanceof AbstractCaptchaDialog) {
-
-                                    w.toFront();
-                                    break;
-
-                                }
-                            }
-                        }
-                    }
-                    // }
-
-                } else {
-                    // from a different jd frame
-
-                }
-                AbstractDialog.setRootFrame(getMainFrame());
-
-            }
-        });
-        mainFrame.addWindowFocusListener(new WindowFocusListener() {
-
-            @Override
-            public void windowLostFocus(WindowEvent e) {
-
-            }
-
-            @Override
-            public void windowGainedFocus(WindowEvent e) {
-
-                for (Window w : Window.getWindows()) {
-                    if (w instanceof InternDialog && !((InternDialog) w).getDialogModel().isDisposed()) {
-                        Window owner = ((InternDialog) w).getOwner();
-
-                        if (owner == null && w.isVisible()) {
-                            WindowManager.getInstance().setZState(w, FrameState.TO_FRONT_FOCUSED);
-                        }
-                        // ((InternDialog)w).getDialogModel() instanceof AbstractCaptchaDialog)
-
-                    }
-
-                }
-
-            }
-        });
-        mainFrame.addWindowStateListener(new WindowStateListener() {
-
-            @Override
-            public void windowStateChanged(WindowEvent e) {
-
-            }
-        });
-        KeyboardFocusManager.getCurrentKeyboardFocusManager().addKeyEventPostProcessor(new KeyEventPostProcessor() {
-
-            public boolean postProcessKeyEvent(final KeyEvent e) {
-                if (e.getID() == KeyEvent.KEY_RELEASED && e.isShiftDown() && e.isControlDown() && e.getKeyCode() == KeyEvent.VK_S) {
-                    try {
-                        /*
-                         * dirty little helper for mac os problem, unable to reach window header
-                         */
-                        final Dimension dim = Toolkit.getDefaultToolkit().getScreenSize();
-                        JDGui.this.mainFrame.setExtendedState(Frame.NORMAL);
-                        JDGui.this.mainFrame.setSize(new Dimension(800, 600));
-                        final Rectangle abounds = JDGui.this.mainFrame.getBounds();
-                        JDGui.this.mainFrame.setLocation((dim.width - abounds.width) / 2, (dim.height - abounds.height) / 2);
-                        LogController.GL.info("Center MainFrame");
-                        return true;
-                    } catch (final Exception ee) {
-                        LogController.GL.log(ee);
-                    }
-                }
-                return false;
-            }
-        });
+        initShiftControlSWindowResetKeyListener();
         // Launcher.INIT_COMPLETE
         SecondLevelLaunch.GUI_COMPLETE.executeWhenReached(new Runnable() {
 
             public void run() {
-
-                ShutdownController.getInstance().addShutdownEvent(new ShutdownEvent() {
-
-                    @Override
-                    public void onShutdown(final ShutdownRequest shutdownRequest) {
-                        new EDTHelper<Object>() {
-
-                            @Override
-                            public Object edtRun() {
-
-                                JDGui.this.mainTabbedPane.onClose();
-
-                                JsonConfig.create(GraphicalUserInterfaceSettings.class).setLastFrameStatus(FrameStatus.create(mainFrame, JsonConfig.create(GraphicalUserInterfaceSettings.class).getLastFrameStatus()));
-
-                                WindowManager.getInstance().setVisible(JDGui.this.getMainFrame(), false, FrameState.OS_DEFAULT);
-                                JDGui.this.getMainFrame().dispose();
-                                return null;
-
-                            }
-                        }.getReturnValue();
-                    }
-                });
+                onGuiInitComplete();
 
             }
 
         });
 
+        initSilentModeHooks();
+
+        // init tray
+        tray = new TrayExtension();
+        try {
+            tray.init();
+        } catch (Exception e1) {
+            logger.log(e1);
+        }
+    }
+
+    public void initSilentModeHooks() {
         // Hook into dialog System
 
         Dialog.getInstance().setHandler(new DialogHandler() {
@@ -490,90 +309,321 @@ public class JDGui extends SwingGui implements UpdaterListener {
 
             }
         });
-        SecondLevelLaunch.GUI_COMPLETE.executeWhenReached(new Runnable() {
+    }
 
-            public void run() {
-                new Thread("StatsDialog") {
-                    public void run() {
-                        try {
-                            Thread.sleep(10000);
-                        } catch (InterruptedException e) {
-                            e.printStackTrace();
-                        }
-                        showStatsDialog();
+    protected void onGuiInitComplete() {
+
+        ShutdownController.getInstance().addShutdownEvent(new ShutdownEvent() {
+
+            @Override
+            public void onShutdown(final ShutdownRequest shutdownRequest) {
+                new EDTHelper<Object>() {
+
+                    @Override
+                    public Object edtRun() {
+
+                        JDGui.this.mainTabbedPane.onClose();
+
+                        JsonConfig.create(GraphicalUserInterfaceSettings.class).setLastFrameStatus(FrameStatus.create(mainFrame, JsonConfig.create(GraphicalUserInterfaceSettings.class).getLastFrameStatus()));
+
+                        WindowManager.getInstance().setVisible(JDGui.this.getMainFrame(), false, FrameState.OS_DEFAULT);
+                        JDGui.this.getMainFrame().dispose();
+
+                        return null;
 
                     }
-                }.start();
-                Application.getResource("/tmp/update/self/JDU").mkdirs();
-                new Thread() {
-                    public void run() {
-                        logger.info("Update bug Finder");
-                        int counter = -1;
-                        try {
-                            logger.info("Find Counter");
-                            counter = org.appwork.Counter.VALUE;
-                            logger.info(Application.getJarFile(org.appwork.Counter.class).getAbsolutePath());
-                            logger.info("Done: " + counter);
-                        } catch (Throwable e) {
-                            logger.log(e);
-
-                        }
-                        long start = System.currentTimeMillis();
-                        while (UpdateController.getInstance().getHandler() == null) {
-                            try {
-                                Thread.sleep(1000);
-                            } catch (InterruptedException e) {
-                                e.printStackTrace();
-                            }
-                            if (System.currentTimeMillis() - start > 30000) {
-                                logger.info("Handler null");
-                                return;
-                            }
-                        }
-                        logger.info("Gogogo " + counter);
-                        if (counter != 1) {
-                            try {
-                                logger.info("Delete jdu");
-                                Files.deleteRecursiv(Application.getResource("update/versioninfo/JDU"));
-                            } catch (IOException e) {
-                                e.printStackTrace();
-                            }
-                            try {
-                                logger.info("Delete extensioncache");
-                                Files.deleteRecursiv(Application.getResource("tmp/extensioncache"));
-                            } catch (IOException e) {
-                                e.printStackTrace();
-                            }
-                            File rev = Application.getResource("/tmp/update/self/JDU/rev");
-                            logger.info("create dummy rev");
-                            if (!rev.exists()) {
-                                rev.getParentFile().mkdirs();
-                                try {
-                                    IO.writeStringToFile(rev, "0");
-                                } catch (IOException e) {
-                                    e.printStackTrace();
-                                }
-                            }
-                            logger.info("Show Message");
-                            Dialog.getInstance().showMessageDialog("This is a very important Update. You should run this NOW!");
-                            // runUpdateChecker is synchronized and may block
-                            logger.info("Init update");
-                            UpdateController.getInstance().setGuiVisible(true);
-                            UpdateController.getInstance().runUpdateChecker(true);
-                        }
-                    }
-                }.start();
-
+                }.getReturnValue();
             }
         });
 
-        // init tray
-        tray = new TrayExtension();
-        try {
-            tray.init();
-        } catch (Exception e1) {
-            logger.log(e1);
-        }
+        // new Thread("StatsDialog") {
+        // public void run() {
+        // try {
+        // Thread.sleep(10000);
+        // } catch (InterruptedException e) {
+        // e.printStackTrace();
+        // }
+        // showStatsDialog();
+        //
+        // }
+        // }.start();
+        Application.getResource("/tmp/update/self/JDU").mkdirs();
+        new Thread() {
+            public void run() {
+                logger.info("Update bug Finder");
+                int counter = -1;
+                try {
+                    logger.info("Find Counter");
+                    counter = org.appwork.Counter.VALUE;
+                    logger.info(Application.getJarFile(org.appwork.Counter.class).getAbsolutePath());
+                    logger.info("Done: " + counter);
+                } catch (Throwable e) {
+                    logger.log(e);
+
+                }
+                long start = System.currentTimeMillis();
+                while (UpdateController.getInstance().getHandler() == null) {
+                    try {
+                        Thread.sleep(1000);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                    if (System.currentTimeMillis() - start > 30000) {
+                        logger.info("Handler null");
+                        return;
+                    }
+                }
+                logger.info("Gogogo " + counter);
+                if (counter != 1) {
+                    try {
+                        logger.info("Delete jdu");
+                        Files.deleteRecursiv(Application.getResource("update/versioninfo/JDU"));
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                    try {
+                        logger.info("Delete extensioncache");
+                        Files.deleteRecursiv(Application.getResource("tmp/extensioncache"));
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                    File rev = Application.getResource("/tmp/update/self/JDU/rev");
+                    logger.info("create dummy rev");
+                    if (!rev.exists()) {
+                        rev.getParentFile().mkdirs();
+                        try {
+                            IO.writeStringToFile(rev, "0");
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                    logger.info("Show Message");
+                    Dialog.getInstance().showMessageDialog("This is a very important Update. You should run this NOW!");
+                    // runUpdateChecker is synchronized and may block
+                    logger.info("Init update");
+                    UpdateController.getInstance().setGuiVisible(true);
+                    UpdateController.getInstance().runUpdateChecker(true);
+                }
+            }
+        }.start();
+    }
+
+    public void initShiftControlSWindowResetKeyListener() {
+        KeyboardFocusManager.getCurrentKeyboardFocusManager().addKeyEventPostProcessor(new KeyEventPostProcessor() {
+
+            public boolean postProcessKeyEvent(final KeyEvent e) {
+                if (e.getID() == KeyEvent.KEY_RELEASED && e.isShiftDown() && e.isControlDown() && e.getKeyCode() == KeyEvent.VK_S) {
+                    try {
+                        /*
+                         * dirty little helper for mac os problem, unable to reach window header
+                         */
+                        final Dimension dim = Toolkit.getDefaultToolkit().getScreenSize();
+                        JDGui.this.mainFrame.setExtendedState(Frame.NORMAL);
+                        JDGui.this.mainFrame.setSize(new Dimension(800, 600));
+                        final Rectangle abounds = JDGui.this.mainFrame.getBounds();
+                        JDGui.this.mainFrame.setLocation((dim.width - abounds.width) / 2, (dim.height - abounds.height) / 2);
+                        LogController.GL.info("Center MainFrame");
+                        return true;
+                    } catch (final Exception ee) {
+                        LogController.GL.log(ee);
+                    }
+                }
+                return false;
+            }
+        });
+    }
+
+    public void initCaptchaToFrontListener() {
+
+        mainFrame.addWindowFocusListener(new WindowFocusListener() {
+
+            @Override
+            public void windowLostFocus(WindowEvent e) {
+
+            }
+
+            @Override
+            public void windowGainedFocus(WindowEvent e) {
+                if (e.getOppositeWindow() == null) {
+                    for (Window w : Window.getWindows()) {
+                        if (w instanceof InternDialog && !((InternDialog) w).getDialogModel().isDisposed()) {
+                            Window owner = ((InternDialog) w).getOwner();
+
+                            if (owner == null && w.isVisible()) {
+                                WindowManager.getInstance().setZState(w, FrameState.TO_FRONT_FOCUSED);
+                            }
+                            // ((InternDialog)w).getDialogModel() instanceof AbstractCaptchaDialog)
+
+                        }
+
+                    }
+                }
+
+            }
+        });
+        //
+        // mainFrame.addWindowListener(new WindowListener() {
+        //
+        // @Override
+        // public void windowOpened(WindowEvent windowevent) {
+        // }
+        //
+        // @Override
+        // public void windowIconified(WindowEvent windowevent) {
+        // }
+        //
+        // @Override
+        // public void windowDeiconified(WindowEvent windowevent) {
+        // }
+        //
+        // @Override
+        // public void windowDeactivated(WindowEvent windowevent) {
+        // }
+        //
+        // @Override
+        // public void windowClosing(WindowEvent windowevent) {
+        // }
+        //
+        // @Override
+        // public void windowClosed(WindowEvent windowevent) {
+        // }
+        //
+        // @Override
+        // public void windowActivated(WindowEvent e) {
+        // if (e.getOppositeWindow() == null) {
+        // // new activation
+        // // if (JsonConfig.create(GraphicalUserInterfaceSettings.class).isCaptchaDialogsRequestFocusEnabled()) {
+        //
+        // for (final Window w : mainFrame.getOwnedWindows()) {
+        // if (w.isShowing()) {
+        // if (w instanceof InternDialog) {
+        // AbstractDialog dialogModel = ((InternDialog) w).getDialogModel();
+        // if (dialogModel instanceof AbstractCaptchaDialog) {
+        // WindowManager.getInstance().setZState(w, FrameState.TO_FRONT_FOCUSED);
+        //
+        // break;
+        //
+        // }
+        // }
+        // }
+        // }
+        // // }
+        //
+        // } else {
+        // // from a different jd frame
+        //
+        // }
+        // }
+        // });
+    }
+
+    public void initUpdateFrameListener() {
+        mainFrame.addWindowListener(new WindowListener() {
+
+            public void windowOpened(WindowEvent e) {
+
+                UpdateController.getInstance().setGuiToFront(mainFrame);
+
+            }
+
+            public void windowIconified(WindowEvent e) {
+
+            }
+
+            public void windowDeiconified(WindowEvent e) {
+
+                UpdateController.getInstance().setGuiToFront(mainFrame);
+
+            }
+
+            public void windowDeactivated(WindowEvent e) {
+
+            }
+
+            public void windowClosing(WindowEvent e) {
+
+            }
+
+            public void windowClosed(WindowEvent e) {
+
+            }
+
+            public void windowActivated(WindowEvent e) {
+
+                AbstractDialog.setRootFrame(getMainFrame());
+
+            }
+        });
+    }
+
+    public void initLocationAndDimension() {
+        initThread = new Thread("initLocationAndDimension") {
+            @Override
+            public void run() {
+                try {
+                    internalInitLocationAndDimension();
+                } finally {
+                    initThread = null;
+                }
+            }
+        };
+        initThread.start();
+    }
+
+    public void initDialogLocators() {
+        RememberRelativeDialogLocator locator;
+        // set a default locator to remmber dialogs position
+        AbstractDialog.setDefaultLocator(locator = new RememberRelativeDialogLocator("", mainFrame) {
+
+            @Override
+            public void onClose(AbstractDialog<?> abstractDialog) {
+                if (!abstractDialog.hasBeenMoved()) return;
+                super.onClose(abstractDialog);
+            }
+
+            @Override
+            protected String getID(Window frame) {
+                try {
+                    if (frame instanceof InternDialog) {
+
+                        AbstractDialog dialog = (AbstractDialog) ((InternDialog) frame).getDialogModel();
+
+                        String key = dialog.getTitle();
+                        if (StringUtils.isEmpty(key)) {
+                            key = dialog.toString();
+                        }
+                        return Hash.getMD5(key);
+                    }
+                } catch (Exception e) {
+                    logger.log(e);
+                }
+                return super.getID(frame);
+            }
+
+        });
+        locator.setFallbackLocator(new DialogLocator() {
+
+            @Override
+            public Point getLocationOnScreen(AbstractDialog<?> abstractDialog) {
+                if (abstractDialog.getDialog().getParent() != null && abstractDialog.getDialog().getParent().isShowing()) { return AbstractDialog.LOCATE_CENTER_OF_SCREEN.getLocationOnScreen(abstractDialog); }
+                GraphicsDevice gd = GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice();
+                Insets insets = Toolkit.getDefaultToolkit().getScreenInsets(gd.getDefaultConfiguration());
+                /* WARNING: this can cause deadlock under linux EDT/XAWT */
+                final Rectangle bounds = gd.getDefaultConfiguration().getBounds();
+                bounds.y += insets.top;
+                bounds.x += insets.left;
+                bounds.width -= insets.left + insets.right;
+                bounds.height -= insets.top + insets.bottom;
+
+                Point ret = AbstractLocator.validate(new Point(bounds.width - abstractDialog.getDialog().getSize().width, bounds.height - abstractDialog.getDialog().getSize().height), abstractDialog.getDialog());
+                return ret;
+            }
+
+            @Override
+            public void onClose(AbstractDialog<?> abstractDialog) {
+            }
+
+        });
     }
 
     protected void showStatsDialog() {
@@ -698,7 +748,7 @@ public class JDGui extends SwingGui implements UpdaterListener {
      * 
      * restores the dimension and location to the window
      */
-    private void initLocationAndDimension() {
+    private void internalInitLocationAndDimension() {
 
         FrameStatus stat = JsonConfig.create(GraphicalUserInterfaceSettings.class).getLastFrameStatus();
 
@@ -946,6 +996,50 @@ public class JDGui extends SwingGui implements UpdaterListener {
             this.mainTabbedPane.addTab(view);
         }
         if (setActive) this.mainTabbedPane.setSelectedComponent(view);
+    }
+
+    public void setFrameState(FrameState toFrontFocused) {
+
+        switch (toFrontFocused) {
+        case OS_DEFAULT:
+            if (isSilentModeActive()) {
+                flashTaskbar();
+            } else {
+
+                if (mainFrame.getExtendedState() == JFrame.ICONIFIED) {
+                    WindowManager.getInstance().setExtendedState(mainFrame, WindowExtendedState.NORMAL);
+                }
+                WindowManager.getInstance().setVisible(mainFrame, true, toFrontFocused);
+            }
+
+            break;
+        case TO_BACK:
+            flashTaskbar();
+            break;
+        case TO_FRONT:
+            if (isSilentModeActive()) {
+                flashTaskbar();
+            } else {
+                if (mainFrame.getExtendedState() == JFrame.ICONIFIED) {
+                    WindowManager.getInstance().setExtendedState(mainFrame, WindowExtendedState.NORMAL);
+                }
+                WindowManager.getInstance().setVisible(mainFrame, true, toFrontFocused);
+
+            }
+            break;
+        case TO_FRONT_FOCUSED:
+            if (isSilentModeActive()) {
+                flashTaskbar();
+            } else {
+
+                if (mainFrame.getExtendedState() == JFrame.ICONIFIED) {
+                    WindowManager.getInstance().setExtendedState(mainFrame, WindowExtendedState.NORMAL);
+                }
+                WindowManager.getInstance().setVisible(mainFrame, true, toFrontFocused);
+            }
+            break;
+        }
+
     }
 
     @Override
@@ -1339,4 +1433,5 @@ public class JDGui extends SwingGui implements UpdaterListener {
             getMainFrame().setTitle("JDownloader");
         }
     }
+
 }

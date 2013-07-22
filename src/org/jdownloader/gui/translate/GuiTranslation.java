@@ -2848,4 +2848,31 @@ public interface GuiTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "If the Silentmode is enabled, you will not get any Popup, Dialogs, Captcharequests or other notifications unless JDownloader is your active Window." })
     String GUISettings_GUISettings_sielntMode_description();
+
+    @Default(lngs = { "en" }, values = { "according to %s1 specifications" })
+    String GUISettings_GUISettings_framestate_os_default(String string);
+
+    @Default(lngs = { "en" }, values = { "behind all windows" })
+    String GUISettings_GUISettings_framestate_back();
+
+    @Default(lngs = { "en" }, values = { "in front of all windows" })
+    String GUISettings_GUISettings_framestate_front();
+
+    @Default(lngs = { "en" }, values = { "in front of all windows and focused" })
+    String GUISettings_GUISettings_framestate_focus();
+
+    @Default(lngs = { "en" }, values = { "Show new Dialogs..." })
+    String GUISettings_GUISettings_dialog_focus();
+
+    @Default(lngs = { "en" }, values = { "When new Links were added, then..." })
+    String GUISettings_GUISettings_dialog_linkgrabber_on_new_links();
+
+    @Default(lngs = { "en" }, values = { "do nothing" })
+    String GUISettings_GUISettings_newlinks_nothing();
+
+    @Default(lngs = { "en" }, values = { "show linkgrabber in front of all other windows" })
+    String GUISettings_GUISettings_newlinks_front();
+
+    @Default(lngs = { "en" }, values = { "show linkgrabber in front of all other windows & steal the focus" })
+    String GUISettings_GUISettings_newlinks_focus();
 }
