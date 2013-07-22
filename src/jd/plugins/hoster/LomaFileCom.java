@@ -18,6 +18,7 @@ package jd.plugins.hoster;
 
 import java.io.File;
 import java.io.IOException;
+import java.lang.reflect.Field;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -88,7 +89,7 @@ public class LomaFileCom extends PluginForHost {
     private static final AtomicInteger totalMaxSimultanFreeDownload = new AtomicInteger(20);
 
     // DEV NOTES
-    // XfileShare Version 3.0.7.1
+    // XfileShare Version 3.0.7.2
     // last XfileSharingProBasic compare :: 2.6.2.1
     // protocol: no https
     // captchatype: 4dignum
@@ -1571,7 +1572,23 @@ public class LomaFileCom extends PluginForHost {
 
         Request req = new Request(oURL) {
             {
-                requested = true;
+                boolean okay = false;
+                try {
+                    final Field field = this.getClass().getSuperclass().getDeclaredField("requested");
+                    field.setAccessible(true);
+                    field.setBoolean(this, true);
+                    okay = true;
+                } catch (final Throwable e2) {
+                    e2.printStackTrace();
+                }
+                if (okay == false) {
+                    try {
+                        requested = true;
+                    } catch (final Throwable e) {
+                        e.printStackTrace();
+                    }
+                }
+
                 httpConnection = con;
                 setHtmlCode(t);
             }

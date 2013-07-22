@@ -17,6 +17,7 @@
 package jd.plugins.decrypter;
 
 import java.io.IOException;
+import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
@@ -259,7 +260,23 @@ public class DlPrtcCom extends PluginForDecrypt {
 
         Request req = new Request(oURL) {
             {
-                requested = true;
+                boolean okay = false;
+                try {
+                    final Field field = this.getClass().getSuperclass().getDeclaredField("requested");
+                    field.setAccessible(true);
+                    field.setBoolean(this, true);
+                    okay = true;
+                } catch (final Throwable e2) {
+                    e2.printStackTrace();
+                }
+                if (okay == false) {
+                    try {
+                        requested = true;
+                    } catch (final Throwable e) {
+                        e.printStackTrace();
+                    }
+                }
+
                 httpConnection = con;
                 setHtmlCode(t);
             }

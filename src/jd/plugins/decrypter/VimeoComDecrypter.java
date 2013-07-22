@@ -95,7 +95,7 @@ public class VimeoComDecrypter extends PluginForDecrypt {
             String url = quality[0];
             String name = Encoding.htmlDecode(quality[1]);
             String fmt = quality[2];
-            name += "_" + fmt + ".mp4";
+            name = name.replaceFirst("\\.mp4$", "") + "_" + fmt.replaceAll(" ?\\.MP4 file$", "") + ".mp4";
             if (fmt != null) fmt = fmt.toLowerCase(Locale.ENGLISH).trim();
             if (fmt != null) {
                 /* best selection is done at the end */
@@ -184,7 +184,7 @@ public class VimeoComDecrypter extends PluginForDecrypt {
         if (br.containsHTML("iconify_down_b")) {
             br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
             br.getPage("http://vimeo.com/" + ID + "?action=download");
-            qualities = br.getRegex("href=\"((http://vimeo\\.com)?/\\d+/download.*?)\" download=\"(.*?)\" .*?>(.*? file)<.*?\\d+x\\d+ /(.*?)\\)").getMatches();
+            qualities = br.getRegex("href=\"[^\"]+(/\\d+/download.*?)\" download=\"(.*?)\" .*?>(.*? file)<.*?\\d+x\\d+ /(.*?)\\)").getMatches();
         } else {
             /* withoutDlBtn */
             String sig = br.getRegex("\"signature\":\"([0-9a-f]+)\"").getMatch(0);

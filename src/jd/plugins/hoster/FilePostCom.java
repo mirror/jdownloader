@@ -55,7 +55,7 @@ import org.appwork.utils.os.CrossSystem;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filepost.com" }, urls = { "https?://(www\\.)?(filepost\\.com/files|fp\\.io)/[a-z0-9]+" }, flags = { 2 })
 public class FilePostCom extends PluginForHost {
 
-    private static final String ua                 = "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/27.0.1453.94 Safari/537.36";
+    private static final String ua                 = "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/28.0.1500.72 Safari/537.36";
     private boolean             showAccountCaptcha = false;
     private static final String FILEIDREGEX        = "filepost\\.com/files/(.+)";
     private static final String MAINPAGE           = "https://filepost.com/";

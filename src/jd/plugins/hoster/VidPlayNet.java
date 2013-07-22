@@ -18,6 +18,7 @@ package jd.plugins.hoster;
 
 import java.io.File;
 import java.io.IOException;
+import java.lang.reflect.Field;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -74,8 +75,15 @@ public class VidPlayNet extends PluginForHost {
     private final String               PASSWORDTEXT                 = "<br><b>Passwor(d|t):</b> <input";
     private final String               MAINTENANCE                  = ">This server is in maintenance mode";
     private final String               dllinkRegex                  = "https?://(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|([\\w\\-]+\\.)?" + DOMAINS + ")(:\\d{1,5})?/(files(/(dl|download))?|d|cgi-bin/dl\\.cgi)/(\\d+/)?([a-z0-9]+/){1,4}[^\"'/<>]+";
-    private final boolean              useVidEmbed                  = true; // works no captcha
-    private final boolean              useAltEmbed                  = false; // also true... but solvemedia is required
+    private final boolean              useVidEmbed                  = true;                                                                                                                                                                             // works
+                                                                                                                                                                                                                                                         // no
+                                                                                                                                                                                                                                                         // captcha
+    private final boolean              useAltEmbed                  = false;                                                                                                                                                                            // also
+                                                                                                                                                                                                                                                         // true...
+                                                                                                                                                                                                                                                         // but
+                                                                                                                                                                                                                                                         // solvemedia
+                                                                                                                                                                                                                                                         // is
+                                                                                                                                                                                                                                                         // required
     private final boolean              supportsHTTPS                = false;
     private final boolean              enforcesHTTPS                = false;
     private final boolean              useRUA                       = false;
@@ -88,7 +96,7 @@ public class VidPlayNet extends PluginForHost {
     private static final AtomicInteger totalMaxSimultanFreeDownload = new AtomicInteger(20);
 
     // DEV NOTES
-    // XfileShare Version 3.0.7.1
+    // XfileShare Version 3.0.7.2
     // last XfileSharingProBasic compare :: 2.6.2.1
     // protocol: no https
     // captchatype: solvemedia
@@ -1572,7 +1580,23 @@ public class VidPlayNet extends PluginForHost {
 
         Request req = new Request(oURL) {
             {
-                requested = true;
+                boolean okay = false;
+                try {
+                    final Field field = this.getClass().getSuperclass().getDeclaredField("requested");
+                    field.setAccessible(true);
+                    field.setBoolean(this, true);
+                    okay = true;
+                } catch (final Throwable e2) {
+                    e2.printStackTrace();
+                }
+                if (okay == false) {
+                    try {
+                        requested = true;
+                    } catch (final Throwable e) {
+                        e.printStackTrace();
+                    }
+                }
+
                 httpConnection = con;
                 setHtmlCode(t);
             }

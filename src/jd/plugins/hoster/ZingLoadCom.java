@@ -18,6 +18,7 @@ package jd.plugins.hoster;
 
 import java.io.File;
 import java.io.IOException;
+import java.lang.reflect.Field;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -88,7 +89,7 @@ public class ZingLoadCom extends PluginForHost {
     private static final AtomicInteger totalMaxSimultanFreeDownload = new AtomicInteger(20);
 
     // DEV NOTES
-    // XfileShare Version 3.0.7.1
+    // XfileShare Version 3.0.7.2
     // last XfileSharingProBasic compare :: 2.6.2.1
     // protocol: no https
     // captchatype: null
@@ -852,37 +853,37 @@ public class ZingLoadCom extends PluginForHost {
     // ***************************************************************************************************** //
     // The components below doesn't require coder interaction, or configuration !
 
-    private Browser                                           cbr                          = new Browser();
+    private Browser                                           cbr                    = new Browser();
 
-    private String                                            acctype                      = null;
-    private String                                            directlinkproperty           = null;
-    private String                                            dllink                       = null;
-    private String                                            fuid                         = null;
-    private String                                            passCode                     = null;
-    private String                                            usedHost                     = null;
+    private String                                            acctype                = null;
+    private String                                            directlinkproperty     = null;
+    private String                                            dllink                 = null;
+    private String                                            fuid                   = null;
+    private String                                            passCode               = null;
+    private String                                            usedHost               = null;
 
-    private int                                               chunks                       = 1;
+    private int                                               chunks                 = 1;
 
-    private boolean                                           resumes                      = false;
-    private boolean                                           skipWaitTime                 = false;
+    private boolean                                           resumes                = false;
+    private boolean                                           skipWaitTime           = false;
 
-    private final String                                      language                     = System.getProperty("user.language");
-    private final String                                      preferHTTPS                  = "preferHTTPS";
-    private final String                                      ALLWAIT_SHORT                = JDL.L("hoster.xfilesharingprobasic.errors.waitingfordownloads", "Waiting till new downloads can be started");
-    private final String                                      MAINTENANCEUSERTEXT          = JDL.L("hoster.xfilesharingprobasic.errors.undermaintenance", "This server is under Maintenance");
+    private final String                                      language               = System.getProperty("user.language");
+    private final String                                      preferHTTPS            = "preferHTTPS";
+    private final String                                      ALLWAIT_SHORT          = JDL.L("hoster.xfilesharingprobasic.errors.waitingfordownloads", "Waiting till new downloads can be started");
+    private final String                                      MAINTENANCEUSERTEXT    = JDL.L("hoster.xfilesharingprobasic.errors.undermaintenance", "This server is under Maintenance");
 
-    private static AtomicInteger                              maxFree                      = new AtomicInteger(1);
-    private static AtomicInteger                              maxPrem                      = new AtomicInteger(1);
+    private static AtomicInteger                              maxFree                = new AtomicInteger(1);
+    private static AtomicInteger                              maxPrem                = new AtomicInteger(1);
     // connections you can make to a given 'host' file server, this assumes each file server is setup identically.
-    private static AtomicInteger                              maxNonAccSimDlPerHost        = new AtomicInteger(20);
-    private static AtomicInteger                              maxFreeAccSimDlPerHost       = new AtomicInteger(20);
-    private static AtomicInteger                              maxPremAccSimDlPerHost       = new AtomicInteger(20);
+    private static AtomicInteger                              maxNonAccSimDlPerHost  = new AtomicInteger(20);
+    private static AtomicInteger                              maxFreeAccSimDlPerHost = new AtomicInteger(20);
+    private static AtomicInteger                              maxPremAccSimDlPerHost = new AtomicInteger(20);
 
-    private static HashMap<Account, HashMap<String, Integer>> hostMap                      = new HashMap<Account, HashMap<String, Integer>>();
+    private static HashMap<Account, HashMap<String, Integer>> hostMap                = new HashMap<Account, HashMap<String, Integer>>();
 
-    private static Object                                     LOCK                         = new Object();
+    private static Object                                     LOCK                   = new Object();
 
-    private static StringContainer                            agent                        = new StringContainer();
+    private static StringContainer                            agent                  = new StringContainer();
 
     public static class StringContainer {
         public String string = null;
@@ -1554,7 +1555,6 @@ public class ZingLoadCom extends PluginForHost {
         return ret;
     }
 
-
     /**
      * This allows backward compatibility for design flaw in setHtmlCode(), It injects updated html into all browsers that share the same
      * request id. This is needed as request.cloneRequest() was never fully implemented like browser.cloneBrowser().
@@ -1573,7 +1573,23 @@ public class ZingLoadCom extends PluginForHost {
 
         Request req = new Request(oURL) {
             {
-                requested = true;
+                boolean okay = false;
+                try {
+                    final Field field = this.getClass().getSuperclass().getDeclaredField("requested");
+                    field.setAccessible(true);
+                    field.setBoolean(this, true);
+                    okay = true;
+                } catch (final Throwable e2) {
+                    e2.printStackTrace();
+                }
+                if (okay == false) {
+                    try {
+                        requested = true;
+                    } catch (final Throwable e) {
+                        e.printStackTrace();
+                    }
+                }
+
                 httpConnection = con;
                 setHtmlCode(t);
             }
