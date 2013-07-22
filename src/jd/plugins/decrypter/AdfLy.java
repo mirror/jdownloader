@@ -32,9 +32,13 @@ import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.locale.JDL;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "adf.ly" }, urls = { "https?://(www\\.)?(adf\\.ly|9\\.bb|j\\.gs|q\\.gs|urlm\\.in)/(?!link\\-deleted\\.php|index|login)[^<>\r\n\t]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "adf.ly" }, urls = { "https?://(www\\.)?(adf\\.ly|j\\.gs|q\\.gs)/(?!link-deleted\\.php|index|login)[^<>\r\n\t]+" }, flags = { 0 })
 @SuppressWarnings("deprecation")
 public class AdfLy extends PluginForDecrypt {
+
+    // DEV NOTES:
+    // uids are not transferable between domains.
+    // alternative domains do not support https
 
     public AdfLy(PluginWrapper wrapper) {
         super(wrapper);
@@ -42,7 +46,7 @@ public class AdfLy extends PluginForDecrypt {
 
     private boolean       supportsHTTPS = true;
     private String        protocol      = null;
-    private final String  HOSTS         = "https?://(www\\.)?(adf\\.ly|9\\.bb|j\\.gs|q\\.gs|urlm\\.in)";
+    private final String  HOSTS         = "https?://(www\\.)?(adf\\.ly|j\\.gs|q\\.gs)";
     private static Object LOCK          = new Object();
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
@@ -52,7 +56,10 @@ public class AdfLy extends PluginForDecrypt {
         protocol = new Regex(parameter, "(https?://)").getMatch(0);
         // poll plugin setting for default protocol, if not set ask the user.
         protocol = getDefaultProtocol() + "://";
-
+        if (!parameter.contains("adf.ly/") && protocol.equalsIgnoreCase("https://")) {
+            logger.info("sorry, HTTPS option is not aviable for this host '" + new Regex(parameter, "://([^/]+)").getMatch(0) + "'");
+            protocol = "http://";
+        }
         br.setFollowRedirects(false);
         br.setReadTimeout(3 * 60 * 1000);
 
@@ -70,11 +77,8 @@ public class AdfLy extends PluginForDecrypt {
         for (int i = 0; i <= 2; i++) {
             synchronized (LOCK) {
                 br.getPage(parameter.replaceFirst("https?://", protocol));
-                if (parameter.contains("9.bb/") && br.getRedirectLocation() != null) {
-                    br.getPage(br.getRedirectLocation());
-                }
             }
-            if (br.containsHTML("(<b style=\"font\\-size: 20px;\">Sorry the page you are looking for does not exist|>404 Not Found<|>Not Found<|>Sorry, but the requested page was not found)") || (br.getRedirectLocation() != null && (br.getRedirectLocation().contains("ink-deleted.php") || br.getRedirectLocation().contains("/suspended")))) {
+            if (br.containsHTML("(<b style=\"font-size: 20px;\">Sorry the page you are looking for does not exist|>404 Not Found<|>Not Found<|>Sorry, but the requested page was not found)") || (br.getRedirectLocation() != null && (br.getRedirectLocation().contains("ink-deleted.php") || br.getRedirectLocation().contains("/suspended")))) {
                 logger.info("adf.ly link offline: " + parameter);
                 return decryptedLinks;
             }
@@ -112,14 +116,14 @@ public class AdfLy extends PluginForDecrypt {
                 finallink = br.getRedirectLocation();
             }
             if (finallink == null) {
-                finallink = br.getRegex("\\.attr\\((\"|\\')href(\"|\\'), \\'(.*?)\\'\\)").getMatch(2);
+                finallink = br.getRegex("\\.attr\\((\"|')href(\"|'), '(.*?)'\\)").getMatch(2);
             }
             if (finallink == null) {
                 finallink = br.getRegex("window\\.location = ('|\")(.*?)('|\");").getMatch(1);
                 if (finallink != null && finallink.contains("/noscript.php")) finallink = null;
             }
             if (finallink == null) {
-                finallink = br.getRegex("close_bar.*?self\\.location = \\'(.*?)\\';").getMatch(0);
+                finallink = br.getRegex("close_bar.*?self\\.location = '(.*?)';").getMatch(0);
             }
             /* 20130130 */
             if (finallink == null && (countdown != null && zzz != null && easyUrl != null)) {
@@ -130,10 +134,10 @@ public class AdfLy extends PluginForDecrypt {
             }
             /* old stuff still exists! tested and working as of 20130328 */
             if (finallink != null && (!finallink.startsWith("/") && finallink.matches(HOSTS + ".+"))) {
-                String extendedProtectionPage = br.getRegex("(" + HOSTS + ")?(/go(/|\\.php\\?)[^<>\"\\']+)").getMatch(3);
+                String extendedProtectionPage = br.getRegex("(" + HOSTS + ")?(/go(/|\\.php\\?)[^<>\"']+)").getMatch(3);
                 if (extendedProtectionPage == null) {
                     // 201307xx
-                    extendedProtectionPage = new Regex(finallink, "(" + HOSTS + ")?(/go(/|\\.php\\?)[^<>\"\\']+)").getMatch(3);
+                    extendedProtectionPage = new Regex(finallink, "(" + HOSTS + ")?(/go(/|\\.php\\?)[^<>\"']+)").getMatch(3);
                     if (extendedProtectionPage != null)
                         extendedProtectionPage = protocol + "adf.ly" + extendedProtectionPage;
                     else
@@ -171,7 +175,7 @@ public class AdfLy extends PluginForDecrypt {
                     }
                 } else {
                     // Everything should have worked correctly, try to get final link
-                    finallink = br.getRegex("<META HTTP\\-EQUIV=\"Refresh\" CONTENT=\"\\d+; URL=(https?://[^<>\"\\']+)\"").getMatch(0);
+                    finallink = br.getRegex("<META HTTP-EQUIV=\"Refresh\" CONTENT=\"\\d+; URL=(https?://[^<>\"']+)\"").getMatch(0);
                     break;
                 }
             } else if (finallink != null && finallink.matches("(https?|ftp)://.+")) break;
