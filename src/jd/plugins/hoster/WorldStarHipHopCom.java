@@ -65,6 +65,9 @@ public class WorldStarHipHopCom extends PluginForHost {
             getURLUniversal();
             filename = br.getRegex("<title>([^<>\"]*?) \\- World Star Uncut</title>").getMatch(0);
             if (filename == null) filename = br.getRegex("<td width=\"607\" class=\"style4\">([^<>\"]*?) \\(\\*Warning\\*").getMatch(0);
+        } else if (br.getURL().contains("worldstarcandy.com/")) {
+            filename = br.getRegex("color:#023a70; font\\-size:28px;\">([^<>\"]*?)</span>").getMatch(0);
+            getURLUniversal();
         } else {
             if (br.containsHTML("<title>Video: No Video </title>") || br.getURL().equals("http://www.worldstarhiphop.com/videos/")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             if (br.containsHTML(">This video isn\\'t here right now\\.\\.\\.")) {

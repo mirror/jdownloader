@@ -65,8 +65,11 @@ public class VideoMediasetIt extends PluginForHost {
         /** Old way */
         // http://cdnselector.xuniplay.fdnames.com/GetCDN.aspx?streamid= + streamID
         /** New way, thx to: http://userscripts.org/scripts/review/151516 */
-        br.getPage("http://lazza.host-ed.me/script/vd.php?id=" + streamID);
-        final String[] dllinks = br.getRegex("<video src=\"(http://[^<>\"]*?)\"/>").getColumn(0);
+        // br.getPage("http://lazza.host-ed.me/script/vd.php?id=" + streamID);
+        br.getPage("http://cdnselector.xuniplay.fdnames.com/GetCDN.aspx?streamid=" + streamID + "&format=json");
+        final String videoList = br.getRegex("\"videoList\":\\[(.*?)\\]").getMatch(0);
+        if (videoList == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        final String[] dllinks = new Regex(videoList, "\"(http://[^<>\"]*?)\"").getColumn(0);
         if (dllinks != null && dllinks.length != 0) DLLINK = dllinks[dllinks.length - 1];
         if (DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         if (DLLINK.contains("Error400") || br.containsHTML("/Cartello_NotAvailable\\.wmv")) {

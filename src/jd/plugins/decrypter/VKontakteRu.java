@@ -227,12 +227,28 @@ public class VKontakteRu extends PluginForDecrypt {
                     decryptedLinks = decryptPhotoAlbums(decryptedLinks, parameter);
                     logger.info("Decrypted " + decryptedLinks.size() + " photo-album-links out of a multiple-photo-albums-link");
                 } else {
+                    // Unsupported link -> Errorhandling -> Either link offline or plugin broken
                     if (!parameter.matches(PATTERN_WALL_LINK)) {
+                        if (br.containsHTML("class=\"profile_blocked\"")) {
+                            final DownloadLink offline = createDownloadlink("http://vkontaktedecrypted.ru/videolink/" + new Random().nextInt(10000000));
+                            offline.setName(new Regex(parameter, "vk\\.com/(.+)").getMatch(0));
+                            offline.setProperty("offline", true);
+                            decryptedLinks.add(offline);
+                            return decryptedLinks;
+                        }
                         logger.warning("Cannot decrypt unsupported linktype: " + parameter);
                         return null;
+                    } else {
+                        if (br.containsHTML("You are not allowed to view this community\\&#39;s wall")) {
+                            final DownloadLink offline = createDownloadlink("http://vkontaktedecrypted.ru/videolink/" + new Random().nextInt(10000000));
+                            offline.setName(new Regex(parameter, "(\\d+)$").getMatch(0));
+                            offline.setProperty("offline", true);
+                            decryptedLinks.add(offline);
+                            return decryptedLinks;
+                        }
+                        decryptedLinks = decryptWallLink(decryptedLinks, parameter);
+                        logger.info("Decrypted " + decryptedLinks.size() + " photo-links out of a wall-link");
                     }
-                    decryptedLinks = decryptWallLink(decryptedLinks, parameter);
-                    logger.info("Decrypted " + decryptedLinks.size() + " photo-links out of a wall-link");
                 }
             } catch (final BrowserException e) {
                 logger.warning("Browser exception thrown: " + e.getMessage());

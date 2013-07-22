@@ -45,7 +45,7 @@ public class MinUsComDecrypter extends PluginForDecrypt {
         String parameter = param.toString().replace("dev.min", "min").replace("min.us/", "minus.com/");
 
         // ignore trash here... uses less memory allocations
-        if (parameter.matches("https?://([a-zA-Z0-9]+\\.)?(minus\\.com|min\\.us)/(directory|explore|httpsmobile|pref|recent|search|smedia|uploads)") || parameter.matches("https?://(blog\\.)?(minus\\.com|min\\.us)/.+")) {
+        if (parameter.matches("https?://([a-zA-Z0-9]+\\.)?(minus\\.com|min\\.us)/(directory|explore|httpsmobile|pref|recent|search|smedia|uploads)") || parameter.matches("https?://(www\\.)?blog\\.(minus\\.com|min\\.us)/.+")) {
             // /uploads is not supported
             return decryptedLinks;
         }

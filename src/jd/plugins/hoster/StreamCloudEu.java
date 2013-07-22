@@ -108,7 +108,8 @@ public class StreamCloudEu extends PluginForHost {
         if (filename == null) filename = br.getRegex("<h1>Watch video: ([^<>\"]+)</h1>").getMatch(0);
         if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         filename = Encoding.htmlDecode(filename.trim());
-        String ext = filename.substring(filename.lastIndexOf("."));
+        String ext = null;
+        if (filename.contains(".")) ext = filename.substring(filename.lastIndexOf("."));
         if (ext != null && ext.length() < 5)
             filename = filename.replace(ext, ".mp4");
         else

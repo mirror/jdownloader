@@ -49,18 +49,7 @@ public class PornCom extends PluginForHost {
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception {
-        requestFileInformation(downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 0);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        dl.startDownload();
-    }
-
-    @Override
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL().replace("/embed/", "/"));
@@ -68,6 +57,13 @@ public class PornCom extends PluginForHost {
         String filename = br.getRegex("<h1>(.*?)</h1>").getMatch(0);
         if (filename == null) {
             filename = br.getRegex("<title>(.*?)</title>").getMatch(0);
+        }
+        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        filename = Encoding.htmlDecode(filename.trim());
+        if (br.containsHTML(">Sorry, this video is only available to members")) {
+            downloadLink.setName(filename + ".mp4");
+            downloadLink.getLinkStatus().setStatusText("Only available for registered users");
+            return AvailableStatus.TRUE;
         }
         DLLINK = br.getRegex("\"Med\"(,file)?:\"(http:.*?)\"").getMatch(1);
         if (DLLINK == null) {
@@ -78,10 +74,9 @@ public class PornCom extends PluginForHost {
         }
         if (filename == null || DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         DLLINK = Encoding.htmlDecode(DLLINK).replace("\\", "");
-        filename = filename.trim();
         String ext = DLLINK.substring(DLLINK.lastIndexOf("."));
         if (ext == null || ext.length() > 5) ext = ".mp4";
-        downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + ext);
+        downloadLink.setFinalFileName(filename + ext);
         Browser br2 = br.cloneBrowser();
         // In case the link redirects to the finallink
         br2.setFollowRedirects(true);
@@ -99,6 +94,25 @@ public class PornCom extends PluginForHost {
             } catch (Throwable e) {
             }
         }
+    }
+
+    @Override
+    public void handleFree(DownloadLink downloadLink) throws Exception {
+        requestFileInformation(downloadLink);
+        if (br.containsHTML(">Sorry, this video is only available to members")) {
+            try {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+            } catch (final Throwable e) {
+                if (e instanceof PluginException) throw (PluginException) e;
+            }
+            throw new PluginException(LinkStatus.ERROR_FATAL, "Only available for registered users");
+        }
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 0);
+        if (dl.getConnection().getContentType().contains("html")) {
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dl.startDownload();
     }
 
     @Override

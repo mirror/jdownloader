@@ -35,9 +35,10 @@ import jd.plugins.PluginForHost;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uzmantv.com" }, urls = { "http://(www\\.)?uzmantv\\.com/[a-z0-9-]+" }, flags = { 0 })
 public class UzManTvCom extends PluginForHost {
 
-    private String              DLLINK     = null;
+    private String              DLLINK       = null;
 
-    private static final String DLLINKPART = "?source=site";
+    private static final String DLLINKPART   = "?source=site";
+    private static final String INVALIDLINKS = "http://(www\\.)?uzmantv\\.com/(kategoriler|kullanimkosullari|favoriler|facebookSubLogin|yardim|konular|uzmanlar|iphone|iletisim)";
 
     public UzManTvCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -137,6 +138,7 @@ public class UzManTvCom extends PluginForHost {
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws Exception {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
+        if (downloadLink.getDownloadURL().matches(INVALIDLINKS)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML("(\">Sayfa bulunamadı|Buraya gelmek için tıkladığınız linkte bir sorun var gibi görünüyor\\. Çünkü maalesef UZMANTV'de böyle bir sayfa yok\\.)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("class=\"clear\"></div></div><h5>(.*?)</h5>").getMatch(0);

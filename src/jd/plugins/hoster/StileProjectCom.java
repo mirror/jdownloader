@@ -30,7 +30,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "stileproject.com" }, urls = { "http://(www\\.)?stileproject\\.com/video/\\d+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "stileproject.com" }, urls = { "http://(www\\.)?stileprojectdecrypted\\.com/video/\\d+" }, flags = { 0 })
 public class StileProjectCom extends PluginForHost {
 
     private String DLLINK = null;
@@ -47,6 +47,10 @@ public class StileProjectCom extends PluginForHost {
     @Override
     public int getMaxSimultanFreeDownloadNum() {
         return -1;
+    }
+
+    public void correctDownloadLink(DownloadLink link) {
+        link.setUrlDownload(link.getDownloadURL().replace("stileprojectdecrypted.com/", "stileproject.com/"));
     }
 
     @Override

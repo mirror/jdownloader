@@ -43,7 +43,7 @@ import jd.utils.locale.JDL;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "upstore.net", "upsto.re" }, urls = { "http://(www\\.)?(upsto\\.re|upstore\\.net)/(?!faq|privacy|terms|d/|aff|login|account|dmca|imprint|message|panel|premium)[A-Za-z0-9]+", "ejnz905rj5o0jt69pgj50ujz0zhDELETE_MEew7th59vcgzh59prnrjhzj0" }, flags = { 2, 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "upstore.net", "upsto.re" }, urls = { "http://(www\\.)?(upsto\\.re|upstore\\.net)/[A-Za-z0-9]+", "ejnz905rj5o0jt69pgj50ujz0zhDELETE_MEew7th59vcgzh59prnrjhzj0" }, flags = { 2, 0 })
 public class UpstoRe extends PluginForHost {
 
     public UpstoRe(PluginWrapper wrapper) {
@@ -56,18 +56,20 @@ public class UpstoRe extends PluginForHost {
         return "http://upstore.net/terms/";
     }
 
-    private static Object LOCK     = new Object();
-    private final String  MAINPAGE = "http://upstore.net";
+    private static Object       LOCK         = new Object();
+    private final String        MAINPAGE     = "http://upstore.net";
+    private static final String INVALIDLINKS = "http://(www\\.)?(upsto\\.re|upstore\\.net)/(faq|privacy|terms|d/|aff|login|account|dmca|imprint|message|panel|premium|contacts)";
 
     public void correctDownloadLink(DownloadLink link) {
         link.setUrlDownload(link.getDownloadURL().replace("upsto.re/", "upstore.net/"));
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.setCookie("http://upstore.net/", "lang", "en");
+        if (link.getDownloadURL().matches(INVALIDLINKS)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         br.getPage(link.getDownloadURL());
         if (br.containsHTML(">File not found<|>File was deleted by owner or due to a violation of service rules\\.|not found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         final Regex fileInfo = br.getRegex("<h2 style=\"margin:0\">([^<>\"]*?)</h2>[\t\n\r ]+<div class=\"comment\">([^<>\"]*?)</div>");

@@ -157,6 +157,9 @@ public class DeviantArtCom extends PluginForHost {
             }
             throw new PluginException(LinkStatus.ERROR_FATAL, "Mature content can only be downloaded via account");
         }
+        if (DLLINK == null) {
+            getDllink();
+        }
         // Disable chunks as we only download pictures or small files
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 1);
         if (dl.getConnection().getContentType().contains("html")) {

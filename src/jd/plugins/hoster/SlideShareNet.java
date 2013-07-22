@@ -34,7 +34,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "slideshare.net" }, urls = { "http://(www\\.)?slideshare\\.net/[a-z0-9\\-_]+/[a-z0-9\\-_]+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "slideshare.net" }, urls = { "http://(www\\.)?slideshare\\.net/(?!search|business)[a-z0-9\\-_]+/[a-z0-9\\-_]+" }, flags = { 2 })
 public class SlideShareNet extends PluginForHost {
 
     public SlideShareNet(PluginWrapper wrapper) {
@@ -55,6 +55,7 @@ public class SlideShareNet extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         this.setBrowserExclusive();
+        br.setFollowRedirects(true);
         try {
             br.getPage(link.getDownloadURL());
         } catch (Exception e) {
@@ -64,7 +65,7 @@ public class SlideShareNet extends PluginForHost {
                 throw e;
             }
         }
-        if (br.containsHTML(FILENOTFOUND)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML(FILENOTFOUND) || br.containsHTML(">Uploaded Content Removed<")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         final String filename = br.getRegex("<title>([^<>\"]*?)</title>").getMatch(0);
         if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         link.setName(Encoding.htmlDecode(filename.trim()));

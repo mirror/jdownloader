@@ -28,7 +28,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "partage-facile.com" }, urls = { "http://[\\w\\.]*?partage\\-facile\\.com/(?!forum|connexion|mentions|inscription)([0-9A-Z]+/.+|\\d+.*?\\.html)" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "partage-facile.com" }, urls = { "http://[\\w\\.]*?partage\\-facile\\.com/(?!forum|connexion|mentions|inscription|css|js)([0-9A-Z]+/.+|\\d+.*?\\.html)" }, flags = { 0 })
 public class PartageFacileCom extends PluginForHost {
 
     public PartageFacileCom(PluginWrapper wrapper) {

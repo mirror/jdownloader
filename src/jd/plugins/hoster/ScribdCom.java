@@ -60,6 +60,10 @@ public class ScribdCom extends PluginForHost {
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(false);
+        try {
+            br.setAllowedResponseCodes(new int[] { 410 });
+        } catch (Throwable e) {
+        }
         br.getPage(downloadLink.getDownloadURL());
         for (int i = 0; i <= 3; i++) {
             String newurl = br.getRedirectLocation();

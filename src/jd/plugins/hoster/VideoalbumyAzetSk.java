@@ -24,7 +24,7 @@ import java.nio.charset.CharsetDecoder;
 import java.nio.charset.CharsetEncoder;
 
 import jd.PluginWrapper;
-import jd.parser.Regex;
+import jd.nutils.encoding.Encoding;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -53,43 +53,17 @@ public class VideoalbumyAzetSk extends PluginForHost {
         return -1;
     }
 
-    @Override
-    public void handleFree(DownloadLink link) throws Exception {
-        requestFileInformation(link);
-        if (dlink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dlink, true, 0);
-        if (dl.getConnection().getContentType().contains("html")) {
-            dl.getConnection().disconnect();
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        dl.startDownload();
-    }
-
-    /**
-     * Converts txt from ISO-8859-1 to WINDOWS-1250 encoding.
-     * 
-     * @param txt
-     * @return
-     */
-    private String iso88591ToWin1250(String txt) {
-        CharsetDecoder decoder = Charset.forName("WINDOWS-1250").newDecoder();
-        CharsetEncoder encoder = Charset.forName("ISO-8859-1").newEncoder();
-        try {
-            ByteBuffer bbuf = encoder.encode(CharBuffer.wrap(txt));
-            CharBuffer cbuf = decoder.decode(bbuf);
-            return cbuf.toString();
-        } catch (CharacterCodingException e) {
-            return null;
-        }
-    }
+    private static final String INVALIDLINKS = "http://(www\\.)?videoalbumy\\.azet\\.sk/video/(zvierata|najnovsie|cestovanie|ostatne|vtipy|politika|reklama|umenie|filmy|vzdelavanie|auta|sport|hudba|priroda|zabava)/";
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws Exception {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
+        if (link.getDownloadURL().matches(INVALIDLINKS)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         br.getPage(link.getDownloadURL());
         String filename = br.getRegex("<title>VideoAlbumy \\- (.*?)</title>").getMatch(0);
+        final String configPage = br.getRegex("flashvars=\"config=(http[^<>\"]*?)\\&autostart=true").getMatch(0);
         if (null == filename || filename.trim().length() == 0) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
 
-        br.getPage("http://videoalbumy.azet.sk/players/jw/plConf.phtml?&h=" + new Regex(link.getDownloadURL(), "([0-9a-zA-Z]+)/$").getMatch(0));
+        br.getPage(Encoding.htmlDecode(configPage));
         dlink = br.getRegex("<file>(http://[^<>\"]*?)</file>").getMatch(0);
         if (dlink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
 
@@ -107,6 +81,36 @@ public class VideoalbumyAzetSk extends PluginForHost {
             if (br.getHttpConnection() != null) br.getHttpConnection().disconnect();
         }
         throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+    }
+
+    @Override
+    public void handleFree(final DownloadLink link) throws Exception {
+        requestFileInformation(link);
+        if (dlink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dlink, true, 0);
+        if (dl.getConnection().getContentType().contains("html")) {
+            dl.getConnection().disconnect();
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        dl.startDownload();
+    }
+
+    /**
+     * Converts txt from ISO-8859-1 to WINDOWS-1250 encoding.
+     * 
+     * @param txt
+     * @return
+     */
+    private String iso88591ToWin1250(final String txt) {
+        CharsetDecoder decoder = Charset.forName("WINDOWS-1250").newDecoder();
+        CharsetEncoder encoder = Charset.forName("ISO-8859-1").newEncoder();
+        try {
+            ByteBuffer bbuf = encoder.encode(CharBuffer.wrap(txt));
+            CharBuffer cbuf = decoder.decode(bbuf);
+            return cbuf.toString();
+        } catch (CharacterCodingException e) {
+            return null;
+        }
     }
 
     @Override

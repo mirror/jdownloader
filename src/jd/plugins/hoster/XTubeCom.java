@@ -66,6 +66,7 @@ public class XTubeCom extends PluginForHost {
         String filename = br.getRegex("<div class=\"font_b_12px\">(.*?)</div><div").getMatch(0);
         String fileID = new Regex(downloadLink.getDownloadURL(), "xtube\\.com/watch\\.php\\?v=(.+)").getMatch(0);
         String ownerName = br.getRegex("\\?field_subscribe_user_id=([^<>\"]*?)\"").getMatch(0);
+        if (ownerName == null) ownerName = "undefined";
         if (fileID == null || ownerName == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         br.postPage("http://www.xtube.com/find_video.php", "user%5Fid=" + Encoding.urlEncode(ownerName) + "&clip%5Fid=&video%5Fid=" + Encoding.urlEncode(fileID));
         DLLINK = br.getRegex("\\&filename=(http.*?)($|\r|\n| )").getMatch(0);

@@ -160,6 +160,7 @@ public class MxCloudCom extends PluginForDecrypt {
         } catch (final Throwable e) {
         }
 
+        br.setFollowRedirects(true);
         URLConnectionAdapter con = null;
         final String[] links = new Regex(result, "\"(.*?)\"").getColumn(0);
         if (links == null || links.length == 0) { return null; }
@@ -173,7 +174,7 @@ public class MxCloudCom extends PluginForDecrypt {
             /* Nicht alle Links im Array sets[] sind verfügbar. */
             try {
                 con = br.openGetConnection(dl);
-                if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
+                if (con.getContentType().contains("html") && con.getLongContentLength() == -1) {
                     continue;
                 }
                 if (alreadyFound.get(dlink.getName()) != null && alreadyFound.get(dlink.getName()) == con.getLongContentLength()) {
