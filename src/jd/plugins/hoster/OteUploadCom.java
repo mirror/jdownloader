@@ -1725,7 +1725,7 @@ public class OteUploadCom extends PluginForHost {
                 } catch (final Throwable e) {
                     e.printStackTrace();
                     try {
-                        final Field field = getClass().getDeclaredField("requested");
+                        final Field field = this.getClass().getSuperclass().getDeclaredField("requested");
                         field.setAccessible(true);
                         field.setBoolean(this, true);
                     } catch (final Throwable e2) {
