@@ -68,7 +68,7 @@ public class RemoteAPIController {
         register(new LinkCollectorEventPublisher());
         register(new DownloadControllerEventPublisher());
         register(new ExtensionsAPIImpl());
-
+        register(new UpdateAPIImpl());
         register(new LinkCrawlerEventPublisher());
         RemoteAPIIOHandlerWrapper wrapper;
         UIOManager.setUserIO(wrapper = new RemoteAPIIOHandlerWrapper(UIOManager.I()));

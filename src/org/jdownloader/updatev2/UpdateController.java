@@ -437,6 +437,7 @@ public class UpdateController implements UpdateCallbackInterface {
     }
 
     public boolean hasPendingUpdates() {
+        if (handler == null) return false;
         return handler.hasPendingUpdates();
     }
 
