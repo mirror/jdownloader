@@ -16,10 +16,12 @@
 
 package jd.plugins.decrypter;
 
+import java.io.IOException;
 import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
@@ -27,8 +29,15 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.JDUtilities;
 
+import org.appwork.utils.formatter.SizeFormatter;
+
 @DecrypterPlugin(revision = "$Revision: 17642 $", interfaceVersion = 2, names = { "rapidgator.net" }, urls = { "http://(www\\.)?rapidgator\\.net/folder/\\d+/[\\w\\%]+" }, flags = { 0 })
+@SuppressWarnings("deprecation")
 public class RapidGatorNetFolder extends PluginForDecrypt {
+
+    private String parameter = null;
+    private String uid       = null;
+    private String lastPage  = null;
 
     public RapidGatorNetFolder(PluginWrapper wrapper) {
         super(wrapper);
@@ -36,7 +45,8 @@ public class RapidGatorNetFolder extends PluginForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        String parameter = param.toString();
+        parameter = param.toString();
+        uid = new Regex(parameter, "/folder/(\\d+)").getMatch(0);
         // standardise browser configurations to avoid detection.
         /* we first have to load the plugin, before we can reference it */
         JDUtilities.getPluginForHost("rapidgator.net");
@@ -49,7 +59,8 @@ public class RapidGatorNetFolder extends PluginForDecrypt {
         }
         String fpName = br.getRegex("Downloading:[\r\n\t ]+</strong>[\r\n\t ]+(.*?)[\r\n\t ]+</p>").getMatch(0);
         if (fpName == null) fpName = br.getRegex("<title>Download file (.*?)</title>").getMatch(0);
-        parsePage(decryptedLinks, parameter);
+        parsePage(decryptedLinks);
+        parseNextPage(decryptedLinks);
         if (fpName != null) {
             FilePackage fp = FilePackage.getInstance();
             fp.setName(fpName.trim());
@@ -58,18 +69,37 @@ public class RapidGatorNetFolder extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    private void parsePage(ArrayList<DownloadLink> ret, String parameter) {
-        String[] links = br.getRegex("\"(/file/([a-z0-9]{32}|\\d+)/[^\"]+)").getColumn(0);
+    private void parsePage(ArrayList<DownloadLink> ret) {
+        String[][] links = br.getRegex("\"(/file/([a-z0-9]{32}|\\d+)/([^\"]+))\".*?>([\\d\\.]+ (KB|MB|GB))").getMatches();
 
         if (links == null || links.length == 0) {
             logger.warning("Empty folder, or possible plugin defect. Please confirm this issue within your browser, if the plugin is truely broken please report issue to JDownloader Development Team. " + parameter);
             return;
         }
         if (links != null && links.length != 0) {
-            for (String dl : links)
-                ret.add(createDownloadlink("http://rapidgator.net" + dl));
+            for (String[] dl : links) {
+                DownloadLink link = createDownloadlink("http://rapidgator.net" + dl[0]);
+                link.setName(dl[2].replaceFirst("\\.html$", ""));
+                link.setDownloadSize(SizeFormatter.getSize(dl[3]));
+                link.setAvailable(true);
+                ret.add(link);
+            }
         }
 
+    }
+
+    private boolean parseNextPage(ArrayList<DownloadLink> ret) throws IOException {
+        String nextPage = br.getRegex("<a href=\"(/folder/" + uid + "/[^>]+\\?page=\\d+)\">Next").getMatch(0);
+        if (lastPage == null) {
+            lastPage = br.getRegex("<a href=\"(/folder/" + uid + "/[^>]+\\?page=\\d+)\">Last").getMatch(0);
+        }
+        if (nextPage != null && (lastPage != null && !br.getURL().contains(lastPage))) {
+            br.getPage(nextPage);
+            parsePage(ret);
+            parseNextPage(ret);
+            return true;
+        }
+        return false;
     }
 
     /* NO OVERRIDE!! */
