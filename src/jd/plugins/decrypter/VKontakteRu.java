@@ -718,7 +718,19 @@ public class VKontakteRu extends PluginForDecrypt {
             return decryptedLinks;
         }
         String endOffset = br.getRegex("href=\"/wall(\\-)?" + userID + "[^<>\"/]*?offset=(\\d+)\" onclick=\"return nav\\.go\\(this, event\\)\"><div class=\"pg_in\">\\&raquo;</div>").getMatch(1);
-        if (endOffset == null) endOffset = "10";
+        if (endOffset == null) {
+            int highestFoundOffset = 10;
+            final String[] offsets = br.getRegex("\\&offset=(\\d+)\"").getColumn(0);
+            if (offsets != null && offsets.length != 0) {
+                for (final String offset : offsets) {
+                    final int curOffset = Integer.parseInt(offset);
+                    if (curOffset > highestFoundOffset) highestFoundOffset = curOffset;
+                }
+                endOffset = Integer.toString(highestFoundOffset);
+            } else {
+                endOffset = "10";
+            }
+        }
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         int correntOffset = 0;
         int maxOffset = Integer.parseInt(endOffset);
@@ -742,7 +754,8 @@ public class VKontakteRu extends PluginForDecrypt {
             }
 
             // First get all photo links
-            final String[][] photoInfo = br.getRegex("showPhoto\\(\\'((\\-)?\\d+_\\d+)\\', \\'((wall|album)(\\-)?\\d+_\\d+)\\', \\{temp:\\{(base:.*?\\]\\})").getMatches();
+            br.getRequest().setHtmlCode(br.toString().replace("&quot;", "'"));
+            final String[][] photoInfo = br.getRegex("showPhoto\\(\\'((\\-)?\\d+_\\d+)\\', \\'((wall|album)(\\-)?\\d+_\\d+)\\', \\{\\'temp\\':\\{(\\'base\\':.*?\\]\\})").getMatches();
             if (photoInfo == null || photoInfo.length == 0) {
                 logger.info("Current offset has no downloadable links, continuing...");
                 continue;

@@ -148,15 +148,15 @@ public class VKontakteRuHoster extends PluginForHost {
                      * Try to get best quality and test links till a working link is found as it can happen that the found link is offline
                      * but others are online
                      */
-                    final String base = new Regex(directLinks, "base:\"(http://[^<>\"]*?)\"").getMatch(0);
+                    final String base = new Regex(directLinks, "base(\\')?:(\"|\\')(http://[^<>\"]*?)(\"|\\')").getMatch(2);
                     for (String q : qs) {
                         /* large image */
                         if (FINALLINK == null || (FINALLINK != null && !linkOk(link, null))) {
                             if (base == null) {
-                                FINALLINK = new Regex(directLinks, q + ":\\[\"([^<>\"]*?)\"").getMatch(0);
+                                FINALLINK = new Regex(directLinks, q + "(\\')?:\\[(\"|\\')([^<>\"]*?)(\"|\\')").getMatch(2);
                                 if (FINALLINK != null) FINALLINK += ".jpg";
                             } else {
-                                final String linkPart = new Regex(directLinks, q + ":\\[\"([^<>\"]*?)\"").getMatch(0);
+                                final String linkPart = new Regex(directLinks, q + "(\\')?:\\[(\"|\\')([^<>\"]*?)(\"|\\')").getMatch(2);
                                 if (linkPart != null) {
                                     FINALLINK = base + linkPart + ".jpg";
                                 }
