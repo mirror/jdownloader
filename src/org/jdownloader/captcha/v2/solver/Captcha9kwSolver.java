@@ -98,8 +98,9 @@ public class Captcha9kwSolver extends ChallengeSolver<String> implements Challen
                 Browser br = new Browser();
                 br.setAllowedResponseCodes(new int[] { 500 });
                 String ret = "";
+
                 for (int i = 0; i <= 5; i++) {
-                    ret = br.postPage(getAPIROOT() + "index.cgi", "action=usercaptchaupload&jd=2&source=jd2&captchaperhour=" + config.gethour() + "&prio=" + config.getprio() + "&confirm=" + config.isconfirm() + "&oldsource=" + Encoding.urlEncode(challenge.getTypeID()) + "&apikey=" + Encoding.urlEncode(config.getApiKey()) + "&captchaSource=jdPlugin&timeout=" + JsonConfig.create(CaptchaSettings.class).getCaptchaDialogJAntiCaptchaTimeout() + "&version=1.1&base64=1&file-upload-01=" + Encoding.urlEncode(org.appwork.utils.encoding.Base64.encodeToString(data, false)));
+                    ret = br.postPage(getAPIROOT() + "index.cgi", "action=usercaptchaupload&jd=2&source=jd2&captchaperhour=" + config.gethour() + "&prio=" + config.getprio() + "&confirm=" + config.isconfirm() + "&oldsource=" + Encoding.urlEncode(challenge.getTypeID()) + "&apikey=" + Encoding.urlEncode(config.getApiKey()) + "&captchaSource=jdPlugin&maxtimeout=" + (JsonConfig.create(CaptchaSettings.class).getCaptchaDialog9kwTimeout() / 1000) + "&version=1.2&base64=1&file-upload-01=" + Encoding.urlEncode(org.appwork.utils.encoding.Base64.encodeToString(data, false)));
                     if (ret.startsWith("OK-")) {
                         break;
                     } else {
@@ -124,7 +125,7 @@ public class Captcha9kwSolver extends ChallengeSolver<String> implements Challen
                         return;
                     }
                     checkInterruption();
-                    Thread.sleep(2000);
+                    Thread.sleep(3000);
                 }
 
             } catch (IOException e) {

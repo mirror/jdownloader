@@ -8,79 +8,79 @@ import org.appwork.storage.config.annotations.DescriptionForConfigEntry;
 import org.appwork.storage.config.annotations.SpinnerValidator;
 
 public interface Captcha9kwSettings extends ConfigInterface {
-    @AboutConfig
-    @DescriptionForConfigEntry("Your (User) ApiKey from 9kw.eu")
-    String getApiKey();
+	@AboutConfig
+	@DescriptionForConfigEntry("Your (User) ApiKey from 9kw.eu")
+	String getApiKey();
 
-    void setApiKey(String jser);
+	void setApiKey(String jser);
 
-    @AboutConfig
-    @DefaultBooleanValue(false)
-    @DescriptionForConfigEntry("Active the 9kw.eu service")
-    boolean isEnabled();
+	@AboutConfig
+	@DefaultBooleanValue(false)
+	@DescriptionForConfigEntry("Active the 9kw.eu service")
+	boolean isEnabled();
 
-    void setEnabled(boolean b);
+	void setEnabled(boolean b);
 
-    @AboutConfig
-    @DefaultBooleanValue(false)
-    @DescriptionForConfigEntry("Activate the Mouse Captchas")
-    boolean ismouse();
+	@AboutConfig
+	@DefaultBooleanValue(false)
+	@DescriptionForConfigEntry("Activate the Mouse Captchas")
+	boolean ismouse();
 
-    void setmouse(boolean b);
+	void setmouse(boolean b);
 
-    @AboutConfig
-    @DefaultBooleanValue(false)
-    @DescriptionForConfigEntry("Confirm option for captchas (Cost +6)")
-    boolean isconfirm();
+	@AboutConfig
+	@DefaultBooleanValue(false)
+	@DescriptionForConfigEntry("Confirm option for captchas (Cost +6)")
+	boolean isconfirm();
 
-    void setconfirm(boolean b);
+	void setconfirm(boolean b);
 
-    @AboutConfig
-    @DefaultBooleanValue(false)
-    @DescriptionForConfigEntry("Confirm option for mouse captchas (Cost +6)")
-    boolean ismouseconfirm();
+	@AboutConfig
+	@DefaultBooleanValue(false)
+	@DescriptionForConfigEntry("Confirm option for mouse captchas (Cost +6)")
+	boolean ismouseconfirm();
 
-    void setmouseconfirm(boolean b);
+	void setmouseconfirm(boolean b);
 
-    @AboutConfig
-    @DefaultIntValue(0)
-    @SpinnerValidator(min = 0, max = 10)
-    @DescriptionForConfigEntry("More priority for captchas (Cost +1-10)")
-    int getprio();
+	@AboutConfig
+	@DefaultIntValue(0)
+	@SpinnerValidator(min = 0, max = 10)
+	@DescriptionForConfigEntry("More priority for captchas (Cost +1-10)")
+	int getprio();
 
-    void setprio(int seconds);
+	void setprio(int seconds);
 
-    @AboutConfig
-    @DefaultIntValue(0)
-    @SpinnerValidator(min = 0, max = 9999)
-    @DescriptionForConfigEntry("Max. Captchas per hour")
-    int gethour();
+	@AboutConfig
+	@DefaultIntValue(0)
+	@SpinnerValidator(min = 0, max = 9999)
+	@DescriptionForConfigEntry("Max. Captchas per hour")
+	int gethour();
 
-    void sethour(int seconds);
+	void sethour(int seconds);
 
-    @AboutConfig
-    @DefaultBooleanValue(false)
-    @DescriptionForConfigEntry("Only https requests to 9kw.eu")
-    boolean ishttps();
+	@AboutConfig
+	@DefaultBooleanValue(true)
+	@DescriptionForConfigEntry("Only https requests to 9kw.eu")
+	boolean ishttps();
 
-    void sethttps(boolean b);
+	void sethttps(boolean b);
 
-    @AboutConfig
-    @DescriptionForConfigEntry("Captcha whitelist for hoster")
-    String getwhitelist();
+	@AboutConfig
+	@DescriptionForConfigEntry("Captcha whitelist for hoster")
+	String getwhitelist();
 
-    void setwhitelist(String jser);
+	void setwhitelist(String jser);
 
-    @AboutConfig
-    @DescriptionForConfigEntry("Captcha blacklist for hoster")
-    String getblacklist();
+	@AboutConfig
+	@DescriptionForConfigEntry("Captcha blacklist for hoster")
+	String getblacklist();
 
-    void setblacklist(String jser);
+	void setblacklist(String jser);
 
-    @AboutConfig
-    @DefaultBooleanValue(true)
-    @DescriptionForConfigEntry("Activate the Captcha Feedback")
-    boolean isfeedback();
+	@AboutConfig
+	@DefaultBooleanValue(true)
+	@DescriptionForConfigEntry("Activate the Captcha Feedback")
+	boolean isfeedback();
 
-    void setfeedback(boolean b);
+	void setfeedback(boolean b);
 }
