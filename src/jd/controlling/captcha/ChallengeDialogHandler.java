@@ -8,7 +8,6 @@ import java.util.logging.Logger;
 
 import jd.controlling.downloadcontroller.DownloadWatchDog;
 import jd.gui.swing.dialog.CaptchaDialog;
-import jd.gui.swing.dialog.CaptchaDialogInterface;
 import jd.gui.swing.dialog.DialogType;
 import jd.gui.swing.jdgui.JDGui;
 import jd.plugins.PluginForDecrypt;
@@ -29,12 +28,11 @@ import org.jdownloader.controlling.UniqueAlltimeID;
 import org.jdownloader.logging.LogController;
 
 public abstract class ChallengeDialogHandler<T extends ImageCaptchaChallenge<?>> {
-    private CaptchaDialogInterface textDialog;
 
-    private DomainInfo             host;
-    protected T                    captchaChallenge;
-    private CaptchaSettings        config;
-    private final UniqueAlltimeID  id = new UniqueAlltimeID();
+    private DomainInfo            host;
+    protected T                   captchaChallenge;
+    private CaptchaSettings       config;
+    private final UniqueAlltimeID id = new UniqueAlltimeID();
 
     public ChallengeDialogHandler(DomainInfo instance, T captchaChallenge2) {
         this.host = instance;

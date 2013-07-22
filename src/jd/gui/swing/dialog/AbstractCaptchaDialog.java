@@ -137,6 +137,11 @@ public abstract class AbstractCaptchaDialog extends AbstractDialog<Object> {
         }
     }
 
+    @Override
+    public ModalityType getModalityType() {
+        return ModalityType.MODELESS;
+    }
+
     /**
      * @param url
      * @return
@@ -900,11 +905,6 @@ public abstract class AbstractCaptchaDialog extends AbstractDialog<Object> {
 
     public void mouseReleased(final MouseEvent e) {
         this.cancel();
-    }
-
-    @Override
-    public ModalityType getModalityType() {
-        return ModalityType.MODELESS;
     }
 
     public List<? extends Image> getIconList() {

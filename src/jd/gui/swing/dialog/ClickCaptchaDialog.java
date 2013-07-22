@@ -42,7 +42,7 @@ import org.jdownloader.gui.translate._GUI;
 /**
  * This Dialog is used to display a Inputdialog for the captchas
  */
-public class ClickCaptchaDialog extends AbstractCaptchaDialog implements ClickCaptchaDialogInterface {
+public class ClickCaptchaDialog extends AbstractCaptchaDialog {
     public static void main(String[] args) {
         AbstractCaptchaDialog cp;
         try {
@@ -71,12 +71,6 @@ public class ClickCaptchaDialog extends AbstractCaptchaDialog implements ClickCa
     public ClickCaptchaDialog(int flag, DialogType type, DomainInfo domainInfo, Image[] images, String explain) {
         super(flag | Dialog.STYLE_HIDE_ICON | UIOManager.BUTTONS_HIDE_OK, _GUI._.gui_captchaWindow_askForInput(domainInfo.getTld()), type, domainInfo, explain, images);
 
-    }
-
-    public ClickCaptchaDialogInterface show() {
-        final ClickCaptchaDialogInterface ret = UIOManager.I().show(ClickCaptchaDialogInterface.class, this);
-
-        return ret;
     }
 
     @Override
@@ -126,7 +120,6 @@ public class ClickCaptchaDialog extends AbstractCaptchaDialog implements ClickCa
         return ret;
     }
 
-    @Override
     public ClickedPoint getResult() {
         if (resultPoint == null) return null;
         return new ClickedPoint(resultPoint.x, resultPoint.y);
