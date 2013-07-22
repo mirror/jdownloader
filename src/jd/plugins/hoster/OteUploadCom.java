@@ -18,6 +18,7 @@ package jd.plugins.hoster;
 
 import java.io.File;
 import java.io.IOException;
+import java.lang.reflect.Field;
 import java.net.URL;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
@@ -311,8 +312,8 @@ public class OteUploadCom extends PluginForHost {
     }
 
     /**
-     * Provides alternative linkchecking method for a single link at a time. Can be used as generic failover, though kinda pointless as this
-     * method doesn't give filename...
+     * Provides alternative linkchecking method for a single link at a time. Can be used as generic failover, though kinda pointless as this method doesn't give
+     * filename...
      * 
      * */
     private String[] altAvailStat(final DownloadLink downloadLink, final String[] fileInfo) throws Exception {
@@ -579,9 +580,9 @@ public class OteUploadCom extends PluginForHost {
         // monitor this
         if (cbr.containsHTML("(class=\"err\">You have reached the download(\\-| )limit[^<]+for last[^<]+)")) {
             /*
-             * Indication of when you've reached the max download limit for that given session! Usually shows how long the session was
-             * recorded from x time (hours|days) which can trigger false positive below wait handling. As its only indication of what's
-             * previous happened, as in past tense and not a wait time going forward... unknown wait time!
+             * Indication of when you've reached the max download limit for that given session! Usually shows how long the session was recorded from x time
+             * (hours|days) which can trigger false positive below wait handling. As its only indication of what's previous happened, as in past tense and not a
+             * wait time going forward... unknown wait time!
              */
             if (account != null) {
                 logger.warning("Your account ( " + account.getUser() + " @ " + acctype + " ) has been temporarily disabled for going over the download session limit. JDownloader parses HTML for error messages, if you believe this is not a valid response please confirm issue within your browser. If you can download within your browser please contact JDownloader Development Team, if you can not download in your browser please take the issue up with " + this.getHost());
@@ -1158,8 +1159,8 @@ public class OteUploadCom extends PluginForHost {
     }
 
     /**
-     * This fixes filenames from all xfs modules: file hoster, audio/video streaming (including transcoded video), or blocked link checking
-     * which is based on fuid.
+     * This fixes filenames from all xfs modules: file hoster, audio/video streaming (including transcoded video), or blocked link checking which is based on
+     * fuid.
      * 
      * @version 0.2
      * @author raztoki
@@ -1369,14 +1370,14 @@ public class OteUploadCom extends PluginForHost {
     }
 
     /**
-     * Prevents more than one free download from starting at a given time. One step prior to dl.startDownload(), it adds a slot to maxFree
-     * which allows the next singleton download to start, or at least try.
+     * Prevents more than one free download from starting at a given time. One step prior to dl.startDownload(), it adds a slot to maxFree which allows the next
+     * singleton download to start, or at least try.
      * 
-     * This is needed because xfileshare(website) only throws errors after a final dllink starts transferring or at a given step within pre
-     * download sequence. But this template(XfileSharingProBasic) allows multiple slots(when available) to commence the download sequence,
-     * this.setstartintival does not resolve this issue. Which results in x(20) captcha events all at once and only allows one download to
-     * start. This prevents wasting peoples time and effort on captcha solving and|or wasting captcha trading credits. Users will experience
-     * minimal harm to downloading as slots are freed up soon as current download begins.
+     * This is needed because xfileshare(website) only throws errors after a final dllink starts transferring or at a given step within pre download sequence.
+     * But this template(XfileSharingProBasic) allows multiple slots(when available) to commence the download sequence, this.setstartintival does not resolve
+     * this issue. Which results in x(20) captcha events all at once and only allows one download to start. This prevents wasting peoples time and effort on
+     * captcha solving and|or wasting captcha trading credits. Users will experience minimal harm to downloading as slots are freed up soon as current download
+     * begins.
      * 
      * @param controlSlot
      *            (+1|-1)
@@ -1394,8 +1395,8 @@ public class OteUploadCom extends PluginForHost {
     }
 
     /**
-     * ControlSimHost, On error it will set the upper mark for 'max sim dl per host'. This will be the new 'static' setting used going
-     * forward. Thus prevents new downloads starting when not possible and is self aware and requires no coder interaction.
+     * ControlSimHost, On error it will set the upper mark for 'max sim dl per host'. This will be the new 'static' setting used going forward. Thus prevents
+     * new downloads starting when not possible and is self aware and requires no coder interaction.
      * 
      * @param account
      * 
@@ -1428,9 +1429,9 @@ public class OteUploadCom extends PluginForHost {
     }
 
     /**
-     * This matches dllink against an array of used 'host' servers. Use this when site have multiple download servers and they allow x
-     * connections to ip/host server. Currently JD allows a global connection controller and doesn't allow for handling of different
-     * hosts/IP setup. This will help with those situations by allowing more connection when possible.
+     * This matches dllink against an array of used 'host' servers. Use this when site have multiple download servers and they allow x connections to ip/host
+     * server. Currently JD allows a global connection controller and doesn't allow for handling of different hosts/IP setup. This will help with those
+     * situations by allowing more connection when possible.
      * 
      * @param Account
      *            Account that's been used, can be null
@@ -1505,9 +1506,9 @@ public class OteUploadCom extends PluginForHost {
             // New download started, check finallink host against hostMap values && max(Free|Prem)SimDlHost!
 
             /*
-             * max(Free|Prem)SimDlHost prevents more downloads from starting on a given host! At least until one of the previous downloads
-             * finishes. This is best practice otherwise you have to use some crude system of waits, but you have no control over to reset
-             * the count. Highly dependent on how fast or slow the users connections is.
+             * max(Free|Prem)SimDlHost prevents more downloads from starting on a given host! At least until one of the previous downloads finishes. This is
+             * best practice otherwise you have to use some crude system of waits, but you have no control over to reset the count. Highly dependent on how fast
+             * or slow the users connections is.
              */
             if (isHashedHashedKey(account, usedHost)) {
                 Integer usedSlots = getHashedHashedValue(account);
@@ -1672,8 +1673,8 @@ public class OteUploadCom extends PluginForHost {
     }
 
     /**
-     * If form contain both " and ' quotation marks within input fields it can return null values, thus you submit wrong/incorrect data re:
-     * InputField parse(final String data). Affects revision 19688 and earlier!
+     * If form contain both " and ' quotation marks within input fields it can return null values, thus you submit wrong/incorrect data re: InputField
+     * parse(final String data). Affects revision 19688 and earlier!
      * 
      * TODO: remove after JD2 goes stable!
      * 
@@ -1702,8 +1703,8 @@ public class OteUploadCom extends PluginForHost {
     }
 
     /**
-     * This allows backward compatibility for design flaw in setHtmlCode(), It injects updated html into all browsers that share the same
-     * request id. This is needed as request.cloneRequest() was never fully implemented like browser.cloneBrowser().
+     * This allows backward compatibility for design flaw in setHtmlCode(), It injects updated html into all browsers that share the same request id. This is
+     * needed as request.cloneRequest() was never fully implemented like browser.cloneBrowser().
      * 
      * @param ibr
      *            Import Browser
@@ -1719,7 +1720,19 @@ public class OteUploadCom extends PluginForHost {
 
         Request req = new Request(oURL) {
             {
-                requested = true;
+                try {
+                    requested = true;
+                } catch (final Throwable e) {
+                    e.printStackTrace();
+                    try {
+                        final Field field = getClass().getDeclaredField("requested");
+                        field.setAccessible(true);
+                        field.setBoolean(this, true);
+                    } catch (final Throwable e2) {
+                        e2.printStackTrace();
+                    }
+                }
+
                 httpConnection = con;
                 setHtmlCode(t);
             }
