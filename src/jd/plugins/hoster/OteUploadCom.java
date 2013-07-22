@@ -1720,16 +1720,20 @@ public class OteUploadCom extends PluginForHost {
 
         Request req = new Request(oURL) {
             {
+                boolean okay = false;
                 try {
-                    requested = true;
-                } catch (final Throwable e) {
-                    e.printStackTrace();
+                    final Field field = this.getClass().getSuperclass().getDeclaredField("requested");
+                    field.setAccessible(true);
+                    field.setBoolean(this, true);
+                    okay = true;
+                } catch (final Throwable e2) {
+                    e2.printStackTrace();
+                }
+                if (okay == false) {
                     try {
-                        final Field field = this.getClass().getSuperclass().getDeclaredField("requested");
-                        field.setAccessible(true);
-                        field.setBoolean(this, true);
-                    } catch (final Throwable e2) {
-                        e2.printStackTrace();
+                        requested = true;
+                    } catch (final Throwable e) {
+                        e.printStackTrace();
                     }
                 }
 
