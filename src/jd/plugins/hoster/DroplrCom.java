@@ -29,44 +29,48 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "d-h.st" }, urls = { "http://(www\\.)?d\\-h\\.st/[A-Za-z0-9]+" }, flags = { 0 })
-public class DhSt extends PluginForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "droplr.com" }, urls = { "https?://(www\\.)?(droplr\\.com|d\\.pr)/[A-Za-z0-9]+/[A-Za-z0-9]+/[A-Za-z0-9]+" }, flags = { 0 })
+public class DroplrCom extends PluginForHost {
 
-    public DhSt(PluginWrapper wrapper) {
+    public DroplrCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     @Override
     public String getAGBLink() {
-        return "http://d-h.st/tos";
+        return "http://help.droplr.com/customer/portal/articles/989945-terms-conditions";
     }
 
-    private static final String INVALIDLINKS = "http://(www\\.)?d\\-h\\.st/(donate|search|forgot|support|faq|news|register|tos)";
+    public void correctDownloadLink(DownloadLink link) {
+        link.setUrlDownload(link.getDownloadURL().replace("d.pr/", "droplr.com/"));
+    }
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        if (link.getDownloadURL().matches(INVALIDLINKS)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         br.getPage(link.getDownloadURL());
-        if (br.containsHTML("(>File Not Found<|>The file you were looking for could not be found)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        // For invalid links
-        if (br.containsHTML(">403 Forbidden<")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex(">Filename:</span> <div title=\"([^<>\"]*?)\"").getMatch(0);
-        if (filename == null) filename = br.getRegex("<title>Dev\\-Host \\- ([^<>\"]*?) \\- The Ultimate Free File Hosting / File Sharing Service</title>").getMatch(0);
-        String filesize = br.getRegex("\\((\\d+ bytes)\\)").getMatch(0);
+        if (br.containsHTML(">The password you entered for the drop was incorrect")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        final String filename = br.getRegex("data\\-filename=\"([^<>\"]*?)\"").getMatch(0);
+        final String filesize = br.getRegex("class=\"file\\-size\">([^<>\"]*?)</span>").getMatch(0);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         link.setName(Encoding.htmlDecode(filename.trim()));
         link.setDownloadSize(SizeFormatter.getSize(filesize));
-        final String md5 = br.getRegex(">MD5 Sum:</span> ([a-z0-9]{32})</div>").getMatch(0);
-        if (md5 != null) link.setMD5Hash(md5);
         return AvailableStatus.TRUE;
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
+    public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        String dllink = getDllink();
+        final String dtoken = br.getRegex("data\\-dtoken=\"([a-z0-9]+)\"").getMatch(0);
+        String dllink = br.getRegex("data\\-link=\"(http[^<>\"]*?)\" id=\"download\"").getMatch(0);
+        if (dllink == null || dtoken == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        dllink = downloadLink.getDownloadURL().replace("droplr.com/", "d.pr/") + "/download?link=https%3A%2F%2Fs3-us-west-2.amazonaws.com%2Fdroplr.storage%2Ffiles%2Facc_139303%2FmtJJ&filename=01+Belong+To+the+World.m4a&dtoken=b3be344e95e65f803a2d8386eb4af6aad04e0962" + dllink;
+        dllink += "&filename=" + Encoding.urlEncode(downloadLink.getName());
+        dllink += "&dtoken=" + dtoken;
+        br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+        br.getPage(dllink);
+        dllink = br.getRegex("\"signed_link\":\"(http[^<>\"]*?)\"").getMatch(0);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
@@ -74,13 +78,6 @@ public class DhSt extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
-    }
-
-    private String getDllink() {
-        String dllink = br.getRegex("<form style=\"margin\\-top: \\-27px; margin\\-bottom: \\-2px;\" action=\"(http://[^<>\"]*?)\"").getMatch(0);
-        if (dllink == null) dllink = br.getRegex("\"(http://[a-z0-9]+\\.d\\-h\\.st/[A-Za-z0-9]+/\\d+/[^<>\"/]+\\?key=\\d+)\"").getMatch(0);
-        if (dllink == null) dllink = br.getRegex("(\"|')(http://[a-z0-9]+\\.d\\-h\\.st/[A-Za-z0-9]+/\\d+/[^<>\"/]+/[^<>\"/]+)(\"|')").getMatch(1);
-        return dllink;
     }
 
     @Override
@@ -93,7 +90,7 @@ public class DhSt extends PluginForHost {
     }
 
     @Override
-    public void resetDownloadlink(DownloadLink link) {
+    public void resetDownloadlink(final DownloadLink link) {
     }
 
 }

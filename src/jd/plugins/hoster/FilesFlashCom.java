@@ -54,8 +54,12 @@ public class FilesFlashCom extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
+        br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
+        // Link offline
         if (br.containsHTML("(>That is not a valid url\\.<|>That file is not available for download\\.<|>That file has been banned from this website|>That file was deleted due to inactivity<|>That file has been deleted)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        // Invalid link
+        if (br.containsHTML(">403 Forbidden<")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex(">Filename: (.*?)<br").getMatch(0);
         String filesize = br.getRegex("Size: (.*?)</td>").getMatch(0);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

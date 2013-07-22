@@ -139,6 +139,11 @@ public class ChoMikujPl extends PluginForDecrypt {
             br.getPage(parameter);
         }
 
+        if (br.containsHTML("Nie znaleziono \\- błąd 404")) {
+            logger.info("Link offline: " + parameter);
+            return decryptedLinks;
+        }
+
         /** Handle single links 2 */
         String ext = parameter.substring(parameter.lastIndexOf("."));
         if (ext != null) {

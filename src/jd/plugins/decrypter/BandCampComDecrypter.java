@@ -39,6 +39,10 @@ public class BandCampComDecrypter extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
         br.getPage(parameter);
+        if (br.containsHTML(">Sorry, that something isn\\'t here\\.<")) {
+            logger.info("Link offline: " + parameter);
+            return decryptedLinks;
+        }
         if (br.getRedirectLocation() != null) br.getPage(br.getRedirectLocation());
         Regex filenameRegex = br.getRegex("<title>(.*?) \\| (.*?)</title>");
         String[] links = br.getRegex("<div class=\"title\">[\t\n\r ]+<a href=\"(/track/.*?)\"").getColumn(0);

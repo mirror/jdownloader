@@ -50,12 +50,14 @@ public class Antena3Com extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws Exception {
+    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
         // link online?
         this.setBrowserExclusive();
         String html = br.getPage(downloadLink.getDownloadURL());
         // Also throws exception if a link doesn't lead to a video
         if (br.containsHTML("<h1>¡Uy\\! No encontramos la página que buscas\\.</h1>") || !br.containsHTML("\"http://(www\\.)?antena3\\.com/static/swf/A3Player\\.swf")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        // Offline from decrypter
+        if (downloadLink.getBooleanProperty("offline", false)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
 
         // set file and package name
         String name = new Regex(html, "<title>(.*?)</title>").getMatch(0);

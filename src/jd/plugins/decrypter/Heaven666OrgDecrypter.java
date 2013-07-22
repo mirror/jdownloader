@@ -63,6 +63,16 @@ public class Heaven666OrgDecrypter extends PluginForDecrypt {
             }
             return decryptedLinks;
         }
+        externID = br.getRegex("\"(http://player\\.vimeo\\.com/video/[^<>\"]*?)\"").getMatch(0);
+        if (externID != null) {
+            decryptedLinks.add(createDownloadlink(externID));
+            return decryptedLinks;
+        }
+        externID = br.getRegex("\"(http://(www\\.)?youtube\\.com/embed/[^<>\"]*?)\"").getMatch(0);
+        if (externID != null) {
+            decryptedLinks.add(createDownloadlink(externID));
+            return decryptedLinks;
+        }
         decryptedLinks.add(createDownloadlink(parameter.replace("heaven666.org/", "heaven666.orgdecrypted/")));
         return decryptedLinks;
     }

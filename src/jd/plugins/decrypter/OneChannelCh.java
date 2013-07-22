@@ -29,7 +29,7 @@ import jd.plugins.PluginForDecrypt;
 
 import org.appwork.utils.Regex;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "1channel.ch" }, urls = { "http://(www\\.)?1channel\\.(ch|li)/(watch\\-\\d+([A-Za-z0-9\\-_]+)?|tv\\-\\d+[A-Za-z0-9\\-_]+/season\\-\\d+\\-episode\\-\\d+)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "1channel.ch" }, urls = { "http://(www\\.)?(vodly\\.to|primewire\\.ag)/(watch\\-\\d+([A-Za-z0-9\\-_]+)?|tv\\-\\d+[A-Za-z0-9\\-_]+/season\\-\\d+\\-episode\\-\\d+)" }, flags = { 0 })
 public class OneChannelCh extends PluginForDecrypt {
 
     public OneChannelCh(PluginWrapper wrapper) {
@@ -38,7 +38,7 @@ public class OneChannelCh extends PluginForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        String parameter = param.toString().replace("1channel.li/", "1channel.ch/");
+        String parameter = param.toString().replace("vodly.to/", "primewire.ag/");
         br.setFollowRedirects(true);
         br.getPage(parameter);
         if (br.containsHTML("\\(TV Show\\) \\-  on 1Channel \\| LetMeWatchThis</title>")) {
@@ -63,7 +63,7 @@ public class OneChannelCh extends PluginForDecrypt {
                     fpName = fpName + " - " + Encoding.htmlDecode(seasonAndEpisode.getMatch(0)) + " - " + Encoding.htmlDecode(seasonAndEpisode.getMatch(1));
                 }
             }
-            final String[] links = br.getRegex("\"(/external.php\\?vid=\\d+\\&link=\\d+)\"").getColumn(0);
+            final String[] links = br.getRegex("\"(/external\\.php[^<>\"]*?)\"").getColumn(0);
             if (links == null || links.length == 0) {
                 if (br.containsHTML("\\'HD Sponsor\\'")) {
                     logger.info("Found no downloadlink in link: " + parameter);
@@ -74,8 +74,9 @@ public class OneChannelCh extends PluginForDecrypt {
             }
             br.setFollowRedirects(false);
             for (final String singleLink : links) {
-                br.getPage("http://www.1channel.ch" + singleLink);
-                final String finallink = br.getRedirectLocation();
+                br.getPage("http://www.primewire.ag" + singleLink);
+                String finallink = br.getRedirectLocation();
+                if (finallink == null) finallink = br.getRegex("<frame src=\"(http[^<>\"]*?)\"").getMatch(0);
                 if (finallink == null) {
                     logger.warning("Decrypter broken for link: " + parameter);
                     return null;

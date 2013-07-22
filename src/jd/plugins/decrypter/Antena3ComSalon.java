@@ -36,8 +36,11 @@ public class Antena3ComSalon extends PluginForDecrypt {
     @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink link, ProgressController progress) throws Exception {
         br.getPage(link.toString());
-        if (br.containsHTML("<h1>¡Uy\\! No encontramos la página que buscas\\.</h1>")) {
-            logger.info("Link offline: " + link.toString());
+        if (br.containsHTML("<h1>¡Uy\\! No encontramos la página que buscas\\.</h1>") || br.containsHTML(">El contenido al que estás intentando acceder no existe<")) {
+            final DownloadLink dl = createDownloadlink(link.toString().replace("antena3.com/", "antena3decrypted.com/"));
+            dl.setAvailable(false);
+            dl.setProperty("offline", true);
+            decryptedLinks.add(dl);
             return decryptedLinks;
         }
         // No player -> Series link

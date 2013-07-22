@@ -42,6 +42,14 @@ public class ChThnhInfo extends PluginForDecrypt {
             logger.info("Link offline: " + parameter);
             return decryptedLinks;
         }
+        if (br.containsHTML("Removed due to licensed\\.")) {
+            logger.info("Link offline (deleted): " + parameter);
+            return decryptedLinks;
+        }
+        if (br.containsHTML(">No files available for this series")) {
+            logger.info("Link offline ('No files available for this series'): " + parameter);
+            return decryptedLinks;
+        }
         String fpName = br.getRegex("<title>Download anime(.*?)\\- Download Anime").getMatch(0);
         if (fpName == null) fpName = br.getRegex("class=\"bold1\">Download anime(.*?)</span>").getMatch(0);
         String[] links = br.getRegex("<tr><td><a href=\"(/.*?)\"").getColumn(0);
