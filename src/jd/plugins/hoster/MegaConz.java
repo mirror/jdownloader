@@ -39,7 +39,7 @@ import jd.utils.locale.JDL;
 
 import org.jdownloader.images.NewTheme;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mega.co.nz" }, urls = { "https?://(www\\.)?mega\\.co\\.nz/#N?![a-zA-Z0-9]+![a-zA-Z0-9_,\\-]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mega.co.nz" }, urls = { "https?://(www\\.)?mega\\.co\\.nz/#N?(!|%21)[a-zA-Z0-9]+(!|%21)[a-zA-Z0-9_,\\-]+" }, flags = { 0 })
 public class MegaConz extends PluginForHost {
     private static AtomicLong CS        = new AtomicLong(System.currentTimeMillis());
     private final String      USE_SSL   = "USE_SSL_V2";
@@ -70,6 +70,11 @@ public class MegaConz extends PluginForHost {
         } else {
             return false;
         }
+    }
+
+    @Override
+    public void correctDownloadLink(final DownloadLink link) {
+        link.setUrlDownload(link.getDownloadURL().replaceAll("%21", "!"));
     }
 
     @Override

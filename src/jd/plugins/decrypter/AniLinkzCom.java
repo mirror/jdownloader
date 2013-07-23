@@ -1,5 +1,5 @@
 //    jDownloader - Downloadmanager
-//    Copyright (C) 2009  JD-Team support@jdownloader.org
+//    Copyright (C) 2013  JD-Team support@jdownloader.org
 //
 //    This program is free software: you can redistribute it and/or modify
 //    it under the terms of the GNU General Public License as published by
@@ -18,6 +18,7 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 import java.util.regex.Pattern;
 
@@ -34,15 +35,17 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "anilinkz.com" }, urls = { "http://(www\\.)?anilinkz\\.com/[^<>\"/]+(/[^<>\"/]+)?" }, flags = { 0 })
 public class AniLinkzCom extends PluginForDecrypt {
 
-    private static final Pattern PATTERN_SUPPORTED_HOSTER         = Pattern.compile("(youtube\\.com|veoh\\.com|nowvideo\\.eu|videobam\\.com|mp4upload\\.com|gorillavid\\.in|putlocker\\.com|veevr\\.com|yourupload\\.com|videoweed\\.com)", Pattern.CASE_INSENSITIVE);
-    private static final Pattern PATTERN_UNSUPPORTED_HOSTER       = Pattern.compile("(facebook\\.com|google\\.com)", Pattern.CASE_INSENSITIVE);
-    private static final Pattern PATTERN_SUPPORTED_FILE_EXTENSION = Pattern.compile("(\\.mp4|\\.flv|\\.fll)", Pattern.CASE_INSENSITIVE);
-    private static final String  INVALIDLINKS                     = "http://(www\\.)?anilinkz\\.com/(search|affiliates|get|img|dsa|series|forums|files|category|\\?page=|faqs|.*?\\-list|.*?\\-info|\\?random).*?";
+    private final Pattern        PATTERN_SUPPORTED_HOSTER         = Pattern.compile("(youtube\\.com|veoh\\.com|nowvideo\\.eu|videobam\\.com|mp4upload\\.com|gorillavid\\.in|putlocker\\.com|veevr\\.com|yourupload\\.com|videoweed\\.com)", Pattern.CASE_INSENSITIVE);
+    private final Pattern        PATTERN_UNSUPPORTED_HOSTER       = Pattern.compile("(facebook\\.com|google\\.com)", Pattern.CASE_INSENSITIVE);
+    private final Pattern        PATTERN_SUPPORTED_FILE_EXTENSION = Pattern.compile("(\\.mp4|\\.flv|\\.fll)", Pattern.CASE_INSENSITIVE);
+    private final String         INVALIDLINKS                     = "http://(www\\.)?anilinkz\\.com/(search|affiliates|get|img|dsa|series|forums|files|category|\\?page=|faqs|.*?\\-list|.*?\\-info|\\?random).*?";
+    private static AtomicBoolean CLOUDFLARE                       = new AtomicBoolean(false);
 
     public AniLinkzCom(final PluginWrapper wrapper) {
         super(wrapper);
@@ -57,26 +60,40 @@ public class AniLinkzCom extends PluginForDecrypt {
             return decryptedLinks;
         }
         br.getHeaders().put("Referer", null);
-        // Not done yet...
-        // if (!cloudflare(parameter)) {
-        // logger.warning("Decrypter out of date for link: " + parameter);
-        // return null;
-        // }
+
+        // start of cloudflare
+        // this hoster uses cloudflare as it's webhosting service provider, which invokes anti DDoS measures (at times)
+        br.setFollowRedirects(true);
+        if (CLOUDFLARE.get() == false) {
+            // try like normal, on failure try with cloudflare(link)
+            try {
+                br.getPage(parameter);
+            } catch (Exception e) {
+                // typical header response code for anti ddos event is 503
+                if (e.getMessage().contains("503")) {
+                    CLOUDFLARE.set(true);
+                }
+            }
+        }
+        if (CLOUDFLARE.get() == true) {
+            try {
+                cloudflare(parameter);
+            } catch (Exception e) {
+                if (e instanceof PluginException) throw (PluginException) e;
+                if (e.getMessage().contains("503")) {
+                    logger.warning("Cloudflare anti DDoS measures enabled, your version of JD can not support this. In order to go any further you will need to upgrade to JDownloader 2");
+                    return decryptedLinks;
+                }
+            }
+        }
+        br.setFollowRedirects(false);
+        // end of cloudflare
+
         if (br.containsHTML(">Page Not Found<")) {
             logger.info("Link offline: " + parameter);
             return decryptedLinks;
         }
-        // https://pastee.org/e84rh
-        // if (br.containsHTML(">DDoS protection by CloudFlare<")) {
-        // final String importantValue = br.getRegex("name=\"jschl_vc\" value=\"([a-z0-9]+)\"").getMatch(0);
-        // boolean notDoneYet = true;
-        // if (importantValue == null || notDoneYet) {
-        // logger.warning("Decrypter out of date for link: " + parameter);
-        // return null;
-        // }
-        // // Needs this code: https://pastee.org/e84rh
-        // br.postPage(br.getURL(), "act=jschl&jschl_vc=" + importantValue + "&jschl_answer=171");
-        // }
+
         final Browser br2 = br.cloneBrowser();
         // set filepackage
         final String filepackage = br.getRegex("<h3>(.*?)</h3>").getMatch(0);
@@ -256,7 +273,7 @@ public class AniLinkzCom extends PluginForDecrypt {
             // use js for now, but change to Javaluator as the provided string doesn't get evaluated by JS according to Javaluator author.
             ScriptEngineManager mgr = new ScriptEngineManager();
             ScriptEngine engine = mgr.getEngineByName("JavaScript");
-            cloudflare.put("jschl_answer", String.valueOf(((Double) engine.eval("(" + math + ") + 13")).longValue()));
+            cloudflare.put("jschl_answer", String.valueOf(((Double) engine.eval("(" + math + ") + 12")).longValue()));
             Thread.sleep(5500);
             br.submitForm(cloudflare);
             if (br.getFormbyProperty("id", "ChallengeForm") != null) {

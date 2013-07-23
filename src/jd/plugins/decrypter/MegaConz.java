@@ -29,8 +29,9 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision: 20929 $", interfaceVersion = 2, names = { "mega.co.nz" }, urls = { "https?://(www\\.)?mega\\.co\\.nz/#F![a-zA-Z0-9]+![a-zA-Z0-9_,\\-]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision: 20929 $", interfaceVersion = 2, names = { "mega.co.nz" }, urls = { "https?://(www\\.)?mega\\.co\\.nz/#F(!|%21)[a-zA-Z0-9]+(!|%21)[a-zA-Z0-9_,\\-]+" }, flags = { 0 })
 public class MegaConz extends PluginForDecrypt {
+
     private static AtomicLong CS = new AtomicLong(System.currentTimeMillis());
 
     public MegaConz(PluginWrapper wrapper) {
@@ -40,6 +41,7 @@ public class MegaConz extends PluginForDecrypt {
     @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink parameter, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        parameter.setCryptedUrl(parameter.toString().replaceAll("%21", "!"));
         String folderID = getFolderID(parameter);
         String masterKey = getMasterKey(parameter);
         br.getHeaders().put("APPID", "JDownloader");
