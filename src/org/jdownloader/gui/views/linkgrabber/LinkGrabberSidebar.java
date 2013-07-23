@@ -2,7 +2,6 @@ package org.jdownloader.gui.views.linkgrabber;
 
 import javax.swing.Box;
 
-import jd.gui.swing.laf.LAFOptions;
 
 import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.events.GenericConfigEventListener;
@@ -16,6 +15,7 @@ import org.jdownloader.gui.views.linkgrabber.quickfilter.QuickFilterExceptionsTa
 import org.jdownloader.gui.views.linkgrabber.quickfilter.QuickFilterHosterTable;
 import org.jdownloader.gui.views.linkgrabber.quickfilter.QuickFilterTypeTable;
 import org.jdownloader.gui.views.linkgrabber.quickfilter.QuickSettingsHeader;
+import org.jdownloader.updatev2.gui.LAFOptions;
 
 public class LinkGrabberSidebar extends MigPanel {
 

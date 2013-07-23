@@ -25,7 +25,6 @@ import javax.swing.JRootPane;
 import javax.swing.border.Border;
 
 import jd.controlling.IOEQ;
-import jd.gui.swing.laf.LAFOptions;
 
 import org.appwork.scheduler.DelayedRunnable;
 import org.appwork.storage.config.JsonConfig;
@@ -37,6 +36,7 @@ import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.components.SearchCatInterface;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.settings.GeneralSettings;
+import org.jdownloader.updatev2.gui.LAFOptions;
 
 public abstract class SearchField<SearchCat extends SearchCatInterface> extends ExtTextField implements MouseMotionListener, MouseListener {
     /**

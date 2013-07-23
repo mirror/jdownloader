@@ -20,7 +20,6 @@ import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledPackage;
 import jd.controlling.packagecontroller.AbstractNode;
 import jd.gui.swing.jdgui.BasicJDTable;
-import jd.gui.swing.laf.LAFOptions;
 
 import org.appwork.scheduler.DelayedRunnable;
 import org.appwork.storage.config.ValidationException;
@@ -39,6 +38,7 @@ import org.jdownloader.gui.views.linkgrabber.contextmenu.CreateDLCAction;
 import org.jdownloader.gui.views.linkgrabber.contextmenu.MergeToPackageAction;
 import org.jdownloader.gui.views.linkgrabber.contextmenu.RemoveNonSelectedAction;
 import org.jdownloader.gui.views.linkgrabber.contextmenu.RemoveSelectionLinkgrabberAction;
+import org.jdownloader.updatev2.gui.LAFOptions;
 
 public abstract class FilterTable extends BasicJDTable<Filter> implements PackageControllerTableModelFilter<CrawledPackage, CrawledLink> {
 

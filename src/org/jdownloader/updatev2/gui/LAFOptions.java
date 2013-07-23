@@ -1,4 +1,4 @@
-package jd.gui.swing.laf;
+package org.jdownloader.updatev2.gui;
 
 import java.awt.Color;
 import java.util.HashMap;

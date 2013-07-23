@@ -12,13 +12,13 @@ import javax.swing.JPopupMenu;
 
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledPackage;
-import jd.gui.swing.laf.LAFOptions;
 
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.linkgrabber.LinkGrabberTable;
 import org.jdownloader.gui.views.linkgrabber.actions.ConfirmAutoAction.AutoStartOptions;
 import org.jdownloader.images.NewTheme;
+import org.jdownloader.updatev2.gui.LAFOptions;
 
 public class ConfirmOptionsAction extends AbstractAction {
     /**

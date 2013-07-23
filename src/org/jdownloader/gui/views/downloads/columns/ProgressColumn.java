@@ -16,7 +16,6 @@ import javax.swing.Timer;
 import jd.controlling.packagecontroller.AbstractNode;
 import jd.controlling.proxy.ProxyBlock;
 import jd.controlling.proxy.ProxyController;
-import jd.gui.swing.laf.LAFOptions;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForHost;
@@ -31,6 +30,7 @@ import org.appwork.swing.components.tooltips.TooltipPanel;
 import org.appwork.swing.exttable.columns.ExtProgressColumn;
 import org.appwork.utils.swing.SwingUtils;
 import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.updatev2.gui.LAFOptions;
 
 public class ProgressColumn extends ExtProgressColumn<AbstractNode> {
 

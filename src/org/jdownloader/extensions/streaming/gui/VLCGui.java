@@ -11,7 +11,6 @@ import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 
 import jd.gui.swing.jdgui.interfaces.SwitchPanel;
-import jd.gui.swing.laf.LAFOptions;
 import jd.plugins.AddonPanel;
 import net.miginfocom.swing.MigLayout;
 
@@ -28,6 +27,7 @@ import org.jdownloader.extensions.streaming.mediaarchive.MediaArchiveController;
 import org.jdownloader.extensions.streaming.mediaarchive.MediaArchiveListener;
 import org.jdownloader.gui.views.components.HeaderScrollPane;
 import org.jdownloader.logging.LogController;
+import org.jdownloader.updatev2.gui.LAFOptions;
 
 public class VLCGui extends AddonPanel<StreamingExtension> implements MouseListener, MediaArchiveListener {
 

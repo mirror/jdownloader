@@ -12,7 +12,6 @@ import jd.SecondLevelLaunch;
 import jd.gui.swing.jdgui.interfaces.SwitchPanel;
 import jd.gui.swing.jdgui.views.settings.panels.ConfigPanelGeneral;
 import jd.gui.swing.jdgui.views.settings.sidebar.ConfigSidebar;
-import jd.gui.swing.laf.LAFOptions;
 import net.miginfocom.swing.MigLayout;
 
 import org.appwork.storage.config.JsonConfig;
@@ -20,6 +19,7 @@ import org.appwork.swing.MigPanel;
 import org.appwork.utils.swing.EDTRunner;
 import org.jdownloader.extensions.ExtensionConfigPanel;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings;
+import org.jdownloader.updatev2.gui.LAFOptions;
 
 public class ConfigurationPanel extends SwitchPanel implements ListSelectionListener {
 

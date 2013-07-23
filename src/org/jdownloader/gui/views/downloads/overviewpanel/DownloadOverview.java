@@ -25,7 +25,6 @@ import jd.gui.swing.jdgui.menu.ChunksEditor;
 import jd.gui.swing.jdgui.menu.ParalellDownloadsEditor;
 import jd.gui.swing.jdgui.menu.ParallelDownloadsPerHostEditor;
 import jd.gui.swing.jdgui.menu.SpeedlimitEditor;
-import jd.gui.swing.laf.LAFOptions;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
@@ -46,6 +45,7 @@ import org.jdownloader.gui.views.downloads.DownloadsView;
 import org.jdownloader.gui.views.downloads.table.DownloadsTable;
 import org.jdownloader.gui.views.downloads.table.DownloadsTableModel;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
+import org.jdownloader.updatev2.gui.LAFOptions;
 
 public class DownloadOverview extends MigPanel implements ActionListener, DownloadControllerListener, HierarchyListener, GenericConfigEventListener<Boolean>, GUIListener {
 

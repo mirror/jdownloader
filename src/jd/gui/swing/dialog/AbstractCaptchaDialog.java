@@ -48,7 +48,6 @@ import javax.swing.Timer;
 
 import jd.captcha.utils.GifDecoder;
 import jd.gui.swing.jdgui.JDGui;
-import jd.gui.swing.laf.LAFOptions;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
@@ -85,6 +84,7 @@ import org.jdownloader.settings.GeneralSettings;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings;
 import org.jdownloader.settings.SoundSettings;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
+import org.jdownloader.updatev2.gui.LAFOptions;
 
 import sun.swing.SwingUtilities2;
 

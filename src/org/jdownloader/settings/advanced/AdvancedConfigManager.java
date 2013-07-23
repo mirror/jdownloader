@@ -8,7 +8,6 @@ import jd.controlling.linkchecker.LinkCheckerConfig;
 import jd.controlling.linkcollector.LinkCollectorConfig;
 import jd.controlling.linkcrawler.LinkCrawlerConfig;
 import jd.controlling.reconnect.ReconnectConfig;
-import jd.gui.swing.laf.LAFOptions;
 
 import org.appwork.storage.config.ConfigInterface;
 import org.appwork.storage.config.JsonConfig;
@@ -33,6 +32,7 @@ import org.jdownloader.settings.SilentModeSettings;
 import org.jdownloader.settings.SoundSettings;
 import org.jdownloader.updatev2.InternetConnectionSettings;
 import org.jdownloader.updatev2.UpdateSettings;
+import org.jdownloader.updatev2.gui.LAFOptions;
 
 public class AdvancedConfigManager {
     private static final AdvancedConfigManager INSTANCE = new AdvancedConfigManager();

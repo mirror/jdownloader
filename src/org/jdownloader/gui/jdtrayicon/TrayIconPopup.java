@@ -47,7 +47,6 @@ import javax.swing.Timer;
 
 import jd.gui.swing.jdgui.JDGui;
 import jd.gui.swing.jdgui.components.toolbar.actions.ExitToolbarAction;
-import jd.gui.swing.laf.LAFOptions;
 import jd.utils.JDUtilities;
 import net.miginfocom.swing.MigLayout;
 
@@ -64,6 +63,7 @@ import org.jdownloader.controlling.contextmenu.gui.MenuBuilder;
 import org.jdownloader.extensions.ExtensionNotLoadedException;
 import org.jdownloader.gui.toolbar.MainToolbarManager;
 import org.jdownloader.images.NewTheme;
+import org.jdownloader.updatev2.gui.LAFOptions;
 
 //final, because the constructor calls Thread.start(),
 //see http://findbugs.sourceforge.net/bugDescriptions.html#SC_START_IN_CTOR

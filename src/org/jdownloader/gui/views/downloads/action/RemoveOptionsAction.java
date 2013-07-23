@@ -8,7 +8,6 @@ import javax.swing.JMenu;
 import javax.swing.JPopupMenu;
 
 import jd.controlling.packagecontroller.AbstractNode;
-import jd.gui.swing.laf.LAFOptions;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
@@ -18,6 +17,7 @@ import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.downloads.table.DownloadsTable;
 import org.jdownloader.gui.views.downloads.table.DownloadsTableModel;
 import org.jdownloader.images.NewTheme;
+import org.jdownloader.updatev2.gui.LAFOptions;
 
 public class RemoveOptionsAction extends AppAction {
     /**

@@ -31,7 +31,6 @@ import javax.imageio.ImageIO;
 import javax.swing.ImageIcon;
 
 import jd.captcha.utils.GifDecoder;
-import jd.gui.swing.laf.LAFOptions;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import net.sf.image4j.codec.ico.ICODecoder;
@@ -48,6 +47,7 @@ import org.jdownloader.images.NewTheme;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.plugins.controller.host.HostPluginController;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin;
+import org.jdownloader.updatev2.gui.LAFOptions;
 
 public class FavIcons {
 

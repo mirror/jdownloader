@@ -37,7 +37,6 @@ import javax.swing.event.ListSelectionListener;
 
 import jd.gui.swing.jdgui.interfaces.SwitchPanel;
 import jd.gui.swing.jdgui.views.settings.panels.advanced.AdvancedSettings;
-import jd.gui.swing.laf.LAFOptions;
 import net.miginfocom.swing.MigLayout;
 
 import org.appwork.controlling.SingleReachableState;
@@ -54,6 +53,7 @@ import org.jdownloader.extensions.LazyExtension;
 import org.jdownloader.extensions.StartException;
 import org.jdownloader.extensions.StopException;
 import org.jdownloader.translate._JDT;
+import org.jdownloader.updatev2.gui.LAFOptions;
 
 public class ConfigSidebar extends JPanel implements MouseMotionListener, MouseListener, ConfigEventListener {
 

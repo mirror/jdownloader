@@ -1,4 +1,4 @@
-package jd.gui.swing.laf;
+package org.jdownloader.updatev2.gui;
 
 import org.appwork.storage.config.ConfigInterface;
 import org.appwork.storage.config.annotations.AboutConfig;

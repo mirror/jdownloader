@@ -14,7 +14,6 @@ import javax.swing.event.TreeSelectionListener;
 import javax.swing.filechooser.FileFilter;
 import javax.swing.tree.TreePath;
 
-import jd.gui.swing.laf.LAFOptions;
 
 import org.appwork.swing.MigPanel;
 import org.appwork.swing.components.ExtButton;
@@ -41,6 +40,7 @@ import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.components.HeaderScrollPane;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.logging.LogController;
+import org.jdownloader.updatev2.gui.LAFOptions;
 
 public class ManagerFrame extends AbstractDialog<Object> implements TreeSelectionListener {
 

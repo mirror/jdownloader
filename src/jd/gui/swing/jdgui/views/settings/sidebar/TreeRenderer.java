@@ -32,12 +32,12 @@ import javax.swing.border.MatteBorder;
 
 import jd.gui.swing.jdgui.views.settings.ConfigPanel;
 import jd.gui.swing.jdgui.views.settings.panels.advanced.AdvancedSettings;
-import jd.gui.swing.laf.LAFOptions;
 import net.miginfocom.swing.MigLayout;
 
 import org.appwork.utils.ColorUtils;
 import org.appwork.utils.swing.renderer.RenderLabel;
 import org.jdownloader.gui.settings.AbstractConfigPanel;
+import org.jdownloader.updatev2.gui.LAFOptions;
 
 public class TreeRenderer extends JPanel implements ListCellRenderer {
 

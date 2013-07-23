@@ -15,7 +15,6 @@ import javax.swing.JMenuItem;
 import javax.swing.SpinnerNumberModel;
 import javax.swing.SwingConstants;
 
-import jd.gui.swing.laf.LAFOptions;
 
 import net.miginfocom.swing.MigLayout;
 
@@ -37,6 +36,7 @@ import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.settings.advanced.AdvancedConfigEntry;
 import org.jdownloader.settings.advanced.RangeValidator;
+import org.jdownloader.updatev2.gui.LAFOptions;
 
 import sun.swing.SwingUtilities2;
 

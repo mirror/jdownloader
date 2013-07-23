@@ -10,7 +10,6 @@ import javax.swing.ImageIcon;
 import javax.swing.JLabel;
 import javax.swing.JTextArea;
 
-import jd.gui.swing.laf.LAFOptions;
 
 import org.appwork.swing.components.circlebar.CircledProgressBar;
 import org.appwork.swing.components.circlebar.ImagePainter;
@@ -19,6 +18,7 @@ import org.appwork.swing.components.tooltips.PanelToolTip;
 import org.appwork.swing.components.tooltips.ToolTipController;
 import org.appwork.swing.components.tooltips.TooltipPanel;
 import org.appwork.utils.swing.SwingUtils;
+import org.jdownloader.updatev2.gui.LAFOptions;
 
 public class IconedProcessIndicator extends CircledProgressBar implements MouseListener {
 

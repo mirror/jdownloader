@@ -7,7 +7,8 @@ import java.awt.Shape;
 
 import javax.swing.plaf.synth.SynthContext;
 
-import jd.gui.swing.laf.LAFOptions;
+import org.jdownloader.updatev2.gui.LAFOptions;
+
 
 import de.javasoft.plaf.synthetica.SyntheticaSimple2DLookAndFeel;
 import de.javasoft.plaf.synthetica.simple2D.ScrollBarPainter;

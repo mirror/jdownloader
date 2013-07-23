@@ -43,7 +43,6 @@ import jd.controlling.linkcrawler.LinkCrawlerEvent;
 import jd.controlling.linkcrawler.LinkCrawlerListener;
 import jd.controlling.reconnect.Reconnecter;
 import jd.gui.swing.jdgui.components.premiumbar.PremiumStatus;
-import jd.gui.swing.laf.LAFOptions;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import net.miginfocom.swing.MigLayout;
@@ -59,6 +58,7 @@ import org.jdownloader.actions.AppAction;
 import org.jdownloader.controlling.DownloadLinkWalker;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
+import org.jdownloader.updatev2.gui.LAFOptions;
 
 public class StatusBarImpl extends JPanel implements DownloadWatchdogListener {
 

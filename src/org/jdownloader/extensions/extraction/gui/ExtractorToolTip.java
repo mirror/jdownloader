@@ -7,13 +7,13 @@ import java.awt.FontMetrics;
 
 import javax.swing.JLabel;
 
-import jd.gui.swing.laf.LAFOptions;
 
 import org.appwork.swing.components.tooltips.PanelToolTip;
 import org.appwork.swing.components.tooltips.TooltipPanel;
 import org.jdownloader.extensions.extraction.ExtractionController;
 import org.jdownloader.extensions.extraction.ExtractionExtension;
 import org.jdownloader.extensions.extraction.translate.T;
+import org.jdownloader.updatev2.gui.LAFOptions;
 
 public class ExtractorToolTip extends PanelToolTip {
     /**
