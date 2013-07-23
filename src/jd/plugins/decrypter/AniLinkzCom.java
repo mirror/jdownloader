@@ -21,11 +21,15 @@ import java.util.List;
 import java.util.logging.Level;
 import java.util.regex.Pattern;
 
+import javax.script.ScriptEngine;
+import javax.script.ScriptEngineManager;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.parser.html.Form;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
@@ -53,11 +57,26 @@ public class AniLinkzCom extends PluginForDecrypt {
             return decryptedLinks;
         }
         br.getHeaders().put("Referer", null);
-        br.getPage(parameter);
+        // Not done yet...
+        // if (!cloudflare(parameter)) {
+        // logger.warning("Decrypter out of date for link: " + parameter);
+        // return null;
+        // }
         if (br.containsHTML(">Page Not Found<")) {
             logger.info("Link offline: " + parameter);
             return decryptedLinks;
         }
+        // https://pastee.org/e84rh
+        // if (br.containsHTML(">DDoS protection by CloudFlare<")) {
+        // final String importantValue = br.getRegex("name=\"jschl_vc\" value=\"([a-z0-9]+)\"").getMatch(0);
+        // boolean notDoneYet = true;
+        // if (importantValue == null || notDoneYet) {
+        // logger.warning("Decrypter out of date for link: " + parameter);
+        // return null;
+        // }
+        // // Needs this code: https://pastee.org/e84rh
+        // br.postPage(br.getURL(), "act=jschl&jschl_vc=" + importantValue + "&jschl_answer=171");
+        // }
         final Browser br2 = br.cloneBrowser();
         // set filepackage
         final String filepackage = br.getRegex("<h3>(.*?)</h3>").getMatch(0);
@@ -209,6 +228,49 @@ public class AniLinkzCom extends PluginForDecrypt {
         fp.addLinks(decryptedLinks);
 
         return decryptedLinks;
+    }
+
+    /**
+     * performs silly cloudflare anti DDoS crapola, made by Raztoki
+     */
+    private boolean cloudflare(String url) throws Exception {
+        try {
+            /* not available in old stable */
+            br.setAllowedResponseCodes(new int[] { 503 });
+        } catch (Throwable e) {
+        }
+        // we need to reload the page, as first time it failed and allowedResponseCodes wasn't set to allow 503
+        br.getPage(url);
+        final Form cloudflare = br.getFormbyProperty("id", "ChallengeForm");
+        if (cloudflare != null) {
+            String math = br.getRegex("\\$\\(\\'#jschl_answer\\'\\)\\.val\\(([^\\)]+)\\);").getMatch(0);
+            if (math == null) {
+                String variableName = br.getRegex("(\\w+)\\s*=\\s*\\$\\(\'#jschl_answer\'\\);").getMatch(0);
+                if (variableName != null) variableName = variableName.trim();
+                math = br.getRegex(variableName + "\\.val\\(([^\\)]+)\\)").getMatch(0);
+            }
+            if (math == null) {
+                logger.warning("Couldn't find 'math'");
+                return false;
+            }
+            // use js for now, but change to Javaluator as the provided string doesn't get evaluated by JS according to Javaluator author.
+            ScriptEngineManager mgr = new ScriptEngineManager();
+            ScriptEngine engine = mgr.getEngineByName("JavaScript");
+            cloudflare.put("jschl_answer", String.valueOf(((Double) engine.eval("(" + math + ") + 13")).longValue()));
+            Thread.sleep(5500);
+            br.submitForm(cloudflare);
+            if (br.getFormbyProperty("id", "ChallengeForm") != null) {
+                logger.warning("Possible plugin error within cloudflare(). Continuing....");
+                return false;
+            }
+        }
+        // remove the setter
+        try {
+            /* not available in old stable */
+            br.setAllowedResponseCodes(new int[] {});
+        } catch (Throwable e) {
+        }
+        return true;
     }
 
     /* NO OVERRIDE!! */

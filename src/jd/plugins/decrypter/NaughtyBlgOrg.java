@@ -27,7 +27,7 @@ public class NaughtyBlgOrg extends PluginForDecrypt {
     }
 
     private Category            CATEGORY;
-    private static final String INVALIDLINKS = "http://(www\\.)?naughtyblog\\.org/(category|linkex|feed|\\d{4}|tag|free\\-desktop\\-strippers|list\\-of\\-all\\-siterips)";
+    private static final String INVALIDLINKS = "http://(www\\.)?naughtyblog\\.org/(category|linkex|feed|\\d{4}|tag|free\\-desktop\\-strippers|list\\-of\\-all\\-siterips|contact\\-us|how\\-to\\-download\\-files)";
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         CATEGORY = Category.UNDEF;

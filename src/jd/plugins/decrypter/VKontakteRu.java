@@ -141,7 +141,8 @@ public class VKontakteRu extends PluginForDecrypt {
                     if (!br.getURL().equals(parameter)) getPageSafe(parameter);
                     if (br.containsHTML("id=\"profile_main_actions\"")) {
                         // Change profile links -> albums links
-                        final String profileAlbums = br.getRegex("id=\"profile_albums\">[\t\n\r ]+<a href=\"(/albums\\d+)\"").getMatch(0);
+                        String profileAlbums = br.getRegex("id=\"profile_albums\">[\t\n\r ]+<a href=\"(/albums\\d+)\"").getMatch(0);
+                        if (profileAlbums == null) profileAlbums = br.getRegex("id=\"profile_photos_module\">[\t\n\r ]+<a href=\"(/albums\\d+)").getMatch(0);
                         if (profileAlbums == null) {
                             logger.warning("Failed to find profileAlbums for profile-link: " + parameter);
                             return null;
@@ -714,9 +715,13 @@ public class VKontakteRu extends PluginForDecrypt {
         }
         if (!parameter.equalsIgnoreCase(br.getURL())) br.getPage(parameter);
         if (br.containsHTML(">404 Not Found<")) {
-            logger.info("Invalid walllink: " + parameter);
+            final DownloadLink offline = createDownloadlink("http://vkontaktedecrypted.ru/videolink/" + new Regex(parameter, "(\\d+)$").getMatch(0));
+            offline.setProperty("offline", true);
+            decryptedLinks.add(offline);
             return decryptedLinks;
         }
+
+        /** Find offset start */
         String endOffset = br.getRegex("href=\"/wall(\\-)?" + userID + "[^<>\"/]*?offset=(\\d+)\" onclick=\"return nav\\.go\\(this, event\\)\"><div class=\"pg_in\">\\&raquo;</div>").getMatch(1);
         if (endOffset == null) {
             int highestFoundOffset = 10;
@@ -731,6 +736,8 @@ public class VKontakteRu extends PluginForDecrypt {
                 endOffset = "10";
             }
         }
+        /** Find offset end */
+
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         int correntOffset = 0;
         int maxOffset = Integer.parseInt(endOffset);
@@ -754,6 +761,7 @@ public class VKontakteRu extends PluginForDecrypt {
             }
 
             // First get all photo links
+            // Correct browser html
             br.getRequest().setHtmlCode(br.toString().replace("&quot;", "'"));
             final String[][] photoInfo = br.getRegex("showPhoto\\(\\'((\\-)?\\d+_\\d+)\\', \\'((wall|album)(\\-)?\\d+_\\d+)\\', \\{\\'temp\\':\\{(\\'base\\':.*?\\]\\})").getMatches();
             if (photoInfo == null || photoInfo.length == 0) {
