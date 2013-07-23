@@ -1006,7 +1006,7 @@ public class JDGui extends SwingGui implements UpdaterListener {
                 flashTaskbar();
             } else {
 
-                if (mainFrame.getExtendedState() == JFrame.ICONIFIED) {
+                if (WindowManager.getInstance().getExtendedState(mainFrame) == WindowExtendedState.ICONIFIED) {
                     WindowManager.getInstance().setExtendedState(mainFrame, WindowExtendedState.NORMAL);
                 }
                 WindowManager.getInstance().setVisible(mainFrame, true, toFrontFocused);
@@ -1020,7 +1020,7 @@ public class JDGui extends SwingGui implements UpdaterListener {
             if (isSilentModeActive()) {
                 flashTaskbar();
             } else {
-                if (mainFrame.getExtendedState() == JFrame.ICONIFIED) {
+                if (WindowManager.getInstance().getExtendedState(mainFrame) == WindowExtendedState.ICONIFIED) {
                     WindowManager.getInstance().setExtendedState(mainFrame, WindowExtendedState.NORMAL);
                 }
                 WindowManager.getInstance().setVisible(mainFrame, true, toFrontFocused);
@@ -1032,7 +1032,7 @@ public class JDGui extends SwingGui implements UpdaterListener {
                 flashTaskbar();
             } else {
 
-                if (mainFrame.getExtendedState() == JFrame.ICONIFIED) {
+                if (WindowManager.getInstance().getExtendedState(mainFrame) == WindowExtendedState.ICONIFIED) {
                     WindowManager.getInstance().setExtendedState(mainFrame, WindowExtendedState.NORMAL);
                 }
                 WindowManager.getInstance().setVisible(mainFrame, true, toFrontFocused);
@@ -1077,8 +1077,10 @@ public class JDGui extends SwingGui implements UpdaterListener {
                             // finalCaptchaDialog.getDialog().setFocusableWindowState(false);
                             // }
 
-                            WindowManager.getInstance().setExtendedState(mainFrame, WindowExtendedState.NORMAL);
-                            WindowManager.getInstance().setVisible(mainFrame, true, FrameState.OS_DEFAULT);
+                            if (WindowManager.getInstance().getExtendedState(mainFrame) == WindowExtendedState.ICONIFIED) {
+                                WindowManager.getInstance().setExtendedState(mainFrame, WindowExtendedState.NORMAL);
+                            }
+                            WindowManager.getInstance().setVisible(mainFrame, true, FrameState.TO_FRONT_FOCUSED);
                             //
                             if (tray.isEnabled()) {
                                 setWindowToTray(false);
@@ -1104,8 +1106,10 @@ public class JDGui extends SwingGui implements UpdaterListener {
                             // finalCaptchaDialog.getDialog().setFocusableWindowState(false);
                             // }
 
-                            WindowManager.getInstance().setExtendedState(mainFrame, WindowExtendedState.NORMAL);
-                            WindowManager.getInstance().setVisible(mainFrame, true, FrameState.OS_DEFAULT);
+                            if (WindowManager.getInstance().getExtendedState(mainFrame) == WindowExtendedState.ICONIFIED) {
+                                WindowManager.getInstance().setExtendedState(mainFrame, WindowExtendedState.NORMAL);
+                            }
+                            WindowManager.getInstance().setVisible(mainFrame, true, FrameState.TO_FRONT);
                             //
                             if (tray.isEnabled()) {
                                 setWindowToTray(false);
@@ -1335,8 +1339,12 @@ public class JDGui extends SwingGui implements UpdaterListener {
 
                 if (!minimize) {
 
+                    int estate = getMainFrame().getExtendedState();
+                    if ((estate & JFrame.ICONIFIED) != 0) {
+                        WindowManager.getInstance().setExtendedState(getMainFrame(), WindowExtendedState.NORMAL);
+                    }
                     if (!getMainFrame().isVisible()) {
-                        WindowManager.getInstance().setVisible(getMainFrame(), true, FrameState.OS_DEFAULT);
+                        WindowManager.getInstance().setVisible(getMainFrame(), true, FrameState.TO_FRONT_FOCUSED);
                     }
 
                     if (trayIconChecker != null) {
@@ -1432,6 +1440,10 @@ public class JDGui extends SwingGui implements UpdaterListener {
         } catch (Exception e) {
             getMainFrame().setTitle("JDownloader");
         }
+    }
+
+    public LogSource getLogger() {
+        return logger;
     }
 
 }
