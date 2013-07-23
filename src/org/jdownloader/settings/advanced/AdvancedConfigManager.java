@@ -8,6 +8,7 @@ import jd.controlling.linkchecker.LinkCheckerConfig;
 import jd.controlling.linkcollector.LinkCollectorConfig;
 import jd.controlling.linkcrawler.LinkCrawlerConfig;
 import jd.controlling.reconnect.ReconnectConfig;
+import jd.gui.swing.laf.LAFOptions;
 
 import org.appwork.storage.config.ConfigInterface;
 import org.appwork.storage.config.JsonConfig;
@@ -20,7 +21,6 @@ import org.jdownloader.api.RemoteAPIConfig;
 import org.jdownloader.api.myjdownloader.MyJDownloaderSettings;
 import org.jdownloader.controlling.filter.LinkFilterSettings;
 import org.jdownloader.controlling.packagizer.PackagizerSettings;
-import org.jdownloader.gui.laf.jddefault.LAFOptions;
 import org.jdownloader.gui.shortcuts.ShortcutSettings;
 import org.jdownloader.gui.views.linkgrabber.addlinksdialog.LinkgrabberSettings;
 import org.jdownloader.jdserv.stats.StatsManagerConfig;

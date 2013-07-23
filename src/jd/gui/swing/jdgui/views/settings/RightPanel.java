@@ -6,8 +6,9 @@ import java.awt.Rectangle;
 import javax.swing.JViewport;
 import javax.swing.Scrollable;
 
+import jd.gui.swing.laf.LAFOptions;
+
 import org.appwork.swing.MigPanel;
-import org.jdownloader.gui.laf.jddefault.LAFOptions;
 
 public class RightPanel extends MigPanel implements Scrollable {
 

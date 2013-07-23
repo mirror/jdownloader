@@ -24,6 +24,7 @@ import jd.controlling.linkcrawler.CrawledPackage;
 import jd.gui.UserIF;
 import jd.gui.swing.jdgui.JDGui;
 import jd.gui.swing.jdgui.interfaces.SwitchPanel;
+import jd.gui.swing.laf.LAFOptions;
 import net.miginfocom.swing.MigLayout;
 
 import org.appwork.storage.config.ValidationException;
@@ -36,7 +37,6 @@ import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.WindowManager.FrameState;
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.gui.components.OverviewHeaderScrollPane;
-import org.jdownloader.gui.laf.jddefault.LAFOptions;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.components.HeaderScrollPane;
 import org.jdownloader.gui.views.components.LinktablesSearchCategory;

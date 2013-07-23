@@ -11,12 +11,13 @@ import javax.swing.JList;
 import javax.swing.JPanel;
 import javax.swing.ListCellRenderer;
 
+import jd.gui.swing.laf.LAFOptions;
+
 import net.miginfocom.swing.MigLayout;
 
 import org.appwork.utils.ColorUtils;
 import org.appwork.utils.swing.renderer.RenderLabel;
 import org.appwork.utils.swing.renderer.RendererCheckBox;
-import org.jdownloader.gui.laf.jddefault.LAFOptions;
 import org.jdownloader.images.NewTheme;
 
 public class ExtensionPanelListRenderer extends JPanel implements ListCellRenderer {

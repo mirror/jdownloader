@@ -40,7 +40,7 @@ public class SolverJob<T> {
 
     public String toString() {
 
-        return "CaptchaJob: " + challenge;
+        return "CaptchaJob: " + challenge + " Solver: " + solverList;
     }
 
     public SolverJob(ChallengeResponseController controller, Challenge<T> c, List<ChallengeSolver<T>> solver) {
@@ -77,7 +77,7 @@ public class SolverJob<T> {
         }
     }
 
-    public boolean areDone(ChallengeSolver<?>[] instances) {
+    public boolean areDone(ChallengeSolver<?>... instances) {
         synchronized (LOCK) {
             for (ChallengeSolver<?> cs : instances) {
                 if (solverList.contains(cs) && !doneList.contains(cs)) { return false; }

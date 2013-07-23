@@ -2,11 +2,12 @@ package org.jdownloader.gui.views.linkgrabber;
 
 import javax.swing.Box;
 
+import jd.gui.swing.laf.LAFOptions;
+
 import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.events.GenericConfigEventListener;
 import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.swing.MigPanel;
-import org.jdownloader.gui.laf.jddefault.LAFOptions;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.components.Checkbox;
 import org.jdownloader.gui.views.components.Header;

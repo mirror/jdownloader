@@ -49,6 +49,7 @@ import jd.controlling.downloadcontroller.DownloadWatchDog;
 import jd.controlling.downloadcontroller.event.DownloadWatchdogListener;
 import jd.gui.swing.SwingGui;
 import jd.gui.swing.jdgui.components.speedmeter.SpeedMeterPanel;
+import jd.gui.swing.laf.LAFOptions;
 import net.miginfocom.swing.MigLayout;
 
 import org.appwork.storage.config.JsonConfig;
@@ -64,7 +65,6 @@ import org.jdownloader.controlling.contextmenu.MenuLink;
 import org.jdownloader.controlling.contextmenu.SeperatorData;
 import org.jdownloader.controlling.contextmenu.gui.ExtPopupMenu;
 import org.jdownloader.controlling.contextmenu.gui.MenuBuilder;
-import org.jdownloader.gui.laf.jddefault.LAFOptions;
 import org.jdownloader.gui.toolbar.MainToolbarManager;
 import org.jdownloader.gui.views.downloads.QuickSettingsPopup;
 import org.jdownloader.images.NewTheme;

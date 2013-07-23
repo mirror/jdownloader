@@ -331,6 +331,7 @@ public class Uploadedto extends PluginForHost {
 
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
+
         if (usePremiumAPI.get()) {
             return fetchAccountInfo_API(account);
         } else {

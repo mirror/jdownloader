@@ -11,6 +11,7 @@ import jd.controlling.downloadcontroller.DownloadController;
 import jd.controlling.downloadcontroller.DownloadControllerEvent;
 import jd.controlling.downloadcontroller.DownloadControllerListener;
 import jd.gui.swing.jdgui.interfaces.SwitchPanel;
+import jd.gui.swing.laf.LAFOptions;
 import net.miginfocom.swing.MigLayout;
 
 import org.appwork.storage.config.ValidationException;
@@ -19,7 +20,6 @@ import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.swing.MigPanel;
 import org.appwork.utils.swing.EDTRunner;
 import org.jdownloader.gui.components.OverviewHeaderScrollPane;
-import org.jdownloader.gui.laf.jddefault.LAFOptions;
 import org.jdownloader.gui.views.components.HeaderScrollPane;
 import org.jdownloader.gui.views.downloads.overviewpanel.DownloadOverview;
 import org.jdownloader.gui.views.downloads.overviewpanel.OverViewHeader;

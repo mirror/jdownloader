@@ -11,9 +11,10 @@ import javax.swing.JButton;
 import javax.swing.JPopupMenu;
 import javax.swing.SwingConstants;
 
+import jd.gui.swing.laf.LAFOptions;
+
 import org.appwork.utils.logging.Log;
 import org.jdownloader.actions.AppAction;
-import org.jdownloader.gui.laf.jddefault.LAFOptions;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
 

@@ -20,6 +20,7 @@ import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledPackage;
 import jd.controlling.packagecontroller.AbstractNode;
 import jd.gui.swing.jdgui.BasicJDTable;
+import jd.gui.swing.laf.LAFOptions;
 
 import org.appwork.scheduler.DelayedRunnable;
 import org.appwork.storage.config.ValidationException;
@@ -29,7 +30,6 @@ import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.swing.exttable.ExtColumn;
 import org.appwork.swing.exttable.columns.ExtCheckColumn;
 import org.appwork.utils.swing.EDTRunner;
-import org.jdownloader.gui.laf.jddefault.LAFOptions;
 import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.components.packagetable.PackageControllerTableModel;
 import org.jdownloader.gui.views.components.packagetable.PackageControllerTableModelFilter;

@@ -12,6 +12,7 @@ import javax.swing.JButton;
 import javax.swing.JToggleButton;
 import javax.swing.SwingUtilities;
 
+import jd.gui.swing.laf.LAFOptions;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
@@ -22,7 +23,6 @@ import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.swing.MigPanel;
 import org.appwork.swing.components.ExtButton;
 import org.jdownloader.actions.AppAction;
-import org.jdownloader.gui.laf.jddefault.LAFOptions;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.components.LinktablesSearchCategory;
 import org.jdownloader.gui.views.components.packagetable.PackageControllerTableModelFilter;

@@ -25,6 +25,7 @@ import javax.swing.JRootPane;
 import javax.swing.border.Border;
 
 import jd.controlling.IOEQ;
+import jd.gui.swing.laf.LAFOptions;
 
 import org.appwork.scheduler.DelayedRunnable;
 import org.appwork.storage.config.JsonConfig;
@@ -32,7 +33,6 @@ import org.appwork.swing.components.ExtTextField;
 import org.appwork.utils.logging.Log;
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.controlling.filter.LinkgrabberFilterRuleWrapper;
-import org.jdownloader.gui.laf.jddefault.LAFOptions;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.components.SearchCatInterface;
 import org.jdownloader.images.NewTheme;

@@ -8,11 +8,11 @@ import javax.swing.JMenu;
 import javax.swing.JPopupMenu;
 
 import jd.controlling.packagecontroller.AbstractNode;
+import jd.gui.swing.laf.LAFOptions;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
 import org.jdownloader.actions.AppAction;
-import org.jdownloader.gui.laf.jddefault.LAFOptions;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.downloads.table.DownloadsTable;

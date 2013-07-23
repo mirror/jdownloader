@@ -47,6 +47,7 @@ import javax.swing.Timer;
 
 import jd.gui.swing.jdgui.JDGui;
 import jd.gui.swing.jdgui.components.toolbar.actions.ExitToolbarAction;
+import jd.gui.swing.laf.LAFOptions;
 import jd.utils.JDUtilities;
 import net.miginfocom.swing.MigLayout;
 
@@ -61,7 +62,6 @@ import org.jdownloader.controlling.contextmenu.SeperatorData;
 import org.jdownloader.controlling.contextmenu.gui.ExtPopupMenu;
 import org.jdownloader.controlling.contextmenu.gui.MenuBuilder;
 import org.jdownloader.extensions.ExtensionNotLoadedException;
-import org.jdownloader.gui.laf.jddefault.LAFOptions;
 import org.jdownloader.gui.toolbar.MainToolbarManager;
 import org.jdownloader.images.NewTheme;
 

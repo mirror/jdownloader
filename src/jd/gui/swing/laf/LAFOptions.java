@@ -1,4 +1,4 @@
-package org.jdownloader.gui.laf.jddefault;
+package jd.gui.swing.laf;
 
 import java.awt.Color;
 import java.util.HashMap;

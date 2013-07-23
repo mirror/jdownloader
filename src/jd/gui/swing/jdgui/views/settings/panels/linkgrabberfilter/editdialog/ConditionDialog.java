@@ -37,6 +37,7 @@ import jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter.editdialog.Onl
 import jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter.editdialog.OnlineStatusFilter.OnlineStatusMatchtype;
 import jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter.editdialog.PluginStatusFilter.PluginStatus;
 import jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter.editdialog.PluginStatusFilter.PluginStatusMatchtype;
+import jd.gui.swing.laf.LAFOptions;
 
 import org.appwork.app.gui.copycutpaste.CopyAction;
 import org.appwork.app.gui.copycutpaste.CutAction;
@@ -67,7 +68,6 @@ import org.jdownloader.controlling.filter.FiletypeFilter.TypeMatchType;
 import org.jdownloader.controlling.filter.RegexFilter;
 import org.jdownloader.controlling.filter.RegexFilter.MatchType;
 import org.jdownloader.controlling.filter.RuleWrapper;
-import org.jdownloader.gui.laf.jddefault.LAFOptions;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
 

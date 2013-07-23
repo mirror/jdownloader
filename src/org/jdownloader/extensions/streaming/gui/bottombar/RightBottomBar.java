@@ -7,13 +7,14 @@ import java.awt.event.KeyListener;
 import java.util.List;
 import java.util.regex.Pattern;
 
+import jd.gui.swing.laf.LAFOptions;
+
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.swing.MigPanel;
 import org.appwork.swing.components.ExtButton;
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.extensions.streaming.StreamingExtension;
 import org.jdownloader.extensions.streaming.gui.VLCGui;
-import org.jdownloader.gui.laf.jddefault.LAFOptions;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.downloads.QuickSettingsPopup;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings;

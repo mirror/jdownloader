@@ -8,10 +8,10 @@ import javax.swing.JComponent;
 import javax.swing.JScrollBar;
 import javax.swing.JScrollPane;
 
+import jd.gui.swing.laf.LAFOptions;
 import jd.gui.swing.laf.LookAndFeelController;
 
 import org.appwork.app.gui.BasicGui;
-import org.jdownloader.gui.laf.jddefault.LAFOptions;
 import org.jdownloader.gui.views.linkgrabber.LinkGrabberPanel;
 
 public class HeaderScrollPane extends JScrollPane {

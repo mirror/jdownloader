@@ -32,6 +32,8 @@ import org.jdownloader.captcha.v2.challenge.stringcaptcha.BasicCaptchaChallenge;
 import org.jdownloader.captcha.v2.challenge.stringcaptcha.CaptchaResponse;
 import org.jdownloader.captcha.v2.challenge.stringcaptcha.ClickCaptchaResponse;
 import org.jdownloader.captcha.v2.challenge.stringcaptcha.ImageCaptchaChallenge;
+import org.jdownloader.captcha.v2.solver.gui.DialogBasicCaptchaSolver;
+import org.jdownloader.captcha.v2.solver.gui.DialogClickCaptchaSolver;
 import org.jdownloader.captcha.v2.solver.jac.SolverException;
 import org.jdownloader.captcha.v2.solverjob.SolverJob;
 import org.jdownloader.settings.staticreferences.CFG_CAPTCHA;
@@ -140,6 +142,8 @@ public class CaptchaAPISolver extends ChallengeSolver<Object> implements Captcha
 
     public boolean isJobDone(SolverJob<Object> job) {
         if (!isMyJDownloaderActive()) return true;
+        // if (job.areDone(DialogBasicCaptchaSolver.getInstance(), DialogClickCaptchaSolver.getInstance())) return true;
+
         synchronized (map) {
             return !map.containsKey(job);
         }
@@ -160,6 +164,7 @@ public class CaptchaAPISolver extends ChallengeSolver<Object> implements Captcha
             MyJDownloaderController.getInstance().pushCaptchaFlag(true);
 
         }
+        jr.fireBeforeSolveEvent();
         eventPublisher.fireNewJobEvent(job);
 
     }
@@ -278,12 +283,25 @@ public class CaptchaAPISolver extends ChallengeSolver<Object> implements Captcha
     public void onJobDone(SolverJob<?> job) {
         eventPublisher.fireJobDoneEvent(job);
         synchronized (map) {
-            map.remove(job);
+            dispose(job);
             if (map.size() > 0) {
                 MyJDownloaderController.getInstance().pushCaptchaFlag(true);
             } else {
                 MyJDownloaderController.getInstance().pushCaptchaFlag(false);
             }
+        }
+
+    }
+
+    protected void dispose(SolverJob<?> job) {
+        JobRunnable<Object> suc = null;
+        synchronized (map) {
+            suc = map.remove(job);
+
+        }
+
+        if (suc != null) {
+            suc.fireDoneAndAfterSolveEvents();
         }
 
     }
@@ -295,6 +313,13 @@ public class CaptchaAPISolver extends ChallengeSolver<Object> implements Captcha
 
     @Override
     public void onJobSolverEnd(ChallengeSolver<?> solver, SolverJob<?> job) {
+        if (solver == this) return;
+        if (job.areDone(DialogBasicCaptchaSolver.getInstance(), DialogClickCaptchaSolver.getInstance())) {
+            // dialogs and jac is done. let's kill this one,
+
+            dispose(job);
+
+        }
     }
 
     @Override

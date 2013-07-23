@@ -48,6 +48,7 @@ import javax.swing.Timer;
 
 import jd.captcha.utils.GifDecoder;
 import jd.gui.swing.jdgui.JDGui;
+import jd.gui.swing.laf.LAFOptions;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
@@ -74,7 +75,6 @@ import org.appwork.utils.swing.dialog.LocationStorage;
 import org.appwork.utils.swing.dialog.locator.RememberAbsoluteDialogLocator;
 import org.jdownloader.DomainInfo;
 import org.jdownloader.actions.AppAction;
-import org.jdownloader.gui.laf.jddefault.LAFOptions;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.components.HeaderScrollPane;
 import org.jdownloader.images.NewTheme;
@@ -913,7 +913,7 @@ public abstract class AbstractCaptchaDialog extends AbstractDialog<Object> {
 
     @Override
     public Window getOwner() {
-        return null;
+        return super.getOwner();
     }
 
     public void pack() {

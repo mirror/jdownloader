@@ -33,7 +33,15 @@ public class BasicCaptchaDialogHandler extends ChallengeDialogHandler<BasicCaptc
 
     @Override
     protected void showDialog(DialogType dialogType, int flag, Image[] images) throws DialogClosedException, DialogCanceledException, HideCaptchasByHostException, HideCaptchasByPackageException, StopCurrentActionException, HideAllCaptchasException, RefreshException {
-        CaptchaDialog d = new CaptchaDialog(flag, dialogType, getHost(), images, captchaChallenge.getExplain());
+        CaptchaDialog d = new CaptchaDialog(flag, dialogType, getHost(), images, captchaChallenge.getExplain()) {
+            public void dispose() {
+                super.dispose();
+                synchronized (BasicCaptchaDialogHandler.this) {
+
+                    BasicCaptchaDialogHandler.this.notifyAll();
+                }
+            }
+        };
         d.setPlugin(captchaChallenge.getPlugin());
 
         d.setTimeout(getTimeoutInMS());
@@ -70,7 +78,7 @@ public class BasicCaptchaDialogHandler extends ChallengeDialogHandler<BasicCaptc
                     @Override
                     public void windowClosing(WindowEvent e) {
                         synchronized (BasicCaptchaDialogHandler.this) {
-                            boolean v = dialog.getDialog().isVisible();
+
                             BasicCaptchaDialogHandler.this.notifyAll();
                         }
 
@@ -95,7 +103,7 @@ public class BasicCaptchaDialogHandler extends ChallengeDialogHandler<BasicCaptc
             while (dialog.getDialog().isVisible()) {
                 synchronized (this) {
 
-                    this.wait();
+                    this.wait(1000);
 
                 }
             }

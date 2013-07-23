@@ -5,9 +5,10 @@ import javax.swing.Box;
 import javax.swing.ImageIcon;
 import javax.swing.JLabel;
 
+import jd.gui.swing.laf.LAFOptions;
+
 import org.appwork.swing.MigPanel;
 import org.appwork.utils.swing.SwingUtils;
-import org.jdownloader.gui.laf.jddefault.LAFOptions;
 
 public class Header extends MigPanel {
 

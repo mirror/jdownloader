@@ -15,6 +15,8 @@ import javax.swing.JMenuItem;
 import javax.swing.SpinnerNumberModel;
 import javax.swing.SwingConstants;
 
+import jd.gui.swing.laf.LAFOptions;
+
 import net.miginfocom.swing.MigLayout;
 
 import org.appwork.storage.JSonStorage;
@@ -31,7 +33,6 @@ import org.appwork.utils.reflection.Clazz;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.controlling.contextmenu.gui.ExtPopupMenu;
-import org.jdownloader.gui.laf.jddefault.LAFOptions;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.settings.advanced.AdvancedConfigEntry;

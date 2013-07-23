@@ -30,6 +30,14 @@ public class JobRunnable<T> implements Runnable {
         return job;
     }
 
+    public void fireTimeoutEvent() {
+        if (!job.isDone(solver)) {
+            solver.kill(job);
+            job.fireTimeoutEvent(solver);
+
+        }
+    }
+
     @Override
     public void run() {
 
@@ -41,7 +49,7 @@ public class JobRunnable<T> implements Runnable {
                 thread = Thread.currentThread();
                 thread.setName(solver + "-Thread");
             }
-            job.fireBeforeSolveEvent(solver);
+            fireBeforeSolveEvent();
 
             DelayedRunnable timeout = null;
             // final Thread thread = Thread.currentThread();
@@ -50,12 +58,9 @@ public class JobRunnable<T> implements Runnable {
                     @Override
                     public void delayedrun() {
                         System.out.println("Timeout!");
-                        if (!job.isDone(solver)) {
-                            solver.kill(job);
-                            job.fireTimeoutEvent(solver);
-
-                        }
+                        fireTimeoutEvent();
                     }
+
                 };
 
             }
@@ -74,14 +79,23 @@ public class JobRunnable<T> implements Runnable {
                 getJob().getLogger().log(e);
 
             } finally {
-                if (timeout != null) timeout.stop();
-                job.fireAfterSolveEvent(solver);
-                job.setSolverDone(solver);
+                fireDoneAndAfterSolveEvents();
 
             }
         } finally {
             thread = null;
         }
+    }
+
+    public void fireDoneAndAfterSolveEvents() {
+        // order is important. listeners should have a chance to validate which solvers are done
+        job.setSolverDone(solver);
+
+        job.fireAfterSolveEvent(solver);
+    }
+
+    public void fireBeforeSolveEvent() {
+        job.fireBeforeSolveEvent(solver);
     }
 
     private Thread thread;

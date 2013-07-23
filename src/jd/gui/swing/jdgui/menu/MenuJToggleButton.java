@@ -15,9 +15,10 @@ import javax.swing.plaf.synth.SynthConstants;
 import javax.swing.plaf.synth.SynthContext;
 import javax.swing.plaf.synth.SynthStyle;
 
+import jd.gui.swing.laf.LAFOptions;
+
 import org.appwork.utils.logging2.LogSource;
 import org.jdownloader.actions.AppAction;
-import org.jdownloader.gui.laf.jddefault.LAFOptions;
 import org.jdownloader.logging.LogController;
 
 public class MenuJToggleButton extends JToggleButton {

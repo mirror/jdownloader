@@ -1,4 +1,4 @@
-package org.jdownloader.gui.laf.jddefault;
+package jd.gui.swing.laf;
 
 import org.appwork.storage.config.ConfigInterface;
 import org.appwork.storage.config.annotations.AboutConfig;

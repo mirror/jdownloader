@@ -38,7 +38,8 @@ public class ChallengeResponseController {
     private LogSource logger;
 
     /**
-     * Create a new instance of ChallengeResponseController. This is a singleton class. Access the only existing instance by using {@link #getInstance()}.
+     * Create a new instance of ChallengeResponseController. This is a singleton class. Access the only existing instance by using
+     * {@link #getInstance()}.
      */
     private ChallengeResponseController() {
         config = JsonConfig.create(CaptchaSettings.class);
@@ -95,7 +96,8 @@ public class ChallengeResponseController {
     private HashMap<Long, SolverJob<?>> idToJobMap = new HashMap<Long, SolverJob<?>>();
 
     /**
-     * When one job gets a skiprequest, we have to check all pending jobs if this skiprequest affects them as well. if so, we have to skip them as well.
+     * When one job gets a skiprequest, we have to check all pending jobs if this skiprequest affects them as well. if so, we have to skip
+     * them as well.
      * 
      * @param skipRequest
      * @param solver
@@ -142,7 +144,8 @@ public class ChallengeResponseController {
             while (!job.isSolved() && !job.isDone()) {
                 synchronized (job) {
                     if (!job.isSolved() && !job.isDone()) {
-                        job.wait();
+                        System.out.println(job);
+                        job.wait(10000);
                         logger.info("Notified");
                     }
                 }

@@ -27,11 +27,12 @@ import javax.swing.JList;
 import javax.swing.JPanel;
 import javax.swing.ListCellRenderer;
 
+import jd.gui.swing.laf.LAFOptions;
+
 import net.miginfocom.swing.MigLayout;
 
 import org.appwork.utils.ColorUtils;
 import org.jdownloader.extensions.streaming.gui.categories.RootCategory;
-import org.jdownloader.gui.laf.jddefault.LAFOptions;
 
 public class TreeRenderer extends JPanel implements ListCellRenderer {
 

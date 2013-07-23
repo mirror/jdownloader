@@ -36,7 +36,6 @@ import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.swing.dialog.LAFManagerInterface;
 import org.jdownloader.gui.laf.jddefault.JDDefaultLookAndFeel;
-import org.jdownloader.gui.laf.jddefault.LAFOptions;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings.LookAndFeelType;
