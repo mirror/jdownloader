@@ -24,6 +24,7 @@ import java.awt.TrayIcon;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
+import java.util.concurrent.atomic.AtomicReference;
 
 import jd.gui.swing.jdgui.JDGui;
 
@@ -32,17 +33,15 @@ import org.appwork.utils.swing.EDTRunner;
 
 public class TrayMouseAdapter implements MouseListener, MouseMotionListener {
 
-    private TrayExtension deligate;
-    private boolean       mouseover;
-    private Thread        mouseLocationObserver;
-    // private TrayIcon trayIcon;
-    private Point         min;
-    private Point         max;
-    private Dimension     size;
-    private MouseEvent    lastEvent;
-    private Component     dummy;
-    private LogSource     logger;
-    private static int    TOOLTIP_DELAY = 1000;
+    private TrayExtension           deligate;
+    private AtomicReference<Thread> mouseLocationObserver = new AtomicReference<Thread>(null);
+    private Point                   min;
+    private Point                   max;
+    private Dimension               size;
+    private MouseEvent              lastEvent;
+    private Component               dummy;
+    private LogSource               logger;
+    private static int              TOOLTIP_DELAY         = 1000;
 
     public TrayMouseAdapter(TrayExtension lightTray, TrayIcon trayIcon) {
         deligate = lightTray;
@@ -60,19 +59,16 @@ public class TrayMouseAdapter implements MouseListener, MouseMotionListener {
     }
 
     public void mouseEntered(MouseEvent e) {
-        if (mouseover) return;
-        mouseover = true;
-        System.out.println("ENTERED");
-        final long enterTime = System.currentTimeMillis();
-        mouseLocationObserver = new Thread() {
-            boolean mouseStay = false;
+        if (mouseLocationObserver.get() != null) return;
+        Thread localmouseLocationObserver = new Thread() {
+            boolean    mouseStay = false;
+            final long enterTime = System.currentTimeMillis();
 
             public void run() {
+                setName("MouseLocationObserver");
                 try {
-
-                    while (true) {
+                    while (mouseLocationObserver.get() == Thread.currentThread()) {
                         new EDTRunner() {
-
                             @Override
                             protected void runInEDT() {
                                 Point point = MouseInfo.getPointerInfo().getLocation();
@@ -80,11 +76,8 @@ public class TrayMouseAdapter implements MouseListener, MouseMotionListener {
                                     MouseEvent me;
                                     me = new MouseEvent(dummy, 0, System.currentTimeMillis(), 0, point.x, point.y, 0, false);
                                     me.setSource(lastEvent.getSource());
-
                                     mouseExited(me);
-
                                     return;
-
                                 } else {
                                     if ((System.currentTimeMillis() - enterTime) >= TOOLTIP_DELAY && !mouseStay) {
                                         mouseStay = true;
@@ -97,57 +90,51 @@ public class TrayMouseAdapter implements MouseListener, MouseMotionListener {
                                 }
                             }
                         };
-
                         Thread.sleep(100);
                     }
                 } catch (InterruptedException e) {
-
                     return;
                 } finally {
-                    mouseLocationObserver = null;
+                    mouseLocationObserver.compareAndSet(Thread.currentThread(), null);
                 }
             }
 
         };
-        mouseLocationObserver.start();
-
+        if (mouseLocationObserver.compareAndSet(null, localmouseLocationObserver)) {
+            localmouseLocationObserver.setDaemon(true);
+            localmouseLocationObserver.start();
+        }
         deligate.mouseEntered(e);
-
     }
 
     public void mouseExited(MouseEvent e) {
-        mouseover = false;
-
+        abortMouseLocationObserver();
         min = max = null;
-        if (mouseLocationObserver != null) mouseLocationObserver.interrupt();
         deligate.mouseExited(e);
+    }
 
+    public void abortMouseLocationObserver() {
+        Thread localmouseLocationObserver = mouseLocationObserver.getAndSet(null);
+        if (localmouseLocationObserver != null) localmouseLocationObserver.interrupt();
     }
 
     public void mousePressed(MouseEvent e) {
-
+        abortMouseLocationObserver();
         min = max = null;
-        System.out.println("Cancel");
-        if (mouseLocationObserver != null) mouseLocationObserver.interrupt();
         deligate.mousePressed(e);
-
     }
 
     public void mouseReleased(MouseEvent e) {
         deligate.mouseReleased(e);
-
     }
 
     public void mouseDragged(MouseEvent e) {
         deligate.mouseDragged(e);
-
     }
 
     public void mouseMoved(MouseEvent e) {
+        if (e == null || e.getPoint() == null) return;
         Point point = e.getPoint();
-        if (e == null || point == null) {
-
-        return; }
 
         lastEvent = e;
         /**
@@ -167,10 +154,9 @@ public class TrayMouseAdapter implements MouseListener, MouseMotionListener {
             // System.out.println(min+" - "+max);
         }
 
-        if (!this.mouseover) {
+        if (mouseLocationObserver.get() == null) {
             this.mouseEntered(e);
         } else {
-
             deligate.mouseMoved(e);
         }
 
@@ -190,13 +176,15 @@ public class TrayMouseAdapter implements MouseListener, MouseMotionListener {
      * @return
      */
     protected boolean isOver(Point point) {
-        if (max == null || min == null || size == null) return false;
+        if (max == null || min == null || size == null) { return false; }
         int midx = (max.x + min.x) / 2;
         int midy = (max.y + min.y) / 2;
+        // int width = Math.min(size.width, max.x - min.x);
+        // int height = Math.min(size.height, max.y - min.y);
 
-        int width = Math.min(size.width, max.x - min.x);
-        int height = Math.min(size.height, max.y - min.y);
-
+        /* the code above causes flickering of the tooltip because isOver only returns true in inner middle of the trayicon */
+        int width = size.width;
+        int height = size.height;
         int minx = midx - width / 2;
         int miny = midy - height / 2;
         int maxx = midx + width / 2;

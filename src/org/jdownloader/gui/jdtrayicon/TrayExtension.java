@@ -340,8 +340,8 @@ public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTransla
 
                         } catch (Throwable e) {
                             /*
-                             * on Gnome3, Unity, this can happen because icon might be blacklisted, see here
-                             * http://www.webupd8.org/2011/04/how-to-re-enable -notification-area.html
+                             * on Gnome3, Unity, this can happen because icon might be blacklisted, see here http://www.webupd8.org/2011/04/how-to-re-enable
+                             * -notification-area.html
                              * 
                              * dconf-editor", then navigate to desktop > unity > panel and whitelist JDownloader
                              * 
@@ -388,7 +388,7 @@ public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTransla
                         if (!checkPassword()) return;
                         trayIconPopup = new TrayIconPopup(this);
                         calcLocation(trayIconPopup, e.getPoint());
-                        WindowManager.getInstance().setVisible(trayIconPopup, true,FrameState.OS_DEFAULT);
+                        WindowManager.getInstance().setVisible(trayIconPopup, true, FrameState.OS_DEFAULT);
                         trayIconPopup.startAutoHide();
                     }
                 }
@@ -405,7 +405,7 @@ public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTransla
                         Point pointOnScreen = e.getLocationOnScreen();
                         if (e.getX() > 0) pointOnScreen.x -= e.getPoint().x;
                         calcLocation(trayIconPopup, pointOnScreen);
-                        WindowManager.getInstance().setVisible(trayIconPopup, true,FrameState.OS_DEFAULT);
+                        WindowManager.getInstance().setVisible(trayIconPopup, true, FrameState.OS_DEFAULT);
                         trayIconPopup.startAutoHide();
                     }
                 }
@@ -647,7 +647,7 @@ public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTransla
                 @Override
                 public Object edtRun() {
                     /* set visible state */
-                    WindowManager.getInstance().setVisible(JDGui.getInstance().getMainFrame(), false,FrameState.OS_DEFAULT);
+                    WindowManager.getInstance().setVisible(JDGui.getInstance().getMainFrame(), false, FrameState.OS_DEFAULT);
                     return null;
                 }
             }.start();
