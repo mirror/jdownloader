@@ -104,7 +104,7 @@ public class ImgSrcRu extends PluginForDecrypt {
                 return null;
             }
 
-            String fpName = br.getRegex("(хостинг фото, |>)([^\">\r\n]+) on " + username + "\\.iMGSRC\\.RU( @ iMGSRC\\.RU)?").getMatch(1);
+            String fpName = br.getRegex("(хостинг фото, |>)([^>\r\n]+) on " + username + "\\.iMGSRC\\.RU( @ iMGSRC\\.RU)?").getMatch(1);
             if (fpName == null) {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
