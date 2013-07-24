@@ -671,9 +671,9 @@ public class LnkCrptWs extends PluginForDecrypt {
                     if (PARAMS == null || PARAMS.size() == 0) {
                         throw new Exception("KeyCaptcha values couldn't be found");
                     } else {
-                        String src = FORM.getRegex("src=\'(.*?)\'").getMatch(0);
+                        String src = FORM.getRegex("src=\'([^']+keycaptcha\\.com[^']+)\'").getMatch(0);
                         if (src == null) {
-                            src = FORM.getRegex("src=\"(.*?)\"").getMatch(0);
+                            src = FORM.getRegex("src=\"([^\"]+keycaptcha\\.com[^\"]+)\"").getMatch(0);
                             if (src == null) { throw new Exception("KeyCaptcha Module fails"); }
                         }
                         PARAMS.put("src", src);
