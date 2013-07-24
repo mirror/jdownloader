@@ -569,7 +569,7 @@ public class LiveHeaderInvoker extends ReconnectInvoker {
                 return br;
             } catch (final IOException e) {
                 logger.log(e);
-                if (feedback != null) feedback.onRequestExceptionOccured(e, br.getRequest());
+                if (feedback != null) feedback.onBasicRemoteAPIExceptionOccured(e, br.getRequest());
                 logger.severe("IO Error: " + e.getLocalizedMessage());
                 return null;
             }
@@ -618,7 +618,7 @@ public class LiveHeaderInvoker extends ReconnectInvoker {
                 failedRequests = 0;
             }
 
-            public void onRequestExceptionOccured(IOException e, Request request) throws ReconnectFailedException {
+            public void onBasicRemoteAPIExceptionOccured(IOException e, Request request) throws ReconnectFailedException {
                 failedRequests++;
                 if (failedRequests > successRequests) throw new ReconnectFailedException("Request Failed");
             }
