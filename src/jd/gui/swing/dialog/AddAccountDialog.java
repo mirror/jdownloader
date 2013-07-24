@@ -16,8 +16,11 @@
 
 package jd.gui.swing.dialog;
 
+import java.awt.Component;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.WindowEvent;
+import java.awt.event.WindowFocusListener;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collection;
@@ -176,7 +179,26 @@ public class AddAccountDialog extends AbstractDialog<Integer> {
     }
 
     protected void initFocus(final JComponent focus) {
+        getDialog().addWindowFocusListener(new WindowFocusListener() {
 
+            @Override
+            public void windowLostFocus(final WindowEvent windowevent) {
+                // TODO Auto-generated method stub
+
+            }
+
+            @Override
+            public void windowGainedFocus(final WindowEvent windowevent) {
+
+                final Component focusOwner = getDialog().getFocusOwner();
+                if (focusOwner != null) {
+                    // dialog component has already focus...
+                    return;
+                }
+                hoster.requestFocus();
+
+            }
+        });
     }
 
     @Override
@@ -333,7 +355,7 @@ public class AddAccountDialog extends AbstractDialog<Integer> {
     @Override
     protected void packed() {
         super.packed();
-        hoster.requestFocus();
+
     }
 
 }
