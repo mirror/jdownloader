@@ -91,7 +91,7 @@ public class VidToMe extends PluginForHost {
     // DEV NOTES
     // XfileShare Version 3.0.7.2
     // last XfileSharingProBasic compare :: 2.6.2.1
-    // mods: quality selection
+    // mods: quality selection, download1 form
     // protocol: no https
     // captchatype: recaptcha, but never used as of vidembed
     // other: no redirects
@@ -332,8 +332,10 @@ public class VidToMe extends PluginForHost {
                 download1 = cleanForm(download1);
                 // end of backward compatibility
                 download1.remove("method_premium");
+                download1.setAction(br.getURL() + ".html");
                 waitTime(System.currentTimeMillis(), downloadLink);
                 sendForm(download1);
+                if (cbr.containsHTML(">No such file with this filename<")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 checkErrors(downloadLink, account, false);
                 getDllink(downloadLink);
             }
