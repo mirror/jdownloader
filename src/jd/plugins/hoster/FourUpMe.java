@@ -183,7 +183,7 @@ public class FourUpMe extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        doFree(downloadLink, true, -6, "freelink");
+        doFree(downloadLink, true, -4, "freelink");
     }
 
     @SuppressWarnings("unused")
