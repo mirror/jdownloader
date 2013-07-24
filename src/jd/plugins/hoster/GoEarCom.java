@@ -17,6 +17,7 @@
 package jd.plugins.hoster;
 
 import jd.PluginWrapper;
+import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -42,35 +43,28 @@ public class GoEarCom extends PluginForHost {
         return "http://www.goear.com/pages/terms_and_conditions.html";
     }
 
-    private String getXmlUrl(String url) {
-        String id = new Regex(url, "/listen/([0-9a-f]+)/").getMatch(0);
-        return "http://www.goear.com/tracker758.php?f=" + id;
+    @Override
+    public AvailableStatus requestFileInformation(final DownloadLink parameter) throws Exception {
+        this.setBrowserExclusive();
+        br.getPage(parameter.getDownloadURL());
+        if (br.containsHTML("404 \\- Not Found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String title = br.getRegex("<title>([^<<\"]*?) \\- goear\\.com</title>").getMatch(0);
+        if (title == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        parameter.setFinalFileName(Encoding.htmlDecode(title.trim()) + ".mp3");
+        return AvailableStatus.TRUE;
     }
 
     @Override
-    public void handleFree(DownloadLink link) throws Exception {
+    public void handleFree(final DownloadLink link) throws Exception {
         requestFileInformation(link);
         br.setFollowRedirects(false);
-        br.getPage(getXmlUrl(link.getDownloadURL()));
-        String file = br.getRegex("path=\"(.*?)\"").getMatch(0);
-        if (file == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        br.setFollowRedirects(true);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, file);
+        final String finallink = "http://www.goear.com/action/sound/get/" + new Regex(link.getDownloadURL(), "([0-9a-f]+)/$").getMatch(0);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, finallink);
+        if (dl.getConnection().getContentType().contains("html")) {
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         dl.startDownload();
-    }
-
-    @Override
-    public AvailableStatus requestFileInformation(DownloadLink parameter) throws Exception {
-        String artist, title, extension;
-        this.setBrowserExclusive();
-        br.getPage(getXmlUrl(parameter.getDownloadURL()));
-        if (br.containsHTML("404 - Not Found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        artist = br.getRegex("artist=\"(.*?)\"").getMatch(0);
-        title = br.getRegex("title=\"(.*?)\"").getMatch(0);
-        extension = br.getRegex("\\/[0-9a-f]+\\.(.*?)\"").getMatch(0);
-        if (extension == null || (artist == null && title == null)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        parameter.setName(artist + " - " + title + "." + extension);
-        return AvailableStatus.TRUE;
     }
 
     @Override
