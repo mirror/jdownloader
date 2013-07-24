@@ -41,7 +41,7 @@ public interface ShutdownConfig extends ExtensionConfigInterface {
 
     void setCountdownTime(int seconds);
 
-    @DefaultBooleanValue(true)
+    @DefaultBooleanValue(false)
     @AboutConfig
     @DescriptionForConfigEntry("If you want the 'Shutdown enabled' flag to be disabled in a new session, then disable this flag")
     boolean isShutdownActiveByDefaultEnabled();
