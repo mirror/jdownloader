@@ -31,7 +31,6 @@ import javax.swing.ImageIcon;
 import javax.swing.JLabel;
 import javax.swing.JList;
 
-import jd.gui.UserIF;
 import jd.gui.swing.jdgui.JDGui;
 import jd.gui.swing.jdgui.views.settings.components.Checkbox;
 import jd.gui.swing.jdgui.views.settings.components.ComboBox;
@@ -199,7 +198,7 @@ public class GUISettings extends AbstractConfigPanel implements StateUpdateListe
 
                     @Override
                     protected void runInEDT() {
-                        JDGui.getInstance().requestPanel(UserIF.Panels.DOWNLOADLIST, null);
+                        JDGui.getInstance().requestPanel(JDGui.Panels.DOWNLOADLIST, null);
 
                         DownloadListContextMenuManager.getInstance().openGui();
                     }
@@ -220,7 +219,7 @@ public class GUISettings extends AbstractConfigPanel implements StateUpdateListe
 
                     @Override
                     protected void runInEDT() {
-                        JDGui.getInstance().requestPanel(UserIF.Panels.LINKGRABBER, null);
+                        JDGui.getInstance().requestPanel(JDGui.Panels.LINKGRABBER, null);
 
                         LinkgrabberContextMenuManager.getInstance().openGui();
                     }

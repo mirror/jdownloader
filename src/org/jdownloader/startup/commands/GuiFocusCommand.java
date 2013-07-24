@@ -2,7 +2,6 @@ package org.jdownloader.startup.commands;
 
 import jd.SecondLevelLaunch;
 import jd.gui.UIConstants;
-import jd.gui.UserIF;
 import jd.gui.swing.jdgui.JDGui;
 
 import org.appwork.utils.swing.EDTRunner;
@@ -24,7 +23,7 @@ public class GuiFocusCommand extends AbstractStartupCommand {
 
                     @Override
                     protected void runInEDT() {
-                        UserIF.getInstance().setFrameStatus(UIConstants.WINDOW_STATUS_FOREGROUND);
+                        JDGui.getInstance().setFrameStatus(UIConstants.WINDOW_STATUS_FOREGROUND);
                     }
                 };
 

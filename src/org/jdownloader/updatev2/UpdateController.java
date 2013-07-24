@@ -322,6 +322,7 @@ public class UpdateController implements UpdateCallbackInterface {
     public void onResults(boolean app, boolean updater, int clientRevision, int clientDestRevision, int selfRevision, int selfDestRevision, File awfFileclient, File awfFileSelf, File selfWOrkingDir, boolean jdlaunched) throws InterruptedException, IOException {
         try {
             logger.info("onResult");
+
             if (handler.hasPendingSelfupdate()) {
                 fireUpdatesAvailable(false, handler.createAWFInstallLog());
                 if (!isThreadConfirmed()) {
@@ -426,7 +427,15 @@ public class UpdateController implements UpdateCallbackInterface {
 
     private void confirm(int flags, String title, String message, String ok, String no) throws DialogCanceledException, DialogClosedException {
 
-        final ConfirmUpdateDialog cd = new ConfirmUpdateDialog(flags, title, message, null, ok, no);
+        final ConfirmUpdateDialog cd = new ConfirmUpdateDialog(flags, title, message, null, ok, no) {
+
+            @Override
+            protected Window getDesiredRootFrame() {
+                if (handler == null) return null;
+                return handler.getGuiFrame();
+            }
+
+        };
 
         Dialog.getInstance().showDialog(cd);
         if (cd.isClosedBySkipUntilNextRestart()) {

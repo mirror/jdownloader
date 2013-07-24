@@ -27,7 +27,6 @@ import javax.swing.KeyStroke;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
-import jd.gui.swing.SwingGui;
 import jd.gui.swing.jdgui.interfaces.SwitchPanelEvent;
 import jd.gui.swing.jdgui.interfaces.View;
 import jd.gui.swing.jdgui.maintab.ClosableTabHeader;
@@ -100,7 +99,7 @@ public class MainTabbedPane extends JTabbedPane {
         this.addChangeListener(new ChangeListener() {
 
             public void stateChanged(ChangeEvent e) {
-                if (SwingGui.getInstance() != null) SwingGui.getInstance().setWaiting(true);
+                if (JDGui.getInstance() != null) JDGui.getInstance().setWaiting(true);
                 try {
                     View comp = (View) getSelectedComponent();
                     if (comp == latestSelection) return;
@@ -123,7 +122,7 @@ public class MainTabbedPane extends JTabbedPane {
     @Override
     public void paint(Graphics g) {
         super.paint(g);
-        if (SwingGui.getInstance() != null) SwingGui.getInstance().setWaiting(false);
+        if (JDGui.getInstance() != null) JDGui.getInstance().setWaiting(false);
     }
 
     /**

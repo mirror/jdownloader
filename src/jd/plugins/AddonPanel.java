@@ -1,6 +1,6 @@
 package jd.plugins;
 
-import jd.gui.swing.SwingGui;
+import jd.gui.swing.jdgui.JDGui;
 import jd.gui.swing.jdgui.interfaces.SwitchPanelEvent;
 import jd.gui.swing.jdgui.interfaces.SwitchPanelListener;
 import jd.gui.swing.jdgui.views.ClosableView;
@@ -77,10 +77,10 @@ public abstract class AddonPanel<T extends AbstractExtension<? extends Extension
                 extension.getSettings().setGuiEnabled(b);
 
                 if (b) {
-                    SwingGui.getInstance().setContent(AddonPanel.this, false);
+                    JDGui.getInstance().setContent(AddonPanel.this, false);
 
                 } else {
-                    SwingGui.getInstance().disposeView(AddonPanel.this);
+                    JDGui.getInstance().disposeView(AddonPanel.this);
 
                 }
             }
@@ -127,7 +127,7 @@ public abstract class AddonPanel<T extends AbstractExtension<? extends Extension
 
             @Override
             protected void runInEDT() {
-                SwingGui.getInstance().setContent(AddonPanel.this, true);
+                JDGui.getInstance().setContent(AddonPanel.this, true);
 
             }
         };

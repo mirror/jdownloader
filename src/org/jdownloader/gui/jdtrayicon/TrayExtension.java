@@ -40,7 +40,6 @@ import javax.swing.JFrame;
 import javax.swing.SwingUtilities;
 
 import jd.SecondLevelLaunch;
-import jd.gui.swing.SwingGui;
 import jd.gui.swing.jdgui.JDGui;
 import jd.gui.swing.jdgui.MainFrameClosingHandler;
 import jd.gui.swing.jdgui.views.settings.sidebar.CheckBoxedEntry;
@@ -163,7 +162,7 @@ public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTransla
                     @Override
                     protected void runInEDT() {
                         try {
-                            if (SwingGui.getInstance() != null) {
+                            if (JDGui.getInstance() != null) {
                                 initGUI(true);
                                 LogController.CL(TrayExtension.class).info("Systemtray OK");
                             }
@@ -423,9 +422,9 @@ public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTransla
 
         String password;
         try {
-            password = Dialog.getInstance().showInputDialog(Dialog.STYLE_PASSWORD, _GUI._.SwingGui_setVisible_password_(), _GUI._.SwingGui_setVisible_password_msg(), null, NewTheme.I().getIcon("lock", 32), null, null);
+            password = Dialog.getInstance().showInputDialog(Dialog.STYLE_PASSWORD, _GUI._.JDGui_setVisible_password_(), _GUI._.JDGui_setVisible_password_msg(), null, NewTheme.I().getIcon("lock", 32), null, null);
             if (!CFG_GUI.PASSWORD.getValue().equals(password)) {
-                Dialog.getInstance().showMessageDialog(_GUI._.SwingGui_setVisible_password_wrong());
+                Dialog.getInstance().showMessageDialog(_GUI._.JDGui_setVisible_password_wrong());
                 return false;
             }
         } catch (DialogNoAnswerException e) {

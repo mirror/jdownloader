@@ -6,7 +6,6 @@ import java.awt.Rectangle;
 import javax.swing.JViewport;
 import javax.swing.Scrollable;
 
-
 import org.appwork.swing.MigPanel;
 import org.jdownloader.updatev2.gui.LAFOptions;
 

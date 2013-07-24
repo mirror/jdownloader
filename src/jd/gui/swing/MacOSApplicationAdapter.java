@@ -285,7 +285,7 @@ public class MacOSApplicationAdapter implements QuitHandler, AboutHandler, Prefe
     }
 
     public void appReOpened(AppReOpenedEvent e) {
-        final SwingGui swingGui = SwingGui.getInstance();
+        final JDGui swingGui = JDGui.getInstance();
         if (swingGui == null || swingGui.getMainFrame() == null) return;
         final JFrame mainFrame = swingGui.getMainFrame();
         if (!mainFrame.isVisible()) {

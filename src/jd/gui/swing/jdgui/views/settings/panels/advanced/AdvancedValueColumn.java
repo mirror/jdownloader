@@ -15,7 +15,6 @@ import javax.swing.JMenuItem;
 import javax.swing.SpinnerNumberModel;
 import javax.swing.SwingConstants;
 
-
 import net.miginfocom.swing.MigLayout;
 
 import org.appwork.storage.JSonStorage;

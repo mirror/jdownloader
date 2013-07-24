@@ -2,7 +2,7 @@ package jd.gui.swing.jdgui.components.toolbar.actions;
 
 import java.awt.event.ActionEvent;
 
-import jd.gui.swing.SwingGui;
+import jd.gui.swing.jdgui.JDGui;
 import jd.gui.swing.jdgui.views.settings.ConfigurationView;
 
 import org.appwork.storage.config.JsonConfig;
@@ -34,7 +34,7 @@ public class ShowSettingsAction extends ToolBarAction {
             protected void runInEDT() {
 
                 JsonConfig.create(GraphicalUserInterfaceSettings.class).setConfigViewVisible(true);
-                SwingGui.getInstance().setContent(ConfigurationView.getInstance(), true);
+                JDGui.getInstance().setContent(ConfigurationView.getInstance(), true);
             }
         };
     }

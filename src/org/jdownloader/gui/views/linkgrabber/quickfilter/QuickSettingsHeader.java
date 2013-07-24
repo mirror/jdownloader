@@ -7,7 +7,7 @@ import javax.swing.Box;
 import javax.swing.JLabel;
 import javax.swing.JTable;
 
-import jd.gui.swing.SwingGui;
+import jd.gui.swing.jdgui.JDGui;
 import jd.gui.swing.jdgui.views.settings.ConfigurationView;
 
 import org.appwork.storage.config.JsonConfig;
@@ -43,7 +43,7 @@ public class QuickSettingsHeader extends MigPanel implements GenericConfigEventL
 
             public void actionPerformed(ActionEvent e) {
                 JsonConfig.create(GraphicalUserInterfaceSettings.class).setConfigViewVisible(true);
-                SwingGui.getInstance().setContent(ConfigurationView.getInstance(), true);
+                JDGui.getInstance().setContent(ConfigurationView.getInstance(), true);
                 // LinkgrabberFilter.getInstance().setSelectedIndex(1);
                 // ConfigurationView.getInstance().setSelectedSubPanel(jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter.Linkgrabber.class);
             }

@@ -7,7 +7,6 @@ import java.awt.FontMetrics;
 
 import javax.swing.JLabel;
 
-
 import org.appwork.swing.components.tooltips.PanelToolTip;
 import org.appwork.swing.components.tooltips.TooltipPanel;
 import org.jdownloader.extensions.extraction.ExtractionController;

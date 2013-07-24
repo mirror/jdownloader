@@ -47,7 +47,7 @@ import javax.swing.Timer;
 import jd.SecondLevelLaunch;
 import jd.controlling.downloadcontroller.DownloadWatchDog;
 import jd.controlling.downloadcontroller.event.DownloadWatchdogListener;
-import jd.gui.swing.SwingGui;
+import jd.gui.swing.jdgui.JDGui;
 import jd.gui.swing.jdgui.components.speedmeter.SpeedMeterPanel;
 import net.miginfocom.swing.MigLayout;
 
@@ -127,7 +127,7 @@ public class MainToolBar extends JToolBar implements MouseListener, DownloadWatc
      * 
      * @param jdGui
      */
-    public void registerAccelerators(final SwingGui jdGui) {
+    public void registerAccelerators(final JDGui jdGui) {
         this.rootpane = jdGui.getMainFrame().getRootPane();
     }
 

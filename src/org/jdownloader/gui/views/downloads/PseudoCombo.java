@@ -11,7 +11,6 @@ import javax.swing.JButton;
 import javax.swing.JPopupMenu;
 import javax.swing.SwingConstants;
 
-
 import org.appwork.utils.logging.Log;
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.gui.translate._GUI;

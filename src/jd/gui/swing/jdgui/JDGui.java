@@ -33,6 +33,7 @@ import java.awt.Window;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
+import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowFocusListener;
 import java.awt.event.WindowListener;
@@ -43,6 +44,7 @@ import java.util.ArrayList;
 import javax.swing.AbstractAction;
 import javax.swing.ImageIcon;
 import javax.swing.JComponent;
+import javax.swing.JDialog;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
@@ -56,16 +58,17 @@ import javax.swing.WindowConstants;
 import jd.SecondLevelLaunch;
 import jd.config.ConfigContainer;
 import jd.gui.UIConstants;
-import jd.gui.swing.SwingGui;
 import jd.gui.swing.jdgui.components.StatusBarImpl;
 import jd.gui.swing.jdgui.components.toolbar.MainToolBar;
 import jd.gui.swing.jdgui.interfaces.View;
 import jd.gui.swing.jdgui.menu.JDMenuBar;
+import jd.gui.swing.jdgui.views.settings.ConfigPanel;
 import jd.gui.swing.jdgui.views.settings.ConfigurationView;
 import jd.gui.swing.jdgui.views.settings.sidebar.AddonConfig;
 import jd.nutils.Screen;
 import net.miginfocom.swing.MigLayout;
 
+import org.appwork.app.gui.ActiveDialogException;
 import org.appwork.shutdown.ShutdownController;
 import org.appwork.shutdown.ShutdownEvent;
 import org.appwork.shutdown.ShutdownRequest;
@@ -73,6 +76,7 @@ import org.appwork.storage.config.JsonConfig;
 import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.events.GenericConfigEventListener;
 import org.appwork.storage.config.handler.KeyHandler;
+import org.appwork.swing.ExtJFrame;
 import org.appwork.swing.components.tooltips.ToolTipController;
 import org.appwork.utils.Application;
 import org.appwork.utils.BinaryLogic;
@@ -95,6 +99,8 @@ import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.appwork.utils.swing.dialog.DialogHandler;
 import org.appwork.utils.swing.dialog.DialogNoAnswerException;
 import org.appwork.utils.swing.dialog.InternDialog;
+import org.appwork.utils.swing.dialog.OwnerFinder;
+import org.appwork.utils.swing.dialog.WindowStack;
 import org.appwork.utils.swing.dialog.locator.DialogLocator;
 import org.appwork.utils.swing.dialog.locator.RememberRelativeDialogLocator;
 import org.appwork.utils.swing.locator.AbstractLocator;
@@ -119,7 +125,36 @@ import org.jdownloader.updatev2.SmartRlyExitRequest;
 import org.jdownloader.updatev2.UpdateController;
 import org.jdownloader.updatev2.UpdaterListener;
 
-public class JDGui extends SwingGui implements UpdaterListener {
+public class JDGui implements UpdaterListener, OwnerFinder {
+
+    /**
+     * An Abstract panelrepresentation used in requestPanel(Panels.*,Parameter
+     * 
+     * @author Coalado
+     */
+    public static enum Panels {
+        CONFIG,
+
+        /**
+         * Represents a configview. Parameter is a {@link ConfigContainer} or the {@link Class} reference to an {@link ConfigPanel}.
+         */
+        CONFIGPANEL,
+
+        /**
+         * Represents the {@link DownloadView}.
+         */
+        DOWNLOADLIST,
+
+        /**
+         * Represents the {@link LinkgrabberView}.
+         */
+        LINKGRABBER,
+        /**
+         * Displays the {@link Premium}-ConfigPanel. The parameter is the account which should be selected.
+         */
+        PREMIUMCONFIG
+
+    }
 
     private static JDGui INSTANCE;
 
@@ -129,62 +164,62 @@ public class JDGui extends SwingGui implements UpdaterListener {
      * @return
      */
     public static JDGui getInstance() {
-        if (JDGui.INSTANCE == null) {
-            JDGui.INSTANCE = new EDTHelper<JDGui>() {
-                @Override
-                public JDGui edtRun() {
-                    try {
-                        return new JDGui();
-                    } finally {
 
-                    }
-                }
-
-            }.getReturnValue();
-        }
         return JDGui.INSTANCE;
     }
 
-    private JDMenuBar               menuBar;
+    public static void help(final String title, final String msg, final ImageIcon icon) {
 
-    private StatusBarImpl           statusBar;
-    private MainTabbedPane          mainTabbedPane;
-    private DownloadsView           downloadView;
+        Timer timer = new Timer(200, new ActionListener() {
 
-    private LinkGrabberView         linkgrabberView;
-    private MainToolBar             toolBar;
-    private JPanel                  waitingPane;
+            public void actionPerformed(ActionEvent e) {
+                HelpDialog.show(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, title, msg, icon);
+
+            }
+        });
+        timer.setRepeats(false);
+        timer.start();
+
+    }
 
     private MainFrameClosingHandler closingHandler;
 
+    private volatile boolean        dialogShowing = false;
+
+    private DownloadsView           downloadView;
+
+    private Thread                  initThread    = null;
+
+    private LinkGrabberView         linkgrabberView;
     private LogSource               logger;
+    protected ExtJFrame             mainFrame;
+
+    private MainTabbedPane          mainTabbedPane;
+    private JDMenuBar               menuBar;
+    private StatusBarImpl           statusBar;
+
+    private MainToolBar             toolBar;
 
     private TrayExtension           tray;
 
-    private Thread                  initThread = null;
+    private Thread                  trayIconChecker;
 
-    public Thread getInitThread() {
-        return initThread;
-    }
-
-    public MainFrameClosingHandler getClosingHandler() {
-        return closingHandler;
-    }
-
-    public void setClosingHandler(MainFrameClosingHandler closingHandler) {
-        this.closingHandler = closingHandler;
-    }
+    private JPanel                  waitingPane;
 
     private JDGui() {
-        super("JDownloader");
-        updateTitle();
         logger = LogController.getInstance().getLogger("Gui");
+        initFrame("JDownloader");
+        AbstractDialog.setDefaultRoot(getMainFrame());
+        updateTitle();
+
         // Important for unittests
         this.mainFrame.setName("MAINFRAME");
         UpdateController.getInstance().getEventSender().addListener(this, true);
         initDialogLocators();
 
         this.setWindowTitle("JDownloader");
+
+        AbstractDialog.setGlobalOwnerFinder(this);
         this.initDefaults();
         this.initComponents();
         this.setWindowIcon();
@@ -219,6 +254,412 @@ public class JDGui extends SwingGui implements UpdaterListener {
         } catch (Exception e1) {
             logger.log(e1);
         }
+    }
+
+    public void disposeView(View view) {
+        if (view == null) return;
+        view = this.mainTabbedPane.getComponentEquals(view);
+        if (view == null) return;
+        this.mainTabbedPane.remove(view);
+    }
+
+    @Override
+    public Window findDialogOwner(AbstractDialog<?> dialogModel, WindowStack windowStack) {
+
+        return AbstractDialog.DEFAULT_OWNER_FINDER.findDialogOwner(dialogModel, windowStack);
+    }
+
+    public void flashTaskbar() {
+        if (JsonConfig.create(GraphicalUserInterfaceSettings.class).isTaskBarFlashEnabled() && CrossSystem.isWindows()) {
+            new EDTRunner() {
+
+                @Override
+                protected void runInEDT() {
+                    final int state = mainFrame.getExtendedState();
+                    try {
+                        if (state == ExtendedState.ICONIFIED.getId()) {
+                            GuiUtils.flashWindow(mainFrame, true, true);
+                        } else {
+                            GuiUtils.flashWindow(mainFrame, true, true);
+                        }
+                    } catch (Exception e) {
+                        logger.log(e);
+                    }
+                }
+            };
+        }
+    }
+
+    public MainFrameClosingHandler getClosingHandler() {
+        return closingHandler;
+    }
+
+    public Thread getInitThread() {
+        return initThread;
+    }
+
+    public LogSource getLogger() {
+        return logger;
+    }
+
+    /**
+     * Returns the gui's mainjframe
+     * 
+     * @return
+     */
+    public JFrame getMainFrame() {
+        return mainFrame;
+    }
+
+    public MainTabbedPane getMainTabbedPane() {
+        return this.mainTabbedPane;
+    }
+
+    public StatusBarImpl getStatusBar() {
+        return statusBar;
+    }
+
+    public TrayExtension getTray() {
+        return tray;
+    }
+
+    public void initCaptchaToFrontListener() {
+
+        mainFrame.addWindowFocusListener(new WindowFocusListener() {
+
+            @Override
+            public void windowGainedFocus(WindowEvent e) {
+                if (e.getOppositeWindow() == null) {
+                    for (Window w : Window.getWindows()) {
+                        if (w instanceof InternDialog && !((InternDialog) w).getDialogModel().isDisposed()) {
+                            Window owner = ((InternDialog) w).getOwner();
+
+                            if (owner == null && w.isVisible()) {
+                                WindowManager.getInstance().setZState(w, FrameState.TO_FRONT_FOCUSED);
+                            }
+                            // ((InternDialog)w).getDialogModel() instanceof AbstractCaptchaDialog)
+
+                        }
+
+                    }
+                }
+
+            }
+
+            @Override
+            public void windowLostFocus(WindowEvent e) {
+
+            }
+        });
+        //
+        // mainFrame.addWindowListener(new WindowListener() {
+        //
+        // @Override
+        // public void windowOpened(WindowEvent windowevent) {
+        // }
+        //
+        // @Override
+        // public void windowIconified(WindowEvent windowevent) {
+        // }
+        //
+        // @Override
+        // public void windowDeiconified(WindowEvent windowevent) {
+        // }
+        //
+        // @Override
+        // public void windowDeactivated(WindowEvent windowevent) {
+        // }
+        //
+        // @Override
+        // public void windowClosing(WindowEvent windowevent) {
+        // }
+        //
+        // @Override
+        // public void windowClosed(WindowEvent windowevent) {
+        // }
+        //
+        // @Override
+        // public void windowActivated(WindowEvent e) {
+        // if (e.getOppositeWindow() == null) {
+        // // new activation
+        // // if (JsonConfig.create(GraphicalUserInterfaceSettings.class).isCaptchaDialogsRequestFocusEnabled()) {
+        //
+        // for (final Window w : mainFrame.getOwnedWindows()) {
+        // if (w.isShowing()) {
+        // if (w instanceof InternDialog) {
+        // AbstractDialog dialogModel = ((InternDialog) w).getDialogModel();
+        // if (dialogModel instanceof AbstractCaptchaDialog) {
+        // WindowManager.getInstance().setZState(w, FrameState.TO_FRONT_FOCUSED);
+        //
+        // break;
+        //
+        // }
+        // }
+        // }
+        // }
+        // // }
+        //
+        // } else {
+        // // from a different jd frame
+        //
+        // }
+        // }
+        // });
+    }
+
+    private void initComponents() {
+        this.menuBar = JDMenuBar.getInstance();
+        this.statusBar = new StatusBarImpl();
+        this.waitingPane = new JPanel();
+        this.waitingPane.setOpaque(false);
+        this.mainTabbedPane = MainTabbedPane.getInstance();
+        this.toolBar = MainToolBar.getInstance();
+        this.toolBar.registerAccelerators(this);
+        this.downloadView = new DownloadsView();
+        this.linkgrabberView = new LinkGrabberView();
+        this.mainTabbedPane.addTab(downloadView);
+        this.mainTabbedPane.addTab(this.linkgrabberView);
+        SecondLevelLaunch.GUI_COMPLETE.executeWhenReached(new Runnable() {
+            @Override
+            public void run() {
+                new EDTRunner() {
+                    @Override
+                    protected void runInEDT() {
+                        if (JsonConfig.create(GraphicalUserInterfaceSettings.class).isConfigViewVisible()) {
+                            mainTabbedPane.addTab(ConfigurationView.getInstance());
+                        }
+                        if (JsonConfig.create(GraphicalUserInterfaceSettings.class).isLogViewVisible()) {
+                            // this.mainTabbedPane.addTab(LogView.getInstance());
+                        }
+                    }
+
+                };
+            }
+        });
+
+        this.mainTabbedPane.setSelectedComponent(this.downloadView);
+
+        if (CrossSystem.isMac()) {
+            // add handling for Command+W for closing window on Mac OS
+            KeyStroke closeKey = KeyStroke.getKeyStroke(KeyEvent.VK_W, Toolkit.getDefaultToolkit().getMenuShortcutKeyMask());
+            this.mainTabbedPane.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(closeKey, "closeWindow");
+            this.mainTabbedPane.getActionMap().put("closeWindow", new AbstractAction() {
+                private static final long serialVersionUID = 9149139888018750308L;
+
+                public void actionPerformed(ActionEvent e) {
+                    new EDTHelper<Object>() {
+                        @Override
+                        public Object edtRun() {
+                            WindowManager.getInstance().setVisible(JDGui.this.getMainFrame(), false, FrameState.OS_DEFAULT);
+                            return null;
+                        }
+                    }.start();
+                }
+            });
+        }
+
+    }
+
+    private void initDefaults() {
+        this.mainFrame.setDefaultCloseOperation(WindowConstants.DO_NOTHING_ON_CLOSE);
+        this.mainFrame.addWindowListener(new WindowAdapter() {
+
+            @Override
+            public void windowClosing(WindowEvent e) {
+                if (e.getComponent() == getMainFrame()) {
+
+                    if (closingHandler != null) {
+                        closingHandler.windowClosing(e);
+                        return;
+                    }
+
+                    /*
+                     * without trayicon also dont close/exit for macos
+                     */
+                    if (CrossSystem.isMac()) {
+                        new EDTHelper<Object>() {
+                            @Override
+                            public Object edtRun() {
+                                /* set visible state */
+                                WindowManager.getInstance().setVisible(JDGui.this.getMainFrame(), false, FrameState.OS_DEFAULT);
+                                return null;
+                            }
+                        }.start();
+                        return;
+                    }
+
+                    RestartController.getInstance().exitAsynch(new SmartRlyExitRequest());
+                }
+            }
+        });
+
+        // Directly reshow another tooltip
+        ToolTipManager.sharedInstance().setReshowDelay(0);
+        // Increase time a tooltip is displayed (default is 4000)
+        ToolTipManager.sharedInstance().setDismissDelay(6000);
+    }
+
+    public void initDialogLocators() {
+        RememberRelativeDialogLocator locator;
+        // set a default locator to remmber dialogs position
+        AbstractDialog.setDefaultLocator(locator = new RememberRelativeDialogLocator("", mainFrame) {
+
+            @Override
+            protected String getID(Window frame) {
+                try {
+                    if (frame instanceof InternDialog) {
+
+                        AbstractDialog dialog = (AbstractDialog) ((InternDialog) frame).getDialogModel();
+
+                        String key = dialog.getTitle();
+                        if (StringUtils.isEmpty(key)) {
+                            key = dialog.toString();
+                        }
+                        return Hash.getMD5(key);
+                    }
+                } catch (Exception e) {
+                    logger.log(e);
+                }
+                return super.getID(frame);
+            }
+
+            @Override
+            public void onClose(AbstractDialog<?> abstractDialog) {
+                if (!abstractDialog.hasBeenMoved()) return;
+                super.onClose(abstractDialog);
+            }
+
+        });
+        locator.setFallbackLocator(new DialogLocator() {
+
+            @Override
+            public Point getLocationOnScreen(AbstractDialog<?> abstractDialog) {
+                if (abstractDialog.getDialog().getParent() != null && abstractDialog.getDialog().getParent().isShowing()) { return AbstractDialog.LOCATE_CENTER_OF_SCREEN.getLocationOnScreen(abstractDialog); }
+                GraphicsDevice gd = GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice();
+                Insets insets = Toolkit.getDefaultToolkit().getScreenInsets(gd.getDefaultConfiguration());
+                /* WARNING: this can cause deadlock under linux EDT/XAWT */
+                final Rectangle bounds = gd.getDefaultConfiguration().getBounds();
+                bounds.y += insets.top;
+                bounds.x += insets.left;
+                bounds.width -= insets.left + insets.right;
+                bounds.height -= insets.top + insets.bottom;
+
+                Point ret = AbstractLocator.validate(new Point(bounds.width - abstractDialog.getDialog().getSize().width, bounds.height - abstractDialog.getDialog().getSize().height), abstractDialog.getDialog());
+                return ret;
+            }
+
+            @Override
+            public void onClose(AbstractDialog<?> abstractDialog) {
+            }
+
+        });
+    }
+
+    private void initFrame(final String string) {
+
+        mainFrame = new ExtJFrame(string) {
+
+            /**
+                 * 
+                 */
+            private static final long serialVersionUID = -4218493713632551975L;
+
+            public void dispose() {
+
+                super.dispose();
+            }
+
+            public void setVisible(boolean b) {
+                if (b && !isVisible()) {
+                    if (CFG_GUI.PASSWORD_PROTECTION_ENABLED.isEnabled() && !StringUtils.isEmpty(CFG_GUI.PASSWORD.getValue())) {
+                        String password;
+                        if (dialogShowing) return;
+                        try {
+
+                            dialogShowing = true;
+                            password = Dialog.getInstance().showInputDialog(Dialog.STYLE_PASSWORD, _GUI._.JDGui_setVisible_password_(), _GUI._.JDGui_setVisible_password_msg(), null, NewTheme.I().getIcon("lock", 32), null, null);
+                            String internPw = CFG_GUI.PASSWORD.getValue();
+                            if (!internPw.equals(password)) {
+
+                                Dialog.getInstance().showMessageDialog(_GUI._.JDGui_setVisible_password_wrong());
+
+                                return;
+                            }
+                        } catch (DialogNoAnswerException e) {
+                            return;
+                        } finally {
+                            dialogShowing = false;
+                        }
+                    }
+                }
+                // if we hide a frame which is locked by an active modal dialog,
+                // we get in problems. avoid this!
+                if (!b) {
+                    for (Window w : getOwnedWindows()) {
+                        if (w instanceof JDialog) {
+                            boolean mod = ((JDialog) w).isModal();
+                            boolean v = w.isVisible();
+
+                            if (mod && v) {
+                                Toolkit.getDefaultToolkit().beep();
+                                logger.log(new ActiveDialogException(((JDialog) w)));
+                                WindowManager.getInstance().setZState(w, FrameState.TO_FRONT_FOCUSED);
+
+                                return;
+                            }
+                        }
+                    }
+                }
+                super.setVisible(b);
+            }
+
+            public void toFront() {
+
+                if (!isVisible()) return;
+                super.toFront();
+                //
+
+            }
+        };
+    }
+
+    public void initLocationAndDimension() {
+        initThread = new Thread("initLocationAndDimension") {
+            @Override
+            public void run() {
+                try {
+                    internalInitLocationAndDimension();
+                } finally {
+                    initThread = null;
+                }
+            }
+        };
+        initThread.start();
+    }
+
+    public void initShiftControlSWindowResetKeyListener() {
+        KeyboardFocusManager.getCurrentKeyboardFocusManager().addKeyEventPostProcessor(new KeyEventPostProcessor() {
+
+            public boolean postProcessKeyEvent(final KeyEvent e) {
+                if (e.getID() == KeyEvent.KEY_RELEASED && e.isShiftDown() && e.isControlDown() && e.getKeyCode() == KeyEvent.VK_S) {
+                    try {
+                        /*
+                         * dirty little helper for mac os problem, unable to reach window header
+                         */
+                        final Dimension dim = Toolkit.getDefaultToolkit().getScreenSize();
+                        JDGui.this.mainFrame.setExtendedState(Frame.NORMAL);
+                        JDGui.this.mainFrame.setSize(new Dimension(800, 600));
+                        final Rectangle abounds = JDGui.this.mainFrame.getBounds();
+                        JDGui.this.mainFrame.setLocation((dim.width - abounds.width) / 2, (dim.height - abounds.height) / 2);
+                        LogController.GL.info("Center MainFrame");
+                        return true;
+                    } catch (final Exception ee) {
+                        LogController.GL.log(ee);
+                    }
+                }
+                return false;
+            }
+        });
     }
 
     public void initSilentModeHooks() {
@@ -311,222 +752,41 @@ public class JDGui extends SwingGui implements UpdaterListener {
         });
     }
 
-    protected void onGuiInitComplete() {
+    private void initToolTipSettings() {
 
-        ShutdownController.getInstance().addShutdownEvent(new ShutdownEvent() {
+        ToolTipController.getInstance().setClassicToolstipsEnabled(CFG_GUI.TOOLTIP_ENABLED.isEnabled());
 
-            @Override
-            public void onShutdown(final ShutdownRequest shutdownRequest) {
-                new EDTHelper<Object>() {
-
-                    @Override
-                    public Object edtRun() {
-
-                        JDGui.this.mainTabbedPane.onClose();
-
-                        JsonConfig.create(GraphicalUserInterfaceSettings.class).setLastFrameStatus(FrameStatus.create(mainFrame, JsonConfig.create(GraphicalUserInterfaceSettings.class).getLastFrameStatus()));
-
-                        WindowManager.getInstance().setVisible(JDGui.this.getMainFrame(), false, FrameState.OS_DEFAULT);
-                        JDGui.this.getMainFrame().dispose();
-
-                        return null;
-
-                    }
-                }.getReturnValue();
-            }
-        });
-
-        // new Thread("StatsDialog") {
-        // public void run() {
-        // try {
-        // Thread.sleep(10000);
-        // } catch (InterruptedException e) {
-        // e.printStackTrace();
-        // }
-        // showStatsDialog();
-        //
-        // }
-        // }.start();
-        Application.getResource("/tmp/update/self/JDU").mkdirs();
-        new Thread() {
-            public void run() {
-                logger.info("Update bug Finder");
-                int counter = -1;
-                try {
-                    logger.info("Find Counter");
-                    counter = org.appwork.Counter.VALUE;
-                    logger.info(Application.getJarFile(org.appwork.Counter.class).getAbsolutePath());
-                    logger.info("Done: " + counter);
-                } catch (Throwable e) {
-                    logger.log(e);
-
-                }
-                long start = System.currentTimeMillis();
-                while (UpdateController.getInstance().getHandler() == null) {
-                    try {
-                        Thread.sleep(1000);
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
-                    if (System.currentTimeMillis() - start > 30000) {
-                        logger.info("Handler null");
-                        return;
-                    }
-                }
-                logger.info("Gogogo " + counter);
-                if (counter != 1) {
-                    try {
-                        logger.info("Delete jdu");
-                        Files.deleteRecursiv(Application.getResource("update/versioninfo/JDU"));
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
-                    try {
-                        logger.info("Delete extensioncache");
-                        Files.deleteRecursiv(Application.getResource("tmp/extensioncache"));
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
-                    File rev = Application.getResource("/tmp/update/self/JDU/rev");
-                    logger.info("create dummy rev");
-                    if (!rev.exists()) {
-                        rev.getParentFile().mkdirs();
-                        try {
-                            IO.writeStringToFile(rev, "0");
-                        } catch (IOException e) {
-                            e.printStackTrace();
-                        }
-                    }
-                    logger.info("Show Message");
-                    Dialog.getInstance().showMessageDialog("This is a very important Update. You should run this NOW!");
-                    // runUpdateChecker is synchronized and may block
-                    logger.info("Init update");
-                    UpdateController.getInstance().setGuiVisible(true);
-                    UpdateController.getInstance().runUpdateChecker(true);
-                }
-            }
-        }.start();
-    }
-
-    public void initShiftControlSWindowResetKeyListener() {
-        KeyboardFocusManager.getCurrentKeyboardFocusManager().addKeyEventPostProcessor(new KeyEventPostProcessor() {
-
-            public boolean postProcessKeyEvent(final KeyEvent e) {
-                if (e.getID() == KeyEvent.KEY_RELEASED && e.isShiftDown() && e.isControlDown() && e.getKeyCode() == KeyEvent.VK_S) {
-                    try {
-                        /*
-                         * dirty little helper for mac os problem, unable to reach window header
-                         */
-                        final Dimension dim = Toolkit.getDefaultToolkit().getScreenSize();
-                        JDGui.this.mainFrame.setExtendedState(Frame.NORMAL);
-                        JDGui.this.mainFrame.setSize(new Dimension(800, 600));
-                        final Rectangle abounds = JDGui.this.mainFrame.getBounds();
-                        JDGui.this.mainFrame.setLocation((dim.width - abounds.width) / 2, (dim.height - abounds.height) / 2);
-                        LogController.GL.info("Center MainFrame");
-                        return true;
-                    } catch (final Exception ee) {
-                        LogController.GL.log(ee);
-                    }
-                }
-                return false;
-            }
-        });
-    }
-
-    public void initCaptchaToFrontListener() {
-
-        mainFrame.addWindowFocusListener(new WindowFocusListener() {
+        ToolTipManager.sharedInstance().setEnabled(CFG_GUI.TOOLTIP_ENABLED.isEnabled());
+        CFG_GUI.TOOLTIP_ENABLED.getEventSender().addListener(new GenericConfigEventListener<Boolean>() {
 
             @Override
-            public void windowLostFocus(WindowEvent e) {
-
+            public void onConfigValidatorError(KeyHandler<Boolean> keyHandler, Boolean invalidValue, ValidationException validateException) {
             }
 
             @Override
-            public void windowGainedFocus(WindowEvent e) {
-                if (e.getOppositeWindow() == null) {
-                    for (Window w : Window.getWindows()) {
-                        if (w instanceof InternDialog && !((InternDialog) w).getDialogModel().isDisposed()) {
-                            Window owner = ((InternDialog) w).getOwner();
-
-                            if (owner == null && w.isVisible()) {
-                                WindowManager.getInstance().setZState(w, FrameState.TO_FRONT_FOCUSED);
-                            }
-                            // ((InternDialog)w).getDialogModel() instanceof AbstractCaptchaDialog)
-
-                        }
-
-                    }
-                }
-
+            public void onConfigValueModified(KeyHandler<Boolean> keyHandler, Boolean newValue) {
+                ToolTipController.getInstance().setClassicToolstipsEnabled(CFG_GUI.TOOLTIP_ENABLED.isEnabled());
+                ToolTipManager.sharedInstance().setEnabled(CFG_GUI.TOOLTIP_ENABLED.isEnabled());
             }
         });
-        //
-        // mainFrame.addWindowListener(new WindowListener() {
-        //
-        // @Override
-        // public void windowOpened(WindowEvent windowevent) {
-        // }
-        //
-        // @Override
-        // public void windowIconified(WindowEvent windowevent) {
-        // }
-        //
-        // @Override
-        // public void windowDeiconified(WindowEvent windowevent) {
-        // }
-        //
-        // @Override
-        // public void windowDeactivated(WindowEvent windowevent) {
-        // }
-        //
-        // @Override
-        // public void windowClosing(WindowEvent windowevent) {
-        // }
-        //
-        // @Override
-        // public void windowClosed(WindowEvent windowevent) {
-        // }
-        //
-        // @Override
-        // public void windowActivated(WindowEvent e) {
-        // if (e.getOppositeWindow() == null) {
-        // // new activation
-        // // if (JsonConfig.create(GraphicalUserInterfaceSettings.class).isCaptchaDialogsRequestFocusEnabled()) {
-        //
-        // for (final Window w : mainFrame.getOwnedWindows()) {
-        // if (w.isShowing()) {
-        // if (w instanceof InternDialog) {
-        // AbstractDialog dialogModel = ((InternDialog) w).getDialogModel();
-        // if (dialogModel instanceof AbstractCaptchaDialog) {
-        // WindowManager.getInstance().setZState(w, FrameState.TO_FRONT_FOCUSED);
-        //
-        // break;
-        //
-        // }
-        // }
-        // }
-        // }
-        // // }
-        //
-        // } else {
-        // // from a different jd frame
-        //
-        // }
-        // }
-        // });
     }
 
     public void initUpdateFrameListener() {
         mainFrame.addWindowListener(new WindowListener() {
 
-            public void windowOpened(WindowEvent e) {
-
-                UpdateController.getInstance().setGuiToFront(mainFrame);
+            public void windowActivated(WindowEvent e) {
 
             }
 
-            public void windowIconified(WindowEvent e) {
+            public void windowClosed(WindowEvent e) {
+
+            }
+
+            public void windowClosing(WindowEvent e) {
+
+            }
+
+            public void windowDeactivated(WindowEvent e) {
 
             }
 
@@ -536,210 +796,16 @@ public class JDGui extends SwingGui implements UpdaterListener {
 
             }
 
-            public void windowDeactivated(WindowEvent e) {
+            public void windowIconified(WindowEvent e) {
 
             }
 
-            public void windowClosing(WindowEvent e) {
+            public void windowOpened(WindowEvent e) {
 
-            }
-
-            public void windowClosed(WindowEvent e) {
-
-            }
-
-            public void windowActivated(WindowEvent e) {
-
-                AbstractDialog.setRootFrame(getMainFrame());
+                UpdateController.getInstance().setGuiToFront(mainFrame);
 
             }
         });
-    }
-
-    public void initLocationAndDimension() {
-        initThread = new Thread("initLocationAndDimension") {
-            @Override
-            public void run() {
-                try {
-                    internalInitLocationAndDimension();
-                } finally {
-                    initThread = null;
-                }
-            }
-        };
-        initThread.start();
-    }
-
-    public void initDialogLocators() {
-        RememberRelativeDialogLocator locator;
-        // set a default locator to remmber dialogs position
-        AbstractDialog.setDefaultLocator(locator = new RememberRelativeDialogLocator("", mainFrame) {
-
-            @Override
-            public void onClose(AbstractDialog<?> abstractDialog) {
-                if (!abstractDialog.hasBeenMoved()) return;
-                super.onClose(abstractDialog);
-            }
-
-            @Override
-            protected String getID(Window frame) {
-                try {
-                    if (frame instanceof InternDialog) {
-
-                        AbstractDialog dialog = (AbstractDialog) ((InternDialog) frame).getDialogModel();
-
-                        String key = dialog.getTitle();
-                        if (StringUtils.isEmpty(key)) {
-                            key = dialog.toString();
-                        }
-                        return Hash.getMD5(key);
-                    }
-                } catch (Exception e) {
-                    logger.log(e);
-                }
-                return super.getID(frame);
-            }
-
-        });
-        locator.setFallbackLocator(new DialogLocator() {
-
-            @Override
-            public Point getLocationOnScreen(AbstractDialog<?> abstractDialog) {
-                if (abstractDialog.getDialog().getParent() != null && abstractDialog.getDialog().getParent().isShowing()) { return AbstractDialog.LOCATE_CENTER_OF_SCREEN.getLocationOnScreen(abstractDialog); }
-                GraphicsDevice gd = GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice();
-                Insets insets = Toolkit.getDefaultToolkit().getScreenInsets(gd.getDefaultConfiguration());
-                /* WARNING: this can cause deadlock under linux EDT/XAWT */
-                final Rectangle bounds = gd.getDefaultConfiguration().getBounds();
-                bounds.y += insets.top;
-                bounds.x += insets.left;
-                bounds.width -= insets.left + insets.right;
-                bounds.height -= insets.top + insets.bottom;
-
-                Point ret = AbstractLocator.validate(new Point(bounds.width - abstractDialog.getDialog().getSize().width, bounds.height - abstractDialog.getDialog().getSize().height), abstractDialog.getDialog());
-                return ret;
-            }
-
-            @Override
-            public void onClose(AbstractDialog<?> abstractDialog) {
-            }
-
-        });
-    }
-
-    protected void showStatsDialog() {
-
-        ConfirmDialog d = new ConfirmDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI._.JDGui_showStatsDialog_title_(), _GUI._.JDGui_showStatsDialog_message_(), NewTheme.I().getIcon("bug", 32), _GUI._.JDGui_showStatsDialog_yes_(), _GUI._.JDGui_showStatsDialog_no_());
-        d.setDoNotShowAgainSelected(true);
-        try {
-            Dialog.getInstance().showDialog(d);
-            if (!d.isHiddenByDontShowAgain()) {
-                StatsManager.I().setEnabled(true);
-            }
-            return;
-        } catch (DialogClosedException e) {
-            e.printStackTrace();
-        } catch (DialogCanceledException e) {
-            e.printStackTrace();
-        }
-
-    }
-
-    private void initToolTipSettings() {
-
-        ToolTipController.getInstance().setClassicToolstipsEnabled(CFG_GUI.TOOLTIP_ENABLED.isEnabled());
-
-        ToolTipManager.sharedInstance().setEnabled(CFG_GUI.TOOLTIP_ENABLED.isEnabled());
-        CFG_GUI.TOOLTIP_ENABLED.getEventSender().addListener(new GenericConfigEventListener<Boolean>() {
-
-            @Override
-            public void onConfigValueModified(KeyHandler<Boolean> keyHandler, Boolean newValue) {
-                ToolTipController.getInstance().setClassicToolstipsEnabled(CFG_GUI.TOOLTIP_ENABLED.isEnabled());
-                ToolTipManager.sharedInstance().setEnabled(CFG_GUI.TOOLTIP_ENABLED.isEnabled());
-            }
-
-            @Override
-            public void onConfigValidatorError(KeyHandler<Boolean> keyHandler, Boolean invalidValue, ValidationException validateException) {
-            }
-        });
-    }
-
-    @Override
-    public void disposeView(View view) {
-        if (view == null) return;
-        view = this.mainTabbedPane.getComponentEquals(view);
-        if (view == null) return;
-        this.mainTabbedPane.remove(view);
-    }
-
-    public MainTabbedPane getMainTabbedPane() {
-        return this.mainTabbedPane;
-    }
-
-    private void initComponents() {
-        this.menuBar = JDMenuBar.getInstance();
-        this.statusBar = new StatusBarImpl();
-        this.waitingPane = new JPanel();
-        this.waitingPane.setOpaque(false);
-        this.mainTabbedPane = MainTabbedPane.getInstance();
-        this.toolBar = MainToolBar.getInstance();
-        this.toolBar.registerAccelerators(this);
-        this.downloadView = new DownloadsView();
-        this.linkgrabberView = new LinkGrabberView();
-        this.mainTabbedPane.addTab(downloadView);
-        this.mainTabbedPane.addTab(this.linkgrabberView);
-        SecondLevelLaunch.GUI_COMPLETE.executeWhenReached(new Runnable() {
-            @Override
-            public void run() {
-                new EDTRunner() {
-                    @Override
-                    protected void runInEDT() {
-                        if (JsonConfig.create(GraphicalUserInterfaceSettings.class).isConfigViewVisible()) {
-                            mainTabbedPane.addTab(ConfigurationView.getInstance());
-                        }
-                        if (JsonConfig.create(GraphicalUserInterfaceSettings.class).isLogViewVisible()) {
-                            // this.mainTabbedPane.addTab(LogView.getInstance());
-                        }
-                    }
-
-                };
-            }
-        });
-
-        this.mainTabbedPane.setSelectedComponent(this.downloadView);
-
-        if (CrossSystem.isMac()) {
-            // add handling for Command+W for closing window on Mac OS
-            KeyStroke closeKey = KeyStroke.getKeyStroke(KeyEvent.VK_W, Toolkit.getDefaultToolkit().getMenuShortcutKeyMask());
-            this.mainTabbedPane.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(closeKey, "closeWindow");
-            this.mainTabbedPane.getActionMap().put("closeWindow", new AbstractAction() {
-                private static final long serialVersionUID = 9149139888018750308L;
-
-                public void actionPerformed(ActionEvent e) {
-                    new EDTHelper<Object>() {
-                        @Override
-                        public Object edtRun() {
-                            WindowManager.getInstance().setVisible(JDGui.this.getMainFrame(), false, FrameState.OS_DEFAULT);
-                            return null;
-                        }
-                    }.start();
-                }
-            });
-        }
-
-    }
-
-    public StatusBarImpl getStatusBar() {
-        return statusBar;
-    }
-
-    private void initDefaults() {
-        this.mainFrame.setDefaultCloseOperation(WindowConstants.DO_NOTHING_ON_CLOSE);
-        this.mainFrame.addWindowListener(this);
-
-        // Directly reshow another tooltip
-        ToolTipManager.sharedInstance().setReshowDelay(0);
-        // Increase time a tooltip is displayed (default is 4000)
-        ToolTipManager.sharedInstance().setDismissDelay(6000);
     }
 
     /**
@@ -921,6 +987,51 @@ public class JDGui extends SwingGui implements UpdaterListener {
         }.waitForEDT();
     }
 
+    public boolean isCurrentPanel(Panels panelID) {
+        switch (panelID) {
+        case DOWNLOADLIST:
+            return JDGui.this.downloadView == mainTabbedPane.getSelectedComponent();
+        case LINKGRABBER:
+            return JDGui.this.linkgrabberView == mainTabbedPane.getSelectedComponent();
+        }
+        return false;
+    }
+
+    public boolean isSilentModeActive() {
+
+        Boolean ret = new EDTHelper<Boolean>() {
+            @Override
+            public Boolean edtRun() {
+                // don't block anthing if the frame is active anyway
+                if ((getMainFrame().hasFocus() || getMainFrame().isActive()) && getMainFrame().isVisible()) { return false; }
+                // don't block anything if the tray is active
+                if (tray.isEnabled() && tray.isActive()) return false;
+
+                if (CFG_SILENTMODE.MANUAL_ENABLED.isEnabled()) { return true; }
+                switch (CFG_SILENTMODE.CFG.getAutoTrigger()) {
+                case JD_IN_TASKBAR:
+                    if (getMainFrame().getState() == JFrame.ICONIFIED && getMainFrame().isVisible()) return true;
+                    break;
+                case JD_IN_TRAY:
+                    if (!getMainFrame().isVisible()) return true;
+                    break;
+                default:
+                    return false;
+                }
+                return false;
+            }
+        }.getReturnValue();
+        // 75|Gui 18.06.13 16:32:43 - SEVERE [ Gui ] -> java.lang.NullPointerException
+        // at jd.gui.swing.jdgui.JDGui.isSilentModeActive(JDGui.java:986)
+        // at jd.gui.swing.jdgui.JDGui$9.showDialog(JDGui.java:398)
+        // at org.appwork.utils.swing.dialog.Dialog.showDialog(Dialog.java:561)
+        // at org.appwork.utils.logging2.sendlogs.AbstractLogAction.create(AbstractLogAction.java:132)
+        // at org.appwork.utils.logging2.sendlogs.AbstractLogAction$1.run(AbstractLogAction.java:68)
+        // at org.appwork.utils.swing.dialog.ProgressDialog$3.run(ProgressDialog.java:217)
+        if (ret == Boolean.TRUE) return true;
+        return false;
+    }
+
     private void layoutComponents() {
         final JPanel contentPane = new JPanel(new MigLayout("ins 0, wrap 1", "[grow,fill]", "[grow,fill]0[shrink]"));
         contentPane.add(this.mainTabbedPane);
@@ -937,15 +1048,128 @@ public class JDGui extends SwingGui implements UpdaterListener {
 
     }
 
-    // private void openSettings() {
-    // final ConfigurationView config = ConfigurationView.getInstance();
-    // if (!this.mainTabbedPane.contains(config)) {
-    // this.mainTabbedPane.addTab(config);
-    // }
-    // this.mainTabbedPane.setSelectedComponent(config);
-    // }
+    protected void onGuiInitComplete() {
+
+        ShutdownController.getInstance().addShutdownEvent(new ShutdownEvent() {
+
+            @Override
+            public void onShutdown(final ShutdownRequest shutdownRequest) {
+                new EDTHelper<Object>() {
+
+                    @Override
+                    public Object edtRun() {
+
+                        JDGui.this.mainTabbedPane.onClose();
+
+                        JsonConfig.create(GraphicalUserInterfaceSettings.class).setLastFrameStatus(FrameStatus.create(mainFrame, JsonConfig.create(GraphicalUserInterfaceSettings.class).getLastFrameStatus()));
+
+                        WindowManager.getInstance().setVisible(JDGui.this.getMainFrame(), false, FrameState.OS_DEFAULT);
+                        JDGui.this.getMainFrame().dispose();
+
+                        return null;
+
+                    }
+                }.getReturnValue();
+            }
+        });
+
+        // new Thread("StatsDialog") {
+        // public void run() {
+        // try {
+        // Thread.sleep(10000);
+        // } catch (InterruptedException e) {
+        // e.printStackTrace();
+        // }
+        // showStatsDialog();
+        //
+        // }
+        // }.start();
+        Application.getResource("/tmp/update/self/JDU").mkdirs();
+        new Thread() {
+            public void run() {
+                logger.info("Update bug Finder");
+                int counter = -1;
+                try {
+                    logger.info("Find Counter");
+                    counter = org.appwork.Counter.VALUE;
+                    logger.info(Application.getJarFile(org.appwork.Counter.class).getAbsolutePath());
+                    logger.info("Done: " + counter);
+                } catch (Throwable e) {
+                    logger.log(e);
+
+                }
+                long start = System.currentTimeMillis();
+                while (UpdateController.getInstance().getHandler() == null) {
+                    try {
+                        Thread.sleep(1000);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                    if (System.currentTimeMillis() - start > 30000) {
+                        logger.info("Handler null");
+                        return;
+                    }
+                }
+                logger.info("Gogogo " + counter);
+                if (counter != 1) {
+                    try {
+                        logger.info("Delete jdu");
+                        Files.deleteRecursiv(Application.getResource("update/versioninfo/JDU"));
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                    try {
+                        logger.info("Delete extensioncache");
+                        Files.deleteRecursiv(Application.getResource("tmp/extensioncache"));
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                    File rev = Application.getResource("/tmp/update/self/JDU/rev");
+                    logger.info("create dummy rev");
+                    if (!rev.exists()) {
+                        rev.getParentFile().mkdirs();
+                        try {
+                            IO.writeStringToFile(rev, "0");
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                    logger.info("Show Message");
+                    Dialog.getInstance().showMessageDialog("This is a very important Update. You should run this NOW!");
+                    // runUpdateChecker is synchronized and may block
+                    logger.info("Init update");
+                    UpdateController.getInstance().setGuiVisible(true);
+                    UpdateController.getInstance().runUpdateChecker(true);
+                }
+            }
+        }.start();
+    }
 
     @Override
+    public void onUpdatesAvailable(final boolean selfupdate, final InstallLog installlog) {
+        new EDTRunner() {
+
+            @Override
+            protected void runInEDT() {
+                updateTitle();
+            }
+        };
+    }
+
+    /**
+     * requests a special view from the gui. example:
+     * 
+     * JDUtilities.getGUI().requestPanel(Panels.*,parameter);
+     * 
+     * asks the gui backend to display the downloadlist. IT depends on the guibackend which requests are fullfilled and which not.
+     * 
+     * @param panelID
+     *            {@link Panels}
+     * @param parameter
+     *            TODO
+     * @see Panels
+     */
+
     public void requestPanel(final Panels panel, final Object param) {
         new EDTHelper<Object>() {
             @Override
@@ -986,10 +1210,14 @@ public class JDGui extends SwingGui implements UpdaterListener {
         }.start();
     }
 
+    public void setClosingHandler(MainFrameClosingHandler closingHandler) {
+        this.closingHandler = closingHandler;
+    }
+
     /**
      * Adds view to the main tabbedpane if setActive is true, the enw panel will be selected
      */
-    @Override
+
     public void setContent(final View view, boolean setActive) {
 
         if (!this.mainTabbedPane.contains(view)) {
@@ -1042,7 +1270,6 @@ public class JDGui extends SwingGui implements UpdaterListener {
 
     }
 
-    @Override
     public void setFrameStatus(final int id) {
         new EDTRunner() {
 
@@ -1129,42 +1356,6 @@ public class JDGui extends SwingGui implements UpdaterListener {
 
     }
 
-    public boolean isSilentModeActive() {
-
-        Boolean ret = new EDTHelper<Boolean>() {
-            @Override
-            public Boolean edtRun() {
-                // don't block anthing if the frame is active anyway
-                if ((getMainFrame().hasFocus() || getMainFrame().isActive()) && getMainFrame().isVisible()) { return false; }
-                // don't block anything if the tray is active
-                if (tray.isEnabled() && tray.isActive()) return false;
-
-                if (CFG_SILENTMODE.MANUAL_ENABLED.isEnabled()) { return true; }
-                switch (CFG_SILENTMODE.CFG.getAutoTrigger()) {
-                case JD_IN_TASKBAR:
-                    if (getMainFrame().getState() == JFrame.ICONIFIED && getMainFrame().isVisible()) return true;
-                    break;
-                case JD_IN_TRAY:
-                    if (!getMainFrame().isVisible()) return true;
-                    break;
-                default:
-                    return false;
-                }
-                return false;
-            }
-        }.getReturnValue();
-        // 75|Gui 18.06.13 16:32:43 - SEVERE [ Gui ] -> java.lang.NullPointerException
-        // at jd.gui.swing.jdgui.JDGui.isSilentModeActive(JDGui.java:986)
-        // at jd.gui.swing.jdgui.JDGui$9.showDialog(JDGui.java:398)
-        // at org.appwork.utils.swing.dialog.Dialog.showDialog(Dialog.java:561)
-        // at org.appwork.utils.logging2.sendlogs.AbstractLogAction.create(AbstractLogAction.java:132)
-        // at org.appwork.utils.logging2.sendlogs.AbstractLogAction$1.run(AbstractLogAction.java:68)
-        // at org.appwork.utils.swing.dialog.ProgressDialog$3.run(ProgressDialog.java:217)
-        if (ret == Boolean.TRUE) return true;
-        return false;
-    }
-
-    @Override
     public void setWaiting(final boolean b) {
         this.internalSetWaiting(b);
     }
@@ -1236,94 +1427,6 @@ public class JDGui extends SwingGui implements UpdaterListener {
             }
         }.start();
     }
-
-    /**
-     * Converts a {@link ConfigContainer} to a {@link AddonConfig} and displays it
-     * 
-     * @param container
-     */
-    protected void showConfigPanel(final ConfigContainer container) {
-        String name = "";
-        if (container.getTitle() != null) {
-            name = container.getTitle();
-        } else if (container.getGroup() != null && container.getGroup().getName() != null) {
-            name = container.getGroup().getName();
-        }
-
-        ImageIcon icon = null;
-        if (container.getIcon() != null) {
-            icon = container.getIcon();
-        } else if (container.getGroup() != null && container.getGroup().getIcon() != null) {
-            icon = container.getGroup().getIcon();
-        }
-
-        final AddonConfig addonConfig = AddonConfig.getInstance(container, "_2", false);
-
-        final JScrollPane scrollPane = new JScrollPane(addonConfig.getPanel());
-        scrollPane.setBorder(null);
-        scrollPane.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
-
-        // this.mainTabbedPane.getSelectedView().setInfoPanel(col);
-    }
-
-    @Override
-    public void windowClosing(final WindowEvent e) {
-        if (e.getComponent() == this.getMainFrame()) {
-
-            if (closingHandler != null) {
-                closingHandler.windowClosing(e);
-                return;
-            }
-
-            /*
-             * without trayicon also dont close/exit for macos
-             */
-            if (CrossSystem.isMac()) {
-                new EDTHelper<Object>() {
-                    @Override
-                    public Object edtRun() {
-                        /* set visible state */
-                        WindowManager.getInstance().setVisible(JDGui.this.getMainFrame(), false, FrameState.OS_DEFAULT);
-                        return null;
-                    }
-                }.start();
-                return;
-            }
-
-            RestartController.getInstance().exitAsynch(new SmartRlyExitRequest());
-        }
-    }
-
-    public static void help(final String title, final String msg, final ImageIcon icon) {
-
-        Timer timer = new Timer(200, new ActionListener() {
-
-            public void actionPerformed(ActionEvent e) {
-                HelpDialog.show(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, title, msg, icon);
-
-            }
-        });
-        timer.setRepeats(false);
-        timer.start();
-
-    }
-
-    @Override
-    public boolean isCurrentPanel(Panels panelID) {
-        switch (panelID) {
-        case DOWNLOADLIST:
-            return JDGui.this.downloadView == mainTabbedPane.getSelectedComponent();
-        case LINKGRABBER:
-            return JDGui.this.linkgrabberView == mainTabbedPane.getSelectedComponent();
-        }
-        return false;
-    }
-
-    public TrayExtension getTray() {
-        return tray;
-    }
-
-    private Thread trayIconChecker;
 
     /**
      * Sets the window to tray or restores it. This method contains a lot of workarounds for individual system problems... Take care to
@@ -1398,36 +1501,51 @@ public class JDGui extends SwingGui implements UpdaterListener {
         }.start();
     }
 
-    public void flashTaskbar() {
-        if (JsonConfig.create(GraphicalUserInterfaceSettings.class).isTaskBarFlashEnabled() && CrossSystem.isWindows()) {
-            new EDTRunner() {
-
-                @Override
-                protected void runInEDT() {
-                    final int state = mainFrame.getExtendedState();
-                    try {
-                        if (state == ExtendedState.ICONIFIED.getId()) {
-                            GuiUtils.flashWindow(mainFrame, true, true);
-                        } else {
-                            GuiUtils.flashWindow(mainFrame, true, true);
-                        }
-                    } catch (Exception e) {
-                        logger.log(e);
-                    }
-                }
-            };
+    /**
+     * Converts a {@link ConfigContainer} to a {@link AddonConfig} and displays it
+     * 
+     * @param container
+     */
+    protected void showConfigPanel(final ConfigContainer container) {
+        String name = "";
+        if (container.getTitle() != null) {
+            name = container.getTitle();
+        } else if (container.getGroup() != null && container.getGroup().getName() != null) {
+            name = container.getGroup().getName();
         }
+
+        ImageIcon icon = null;
+        if (container.getIcon() != null) {
+            icon = container.getIcon();
+        } else if (container.getGroup() != null && container.getGroup().getIcon() != null) {
+            icon = container.getGroup().getIcon();
+        }
+
+        final AddonConfig addonConfig = AddonConfig.getInstance(container, "_2", false);
+
+        final JScrollPane scrollPane = new JScrollPane(addonConfig.getPanel());
+        scrollPane.setBorder(null);
+        scrollPane.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
+
+        // this.mainTabbedPane.getSelectedView().setInfoPanel(col);
     }
 
-    @Override
-    public void onUpdatesAvailable(final boolean selfupdate, final InstallLog installlog) {
-        new EDTRunner() {
+    protected void showStatsDialog() {
 
-            @Override
-            protected void runInEDT() {
-                updateTitle();
+        ConfirmDialog d = new ConfirmDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI._.JDGui_showStatsDialog_title_(), _GUI._.JDGui_showStatsDialog_message_(), NewTheme.I().getIcon("bug", 32), _GUI._.JDGui_showStatsDialog_yes_(), _GUI._.JDGui_showStatsDialog_no_());
+        d.setDoNotShowAgainSelected(true);
+        try {
+            Dialog.getInstance().showDialog(d);
+            if (!d.isHiddenByDontShowAgain()) {
+                StatsManager.I().setEnabled(true);
             }
-        };
+            return;
+        } catch (DialogClosedException e) {
+            e.printStackTrace();
+        } catch (DialogCanceledException e) {
+            e.printStackTrace();
+        }
+
     }
 
     protected void updateTitle() {
@@ -1442,8 +1560,20 @@ public class JDGui extends SwingGui implements UpdaterListener {
         }
     }
 
-    public LogSource getLogger() {
-        return logger;
+    public static void init() {
+        if (JDGui.INSTANCE == null) {
+            JDGui.INSTANCE = new EDTHelper<JDGui>() {
+                @Override
+                public JDGui edtRun() {
+                    try {
+                        return new JDGui();
+                    } finally {
+
+                    }
+                }
+
+            }.getReturnValue();
+        }
     }
 
 }

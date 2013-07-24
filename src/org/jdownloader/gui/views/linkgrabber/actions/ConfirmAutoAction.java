@@ -15,7 +15,6 @@ import jd.controlling.linkcollector.LinkCollector;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledPackage;
 import jd.controlling.packagecontroller.AbstractNode;
-import jd.gui.UserIF;
 import jd.gui.swing.jdgui.JDGui;
 import jd.plugins.FilePackage;
 
@@ -194,7 +193,7 @@ public class ConfirmAutoAction extends SelectionAppAction<CrawledPackage, Crawle
 
                         @Override
                         protected void runInEDT() {
-                            JDGui.getInstance().requestPanel(UserIF.Panels.DOWNLOADLIST, null);
+                            JDGui.getInstance().requestPanel(JDGui.Panels.DOWNLOADLIST, null);
                         }
                     };
 

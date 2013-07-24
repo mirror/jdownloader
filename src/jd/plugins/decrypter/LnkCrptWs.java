@@ -63,7 +63,7 @@ import javax.swing.event.MouseInputAdapter;
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.gui.UserIO;
-import jd.gui.swing.SwingGui;
+import jd.gui.swing.jdgui.JDGui;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.JDHash;
@@ -307,12 +307,12 @@ public class LnkCrptWs extends PluginForDecrypt {
                     } else {
                         resizeImage();
                         dialog.setSize(315, 350);
-                        if (SwingGui.getInstance() == null) {
+                        if (JDGui.getInstance() == null) {
                             dialog.setLocation(Screen.getCenterOfComponent(null, dialog));
-                        } else if (SwingGui.getInstance().getMainFrame().getExtendedState() == 1 || !SwingGui.getInstance().getMainFrame().isVisible()) {
+                        } else if (JDGui.getInstance().getMainFrame().getExtendedState() == 1 || !JDGui.getInstance().getMainFrame().isVisible()) {
                             dialog.setLocation(Screen.getDockBottomRight(dialog));
                         } else {
-                            dialog.setLocation(Screen.getCenterOfComponent(SwingGui.getInstance().getMainFrame(), dialog));
+                            dialog.setLocation(Screen.getCenterOfComponent(JDGui.getInstance().getMainFrame(), dialog));
                         }
                         setupCaptchaDialog();
                     }
@@ -1297,12 +1297,12 @@ public class LnkCrptWs extends PluginForDecrypt {
 
             toFront();
 
-            if (SwingGui.getInstance() == null) {
+            if (JDGui.getInstance() == null) {
                 setLocation(Screen.getCenterOfComponent(null, this));
-            } else if (SwingGui.getInstance().getMainFrame().getExtendedState() == 1 || !SwingGui.getInstance().getMainFrame().isVisible()) {
+            } else if (JDGui.getInstance().getMainFrame().getExtendedState() == 1 || !JDGui.getInstance().getMainFrame().isVisible()) {
                 setLocation(Screen.getDockBottomRight(this));
             } else {
-                setLocation(Screen.getCenterOfComponent(SwingGui.getInstance().getMainFrame(), this));
+                setLocation(Screen.getCenterOfComponent(JDGui.getInstance().getMainFrame(), this));
             }
 
             setResizable(false);

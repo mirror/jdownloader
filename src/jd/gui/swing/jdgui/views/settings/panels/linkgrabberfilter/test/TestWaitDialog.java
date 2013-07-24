@@ -16,7 +16,7 @@ import jd.controlling.linkchecker.LinkCheckerHandler;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.LinkCrawler;
 import jd.controlling.linkcrawler.LinkCrawlerHandler;
-import jd.gui.swing.SwingGui;
+import jd.gui.swing.jdgui.JDGui;
 import jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter.editdialog.ExceptionsRuleDialog;
 import jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter.editdialog.FilterRuleDialog;
 
@@ -234,7 +234,7 @@ public class TestWaitDialog extends AbstractDialog<List<CrawledLink>> {
 
     protected int getPreferredWidth() {
         // TODO Auto-generated method stub
-        return SwingGui.getInstance().getMainFrame().getWidth();
+        return JDGui.getInstance().getMainFrame().getWidth();
     }
 
     protected boolean isResizable() {

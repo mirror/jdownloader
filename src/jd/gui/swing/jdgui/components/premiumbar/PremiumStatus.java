@@ -31,7 +31,7 @@ import jd.controlling.AccountControllerEvent;
 import jd.controlling.AccountControllerListener;
 import jd.controlling.IOEQ;
 import jd.controlling.accountchecker.AccountChecker;
-import jd.gui.UserIF;
+import jd.gui.swing.jdgui.JDGui;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.PluginForHost;
@@ -203,7 +203,7 @@ public class PremiumStatus extends JPanel implements MouseListener {
                     public void run() {
                         PluginForHost plugin = tpb.getDomainInfo().findPlugin();
                         if (plugin != null && plugin.hasConfig()) {
-                            UserIF.getInstance().requestPanel(UserIF.Panels.CONFIGPANEL, plugin.getConfig());
+                            JDGui.getInstance().requestPanel(JDGui.Panels.CONFIGPANEL, plugin.getConfig());
                         }
                     }
                 });

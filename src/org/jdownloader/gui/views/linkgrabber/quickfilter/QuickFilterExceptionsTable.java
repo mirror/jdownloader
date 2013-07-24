@@ -134,7 +134,7 @@ public class QuickFilterExceptionsTable extends FilterTable {
 
     protected boolean onDoubleClick(final MouseEvent e, final Filter obj) {
         // JsonConfig.create(GraphicalUserInterfaceSettings.class).setConfigViewVisible(true);
-        // SwingGui.getInstance().setContent(ConfigurationView.getInstance(),
+        // JDGui.getInstance().setContent(ConfigurationView.getInstance(),
         // true);
         // LinkgrabberFilter.getInstance().setSelectedIndex(1);
         // ConfigurationView.getInstance().setSelectedSubPanel(jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter.Linkgrabber.class);

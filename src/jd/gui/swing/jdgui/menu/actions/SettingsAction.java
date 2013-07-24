@@ -18,7 +18,7 @@ package jd.gui.swing.jdgui.menu.actions;
 
 import java.awt.event.ActionEvent;
 
-import jd.gui.swing.SwingGui;
+import jd.gui.swing.jdgui.JDGui;
 import jd.gui.swing.jdgui.views.settings.ConfigurationView;
 
 import org.appwork.storage.config.JsonConfig;
@@ -41,7 +41,7 @@ public class SettingsAction extends AppAction implements CachableInterface {
     @Override
     public void actionPerformed(ActionEvent e) {
         JsonConfig.create(GraphicalUserInterfaceSettings.class).setConfigViewVisible(true);
-        SwingGui.getInstance().setContent(ConfigurationView.getInstance(), true);
+        JDGui.getInstance().setContent(ConfigurationView.getInstance(), true);
     }
 
     @Override

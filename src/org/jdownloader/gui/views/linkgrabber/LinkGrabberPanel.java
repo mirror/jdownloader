@@ -21,7 +21,6 @@ import jd.controlling.linkcollector.LinkCollectorHighlightListener;
 import jd.controlling.linkcollector.LinkCollectorListener;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledPackage;
-import jd.gui.UserIF;
 import jd.gui.swing.jdgui.JDGui;
 import jd.gui.swing.jdgui.interfaces.SwitchPanel;
 import net.miginfocom.swing.MigLayout;
@@ -136,7 +135,7 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
                     protected void runInEDT() {
                         try {
                             System.out.println("Highlight");
-                            if (CFG_GUI.CFG.isSwitchToLinkgrabberTabOnNewLinksAddedEnabled()) JDGui.getInstance().requestPanel(UserIF.Panels.LINKGRABBER, null);
+                            if (CFG_GUI.CFG.isSwitchToLinkgrabberTabOnNewLinksAddedEnabled()) JDGui.getInstance().requestPanel(JDGui.Panels.LINKGRABBER, null);
                             switch (CFG_GUI.CFG.getNewLinksAction()) {
                             case FOCUS:
                                 JDGui.getInstance().setFrameState(FrameState.TO_FRONT_FOCUSED);

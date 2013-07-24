@@ -155,7 +155,7 @@ public class NeembuuExtension extends AbstractExtension<NeembuuConfig, NeembuuTr
             // ignore
             // }
             // int o =
-            // JOptionPane.showConfirmDialog(SwingGui.getInstance().getMainFrame(),
+            // JOptionPane.showConfirmDialog(JDGui.getInstance().getMainFrame(),
             // _NT._.approve_WatchAsYouDownload_Message(),
             // _NT._.approve_WatchAsYouDownload_Title(),
             // JOptionPane.YES_NO_OPTION);
@@ -169,7 +169,7 @@ public class NeembuuExtension extends AbstractExtension<NeembuuConfig, NeembuuTr
                 /*
                  * SwingUtilities.invokeLater(new Runnable() { // @Override
                  * 
-                 * public void run() { JOptionPane.showMessageDialog(SwingGui.getInstance ().getMainFrame(), _NT._.failed_WatchAsYouDownload_Message() + "\n" +
+                 * public void run() { JOptionPane.showMessageDialog(JDGui.getInstance ().getMainFrame(), _NT._.failed_WatchAsYouDownload_Message() + "\n" +
                  * jdds.toString(), _NT._.failed_WatchAsYouDownload_Title(), JOptionPane.ERROR_MESSAGE); } });
                  */
 

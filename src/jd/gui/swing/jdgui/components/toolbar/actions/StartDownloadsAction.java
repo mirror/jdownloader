@@ -9,8 +9,8 @@ import jd.controlling.downloadcontroller.event.DownloadWatchdogListener;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledPackage;
 import jd.controlling.packagecontroller.AbstractNode;
-import jd.gui.UserIF.Panels;
 import jd.gui.swing.jdgui.JDGui;
+import jd.gui.swing.jdgui.JDGui.Panels;
 import jd.gui.swing.jdgui.MainTabbedPane;
 import jd.gui.swing.jdgui.interfaces.View;
 

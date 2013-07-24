@@ -4,7 +4,6 @@ import javax.swing.BorderFactory;
 import javax.swing.Box;
 import javax.swing.JLabel;
 
-
 import org.appwork.swing.MigPanel;
 import org.appwork.utils.swing.SwingUtils;
 import org.jdownloader.gui.translate._GUI;

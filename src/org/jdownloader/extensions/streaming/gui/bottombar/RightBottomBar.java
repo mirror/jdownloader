@@ -7,7 +7,6 @@ import java.awt.event.KeyListener;
 import java.util.List;
 import java.util.regex.Pattern;
 
-
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.swing.MigPanel;
 import org.appwork.swing.components.ExtButton;

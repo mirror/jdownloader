@@ -21,7 +21,7 @@ import java.util.ArrayList;
 
 import javax.swing.JFrame;
 
-import jd.gui.swing.SwingGui;
+import jd.gui.swing.jdgui.JDGui;
 
 import org.appwork.swing.ExtJFrame;
 import org.appwork.utils.Application;
@@ -37,7 +37,7 @@ public class DummyFrame extends ExtJFrame {
     public static JFrame PARENT;
 
     public static JFrame getDialogParent() {
-        if (SwingGui.getInstance() != null) return SwingGui.getInstance().getMainFrame();
+        if (JDGui.getInstance() != null) return JDGui.getInstance().getMainFrame();
         if (PARENT == null) PARENT = new DummyFrame();
         return PARENT;
     }

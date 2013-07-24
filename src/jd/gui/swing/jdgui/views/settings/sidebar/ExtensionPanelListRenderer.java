@@ -11,7 +11,6 @@ import javax.swing.JList;
 import javax.swing.JPanel;
 import javax.swing.ListCellRenderer;
 
-
 import net.miginfocom.swing.MigLayout;
 
 import org.appwork.utils.ColorUtils;

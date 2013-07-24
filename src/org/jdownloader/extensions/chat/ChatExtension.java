@@ -52,7 +52,7 @@ import jd.controlling.reconnect.Reconnecter;
 import jd.controlling.reconnect.ReconnecterEvent;
 import jd.controlling.reconnect.ReconnecterListener;
 import jd.gui.UserIO;
-import jd.gui.swing.SwingGui;
+import jd.gui.swing.jdgui.JDGui;
 import jd.gui.swing.jdgui.interfaces.SwitchPanel;
 import jd.plugins.AddonPanel;
 import jd.utils.JDUtilities;
@@ -224,9 +224,9 @@ public class ChatExtension extends AbstractExtension<ChatConfig, ChatTranslation
             @Override
             public Object edtRun() {
 
-                if (!SwingGui.getInstance().getMainFrame().isActive() && ChatExtension.this.conn != null && msg2.contains(ChatExtension.this.conn.getNick())) {
+                if (!JDGui.getInstance().getMainFrame().isActive() && ChatExtension.this.conn != null && msg2.contains(ChatExtension.this.conn.getNick())) {
                     // JDSounds.PT("sound.gui.selectPackage");
-                    SwingGui.getInstance().getMainFrame().toFront();
+                    JDGui.getInstance().getMainFrame().toFront();
                 }
 
                 targetpane.setText(ChatExtension.STYLE + "<ul>" + sb.toString() + "</ul>");
@@ -1090,7 +1090,7 @@ public class ChatExtension extends AbstractExtension<ChatConfig, ChatTranslation
     }
 
     public void onAfterReconnect(ReconnecterEvent event) {
-        if (SwingGui.getInstance().getMainFrame().isActive() && !ChatExtension.this.nickaway) {
+        if (JDGui.getInstance().getMainFrame().isActive() && !ChatExtension.this.nickaway) {
             ChatExtension.this.initIRC();
         } else {
             ChatExtension.this.addToText(null, ChatExtension.STYLE_ERROR, "You got disconnected because of a reconnect. <a href='intern:reconnect|reconnect'><b>[RECONNECT NOW]</b></a>");

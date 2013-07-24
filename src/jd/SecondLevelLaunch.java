@@ -50,9 +50,7 @@ import jd.controlling.packagecontroller.AbstractPackageChildrenNodeFilter;
 import jd.controlling.proxy.ProxyController;
 import jd.controlling.proxy.ProxyEvent;
 import jd.controlling.proxy.ProxyInfo;
-import jd.gui.UserIF;
 import jd.gui.swing.MacOSApplicationAdapter;
-import jd.gui.swing.SwingGui;
 import jd.gui.swing.jdgui.JDGui;
 import jd.http.Browser;
 import jd.http.ext.security.JSPermissionRestricter;
@@ -679,7 +677,7 @@ public class SecondLevelLaunch {
 
                     lafInit.waitForEDT();
                     SecondLevelLaunch.LOG.info("InitGUI->" + (System.currentTimeMillis() - SecondLevelLaunch.startup));
-                    JDGui.getInstance();
+                    JDGui.init();
                     // init Archivecontroller.init has to be done AFTER downloadcontroller and linkcollector
                     ArchiveController.getInstance();
                     Toolkit.getDefaultToolkit().addAWTEventListener(new CopyPasteSupport(), AWTEvent.MOUSE_EVENT_MASK);
@@ -694,9 +692,7 @@ public class SecondLevelLaunch {
                 return null;
             }
         }.waitForEDT();
-        /* this stuff can happen outside edt */
-        SwingGui.setInstance(JDGui.getInstance());
-        UserIF.setInstance(SwingGui.getInstance());
+
         try {
             /* thread should be finished here */
             thread.join(10000);
