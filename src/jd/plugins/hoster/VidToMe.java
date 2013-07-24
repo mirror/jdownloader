@@ -79,7 +79,7 @@ public class VidToMe extends PluginForHost {
     private final boolean              useAltEmbed                  = false;
     private final boolean              supportsHTTPS                = false;
     private final boolean              enforcesHTTPS                = false;
-    private final boolean              useRUA                       = false;
+    private final boolean              useRUA                       = true;
     private final boolean              useAltExpire                 = true;
     private final boolean              useAltLinkCheck              = false;
     private final boolean              skipableRecaptcha            = true;
@@ -100,7 +100,7 @@ public class VidToMe extends PluginForHost {
         if (account != null && account.getBooleanProperty("free")) {
             // free account
             chunks = -2;
-            resumes = false;
+            resumes = true;
             acctype = "Free Account";
             directlinkproperty = "freelink2";
         } else if (account != null && !account.getBooleanProperty("free")) {
@@ -112,7 +112,7 @@ public class VidToMe extends PluginForHost {
         } else {
             // non account
             chunks = -2;
-            resumes = false;
+            resumes = true;
             acctype = "Non Account";
             directlinkproperty = "freelink";
         }
@@ -332,7 +332,11 @@ public class VidToMe extends PluginForHost {
                 download1 = cleanForm(download1);
                 // end of backward compatibility
                 download1.remove("method_premium");
-                download1.setAction(br.getURL() + ".html");
+                if (download1.getAction().equals("")) {
+                    String url = br.getURL();
+                    if (!url.endsWith(".html")) url += ".html";
+                    download1.setAction(url);
+                }
                 waitTime(System.currentTimeMillis(), downloadLink);
                 sendForm(download1);
                 if (cbr.containsHTML(">No such file with this filename<")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
