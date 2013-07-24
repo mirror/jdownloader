@@ -16,6 +16,7 @@
 
 package jd.plugins.hoster;
 
+import java.io.File;
 import java.io.IOException;
 import java.net.SocketException;
 import java.util.ArrayList;
@@ -41,6 +42,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.utils.JDUtilities;
 
 import org.appwork.utils.Hash;
 import org.appwork.utils.StringUtils;
@@ -441,12 +443,27 @@ public class RealDebridCom extends PluginForHost {
                 for (int retry = 0; retry < 3; retry++) {
                     try {
                         br.getPage(mProt + mName + "/ajax/login.php?user=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Hash.getMD5(account.getPass()) + "&captcha_challenge=&captcha_answer=&time=" + System.currentTimeMillis());
+                        if (br.containsHTML("\"captcha\":1")) {
+                            DownloadLink dummyLink = new DownloadLink(this, "Account", mProt + mName, mProt + mName, true);
+                            final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
+                            final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
+                            final String challenge = br.getRegex("\"captcha_challenge\":\"([^\"]+)").getMatch(0);
+                            final String image = br.getRegex("\"captcha_url\":\"(https?://[^\"]+)").getMatch(0);
+                            if (challenge == null || image == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                            rc.setChallenge(challenge);
+                            rc.setCaptchaAddress(image.replaceAll("\\\\/", "/"));
+                            final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
+                            final String c = getCaptchaCode(cf, dummyLink);
+                            br.getPage(mProt + mName + "/ajax/login.php?user=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Hash.getMD5(account.getPass()) + "&captcha_challenge=" + rc.getChallenge() + "&captcha_answer=" + Encoding.urlEncode(c) + "&time=" + System.currentTimeMillis());
+                            if (br.containsHTML("\"captcha\":1")) { throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nError either captcha is incorrect or your user:password is incorrect", PluginException.VALUE_ID_PREMIUM_DISABLE); }
+                        }
                         break;
                     } catch (SocketException e) {
                         if (retry == 2) throw e;
                         Thread.sleep(1000);
                     }
                 }
+
                 if (br.getCookie(mProt + mName, "auth") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 /** Save cookies */
                 final HashMap<String, String> cookies = new HashMap<String, String>();
