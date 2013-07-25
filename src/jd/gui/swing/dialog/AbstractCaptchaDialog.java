@@ -240,7 +240,7 @@ public abstract class AbstractCaptchaDialog extends AbstractDialog<Object> {
         this.type = type;
     }
 
-    protected void playCaptchaSound() {
+    public static void playCaptchaSound() {
         URL soundUrl = null;
         if (JsonConfig.create(SoundSettings.class).isCaptchaSoundEnabled() && (soundUrl = NewTheme.I().getURL("sounds/", "captcha", ".wav")) != null) {
             final URL finalSoundUrl = soundUrl;

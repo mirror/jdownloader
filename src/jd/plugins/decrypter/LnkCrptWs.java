@@ -44,16 +44,6 @@ import java.util.concurrent.locks.ReentrantLock;
 import javax.imageio.ImageIO;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
-import javax.sound.sampled.AudioFormat;
-import javax.sound.sampled.AudioInputStream;
-import javax.sound.sampled.AudioSystem;
-import javax.sound.sampled.BooleanControl;
-import javax.sound.sampled.Clip;
-import javax.sound.sampled.DataLine;
-import javax.sound.sampled.FloatControl;
-import javax.sound.sampled.LineEvent;
-import javax.sound.sampled.LineEvent.Type;
-import javax.sound.sampled.LineListener;
 import javax.swing.BorderFactory;
 import javax.swing.Box;
 import javax.swing.BoxLayout;
@@ -726,7 +716,9 @@ public class LnkCrptWs extends PluginForDecrypt {
 
                 if (!isStableEnviroment()) {
                     final KeyCaptchaDialog vC = new KeyCaptchaDialog(0, "KeyCaptcha - " + br.getHost(), new String[] { stImgs[1], sscStc[1] }, fmsImg, null, rcBr, mmUrlReq);
-                    playCaptchaSound();
+
+                    // avoid imports here
+                    jd.gui.swing.dialog.AbstractCaptchaDialog.playCaptchaSound();
                     out = org.appwork.utils.swing.dialog.Dialog.getInstance().showDialog(vC);
                     if (vC.getReturnmask() == 4) {
                         out = "CANCEL";
@@ -885,74 +877,6 @@ public class LnkCrptWs extends PluginForDecrypt {
                     }
                 } else {
                     fmsImg.put("backGroundImage", pOut);
-                }
-            }
-        }
-
-        // TOOD: remove when JD2 goes stable
-        /**
-         * Sound for JD2 clients, left public so it can be called within other custom captcha dialogs
-         * 
-         */
-        public void playCaptchaSound() {
-            if (!isStableEnviroment()) {
-                // copy paste of jd.gui.swing.dialog.AbstractCaptchaDialog.playCaptchaSound(), slight changes.
-                URL soundUrl = null;
-                if (org.appwork.storage.config.JsonConfig.create(org.jdownloader.settings.SoundSettings.class).isCaptchaSoundEnabled() && (soundUrl = org.jdownloader.images.NewTheme.I().getURL("sounds/", "captcha", ".wav")) != null) {
-                    final URL finalSoundUrl = soundUrl;
-                    new Thread("Captcha Sound") {
-                        public void run() {
-                            AudioInputStream stream = null;
-                            try {
-                                AudioFormat format;
-                                DataLine.Info info;
-                                stream = AudioSystem.getAudioInputStream(finalSoundUrl);
-                                format = stream.getFormat();
-                                info = new DataLine.Info(Clip.class, format);
-                                final Clip clip = (Clip) AudioSystem.getLine(info);
-                                clip.open(stream);
-                                try {
-                                    FloatControl gainControl = (FloatControl) clip.getControl(FloatControl.Type.MASTER_GAIN);
-
-                                    float db = (20f * (float) Math.log(org.appwork.storage.config.JsonConfig.create(org.jdownloader.settings.SoundSettings.class).getCaptchaSoundVolume() / 100f));
-
-                                    gainControl.setValue(Math.max(-80f, db));
-                                    BooleanControl muteControl = (BooleanControl) clip.getControl(BooleanControl.Type.MUTE);
-                                    muteControl.setValue(true);
-
-                                    muteControl.setValue(false);
-                                } catch (Exception e) {
-                                    Log.exception(e);
-                                }
-                                clip.start();
-                                clip.addLineListener(new LineListener() {
-
-                                    @Override
-                                    public void update(LineEvent event) {
-                                        if (event.getType() == Type.STOP) {
-                                            clip.close();
-                                        }
-                                    }
-                                });
-                                while (clip.isRunning()) {
-                                    Thread.sleep(100);
-                                }
-                            } catch (Exception e) {
-                                Log.exception(e);
-                            } finally {
-                                try {
-                                    stream.close();
-                                } catch (Throwable e) {
-
-                                }
-                                // try {
-                                // clip.close();
-                                // } catch (Throwable e) {
-                                //
-                                // }
-                            }
-                        }
-                    }.start();
                 }
             }
         }
