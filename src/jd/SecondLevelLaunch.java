@@ -82,6 +82,7 @@ import org.appwork.utils.swing.EDTHelper;
 import org.appwork.utils.swing.dialog.ConfirmDialog;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogNoAnswerException;
+import org.appwork.utils.swing.dialog.ExtFileSystemView;
 import org.jdownloader.api.RemoteAPIController;
 import org.jdownloader.api.captcha.CaptchaAPISolver;
 import org.jdownloader.api.cnl2.ExternInterface;
@@ -525,6 +526,7 @@ public class SecondLevelLaunch {
                     @Override
                     public void run() {
                         try {
+
                             boolean jared = Application.isJared(SecondLevelLaunch.class);
                             ToolTipController.getInstance().setDelay(JsonConfig.create(GraphicalUserInterfaceSettings.class).getTooltipDelay());
                             Thread.currentThread().setName("ExecuteWhenGuiReachedThread: Init Host Plugins");
@@ -664,6 +666,7 @@ public class SecondLevelLaunch {
                         // parse Menu Data. This will result in a better direct feeling when using the contextmenu the first time
                         DownloadListContextMenuManager.getInstance().getMenuData();
                         LinkgrabberContextMenuManager.getInstance().getMenuData();
+                        ExtFileSystemView.runSambaScanner();
                     }
                 }.start();
             }

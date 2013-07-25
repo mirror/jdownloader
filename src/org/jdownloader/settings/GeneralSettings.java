@@ -185,6 +185,7 @@ public interface GeneralSettings extends ConfigInterface {
 
     void setKeepXOldLists(int x);
 
+    @DescriptionForConfigEntry("Add new Links on top of the downloadlist or at the bottom.")
     @AboutConfig
     boolean isAddNewLinksOnTop();
 
