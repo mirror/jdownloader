@@ -140,6 +140,14 @@ public class GrvShrkCm extends PluginForDecrypt {
             logger.warning("Decrypter out of date for link: " + parameter);
             return null;
         }
+
+        if (getPluginConfig().getBooleanProperty("TITLENUMBERING")) {
+            String format = "%0" + String.valueOf(decryptedLinks.size()).length() + "d";
+            for (DownloadLink dl : decryptedLinks) {
+                dl.setName(String.format(format, decryptedLinks.indexOf(dl) + 1) + "." + dl.getName());
+            }
+        }
+
         return decryptedLinks;
     }
 
@@ -202,6 +210,7 @@ public class GrvShrkCm extends PluginForDecrypt {
             String[] t2 = t1.split("#");
             progress.setRange(t2.length);
             HashMap<String, FilePackage> fpMap = new HashMap<String, FilePackage>();
+            String fixedFpName = null;
             for (String t3 : t2) {
                 String[] line = t3.replace("null", "\"null\"").replace("\",\"", "\"#\"").replaceAll("\\{|\\}", "").split("#");
                 for (String t4 : line) {
@@ -228,7 +237,8 @@ public class GrvShrkCm extends PluginForDecrypt {
                     fpName = "Grooveshark daily popular";
                 }
                 fpName = fpName.trim();
-                FilePackage fp = fpMap.get(fpName);
+                if (fixedFpName == null) fixedFpName = fpName;
+                FilePackage fp = fpMap.get(fpName != fixedFpName ? fixedFpName : fpName);
                 if (fp == null) {
                     fp = FilePackage.getInstance();
                     fp.setName(fpName);
