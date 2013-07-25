@@ -717,8 +717,8 @@ public class LnkCrptWs extends PluginForDecrypt {
                 if (!isStableEnviroment()) {
 
                     final KeyCaptchaDialog vC = new KeyCaptchaDialog(0, "KeyCaptcha - " + br.getHost(), new String[] { stImgs[1], sscStc[1] }, fmsImg, null, rcBr, mmUrlReq);
-                    vC.displayDialog();
-                    out = vC.getReturnValue();
+
+                    out = org.appwork.utils.swing.dialog.Dialog.getInstance().showDialog(vC);
                     if (vC.getReturnmask() == 4) {
                         out = "CANCEL";
                     }
