@@ -151,7 +151,7 @@ public class MyJDownloaderHttpConnection extends HttpConnection {
         if (!StringUtils.equals(getRequest().getRequestedURL(), aesJsonRequest.getUrl())) { return false; }
         if (!api.validateRID(aesJsonRequest.getRid(), getRequestConnectToken())) { return false; }
 
-        logger.info("Go Request " + JSonStorage.toString(aesJsonRequest));
+        logger.info("Go Request " + JSonStorage.serializeToJson(aesJsonRequest));
         return true;
     }
 

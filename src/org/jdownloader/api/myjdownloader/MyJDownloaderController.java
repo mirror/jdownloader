@@ -1,5 +1,7 @@
 package org.jdownloader.api.myjdownloader;
 
+import java.util.concurrent.atomic.AtomicReference;
+
 import org.appwork.shutdown.ShutdownController;
 import org.appwork.shutdown.ShutdownRequest;
 import org.appwork.shutdown.ShutdownVetoException;
@@ -25,24 +27,40 @@ public class MyJDownloaderController implements ShutdownVetoListener, GenericCon
         return INSTANCE;
     }
 
-    private MyJDownloaderConnectThread thread = null;
-    private LogSource                  logger;
-    private MyJDownloaderEventSender   eventSender;
+    private AtomicReference<MyJDownloaderConnectThread> thread = new AtomicReference<MyJDownloaderConnectThread>(null);
+    private LogSource                                   logger;
+    private MyJDownloaderEventSender                    eventSender;
 
     public MyJDownloaderEventSender getEventSender() {
         return eventSender;
     }
 
     public boolean isConnected() {
-        return thread != null && thread.isAlive() && thread.isConnected();
+        MyJDownloaderConnectThread lThread = thread.get();
+        return lThread != null && lThread.isAlive() && lThread.isConnected();
+    }
+
+    public MyJDownloaderConnectionStatus getConnectionStatus() {
+        MyJDownloaderConnectThread lThread = thread.get();
+        if (lThread != null) {
+            return lThread.getConnectionStatus();
+        } else {
+            return MyJDownloaderConnectionStatus.UNCONNECTED;
+        }
+    }
+
+    public int getEstablishedConnections() {
+        MyJDownloaderConnectThread lThread = thread.get();
+        if (lThread != null) {
+            return lThread.getEstablishedConnections();
+        } else {
+            return 0;
+        }
     }
 
     protected void stop() {
-
-        MyJDownloaderConnectThread lThread = thread;
-        thread = null;
-
-        if (lThread != null && lThread.isAlive()) {
+        MyJDownloaderConnectThread lThread = thread.getAndSet(null);
+        if (lThread != null) {
             lThread.disconnect();
         }
     }
@@ -72,46 +90,45 @@ public class MyJDownloaderController implements ShutdownVetoListener, GenericCon
     }
 
     protected void start() {
-        if (thread != null && thread.isAlive()) {
-            stop();
-        }
+        stop();
         String email;
         String password;
         if (!validateLogins(email = CFG_MYJD.CFG.getEmail(), password = CFG_MYJD.CFG.getPassword())) return;
 
-        thread = new MyJDownloaderConnectThread(this);
+        MyJDownloaderConnectThread lthread = new MyJDownloaderConnectThread(this);
 
-        thread.setEmail(email);
-        thread.setPassword(password);
-        thread.setDeviceName(CFG_MYJD.CFG.getDeviceName());
-        thread.start();
-
+        lthread.setEmail(email);
+        lthread.setPassword(password);
+        lthread.setDeviceName(CFG_MYJD.CFG.getDeviceName());
+        if (thread.compareAndSet(null, lthread)) {
+            lthread.start();
+        }
         ShutdownController.getInstance().addShutdownVetoListener(this);
     }
 
     public String getCurrentDeviceName() {
         if (!isConnected()) return null;
-        MyJDownloaderConnectThread th = thread;
+        MyJDownloaderConnectThread th = thread.get();
         if (th == null) return null;
         return th.getDeviceName();
     }
 
     public String getCurrentEmail() {
         if (!isConnected()) return null;
-        MyJDownloaderConnectThread th = thread;
+        MyJDownloaderConnectThread th = thread.get();
         if (th == null) return null;
         return th.getEmail();
     }
 
     public String getCurrentPassword() {
         if (!isConnected()) return null;
-        MyJDownloaderConnectThread th = thread;
+        MyJDownloaderConnectThread th = thread.get();
         if (th == null) return null;
         return th.getPassword();
     }
 
     protected MyJDownloaderConnectThread getConnectThread() {
-        return thread;
+        return thread.get();
     }
 
     @Override
@@ -191,9 +208,9 @@ public class MyJDownloaderController implements ShutdownVetoListener, GenericCon
 
     }
 
-    public void fireConnectionStatusChanged(boolean connected) {
+    public void fireConnectionStatusChanged(MyJDownloaderConnectionStatus status, int connections) {
         CFG_MYJD.CFG.setLatestError(MyJDownloaderError.NONE);
-        eventSender.fireEvent(new MyJDownloaderEvent(this, MyJDownloaderEvent.Type.CONNECTION_STATUS_UPDATE, connected));
+        eventSender.fireEvent(new MyJDownloaderEvent(this, MyJDownloaderEvent.Type.CONNECTION_STATUS_UPDATE, status, connections));
     }
 
     public void disconnect() {
@@ -218,7 +235,7 @@ public class MyJDownloaderController implements ShutdownVetoListener, GenericCon
      */
     public void pushCaptchaFlag(boolean captchasPending) {
         if (!isConnected()) return;
-        MyJDownloaderConnectThread th = thread;
+        MyJDownloaderConnectThread th = thread.get();
         if (th == null) return;
         th.pushCaptchaNotification(captchasPending);
     }

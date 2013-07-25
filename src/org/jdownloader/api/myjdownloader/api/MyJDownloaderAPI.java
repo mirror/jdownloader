@@ -49,7 +49,7 @@ public class MyJDownloaderAPI extends AbstractMyJDClient {
 
     @Override
     protected String objectToJSon(final Object payload) {
-        return JSonStorage.toString(payload);
+        return JSonStorage.serializeToJson(payload);
     }
 
     @Override
@@ -106,7 +106,7 @@ public class MyJDownloaderAPI extends AbstractMyJDClient {
     protected AtomicLong              TIMESTAMP    = new AtomicLong(System.currentTimeMillis());
     protected volatile String         connectToken = null;
 
-    private MyJDownloaderController    extension;
+    private MyJDownloaderController   extension;
     private HashMap<String, RIDArray> rids;
 
     public static int getRevision() {
