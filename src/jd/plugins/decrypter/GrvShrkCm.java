@@ -19,6 +19,7 @@ package jd.plugins.decrypter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Locale;
 import java.util.Map.Entry;
 import java.util.Random;
@@ -62,6 +63,12 @@ public class GrvShrkCm extends PluginForDecrypt {
             res = res.replaceAll("\\" + m.group(0), Character.toString((char) Integer.parseInt(m.group(1), 16)));
         }
         return res;
+    }
+
+    private void removeDuplicatedEntries(ArrayList<DownloadLink> arrayList) {
+        HashSet<DownloadLink> hashSet = new HashSet<DownloadLink>(arrayList);
+        arrayList.clear();
+        arrayList.addAll(hashSet);
     }
 
     @Override
@@ -142,6 +149,7 @@ public class GrvShrkCm extends PluginForDecrypt {
         }
 
         if (getPluginConfig().getBooleanProperty("TITLENUMBERING")) {
+            removeDuplicatedEntries(decryptedLinks);
             String format = "%0" + String.valueOf(decryptedLinks.size()).length() + "d";
             for (DownloadLink dl : decryptedLinks) {
                 dl.setName(String.format(format, decryptedLinks.indexOf(dl) + 1) + "." + dl.getName());
