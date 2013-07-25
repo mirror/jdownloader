@@ -17,8 +17,14 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 
 import jd.PluginWrapper;
+import jd.config.ConfigContainer;
+import jd.config.ConfigEntry;
+import jd.config.SubConfiguration;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.plugins.DownloadLink;
@@ -27,12 +33,14 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "justin.tv" }, urls = { "http://.+(justin|twitch)decrypted\\.tv/archives/[^<>\"]*?\\.flv" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "justin.tv" }, urls = { "http://.+(justin|twitch)decrypted\\.tv/archives/[^<>\"]*?\\.flv" }, flags = { 2 })
 public class JustinTv extends PluginForHost {
 
     public JustinTv(PluginWrapper wrapper) {
         super(wrapper);
+        setConfigElements();
     }
 
     public void correctDownloadLink(DownloadLink link) {
@@ -49,20 +57,23 @@ public class JustinTv extends PluginForHost {
         return -1;
     }
 
-    private static final String NOCHUNKS = "NOCHUNKS";
+    private static final String NOCHUNKS       = "NOCHUNKS";
+    private static final String CUSTOMDATE     = "CUSTOMDATE";
+    private static final String CUSTOMFILENAME = "CUSTOMFILENAME";
 
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException, ParseException {
         this.setBrowserExclusive();
         URLConnectionAdapter con = null;
         final Browser br2 = br.cloneBrowser();
+        String videoName = null;
         // In case the link redirects to the finallink
         br2.setFollowRedirects(true);
         try {
             con = br2.openGetConnection(downloadLink.getDownloadURL());
             if (!con.getContentType().contains("html")) {
                 downloadLink.setDownloadSize(con.getLongContentLength());
-                downloadLink.setFinalFileName(correctFilename(downloadLink.getName()));
+                videoName = correctFilename(downloadLink.getName());
             } else {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
@@ -72,7 +83,31 @@ public class JustinTv extends PluginForHost {
             } catch (Throwable e) {
             }
         }
+        final SubConfiguration cfg = this.getPluginConfig();
+        String formattedFilename = cfg.getStringProperty(CUSTOMFILENAME);
+        if (formattedFilename == null || formattedFilename.equals("")) formattedFilename = "*channel*_*date*_*filename*";
 
+        final String date = downloadLink.getStringProperty("originaldate", null);
+        final String channelName = downloadLink.getStringProperty("channel", null);
+
+        String formattedDate = null;
+        if (date != null) {
+            final String userDefinedDateFormat = cfg.getStringProperty(CUSTOMDATE);
+            final String[] dateStuff = date.split("T");
+            // 2013-04-21T13:44:43Z
+            SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd:hh:mm:ss");
+            Date dateStr = formatter.parse(dateStuff[0] + ":" + dateStuff[1]);
+            formattedDate = formatter.format(dateStr);
+            Date theDate = formatter.parse(formattedDate);
+
+            formatter = new SimpleDateFormat(userDefinedDateFormat);
+            formattedDate = formatter.format(theDate);
+        }
+
+        formattedFilename = formattedFilename.replace("*videoname*", videoName);
+        if (channelName != null) formattedFilename = formattedFilename.replace("*channelname*", channelName);
+        if (formattedDate != null) formattedFilename = formattedFilename.replace("*date*", formattedDate);
+        downloadLink.setFinalFileName(formattedFilename);
         return AvailableStatus.TRUE;
     }
 
@@ -112,6 +147,18 @@ public class JustinTv extends PluginForHost {
     private String correctFilename(final String oldFilename) {
         String newFilename = oldFilename.replace("#", "");
         return newFilename;
+    }
+
+    @Override
+    public String getDescription() {
+        return "JDownloader's twitch.tv Plugin helps downloading videoclips. JDownloader provides settings for the filenames.";
+    }
+
+    private void setConfigElements() {
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), CUSTOMDATE, JDL.L("plugins.hoster.justintv.customdate", "Define how the date should look.")).setDefaultValue("dd.MM.yyyy_hh-mm-ss"));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "Customize the filename! Example: '*channel*_*date*_*filename*'"));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), CUSTOMFILENAME, JDL.L("plugins.hoster.justintv.customfilename", "Define how the filenames should look:")).setDefaultValue("*channelname*_*date*_*videoname*"));
     }
 
     @Override

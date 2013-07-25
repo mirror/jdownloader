@@ -77,7 +77,7 @@ public class UFoxCom extends PluginForHost {
 
     // DEV NOTES
     // XfileSharingProBasic Version 2.6.0.9
-    // mods:
+    // mods: other file not found text
     // non account: 2 * 1
     // free account: untested, set same as FREE
     // premium account: 10 * 1
@@ -130,7 +130,7 @@ public class UFoxCom extends PluginForHost {
         br.setFollowRedirects(true);
         prepBrowser(br);
         getPage(link.getDownloadURL());
-        if (new Regex(correctedBR, ">ERROR 404 \\- File Not Found<|The file you were looking for could not be found|>The file expired").matches()) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (new Regex(correctedBR, ">ERROR 404 \\- File Not Found<|The file you were looking for could not be found|>The file expired|ufox\\.com/deleted\\.html>").matches()) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (new Regex(correctedBR, MAINTENANCE).matches()) {
             link.getLinkStatus().setStatusText(MAINTENANCEUSERTEXT);
             return AvailableStatus.TRUE;

@@ -79,12 +79,16 @@ public class JustinTvDecrypt extends PluginForDecrypt {
                 return decryptedLinks;
             }
             String filename = null;
+            String channelName = null;
+            String date = null;
             if (parameter.contains("justin.tv/")) {
                 filename = br.getRegex("<h2 class=\"clip_title\">([^<>\"]*?)</h2>").getMatch(0);
             } else {
                 // Testlink: http://www.twitch.tv/fiegsy/b/296921448
                 filename = br.getRegex("<span class='real_title js\\-title'>(.*?)</span>").getMatch(0);
                 if (filename == null) filename = br.getRegex("<h2 class='js\\-title'>(.*?)</h2>").getMatch(0);
+                channelName = br.getRegex("class=\"channelname\">([^<>\"]*?)</a>").getMatch(0);
+                date = br.getRegex("<time datetime=\\'(\\d{4}\\-\\d{2}\\-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z)\\'></time>").getMatch(0);
                 // they don't give full title with this regex, badddd
                 // eg. http://www.twitch.tv/fgtvlive/c/2006335
                 // returns: 'FgtvLive' from <meta property="og:title" content="FgtvLive"/>
@@ -114,6 +118,8 @@ public class JustinTvDecrypt extends PluginForDecrypt {
                 } else {
                     dlink.setFinalFileName(filename + ".flv");
                 }
+                if (date != null) dlink.setProperty("originaldate", date);
+                if (channelName != null) dlink.setProperty("channel", channelName);
                 decryptedLinks.add(dlink);
                 counter++;
             }
