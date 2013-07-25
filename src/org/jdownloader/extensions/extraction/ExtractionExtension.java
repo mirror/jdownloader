@@ -818,6 +818,7 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
             ArchivesSubMenu root;
             mr.getItems().add(addonLinkIndex, root = new ArchivesSubMenu());
             root.add(new MenuItemData(new ActionData(ExtractArchiveNowAction.class)));
+            // root.add(new MenuItemData(new ActionData(ShowExtractionResultAction.class)));
             root.add(new MenuItemData(new ActionData(ValidateArchivesAction.class)));
 
             root.add(new SeperatorData());

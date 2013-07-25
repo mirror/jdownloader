@@ -311,4 +311,7 @@ public interface ExtractionTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "It seems that there was a crash while extracting an archive.\r\nCheck the details below. Do you want to send a bug report?" })
     String crash_message();
 
+    @Default(lngs = { "en" }, values = { "Show Extraction Result" })
+    String contextmenu_extract_show_result();
+
 }

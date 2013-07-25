@@ -2875,4 +2875,22 @@ public interface GuiTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "show linkgrabber in front of all other windows & steal the focus" })
     String GUISettings_GUISettings_newlinks_focus();
+
+    @Default(lngs = { "en" }, values = { "Extraction error" })
+    String TaskColumn_getStringValue_extraction_error();
+
+    @Default(lngs = { "en" }, values = { "Extraction error: CRC" })
+    String TaskColumn_getStringValue_extraction_error_crc();
+
+    @Default(lngs = { "en" }, values = { "Extraction error: Not enough Space" })
+    String TaskColumn_getStringValue_extraction_error_space();
+
+    @Default(lngs = { "en" }, values = { "Extraction error: File not found" })
+    String TaskColumn_getStringValue_extraction_error_file_not_found();
+
+    @Default(lngs = { "en" }, values = { "Extraction OK" })
+    String TaskColumn_getStringValue_extraction_success();
+
+    @Default(lngs = { "en" }, values = { "Extracting..." })
+    String TaskColumn_getStringValue_extraction_extracting();
 }

@@ -23,11 +23,14 @@ import jd.plugins.PluginProgress;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.swing.exttable.columnmenu.LockColumnWidthAction;
 import org.appwork.swing.exttable.columns.ExtTextColumn;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.ImageProvider.ImageProvider;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.jdownloader.DomainInfo;
 import org.jdownloader.actions.AppAction;
+import org.jdownloader.extensions.extraction.ExtractionProgress;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.premium.PremiumInfoDialog;
@@ -47,6 +50,12 @@ public class TaskColumn extends ExtTextColumn<AbstractNode> {
 
     private ImageIcon         iconWait;
 
+    private ImageIcon         trueIconExtracted;
+
+    private ImageIcon         trueIconExtractedFailed;
+
+    private ImageIcon         extracting;
+
     @Override
     public int getDefaultWidth() {
         return 180;
@@ -64,6 +73,10 @@ public class TaskColumn extends ExtTextColumn<AbstractNode> {
         this.infoIcon = NewTheme.I().getIcon("info", 16);
 
         this.iconWait = NewTheme.I().getIcon("wait", 16);
+        this.extracting = NewTheme.I().getIcon("archive", 16);
+        trueIconExtracted = new ImageIcon(ImageProvider.merge(trueIcon.getImage(), NewTheme.I().getImage("archive", 16), 0, 0, trueIcon.getIconWidth() + 4, (trueIcon.getIconHeight() - 16) / 2 + 2));
+
+        trueIconExtractedFailed = new ImageIcon(ImageProvider.merge(trueIconExtracted.getImage(), NewTheme.I().getImage("error", 10), 0, 0, trueIcon.getIconWidth() + 12, trueIconExtracted.getIconHeight() - 10));
 
     }
 
@@ -135,11 +148,24 @@ public class TaskColumn extends ExtTextColumn<AbstractNode> {
             LinkStatus ls = dl.getLinkStatus();
             PluginProgress prog = dl.getPluginProgress();
             ImageIcon icon = null;
-            if (prog != null && prog.getPercent() > 0.0 && prog.getPercent() < 100.0) {
+            if (prog != null && prog.getPercent() > 0.0 && prog.getPercent() < 100.0 && !(prog instanceof ExtractionProgress)) {
                 return prog.getIcon();
             } else if ((icon = ls.getStatusIcon()) != null) {
                 return icon;
             } else if (ls.isFinished()) {
+                if (dl.getExtractionStatus() != null) {
+                    switch (dl.getExtractionStatus()) {
+                    case ERROR:
+                    case ERROR_CRC:
+                    case ERROR_NOT_ENOUGH_SPACE:
+                    case ERRROR_FILE_NOT_FOUND:
+                        return trueIconExtractedFailed;
+                    case SUCCESSFUL:
+                        return trueIconExtracted;
+                    case RUNNING:
+                        return extracting;
+                    }
+                }
                 return trueIcon;
             } else if (dl.isSkipped()) {
                 return infoIcon;
@@ -170,7 +196,10 @@ public class TaskColumn extends ExtTextColumn<AbstractNode> {
         if (value instanceof DownloadLink) {
             DownloadLink dl = (DownloadLink) value;
             PluginProgress prog = dl.getPluginProgress();
-            if (prog != null) return prog.getMessage();
+            if (prog != null && StringUtils.isNotEmpty(prog.getMessage())) {
+                //
+                return prog.getMessage();
+            }
             if (((DownloadLink) value).isSkipped()) { return ((DownloadLink) value).getSkipReason().getExplanation(); }
             if (!dl.getLinkStatus().isPluginActive() && dl.isEnabled() && dl.getLivePlugin() == null) {
                 if (!dl.getLinkStatus().isFinished()) {
@@ -193,6 +222,26 @@ public class TaskColumn extends ExtTextColumn<AbstractNode> {
                             return _JDT._.gui_downloadlink_hostertempunavail();
                         }
                     }
+                }
+            }
+            if (dl.getLinkStatus().isFinished()) {
+                if (dl.getExtractionStatus() != null) {
+                    switch (dl.getExtractionStatus()) {
+                    case ERROR:
+                        return _GUI._.TaskColumn_getStringValue_extraction_error();
+                    case ERROR_CRC:
+                        return _GUI._.TaskColumn_getStringValue_extraction_error_crc();
+                    case ERROR_NOT_ENOUGH_SPACE:
+                        return _GUI._.TaskColumn_getStringValue_extraction_error_space();
+                    case ERRROR_FILE_NOT_FOUND:
+                        return _GUI._.TaskColumn_getStringValue_extraction_error_file_not_found();
+                    case SUCCESSFUL:
+                        return _GUI._.TaskColumn_getStringValue_extraction_success();
+                    case RUNNING:
+                        // return _GUI._.TaskColumn_getStringValue_extraction_extracting();
+                        return dl.getLinkStatus().getMessage(false);
+                    }
+
                 }
             }
             return dl.getLinkStatus().getMessage(false);

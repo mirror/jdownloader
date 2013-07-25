@@ -59,6 +59,8 @@ public class ExtractionListenerList implements ExtractionListener {
 
         switch (event.getType()) {
         case QUEUED:
+
+            controller.getArchiv().setStatus(ExtractionStatus.IDLE);
             controller.getArchiv().getFirstArchiveFile().setMessage(T._.plugins_optional_extraction_status_queued());
 
             break;
@@ -97,6 +99,7 @@ public class ExtractionListenerList implements ExtractionListener {
                 }
                 if (removed.size() > 0) FileCreationManager.getInstance().getEventSender().fireEvent(new FileCreationEvent(controller, FileCreationEvent.Type.REMOVE_FILES, removed.toArray(new File[removed.size()])));
             } finally {
+                controller.getArchiv().setStatus(ExtractionStatus.ERROR);
                 controller.getArchiv().setActive(false);
                 ex.onFinished(controller);
             }
@@ -129,6 +132,7 @@ public class ExtractionListenerList implements ExtractionListener {
         case START:
             controller.getArchiv().getFirstArchiveFile().setMessage(T._.plugins_optional_extraction_status_openingarchive());
             // controller.getArchiv().getFirstArchiveFile().requestGuiUpdate();
+            controller.getArchiv().setStatus(ExtractionStatus.RUNNING);
             break;
         case OPEN_ARCHIVE_SUCCESS:
 
@@ -184,6 +188,7 @@ public class ExtractionListenerList implements ExtractionListener {
                 }
                 if (removed.size() > 0) FileCreationManager.getInstance().getEventSender().fireEvent(new FileCreationEvent(controller, FileCreationEvent.Type.REMOVE_FILES, removed.toArray(new File[removed.size()])));
             } finally {
+                controller.getArchiv().setStatus(ExtractionStatus.ERROR_CRC);
                 controller.getArchiv().setActive(false);
                 ex.onFinished(controller);
             }
@@ -198,10 +203,7 @@ public class ExtractionListenerList implements ExtractionListener {
                         logger.info(infoFiles.getName() + " removed");
                     }
                 }
-                for (ArchiveFile link : controller.getArchiv().getArchiveFiles()) {
-                    if (link == null) continue;
-                    link.setStatus(ExtractionStatus.SUCCESSFUL);
-                }
+                controller.getArchiv().setStatus(ExtractionStatus.SUCCESSFUL);
 
             } finally {
                 controller.getArchiv().setActive(false);
@@ -209,10 +211,7 @@ public class ExtractionListenerList implements ExtractionListener {
             }
             break;
         case NOT_ENOUGH_SPACE:
-            for (ArchiveFile link : controller.getArchiv().getArchiveFiles()) {
-                if (link == null) continue;
-                link.setStatus(ExtractionStatus.ERROR_NOT_ENOUGH_SPACE);
-            }
+            controller.getArchiv().setStatus(ExtractionStatus.ERROR_NOT_ENOUGH_SPACE);
             ex.onFinished(controller);
             break;
         case CLEANUP:
@@ -259,15 +258,14 @@ public class ExtractionListenerList implements ExtractionListener {
         case FILE_NOT_FOUND:
             try {
                 if (controller.getArchiv().getCrcError().size() != 0) {
-                    for (ArchiveFile link : controller.getArchiv().getCrcError()) {
-                        if (link == null) continue;
-                        link.setStatus(ExtractionStatus.ERRROR_FILE_NOT_FOUND);
-                    }
+                    controller.getArchiv().setStatus(ExtractionStatus.ERRROR_FILE_NOT_FOUND);
                 } else {
                     for (ArchiveFile link : controller.getArchiv().getArchiveFiles()) {
                         if (link == null) continue;
                         link.setMessage(T._.plugins_optional_extraction_filenotfound());
                     }
+
+                    controller.getArchiv().setStatus(ExtractionStatus.ERROR_CRC);
                 }
                 java.util.List<File> removed = new ArrayList<File>();
                 for (File f : controller.getArchiv().getExtractedFiles()) {

@@ -312,4 +312,11 @@ public class Archive {
     public void onCleanUp() {
     }
 
+    public void setStatus(ExtractionStatus status) {
+        for (ArchiveFile link : getArchiveFiles()) {
+            if (link == null) continue;
+            link.setStatus(status);
+        }
+    }
+
 }
