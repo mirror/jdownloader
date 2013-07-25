@@ -121,3 +121,4 @@ proxy_socks5=%s1:%s2 (Socks5 Proksi)
 proxydialog_title=Internete Bağlantı Yok
 tableheader_tooltip_locked=%s1 (Yeniden Boyutlandırma Kilitlendi)
 tableheader_tooltip_normal=%s1
+unLockColumnWidthAction=Sütun Genişliği Kilidini Aç
