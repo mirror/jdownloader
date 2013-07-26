@@ -118,7 +118,6 @@ public class MyJDownloaderAPI extends AbstractMyJDClient {
     public MyJDownloaderAPI(MyJDownloaderController myJDownloaderExtension) {
         super("JD_" + getRevision());
         extension = myJDownloaderExtension;
-
         setServerRoot("http://" + CFG_MYJD.CONNECT_IP.getValue() + ":" + CFG_MYJD.CLIENT_CONNECT_PORT.getValue());
         logger = extension.getLogger();
         br = new BasicHTTP();
