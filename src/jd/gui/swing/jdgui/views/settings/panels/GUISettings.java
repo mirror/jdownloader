@@ -85,6 +85,8 @@ public class GUISettings extends AbstractConfigPanel implements StateUpdateListe
 
     private ComboBox<NewLinksInLinkgrabberAction> linkgrabberfocus;
 
+    private boolean                               setting;
+
     public String getTitle() {
         return _GUI._.GUISettings_getTitle();
     }
@@ -334,42 +336,48 @@ public class GUISettings extends AbstractConfigPanel implements StateUpdateListe
 
     @Override
     public void updateContents() {
-        focus.setSelectedItem(CFG_GUI.CFG.getNewDialogFrameState());
-        linkgrabberfocus.setSelectedItem(CFG_GUI.CFG.getNewLinksAction());
-        // asynch loading, because listAvailableTranslations can take its time.
-        if (languages == null && languageScanner == null) {
-            languageScanner = new Thread("LanguageScanner") {
-                public void run() {
-                    List<String> list = TranslationFactory.listAvailableTranslations(JdownloaderTranslation.class, GuiTranslation.class);
-                    Collections.sort(list, new Comparator<String>() {
+        setting = true;
+        try {
+            focus.setSelectedItem(CFG_GUI.CFG.getNewDialogFrameState());
+            NewLinksInLinkgrabberAction newvalue = CFG_GUI.CFG.getNewLinksAction();
+            linkgrabberfocus.setSelectedItem(newvalue);
+            // asynch loading, because listAvailableTranslations can take its time.
+            if (languages == null && languageScanner == null) {
+                languageScanner = new Thread("LanguageScanner") {
+                    public void run() {
+                        List<String> list = TranslationFactory.listAvailableTranslations(JdownloaderTranslation.class, GuiTranslation.class);
+                        Collections.sort(list, new Comparator<String>() {
 
-                        @Override
-                        public int compare(String o1, String o2) {
-                            Locale lc1 = TranslationFactory.stringToLocale(o1);
-                            Locale lc2 = TranslationFactory.stringToLocale(o2);
+                            @Override
+                            public int compare(String o1, String o2) {
+                                Locale lc1 = TranslationFactory.stringToLocale(o1);
+                                Locale lc2 = TranslationFactory.stringToLocale(o2);
 
-                            return lc1.getDisplayName(Locale.ENGLISH).compareToIgnoreCase(lc2.getDisplayName(Locale.ENGLISH));
-                        }
-                    });
-                    languages = list.toArray(new String[] {});
-                    new EDTRunner() {
+                                return lc1.getDisplayName(Locale.ENGLISH).compareToIgnoreCase(lc2.getDisplayName(Locale.ENGLISH));
+                            }
+                        });
+                        languages = list.toArray(new String[] {});
+                        new EDTRunner() {
 
-                        @Override
-                        protected void runInEDT() {
-                            lng.setModel(new DefaultComboBoxModel(languages));
-                            lng.setSelectedItem(TranslationFactory.getDesiredLanguage());
-                        }
-                    };
-                    languageScanner = null;
-                }
-            };
-            languageScanner.start();
+                            @Override
+                            protected void runInEDT() {
+                                lng.setModel(new DefaultComboBoxModel(languages));
+                                lng.setSelectedItem(TranslationFactory.getDesiredLanguage());
+                            }
+                        };
+                        languageScanner = null;
+                    }
+                };
+                languageScanner.start();
+            }
+        } finally {
+            setting = false;
         }
 
     }
 
     @Override
     public void onStateUpdated() {
-        save();
+        if (!setting) save();
     }
 }

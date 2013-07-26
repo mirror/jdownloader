@@ -528,7 +528,7 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
     }
 
     @AboutConfig
-    @DefaultEnumValue("TO_FRONT")
+    @DefaultEnumValue("NOTHING")
     NewLinksInLinkgrabberAction getNewLinksAction();
 
     void setNewLinksAction(NewLinksInLinkgrabberAction action);

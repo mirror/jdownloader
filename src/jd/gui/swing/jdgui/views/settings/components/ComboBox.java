@@ -79,6 +79,7 @@ public class ComboBox<ContentType> extends JComboBox implements SettingsComponen
         this.setRenderer(new ListCellRenderer() {
             public Component getListCellRendererComponent(JList list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
                 if (index == -1) index = getSelectedIndex();
+                if (index == -1) return orgRenderer.getListCellRendererComponent(list, null, index, isSelected, cellHasFocus);
                 Component ret;
                 renderComponent(ret = orgRenderer.getListCellRendererComponent(list, translations[index], index, isSelected, cellHasFocus), list, (ContentType) value, index, isSelected, cellHasFocus);
                 return ret;
