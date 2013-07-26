@@ -27,10 +27,17 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vids.myspace.com" }, urls = { "http://(www\\.)?myspace\\.com/video/.*?\\d+$" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vids.myspace.com" }, urls = { "https?://((www\\.)?myspace\\.com/(\\d+/)?video/.*?\\d+|mediaservices\\.myspace\\.com/.+/embed\\.aspx.+)" }, flags = { 0 })
 public class VidsMySpaceCom extends PluginForHost {
 
     private String DLLINK = null;
+
+    @Override
+    public void correctDownloadLink(final DownloadLink link) {
+        // correction of old embded link format.
+        String[] movuid = new Regex(link.getDownloadURL(), "(https?).+embed\\.aspx/m=(\\d+)").getRow(0);
+        if (movuid != null && movuid.length == 2) link.setUrlDownload(movuid[0] + "://myspace.com/video/" + movuid[1]);
+    }
 
     public VidsMySpaceCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -52,7 +59,7 @@ public class VidsMySpaceCom extends PluginForHost {
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
         if (br.getURL().contains("myspace.com/error")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("<meta property=\"og:title\" content=\"([^<>\"]*?)\"").getMatch(0);
+        String filename = br.getRegex("<meta property=\"og:title\" content=\"([^\"]+) Video by[^\"]+\"").getMatch(0);
         final String qs = br.getRegex("\"qs\":\"([^<>\"]*?)\"").getMatch(0);
         if (filename == null || qs == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         br.getPage("http://mediaservices.myspace.com/services/rss.ashx?cb=" + System.currentTimeMillis() + "&type=video&el=http%3A%2F%2Fwww%2Emyspace%2Ecom%2Fmodules%2Fvideos%2Fpages%2Fvideodetail%2Easpx%3F" + Encoding.urlEncode(qs).replace("-", "%2D") + "&videoID=" + new Regex(link.getDownloadURL(), "(\\d+)$").getMatch(0));
