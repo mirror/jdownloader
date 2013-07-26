@@ -49,6 +49,14 @@ public class Ftp extends PluginForHost {
         super(wrapper);
     }
 
+    public String getCustomFavIconURL(DownloadLink link) {
+        if (link != null) {
+            String domain = Browser.getHost(link.getDownloadURL(), true);
+            if (domain != null) { return domain; }
+        }
+        return null;
+    }
+
     public void download(String ftpurl, final DownloadLink downloadLink, boolean throwException) throws IOException, PluginException {
         SimpleFTP ftp = new SimpleFTP();
         try {

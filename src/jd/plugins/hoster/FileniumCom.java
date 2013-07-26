@@ -16,6 +16,7 @@
 
 package jd.plugins.hoster;
 
+import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -125,8 +126,19 @@ public class FileniumCom extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws PluginException {
         checkLinks(new DownloadLink[] { link });
-        if (AvailableStatus.FALSE == link.getAvailableStatus()) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
-        return link.getAvailableStatus();
+        if (AvailableStatus.FALSE == getAvailableStatus(link)) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+        return getAvailableStatus(link);
+    }
+
+    private AvailableStatus getAvailableStatus(DownloadLink link) {
+        try {
+            final Field field = link.getClass().getDeclaredField("availableStatus");
+            field.setAccessible(true);
+            Object ret = field.get(link);
+            if (ret != null && ret instanceof AvailableStatus) return (AvailableStatus) ret;
+        } catch (final Throwable e) {
+        }
+        return AvailableStatus.UNCHECKED;
     }
 
     @Override

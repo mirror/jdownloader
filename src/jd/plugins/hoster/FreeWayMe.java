@@ -61,6 +61,7 @@ import org.appwork.uio.UIOManager;
 import org.appwork.utils.swing.dialog.ContainerDialog;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogNoAnswerException;
+import org.jdownloader.DomainInfo;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
 
@@ -295,7 +296,7 @@ public class FreeWayMe extends PluginForHost {
                 PanelGenerator panelGenerator = new PanelGenerator();
 
                 JLabel hostLabel = new JLabel("<html><b>" + account.getHoster() + "</b></html>");
-                hostLabel.setIcon(account.getDomainInfo().getFavIcon());
+                hostLabel.setIcon(DomainInfo.getInstance(account.getHoster()).getFavIcon());
                 panelGenerator.addLabel(hostLabel);
 
                 String revision = "$Revision$";
@@ -672,7 +673,7 @@ public class FreeWayMe extends PluginForHost {
 
         public ImageIcon getIcon() {
             try {
-                return JDUtilities.getPluginForHost(host).getDomainInfo().getFavIcon();
+                return JDUtilities.getPluginForHost(host).getDomainInfo(null).getFavIcon();
             } catch (Exception e) {
                 return null;
             }

@@ -200,7 +200,7 @@ public class Oceanus extends PluginForHost {
         reqObj = new HashMap<String, Object>();
         reqObj.put(USER_NAME, account.getUser());
         reqObj.put(PASSWORD, Hash.getMD5(account.getPass()));
-        return sendPostRequest(LOGIN_REQ, JSonStorage.toString(reqObj), null);
+        return sendPostRequest(LOGIN_REQ, JSonStorage.serializeToJson(reqObj), null);
     }
 
     /**
@@ -375,7 +375,7 @@ public class Oceanus extends PluginForHost {
         ArrayList<Long> uploadIDList = new ArrayList<Long>();
         uploadIDList.add(uploadID);
         jsObj.put(UPLOAD_ID_LST, uploadIDList);
-        return sendPostRequest(PRE_DOWN_REQ, JSonStorage.toString(jsObj), null);
+        return sendPostRequest(PRE_DOWN_REQ, JSonStorage.serializeToJson(jsObj), null);
     }
 
     /**
@@ -529,7 +529,7 @@ public class Oceanus extends PluginForHost {
                 jsObj.put("uploadID", uploadID);
                 jsObj.put("challenge", challenge);
                 jsObj.put("response", code);
-                respObj = sendPostRequest(VERIFY_CAPTCHA, JSonStorage.toString(jsObj), null);
+                respObj = sendPostRequest(VERIFY_CAPTCHA, JSonStorage.serializeToJson(jsObj), null);
                 this.tries++;
             } catch (Exception e) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -733,7 +733,7 @@ public class Oceanus extends PluginForHost {
                                 jsonReq.put("userID", userID);
                                 jsonReq.put("uploadID", uploadId);
                                 jsonReq.put("fileID", file.getFileId());
-                                oceanus.sendPostRequest("wholeDownloadComplete", JSonStorage.toString(jsonReq), null);
+                                oceanus.sendPostRequest("wholeDownloadComplete", JSonStorage.serializeToJson(jsonReq), null);
                             } catch (final Throwable e) {
                                 LogSource.exception(oceanus.getLogger(), e);
                             }
@@ -799,7 +799,7 @@ public class Oceanus extends PluginForHost {
             jsObj.put("chunkID", chunk.getChunkID());
             jsObj.put("cdnNodeID", cdnNodeId);
             jsObj.put("userID", userID);
-            respObj = oceanus.sendPostRequest("startDownloadReq", JSonStorage.toString(jsObj), null);
+            respObj = oceanus.sendPostRequest("startDownloadReq", JSonStorage.serializeToJson(jsObj), null);
             // process using reply message from MS
             if (respObj != null) {
                 chunk.setDownloadID((Long) respObj.get("downloadID"));
@@ -908,7 +908,7 @@ public class Oceanus extends PluginForHost {
             reqObj.put("userID", userID);
             reqObj.put("downloadID", chunk.getDownloadID());
             reqObj.put("bytesTransferred", inputStream.transfered());
-            oceanus.sendPostRequest("DownloadCompleted", JSonStorage.toString(reqObj), null);
+            oceanus.sendPostRequest("DownloadCompleted", JSonStorage.serializeToJson(reqObj), null);
         }
 
         /**

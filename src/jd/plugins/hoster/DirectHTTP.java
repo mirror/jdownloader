@@ -18,6 +18,7 @@ package jd.plugins.hoster;
 
 import java.io.File;
 import java.io.IOException;
+import java.lang.reflect.Field;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
@@ -613,7 +614,7 @@ public class DirectHTTP extends PluginForHost {
                 downloadLink.setUrlDownload(follow.get(0).trim());
                 /* we set property here to avoid loops */
                 downloadLink.setProperty("htmlRedirect", true);
-                return downloadLink.getAvailableStatus();
+                return getAvailableStatus(downloadLink);
             } else {
                 urlConnection.disconnect();
             }
@@ -657,7 +658,17 @@ public class DirectHTTP extends PluginForHost {
             }
         }
         throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+    }
 
+    private AvailableStatus getAvailableStatus(DownloadLink link) {
+        try {
+            final Field field = link.getClass().getDeclaredField("availableStatus");
+            field.setAccessible(true);
+            Object ret = field.get(link);
+            if (ret != null && ret instanceof AvailableStatus) return (AvailableStatus) ret;
+        } catch (final Throwable e) {
+        }
+        return AvailableStatus.UNCHECKED;
     }
 
     @Override
