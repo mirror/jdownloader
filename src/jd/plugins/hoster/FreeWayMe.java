@@ -51,7 +51,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.utils.JDUtilities;
 
 import org.appwork.swing.exttable.ExtTableHeaderRenderer;
 import org.appwork.swing.exttable.ExtTableModel;
@@ -673,7 +672,7 @@ public class FreeWayMe extends PluginForHost {
 
         public ImageIcon getIcon() {
             try {
-                return JDUtilities.getPluginForHost(host).getDomainInfo(null).getFavIcon();
+                return DomainInfo.getInstance(host).getFavIcon();
             } catch (Exception e) {
                 return null;
             }
