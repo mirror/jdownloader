@@ -121,3 +121,4 @@ proxy_socks5=%s1:%s2 (Socks5 Proxy)
 proxydialog_title=Nessuna connessione a internet
 tableheader_tooltip_locked=%s1 (ridimensionamento bloccato)
 tableheader_tooltip_normal=%s1
+unLockColumnWidthAction=sblocca larghezza colonna

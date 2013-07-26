@@ -97,4 +97,4 @@ subfolder=Sottocartella download
 tooltip_NameColumn=Nome archivio
 tooltip_empty=Nessun processo d'estrazione
 unknown=Sconosciuto
-unknown_tt=Un collegamento per questa parte è disponibile, ma potrebbe essere offline.
+unknown_tt=E' disponibile un collegamento per questa parte, ma potrebbe essere offline.
