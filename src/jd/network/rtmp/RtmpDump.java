@@ -97,8 +97,8 @@ public class RtmpDump extends RTMPDownload {
     }
 
     /**
-     * Attempt to locate a rtmpdump executable. The *nix /usr bin folders is searched first, then local tools folder. If found, the path
-     * will is saved to the variable RTMPDUMP.
+     * Attempt to locate a rtmpdump executable. The *nix /usr bin folders is searched first, then local tools folder. If found, the path will is saved to the
+     * variable RTMPDUMP.
      * 
      * @return Whether or not rtmpdump executable was found
      */
@@ -267,7 +267,6 @@ public class RtmpDump extends RTMPDownload {
         File tmpFile = new File(downloadLink.getFileOutput() + ".part");
         try {
             getManagedConnetionHandler().addThrottledConnection(tcon);
-            addChunksDownloading(1);
             downloadLink.getLinkStatus().addStatus(LinkStatus.DOWNLOADINTERFACE_IN_PROGRESS);
             try {
                 downloadLink.getDownloadLinkController().getConnectionHandler().addConnectionHandler(getManagedConnetionHandler());
@@ -428,7 +427,7 @@ public class RtmpDump extends RTMPDownload {
             if (error.isEmpty() && line == null) {
                 logger.severe("RtmpDump: An unknown error has occured!");
                 downloadLink.getLinkStatus().addStatus(LinkStatus.ERROR_RETRY);
-                downloadLink.reset();
+                /* CHECK: downloadLink.reset was here */
                 return false;
             }
             if (line != null) {
@@ -454,7 +453,7 @@ public class RtmpDump extends RTMPDownload {
                 } else if (e.contains("rtmp_readpacket, failed to read rtmp packet header")) {
                     downloadLink.getLinkStatus().addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
                 } else if (e.contains("netstream.play.streamnotfound")) {
-                    downloadLink.deleteFile(null, true, false);
+                    tmpFile.delete();
                     downloadLink.getLinkStatus().addStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
                     return true;
                 } else if (error.startsWith(timeoutMessage)) {
