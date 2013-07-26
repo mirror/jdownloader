@@ -74,6 +74,11 @@ public class SpankWireCom extends PluginForHost {
                 }
             }
         } else {
+            if (br.containsHTML("This video is temporarily unavailable")) {
+                downloadLink.getLinkStatus().setStatusText("This video is temporarily unavailable!");
+                downloadLink.setName(new Regex(downloadLink.getDownloadURL(), "(\\d+)$").getMatch(0));
+                return AvailableStatus.TRUE;
+            }
             filename = br.getRegex("video_title = \"([^\"]+)\";").getMatch(0);
             if (filename != null) {
                 filename = filename.replaceAll("\\+", " ");
@@ -81,10 +86,6 @@ public class SpankWireCom extends PluginForHost {
         }
         if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         downloadLink.setName(filename.trim());
-        if (br.containsHTML(">This article is temporarily unavailable")) {
-            downloadLink.getLinkStatus().setStatusText("This video is temporarily unavailable!");
-            return AvailableStatus.TRUE;
-        }
         DLLINK = br.getRegex("flashvars\\.video_url = \"(http[^<>\"]*?)\"").getMatch(0);
         if (filename == null || DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         DLLINK = Encoding.htmlDecode(DLLINK);
@@ -105,9 +106,9 @@ public class SpankWireCom extends PluginForHost {
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception {
+    public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        if (br.containsHTML(">This article is temporarily unavailable")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "This video is temporarily unavailable!");
+        if (downloadLink.getDownloadURL().contains("EmbedPlayer.aspx") && br.containsHTML("This video is temporarily unavailable")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "This video is temporarily unavailable!");
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();

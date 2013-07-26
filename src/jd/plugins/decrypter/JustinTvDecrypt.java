@@ -28,6 +28,8 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
+import jd.plugins.PluginForHost;
+import jd.utils.JDUtilities;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "justin.tv" }, urls = { "http://(((www\\.)?(justin\\.tv)|(www\\.|[a-z]{2}\\.)?(twitchtv\\.com|twitch\\.tv))/[^<>/\"]+/((b|c)/\\d+|videos(\\?page=\\d+)?)|(www\\.)?(justin|twitch)\\.tv/archive/archive_popout\\?id=\\d+)" }, flags = { 0 })
 public class JustinTvDecrypt extends PluginForDecrypt {
@@ -109,17 +111,17 @@ public class JustinTvDecrypt extends PluginForDecrypt {
             filename = filename.replaceAll("[\r\n#]+", "");
             int counter = 1;
             String format = String.format("%%0%dd", (int) Math.log10(links.length) + 1);
+            final PluginForHost hostPlugin = JDUtilities.getPluginForHost("justin.tv");
 
             for (String dl : links) {
                 final DownloadLink dlink = createDownloadlink(dl.replace("twitch.tv/", "twitchdecrypted.tv/").replace("justin.tv/", "justindecrypted.tv/"));
                 dlink.setProperty("directlink", "true");
-                if (links.length != 1) {
-                    dlink.setFinalFileName(filename + " - Part " + String.format(format, counter) + ".flv");
-                } else {
-                    dlink.setFinalFileName(filename + ".flv");
-                }
+                dlink.setProperty("plainfilename", filename);
+                dlink.setProperty("partnumber", counter);
                 if (date != null) dlink.setProperty("originaldate", date);
-                if (channelName != null) dlink.setProperty("channel", channelName);
+                if (channelName != null) dlink.setProperty("channel", Encoding.htmlDecode(channelName.trim()));
+                final String formattedFilename = ((jd.plugins.hoster.JustinTv) hostPlugin).getFormattedFilename(dlink);
+                dlink.setName(formattedFilename);
                 decryptedLinks.add(dlink);
                 counter++;
             }

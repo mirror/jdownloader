@@ -73,6 +73,11 @@ public class Heaven666OrgDecrypter extends PluginForDecrypt {
             decryptedLinks.add(createDownloadlink(externID));
             return decryptedLinks;
         }
+        externID = br.getRegex("\"(http://(www\\.)?liveleak\\.com/ll_embed\\?f=[a-z0-9]+)\"").getMatch(0);
+        if (externID != null) {
+            decryptedLinks.add(createDownloadlink(externID));
+            return decryptedLinks;
+        }
         decryptedLinks.add(createDownloadlink(parameter.replace("heaven666.org/", "heaven666.orgdecrypted/")));
         return decryptedLinks;
     }

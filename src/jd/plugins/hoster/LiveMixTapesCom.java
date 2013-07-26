@@ -170,7 +170,7 @@ public class LiveMixTapesCom extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.getHeaders().put("Accept-Encoding", "gzip,deflate");
         /** If link is a short link correct it */
@@ -193,6 +193,10 @@ public class LiveMixTapesCom extends PluginForHost {
             final Regex fileInfo = br.getRegex("<td height=\"35\"><div style=\"padding\\-left: 8px\">([^<>\"]*?)</div></td>[\t\n\r ]+<td align=\"center\">([^<>\"]*?)</td>");
             filename = fileInfo.getMatch(0);
             filesize = fileInfo.getMatch(1);
+            if (filename == null || filesize == null) {
+                link.getLinkStatus().setStatusText(ONLYREGISTEREDUSERTEXT);
+                return AvailableStatus.TRUE;
+            }
         } else {
             final Regex fileInfo = br.getRegex("<td height=\"35\"><div[^>]+>(.*?)</div></td>[\t\n\r ]+<td align=\"center\">((\\d+(\\.\\d+)? ?(KB|MB|GB)))</td>");
             filename = fileInfo.getMatch(0);

@@ -53,7 +53,7 @@ public class Heaven666Org extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        if (br.getURL().contains("heaven666.org/index.php?session_id=")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.getURL().contains("heaven666.org/index.php?session_id=") || br.containsHTML(">This media no longer exists, but you can watch")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("property=\"og:title\" content=\"([^<>\"]*?)\"").getMatch(0);
         if (filename == null) filename = br.getRegex("flashvars\\.Title = \"([^<>\"]*?)\"").getMatch(0);
         if (!br.containsHTML("\\.swf")) {
@@ -61,7 +61,11 @@ public class Heaven666Org extends PluginForHost {
         } else {
             DLLINK = br.getRegex("flashvars\\.VideoURL = \"(/[^<>\"]*?)\"").getMatch(0);
         }
-        if (filename == null || DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (filename == null || DLLINK == null) {
+            // No downloadable content there
+            if (br.containsHTML("id=article_frame class=article_frame")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         DLLINK = Encoding.htmlDecode(DLLINK);
         if (!DLLINK.startsWith("http://h6img.com/")) DLLINK = "http://h6img.com/" + DLLINK;
         filename = filename.trim();

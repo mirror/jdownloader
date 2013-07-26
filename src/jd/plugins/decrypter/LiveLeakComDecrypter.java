@@ -30,7 +30,7 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
 //Decrypts embedded videos from liveleak.com
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "liveleak.com" }, urls = { "http://(www\\.)?liveleak\\.com/view\\?i=[a-z0-9]+_\\d+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "liveleak.com" }, urls = { "http://(www\\.)?liveleak\\.com/(view\\?i=[a-z0-9]+_\\d+|ll_embed\\?f=[a-z0-9]+)" }, flags = { 0 })
 public class LiveLeakComDecrypter extends PluginForDecrypt {
 
     public LiveLeakComDecrypter(PluginWrapper wrapper) {
@@ -42,6 +42,16 @@ public class LiveLeakComDecrypter extends PluginForDecrypt {
         String parameter = param.toString();
         br.setCookie("http://liveleak.com/", "liveleak_safe_mode", "0");
         br.getPage(parameter);
+        // Handle embedded links
+        if (parameter.matches("http://(www\\.)?liveleak\\.com/ll_embed\\?f=[a-z0-9]+")) {
+            final String originalID = br.getRegex("\\&item_token=([a-z0-9]+_\\d+)\\&embed=").getMatch(0);
+            if (originalID == null) {
+                logger.warning("Decrypter broken for link: " + parameter);
+                return null;
+            }
+            parameter = "http://www.liveleak.com/view?i=" + originalID;
+            br.getPage(parameter);
+        }
         if (br.containsHTML(">This item has been deleted because of a possible violation of our terms of service")) {
             final DownloadLink dl = createDownloadlink(parameter.replace("liveleak.com/", "liveleakdecrypted.com/"));
             dl.setAvailable(false);
@@ -54,7 +64,7 @@ public class LiveLeakComDecrypter extends PluginForDecrypt {
             externID = br.getRegex("\\'config\\': \\'(http://[^<>\"]*?)\\'").getMatch(0);
             if (externID == null) {
                 logger.warning("Decrypter broken for link: " + parameter);
-                return decryptedLinks;
+                return null;
             }
             br.getPage(Encoding.htmlDecode(externID));
             externID = br.getRegex("<link>(http://[^<>\"]*?)</link>").getMatch(0);

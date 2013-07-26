@@ -17,6 +17,9 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -24,6 +27,7 @@ import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.Property;
+import jd.config.SubConfiguration;
 import jd.http.Browser;
 import jd.http.Cookie;
 import jd.http.Cookies;
@@ -44,15 +48,17 @@ import jd.utils.locale.JDL;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vimeo.com" }, urls = { "decryptedforVimeoHosterPlugin\\d?://(www\\.|player\\.)?vimeo\\.com/(video/)?\\d+" }, flags = { 2 })
 public class VimeoCom extends PluginForHost {
 
-    private static final String MAINPAGE   = "http://vimeo.com";
-    static private final String AGB        = "http://www.vimeo.com/terms";
+    private static final String MAINPAGE       = "http://vimeo.com";
+    static private final String AGB            = "http://www.vimeo.com/terms";
     private String              finalURL;
-    private static Object       LOCK       = new Object();
-    private static final String Q_MOBILE   = "Q_MOBILE";
-    private static final String Q_ORIGINAL = "Q_ORIGINAL";
-    private static final String Q_HD       = "Q_HD";
-    private static final String Q_SD       = "Q_SD";
-    private static final String Q_BEST     = "Q_BEST";
+    private static Object       LOCK           = new Object();
+    private static final String Q_MOBILE       = "Q_MOBILE";
+    private static final String Q_ORIGINAL     = "Q_ORIGINAL";
+    private static final String Q_HD           = "Q_HD";
+    private static final String Q_SD           = "Q_SD";
+    private static final String Q_BEST         = "Q_BEST";
+    private static final String CUSTOMDATE     = "CUSTOMDATE";
+    private static final String CUSTOMFILENAME = "CUSTOMFILENAME";
 
     public VimeoCom(final PluginWrapper wrapper) {
         super(wrapper);
@@ -340,7 +346,7 @@ public class VimeoCom extends PluginForHost {
             }
         }
         /* fetch fresh directURL */
-        String name = downloadLink.getStringProperty("directName", null);
+        final String name = getFormattedFilename(downloadLink);
         String ID = new Regex(downloadLink.getDownloadURL(), ".com/(\\d+)").getMatch(0);
         if (ID == null || name == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         Browser br = new Browser();
@@ -386,6 +392,45 @@ public class VimeoCom extends PluginForHost {
         }
     }
 
+    public static String getFormattedFilename(final DownloadLink downloadLink) throws ParseException {
+        String videoName = downloadLink.getStringProperty("plainfilename", null);
+        final SubConfiguration cfg = SubConfiguration.getConfig("vimeo.com");
+        String formattedFilename = cfg.getStringProperty(CUSTOMFILENAME);
+        if (formattedFilename == null || formattedFilename.equals("")) formattedFilename = "*channel*_*date*_*filename*";
+
+        final String date = downloadLink.getStringProperty("originaldate", null);
+        final String channelName = downloadLink.getStringProperty("channel", null);
+
+        String formattedDate = null;
+        if (date != null) {
+            final String userDefinedDateFormat = cfg.getStringProperty(CUSTOMDATE);
+            final String[] dateStuff = date.split("T");
+            SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd:hh:mm:ss");
+            Date dateStr = formatter.parse(dateStuff[0] + ":" + dateStuff[1]);
+            formattedDate = formatter.format(dateStr);
+            Date theDate = formatter.parse(formattedDate);
+
+            formatter = new SimpleDateFormat(userDefinedDateFormat);
+            formattedDate = formatter.format(theDate);
+        }
+
+        if (channelName != null) {
+            formattedFilename = formattedFilename.replace("*channelname*", channelName);
+        } else {
+            formattedFilename = formattedFilename.replace("*channelname*", "");
+        }
+        if (formattedDate != null) {
+            formattedFilename = formattedFilename.replace("*date*", formattedDate);
+        } else {
+            formattedFilename = formattedFilename.replace("*date*", "");
+        }
+        formattedFilename = formattedFilename.replace("*ext*", ".mp4");
+        // Insert filename at the end to prevent errors with tags
+        formattedFilename = formattedFilename.replace("*videoname*", videoName);
+
+        return formattedFilename;
+    }
+
     @Override
     public void reset() {
     }
@@ -402,6 +447,11 @@ public class VimeoCom extends PluginForHost {
     public void resetPluginGlobals() {
     }
 
+    @Override
+    public String getDescription() {
+        return "JDownloader's Vimeo Plugin helps downloading videoclips from vimeo.com. Vimeo provides different video qualities.";
+    }
+
     private void setConfigElements() {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), Q_BEST, JDL.L("plugins.hoster.vimeo.best", "Load Best Version ONLY")).setDefaultValue(false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
@@ -409,6 +459,19 @@ public class VimeoCom extends PluginForHost {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), Q_ORIGINAL, JDL.L("plugins.hoster.vimeo.loadoriginal", "Load Original Version")).setDefaultValue(true));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), Q_HD, JDL.L("plugins.hoster.vimeo.loadsd", "Load HD Version")).setDefaultValue(true));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), Q_SD, JDL.L("plugins.hoster.vimeo.loadhd", "Load SD Version")).setDefaultValue(true));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "Filename settings:"));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), CUSTOMDATE, JDL.L("plugins.hoster.vimeocom.customdate", "Define how the date should look.")).setDefaultValue("dd.MM.yyyy_hh-mm-ss"));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "Customize the filename! Example: '*channelname*_*date*_*videoname**ext*'"));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), CUSTOMFILENAME, JDL.L("plugins.hoster.vimeocom.customfilename", "Define how the filenames should look:")).setDefaultValue("*channelname*_*date*_*videoname**ext*"));
+        final StringBuilder sb = new StringBuilder();
+        sb.append("Explanation of the available tags:\r\n");
+        sb.append("*channelname* = name of the channel/uploader\r\n");
+        sb.append("*date* = date when the video was posted - appears in the user-defined format above\r\n");
+        sb.append("*videoname* = name of the video without extension\r\n");
+        sb.append("*ext* = the extension of the file, in this case usually '.mp4'");
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, sb.toString()));
     }
 
 }

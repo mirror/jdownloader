@@ -49,7 +49,7 @@ public class FilthDumpCom extends PluginForDecrypt {
             logger.info("Link offline: " + parameter);
             return decryptedLinks;
         }
-        String tempID = br.getRegex("\\?settings=(http://(www\\.)?(tube\\.)?watchgfporn\\.com/playerConfig\\.php\\?.*?)\"").getMatch(0);
+        String tempID = br.getRegex("settings=(http://(www\\.)?(tube\\.)?watchgfporn\\.com/playerConfig\\.php\\?.*?)\"").getMatch(0);
         if (tempID != null) {
             br.setFollowRedirects(true);
             try {

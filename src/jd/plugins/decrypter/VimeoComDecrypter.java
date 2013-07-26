@@ -34,6 +34,8 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
+import jd.plugins.PluginForHost;
+import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
@@ -82,9 +84,13 @@ public class VimeoComDecrypter extends PluginForDecrypt {
         }
 
         handlePW(param, br);
+
+        final String date = br.getRegex("itemprop=\"dateCreated\" content=\"(\\d{4}\\-\\d{2}\\-\\d{2}T\\d{2}:\\d{2}:\\d{2})").getMatch(0);
+        final String channelName = br.getRegex("itemtype=\"http://schema\\.org/Person\">[\t\n\r ]+<meta itemprop=\"name\" content=\"([^<>\"]*?)\"").getMatch(0);
         String title = br.getRegex("\"title\":\"([^<>\"]*?)\"").getMatch(0);
         if (title == null) title = br.getRegex("<meta property=\"og:title\" content=\"([^<>\"]*?)\">").getMatch(0);
         if (title != null) title = Encoding.htmlDecode(title.replaceAll("(\\\\|/)", "_").replaceAll("_+", "_").trim());
+        final PluginForHost hostPlugin = JDUtilities.getPluginForHost("vimeo.com");
 
         String qualities[][] = getQualities(br, ID, title);
 
@@ -95,7 +101,7 @@ public class VimeoComDecrypter extends PluginForDecrypt {
             String url = quality[0];
             String name = Encoding.htmlDecode(quality[1]);
             String fmt = quality[2];
-            name = name.replaceFirst("\\.mp4$", "") + "_" + fmt.replaceAll(" ?\\.MP4 file$", "") + ".mp4";
+            name = name.replaceFirst("\\.mp4$", "") + "_" + fmt.replaceAll(" ?\\.MP4 file$", "");
             if (fmt != null) fmt = fmt.toLowerCase(Locale.ENGLISH).trim();
             if (fmt != null) {
                 /* best selection is done at the end */
@@ -132,12 +138,18 @@ public class VimeoComDecrypter extends PluginForDecrypt {
             if (url == null || name == null) continue;
             if (!url.startsWith("http://")) url = "http://vimeo.com" + url;
             final DownloadLink link = createDownloadlink(parameter.replace("http://", "decryptedforVimeoHosterPlugin" + format + "://"));
-            link.setFinalFileName(name);
             link.setProperty("directURL", url);
-            link.setProperty("directName", name);
             link.setProperty("directQuality", fmt);
             link.setProperty("LINKDUPEID", "vimeo" + ID + name + fmt);
             link.setProperty("pass", password);
+
+            if (date != null) link.setProperty("originaldate", date);
+            if (channelName != null) link.setProperty("channel", Encoding.htmlDecode(channelName.trim()));
+            link.setProperty("plainfilename", name);
+            final String formattedFilename = ((jd.plugins.hoster.VimeoCom) hostPlugin).getFormattedFilename(link);
+            link.setName(formattedFilename);
+            link.setProperty("directName", formattedFilename);
+
             if (quality[3] != null) {
                 link.setDownloadSize(SizeFormatter.getSize(quality[3].trim()));
                 link.setAvailable(true);

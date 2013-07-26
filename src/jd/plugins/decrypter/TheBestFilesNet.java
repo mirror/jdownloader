@@ -20,37 +20,44 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
-import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "break.com" }, urls = { "http://(www\\.)?break\\.com/(index|usercontent|skittles|video)/[A-Za-z0-9\\-_/]+\\-\\d+$" }, flags = { 0 })
-public class BreakComDecrypter extends PluginForDecrypt {
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "thebestfiles.net" }, urls = { "http://(www\\.)?thebestfiles\\.net/download/[a-z0-9]+/[^<>\"/]+\\.html" }, flags = { 0 })
+public class TheBestFilesNet extends PluginForDecrypt {
 
-    public BreakComDecrypter(PluginWrapper wrapper) {
+    public TheBestFilesNet(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        br.setFollowRedirects(true);
         final String parameter = param.toString();
-        br.getPage("http://www.break.com/embed/" + new Regex(parameter, "(\\d+)$").getMatch(0));
-        final String externID = br.getRegex("(http://(www\\.)?youtube\\.com/watch\\?v=[A-Za-z0-9\\-_]+)\"").getMatch(0);
-        if (externID != null) {
-            decryptedLinks.add(createDownloadlink(externID));
+        br.setFollowRedirects(false);
+        // Sometimes slow servers
+        br.setReadTimeout(60 * 60 * 1000);
+        br.setConnectTimeout(60 * 60 * 1000);
+        br.getPage(parameter);
+        if (br.containsHTML(">File was removed from filehosting")) {
+            logger.info("Link offline: " + parameter);
             return decryptedLinks;
         }
-        decryptedLinks.add(createDownloadlink(parameter.replace("break.com/", "breakdecrypted.com/")));
+        final String fileID = br.getRegex("name=\"file_id\" value=\"(\\d+)\"").getMatch(0);
+        if (fileID == null) {
+            logger.warning("Decrypter broken for link: " + parameter);
+            return null;
+        }
+        br.postPage("http://www.thebestfiles.net/go", "file_id=" + fileID);
+        final String finallink = br.getRedirectLocation();
+        if (finallink == null) {
+            logger.warning("Decrypter broken for link: " + parameter);
+            return null;
+        }
+        decryptedLinks.add(createDownloadlink(finallink));
 
         return decryptedLinks;
-    }
-
-    /* NO OVERRIDE!! */
-    public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
-        return false;
     }
 
 }

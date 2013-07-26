@@ -17,6 +17,7 @@
 package jd.plugins.hoster;
 
 import jd.PluginWrapper;
+import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -54,14 +55,12 @@ public class BreakCom extends PluginForHost {
     public AvailableStatus requestFileInformation(DownloadLink link) throws Exception {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.getPage(link.getDownloadURL());
-        if ("http://www.break.com/".equals(br.getURL())) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("sVidTitle: \\'([^<>\"]*?)\\'").getMatch(0);
-        if (filename == null) {
-            filename = br.getRegex("contentName: \\'([^<>\"]*?)\\'").getMatch(0);
-        }
-        String token = br.getRegex("icon: \\'([^<>\"]*?)\\'").getMatch(0);
-        dlink = br.getRegex("videoPath: \\'(http://[^<>\"]*?)\\'").getMatch(0);
+        br.getPage("http://www.break.com/embed/" + new Regex(link.getDownloadURL(), "(\\d+)$").getMatch(0));
+        if (br.getURL().contains("break.com/content/missing/")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = br.getRegex("\"contentName\": \"([^<>\"]*?)\"").getMatch(0);
+
+        String token = br.getRegex("\"AuthToken\": \"([^<>\"]*?)\"").getMatch(0);
+        dlink = br.getRegex("\"videoUri\": \"(http://[^<>\"]*?)\"").getMatch(0);
         if (filename == null || dlink == null || token == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dlink += "?" + token;
         filename = filename.trim();

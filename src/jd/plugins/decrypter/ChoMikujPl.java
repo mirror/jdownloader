@@ -101,8 +101,12 @@ public class ChoMikujPl extends PluginForDecrypt {
                         }
                         parameter = orgLink;
                     } else {
-                        logger.warning("SingleLink handling failed for link: " + parameter);
-                        return null;
+                        // Hmm nothing to download --> Offline
+                        final DownloadLink dloffline = createDownloadlink(parameter.replace("chomikuj.pl/", "chomikujdecrypted.pl/") + "," + System.currentTimeMillis() + new Random().nextInt(100000));
+                        dloffline.setAvailable(false);
+                        dloffline.setProperty("offline", true);
+                        decryptedLinks.add(dloffline);
+                        return decryptedLinks;
                     }
                 }
                 final DownloadLink dl = createDownloadlink(parameter.replace("chomikuj.pl/", "chomikujdecrypted.pl/") + "," + System.currentTimeMillis() + new Random().nextInt(100000));
@@ -140,7 +144,11 @@ public class ChoMikujPl extends PluginForDecrypt {
         }
 
         if (br.containsHTML("Nie znaleziono \\- błąd 404")) {
-            logger.info("Link offline: " + parameter);
+            // Offline
+            final DownloadLink dloffline = createDownloadlink(parameter.replace("chomikuj.pl/", "chomikujdecrypted.pl/") + "," + System.currentTimeMillis() + new Random().nextInt(100000));
+            dloffline.setAvailable(false);
+            dloffline.setProperty("offline", true);
+            decryptedLinks.add(dloffline);
             return decryptedLinks;
         }
 
