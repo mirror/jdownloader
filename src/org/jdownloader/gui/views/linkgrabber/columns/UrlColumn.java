@@ -4,6 +4,9 @@ import java.awt.event.ActionEvent;
 import java.awt.event.FocusEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.util.List;
 
 import javax.swing.JTextField;
 
@@ -11,6 +14,7 @@ import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledPackage;
 import jd.controlling.packagecontroller.AbstractNode;
 import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
 import net.miginfocom.swing.MigLayout;
 
 import org.appwork.swing.action.BasicAction;
@@ -134,23 +138,43 @@ public class UrlColumn extends ExtTextColumn<AbstractNode> {
     @Override
     public String getStringValue(AbstractNode value) {
         if (value instanceof CrawledPackage) {
+
+            return ((CrawledPackage) value).getView().getCommonSourceUrl();
+        } else if (value instanceof FilePackage) {
+            List<DownloadLink> children = ((FilePackage) value).getChildren();
+            if (children.size() > 0) {
+                URL url;
+                try {
+                    url = new URL(fromDownloadLink(children.get(0)));
+
+                    return url.getProtocol() + "://" + url.getHost();
+                } catch (MalformedURLException e) {
+                    e.printStackTrace();
+                }
+            }
             return null;
         } else if (value instanceof CrawledLink) {
-            DownloadLink dlLink = ((CrawledLink) value).getDownloadLink();
-            if (dlLink.getLinkType() == DownloadLink.LINKTYPE_CONTAINER) {
-                if (dlLink.gotBrowserUrl()) return dlLink.getBrowserUrl();
-                return null;
-            }
-            return dlLink.getBrowserUrl();
-        } else if (value instanceof DownloadLink) {
-            DownloadLink dlLink = ((DownloadLink) value);
-            if (dlLink.getLinkType() == DownloadLink.LINKTYPE_CONTAINER) {
-                if (dlLink.gotBrowserUrl()) return dlLink.getBrowserUrl();
-                return null;
-            }
-            return dlLink.getBrowserUrl();
-        }
+            return fromCrawledLink(value);
+        } else if (value instanceof DownloadLink) { return fromDownloadLink(value); }
         return null;
+    }
+
+    protected String fromDownloadLink(AbstractNode value) {
+        DownloadLink dlLink = ((DownloadLink) value);
+        if (dlLink.getLinkType() == DownloadLink.LINKTYPE_CONTAINER) {
+            if (dlLink.gotBrowserUrl()) return dlLink.getBrowserUrl();
+            return null;
+        }
+        return dlLink.getBrowserUrl();
+    }
+
+    protected String fromCrawledLink(AbstractNode value) {
+        DownloadLink dlLink = ((CrawledLink) value).getDownloadLink();
+        if (dlLink.getLinkType() == DownloadLink.LINKTYPE_CONTAINER) {
+            if (dlLink.gotBrowserUrl()) return dlLink.getBrowserUrl();
+            return null;
+        }
+        return dlLink.getBrowserUrl();
     }
 
 }

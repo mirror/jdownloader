@@ -8,7 +8,9 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import jd.controlling.linkcrawler.CrawledLink.LinkState;
 import jd.controlling.packagecontroller.ChildrenView;
+import jd.plugins.DownloadLink;
 
+import org.appwork.utils.StringUtils;
 import org.jdownloader.DomainInfo;
 import org.jdownloader.controlling.Priority;
 
@@ -24,10 +26,12 @@ public class CrawledPackageView extends ChildrenView<CrawledLink> {
     private long                        updatesDone     = -1;
     private Priority                    lowestPriority;
     private Priority                    highestPriority;
+    private String                      commonSourceUrl;
 
     public CrawledPackageView() {
         this.fileSize = 0l;
         domainInfos = new DomainInfo[0];
+
     }
 
     @Override
@@ -43,8 +47,17 @@ public class CrawledPackageView extends ChildrenView<CrawledLink> {
             int newOnline = 0;
             long newFileSize = 0;
             HashMap<String, Long> names = new HashMap<String, Long>();
+            String sameSource = null;
+            boolean sameSourceFullUrl = true;
             for (CrawledLink item : litems) {
 
+                DownloadLink dlLink = ((CrawledLink) item).getDownloadLink();
+                String sourceUrl = dlLink.getBrowserUrl();
+
+                if (sourceUrl != null) {
+                    sameSource = StringUtils.getCommonalities(sameSource, sourceUrl);
+                    sameSourceFullUrl = sameSourceFullUrl && sameSource.equals(sourceUrl);
+                }
                 if (item.getPriority().ordinal() < priorityLowset.ordinal()) {
                     priorityLowset = item.getPriority();
                 }
@@ -71,6 +84,10 @@ public class CrawledPackageView extends ChildrenView<CrawledLink> {
                     names.put(name, item.getSize());
                     newFileSize += item.getSize();
                 }
+            }
+            this.commonSourceUrl = sameSource;
+            if (!sameSourceFullUrl) {
+                commonSourceUrl += "[...]";
             }
             fileSize = newFileSize;
             enabled = newEnabled;
@@ -102,7 +119,16 @@ public class CrawledPackageView extends ChildrenView<CrawledLink> {
             long newFileSize = 0;
             HashMap<String, Long> names = new HashMap<String, Long>();
             TreeSet<DomainInfo> domains = new TreeSet<DomainInfo>();
+            String sameSource = null;
+            boolean sameSourceFullUrl = true;
             for (CrawledLink item : updatedItems) {
+
+                DownloadLink dlLink = ((CrawledLink) item).getDownloadLink();
+                String sourceUrl = dlLink.getBrowserUrl();
+                if (sourceUrl != null) {
+                    sameSource = StringUtils.getCommonalities(sameSource, sourceUrl);
+                    sameSourceFullUrl = sameSourceFullUrl && sameSource.equals(sourceUrl);
+                }
                 if (item.getPriority().ordinal() < priorityLowset.ordinal()) {
                     priorityLowset = item.getPriority();
                 }
@@ -132,6 +158,10 @@ public class CrawledPackageView extends ChildrenView<CrawledLink> {
                     newFileSize += item.getSize();
                 }
             }
+            this.commonSourceUrl = sameSource;
+            if (!sameSourceFullUrl) {
+                commonSourceUrl += "[...]";
+            }
             fileSize = newFileSize;
             enabled = newEnabled;
             offline = newOffline;
@@ -142,6 +172,10 @@ public class CrawledPackageView extends ChildrenView<CrawledLink> {
             domainInfos = domains.toArray(new DomainInfo[] {});
             updatesDone = lupdatesRequired;
         }
+    }
+
+    public String getCommonSourceUrl() {
+        return commonSourceUrl;
     }
 
     public void clear() {
