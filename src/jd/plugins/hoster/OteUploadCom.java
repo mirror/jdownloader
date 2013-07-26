@@ -93,7 +93,7 @@ public class OteUploadCom extends PluginForHost {
 
     // Connection Management
     // note: CAN NOT be negative or zero! (ie. -1 or 0) Otherwise math sections fail. .:. use [1-20]
-    private static AtomicInteger totalMaxSimultanFreeDownload = new AtomicInteger(20);
+    private static AtomicInteger totalMaxSimultanFreeDownload = new AtomicInteger(10);
 
     // DEV NOTES
     // XfileShare Version 3.0.7.2
@@ -698,7 +698,7 @@ public class OteUploadCom extends PluginForHost {
             }
             if (account.getBooleanProperty("free")) {
                 ai.setStatus("Registered (free) User");
-                account.setProperty("totalMaxSim", 20);
+                account.setProperty("totalMaxSim", 10);
             } else {
                 long expire = 0, expireD = 0, expireS = 0;
                 final String expireDay = br.getRegex("(\\d{1,2} (January|February|March|April|May|June|July|August|September|October|November|December) \\d{4})").getMatch(0);
@@ -732,7 +732,7 @@ public class OteUploadCom extends PluginForHost {
                 } else {
                     expire = expireD;
                 }
-                account.setProperty("totalMaxSim", 20);
+                account.setProperty("totalMaxSim", 10);
                 ai.setValidUntil(expire);
                 ai.setStatus("Premium User");
             }
