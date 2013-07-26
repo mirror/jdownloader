@@ -232,8 +232,9 @@ public class GrooveShark extends PluginForHost {
         setStartIntervall(2000l + (long) 1000 * (int) Math.round(Math.random() * 3 + Math.random() * 3));
         String timeZone = System.getProperty("user.timezone");
         if (timeZone != null && timeZone.contains("Berlin")) {
-            setConfigElements();
+            setConfigElementsforGermanyUsers();
         }
+        setConfigElements();
     }
 
     private String cleanNameForURL(String name) {
@@ -539,6 +540,10 @@ public class GrooveShark extends PluginForHost {
     }
 
     private void setConfigElements() {
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "TITLENUMBERING", JDL.L("plugins.hoster.grooveshark.titlenumbering", "Continuous numbering of titles")).setDefaultValue(false));
+    }
+
+    private void setConfigElementsforGermanyUsers() {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, JDL.L("plugins.hoster.grooveshark.configlabel", "Proxy Configuration")));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "STATUS", JDL.L("plugins.hoster.grooveshark.status", "Use Proxy-Server?")).setDefaultValue(false));
@@ -546,7 +551,6 @@ public class GrooveShark extends PluginForHost {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), "PROXYSERVER", JDL.L("plugins.hoster.grooveshark.proxyhost", "Host:")).setDefaultValue("proxy.personalitycores.com"));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), "PROXYPORT", JDL.L("plugins.hoster.grooveshark.proxyport", "Port:")).setDefaultValue("8000"));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "TITLENUMBERING", JDL.L("plugins.hoster.grooveshark.titlenumbering", "Continuous numbering of titles")).setDefaultValue(false));
     }
 
 }
