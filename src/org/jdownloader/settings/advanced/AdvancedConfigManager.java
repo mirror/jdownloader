@@ -3,11 +3,8 @@ package org.jdownloader.settings.advanced;
 import java.util.ArrayList;
 import java.util.HashMap;
 
-import jd.controlling.captcha.CaptchaSettings;
 import jd.controlling.linkchecker.LinkCheckerConfig;
-import jd.controlling.linkcollector.LinkCollectorConfig;
 import jd.controlling.linkcrawler.LinkCrawlerConfig;
-import jd.controlling.reconnect.ReconnectConfig;
 
 import org.appwork.storage.config.ConfigInterface;
 import org.appwork.storage.config.JsonConfig;
@@ -16,20 +13,23 @@ import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.swing.synthetica.SyntheticaSettings;
 import org.appwork.utils.logging2.LogConfig;
 import org.appwork.utils.logging2.LogSource;
-import org.jdownloader.api.RemoteAPIConfig;
-import org.jdownloader.api.myjdownloader.MyJDownloaderSettings;
-import org.jdownloader.controlling.filter.LinkFilterSettings;
-import org.jdownloader.controlling.packagizer.PackagizerSettings;
 import org.jdownloader.gui.shortcuts.ShortcutSettings;
-import org.jdownloader.gui.views.linkgrabber.addlinksdialog.LinkgrabberSettings;
 import org.jdownloader.jdserv.stats.StatsManagerConfig;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.settings.AccountSettings;
-import org.jdownloader.settings.GeneralSettings;
-import org.jdownloader.settings.GraphicalUserInterfaceSettings;
 import org.jdownloader.settings.RtmpdumpSettings;
-import org.jdownloader.settings.SilentModeSettings;
 import org.jdownloader.settings.SoundSettings;
+import org.jdownloader.settings.staticreferences.CFG_API;
+import org.jdownloader.settings.staticreferences.CFG_CAPTCHA;
+import org.jdownloader.settings.staticreferences.CFG_GENERAL;
+import org.jdownloader.settings.staticreferences.CFG_GUI;
+import org.jdownloader.settings.staticreferences.CFG_LINKCOLLECTOR;
+import org.jdownloader.settings.staticreferences.CFG_LINKFILTER;
+import org.jdownloader.settings.staticreferences.CFG_LINKGRABBER;
+import org.jdownloader.settings.staticreferences.CFG_MYJD;
+import org.jdownloader.settings.staticreferences.CFG_PACKAGIZER;
+import org.jdownloader.settings.staticreferences.CFG_RECONNECT;
+import org.jdownloader.settings.staticreferences.CFG_SILENTMODE;
 import org.jdownloader.updatev2.InternetConnectionSettings;
 import org.jdownloader.updatev2.UpdateSettings;
 import org.jdownloader.updatev2.gui.LAFOptions;
@@ -49,19 +49,20 @@ public class AdvancedConfigManager {
         logger = LogController.getInstance().getLogger(AdvancedConfigManager.class.getName());
         configInterfaces = new ArrayList<AdvancedConfigEntry>();
         eventSender = new AdvancedConfigEventSender();
-        this.register(JsonConfig.create(GeneralSettings.class));
-        register(JsonConfig.create(LinkFilterSettings.class));
+        // REFERENCE via static CFG_* classes if possible. this way, we get error messages if there are error in the static refs
+        this.register(CFG_GENERAL.CFG);
+        register(CFG_LINKFILTER.CFG);
         register(JsonConfig.create(InternetConnectionSettings.PATH, InternetConnectionSettings.class));
-        register(JsonConfig.create(MyJDownloaderSettings.class));
+        register(CFG_MYJD.CFG);
         register(JsonConfig.create(AccountSettings.class));
-        register(JsonConfig.create(GraphicalUserInterfaceSettings.class));
+        register(CFG_GUI.CFG);
         register(JsonConfig.create(LinkCheckerConfig.class));
         register(JsonConfig.create(LinkCrawlerConfig.class));
-        register(JsonConfig.create(LinkgrabberSettings.class));
-        register(JsonConfig.create(LinkCollectorConfig.class));
-        register(JsonConfig.create(ReconnectConfig.class));
-        register(JsonConfig.create(RemoteAPIConfig.class));
-        register(JsonConfig.create(PackagizerSettings.class));
+        register(CFG_LINKGRABBER.CFG);
+        register(CFG_LINKCOLLECTOR.CFG);
+        register(CFG_RECONNECT.CFG);
+        register(CFG_API.CFG);
+        register(CFG_PACKAGIZER.CFG);
 
         register(JsonConfig.create(StatsManagerConfig.class));
         register(JsonConfig.create(LogConfig.class));
@@ -70,8 +71,8 @@ public class AdvancedConfigManager {
         register(JsonConfig.create(UpdateSettings.class));
         register(JsonConfig.create(SyntheticaSettings.class));
         register(JsonConfig.create(SoundSettings.class));
-        register(JsonConfig.create(CaptchaSettings.class));
-        register(JsonConfig.create(SilentModeSettings.class));
+        register(CFG_CAPTCHA.CFG);
+        register(CFG_SILENTMODE.CFG);
         try {
             register(LAFOptions.getInstance().getCfg());
         } catch (Exception e) {

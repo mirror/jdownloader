@@ -38,11 +38,11 @@ public class CFG_CAPTCHA {
      * Milliseconds after which a Captcha Dialog will appear even if Auto CaptchaBroptherhood Service is still running
      **/
     public static final IntegerKeyHandler               CAPTCHA_DIALOG_CAPTCHA_BROPTHERHOOD_TIMEOUT   = SH.getKeyHandler("CaptchaDialogCaptchaBroptherhoodTimeout", IntegerKeyHandler.class);
-    // 20000
+    // 60000
     /**
      * MS to wait until captcha dialog gets answered. Close dialog after this timeout unanswered
      **/
-    public static final IntegerKeyHandler               DIALOG_COUNTDOWN                              = SH.getKeyHandler("DialogCountdown", IntegerKeyHandler.class);
+    public static final IntegerKeyHandler               CAPTCHA_DIALOG_DEFAULT_COUNTDOWN              = SH.getKeyHandler("CaptchaDialogDefaultCountdown", IntegerKeyHandler.class);
     // 300000
     /**
      * Timeout after which a challenge (captcha) invalidates (e.g sessions run out...) this timeout should be set by the plugins

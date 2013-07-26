@@ -34,12 +34,12 @@ public interface CaptchaSettings extends ConfigInterface {
     void setSkipDownloadLinkOnCaptchaTimeoutEnabled(boolean b);
 
     @AboutConfig
-    @DefaultIntValue(20000)
+    @DefaultIntValue(60000)
     @SpinnerValidator(min = 0, max = Integer.MAX_VALUE)
     @DescriptionForConfigEntry("MS to wait until captcha dialog gets answered. Close dialog after this timeout unanswered")
-    int getDialogCountdown();
+    int getCaptchaDialogDefaultCountdown();
 
-    void setDialogCountdown(int seconds);
+    void setCaptchaDialogDefaultCountdown(int seconds);
 
     // @DefaultIntValue(0)
     // int getLastCancelOption();

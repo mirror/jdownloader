@@ -158,12 +158,12 @@ public abstract class ChallengeDialogHandler<T extends ImageCaptchaChallenge<?>>
         if (captchaChallenge.getPlugin() instanceof PluginForHost) {
 
             if (config.isDialogCountdownForDownloadsEnabled()) {
-                countdown = config.getDialogCountdown();
+                countdown = config.getCaptchaDialogDefaultCountdown();
             }
         } else if (captchaChallenge.getPlugin() instanceof PluginForDecrypt) {
 
             if (config.isDialogCountdownForCrawlerEnabled()) {
-                countdown = config.getDialogCountdown();
+                countdown = config.getCaptchaDialogDefaultCountdown();
             }
 
         }

@@ -31,7 +31,7 @@ public interface InternetConnectionSettings extends ConfigInterface {
     @AboutConfig
     @DescriptionForConfigEntry("Timeout for reading from a httpserver")
     @SpinnerValidator(min = 0, max = 600000)
-    @DefaultIntValue(30000)
+    @DefaultIntValue(60000)
     @RequiresRestart
     int getHttpReadTimeout();
 
