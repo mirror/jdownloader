@@ -695,6 +695,7 @@ public class DirectHTTP extends PluginForHost {
         if (customRet != null && customRet instanceof List) {
             custom = (List<String[]>) customRet;
         }
+        // Bla
         if (custom != null && custom.size() > 0) {
             for (final Object header : custom) {
                 /*
