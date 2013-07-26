@@ -1308,16 +1308,33 @@ public class TbCm extends PluginForDecrypt {
             sb.append(new StringBuilder(s.substring(1, 33)).reverse());
             sb.append(s.charAt(34));
         } else if (s.length() == 81) {
-            sb.append(s.charAt(6));
-            sb.append(s.substring(3, 6));
-            sb.append(s.charAt(33));
-            sb.append(s.substring(7, 24));
+            sb.append(s.charAt(56));
+            sb.append(new StringBuilder(s.substring(57, 80)).reverse());
+            sb.append(s.charAt(41));
+            sb.append(new StringBuilder(s.substring(42, 56)).reverse());
+            sb.append(s.charAt(80));
+            sb.append(new StringBuilder(s.substring(35, 41)).reverse());
             sb.append(s.charAt(0));
-            sb.append(s.substring(25, 33));
-            sb.append(s.charAt(2));
-            sb.append(s.substring(34, 53));
-            sb.append(s.charAt(24));
-            sb.append(s.substring(54, 81));
+            sb.append(new StringBuilder(s.substring(30, 34)).reverse());
+            sb.append(s.charAt(34));
+            sb.append(new StringBuilder(s.substring(10, 29)).reverse());
+            sb.append(s.charAt(29));
+            sb.append(new StringBuilder(s.substring(1, 9)).reverse());
+            sb.append(s.charAt(9));
+        } else if (s.length() == 79) {
+            sb.append(s.charAt(54));
+            sb.append(new StringBuilder(s.substring(55, 78)).reverse());
+            sb.append(s.charAt(39));
+            sb.append(new StringBuilder(s.substring(40, 54)).reverse());
+            sb.append(s.charAt(78));
+            sb.append(new StringBuilder(s.substring(35, 39)).reverse());
+            sb.append(s.charAt(0));
+            sb.append(new StringBuilder(s.substring(30, 34)).reverse());
+            sb.append(s.charAt(34));
+            sb.append(new StringBuilder(s.substring(10, 29)).reverse());
+            sb.append(s.charAt(29));
+            sb.append(new StringBuilder(s.substring(1, 9)).reverse());
+            sb.append(s.charAt(9));
         } else {
             logger.info("Unsupported SigLength: " + s.length());
             return null;
