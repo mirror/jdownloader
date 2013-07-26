@@ -74,12 +74,10 @@ public class DailyMotionComDecrypter extends PluginForDecrypt {
         try {
             br.getPage(PARAMETER);
         } catch (final Exception e) {
-            {
-                final DownloadLink dl = createDownloadlink(PARAMETER.replace("dailymotion.com/", "dailymotiondecrypted.com/"));
-                dl.setProperty("offline", true);
-                decryptedLinks.add(dl);
-                return decryptedLinks;
-            }
+            final DownloadLink dl = createDownloadlink(PARAMETER.replace("dailymotion.com/", "dailymotiondecrypted.com/"));
+            dl.setProperty("offline", true);
+            decryptedLinks.add(dl);
+            return decryptedLinks;
         }
         // 404
         if (br.containsHTML("(<title>Dailymotion \\– 404 Not Found</title>|url\\(/images/404_background\\.jpg)")) {

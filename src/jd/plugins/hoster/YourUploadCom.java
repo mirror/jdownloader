@@ -19,6 +19,8 @@ package jd.plugins.hoster;
 import java.io.IOException;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
+import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
@@ -30,8 +32,10 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "yourupload.com" }, urls = { "http://((www\\.)?yourupload\\.com/(file|embed|watch)/[a-z0-9]+|embed\\.yourupload\\.com/[A-Za-z0-9]+)" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "yourupload.com" }, urls = { "http://((www\\.)?yourupload\\.com/(file|embed(_ext/\\w+)?|watch)/[a-z0-9]+|embed\\.yourupload\\.com/[A-Za-z0-9]+)" }, flags = { 0 })
 public class YourUploadCom extends PluginForHost {
+
+    private String dllink = null;
 
     public YourUploadCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -43,7 +47,7 @@ public class YourUploadCom extends PluginForHost {
     }
 
     public void correctDownloadLink(DownloadLink link) {
-        link.setUrlDownload("http://yourupload.com/file/" + new Regex(link.getDownloadURL(), "([A-Za-z0-9]+)$").getMatch(0));
+        if (!link.getDownloadURL().contains("/embed_ext/")) link.setUrlDownload("http://yourupload.com/file/" + new Regex(link.getDownloadURL(), "([A-Za-z0-9]+)$").getMatch(0));
     }
 
     @Override
@@ -53,6 +57,35 @@ public class YourUploadCom extends PluginForHost {
         // Correct old links
         correctDownloadLink(link);
         br.getPage(link.getDownloadURL());
+        if (link.getDownloadURL().contains("/embed_ext/")) {
+            String filename = br.getRegex("<title>(.*?)</title>").getMatch(0);
+            if (filename == null) filename = br.getRegex("<meta name=\"description\" content=\"(.*?)\" />").getMatch(0);
+            dllink = br.getRegex("'file':\\s+'(https?://.*?)'").getMatch(0);
+            if (dllink == null) dllink = br.getRegex("<meta property=\"og:video\" content=\"(https?://.*?)\"/>").getMatch(0);
+            if (dllink == null || filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            link.setFinalFileName(filename);
+            Browser br2 = br.cloneBrowser();
+            // In case the link redirects to the finallink
+            br2.setFollowRedirects(true);
+            URLConnectionAdapter con = null;
+            try {
+                con = br2.openGetConnection(dllink);
+                // only way to check for made up links... or offline is here
+                if (con.getResponseCode() == 404) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                if (!con.getContentType().contains("html")) {
+                    link.setDownloadSize(con.getLongContentLength());
+                } else
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                return AvailableStatus.TRUE;
+            } catch (Exception e) {
+                throw e;
+            } finally {
+                try {
+                    con.disconnect();
+                } catch (Throwable e) {
+                }
+            }
+        }
         if (br.containsHTML("(>System Error<|>could not find file|>File not found<)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex(">Name</b>[\r\n\t ]+</td>[\r\n\t ]+<td>([^<>\"]+)</td>").getMatch(0);
         final String filesize = br.getRegex(">Size</b>[\r\n\t ]+</td>[\r\n\t ]+<td>([^<>\"]+)</td>").getMatch(0);
@@ -75,7 +108,7 @@ public class YourUploadCom extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        final String dllink = br.getRegex("(http://download\\.yourupload\\.com/[a-f0-9]{32}[^\"]+)").getMatch(0);
+        if (dllink == null) dllink = br.getRegex("(http://download\\.yourupload\\.com/[a-f0-9]{32}[^\"]+)").getMatch(0);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
         if (dl.getConnection().getContentType().contains("html")) {

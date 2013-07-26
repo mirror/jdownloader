@@ -17,10 +17,7 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
-import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.logging.Level;
-import java.util.regex.Pattern;
 
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
@@ -28,6 +25,7 @@ import javax.script.ScriptEngineManager;
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
+import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
@@ -39,13 +37,19 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "anilinkz.com" }, urls = { "http://(www\\.)?anilinkz\\.com/[^<>\"/]+(/[^<>\"/]+)?" }, flags = { 0 })
+@SuppressWarnings("deprecation")
 public class AniLinkzCom extends PluginForDecrypt {
 
-    private final Pattern        PATTERN_SUPPORTED_HOSTER         = Pattern.compile("(youtube\\.com|veoh\\.com|nowvideo\\.eu|videobam\\.com|mp4upload\\.com|gorillavid\\.in|putlocker\\.com|veevr\\.com|yourupload\\.com|videoweed\\.com)", Pattern.CASE_INSENSITIVE);
-    private final Pattern        PATTERN_UNSUPPORTED_HOSTER       = Pattern.compile("(facebook\\.com|google\\.com)", Pattern.CASE_INSENSITIVE);
-    private final Pattern        PATTERN_SUPPORTED_FILE_EXTENSION = Pattern.compile("(\\.mp4|\\.flv|\\.fll)", Pattern.CASE_INSENSITIVE);
-    private final String         INVALIDLINKS                     = "http://(www\\.)?anilinkz\\.com/(search|affiliates|get|img|dsa|series|forums|files|category|\\?page=|faqs|.*?\\-list|.*?\\-info|\\?random).*?";
-    private static AtomicBoolean CLOUDFLARE                       = new AtomicBoolean(false);
+    private final String            supported_hoster          = "(4shared\\.com|animeuploads\\.com|auengine\\.com|dailymotion\\.com|gorillavid\\.in|mp4upload\\.com|myspace\\.com|nowvideo\\.eu|novamov\\.com|putlocker\\.com|rutube\\.ru|veevr\\.com|veoh\\.com|video44\\.net|videobam\\.com|videoweed\\.com|yourupload\\.com|youtube\\.com)";
+    private final String            unsupported_hoster        = "(facebook\\.com|google\\.com)";
+    private final String            supported_file_extensions = "(\\.mp4|\\.flv|\\.fll)";
+    private final String            invalid_links             = "http://(www\\.)?anilinkz\\.com/(search|affiliates|get|img|dsa|series|forums|files|category|\\?page=|faqs|.*?\\-list|.*?\\-info|\\?random).*?";
+    private String                  parameter                 = null;
+    private String                  fpName                    = null;
+    private boolean                 foundOffline              = false;
+    private Browser                 br2                       = new Browser();
+    private ArrayList<DownloadLink> decryptedLinks            = null;
+    private static AtomicBoolean    CLOUDFLARE                = new AtomicBoolean(false);
 
     public AniLinkzCom(final PluginWrapper wrapper) {
         super(wrapper);
@@ -53,9 +57,9 @@ public class AniLinkzCom extends PluginForDecrypt {
 
     @Override
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, final ProgressController progress) throws Exception {
-        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final String parameter = param.toString();
-        if (parameter.matches(INVALIDLINKS)) {
+        decryptedLinks = new ArrayList<DownloadLink>();
+        parameter = param.toString();
+        if (parameter.matches(invalid_links)) {
             logger.info("Link invalid: " + parameter);
             return decryptedLinks;
         }
@@ -94,144 +98,34 @@ public class AniLinkzCom extends PluginForDecrypt {
             return decryptedLinks;
         }
 
-        final Browser br2 = br.cloneBrowser();
         // set filepackage
-        final String filepackage = br.getRegex("<h3>(.*?)</h3>").getMatch(0);
-        if (filepackage == null) {
+        fpName = br.getRegex("<h3>(.*?)</h3>").getMatch(0);
+        if (fpName == null) {
             logger.warning("filepackage == null: " + parameter);
             logger.warning("Please report issue to JDownloader Development team!");
             return null;
         }
-        // get Mirrors
-        int mirrorCount = 0;
-        final String[] img = br.getRegex("(/images/src\\d+\\.png)").getColumn(0);
-        for (int i = img.length - 1; i > 0; i--) {
-            br2.openGetConnection(img[i]);
-            if (br2.getRequest().getHttpConnection().getResponseCode() == 404) {
-                mirrorCount = i;
-            } else {
-                mirrorCount = i;
-                break;
-            }
-        }
-        boolean foundOffline = false;
-        final List<String> unescape = new ArrayList<String>();
-        String[] dllinks;
-        String mirror = null;
-        // get dllinks
-        for (int i = 0; i <= mirrorCount; i++) {
-            String escapeAll = br.getRegex("escapeall\\('(.*)'\\)\\)\\);").getMatch(0);
-            if (escapeAll != null) {
-                escapeAll = escapeAll.replaceAll("[A-Z~!@#\\$\\*\\{\\}\\[\\]\\-\\+\\.]?", "");
-            } else {
-                logger.warning("Decrypter out of date for link: " + parameter);
-                return null;
-            }
-            unescape.add(Encoding.htmlDecode(escapeAll));
-            // we should change this to an array as these can pick up false positives like javascript:void
-            dllinks = new Regex(unescape.get(i), "<iframe src=\"(http://[^<>\"]*?)\"").getColumn(0);
-            // this is for dailymotion.com embeded links
-            if (dllinks == null || dllinks.length == 0) dllinks = new Regex(unescape.get(i), "src=\"(http[^\"]+dailymotion\\.com/swf/[^\"]+)").getColumn(0);
-            // for youtube.com links
-            if (dllinks == null || dllinks.length == 0) dllinks = new Regex(unescape.get(i), "src=\"(http://(www\\.)?youtube\\.com/v/[^<>\"]*?)\"").getColumn(0);
-            if (dllinks == null || dllinks.length == 0) dllinks = new Regex(unescape.get(i), "(href|url|file)=\"?(.*?)\"").getColumn(1);
-            if (dllinks == null || dllinks.length == 0) dllinks = new Regex(unescape.get(i), "src=\"(.*?)\"").getColumn(0);
 
-            if (dllinks.length > 0) {
-                for (String dllink : dllinks) {
-                    try {
-                        if (dllink.contains("auengine.com/embed.php")) {
-                            br2.getPage(dllink);
-                            dllink = br2.getRegex("url:\\s+'([^']+auengine\\.com%2Fvideos%2F[^']+)").getMatch(0);
-                            if (dllink != null) {
-                                dllink = "directhttp://" + Encoding.htmlDecode(dllink);
-                            } else {
-                                break;
-                            }
-                        } else if (dllink.contains("dailymotion.com/swf/")) {
-                            decryptedLinks.add(createDownloadlink(dllink));
-                        } else if (dllink.contains("videofun.me/embed/")) {
-                            br2.getPage(dllink);
-                            dllink = br2.getRegex("url:\\s+\"(https?://[^\"]+videofun\\.me%2Fvideos%2F[^\"]+)").getMatch(0);
-                            if (dllink != null) {
-                                dllink = "directhttp://" + Encoding.htmlDecode(dllink);
-                            } else {
-                                break;
-                            }
-                        } else if (dllink.contains("anilinkz.com/get")) {
-                            br2.openGetConnection(dllink);
-                            if (br2.getRedirectLocation() != null) {
-                                dllink = "directhttp://" + br2.getRedirectLocation().toString();
-                            } else {
-                                break;
-                            }
-                        } else if (dllink.contains("embed.novamov.com")) {
-                            br2.getPage(dllink);
-                            dllink = br2.getRegex("flashvars\\.file=\"(.*?)\";").getMatch(0);
-                            if (dllink == null) {
-                                break;
-                            }
-                        } else if (dllink.contains("upload2.com")) {
-                            br2.getPage(dllink);
-                            dllink = br2.getRegex("video=(.*?)&rating").getMatch(0);
-                            if (dllink == null) {
-                                break;
-                            }
-                            dllink = "directhttp://" + dllink;
-                            mirror = "upload2.com";
-                        } else if (dllink.contains("youtube.com")) {
-                            dllink = new Regex(dllink, "(http://[\\w\\.]*?youtube\\.com/v/\\w+)&").getMatch(0);
-                            if (dllink != null) {
-                                dllink = dllink.replace("v/", "watch?v=");
-                            } else {
-                                break;
-                            }
-                        } else if (dllink.contains("vidzur.com/embed")) {
-                            br.getPage(dllink);
-                            dllink = br.getRegex("url: \\'(http://[a-z0-9]+\\.vidzur\\.com[^<>\"]*?)\\',").getMatch(0);
-                            if (dllink == null) break;
-                            dllink = "directhttp://" + Encoding.htmlDecode(dllink);
-                        } else if (dllink.contains("videobam.com/widget/")) {
-                            dllink = dllink.replace("videobam.com/widget/", "videobam.com/");
-                        } else if (dllink.contains("gorillavid.in/")) {
-                            dllink = "http://gorillavid.in/" + new Regex(dllink, "gorillavid\\.in/embed\\-([a-z0-9]{12})").getMatch(0);
-                        } else if (dllink.contains("http://www./media")) {
-                            logger.info("Found offline link: " + dllink);
-                            foundOffline = true;
-                            continue;
-                        }
-                    } catch (final Exception e) {
-                        logger.log(Level.SEVERE, e.getMessage(), e);
-                        continue;
-                    }
-                    if (mirror == null) {
-                        mirror = new Regex(dllink, "http://.*?\\.(\\w+\\.\\w+)/.*?").getMatch(0);
-                    }
-                    if (mirrorCount == 0 && new Regex(mirror, PATTERN_UNSUPPORTED_HOSTER).count() == 1) {
-                        logger.warning(mirror + " is not supported yet! Link: " + parameter);
-                        return null;
-                    }
-                    if (new Regex(dllink, PATTERN_SUPPORTED_FILE_EXTENSION).count() == 1 || new Regex(dllink, PATTERN_SUPPORTED_HOSTER).count() == 1) {
-                        String ext = dllink.substring(dllink.lastIndexOf("."));
-                        if (ext.length() > 3) {
-                            ext = ext.substring(0, 4);
-                        }
-                        final DownloadLink dl = createDownloadlink(dllink.trim());
-                        dl.setProperty("removeReferer", true);
-                        if (ext != null && new Regex(dllink, PATTERN_SUPPORTED_HOSTER).count() == 0) {
-                            final String filename = filepackage + "_mirror_" + (i + 1) + "_" + mirror + ext;
-                            dl.setFinalFileName(filename.trim());
-                        }
-                        mirror = null;
-                        decryptedLinks.add(dl);
-                    }
+        if (parameter.matches(".+\\?src=\\d+")) {
+            // if the user imports src link, just return that link
+            br2 = br.cloneBrowser();
+            parsePage();
+        } else {
+            // if the user imports src link, just return that link
+            br2 = br.cloneBrowser();
+            parsePage();
+            // grab src links and process
+            String[] links = br.getRegex("<a rel=\"nofollow\" title=\"[^\"]+(?!dead) Source\" href=\"(/[^\"]+\\?src=\\d+)\">").getColumn(0);
+            if (links != null && links.length != 0) {
+                for (String link : links) {
+                    br2 = br.cloneBrowser();
+                    br2.getPage(link);
+                    parsePage();
                 }
             }
-            if (mirrorCount > i) {
-                br.getPage(parameter + (i + 2) + "/");
-            }
         }
-        if (decryptedLinks.size() == 0) {
+
+        if (decryptedLinks.isEmpty()) {
             if (foundOffline) {
                 logger.info("Found no downloadable content in link: " + parameter);
                 return decryptedLinks;
@@ -241,10 +135,74 @@ public class AniLinkzCom extends PluginForDecrypt {
         }
 
         final FilePackage fp = FilePackage.getInstance();
-        fp.setName(filepackage.trim());
+        fp.setName(fpName.trim());
+        fp.setProperty("ALLOW_MERGE", true);
         fp.addLinks(decryptedLinks);
 
         return decryptedLinks;
+
+    }
+
+    private void parsePage() throws Exception {
+        String escapeAll = br2.getRegex("escapeall\\('(.*)'\\)\\)\\);").getMatch(0);
+        if (escapeAll != null) {
+            escapeAll = escapeAll.replaceAll("[A-Z~!@#\\$\\*\\{\\}\\[\\]\\-\\+\\.]?", "");
+        } else {
+            logger.warning("Decrypter out of date for link: " + parameter);
+            return;
+        }
+        escapeAll = Encoding.htmlDecode(escapeAll);
+        // offline stuff
+        if (new Regex(escapeAll, "(/img/\\w+dead\\.jpg|http://www\\./media)").matches()) {
+            logger.info("Found offline link: " + br2.getURL());
+            DownloadLink dl = createDownloadlink(br2.getURL());
+            dl.setAvailable(foundOffline);
+            decryptedLinks.add(dl);
+            return;
+        }
+
+        // embeded links that are not found by generics
+        String link = new Regex(escapeAll, "\"(https?://(www\\.)?youtube\\.com/v/[^<>\"]*?)\"").getMatch(0); // not sure this is needed
+        if (inValidate(link)) link = new Regex(escapeAll, "(https?://(\\w+\\.)?vureel\\.com/playwire\\.php\\?vid=\\d+)").getMatch(0);
+        // generic fail overs
+        if (inValidate(link)) link = new Regex(escapeAll, "<iframe src=\"(https?://([^<>\"]+)?" + supported_hoster + "/[^<>\"]+)\"").getMatch(0);
+        if (inValidate(link)) link = new Regex(escapeAll, "(href|url|file)=\"?(https?://([^<>\"]+)?" + supported_hoster + "/[^<>\"]+)\"").getMatch(1);
+        if (inValidate(link)) link = new Regex(escapeAll, "src=\"(https?://([^<>\"]+)?" + supported_hoster + "/[^<>\"]+)\"").getMatch(0);
+        if (!inValidate(link))
+            decryptedLinks.add(createDownloadlink(link));
+        else if (inValidate(link) && escapeAll.contains("anilinkz.com/get/")) {
+            String[] aLinks = new Regex(escapeAll, "(http[^\"]+/get/[^\"]+)").getColumn(0);
+            if (aLinks != null && aLinks.length != 0) {
+                for (String aLink : aLinks) {
+                    DownloadLink downloadLink = createDownloadlink("directhttp://" + aLink);
+                    downloadLink.setFinalFileName(fpName + aLink.substring(aLink.lastIndexOf(".")));
+
+                    Browser br2 = br.cloneBrowser();
+                    // In case the link redirects to the finallink
+                    br2.setFollowRedirects(true);
+                    URLConnectionAdapter con = null;
+                    try {
+                        con = br2.openGetConnection(aLink);
+                        // only way to check for made up links... or offline is here
+                        if (!con.getContentType().contains("html")) {
+                            downloadLink.setName(fpName + getFileNameFromHeader(con).substring(getFileNameFromHeader(con).lastIndexOf(".")));
+                            downloadLink.setDownloadSize(con.getLongContentLength());
+                            downloadLink.setAvailable(true);
+                        } else {
+                            downloadLink.setAvailable(false);
+                        }
+                        decryptedLinks.add(downloadLink);
+                    } finally {
+                        try {
+                            con.disconnect();
+                        } catch (Throwable e) {
+                        }
+                    }
+
+                }
+            }
+        }
+        return;
     }
 
     /**
@@ -288,6 +246,21 @@ public class AniLinkzCom extends PluginForDecrypt {
         } catch (Throwable e) {
         }
         return true;
+    }
+
+    /**
+     * Validates string to series of conditions, null, whitespace, or "". This saves effort factor within if/for/while statements
+     * 
+     * @param s
+     *            Imported String to match against.
+     * @return <b>true</b> on valid rule match. <b>false</b> on invalid rule match.
+     * @author raztoki
+     * */
+    private boolean inValidate(final String s) {
+        if (s == null || s != null && (s.matches("[\r\n\t ]+") || s.equals("")))
+            return true;
+        else
+            return false;
     }
 
     /* NO OVERRIDE!! */

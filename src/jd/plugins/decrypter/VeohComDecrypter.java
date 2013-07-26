@@ -25,7 +25,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "veoh.com" }, urls = { "http://(www\\.)?veoh\\.com/(browse/videos/category/.*?/)?watch/[A-Za-z0-9]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "veoh.com" }, urls = { "http://(www\\.)?veoh\\.com/((browse/videos/category/.*?/)?watch/[A-Za-z0-9]+|videos/[A-Za-z0-9]+)" }, flags = { 0 })
 public class VeohComDecrypter extends PluginForDecrypt {
 
     public VeohComDecrypter(PluginWrapper wrapper) {
@@ -34,11 +34,12 @@ public class VeohComDecrypter extends PluginForDecrypt {
 
     /**
      * This decrypter exists to find embedded videos. If none are there the video is hosted on veoh.com itself so the link will then be
-     * passed over to the hosterplugin.
+     * passed over to the hoster plugin.
      */
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        String parameter = param.toString();
+        // /videos/ are embed link format. so correct it here, and away you go!
+        String parameter = param.toString().replace(".com/videos/", ".com/watch/");
         br.setFollowRedirects(true);
         br.getPage(parameter);
         String externID = br.getRegex("<param name=\"movie\" value=\"(http://(www\\.)?youtube\\.com/v/[^<>\"/]*?)\"").getMatch(0);
