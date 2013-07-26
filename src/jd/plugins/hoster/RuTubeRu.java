@@ -83,9 +83,9 @@ public class RuTubeRu extends PluginForHost {
         String dllink = downloadLink.getDownloadURL();
         String regId = "http://video\\.rutube\\.ru/([0-9a-f]{32})";
         String nextId = new Regex(dllink, regId).getMatch(0);
-
-        br.getPage("http://rutube.ru/trackinfo/" + nextId + ".xml?referer=" + Encoding.urlEncode(dllink));
-        String filename = br.getRegex("<title><\\!\\[CDATA\\[(.*?)\\]\\]></title>").getMatch(0);
+        br.setCustomCharset("utf-8");
+        br.getPage("http://rutube.ru/api/play/trackinfo/" + nextId + "?format=xml&referer=" + Encoding.urlEncode(dllink));
+        String filename = br.getRegex("<name>(.*?)</name>").getMatch(0);
         String filesize = br.getRegex("<size>(\\d+)</size>").getMatch(0);
         String videoBalancer = br.getRegex("<video_balancer>(http://.*?)</video_balancer>").getMatch(0);
         if (videoBalancer == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

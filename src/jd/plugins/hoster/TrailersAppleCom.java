@@ -24,7 +24,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision: 15419 $", interfaceVersion = 2, names = { "trailers.apple.com" }, urls = { "https?://trailers\\.appledecrypted\\.com/.+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision: 15419 $", interfaceVersion = 2, names = { "trailers.apple.com" }, urls = { "https?://\\w+\\.appledecrypted\\.com/.+" }, flags = { 0 })
 public class TrailersAppleCom extends PluginForHost {
 
     // DEV NOTES

@@ -1015,7 +1015,7 @@ public class OteUploadCom extends PluginForHost {
     private final String                                      ALLWAIT_SHORT          = JDL.L("hoster.xfilesharingprobasic.errors.waitingfordownloads", "Waiting till new downloads can be started");
     private final String                                      MAINTENANCEUSERTEXT    = JDL.L("hoster.xfilesharingprobasic.errors.undermaintenance", "This server is under Maintenance");
 
-    private static AtomicBoolean                              oteAPI                 = new AtomicBoolean(true);
+    private static AtomicBoolean                              oteAPI                 = new AtomicBoolean(false);
 
     private static AtomicInteger                              maxFree                = new AtomicInteger(1);
     private static AtomicInteger                              maxPrem                = new AtomicInteger(1);

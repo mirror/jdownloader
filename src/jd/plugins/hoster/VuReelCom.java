@@ -28,7 +28,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vureel.com" }, urls = { "http://(www\\.)?vureel\\.com/video/\\d+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vureel.com" }, urls = { "http://(www\\.)?vureel\\.com/(video/\\d+|playwire\\.php\\?vid=\\d+)" }, flags = { 0 })
 public class VuReelCom extends PluginForHost {
 
     public VuReelCom(PluginWrapper wrapper) {
@@ -38,6 +38,11 @@ public class VuReelCom extends PluginForHost {
     @Override
     public String getAGBLink() {
         return "http://www.vureel.com/terms";
+    }
+
+    @Override
+    public void correctDownloadLink(final DownloadLink downloadLink) {
+        downloadLink.setUrlDownload(downloadLink.getDownloadURL().replaceAll("playwire\\.php\\?vid=", "video/"));
     }
 
     @Override
