@@ -37,7 +37,7 @@ public abstract class IExtraction {
     protected ExtractionConfig     config;
     private Exception              exception;
     private ArchiveFile            lastAccessedArchiveFile;
-    private CrashDetectFile        crashLog;
+    private ExtractLogFileWriter        crashLog;
 
     public void setLastAccessedArchiveFile(ArchiveFile lastAccessedArchiveFile) {
 
@@ -213,7 +213,7 @@ public abstract class IExtraction {
         }
     }
 
-    public void setCrashLog(CrashDetectFile crashLog) {
+    public void setCrashLog(ExtractLogFileWriter crashLog) {
         this.crashLog = crashLog;
     }
 

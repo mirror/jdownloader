@@ -48,15 +48,10 @@ public class CFG_EXTRACTION {
      * Delete archive DownloadLinks after successful extraction?
      **/
     public static final BooleanKeyHandler                DELETE_ARCHIVE_DOWNLOADLINKS_AFTER_EXTRACTION                    = SH.getKeyHandler("DeleteArchiveDownloadlinksAfterExtraction", BooleanKeyHandler.class);
-    // true
-    public static final BooleanKeyHandler                FRESH_INSTALL                                                    = SH.getKeyHandler("FreshInstall", BooleanKeyHandler.class);
     // false
     public static final BooleanKeyHandler                GUI_ENABLED                                                      = SH.getKeyHandler("GuiEnabled", BooleanKeyHandler.class);
-    // false
-    /**
-     * Crashlog files in logs/extraction/... can be used to debug extraction
-     **/
-    public static final BooleanKeyHandler                KEEP_CRASHLOG_FILES_ENABLED                                      = SH.getKeyHandler("KeepCrashlogFilesEnabled", BooleanKeyHandler.class);
+    // true
+    public static final BooleanKeyHandler                FRESH_INSTALL                                                    = SH.getKeyHandler("FreshInstall", BooleanKeyHandler.class);
     // false
     public static final BooleanKeyHandler                OVERWRITE_EXISTING_FILES_ENABLED                                 = SH.getKeyHandler("OverwriteExistingFilesEnabled", BooleanKeyHandler.class);
     // null
@@ -74,7 +69,7 @@ public class CFG_EXTRACTION {
      * Delete archives after successful extraction?
      **/
     public static final BooleanKeyHandler                DELETE_ARCHIVE_FILES_AFTER_EXTRACTION                            = SH.getKeyHandler("DeleteArchiveFilesAfterExtraction", BooleanKeyHandler.class);
-    // [Ljava.lang.String;@1dc58fb9
+    // [Ljava.lang.String;@694b150
     /**
      * A Blacklist is a list of regular expressions. Use a blacklist to avoid extracting certain filetypes.
      **/
@@ -90,6 +85,11 @@ public class CFG_EXTRACTION {
     public static final BooleanKeyHandler                PASSWORD_FIND_OPTIMIZATION_ENABLED                               = SH.getKeyHandler("PasswordFindOptimizationEnabled", BooleanKeyHandler.class);
     // false
     public static final BooleanKeyHandler                ENABLED                                                          = SH.getKeyHandler("Enabled", BooleanKeyHandler.class);
+    // true
+    /**
+     * Extract Log files in logs/extraction/...
+     **/
+    public static final BooleanKeyHandler                WRITE_EXTRACTION_LOG_ENABLED                                     = SH.getKeyHandler("WriteExtractionLogEnabled", BooleanKeyHandler.class);
     // false
     public static final BooleanKeyHandler                SUBPATH_ENABLED_IF_ALL_FILES_ARE_IN_AFOLDER                      = SH.getKeyHandler("SubpathEnabledIfAllFilesAreInAFolder", BooleanKeyHandler.class);
     // true

@@ -32,6 +32,8 @@ import java.awt.Toolkit;
 import java.awt.Window;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.ComponentAdapter;
+import java.awt.event.ComponentEvent;
 import java.awt.event.KeyEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
@@ -227,7 +229,7 @@ public class JDGui implements UpdaterListener, OwnerFinder {
         this.mainFrame.pack();
 
         initLocationAndDimension();
-
+        //
         initToolTipSettings();
 
         initUpdateFrameListener();
@@ -962,14 +964,33 @@ public class JDGui implements UpdaterListener, OwnerFinder {
                 if (finalState != null) mainFrame.setExtendedState(finalState);
 
                 WindowManager.getInstance().setVisible(mainFrame, true, FrameState.OS_DEFAULT);
-                // 7. Why a JFrame hides the OS TaskBar when being displayed maximized via JFrame#setExtendedState()?
-                //
-                // The described problem is a Swing issue which appears only with non-native decorated frames by using
-                // JFrame#setExtendedState().
-                // The workaround below can be used to fix the issue - whereas this is the JFrame instance:
-                if (mainFrame.getRootPane().getUI().toString().contains("SyntheticaRootPaneUI")) {
-                    ((de.javasoft.plaf.synthetica.SyntheticaRootPaneUI) mainFrame.getRootPane().getUI()).setMaximizedBounds(mainFrame);
+                if (CrossSystem.isMac() && !mainFrame.isUndecorated()) {
+                    mainFrame.addComponentListener(new ComponentAdapter() {
+
+                        private String screenID;
+
+                        @Override
+                        public void componentMoved(ComponentEvent e) {
+
+                            String newScreenID = mainFrame.getGraphicsConfiguration().getDevice().getIDstring();
+                            if (!StringUtils.equals(newScreenID, screenID)) {
+                                // 7. Why a JFrame hides the OS TaskBar when being displayed maximized via JFrame#setExtendedState()?
+                                //
+                                // The described problem is a Swing issue which appears only with non-native decorated frames by using
+                                // JFrame#setExtendedState().
+                                // The workaround below can be used to fix the issue - whereas this is the JFrame instance:
+                                if (mainFrame.getRootPane().getUI().toString().contains("SyntheticaRootPaneUI")) {
+                                    ((de.javasoft.plaf.synthetica.SyntheticaRootPaneUI) mainFrame.getRootPane().getUI()).setMaximizedBounds(mainFrame);
+                                    logger.info("Set Mainframe MaximizedBounds to: " + mainFrame.getMaximizedBounds());
+                                }
+                                screenID = newScreenID;
+                            }
+
+                        }
+
+                    });
                 }
+
             }
         }.waitForEDT();
 

@@ -71,6 +71,7 @@ import org.jdownloader.extensions.extraction.contextmenu.downloadlist.action.Cle
 import org.jdownloader.extensions.extraction.contextmenu.downloadlist.action.ExtractArchiveNowAction;
 import org.jdownloader.extensions.extraction.contextmenu.downloadlist.action.SetExtractPasswordAction;
 import org.jdownloader.extensions.extraction.contextmenu.downloadlist.action.SetExtractToAction;
+import org.jdownloader.extensions.extraction.contextmenu.downloadlist.action.ShowExtractionResultAction;
 import org.jdownloader.extensions.extraction.contextmenu.downloadlist.action.ValidateArchivesAction;
 import org.jdownloader.extensions.extraction.gui.config.ExtractionConfigPanel;
 import org.jdownloader.extensions.extraction.multi.ArchiveException;
@@ -471,18 +472,14 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
 
         });
         try {
-            Application.getResource("logs/extracting").mkdirs();
+            Application.getResource("logs/extracting/open").mkdirs();
 
-            for (File f : Application.getResource("logs/extracting").listFiles()) {
-                if (f.getName().matches("\\d{13}\\.txt")) {
-                    getLogger().log(new Exception("Extraction Crashlog found!"));
-                    getLogger().info(IO.readFileToString(f));
-                    f.renameTo(new File(f.getParentFile(), "logged_" + f.getName()));
-                } else if (f.getName().matches("\\d{13}\\.open")) {
+            for (File f : Application.getResource("logs/extracting/open").listFiles()) {
+                if (f.getName().matches("\\w+\\.txt")) {
                     getLogger().log(new Exception("Extraction Crashlog found!"));
                     String log;
                     getLogger().info(log = IO.readFileToString(f));
-                    f.renameTo(new File(f.getParentFile(), "logged_" + f.getName()));
+                    f.renameTo(new File(f.getParentFile().getParentFile(), "crashed_" + f.getName()));
                     ExceptionDialog ed = new ExceptionDialog(0, T._.crash_title(), T._.crash_message(), null, null, null);
                     ed.setMore(log);
                     try {
@@ -818,7 +815,7 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
             ArchivesSubMenu root;
             mr.getItems().add(addonLinkIndex, root = new ArchivesSubMenu());
             root.add(new MenuItemData(new ActionData(ExtractArchiveNowAction.class)));
-            // root.add(new MenuItemData(new ActionData(ShowExtractionResultAction.class)));
+            root.add(new MenuItemData(new ActionData(ShowExtractionResultAction.class)));
             root.add(new MenuItemData(new ActionData(ValidateArchivesAction.class)));
 
             root.add(new SeperatorData());

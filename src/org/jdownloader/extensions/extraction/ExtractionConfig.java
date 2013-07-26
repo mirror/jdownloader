@@ -154,10 +154,10 @@ public interface ExtractionConfig extends ExtensionConfigInterface {
 
     void setPasswordFindOptimizationEnabled(boolean b);
 
-    @DefaultBooleanValue(false)
+    @DefaultBooleanValue(true)
     @AboutConfig
-    @DescriptionForConfigEntry("Crashlog files in logs/extraction/... can be used to debug extraction")
-    boolean isKeepCrashlogFilesEnabled();
+    @DescriptionForConfigEntry("Extract Log files in logs/extraction/...")
+    boolean isWriteExtractionLogEnabled();
 
-    void setKeepCrashlogFilesEnabled(boolean b);
+    void setWriteExtractionLogEnabled(boolean b);
 }

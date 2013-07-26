@@ -5,20 +5,17 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
-import java.util.concurrent.atomic.AtomicLong;
 
-import org.appwork.utils.Application;
+public class ExtractLogFileWriter {
 
-public class CrashDetectFile {
+    private File           file;
+    private BufferedWriter output;
+    private String         id;
 
-    private File                    file;
-    private BufferedWriter          output;
-    private long                    id;
-    private static final AtomicLong ID = new AtomicLong(System.currentTimeMillis());
-
-    public CrashDetectFile(String name, String filePath) {
-        id = ID.incrementAndGet();
-        file = Application.getResource("logs/extracting/" + id + ".open");
+    public ExtractLogFileWriter(String name, String filePath, String id) {
+        this.id = id;
+        File f = Archive.getArchiveLogFileById(id);
+        file = new File(new File(f.getParentFile(), "open"), f.getName());
         file.getParentFile().mkdirs();
         try {
             file.createNewFile();
@@ -57,7 +54,7 @@ public class CrashDetectFile {
 
             output.close();
             File newFile;
-            newFile = Application.getResource("logs/extracting/" + id + ".txt");
+            newFile = Archive.getArchiveLogFileById(id);
             newFile.delete();
             file.renameTo(newFile);
             file = newFile;

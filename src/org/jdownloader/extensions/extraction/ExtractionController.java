@@ -60,7 +60,7 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> {
     private boolean                overwriteFiles;
     private File                   extractToFolder;
     private boolean                successful       = false;
-    private CrashDetectFile        crashLog;
+    private ExtractLogFileWriter   crashLog;
 
     public boolean isSuccessful() {
         return successful;
@@ -129,7 +129,7 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> {
     @Override
     public Void run() {
         // let's write an info file. and delete if after extraction. this wy we have infosfiles if the extraction crashes jd
-        crashLog = new CrashDetectFile(archive.getName(), archive.getFirstArchiveFile().getFilePath());
+        crashLog = new ExtractLogFileWriter(archive.getName(), archive.getFirstArchiveFile().getFilePath(), archive.getFactory().getID());
         try {
             fireEvent(ExtractionEvent.Type.START);
             archive.onStartExtracting();
@@ -137,7 +137,7 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> {
             crashLog.write("Start Extracting");
             crashLog.write("Extension Setup: \r\n" + extension.getSettings().toString());
 
-            crashLog.write("Archive Setup: \r\n" + archive.getSettings().toString());
+            crashLog.write("Archive Setup: \r\n" + JSonStorage.toString(archive.getSettings()));
             extractor.setCrashLog(crashLog);
             logger.info("Start unpacking of " + archive.getFirstArchiveFile().getFilePath());
 
@@ -353,7 +353,7 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> {
             fireEvent(ExtractionEvent.Type.EXTRACTION_FAILED);
         } finally {
             crashLog.close();
-            if (!CFG_EXTRACTION.CFG.isKeepCrashlogFilesEnabled()) {
+            if (!CFG_EXTRACTION.CFG.isWriteExtractionLogEnabled()) {
                 crashLog.delete();
             }
             try {

@@ -20,6 +20,7 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.Collections;
 
+import org.appwork.utils.Application;
 import org.jdownloader.extensions.extraction.content.ContentView;
 import org.jdownloader.extensions.extraction.content.PackedFile;
 import org.jdownloader.extensions.extraction.multi.ArchiveType;
@@ -317,6 +318,14 @@ public class Archive {
             if (link == null) continue;
             link.setStatus(status);
         }
+    }
+
+    public File getExtractLogFile() {
+        return getArchiveLogFileById(getFactory().getID());
+    }
+
+    public static File getArchiveLogFileById(String id) {
+        return Application.getResource("logs/extracting/" + id + ".txt");
     }
 
 }
