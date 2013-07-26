@@ -136,7 +136,7 @@ public interface TrayiconTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "New Linkgrabber Packages" })
     String plugins_optional_JDLightTray_ballon_newPackages();
 
-    @Default(lngs = { "en" }, values = { "Ballon Notifications are tiny messages that notify you if there is a special event you should know about. These messages only appear if JDownloader is not the focused Window!" })
+    @Default(lngs = { "en" }, values = { "Ballon Notifications are tiny messages that notify you when special events occur. These messages only appear if JDownloader is not the focused Window!" })
     String plugins_optional_JDLightTray_ballon_desc();
 
     @Default(lngs = { "en" }, values = { "New Linkgrabber Links" })
