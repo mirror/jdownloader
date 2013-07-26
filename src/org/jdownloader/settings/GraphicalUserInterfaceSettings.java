@@ -532,4 +532,5 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
     NewLinksInLinkgrabberAction getNewLinksAction();
 
     void setNewLinksAction(NewLinksInLinkgrabberAction action);
+
 }

@@ -23,6 +23,7 @@ import java.awt.Point;
 import java.awt.SystemTray;
 import java.awt.Toolkit;
 import java.awt.TrayIcon;
+import java.awt.TrayIcon.MessageType;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ComponentEvent;
@@ -40,6 +41,11 @@ import javax.swing.JFrame;
 import javax.swing.SwingUtilities;
 
 import jd.SecondLevelLaunch;
+import jd.controlling.linkcollector.LinkCollector;
+import jd.controlling.linkcollector.LinkCollectorEvent;
+import jd.controlling.linkcollector.LinkCollectorHighlightListener;
+import jd.controlling.linkcrawler.CrawledLink;
+import jd.controlling.linkcrawler.CrawledPackage;
 import jd.gui.swing.jdgui.JDGui;
 import jd.gui.swing.jdgui.MainFrameClosingHandler;
 import jd.gui.swing.jdgui.views.settings.sidebar.CheckBoxedEntry;
@@ -65,6 +71,7 @@ import org.jdownloader.extensions.AbstractExtension;
 import org.jdownloader.extensions.ExtensionConfigPanel;
 import org.jdownloader.extensions.StartException;
 import org.jdownloader.extensions.StopException;
+import org.jdownloader.gui.GuiUtils;
 import org.jdownloader.gui.jdtrayicon.translate.TrayiconTranslation;
 import org.jdownloader.gui.jdtrayicon.translate._TRAY;
 import org.jdownloader.gui.translate._GUI;
@@ -153,6 +160,45 @@ public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTransla
             if (CrossSystem.isLinux()) LogController.CL().severe("Make sure your Notification Area is enabled!");
             throw new StartException("Tray isn't supported!");
         }
+
+        LinkCollector.getInstance().getEventsender().addListener(new LinkCollectorHighlightListener() {
+            @Override
+            public void onLinkCollectorContentAdded(LinkCollectorEvent event) {
+                if (!getSettings().isBallonNotifyOnNewLinkgrabberPackageEnabled()) return;
+                if (event.getParameters().length > 0 && event.getParameter(0) instanceof CrawledPackage) {
+                    // new Package
+
+                    if (GuiUtils.isActiveWindow(JDGui.getInstance().getMainFrame())) return;
+                    final TrayIcon ti = trayIcon;
+                    if (ti != null) {
+                        ti.displayMessage(_TRAY._.balloon_new_package(), _TRAY._.balloon_new_package_msg(((CrawledPackage) event.getParameter(0)).getName()), MessageType.INFO);
+
+                    }
+                }
+            }
+
+            @Override
+            public void onHighLight(CrawledLink parameter) {
+                new EDTRunner() {
+
+                    @Override
+                    protected void runInEDT() {
+                        if (!getSettings().isBallonNotifyOnNewLinkgrabberLinksEnabled()) return;
+                        if (GuiUtils.isActiveWindow(JDGui.getInstance().getMainFrame())) return;
+                        final TrayIcon ti = trayIcon;
+                        if (ti != null) {
+                            ti.displayMessage(_TRAY._.balloon_new_links(), _TRAY._.balloon_new_links_msg(LinkCollector.getInstance().getPackages().size(), LinkCollector.getInstance().getChildrenCount()), MessageType.INFO);
+
+                        }
+                    }
+                };
+            }
+
+            @Override
+            public boolean isThisListenerEnabled() {
+                return true;
+            }
+        });
         SecondLevelLaunch.GUI_COMPLETE.executeWhenReached(new Runnable() {
 
             public void run() {
@@ -266,6 +312,7 @@ public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTransla
                              * trayicon message must be set, else windows cannot handle icon right (eg autohide feature)
                              */
                             trayIcon = new TrayIcon(img, "JDownloader");
+
                             trayIcon.setImageAutoSize(true);
                             trayIcon.addActionListener(TrayExtension.this);
                             ma = new TrayMouseAdapter(TrayExtension.this, trayIcon);
@@ -339,8 +386,8 @@ public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTransla
 
                         } catch (Throwable e) {
                             /*
-                             * on Gnome3, Unity, this can happen because icon might be blacklisted, see here http://www.webupd8.org/2011/04/how-to-re-enable
-                             * -notification-area.html
+                             * on Gnome3, Unity, this can happen because icon might be blacklisted, see here
+                             * http://www.webupd8.org/2011/04/how-to-re-enable -notification-area.html
                              * 
                              * dconf-editor", then navigate to desktop > unity > panel and whitelist JDownloader
                              * 

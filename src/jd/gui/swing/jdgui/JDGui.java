@@ -280,9 +280,9 @@ public class JDGui implements UpdaterListener, OwnerFinder {
                     final int state = mainFrame.getExtendedState();
                     try {
                         if (state == ExtendedState.ICONIFIED.getId()) {
-                            GuiUtils.flashWindow(mainFrame, true, true);
+                            GuiUtils.flashWindow(mainFrame, true);
                         } else {
-                            GuiUtils.flashWindow(mainFrame, true, true);
+                            GuiUtils.flashWindow(mainFrame, true);
                         }
                     } catch (Exception e) {
                         logger.log(e);

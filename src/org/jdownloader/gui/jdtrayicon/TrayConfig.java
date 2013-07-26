@@ -55,4 +55,16 @@ public interface TrayConfig extends ExtensionConfigInterface {
     public boolean isTrayOnlyVisibleIfWindowIsHiddenEnabled();
 
     public void setTrayOnlyVisibleIfWindowIsHiddenEnabled(boolean b);
+
+    @DefaultBooleanValue(true)
+    @AboutConfig
+    public boolean isBallonNotifyOnNewLinkgrabberLinksEnabled();
+
+    public void setBallonNotifyOnNewLinkgrabberLinksEnabled(boolean b);
+
+    @DefaultBooleanValue(true)
+    @AboutConfig
+    public boolean isBallonNotifyOnNewLinkgrabberPackageEnabled();
+
+    public void setBallonNotifyOnNewLinkgrabberPackageEnabled(boolean b);
 }

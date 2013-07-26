@@ -118,4 +118,28 @@ public interface TrayiconTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Tray Icon Manager" })
     String TrayMenuManager_getName();
 
+    @Default(lngs = { "en" }, values = { "New Links added" })
+    String balloon_new_links();
+
+    @Default(lngs = { "en" }, values = { "%s2 Link(s) in %s1 Package(s)" })
+    String balloon_new_links_msg(int packagcount, int childrenCount);
+
+    @Default(lngs = { "en" }, values = { "New Package added" })
+    String balloon_new_package();
+
+    @Default(lngs = { "en" }, values = { "A new Package has been added to the Linkgrabber: %s1" })
+    String balloon_new_package_msg(String name);
+
+    @Default(lngs = { "en" }, values = { "Ballon Notifications" })
+    String plugins_optional_JDLightTray_ballon();
+
+    @Default(lngs = { "en" }, values = { "New Linkgrabber Packages" })
+    String plugins_optional_JDLightTray_ballon_newPackages();
+
+    @Default(lngs = { "en" }, values = { "Ballon Notifications are tiny messages that notify you if there is a special event you should know about. These messages only appear if JDownloader is not the focused Window!" })
+    String plugins_optional_JDLightTray_ballon_desc();
+
+    @Default(lngs = { "en" }, values = { "New Linkgrabber Links" })
+    String plugins_optional_JDLightTray_ballon_newlinks();
+
 }
