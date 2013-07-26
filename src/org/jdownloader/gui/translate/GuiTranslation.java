@@ -2729,6 +2729,12 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Connection estabilished. Great!" })
     String MyJDownloaderSettingsPanel_runInEDT_connected_2();
 
+    @Default(lngs = { "en" }, values = { "Current connections: %s1" })
+    String MyJDownloaderSettingsPanel_runInEDT_connections(int connections);
+
+    @Default(lngs = { "en" }, values = { "Connection pending. Please wait!" })
+    String MyJDownloaderSettingsPanel_runInEDT_pending();
+
     @Default(lngs = { "en" }, values = { "Not Connected!" })
     String MyJDownloaderSettingsPanel_runInEDT_disconnected_();
 
