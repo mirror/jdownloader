@@ -41,6 +41,7 @@ import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.SwingUtils;
 import org.jdownloader.actions.AppAction;
+import org.jdownloader.api.myjdownloader.MyJDownloaderConnectionStatus;
 import org.jdownloader.api.myjdownloader.MyJDownloaderController;
 import org.jdownloader.api.myjdownloader.event.MyJDownloaderListener;
 import org.jdownloader.gui.IconKey;
@@ -215,7 +216,7 @@ public class MyJDownloaderSettingsPanel extends AbstractConfigPanel implements G
 
     @Override
     public void updateContents() {
-        onMyJDownloaderConnectionStatusChanged(MyJDownloaderController.getInstance().isConnected());
+        onMyJDownloaderConnectionStatusChanged(MyJDownloaderController.getInstance().getConnectionStatus(), MyJDownloaderController.getInstance().getEstablishedConnections());
         new EDTRunner() {
 
             @Override
@@ -253,12 +254,12 @@ public class MyJDownloaderSettingsPanel extends AbstractConfigPanel implements G
     }
 
     @Override
-    public void onMyJDownloaderConnectionStatusChanged(final boolean connected) {
+    public void onMyJDownloaderConnectionStatusChanged(final MyJDownloaderConnectionStatus connectionStatus, final int connections) {
         new EDTRunner() {
 
             @Override
             protected void runInEDT() {
-
+                boolean connected = connectionStatus != MyJDownloaderConnectionStatus.UNCONNECTED;
                 disconnectAction.setEnabled(connected);
                 connectAction.setEnabled(!connected);
                 reconnectAction.setEnabled(false);
@@ -277,16 +278,20 @@ public class MyJDownloaderSettingsPanel extends AbstractConfigPanel implements G
 
                         }
                     }
-
-                    status.setForeground(Color.GREEN);
-                    status.setText(_GUI._.MyJDownloaderSettingsPanel_runInEDT_connected_2());
-
+                    switch (connectionStatus) {
+                    case CONNECTED:
+                        status.setForeground(Color.GREEN);
+                        status.setText(_GUI._.MyJDownloaderSettingsPanel_runInEDT_connected_2() + "\r\n" + _GUI._.MyJDownloaderSettingsPanel_runInEDT_connections(connections));
+                        break;
+                    case PENDING:
+                        status.setForeground(Color.YELLOW.darker());
+                        status.setText(_GUI._.MyJDownloaderSettingsPanel_runInEDT_pending());
+                        break;
+                    }
                 } else {
-
                     status.setText(_GUI._.MyJDownloaderSettingsPanel_runInEDT_disconnected_());
                     status.setForeground(Color.RED);
                     connectButton.setAction(connectAction);
-
                 }
 
             }
