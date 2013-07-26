@@ -113,7 +113,7 @@ public class OteUploadCom extends PluginForHost {
             directlinkproperty = "freelink2";
         } else if (account != null && !account.getBooleanProperty("free")) {
             // prem account
-            chunks = -10;
+            chunks = 1;
             resumes = true;
             acctype = "Premium Account";
             directlinkproperty = "premlink";
