@@ -42,6 +42,7 @@ public class LnkBcks extends PluginForDecrypt {
         String parameter = param.toString();
         br.setFollowRedirects(false);
         br.getPage(parameter);
+        sleep(5 * 1000l, param);
         String link = br.getRedirectLocation();
         if ((link != null && link.contains("/notfound/")) || br.containsHTML("(>Link Not Found<|>The link may have been deleted by the owner)")) {
             logger.info("Link offline: " + parameter);
