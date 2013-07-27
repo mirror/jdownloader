@@ -54,10 +54,6 @@ public class CloudStorEs extends PluginForHost {
         return "http://cloudstor.es/policies/tos/";
     }
 
-    public void correctDownloadLink(DownloadLink link) {
-        link.setUrlDownload("http://cloudstor.es/file/" + new Regex(link.getDownloadURL(), "cloudstor\\.es/(f|file)/(.+)").getMatch(1));
-    }
-
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
