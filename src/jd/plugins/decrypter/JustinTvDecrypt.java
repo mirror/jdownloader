@@ -16,10 +16,13 @@
 
 package jd.plugins.decrypter;
 
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.Random;
 
 import jd.PluginWrapper;
+import jd.config.SubConfiguration;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -37,8 +40,6 @@ public class JustinTvDecrypt extends PluginForDecrypt {
     public JustinTvDecrypt(PluginWrapper wrapper) {
         super(wrapper);
     }
-
-    private static final String HOSTURL = "http://www.justindecrypted.tv";
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
@@ -110,7 +111,6 @@ public class JustinTvDecrypt extends PluginForDecrypt {
             filename = Encoding.htmlDecode(filename.trim());
             filename = filename.replaceAll("[\r\n#]+", "");
             int counter = 1;
-            String format = String.format("%%0%dd", (int) Math.log10(links.length) + 1);
             final PluginForHost hostPlugin = JDUtilities.getPluginForHost("justin.tv");
 
             for (String dl : links) {
@@ -125,8 +125,25 @@ public class JustinTvDecrypt extends PluginForDecrypt {
                 decryptedLinks.add(dlink);
                 counter++;
             }
+
+            String fpName = "";
+            if (channelName != null) fpName += Encoding.htmlDecode(channelName.trim()) + " - ";
+            if (date != null) {
+                final SubConfiguration cfg = SubConfiguration.getConfig("justin.tv");
+                final String userDefinedDateFormat = cfg.getStringProperty("CUSTOMDATE");
+                final String[] dateStuff = date.split("T");
+                SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd:hh:mm:ss");
+                Date dateStr = formatter.parse(dateStuff[0] + ":" + dateStuff[1]);
+                String formattedDate = formatter.format(dateStr);
+                Date theDate = formatter.parse(formattedDate);
+
+                formatter = new SimpleDateFormat(userDefinedDateFormat);
+                formattedDate = formatter.format(theDate);
+                fpName += formattedDate + " - ";
+            }
+            fpName += filename;
             final FilePackage fp = FilePackage.getInstance();
-            fp.setName(filename);
+            fp.setName(fpName);
             fp.addLinks(decryptedLinks);
         }
         return decryptedLinks;

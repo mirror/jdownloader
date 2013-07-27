@@ -113,6 +113,7 @@ public class NmLdsrg extends PluginForDecrypt {
             }
 
             // disabled by raztoki 20130603, this requires the same captcha method as web!
+            // Addition from psp: Without CNL2 usage in this decrypter, this problem is "Solved": http://svn.jdownloader.org/issues/7177
             // Try adding links via CNL
             // ajax.postPage(br.getURL(), "action=cnl");
             // final String jk = ajax.getRegex("name=\"jk\" value=\"([^<>\"]*?)\"").getMatch(0);

@@ -16,7 +16,9 @@
 
 package jd.plugins.decrypter;
 
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Locale;
 
@@ -59,7 +61,6 @@ public class VimeoComDecrypter extends PluginForDecrypt {
         String parameter = param.toString();
         parameter = parameter.replace("https://", "http://");
 
-        FilePackage fp = FilePackage.getInstance();
         final SubConfiguration cfg = SubConfiguration.getConfig("vimeo.com");
 
         final String ID = new Regex(parameter, "/(\\d+)").getMatch(0);
@@ -89,7 +90,11 @@ public class VimeoComDecrypter extends PluginForDecrypt {
         final String channelName = br.getRegex("itemtype=\"http://schema\\.org/Person\">[\t\n\r ]+<meta itemprop=\"name\" content=\"([^<>\"]*?)\"").getMatch(0);
         String title = br.getRegex("\"title\":\"([^<>\"]*?)\"").getMatch(0);
         if (title == null) title = br.getRegex("<meta property=\"og:title\" content=\"([^<>\"]*?)\">").getMatch(0);
-        if (title != null) title = Encoding.htmlDecode(title.replaceAll("(\\\\|/)", "_").replaceAll("_+", "_").trim());
+        if (title == null) {
+            logger.warning("Decrypter broken for link: " + parameter);
+            return null;
+        }
+        title = Encoding.htmlDecode(title.replaceAll("(\\\\|/)", "_").replaceAll("_+", "_").trim());
         final PluginForHost hostPlugin = JDUtilities.getPluginForHost("vimeo.com");
 
         String qualities[][] = getQualities(br, ID, title);
@@ -175,9 +180,25 @@ public class VimeoComDecrypter extends PluginForDecrypt {
             /*
              * only replace original found links by new ones, when we have some
              */
-            if (title != null && newRet.size() > 1) {
-                fp = FilePackage.getInstance();
-                fp.setName(title);
+            if (newRet.size() > 1) {
+                String fpName = "";
+                if (channelName != null) fpName += Encoding.htmlDecode(channelName.trim()) + " - ";
+                if (date != null) {
+                    final String userDefinedDateFormat = cfg.getStringProperty("CUSTOMDATE");
+                    final String[] dateStuff = date.split("T");
+                    SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd:hh:mm:ss");
+                    Date dateStr = formatter.parse(dateStuff[0] + ":" + dateStuff[1]);
+                    String formattedDate = formatter.format(dateStr);
+                    Date theDate = formatter.parse(formattedDate);
+
+                    formatter = new SimpleDateFormat(userDefinedDateFormat);
+                    formattedDate = formatter.format(theDate);
+                    fpName += formattedDate + " - ";
+                }
+                fpName += title;
+
+                final FilePackage fp = FilePackage.getInstance();
+                fp.setName(fpName);
                 fp.addLinks(newRet);
             }
             decryptedLinks.addAll(newRet);

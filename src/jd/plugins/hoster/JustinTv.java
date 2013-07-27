@@ -123,11 +123,14 @@ public class JustinTv extends PluginForHost {
 
     public static String getFormattedFilename(final DownloadLink downloadLink) throws ParseException {
         String videoName = downloadLink.getStringProperty("plainfilename", null);
+
         final SubConfiguration cfg = SubConfiguration.getConfig("justin.tv");
         String formattedFilename = cfg.getStringProperty(CUSTOMFILENAME);
         if (formattedFilename == null || formattedFilename.equals("")) formattedFilename = "*channel*_*date*_*filename*";
+        String partnumberformat = cfg.getStringProperty(PARTNUMBERFORMAT);
+        if (partnumberformat == null || partnumberformat.equals("")) partnumberformat = "00";
 
-        final DecimalFormat df = new DecimalFormat(cfg.getStringProperty(PARTNUMBERFORMAT));
+        final DecimalFormat df = new DecimalFormat(partnumberformat);
         final String date = downloadLink.getStringProperty("originaldate", null);
         final String channelName = downloadLink.getStringProperty("channel", null);
         final int partNumber = downloadLink.getIntegerProperty("partnumber", -1);
@@ -169,9 +172,9 @@ public class JustinTv extends PluginForHost {
     }
 
     private void setConfigElements() {
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), CUSTOMDATE, JDL.L("plugins.hoster.justintv.customdate", "Define how the date should look.")).setDefaultValue("dd.MM.yyyy_hh-mm-ss"));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), CUSTOMDATE, JDL.L("plugins.hoster.justintv.customdate", "Define how the date should look:")).setDefaultValue("dd.MM.yyyy_hh-mm-ss"));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), PARTNUMBERFORMAT, JDL.L("plugins.hoster.justintv.custompartnumber", "Define how the partnumbers should look.")).setDefaultValue("00"));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), PARTNUMBERFORMAT, JDL.L("plugins.hoster.justintv.custompartnumber", "Define how the partnumbers should look:")).setDefaultValue("00"));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "Customize the filename! Example: '*channelname*_*date*_*videoname*_*partnumber**ext*'"));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), CUSTOMFILENAME, JDL.L("plugins.hoster.justintv.customfilename", "Define how the filenames should look:")).setDefaultValue("*channelname*_*date*_*videoname*_*partnumber**ext*"));

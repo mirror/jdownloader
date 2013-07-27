@@ -497,9 +497,9 @@ public class FourSharedCom extends PluginForHost {
                         String title = null;
                         if ("de".equalsIgnoreCase(lng)) {
                             title = domain;
-                            message = "Sorry, leider ist es nicht möglich" + domain + " mit dieser Version des JDownloaders zu nutzen.\r\n";
-                            message += "                            Es wird hier der JDownloader 2 benötigt.\r\n";
-                            message += "\r\n JDownloader 2 Installationsanweisungen und Download Link: Klicke -OK- (im Browser oeffnen)\r\n";
+                            message = "Sorry, leider ist es nicht moeglich, " + domain + " mit dieser Version des JDownloaders zu nutzen.\r\n";
+                            message += "                            Hierfür wird der JDownloader 2 benoetigt.\r\n";
+                            message += "\r\n JDownloader 2 Installationsanweisungen und Downloadlink: Klicke -OK- (im Browser oeffnen)\r\n";
                         } else {
                             title = domain;
                             message = "Sorry it's not possible to use " + domain + " with this version of JDownloader.\r\n";
