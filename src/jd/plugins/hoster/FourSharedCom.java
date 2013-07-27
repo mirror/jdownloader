@@ -180,7 +180,7 @@ public class FourSharedCom extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         if (isStableEnviroment()) {
-            if (stableSucks.get()) showStableWarning();
+            if (!stableSucks.get()) showStableWarning();
             throw new PluginException(LinkStatus.ERROR_FATAL, "You need JDownloader 2");
         }
         requestFileInformation(downloadLink);
@@ -300,7 +300,7 @@ public class FourSharedCom extends PluginForHost {
     @Override
     public void handlePremium(final DownloadLink downloadLink, final Account account) throws Exception {
         if (isStableEnviroment()) {
-            if (stableSucks.get()) showStableWarning();
+            if (!stableSucks.get()) showStableWarning();
             throw new PluginException(LinkStatus.ERROR_FATAL, "You need JDownloader 2");
         }
         login(account, false);
