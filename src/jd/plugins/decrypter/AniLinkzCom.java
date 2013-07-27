@@ -17,7 +17,8 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.HashMap;
+import java.util.Map;
 
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
@@ -25,6 +26,8 @@ import javax.script.ScriptEngineManager;
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
+import jd.http.Cookie;
+import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -35,24 +38,51 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
+import jd.utils.JDUtilities;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "anilinkz.com" }, urls = { "http://(www\\.)?anilinkz\\.com/[^<>\"/]+(/[^<>\"/]+)?" }, flags = { 0 })
 @SuppressWarnings("deprecation")
 public class AniLinkzCom extends PluginForDecrypt {
 
-    private final String            supported_hoster          = "(4shared\\.com|animeuploads\\.com|auengine\\.com|dailymotion\\.com|gorillavid\\.in|mp4upload\\.com|myspace\\.com|nowvideo\\.eu|novamov\\.com|putlocker\\.com|rutube\\.ru|veevr\\.com|veoh\\.com|video44\\.net|videobb\\.com|videobam\\.com|videoweed\\.com|yourupload\\.com|youtube\\.com)";
-    private final String            unsupported_hoster        = "(facebook\\.com|google\\.com)";
-    private final String            supported_file_extensions = "(\\.mp4|\\.flv|\\.fll)";
-    private final String            invalid_links             = "http://(www\\.)?anilinkz\\.com/(search|affiliates|get|img|dsa|series|forums|files|category|\\?page=|faqs|.*?\\-list|.*?\\-info|\\?random).*?";
-    private String                  parameter                 = null;
-    private String                  fpName                    = null;
-    private boolean                 foundOffline              = false;
-    private Browser                 br2                       = new Browser();
-    private ArrayList<DownloadLink> decryptedLinks            = null;
-    private static AtomicBoolean    CLOUDFLARE                = new AtomicBoolean(false);
+    private final String                   supported_hoster  = "(4shared\\.com|animeuploads\\.com|auengine\\.com|dailymotion\\.com|gorillavid\\.in|mp4upload\\.com|myspace\\.com|nowvideo\\.eu|novamov\\.com|putlocker\\.com|rutube\\.ru|veevr\\.com|veoh\\.com|video44\\.net|videobb\\.com|videobam\\.com|videoweed\\.com|yourupload\\.com|youtube\\.com)";
+    private final String                   invalid_links     = "http://(www\\.)?anilinkz\\.com/(search|affiliates|get|img|dsa|forums|files|category|\\?page=|faqs|.*?-list|.*?-info|\\?random).*?";
+    private String                         parameter         = null;
+    private String                         fpName            = null;
+    private Browser                        br2               = new Browser();
+    private ArrayList<DownloadLink>        decryptedLinks    = null;
+    private boolean                        cloudflare        = false;
+    private static HashMap<String, String> cloudflareCookies = new HashMap<String, String>();
+    private static Object                  LOCK              = new Object();
 
+    /**
+     * @author raztoki
+     * */
     public AniLinkzCom(final PluginWrapper wrapper) {
         super(wrapper);
+    }
+
+    private static StringContainer agent = new StringContainer();
+
+    public static class StringContainer {
+        public String string = null;
+    }
+
+    private Browser prepBrowser(Browser prepBr) {
+        if (!cloudflareCookies.isEmpty()) {
+            for (final Map.Entry<String, String> cookieEntry : cloudflareCookies.entrySet()) {
+                final String key = cookieEntry.getKey();
+                final String value = cookieEntry.getValue();
+                prepBr.setCookie(this.getHost(), key, value);
+            }
+        }
+        if (agent.string == null) {
+            /* we first have to load the plugin, before we can reference it */
+            JDUtilities.getPluginForHost("mediafire.com");
+            agent.string = jd.plugins.hoster.MediafireCom.stringUserAgent();
+        }
+        prepBr.getHeaders().put("User-Agent", agent.string);
+        prepBr.getHeaders().put("Referer", null);
+        return prepBr;
     }
 
     @Override
@@ -63,84 +93,99 @@ public class AniLinkzCom extends PluginForDecrypt {
             logger.info("Link invalid: " + parameter);
             return decryptedLinks;
         }
-        br.getHeaders().put("Referer", null);
-
-        // start of cloudflare
-        // this hoster uses cloudflare as it's webhosting service provider, which invokes anti DDoS measures (at times)
-        br.setFollowRedirects(true);
-        if (CLOUDFLARE.get() == false) {
+        // only allow one thread! To minimise/reduce loads.
+        synchronized (LOCK) {
+            prepBrowser(br);
+            // start of cloudflare
+            // this hoster uses cloudflare as it's webhosting service provider, which invokes anti DDoS measures (at times)
+            br.setFollowRedirects(true);
             // try like normal, on failure try with cloudflare(link)
             try {
                 br.getPage(parameter);
             } catch (Exception e) {
                 // typical header response code for anti ddos event is 503
                 if (e.getMessage().contains("503")) {
-                    CLOUDFLARE.set(true);
+                    cloudflare = true;
                 }
             }
-        }
-        if (CLOUDFLARE.get() == true) {
-            try {
-                cloudflare(parameter);
-            } catch (Exception e) {
-                if (e instanceof PluginException) throw (PluginException) e;
-                if (e.getMessage().contains("503")) {
-                    logger.warning("Cloudflare anti DDoS measures enabled, your version of JD can not support this. In order to go any further you will need to upgrade to JDownloader 2");
-                    return decryptedLinks;
+            if (cloudflare) {
+                try {
+                    cloudflare(parameter);
+                } catch (Exception e) {
+                    if (e instanceof PluginException) throw (PluginException) e;
+                    if (e.getMessage().contains("503")) {
+                        logger.warning("Cloudflare anti DDoS measures enabled, your version of JD can not support this. In order to go any further you will need to upgrade to JDownloader 2");
+                        return decryptedLinks;
+                    }
                 }
             }
-        }
-        br.setFollowRedirects(false);
-        // end of cloudflare
-
-        if (br.containsHTML(">Page Not Found<")) {
-            logger.info("Link offline: " + parameter);
-            return decryptedLinks;
-        }
-
-        // set filepackage
-        fpName = br.getRegex("<h3>(.*?)</h3>").getMatch(0);
-        if (fpName == null) {
-            logger.warning("filepackage == null: " + parameter);
-            logger.warning("Please report issue to JDownloader Development team!");
-            return null;
-        }
-
-        if (parameter.matches(".+\\?src=\\d+")) {
-            // if the user imports src link, just return that link
-            br2 = br.cloneBrowser();
-            parsePage();
-        } else {
-            // if the user imports src link, just return that link
-            br2 = br.cloneBrowser();
-            parsePage();
-            // grab src links and process
-            String[] links = br.getRegex("<a rel=\"nofollow\" title=\"[^\"]+(?!dead) Source\" href=\"(/[^\"]+\\?src=\\d+)\">").getColumn(0);
-            if (links != null && links.length != 0) {
-                for (String link : links) {
-                    br2 = br.cloneBrowser();
-                    br2.getPage(link);
-                    parsePage();
-                }
-            }
-        }
-
-        if (decryptedLinks.isEmpty()) {
-            if (foundOffline) {
-                logger.info("Found no downloadable content in link: " + parameter);
+            br.setFollowRedirects(false);
+            // end of cloudflare
+            if (br.containsHTML(">Page Not Found<")) {
+                logger.info("Link offline: " + parameter);
                 return decryptedLinks;
             }
-            logger.warning("Decrypter out of date for link: " + parameter);
-            return null;
+            if (parameter.contains(".com/series/")) {
+                int p = 1;
+                String page = new Regex(parameter, "\\?page=(\\d+)").getMatch(0);
+                if (page != null) p = Integer.parseInt(page);
+                for (int i = 0; i != p; i++) {
+                    String host = new Regex(br.getURL(), "(https?://[^/]+)").getMatch(0);
+                    String nextPage = br.getRegex("class=\"page\" href=\"(/series/[^\\?]+\\?page=" + (p + 1) + ")\">\\d+</a>").getMatch(0);
+                    String[] links = br.getRegex("href=\"(/[^\"]+)\">[^<]+</a>[\r\n\t ]+Series:").getColumn(0);
+                    if (links == null || links.length == 0) {
+                        logger.warning("Could not find series 'links' : " + parameter);
+                        return null;
+                    }
+                    for (String link : links) {
+                        decryptedLinks.add(createDownloadlink(host + link));
+                    }
+                    // if page is provided within parameter only add that page
+                    if (nextPage != null && !parameter.contains("?page=")) {
+                        p++;
+                        br.getPage(nextPage);
+                    } else {
+                        break;
+                    }
+                }
+            } else {
+                // set filepackage
+                fpName = br.getRegex("<h3>(.*?)</h3>").getMatch(0);
+                if (fpName == null) {
+                    logger.warning("filepackage == null: " + parameter);
+                    logger.warning("Please report issue to JDownloader Development team!");
+                    return null;
+                }
+
+                if (parameter.matches(".+\\?src=\\d+")) {
+                    // if the user imports src link, just return that link
+                    br2 = br.cloneBrowser();
+                    parsePage();
+                } else {
+                    // if the user imports src link, just return that link
+                    br2 = br.cloneBrowser();
+                    parsePage();
+                    // grab src links and process
+                    String[] links = br.getRegex("<a rel=\"nofollow\" title=\"[^\"]+(?!dead) Source\" href=\"(/[^\"]+\\?src=\\d+)\">").getColumn(0);
+                    if (links != null && links.length != 0) {
+                        for (String link : links) {
+                            br2 = br.cloneBrowser();
+                            br2.getPage(link);
+                            parsePage();
+                        }
+                    }
+                }
+                final FilePackage fp = FilePackage.getInstance();
+                fp.setName(fpName.trim());
+                fp.setProperty("ALLOW_MERGE", true);
+                fp.addLinks(decryptedLinks);
+            }
+            if (decryptedLinks.isEmpty()) {
+                logger.warning("Decrypter out of date for link: " + parameter);
+                return null;
+            }
         }
-
-        final FilePackage fp = FilePackage.getInstance();
-        fp.setName(fpName.trim());
-        fp.setProperty("ALLOW_MERGE", true);
-        fp.addLinks(decryptedLinks);
-
         return decryptedLinks;
-
     }
 
     private void parsePage() throws Exception {
@@ -156,12 +201,12 @@ public class AniLinkzCom extends PluginForDecrypt {
         if (new Regex(escapeAll, "(/img/\\w+dead\\.jpg|http://www\\./media)").matches()) {
             logger.info("Found offline link: " + br2.getURL());
             DownloadLink dl = createDownloadlink(br2.getURL());
-            dl.setAvailable(foundOffline);
+            dl.setAvailable(true);
             decryptedLinks.add(dl);
             return;
         }
 
-        // embeded links that are not found by generics
+        // embed links that are not found by generic's
         String link = new Regex(escapeAll, "\"(https?://(www\\.)?youtube\\.com/v/[^<>\"]*?)\"").getMatch(0); // not sure this is needed
         if (inValidate(link)) link = new Regex(escapeAll, "(https?://(\\w+\\.)?vureel\\.com/playwire\\.php\\?vid=\\d+)").getMatch(0);
         // generic fail overs
@@ -206,7 +251,9 @@ public class AniLinkzCom extends PluginForDecrypt {
     }
 
     /**
-     * performs silly cloudflare anti DDoS crapola, made by Raztoki
+     * performs silly cloudflare anti DDoS crapola
+     * 
+     * @author raztoki
      */
     private boolean cloudflare(String url) throws Exception {
         try {
@@ -238,6 +285,13 @@ public class AniLinkzCom extends PluginForDecrypt {
                 logger.warning("Possible plugin error within cloudflare(). Continuing....");
                 return false;
             }
+            // lets save cloudflare cookie to reduce the need repeat cloudFlare()
+            final HashMap<String, String> cookies = new HashMap<String, String>();
+            final Cookies add = br.getCookies(this.getHost());
+            for (final Cookie c : add.getCookies()) {
+                if (c.getKey().contains("cfduid")) cookies.put(c.getKey(), c.getValue());
+            }
+            cloudflareCookies = cookies;
         }
         // remove the setter
         try {
