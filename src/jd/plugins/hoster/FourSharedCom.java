@@ -17,9 +17,14 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.regex.Pattern;
+
+import javax.swing.JOptionPane;
+import javax.swing.SwingUtilities;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
@@ -43,9 +48,14 @@ import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.os.CrossSystem;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "4shared.com" }, urls = { "https?://(www\\.)?4shared(\\-china)?\\.com/(account/)?(download|get|file|document|embed|photo|video|audio|mp3|office|rar|zip|archive|music)/.+?/.*" }, flags = { 2 })
 public class FourSharedCom extends PluginForHost {
+
+    // DEV NOTES:
+    // - login does not work in stable!
+    // - you require login to download.
 
     public final String            PLUGINS_HOSTER_FOURSHAREDCOM_ONLY4PREMIUM = "plugins.hoster.foursharedcom.only4premium";
     private static StringContainer agent                                     = new StringContainer();
@@ -169,6 +179,10 @@ public class FourSharedCom extends PluginForHost {
 
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
+        if (isStableEnviroment()) {
+            if (stableSucks.get()) showStableWarning();
+            throw new PluginException(LinkStatus.ERROR_FATAL, "You need JDownloader 2");
+        }
         requestFileInformation(downloadLink);
         doFree(downloadLink);
     }
@@ -285,6 +299,10 @@ public class FourSharedCom extends PluginForHost {
 
     @Override
     public void handlePremium(final DownloadLink downloadLink, final Account account) throws Exception {
+        if (isStableEnviroment()) {
+            if (stableSucks.get()) showStableWarning();
+            throw new PluginException(LinkStatus.ERROR_FATAL, "You need JDownloader 2");
+        }
         login(account, false);
         br.getPage(downloadLink.getDownloadURL());
         if (account.getStringProperty("nopremium") != null) {
@@ -335,13 +353,17 @@ public class FourSharedCom extends PluginForHost {
                         return;
                     }
                 }
+                br.forceDebug(true);
                 br.setReadTimeout(3 * 60 * 1000);
                 br.getPage("http://www.4shared.com/");
                 br.setCookie("http://www.4shared.com", "4langcookie", "en");
-                br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-                br.postPage("https://www.4shared.com/web/login/validate", "login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
+                // stable does not send this header with post request!!!!!
+                // br.getHeaders().put("Content-Type", "application/x-www-form-urlencoded");
+                Browser br2 = br.cloneBrowser();
+                br2.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+                br2.postPage("https://www.4shared.com/web/login/validate", "login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
                 final String lang = System.getProperty("user.language");
-                if (!br.containsHTML("\"success\":true")) {
+                if (!br2.containsHTML("\"success\":true")) {
                     if ("de".equalsIgnoreCase(lang)) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     } else {
@@ -349,6 +371,7 @@ public class FourSharedCom extends PluginForHost {
                     }
                 }
                 br.postPage("https://www.4shared.com/web/login", "login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&remember=true&returnTo=https%253A%252F%252Fwww.4shared.com%252Faccount%252Fhome.jsp");
+                br.getHeaders().put("Content-Type", null);
                 if (br.getCookie("http://www.4shared.com", "ulin") == null || !br.getCookie("http://www.4shared.com", "ulin").equals("true")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 /** Save cookies */
                 final HashMap<String, String> cookies = new HashMap<String, String>();
@@ -368,8 +391,12 @@ public class FourSharedCom extends PluginForHost {
 
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
+        if (isStableEnviroment()) {
+            showStableWarning();
+            account.setEnabled(false);
+            throw new PluginException(LinkStatus.ERROR_FATAL, "You need JDownloader 2");
+        }
         final AccountInfo ai = new AccountInfo();
-        br.forceDebug(true);
         try {
             login(account, true);
         } catch (final PluginException e) {
@@ -441,6 +468,55 @@ public class FourSharedCom extends PluginForHost {
     private void setConfigElements() {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), FourSharedCom.DOWNLOADSTREAMS, JDL.L("plugins.hoster.foursharedcom.downloadstreams", "Download video/audio streams if available (faster download but this can decrease audio/video quality)")).setDefaultValue(false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), FourSharedCom.DOWNLOADSTREAMSERRORHANDLING, JDL.L("plugins.hoster.foursharedcom.activateerrorhandling", "Only download video/audio streams if normal file is not available (faster download but this can decrease audio/video quality)")).setDefaultValue(false));
+    }
+
+    private boolean isStableEnviroment() {
+        String prev = JDUtilities.getRevision();
+        if (prev == null || prev.length() < 3) {
+            prev = "0";
+        } else {
+            prev = prev.replaceAll(",|\\.", "");
+        }
+        final int rev = Integer.parseInt(prev);
+        if (rev < 10000) return true;
+        return false;
+    }
+
+    private static AtomicBoolean stableSucks = new AtomicBoolean(false);
+
+    private void showStableWarning() {
+        try {
+            SwingUtilities.invokeAndWait(new Runnable() {
+
+                @Override
+                public void run() {
+                    try {
+                        String lng = System.getProperty("user.language");
+                        String domain = "4shared.com";
+                        String message = null;
+                        String title = null;
+                        if ("de".equalsIgnoreCase(lng)) {
+                            title = domain;
+                            message = "Sorry, leider ist es nicht möglich" + domain + " mit dieser Version des JDownloaders zu nutzen.\r\n";
+                            message += "                            Es wird hier der JDownloader 2 benötigt.\r\n";
+                            message += "\r\n JDownloader 2 Installationsanweisungen und Download Link: Klicke -OK- (im Browser oeffnen)\r\n";
+                        } else {
+                            title = domain;
+                            message = "Sorry it's not possible to use " + domain + " with this version of JDownloader.\r\n";
+                            message += "                               You will need to use JDownloader 2.\r\n";
+                            message += "JD2 install instructions and download link: Click -OK- (open in browser)\r\n ";
+                        }
+                        if (CrossSystem.isOpenBrowserSupported()) {
+                            int result = JOptionPane.showConfirmDialog(jd.gui.swing.jdgui.JDGui.getInstance().getMainFrame(), message, title, JOptionPane.CLOSED_OPTION, JOptionPane.CLOSED_OPTION);
+                            if (JOptionPane.OK_OPTION == result) CrossSystem.openURL(new URL("http://board.jdownloader.org/showthread.php?t=37365"));
+                            stableSucks.set(true);
+                        }
+                    } catch (Throwable e) {
+                    }
+                }
+            });
+        } catch (Throwable e) {
+        }
     }
 
     @Override
