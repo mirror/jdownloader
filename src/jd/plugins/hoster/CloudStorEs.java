@@ -54,10 +54,16 @@ public class CloudStorEs extends PluginForHost {
         return "http://cloudstor.es/policies/tos/";
     }
 
+    public void correctDownloadLink(DownloadLink link) {
+        link.setUrlDownload("http://cloudstor.es/f/" + new Regex(link.getDownloadURL(), "cloudstor\\.es/(f|file)/(.+)").getMatch(1));
+    }
+
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
+        // Fix old links
+        correctDownloadLink(link);
         br.getPage(link.getDownloadURL());
         if (br.containsHTML(">Error 404: Page Not Found<")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (br.containsHTML(veryBusy)) {
@@ -80,12 +86,18 @@ public class CloudStorEs extends PluginForHost {
             // could be a temp issue?? but we can't download...
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 5 * 60 * 1000);
         }
-        final Regex dlInfo = br.getRegex("hash: \\'([A-Za-z0-9_]+)\\', token: \\'([a-z0-9]+)\\'");
-        if (dlInfo.getMatches().length == 0) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         // jd0.9 doesn't set this following header with postPage or submitform. JD2 does!
         br.getHeaders().put("Content-Type", "application/x-www-form-urlencoded");
-        br.postPage("http://cloudstor.es/submit/_dl_qs.php", "hash=" + dlInfo.getMatch(0) + "&token=" + dlInfo.getMatch(1));
+        if (br.containsHTML("\\'/submit/_dl_isozone\\.php\\'")) {
+            final Regex dlInfo = br.getRegex("id: \\'(\\d+)\\', part: \\'(\\d+)\\', token: \\'([a-z0-9]+)\\'");
+            if (dlInfo.getMatches().length == 0) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            br.postPage("http://cloudstor.es/submit/_dl_isozone.php", "id=" + dlInfo.getMatch(0) + "&part=" + dlInfo.getMatch(1) + "&token=" + dlInfo.getMatch(2));
+        } else {
+            final Regex dlInfo = br.getRegex("hash: \\'([A-Za-z0-9_]+)\\', token: \\'([a-z0-9]+)\\'");
+            if (dlInfo.getMatches().length == 0) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            br.postPage("http://cloudstor.es/submit/_dl_qs.php", "hash=" + dlInfo.getMatch(0) + "&token=" + dlInfo.getMatch(1));
+        }
         br.getHeaders().put("Content-Type", null);
         String dllink = br.toString();
         if (dllink == null || !dllink.startsWith("http") || dllink.length() > 500) dllink = br.getRegex("(http://[^\r\n]+)").getMatch(0);
