@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.plugins.CryptedLink;
+import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
@@ -49,7 +50,18 @@ public class TheBestFilesNet extends PluginForDecrypt {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
-        br.postPage("http://www.thebestfiles.net/go", "file_id=" + fileID);
+        final String captchaURL = br.getRegex("\"(/captcha/\\d+)\"").getMatch(0);
+        if (captchaURL != null) {
+            for (int i = 1; i <= 3; i++) {
+                final String code = getCaptchaCode("http://www.thebestfiles.net" + captchaURL, param);
+                br.postPage("http://www.thebestfiles.net/go", "captcha=" + code + "&file_id=" + fileID);
+                if (br.getRedirectLocation() != null && br.getRedirectLocation().contains("thebestfiles.net/")) continue;
+                break;
+            }
+            if (br.getRedirectLocation() != null && br.getRedirectLocation().contains("thebestfiles.net/")) throw new DecrypterException(DecrypterException.CAPTCHA);
+        } else {
+            br.postPage("http://www.thebestfiles.net/go", "file_id=" + fileID);
+        }
         final String finallink = br.getRedirectLocation();
         if (finallink == null) {
             logger.warning("Decrypter broken for link: " + parameter);

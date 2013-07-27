@@ -20,6 +20,7 @@ import java.io.IOException;
 
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -28,13 +29,33 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.download.DownloadInterface;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "orgasm.com" }, urls = { "http://(www\\.)?orgasm\\.com/movies(/recent/[\\w\\+\\%]+)?\\?id=/video/\\d+/" }, flags = { 32 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "orgasm.com" }, urls = { "http://(www\\.)?orgasm\\.com/(movies(/recent/[\\w\\+\\%]+)?\\?id=/video/\\d+/|movies\\?id=%2Fvideo%2F\\d+%2F)" }, flags = { 32 })
 public class OrgasmCom extends PluginForHost {
 
     private String DLLINK = null;
 
     public OrgasmCom(final PluginWrapper wrapper) {
         super(wrapper);
+    }
+
+    public void correctDownloadLink(DownloadLink link) {
+        final String niceLink = Encoding.htmlDecode(link.getDownloadURL());
+        link.setUrlDownload("http://www.orgasm.com/movies?id=/video/" + new Regex(niceLink, "(\\d+)/$").getMatch(0) + "/");
+    }
+
+    @Override
+    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
+        setBrowserExclusive();
+        br.setFollowRedirects(true);
+        br.getPage(downloadLink.getDownloadURL());
+        if (br.containsHTML("Movie Not Found")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+        String filename = br.getRegex("playerHeader\">(.*?)</div>").getMatch(0);
+        if (filename == null) {
+            filename = br.getRegex("title: \"(.*?)\"").getMatch(0);
+        }
+        if (filename == null) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+        downloadLink.setName(Encoding.htmlDecode(filename.trim()) + ".flv");
+        return AvailableStatus.TRUE;
     }
 
     public void download(final DownloadLink downloadLink) throws Exception {
@@ -61,21 +82,6 @@ public class OrgasmCom extends PluginForHost {
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         download(downloadLink);
-    }
-
-    @Override
-    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
-        setBrowserExclusive();
-        br.setFollowRedirects(true);
-        br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML("Movie Not Found")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
-        String filename = br.getRegex("playerHeader\">(.*?)</div>").getMatch(0);
-        if (filename == null) {
-            filename = br.getRegex("title: \"(.*?)\"").getMatch(0);
-        }
-        if (filename == null) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
-        downloadLink.setName(Encoding.htmlDecode(filename.trim()) + ".flv");
-        return AvailableStatus.TRUE;
     }
 
     @Override
