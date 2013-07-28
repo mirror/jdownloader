@@ -19,7 +19,7 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 
 import jd.PluginWrapper;
-import jd.config.SubConfiguration;
+import jd.config.Property;
 import jd.controlling.ProgressController;
 import jd.gui.UserIO;
 import jd.http.Browser;
@@ -44,18 +44,18 @@ public class AdfLy extends PluginForDecrypt {
         super(wrapper);
     }
 
-    private boolean       supportsHTTPS = true;
+    private final boolean supportsHTTPS = true;
     private String        protocol      = null;
     private final String  HOSTS         = "https?://(www\\.)?(adf\\.ly|j\\.gs|q\\.gs)";
     private static Object LOCK          = new Object();
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final String parameter = param.toString().replace("www.", "");
+        String parameter = param.toString().replace("www.", "");
         // imported protocol choice
         protocol = new Regex(parameter, "(https?://)").getMatch(0);
         // poll plugin setting for default protocol, if not set ask the user.
-        protocol = getDefaultProtocol() + "://";
+        protocol = getDefaultProtocol();
         if (!parameter.contains("adf.ly/") && protocol.equalsIgnoreCase("https://")) {
             logger.info("sorry, HTTPS option is not aviable for this host '" + new Regex(parameter, "://([^/]+)").getMatch(0) + "'");
             protocol = "http://";
@@ -65,13 +65,14 @@ public class AdfLy extends PluginForDecrypt {
 
         if (parameter.matches(HOSTS + "/\\d+/(http|ftp).+")) {
             String linkInsideLink = new Regex(parameter, HOSTS + "/\\d+/(.+)").getMatch(2);
-            linkInsideLink = protocol + linkInsideLink;
             if (!linkInsideLink.matches(HOSTS + "/.+")) {
                 decryptedLinks.add(createDownloadlink(linkInsideLink));
                 return decryptedLinks;
+            } else {
+                parameter = linkInsideLink.replace("www.", "");
             }
         }
-        br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/27.0.1453.116 Safari/537.36");
+        br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.2; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/28.0.1500.72 Safari/537.36");
         boolean skipWait = true;
         String finallink = null;
         for (int i = 0; i <= 2; i++) {
@@ -216,9 +217,15 @@ public class AdfLy extends PluginForDecrypt {
         }
     }
 
+    private static StringContainer defaultProtocol = new StringContainer();
+
+    public static class StringContainer {
+        public String string = null;
+    }
+
     /**
-     * Issue the user with a dialog prompt and asks them to select a default request protocol. Saves users preference for future
-     * communication requests!<br/>
+     * Issue the user with a dialog prompt, ask them to select a default request protocol.<br/>
+     * Save users preference in memory for given session. Each Start = new session<br/>
      * <br/>
      * Decrypter Template: Default Request Protocol.
      * 
@@ -226,16 +233,14 @@ public class AdfLy extends PluginForDecrypt {
      * @author raztoki
      * */
     private String getDefaultProtocol() {
-        String defaultProtocol = null;
         if (!supportsHTTPS) {
-            defaultProtocol = "http";
+            defaultProtocol.string = "http://";
         } else {
-            SubConfiguration config = null;
+            // save in session in memory because reverting in 0.9 is too difficult. Kill previously saved reference!
+            getPluginConfig().setProperty("defaultProtocol", Property.NULL); // delete after one month 20130728
             synchronized (LOCK) {
                 try {
-                    config = getPluginConfig();
-                    defaultProtocol = config.getStringProperty("defaultProtocol", null);
-                    if (defaultProtocol == null) {
+                    if (defaultProtocol.string == null) {
                         String lng = System.getProperty("user.language");
                         String message = null;
                         String title = null;
@@ -243,29 +248,23 @@ public class AdfLy extends PluginForDecrypt {
                             title = "Wähle bitte Dein Standard Request Protokoll aus.";
                             message = "Dies ist eine einmalige Auswahl. Einmal gespeichert, nutzt der JDownloader Dein\r\ngewähltes Standard Protokoll auch für alle zukünftigen Verbindungen zu " + this.getHost() + ".";
                         } else {
-                            title = "Please select your default request Protocol.";
+                            title = "Please select your default Request Protocol.";
                             message = "This is a once off choice. Once saved, JDownloader will reuse\r\n your default Protocol for all future requests to " + this.getHost() + ".";
                         }
                         String[] select = new String[] { "http (insecure)", "https (secure)" };
                         int userSelect = UserIO.getInstance().requestComboDialog(0, JDL.L("plugins.decrypter.adfly.SelectDefaultProtocolTitle", title), JDL.L("plugins.decrypter.adfly.SelectDefaultProtocolMessage", message), select, 0, null, null, null, null);
                         if (userSelect != -1) {
-                            defaultProtocol = userSelect == 0 ? "http" : "https";
+                            defaultProtocol.string = userSelect == 0 ? "http://" : "https://";
                         } else {
-                            // no need to save again, and again..
-                            config = null;
+                            return protocol;
                         }
                     }
                 } catch (final Throwable e) {
-                } finally {
-                    if (config != null) {
-                        config.setProperty("defaultProtocol", defaultProtocol);
-                        config.save();
-                    }
                 }
             }
 
         }
-        return defaultProtocol;
+        return defaultProtocol.string;
     }
 
     /* NO OVERRIDE!! */

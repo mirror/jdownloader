@@ -19,12 +19,16 @@ package jd.plugins.hoster;
 import java.io.File;
 import java.io.IOException;
 import java.net.SocketException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
+
+import javax.swing.JOptionPane;
+import javax.swing.SwingUtilities;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -48,6 +52,7 @@ import org.appwork.utils.Hash;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.logging2.LogSource;
+import org.appwork.utils.os.CrossSystem;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "real-debrid.com" }, urls = { "https?://\\w+\\.real\\-debrid\\.com/dl/\\w+/.+" }, flags = { 2 })
 public class RealDebridCom extends PluginForHost {
@@ -442,7 +447,7 @@ public class RealDebridCom extends PluginForHost {
                 }
                 for (int retry = 0; retry < 3; retry++) {
                     try {
-                        br.getPage(mProt + mName + "/ajax/login.php?user=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Hash.getMD5(account.getPass()) + "&captcha_challenge=&captcha_answer=&time=" + System.currentTimeMillis());
+                        br.getPage(mProt + mName + "/ajax/login.php?user=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Hash.getMD5(account.getPass()) + "&captcha_challenge=&captcha_answer=&time=" + System.currentTimeMillis() + "&pin_challenge=&pin_answer=");
                         if (br.containsHTML("\"captcha\":1")) {
                             DownloadLink dummyLink = new DownloadLink(this, "Account", mProt + mName, mProt + mName, true);
                             final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
@@ -454,8 +459,53 @@ public class RealDebridCom extends PluginForHost {
                             rc.setCaptchaAddress(image.replaceAll("\\\\/", "/"));
                             final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
                             final String c = getCaptchaCode(cf, dummyLink);
-                            br.getPage(mProt + mName + "/ajax/login.php?user=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Hash.getMD5(account.getPass()) + "&captcha_challenge=" + rc.getChallenge() + "&captcha_answer=" + Encoding.urlEncode(c) + "&time=" + System.currentTimeMillis());
+                            br.getPage(mProt + mName + "/ajax/login.php?user=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Hash.getMD5(account.getPass()) + "&captcha_challenge=" + rc.getChallenge() + "&captcha_answer=" + Encoding.urlEncode(c) + "&time=" + System.currentTimeMillis() + "&pin_challenge=&pin_answer=");
                             if (br.containsHTML("\"captcha\":1")) { throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nError either captcha is incorrect or your user:password is incorrect", PluginException.VALUE_ID_PREMIUM_DISABLE); }
+                        }
+                        if (br.containsHTML("\"message\":\"PIN Code required\"")) {
+                            try {
+                                SwingUtilities.invokeAndWait(new Runnable() {
+
+                                    @Override
+                                    public void run() {
+                                        try {
+                                            String lng = System.getProperty("user.language");
+                                            String message = null;
+                                            String title = null;
+                                            boolean xSystem = CrossSystem.isOpenBrowserSupported();
+                                            if ("de".equalsIgnoreCase(lng)) {
+                                                title = mName + " Two Factor Authentication wird benoetigt";
+                                                message = "Oeffne bitte Deinen Webbrowser:\r\n";
+                                                message += " - Melde den Nutzer " + mName + " ab.\r\n";
+                                                message += " - Melde Dich neu an. \r\n";
+                                                message += " - Vervollstaendige die Two Factor Authenication.\r\n";
+                                                message += "Nach dem erfolgreichen Login kannst Du Dich im JDownloader neu anmelden.\r\n\r\n";
+                                                if (xSystem)
+                                                    message += "Klicke -OK- (Oeffnet " + mName + " in Deinem Webbrowser)\r\n";
+                                                else
+                                                    message += new URL(mProt + mName);
+                                            } else {
+                                                title = mName + " Two Factor Authentication Required";
+                                                message = "Please goto your Browser:\r\n";
+                                                message += " - Logout of " + mName + ".\r\n";
+                                                message += " - Re-Login. \r\n";
+                                                message += " - Complete Two Factor Authenication.\r\n";
+                                                message += "Once completed, you will be able to relogin within JDownloader.\r\n\r\n";
+                                                if (xSystem)
+                                                    message += "Click -OK- (Opens " + mName + " in your Browser)\r\n";
+                                                else
+                                                    message += new URL(mProt + mName);
+                                            }
+                                            int result = JOptionPane.showConfirmDialog(jd.gui.swing.jdgui.JDGui.getInstance().getMainFrame(), message, title, JOptionPane.CLOSED_OPTION, JOptionPane.CLOSED_OPTION);
+                                            if (xSystem && JOptionPane.OK_OPTION == result) CrossSystem.openURL(new URL(mProt + mName));
+                                            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                                        } catch (Throwable e) {
+                                        }
+                                    }
+                                });
+                            } catch (Throwable e) {
+                            }
+
                         }
                         break;
                     } catch (SocketException e) {

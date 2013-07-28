@@ -69,6 +69,8 @@ public class VideoWeedCom extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
+        br.setConnectTimeout(180 * 1000);
+        br.setReadTimeout(180 * 1000);
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML("(>This file no longer exists on our servers\\.<|The video file was removed)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);

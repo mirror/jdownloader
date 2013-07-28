@@ -190,18 +190,18 @@ public class AniLinkzCom extends PluginForDecrypt {
 
     private void parsePage() throws Exception {
         String escapeAll = br2.getRegex("escapeall\\('(.*)'\\)\\)\\);").getMatch(0);
-        if (escapeAll != null) {
+        if (!inValidate(escapeAll)) {
             escapeAll = escapeAll.replaceAll("[A-Z~!@#\\$\\*\\{\\}\\[\\]\\-\\+\\.]?", "");
         } else {
             logger.warning("Decrypter out of date for link: " + parameter);
             return;
         }
         escapeAll = Encoding.htmlDecode(escapeAll);
-        // offline stuff
-        if (new Regex(escapeAll, "(/img/\\w+dead\\.jpg|http://www\\./media)").matches()) {
-            logger.info("Found offline link: " + br2.getURL());
-            DownloadLink dl = createDownloadlink(br2.getURL());
-            dl.setAvailable(true);
+        // not online yet... || offline results within escapeAll
+        if (inValidate(escapeAll) || new Regex(escapeAll, "(/img/\\w+dead\\.jpg|http://www\\./media)").matches()) {
+            logger.info("Could not find link: " + br2.getURL());
+            DownloadLink dl = createDownloadlink("directhttp://http://anilinkz.com/");
+            dl.setAvailable(false);
             decryptedLinks.add(dl);
             return;
         }

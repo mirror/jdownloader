@@ -495,22 +495,27 @@ public class FourSharedCom extends PluginForHost {
                         String domain = "4shared.com";
                         String message = null;
                         String title = null;
+                        boolean xSystem = CrossSystem.isOpenBrowserSupported();
                         if ("de".equalsIgnoreCase(lng)) {
                             title = domain;
                             message = "Sorry, leider ist es nicht moeglich, " + domain + " mit dieser Version des JDownloaders zu nutzen.\r\n";
                             message += "                            Hierfür wird der JDownloader 2 benoetigt.\r\n";
-                            message += "\r\n JDownloader 2 Installationsanweisungen und Downloadlink: Klicke -OK- (im Browser oeffnen)\r\n";
+                            if (xSystem)
+                                message += "JDownloader 2 Installationsanweisungen und Downloadlink: Klicke -OK- (im Browser oeffnen)\r\n";
+                            else
+                                message += "JDownloader 2 Installationsanweisungen und Downloadlink:\r\n                 " + new URL("http://board.jdownloader.org/showthread.php?t=37365") + "\r\n";
                         } else {
                             title = domain;
                             message = "Sorry it's not possible to use " + domain + " with this version of JDownloader.\r\n";
                             message += "                               You will need to use JDownloader 2.\r\n";
-                            message += "JD2 install instructions and download link: Click -OK- (open in browser)\r\n ";
+                            if (xSystem)
+                                message += "Jdownloader 2 install instructions and download link: Click -OK- (open in browser)\r\n ";
+                            else
+                                message += "                   JDownloader 2 install instructions and download link:\r\n                 " + new URL("http://board.jdownloader.org/showthread.php?t=37365") + "\r\n";
                         }
-                        if (CrossSystem.isOpenBrowserSupported()) {
-                            int result = JOptionPane.showConfirmDialog(jd.gui.swing.jdgui.JDGui.getInstance().getMainFrame(), message, title, JOptionPane.CLOSED_OPTION, JOptionPane.CLOSED_OPTION);
-                            if (JOptionPane.OK_OPTION == result) CrossSystem.openURL(new URL("http://board.jdownloader.org/showthread.php?t=37365"));
-                            stableSucks.set(true);
-                        }
+                        int result = JOptionPane.showConfirmDialog(jd.gui.swing.jdgui.JDGui.getInstance().getMainFrame(), message, title, JOptionPane.CLOSED_OPTION, JOptionPane.CLOSED_OPTION);
+                        if (xSystem && JOptionPane.OK_OPTION == result) CrossSystem.openURL(new URL("http://board.jdownloader.org/showthread.php?t=37365"));
+                        stableSucks.set(true);
                     } catch (Throwable e) {
                     }
                 }
