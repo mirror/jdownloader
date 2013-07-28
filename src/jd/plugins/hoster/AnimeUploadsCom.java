@@ -28,10 +28,12 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision: 21813 $", interfaceVersion = 2, names = { "animeuploads.com" }, urls = { "http://(www\\.)?animeuploads\\.com/embed\\.php\\?file=.+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision: 21813 $", interfaceVersion = 2, names = { "animeuploads.com", "cizgifilmlerizle.com" }, urls = { "http://(www\\.)?animeuploads\\.com/embed\\.php\\?file=.+", "http://(www\\.)?cizgifilmlerizle\\.com/embed\\.php\\?file=.+" }, flags = { 0 })
 public class AnimeUploadsCom extends PluginForHost {
 
-    private String dllink = null;
+    private String  dllink  = null;
+    private int     chunks  = 0;
+    private boolean resumes = true;
 
     public AnimeUploadsCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -39,7 +41,7 @@ public class AnimeUploadsCom extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "http://www.animeuploads.com/";
+        return "http://www" + this.getHost() + "/";
     }
 
     @Override
@@ -47,18 +49,31 @@ public class AnimeUploadsCom extends PluginForHost {
         return -1;
     }
 
+    private void setConstants() {
+        if (this.getHost().equals("animeuploads.com")) {
+            chunks = 0;
+            resumes = true;
+        } else if (this.getHost().equals("cizgifilmlerizle.com")) {
+            chunks = 0;
+            resumes = true;
+        }
+    }
+
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
+        setConstants();
         requestFileInformation(downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumes, chunks);
         dl.startDownload();
     }
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws Exception {
         this.setBrowserExclusive();
+        br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        // made up links still valid all the way to the finallink!
+        // bad links still valid finallink! offline checking the finallink is the only way.
+        // this type of site uses form before you get info you need, form name="fuck_you"
         Form dl = br.getForm(0);
         if (dl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         br.submitForm(dl);

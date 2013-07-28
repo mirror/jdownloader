@@ -20,6 +20,7 @@ import java.io.IOException;
 
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -27,7 +28,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "stagevu.com" }, urls = { "http://[\\w\\.]*?stagevu\\.com/video/[a-z0-9]{12}" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "stagevu.com" }, urls = { "http://[\\w\\.]*?stagevu\\.com/(video/[a-z0-9]{12}|embed\\?.*)" }, flags = { 0 })
 public class StageVuCom extends PluginForHost {
 
     public StageVuCom(PluginWrapper wrapper) {
@@ -42,6 +43,18 @@ public class StageVuCom extends PluginForHost {
     @Override
     public int getMaxSimultanFreeDownloadNum() {
         return -1;
+    }
+
+    @Override
+    public void correctDownloadLink(final DownloadLink link) throws PluginException {
+        // convert embed links back into standard links
+        if (link.getDownloadURL().contains(".com/embed?")) {
+            String uid = new Regex(link.getDownloadURL(), "uid=([a-z]{12})").getMatch(0);
+            if (uid != null)
+                link.setUrlDownload("http://stagevu.com/video/" + uid);
+            else
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
     }
 
     @Override

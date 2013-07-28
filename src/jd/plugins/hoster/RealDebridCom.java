@@ -478,7 +478,7 @@ public class RealDebridCom extends PluginForHost {
                                                 message = "Oeffne bitte Deinen Webbrowser:\r\n";
                                                 message += " - Melde den Nutzer " + mName + " ab.\r\n";
                                                 message += " - Melde Dich neu an. \r\n";
-                                                message += " - Vervollstaendige die Two Factor Authenication.\r\n";
+                                                message += " - Vervollstaendige die Two Factor Authentication.\r\n";
                                                 message += "Nach dem erfolgreichen Login kannst Du Dich im JDownloader neu anmelden.\r\n\r\n";
                                                 if (xSystem)
                                                     message += "Klicke -OK- (Oeffnet " + mName + " in Deinem Webbrowser)\r\n";
@@ -489,7 +489,7 @@ public class RealDebridCom extends PluginForHost {
                                                 message = "Please goto your Browser:\r\n";
                                                 message += " - Logout of " + mName + ".\r\n";
                                                 message += " - Re-Login. \r\n";
-                                                message += " - Complete Two Factor Authenication.\r\n";
+                                                message += " - Complete Two Factor Authentication.\r\n";
                                                 message += "Once completed, you will be able to relogin within JDownloader.\r\n\r\n";
                                                 if (xSystem)
                                                     message += "Click -OK- (Opens " + mName + " in your Browser)\r\n";
