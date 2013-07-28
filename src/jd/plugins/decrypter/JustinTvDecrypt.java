@@ -42,6 +42,7 @@ public class JustinTvDecrypt extends PluginForDecrypt {
     }
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
+        final SubConfiguration cfg = SubConfiguration.getConfig("justin.tv");
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         // twitchtv belongs to justin.tv
         br.setCookie("http://justin.tv", "fl", "en-us");
@@ -122,6 +123,7 @@ public class JustinTvDecrypt extends PluginForDecrypt {
                 if (channelName != null) dlink.setProperty("channel", Encoding.htmlDecode(channelName.trim()));
                 final String formattedFilename = ((jd.plugins.hoster.JustinTv) hostPlugin).getFormattedFilename(dlink);
                 dlink.setName(formattedFilename);
+                if (cfg.getBooleanProperty("FASTLINKCHECK", false)) dlink.setAvailable(true);
                 decryptedLinks.add(dlink);
                 counter++;
             }
@@ -129,7 +131,6 @@ public class JustinTvDecrypt extends PluginForDecrypt {
             String fpName = "";
             if (channelName != null) fpName += Encoding.htmlDecode(channelName.trim()) + " - ";
             if (date != null) {
-                final SubConfiguration cfg = SubConfiguration.getConfig("justin.tv");
                 final String userDefinedDateFormat = cfg.getStringProperty("CUSTOMDATE");
                 final String[] dateStuff = date.split("T");
                 SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd:hh:mm:ss");
@@ -142,6 +143,7 @@ public class JustinTvDecrypt extends PluginForDecrypt {
                 fpName += formattedDate + " - ";
             }
             fpName += filename;
+            fpName += " - [" + links.length + "]";
             final FilePackage fp = FilePackage.getInstance();
             fp.setName(fpName);
             fp.addLinks(decryptedLinks);

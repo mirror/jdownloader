@@ -85,7 +85,7 @@ public class Keep2ShareCc extends PluginForHost {
         prepBrowser(br);
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
-        if (br.containsHTML("Sorry, an error occurred while processing your request")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("Sorry, an error occurred while processing your request|File not found or deleted")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename, filesize = null;
         if (br.containsHTML(DOWNLOADPOSSIBLE)) {
             filename = br.getRegex(">Downloading file:</span><br>[\t\n\r ]+<span class=\"c2\">.*?alt=\"\" style=\"\">([^<>\"]*?)</span>").getMatch(0);
@@ -331,7 +331,7 @@ public class Keep2ShareCc extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dllink = Encoding.htmlDecode(dllink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             logger.warning("The final dllink seems not to be a file!");
             br.followConnection();

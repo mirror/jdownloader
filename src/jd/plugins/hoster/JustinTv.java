@@ -58,6 +58,7 @@ public class JustinTv extends PluginForHost {
         return -1;
     }
 
+    private static final String FASTLINKCHECK    = "FASTLINKCHECK";
     private static final String NOCHUNKS         = "NOCHUNKS";
     private static final String CUSTOMDATE       = "CUSTOMDATE";
     private static final String CUSTOMFILENAME   = "CUSTOMFILENAME";
@@ -172,6 +173,8 @@ public class JustinTv extends PluginForHost {
     }
 
     private void setConfigElements() {
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), FASTLINKCHECK, JDL.L("plugins.hoster.justintv.fastlinkcheck", "Activate fast linkcheck (filesize won't be shown in linkgrabber)?")).setDefaultValue(false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), CUSTOMDATE, JDL.L("plugins.hoster.justintv.customdate", "Define how the date should look:")).setDefaultValue("dd.MM.yyyy_hh-mm-ss"));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), PARTNUMBERFORMAT, JDL.L("plugins.hoster.justintv.custompartnumber", "Define how the partnumbers should look:")).setDefaultValue("00"));

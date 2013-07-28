@@ -27,7 +27,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vids.myspace.com" }, urls = { "https?://(www\\.)?(myspace\\.com/(([a-z0-9\\-_]+/)?video/[a-z0-9\\-_]+/\\d+|[a-z0-9\\-_]+/music/song/[a-z0-9\\-_\\.]+)|mediaservices\\.myspace\\.com/services/media/embed\\.aspx/m=\\d+)" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vids.myspace.com" }, urls = { "https?://(www\\.)?(myspace\\.com/(([a-z0-9\\-_\\.]+/)?video/[a-z0-9\\-_]+/\\d+|[a-z0-9\\-_]+/music/song/[a-z0-9\\-_\\.]+)|mediaservices\\.myspace\\.com/services/media/embed\\.aspx/m=\\d+)" }, flags = { 0 })
 public class VidsMySpaceCom extends PluginForHost {
 
     private static final String SONGURL = "https?://(www\\.)?myspace\\.com/[a-z0-9\\-_]+/music/song/[a-z0-9\\-_\\.]+";

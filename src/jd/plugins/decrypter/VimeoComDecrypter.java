@@ -41,7 +41,7 @@ import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vimeo.com" }, urls = { "https?://(www\\.|player\\.)?vimeo\\.com/(video/)?\\d+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vimeo.com" }, urls = { "https?://(www\\.|player\\.)?vimeo\\.com/((video/)?\\d+|channels/[a-z0-9\\-_]+/\\d+)" }, flags = { 0 })
 public class VimeoComDecrypter extends PluginForDecrypt {
 
     private static final String Q_MOBILE   = "Q_MOBILE";
@@ -56,19 +56,18 @@ public class VimeoComDecrypter extends PluginForDecrypt {
     }
 
     @Override
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
-        parameter = parameter.replace("https://", "http://");
-
         final SubConfiguration cfg = SubConfiguration.getConfig("vimeo.com");
-
         final String ID = new Regex(parameter, "/(\\d+)").getMatch(0);
-        Browser br = new Browser();
+        parameter = "http://vimeo.com/" + ID;
+
+        final Browser br = new Browser();
         setBrowserExclusive();
         br.setFollowRedirects(true);
         br.setCookie("vimeo.com", "v6f", "1");
-        br.getPage("http://vimeo.com/" + ID);
+        br.getPage(parameter);
 
         /* Workaround for User from Iran */
         if (br.containsHTML("<body><iframe src=\"http://10\\.10\\.\\d+\\.\\d+\\?type=(Invalid Site)?\\&policy=MainPolicy")) br.getPage("http://player.vimeo.com/config/" + ID);
