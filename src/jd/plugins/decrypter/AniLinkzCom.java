@@ -44,7 +44,7 @@ import jd.utils.JDUtilities;
 @SuppressWarnings("deprecation")
 public class AniLinkzCom extends PluginForDecrypt {
 
-    private final String                   supported_hoster  = "(4shared\\.com|animeuploads\\.com|auengine\\.com|cizgifilmlerizle\\.com|dailymotion\\.com|gorillavid\\.in|mp4upload\\.com|myspace\\.com|nowvideo\\.eu|novamov\\.com|putlocker\\.com|rutube\\.ru|stagevu\\.com|uploadc\\.com|veevr\\.com|veoh\\.com|video44\\.net|videobb\\.com|videobam\\.com|videoweed\\.com|yourupload\\.com|youtube\\.com)";
+    private final String                   supported_hoster  = "(4shared\\.com|animeuploads\\.com|auengine\\.com|cizgifilmlerizle\\.com|dailymotion\\.com|gorillavid\\.in|mp4upload\\.com|myspace\\.com|nowvideo\\.eu|novamov\\.com|putlocker\\.com|rutube\\.ru|stagevu\\.com|upload2\\.com|uploadc\\.com|veevr\\.com|veoh\\.com|video44\\.net|videobb\\.com|videobam\\.com|videoweed\\.com|yourupload\\.com|youtube\\.com|zshare\\.net)";
     private final String                   invalid_links     = "http://(www\\.)?anilinkz\\.com/(search|affiliates|get|img|dsa|forums|files|category|\\?page=|faqs|.*?-list|.*?-info|\\?random).*?";
     private String                         parameter         = null;
     private String                         fpName            = null;
@@ -192,15 +192,15 @@ public class AniLinkzCom extends PluginForDecrypt {
         String escapeAll = br2.getRegex("escapeall\\('(.*)'\\)\\)\\);").getMatch(0);
         if (!inValidate(escapeAll)) {
             escapeAll = escapeAll.replaceAll("[A-Z~!@#\\$\\*\\{\\}\\[\\]\\-\\+\\.]?", "");
-        } else {
-            logger.warning("Decrypter out of date for link: " + parameter);
-            return;
-        }
-        escapeAll = Encoding.htmlDecode(escapeAll);
-        // not online yet... || offline results within escapeAll
-        if (inValidate(escapeAll) || new Regex(escapeAll, "(/img/\\w+dead\\.jpg|http://www\\./media)").matches()) {
-            logger.info("Could not find link: " + br2.getURL());
-            DownloadLink dl = createDownloadlink("directhttp://http://anilinkz.com/");
+            escapeAll = Encoding.htmlDecode(escapeAll);
+        } else if (inValidate(escapeAll) || new Regex(escapeAll, "(/img/\\w+dead\\.jpg|http://www\\./media)").matches()) {
+            // escapeAll == null / not online yet... || offline results within escapeAll
+            if (br.containsHTML("This page will be updated as soon as"))
+                logger.info("Not been release yet... : " + br2.getURL());
+            else
+                logger.warning("Decrypter out of date for link: " + br2.getURL());
+            DownloadLink dl = createDownloadlink("directhttp://" + br2.getURL());
+            dl.setProperty("OFFLINE", true);
             dl.setAvailable(false);
             decryptedLinks.add(dl);
             return;
