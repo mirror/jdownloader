@@ -276,8 +276,10 @@ public class RealDebridCom extends PluginForHost {
                 logger.info("It's not happy hour, free account, you need premium!.");
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
             } else if (br.containsHTML("error\":6,")) {
+                // {"error":6,"message":"Ihr Tages-Limit wurde erreicht."}
                 // {"error":6,"message":"Daily limit exceeded."}
                 logger.info("You have run out of download quota for this hoster");
+                removeHostFromMultiHost(link, acc);
             } else if (br.containsHTML("error\":10,")) {
                 logger.info("File's hoster is in maintenance. Try again later");
                 removeHostFromMultiHost(link, acc);

@@ -48,9 +48,9 @@ public class Rpdshrknt extends PluginForDecrypt {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
-        if (finallink.contains("cdn.share.net.ua/")) {
+        if (finallink.contains("share.net.ua/")) {
             br.getPage(finallink);
-            finallink = br.getRegex("\"(http://cdn\\.share\\.net\\.ua/temp/[^<>\"]*?)\"").getMatch(0);
+            finallink = br.getRegex("\"(http://\\w+\\.share\\.net\\.ua/temp/[^<>\"]*?)\"").getMatch(0);
             if (finallink == null) {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;

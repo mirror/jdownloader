@@ -59,9 +59,10 @@ public class Indowebster extends PluginForHost {
             post += strregex.getMatch(0) + "=" + strregex.getMatch(1);
         }
         br.postPage(action, post);
-        final String dllink = br.toString();
+        String dllink = br.toString();
         if (dllink == null || !dllink.startsWith("http") || dllink.length() > 500) { return null; }
-        return dllink.replace("[", "%5B").replace("]", "%5D");
+        dllink = dllink.replace("[", "%5B").replace("]", "%5D");
+        return dllink;
     }
 
     @Override
@@ -96,7 +97,7 @@ public class Indowebster extends PluginForHost {
             ad_url = "http://www.indowebster.com/" + ad_url;
         }
         br.getPage(ad_url);
-        final String realName = br.getRegex("<strong id=\"filename\">(\\[www\\.indowebster\\.com\\])?(.*?)</strong>").getMatch(1);
+        final String realName = br.getRegex("<strong id=\"filename\">(\\[\\w+\\.indowebster\\.com\\])?(.*?)</strong>").getMatch(1);
         if (realName != null) {
             link.setFinalFileName(Encoding.htmlDecode(realName));
         }
@@ -116,6 +117,8 @@ public class Indowebster extends PluginForHost {
         if (dllink == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
         dllink = dllink.trim();
         br.setDebug(true);
+        br.setReadTimeout(180 * 1001);
+        br.setConnectTimeout(180 * 1001);
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
