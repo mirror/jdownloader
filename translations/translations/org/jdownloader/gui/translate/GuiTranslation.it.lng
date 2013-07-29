@@ -467,6 +467,7 @@ MyJDownloaderSettingsPanel_runInEDT_account_badlogins=Il tuo account è stato di
 MyJDownloaderSettingsPanel_runInEDT_account_unconfirmed_=Il tuo account è stato disattivato poichè la email non è stata ancora confermata. Ti abbiamo inviato una email per confermare il tuo indirizzo. Seleziona il collegamento nella email.
 MyJDownloaderSettingsPanel_runInEDT_account_unknown=Il tuo account è stato disattivato a causa dell'errore: %s1
 MyJDownloaderSettingsPanel_runInEDT_connected_2=Connessione stabillita. Grande!
+MyJDownloaderSettingsPanel_runInEDT_connections=Connessione attuale: %s1
 MyJDownloaderSettingsPanel_runInEDT_disconnected_=Non connesso!
 MyJDownloaderSettingsPanel_runInEDT_pending=Connessione in corso...
 NewPackageDialog_NewPackageDialog_=Nuovo pacchetto
