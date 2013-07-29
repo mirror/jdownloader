@@ -759,7 +759,7 @@ public class Uploadedto extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "Upload User deleted");
             case 8013:
                 // {"err":["Leider haben wir Zugriffe von zu vielen verschiedenen IPs auf Ihren Account feststellen k&#246;nnen, Account-Sharing ist laut unseren AGB strengstens untersagt. Sie k&#246;nnen f&#252;r den heutigen Tag leider keine Premium-Downloads mehr starten."],"errCode":8013}
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, "Your account been flagged for 'Account sharing', Please contact " + this.getHost() + " support for resolution.", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "Your account been flagged for 'Account sharing', Please contact " + this.getHost() + " support for resolution.", PluginException.VALUE_ID_PREMIUM_DISABLE);
             case 8016:
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server in maintenance", 20 * 60 * 1000l);
             case 8017:
@@ -879,7 +879,7 @@ public class Uploadedto extends PluginForHost {
                 }
                 if (br.containsHTML(">Download Blocked \\(ip\\)<") || br.containsHTML("Leider haben wir Zugriffe von zu vielen verschiedenen IPs auf Ihren Account feststellen k\\&#246;nnen, Account-Sharing ist laut unseren AGB strengstens untersagt")) {
                     logger.info("Download blocked (IP), disabling account...");
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "Your account been flagged for 'Account sharing', Please contact " + this.getHost() + " support for resolution.", PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
                 int chunks = 0;
                 boolean resume = true;
@@ -1111,7 +1111,13 @@ public class Uploadedto extends PluginForHost {
         br.getHeaders().put("Accept-Language", "en-US,en;q=0.5");
         br.setCookie("http://uploaded.net", "lang", "en");
         br.setCookie("https://uploaded.net", "lang", "en");
-        br.getPage(getProtocol() + "uploaded.net/language/en");
+        boolean red = br.isFollowingRedirects();
+        try {
+            br.setFollowRedirects(false);
+            br.getPage(getProtocol() + "uploaded.net/language/en");
+        } finally {
+            br.setFollowRedirects(red);
+        }
     }
 
     private String getIP() throws PluginException {
