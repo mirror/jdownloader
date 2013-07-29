@@ -27,8 +27,11 @@ import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map.Entry;
 import java.util.Properties;
 import java.util.Random;
 import java.util.TreeSet;
@@ -63,6 +66,8 @@ import org.appwork.controlling.SingleReachableState;
 import org.appwork.shutdown.ShutdownController;
 import org.appwork.shutdown.ShutdownEvent;
 import org.appwork.shutdown.ShutdownRequest;
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.events.GenericConfigEventListener;
@@ -232,7 +237,17 @@ public class SecondLevelLaunch {
         System.setProperty("sun.swing.enableImprovedDragGesture", "true");
         try {
             // log source revision infos
-            SecondLevelLaunch.LOG.info(IO.readFileToString(Application.getResource("build.json")));
+            HashMap<String, Object> versionMap = JSonStorage.restoreFromString(IO.readFileToString(Application.getResource("build.json")), new TypeRef<HashMap<String, Object>>() {
+            });
+            if (versionMap != null) {
+                Iterator<Entry<String, Object>> it = versionMap.entrySet().iterator();
+                while (it.hasNext()) {
+                    Entry<String, Object> next = it.next();
+                    if (next.getKey().endsWith("Revision")) {
+                        System.setProperty("jd.revision." + next.getKey().toLowerCase(Locale.ENGLISH), next.getValue().toString());
+                    }
+                }
+            }
         } catch (Throwable e1) {
             SecondLevelLaunch.LOG.log(e1);
         }
@@ -254,11 +269,8 @@ public class SecondLevelLaunch {
         } else {
             SecondLevelLaunch.LOG.info("Jared Version(" + revision + ")");
         }
-
         SecondLevelLaunch.preInitChecks();
-
         SecondLevelLaunch.start(args);
-
     }
 
     // private static void checkSessionInstallLog() {
