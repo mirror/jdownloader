@@ -76,7 +76,8 @@ public class EgoFilesCom extends PluginForHost {
         br.setCookie(MAINPAGE, "lang", "en");
         br.getPage(link.getDownloadURL());
         // (Invalid link | Link offline, this also means country block!)
-        if (br.containsHTML("(>404 \\- Not Found<|>404 File not found<)") || br.containsHTML("Ten link jest niepoprawny, sprawdź czy nie ma jakiegoś błędu\\.")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("(>404 \\- Not Found<|>404 File not found<)") || br.containsHTML("Ten link jest niepoprawny, sprawdź czy nie ma jakiegoś błędu\\.") || br.containsHTML("File size: 0 KB | Upload date:          </div>")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+
         final String filename = br.getRegex("<div class=\"down\\-file\">([^<>\"]*?)<div").getMatch(0);
         final String filesize = br.getRegex("File size: ([^<>\"]*?) \\|").getMatch(0);
         if (filename == null || filesize == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "filename or filesize not recognized"); }
@@ -247,9 +248,14 @@ public class EgoFilesCom extends PluginForHost {
             // based on the logs only, need real Premium to check
             final String limitMsg = br.getRegex("<h2 class=\"grey\\-brake\">(.*?)</h2>").getMatch(0);
             if (limitMsg != null) {
-                logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!\nMessage: " + limitMsg);
-                UserIO.getInstance().requestMessageDialog(0, "EgoFiles.com Premium Error", limitMsg + "\r\nPremium disabled, will continue downloads as Free User");
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+                if (limitMsg.equals("404 File not found"))
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                else {
+                    logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!\nMessage: " + limitMsg);
+                    UserIO.getInstance().requestMessageDialog(0, "EgoFiles.com Premium Error", limitMsg + "\r\nPremium disabled, will continue downloads as Free User");
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+                }
+
             } else {
                 logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!\n" + br.getRequest().getHtmlCode());
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "final dllink is null");
