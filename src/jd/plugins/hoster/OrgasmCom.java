@@ -99,7 +99,7 @@ public class OrgasmCom extends PluginForHost {
     private void setupRTMPConnection(final DownloadInterface dl) {
         final jd.network.rtmp.url.RtmpUrlConnection rtmp = ((RTMPDownload) dl).getRtmpConnection();
         String playpath = DLLINK.split("@")[1];
-        playpath = playpath.startsWith("/") ? "mp4:" + playpath.substring(1) : playpath;
+        playpath = playpath.endsWith(".mp4") ? "mp4:" + playpath.substring(1) : playpath;
 
         rtmp.setResume(false);
         rtmp.setPlayPath(playpath);
