@@ -190,6 +190,16 @@ public class GrooveShark extends PluginForHost {
         try {
             appjs.getPage(APPJSURL.string);
         } catch (Throwable e) {
+            /**
+             * FIXME Jiaz, ist das ein Browser Bug? --> jd.http.Browser$BrowserException: Content-length too big 10475091999 >= 1048576
+             * 
+             * Die Datei ist 1.049.526 Bytes groß
+             * 
+             * Bsp.: http://grooveshark.com/#!/playlist/Rock+n+Roll+Baby/65695650
+             * 
+             * .bismarck
+             */
+            e.printStackTrace();
             return null;
         }
         return appjs.getRegex(appjs.getRegex(reqk(2)).getMatch(0) + reqk(4)).getMatch(0);
