@@ -48,17 +48,17 @@ import jd.utils.locale.JDL;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vimeo.com" }, urls = { "decryptedforVimeoHosterPlugin\\d?://(www\\.|player\\.)?vimeo\\.com/(video/)?\\d+" }, flags = { 2 })
 public class VimeoCom extends PluginForHost {
 
-    private static final String MAINPAGE       = "http://vimeo.com";
-    static private final String AGB            = "http://www.vimeo.com/terms";
+    private static final String MAINPAGE        = "http://vimeo.com";
+    static private final String AGB             = "http://www.vimeo.com/terms";
     private String              finalURL;
-    private static Object       LOCK           = new Object();
-    private static final String Q_MOBILE       = "Q_MOBILE";
-    private static final String Q_ORIGINAL     = "Q_ORIGINAL";
-    private static final String Q_HD           = "Q_HD";
-    private static final String Q_SD           = "Q_SD";
-    private static final String Q_BEST         = "Q_BEST";
-    private static final String CUSTOM_DATE    = "CUSTOM_DATE";
-    private static final String CUSTOMFILENAME = "CUSTOMFILENAME";
+    private static Object       LOCK            = new Object();
+    private static final String Q_MOBILE        = "Q_MOBILE";
+    private static final String Q_ORIGINAL      = "Q_ORIGINAL";
+    private static final String Q_HD            = "Q_HD";
+    private static final String Q_SD            = "Q_SD";
+    private static final String Q_BEST          = "Q_BEST";
+    private static final String CUSTOM_DATE     = "CUSTOM_DATE";
+    private static final String CUSTOM_FILENAME = "CUSTOM_FILENAME";
 
     public VimeoCom(final PluginWrapper wrapper) {
         super(wrapper);
@@ -395,7 +395,7 @@ public class VimeoCom extends PluginForHost {
     public static String getFormattedFilename(final DownloadLink downloadLink) throws ParseException {
         String videoName = downloadLink.getStringProperty("plainfilename", null);
         final SubConfiguration cfg = SubConfiguration.getConfig("vimeo.com");
-        String formattedFilename = cfg.getStringProperty(CUSTOMFILENAME);
+        String formattedFilename = cfg.getStringProperty(CUSTOM_FILENAME);
         if (formattedFilename == null || formattedFilename.equals("")) formattedFilename = defaultCustomFilename;
 
         final String date = downloadLink.getStringProperty("originaldate", null);
@@ -472,10 +472,11 @@ public class VimeoCom extends PluginForHost {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "Filename settings:"));
         // killing old bad reference, which is stored *delete this in a month 20130731
         getPluginConfig().setProperty("CUSTOMDATE", Property.NULL);
+        getPluginConfig().setProperty("CUSTOMFILENAME", Property.NULL);
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), CUSTOM_DATE, JDL.L("plugins.hoster.vimeocom.customdate", "Define how the date should look.")).setDefaultValue("dd.MM.yyyy_HH-mm-ss"));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "Customize the filename! Example: '*channelname*_*date*_*videoname**ext*'"));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), CUSTOMFILENAME, JDL.L("plugins.hoster.vimeocom.customfilename", "Define how the filenames should look:")).setDefaultValue(defaultCustomFilename));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), CUSTOM_FILENAME, JDL.L("plugins.hoster.vimeocom.customfilename", "Define how the filenames should look:")).setDefaultValue(defaultCustomFilename));
         final StringBuilder sb = new StringBuilder();
         sb.append("Explanation of the available tags:\r\n");
         sb.append("*channelname* = name of the channel/uploader\r\n");
