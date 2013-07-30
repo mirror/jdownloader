@@ -98,8 +98,12 @@ public class MotherLessCom extends PluginForDecrypt {
             }
             return decryptedLinks;
         }
-        if (br.containsHTML("(jwplayer\\(|jwplayer_playing|jwplayer_position)")) {
+        if (br.containsHTML("(jwplayer\\(jwplayer_playing|jwplayer_position|" + jd.plugins.hoster.MotherLessCom.notOnlineYet + ")")) {
             DownloadLink dlink = createDownloadlink(parameter.replace("motherless.com/", "motherlessvideos.com/"));
+            if (br.containsHTML(jd.plugins.hoster.MotherLessCom.notOnlineYet)) {
+                jd.plugins.hoster.MotherLessCom.notOnlineYet(dlink, false);
+                dlink.setAvailable(false);
+            }
             dlink.setProperty("dltype", "video");
             dlink.setBrowserUrl(parameter);
             dlink.setName(new Regex(parameter, "motherless\\.com/(.+)").getMatch(0));

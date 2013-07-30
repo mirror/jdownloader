@@ -16,8 +16,6 @@
 
 package jd.plugins.hoster;
 
-import java.io.IOException;
-
 import jd.PluginWrapper;
 import jd.http.RandomUserAgent;
 import jd.http.URLConnectionAdapter;
@@ -35,10 +33,11 @@ import jd.plugins.PluginForHost;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "motherless.com" }, urls = { "http://(www\\.)?(members\\.)?(motherless\\.com/(movies|thumbs).*|(premium)?motherlesspictures(media)?\\.com/[a-zA-Z0-9/\\.]+|motherlessvideos\\.com/[a-zA-Z0-9/\\.]+)" }, flags = { 2 })
 public class MotherLessCom extends PluginForHost {
 
-    private static final String SUBSCRIBEFAILED     = "Failed to subscribe to the owner of the video";
-    private static final String ONLY4REGISTEREDTEXT = "This link is only downloadable for registered users.";
-    private String              DLLINK              = null;
-    public final static String  ua                  = RandomUserAgent.generate();
+    private final String       SUBSCRIBEFAILED     = "Failed to subscribe to the owner of the video";
+    private final String       ONLY4REGISTEREDTEXT = "This link is only downloadable for registered users.";
+    private String             DLLINK              = null;
+    public final static String notOnlineYet        = "(This video is being processed and will be available shortly|This video will be available in (less than a minute|[0-9]+ minutes))";
+    public final static String ua                  = RandomUserAgent.generate();
 
     public MotherLessCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -65,10 +64,8 @@ public class MotherLessCom extends PluginForHost {
             }
         }
         if ("video".equals(link.getStringProperty("dltype"))) {
-            getVideoLink(link);
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, DLLINK, true, 0);
         } else if ("image".equals(link.getStringProperty("dltype"))) {
-            getPictureLink(link);
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, DLLINK, false, 1);
         } else {
             logger.warning("Unnknown case for link: " + link.getDownloadURL());
@@ -109,8 +106,7 @@ public class MotherLessCom extends PluginForHost {
         return -1;
     }
 
-    private void getPictureLink(DownloadLink parameter) throws IOException, PluginException {
-        br.getPage(parameter.getDownloadURL());
+    private void getPictureLink() {
         DLLINK = br.getRegex("\"(http://members\\.motherless\\.com/img/.*?)\"").getMatch(0);
         if (DLLINK == null) {
             DLLINK = br.getRegex("full_sized\\.jpg\" (.*?)\"(http://s\\d+\\.motherless\\.com/dev\\d+/\\d+/\\d+/\\d+/\\d+.*?)\"").getMatch(1);
@@ -124,20 +120,14 @@ public class MotherLessCom extends PluginForHost {
                 }
             }
         }
-        // No link there but link to the full picture -> Offline
-        if (DLLINK == null && br.containsHTML("<div id=\"media\\-media\">[\t\n\r ]+<div>[\t\n\r ]+<a href=\"/[A-Z0-9]+\\?full\"")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        if (DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
     }
 
-    private void getVideoLink(final DownloadLink parameter) throws IOException, PluginException {
-        br.getPage(parameter.getDownloadURL());
-        if (br.containsHTML("<img src=\"/images/icons/exclamation\\.png\" style=\"margin\\-top: \\-5px;\" />[\t\n\r ]+404")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+    private void getVideoLink() {
         DLLINK = br.getRegex("addVariable\\(\\'file\\', \\'(http://.*?\\.flv)\\'\\)").getMatch(0);
         if (DLLINK == null) {
             DLLINK = br.getRegex("(http://s\\d+\\.motherlessmedia\\.com/dev[0-9]+/[^<>\"]*?\\.flv)\"").getMatch(0);
         }
         if (DLLINK != null && !DLLINK.contains("?start=0")) DLLINK += "?start=0";
-        if (DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
     }
 
     public void handleFree(DownloadLink link) throws Exception {
@@ -175,7 +165,9 @@ public class MotherLessCom extends PluginForHost {
         if (br.getCookie("http://motherless.com/", "motherless_auth") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
     }
 
-    public AvailableStatus requestFileInformation(DownloadLink parameter) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(DownloadLink parameter) throws Exception {
+        // reset comment/message
+        if ("video".equals(parameter.getStringProperty("dltype"))) notOnlineYet(parameter, true);
         if (parameter.getStringProperty("onlyregistered") != null) {
             logger.info(ONLY4REGISTEREDTEXT);
             parameter.getLinkStatus().setStatusText("This " + parameter.getStringProperty("dltype") + " link can only be downloaded by registered users");
@@ -188,11 +180,22 @@ public class MotherLessCom extends PluginForHost {
         if ("offline".equals(parameter.getStringProperty("dltype"))) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if ("video".equals(parameter.getStringProperty("dltype"))) {
-            getVideoLink(parameter);
+            br.getPage(parameter.getDownloadURL());
+            if (br.containsHTML(notOnlineYet)) {
+                notOnlineYet(parameter, false);
+                return AvailableStatus.FALSE;
+            }
+            if (br.containsHTML("<img src=\"/images/icons/exclamation\\.png\" style=\"margin\\-top: \\-5px;\" />[\t\n\r ]+404")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            getVideoLink();
+            if (DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             betterName = new Regex(parameter.getDownloadURL(), "([A-Za-z0-9]+)$").getMatch(0);
             if (betterName != null) betterName += ".flv";
         } else if ("image".equals(parameter.getStringProperty("dltype"))) {
-            getPictureLink(parameter);
+            br.getPage(parameter.getDownloadURL());
+            getPictureLink();
+            // No link there but link to the full picture -> Offline
+            if (DLLINK == null && br.containsHTML("<div id=\"media\\-media\">[\t\n\r ]+<div>[\t\n\r ]+<a href=\"/[A-Z0-9]+\\?full\"")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            if (DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         if (DLLINK == null) DLLINK = parameter.getDownloadURL();
         URLConnectionAdapter con = null;
@@ -211,6 +214,17 @@ public class MotherLessCom extends PluginForHost {
             } catch (final Throwable e) {
             }
         }
+    }
+
+    public static DownloadLink notOnlineYet(DownloadLink downloadLink, boolean reset) {
+        String msg = null;
+        if (!reset) msg = "Not online yet... check again later";
+        downloadLink.getLinkStatus().setStatusText(msg);
+        try {
+            downloadLink.setComment(msg);
+        } catch (Throwable e) {
+        }
+        return downloadLink;
     }
 
     public void reset() {

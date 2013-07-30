@@ -261,6 +261,7 @@ public class RealDebridCom extends PluginForHost {
                 // 1: Happy hours activated BUT the concerned hoster is not included => Upgrade to Premium to use it
                 logger.info("This Hoster isn't supported in Happy Hour!");
                 removeHostFromMultiHost(link, acc);
+                throw new PluginException(LinkStatus.ERROR_RETRY);
             } else if (br.containsHTML("\"error\":2,")) {
                 // from rd
                 // 2: Free account, come back at happy hours
@@ -280,12 +281,15 @@ public class RealDebridCom extends PluginForHost {
                 // {"error":6,"message":"Daily limit exceeded."}
                 logger.info("You have run out of download quota for this hoster");
                 removeHostFromMultiHost(link, acc);
+                throw new PluginException(LinkStatus.ERROR_RETRY);
             } else if (br.containsHTML("error\":10,")) {
                 logger.info("File's hoster is in maintenance. Try again later");
                 removeHostFromMultiHost(link, acc);
+                throw new PluginException(LinkStatus.ERROR_RETRY);
             } else if (br.containsHTML("error\":11,")) {
                 logger.info("Host seems buggy, remove it from list");
                 removeHostFromMultiHost(link, acc);
+                throw new PluginException(LinkStatus.ERROR_RETRY);
             } else if (br.containsHTML("error\":12,")) {
                 /* You have too many simultaneous downloads */
                 MAX_DOWNLOADS.set(RUNNING_DOWNLOADS.get());
