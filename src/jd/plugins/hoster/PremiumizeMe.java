@@ -39,6 +39,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
 import org.appwork.storage.JSonStorage;
+import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.net.Base64OutputStream;
 
@@ -228,6 +229,7 @@ public class PremiumizeMe extends PluginForHost {
         }
         String trafficleft_bytes = br.getRegex("trafficleft_bytes\":(-?[\\d\\.]+)").getMatch(0);
         if (trafficleft_bytes != null) {
+            ai.setTrafficMax(SizeFormatter.getSize("220 GByte", true, true));
             if (Long.parseLong(trafficleft_bytes) <= 0) trafficleft_bytes = "0";
             ai.setTrafficLeft(trafficleft_bytes);
         } else {
