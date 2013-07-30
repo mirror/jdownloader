@@ -57,7 +57,7 @@ public class VimeoCom extends PluginForHost {
     private static final String Q_HD           = "Q_HD";
     private static final String Q_SD           = "Q_SD";
     private static final String Q_BEST         = "Q_BEST";
-    private static final String CUSTOMDATE     = "CUSTOMDATE";
+    private static final String CUSTOM_DATE    = "CUSTOM_DATE";
     private static final String CUSTOMFILENAME = "CUSTOMFILENAME";
 
     public VimeoCom(final PluginWrapper wrapper) {
@@ -396,33 +396,40 @@ public class VimeoCom extends PluginForHost {
         String videoName = downloadLink.getStringProperty("plainfilename", null);
         final SubConfiguration cfg = SubConfiguration.getConfig("vimeo.com");
         String formattedFilename = cfg.getStringProperty(CUSTOMFILENAME);
-        if (formattedFilename == null || formattedFilename.equals("")) formattedFilename = "*channel*_*date*_*filename*";
+        if (formattedFilename == null || formattedFilename.equals("")) formattedFilename = defaultCustomFilename;
 
         final String date = downloadLink.getStringProperty("originaldate", null);
         final String channelName = downloadLink.getStringProperty("channel", null);
 
         String formattedDate = null;
-        if (date != null) {
-            final String userDefinedDateFormat = cfg.getStringProperty(CUSTOMDATE);
+        if (date != null && formattedFilename.contains("*date*")) {
+            final String userDefinedDateFormat = cfg.getStringProperty(CUSTOM_DATE);
             final String[] dateStuff = date.split("T");
-            SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd:hh:mm:ss");
+            SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd:HH:mm:ss");
             Date dateStr = formatter.parse(dateStuff[0] + ":" + dateStuff[1]);
+
             formattedDate = formatter.format(dateStr);
             Date theDate = formatter.parse(formattedDate);
 
-            formatter = new SimpleDateFormat(userDefinedDateFormat);
-            formattedDate = formatter.format(theDate);
+            if (userDefinedDateFormat != null) {
+                try {
+                    formatter = new SimpleDateFormat(userDefinedDateFormat);
+                    formattedDate = formatter.format(theDate);
+                } catch (Exception e) {
+                    // prevent user error killing plugin.
+                    formattedDate = "";
+                }
+            }
+            if (formattedDate != null)
+                formattedFilename = formattedFilename.replace("*date*", formattedDate);
+            else
+                formattedFilename = formattedFilename.replace("*date*", "");
         }
-
-        if (channelName != null) {
-            formattedFilename = formattedFilename.replace("*channelname*", channelName);
-        } else {
-            formattedFilename = formattedFilename.replace("*channelname*", "");
-        }
-        if (formattedDate != null) {
-            formattedFilename = formattedFilename.replace("*date*", formattedDate);
-        } else {
-            formattedFilename = formattedFilename.replace("*date*", "");
+        if (formattedFilename.contains("*channel*")) {
+            if (channelName != null)
+                formattedFilename = formattedFilename.replace("*channel*", channelName);
+            else
+                formattedFilename = formattedFilename.replace("*channel*", "");
         }
         formattedFilename = formattedFilename.replace("*ext*", ".mp4");
         // Insert filename at the end to prevent errors with tags
@@ -452,6 +459,8 @@ public class VimeoCom extends PluginForHost {
         return "JDownloader's Vimeo Plugin helps downloading videoclips from vimeo.com. Vimeo provides different video qualities.";
     }
 
+    private final static String defaultCustomFilename = "*videoname**ext*";
+
     private void setConfigElements() {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), Q_BEST, JDL.L("plugins.hoster.vimeo.best", "Load Best Version ONLY")).setDefaultValue(false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
@@ -461,10 +470,12 @@ public class VimeoCom extends PluginForHost {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), Q_SD, JDL.L("plugins.hoster.vimeo.loadhd", "Load SD Version")).setDefaultValue(true));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "Filename settings:"));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), CUSTOMDATE, JDL.L("plugins.hoster.vimeocom.customdate", "Define how the date should look.")).setDefaultValue("dd.MM.yyyy_hh-mm-ss"));
+        // killing old bad reference, which is stored *delete this in a month 20130731
+        getPluginConfig().setProperty("CUSTOMDATE", Property.NULL);
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), CUSTOM_DATE, JDL.L("plugins.hoster.vimeocom.customdate", "Define how the date should look.")).setDefaultValue("dd.MM.yyyy_HH-mm-ss"));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "Customize the filename! Example: '*channelname*_*date*_*videoname**ext*'"));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), CUSTOMFILENAME, JDL.L("plugins.hoster.vimeocom.customfilename", "Define how the filenames should look:")).setDefaultValue("*channelname*_*date*_*videoname**ext*"));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), CUSTOMFILENAME, JDL.L("plugins.hoster.vimeocom.customfilename", "Define how the filenames should look:")).setDefaultValue(defaultCustomFilename));
         final StringBuilder sb = new StringBuilder();
         sb.append("Explanation of the available tags:\r\n");
         sb.append("*channelname* = name of the channel/uploader\r\n");

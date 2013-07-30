@@ -151,7 +151,7 @@ public class VimeoComDecrypter extends PluginForDecrypt {
             if (channelName != null) link.setProperty("channel", Encoding.htmlDecode(channelName.trim()));
             link.setProperty("plainfilename", name);
             final String formattedFilename = ((jd.plugins.hoster.VimeoCom) hostPlugin).getFormattedFilename(link);
-            link.setName(formattedFilename);
+            link.setFinalFileName(formattedFilename);
             link.setProperty("directName", formattedFilename);
 
             if (quality[3] != null) {
