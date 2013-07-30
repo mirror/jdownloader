@@ -32,6 +32,10 @@ import jd.plugins.PluginForHost;
 public class AnimeUploadsCom extends PluginForHost {
 
     // raztoki 'fuck_you' embed video player template.
+    // Name: animeuploads.com
+    // Address: 178.211.52.82
+    // Name: cizgifilmlerizle.com
+    // Address: 178.211.52.82
 
     private String  dllink  = null;
     private int     chunks  = 0;
@@ -81,7 +85,7 @@ public class AnimeUploadsCom extends PluginForHost {
         br.submitForm(dl);
         dllink = br.getRegex(";file=(http[^\"&]+)").getMatch(0);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        dllink = Encoding.urlDecode(dllink, true);
+        dllink = Encoding.urlDecode(dllink, false);
         Browser br2 = br.cloneBrowser();
         // In case the link redirects to the finallink
         br2.setFollowRedirects(true);

@@ -1,5 +1,5 @@
 //jDownloader - Downloadmanager
-//Copyright (C) 2009  JD-Team support@jdownloader.org
+//Copyright (C) 2013  JD-Team support@jdownloader.org
 //
 //This program is free software: you can redistribute it and/or modify
 //it under the terms of the GNU General Public License as published by
@@ -27,7 +27,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "gogoanime.com" }, urls = { "http://(www\\.)?gogoanime\\.com/(?!category|thumbs|sitemap|img|xmlrpc|fav|images|ads)[a-z0-9\\-_]+(/\\d+)?" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "gogoanime.com", "goodanime.net", "gooddrama.net" }, urls = { "http://(www\\.)?gogoanime\\.com/(?!category|thumbs|sitemap|img|xmlrpc|fav|images|ads)[a-z0-9\\-_]+(/\\d+)?", "http://(www\\.)?goodanime\\.net/(?!category|thumbs|sitemap|img|xmlrpc|fav|images|ads)[a-z0-9\\-_]+(/\\d+)?", "http://(www\\.)?gooddrama\\.net/(?!category|thumbs|sitemap|img|xmlrpc|fav|images|ads)([a-z0-9\\-_]+/?){2}([\\d\\-]+)?" }, flags = { 0, 0, 0 })
 public class GogoanimeCom extends PluginForDecrypt {
 
     public GogoanimeCom(PluginWrapper wrapper) {
@@ -62,7 +62,7 @@ public class GogoanimeCom extends PluginForDecrypt {
         }
 
         String fpName = br.getRegex("<h1>(.*?)</h1>").getMatch(0);
-        if (fpName == null) fpName = br.getRegex("<title>([^<>\"]*?)( \\w+ Sub)?</title>").getMatch(0);
+        if (fpName == null) fpName = br.getRegex("<title>([^<>\"]*?)( \\w+ Sub.*?)?</title>").getMatch(0);
 
         final String[] links = br.getRegex("<iframe.*?src=(\"|\\')(http[^<>\"]+)(\"|\\')").getColumn(1);
         if (links == null || links.length == 0) {
@@ -70,8 +70,8 @@ public class GogoanimeCom extends PluginForDecrypt {
             return null;
         }
         for (final String singleLink : links) {
-            // lets prevent returning of links which contain gogoanime...
-            if (!singleLink.contains(this.getHost())) {
+            // lets prevent returning of links which contain itself.
+            if (!singleLink.matches(".+(" + this.getHost().replace(".", "\\.") + "|imgur\\.com).+")) {
                 final DownloadLink dl = createDownloadlink(Encoding.htmlDecode(singleLink));
                 if (dl != null) decryptedLinks.add(dl);
             }
@@ -80,6 +80,7 @@ public class GogoanimeCom extends PluginForDecrypt {
             final FilePackage fp = FilePackage.getInstance();
             fp.setName(fpName.trim());
             fp.addLinks(decryptedLinks);
+            fp.setProperty("ALLOW_MERGE", true);
         }
         return decryptedLinks;
     }

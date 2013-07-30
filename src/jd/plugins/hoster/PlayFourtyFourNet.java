@@ -27,20 +27,20 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision: 21813 $", interfaceVersion = 2, names = { "video44.net" }, urls = { "http://(www\\.)?video44\\.net/gogo/\\?.+" }, flags = { 0 })
-public class VideoFourtyFourNet extends PluginForHost {
+@HostPlugin(revision = "$Revision: 21813 $", interfaceVersion = 2, names = { "play44.net" }, urls = { "http://(www\\.)?play44\\.net/embed\\.php\\?.+" }, flags = { 0 })
+public class PlayFourtyFourNet extends PluginForHost {
 
     // raztoki embed video player template.
 
     private String dllink = null;
 
-    public VideoFourtyFourNet(PluginWrapper wrapper) {
+    public PlayFourtyFourNet(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     @Override
     public String getAGBLink() {
-        return "http://www.video44.net/";
+        return "http://www.play44.net";
     }
 
     @Override
@@ -51,7 +51,7 @@ public class VideoFourtyFourNet extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
         dl.startDownload();
     }
 
@@ -59,8 +59,7 @@ public class VideoFourtyFourNet extends PluginForHost {
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws Exception {
         this.setBrowserExclusive();
         br.getPage(downloadLink.getDownloadURL());
-        // made up links still valid all the way to the finallink!
-        dllink = br.getRegex("file:\\s*\"(http[^\"]+)").getMatch(0);
+        dllink = br.getRegex("url: '(http[^']+play44\\.net%2Fvideos[^']+)").getMatch(0);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dllink = Encoding.urlDecode(dllink, false);
         Browser br2 = br.cloneBrowser();
@@ -70,7 +69,7 @@ public class VideoFourtyFourNet extends PluginForHost {
         try {
             con = br2.openGetConnection(dllink);
             // only way to check for made up links... or offline is here
-            if (con.getResponseCode() == 403) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            if (con.getResponseCode() == 404) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             if (!con.getContentType().contains("html")) {
                 downloadLink.setFinalFileName(getFileNameFromHeader(con));
                 downloadLink.setDownloadSize(con.getLongContentLength());

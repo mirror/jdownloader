@@ -67,7 +67,7 @@ public class UploadTwoCom extends PluginForHost {
         String filename = br.getRegex("&video_title=(.*?)&video").getMatch(0);
         dllink = br.getRegex("video=(http[^\"&]+)").getMatch(0);
         if (dllink == null || filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        dllink = Encoding.urlDecode(dllink, true);
+        dllink = Encoding.urlDecode(dllink, false);
         Browser br2 = br.cloneBrowser();
         // In case the link redirects to the finallink
         br2.setFollowRedirects(true);
