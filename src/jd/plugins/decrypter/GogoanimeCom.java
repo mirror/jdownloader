@@ -16,12 +16,10 @@
 
 package jd.plugins.decrypter;
 
-import java.io.IOException;
 import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
-import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
@@ -63,7 +61,10 @@ public class GogoanimeCom extends PluginForDecrypt {
             return decryptedLinks;
         }
 
-        final String[] links = br.getRegex("<iframe.*?src=(\"|\\')(http[^<>\"]*?)(\"|\\')").getColumn(1);
+        String fpName = br.getRegex("<h1>(.*?)</h1>").getMatch(0);
+        if (fpName == null) fpName = br.getRegex("<title>([^<>\"]*?)( \\w+ Sub)?</title>").getMatch(0);
+
+        final String[] links = br.getRegex("<iframe.*?src=(\"|\\')(http[^<>\"]+)(\"|\\')").getColumn(1);
         if (links == null || links.length == 0) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
@@ -71,37 +72,16 @@ public class GogoanimeCom extends PluginForDecrypt {
         for (final String singleLink : links) {
             // lets prevent returning of links which contain gogoanime...
             if (!singleLink.contains(this.getHost())) {
-                final DownloadLink dl = decryptLink(Encoding.htmlDecode(singleLink));
+                final DownloadLink dl = createDownloadlink(Encoding.htmlDecode(singleLink));
                 if (dl != null) decryptedLinks.add(dl);
             }
         }
-        final FilePackage fp = FilePackage.getInstance();
-        fp.setName(br.getRegex("<title>([^<>\"]*?)</title>").getMatch(0));
-        fp.addLinks(decryptedLinks);
-        return decryptedLinks;
-    }
-
-    private DownloadLink decryptLink(final String parameter) throws IOException {
-        final Browser br2 = br.cloneBrowser();
-        String externID = parameter;
-        if (externID.matches(".+(video44\\.net|videofun\\.me)/.+")) {
-            br2.getPage(externID);
-            if (externID.contains("video44.net)/")) {
-                externID = br2.getRegex("file=(http.*?)\\&amp;plugins").getMatch(0);
-                if (externID == null) {
-                    externID = br2.getRegex("file: \"(http[^\"]+)").getMatch(0);
-                }
-            } else if (externID.contains("videofun.me/")) {
-                externID = br2.getRegex("url:\\s+\"(https?://[^\"]+videofun\\.me%2Fvideos%2F[^\"]+)").getMatch(0);
-            }
-            if (externID == null) {
-                logger.info("Found one broken link: " + parameter);
-                return null;
-            }
-            externID = "directhttp://" + Encoding.htmlDecode(externID);
+        if (fpName != null) {
+            final FilePackage fp = FilePackage.getInstance();
+            fp.setName(fpName.trim());
+            fp.addLinks(decryptedLinks);
         }
-        // all other results return back into their own plugins! novamov.com, yourupload.com
-        return createDownloadlink(externID);
+        return decryptedLinks;
     }
 
     /* NO OVERRIDE!! */

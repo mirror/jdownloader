@@ -31,6 +31,8 @@ import jd.plugins.PluginForHost;
 @HostPlugin(revision = "$Revision: 21813 $", interfaceVersion = 2, names = { "animeuploads.com", "cizgifilmlerizle.com" }, urls = { "http://(www\\.)?animeuploads\\.com/embed\\.php\\?file=.+", "http://(www\\.)?cizgifilmlerizle\\.com/embed\\.php\\?file=.+" }, flags = { 0 })
 public class AnimeUploadsCom extends PluginForHost {
 
+    // raztoki 'fuck_you' embed video player template.
+
     private String  dllink  = null;
     private int     chunks  = 0;
     private boolean resumes = true;

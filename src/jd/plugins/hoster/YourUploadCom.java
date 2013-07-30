@@ -45,7 +45,8 @@ public class YourUploadCom extends PluginForHost {
     }
 
     public void correctDownloadLink(DownloadLink link) {
-        if (!link.getDownloadURL().contains("/embed_ext/")) link.setUrlDownload("http://yourupload.com/file/" + new Regex(link.getDownloadURL(), "([A-Za-z0-9]+)$").getMatch(0));
+        // you can not convert embed formats back! will always show up offline!
+        if (!link.getDownloadURL().matches(".+(/embed_ext/|embed\\.yourupload\\.com/).+")) link.setUrlDownload("http://yourupload.com/file/" + new Regex(link.getDownloadURL(), "([A-Za-z0-9]+)$").getMatch(0));
     }
 
     @Override
@@ -55,7 +56,7 @@ public class YourUploadCom extends PluginForHost {
         // Correct old links
         correctDownloadLink(link);
         br.getPage(link.getDownloadURL());
-        if (link.getDownloadURL().contains("/embed_ext/")) {
+        if (link.getDownloadURL().matches(".+(/embed_ext/|embed\\.yourupload\\.com/).+")) {
             String filename = br.getRegex("<title>(.*?)</title>").getMatch(0);
             if (filename == null) filename = br.getRegex("<meta name=\"description\" content=\"(.*?)\" />").getMatch(0);
             dllink = br.getRegex("'file':\\s+'(https?://.*?)'").getMatch(0);

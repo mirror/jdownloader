@@ -27,25 +27,20 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision: 21813 $", interfaceVersion = 2, names = { "upload2.com" }, urls = { "http://(www\\.)?upload2\\.com/(embed|video)/[a-z0-9]{8}" }, flags = { 0 })
-public class UploadTwoCom extends PluginForHost {
+@HostPlugin(revision = "$Revision: 21813 $", interfaceVersion = 2, names = { "vidzur.com" }, urls = { "http://(www\\.)?vidzur\\.com/embed\\.php\\?.+" }, flags = { 0 })
+public class VidZurCom extends PluginForHost {
 
     // raztoki embed video player template.
 
     private String dllink = null;
 
-    public UploadTwoCom(PluginWrapper wrapper) {
+    public VidZurCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     @Override
     public String getAGBLink() {
-        return "http://www.upload2.com/";
-    }
-
-    @Override
-    public void correctDownloadLink(final DownloadLink link) throws PluginException {
-        link.setUrlDownload(link.getDownloadURL().replace("/video/", "/embed/"));
+        return "http://www.vidzur.com/";
     }
 
     @Override
@@ -64,21 +59,18 @@ public class UploadTwoCom extends PluginForHost {
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws Exception {
         this.setBrowserExclusive();
         br.getPage(downloadLink.getDownloadURL());
-        String filename = br.getRegex("&video_title=(.*?)&video").getMatch(0);
-        dllink = br.getRegex("video=(http[^\"&]+)").getMatch(0);
-        if (dllink == null || filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        dllink = Encoding.urlDecode(dllink, true);
+        dllink = br.getRegex("url: '(http[^']+vidzur\\.com%2Fvideos[^']+)").getMatch(0);
+        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        dllink = Encoding.urlDecode(dllink, false);
         Browser br2 = br.cloneBrowser();
         // In case the link redirects to the finallink
         br2.setFollowRedirects(true);
         URLConnectionAdapter con = null;
         try {
             con = br2.openGetConnection(dllink);
-            // only way to check for made up links... or offline is here
             if (con.getResponseCode() == 404) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             if (!con.getContentType().contains("html")) {
-                String ext = con.getContentType().substring(con.getContentType().lastIndexOf("/") + 1);
-                downloadLink.setFinalFileName(filename + "." + ext);
+                downloadLink.setFinalFileName(getFileNameFromHeader(con));
                 downloadLink.setDownloadSize(con.getLongContentLength());
             } else
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);

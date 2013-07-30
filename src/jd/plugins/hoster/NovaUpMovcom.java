@@ -20,6 +20,7 @@ import java.io.IOException;
 
 import jd.PluginWrapper;
 import jd.http.URLConnectionAdapter;
+import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -81,7 +82,7 @@ public class NovaUpMovcom extends PluginForHost {
                 return AvailableStatus.TRUE;
             }
             if (DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            final URLConnectionAdapter con = br.openGetConnection(DLLINK);
+            final URLConnectionAdapter con = br.openGetConnection(Encoding.urlDecode(DLLINK, false));
             try {
                 downloadLink.setDownloadSize(con.getLongContentLength());
             } finally {

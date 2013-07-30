@@ -31,6 +31,8 @@ import jd.plugins.PluginForHost;
 @HostPlugin(revision = "$Revision: 21813 $", interfaceVersion = 2, names = { "veevr.com" }, urls = { "http://(www\\.)?veevr\\.com/(embed|videos)/[a-zA-Z0-9\\_\\-]+" }, flags = { 0 })
 public class VeevrCom extends PluginForHost {
 
+    // raztoki embed video player template.
+
     private String dllink = null;
 
     public VeevrCom(PluginWrapper wrapper) {
