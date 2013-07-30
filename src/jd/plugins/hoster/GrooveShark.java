@@ -188,6 +188,10 @@ public class GrooveShark extends PluginForHost {
         if (APPJSURL.string == null) return CLIENTREVISION.string;
         Browser appjs = br.cloneBrowser();
         try {
+            appjs.setLoadLimit(2 * 1024 * 1024);
+        } catch (final Throwable e) {
+        }
+        try {
             appjs.getPage(APPJSURL.string);
         } catch (Throwable e) {
             /**
