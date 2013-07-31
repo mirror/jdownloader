@@ -29,6 +29,11 @@ public class ConfirmDeleteLinksDialog extends ConfirmDialog implements ConfirmDe
 
     }
 
+    @Override
+    public String getDontShowAgainKey() {
+        return "ConfirmDeleteLinksDialog";
+    }
+
     public ConfirmDeleteLinksDialogInterface show() {
 
         return UIOManager.I().show(ConfirmDeleteLinksDialogInterface.class, this);
