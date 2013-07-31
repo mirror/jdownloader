@@ -556,4 +556,10 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
     void setWindowsWindowManagerForegroundLockTimeout(int readForegroundLockTimeout);
 
     int getWindowsWindowManagerForegroundLockTimeout();
+
+    @AboutConfig
+    @DefaultBooleanValue(true)
+    boolean isUpdateButtonFlashingEnabled();
+
+    void setUpdateButtonFlashingEnabled(boolean b);
 }

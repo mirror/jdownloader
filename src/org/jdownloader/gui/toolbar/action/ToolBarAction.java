@@ -1,5 +1,7 @@
 package org.jdownloader.gui.toolbar.action;
 
+import javax.swing.AbstractButton;
+
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.actions.CachableInterface;
 import org.jdownloader.images.NewTheme;
@@ -32,4 +34,8 @@ public abstract class ToolBarAction extends AppAction implements CachableInterfa
     }
 
     protected abstract String createTooltip();
+
+    public AbstractButton createButton() {
+        return null;
+    }
 }

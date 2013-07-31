@@ -2,8 +2,6 @@ package org.jdownloader.gui;
 
 import java.awt.Window;
 
-import javax.swing.JFrame;
-
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.swing.EDTHelper;
 
@@ -47,7 +45,7 @@ public class GuiUtils {
      * @param mainFrame
      * @return
      */
-    public static boolean isActiveWindow(final JFrame mainFrame) {
+    public static boolean isActiveWindow(final Window mainFrame) {
         return new EDTHelper<Boolean>() {
 
             @Override

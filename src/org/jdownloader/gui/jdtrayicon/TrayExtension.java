@@ -48,6 +48,7 @@ import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledPackage;
 import jd.gui.swing.jdgui.JDGui;
 import jd.gui.swing.jdgui.MainFrameClosingHandler;
+import jd.gui.swing.jdgui.components.toolbar.actions.UpdateAction;
 import jd.gui.swing.jdgui.views.settings.sidebar.CheckBoxedEntry;
 import jd.plugins.AddonPanel;
 
@@ -78,10 +79,13 @@ import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
+import org.jdownloader.updatev2.InstallLog;
 import org.jdownloader.updatev2.RestartController;
 import org.jdownloader.updatev2.SmartRlyExitRequest;
+import org.jdownloader.updatev2.UpdateController;
+import org.jdownloader.updatev2.UpdaterListener;
 
-public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTranslation> implements MouseListener, MouseMotionListener, WindowStateListener, ActionListener, MainFrameClosingHandler, CheckBoxedEntry {
+public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTranslation> implements MouseListener, MouseMotionListener, WindowStateListener, ActionListener, MainFrameClosingHandler, CheckBoxedEntry, UpdaterListener {
 
     // private LinkCollectorHighlightListener highListener = new LinkCollectorHighlightListener() {
     //
@@ -130,6 +134,8 @@ public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTransla
 
     @Override
     protected void stop() throws StopException {
+        UpdateController.getInstance().getEventSender().removeListener(this);
+        LinkCollector.getInstance().getEventsender().removeListener(linkcollectorHighlighListener);
         removeTrayIcon();
         if (guiFrame != null) {
             JDGui.getInstance().setClosingHandler(null);
@@ -160,45 +166,10 @@ public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTransla
             if (CrossSystem.isLinux()) LogController.CL().severe("Make sure your Notification Area is enabled!");
             throw new StartException("Tray isn't supported!");
         }
-
-        LinkCollector.getInstance().getEventsender().addListener(new LinkCollectorHighlightListener() {
-            @Override
-            public void onLinkCollectorContentAdded(LinkCollectorEvent event) {
-                if (!getSettings().isBallonNotifyOnNewLinkgrabberPackageEnabled()) return;
-                if (event.getParameters().length > 0 && event.getParameter(0) instanceof CrawledPackage) {
-                    // new Package
-
-                    if (GuiUtils.isActiveWindow(JDGui.getInstance().getMainFrame())) return;
-                    final TrayIcon ti = trayIcon;
-                    if (ti != null) {
-                        ti.displayMessage(_TRAY._.balloon_new_package(), _TRAY._.balloon_new_package_msg(((CrawledPackage) event.getParameter(0)).getName()), MessageType.INFO);
-
-                    }
-                }
-            }
-
-            @Override
-            public void onHighLight(CrawledLink parameter) {
-                new EDTRunner() {
-
-                    @Override
-                    protected void runInEDT() {
-                        if (!getSettings().isBallonNotifyOnNewLinkgrabberLinksEnabled()) return;
-                        if (GuiUtils.isActiveWindow(JDGui.getInstance().getMainFrame())) return;
-                        final TrayIcon ti = trayIcon;
-                        if (ti != null) {
-                            ti.displayMessage(_TRAY._.balloon_new_links(), _TRAY._.balloon_new_links_msg(LinkCollector.getInstance().getPackages().size(), LinkCollector.getInstance().getChildrenCount()), MessageType.INFO);
-
-                        }
-                    }
-                };
-            }
-
-            @Override
-            public boolean isThisListenerEnabled() {
-                return true;
-            }
-        });
+        UpdateController.getInstance().getEventSender().removeListener(this);
+        UpdateController.getInstance().getEventSender().addListener(this, true);
+        LinkCollector.getInstance().getEventsender().removeListener(linkcollectorHighlighListener);
+        LinkCollector.getInstance().getEventsender().addListener(linkcollectorHighlighListener, true);
         SecondLevelLaunch.GUI_COMPLETE.executeWhenReached(new Runnable() {
 
             public void run() {
@@ -220,6 +191,7 @@ public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTransla
                 };
             }
         });
+        onUpdatesAvailable(false, null);
     }
 
     @Override
@@ -257,6 +229,10 @@ public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTransla
 
     private boolean                             asking;
 
+    private LinkCollectorHighlightListener      linkcollectorHighlighListener;
+
+    private boolean                             updatesNotified;
+
     public ExtensionConfigPanel<TrayExtension> getConfigPanel() {
         return configPanel;
     }
@@ -267,7 +243,45 @@ public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTransla
 
     public TrayExtension() {
         setTitle(_TRAY._.jd_plugins_optional_jdtrayicon_jdlighttray());
+        linkcollectorHighlighListener = new LinkCollectorHighlightListener() {
+            @Override
+            public void onLinkCollectorContentAdded(LinkCollectorEvent event) {
+                if (!getSettings().isBallonNotifyOnNewLinkgrabberPackageEnabled()) return;
+                if (event.getParameters().length > 0 && event.getParameter(0) instanceof CrawledPackage) {
+                    // new Package
 
+                    if (GuiUtils.isActiveWindow(JDGui.getInstance().getMainFrame())) return;
+                    final TrayIcon ti = trayIcon;
+                    if (ti != null) {
+                        ti.displayMessage(_TRAY._.balloon_new_package(), _TRAY._.balloon_new_package_msg(((CrawledPackage) event.getParameter(0)).getName()), MessageType.INFO);
+
+                    }
+                }
+            }
+
+            @Override
+            public void onHighLight(CrawledLink parameter) {
+                new EDTRunner() {
+
+                    @Override
+                    protected void runInEDT() {
+                        if (!getSettings().isBallonNotifyOnNewLinkgrabberLinksEnabled()) return;
+                        if (GuiUtils.isActiveWindow(JDGui.getInstance().getMainFrame())) return;
+                        final TrayIcon ti = trayIcon;
+                        if (ti != null) {
+
+                            ti.displayMessage(_TRAY._.balloon_new_links(), _TRAY._.balloon_new_links_msg(LinkCollector.getInstance().getPackages().size(), LinkCollector.getInstance().getChildrenCount()), MessageType.INFO);
+
+                        }
+                    }
+                };
+            }
+
+            @Override
+            public boolean isThisListenerEnabled() {
+                return true;
+            }
+        };
     }
 
     public void initGUI(final boolean startup) {
@@ -728,6 +742,44 @@ public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTransla
     public boolean isActive() {
 
         return trayIconPopup != null && trayIconPopup.hasBeenRecentlyActive();
+    }
+
+    @Override
+    public void onUpdatesAvailable(boolean selfupdate, InstallLog installlog) {
+
+        if (UpdateController.getInstance().hasPendingUpdates() && !updatesNotified) {
+            updatesNotified = true;
+            new EDTRunner() {
+
+                @Override
+                protected void runInEDT() {
+                    if (!getSettings().isBallonNotifyOnUpdateAvailableEnabled()) return;
+
+                    final TrayIcon ti = trayIcon;
+                    if (ti != null) {
+                        setListener(new ActionListener() {
+
+                            public void actionPerformed(ActionEvent e) {
+                                new UpdateAction(null).actionPerformed(e);
+                            }
+                        });
+
+                        ti.displayMessage(_TRAY._.balloon_updates(), _TRAY._.balloon_updates_msg(), MessageType.INFO);
+
+                    }
+                }
+            };
+        } else if (!UpdateController.getInstance().hasPendingUpdates()) {
+            updatesNotified = false;
+        }
+    }
+
+    protected void setListener(ActionListener actionListener) {
+        TrayIcon ti = trayIcon;
+        for (ActionListener al : ti.getActionListeners()) {
+            ti.removeActionListener(al);
+        }
+        ti.addActionListener(actionListener);
     }
 
 }

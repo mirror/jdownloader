@@ -148,6 +148,7 @@ public class MainMenuManager extends ContextMenuManager<FilePackage, DownloadLin
         ret.add(KnowledgeAction.class);
         ret.add(LogSendAction.class);
         ret.add(new SeperatorData());
+        ret.add(CheckForUpdatesAction.class);
         ret.add(AboutAction.class);
         return ret;
     }

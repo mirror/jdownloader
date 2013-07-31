@@ -142,4 +142,13 @@ public interface TrayiconTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "New Linkgrabber Links" })
     String plugins_optional_JDLightTray_ballon_newlinks();
 
+    @Default(lngs = { "en" }, values = { "New Updates found" })
+    String plugins_optional_JDLightTray_ballon_updates();
+
+    @Default(lngs = { "en" }, values = { "JDownloader Updates available!" })
+    String balloon_updates();
+
+    @Default(lngs = { "en" }, values = { "New Updates for JDownloader are available.\r\nClick here to start Installation!" })
+    String balloon_updates_msg();
+
 }

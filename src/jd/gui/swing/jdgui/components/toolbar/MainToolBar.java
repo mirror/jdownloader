@@ -65,6 +65,7 @@ import org.jdownloader.controlling.contextmenu.SeperatorData;
 import org.jdownloader.controlling.contextmenu.gui.ExtPopupMenu;
 import org.jdownloader.controlling.contextmenu.gui.MenuBuilder;
 import org.jdownloader.gui.toolbar.MainToolbarManager;
+import org.jdownloader.gui.toolbar.action.ToolBarAction;
 import org.jdownloader.gui.views.downloads.QuickSettingsPopup;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.updatev2.gui.LAFOptions;
@@ -287,23 +288,33 @@ public class MainToolBar extends JToolBar implements MouseListener, DownloadWatc
                     if (StringUtils.isNotEmpty(menudata._getShortcut())) {
                         action.setAccelerator(KeyStroke.getKeyStroke(menudata._getShortcut()));
                     }
-                    if (action.isToggle()) {
-                        bt = new JToggleButton(action);
-                        ImageIcon icon;
-
-                        bt.setIcon(icon = NewTheme.I().getCheckBoxImage(action.getIconKey(), false, 24));
-                        bt.setRolloverIcon(icon);
-                        bt.setSelectedIcon(icon = NewTheme.I().getCheckBoxImage(action.getIconKey(), true, 24));
-                        bt.setRolloverSelectedIcon(icon);
-                        add(bt, "width 32!,height 32!,hidemode 3");
-                        bt.setHideActionText(true);
-                    } else {
-                        bt = new ExtButton(action);
-
-                        bt.setIcon(NewTheme.I().getIcon(action.getIconKey(), 24));
-                        add(bt, "width 32!,height 32!,hidemode 3");
-                        bt.setHideActionText(true);
+                    bt = null;
+                    if (action instanceof ToolBarAction) {
+                        bt = ((ToolBarAction) action).createButton();
+                        if (bt != null) {
+                            add(bt, "width 32!,height 32!,hidemode 3");
+                        }
                     }
+                    if (bt == null) {
+                        if (action.isToggle()) {
+                            bt = new JToggleButton(action);
+                            ImageIcon icon;
+
+                            bt.setIcon(icon = NewTheme.I().getCheckBoxImage(action.getIconKey(), false, 24));
+                            bt.setRolloverIcon(icon);
+                            bt.setSelectedIcon(icon = NewTheme.I().getCheckBoxImage(action.getIconKey(), true, 24));
+                            bt.setRolloverSelectedIcon(icon);
+                            add(bt, "width 32!,height 32!,hidemode 3");
+                            bt.setHideActionText(true);
+                        } else {
+                            bt = new ExtButton(action);
+
+                            bt.setIcon(NewTheme.I().getIcon(action.getIconKey(), 24));
+                            add(bt, "width 32!,height 32!,hidemode 3");
+                            bt.setHideActionText(true);
+                        }
+                    }
+
                     final AbstractButton finalBt = bt;
                     action.addPropertyChangeListener(new PropertyChangeListener() {
 

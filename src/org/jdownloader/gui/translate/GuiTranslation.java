@@ -2902,4 +2902,13 @@ public interface GuiTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "A System reboot is required for changes to take effect." })
     String LookAndFeelController_onConfigValueModified_reboot_required();
+
+    @Default(lngs = { "en" }, values = { "Click here to install pending updates!" })
+    String UpdateAction_runInEDT_updates_pendings();
+
+    @Default(lngs = { "en" }, values = { "Click here to search for new updates!" })
+    String UpdateAction_runInEDT_no_updates_pendings();
+
+    @Default(lngs = { "en" }, values = { "Find Updates" })
+    String CheckForUpdatesAction_CheckForUpdatesAction();
 }

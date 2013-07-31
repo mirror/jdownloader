@@ -67,4 +67,10 @@ public interface TrayConfig extends ExtensionConfigInterface {
     public boolean isBallonNotifyOnNewLinkgrabberPackageEnabled();
 
     public void setBallonNotifyOnNewLinkgrabberPackageEnabled(boolean b);
+
+    @DefaultBooleanValue(true)
+    @AboutConfig
+    public boolean isBallonNotifyOnUpdateAvailableEnabled();
+
+    public void setBallonNotifyOnUpdateAvailableEnabled(boolean b);
 }

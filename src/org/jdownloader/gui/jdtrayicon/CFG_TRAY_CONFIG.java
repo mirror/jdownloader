@@ -23,6 +23,8 @@ public class CFG_TRAY_CONFIG {
     public static final EnumKeyHandler             ON_CLOSE_ACTION                                  = SH.getKeyHandler("OnCloseAction", EnumKeyHandler.class);
     // true
     public static final BooleanKeyHandler          GNOME_TRAY_ICON_TRANSPARENT_ENABLED              = SH.getKeyHandler("GnomeTrayIconTransparentEnabled", BooleanKeyHandler.class);
+    // true
+    public static final BooleanKeyHandler          BALLON_NOTIFY_ON_UPDATE_AVAILABLE_ENABLED        = SH.getKeyHandler("BallonNotifyOnUpdateAvailableEnabled", BooleanKeyHandler.class);
     // TO_TASKBAR
     public static final EnumKeyHandler             ON_MINIMIZE_ACTION                               = SH.getKeyHandler("OnMinimizeAction", EnumKeyHandler.class);
     // false
@@ -37,10 +39,11 @@ public class CFG_TRAY_CONFIG {
     public static final BooleanKeyHandler          FRESH_INSTALL                                    = SH.getKeyHandler("FreshInstall", BooleanKeyHandler.class);
     // false
     public static final BooleanKeyHandler          START_MINIMIZED_ENABLED                          = SH.getKeyHandler("StartMinimizedEnabled", BooleanKeyHandler.class);
-    // false
+    // true
     public static final BooleanKeyHandler          BALLON_NOTIFY_ON_NEW_LINKGRABBER_LINKS_ENABLED   = SH.getKeyHandler("BallonNotifyOnNewLinkgrabberLinksEnabled", BooleanKeyHandler.class);
     // false
-    public static final BooleanKeyHandler          BALLON_NOTIFY_ON_NEW_LINKGRABBER_PACKAGE_ENABLED = SH.getKeyHandler("BallonNotifyOnNewLinkgrabberPackageEnabled", BooleanKeyHandler.class);
-    // false
     public static final BooleanKeyHandler          ENABLED                                          = SH.getKeyHandler("Enabled", BooleanKeyHandler.class);
+    // true
+    public static final BooleanKeyHandler          BALLON_NOTIFY_ON_NEW_LINKGRABBER_PACKAGE_ENABLED = SH.getKeyHandler("BallonNotifyOnNewLinkgrabberPackageEnabled", BooleanKeyHandler.class);
+
 }

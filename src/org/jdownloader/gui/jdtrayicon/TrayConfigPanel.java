@@ -32,6 +32,7 @@ public class TrayConfigPanel extends ExtensionConfigPanel<TrayExtension> {
         addDescription(_TRAY._.plugins_optional_JDLightTray_ballon_desc());
         addPair(_TRAY._.plugins_optional_JDLightTray_ballon_newPackages(), null, new Checkbox(CFG_TRAY_CONFIG.BALLON_NOTIFY_ON_NEW_LINKGRABBER_PACKAGE_ENABLED));
         addPair(_TRAY._.plugins_optional_JDLightTray_ballon_newlinks(), null, new Checkbox(CFG_TRAY_CONFIG.BALLON_NOTIFY_ON_NEW_LINKGRABBER_LINKS_ENABLED));
+        addPair(_TRAY._.plugins_optional_JDLightTray_ballon_updates(), null, new Checkbox(CFG_TRAY_CONFIG.BALLON_NOTIFY_ON_UPDATE_AVAILABLE_ENABLED));
     }
 
     @Override

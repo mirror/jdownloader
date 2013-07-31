@@ -1025,6 +1025,8 @@ public class JDGui implements UpdaterListener, OwnerFinder {
             public Boolean edtRun() {
                 // don't block anthing if the frame is active anyway
                 if ((getMainFrame().hasFocus() || getMainFrame().isActive()) && getMainFrame().isVisible()) { return false; }
+                if (UpdateController.getInstance().getHandler() != null && GuiUtils.isActiveWindow(UpdateController.getInstance().getHandler().getGuiFrame())) return false;
+
                 // don't block anything if the tray is active
                 if (tray.isEnabled() && tray.isActive()) return false;
 
@@ -1173,6 +1175,7 @@ public class JDGui implements UpdaterListener, OwnerFinder {
             @Override
             protected void runInEDT() {
                 updateTitle();
+
             }
         };
     }

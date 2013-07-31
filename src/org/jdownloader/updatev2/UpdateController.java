@@ -347,6 +347,7 @@ public class UpdateController implements UpdateCallbackInterface {
                 // Thread.sleep(1000);
                 handler.setGuiFinished(null);
                 if (settings.isAutohideGuiIfThereAreNoUpdatesEnabled()) handler.setGuiVisible(false, false);
+                fireUpdatesAvailable(false, null);
                 return;
             }
             if (awfoverview.getModifiedFiles().size() == 0) {
@@ -355,6 +356,7 @@ public class UpdateController implements UpdateCallbackInterface {
                 UpdateController.getInstance().installUpdates(awfoverview);
                 handler.setGuiFinished(null);
                 if (settings.isAutohideGuiIfThereAreNoUpdatesEnabled()) handler.setGuiVisible(false, false);
+                fireUpdatesAvailable(false, null);
                 return;
             }
             if (awfoverview.getModifiedRestartRequiredFiles().size() == 0) {
@@ -378,6 +380,7 @@ public class UpdateController implements UpdateCallbackInterface {
                 handler.setGuiFinished(_UPDATE._.updatedplugins());
 
                 if (settings.isAutohideGuiIfSilentUpdatesWereInstalledEnabled()) handler.setGuiVisible(false, false);
+                fireUpdatesAvailable(false, null);
                 return;
 
             }
@@ -385,23 +388,23 @@ public class UpdateController implements UpdateCallbackInterface {
             // we need at least one restart
             if (isThreadConfirmed()) {
                 installUpdates(awfoverview);
+                fireUpdatesAvailable(false, null);
             } else {
-                if (!isThreadConfirmed()) {
 
-                    if (!handler.isGuiVisible() && settings.isDoNotAskJustInstallOnNextStartupEnabled()) return;
-                    List<String> rInstalls = handler.getRequestedInstalls();
-                    List<String> ruInstalls = handler.getRequestedUnInstalls();
-                    if (rInstalls.size() > 0 || ruInstalls.size() > 0) {
-                        confirm(UIOManager.LOGIC_COUNTDOWN, _UPDATE._.confirmdialog_new_update_available_frametitle_extensions(), _UPDATE._.confirmdialog_new_update_available_for_install_message_extensions(rInstalls.size(), ruInstalls.size()), _UPDATE._.confirmdialog_new_update_available_answer_now_install(), _UPDATE._.confirmdialog_new_update_available_answer_later_install());
+                if (!handler.isGuiVisible() && settings.isDoNotAskJustInstallOnNextStartupEnabled()) return;
+                List<String> rInstalls = handler.getRequestedInstalls();
+                List<String> ruInstalls = handler.getRequestedUnInstalls();
+                if (rInstalls.size() > 0 || ruInstalls.size() > 0) {
+                    confirm(UIOManager.LOGIC_COUNTDOWN, _UPDATE._.confirmdialog_new_update_available_frametitle_extensions(), _UPDATE._.confirmdialog_new_update_available_for_install_message_extensions(rInstalls.size(), ruInstalls.size()), _UPDATE._.confirmdialog_new_update_available_answer_now_install(), _UPDATE._.confirmdialog_new_update_available_answer_later_install());
 
-                    } else {
-                        confirm(UIOManager.LOGIC_COUNTDOWN, _UPDATE._.confirmdialog_new_update_available_frametitle(), _UPDATE._.confirmdialog_new_update_available_for_install_message(), _UPDATE._.confirmdialog_new_update_available_answer_now_install(), _UPDATE._.confirmdialog_new_update_available_answer_later_install());
-                    }
-                    setUpdateConfirmed(true);
-                    handler.setGuiVisible(true, true);
+                } else {
+                    confirm(UIOManager.LOGIC_COUNTDOWN, _UPDATE._.confirmdialog_new_update_available_frametitle(), _UPDATE._.confirmdialog_new_update_available_for_install_message(), _UPDATE._.confirmdialog_new_update_available_answer_now_install(), _UPDATE._.confirmdialog_new_update_available_answer_later_install());
                 }
+                setUpdateConfirmed(true);
+                handler.setGuiVisible(true, true);
 
                 UpdateController.getInstance().installUpdates(awfoverview);
+                fireUpdatesAvailable(false, null);
             }
         } catch (DialogNoAnswerException e) {
             logger.log(e);
