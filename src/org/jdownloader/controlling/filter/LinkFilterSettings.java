@@ -66,7 +66,7 @@ public interface LinkFilterSettings extends ConfigInterface {
 
     @DefaultBooleanValue(true)
     @AboutConfig
-    @RequiresRestart
+    @RequiresRestart("A JDownloader Restart is Required")
     @org.appwork.storage.config.annotations.DescriptionForConfigEntry("show a restore button for filtered links")
     boolean isRestoreButtonEnabled();
 

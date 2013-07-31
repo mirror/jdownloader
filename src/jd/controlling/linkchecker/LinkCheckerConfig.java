@@ -10,7 +10,7 @@ public interface LinkCheckerConfig extends ConfigInterface {
 
     @DefaultIntValue(4)
     @AboutConfig
-    @RequiresRestart
+    @RequiresRestart("A JDownloader Restart is Required")
     @DescriptionForConfigEntry("max. number of linkchecking threads")
     int getMaxThreads();
 
@@ -18,7 +18,7 @@ public interface LinkCheckerConfig extends ConfigInterface {
 
     @DefaultIntValue(250)
     @AboutConfig
-    @RequiresRestart
+    @RequiresRestart("A JDownloader Restart is Required")
     @DescriptionForConfigEntry("max. time in ms before killing an idle linkcheck thread")
     int getThreadKeepAlive();
 

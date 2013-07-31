@@ -2899,4 +2899,7 @@ public interface GuiTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Extracting..." })
     String TaskColumn_getStringValue_extraction_extracting();
+
+    @Default(lngs = { "en" }, values = { "A System reboot is required for changes to take effect." })
+    String LookAndFeelController_onConfigValueModified_reboot_required();
 }

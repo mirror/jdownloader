@@ -28,17 +28,25 @@ import javax.swing.UnsupportedLookAndFeelException;
 import javax.swing.plaf.metal.MetalLookAndFeel;
 
 import org.appwork.storage.config.JsonConfig;
+import org.appwork.storage.config.ValidationException;
+import org.appwork.storage.config.events.GenericConfigEventListener;
+import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.swing.components.tooltips.ExtTooltip;
 import org.appwork.swing.synthetica.SyntheticaHelper;
 import org.appwork.utils.Application;
 import org.appwork.utils.IO;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.os.CrossSystem;
+import org.appwork.utils.swing.WindowManager;
+import org.appwork.utils.swing.WindowsWindowManager;
+import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.LAFManagerInterface;
 import org.jdownloader.gui.laf.jddefault.JDDefaultLookAndFeel;
+import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings.LookAndFeelType;
+import org.jdownloader.settings.staticreferences.CFG_GUI;
 import org.jdownloader.updatev2.gui.LAFOptions;
 
 public class LookAndFeelController implements LAFManagerInterface {
@@ -94,7 +102,7 @@ public class LookAndFeelController implements LAFManagerInterface {
     public synchronized void setUIManager() {
         if (uiInitated) return;
         uiInitated = true;
-
+        initWindowManager();
         if (CrossSystem.isLinux()) initLinux();
         long t = System.currentTimeMillis();
         try {
@@ -204,8 +212,67 @@ public class LookAndFeelController implements LAFManagerInterface {
         }
     }
 
+    private void initWindowManager() {
+        WindowManager wm = WindowManager.getInstance();
+        if (wm instanceof WindowsWindowManager) {
+            final WindowsWindowManager wwm = (WindowsWindowManager) wm;
+
+            wwm.setAltWorkaroundEnabled(CFG_GUI.CFG.isWindowsWindowManagerAltKeyWorkaroundEnabled());
+            wwm.setAltWorkaroundKeys(CFG_GUI.CFG.getWindowsWindowManagerAltKeyCombination());
+            try {
+                CFG_GUI.CFG.setWindowsWindowManagerForegroundLockTimeout(WindowsWindowManager.readForegroundLockTimeout());
+            } catch (Exception e) {
+                CFG_GUI.CFG.setWindowsWindowManagerForegroundLockTimeout(-1);
+                logger.log(e);
+            }
+            CFG_GUI.WINDOWS_WINDOW_MANAGER_FOREGROUND_LOCK_TIMEOUT.getEventSender().addListener(new GenericConfigEventListener<Integer>() {
+
+                @Override
+                public void onConfigValidatorError(KeyHandler<Integer> keyHandler, Integer invalidValue, ValidationException validateException) {
+                }
+
+                @Override
+                public void onConfigValueModified(KeyHandler<Integer> keyHandler, Integer newValue) {
+                    try {
+                        if (newValue >= 0 && newValue != WindowsWindowManager.readForegroundLockTimeout()) {
+
+                            WindowsWindowManager.writeForegroundLockTimeout(newValue);
+                            Dialog.getInstance().showMessageDialog(_GUI._.LookAndFeelController_onConfigValueModified_reboot_required());
+                        }
+                    } catch (Exception e) {
+                        logger.log(e);
+                        Dialog.getInstance().showExceptionDialog(_GUI._.lit_error_occured(), e.getMessage(), e);
+                    }
+                }
+            });
+            CFG_GUI.WINDOWS_WINDOW_MANAGER_ALT_KEY_WORKAROUND_ENABLED.getEventSender().addListener(new GenericConfigEventListener<Boolean>() {
+
+                @Override
+                public void onConfigValidatorError(KeyHandler<Boolean> keyHandler, Boolean invalidValue, ValidationException validateException) {
+                }
+
+                @Override
+                public void onConfigValueModified(KeyHandler<Boolean> keyHandler, Boolean newValue) {
+                    wwm.setAltWorkaroundEnabled(CFG_GUI.CFG.isWindowsWindowManagerAltKeyWorkaroundEnabled());
+                }
+            });
+            CFG_GUI.WINDOWS_WINDOW_MANAGER_ALT_KEY_COMBINATION.getEventSender().addListener(new GenericConfigEventListener<int[]>() {
+
+                @Override
+                public void onConfigValueModified(KeyHandler<int[]> keyHandler, int[] newValue) {
+                    wwm.setAltWorkaroundKeys(CFG_GUI.CFG.getWindowsWindowManagerAltKeyCombination());
+                }
+
+                @Override
+                public void onConfigValidatorError(KeyHandler<int[]> keyHandler, int[] invalidValue, ValidationException validateException) {
+                }
+            });
+        }
+    }
+
     @Override
     public void init() {
+
         setUIManager();
     }
 }

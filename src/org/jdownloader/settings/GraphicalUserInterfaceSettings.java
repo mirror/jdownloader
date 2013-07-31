@@ -1,11 +1,14 @@
 package org.jdownloader.settings;
 
+import java.awt.event.KeyEvent;
+
 import org.appwork.storage.config.ConfigInterface;
 import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.annotations.AboutConfig;
 import org.appwork.storage.config.annotations.AbstractValidator;
 import org.appwork.storage.config.annotations.DefaultBooleanValue;
 import org.appwork.storage.config.annotations.DefaultEnumValue;
+import org.appwork.storage.config.annotations.DefaultIntArrayValue;
 import org.appwork.storage.config.annotations.DefaultIntValue;
 import org.appwork.storage.config.annotations.DefaultLongValue;
 import org.appwork.storage.config.annotations.DefaultStringValue;
@@ -59,7 +62,7 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
     @DescriptionForConfigEntry("Refreshrate in ms for the DownloadView")
     @DefaultLongValue(500)
     @SpinnerValidator(min = 50, max = 5000, step = 25)
-    @RequiresRestart
+    @RequiresRestart("A JDownloader Restart is Required")
     public long getDownloadViewRefresh();
 
     FrameStatus getLastFrameStatus();
@@ -81,17 +84,17 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
     // @AboutConfig
     // @Description("Enable/Disable the Linkgrabber Sidebar")
     // @DefaultBooleanValue(true)
-    // @RequiresRestart
+    // @RequiresRestart("A JDownloader Restart is Required")
     // boolean isDownloadViewSidebarEnabled();
     //
     // @AboutConfig
     // @Description("Enable/Disable the DownloadView Sidebar QuicktoggleButton")
     // @DefaultBooleanValue(true)
-    // @RequiresRestart
+    // @RequiresRestart("A JDownloader Restart is Required")
     // boolean isDownloadViewSidebarToggleButtonEnabled();
     //
     // @DefaultBooleanValue(true)
-    // @RequiresRestart
+    // @RequiresRestart("A JDownloader Restart is Required")
     // boolean isDownloadViewSidebarVisible();
 
     @AboutConfig
@@ -120,7 +123,7 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
     @AboutConfig
     @DescriptionForConfigEntry("Highlight Table in Downloadview if table is filtered")
     @DefaultBooleanValue(true)
-    @RequiresRestart
+    @RequiresRestart("A JDownloader Restart is Required")
     boolean isFilterHighlightEnabled();
 
     @AboutConfig
@@ -139,13 +142,13 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
     @AboutConfig
     @DescriptionForConfigEntry("Enable/Disable the Linkgrabber Sidebar")
     @DefaultBooleanValue(true)
-    @RequiresRestart
+    @RequiresRestart("A JDownloader Restart is Required")
     boolean isLinkgrabberSidebarEnabled();
 
     @AboutConfig
     @DescriptionForConfigEntry("Enable/Disable the DownloadPanel Overview panel ")
     @DefaultBooleanValue(false)
-    @RequiresRestart
+    @RequiresRestart("A JDownloader Restart is Required")
     boolean isDownloadPanelOverviewVisible();
 
     void setDownloadPanelOverviewVisible(boolean b);
@@ -153,7 +156,7 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
     @AboutConfig
     @DescriptionForConfigEntry("Enable/Disable the Linkgrabber Overview panel ")
     @DefaultBooleanValue(false)
-    @RequiresRestart
+    @RequiresRestart("A JDownloader Restart is Required")
     boolean isLinkgrabberOverviewVisible();
 
     void setLinkgrabberOverviewVisible(boolean b);
@@ -191,11 +194,11 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
     @AboutConfig
     @DescriptionForConfigEntry("Enable/Disable the Linkgrabber Sidebar QuicktoggleButton")
     @DefaultBooleanValue(true)
-    @RequiresRestart
+    @RequiresRestart("A JDownloader Restart is Required")
     boolean isLinkgrabberSidebarToggleButtonEnabled();
 
     @DefaultBooleanValue(true)
-    @RequiresRestart
+    @RequiresRestart("A JDownloader Restart is Required")
     boolean isLinkgrabberSidebarVisible();
 
     @DefaultBooleanValue(false)
@@ -225,7 +228,7 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
     @AboutConfig
     @DescriptionForConfigEntry("Highlight Column in Downloadview if table is not in downloadsortorder")
     @DefaultBooleanValue(true)
-    @RequiresRestart
+    @RequiresRestart("A JDownloader Restart is Required")
     boolean isSortColumnHighlightEnabled();
 
     @AboutConfig
@@ -241,7 +244,7 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
     @AboutConfig
     @DescriptionForConfigEntry("If true, java will try to use D3D for graphics")
     @DefaultBooleanValue(false)
-    @RequiresRestart
+    @RequiresRestart("A JDownloader Restart is Required")
     boolean isUseD3D();
 
     public void setUseD3D(boolean b);
@@ -314,7 +317,7 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
     @AboutConfig
     @DefaultIntValue(2000)
     @SpinnerValidator(min = 50, max = 5000, step = 50)
-    @RequiresRestart
+    @RequiresRestart("A JDownloader Restart is Required")
     int getTooltipDelay();
 
     void setTooltipDelay(int t);
@@ -340,7 +343,7 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
 
     @DefaultBooleanValue(true)
     @AboutConfig
-    @RequiresRestart
+    @RequiresRestart("A JDownloader Restart is Required")
     boolean isFileCountInSizeColumnVisible();
 
     void setFileCountInSizeColumnVisible(boolean b);
@@ -348,7 +351,7 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
     @AboutConfig
     @DescriptionForConfigEntry("Paint all labels/text with or without antialias. Default value is false.")
     @DefaultBooleanValue(false)
-    @RequiresRestart
+    @RequiresRestart("A JDownloader Restart is Required")
     boolean isSpeedmeterAntiAliasingEnabled();
 
     void setSpeedmeterAntiAliasingEnabled(boolean b);
@@ -362,7 +365,7 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
 
     @DefaultEnumValue("CLEAR_LIST")
     @AboutConfig
-    @RequiresRestart
+    @RequiresRestart("A JDownloader Restart is Required")
     ClearAction getLinkgrabberDefaultClearAction();
 
     void setLinkgrabberDefaultClearAction(ClearAction action);
@@ -444,7 +447,7 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
 
     void setCustomTableRowHeight(int height);
 
-    @RequiresRestart
+    @RequiresRestart("A JDownloader Restart is Required")
     @DefaultBooleanValue(true)
     @DescriptionForConfigEntry("Every  odd row get's a light shadow if enabled")
     @AboutConfig
@@ -452,7 +455,7 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
 
     void setTableAlternateRowHighlightEnabled(boolean b);
 
-    @RequiresRestart
+    @RequiresRestart("A JDownloader Restart is Required")
     @DefaultBooleanValue(true)
     @DescriptionForConfigEntry("The row that is 'touched' by the mouse cursor gets a darker shadow")
     @AboutConfig
@@ -460,7 +463,7 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
 
     void setTableMouseOverHighlightEnabled(boolean b);
 
-    @RequiresRestart
+    @RequiresRestart("A JDownloader Restart is Required")
     @DefaultBooleanValue(true)
     @DescriptionForConfigEntry("Packages get a different background color if enabled")
     @AboutConfig
@@ -469,7 +472,7 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
     void setPackagesBackgroundHighlightEnabled(boolean b);
 
     @AboutConfig
-    @RequiresRestart
+    @RequiresRestart("A JDownloader Restart is Required")
     @DefaultEnumValue("DEFAULT")
     LookAndFeelType getLookAndFeelTheme();
 
@@ -533,4 +536,24 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
 
     void setNewLinksAction(NewLinksInLinkgrabberAction action);
 
+    @AboutConfig
+    @DescriptionForConfigEntry("JDownloader uses a workaround to bring it's window or dialogs to focused to front. It simulates an ALT key shortcut. \r\nIf disabled, you will get focus problems")
+    @DefaultBooleanValue(true)
+    boolean isWindowsWindowManagerAltKeyWorkaroundEnabled();
+
+    void setWindowsWindowManagerAltKeyWorkaroundEnabled(boolean b);
+
+    @AboutConfig
+    @DescriptionForConfigEntry("JDownloader uses a workaround to bring it's window or dialogs to focused to front. It simulates an ALT key shortcut. \r\nIf disabled, you will get focus problems")
+    @DefaultIntArrayValue({ KeyEvent.VK_SHIFT, KeyEvent.VK_ALT, KeyEvent.VK_CONTROL })
+    int[] getWindowsWindowManagerAltKeyCombination();
+
+    void setWindowsWindowManagerAltKeyCombination(int[] keys);
+
+    @AboutConfig
+    @RequiresRestart("A Windows Reboot is Required")
+    @DescriptionForConfigEntry("This value is read from the windows registry. if you set it, JDownloader will write it back to the registry.")
+    void setWindowsWindowManagerForegroundLockTimeout(int readForegroundLockTimeout);
+
+    int getWindowsWindowManagerForegroundLockTimeout();
 }

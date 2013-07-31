@@ -5,6 +5,7 @@ import org.appwork.storage.config.JsonConfig;
 import org.appwork.storage.config.handler.BooleanKeyHandler;
 import org.appwork.storage.config.handler.EnumKeyHandler;
 import org.appwork.storage.config.handler.IntegerKeyHandler;
+import org.appwork.storage.config.handler.ListHandler;
 import org.appwork.storage.config.handler.LongKeyHandler;
 import org.appwork.storage.config.handler.ObjectKeyHandler;
 import org.appwork.storage.config.handler.StorageHandler;
@@ -21,6 +22,11 @@ public class CFG_GUI {
     public static final StorageHandler<GraphicalUserInterfaceSettings> SH                                                   = (StorageHandler<GraphicalUserInterfaceSettings>) CFG._getStorageHandler();
     // let's do this mapping here. If we map all methods to static handlers, access is faster, and we get an error on init if mappings are
     // wrong.
+    // 0
+    /**
+     * This value is read from the windows registry. if you set it, JDownloader will write it back to the registry.
+     **/
+    public static final IntegerKeyHandler                              WINDOWS_WINDOW_MANAGER_FOREGROUND_LOCK_TIMEOUT       = SH.getKeyHandler("WindowsWindowManagerForegroundLockTimeout", IntegerKeyHandler.class);
     // false
     /**
      * Paint all labels/text with or without antialias. Default value is false.
@@ -43,22 +49,30 @@ public class CFG_GUI {
      * Enable/disable Enable/disable Clipboard monitoring
      **/
     public static final BooleanKeyHandler                              CLIPBOARD_MONITORED                                  = SH.getKeyHandler("ClipboardMonitored", BooleanKeyHandler.class);
+    // NOTHING
+    public static final EnumKeyHandler                                 NEW_LINKS_ACTION                                     = SH.getKeyHandler("NewLinksAction", EnumKeyHandler.class);
     // false
     /**
      * If true, java will try to use D3D for graphics
      **/
     public static final BooleanKeyHandler                              USE_D3D                                              = SH.getKeyHandler("UseD3D", BooleanKeyHandler.class);
-    // TO_FRONT
-    public static final EnumKeyHandler                                 NEW_DIALOG_FRAME_STATE                               = SH.getKeyHandler("NewDialogFrameState", EnumKeyHandler.class);
     // false
     /**
      * Use horizontal Scrollbars in Linkgrabber
      **/
     public static final BooleanKeyHandler                              HORIZONTAL_SCROLLBARS_IN_LINKGRABBER_TABLE_ENABLED   = SH.getKeyHandler("HorizontalScrollbarsInLinkgrabberTableEnabled", BooleanKeyHandler.class);
+    // TO_FRONT
+    public static final EnumKeyHandler                                 NEW_DIALOG_FRAME_STATE                               = SH.getKeyHandler("NewDialogFrameState", EnumKeyHandler.class);
     // jd.gui.swing.jdgui.views.settings.panels.advanced.AdvancedSettings
     public static final StringKeyHandler                               ACTIVE_CONFIG_PANEL                                  = SH.getKeyHandler("ActiveConfigPanel", StringKeyHandler.class);
     // null
     public static final StringKeyHandler                               ACTIVE_PLUGIN_CONFIG_PANEL                           = SH.getKeyHandler("ActivePluginConfigPanel", StringKeyHandler.class);
+    // [I@14c7b5e7
+    /**
+     * JDownloader uses a workaround to bring it's window or dialogs to focused to front. It simulates an ALT key shortcut. If disabled, you
+     * will get focus problems
+     **/
+    public static final ListHandler<int[]>                             WINDOWS_WINDOW_MANAGER_ALT_KEY_COMBINATION           = (ListHandler<int[]>) SH.getKeyHandler("WindowsWindowManagerAltKeyCombination", ListHandler.class);
     // false
     public static final BooleanKeyHandler                              CAPTCHA_DEBUG_MODE_ENABLED                           = SH.getKeyHandler("CaptchaDebugModeEnabled", BooleanKeyHandler.class);
     // standard
@@ -91,10 +105,10 @@ public class CFG_GUI {
      * Captcha Dialog Image scale Faktor in %
      **/
     public static final IntegerKeyHandler                              CAPTCHA_SCALE_FACTOR                                 = SH.getKeyHandler("CaptchaScaleFactor", IntegerKeyHandler.class);
-    // FILENAME
-    public static final EnumKeyHandler                                 SELECTED_DOWNLOAD_SEARCH_CATEGORY                    = SH.getKeyHandler("SelectedDownloadSearchCategory", EnumKeyHandler.class);
     // false
     public static final BooleanKeyHandler                              PASSWORD_PROTECTION_ENABLED                          = SH.getKeyHandler("PasswordProtectionEnabled", BooleanKeyHandler.class);
+    // FILENAME
+    public static final EnumKeyHandler                                 SELECTED_DOWNLOAD_SEARCH_CATEGORY                    = SH.getKeyHandler("SelectedDownloadSearchCategory", EnumKeyHandler.class);
     // DEFAULT
     public static final EnumKeyHandler                                 LOOK_AND_FEEL_THEME                                  = SH.getKeyHandler("LookAndFeelTheme", EnumKeyHandler.class);
     // false
@@ -206,6 +220,12 @@ public class CFG_GUI {
     public static final BooleanKeyHandler                              FILTER_HIGHLIGHT_ENABLED                             = SH.getKeyHandler("FilterHighlightEnabled", BooleanKeyHandler.class);
     // true
     public static final BooleanKeyHandler                              OVERVIEW_PANEL_SMART_INFO_VISIBLE                    = SH.getKeyHandler("OverviewPanelSmartInfoVisible", BooleanKeyHandler.class);
+    // true
+    /**
+     * JDownloader uses a workaround to bring it's window or dialogs to focused to front. It simulates an ALT key shortcut. If disabled, you
+     * will get focus problems
+     **/
+    public static final BooleanKeyHandler                              WINDOWS_WINDOW_MANAGER_ALT_KEY_WORKAROUND_ENABLED    = SH.getKeyHandler("WindowsWindowManagerAltKeyWorkaroundEnabled", BooleanKeyHandler.class);
     // true
     public static final BooleanKeyHandler                              OVERVIEW_PANEL_TOTAL_INFO_VISIBLE                    = SH.getKeyHandler("OverviewPanelTotalInfoVisible", BooleanKeyHandler.class);
     // false

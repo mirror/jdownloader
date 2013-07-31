@@ -145,7 +145,7 @@ public interface GeneralSettings extends ConfigInterface {
     @AboutConfig
     @DescriptionForConfigEntry("How often a Plugin restarts a download if download failed")
     @DefaultIntValue(3)
-    @RequiresRestart
+    @RequiresRestart("A JDownloader Restart is Required")
     int getMaxPluginRetries();
 
     @AboutConfig
@@ -163,7 +163,7 @@ public interface GeneralSettings extends ConfigInterface {
     @DescriptionForConfigEntry("Timeout for network problems")
     @SpinnerValidator(min = 0, max = 1000000)
     @DefaultIntValue(15000)
-    @RequiresRestart
+    @RequiresRestart("A JDownloader Restart is Required")
     int getNetworkIssuesTimeout();
 
     @AboutConfig
@@ -275,7 +275,7 @@ public interface GeneralSettings extends ConfigInterface {
 
     @DefaultBooleanValue(true)
     @AboutConfig
-    @RequiresRestart
+    @RequiresRestart("A JDownloader Restart is Required")
     @DescriptionForConfigEntry("Correct pathes relative to JDownloader root")
     void setConvertRelativePathesJDRoot(boolean b);
 

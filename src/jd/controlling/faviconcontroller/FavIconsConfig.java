@@ -13,7 +13,7 @@ public interface FavIconsConfig extends ConfigInterface {
 
     @DefaultIntValue(12)
     @AboutConfig
-    @RequiresRestart
+    @RequiresRestart("A JDownloader Restart is Required")
     @DescriptionForConfigEntry("max. number of favicon threads")
     int getMaxThreads();
 
@@ -21,7 +21,7 @@ public interface FavIconsConfig extends ConfigInterface {
 
     @DefaultIntValue(20000)
     @AboutConfig
-    @RequiresRestart
+    @RequiresRestart("A JDownloader Restart is Required")
     @DescriptionForConfigEntry("max. time in ms before killing an idle favicon thread")
     int getThreadKeepAlive();
 

@@ -60,7 +60,7 @@ public interface LinkgrabberSettings extends ConfigInterface {
     void setAutoSwitchToDownloadTableOnConfirmDefaultEnabled(boolean b);
 
     @AboutConfig
-    @RequiresRestart
+    @RequiresRestart("A JDownloader Restart is Required")
     @DefaultBooleanValue(true)
     @DescriptionForConfigEntry("If false, The AddLinks Dialog in Linkgrabber works on the pasted text, and does not prefilter URLS any more")
     boolean isAddLinksPreParserEnabled();
@@ -68,7 +68,7 @@ public interface LinkgrabberSettings extends ConfigInterface {
     void setAddLinksPreParserEnabled(boolean b);
 
     @AboutConfig
-    @RequiresRestart
+    @RequiresRestart("A JDownloader Restart is Required")
     @DefaultBooleanValue(true)
     @DescriptionForConfigEntry("Selecting Views in Linkgrabber Sidebar autoselects the matching links in the table. Set this to false to avoid this.")
     boolean isQuickViewSelectionEnabled();
@@ -111,7 +111,7 @@ public interface LinkgrabberSettings extends ConfigInterface {
     void setVariousPackageLimit(int b);
 
     @AboutConfig
-    @RequiresRestart
+    @RequiresRestart("A JDownloader Restart is Required")
     @DescriptionForConfigEntry("AutoConfirm waits a delay before confirming the links. Default is 15000ms")
     @DefaultIntValue(15000)
     int getAutoConfirmDelay();

@@ -57,7 +57,7 @@ public interface LAFSettings extends ConfigInterface {
     // private String colorForScrollbarsMouseOverState = "ffABC7D8";
     @DescriptionForConfigEntry("Customized Color in aRGB Format (Pure red: #ffFF0000)")
     @AboutConfig
-    @RequiresRestart
+    @RequiresRestart("A JDownloader Restart is Required")
     @HexColorString
     @DefaultStringValue(RED)
     public String getColorForErrorForeground();
@@ -65,7 +65,7 @@ public interface LAFSettings extends ConfigInterface {
     // if (StringUtils.isNotEmpty(c)) lafOptions.setPanelBackgroundColor(c);
     @DescriptionForConfigEntry("Customized Color in aRGB Format (Pure red: #ffFF0000)")
     @AboutConfig
-    @RequiresRestart
+    @RequiresRestart("A JDownloader Restart is Required")
     @HexColorString
     @DefaultStringValue(ALICE_BLUE_APPROX)
     String getColorForPanelBackground();
@@ -73,7 +73,7 @@ public interface LAFSettings extends ConfigInterface {
     // if (StringUtils.isNotEmpty(c)) lafOptions.setPanelHeaderColor(c);
     @DescriptionForConfigEntry("Customized Color in aRGB Format (Pure red: #ffFF0000)")
     @AboutConfig
-    @RequiresRestart
+    @RequiresRestart("A JDownloader Restart is Required")
     @HexColorString
     @DefaultStringValue(JAGGED_ICE_APPROX)
     String getColorForPanelHeaderBackground();
@@ -81,89 +81,89 @@ public interface LAFSettings extends ConfigInterface {
     // if (StringUtils.isNotEmpty(c)) lafOptions.setPanelHeaderLineColor(c);
     @DescriptionForConfigEntry("Customized Color in aRGB Format (Pure red: #ffFF0000)")
     @AboutConfig
-    @RequiresRestart
+    @RequiresRestart("A JDownloader Restart is Required")
     @HexColorString
     @DefaultStringValue(GRAY)
     String getColorForPanelHeaderLine();
 
     @DescriptionForConfigEntry("Customized Color in aRGB Format (Pure red: #ffFF0000)")
     @AboutConfig
-    @RequiresRestart
+    @RequiresRestart("A JDownloader Restart is Required")
     @HexColorString
     @DefaultStringValue(PIGEON_POST_APPROX)
     String getColorForScrollbarsMouseOverState();
 
     @DescriptionForConfigEntry("Customized Color in aRGB Format (Pure red: #ffFF0000)")
     @AboutConfig
-    @RequiresRestart
+    @RequiresRestart("A JDownloader Restart is Required")
     @HexColorString
     @DefaultStringValue(JAGGED_ICE_APPROX)
     String getColorForScrollbarsNormalState();
 
     @DescriptionForConfigEntry("Customized Color in aRGB Format (Pure red: #ffFF0000)")
     @AboutConfig
-    @RequiresRestart
+    @RequiresRestart("A JDownloader Restart is Required")
     @HexColorString
     @DefaultStringValue("06000000")
     String getColorForTableAlternateRowBackground();
 
     @DescriptionForConfigEntry("Customized Color in aRGB Format (Pure red: #ffFF0000)")
     @AboutConfig
-    @RequiresRestart
+    @RequiresRestart("A JDownloader Restart is Required")
     @HexColorString
     String getColorForTableAlternateRowForeground();
 
     // if (StringUtils.isNotEmpty(c)) lafOptions.setHighlightColor2(c);
     @DescriptionForConfigEntry("Customized Color in aRGB Format (Pure red: #ffFF0000)")
     @AboutConfig
-    @RequiresRestart
+    @RequiresRestart("A JDownloader Restart is Required")
     @HexColorString
     @DefaultStringValue(GREEN)
     String getColorForTableFilteredView();
 
     @DescriptionForConfigEntry("Customized Color in aRGB Format (Pure red: #ffFF0000)")
     @AboutConfig
-    @RequiresRestart
+    @RequiresRestart("A JDownloader Restart is Required")
     @HexColorString
     @DefaultStringValue("ffC9E0ED")
     String getColorForTableMouseOverRowBackground();
 
     @DescriptionForConfigEntry("Customized Color in aRGB Format (Pure red: #ffFF0000)")
     @AboutConfig
-    @RequiresRestart
+    @RequiresRestart("A JDownloader Restart is Required")
     @HexColorString
     String getColorForTableMouseOverRowForeground();
 
     @DescriptionForConfigEntry("Customized Color in aRGB Format (Pure red: #ffFF0000)")
     @AboutConfig
-    @RequiresRestart
+    @RequiresRestart("A JDownloader Restart is Required")
     @HexColorString
     @DefaultStringValue(MYSTIC_APPROX)
     public String getColorForTablePackageRowBackground();
 
     @DescriptionForConfigEntry("Customized Color in aRGB Format (Pure red: #ffFF0000)")
     @AboutConfig
-    @RequiresRestart
+    @RequiresRestart("A JDownloader Restart is Required")
     @HexColorString
     public String getColorForTablePackageRowForeground();
 
     @DescriptionForConfigEntry("Customized Color in aRGB Format (Pure red: #ffFF0000)")
     @AboutConfig
-    @RequiresRestart
+    @RequiresRestart("A JDownloader Restart is Required")
     @HexColorString
     @DefaultStringValue(TROPICAL_BLUE_APPROX)
     String getColorForTableSelectedRowsBackground();
 
     @DescriptionForConfigEntry("Customized Color in aRGB Format (Pure red: #ffFF0000)")
     @AboutConfig
-    @RequiresRestart
+    @RequiresRestart("A JDownloader Restart is Required")
     @HexColorString
     String getColorForTableSelectedRowsForeground();
 
     // if (StringUtils.isNotEmpty(c)) lafOptions.setHighlightColor1(c);
     @DescriptionForConfigEntry("Customized Color in aRGB Format (Pure red: #ffFF0000)")
     @AboutConfig
-    @RequiresRestart
+    @RequiresRestart("A JDownloader Restart is Required")
     @HexColorString
     @DefaultStringValue(ORANGE)
     String getColorForTableSortedColumnView();
@@ -171,7 +171,7 @@ public interface LAFSettings extends ConfigInterface {
     // if (StringUtils.isNotEmpty(c)) lafOptions.setTooltipForegroundColor(c);
     @DescriptionForConfigEntry("Customized Color in aRGB Format (Pure red: #ffFF0000)")
     @AboutConfig
-    @RequiresRestart
+    @RequiresRestart("A JDownloader Restart is Required")
     @HexColorString
     @DefaultStringValue(ALICE_BLUE_APPROX)
     public String getColorForTooltipForeground();
@@ -217,7 +217,7 @@ public interface LAFSettings extends ConfigInterface {
     public abstract void setMenuBackgroundPainterClass(String menuBackgroundPainterClass);
 
     @AboutConfig
-    @RequiresRestart
+    @RequiresRestart("A JDownloader Restart is Required")
     @DefaultBooleanValue(false)
     public abstract boolean isPaintStatusbarTopBorder();
 
@@ -227,13 +227,13 @@ public interface LAFSettings extends ConfigInterface {
 
     @DescriptionForConfigEntry("This Painter class is used to paint Main Menu Items without a popdown menu")
     @AboutConfig
-    @RequiresRestart
+    @RequiresRestart("A JDownloader Restart is Required")
     @DefaultStringValue(DE_JAVASOFT_PLAF_SYNTHETICA_SIMPLE2D_MENU_PAINTER)
     public abstract String getMenuBackgroundPainterClass();
 
     @DescriptionForConfigEntry("Customized Color in aRGB Format (Pure red: #ffFF0000)")
     @AboutConfig
-    @RequiresRestart
+    @RequiresRestart("A JDownloader Restart is Required")
     @HexColorString
     @DefaultStringValue(BLACK)
     public String getColorForPanelHeaderForeground();
