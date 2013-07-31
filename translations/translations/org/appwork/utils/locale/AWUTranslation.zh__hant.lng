@@ -121,3 +121,4 @@ proxy_socks5=%s1:%s2 (Socks5 代理)
 proxydialog_title=沒有到網際網路的連線
 tableheader_tooltip_locked=%s1 (縮放鎖定)
 tableheader_tooltip_normal=%s1
+unLockColumnWidthAction=解鎖欄位寬度
