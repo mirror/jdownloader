@@ -93,6 +93,7 @@ settings_subpath_no_folder2=... solo si no hay carpetas raiz
 settings_subpath_no_folder_tt=No usar subcarpetas si los archivos descomprimidos ya están en uno
 settings_use_subpath=Crear subcarpeta
 settings_various=Otros
+showextractlog=Extraer Registro para %s1
 subfolder=Subcarpeta de descarga
 tooltip_NameColumn=Nombre del Archivo
 tooltip_empty=Sin tarea de extracción
