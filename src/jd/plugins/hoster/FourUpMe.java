@@ -482,13 +482,14 @@ public class FourUpMe extends PluginForHost {
     private void waitTime(long timeBefore, final DownloadLink downloadLink) throws PluginException {
         int passedTime = (int) ((System.currentTimeMillis() - timeBefore) / 1000) - 1;
         /** Ticket Time */
-        final String ttt = new Regex(correctedBR, ">Wait <span id=\"[a-z0-9]+\" style=\"color:#498fc9\">(\\d+)</span> seconds</span>").getMatch(0);
+        final String ttt = new Regex(correctedBR, ">Wait <span id=\"[a-z0-9]+\">(\\d+)</span> seconds</span>").getMatch(0);
         if (ttt != null) {
             int tt = Integer.parseInt(ttt);
             tt -= passedTime;
             logger.info("Waittime detected, waiting " + ttt + " - " + passedTime + " seconds from now on...");
             if (tt > 0) sleep(tt * 1000l, downloadLink);
         }
+        if (ttt == null) sleep(10 * 1000l, downloadLink);
     }
 
     // TODO: remove this when v2 becomes stable. use br.getFormbyKey(String key, String value)
