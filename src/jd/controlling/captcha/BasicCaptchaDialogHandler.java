@@ -51,12 +51,13 @@ public class BasicCaptchaDialogHandler extends ChallengeDialogHandler<BasicCaptc
         }
         dialog = d;
         if (suggest != null) dialog.suggest(suggest);
-
+        // don't put this in the edt
+        showDialog(dialog);
         new EDTHelper<Object>() {
 
             @Override
             public Object edtRun() {
-                dialog.displayDialog();
+
                 dialog.getDialog().addWindowListener(new WindowListener() {
 
                     @Override

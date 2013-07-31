@@ -42,12 +42,13 @@ public class ClickCaptchaDialogHandler extends ChallengeDialogHandler<ClickCaptc
         }
 
         dialog = d;
-
+        // don't put this in the edt
+        showDialog(dialog);
         new EDTHelper<Object>() {
 
             @Override
             public Object edtRun() {
-                dialog.displayDialog();
+
                 dialog.getDialog().addWindowListener(new WindowListener() {
 
                     @Override
