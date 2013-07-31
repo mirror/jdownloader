@@ -60,8 +60,8 @@ public class JustinTv extends PluginForHost {
 
     private static final String FASTLINKCHECK    = "FASTLINKCHECK";
     private static final String NOCHUNKS         = "NOCHUNKS";
-    private static final String CUSTOMDATE       = "CUSTOMDATE";
-    private static final String CUSTOMFILENAME   = "CUSTOMFILENAME";
+    private static final String CUSTOM_DATE      = "CUSTOM_DATE_2";
+    private static final String CUSTOM_FILENAME  = "CUSTOM_FILENAME_2";
     private static final String PARTNUMBERFORMAT = "PARTNUMBERFORMAT";
 
     @Override
@@ -126,7 +126,7 @@ public class JustinTv extends PluginForHost {
         String videoName = downloadLink.getStringProperty("plainfilename", null);
 
         final SubConfiguration cfg = SubConfiguration.getConfig("justin.tv");
-        String formattedFilename = cfg.getStringProperty(CUSTOMFILENAME);
+        String formattedFilename = cfg.getStringProperty(CUSTOM_FILENAME, "*channelname*_*date*_*videoname*_*partnumber**ext*");
         if (formattedFilename == null || formattedFilename.equals("")) formattedFilename = "*channel*_*date*_*filename*";
         String partnumberformat = cfg.getStringProperty(PARTNUMBERFORMAT);
         if (partnumberformat == null || partnumberformat.equals("")) partnumberformat = "00";
@@ -138,7 +138,7 @@ public class JustinTv extends PluginForHost {
 
         String formattedDate = null;
         if (date != null) {
-            final String userDefinedDateFormat = cfg.getStringProperty(CUSTOMDATE);
+            final String userDefinedDateFormat = cfg.getStringProperty(CUSTOM_DATE, "dd.MM.yyyy_hh-mm-ss");
             final String[] dateStuff = date.split("T");
             SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd:hh:mm:ss");
             Date dateStr = formatter.parse(dateStuff[0] + ":" + dateStuff[1]);
@@ -175,12 +175,12 @@ public class JustinTv extends PluginForHost {
     private void setConfigElements() {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), FASTLINKCHECK, JDL.L("plugins.hoster.justintv.fastlinkcheck", "Activate fast linkcheck (filesize won't be shown in linkgrabber)?")).setDefaultValue(false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), CUSTOMDATE, JDL.L("plugins.hoster.justintv.customdate", "Define how the date should look:")).setDefaultValue("dd.MM.yyyy_hh-mm-ss"));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), CUSTOM_DATE, JDL.L("plugins.hoster.justintv.customdate", "Define how the date should look:")).setDefaultValue("dd.MM.yyyy_hh-mm-ss"));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), PARTNUMBERFORMAT, JDL.L("plugins.hoster.justintv.custompartnumber", "Define how the partnumbers should look:")).setDefaultValue("00"));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "Customize the filename! Example: '*channelname*_*date*_*videoname*_*partnumber**ext*'"));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), CUSTOMFILENAME, JDL.L("plugins.hoster.justintv.customfilename", "Define how the filenames should look:")).setDefaultValue("*channelname*_*date*_*videoname*_*partnumber**ext*"));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), CUSTOM_FILENAME, JDL.L("plugins.hoster.justintv.customfilename", "Define how the filenames should look:")).setDefaultValue("*channelname*_*date*_*videoname*_*partnumber**ext*"));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         final StringBuilder sb = new StringBuilder();
         sb.append("Explanation of the available tags:\r\n");

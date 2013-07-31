@@ -34,6 +34,8 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
+import org.appwork.utils.logging2.LogSource;
+
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "justin.tv" }, urls = { "http://(((www\\.)?(justin\\.tv)|(www\\.|[a-z]{2}\\.)?(twitchtv\\.com|twitch\\.tv))/[^<>/\"]+/((b|c)/\\d+|videos(\\?page=\\d+)?)|(www\\.)?(justin|twitch)\\.tv/archive/archive_popout\\?id=\\d+)" }, flags = { 0 })
 public class JustinTvDecrypt extends PluginForDecrypt {
 
@@ -121,6 +123,8 @@ public class JustinTvDecrypt extends PluginForDecrypt {
                 dlink.setProperty("partnumber", counter);
                 if (date != null) dlink.setProperty("originaldate", date);
                 if (channelName != null) dlink.setProperty("channel", Encoding.htmlDecode(channelName.trim()));
+                /* make sure the plugin is loaded! */
+                JDUtilities.getPluginForHost("justin.tv");
                 final String formattedFilename = ((jd.plugins.hoster.JustinTv) hostPlugin).getFormattedFilename(dlink);
                 dlink.setName(formattedFilename);
                 if (cfg.getBooleanProperty("FASTLINKCHECK", false)) dlink.setAvailable(true);
@@ -131,16 +135,20 @@ public class JustinTvDecrypt extends PluginForDecrypt {
             String fpName = "";
             if (channelName != null) fpName += Encoding.htmlDecode(channelName.trim()) + " - ";
             if (date != null) {
-                final String userDefinedDateFormat = cfg.getStringProperty("CUSTOMDATE");
-                final String[] dateStuff = date.split("T");
-                SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd:hh:mm:ss");
-                Date dateStr = formatter.parse(dateStuff[0] + ":" + dateStuff[1]);
-                String formattedDate = formatter.format(dateStr);
-                Date theDate = formatter.parse(formattedDate);
+                try {
+                    final String userDefinedDateFormat = cfg.getStringProperty("CUSTOM_DATE_2", "dd.MM.yyyy_hh-mm-ss");
+                    final String[] dateStuff = date.split("T");
+                    SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd:hh:mm:ss");
+                    Date dateStr = formatter.parse(dateStuff[0] + ":" + dateStuff[1]);
+                    String formattedDate = formatter.format(dateStr);
+                    Date theDate = formatter.parse(formattedDate);
 
-                formatter = new SimpleDateFormat(userDefinedDateFormat);
-                formattedDate = formatter.format(theDate);
-                fpName += formattedDate + " - ";
+                    formatter = new SimpleDateFormat(userDefinedDateFormat);
+                    formattedDate = formatter.format(theDate);
+                    fpName += formattedDate + " - ";
+                } catch (final Throwable e) {
+                    LogSource.exception(logger, e);
+                }
             }
             fpName += filename;
             fpName += " - [" + links.length + "]";

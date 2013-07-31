@@ -40,6 +40,7 @@ import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.logging2.LogSource;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vimeo.com" }, urls = { "https?://(www\\.|player\\.)?vimeo\\.com/((video/)?\\d+|channels/[a-z0-9\\-_]+/\\d+)" }, flags = { 0 })
 public class VimeoComDecrypter extends PluginForDecrypt {
@@ -150,6 +151,8 @@ public class VimeoComDecrypter extends PluginForDecrypt {
             if (date != null) link.setProperty("originaldate", date);
             if (channelName != null) link.setProperty("channel", Encoding.htmlDecode(channelName.trim()));
             link.setProperty("plainfilename", name);
+            /* make sure the plugin is loaded! */
+            JDUtilities.getPluginForHost("vimeo.com");
             final String formattedFilename = ((jd.plugins.hoster.VimeoCom) hostPlugin).getFormattedFilename(link);
             link.setFinalFileName(formattedFilename);
             link.setProperty("directName", formattedFilename);
@@ -183,16 +186,19 @@ public class VimeoComDecrypter extends PluginForDecrypt {
                 String fpName = "";
                 if (channelName != null) fpName += Encoding.htmlDecode(channelName.trim()) + " - ";
                 if (date != null) {
-                    final String userDefinedDateFormat = cfg.getStringProperty("CUSTOMDATE");
-                    final String[] dateStuff = date.split("T");
-                    SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd:hh:mm:ss");
-                    Date dateStr = formatter.parse(dateStuff[0] + ":" + dateStuff[1]);
-                    String formattedDate = formatter.format(dateStr);
-                    Date theDate = formatter.parse(formattedDate);
-
-                    formatter = new SimpleDateFormat(userDefinedDateFormat);
-                    formattedDate = formatter.format(theDate);
-                    fpName += formattedDate + " - ";
+                    try {
+                        final String userDefinedDateFormat = cfg.getStringProperty("CUSTOM_DATE_2", "dd.MM.yyyy_HH-mm-ss");
+                        final String[] dateStuff = date.split("T");
+                        SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd:hh:mm:ss");
+                        Date dateStr = formatter.parse(dateStuff[0] + ":" + dateStuff[1]);
+                        String formattedDate = formatter.format(dateStr);
+                        Date theDate = formatter.parse(formattedDate);
+                        formatter = new SimpleDateFormat(userDefinedDateFormat);
+                        formattedDate = formatter.format(theDate);
+                        fpName += formattedDate + " - ";
+                    } catch (final Throwable e) {
+                        LogSource.exception(logger, e);
+                    }
                 }
                 fpName += title;
 
