@@ -341,7 +341,6 @@ public class TbCm extends PluginForDecrypt {
         parameter = parameter.replaceFirst("(%3Fv%3D)", "?v=");
         parameter = parameter.replaceFirst("(watch\\?.*?v=)", "watch?v=");
         parameter = parameter.replaceFirst("/embed/", "/watch?v=");
-        parameter = parameter.replaceFirst("https", "http");
 
         this.br.setFollowRedirects(true);
         this.br.setCookiesExclusive(true);
@@ -731,8 +730,8 @@ public class TbCm extends PluginForDecrypt {
                     if (id != null) YT_FILENAME = id;
                 }
 
+                // ytid are case sensitive, you can not effectively dupe check 100% reliablity with lower case only.
                 String ytID = getVideoID(currentVideoUrl);
-                if (ytID != null) ytID = ytID.toLowerCase(Locale.ENGLISH);
 
                 /*
                  * We match against users resolution and file encoding type. This allows us to use their upper and lower limits. It will
@@ -1263,10 +1262,17 @@ public class TbCm extends PluginForDecrypt {
             sb.append(s.charAt(86));
             sb.append(s.substring(24, 85));
         } else if (s.length() == 86) {
-            sb.append(s.substring(2, 63));
+            sb.append(s.substring(83, 85));
+            sb.append(s.charAt(26));
+            sb.append(new StringBuilder(s.substring(47, 80)).reverse());
+            sb.append(s.charAt(85));
+            sb.append(new StringBuilder(s.substring(37, 46)).reverse());
+            sb.append(s.charAt(30));
+            sb.append(new StringBuilder(s.substring(31, 36)).reverse());
+            sb.append(s.charAt(46));
+            sb.append(new StringBuilder(s.substring(27, 30)).reverse());
             sb.append(s.charAt(82));
-            sb.append(s.substring(64, 82));
-            sb.append(s.charAt(63));
+            sb.append(new StringBuilder(s.substring(2, 26)).reverse());
         } else if (s.length() == 85) {
             sb.append(s.substring(2, 8));
             sb.append(s.charAt(0));
