@@ -545,10 +545,10 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
 
     @AboutConfig
     @DescriptionForConfigEntry("JDownloader uses a workaround to bring it's window or dialogs to focused to front. It simulates an ALT key shortcut. \r\nIf disabled, you will get focus problems")
-    @DefaultIntArrayValue({ KeyEvent.VK_SHIFT, KeyEvent.VK_ALT, KeyEvent.VK_CONTROL })
-    int[] getWindowsWindowManagerAltKeyCombination();
+    @DefaultIntArrayValue({ KeyEvent.VK_CONTROL, KeyEvent.VK_ALT, KeyEvent.VK_SHIFT })
+    int[] getWindowsWindowManagerAltKeyCombi();
 
-    void setWindowsWindowManagerAltKeyCombination(int[] keys);
+    void setWindowsWindowManagerAltKeyCombi(int[] keys);
 
     @AboutConfig
     @RequiresRestart("A Windows Reboot is Required")

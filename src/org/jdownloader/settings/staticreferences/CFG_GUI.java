@@ -39,6 +39,13 @@ public class CFG_GUI {
      * Refreshrate in ms for the DownloadView
      **/
     public static final LongKeyHandler                                 DOWNLOAD_VIEW_REFRESH                                = SH.getKeyHandler("DownloadViewRefresh", LongKeyHandler.class);
+    // false
+    /**
+     * If true, java will try to use D3D for graphics
+     **/
+    public static final BooleanKeyHandler                              USE_D3D                                              = SH.getKeyHandler("UseD3D", BooleanKeyHandler.class);
+    // NOTHING
+    public static final EnumKeyHandler                                 NEW_LINKS_ACTION                                     = SH.getKeyHandler("NewLinksAction", EnumKeyHandler.class);
     // true
     /**
      * Packages get a different background color if enabled
@@ -49,13 +56,6 @@ public class CFG_GUI {
      * Enable/disable Enable/disable Clipboard monitoring
      **/
     public static final BooleanKeyHandler                              CLIPBOARD_MONITORED                                  = SH.getKeyHandler("ClipboardMonitored", BooleanKeyHandler.class);
-    // NOTHING
-    public static final EnumKeyHandler                                 NEW_LINKS_ACTION                                     = SH.getKeyHandler("NewLinksAction", EnumKeyHandler.class);
-    // false
-    /**
-     * If true, java will try to use D3D for graphics
-     **/
-    public static final BooleanKeyHandler                              USE_D3D                                              = SH.getKeyHandler("UseD3D", BooleanKeyHandler.class);
     // false
     /**
      * Use horizontal Scrollbars in Linkgrabber
@@ -67,12 +67,6 @@ public class CFG_GUI {
     public static final StringKeyHandler                               ACTIVE_CONFIG_PANEL                                  = SH.getKeyHandler("ActiveConfigPanel", StringKeyHandler.class);
     // null
     public static final StringKeyHandler                               ACTIVE_PLUGIN_CONFIG_PANEL                           = SH.getKeyHandler("ActivePluginConfigPanel", StringKeyHandler.class);
-    // [I@14c7b5e7
-    /**
-     * JDownloader uses a workaround to bring it's window or dialogs to focused to front. It simulates an ALT key shortcut. If disabled, you
-     * will get focus problems
-     **/
-    public static final ListHandler<int[]>                             WINDOWS_WINDOW_MANAGER_ALT_KEY_COMBINATION           = (ListHandler<int[]>) SH.getKeyHandler("WindowsWindowManagerAltKeyCombination", ListHandler.class);
     // false
     public static final BooleanKeyHandler                              CAPTCHA_DEBUG_MODE_ENABLED                           = SH.getKeyHandler("CaptchaDebugModeEnabled", BooleanKeyHandler.class);
     // standard
@@ -80,6 +74,12 @@ public class CFG_GUI {
      * Icon Theme ID. Make sure that ./themes/<ID>/ exists
      **/
     public static final StringKeyHandler                               THEME_ID                                             = SH.getKeyHandler("ThemeID", StringKeyHandler.class);
+    // [I@65c82af8
+    /**
+     * JDownloader uses a workaround to bring it's window or dialogs to focused to front. It simulates an ALT key shortcut. If disabled, you
+     * will get focus problems
+     **/
+    public static final ListHandler<int[]>                             WINDOWS_WINDOW_MANAGER_ALT_KEY_COMBI                 = (ListHandler<int[]>) SH.getKeyHandler("WindowsWindowManagerAltKeyCombi", ListHandler.class);
     // false
     /**
      * If true, TaskColumn will show Premium Alerts in Free Download mode if JD thinks Premium would be better currently.
@@ -94,10 +94,10 @@ public class CFG_GUI {
     public static final BooleanKeyHandler                              DOWNLOAD_PANEL_OVERVIEW_VISIBLE                      = SH.getKeyHandler("DownloadPanelOverviewVisible", BooleanKeyHandler.class);
     // true
     public static final BooleanKeyHandler                              BALLOON_NOTIFICATION_ENABLED                         = SH.getKeyHandler("BalloonNotificationEnabled", BooleanKeyHandler.class);
-    // false
-    public static final BooleanKeyHandler                              CONFIG_VIEW_VISIBLE                                  = SH.getKeyHandler("ConfigViewVisible", BooleanKeyHandler.class);
     // true
     public static final BooleanKeyHandler                              OVERVIEW_PANEL_VISIBLE_ONLY_INFO_VISIBLE             = SH.getKeyHandler("OverviewPanelVisibleOnlyInfoVisible", BooleanKeyHandler.class);
+    // false
+    public static final BooleanKeyHandler                              CONFIG_VIEW_VISIBLE                                  = SH.getKeyHandler("ConfigViewVisible", BooleanKeyHandler.class);
     // SKIP_FILE
     public static final EnumKeyHandler                                 LAST_IF_FILE_EXISTS                                  = SH.getKeyHandler("LastIfFileExists", EnumKeyHandler.class);
     // 100
@@ -105,10 +105,10 @@ public class CFG_GUI {
      * Captcha Dialog Image scale Faktor in %
      **/
     public static final IntegerKeyHandler                              CAPTCHA_SCALE_FACTOR                                 = SH.getKeyHandler("CaptchaScaleFactor", IntegerKeyHandler.class);
-    // false
-    public static final BooleanKeyHandler                              PASSWORD_PROTECTION_ENABLED                          = SH.getKeyHandler("PasswordProtectionEnabled", BooleanKeyHandler.class);
     // FILENAME
     public static final EnumKeyHandler                                 SELECTED_DOWNLOAD_SEARCH_CATEGORY                    = SH.getKeyHandler("SelectedDownloadSearchCategory", EnumKeyHandler.class);
+    // false
+    public static final BooleanKeyHandler                              PASSWORD_PROTECTION_ENABLED                          = SH.getKeyHandler("PasswordProtectionEnabled", BooleanKeyHandler.class);
     // DEFAULT
     public static final EnumKeyHandler                                 LOOK_AND_FEEL_THEME                                  = SH.getKeyHandler("LookAndFeelTheme", EnumKeyHandler.class);
     // false
@@ -151,6 +151,11 @@ public class CFG_GUI {
      * The row that is 'touched' by the mouse cursor gets a darker shadow
      **/
     public static final BooleanKeyHandler                              TABLE_MOUSE_OVER_HIGHLIGHT_ENABLED                   = SH.getKeyHandler("TableMouseOverHighlightEnabled", BooleanKeyHandler.class);
+    // 0
+    /**
+     * by default, table row's height dynamicly adapts to the fontsize. Set a value>0 to set your own custom row height.
+     **/
+    public static final IntegerKeyHandler                              CUSTOM_TABLE_ROW_HEIGHT                              = SH.getKeyHandler("CustomTableRowHeight", IntegerKeyHandler.class);
     // ADD_ALL_LINKS_AND_START_DOWNLOADS
     /**
      * Choose what should happen when you click on the [Start Downloads] Button when you are in the Linkgrabber Tab
@@ -158,11 +163,6 @@ public class CFG_GUI {
     public static final EnumKeyHandler                                 START_BUTTON_ACTION_IN_LINKGRABBER_CONTEXT           = SH.getKeyHandler("StartButtonActionInLinkgrabberContext", EnumKeyHandler.class);
     // 2000
     public static final IntegerKeyHandler                              TOOLTIP_DELAY                                        = SH.getKeyHandler("TooltipDelay", IntegerKeyHandler.class);
-    // 0
-    /**
-     * by default, table row's height dynamicly adapts to the fontsize. Set a value>0 to set your own custom row height.
-     **/
-    public static final IntegerKeyHandler                              CUSTOM_TABLE_ROW_HEIGHT                              = SH.getKeyHandler("CustomTableRowHeight", IntegerKeyHandler.class);
     // false
     public static final BooleanKeyHandler                              SKIP_CLIPBOARD_MONITOR_FIRST_ROUND                   = SH.getKeyHandler("SkipClipboardMonitorFirstRound", BooleanKeyHandler.class);
     // true
