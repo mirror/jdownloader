@@ -151,53 +151,42 @@ public class UnrestrictLi extends PluginForHost {
             logger.info("File offline");
             MessageDialog("Error", "File offline", false);
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        if (br.containsHTML("invalid\":\"Host is not supported or unknown link format")) {
+        } else if (br.containsHTML("invalid\":\"Host is not supported or unknown link format")) {
             logger.info("Unknown link format");
             MessageDialog("Error", "Unknown link format", false);
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        if (br.containsHTML("invalid\":\"You are not allowed to download from this host")) {
+            removeHostFromMultiHost(link, acc);
+            throw new PluginException(LinkStatus.ERROR_RETRY);
+        } else if (br.containsHTML("invalid\":\"You are not allowed to download from this host")) {
             logger.info("You are not allowed to download from this host");
             MessageDialog("Error", "You are not allowed to download from this host", false);
             removeHostFromMultiHost(link, acc);
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        if (br.containsHTML("invalid\":\"Host is down")) {
+            throw new PluginException(LinkStatus.ERROR_RETRY);
+        } else if (br.containsHTML("invalid\":\"Host is down")) {
             logger.info("Host is down");
             MessageDialog("Error", "Host is down", false);
             removeHostFromMultiHost(link, acc);
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        if (br.containsHTML("invalid\":\"This file is too large")) {
-            logger.info("This file is too large");
-            MessageDialog("Error", "This file is too large", false);
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        if (br.containsHTML("invalid\":\"You have reached your total daily limit. (Fair Use)")) {
+            throw new PluginException(LinkStatus.ERROR_RETRY);
+        } else if (br.containsHTML("invalid\":\"You have reached your total daily limit. (Fair Use)")) {
             logger.info("You have reached your total daily limit. (Fair Use)");
             MessageDialog("Error", "You have reached your total daily limit. (Fair Use)", false);
             removeHostFromMultiHost(link, acc);
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        if (br.containsHTML("invalid\":\"You have reached your daily limit for this host")) {
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+        } else if (br.containsHTML("invalid\":\"You have reached your daily limit for this host")) {
             logger.info("You have reached your daily limit for this host");
             MessageDialog("Error", "You have reached your daily limit for this host", false);
             removeHostFromMultiHost(link, acc);
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        if (br.containsHTML("invalid\":\"This link has been reported and blocked")) {
+            throw new PluginException(LinkStatus.ERROR_RETRY);
+        } else if (br.containsHTML("invalid\":\"This link has been reported and blocked")) {
             logger.info("This link has been reported and blocked");
             MessageDialog("Error", "This link has been reported and blocked", false);
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        if (br.containsHTML("invalid\":\"Error receiving page")) {
+            throw new PluginException(LinkStatus.ERROR_RETRY);
+        } else if (br.containsHTML("invalid\":\"Error receiving page")) {
             logger.info("Error receiving page");
             if (link.getLinkStatus().getRetryCount() >= 3) {
                 link.getLinkStatus().setRetryCount(0);
                 MessageDialog("Error", "Error receiving page", false);
                 removeHostFromMultiHost(link, acc);
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                throw new PluginException(LinkStatus.ERROR_RETRY);
             }
             String msg = "(" + link.getLinkStatus().getRetryCount() + 1 + "/" + 3 + ")";
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Error fetching file information:" + msg, 20 * 1000l);
@@ -219,38 +208,36 @@ public class UnrestrictLi extends PluginForHost {
                 logger.info("Invalid API response.");
                 MessageDialog("Error", "Invalid API response", false);
                 removeHostFromMultiHost(link, acc);
-            }
-            if (br.containsHTML("Host not supported.")) {
+                throw new PluginException(LinkStatus.ERROR_RETRY);
+            } else if (br.containsHTML("Host not supported.")) {
                 logger.info("Host not supported.");
                 MessageDialog("Error", "Host not supported", false);
                 removeHostFromMultiHost(link, acc);
-            }
-            if (br.containsHTML("Error downloading file.")) {
+                throw new PluginException(LinkStatus.ERROR_RETRY);
+            } else if (br.containsHTML("Error downloading file.")) {
                 logger.info("Error downloading file.");
                 MessageDialog("Error", "Error downloading file", false);
                 removeHostFromMultiHost(link, acc);
-            }
-            if (br.containsHTML("Invalid URL returned.")) {
+                throw new PluginException(LinkStatus.ERROR_RETRY);
+            } else if (br.containsHTML("Invalid URL returned.")) {
                 logger.info("Invalid URL returned.");
                 MessageDialog("Error", "Invalid URL returned", false);
                 removeHostFromMultiHost(link, acc);
-            }
-            if (br.containsHTML("Wrong server.")) {
+                throw new PluginException(LinkStatus.ERROR_RETRY);
+            } else if (br.containsHTML("Wrong server.")) {
                 logger.info("Wrong server.");
                 MessageDialog("Error", "Wrong server", false);
                 removeHostFromMultiHost(link, acc);
-            }
-            if (br.containsHTML("Request denied")) {
+                throw new PluginException(LinkStatus.ERROR_RETRY);
+            } else if (br.containsHTML("Request denied")) {
                 logger.info("Request denied. Please wait at least 5 seconds before refreshing. (Flooding)");
                 MessageDialog("Error", "Request denied. Please wait at least 5 seconds before refreshing. (Flooding)", false);
                 throw new PluginException(LinkStatus.ERROR_RETRY);
-            }
-            if (br.containsHTML("Error receiving page.")) {
+            } else if (br.containsHTML("Error receiving page.")) {
                 logger.info("Error receiving page.");
                 MessageDialog("Error", "Error receiving page", false);
                 throw new PluginException(LinkStatus.ERROR_RETRY);
-            }
-            if (br.containsHTML("An unknown error has occured.")) {
+            } else if (br.containsHTML("An unknown error has occured.")) {
                 logger.info("An unknown error has occured.");
                 MessageDialog("Error", "An unknown error has occured", false);
                 throw new PluginException(LinkStatus.ERROR_RETRY);
