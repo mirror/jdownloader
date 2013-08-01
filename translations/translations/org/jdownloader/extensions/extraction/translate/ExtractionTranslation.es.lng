@@ -18,6 +18,7 @@ contextmenu_autoextract=Autoextraer activado
 contextmenu_disable_auto_extract=Extraer después de Descargar
 contextmenu_enable_auto_extract=Extraer después de Descargado
 contextmenu_extract=Extraer ahora
+contextmenu_extract_show_result=Mostrar Registro de Extracción
 contextmenu_extract_to=Establecer la carpeta de extracción
 contextmenu_main=Archivo(s)
 contextmenu_password=Establecer contraseña del archivo
