@@ -450,6 +450,7 @@ public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTransla
 
     public void mousePressed(MouseEvent e) {
         trayIconTooltip.hideTooltip();
+        clearListener();
         if (e.getSource() instanceof TrayIcon) {
             if (!CrossSystem.isMac()) {
                 if (e.getClickCount() >= (getSettings().isToogleWindowStatusWithSingleClickEnabled() ? 1 : 2) && !SwingUtilities.isRightMouseButton(e)) {
@@ -788,12 +789,28 @@ public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTransla
         }
     }
 
-    protected void setListener(ActionListener actionListener) {
+    protected void setListener(final ActionListener actionListener) {
         TrayIcon ti = trayIcon;
-        for (ActionListener al : ti.getActionListeners()) {
-            ti.removeActionListener(al);
+        clearListener();
+        if (ti != null) {
+            ti.addActionListener(new ActionListener() {
+
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    actionListener.actionPerformed(e);
+                    clearListener();
+                }
+            });
         }
-        ti.addActionListener(actionListener);
+    }
+
+    private void clearListener() {
+        TrayIcon ti = trayIcon;
+        if (ti != null) {
+            for (ActionListener al : ti.getActionListeners()) {
+                ti.removeActionListener(al);
+            }
+        }
     }
 
 }
