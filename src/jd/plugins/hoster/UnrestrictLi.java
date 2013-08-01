@@ -166,7 +166,7 @@ public class UnrestrictLi extends PluginForHost {
             MessageDialog("Error", "Host is down", false);
             removeHostFromMultiHost(link, acc);
             throw new PluginException(LinkStatus.ERROR_RETRY);
-        } else if (br.containsHTML("invalid\":\"You have reached your total daily limit. (Fair Use)")) {
+        } else if (br.containsHTML("invalid\":\"You have reached your total daily limit\\. \\(Fair Use\\)")) {
             logger.info("You have reached your total daily limit. (Fair Use)");
             MessageDialog("Error", "You have reached your total daily limit. (Fair Use)", false);
             removeHostFromMultiHost(link, acc);
