@@ -711,7 +711,9 @@ public class JDGui implements UpdaterListener, OwnerFinder {
                             countdown = System.currentTimeMillis() + CFG_SILENTMODE.ON_DIALOG_DURING_SILENT_MODE_ACTION_TIMEOUT.getValue();
 
                         }
-                        flashTaskbar();
+                        if (silentModeActive) {
+                            flashTaskbar();
+                        }
                         while (isSilentModeActive()) {
                             if (countdown > 0) {
                                 Thread.sleep(Math.min(Math.max(1, countdown - System.currentTimeMillis()), 250));

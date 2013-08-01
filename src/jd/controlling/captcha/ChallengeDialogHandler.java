@@ -61,46 +61,50 @@ public abstract class ChallengeDialogHandler<T extends ImageCaptchaChallenge<?>>
                     dialog.forceDummyInit();
 
                     boolean silentModeActive = JDGui.getInstance().isSilentModeActive();
-                    if (silentModeActive && CFG_SILENTMODE.ON_DIALOG_DURING_SILENT_MODE_ACTION.getValue() == DialogDuringSilentModeAction.CANCEL_DIALOG) {
-                        // Cancel dialog
-                        throw new DialogClosedException(Dialog.RETURN_CLOSED);
-                    }
 
-                    // if this is the edt, we should not block it.. NEVER
-                    if (!SwingUtilities.isEventDispatchThread()) {
-                        // block dialog calls... the shall appear as soon as isSilentModeActive is false.
-                        long countdown = -1;
+                    if (silentModeActive) {
 
-                        if (dialog.isCountdownFlagEnabled()) {
-                            long countdownDif = dialog.getCountdown() * 1000;
-                            countdown = System.currentTimeMillis() + countdownDif;
+                        if (CFG_SILENTMODE.ON_DIALOG_DURING_SILENT_MODE_ACTION.getValue() == DialogDuringSilentModeAction.CANCEL_DIALOG) {
+                            // Cancel dialog
+                            throw new DialogClosedException(Dialog.RETURN_CLOSED);
                         }
-                        if (countdown < 0 && CFG_SILENTMODE.ON_DIALOG_DURING_SILENT_MODE_ACTION.getValue() == DialogDuringSilentModeAction.WAIT_IN_BACKGROUND_UNTIL_WINDOW_GETS_FOCUS_OR_TIMEOUT) {
-                            countdown = System.currentTimeMillis() + CFG_SILENTMODE.ON_DIALOG_DURING_SILENT_MODE_ACTION_TIMEOUT.getValue();
 
-                        }
-                        JDGui.getInstance().flashTaskbar();
-                        while (JDGui.getInstance().isSilentModeActive()) {
-                            if (countdown > 0) {
-                                Thread.sleep(Math.min(Math.max(1, countdown - System.currentTimeMillis()), 250));
-                                if (System.currentTimeMillis() > countdown) {
-                                    dialog.onTimeout();
-                                    // clear interrupt
-                                    Thread.interrupted();
-                                    final int mask = dialog.getReturnmask();
-                                    if (BinaryLogic.containsSome(mask, Dialog.RETURN_CLOSED)) { throw new DialogClosedException(mask); }
-                                    if (BinaryLogic.containsSome(mask, Dialog.RETURN_CANCEL)) { throw new DialogCanceledException(mask); }
-                                    try {
-                                        return dialog.getReturnValue();
+                        // if this is the edt, we should not block it.. NEVER
+                        if (!SwingUtilities.isEventDispatchThread()) {
+                            // block dialog calls... the shall appear as soon as isSilentModeActive is false.
+                            long countdown = -1;
 
-                                    } catch (Exception e) {
-                                        // dialogs have not been initialized. so the getReturnValue might fail.
-                                        logger.log(e);
-                                        throw new DialogClosedException(Dialog.RETURN_CLOSED | Dialog.RETURN_TIMEOUT);
+                            if (dialog.isCountdownFlagEnabled()) {
+                                long countdownDif = dialog.getCountdown() * 1000;
+                                countdown = System.currentTimeMillis() + countdownDif;
+                            }
+                            if (countdown < 0 && CFG_SILENTMODE.ON_DIALOG_DURING_SILENT_MODE_ACTION.getValue() == DialogDuringSilentModeAction.WAIT_IN_BACKGROUND_UNTIL_WINDOW_GETS_FOCUS_OR_TIMEOUT) {
+                                countdown = System.currentTimeMillis() + CFG_SILENTMODE.ON_DIALOG_DURING_SILENT_MODE_ACTION_TIMEOUT.getValue();
+
+                            }
+                            JDGui.getInstance().flashTaskbar();
+                            while (JDGui.getInstance().isSilentModeActive()) {
+                                if (countdown > 0) {
+                                    Thread.sleep(Math.min(Math.max(1, countdown - System.currentTimeMillis()), 250));
+                                    if (System.currentTimeMillis() > countdown) {
+                                        dialog.onTimeout();
+                                        // clear interrupt
+                                        Thread.interrupted();
+                                        final int mask = dialog.getReturnmask();
+                                        if (BinaryLogic.containsSome(mask, Dialog.RETURN_CLOSED)) { throw new DialogClosedException(mask); }
+                                        if (BinaryLogic.containsSome(mask, Dialog.RETURN_CANCEL)) { throw new DialogCanceledException(mask); }
+                                        try {
+                                            return dialog.getReturnValue();
+
+                                        } catch (Exception e) {
+                                            // dialogs have not been initialized. so the getReturnValue might fail.
+                                            logger.log(e);
+                                            throw new DialogClosedException(Dialog.RETURN_CLOSED | Dialog.RETURN_TIMEOUT);
+                                        }
                                     }
+                                } else {
+                                    Thread.sleep(250);
                                 }
-                            } else {
-                                Thread.sleep(250);
                             }
                         }
                     }

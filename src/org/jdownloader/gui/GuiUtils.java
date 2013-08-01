@@ -46,6 +46,7 @@ public class GuiUtils {
      * @return
      */
     public static boolean isActiveWindow(final Window mainFrame) {
+        if (mainFrame == null) return false;
         return new EDTHelper<Boolean>() {
 
             @Override
