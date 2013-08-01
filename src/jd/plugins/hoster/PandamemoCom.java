@@ -367,7 +367,6 @@ public class PandamemoCom extends PluginForHost {
     public String getDllink() {
         String dllink = br.getRedirectLocation();
         if (dllink == null) {
-            // "http://33b.pandamemo.com:443/dl/f/4/aglvthawibn7vx/Virgin_Loads.mp4.part3.rar
             dllink = new Regex(correctedBR, "(\"|\\')(http://(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|([a-z0-9]+\\.)?" + COOKIE_HOST.replace("http://", "") + ")(:\\d{1,4})?/(files|d|dl/f)/(\\d+/)?[a-z0-9]+/[^<>\"/]*?)(\"|\\')").getMatch(1);
             if (dllink == null) dllink = new Regex(correctedBR, "<tr><td><br>[\t\n\r ]+<a href=\"(http://\\d+\\.\\d+\\.\\d+\\.\\d+/[a-z0-9]+)\"").getMatch(0);
         }
