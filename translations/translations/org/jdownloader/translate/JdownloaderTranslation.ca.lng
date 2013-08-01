@@ -28,6 +28,7 @@ SetDownloadFolderAction_msg=Canvia la carpeta de descàrrega pel conjunt de paqu
 SetDownloadFolderAction_no=Selecció
 SetDownloadFolderAction_yes=Paquet
 StartDownloadsAction_createTooltip_=Inicia les descàrregues
+audiofilter_description=Fitxers de so: mp3, wav, ogg, mid...
 basics_no=No
 basics_yes=Sí
 configheader_enabled=Habilitat
