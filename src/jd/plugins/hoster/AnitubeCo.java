@@ -29,7 +29,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "anitube.co" }, urls = { "http://(www\\.)?anitube\\.(co|tv|com\\.br|jp)/video/\\d+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "anitube.co" }, urls = { "http://(www\\.)?anitube\\.(co|tv|com\\.br|jp|se)/video/\\d+" }, flags = { 0 })
 public class AnitubeCo extends PluginForHost {
 
     private String dllink = null;
@@ -45,7 +45,7 @@ public class AnitubeCo extends PluginForHost {
 
     @Override
     public void correctDownloadLink(final DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replaceFirst("\\.(co|tv|com\\.br|jp)", ".jp"));
+        link.setUrlDownload(link.getDownloadURL().replaceFirst("\\.(co|tv|com\\.br|jp|se)", ".se"));
     }
 
     // Maybe broken, 01.01.12

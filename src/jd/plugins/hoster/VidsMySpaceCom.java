@@ -70,6 +70,7 @@ public class VidsMySpaceCom extends PluginForHost {
             }
         }
         if (br.getURL().contains("myspace.com/error")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (!br.getURL().matches("https?://(www\\.)?(myspace\\.com/(([a-z0-9\\-_\\.]+/)?video/[a-z0-9\\-_]+/\\d+|[a-z0-9\\-_]+/music/song/[a-z0-9\\-_\\.]+)|mediaservices\\.myspace\\.com/services/media/embed\\.aspx/m=\\d+)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = null;
         if (link.getDownloadURL().matches(SONGURL)) {
             filename = br.getRegex("<meta property=\"og:title\" content=\"([^\"]+)\"").getMatch(0);

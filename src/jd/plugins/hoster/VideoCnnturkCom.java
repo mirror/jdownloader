@@ -86,7 +86,7 @@ public class VideoCnnturkCom extends PluginForHost {
         setBrowserExclusive();
         br.getPage(downloadLink.getDownloadURL());
         if (br.getRedirectLocation() != null) {
-            if ("/".equals(br.getRedirectLocation())) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+            if ("/".equals(br.getRedirectLocation()) || "http://video.cnnturk.com/".equals(br.getRedirectLocation())) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
         }
 
         final String xmlUrl = br.getRegex("\"FlashPlayerConfigUrl\": \"(http://[^<>\"]*?)\"").getMatch(0);

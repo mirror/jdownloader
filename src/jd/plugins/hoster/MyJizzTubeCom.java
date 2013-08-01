@@ -17,12 +17,12 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.util.Random;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -45,13 +45,11 @@ public class MyJizzTubeCom extends PluginForHost {
     }
 
     private void getDllink() throws IOException {
-        final String nextReq = br.getRegex("\"settings=(http.*?)\"\\)").getMatch(0);
+        String nextReq = br.getRegex("\"settings=(http.*?)\"\\)").getMatch(0);
         if (nextReq != null) {
+            nextReq = Encoding.htmlDecode(nextReq + "&noCache=" + new Random().nextInt(100) + "&");
             br.getPage(nextReq);
-            final Regex dllinkInfo = br.getRegex("flvMask:http://:(/videos/[^<>\"]*?)%26(media\\d+\\.myjizztube\\.com)%268080([^<>\"]*?);");
-            if (dllinkInfo.getMatches().length != 0) {
-                DLLINK = "http://" + dllinkInfo.getMatch(1) + ":8080" + dllinkInfo.getMatch(0) + dllinkInfo.getMatch(2);
-            }
+            DLLINK = br.getRegex("flvMask:(http://[^<>\"]*?);").getMatch(0);
             /* rtmp */
             // if (DLLINK == null && br.getRegex("conn\\:.*?;\r\n").matches()) {
             // DLLINK = br.getRegex("conn\\:(.*?);\r\n").getMatch(0);

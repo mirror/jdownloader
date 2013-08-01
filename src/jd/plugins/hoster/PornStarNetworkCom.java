@@ -53,7 +53,7 @@ public class PornStarNetworkCom extends PluginForHost {
         if (br.containsHTML("(>Page not Found<|>Sorry, the page you are looking for cannot be found)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("<div id=\"viewTitle\"><h1>Video \\- ([^<>\"]*?) \\&nbsp;</h1></div>").getMatch(0);
         if (filename == null) filename = br.getRegex("<title>([^<>\"]*?)</title>").getMatch(0);
-        br.getPage("http://www.pornstarnetwork.com/streaming/getVideosZ/cntid/" + new Regex(downloadLink.getDownloadURL(), "(\\d+)\\.html$").getMatch(0) + "/quality/sd/" + new Random().nextInt(1000));
+        br.getPage("http://www.pornstarnetwork.com/streaming/getAuthUrl/cntid/" + new Regex(downloadLink.getDownloadURL(), "(\\d+)\\.html$").getMatch(0) + "/quality/sd/format/h264/" + new Random().nextInt(1000));
         DLLINK = br.getRegex("swfUrl=(http[^<>\"]*?)\\&").getMatch(0);
         if (filename == null || DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         DLLINK = Encoding.htmlDecode(DLLINK);

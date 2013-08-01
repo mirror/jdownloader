@@ -49,6 +49,11 @@ public class WorldStarHipHopComDecrypter extends PluginForDecrypt {
             decryptedLinks.add(createDownloadlink(Encoding.htmlDecode(externID.trim())));
             return decryptedLinks;
         }
+        externID = br.getRegex("\"(http://media\\.mtvnservices\\.com/mgid:uma:video:mtv\\.com:\\d+)\"").getMatch(0);
+        if (externID != null) {
+            decryptedLinks.add(createDownloadlink(Encoding.htmlDecode(externID.trim())));
+            return decryptedLinks;
+        }
         // Probably no external video, pass it over to the hoster plugin
         final DownloadLink dl = createDownloadlink(parameter.replace("worldstarhiphop.com/", "worldstarhiphopdecrypted.com/"));
         decryptedLinks.add(dl);

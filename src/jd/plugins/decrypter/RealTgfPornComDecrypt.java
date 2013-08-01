@@ -38,9 +38,10 @@ public class RealTgfPornComDecrypt extends PluginForDecrypt {
         String parameter = param.toString();
         br.getPage(parameter);
         String tempID = br.getRedirectLocation();
-        if (tempID != null && tempID.equals("http://www.realgfporn.com/") || br.containsHTML("Internet Explorer Custom 404")) {
+        if (tempID != null && tempID.equals("http://www.realgfporn.com/") || br.containsHTML(">404 \\- Page not found")) {
             final DownloadLink dl = createDownloadlink(parameter.replace("realgfporn.com/", "realgfporndecrypted.com/"));
             dl.setAvailable(false);
+            dl.setProperty("offline", true);
             decryptedLinks.add(dl);
             return decryptedLinks;
         }

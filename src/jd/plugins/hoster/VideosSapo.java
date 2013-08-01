@@ -90,6 +90,8 @@ public class VideosSapo extends PluginForHost {
         br.setFollowRedirects(true);
         final String dlurl = downloadLink.getDownloadURL();
         br.getPage(dlurl);
+        // Password protected links are not supported yet
+        if (br.containsHTML("Est\\&aacute; a tentar aceder a um v\\&iacute;deo privado\\.")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("<div class=\"tit\">([^<>\"]*?)</div>").getMatch(0);
         if (filename == null) filename = br.getRegex("property=\"og:title\" content=\"([^<>\"]*?) \\- SAPO V\\&iacute;deos\"").getMatch(0);
         getDownloadlink(dlurl);

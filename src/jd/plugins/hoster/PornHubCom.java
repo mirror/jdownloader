@@ -83,6 +83,13 @@ public class PornHubCom extends PluginForHost {
     private AvailableStatus requestVideo(final DownloadLink downloadLink) throws Exception {
         setBrowserExclusive();
         br.setCookie("http://pornhub.com/", "age_verified", "1");
+        br.setCookie("http://pornhub.com/", "is_really_pc", "1");
+        br.setCookie("http://pornhub.com/", "phub_in_player", "1");
+        br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:22.0) Gecko/20100101 Firefox/22.0");
+        br.getHeaders().put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
+        br.getHeaders().put("Accept-Language", "en-US,en;q=0.5");
+        br.getHeaders().put("Accept-Charset", null);
+
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
         // Convert embed links to normal links

@@ -53,9 +53,10 @@ public class PornRabbitCom extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
         final Browser br2 = br.cloneBrowser();
         this.setBrowserExclusive();
+        if (downloadLink.getBooleanProperty("offline", false)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML("(>Page Not Found<|>Sorry but the page you are looking for has)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);

@@ -30,7 +30,7 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "extreme-protect.com" }, urls = { "http://[\\w\\.]*?extreme-protect\\.com/(linkcheck|linkidwoc)\\.php\\?linkid=[a-z]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "extreme-protect.com" }, urls = { "http://(www\\.)?extreme\\-protect\\.com/(linkcheck|linkidwoc)\\.php\\?linkid=[a-z]+" }, flags = { 0 })
 public class ExtremeProtectCom extends PluginForDecrypt {
 
     public ExtremeProtectCom(PluginWrapper wrapper) {

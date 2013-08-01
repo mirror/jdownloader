@@ -49,8 +49,9 @@ public class RealGfPornCom extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
+        if (downloadLink.getBooleanProperty("offline", false)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
         if (br.getURL().equals("http://www.realgfporn.com/") || br.containsHTML("<title>Free Amateur and Homemade Porn Videos  \\– Real Girlfriend Porn</title>") || br.containsHTML("Internet Explorer Custom 404")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
