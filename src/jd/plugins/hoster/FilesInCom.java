@@ -61,8 +61,7 @@ public class FilesInCom extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        String freeLink = br.getRegex("<tr><td style=\"padding\\-left: 50px;\"><a href=\"(http://[^<>\"\\']+)\"").getMatch(0);
-        if (freeLink == null) freeLink = br.getRegex("\"(http://(www\\.)?filesin\\.com/[A-Z0-9]+/[A-Z0-9]+/" + downloadLink.getName() + ".html)\"").getMatch(0);
+        String freeLink = br.getRegex("\"(http://(www\\.)?filesin\\.com/(?!premium)[A-Z0-9]+/[A-Z0-9]+/" + downloadLink.getName() + ".html)\"").getMatch(0);
         if (freeLink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         br.getPage(freeLink);
         final String rcID = br.getRegex("\\?k=([^<>\"\\'/]+)\"").getMatch(0);
@@ -71,7 +70,12 @@ public class FilesInCom extends PluginForHost {
         jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
         rc.setId(rcID);
         for (int i = 0; i <= 5; i++) {
-            rc.load();
+            // Hmm, service contains wrong reCaptcha ID --> Error
+            try {
+                rc.load();
+            } catch (final Exception e) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 30 * 60 * 1000l);
+            }
             File cf = rc.downloadCaptcha(getLocalCaptchaFile());
             String c = getCaptchaCode(cf, downloadLink);
             dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, freeLink, "download=1&recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + c, false, 1);

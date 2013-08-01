@@ -165,10 +165,16 @@ public class PandamemoCom extends PluginForHost {
             fileInfo[0] = fileRegex.getMatch(0);
             if (fileInfo[0] == null) {
                 fileInfo[0] = new Regex(correctedBR, ">\\[URL=http://(www\\.)?pandamemo\\.com/[a-z0-9]{12}\\]([^<>\"]*?) \\- \\d+").getMatch(1);
+                if (fileInfo[0] == null) {
+                    fileInfo[0] = new Regex(correctedBR, "<b>Filename:</b></td><td nowrap>([^<>\"]*?)</td>").getMatch(0);
+                }
             }
         }
         if (fileInfo[1] == null) {
             fileInfo[1] = fileRegex.getMatch(1);
+            if (fileInfo[1] == null) {
+                fileInfo[1] = new Regex(correctedBR, "\\((\\d+ bytes)\\)").getMatch(0);
+            }
         }
         if (fileInfo[2] == null) fileInfo[2] = new Regex(correctedBR, "<b>MD5.*?</b>.*?nowrap>(.*?)<").getMatch(0);
         return fileInfo;
@@ -361,7 +367,8 @@ public class PandamemoCom extends PluginForHost {
     public String getDllink() {
         String dllink = br.getRedirectLocation();
         if (dllink == null) {
-            dllink = new Regex(correctedBR, "(\"|\\')(http://(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|([a-z0-9]+\\.)?" + COOKIE_HOST.replace("http://", "") + ")(:\\d{1,4})?/(files|d)/(\\d+/)?[a-z0-9]+/[^<>\"/]*?)(\"|\\')").getMatch(1);
+            // "http://33b.pandamemo.com:443/dl/f/4/aglvthawibn7vx/Virgin_Loads.mp4.part3.rar
+            dllink = new Regex(correctedBR, "(\"|\\')(http://(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|([a-z0-9]+\\.)?" + COOKIE_HOST.replace("http://", "") + ")(:\\d{1,4})?/(files|d|dl/f)/(\\d+/)?[a-z0-9]+/[^<>\"/]*?)(\"|\\')").getMatch(1);
             if (dllink == null) dllink = new Regex(correctedBR, "<tr><td><br>[\t\n\r ]+<a href=\"(http://\\d+\\.\\d+\\.\\d+\\.\\d+/[a-z0-9]+)\"").getMatch(0);
         }
         return dllink;
@@ -447,6 +454,7 @@ public class PandamemoCom extends PluginForHost {
             logger.warning("Server says link offline, please recheck that!");
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
+        if (correctedBR.contains("No htmlCode read")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 10 * 60 * 1000l);
     }
 
     private String handlePassword(String passCode, Form pwform, DownloadLink thelink) throws IOException, PluginException {

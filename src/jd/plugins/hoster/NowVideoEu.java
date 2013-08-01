@@ -104,7 +104,8 @@ public class NowVideoEu extends PluginForHost {
             synchronized (LOCK) {
                 if (AVAILABLE_PRECHECK.get() == false) {
                     /*
-                     * For example .eu domain are blocked from some Italian ISP, and .co from others, so need to test all domains before proceeding.
+                     * For example .eu domain are blocked from some Italian ISP, and .co from others, so need to test all domains before
+                     * proceeding.
                      */
 
                     String CCtld = validateHost();
@@ -170,6 +171,7 @@ public class NowVideoEu extends PluginForHost {
         final String fKey = br.getRegex("flashvars\\.filekey=\"([^<>\"]*?)\"").getMatch(0);
         if (fKey == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         br.getPage(MAINPAGE.string + "/api/player.api.php?pass=undefined&user=undefined&codes=undefined&file=" + new Regex(downloadLink.getDownloadURL(), "([a-z0-9]+)$").getMatch(0) + "&key=" + Encoding.urlEncode(fKey));
+        if (br.containsHTML("The video is being transfered")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error: The video is being transfered", 30 * 60 * 1000l);
         String dllink = br.getRegex("url=(http://[^<>\"]*?\\.flv)\\&title").getMatch(0);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
@@ -190,8 +192,8 @@ public class NowVideoEu extends PluginForHost {
     }
 
     /**
-     * Dev note: Never buy premium from them, as freeuser you have no limits, as premium neither and you can't even download the original videos as
-     * premiumuser->Senseless!!
+     * Dev note: Never buy premium from them, as freeuser you have no limits, as premium neither and you can't even download the original
+     * videos as premiumuser->Senseless!!
      */
     @SuppressWarnings("unchecked")
     private void login(Account account, boolean force) throws Exception {

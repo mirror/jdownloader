@@ -176,9 +176,11 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
                         link.setProperty("directQuality", stream[0]);
                         link.setProperty("streamingType", "http");
 
-                        try {
-                            link.setDownloadSize(SizeFormatter.getSize(stream[2]));
-                        } catch (Throwable e) {
+                        if (!url.contains("hinweis_fsk")) {
+                            try {
+                                link.setDownloadSize(SizeFormatter.getSize(stream[2]));
+                            } catch (Throwable e) {
+                            }
                         }
 
                         DownloadLink best = bestMap.get(fmt);
