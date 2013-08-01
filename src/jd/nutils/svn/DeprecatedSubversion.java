@@ -22,6 +22,7 @@ import java.util.Collection;
 
 import jd.nutils.io.JDIO;
 
+import org.jdownloader.controlling.FileCreationManager;
 import org.tmatesoft.svn.core.SVNCancelException;
 import org.tmatesoft.svn.core.SVNCommitInfo;
 import org.tmatesoft.svn.core.SVNDepth;
@@ -106,7 +107,7 @@ public class DeprecatedSubversion implements ISVNEventHandler {
 
     public long export(File file) throws SVNException {
         JDIO.removeDirectoryOrFile(file);
-        file.mkdirs();
+        FileCreationManager.getInstance().mkdir(file);
 
         ISVNEditor exportEditor = new ExportEditor(file);
         long rev = latestRevision();
@@ -148,7 +149,7 @@ public class DeprecatedSubversion implements ISVNEventHandler {
      */
     public long update(File file, SVNRevision revision) throws SVNException {
         // JDIO.removeDirectoryOrFile(file);
-        file.mkdirs();
+        FileCreationManager.getInstance().mkdir(file);
 
         SVNUpdateClient updateClient = this.getUpdateClient();
 
@@ -461,14 +462,15 @@ public class DeprecatedSubversion implements ISVNEventHandler {
                 pathChangeType = "U";
             } else if (contentsStatus == SVNStatusType.CONFLICTED) {
                 /*
-                 * The file item is in a state of Conflict. That is, changes received from the repository during an update, overlap with local changes the user
-                 * has in his working copy.
+                 * The file item is in a state of Conflict. That is, changes received from the repository during an update, overlap with
+                 * local changes the user has in his working copy.
                  */
 
                 pathChangeType = "C";
             } else if (contentsStatus == SVNStatusType.MERGED) {
                 /*
-                 * The file item was merGed (those changes that came from the repository did not overlap local changes and were merged into the file).
+                 * The file item was merGed (those changes that came from the repository did not overlap local changes and were merged into
+                 * the file).
                  */
                 pathChangeType = "G";
             }

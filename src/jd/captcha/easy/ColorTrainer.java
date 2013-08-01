@@ -30,12 +30,12 @@ import jd.captcha.translate.T;
 import jd.nutils.Colors;
 import jd.nutils.io.JDIO;
 
+import org.jdownloader.controlling.FileCreationManager;
+
 public class ColorTrainer {
     /**
-     * Farben mit denen der Hintergrund/Fordergrund gefärbt wird
-     * foregroundColor1, backgroundColor1 = sicher zugeordnete Farben
-     * foregroundColor2, backgroundColor2 = wahrscheinlich
-     * Fordergrund/Hintergrund
+     * Farben mit denen der Hintergrund/Fordergrund gefärbt wird foregroundColor1, backgroundColor1 = sicher zugeordnete Farben
+     * foregroundColor2, backgroundColor2 = wahrscheinlich Fordergrund/Hintergrund
      */
     public static final int foregroundColor1     = 0xff00ff, foregroundColor2 = 0xFF99FF, backgroundColor1 = 0x0000ff, backgroundColor2 = 0x00ffff;
 
@@ -52,8 +52,7 @@ public class ColorTrainer {
      */
     public boolean          foreground           = true;
     /**
-     * schnelle und performante Selektionsmöglichkeit noch nicht fertig und
-     * deswegen vorerst deaktiviert
+     * schnelle und performante Selektionsmöglichkeit noch nicht fertig und deswegen vorerst deaktiviert
      */
     public boolean          fastSelection        = false;
     public boolean          add                  = true;
@@ -74,8 +73,7 @@ public class ColorTrainer {
      */
     public BufferedImage    colorImage           = new BufferedImage(28, 28, BufferedImage.TYPE_INT_RGB);
     /**
-     * Liste der Farbpunkte die zum identifizieren von Hintergrund und
-     * Fordergrund verwendet werden
+     * Liste der Farbpunkte die zum identifizieren von Hintergrund und Fordergrund verwendet werden
      */
     public Vector<CPoint>   colorPointList       = new Vector<CPoint>();
     private Vector<CPoint>  colorPointListBackUp = new Vector<CPoint>();
@@ -161,8 +159,7 @@ public class ColorTrainer {
     }
 
     /**
-     * Gibt einen String mit Informationen (rgb hsb usw.) über den pixel an der
-     * Position x y an
+     * Gibt einen String mit Informationen (rgb hsb usw.) über den pixel an der Position x y an
      * 
      * @param x
      * @param y
@@ -210,10 +207,8 @@ public class ColorTrainer {
     }
 
     /**
-     * Sucht den ColorPoint aus der colorPointList der die meiste
-     * Übereinstimmung mit der Farbe hat gibt null aus wenn die Farbe keinem
-     * ColorPoint der Liste entspricht Wird beim löschen von Farbpunkten aus der
-     * Liste verwendet
+     * Sucht den ColorPoint aus der colorPointList der die meiste Übereinstimmung mit der Farbe hat gibt null aus wenn die Farbe keinem
+     * ColorPoint der Liste entspricht Wird beim löschen von Farbpunkten aus der Liste verwendet
      * 
      * @param color
      * @return matching CPoint
@@ -223,10 +218,8 @@ public class ColorTrainer {
     }
 
     /**
-     * Sucht den ColorPoint aus der colorPointList der die meiste
-     * Übereinstimmung mit der Farbe hat gibt null aus wenn die Farbe keinem
-     * ColorPoint der Liste entspricht Wird beim löschen von Farbpunkten aus der
-     * Liste verwendet
+     * Sucht den ColorPoint aus der colorPointList der die meiste Übereinstimmung mit der Farbe hat gibt null aus wenn die Farbe keinem
+     * ColorPoint der Liste entspricht Wird beim löschen von Farbpunkten aus der Liste verwendet
      * 
      * @param color
      * @return matching CPoint
@@ -343,8 +336,7 @@ public class ColorTrainer {
     }
 
     /**
-     * gibt vom bearbeiteten Captcha ein um den Zoomfaktor Scalliertes Image
-     * zurück
+     * gibt vom bearbeiteten Captcha ein um den Zoomfaktor Scalliertes Image zurück
      * 
      * @param zoom
      * @return Image
@@ -383,7 +375,7 @@ public class ColorTrainer {
      * @param file
      */
     public static void saveColors(Vector<CPoint> cPoints, File file) {
-        file.getParentFile().mkdirs();
+        FileCreationManager.getInstance().mkdir(file.getParentFile());
         JDIO.saveObject(cPoints, file, true);
     }
 

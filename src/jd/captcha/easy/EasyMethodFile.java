@@ -41,6 +41,7 @@ import org.appwork.utils.ImageProvider.ImageProvider;
 import org.appwork.utils.images.IconIO;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.swing.EDTHelper;
+import org.jdownloader.controlling.FileCreationManager;
 
 public class EasyMethodFile implements JDLabelContainer, Serializable {
     /**
@@ -108,7 +109,7 @@ public class EasyMethodFile implements JDLabelContainer, Serializable {
             if (!folder2.exists() || folder2.list().length < 1) {
                 final int res = UserIO.getInstance().requestConfirmDialog(0, T._.easycaptcha_loadcaptchas_title(), T._.easycaptcha_needCaptchas(), null, T._.easycaptcha_openCaptchaFolder(), T._.easycaptcha_loadcaptchas());
                 if (JDFlags.hasSomeFlags(res, UserIO.RETURN_OK)) {
-                    folder2.mkdir();
+                    FileCreationManager.getInstance().mkdir(folder2);
                     this.openCaptchaFolder();
                     return "jpg";
                 } else {

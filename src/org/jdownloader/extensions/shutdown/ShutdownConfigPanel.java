@@ -19,6 +19,7 @@ import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.jdownloader.actions.AppAction;
+import org.jdownloader.controlling.FileCreationManager;
 import org.jdownloader.extensions.ExtensionConfigPanel;
 import org.jdownloader.extensions.shutdown.translate.T;
 
@@ -101,7 +102,7 @@ public class ShutdownConfigPanel extends ExtensionConfigPanel<ShutdownExtension>
         Dialog.getInstance().showConfirmDialog(0, T._.install_title(), T._.install_msg());
         Executer exec = new Executer("/usr/bin/osascript");
         File tmp = Application.getResource("tmp/osxnopasswordforshutdown.scpt");
-        tmp.delete();
+        FileCreationManager.getInstance().delete(tmp);
         try {
             IO.writeToFile(tmp, IO.readURL(getClass().getResource("osxnopasswordforshutdown.scpt")));
 

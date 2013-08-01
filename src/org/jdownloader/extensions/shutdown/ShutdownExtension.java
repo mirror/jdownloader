@@ -41,6 +41,7 @@ import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.os.CrossSystem.OperatingSystem;
 import org.appwork.utils.processes.ProcessBuilderFactory;
 import org.appwork.utils.swing.dialog.Dialog;
+import org.jdownloader.controlling.FileCreationManager;
 import org.jdownloader.controlling.contextmenu.ActionData;
 import org.jdownloader.controlling.contextmenu.ContextMenuManager;
 import org.jdownloader.controlling.contextmenu.MenuContainerRoot;
@@ -134,7 +135,7 @@ public class ShutdownExtension extends AbstractExtension<ShutdownConfig, Shutdow
                         JDUtilities.runCommand("cmd", new String[] { "/c", "start", "/min", "cscript", f.getAbsolutePath() }, null, 0);
 
                     } finally {
-                        f.delete();
+                        FileCreationManager.getInstance().delete(f);
                     }
                 } catch (Exception e) {
                 }

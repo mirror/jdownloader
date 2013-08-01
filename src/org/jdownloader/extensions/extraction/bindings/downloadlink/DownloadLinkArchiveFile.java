@@ -12,6 +12,7 @@ import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginProgress;
 
+import org.jdownloader.controlling.FileCreationManager;
 import org.jdownloader.extensions.extraction.Archive;
 import org.jdownloader.extensions.extraction.ArchiveFile;
 import org.jdownloader.extensions.extraction.ExtractionController;
@@ -90,7 +91,7 @@ public class DownloadLinkArchiveFile implements ArchiveFile {
     public boolean deleteFile() {
         boolean ret = false;
         for (DownloadLink l : downloadLinks) {
-            ret = ret || new File(l.getFileOutput()).delete();
+            ret = ret || FileCreationManager.getInstance().delete(new File(l.getFileOutput()));
 
         }
         return ret;

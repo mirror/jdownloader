@@ -232,7 +232,7 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> {
                 fireEvent(ExtractionEvent.Type.OPEN_ARCHIVE_SUCCESS);
 
                 if (!getExtractToFolder().exists()) {
-                    if (!getExtractToFolder().mkdirs()) {
+                    if (!FileCreationManager.getInstance().mkdir(getExtractToFolder())) {
                         logger.warning("Could not create subpath");
                         crashLog.write("Could not create subpath: " + getExtractToFolder());
                         crashLog.write("Failed");

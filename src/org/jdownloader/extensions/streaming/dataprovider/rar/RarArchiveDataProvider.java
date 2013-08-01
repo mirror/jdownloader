@@ -35,6 +35,7 @@ import org.appwork.utils.io.streamingio.StreamingChunk;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.InputDialog;
+import org.jdownloader.controlling.FileCreationManager;
 import org.jdownloader.extensions.ExtensionController;
 import org.jdownloader.extensions.extraction.Archive;
 import org.jdownloader.extensions.extraction.ArchiveFile;
@@ -581,7 +582,7 @@ public class RarArchiveDataProvider implements DataProvider<Archive>, IArchiveOp
 
     public void extract() throws IOException, SevenZipException {
         File tmp = Application.getResource("/tmp/streaming/extract" + System.currentTimeMillis());
-        tmp.getParentFile().mkdirs();
+        FileCreationManager.getInstance().mkdir(tmp.getParentFile());
         streamingChunk = new StreamingChunk(tmp, 0);
 
         extractionThread = new Thread("Extractor Thread") {

@@ -21,12 +21,13 @@ import java.io.File;
 import jd.nutils.io.JDIO;
 
 import org.appwork.exceptions.WTFException;
+import org.jdownloader.controlling.FileCreationManager;
 
 public class CreateHoster {
     public static void createJacinfoXml(EasyMethodFile destination, String user, int lettersize, boolean showLoadDialog) {
         String jacInfoXml = getjacInfoXmlString(destination, user, lettersize, showLoadDialog);
         destination.file = new File(destination.file.getParentFile(), destination.getName().replaceAll("[^a-zA-Z0-9]", "").replaceAll("[AEIOUaeiou]", ""));
-        destination.file.mkdirs();
+        FileCreationManager.getInstance().mkdir(destination.file);
 
         File ji = destination.getJacinfoXml();
         if (ji.exists()) ji.renameTo(new File(destination.file, "jacinfo_bak_" + System.currentTimeMillis() + ".xml"));

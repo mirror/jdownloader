@@ -38,6 +38,7 @@ import org.appwork.utils.IOErrorHandler;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.processes.ProcessBuilderFactory;
 import org.appwork.utils.swing.dialog.Dialog;
+import org.jdownloader.controlling.FileCreationManager;
 import org.jdownloader.extensions.ExtensionController;
 import org.jdownloader.logging.ExtLogManager;
 import org.jdownloader.logging.LogController;
@@ -227,7 +228,7 @@ public class Main {
                     URL mainClass = Application.getRessourceURL("org", true);
 
                     File svnJar = new File(new File(mainClass.toURI()).getParentFile().getParentFile(), "dev/JDownloader.jar");
-                    jdjar.delete();
+                    FileCreationManager.getInstance().delete(jdjar);
                     IO.copyFile(svnJar, jdjar);
 
                 }

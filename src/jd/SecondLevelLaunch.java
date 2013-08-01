@@ -100,6 +100,7 @@ import org.jdownloader.captcha.v2.solver.CaptchaResolutorCaptchaSolver;
 import org.jdownloader.captcha.v2.solver.gui.DialogBasicCaptchaSolver;
 import org.jdownloader.captcha.v2.solver.gui.DialogClickCaptchaSolver;
 import org.jdownloader.captcha.v2.solver.jac.JACSolver;
+import org.jdownloader.controlling.FileCreationManager;
 import org.jdownloader.dynamic.Dynamic;
 import org.jdownloader.extensions.ExtensionController;
 import org.jdownloader.extensions.extraction.ArchiveController;
@@ -341,8 +342,8 @@ public class SecondLevelLaunch {
 
             }
 
-            FILE.delete();
-            FILE.getParentFile().mkdirs();
+            FileCreationManager.getInstance().delete(FILE);
+            FileCreationManager.getInstance().mkdir(FILE.getParentFile());
             IO.writeToFile(FILE, (new SimpleDateFormat("dd.MMM.yyyy HH:mm").format(new Date())).getBytes("UTF-8"));
 
         } catch (Exception e) {
@@ -360,7 +361,7 @@ public class SecondLevelLaunch {
 
             @Override
             public void onShutdown(final ShutdownRequest shutdownRequest) {
-                FILE.delete();
+                FileCreationManager.getInstance().delete(FILE);
             }
         });
     }

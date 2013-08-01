@@ -42,6 +42,7 @@ import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.os.CrossSystem;
 import org.jdownloader.DomainInfo;
+import org.jdownloader.controlling.FileCreationManager;
 import org.jdownloader.controlling.Priority;
 import org.jdownloader.controlling.UniqueAlltimeID;
 import org.jdownloader.extensions.extraction.ExtractionStatus;
@@ -49,6 +50,7 @@ import org.jdownloader.images.NewTheme;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.plugins.SkipReason;
 import org.jdownloader.settings.GeneralSettings;
+import org.jdownloader.settings.staticreferences.CFG_GENERAL;
 import org.jdownloader.translate._JDT;
 import org.jdownloader.utils.JDFileUtils;
 
@@ -678,6 +680,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
                 LogController.CL().severe("Could not delete file " + this.getFileOutput());
             }
         }
+
         if (partfile && new File(this.getFileOutput() + ".part").exists()) {
             if (!internalDeleteFile(deleteTo, new File(this.getFileOutput() + ".part"))) {
                 LogController.CL().severe("Could not delete file " + this.getFileOutput());
@@ -693,10 +696,10 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
     }
 
     private boolean internalDeleteFile(DeleteTo deleteTo, File f) {
-        if (deleteTo == null) return f.delete();
+        if (deleteTo == null) return FileCreationManager.getInstance().delete(f);
         switch (deleteTo) {
         case NULL:
-            return f.delete();
+            return FileCreationManager.getInstance().delete(f);
         case RECYCLE:
             try {
                 JDFileUtils.moveToTrash(f);
@@ -706,6 +709,9 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
                 return false;
             }
 
+        }
+        if (CFG_GENERAL.CFG.isDeleteEmptySubFoldersAfterDeletingDownloadedFilesEnabled()) {
+            if (f.getParentFile().list().length == 0) { return FileCreationManager.getInstance().delete(f.getParentFile()); }
         }
         return false;
     }

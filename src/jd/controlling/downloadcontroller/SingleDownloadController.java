@@ -549,7 +549,7 @@ public class SingleDownloadController extends BrowserSettingsThread implements S
                 linkStatus.reset();
                 break;
             default:
-                if (new File(downloadLink.getFileOutput()).delete()) {
+                if (FileCreationManager.getInstance().delete(new File(downloadLink.getFileOutput()))) {
                     /* delete local file and retry = overwrite */
                     linkStatus.reset();
                 } else {

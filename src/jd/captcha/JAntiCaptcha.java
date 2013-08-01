@@ -70,6 +70,7 @@ import org.appwork.utils.ImageProvider.ImageProvider;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.swing.WindowManager;
 import org.appwork.utils.swing.WindowManager.FrameState;
+import org.jdownloader.controlling.FileCreationManager;
 import org.jdownloader.logging.LogController;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -433,7 +434,7 @@ public class JAntiCaptcha {
 
             img = letter.getFullImage();
             file = new File(path + "/letterDB/" + i++ + "_" + letter.getDecodedValue() + ".png");
-            file.mkdirs();
+            FileCreationManager.getInstance().mkdir(file);
             FileOutputStream fos = null;
             try {
                 logger.info("Write Db: " + file);
@@ -483,7 +484,7 @@ public class JAntiCaptcha {
             FileOutputStream fos = null;
             try {
                 File file = JDUtilities.getResourceFile(this.srcFile);
-                file.getParentFile().mkdirs();
+                FileCreationManager.getInstance().mkdir(file.getParentFile());
                 String ext = Files.getExtension(file.getName());
                 fos = new FileOutputStream(file);
                 ImageIO.write(toBufferedImage(this.sourceImage), ext, fos);
@@ -748,7 +749,7 @@ public class JAntiCaptcha {
             }
         });
         w.pack();
-        WindowManager.getInstance().setVisible(w, true,FrameState.OS_DEFAULT);
+        WindowManager.getInstance().setVisible(w, true, FrameState.OS_DEFAULT);
     }
 
     public String getCodeFromFileName(String name) {
@@ -1328,7 +1329,7 @@ public class JAntiCaptcha {
     public void importDB(File path) throws InterruptedException {
         String pattern = JOptionPane.showInputDialog("PATTERN", "\\d+_(.*?)\\.");
         if (JOptionPane.showConfirmDialog(null, "Delete old db?") == JOptionPane.OK_OPTION) letterDB = new ArrayList<Letter>();
-        getResourceFile("letters.mth").delete();
+        FileCreationManager.getInstance().delete(getResourceFile("letters.mth"));
         System.out.println("LETTERS BEFORE: " + letterDB.size());
         Image image;
         Letter letter;
@@ -1583,7 +1584,7 @@ public class JAntiCaptcha {
         for (int i = 0; i < letters.length; i++) {
             bw2.add(new ImageComponent(letters[i].getImage((int) Math.ceil(jas.getDouble("simplifyFaktor")))), Utilities.getGBC(i * 2 + 2, 0, 2, 2));
         }
-        WindowManager.getInstance().setVisible(bw2, true,FrameState.OS_DEFAULT);
+        WindowManager.getInstance().setVisible(bw2, true, FrameState.OS_DEFAULT);
         bw2.pack();
         bw2.setSize(300, bw2.getSize().height);
 
@@ -1739,7 +1740,7 @@ public class JAntiCaptcha {
 
         f.setSize(1400, 800);
         f.pack();
-        WindowManager.getInstance().setVisible(f, true,FrameState.OS_DEFAULT);
+        WindowManager.getInstance().setVisible(f, true, FrameState.OS_DEFAULT);
 
         // Führe das Prepare aus
         // jas.executePrepareCommands(captcha);
@@ -1748,7 +1749,7 @@ public class JAntiCaptcha {
         final Letter[] letters = captcha.getLetters(letterNum);
         if (letters == null) {
             File file = getResourceFile("detectionErrors5/" + System.currentTimeMillis() + "_" + captchafile.getName());
-            file.getParentFile().mkdirs();
+            FileCreationManager.getInstance().mkdir(file.getParentFile());
             captchafile.renameTo(file);
 
             logger.severe("Letter detection error");
@@ -1804,7 +1805,7 @@ public class JAntiCaptcha {
         final LetterComperator[] lcs = captcha.getLetterComperators();
         if (lcs == null) {
             File file = getResourceFile("detectionErrors5/" + System.currentTimeMillis() + "_" + captchafile.getName());
-            file.getParentFile().mkdirs();
+            FileCreationManager.getInstance().mkdir(file.getParentFile());
             captchafile.renameTo(file);
 
             logger.severe("Letter detection error");
@@ -1876,7 +1877,7 @@ public class JAntiCaptcha {
         code = run.code;
         if (code == null) {
             File file = getResourceFile("detectionErrors3/" + System.currentTimeMillis() + "_" + captchafile.getName());
-            file.getParentFile().mkdirs();
+            FileCreationManager.getInstance().mkdir(file.getParentFile());
             captchafile.renameTo(file);
             logger.severe("Captcha Input error");
             return -1;
@@ -1886,7 +1887,7 @@ public class JAntiCaptcha {
         }
         if (code.length() != letters.length) {
             File file = getResourceFile("detectionErrors4/" + System.currentTimeMillis() + "_" + captchafile.getName());
-            file.getParentFile().mkdirs();
+            FileCreationManager.getInstance().mkdir(file.getParentFile());
             captchafile.renameTo(file);
             logger.severe("Captcha Input error3");
             return -1;

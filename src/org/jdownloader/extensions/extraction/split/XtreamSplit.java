@@ -33,6 +33,7 @@ import java.util.List;
 import org.appwork.utils.Regex;
 import org.appwork.utils.formatter.HexFormatter;
 import org.appwork.utils.formatter.StringFormatter;
+import org.jdownloader.controlling.FileCreationManager;
 import org.jdownloader.extensions.extraction.Archive;
 import org.jdownloader.extensions.extraction.ArchiveFactory;
 import org.jdownloader.extensions.extraction.ArchiveFile;
@@ -95,7 +96,7 @@ public class XtreamSplit extends IExtraction {
         try {
             if (file.exists()) {
                 if (controller.isOverwriteFiles()) {
-                    if (!file.delete()) {
+                    if (!FileCreationManager.getInstance().delete(file)) {
                         archive.setExitCode(ExtractionControllerConstants.EXIT_CODE_FATAL_ERROR);
                         return;
                     }
@@ -106,7 +107,7 @@ public class XtreamSplit extends IExtraction {
                 }
             }
 
-            if ((!file.getParentFile().exists() && !file.getParentFile().mkdirs()) || !file.createNewFile()) {
+            if ((!file.getParentFile().exists() && !FileCreationManager.getInstance().mkdir(file.getParentFile())) || !file.createNewFile()) {
                 archive.setExitCode(ExtractionControllerConstants.EXIT_CODE_CREATE_ERROR);
                 return;
             }
@@ -227,7 +228,7 @@ public class XtreamSplit extends IExtraction {
         }
 
         if (archive.getCrcError().size() > 0) {
-            if (!file.delete()) {
+            if (!FileCreationManager.getInstance().delete(file)) {
                 logger.warning("Could not delete outputfile after crc error");
             }
             archive.setExitCode(ExtractionControllerConstants.EXIT_CODE_CRC_ERROR);

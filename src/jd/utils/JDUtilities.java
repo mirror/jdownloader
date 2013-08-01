@@ -40,6 +40,7 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 
 import org.appwork.utils.Application;
+import org.jdownloader.controlling.FileCreationManager;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.plugins.controller.PluginClassLoader;
 import org.jdownloader.plugins.controller.UpdateRequiredClassNotFoundException;
@@ -115,8 +116,8 @@ public class JDUtilities {
     }
 
     /**
-     * Liefert das Basisverzeichnis fuer jD zurueck. Don't use a logger in this method. It will cause a NullpointerException, because the logger need this
-     * method for initialisation.
+     * Liefert das Basisverzeichnis fuer jD zurueck. Don't use a logger in this method. It will cause a NullpointerException, because the
+     * logger need this method for initialisation.
      * 
      * @return ein File, dass das Basisverzeichnis angibt
      */
@@ -133,7 +134,7 @@ public class JDUtilities {
                 throw new NullPointerException("jd/Main.class not found");
             }
             if (!JD_HOME.exists()) {
-                JD_HOME.mkdirs();
+                FileCreationManager.getInstance().mkdir(JD_HOME);
             }
             return JD_HOME;
         }
@@ -233,7 +234,7 @@ public class JDUtilities {
         if (f != null) {
             if (mkdirs) {
                 final File f2 = f.getParentFile();
-                if (f2 != null && !f2.exists()) f2.mkdirs();
+                if (f2 != null && !f2.exists()) FileCreationManager.getInstance().mkdir(f2);
             }
             return f;
         }

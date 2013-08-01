@@ -398,7 +398,7 @@ public class AddLinksDialog extends AbstractDialog<LinkCollectingJob> {
         p.add(downloadPassword);
         p.add(priority, "sg right");
 
-        if (Application.getJavaVersion() >= 17000000) {
+        if (Application.getJavaVersion() >= Application.JAVA17) {
             J17DragAndDropDelegater dnd = new J17DragAndDropDelegater(this, input);
             input.setTransferHandler(dnd);
         } else {

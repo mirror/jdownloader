@@ -60,6 +60,7 @@ import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.zip.ZipIOReader;
 import org.appwork.utils.zip.ZipIOWriter;
+import org.jdownloader.controlling.FileCreationManager;
 import org.jdownloader.controlling.UniqueAlltimeID;
 import org.jdownloader.controlling.filter.LinkFilterController;
 import org.jdownloader.controlling.filter.LinkFilterSettings;
@@ -1293,9 +1294,9 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                     try {
                         if (file.exists()) {
                             if (file.isDirectory()) throw new IOException("File " + file + " is a directory");
-                            if (file.delete() == false) throw new IOException("Could not delete file " + file);
+                            if (FileCreationManager.getInstance().delete(file) == false) throw new IOException("Could not delete file " + file);
                         } else {
-                            if (file.getParentFile().exists() == false && file.getParentFile().mkdirs() == false) throw new IOException("Could not create parentFolder for file " + file);
+                            if (file.getParentFile().exists() == false && FileCreationManager.getInstance().mkdir(file.getParentFile()) == false) throw new IOException("Could not create parentFolder for file " + file);
                         }
                         int index = 0;
                         /* prepare formatter for package filenames in zipfiles */
@@ -1350,7 +1351,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                             if (availableCollectorLists != null && availableCollectorLists.size() > keepXOld) {
                                 availableCollectorLists = availableCollectorLists.subList(keepXOld, availableCollectorLists.size());
                                 for (File oldCollectorList : availableCollectorLists) {
-                                    logger.info("Delete outdated CollectorList: " + oldCollectorList + " " + oldCollectorList.delete());
+                                    logger.info("Delete outdated CollectorList: " + oldCollectorList + " " + FileCreationManager.getInstance().delete(oldCollectorList));
                                 }
                             }
                         } catch (final Throwable e) {
@@ -1365,7 +1366,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                         } catch (final Throwable e) {
                         }
                         if (deleteFile && file.exists()) {
-                            file.delete();
+                            FileCreationManager.getInstance().delete(file);
                         }
                     }
                 }

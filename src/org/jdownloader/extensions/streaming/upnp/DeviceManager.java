@@ -36,6 +36,7 @@ import org.fourthline.cling.support.connectionmanager.callback.GetProtocolInfo;
 import org.fourthline.cling.support.model.Protocol;
 import org.fourthline.cling.support.model.ProtocolInfo;
 import org.fourthline.cling.support.model.ProtocolInfos;
+import org.jdownloader.controlling.FileCreationManager;
 import org.jdownloader.extensions.streaming.StreamingExtension;
 import org.jdownloader.extensions.streaming.upnp.remotedevices.RendererInfo;
 import org.jdownloader.extensions.streaming.upnp.remotedevices.handlers.AbstractDeviceHandler;
@@ -131,7 +132,7 @@ public class DeviceManager implements RegistryListener {
 
                                 try {
                                     File file = Application.getResource("tmp/streaming/devices/icon_" + id + "." + format);
-                                    file.getParentFile().mkdirs();
+                                    FileCreationManager.getInstance().mkdir(file.getParentFile());
                                     new SimpleHTTP().download(iconUrl, null, file);
                                     deviceCache.setIconPath(Files.getRelativePath(Application.getResource("tmp").getParentFile(), file));
                                 } catch (IOException e) {

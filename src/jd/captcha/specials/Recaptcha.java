@@ -32,6 +32,7 @@ import jd.nutils.Executer;
 import jd.utils.JDUtilities;
 
 import org.appwork.utils.IO;
+import org.jdownloader.controlling.FileCreationManager;
 
 public class Recaptcha {
 
@@ -114,7 +115,7 @@ public class Recaptcha {
 
         final File f = list[id];
         final File input = new File("input.jpg");
-        input.delete();
+        FileCreationManager.getInstance().delete(input);
         IO.copyFile(f, input);
         // prepare image
         Recaptcha.prepareCaptcha(input);

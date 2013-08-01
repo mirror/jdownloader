@@ -47,6 +47,7 @@ import org.appwork.utils.swing.dialog.ConfirmDialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.appwork.utils.swing.dialog.DialogNoAnswerException;
+import org.jdownloader.controlling.FileCreationManager;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
 
@@ -495,7 +496,7 @@ public class LiveHeaderDetectionWizard {
             try {
                 final BufferedImage image = FavIcons.downloadFavIcon(this.gatewayAdressHost);
                 final File imageFile = JDUtilities.getResourceFile("tmp/routerfav.png", true);
-                imageFile.delete();
+                FileCreationManager.getInstance().delete(imageFile);
                 imageFile.deleteOnExit();
                 fos = new FileOutputStream(imageFile);
                 ImageIO.write(image, "png", fos);
@@ -540,7 +541,7 @@ public class LiveHeaderDetectionWizard {
             try {
                 final BufferedImage image = FavIcons.downloadFavIcon(this.gatewayAdressHost);
                 final File imageFile = JDUtilities.getResourceFile("tmp/routerfav.png", true);
-                imageFile.delete();
+                FileCreationManager.getInstance().delete(imageFile);
                 imageFile.deleteOnExit();
                 fos = new FileOutputStream(imageFile);
                 ImageIO.write(image, "png", fos);

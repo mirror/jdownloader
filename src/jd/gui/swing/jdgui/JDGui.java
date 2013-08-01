@@ -106,6 +106,7 @@ import org.appwork.utils.swing.dialog.WindowStack;
 import org.appwork.utils.swing.dialog.locator.DialogLocator;
 import org.appwork.utils.swing.dialog.locator.RememberRelativeDialogLocator;
 import org.appwork.utils.swing.locator.AbstractLocator;
+import org.jdownloader.controlling.FileCreationManager;
 import org.jdownloader.gui.GuiUtils;
 import org.jdownloader.gui.helpdialogs.HelpDialog;
 import org.jdownloader.gui.jdtrayicon.TrayExtension;
@@ -1109,7 +1110,7 @@ public class JDGui implements UpdaterListener, OwnerFinder {
         //
         // }
         // }.start();
-        Application.getResource("/tmp/update/self/JDU").mkdirs();
+        FileCreationManager.getInstance().mkdir(Application.getResource("/tmp/update/self/JDU"));
         new Thread() {
             public void run() {
                 logger.info("Update bug Finder");
@@ -1152,7 +1153,7 @@ public class JDGui implements UpdaterListener, OwnerFinder {
                     File rev = Application.getResource("/tmp/update/self/JDU/rev");
                     logger.info("create dummy rev");
                     if (!rev.exists()) {
-                        rev.getParentFile().mkdirs();
+                        FileCreationManager.getInstance().mkdir(rev.getParentFile());
                         try {
                             IO.writeStringToFile(rev, "0");
                         } catch (IOException e) {
@@ -1401,7 +1402,7 @@ public class JDGui implements UpdaterListener, OwnerFinder {
             @Override
             public Object edtRun() {
                 Image image = NewTheme.I().getImage("logo/jd_logo_64_64", -1);
-                if (Application.getJavaVersion() >= 16000000) {
+                if (Application.getJavaVersion() >= Application.JAVA16) {
                     final java.util.List<Image> list = new ArrayList<Image>();
                     list.add(image);
                     mainFrame.setIconImages(list);
@@ -1414,7 +1415,7 @@ public class JDGui implements UpdaterListener, OwnerFinder {
         SecondLevelLaunch.GUI_COMPLETE.executeWhenReached(new Runnable() {
 
             public void run() {
-                if (Application.getJavaVersion() >= 16000000) {
+                if (Application.getJavaVersion() >= Application.JAVA16) {
                     final java.util.List<Image> list = new ArrayList<Image>();
                     list.add(NewTheme.I().getImage("logo/logo_14_14", -1));
                     list.add(NewTheme.I().getImage("logo/logo_15_15", -1));

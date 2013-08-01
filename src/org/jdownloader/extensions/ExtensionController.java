@@ -36,6 +36,7 @@ import org.appwork.utils.logging.Log;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.swing.dialog.ConfirmDialog;
 import org.appwork.utils.swing.dialog.Dialog;
+import org.jdownloader.controlling.FileCreationManager;
 import org.jdownloader.controlling.contextmenu.ActionData;
 import org.jdownloader.controlling.contextmenu.ContextMenuManager;
 import org.jdownloader.controlling.contextmenu.MenuContainerRoot;
@@ -101,7 +102,7 @@ public class ExtensionController implements MenuExtenderHandler {
 
     protected void validateCache() {
         cacheInvalidated = false;
-        Application.getResource(TMP_INVALIDEXTENSIONS).delete();
+        FileCreationManager.getInstance().delete(Application.getResource(TMP_INVALIDEXTENSIONS));
     }
 
     public void init() {

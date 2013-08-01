@@ -26,6 +26,8 @@ import java.util.ArrayList;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.jdownloader.controlling.FileCreationManager;
+
 public class OutdatedParser {
 
     // DO not use Regex class to stay compatible to Restarter.jar
@@ -169,7 +171,7 @@ public class OutdatedParser {
                 if (!success) { return false; }
             }
         }
-        return dir.delete();
+        return FileCreationManager.getInstance().delete(dir);
     }
 
 }

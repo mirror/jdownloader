@@ -16,6 +16,7 @@ import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.zip.ZipIOReader;
 import org.appwork.utils.zip.ZipIOWriter;
+import org.jdownloader.controlling.FileCreationManager;
 import org.jdownloader.logging.LogController;
 
 public abstract class MediaListController<T extends MediaItem> {
@@ -131,7 +132,7 @@ public abstract class MediaListController<T extends MediaItem> {
                 // daily backup file. at least until this is stable
                 File backup = Application.getResource("cfg/medialibrary/" + getType().getSimpleName() + ".zip.backup." + (System.currentTimeMillis() / (1000l * 24 * 60 * 60)));
 
-                tmp.getParentFile().mkdirs();
+                FileCreationManager.getInstance().mkdir(tmp.getParentFile());
 
                 ZipIOWriter zip = new ZipIOWriter(tmp, true);
                 int index = 0;
@@ -150,7 +151,7 @@ public abstract class MediaListController<T extends MediaItem> {
 
                 zip.close();
 
-                backup.delete();
+                FileCreationManager.getInstance().delete(backup);
                 path.renameTo(backup);
                 tmp.renameTo(path);
                 return true;

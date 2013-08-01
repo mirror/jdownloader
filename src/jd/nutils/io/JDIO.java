@@ -32,6 +32,7 @@ import java.util.regex.Pattern;
 
 import org.appwork.utils.IO;
 import org.appwork.utils.Regex;
+import org.jdownloader.controlling.FileCreationManager;
 import org.jdownloader.logging.LogController;
 
 public final class JDIO {
@@ -63,12 +64,12 @@ public final class JDIO {
         OutputStreamWriter ow = null;
         FileOutputStream fo = null;
         try {
-            if (!append && file.isFile() && !file.delete()) {
+            if (!append && file.isFile() && !FileCreationManager.getInstance().delete(file)) {
                 System.err.println("Konnte Datei nicht löschen " + file);
                 return false;
             }
             if (file.getParent() != null && !file.getParentFile().exists()) {
-                file.getParentFile().mkdirs();
+                FileCreationManager.getInstance().mkdir(file.getParentFile());
             }
             if (!append || !file.isFile()) {
                 file.createNewFile();
@@ -114,10 +115,10 @@ public final class JDIO {
             return;
         }
 
-        fileOutput.getParentFile().mkdirs();
+        FileCreationManager.getInstance().mkdir(fileOutput.getParentFile());
 
         if (fileOutput.exists()) {
-            fileOutput.delete();
+            FileCreationManager.getInstance().delete(fileOutput);
         }
         FileOutputStream fos = null;
         try {
@@ -235,7 +236,7 @@ public final class JDIO {
                 if (!success) return false;
             }
         }
-        return dir.delete();
+        return FileCreationManager.getInstance().delete(dir);
     }
 
     /**
@@ -272,7 +273,7 @@ public final class JDIO {
                 removeRekursive(f, fileSelector);
             }
             if (fileSelector.doIt(f)) {
-                f.delete();
+                FileCreationManager.getInstance().delete(f);
             }
         }
     }

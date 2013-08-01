@@ -30,6 +30,7 @@ import jd.parser.html.HTMLParser;
 import jd.utils.JDUtilities;
 
 import org.appwork.utils.ImageProvider.ImageProvider;
+import org.jdownloader.controlling.FileCreationManager;
 
 /**
  * Diese klasse speichert Bildinformationen wie die Form die verwendet wurde und die Bildposition
@@ -159,7 +160,7 @@ public class LoadImage {
         File dest = new File(destination, b + "_" + JDHash.getMD5(file) + getFileType());
 
         if (dest.exists()) {
-            file.delete();
+            FileCreationManager.getInstance().delete(file);
             return false;
         }
         file.renameTo(dest);
@@ -193,7 +194,7 @@ public class LoadImage {
     public LoadImage load(String host) throws Exception {
         if (host == null) host = new URI(baseUrl).getHost();
         String destination = JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath() + "/captchas/" + host + "/";
-        new File(destination).mkdir();
+        FileCreationManager.getInstance().mkdir(new File(destination));
         br.clearCookies(baseUrl);
         br.getPage(baseUrl);
         if (followUrl != -1) {
@@ -304,7 +305,7 @@ public class LoadImage {
      * @param file
      */
     public static void save(LoadImage li, File file) {
-        file.getParentFile().mkdirs();
+        FileCreationManager.getInstance().mkdir(file.getParentFile());
         System.out.println("LoadImage has beens saved under: " + file);
         JDIO.saveObject(li, file, true);
     }

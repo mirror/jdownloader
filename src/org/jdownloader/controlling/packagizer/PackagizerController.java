@@ -528,7 +528,7 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
         }
         if (!originalFolder.equals(moveToFolder) || !originalFileName.equals(link.getName())) {
             File newFile = new File(moveToFolder, link.getName());
-            if (newFile.getParentFile().exists() == false && newFile.getParentFile().mkdirs() == false) {
+            if (newFile.getParentFile().exists() == false && FileCreationManager.getInstance().mkdir(newFile.getParentFile()) == false) {
                 Log.L.warning("Packagizer could not create " + newFile.getParentFile());
                 return;
             }
@@ -538,10 +538,10 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
                 try {
                     Log.L.warning("Packagizer try copy " + f + " to" + newFile);
                     IO.copyFile(f, newFile);
-                    f.delete();
+                    FileCreationManager.getInstance().delete(f);
                     successful = true;
                 } catch (final Throwable e) {
-                    newFile.delete();
+                    FileCreationManager.getInstance().delete(newFile);
                     Log.L.warning("Packagizer could not move/rename " + f + " to" + newFile);
                 }
             }

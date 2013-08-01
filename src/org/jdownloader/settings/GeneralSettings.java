@@ -45,7 +45,7 @@ public interface GeneralSettings extends ConfigInterface {
             }
             String home = System.getProperty("user.home");
             if (home != null && new File(home).exists() && new File(home).isDirectory()) {
-                // new File(home, "downloads").mkdirs();
+                // new File(home, FileCreationManager.getInstance().mkdir("downloads"));
                 return new File(home, "downloads").getAbsolutePath();
             } else {
                 return Application.getResource("downloads").getAbsolutePath();
@@ -399,5 +399,11 @@ public interface GeneralSettings extends ConfigInterface {
     CreateFolderTrigger getCreateFolderTrigger();
 
     void setCreateFolderTrigger(CreateFolderTrigger trigger);
+
+    @AboutConfig
+    @DefaultBooleanValue(true)
+    boolean isDeleteEmptySubFoldersAfterDeletingDownloadedFilesEnabled();
+
+    void setDeleteEmptySubFoldersAfterDeletingDownloadedFilesEnabled(boolean b);
 
 }

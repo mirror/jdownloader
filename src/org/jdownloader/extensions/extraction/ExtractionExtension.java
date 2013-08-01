@@ -472,7 +472,7 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
 
         });
         try {
-            Application.getResource("logs/extracting/open").mkdirs();
+            FileCreationManager.getInstance().mkdir(Application.getResource("logs/extracting/open"));
 
             for (File f : Application.getResource("logs/extracting/open").listFiles()) {
                 if (f.getName().matches("\\w+\\.txt")) {

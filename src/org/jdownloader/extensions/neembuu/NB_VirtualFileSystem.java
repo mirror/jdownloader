@@ -29,6 +29,7 @@ import jpfm.volume.vector.VectorRootDirectory;
 import neembuu.vfs.file.ConstrainUtility;
 
 import org.appwork.utils.logging.Log;
+import org.jdownloader.controlling.FileCreationManager;
 import org.jdownloader.extensions.neembuu.gui.VirtualFilesPanel;
 import org.jdownloader.extensions.neembuu.postprocess.PostProcessors;
 
@@ -87,7 +88,7 @@ public final class NB_VirtualFileSystem extends SimpleReadOnlyFileSystem {
 
         if (mountLoc.exists()) {
             try {
-                boolean v = mountLoc.delete();
+                boolean v = FileCreationManager.getInstance().delete(mountLoc);
                 if (!v) throw new Exception();
             } catch (Exception a) {
                 Log.L.log(Level.INFO, "Could not mount at preferred mount location", a);
@@ -174,7 +175,7 @@ public final class NB_VirtualFileSystem extends SimpleReadOnlyFileSystem {
                     session.getWatchAsYouDownloadSession().getSeekableConnectionFile().close();
                 } catch (Exception exception) {
                     // ignore
-                    Log.L.log(Level.INFO,"Cannot close a session",exception);
+                    Log.L.log(Level.INFO, "Cannot close a session", exception);
                 }
                 // it.remove();
             }
@@ -184,7 +185,7 @@ public final class NB_VirtualFileSystem extends SimpleReadOnlyFileSystem {
             try {
                 if (!alreadyUnmounted) unMount();
             } catch (Exception a) {
-                Log.L.log(Level.SEVERE,"error in unmounting",a);
+                Log.L.log(Level.SEVERE, "error in unmounting", a);
             }
             NeembuuExtension.getInstance().getGUI().removeSession(jdds.getWatchAsYouDownloadSession().getFilePanel());
             NeembuuExtension.getInstance().getVirtualFileSystems().remove(jdds.getDownloadLink().getFilePackage());

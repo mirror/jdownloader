@@ -27,6 +27,7 @@ import java.util.TreeSet;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
+import org.jdownloader.controlling.FileCreationManager;
 import org.jdownloader.logging.LogController;
 
 public class UnZip {
@@ -99,7 +100,7 @@ public class UnZip {
         }
         zipF.close();
         if (autoDelete) {
-            zipFile.delete();
+            FileCreationManager.getInstance().delete(zipFile);
         }
         return ret.toArray(new File[ret.size()]);
 
@@ -121,7 +122,7 @@ public class UnZip {
             if (!dirsMade.contains(dirName)) {
                 File d = new File(targetPath, dirName);
                 if (!(d.exists() && d.isDirectory())) {
-                    if (!d.mkdirs()) {
+                    if (!FileCreationManager.getInstance().mkdir(d)) {
                         System.err.println("Warning: unable to mkdir " + dirName);
                     }
                     dirsMade.add(dirName);
@@ -134,7 +135,7 @@ public class UnZip {
             System.out.println("Exists skip " + zipName);
             return null;
         } else {
-            toExtract.delete();
+            FileCreationManager.getInstance().delete(toExtract);
         }
         FileOutputStream os = new FileOutputStream(toExtract);
         InputStream is = zipF.getInputStream(e);

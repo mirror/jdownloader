@@ -22,6 +22,7 @@ import org.appwork.storage.TypeRef;
 import org.appwork.utils.Application;
 import org.appwork.utils.IO;
 import org.appwork.utils.logging2.LogSource;
+import org.jdownloader.controlling.FileCreationManager;
 import org.jdownloader.extensions.extraction.bindings.downloadlink.DownloadLinkArchiveFactory;
 import org.jdownloader.logging.LogController;
 
@@ -210,7 +211,7 @@ public class ArchiveController implements DownloadControllerListener, LinkCollec
             }
             if (weNeedToCopyFile && path.exists()) {
                 // we need to copy the file. clone has no write flag, and the oldfile exists;
-                newPath.delete();
+                FileCreationManager.getInstance().delete(newPath);
                 try {
                     IO.copyFile(path, newPath);
                 } catch (IOException e) {

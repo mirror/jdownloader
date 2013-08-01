@@ -65,6 +65,7 @@ import org.jdownloader.captcha.v2.ChallengeSolver;
 import org.jdownloader.captcha.v2.challenge.stringcaptcha.BasicCaptchaChallenge;
 import org.jdownloader.captcha.v2.solverjob.ResponseList;
 import org.jdownloader.controlling.DownloadLinkWalker;
+import org.jdownloader.controlling.FileCreationManager;
 import org.jdownloader.gui.helpdialogs.HelpDialog;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
@@ -170,7 +171,7 @@ public abstract class PluginForHost extends Plugin {
             final String captchaCode = getCaptchaCode(method, captchaFile, downloadLink);
             return captchaCode;
         } finally {
-            captchaFile.delete();
+            FileCreationManager.getInstance().delete(captchaFile);
         }
     }
 
@@ -941,7 +942,7 @@ public abstract class PluginForHost extends Plugin {
                     if (method.length() > 0) {
 
                         src = src.substring(0, src.lastIndexOf("}")) + method.toString() + "\r\n}";
-                        f.delete();
+                        FileCreationManager.getInstance().delete(f);
                         IO.writeStringToFile(f, src);
                     }
 

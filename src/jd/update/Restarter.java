@@ -29,11 +29,11 @@ import jd.nutils.Executer;
 import jd.nutils.OutdatedParser;
 import jd.nutils.zip.UnZip;
 
+import org.jdownloader.controlling.FileCreationManager;
+
 /**
- * This class is the mainclass of tinyupdate.jar. This tool is called by
- * JDownloader.jar and moves fresh files from ./update/ to ./ after an update.
- * Since jdownloader.jar is already closed when tinyupdate is running,
- * tinyupdate ca overwrite jdownloader.jar <br>
+ * This class is the mainclass of tinyupdate.jar. This tool is called by JDownloader.jar and moves fresh files from ./update/ to ./ after an
+ * update. Since jdownloader.jar is already closed when tinyupdate is running, tinyupdate ca overwrite jdownloader.jar <br>
  * TINYUPDATE.jar must run in JD_HOME
  * 
  * @author coalado
@@ -41,26 +41,24 @@ import jd.nutils.zip.UnZip;
  */
 public class Restarter {
     /**
-     * This variable is false and is set to true as soon as the first file could
-     * be overwritten. It is used to wait until jdownlaoder.jar has really
-     * terminated <br>
+     * This variable is false and is set to true as soon as the first file could be overwritten. It is used to wait until jdownlaoder.jar
+     * has really terminated <br>
      * Take care that you do not use package-extern classes in here.
      */
     private static boolean WAIT_FOR_JDOWNLOADER_TERM = false;
     /**
-     * is set by -restart parameter to true, and is used to do a restart aftrer
-     * moving files
+     * is set by -restart parameter to true, and is used to do a restart aftrer moving files
      */
-    private static boolean RESTART = false;
+    private static boolean RESTART                   = false;
     /**
      * package logger
      */
-    private static Logger logger;
+    private static Logger  logger;
     /**
-     * is set to true by parameter -nolog ,if the class should not write a log
-     * file. Use this if you use this class in another contect than MAIN class
+     * is set to true by parameter -nolog ,if the class should not write a log file. Use this if you use this class in another contect than
+     * MAIN class
      */
-    private static boolean NOLOG = false;
+    private static boolean NOLOG                     = false;
 
     /**
      * Returns the stacktrace of a Thorwable
@@ -112,7 +110,7 @@ public class Restarter {
             // themselves. tinyupdate.jar updates jdownloader.jar and
             // jdownloader.jar updates tinyupdate.jar
             new File("update/tools/tinyupdate.jar").deleteOnExit();
-            new File("update/tools/tinyupdate.jar").delete();
+            FileCreationManager.getInstance().delete(new File("update/tools/tinyupdate.jar"));
 
             extract(new File("update"));
             move(new File("update"));
@@ -130,7 +128,7 @@ public class Restarter {
             String javaPath = new File(new File(System.getProperty("sun.boot.library.path")), "javaw.exe").getAbsolutePath();
 
             if (RESTART) {
-                //Do not use Appwork utils here
+                // Do not use Appwork utils here
                 if (System.getProperty("os.name").toLowerCase().contains("mac")) {
                     Executer exec = new Executer("open");
                     exec.setLogger(logger);
@@ -141,7 +139,7 @@ public class Restarter {
 
                 } else {
                     Executer exec;
-              
+
                     if (new File(javaPath).exists()) {
                         exec = new Executer(javaPath);
                     } else {
@@ -206,8 +204,7 @@ public class Restarter {
     }
 
     /**
-     * moves all files from dir to ./ Waits a timeout for 15 ms if the files are
-     * locked. (maybe the are blocked by old jvm)
+     * moves all files from dir to ./ Waits a timeout for 15 ms if the files are locked. (maybe the are blocked by old jvm)
      * 
      * @param dir
      */
@@ -229,14 +226,14 @@ public class Restarter {
                 if (!newFile.getParentFile().exists()) {
                     logger.info("Parent Exists: false");
 
-                    if (newFile.getParentFile().mkdirs()) {
+                    if (FileCreationManager.getInstance().mkdir(newFile.getParentFile())) {
                         logger.info("^^CREATED");
                     } else {
                         logger.info("^^CREATION FAILED");
                     }
                 }
                 int waittime = 15000;
-                while (newFile.exists() && !newFile.delete() && !WAIT_FOR_JDOWNLOADER_TERM) {
+                while (newFile.exists() && !FileCreationManager.getInstance().delete(newFile) && !WAIT_FOR_JDOWNLOADER_TERM) {
 
                     try {
                         Thread.sleep(1000);
@@ -261,12 +258,12 @@ public class Restarter {
                 logger.severe("RENAME :" + f.renameTo(newFile));
                 if (f.getParentFile().list().length == 0) {
                     logger.severe("^^REMOVED PARENT DIR");
-                    f.getParentFile().delete();
+                    FileCreationManager.getInstance().delete(f.getParentFile());
                 }
             }
         }
         if (dir.list() != null) {
-            if (dir.list().length == 0) dir.delete();
+            if (dir.list().length == 0) FileCreationManager.getInstance().delete(dir);
         }
 
     }

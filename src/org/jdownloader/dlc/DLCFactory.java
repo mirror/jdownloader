@@ -33,6 +33,7 @@ import org.appwork.utils.swing.dialog.FileChooserSelectionMode;
 import org.appwork.utils.swing.dialog.FileChooserType;
 import org.appwork.utils.swing.dialog.MessageDialogImpl;
 import org.jdownloader.container.D;
+import org.jdownloader.controlling.FileCreationManager;
 import org.jdownloader.controlling.filter.LinkFilterController;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
@@ -180,7 +181,7 @@ public class DLCFactory extends D {
                 if (file.exists()) {
                     new ConfirmDialog(0, _GUI._.lit_file_exists(), _GUI._.lit_file_already_exists_overwrite_question(file.getAbsolutePath())).show().throwCloseExceptions();
 
-                    file.delete();
+                    FileCreationManager.getInstance().delete(file);
                 }
                 IO.writeStringToFile(file, cipher);
                 if (new ConfirmDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI._.DLCFactory_writeDLC_success_ok(), _GUI._.DLCFactory_createDLC_created_(file.getAbsolutePath()), NewTheme.I().getIcon(IconKey.ICON_DLC, 32), _GUI._.DLCFactory_writeDLC_showpath(), _GUI._.lit_close()).show().getCloseReason() == CloseReason.OK) {

@@ -89,7 +89,7 @@ public class InfoBarExtension extends AbstractExtension<InfoBarConfig, InfobarTr
                 infoDialog = new InfoDialog(this);
                 infoDialog.setEnableDropLocation(getPropertyConfig().getBooleanProperty(PROPERTY_DROPLOCATION, true));
                 infoDialog.setEnableDocking(getPropertyConfig().getBooleanProperty(PROPERTY_DOCKING, true));
-                if (Application.getJavaVersion() >= 16000000) updateOpacity(null);
+                if (Application.getJavaVersion() >= Application.JAVA16) updateOpacity(null);
             }
             infoDialog.showDialog();
         } else {
@@ -147,7 +147,7 @@ public class InfoBarExtension extends AbstractExtension<InfoBarConfig, InfobarTr
 
     protected void initSettings(ConfigContainer config) {
         config.setGroup(new ConfigGroup(getName(), getIconKey()));
-        if (Application.getJavaVersion() >= 16000000) {
+        if (Application.getJavaVersion() >= Application.JAVA16) {
             ConfigEntry ce = new ConfigEntry(ConfigContainer.TYPE_SPINNER, getPropertyConfig(), PROPERTY_OPACITY, T._.jd_plugins_optional_infobar_opacity(), 1, 100, 10) {
                 private static final long serialVersionUID = 1L;
 

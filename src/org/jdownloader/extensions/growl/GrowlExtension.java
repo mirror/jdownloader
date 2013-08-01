@@ -33,6 +33,7 @@ import org.appwork.controlling.StateEventListener;
 import org.appwork.utils.Application;
 import org.appwork.utils.IO;
 import org.appwork.utils.os.CrossSystem;
+import org.jdownloader.controlling.FileCreationManager;
 import org.jdownloader.extensions.AbstractExtension;
 import org.jdownloader.extensions.ExtensionConfigPanel;
 import org.jdownloader.extensions.StartException;
@@ -52,7 +53,7 @@ public class GrowlExtension extends AbstractExtension<GrowlConfig, GrowlTranslat
     @Override
     protected void start() throws StartException {
         File tmp = Application.getResource(TMP_GROWL_NOTIFICATION_SCPT);
-        tmp.delete();
+        FileCreationManager.getInstance().delete(tmp);
         tmp.deleteOnExit();
         try {
             IO.writeToFile(tmp, IO.readURL(getClass().getResource("osxnopasswordforshutdown.scpt")));

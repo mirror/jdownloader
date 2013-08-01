@@ -14,6 +14,7 @@ import org.appwork.utils.Application;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.processes.ProcessBuilderFactory;
+import org.jdownloader.controlling.FileCreationManager;
 import org.jdownloader.controlling.UniqueAlltimeID;
 import org.jdownloader.extensions.streaming.StreamingExtension;
 import org.jdownloader.extensions.streaming.mediaarchive.MediaItem;
@@ -89,8 +90,8 @@ public class FFMpegInfoReader {
                 String ffmpeg = getFFMpegPath();
                 if (ffmpeg != null) {
                     thumb = Application.getResource("tmp/streaming/cover/" + mediaItem.getUniqueID().toString() + ".jpg");
-                    thumb.getParentFile().mkdirs();
-                    thumb.delete();
+                    FileCreationManager.getInstance().mkdir(thumb.getParentFile());
+                    FileCreationManager.getInstance().delete(thumb);
                     String[] ret = execute(ffmpeg, "-i", streamurl, "-c", "copy", thumb.getAbsolutePath());
                     logger.info(ret[1]);
                     System.out.println(2);
@@ -108,8 +109,8 @@ public class FFMpegInfoReader {
                             String ffmpeg = getFFMpegPath();
                             if (ffmpeg != null) {
                                 thumb = Application.getResource("tmp/streaming/thumbs/" + mediaItem.getUniqueID().toString() + ".jpg");
-                                thumb.getParentFile().mkdirs();
-                                thumb.delete();
+                                FileCreationManager.getInstance().mkdir(thumb.getParentFile());
+                                FileCreationManager.getInstance().delete(thumb);
                                 long duration = getFormat().parseDuration() / 1000;
                                 int offsetInSeconds = (int) (((duration * 0.6 * Math.random())) + duration * 0.2);
                                 if (offsetInSeconds < 0) offsetInSeconds = 10;

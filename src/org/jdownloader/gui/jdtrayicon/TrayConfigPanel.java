@@ -39,6 +39,10 @@ public class TrayConfigPanel extends ExtensionConfigPanel<TrayExtension> {
     public void save() {
     }
 
+    private void updateHeaders(boolean b) {
+
+    }
+
     @Override
     public void updateContents() {
 

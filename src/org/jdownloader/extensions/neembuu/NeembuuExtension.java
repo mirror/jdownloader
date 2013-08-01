@@ -27,6 +27,7 @@ import jd.plugins.FilePackage;
 
 import org.appwork.utils.Application;
 import org.appwork.utils.swing.EDTRunner;
+import org.jdownloader.controlling.FileCreationManager;
 import org.jdownloader.extensions.AbstractExtension;
 import org.jdownloader.extensions.ExtensionConfigPanel;
 import org.jdownloader.extensions.ExtensionController;
@@ -87,10 +88,10 @@ public class NeembuuExtension extends AbstractExtension<NeembuuConfig, NeembuuTr
             // ok
         }
 
-        boolean del = f_test.delete();
+        boolean del = FileCreationManager.getInstance().delete(f_test);
         if (!del) {
             LogController.CL().severe("could not delete " + f_test);
-            java.nio.file.Files.delete(f_test.toPath());
+
         }
 
         getSettings().setBasicMountLocation(basicMntLoc);
@@ -169,8 +170,9 @@ public class NeembuuExtension extends AbstractExtension<NeembuuConfig, NeembuuTr
                 /*
                  * SwingUtilities.invokeLater(new Runnable() { // @Override
                  * 
-                 * public void run() { JOptionPane.showMessageDialog(JDGui.getInstance ().getMainFrame(), _NT._.failed_WatchAsYouDownload_Message() + "\n" +
-                 * jdds.toString(), _NT._.failed_WatchAsYouDownload_Title(), JOptionPane.ERROR_MESSAGE); } });
+                 * public void run() { JOptionPane.showMessageDialog(JDGui.getInstance ().getMainFrame(),
+                 * _NT._.failed_WatchAsYouDownload_Message() + "\n" + jdds.toString(), _NT._.failed_WatchAsYouDownload_Title(),
+                 * JOptionPane.ERROR_MESSAGE); } });
                  */
 
                 LogController.CL().log(Level.SEVERE, "Could not start a watch as you download session", a);

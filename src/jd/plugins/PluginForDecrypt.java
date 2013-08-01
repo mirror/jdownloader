@@ -46,6 +46,7 @@ import org.jdownloader.captcha.v2.ChallengeResponseValidation;
 import org.jdownloader.captcha.v2.ChallengeSolver;
 import org.jdownloader.captcha.v2.challenge.stringcaptcha.BasicCaptchaChallenge;
 import org.jdownloader.captcha.v2.solverjob.ResponseList;
+import org.jdownloader.controlling.FileCreationManager;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.plugins.controller.crawler.LazyCrawlerPlugin;
 
@@ -318,7 +319,7 @@ public abstract class PluginForDecrypt extends Plugin {
             String captchaCode = getCaptchaCode(method, captchaFile, param);
             return captchaCode;
         } finally {
-            if (captchaFile != null) captchaFile.delete();
+            if (captchaFile != null) FileCreationManager.getInstance().delete(captchaFile);
         }
     }
 

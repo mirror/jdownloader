@@ -1689,7 +1689,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
             return false;
         }
         if (!fileOutput.getParentFile().exists()) {
-            if (!fileOutput.getParentFile().mkdirs()) {
+            if (!FileCreationManager.getInstance().mkdir(fileOutput.getParentFile())) {
                 link.setSkipReason(SkipReason.INVALID_DESTINATION);
                 return false;
             }
@@ -1697,7 +1697,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
         if (fileOutput.exists()) {
             // TODO: handle all options!?
             if (JsonConfig.create(GeneralSettings.class).getIfFileExistsAction() == IfFileExistsAction.OVERWRITE_FILE) {
-                if (!new File(downloadLink.getFileOutput()).delete()) { throw new PluginException(LinkStatus.ERROR_FATAL, _JDT._.system_download_errors_couldnotoverwrite()); }
+                if (!FileCreationManager.getInstance().delete(new File(downloadLink.getFileOutput()))) { throw new PluginException(LinkStatus.ERROR_FATAL, _JDT._.system_download_errors_couldnotoverwrite()); }
             } else {
                 throw new PluginException(LinkStatus.ERROR_ALREADYEXISTS, _JDT._.downloadlink_status_error_file_exists());
             }

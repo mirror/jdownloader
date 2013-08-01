@@ -23,6 +23,7 @@ import org.appwork.utils.io.streamingio.Streaming;
 import org.appwork.utils.io.streamingio.StreamingInputStream;
 import org.appwork.utils.io.streamingio.StreamingOutputStream;
 import org.appwork.utils.io.streamingio.StreamingOverlapWrite;
+import org.jdownloader.controlling.FileCreationManager;
 import org.jdownloader.plugins.controller.PluginClassLoader;
 import org.jdownloader.plugins.controller.PluginClassLoader.PluginClassLoaderChild;
 
@@ -41,7 +42,7 @@ public class StreamingProvider {
             Streaming stream = streaming.get(remoteLink);
             if (stream == null || stream.isClosed()) {
                 File tmp = Application.getResource("/tmp/streaming/" + remoteLink.getUniqueID());
-                tmp.getParentFile().mkdirs();
+                FileCreationManager.getInstance().mkdir(tmp.getParentFile());
                 stream = new Streaming(tmp.getAbsolutePath()) {
                     private long fileSize = -1;
 

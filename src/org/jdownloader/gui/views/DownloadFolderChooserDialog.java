@@ -28,6 +28,7 @@ import org.appwork.utils.swing.dialog.ExtFileChooserDialog;
 import org.appwork.utils.swing.dialog.FileChooserSelectionMode;
 import org.appwork.utils.swing.dialog.dimensor.RememberLastDialogDimension;
 import org.jdownloader.actions.AppAction;
+import org.jdownloader.controlling.FileCreationManager;
 import org.jdownloader.controlling.packagizer.PackagizerController;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.linkgrabber.addlinksdialog.DownloadPath;
@@ -265,7 +266,7 @@ public class DownloadFolderChooserDialog extends ExtFileChooserDialog {
         try {
 
             Dialog.getInstance().showConfirmDialog(0, _GUI._.DownloadFolderChooserDialog_handleNonExistingFolders_title_(), _GUI._.DownloadFolderChooserDialog_handleNonExistingFolders_msg_(file.getAbsolutePath()));
-            if (!file.mkdirs()) {
+            if (!FileCreationManager.getInstance().mkdir(file)) {
                 UIOManager.I().showErrorMessage(_GUI._.DownloadFolderChooserDialog_handleNonExistingFolders_couldnotcreatefolder(file.getAbsolutePath()));
             }
         } catch (DialogClosedException e) {

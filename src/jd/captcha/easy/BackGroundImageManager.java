@@ -25,6 +25,7 @@ import jd.captcha.pixelgrid.Captcha;
 import jd.captcha.pixelgrid.PixelGrid;
 import jd.nutils.io.JDIO;
 
+import org.jdownloader.controlling.FileCreationManager;
 import org.jdownloader.logging.LogController;
 
 /**
@@ -171,13 +172,13 @@ public class BackGroundImageManager {
     public void save() {
 
         File file = getBgImagesXmlFile();
-        file.getParentFile().mkdirs();
+        FileCreationManager.getInstance().mkdir(file.getParentFile());
         for (Iterator<BackGroundImage> iter = backgroundList.iterator(); iter.hasNext();) {
             BackGroundImage bgi = iter.next();
             if (bgi == null || bgi.getBackgroundImage() == null || bgi.getBackgroundImage().matches("\\s*")) iter.remove();
         }
         if (backgroundList.isEmpty()) {
-            file.delete();
+            FileCreationManager.getInstance().delete(file);
         } else {
             JDIO.saveObject(backgroundList, file, true);
         }

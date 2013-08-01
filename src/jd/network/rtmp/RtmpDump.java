@@ -32,6 +32,7 @@ import org.appwork.utils.net.throttledconnection.ThrottledConnection;
 import org.appwork.utils.net.throttledconnection.ThrottledConnectionHandler;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.speedmeter.SpeedMeterInterface;
+import org.jdownloader.controlling.FileCreationManager;
 import org.jdownloader.nativ.NativeProcess;
 import org.jdownloader.settings.RtmpdumpSettings;
 import org.jdownloader.translate._JDT;
@@ -97,8 +98,8 @@ public class RtmpDump extends RTMPDownload {
     }
 
     /**
-     * Attempt to locate a rtmpdump executable. The *nix /usr bin folders is searched first, then local tools folder. If found, the path will is saved to the
-     * variable RTMPDUMP.
+     * Attempt to locate a rtmpdump executable. The *nix /usr bin folders is searched first, then local tools folder. If found, the path
+     * will is saved to the variable RTMPDUMP.
      * 
      * @return Whether or not rtmpdump executable was found
      */
@@ -225,16 +226,16 @@ public class RtmpDump extends RTMPDownload {
             error(LinkStatus.ERROR_LOCAL_IO, _JDT._.downloadlink_status_error_file_not_found());
             return false;
         }
-        if (!tmpFile.delete()) {
+        if (!FileCreationManager.getInstance().delete(tmpFile)) {
             logger.severe("Could not delete part file " + tmpFile);
             error(LinkStatus.ERROR_LOCAL_IO, _JDT._.system_download_errors_couldnotdelete());
-            fixedFile.delete();
+            FileCreationManager.getInstance().delete(fixedFile);
             return false;
         }
         if (!fixedFile.renameTo(tmpFile)) {
             logger.severe("Could not rename file " + fixedFile.getName() + " to " + tmpFile.getName());
             error(LinkStatus.ERROR_LOCAL_IO, _JDT._.system_download_errors_couldnotrename());
-            fixedFile.delete();
+            FileCreationManager.getInstance().delete(fixedFile);
             return false;
         }
         return true;
@@ -453,7 +454,7 @@ public class RtmpDump extends RTMPDownload {
                 } else if (e.contains("rtmp_readpacket, failed to read rtmp packet header")) {
                     downloadLink.getLinkStatus().addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
                 } else if (e.contains("netstream.play.streamnotfound")) {
-                    tmpFile.delete();
+                    FileCreationManager.getInstance().delete(tmpFile);
                     downloadLink.getLinkStatus().addStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
                     return true;
                 } else if (error.startsWith(timeoutMessage)) {

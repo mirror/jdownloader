@@ -34,6 +34,7 @@ import org.appwork.utils.Regex;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.swing.dialog.ConfirmDialog;
 import org.appwork.utils.swing.dialog.Dialog;
+import org.jdownloader.controlling.FileCreationManager;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.logging.LogController;
@@ -157,7 +158,7 @@ public abstract class PluginsC {
             try {
                 callDecryption(file);
                 if (askFileDeletion() == false) {
-                    file.delete();
+                    FileCreationManager.getInstance().delete(file);
                 } else if (cls.size() > 0 && askFileDeletion()) {
                     switch (JsonConfig.create(GeneralSettings.class).getDeleteContainerFilesAfterAddingThemAction()) {
                     case ASK_FOR_DELETE:
@@ -170,7 +171,7 @@ public abstract class PluginsC {
 
                         org.appwork.uio.ConfirmDialogInterface io = d.show();
                         if (io.getCloseReason() == CloseReason.OK) {
-                            file.delete();
+                            FileCreationManager.getInstance().delete(file);
                             if (io.isDontShowAgainSelected()) {
                                 JsonConfig.create(GeneralSettings.class).setDeleteContainerFilesAfterAddingThemAction(DeleteContainerAction.DELETE);
                             }
@@ -181,7 +182,7 @@ public abstract class PluginsC {
                         }
                         break;
                     case DELETE:
-                        file.delete();
+                        FileCreationManager.getInstance().delete(file);
                         break;
                     case DONT_DELETE:
 

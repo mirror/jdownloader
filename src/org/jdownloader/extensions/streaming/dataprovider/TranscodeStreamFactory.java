@@ -7,6 +7,7 @@ import java.io.InputStream;
 
 import org.appwork.utils.Application;
 import org.appwork.utils.io.streamingio.StreamingChunk;
+import org.jdownloader.controlling.FileCreationManager;
 import org.jdownloader.controlling.UniqueAlltimeID;
 import org.jdownloader.extensions.streaming.dataprovider.transcode.Transcoder;
 import org.jdownloader.extensions.streaming.dlna.profiles.Profile;
@@ -76,7 +77,7 @@ public class TranscodeStreamFactory extends AbstractStreamFactory {
         String id = new UniqueAlltimeID().toString();
         File tmp = Application.getResource("/tmp/streaming/transcode_" + id);
         tmp.deleteOnExit();
-        tmp.getParentFile().mkdirs();
+        FileCreationManager.getInstance().mkdir(tmp.getParentFile());
 
         streamingChunk = new StreamingChunk(tmp, 0);
         streamingChunk.setCanGrow(true);

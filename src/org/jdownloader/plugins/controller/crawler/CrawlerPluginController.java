@@ -17,6 +17,7 @@ import org.appwork.storage.TypeRef;
 import org.appwork.storage.config.MinTimeWeakReference;
 import org.appwork.utils.Application;
 import org.appwork.utils.logging2.LogSource;
+import org.jdownloader.controlling.FileCreationManager;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.plugins.controller.LazyPlugin;
 import org.jdownloader.plugins.controller.PluginClassLoader.PluginClassLoaderChild;
@@ -46,7 +47,7 @@ public class CrawlerPluginController extends PluginController<PluginForDecrypt> 
 
     protected static void validateCache() {
         CACHE_INVALIDATED = false;
-        Application.getResource(HostPluginController.TMP_INVALIDPLUGINS).delete();
+        FileCreationManager.getInstance().delete(Application.getResource(HostPluginController.TMP_INVALIDPLUGINS));
     }
 
     /**
@@ -75,7 +76,8 @@ public class CrawlerPluginController extends PluginController<PluginForDecrypt> 
     }
 
     /**
-     * Create a new instance of HostPluginController. This is a singleton class. Access the only existing instance by using {@link #getInstance()}.
+     * Create a new instance of HostPluginController. This is a singleton class. Access the only existing instance by using
+     * {@link #getInstance()}.
      * 
      */
     private CrawlerPluginController() {

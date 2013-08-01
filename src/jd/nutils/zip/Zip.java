@@ -26,20 +26,21 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
 import org.appwork.utils.Regex;
+import org.jdownloader.controlling.FileCreationManager;
 
 public class Zip {
-    private File destinationFile;
+    private File            destinationFile;
     /**
      * Dateien/Ordner die nicht hinzugefügt werden sollen
      */
     public LinkedList<File> excludeFiles = new LinkedList<File>();
-    private Pattern excludeFilter;
+    private Pattern         excludeFilter;
     /**
      * Füllt die zipDatei auf die gewünschte größe auf
      */
-    public int fillSize = 0;
-    private File[] srcFiles;
-    private boolean deleteAfterPack;
+    public int              fillSize     = 0;
+    private File[]          srcFiles;
+    private boolean         deleteAfterPack;
 
     /**
      * 
@@ -55,8 +56,7 @@ public class Zip {
     /**
      * 
      * @param srcFiles
-     *            Dateien oder Ordner die dem Ziparchiv hinzugefügt werden
-     *            sollen.
+     *            Dateien oder Ordner die dem Ziparchiv hinzugefügt werden sollen.
      * @param destinationFile
      *            die Zieldatei
      */
@@ -67,43 +67,43 @@ public class Zip {
     }
 
     private java.util.List<File> addFileToZip(String path, String srcFile, ZipOutputStream zip) throws Exception {
-    	ArrayList<File> ret = new ArrayList<File>();
-            if (srcFile.endsWith("Thumbs.db")) { return null; }
-            if (excludeFilter != null) {
-                if (Regex.matches(srcFile, excludeFilter)) {
+        ArrayList<File> ret = new ArrayList<File>();
+        if (srcFile.endsWith("Thumbs.db")) { return null; }
+        if (excludeFilter != null) {
+            if (Regex.matches(srcFile, excludeFilter)) {
 
-                    System.out.println("Filtered: " + srcFile);
-                    return ret;
-                }
+                System.out.println("Filtered: " + srcFile);
+                return ret;
             }
-            File folder = new File(srcFile);
-            if (excludeFiles != null && excludeFiles.contains(folder)) { return ret; }
-            if (folder.isDirectory()) {
-            	ret.addAll(addFolderToZip(path, srcFile, zip));
-                if (this.deleteAfterPack) new File(srcFile).delete();
+        }
+        File folder = new File(srcFile);
+        if (excludeFiles != null && excludeFiles.contains(folder)) { return ret; }
+        if (folder.isDirectory()) {
+            ret.addAll(addFolderToZip(path, srcFile, zip));
+            if (this.deleteAfterPack) FileCreationManager.getInstance().delete(new File(srcFile));
+        } else {
+            byte[] buf = new byte[1024];
+            int len;
+            FileInputStream in = new FileInputStream(srcFile);
+            if (path == null || path.trim().length() == 0) {
+                zip.putNextEntry(new ZipEntry(folder.getName()));
             } else {
-                byte[] buf = new byte[1024];
-                int len;
-                FileInputStream in = new FileInputStream(srcFile);
-                if (path == null || path.trim().length() == 0) {
-                    zip.putNextEntry(new ZipEntry(folder.getName()));
-                } else {
-                    zip.putNextEntry(new ZipEntry(path + "/" + folder.getName()));
-                }
-
-                while ((len = in.read(buf)) > 0) {
-                    zip.write(buf, 0, len);
-                }
-                in.close();
-                if (this.deleteAfterPack) new File(srcFile).delete();
-                ret.add(new File(srcFile));
+                zip.putNextEntry(new ZipEntry(path + "/" + folder.getName()));
             }
-            return ret;
-      
+
+            while ((len = in.read(buf)) > 0) {
+                zip.write(buf, 0, len);
+            }
+            in.close();
+            if (this.deleteAfterPack) FileCreationManager.getInstance().delete(new File(srcFile));
+            ret.add(new File(srcFile));
+        }
+        return ret;
+
     }
 
     private java.util.List<File> addFolderToZip(String path, String srcFolder, ZipOutputStream zip) throws Exception {
-    	ArrayList<File> ret = new ArrayList<File>();
+        ArrayList<File> ret = new ArrayList<File>();
         File folder = new File(srcFolder);
         if (excludeFiles.contains(folder)) { return ret; }
         for (String fileName : folder.list()) {
@@ -116,11 +116,10 @@ public class Zip {
             if (path.equals("")) {
                 ret.addAll(addFileToZip(folder.getName(), srcFolder + "/" + fileName, zip));
             } else {
-            	ret.addAll(addFileToZip(path + "/" + folder.getName(), srcFolder + "/" + fileName, zip));
+                ret.addAll(addFileToZip(path + "/" + folder.getName(), srcFolder + "/" + fileName, zip));
             }
         }
         return ret;
-
 
     }
 
@@ -134,8 +133,8 @@ public class Zip {
      * 
      * @throws Exception
      */
-    public java.util.List<File>  zip() throws Exception {
-    	ArrayList<File> ret = new ArrayList<File>();
+    public java.util.List<File> zip() throws Exception {
+        ArrayList<File> ret = new ArrayList<File>();
         ZipOutputStream zip = null;
         FileOutputStream fileWriter = null;
 
@@ -143,7 +142,7 @@ public class Zip {
         zip = new ZipOutputStream(fileWriter);
         for (File element : srcFiles) {
             if (element.isDirectory()) {
-            	ret.addAll(addFolderToZip("", element.getAbsolutePath(), zip));
+                ret.addAll(addFolderToZip("", element.getAbsolutePath(), zip));
             } else if (element.isFile()) {
                 ret.addAll(addFileToZip("", element.getAbsolutePath(), zip));
             }
@@ -167,7 +166,7 @@ public class Zip {
             }
             in.close();
             out.close();
-            destinationFile.delete();
+            FileCreationManager.getInstance().delete(destinationFile);
             newTarget.renameTo(destinationFile);
         }
         return ret;

@@ -30,6 +30,7 @@ import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.appwork.utils.swing.dialog.ProgressDialog;
 import org.appwork.utils.swing.dialog.ProgressDialog.ProgressGetter;
+import org.jdownloader.controlling.FileCreationManager;
 import org.jdownloader.extensions.ExtensionController;
 import org.jdownloader.extensions.extraction.Archive;
 import org.jdownloader.extensions.extraction.ArchiveItem;
@@ -466,7 +467,7 @@ public class RarStreamer implements Runnable {
 
     public void extract() throws IOException, SevenZipException {
         File tmp = Application.getResource("/tmp/streaming/extract" + System.currentTimeMillis());
-        tmp.getParentFile().mkdirs();
+        FileCreationManager.getInstance().mkdir(tmp.getParentFile());
         streamingChunk = new StreamingChunk(tmp, 0);
 
         extractionThread = new Thread() {

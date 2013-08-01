@@ -30,6 +30,7 @@ import java.util.regex.Pattern;
 import jd.utils.JDHexUtils;
 
 import org.appwork.utils.Regex;
+import org.jdownloader.controlling.FileCreationManager;
 import org.jdownloader.extensions.extraction.Archive;
 import org.jdownloader.extensions.extraction.ArchiveFactory;
 import org.jdownloader.extensions.extraction.ArchiveFile;
@@ -183,7 +184,7 @@ class SplitUtil {
             /* read buffer, we use 64kb here which should be okay */
             if (file.exists()) {
                 if (controller.isOverwriteFiles()) {
-                    if (!file.delete()) {
+                    if (!FileCreationManager.getInstance().delete(file)) {
                         archive.setExitCode(ExtractionControllerConstants.EXIT_CODE_FATAL_ERROR);
                         return false;
                     }
@@ -194,7 +195,7 @@ class SplitUtil {
                 }
             }
 
-            if ((!file.getParentFile().exists() && !file.getParentFile().mkdirs()) || !file.createNewFile()) {
+            if ((!file.getParentFile().exists() && !FileCreationManager.getInstance().mkdir(file.getParentFile())) || !file.createNewFile()) {
                 archive.setExitCode(ExtractionControllerConstants.EXIT_CODE_CREATE_ERROR);
                 return false;
             }

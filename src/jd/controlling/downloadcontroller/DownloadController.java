@@ -71,6 +71,7 @@ import org.appwork.utils.zip.ZipIOWriter;
 import org.jdownloader.controlling.AggregatedNumbers;
 import org.jdownloader.controlling.DownloadLinkAggregator;
 import org.jdownloader.controlling.DownloadLinkWalker;
+import org.jdownloader.controlling.FileCreationManager;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.components.packagetable.LinkTreeUtils;
@@ -239,7 +240,8 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
                     int counter = index;
                     for (FilePackage fp : fps) {
                         if (CFG_GENERAL.CREATE_FOLDER_TRIGGER.getValue() == CreateFolderTrigger.ON_LINKS_ADDED) {
-                            new File(fp.getDownloadDirectory()).mkdirs();
+
+                            FileCreationManager.getInstance().mkdir(new File(fp.getDownloadDirectory()));
                         }
 
                         addmovePackageAt(fp, counter++);
@@ -647,9 +649,9 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
             if (packages != null && file != null) {
                 if (file.exists()) {
                     if (file.isDirectory()) throw new IOException("File " + file + " is a directory");
-                    if (file.delete() == false) throw new IOException("Could not delete file " + file);
+                    if (FileCreationManager.getInstance().delete(file) == false) throw new IOException("Could not delete file " + file);
                 } else {
-                    if (file.getParentFile().exists() == false && file.getParentFile().mkdirs() == false) throw new IOException("Could not create parentFolder for file " + file);
+                    if (file.getParentFile().exists() == false && FileCreationManager.getInstance().mkdir(file.getParentFile()) == false) throw new IOException("Could not create parentFolder for file " + file);
                 }
                 /* prepare formatter(001,0001...) for package filenames in zipfiles */
                 String format = "%02d";
@@ -691,7 +693,7 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
                         if (availableDownloadLists != null && availableDownloadLists.size() > keepXOld) {
                             availableDownloadLists = availableDownloadLists.subList(keepXOld, availableDownloadLists.size());
                             for (File oldDownloadList : availableDownloadLists) {
-                                logger.info("Delete outdated DownloadList: " + oldDownloadList + " " + oldDownloadList.delete());
+                                logger.info("Delete outdated DownloadList: " + oldDownloadList + " " + FileCreationManager.getInstance().delete(oldDownloadList));
                             }
                         }
                     } catch (final Throwable e) {
@@ -706,7 +708,7 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
                     } catch (final Throwable e) {
                     }
                     if (deleteFile && file.exists()) {
-                        file.delete();
+                        FileCreationManager.getInstance().delete(file);
                     }
                 }
             }
@@ -883,15 +885,14 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
             IOEQ.add(new Runnable() {
 
                 public void run() {
-
-                    DownloadController.getInstance().removeChildren(si.getChildren());
-
                     if (deleteFiles) {
                         for (DownloadLink dl : si.getChildren()) {
                             dl.deleteFile(toRecycle ? DeleteTo.RECYCLE : DeleteTo.NULL, true, true);
 
                         }
                     }
+                    DownloadController.getInstance().removeChildren(si.getChildren());
+
                 }
 
             }, true);

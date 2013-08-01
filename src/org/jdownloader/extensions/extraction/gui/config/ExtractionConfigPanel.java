@@ -250,6 +250,10 @@ public class ExtractionConfigPanel extends ExtensionConfigPanel<ExtractionExtens
         };
     }
 
+    private void updateHeaders(boolean b) {
+
+    }
+
     @Override
     public void save() {
         final ExtractionConfig s = extension.getSettings();

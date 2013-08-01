@@ -50,6 +50,7 @@ import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.StringFormatter;
 import org.appwork.utils.os.CrossSystem;
+import org.jdownloader.controlling.FileCreationManager;
 import org.jdownloader.extensions.extraction.Archive;
 import org.jdownloader.extensions.extraction.ArchiveFactory;
 import org.jdownloader.extensions.extraction.ArchiveFile;
@@ -279,7 +280,7 @@ public class Multi extends IExtraction {
             } catch (final Throwable e) {
             }
             logger.finer("Lib Path: " + tmp);
-            tmp.mkdirs();
+            FileCreationManager.getInstance().mkdir(tmp);
             SevenZip.initSevenZipFromPlatformJAR(libID, tmp);
         } catch (Throwable e) {
             if (e instanceof UnsatisfiedLinkError && CrossSystem.isWindows()) {
@@ -451,7 +452,7 @@ public class Multi extends IExtraction {
                     File f = archive.getFactory().toFile(link.getFilePath().replace(REGEX_EXTENSION_RAR, ".rev"));
                     if (f.exists() && f.getName().toLowerCase(Locale.ENGLISH).endsWith(".rev")) {
                         logger.info("Deleting rar recovery volume " + f.getAbsolutePath());
-                        if (!f.delete()) {
+                        if (!FileCreationManager.getInstance().delete(f)) {
                             logger.warning("Could not deleting rar recovery volume " + f.getAbsolutePath());
                         }
                     }
@@ -571,7 +572,7 @@ public class Multi extends IExtraction {
                     writeCrashLog("File exists");
                     if (controller.isOverwriteFiles()) {
 
-                        if (!extractTo.delete()) {
+                        if (!FileCreationManager.getInstance().delete(extractTo)) {
                             writeCrashLog("Overwrite Failed");
                             setException(new Exception("Could not overwrite(delete) " + extractTo));
                             archive.setExitCode(ExtractionControllerConstants.EXIT_CODE_CREATE_ERROR);
@@ -588,7 +589,7 @@ public class Multi extends IExtraction {
                         continue;
                     }
                 }
-                if ((!extractTo.getParentFile().exists() && !extractTo.getParentFile().mkdirs())) {
+                if ((!extractTo.getParentFile().exists() && !FileCreationManager.getInstance().mkdir(extractTo.getParentFile()))) {
                     setException(new Exception("Could not create folder for File " + extractTo));
                     writeCrashLog("Folder creation failed: " + extractTo.getParent());
                     archive.setExitCode(ExtractionControllerConstants.EXIT_CODE_CREATE_ERROR);

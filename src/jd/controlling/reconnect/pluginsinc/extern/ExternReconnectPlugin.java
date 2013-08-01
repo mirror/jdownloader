@@ -30,6 +30,7 @@ import org.appwork.storage.Storage;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.TextComponentChangeListener;
+import org.jdownloader.controlling.FileCreationManager;
 import org.jdownloader.images.NewTheme;
 
 /**
@@ -80,7 +81,7 @@ public class ExternReconnectPlugin extends RouterPlugin implements ActionListene
                     }
                     final File tmp = JDUtilities.getResourceFile("tmp/recon_" + number + ".bat", true);
                     if (tmp.exists()) {
-                        if (tmp.delete()) { return tmp; }
+                        if (FileCreationManager.getInstance().delete(tmp)) { return tmp; }
                         tmp.deleteOnExit();
                     } else {
                         return tmp;

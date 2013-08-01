@@ -27,24 +27,25 @@ import jd.nutils.JDHash;
 import jd.utils.JDUtilities;
 
 import org.appwork.utils.Regex;
+import org.jdownloader.controlling.FileCreationManager;
 
 public class FileUpdate {
 
-    public static final int         DOWNLOAD_SOURCE   = 1;
-    public static final int         ERROR             = 2;
-    public static final int         SERVER_STATS      = 3;
-    public static final int         SUCCESS           = 4;
-    public static long              WAITTIME_ON_ERROR = 15000;
+    public static final int              DOWNLOAD_SOURCE   = 1;
+    public static final int              ERROR             = 2;
+    public static final int              SERVER_STATS      = 3;
+    public static final int              SUCCESS           = 4;
+    public static long                   WAITTIME_ON_ERROR = 15000;
 
-    private final String            localPath;
-    private String                  url;
-    private final String            hash;
+    private final String                 localPath;
+    private String                       url;
+    private final String                 hash;
     private final java.util.List<Server> serverList        = new ArrayList<Server>();
 
-    private Server                  currentServer;
+    private Server                       currentServer;
 
-    private String                  relURL;
-    private File                    workingDir;
+    private String                       relURL;
+    private File                         workingDir;
 
     public FileUpdate(String serverString, final String hash) {
         this.hash = hash;
@@ -147,14 +148,14 @@ public class FileUpdate {
                     tmpFile = JDUtilities.getResourceFile(getLocalPath() + ".tmp");
                 }
                 // delete tmp file
-                tmpFile.delete();
+                FileCreationManager.getInstance().delete(tmpFile);
                 File updatetmp = this.getLocalTmpFile();
                 if (updatetmp.exists() && JDHash.getMD5(updatetmp).equals(hash)) {
                     return true;
                 } else {
                     // remove local tmp file, since it does either not exist or
                     // is invalid
-                    this.getLocalTmpFile().delete();
+                    FileCreationManager.getInstance().delete(this.getLocalTmpFile());
 
                     if (url.contains("?")) {
                         url += "&r=" + System.currentTimeMillis();
@@ -222,12 +223,12 @@ public class FileUpdate {
                     // hash of fresh downloaded file is ok
 
                     // move to update folder
-                    this.getLocalTmpFile().delete();
+                    FileCreationManager.getInstance().delete(this.getLocalTmpFile());
                     // tinyupdate has to be updated directly
                     boolean ret;
 
                     if (tmpFile.getName().startsWith("tinyupdate")) {
-                        this.getLocalFile().delete();
+                        FileCreationManager.getInstance().delete(this.getLocalFile());
                         ret = tmpFile.renameTo(this.getLocalFile());
                     } else {
                         ret = tmpFile.renameTo(getLocalTmpFile());
@@ -238,7 +239,7 @@ public class FileUpdate {
                         return ret;
                     } else {
                         // rename failed. needs subfolder?
-                        getLocalTmpFile().getParentFile().mkdirs();
+                        FileCreationManager.getInstance().mkdir(getLocalTmpFile().getParentFile());
                         ret = tmpFile.renameTo(getLocalTmpFile());
                         if (!ret) {
                             // rename failed finally
@@ -258,7 +259,7 @@ public class FileUpdate {
                     } else {
 
                     }
-                    tmpFile.delete();
+                    FileCreationManager.getInstance().delete(tmpFile);
                     errorWait();
                     continue;
                 }

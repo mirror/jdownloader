@@ -90,7 +90,7 @@ public class ExtractionListenerList implements ExtractionListener {
                 java.util.List<File> removed = new ArrayList<File>();
                 for (File f : controller.getArchiv().getExtractedFiles()) {
                     if (f.exists()) {
-                        if (!f.delete()) {
+                        if (!FileCreationManager.getInstance().delete(f)) {
                             logger.warning("Could not delete file " + f.getAbsolutePath());
                         } else {
                             removed.add(f);
@@ -179,7 +179,7 @@ public class ExtractionListenerList implements ExtractionListener {
                 java.util.List<File> removed = new ArrayList<File>();
                 for (File f : controller.getArchiv().getExtractedFiles()) {
                     if (f.exists()) {
-                        if (!f.delete()) {
+                        if (!FileCreationManager.getInstance().delete(f)) {
                             logger.warning("Could not delete file " + f.getAbsolutePath());
                         } else {
                             removed.add(f);
@@ -199,7 +199,7 @@ public class ExtractionListenerList implements ExtractionListener {
                 if (ex.getSettings().isDeleteInfoFilesAfterExtraction()) {
                     File fileOutput = new File(controller.getArchiv().getFirstArchiveFile().getFilePath());
                     File infoFiles = new File(fileOutput.getParentFile(), fileOutput.getName().replaceFirst("(?i)(\\.pa?r?t?\\.?[0-9]+\\.rar|\\.rar)$", "") + ".info");
-                    if (infoFiles.exists() && infoFiles.delete()) {
+                    if (infoFiles.exists() && FileCreationManager.getInstance().delete(infoFiles)) {
                         logger.info(infoFiles.getName() + " removed");
                     }
                 }
@@ -230,7 +230,7 @@ public class ExtractionListenerList implements ExtractionListener {
                     controller.getArchiv().getFirstArchiveFile().setMessage(null);
                     for (File f : controller.getArchiv().getExtractedFiles()) {
                         if (f.exists()) {
-                            if (!f.delete()) {
+                            if (!FileCreationManager.getInstance().delete(f)) {
                                 logger.warning("Could not delete file " + f.getAbsolutePath());
                             } else {
                                 removed.add(f);
@@ -270,7 +270,7 @@ public class ExtractionListenerList implements ExtractionListener {
                 java.util.List<File> removed = new ArrayList<File>();
                 for (File f : controller.getArchiv().getExtractedFiles()) {
                     if (f.exists()) {
-                        if (!f.delete()) {
+                        if (!FileCreationManager.getInstance().delete(f)) {
                             logger.warning("Could not delete file " + f.getAbsolutePath());
                         } else {
                             removed.add(f);

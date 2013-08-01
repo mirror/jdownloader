@@ -12,6 +12,7 @@ import jd.plugins.DownloadLink;
 import org.appwork.utils.Application;
 import org.appwork.utils.Files;
 import org.appwork.utils.images.IconIO;
+import org.jdownloader.controlling.FileCreationManager;
 import org.jdownloader.controlling.UniqueAlltimeID;
 import org.jdownloader.extensions.streaming.StreamingExtension;
 import org.jdownloader.extensions.streaming.mediaarchive.ImageMediaItem;
@@ -36,8 +37,8 @@ public class ImageHandler extends ExtensionHandler<ImageMediaItem> {
             ret.setHeight(image.getHeight());
 
             File thumb = Application.getResource("tmp/streaming/thumbs/" + dl.getUniqueID().toString() + ".png");
-            thumb.getParentFile().mkdirs();
-            thumb.delete();
+            FileCreationManager.getInstance().mkdir(thumb.getParentFile());
+            FileCreationManager.getInstance().delete(thumb);
             fos = new FileOutputStream(thumb);
             ImageIO.write(IconIO.getScaledInstance(image, 300, 300), "png", fos);
             ret.setThumbnailPath(Files.getRelativePath(Application.getResource("tmp").getParentFile(), thumb));

@@ -6,6 +6,8 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 
+import org.jdownloader.controlling.FileCreationManager;
+
 public class ExtractLogFileWriter {
 
     private File           file;
@@ -16,7 +18,7 @@ public class ExtractLogFileWriter {
         this.id = id;
         File f = Archive.getArchiveLogFileById(id);
         file = new File(new File(f.getParentFile(), "open"), f.getName());
-        file.getParentFile().mkdirs();
+        FileCreationManager.getInstance().mkdir(file.getParentFile());
         try {
             file.createNewFile();
 
@@ -32,7 +34,7 @@ public class ExtractLogFileWriter {
 
     public void delete() {
         close();
-        file.delete();
+        FileCreationManager.getInstance().delete(file);
     }
 
     public void write(String string) {
@@ -55,7 +57,7 @@ public class ExtractLogFileWriter {
             output.close();
             File newFile;
             newFile = Archive.getArchiveLogFileById(id);
-            newFile.delete();
+            FileCreationManager.getInstance().delete(newFile);
             file.renameTo(newFile);
             file = newFile;
         } catch (Exception e) {

@@ -48,6 +48,7 @@ import org.appwork.utils.swing.dialog.DialogNoAnswerException;
 import org.appwork.utils.swing.dialog.LoginDialog;
 import org.appwork.utils.swing.dialog.LoginDialog.LoginData;
 import org.jdownloader.api.cnl2.translate.ExternInterfaceTranslation;
+import org.jdownloader.controlling.FileCreationManager;
 import org.jdownloader.controlling.contextmenu.ContextMenuManager;
 import org.jdownloader.controlling.contextmenu.MenuContainerRoot;
 import org.jdownloader.controlling.contextmenu.MenuExtenderHandler;
@@ -730,8 +731,8 @@ public class TranslatorExtension extends AbstractExtension<TranslatorConfig, Tra
                     newFile = Application.getResource("translations/custom/" + h.getInterfaceClass().getName().replace(".", "/") + "." + localLoaded.getId() + ".lng");
                 }
                 // }
-                newFile.delete();
-                newFile.getParentFile().mkdirs();
+                FileCreationManager.getInstance().delete(newFile);
+                FileCreationManager.getInstance().mkdir(newFile.getParentFile());
                 IO.writeStringToFile(newFile, file);
 
                 logger.info("Updated " + file);

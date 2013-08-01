@@ -43,6 +43,7 @@ import org.appwork.utils.Application;
 import org.appwork.utils.Files;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging2.LogSource;
+import org.jdownloader.controlling.FileCreationManager;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.plugins.controller.host.HostPluginController;
@@ -181,7 +182,7 @@ public class FavIcons {
                                 try {
                                     /* buffer favicon to disk */
                                     File imageFile = Application.getResource(NewTheme.I().getPath() + "/images/fav/" + host + ".png");
-                                    imageFile.getParentFile().mkdirs();
+                                    FileCreationManager.getInstance().mkdir(imageFile.getParentFile());
                                     fos = new FileOutputStream(imageFile);
                                     ImageIO.write(favicon, "png", fos);
                                     /* load and scale it again */
