@@ -253,6 +253,14 @@ public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTransla
                     if (GuiUtils.isActiveWindow(JDGui.getInstance().getMainFrame())) return;
                     final TrayIcon ti = trayIcon;
                     if (ti != null) {
+                        setListener(new ActionListener() {
+
+                            public void actionPerformed(ActionEvent e) {
+                                JDGui.getInstance().requestPanel(JDGui.Panels.LINKGRABBER, null);
+                                JDGui.getInstance().setFrameState(FrameState.TO_FRONT_FOCUSED);
+                            }
+                        });
+
                         ti.displayMessage(_TRAY._.balloon_new_package(), _TRAY._.balloon_new_package_msg(((CrawledPackage) event.getParameter(0)).getName()), MessageType.INFO);
 
                     }
@@ -269,7 +277,13 @@ public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTransla
                         if (GuiUtils.isActiveWindow(JDGui.getInstance().getMainFrame())) return;
                         final TrayIcon ti = trayIcon;
                         if (ti != null) {
+                            setListener(new ActionListener() {
 
+                                public void actionPerformed(ActionEvent e) {
+                                    JDGui.getInstance().requestPanel(JDGui.Panels.LINKGRABBER, null);
+                                    JDGui.getInstance().setFrameState(FrameState.TO_FRONT_FOCUSED);
+                                }
+                            });
                             ti.displayMessage(_TRAY._.balloon_new_links(), _TRAY._.balloon_new_links_msg(LinkCollector.getInstance().getPackages().size(), LinkCollector.getInstance().getChildrenCount()), MessageType.INFO);
 
                         }
