@@ -19,7 +19,6 @@ package jd.plugins.decrypter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Locale;
 import java.util.Map.Entry;
 import java.util.Random;
@@ -65,10 +64,11 @@ public class GrvShrkCm extends PluginForDecrypt {
         return res;
     }
 
-    private void removeDuplicatedEntries(ArrayList<DownloadLink> arrayList) {
-        HashSet<DownloadLink> hashSet = new HashSet<DownloadLink>(arrayList);
-        arrayList.clear();
-        arrayList.addAll(hashSet);
+    private boolean exists(DownloadLink dl) {
+        for (DownloadLink dLink : decryptedLinks) {
+            if (dl.getDownloadURL().equals(dLink.getDownloadURL())) return true;
+        }
+        return false;
     }
 
     @Override
@@ -149,10 +149,10 @@ public class GrvShrkCm extends PluginForDecrypt {
         }
 
         if (getPluginConfig().getBooleanProperty("TITLENUMBERING")) {
-            removeDuplicatedEntries(decryptedLinks);
             String format = "%0" + String.valueOf(decryptedLinks.size()).length() + "d";
             for (DownloadLink dl : decryptedLinks) {
-                dl.setName(String.format(format, decryptedLinks.indexOf(dl) + 1) + "." + dl.getName());
+                String trackNumber = dl.getStringProperty("TrackNum");
+                dl.setName(String.format(format, trackNumber == null ? decryptedLinks.indexOf(dl) + 1 : Integer.parseInt(trackNumber)) + "." + dl.getName());
             }
         }
 
@@ -252,9 +252,11 @@ public class GrvShrkCm extends PluginForDecrypt {
                     fp.setName(fpName);
                     fpMap.put(fpName, fp);
                 }
-                fp.add(dlLink);
-                decryptedLinks.add(dlLink);
-                progress.increase(1);
+                if (!exists(dlLink)) {
+                    decryptedLinks.add(dlLink);
+                    fp.add(dlLink);
+                    progress.increase(1);
+                }
                 // we do no linkcheck.. so this should be fast
             }
         }
@@ -301,8 +303,10 @@ public class GrvShrkCm extends PluginForDecrypt {
                 dlLink.setDownloadSize(Integer.parseInt(dlLink.getStringProperty("EstimateDuration")) * (128 / 8) * 1024);
             } catch (Exception e) {
             }
-            decryptedLinks.add(dlLink);
-            fp.add(dlLink);
+            if (!exists(dlLink)) {
+                decryptedLinks.add(dlLink);
+                fp.add(dlLink);
+            }
         }
         progress.doFinalize();
     }
@@ -362,8 +366,10 @@ public class GrvShrkCm extends PluginForDecrypt {
                 dlLink.setDownloadSize(Integer.parseInt(dlLink.getStringProperty("EstimateDuration")) * (128 / 8) * 1024);
             } catch (Exception e) {
             }
-            decryptedLinks.add(dlLink);
-            fp.add(dlLink);
+            if (!exists(dlLink)) {
+                decryptedLinks.add(dlLink);
+                fp.add(dlLink);
+            }
         }
         progress.doFinalize();
     }
