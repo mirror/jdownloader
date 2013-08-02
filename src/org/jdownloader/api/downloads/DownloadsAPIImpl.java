@@ -213,6 +213,9 @@ public class DownloadsAPIImpl implements DownloadsAPI {
             if (queryParams._getQueryParam("running", Boolean.class, false)) {
                 infomap.put("running", dwd.getRunningDownloadLinks().contains(dl));
             }
+            if (queryParams._getQueryParam("skipped", Boolean.class, false)) {
+                infomap.put("skipped", dl.isSkipped());
+            }
             if (queryParams.fieldRequested("url")) {
                 infomap.put("url", dl.getBrowserUrl());
             }
