@@ -78,11 +78,18 @@ public class MyJDownloaderWaitingConnectionThread extends Thread {
 
     }
 
-    protected AtomicBoolean                                   running           = new AtomicBoolean(false);
-    protected AtomicReference<MyJDownloaderConnectionRequest> connectionRequest = new AtomicReference<MyJDownloaderConnectionRequest>(null);
-    private final LogSource                                   logger;
-    protected Socket                                          connectionSocket  = null;
-    protected final MyJDownloaderConnectThread                connectThread;
+    protected AtomicBoolean                    running           = new AtomicBoolean(false);
+    private final Object                       NULL              = new Object() {
+                                                                     public boolean equals(Object obj) {
+                                                                         if (obj == this) return true;
+                                                                         if (obj == null) return true;
+                                                                         return false;
+                                                                     };
+                                                                 };
+    protected AtomicReference<Object>          connectionRequest = new AtomicReference<Object>(NULL);
+    private final LogSource                    logger;
+    protected Socket                           connectionSocket  = null;
+    protected final MyJDownloaderConnectThread connectThread;
 
     public MyJDownloaderWaitingConnectionThread(MyJDownloaderConnectThread connectThread) {
         this.setDaemon(true);
@@ -99,11 +106,13 @@ public class MyJDownloaderWaitingConnectionThread extends Thread {
                 MyJDownloaderConnectionRequest request = null;
                 synchronized (connectionRequest) {
                     if (running.get() == false) return;
-                    if ((request = connectionRequest.getAndSet(null)) == null) {
+                    Object ret = connectionRequest.getAndSet(NULL);
+                    if (NULL.equals(ret)) {
                         connectionRequest.wait();
                         if (running.get() == false) return;
-                        request = connectionRequest.getAndSet(null);
+                        ret = connectionRequest.getAndSet(NULL);
                     }
+                    if (!NULL.equals(ret)) request = (MyJDownloaderConnectionRequest) ret;
                 }
                 if (request != null) {
                     Throwable e = null;
@@ -146,7 +155,7 @@ public class MyJDownloaderWaitingConnectionThread extends Thread {
     public boolean putRequest(MyJDownloaderConnectionRequest request) {
         synchronized (connectionRequest) {
             if (running.get() == false) return false;
-            if (connectionRequest.compareAndSet(null, request)) {
+            if (connectionRequest.compareAndSet(NULL, request)) {
                 connectionRequest.notifyAll();
                 return true;
             }
