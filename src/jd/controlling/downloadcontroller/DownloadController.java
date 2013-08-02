@@ -27,6 +27,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.zip.ZipEntry;
@@ -181,6 +182,30 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
     @Override
     protected void _controllerPackageNodeRemoved(FilePackage pkg, QueuePriority priority) {
         broadcaster.fireEvent(new DownloadControllerEvent(DownloadController.this, DownloadControllerEvent.TYPE.REMOVE_CONTENT, pkg));
+    }
+
+    public void moveOrAddAt(final FilePackage pkg, final List<DownloadLink> movechildren, final int index, boolean moveLocalFiles) {
+        Map<DownloadLink, String> filesToMmove = null;
+        if (moveLocalFiles) {
+            filesToMmove = new HashMap<DownloadLink, String>();
+            for (DownloadLink link : movechildren) {
+                filesToMmove.put(link, link.getFileOutput());
+
+            }
+        }
+        super.moveOrAddAt(pkg, movechildren, index);
+        if (moveLocalFiles) {
+            for (DownloadLink link : movechildren) {
+                String oldPath = filesToMmove.get(link);
+                String newPath = link.getFileOutput();
+                if (!oldPath.equals(newPath)) {
+                    FileCreationManager.getInstance().moveFile(oldPath, newPath);
+                    FileCreationManager.getInstance().moveFile(oldPath + ".part", newPath + ".part");
+                }
+
+            }
+        }
+
     }
 
     @Override
@@ -915,4 +940,5 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
             DownloadController.getInstance().logger.info("Package is not finised");
         }
     }
+
 }

@@ -1,11 +1,15 @@
 package org.jdownloader.controlling;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 
 import org.appwork.utils.Application;
+import org.appwork.utils.IO;
+import org.appwork.utils.logging2.LogSource;
+import org.jdownloader.logging.LogController;
 
 public class FileCreationManager {
     private static final FileCreationManager INSTANCE = new FileCreationManager();
@@ -20,6 +24,7 @@ public class FileCreationManager {
     }
 
     private FileCreationEventSender eventSender;
+    private LogSource               logger;
 
     public FileCreationEventSender getEventSender() {
         return eventSender;
@@ -31,6 +36,7 @@ public class FileCreationManager {
      */
     private FileCreationManager() {
         eventSender = new FileCreationEventSender();
+        logger = LogController.getInstance().getLogger(FileCreationManager.class.getName());
     }
 
     public boolean mkdir(File folder) {
@@ -75,5 +81,20 @@ public class FileCreationManager {
             }
             return !file.exists();
         }
+    }
+
+    public void moveFile(String oldPath, String newPath) {
+        if (new File(oldPath).exists() && !new File(newPath).exists()) {
+            FileCreationManager.getInstance().mkdir(new File(newPath).getParentFile());
+            if (!new File(oldPath).renameTo(new File(newPath))) {
+                try {
+                    IO.copyFile(new File(oldPath), new File(newPath));
+                    FileCreationManager.getInstance().delete(new File(oldPath));
+                } catch (IOException e) {
+                    logger.log(e);
+                }
+            }
+        }
+
     }
 }

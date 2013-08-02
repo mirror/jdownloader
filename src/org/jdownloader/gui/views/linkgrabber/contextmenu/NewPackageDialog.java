@@ -7,8 +7,6 @@ import java.io.File;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 
-import jd.controlling.linkcrawler.CrawledLink;
-import jd.controlling.linkcrawler.CrawledPackage;
 import jd.gui.swing.jdgui.views.settings.components.FolderChooser;
 
 import org.appwork.swing.MigPanel;
@@ -21,11 +19,11 @@ import org.jdownloader.gui.views.components.packagetable.LinkTreeUtils;
 
 public class NewPackageDialog extends AbstractDialog<Object> {
 
-    private SelectionInfo<CrawledPackage, CrawledLink> selection;
-    private ExtTextField                               tf;
-    private FolderChooser                              fc;
+    private SelectionInfo<?, ?> selection;
+    private ExtTextField        tf;
+    private FolderChooser       fc;
 
-    public NewPackageDialog(SelectionInfo<CrawledPackage, CrawledLink> selection) {
+    public NewPackageDialog(SelectionInfo<?, ?> selection) {
         super(0, _GUI._.NewPackageDialog_NewPackageDialog_(), null, null, null);
         this.selection = selection;
 
