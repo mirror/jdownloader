@@ -2468,11 +2468,11 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Main Toolbar" })
     String MainToolbarManager_getName();
 
-    @Default(lngs = { "en" }, values = { "Disable %s1" })
-    String ExtensionQuickToggleAction_name_selected(String name);
+    @Default(lngs = { "en" }, values = { "%s1" })
+    String ExtensionQuickToggleAction_name_selected2(String name);
 
-    @Default(lngs = { "en" }, values = { "Enable %s1" })
-    String ExtensionQuickToggleAction_name_deselected(String name);
+    @Default(lngs = { "en" }, values = { "%s1" })
+    String ExtensionQuickToggleAction_name_deselected2(String name);
 
     @Default(lngs = { "en" }, values = { "Disable  the '%s1' Extension" })
     String ExtensionQuickToggleAction_name_selected_tt(String name);
@@ -2546,52 +2546,52 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Enable/Disable Captcha Dialogs. (Check our SilentMode)" })
     String CaptchaDialogsToogleAction_createTooltip_();
 
-    @Default(lngs = { "en" }, values = { "Enable Auto Reconnect" })
+    @Default(lngs = { "en" }, values = { "Auto Reconnect" })
     String AutoReconnectToggleAction_getNameWhenDisabled_();
 
-    @Default(lngs = { "en" }, values = { "Disable Auto Reconnect" })
+    @Default(lngs = { "en" }, values = { "Auto Reconnect" })
     String AutoReconnectToggleAction_getNameWhenEnabled_();
 
-    @Default(lngs = { "en" }, values = { "Enable Captcha Dialogs" })
+    @Default(lngs = { "en" }, values = { "Captcha Dialogs" })
     String CaptchaDialogsToogleAction_getNameWhenDisabled_();
 
-    @Default(lngs = { "en" }, values = { "Disable Captcha Dialogs" })
+    @Default(lngs = { "en" }, values = { "Captcha Dialogs" })
     String CaptchaDialogsToogleAction_getNameWhenEnabled_();
 
-    @Default(lngs = { "en" }, values = { "Enable Captcha Exchange Services" })
+    @Default(lngs = { "en" }, values = { "Captcha Exchange Services" })
     String CaptchaExchangeToogleAction_getNameWhenDisabled_();
 
-    @Default(lngs = { "en" }, values = { "Disable Captcha Exchange Services" })
+    @Default(lngs = { "en" }, values = { "Captcha Exchange Services" })
     String CaptchaExchangeToogleAction_getNameWhenEnabled_();
 
-    @Default(lngs = { "en" }, values = { "Enable Clipboard Monitoring" })
+    @Default(lngs = { "en" }, values = { "Clipboard Monitoring" })
     String ClipBoardToggleAction_getNameWhenDisabled_();
 
-    @Default(lngs = { "en" }, values = { "Disable Clipboard Monitoring" })
+    @Default(lngs = { "en" }, values = { "Clipboard Monitoring" })
     String ClipBoardToggleAction_getNameWhenEnabled_();
 
-    @Default(lngs = { "en" }, values = { "Enable Premium Downloads" })
+    @Default(lngs = { "en" }, values = { "Premium Downloads" })
     String GlobalPremiumSwitchToggleAction_getNameWhenDisabled_();
 
-    @Default(lngs = { "en" }, values = { "Disable Premium Downloads" })
+    @Default(lngs = { "en" }, values = { "Premium Downloads" })
     String GlobalPremiumSwitchToggleAction_getNameWhenEnabled_();
 
-    @Default(lngs = { "en" }, values = { "Enable Auto Captcha Recognition" })
+    @Default(lngs = { "en" }, values = { "Auto Captcha Recognition" })
     String JAntiCaptchaToogleAction_getNameWhenDisabled_();
 
-    @Default(lngs = { "en" }, values = { "Disable Auto Captcha Recognition" })
+    @Default(lngs = { "en" }, values = { "Auto Captcha Recognition" })
     String JAntiCaptchaToogleAction_getNameWhenEnabled_();
 
-    @Default(lngs = { "en" }, values = { "Enable Captchas via MyJDownloader" })
+    @Default(lngs = { "en" }, values = { "Captchas via MyJDownloader" })
     String RemoteCaptchaToogleAction_getNameWhenDisabled_();
 
-    @Default(lngs = { "en" }, values = { "Disable Captchas via MyJDownloader" })
+    @Default(lngs = { "en" }, values = { "Captchas via MyJDownloader" })
     String RemoteCaptchaToogleAction_getNameWhenEnabled_();
 
-    @Default(lngs = { "en" }, values = { "Activate Silent Mode" })
+    @Default(lngs = { "en" }, values = { "Silent Mode" })
     String SilentModeToggleAction_getNameWhenDisabled_();
 
-    @Default(lngs = { "en" }, values = { "Deactivate Silent Mode" })
+    @Default(lngs = { "en" }, values = { "Silent Mode" })
     String SilentModeToggleAction_getNameWhenEnabled_();
 
     @Default(lngs = { "en" }, values = { "More..." })

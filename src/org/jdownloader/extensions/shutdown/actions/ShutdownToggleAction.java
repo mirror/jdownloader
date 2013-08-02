@@ -36,9 +36,9 @@ public class ShutdownToggleAction extends AbstractExtensionAction<ShutdownExtens
     public void setSelected(final boolean selected) {
         super.setSelected(selected);
         if (selected) {
-            setName(T._.shutdown_toggle_action_enabled());
+            setName(T._.shutdown_toggle_action_enabled2());
         } else {
-            setName(T._.shutdown_toggle_action_disabled());
+            setName(T._.shutdown_toggle_action_disabled2());
         }
     }
 
