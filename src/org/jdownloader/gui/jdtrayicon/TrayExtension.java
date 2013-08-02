@@ -34,7 +34,11 @@ import java.awt.event.MouseMotionListener;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowStateListener;
 import java.awt.image.BufferedImage;
+import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import javax.swing.ImageIcon;
 import javax.swing.JFrame;
@@ -56,8 +60,10 @@ import jd.gui.swing.jdgui.components.toolbar.actions.UpdateAction;
 import jd.gui.swing.jdgui.views.settings.sidebar.CheckBoxedEntry;
 import jd.plugins.AddonPanel;
 
+import org.appwork.storage.config.handler.BooleanKeyHandler;
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.Application;
+import org.appwork.utils.IO;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.ImageProvider.ImageProvider;
 import org.appwork.utils.images.IconIO;
@@ -77,6 +83,7 @@ import org.jdownloader.extensions.ExtensionConfigPanel;
 import org.jdownloader.extensions.StartException;
 import org.jdownloader.extensions.StopException;
 import org.jdownloader.gui.GuiUtils;
+import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.jdtrayicon.translate.TrayiconTranslation;
 import org.jdownloader.gui.jdtrayicon.translate._TRAY;
 import org.jdownloader.gui.translate._GUI;
@@ -276,7 +283,7 @@ public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTransla
                                 }
                             });
 
-                            ti.displayMessage(_TRAY._.balloon_reconnect(), _TRAY._.balloon_reconnect_start_msg(), MessageType.INFO);
+                            showTrayMessage(ti, CFG_TRAY_CONFIG.BALLON_NOTIFY_ON_RECONNECT_START_ENABLED, _TRAY._.balloon_reconnect(), _TRAY._.balloon_reconnect_start_msg(), MessageType.INFO);
 
                         }
                     }
@@ -301,9 +308,9 @@ public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTransla
                                 }
                             });
                             if (!(Boolean) event.getParameter()) {
-                                ti.displayMessage(_TRAY._.balloon_reconnect(), _TRAY._.balloon_reconnect_end_msg_failed(IPController.getInstance().getIP()), MessageType.ERROR);
+                                showTrayMessage(ti, CFG_TRAY_CONFIG.BALLON_NOTIFY_ON_RECONNECT_END_ENABLED, _TRAY._.balloon_reconnect(), _TRAY._.balloon_reconnect_end_msg_failed(IPController.getInstance().getIP()), MessageType.ERROR);
                             } else {
-                                ti.displayMessage(_TRAY._.balloon_reconnect(), _TRAY._.balloon_reconnect_end_msg(IPController.getInstance().getIP()), MessageType.INFO);
+                                showTrayMessage(ti, CFG_TRAY_CONFIG.BALLON_NOTIFY_ON_RECONNECT_END_ENABLED, _TRAY._.balloon_reconnect(), _TRAY._.balloon_reconnect_end_msg(IPController.getInstance().getIP()), MessageType.INFO);
                             }
 
                         }
@@ -332,7 +339,7 @@ public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTransla
                                     }
                                 });
 
-                                ti.displayMessage(_TRAY._.balloon_new_package(), _TRAY._.balloon_new_package_msg(((CrawledPackage) event.getParameter(0)).getName()), MessageType.INFO);
+                                showTrayMessage(ti, CFG_TRAY_CONFIG.BALLON_NOTIFY_ON_NEW_LINKGRABBER_PACKAGE_ENABLED, _TRAY._.balloon_new_package(), _TRAY._.balloon_new_package_msg(((CrawledPackage) event.getParameter(0)).getName()), MessageType.INFO);
 
                             }
                         }
@@ -358,7 +365,7 @@ public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTransla
                                     JDGui.getInstance().setFrameState(FrameState.TO_FRONT_FOCUSED);
                                 }
                             });
-                            ti.displayMessage(_TRAY._.balloon_new_links(), _TRAY._.balloon_new_links_msg(LinkCollector.getInstance().getPackages().size(), LinkCollector.getInstance().getChildrenCount()), MessageType.INFO);
+                            showTrayMessage(ti, CFG_TRAY_CONFIG.BALLON_NOTIFY_ON_NEW_LINKGRABBER_LINKS_ENABLED, _TRAY._.balloon_new_links(), _TRAY._.balloon_new_links_msg(LinkCollector.getInstance().getPackages().size(), LinkCollector.getInstance().getChildrenCount()), MessageType.INFO);
 
                         }
                     }
@@ -370,7 +377,69 @@ public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTransla
                 return true;
             }
         };
+
     }
+
+    public static int readEnableBalloonTips() throws UnsupportedEncodingException, IOException {
+        final String iconResult = IO.readInputStreamToString(Runtime.getRuntime().exec("reg query \"HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced\" /v \"EnableBalloonTips\"").getInputStream());
+        final Matcher matcher = Pattern.compile("EnableBalloonTips\\s+REG_DWORD\\s+0x(.*)").matcher(iconResult);
+        matcher.find();
+        final String value = matcher.group(1);
+        return Integer.parseInt(value, 16);
+    }
+
+    public static void writeEnableBalloonTips(final int foregroundLockTimeout) {
+        try {
+
+            final Process p = Runtime.getRuntime().exec("reg add \"HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced\" /v \"EnableBalloonTips\" /t REG_DWORD /d 0x" + Integer.toHexString(foregroundLockTimeout) + " /f");
+            IO.readInputStreamToString(p.getInputStream());
+            final int exitCode = p.exitValue();
+            if (exitCode == 0) {
+
+            } else {
+                throw new IOException("Reg add execution failed");
+            }
+        } catch (final UnsupportedEncodingException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        } catch (final IOException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+
+    }
+
+    // public static int readShowInfoTip() throws UnsupportedEncodingException, IOException {
+    // final String iconResult =
+    // IO.readInputStreamToString(Runtime.getRuntime().exec("reg query \"HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced\" /v \"ShowInfoTip\"").getInputStream());
+    // final Matcher matcher = Pattern.compile("ShowInfoTip\\s+REG_DWORD\\s+0x(.*)").matcher(iconResult);
+    // matcher.find();
+    // final String value = matcher.group(1);
+    // return Integer.parseInt(value, 16);
+    // }
+
+    // public static void writeShowInfoTip(final int foregroundLockTimeout) {
+    // try {
+    //
+    // final Process p =
+    // Runtime.getRuntime().exec("reg add \"HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced\" /v \"ShowInfoTip\" /t REG_DWORD /d 0x"
+    // + Integer.toHexString(foregroundLockTimeout) + " /f");
+    // IO.readInputStreamToString(p.getInputStream());
+    // final int exitCode = p.exitValue();
+    // if (exitCode == 0) {
+    //
+    // } else {
+    // throw new IOException("Reg add execution failed");
+    // }
+    // } catch (final UnsupportedEncodingException e) {
+    // // TODO Auto-generated catch block
+    // e.printStackTrace();
+    // } catch (final IOException e) {
+    // // TODO Auto-generated catch block
+    // e.printStackTrace();
+    // }
+    //
+    // }
 
     public void initGUI(final boolean startup) {
         SecondLevelLaunch.GUI_COMPLETE.executeWhenReached(new Runnable() {
@@ -853,7 +922,7 @@ public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTransla
                             }
                         });
 
-                        ti.displayMessage(_TRAY._.balloon_updates(), _TRAY._.balloon_updates_msg(), MessageType.INFO);
+                        showTrayMessage(ti, CFG_TRAY_CONFIG.BALLON_NOTIFY_ON_UPDATE_AVAILABLE_ENABLED, _TRAY._.balloon_updates(), _TRAY._.balloon_updates_msg(), MessageType.INFO);
 
                     }
                 }
@@ -861,6 +930,58 @@ public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTransla
         } else if (!UpdateController.getInstance().hasPendingUpdates()) {
             updatesNotified = false;
         }
+    }
+
+    protected void showTrayMessage(final TrayIcon ti, final BooleanKeyHandler keyhandler, final String caption, final String text, final MessageType info) {
+        if (!keyhandler.isEnabled()) return;
+        new Thread("Show Message") {
+            public void run() {
+                synchronized (TrayExtension.this) {
+                    if (!keyhandler.isEnabled()) return;
+                    boolean ballontipsEnabled = true;
+                    if (CrossSystem.isWindows()) {
+                        try {
+                            // WIN xp and maybe other windows versions
+                            if (ballontipsEnabled && readEnableBalloonTips() == 0) {
+                                // ballon tipps disabled
+                                ballontipsEnabled = false;
+                            }
+                        } catch (Exception e) {
+                            // not available
+                        }
+
+                    }
+                    if (!ballontipsEnabled) {
+                        try {
+                            Dialog.getInstance().showConfirmDialog(0, _TRAY._.enabled_os_ballons(), _TRAY._.enabled_os_ballons_msg(), NewTheme.I().getIcon(IconKey.ICON_QUESTION, 32), _GUI._.lit_yes(), _GUI._.lit_no());
+
+                            if (CrossSystem.isWindows()) {
+                                writeEnableBalloonTips(1);
+
+                            }
+
+                        } catch (DialogNoAnswerException e) {
+                            CFG_TRAY_CONFIG.BALLON_NOTIFY_ON_NEW_LINKGRABBER_LINKS_ENABLED.setValue(false);
+                            CFG_TRAY_CONFIG.BALLON_NOTIFY_ON_NEW_LINKGRABBER_PACKAGE_ENABLED.setValue(false);
+                            CFG_TRAY_CONFIG.BALLON_NOTIFY_ON_RECONNECT_END_ENABLED.setValue(false);
+                            CFG_TRAY_CONFIG.BALLON_NOTIFY_ON_RECONNECT_START_ENABLED.setValue(false);
+                            CFG_TRAY_CONFIG.BALLON_NOTIFY_ON_UPDATE_AVAILABLE_ENABLED.setValue(false);
+                            return;
+
+                        }
+                    }
+                    new EDTRunner() {
+
+                        @Override
+                        protected void runInEDT() {
+                            ti.displayMessage(caption, text, info);
+                        }
+                    };
+
+                }
+            }
+        }.start();
+
     }
 
     protected void setListener(final ActionListener actionListener) {

@@ -171,4 +171,10 @@ public interface TrayiconTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "JDownloader Reconnect" })
     String balloon_reconnect();
 
+    @Default(lngs = { "en" }, values = { "Balloon Notification is disabled!" })
+    String enabled_os_ballons();
+
+    @Default(lngs = { "en" }, values = { "JDownloader would like to show you tiny notify messages about important events, but your Windows System is set up to hide these messages.\r\nClick [Yes] if you want JDownloader to correct this and show these balloon notifications.\r\nIt may be required to reboot your System for the changes to take effect." })
+    String enabled_os_ballons_msg();
+
 }
