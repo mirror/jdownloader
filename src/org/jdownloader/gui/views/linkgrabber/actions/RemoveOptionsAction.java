@@ -18,6 +18,7 @@ import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.linkgrabber.LinkGrabberPanel;
 import org.jdownloader.gui.views.linkgrabber.LinkGrabberTable;
 import org.jdownloader.gui.views.linkgrabber.LinkGrabberTableModel;
+import org.jdownloader.gui.views.linkgrabber.contextmenu.ClearFilteredLinksAction;
 import org.jdownloader.gui.views.linkgrabber.contextmenu.RemoveAllLinkgrabberAction;
 import org.jdownloader.gui.views.linkgrabber.contextmenu.RemoveIncompleteArchives;
 import org.jdownloader.gui.views.linkgrabber.contextmenu.RemoveNonSelectedAction;
@@ -60,7 +61,9 @@ public class RemoveOptionsAction extends AbstractAction {
         });
         popup.add(new RemoveNonSelectedAction(si));
         popup.add(new RemoveOfflineAction(null));
+        popup.add(new RemoveOfflineAction(null));
         popup.add(new RemoveIncompleteArchives(new SelectionInfo<CrawledPackage, CrawledLink>(null, new ArrayList<AbstractNode>(LinkGrabberTableModel.getInstance().getAllPackageNodes()), null, null, e, table)));
+        popup.add(new ClearFilteredLinksAction(null));
         popup.add(new JSeparator());
         popup.add(new ResetPopupAction(null));
         int[] insets = LAFOptions.getInstance().getPopupBorderInsets();

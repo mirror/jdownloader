@@ -2911,4 +2911,10 @@ public interface GuiTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Find Updates" })
     String CheckForUpdatesAction_CheckForUpdatesAction();
+
+    @Default(lngs = { "en" }, values = { "Clear filtered Links" })
+    String ClearFilteredLinksAction();
+
+    @Default(lngs = { "en" }, values = { "Do you really want to remove all filtered Links(%s1)?" })
+    String ClearFilteredLinksAction_msg(int count);
 }
