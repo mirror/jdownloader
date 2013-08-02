@@ -132,7 +132,7 @@ public class MyJDownloaderWaitingConnectionThread extends Thread {
                     }
                 }
             }
-        } catch (InterruptedException e) {
+        } catch (final Throwable e) {
             logger.log(e);
         } finally {
             try {
@@ -156,8 +156,8 @@ public class MyJDownloaderWaitingConnectionThread extends Thread {
 
     @Override
     public void interrupt() {
-        running.set(false);
         synchronized (connectionRequest) {
+            running.set(false);
             connectionRequest.notifyAll();
         }
         try {

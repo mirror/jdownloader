@@ -9,6 +9,8 @@ import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Map.Entry;
 import java.util.Random;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -283,19 +285,19 @@ public class MyJDownloaderConnectThread extends Thread {
                         logger.info("Could not connect! Server down?");
                         currentHelper.requestbackoff();
                     } catch (SocketTimeoutException e) {
-                        e.printStackTrace();
+                        logger.log(e);
                         setConnected(MyJDownloaderConnectionStatus.PENDING);
                         myJDownloaderExtension.onError(MyJDownloaderError.IO);
                         logger.info("ReadTimeout on server connect!");
                         currentHelper.requestbackoff();
                     } catch (final Throwable e) {
+                        logger.log(e);
                         setConnected(MyJDownloaderConnectionStatus.PENDING);
                         if (myJDownloaderExtension.getConnectThread() != this || api == null) {
                             // external disconnect
                             return;
                         }
                         myJDownloaderExtension.onError(MyJDownloaderError.UNKNOWN);
-                        logger.log(e);
                         currentHelper.requestbackoff();
                     }
                 } catch (final Throwable e) {
@@ -416,10 +418,11 @@ public class MyJDownloaderConnectThread extends Thread {
 
     private void terminateWaitingConnections() {
         synchronized (waitingConnections) {
-            for (MyJDownloaderWaitingConnectionThread thread : waitingConnections) {
+            ArrayList<MyJDownloaderWaitingConnectionThread> copy = new ArrayList<MyJDownloaderWaitingConnectionThread>(waitingConnections);
+            waitingConnections.clear();
+            for (MyJDownloaderWaitingConnectionThread thread : copy) {
                 thread.interrupt();
             }
-            waitingConnections.clear();
         }
     }
 
@@ -434,6 +437,20 @@ public class MyJDownloaderConnectThread extends Thread {
         try {
             lapi.disconnect();
         } catch (final Throwable e) {
+        }
+        synchronized (openConnections) {
+            Iterator<Entry<Thread, Socket>> it = openConnections.entrySet().iterator();
+            while (it.hasNext()) {
+                Entry<Thread, Socket> next = it.next();
+                try {
+                    next.getValue().close();
+                } catch (final Throwable e) {
+                }
+                try {
+                    next.getKey().interrupt();
+                } catch (final Throwable e) {
+                }
+            }
         }
         setConnected(MyJDownloaderConnectionStatus.UNCONNECTED);
         ScheduledThreadPoolExecutor lTHREADQUEUE = THREADQUEUE;
@@ -481,12 +498,12 @@ public class MyJDownloaderConnectThread extends Thread {
             try {
                 DeviceData device = lapi.bindDevice(new DeviceData(CFG_MYJD.CFG.getUniqueDeviceID(), "jd", getDeviceName()));
                 if (StringUtils.isNotEmpty(device.getId())) {
-                    deviceBound = true;
                     if (!device.getId().equals(CFG_MYJD.CFG.getUniqueDeviceID())) {
                         CFG_MYJD.CFG.setUniqueDeviceID(device.getId());
                         CFG_MYJD.CFG._getStorageHandler().write();
                     }
                     validateSession();
+                    deviceBound = true;
                 }
             } finally {
                 if (deviceBound == false) {
