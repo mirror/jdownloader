@@ -24,5 +24,5 @@ jd_plugins_optional_jdshutdown=JD Kapat
 jd_plugins_optional_jdshutdown_description=İndirmeler bittiğinde otomatik olarak PC'nizi kapatın, beklemeye alın, hazırda bekletin veya JDownloader'ı kapatın.
 lit_shutdownn=Kapat
 show_admin=Hazırda Beklet ve Bekleme Kipi için JDownloader'ı ayarlamak Yönetici Haklarını gerektirir
-shutdown_toggle_action_disabled=İndirmelerden sonra Kapat'ı etkinleştir
-shutdown_toggle_action_enabled=İndirmelerden sonra Kapat'ı etkisizleştir
+shutdown_toggle_action_disabled2=İndirmelerden sonra kapat
+shutdown_toggle_action_enabled2=İndirmelerden sonra kapat
