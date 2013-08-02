@@ -190,6 +190,15 @@ public class UnrestrictLi extends PluginForHost {
             }
             String msg = "(" + link.getLinkStatus().getRetryCount() + 1 + "/" + 3 + ")";
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Error fetching file information:" + msg, 20 * 1000l);
+        } else if (br.containsHTML("Expired session\\. Please sign in")) {
+            if (link.getLinkStatus().getRetryCount() >= 3) {
+                link.getLinkStatus().setRetryCount(0);
+                MessageDialog("Error", "Error signing in", false);
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            logger.info("Invalid/Expired session.");
+            fetchAccountInfo(acc);
+            throw new PluginException(LinkStatus.ERROR_RETRY);
         }
         if (generated == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         /* END Possible Error Messages */
