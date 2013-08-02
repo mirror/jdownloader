@@ -95,6 +95,9 @@ public class VideoNhlCom extends PluginForHost {
             secondUrlPart = postURL.substring(a);
         }
         switch (Integer.parseInt(quality)) {
+        case 0:
+            qStr = "";
+            break;
         case 1:
             qStr = "_sd";
             break;

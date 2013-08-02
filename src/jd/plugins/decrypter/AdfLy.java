@@ -32,7 +32,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.locale.JDL;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "adf.ly" }, urls = { "https?://(www\\.)?(adf\\.ly|j\\.gs|q\\.gs)/(?!link-deleted\\.php|index|login)[^<>\r\n\t]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "adf.ly" }, urls = { "https?://(www\\.)?(adf\\.ly|j\\.gs|q\\.gs)/[^<>\r\n\t]+" }, flags = { 0 })
 @SuppressWarnings("deprecation")
 public class AdfLy extends PluginForDecrypt {
 
@@ -44,14 +44,19 @@ public class AdfLy extends PluginForDecrypt {
         super(wrapper);
     }
 
-    private final boolean supportsHTTPS = true;
-    private String        protocol      = null;
-    private final String  HOSTS         = "https?://(www\\.)?(adf\\.ly|j\\.gs|q\\.gs)";
-    private static Object LOCK          = new Object();
+    private final boolean       supportsHTTPS = true;
+    private String              protocol      = null;
+    private final String        HOSTS         = "https?://(www\\.)?(adf\\.ly|j\\.gs|q\\.gs)";
+    private static final String INVALIDLINKS  = "https?://(www\\.)?(adf\\.ly|j\\.gs|q\\.gs)/(link\\-deleted\\.php|index|login|static).+";
+    private static Object       LOCK          = new Object();
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString().replace("www.", "");
+        if (parameter.matches(INVALIDLINKS)) {
+            logger.info("adf.ly link invalid: " + parameter);
+            return decryptedLinks;
+        }
         // imported protocol choice
         protocol = new Regex(parameter, "(https?://)").getMatch(0);
         // poll plugin setting for default protocol, if not set ask the user.

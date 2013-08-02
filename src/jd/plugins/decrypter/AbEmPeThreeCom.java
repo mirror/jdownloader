@@ -16,18 +16,22 @@
 
 package jd.plugins.decrypter;
 
+import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.Browser;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "abmp3.com" }, urls = { "http://(www\\.)?abmp3\\.com/download/\\d+-.*?\\.html" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "abmp3.com" }, urls = { "http://(www\\.)?abmp3\\.(com|info)/download/\\d+\\-.*?\\.html" }, flags = { 0 })
 public class AbEmPeThreeCom extends PluginForDecrypt {
 
     public AbEmPeThreeCom(PluginWrapper wrapper) {
@@ -41,7 +45,7 @@ public class AbEmPeThreeCom extends PluginForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        String parameter = param.toString();
+        String parameter = param.toString().replace("abmp3.com/", "abmp3.info/");
         br.getPage(parameter);
         // Invalid link
         if (br.containsHTML("(<TITLE>404 Not Found</TITLE>|<H1>Not Found</H1>)")) {
@@ -55,7 +59,7 @@ public class AbEmPeThreeCom extends PluginForDecrypt {
         }
         String captchaUrl = null;
         boolean failed = true;
-        String fileID = new Regex(parameter, "abmp3\\.com/download/(\\d+)-").getMatch(0);
+        String fileID = new Regex(parameter, "abmp3\\.info/download/(\\d+)-").getMatch(0);
         for (int i = 0; i <= 5; i++) {
             captchaUrl = br.getRegex(CAPTCHAREGEX).getMatch(0);
             if (captchaUrl == null) captchaUrl = br.getRegex(CAPTCHAREGEX2).getMatch(0);
@@ -63,11 +67,13 @@ public class AbEmPeThreeCom extends PluginForDecrypt {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
             }
-            captchaUrl = "http://abmp3.com" + captchaUrl;
-            String code = getCaptchaCode(captchaUrl, param);
-            br.getPage("http://abmp3.com/chk_cd.php?id=" + fileID + "&code=" + code);
+            captchaUrl = "http://abmp3.info" + captchaUrl;
+            final File dlledCaptcha = downloadCaptcha(getLocalCaptchaFile(), captchaUrl);
+            String code = getCaptchaCode(dlledCaptcha, param);
+
+            br.getPage("http://www.abmp3.info/chk_cd.php?id=" + fileID + "&code=" + code);
             if (!br.containsHTML(DONE)) {
-                br.clearCookies("http://abmp3.com");
+                br.clearCookies("http://abmp3.info");
                 br.getPage(parameter);
                 continue;
             }
@@ -83,6 +89,18 @@ public class AbEmPeThreeCom extends PluginForDecrypt {
         decryptedLinks.add(createDownloadlink("directhttp://" + finallink.trim()));
 
         return decryptedLinks;
+    }
+
+    public File downloadCaptcha(final File captchaFile, final String captchaAdress) throws IOException, PluginException {
+        final Browser rcBr = br.cloneBrowser();
+        rcBr.setFollowRedirects(true);
+        try {
+            Browser.download(captchaFile, rcBr.openGetConnection(captchaAdress));
+        } catch (IOException e) {
+            captchaFile.delete();
+            throw e;
+        }
+        return captchaFile;
     }
 
     /* NO OVERRIDE!! */

@@ -78,6 +78,10 @@ public class AllSharesCom extends PluginForDecrypt {
         final String fpName = br.getRegex("\">Download <b>(.*?)</b></a>").getMatch(0);
         final String[] links = br.getRegex("url=([^<>\"\\']*?)\\&").getColumn(0);
         if (links == null || links.length == 0) {
+            if (br.containsHTML("\"/gos\\.php\\?q=")) {
+                logger.info("Link offline: " + parameter);
+                return decryptedLinks;
+            }
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
