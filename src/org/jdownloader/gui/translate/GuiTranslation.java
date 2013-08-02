@@ -2917,4 +2917,7 @@ public interface GuiTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Do you really want to remove all filtered Links(%s1)?" })
     String ClearFilteredLinksAction_msg(int count);
+
+    @Default(lngs = { "en" }, values = { "Quick Settings" })
+    String quicksettings_SettingsMenuContainer();
 }

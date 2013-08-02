@@ -46,6 +46,10 @@ import jd.controlling.linkcollector.LinkCollectorEvent;
 import jd.controlling.linkcollector.LinkCollectorHighlightListener;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledPackage;
+import jd.controlling.reconnect.Reconnecter;
+import jd.controlling.reconnect.ReconnecterEvent;
+import jd.controlling.reconnect.ReconnecterListener;
+import jd.controlling.reconnect.ipcheck.IPController;
 import jd.gui.swing.jdgui.JDGui;
 import jd.gui.swing.jdgui.MainFrameClosingHandler;
 import jd.gui.swing.jdgui.components.toolbar.actions.UpdateAction;
@@ -132,9 +136,12 @@ public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTransla
     // }
     // };
 
+    private ReconnecterListener reconnectListener;
+
     @Override
     protected void stop() throws StopException {
         UpdateController.getInstance().getEventSender().removeListener(this);
+        Reconnecter.getInstance().getEventSender().removeListener(reconnectListener);
         LinkCollector.getInstance().getEventsender().removeListener(linkcollectorHighlighListener);
         removeTrayIcon();
         if (guiFrame != null) {
@@ -170,6 +177,8 @@ public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTransla
         UpdateController.getInstance().getEventSender().addListener(this, true);
         LinkCollector.getInstance().getEventsender().removeListener(linkcollectorHighlighListener);
         LinkCollector.getInstance().getEventsender().addListener(linkcollectorHighlighListener, true);
+        Reconnecter.getInstance().getEventSender().removeListener(reconnectListener);
+        Reconnecter.getInstance().getEventSender().addListener(reconnectListener, true);
         SecondLevelLaunch.GUI_COMPLETE.executeWhenReached(new Runnable() {
 
             public void run() {
@@ -243,27 +252,92 @@ public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTransla
 
     public TrayExtension() {
         setTitle(_TRAY._.jd_plugins_optional_jdtrayicon_jdlighttray());
+        reconnectListener = new ReconnecterListener() {
+
+            @Override
+            public void onReconnectSettingsUpdated(ReconnecterEvent event) {
+            }
+
+            @Override
+            public void onBeforeReconnect(final ReconnecterEvent event) {
+                if (!getSettings().isBallonNotifyOnReconnectStartEnabled()) return;
+                new EDTRunner() {
+
+                    @Override
+                    protected void runInEDT() {
+
+                        final TrayIcon ti = trayIcon;
+                        if (ti != null) {
+                            // overwrite old actions
+                            setListener(new ActionListener() {
+
+                                public void actionPerformed(ActionEvent e) {
+
+                                }
+                            });
+
+                            ti.displayMessage(_TRAY._.balloon_reconnect(), _TRAY._.balloon_reconnect_start_msg(), MessageType.INFO);
+
+                        }
+                    }
+                };
+            }
+
+            @Override
+            public void onAfterReconnect(final ReconnecterEvent event) {
+                if (!getSettings().isBallonNotifyOnReconnectEndEnabled()) return;
+                new EDTRunner() {
+
+                    @Override
+                    protected void runInEDT() {
+
+                        final TrayIcon ti = trayIcon;
+                        if (ti != null) {
+                            // overwrite old actions
+                            setListener(new ActionListener() {
+
+                                public void actionPerformed(ActionEvent e) {
+
+                                }
+                            });
+                            if (!(Boolean) event.getParameter()) {
+                                ti.displayMessage(_TRAY._.balloon_reconnect(), _TRAY._.balloon_reconnect_end_msg_failed(IPController.getInstance().getIP()), MessageType.ERROR);
+                            } else {
+                                ti.displayMessage(_TRAY._.balloon_reconnect(), _TRAY._.balloon_reconnect_end_msg(IPController.getInstance().getIP()), MessageType.INFO);
+                            }
+
+                        }
+                    }
+                };
+            }
+        };
         linkcollectorHighlighListener = new LinkCollectorHighlightListener() {
             @Override
-            public void onLinkCollectorContentAdded(LinkCollectorEvent event) {
+            public void onLinkCollectorContentAdded(final LinkCollectorEvent event) {
                 if (!getSettings().isBallonNotifyOnNewLinkgrabberPackageEnabled()) return;
                 if (event.getParameters().length > 0 && event.getParameter(0) instanceof CrawledPackage) {
                     // new Package
+                    new EDTRunner() {
 
-                    if (GuiUtils.isActiveWindow(JDGui.getInstance().getMainFrame())) return;
-                    final TrayIcon ti = trayIcon;
-                    if (ti != null) {
-                        setListener(new ActionListener() {
+                        @Override
+                        protected void runInEDT() {
+                            if (GuiUtils.isActiveWindow(JDGui.getInstance().getMainFrame())) return;
+                            final TrayIcon ti = trayIcon;
+                            if (ti != null) {
+                                setListener(new ActionListener() {
 
-                            public void actionPerformed(ActionEvent e) {
-                                JDGui.getInstance().requestPanel(JDGui.Panels.LINKGRABBER, null);
-                                JDGui.getInstance().setFrameState(FrameState.TO_FRONT_FOCUSED);
+                                    public void actionPerformed(ActionEvent e) {
+                                        JDGui.getInstance().requestPanel(JDGui.Panels.LINKGRABBER, null);
+                                        JDGui.getInstance().setFrameState(FrameState.TO_FRONT_FOCUSED);
+                                    }
+                                });
+
+                                ti.displayMessage(_TRAY._.balloon_new_package(), _TRAY._.balloon_new_package_msg(((CrawledPackage) event.getParameter(0)).getName()), MessageType.INFO);
+
                             }
-                        });
+                        }
+                    };
 
-                        ti.displayMessage(_TRAY._.balloon_new_package(), _TRAY._.balloon_new_package_msg(((CrawledPackage) event.getParameter(0)).getName()), MessageType.INFO);
-
-                    }
                 }
             }
 

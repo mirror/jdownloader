@@ -27,18 +27,22 @@ public class CFG_TRAY_CONFIG {
     public static final BooleanKeyHandler          BALLON_NOTIFY_ON_UPDATE_AVAILABLE_ENABLED        = SH.getKeyHandler("BallonNotifyOnUpdateAvailableEnabled", BooleanKeyHandler.class);
     // TO_TASKBAR
     public static final EnumKeyHandler             ON_MINIMIZE_ACTION                               = SH.getKeyHandler("OnMinimizeAction", EnumKeyHandler.class);
+    // true
+    public static final BooleanKeyHandler          BALLON_NOTIFY_ON_RECONNECT_END_ENABLED           = SH.getKeyHandler("BallonNotifyOnReconnectEndEnabled", BooleanKeyHandler.class);
     // false
     public static final BooleanKeyHandler          GREY_ICON_ENABLED                                = SH.getKeyHandler("GreyIconEnabled", BooleanKeyHandler.class);
     // false
     public static final BooleanKeyHandler          TRAY_ONLY_VISIBLE_IF_WINDOW_IS_HIDDEN_ENABLED    = SH.getKeyHandler("TrayOnlyVisibleIfWindowIsHiddenEnabled", BooleanKeyHandler.class);
     // false
     public static final BooleanKeyHandler          GUI_ENABLED                                      = SH.getKeyHandler("GuiEnabled", BooleanKeyHandler.class);
-    // false
-    public static final BooleanKeyHandler          TOOGLE_WINDOW_STATUS_WITH_SINGLE_CLICK_ENABLED   = SH.getKeyHandler("ToogleWindowStatusWithSingleClickEnabled", BooleanKeyHandler.class);
     // true
     public static final BooleanKeyHandler          FRESH_INSTALL                                    = SH.getKeyHandler("FreshInstall", BooleanKeyHandler.class);
     // false
+    public static final BooleanKeyHandler          TOOGLE_WINDOW_STATUS_WITH_SINGLE_CLICK_ENABLED   = SH.getKeyHandler("ToogleWindowStatusWithSingleClickEnabled", BooleanKeyHandler.class);
+    // false
     public static final BooleanKeyHandler          START_MINIMIZED_ENABLED                          = SH.getKeyHandler("StartMinimizedEnabled", BooleanKeyHandler.class);
+    // true
+    public static final BooleanKeyHandler          BALLON_NOTIFY_ON_RECONNECT_START_ENABLED         = SH.getKeyHandler("BallonNotifyOnReconnectStartEnabled", BooleanKeyHandler.class);
     // true
     public static final BooleanKeyHandler          BALLON_NOTIFY_ON_NEW_LINKGRABBER_LINKS_ENABLED   = SH.getKeyHandler("BallonNotifyOnNewLinkgrabberLinksEnabled", BooleanKeyHandler.class);
     // false

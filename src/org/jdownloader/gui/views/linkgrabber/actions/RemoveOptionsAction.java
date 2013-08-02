@@ -61,7 +61,7 @@ public class RemoveOptionsAction extends AbstractAction {
         });
         popup.add(new RemoveNonSelectedAction(si));
         popup.add(new RemoveOfflineAction(null));
-        popup.add(new RemoveOfflineAction(null));
+
         popup.add(new RemoveIncompleteArchives(new SelectionInfo<CrawledPackage, CrawledLink>(null, new ArrayList<AbstractNode>(LinkGrabberTableModel.getInstance().getAllPackageNodes()), null, null, e, table)));
         popup.add(new ClearFilteredLinksAction(null));
         popup.add(new JSeparator());

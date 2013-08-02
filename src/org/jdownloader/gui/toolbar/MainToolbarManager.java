@@ -42,6 +42,7 @@ import org.jdownloader.gui.mainmenu.action.AddLinksMenuAction;
 import org.jdownloader.gui.mainmenu.action.LogSendAction;
 import org.jdownloader.gui.mainmenu.container.CaptchaQuickSettingsContainer;
 import org.jdownloader.gui.mainmenu.container.OptionalContainer;
+import org.jdownloader.gui.mainmenu.container.SettingsMenuContainer;
 import org.jdownloader.gui.toolbar.action.CaptchaDialogsToogleAction;
 import org.jdownloader.gui.toolbar.action.CaptchaExchangeToogleAction;
 import org.jdownloader.gui.toolbar.action.GenericDeleteSelectedToolbarAction;
@@ -167,12 +168,17 @@ public class MainToolbarManager extends ContextMenuManager<FilePackage, Download
         opt.add(SetProxySetupAction.class);
         opt.add(RestartAction.class);
         opt.add(SettingsAction.class);
-        opt.add(new ChunksEditorLink());
 
-        opt.add(new ParalellDownloadsEditorLink());
-        opt.add(new ParallelDownloadsPerHostEditorLink());
+        SettingsMenuContainer ret = new SettingsMenuContainer();
+        ret.setName(_GUI._.quicksettings_SettingsMenuContainer());
+        opt.add(ret);
+
+        ret.add(new ChunksEditorLink());
+
+        ret.add(new ParalellDownloadsEditorLink());
+        ret.add(new ParallelDownloadsPerHostEditorLink());
         //
-        opt.add(new SpeedlimitEditorLink());
+        ret.add(new SpeedlimitEditorLink());
         opt.add(LatestChangesAction.class);
         opt.add(KnowledgeAction.class);
         opt.add(LogSendAction.class);

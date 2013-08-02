@@ -1,5 +1,7 @@
 package org.jdownloader.gui.jdtrayicon.translate;
 
+import jd.controlling.reconnect.ipcheck.IP;
+
 import org.appwork.txtresource.Default;
 import org.appwork.txtresource.Defaults;
 import org.appwork.txtresource.TranslateInterface;
@@ -150,5 +152,23 @@ public interface TrayiconTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "New Updates for JDownloader are available.\r\nClick here to start Installation!" })
     String balloon_updates_msg();
+
+    @Default(lngs = { "en" }, values = { "A Reconnect process starts now.\r\nA new IP is required to continue downloads." })
+    String balloon_reconnect_start_msg();
+
+    @Default(lngs = { "en" }, values = { "Reconnect failed!\r\nYour IP is %s1" })
+    String balloon_reconnect_end_msg_failed(IP ip);
+
+    @Default(lngs = { "en" }, values = { "Reconnect successful!\r\nYour new IP is %s1" })
+    String balloon_reconnect_end_msg(IP ip);
+
+    @Default(lngs = { "en" }, values = { "Before a Reconnect" })
+    String plugins_optional_JDLightTray_ballon_reconnectstart();
+
+    @Default(lngs = { "en" }, values = { "After a Reconnect" })
+    String plugins_optional_JDLightTray_ballon_reconnectend();
+
+    @Default(lngs = { "en" }, values = { "JDownloader Reconnect" })
+    String balloon_reconnect();
 
 }
