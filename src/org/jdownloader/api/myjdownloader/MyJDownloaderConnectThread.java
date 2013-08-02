@@ -16,10 +16,10 @@ import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.concurrent.atomic.AtomicReference;
 
 import org.appwork.exceptions.WTFException;
 import org.appwork.utils.Exceptions;
+import org.appwork.utils.NullsafeAtomicReference;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.awfc.AWFCUtils;
 import org.appwork.utils.logging2.LogSource;
@@ -94,21 +94,21 @@ public class MyJDownloaderConnectThread extends Thread {
         return logger;
     }
 
-    private AtomicBoolean                                         sessionValid              = new AtomicBoolean(false);
-    private AtomicLong                                            syncMark                  = new AtomicLong(-1);
-    private ScheduledThreadPoolExecutor                           THREADQUEUE               = new ScheduledThreadPoolExecutor(1);
-    private final DeviceConnectionHelper[]                        deviceConnectionHelper;
-    private int                                                   helperIndex               = 0;
-    private AtomicReference<MyJDownloaderConnectionStatus>        connected                 = new AtomicReference<MyJDownloaderConnectionStatus>(MyJDownloaderConnectionStatus.UNCONNECTED);
-    private String                                                password;
-    private String                                                email;
-    private String                                                deviceName;
-    private HashSet<TYPE>                                         notifyInterests;
-    private final static HashMap<Thread, Socket>                  openConnections           = new HashMap<Thread, Socket>();
-    private final ArrayDeque<MyJDownloaderConnectionResponse>     responses                 = new ArrayDeque<MyJDownloaderWaitingConnectionThread.MyJDownloaderConnectionResponse>();
-    private final ArrayList<MyJDownloaderWaitingConnectionThread> waitingConnections        = new ArrayList<MyJDownloaderWaitingConnectionThread>();
-    private final int                                             minimumWaitingConnections = 1;
-    private final int                                             maximumWaitingConnections = 4;
+    private AtomicBoolean                                          sessionValid              = new AtomicBoolean(false);
+    private AtomicLong                                             syncMark                  = new AtomicLong(-1);
+    private ScheduledThreadPoolExecutor                            THREADQUEUE               = new ScheduledThreadPoolExecutor(1);
+    private final DeviceConnectionHelper[]                         deviceConnectionHelper;
+    private int                                                    helperIndex               = 0;
+    private NullsafeAtomicReference<MyJDownloaderConnectionStatus> connected                 = new NullsafeAtomicReference<MyJDownloaderConnectionStatus>(MyJDownloaderConnectionStatus.UNCONNECTED);
+    private String                                                 password;
+    private String                                                 email;
+    private String                                                 deviceName;
+    private HashSet<TYPE>                                          notifyInterests;
+    private final static HashMap<Thread, Socket>                   openConnections           = new HashMap<Thread, Socket>();
+    private final ArrayDeque<MyJDownloaderConnectionResponse>      responses                 = new ArrayDeque<MyJDownloaderWaitingConnectionThread.MyJDownloaderConnectionResponse>();
+    private final ArrayList<MyJDownloaderWaitingConnectionThread>  waitingConnections        = new ArrayList<MyJDownloaderWaitingConnectionThread>();
+    private final int                                              minimumWaitingConnections = 1;
+    private final int                                              maximumWaitingConnections = 4;
 
     public MyJDownloaderConnectThread(MyJDownloaderController myJDownloaderExtension) {
         setName("MyJDownloaderConnectThread");

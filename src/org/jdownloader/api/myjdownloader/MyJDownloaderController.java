@@ -1,7 +1,5 @@
 package org.jdownloader.api.myjdownloader;
 
-import java.util.concurrent.atomic.AtomicReference;
-
 import org.appwork.shutdown.ShutdownController;
 import org.appwork.shutdown.ShutdownRequest;
 import org.appwork.shutdown.ShutdownVetoException;
@@ -9,6 +7,7 @@ import org.appwork.shutdown.ShutdownVetoListener;
 import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.events.GenericConfigEventListener;
 import org.appwork.storage.config.handler.KeyHandler;
+import org.appwork.utils.NullsafeAtomicReference;
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging2.LogSource;
@@ -27,9 +26,9 @@ public class MyJDownloaderController implements ShutdownVetoListener, GenericCon
         return INSTANCE;
     }
 
-    private AtomicReference<MyJDownloaderConnectThread> thread = new AtomicReference<MyJDownloaderConnectThread>(null);
-    private LogSource                                   logger;
-    private MyJDownloaderEventSender                    eventSender;
+    private NullsafeAtomicReference<MyJDownloaderConnectThread> thread = new NullsafeAtomicReference<MyJDownloaderConnectThread>(null);
+    private LogSource                                           logger;
+    private MyJDownloaderEventSender                            eventSender;
 
     public MyJDownloaderEventSender getEventSender() {
         return eventSender;
