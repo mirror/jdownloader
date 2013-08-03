@@ -286,8 +286,10 @@ public class ReplikPl extends PluginForHost {
         String result = null;
         if (loginForm)
             result = br2.getRegex(parameter + "\": \"(.*?)\"},").getMatch(0);
-        else
-            result = br2.getRegex(parameter + "\": \"(.{128})\"}").getMatch(0);
+        else {
+            result = br2.getRegex(parameter + "\": \"(.*)\"}").getMatch(0);
+            // if (result == null) result = br2.getRegex(parameter + "\": \"(.{128})\"}").getMatch(0);
+        }
         return result;
     }
 
