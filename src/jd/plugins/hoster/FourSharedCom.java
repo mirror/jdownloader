@@ -54,8 +54,7 @@ import org.appwork.utils.os.CrossSystem;
 public class FourSharedCom extends PluginForHost {
 
     // DEV NOTES:
-    // - login does not work in stable!
-    // - you require login to download.
+    // old versions of JDownloader can have troubles with Java7+ with HTTPS posts.
 
     public final String            PLUGINS_HOSTER_FOURSHAREDCOM_ONLY4PREMIUM = "plugins.hoster.foursharedcom.only4premium";
     private static StringContainer agent                                     = new StringContainer();
@@ -179,10 +178,6 @@ public class FourSharedCom extends PluginForHost {
 
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
-        if (isStableEnviroment()) {
-            if (!stableSucks.get()) showStableWarning();
-            throw new PluginException(LinkStatus.ERROR_FATAL, "You need JDownloader 2");
-        }
         requestFileInformation(downloadLink);
         doFree(downloadLink);
     }
@@ -233,7 +228,7 @@ public class FourSharedCom extends PluginForHost {
                     final String ttt = br.getRegex(" var c = (\\d+);").getMatch(0);
                     int tt = 20;
                     if (ttt != null) {
-                        logger.info("Waittime detected, waiting " + ttt.trim() + " seconds from now on...");
+                        /* logger.info */System.out.println("Waittime detected, waiting " + ttt.trim() + " seconds from now on...");
                         tt = Integer.parseInt(ttt);
                     }
                     sleep(tt * 1000l, downloadLink);
@@ -299,10 +294,7 @@ public class FourSharedCom extends PluginForHost {
 
     @Override
     public void handlePremium(final DownloadLink downloadLink, final Account account) throws Exception {
-        if (isStableEnviroment()) {
-            if (!stableSucks.get()) showStableWarning();
-            throw new PluginException(LinkStatus.ERROR_FATAL, "You need JDownloader 2");
-        }
+        requestFileInformation(downloadLink);
         login(account, false);
         br.getPage(downloadLink.getDownloadURL());
         if (account.getStringProperty("nopremium") != null) {
@@ -358,10 +350,15 @@ public class FourSharedCom extends PluginForHost {
                 br.getPage("http://www.4shared.com/");
                 br.setCookie("http://www.4shared.com", "4langcookie", "en");
                 // stable does not send this header with post request!!!!!
-                // br.getHeaders().put("Content-Type", "application/x-www-form-urlencoded");
+                String protocol = "https://";
+                if (isJava7nJDStable()) {
+                    if (!stableSucks.get()) showSSLWarning(this.getHost());
+                    protocol = "http://";
+                }
+                br.getHeaders().put("Content-Type", "application/x-www-form-urlencoded");
                 Browser br2 = br.cloneBrowser();
                 br2.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-                br2.postPage("https://www.4shared.com/web/login/validate", "login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
+                br2.postPage(protocol + "www.4shared.com/web/login/validate", "login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
                 final String lang = System.getProperty("user.language");
                 if (!br2.containsHTML("\"success\":true")) {
                     if ("de".equalsIgnoreCase(lang)) {
@@ -370,7 +367,7 @@ public class FourSharedCom extends PluginForHost {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
                 }
-                br.postPage("https://www.4shared.com/web/login", "login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&remember=true&returnTo=https%253A%252F%252Fwww.4shared.com%252Faccount%252Fhome.jsp");
+                br.postPage(protocol + "www.4shared.com/web/login", "login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&remember=true&returnTo=https%253A%252F%252Fwww.4shared.com%252Faccount%252Fhome.jsp");
                 br.getHeaders().put("Content-Type", null);
                 if (br.getCookie("http://www.4shared.com", "ulin") == null || !br.getCookie("http://www.4shared.com", "ulin").equals("true")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 /** Save cookies */
@@ -391,11 +388,6 @@ public class FourSharedCom extends PluginForHost {
 
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
-        if (isStableEnviroment()) {
-            showStableWarning();
-            account.setEnabled(false);
-            throw new PluginException(LinkStatus.ERROR_FATAL, "You need JDownloader 2");
-        }
         final AccountInfo ai = new AccountInfo();
         try {
             login(account, true);
@@ -470,21 +462,16 @@ public class FourSharedCom extends PluginForHost {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), FourSharedCom.DOWNLOADSTREAMSERRORHANDLING, JDL.L("plugins.hoster.foursharedcom.activateerrorhandling", "Only download video/audio streams if normal file is not available (faster download but this can decrease audio/video quality)")).setDefaultValue(false));
     }
 
-    private boolean isStableEnviroment() {
-        String prev = JDUtilities.getRevision();
-        if (prev == null || prev.length() < 3) {
-            prev = "0";
-        } else {
-            prev = prev.replaceAll(",|\\.", "");
-        }
-        final int rev = Integer.parseInt(prev);
-        if (rev < 10000) return true;
-        return false;
+    private boolean isJava7nJDStable() {
+        if (System.getProperty("jd.revision.jdownloaderrevision") == null && System.getProperty("java.version").matches("1\\.[7-9].+"))
+            return true;
+        else
+            return false;
     }
 
     private static AtomicBoolean stableSucks = new AtomicBoolean(false);
 
-    private void showStableWarning() {
+    public static void showSSLWarning(final String domain) {
         try {
             SwingUtilities.invokeAndWait(new Runnable() {
 
@@ -492,26 +479,29 @@ public class FourSharedCom extends PluginForHost {
                 public void run() {
                     try {
                         String lng = System.getProperty("user.language");
-                        String domain = "4shared.com";
                         String message = null;
                         String title = null;
                         boolean xSystem = CrossSystem.isOpenBrowserSupported();
                         if ("de".equalsIgnoreCase(lng)) {
-                            title = domain;
-                            message = "Sorry, leider ist es nicht moeglich, " + domain + " mit dieser Version des JDownloaders zu nutzen.\r\n";
-                            message += "                            Hierfür wird der JDownloader 2 benoetigt.\r\n";
+                            title = domain + " :: Java 7+ && HTTPS Post Requests.";
+                            message = "Wegen einem Bug in in Java 7+ in dieser JDownloader version koennen wir keine HTTPS Post Requests ausfuehren.\r\n";
+                            message += "Wir haben eine Notloesung ergaenzt durch die man weiterhin diese JDownloader Version nutzen kann.\r\n";
+                            message += "Bitte bedenke, dass HTTPS Post Requests als HTTP gesendet werden. Nutzung auf eigene Gefahr!\r\n";
+                            message += "Falls du keine unverschluesselten Daten versenden willst, update bitte auf JDownloader 2!\r\n";
                             if (xSystem)
-                                message += "JDownloader 2 Installationsanweisungen und Downloadlink: Klicke -OK- (im Browser oeffnen)\r\n";
+                                message += "JDownloader 2 Installationsanleitung und Downloadlink: Klicke -OK- (per Browser oeffnen)\r\n ";
                             else
-                                message += "JDownloader 2 Installationsanweisungen und Downloadlink:\r\n                 " + new URL("http://board.jdownloader.org/showthread.php?t=37365") + "\r\n";
+                                message += "JDownloader 2 Installationsanleitung und Downloadlink:\r\n" + new URL("http://board.jdownloader.org/showthread.php?t=37365") + "\r\n";
                         } else {
-                            title = domain;
-                            message = "Sorry it's not possible to use " + domain + " with this version of JDownloader.\r\n";
-                            message += "                               You will need to use JDownloader 2.\r\n";
+                            title = domain + " :: Java 7+ && HTTPS Post Requests.";
+                            message = "Due to a bug in Java 7+ when using this version of JDownloader, we can not succesfully send HTTPS Post Requests.\r\n";
+                            message += "We have added a work around so you can continue to use this version of JDownloader...\r\n";
+                            message += "Please be aware that HTTPS Post Requests are sent as HTTP. Use at your own discretion.\r\n";
+                            message += "If you do not want to send unecrypted data, please upgrade to JDownloader 2!\r\n";
                             if (xSystem)
                                 message += "Jdownloader 2 install instructions and download link: Click -OK- (open in browser)\r\n ";
                             else
-                                message += "                   JDownloader 2 install instructions and download link:\r\n                 " + new URL("http://board.jdownloader.org/showthread.php?t=37365") + "\r\n";
+                                message += "JDownloader 2 install instructions and download link:\r\n" + new URL("http://board.jdownloader.org/showthread.php?t=37365") + "\r\n";
                         }
                         int result = JOptionPane.showConfirmDialog(jd.gui.swing.jdgui.JDGui.getInstance().getMainFrame(), message, title, JOptionPane.CLOSED_OPTION, JOptionPane.CLOSED_OPTION);
                         if (xSystem && JOptionPane.OK_OPTION == result) CrossSystem.openURL(new URL("http://board.jdownloader.org/showthread.php?t=37365"));

@@ -20,6 +20,7 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.config.Property;
+import jd.config.SubConfiguration;
 import jd.controlling.ProgressController;
 import jd.gui.UserIO;
 import jd.http.Browser;
@@ -44,11 +45,11 @@ public class AdfLy extends PluginForDecrypt {
         super(wrapper);
     }
 
-    private final boolean       supportsHTTPS = true;
-    private String              protocol      = null;
-    private final String        HOSTS         = "https?://(www\\.)?(adf\\.ly|j\\.gs|q\\.gs)";
-    private static final String INVALIDLINKS  = "https?://(www\\.)?(adf\\.ly|j\\.gs|q\\.gs)/(link\\-deleted\\.php|index|login|static).+";
-    private static Object       LOCK          = new Object();
+    private final boolean supportsHTTPS = true;
+    private String        protocol      = null;
+    private final String  HOSTS         = "https?://(www\\.)?(adf\\.ly|j\\.gs|q\\.gs)";
+    private final String  INVALIDLINKS  = "https?://(www\\.)?(adf\\.ly|j\\.gs|q\\.gs)/(link\\-deleted\\.php|index|login|static).+";
+    private static Object LOCK          = new Object();
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
@@ -241,10 +242,16 @@ public class AdfLy extends PluginForDecrypt {
         if (!supportsHTTPS) {
             defaultProtocol.string = "http://";
         } else {
-            // save in session in memory because reverting in 0.9 is too difficult. Kill previously saved reference!
+            // save session setting in memory for in 0.9, in configs for JD2. Too difficult to edit non JD2 configs.
             getPluginConfig().setProperty("defaultProtocol", Property.NULL); // delete after one month 20130728
+            SubConfiguration config = null;
             synchronized (LOCK) {
                 try {
+                    config = getPluginConfig();
+                    if (isJD2()) {
+                        defaultProtocol.string = config.getStringProperty("savedDefaultProtocol", null);
+                        if (defaultProtocol.string != null) return defaultProtocol.string;
+                    }
                     if (defaultProtocol.string == null) {
                         String lng = System.getProperty("user.language");
                         String message = null;
@@ -260,16 +267,27 @@ public class AdfLy extends PluginForDecrypt {
                         int userSelect = UserIO.getInstance().requestComboDialog(0, JDL.L("plugins.decrypter.adfly.SelectDefaultProtocolTitle", title), JDL.L("plugins.decrypter.adfly.SelectDefaultProtocolMessage", message), select, 0, null, null, null, null);
                         if (userSelect != -1) {
                             defaultProtocol.string = userSelect == 0 ? "http://" : "https://";
+                            if (isJD2()) {
+                                config.setProperty("savedDefaultProtocol", defaultProtocol.string);
+                                config.save();
+                            }
                         } else {
+                            // 'cancelled/closed/time outed' dialog, returns import protocol.
                             return protocol;
                         }
                     }
                 } catch (final Throwable e) {
                 }
             }
-
         }
         return defaultProtocol.string;
+    }
+
+    private boolean isJD2() {
+        if (System.getProperty("jd.revision.jdownloaderrevision") != null)
+            return true;
+        else
+            return false;
     }
 
     /* NO OVERRIDE!! */

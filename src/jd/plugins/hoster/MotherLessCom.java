@@ -64,6 +64,7 @@ public class MotherLessCom extends PluginForHost {
             }
         }
         if ("video".equals(link.getStringProperty("dltype"))) {
+            br.getHeaders().put("Referer", "http://motherless.com/scripts/jwplayer.flash.swf");
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, DLLINK, true, 0);
         } else if ("image".equals(link.getStringProperty("dltype"))) {
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, DLLINK, false, 1);

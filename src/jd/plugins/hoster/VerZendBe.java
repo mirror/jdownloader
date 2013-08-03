@@ -19,6 +19,7 @@ package jd.plugins.hoster;
 import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Field;
+import java.net.URL;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -28,7 +29,11 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.SortedMap;
 import java.util.TreeMap;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+
+import javax.swing.JOptionPane;
+import javax.swing.SwingUtilities;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
@@ -62,6 +67,7 @@ import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.os.CrossSystem;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "verzend.be" }, urls = { "https?://(www\\.)?verzend\\.be/((vid)?embed\\-)?[a-z0-9]{12}" }, flags = { 2 })
 @SuppressWarnings("deprecation")
@@ -74,7 +80,7 @@ public class VerZendBe extends PluginForHost {
     private final String               DOMAINS                      = "(verzend\\.be)";
     private final String               PASSWORDTEXT                 = "<br><b>Passwor(d|t):</b> <input";
     private final String               MAINTENANCE                  = ">This server is in maintenance mode";
-    private final String               dllinkRegex                  = "https?://(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|([\\w\\-]+\\.)?" + DOMAINS + ")(:\\d{1,5})?/(files(/(dl|download))?|d|cgi-bin/dl\\.cgi)/(\\d+/)?([a-z0-9]+/){1,4}[^\"'/<>]+";
+    private final String               dllinkRegex                  = "https?://(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|([\\w\\-]+\\.)?" + DOMAINS + ")(:\\d{1,5})?/(files(/(dl|download))?|d|cgi-bin/dl\\.cgi)/(\\d+/)?([a-z0-9]+/){1,4}[^/<>\r\n\t]+";
     private final boolean              useVidEmbed                  = true;
     private final boolean              useAltEmbed                  = false;
     private final boolean              supportsHTTPS                = false;
@@ -89,7 +95,7 @@ public class VerZendBe extends PluginForHost {
     private static final AtomicInteger totalMaxSimultanFreeDownload = new AtomicInteger(20);
 
     // DEV NOTES
-    // XfileShare Version 3.0.7.2
+    // XfileShare Version 3.0.7.3
     // last XfileSharingProBasic compare :: 2.6.2.1
     // protocol: no https
     // captchatype: null
@@ -232,17 +238,6 @@ public class VerZendBe extends PluginForHost {
         return getAvailableStatus(downloadLink);
     }
 
-    private AvailableStatus getAvailableStatus(DownloadLink link) {
-        try {
-            final Field field = link.getClass().getDeclaredField("availableStatus");
-            field.setAccessible(true);
-            Object ret = field.get(link);
-            if (ret != null && ret instanceof AvailableStatus) return (AvailableStatus) ret;
-        } catch (final Throwable e) {
-        }
-        return AvailableStatus.UNCHECKED;
-    }
-
     private String[] scanInfo(final DownloadLink downloadLink, final String[] fileInfo) {
         // standard traits from base page
         if (inValidate(fileInfo[0])) {
@@ -290,8 +285,8 @@ public class VerZendBe extends PluginForHost {
     }
 
     /**
-     * Provides alternative linkchecking method for a single link at a time. Can be used as generic failover, though kinda pointless as this method doesn't give
-     * filename...
+     * Provides alternative linkchecking method for a single link at a time. Can be used as generic failover, though kinda pointless as this
+     * method doesn't give filename...
      * 
      * */
     private String[] altAvailStat(final DownloadLink downloadLink, final String[] fileInfo) throws Exception {
@@ -539,9 +534,9 @@ public class VerZendBe extends PluginForHost {
         // monitor this
         if (cbr.containsHTML("(class=\"err\">You have reached the download(\\-| )limit[^<]+for last[^<]+)")) {
             /*
-             * Indication of when you've reached the max download limit for that given session! Usually shows how long the session was recorded from x time
-             * (hours|days) which can trigger false positive below wait handling. As its only indication of what's previous happened, as in past tense and not a
-             * wait time going forward... unknown wait time!
+             * Indication of when you've reached the max download limit for that given session! Usually shows how long the session was
+             * recorded from x time (hours|days) which can trigger false positive below wait handling. As its only indication of what's
+             * previous happened, as in past tense and not a wait time going forward... unknown wait time!
              */
             if (account != null) {
                 logger.warning("Your account ( " + account.getUser() + " @ " + acctype + " ) has been temporarily disabled for going over the download session limit. JDownloader parses HTML for error messages, if you believe this is not a valid response please confirm issue within your browser. If you can download within your browser please contact JDownloader Development Team, if you can not download in your browser please take the issue up with " + this.getHost());
@@ -719,6 +714,7 @@ public class VerZendBe extends PluginForHost {
                 loginform = cleanForm(loginform);
                 loginform.put("login", Encoding.urlEncode(account.getUser()));
                 loginform.put("password", Encoding.urlEncode(account.getPass()));
+                loginform.put("redirect", Encoding.urlEncode("/?op=my_account"));
                 // check form for login captcha crap.
                 DownloadLink dummyLink = new DownloadLink(null, "Account", this.getHost(), COOKIE_HOST, true);
                 loginform = captchaForm(dummyLink, loginform);
@@ -999,18 +995,59 @@ public class VerZendBe extends PluginForHost {
     }
 
     private void getPage(final String page) throws Exception {
+        if (page == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         br.getPage(page);
         correctBR();
     }
 
     @SuppressWarnings("unused")
-    private void postPage(final String page, final String postData) throws Exception {
-        br.postPage(page, postData);
+    private void postPage(String page, final String postData) throws Exception {
+        if (page == null || postData == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        // stable sucks
+        if (isJava7nJDStable() && page.startsWith("https")) page = page.replaceFirst("https://", "http://");
+        br.getHeaders().put("Content-Type", "application/x-www-form-urlencoded");
+        try {
+            br.postPage(page, postData);
+        } finally {
+            br.getHeaders().put("Content-Type", null);
+        }
         correctBR();
     }
 
     private void sendForm(final Form form) throws Exception {
-        br.submitForm(form);
+        if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        // stable sucks && lame to the max, lets try and send a form outside of desired protocol. (works with oteupload)
+        if (Form.MethodType.POST.equals(form.getMethod())) {
+            // if the form doesn't contain an action lets set one based on current br.getURL().
+            if (form.getAction() == null || form.getAction().equals("")) form.setAction(br.getURL());
+            if (isJava7nJDStable() && (form.getAction().contains("https://") || /* relative path */(!form.getAction().startsWith("http")))) {
+                if (!form.getAction().startsWith("http") && br.getURL().contains("https://")) {
+                    // change relative path into full path, with protocol correction
+                    String basepath = new Regex(br.getURL(), "(https?://.+)/[^/]+$").getMatch(0);
+                    String basedomain = new Regex(br.getURL(), "(https?://[^/]+)").getMatch(0);
+                    String path = form.getAction();
+                    String finalpath = null;
+                    if (path.startsWith("/"))
+                        finalpath = basedomain.replaceFirst("https://", "http://") + path;
+                    else if (!path.startsWith("."))
+                        finalpath = basepath.replaceFirst("https://", "http://") + path;
+                    else {
+                        // lacking builder for ../relative paths. this will do for now.
+                        logger.info("Missing relative path builder. Must abort now... Try upgrading to JDownloader 2");
+                        throw new PluginException(LinkStatus.ERROR_FATAL);
+                    }
+                    form.setAction(finalpath);
+                } else
+                    form.setAction(form.getAction().replaceFirst("https?://", "http://"));
+                if (!stableSucks.get()) showSSLWarning(this.getHost());
+            }
+            br.getHeaders().put("Content-Type", "application/x-www-form-urlencoded");
+        }
+        try {
+            br.submitForm(form);
+        } finally {
+            br.getHeaders().put("Content-Type", null);
+        }
         correctBR();
     }
 
@@ -1022,8 +1059,8 @@ public class VerZendBe extends PluginForHost {
     }
 
     /**
-     * This fixes filenames from all xfs modules: file hoster, audio/video streaming (including transcoded video), or blocked link checking which is based on
-     * fuid.
+     * This fixes filenames from all xfs modules: file hoster, audio/video streaming (including transcoded video), or blocked link checking
+     * which is based on fuid.
      * 
      * @version 0.2
      * @author raztoki
@@ -1199,7 +1236,24 @@ public class VerZendBe extends PluginForHost {
      * @return String result
      * */
     private String regexDllink(final String source) {
-        return new Regex(source, "(\"|')(" + dllinkRegex + ")(\"|')").getMatch(1);
+        if (inValidate(source)) return null;
+        String result = null;
+        // using the following logic to help pick up URL that contains encoded ' character. Very hard to make generic regular expressions at
+        // 100% accuracy when using [^\"']+
+        String[] links = HTMLParser.getHttpLinks(source, null);
+        if (links != null && links.length != 0) {
+            for (String link : links) {
+                if (link.matches(dllinkRegex) && inValidate(dllink)) {
+                    result = link;
+                } else if (link.matches(dllinkRegex) && !inValidate(dllink) && link.contains("%27")) {
+                    // this picks up url encoded link that contains ' and updates result
+                    result = link;
+                }
+            }
+        }
+        if (inValidate(result)) result = new Regex(source, "\"(" + dllinkRegex + ")\"").getMatch(0);
+        if (inValidate(result)) result = new Regex(source, "'(" + dllinkRegex + ")'").getMatch(0);
+        return result;
     }
 
     /**
@@ -1233,14 +1287,14 @@ public class VerZendBe extends PluginForHost {
     }
 
     /**
-     * Prevents more than one free download from starting at a given time. One step prior to dl.startDownload(), it adds a slot to maxFree which allows the next
-     * singleton download to start, or at least try.
+     * Prevents more than one free download from starting at a given time. One step prior to dl.startDownload(), it adds a slot to maxFree
+     * which allows the next singleton download to start, or at least try.
      * 
-     * This is needed because xfileshare(website) only throws errors after a final dllink starts transferring or at a given step within pre download sequence.
-     * But this template(XfileSharingProBasic) allows multiple slots(when available) to commence the download sequence, this.setstartintival does not resolve
-     * this issue. Which results in x(20) captcha events all at once and only allows one download to start. This prevents wasting peoples time and effort on
-     * captcha solving and|or wasting captcha trading credits. Users will experience minimal harm to downloading as slots are freed up soon as current download
-     * begins.
+     * This is needed because xfileshare(website) only throws errors after a final dllink starts transferring or at a given step within pre
+     * download sequence. But this template(XfileSharingProBasic) allows multiple slots(when available) to commence the download sequence,
+     * this.setstartintival does not resolve this issue. Which results in x(20) captcha events all at once and only allows one download to
+     * start. This prevents wasting peoples time and effort on captcha solving and|or wasting captcha trading credits. Users will experience
+     * minimal harm to downloading as slots are freed up soon as current download begins.
      * 
      * @param controlSlot
      *            (+1|-1)
@@ -1258,8 +1312,8 @@ public class VerZendBe extends PluginForHost {
     }
 
     /**
-     * ControlSimHost, On error it will set the upper mark for 'max sim dl per host'. This will be the new 'static' setting used going forward. Thus prevents
-     * new downloads starting when not possible and is self aware and requires no coder interaction.
+     * ControlSimHost, On error it will set the upper mark for 'max sim dl per host'. This will be the new 'static' setting used going
+     * forward. Thus prevents new downloads starting when not possible and is self aware and requires no coder interaction.
      * 
      * @param account
      * 
@@ -1292,9 +1346,9 @@ public class VerZendBe extends PluginForHost {
     }
 
     /**
-     * This matches dllink against an array of used 'host' servers. Use this when site have multiple download servers and they allow x connections to ip/host
-     * server. Currently JD allows a global connection controller and doesn't allow for handling of different hosts/IP setup. This will help with those
-     * situations by allowing more connection when possible.
+     * This matches dllink against an array of used 'host' servers. Use this when site have multiple download servers and they allow x
+     * connections to ip/host server. Currently JD allows a global connection controller and doesn't allow for handling of different
+     * hosts/IP setup. This will help with those situations by allowing more connection when possible.
      * 
      * @param Account
      *            Account that's been used, can be null
@@ -1369,9 +1423,9 @@ public class VerZendBe extends PluginForHost {
             // New download started, check finallink host against hostMap values && max(Free|Prem)SimDlHost!
 
             /*
-             * max(Free|Prem)SimDlHost prevents more downloads from starting on a given host! At least until one of the previous downloads finishes. This is
-             * best practice otherwise you have to use some crude system of waits, but you have no control over to reset the count. Highly dependent on how fast
-             * or slow the users connections is.
+             * max(Free|Prem)SimDlHost prevents more downloads from starting on a given host! At least until one of the previous downloads
+             * finishes. This is best practice otherwise you have to use some crude system of waits, but you have no control over to reset
+             * the count. Highly dependent on how fast or slow the users connections is.
              */
             if (isHashedHashedKey(account, usedHost)) {
                 Integer usedSlots = getHashedHashedValue(account);
@@ -1536,8 +1590,8 @@ public class VerZendBe extends PluginForHost {
     }
 
     /**
-     * If form contain both " and ' quotation marks within input fields it can return null values, thus you submit wrong/incorrect data re: InputField
-     * parse(final String data). Affects revision 19688 and earlier!
+     * If form contain both " and ' quotation marks within input fields it can return null values, thus you submit wrong/incorrect data re:
+     * InputField parse(final String data). Affects revision 19688 and earlier!
      * 
      * TODO: remove after JD2 goes stable!
      * 
@@ -1566,8 +1620,8 @@ public class VerZendBe extends PluginForHost {
     }
 
     /**
-     * This allows backward compatibility for design flaw in setHtmlCode(), It injects updated html into all browsers that share the same request id. This is
-     * needed as request.cloneRequest() was never fully implemented like browser.cloneBrowser().
+     * This allows backward compatibility for design flaw in setHtmlCode(), It injects updated html into all browsers that share the same
+     * request id. This is needed as request.cloneRequest() was never fully implemented like browser.cloneBrowser().
      * 
      * @param ibr
      *            Import Browser
@@ -1616,6 +1670,69 @@ public class VerZendBe extends PluginForHost {
         if (ibr.isDebug()) {
             logger.info("\r\ndirtyMD5sum = " + dMD5 + "\r\ncleanMD5sum = " + JDHash.getMD5(ibr.toString()) + "\r\n");
             System.out.println(ibr.toString());
+        }
+    }
+
+    private AvailableStatus getAvailableStatus(DownloadLink link) {
+        try {
+            final Field field = link.getClass().getDeclaredField("availableStatus");
+            field.setAccessible(true);
+            Object ret = field.get(link);
+            if (ret != null && ret instanceof AvailableStatus) return (AvailableStatus) ret;
+        } catch (final Throwable e) {
+        }
+        return AvailableStatus.UNCHECKED;
+    }
+
+    private boolean isJava7nJDStable() {
+        if (System.getProperty("jd.revision.jdownloaderrevision") == null && System.getProperty("java.version").matches("1\\.[7-9].+")) 
+            return true;
+         else
+            return false;
+    }
+
+    private static AtomicBoolean stableSucks = new AtomicBoolean(false);
+
+    public static void showSSLWarning(final String domain) {
+        try {
+            SwingUtilities.invokeAndWait(new Runnable() {
+
+                @Override
+                public void run() {
+                    try {
+                        String lng = System.getProperty("user.language");
+                        String message = null;
+                        String title = null;
+                        boolean xSystem = CrossSystem.isOpenBrowserSupported();
+                        if ("de".equalsIgnoreCase(lng)) {
+                            title = domain + " :: Java 7+ && HTTPS Post Requests.";
+                            message = "Wegen einem Bug in in Java 7+ in dieser JDownloader version koennen wir keine HTTPS Post Requests ausfuehren.\r\n";
+                            message += "Wir haben eine Notloesung ergaenzt durch die man weiterhin diese JDownloader Version nutzen kann.\r\n";
+                            message += "Bitte bedenke, dass HTTPS Post Requests als HTTP gesendet werden. Nutzung auf eigene Gefahr!\r\n";
+                            message += "Falls du keine unverschluesselten Daten versenden willst, update bitte auf JDownloader 2!\r\n";
+                            if (xSystem)
+                                message += "JDownloader 2 Installationsanleitung und Downloadlink: Klicke -OK- (per Browser oeffnen)\r\n ";
+                            else
+                                message += "JDownloader 2 Installationsanleitung und Downloadlink:\r\n" + new URL("http://board.jdownloader.org/showthread.php?t=37365") + "\r\n";
+                        } else {
+                            title = domain + " :: Java 7+ && HTTPS Post Requests.";
+                            message = "Due to a bug in Java 7+ when using this version of JDownloader, we can not succesfully send HTTPS Post Requests.\r\n";
+                            message += "We have added a work around so you can continue to use this version of JDownloader...\r\n";
+                            message += "Please be aware that HTTPS Post Requests are sent as HTTP. Use at your own discretion.\r\n";
+                            message += "If you do not want to send unecrypted data, please upgrade to JDownloader 2!\r\n";
+                            if (xSystem)
+                                message += "Jdownloader 2 install instructions and download link: Click -OK- (open in browser)\r\n ";
+                            else
+                                message += "JDownloader 2 install instructions and download link:\r\n" + new URL("http://board.jdownloader.org/showthread.php?t=37365") + "\r\n";
+                        }
+                        int result = JOptionPane.showConfirmDialog(jd.gui.swing.jdgui.JDGui.getInstance().getMainFrame(), message, title, JOptionPane.CLOSED_OPTION, JOptionPane.CLOSED_OPTION);
+                        if (xSystem && JOptionPane.OK_OPTION == result) CrossSystem.openURL(new URL("http://board.jdownloader.org/showthread.php?t=37365"));
+                        stableSucks.set(true);
+                    } catch (Throwable e) {
+                    }
+                }
+            });
+        } catch (Throwable e) {
         }
     }
 

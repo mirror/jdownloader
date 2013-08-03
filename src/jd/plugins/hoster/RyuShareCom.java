@@ -29,6 +29,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.SortedMap;
 import java.util.TreeMap;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.swing.JOptionPane;
@@ -80,7 +81,7 @@ public class RyuShareCom extends PluginForHost {
     private final String               DOMAINS                      = "(ryushare\\.com)";
     private final String               PASSWORDTEXT                 = "<br><b>Passwor(d|t):</b> <input";
     private final String               MAINTENANCE                  = ">This server is in maintenance mode";
-    private final String               dllinkRegex                  = "https?://(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|([\\w\\-]+\\.)?" + DOMAINS + ")(:\\d{1,5})?/(files(/(dl|download))?|d|cgi-bin/dl\\.cgi)/(\\d+/)?([a-z0-9]+/){1,4}[^\"'/<>]+";
+    private final String               dllinkRegex                  = "https?://(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|([\\w\\-]+\\.)?" + DOMAINS + ")(:\\d{1,5})?/(files(/(dl|download))?|d|cgi-bin/dl\\.cgi)/(\\d+/)?([a-z0-9]+/){1,4}[^/<>\r\n\t]+";
     private final boolean              useVidEmbed                  = false;
     private final boolean              useAltEmbed                  = false;
     private final boolean              supportsHTTPS                = false;
@@ -95,7 +96,7 @@ public class RyuShareCom extends PluginForHost {
     private static final AtomicInteger totalMaxSimultanFreeDownload = new AtomicInteger(20);
 
     // DEV NOTES
-    // XfileShare Version 3.0.7.2
+    // XfileShare Version 3.0.7.3
     // last XfileSharingProBasic compare :: 2.6.2.1
     // protocol: no https
     // captchatype: keycaptcha
@@ -236,17 +237,6 @@ public class RyuShareCom extends PluginForHost {
         if (!inValidate(fileInfo[1])) downloadLink.setDownloadSize(SizeFormatter.getSize(fileInfo[1]));
         if (!inValidate(fileInfo[2])) downloadLink.setMD5Hash(fileInfo[2].trim());
         return getAvailableStatus(downloadLink);
-    }
-
-    private AvailableStatus getAvailableStatus(DownloadLink link) {
-        try {
-            final Field field = link.getClass().getDeclaredField("availableStatus");
-            field.setAccessible(true);
-            Object ret = field.get(link);
-            if (ret != null && ret instanceof AvailableStatus) return (AvailableStatus) ret;
-        } catch (final Throwable e) {
-        }
-        return AvailableStatus.UNCHECKED;
     }
 
     private String[] scanInfo(final DownloadLink downloadLink, final String[] fileInfo) {
@@ -730,6 +720,7 @@ public class RyuShareCom extends PluginForHost {
                 loginform = cleanForm(loginform);
                 loginform.put("login", Encoding.urlEncode(account.getUser()));
                 loginform.put("password", Encoding.urlEncode(account.getPass()));
+                loginform.put("redirect", Encoding.urlEncode("/?op=my_account"));
                 // check form for login captcha crap.
                 DownloadLink dummyLink = new DownloadLink(null, "Account", this.getHost(), COOKIE_HOST, true);
                 loginform = captchaForm(dummyLink, loginform);
@@ -1066,18 +1057,59 @@ public class RyuShareCom extends PluginForHost {
     }
 
     private void getPage(final String page) throws Exception {
+        if (page == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         br.getPage(page);
         correctBR();
     }
 
     @SuppressWarnings("unused")
-    private void postPage(final String page, final String postData) throws Exception {
-        br.postPage(page, postData);
+    private void postPage(String page, final String postData) throws Exception {
+        if (page == null || postData == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        // stable sucks
+        if (isJava7nJDStable() && page.startsWith("https")) page = page.replaceFirst("https://", "http://");
+        br.getHeaders().put("Content-Type", "application/x-www-form-urlencoded");
+        try {
+            br.postPage(page, postData);
+        } finally {
+            br.getHeaders().put("Content-Type", null);
+        }
         correctBR();
     }
 
     private void sendForm(final Form form) throws Exception {
-        br.submitForm(form);
+        if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        // stable sucks && lame to the max, lets try and send a form outside of desired protocol. (works with oteupload)
+        if (Form.MethodType.POST.equals(form.getMethod())) {
+            // if the form doesn't contain an action lets set one based on current br.getURL().
+            if (form.getAction() == null || form.getAction().equals("")) form.setAction(br.getURL());
+            if (isJava7nJDStable() && (form.getAction().contains("https://") || /* relative path */(!form.getAction().startsWith("http")))) {
+                if (!form.getAction().startsWith("http") && br.getURL().contains("https://")) {
+                    // change relative path into full path, with protocol correction
+                    String basepath = new Regex(br.getURL(), "(https?://.+)/[^/]+$").getMatch(0);
+                    String basedomain = new Regex(br.getURL(), "(https?://[^/]+)").getMatch(0);
+                    String path = form.getAction();
+                    String finalpath = null;
+                    if (path.startsWith("/"))
+                        finalpath = basedomain.replaceFirst("https://", "http://") + path;
+                    else if (!path.startsWith("."))
+                        finalpath = basepath.replaceFirst("https://", "http://") + path;
+                    else {
+                        // lacking builder for ../relative paths. this will do for now.
+                        logger.info("Missing relative path builder. Must abort now... Try upgrading to JDownloader 2");
+                        throw new PluginException(LinkStatus.ERROR_FATAL);
+                    }
+                    form.setAction(finalpath);
+                } else
+                    form.setAction(form.getAction().replaceFirst("https?://", "http://"));
+                if (!stableSucks.get()) showSSLWarning(this.getHost());
+            }
+            br.getHeaders().put("Content-Type", "application/x-www-form-urlencoded");
+        }
+        try {
+            br.submitForm(form);
+        } finally {
+            br.getHeaders().put("Content-Type", null);
+        }
         correctBR();
     }
 
@@ -1702,6 +1734,69 @@ public class RyuShareCom extends PluginForHost {
         if (ibr.isDebug()) {
             logger.info("\r\ndirtyMD5sum = " + dMD5 + "\r\ncleanMD5sum = " + JDHash.getMD5(ibr.toString()) + "\r\n");
             System.out.println(ibr.toString());
+        }
+    }
+
+    private AvailableStatus getAvailableStatus(DownloadLink link) {
+        try {
+            final Field field = link.getClass().getDeclaredField("availableStatus");
+            field.setAccessible(true);
+            Object ret = field.get(link);
+            if (ret != null && ret instanceof AvailableStatus) return (AvailableStatus) ret;
+        } catch (final Throwable e) {
+        }
+        return AvailableStatus.UNCHECKED;
+    }
+
+    private boolean isJava7nJDStable() {
+        if (System.getProperty("jd.revision.jdownloaderrevision") == null && System.getProperty("java.version").matches("1\\.[7-9].+")) 
+            return true;
+         else
+            return false;
+    }
+
+    private static AtomicBoolean stableSucks = new AtomicBoolean(false);
+
+    public static void showSSLWarning(final String domain) {
+        try {
+            SwingUtilities.invokeAndWait(new Runnable() {
+
+                @Override
+                public void run() {
+                    try {
+                        String lng = System.getProperty("user.language");
+                        String message = null;
+                        String title = null;
+                        boolean xSystem = CrossSystem.isOpenBrowserSupported();
+                        if ("de".equalsIgnoreCase(lng)) {
+                            title = domain + " :: Java 7+ && HTTPS Post Requests.";
+                            message = "Wegen einem Bug in in Java 7+ in dieser JDownloader version koennen wir keine HTTPS Post Requests ausfuehren.\r\n";
+                            message += "Wir haben eine Notloesung ergaenzt durch die man weiterhin diese JDownloader Version nutzen kann.\r\n";
+                            message += "Bitte bedenke, dass HTTPS Post Requests als HTTP gesendet werden. Nutzung auf eigene Gefahr!\r\n";
+                            message += "Falls du keine unverschluesselten Daten versenden willst, update bitte auf JDownloader 2!\r\n";
+                            if (xSystem)
+                                message += "JDownloader 2 Installationsanleitung und Downloadlink: Klicke -OK- (per Browser oeffnen)\r\n ";
+                            else
+                                message += "JDownloader 2 Installationsanleitung und Downloadlink:\r\n" + new URL("http://board.jdownloader.org/showthread.php?t=37365") + "\r\n";
+                        } else {
+                            title = domain + " :: Java 7+ && HTTPS Post Requests.";
+                            message = "Due to a bug in Java 7+ when using this version of JDownloader, we can not succesfully send HTTPS Post Requests.\r\n";
+                            message += "We have added a work around so you can continue to use this version of JDownloader...\r\n";
+                            message += "Please be aware that HTTPS Post Requests are sent as HTTP. Use at your own discretion.\r\n";
+                            message += "If you do not want to send unecrypted data, please upgrade to JDownloader 2!\r\n";
+                            if (xSystem)
+                                message += "Jdownloader 2 install instructions and download link: Click -OK- (open in browser)\r\n ";
+                            else
+                                message += "JDownloader 2 install instructions and download link:\r\n" + new URL("http://board.jdownloader.org/showthread.php?t=37365") + "\r\n";
+                        }
+                        int result = JOptionPane.showConfirmDialog(jd.gui.swing.jdgui.JDGui.getInstance().getMainFrame(), message, title, JOptionPane.CLOSED_OPTION, JOptionPane.CLOSED_OPTION);
+                        if (xSystem && JOptionPane.OK_OPTION == result) CrossSystem.openURL(new URL("http://board.jdownloader.org/showthread.php?t=37365"));
+                        stableSucks.set(true);
+                    } catch (Throwable e) {
+                    }
+                }
+            });
+        } catch (Throwable e) {
         }
     }
 
