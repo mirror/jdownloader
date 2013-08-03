@@ -28,7 +28,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "beemp3.com" }, urls = { "http://(www\\.)?beemp3\\.com/download\\.php\\?file=\\d+\\&song=.+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "beemp3.com" }, urls = { "http://(www\\.)?beemp3s\\.org/download\\.php\\?file=\\d+\\&song=.+" }, flags = { 0 })
 public class BeeEmPeThreeCom extends PluginForDecrypt {
 
     public BeeEmPeThreeCom(PluginWrapper wrapper) {
@@ -47,18 +47,18 @@ public class BeeEmPeThreeCom extends PluginForDecrypt {
             logger.info("Link offline: " + parameter);
             return decryptedLinks;
         }
-        final String finalFilename = br.getRegex("<div class=\"download_block\">[\t\n\r ]+<h3 class=\"my_h\">(.*?)</h3><br>").getMatch(0);
+        final String finalFilename = br.getRegex("monetized_ad_client_song = \"([^<>\"]*?)\"").getMatch(0);
         String captchaUrl = null;
         boolean failed = true;
-        String fileID = new Regex(parameter, "beemp3\\.com/download\\.php\\?file=(\\d+)").getMatch(0);
+        String fileID = new Regex(parameter, "beemp3s\\.org/download\\.php\\?file=(\\d+)").getMatch(0);
         for (int i = 0; i <= 5; i++) {
             captchaUrl = br.getRegex(CAPTCHAREGEX).getMatch(0);
             if (captchaUrl == null) return null;
-            captchaUrl = "http://beemp3.com/" + captchaUrl;
+            captchaUrl = "http://beemp3s.org/" + captchaUrl;
             String code = getCaptchaCode(captchaUrl, param);
-            br.getPage("http://beemp3.com/chk_cd.php?id=" + fileID + "&code=" + code);
+            br.getPage("http://beemp3s.org/chk_cd.php?id=" + fileID + "&code=" + code);
             if (!br.containsHTML(DONE)) {
-                br.clearCookies("http://beemp3.com");
+                br.clearCookies("http://beemp3s.com");
                 br.getPage(parameter);
                 continue;
             }
@@ -66,7 +66,7 @@ public class BeeEmPeThreeCom extends PluginForDecrypt {
             break;
         }
         if (failed) throw new DecrypterException(DecrypterException.CAPTCHA);
-        String finallink = br.getRegex("Done#\\|#(http://.*?\\.mp3)").getMatch(0);
+        String finallink = br.getRegex("Done#\\|#(http://.+)").getMatch(0);
         if (finallink == null) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
@@ -75,7 +75,7 @@ public class BeeEmPeThreeCom extends PluginForDecrypt {
          * Set filename if possible as filenames may be cut or broken if not set here
          */
         DownloadLink dl = createDownloadlink("directhttp://" + finallink.trim());
-        if (finalFilename != null) dl.setFinalFileName(Encoding.htmlDecode(finalFilename));
+        if (finalFilename != null) dl.setFinalFileName(Encoding.htmlDecode(finalFilename) + ".mp3");
         decryptedLinks.add(dl);
 
         return decryptedLinks;

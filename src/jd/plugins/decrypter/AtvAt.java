@@ -54,6 +54,10 @@ public class AtvAt extends PluginForDecrypt {
             logger.info("There is no downloadable content: " + parameter);
             return decryptedLinks;
         }
+        if (br.containsHTML("Dieses Video wird derzeit encodiert und ist in Kürze verfügbar")) {
+            logger.info("Video temporarily unavailable: " + parameter);
+            return decryptedLinks;
+        }
         final String activeClipID = br.getRegex("active_clip_id%22%3A(\\d+)%2C").getMatch(0);
         if (activeClipID == null) {
             logger.warning("Decrypter broken for link: " + parameter);

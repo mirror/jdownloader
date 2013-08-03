@@ -764,29 +764,40 @@ public class VKontakteRu extends PluginForDecrypt {
             // Correct browser html
             br.getRequest().setHtmlCode(br.toString().replace("&quot;", "'"));
             final String[][] photoInfo = br.getRegex("showPhoto\\(\\'((\\-)?\\d+_\\d+)\\', \\'((wall|album)(\\-)?\\d+_\\d+)\\', \\{\\'temp\\':\\{(\\'base\\':.*?\\]\\})").getMatches();
-            if (photoInfo == null || photoInfo.length == 0) {
+            final String[] albums = br.getRegex("\"(http://vk\\.com/album\\-\\d+_\\d+)\"").getColumn(0);
+            if ((photoInfo == null || photoInfo.length == 0) && (albums == null || albums.length == 0)) {
                 logger.info("Current offset has no downloadable links, continuing...");
                 continue;
             }
 
-            for (final String[] singlePhotoInfo : photoInfo) {
-                final String pictureID = singlePhotoInfo[0];
-                final String other_id = singlePhotoInfo[2];
-                final String directlinks = singlePhotoInfo[5];
+            if (photoInfo != null && photoInfo.length != 0) {
+                for (final String[] singlePhotoInfo : photoInfo) {
+                    final String pictureID = singlePhotoInfo[0];
+                    final String other_id = singlePhotoInfo[2];
+                    final String directlinks = singlePhotoInfo[5];
 
-                final DownloadLink dl = getSinglePhotoDownloadLink(pictureID);
-                if (other_id.matches("album\\-\\d+_\\d+")) {
-                    dl.setProperty("albumid", other_id);
-                } else {
-                    dl.setProperty("wall_id", other_id);
+                    final DownloadLink dl = getSinglePhotoDownloadLink(pictureID);
+                    if (other_id.matches("album\\-\\d+_\\d+")) {
+                        dl.setProperty("albumid", other_id);
+                    } else {
+                        dl.setProperty("wall_id", other_id);
+                    }
+                    dl.setProperty("directlinks", directlinks);
+                    decryptedLinks.add(dl);
                 }
-                dl.setProperty("directlinks", directlinks);
-                decryptedLinks.add(dl);
+                logger.info("Found " + photoInfo.length + " photo links in offset " + correntOffset);
+            }
+
+            if (albums != null && albums.length != 0) {
+                for (final String album : albums) {
+                    decryptedLinks.add(createDownloadlink(album));
+                }
+                logger.info("Found " + albums.length + " album links in offset " + correntOffset);
             }
             logger.info("Decrypted offset " + correntOffset + " / " + maxOffset);
-            logger.info("Found " + photoInfo.length + " links in offset " + correntOffset);
             logger.info("Found " + decryptedLinks.size() + " links so far");
         }
+
         final FilePackage fp = FilePackage.getInstance();
         fp.setName("-" + userID);
         fp.addLinks(decryptedLinks);

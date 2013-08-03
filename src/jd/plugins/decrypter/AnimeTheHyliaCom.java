@@ -40,6 +40,10 @@ public class AnimeTheHyliaCom extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
         br.getPage(parameter);
+        if (br.containsHTML(">No such series<")) {
+            logger.info("Link offline: " + parameter);
+            return decryptedLinks;
+        }
         String fpName = br.getRegex("<\\!\\-\\-Series name: <b>([^<>\"]*?)</b><br>\\-\\->").getMatch(0);
         if (fpName == null) fpName = br.getRegex("<div><h2>([^<>\"]*?)</h2>").getMatch(0);
         final String[][] links = br.getRegex("\"(http://anime\\.thehylia\\.com/download_file/\\d+)\">([^<>\"]*?)</a></td>[\t\n\r ]+<td align=\"center\" width=\"55px\">([^<>\"]*?)</td>").getMatches();
