@@ -93,7 +93,6 @@ public class DepositFiles extends PluginForHost {
     private static AtomicBoolean  useAPI                   = new AtomicBoolean(true);
 
     private final String          SSL_CONNECTION           = "SSL_CONNECTION";
-    private boolean               PREFERSSL                = false;
 
     public DepositFiles(final PluginWrapper wrapper) {
         super(wrapper);
@@ -102,10 +101,11 @@ public class DepositFiles extends PluginForHost {
     }
 
     public void setMainpage() {
-        if (MAINPAGE == null || MAINPAGE.string == null) {
+        if (MAINPAGE == null || MAINPAGE.string == null || userChangedSslSetting()) {
             try {
                 Browser testBr = new Browser();
                 testBr.setFollowRedirects(true);
+                // NOTE: https requests do not trigger redirects
                 testBr.getPage(fixLinkSSL("http://depositfiles.com"));
                 String baseURL = new Regex(testBr.getURL(), "(https?://[^/]+)").getMatch(0);
                 StringContainer main = new StringContainer();
@@ -1087,9 +1087,9 @@ public class DepositFiles extends PluginForHost {
     }
 
     private void mainpageCookies(Browser ibr) {
-        String current_host = new Regex(br.getURL(), "(https?://[^/])").getMatch(0);
+        String current_host = new Regex(ibr.getURL(), "(https?://[^/]+)").getMatch(0);
         /** Save cookies */
-        final Cookies add = br.getCookies(current_host);
+        final Cookies add = ibr.getCookies(current_host);
         for (final Cookie c : add.getCookies()) {
             br.setCookie(MAINPAGE.string, c.getKey(), c.getValue());
         }
@@ -1114,13 +1114,19 @@ public class DepositFiles extends PluginForHost {
         return finallink;
     }
 
-    private void checkSsl() {
-        PREFERSSL = getPluginConfig().getBooleanProperty(SSL_CONNECTION, false);
+    private boolean userChangedSslSetting() {
+        if (MAINPAGE != null && MAINPAGE.string != null && (checkSsl() && MAINPAGE.string.startsWith("http://")) || (!checkSsl() && MAINPAGE.string.startsWith("https://")))
+            return true;
+        else
+            return false;
+    }
+
+    private boolean checkSsl() {
+        return getPluginConfig().getBooleanProperty(SSL_CONNECTION, false);
     }
 
     private String fixLinkSSL(String link) {
-        checkSsl();
-        if (PREFERSSL)
+        if (checkSsl())
             link = link.replace("http://", "https://");
         else
             link = link.replace("https://", "http://");
