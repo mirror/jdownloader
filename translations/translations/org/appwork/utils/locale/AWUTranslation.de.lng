@@ -119,4 +119,6 @@ proxy_none=Direkt
 proxy_socks4=%s1:%s2 (Socks4 Proxy)
 proxy_socks5=%s1:%s2 (Socks5 Proxy)
 proxydialog_title=Keine Internetverbindung
+tableheader_tooltip_locked=%s1 (Größenänderungen gesperrt)
 tableheader_tooltip_normal=%s1
+unLockColumnWidthAction=entsperre Spaltenbreite

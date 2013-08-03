@@ -24,5 +24,5 @@ jd_plugins_optional_jdshutdown=Herunterfahren
 jd_plugins_optional_jdshutdown_description=Automatisches Herunterfahren, Standby, Ruhezustand deines PC's oder JDownloader schließen wenn die Downloads fertig sind.
 lit_shutdownn=Herunterfahren
 show_admin=Es sind administrative Rechte erforderlich um Ruhezustand oder Standby konfigurieren zu können
-shutdown_toggle_action_disabled=Aktiviere Herunterfahren nach den Downloads
-shutdown_toggle_action_enabled=Deaktiviere Herunterfahren nach den Downloads
+shutdown_toggle_action_disabled2=Nach dem Download nicht herunterfahren
+shutdown_toggle_action_enabled2=Nach dem Download herunterfahren
