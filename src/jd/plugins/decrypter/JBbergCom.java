@@ -18,6 +18,7 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 
 import jd.PluginWrapper;
@@ -29,12 +30,14 @@ import jd.http.Browser.BrowserException;
 import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
+import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "jheberg.com" }, urls = { "http://(www\\.)?jheberg\\.net/captcha/[A-Z0-9a-z\\.\\-_]+" }, flags = { 0 })
@@ -48,11 +51,26 @@ public class JBbergCom extends PluginForDecrypt {
     /* must be static so all plugins share same lock */
     private static Object LOCK         = new Object();
     private final Integer MAXCOOKIEUSE = 50;
+    private String        agent        = null;
+
+    private Browser prepBrowser(Browser prepBr) {
+        prepBr.setFollowRedirects(true);
+        if (agent == null) {
+            /* we first have to load the plugin, before we can reference it */
+            JDUtilities.getPluginForHost("mediafire.com");
+            agent = jd.plugins.hoster.MediafireCom.stringUserAgent();
+        }
+        prepBr.getHeaders().put("User-Agent", agent);
+        prepBr.getHeaders().put("Accept-Language", "en-gb, en;q=0.9");
+        return prepBr;
+    }
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        br.setFollowRedirects(true);
+        HashSet<String> filter = new HashSet<String>();
+
         String parameter = param.toString();
+        prepBrowser(br);
         // boolean loggedIn = false;
         // Login function is probably broken, maybe not even needed anymore
         // if (!this.getPluginConfig().getBooleanProperty("skiplogin")) loggedIn = getUserLogin();
@@ -62,9 +80,9 @@ public class JBbergCom extends PluginForDecrypt {
             return decryptedLinks;
         }
 
-        final String fpName = br.getRegex("<li>File : ([^<>\"]*?)</li>").getMatch(0);
-        br.getPage(parameter.replace("/captcha/", "/download/"));
-        final String[] links = br.getRegex("\"/(redirect/[^<>\"/]*?/[^<>\"/]*?)\"").getColumn(0);
+        final String fpName = br.getRegex("file-name\">([^<>\"]+)</h1>").getMatch(0);
+        br.getPage(parameter.replace("/captcha/", "/mirrors/"));
+        final String[] links = br.getRegex("\"(/redirect/[^<>\"/]+/[^<>\"]+)\"").getColumn(0);
         if (links == null || links.length == 0) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
@@ -75,28 +93,29 @@ public class JBbergCom extends PluginForDecrypt {
         fp.setName(linkID);
         if (fpName != null) fp.setName(Encoding.htmlDecode(fpName.trim()));
 
-        final Browser br2 = br.cloneBrowser();
-        br2.getHeaders().put("Accept", "*/*");
-        br2.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         for (final String singleLink : links) {
-            final String currentLink = COOKIE_HOST + singleLink;
+            if (filter.add(singleLink) == false) continue;
+            final Browser br2 = br.cloneBrowser();
+            br2.getHeaders().put("Accept", "*/*");
+            br2.getHeaders().put("X-Requested-With", "XMLHttpRequest");
             try {
-                br.getPage(currentLink);
+                br2.getPage(singleLink);
 
                 // Waittime can be skipped
                 // int wait = 10;
                 // final String waittime = br.getRegex("startNumber: (\\d+),").getMatch(0);
                 // if (waittime != null) wait = Integer.parseInt(waittime);
                 // sleep(wait * 1001l, param);
+                String host = new Regex(singleLink, "/redirect/" + linkID + "/([^/]+)").getMatch(0);
 
-                br2.postPage("http://www.jheberg.net/redirect-ajax/", "slug=" + Encoding.urlEncode(linkID) + "&host=" + singleLink.substring(singleLink.lastIndexOf("/") + 1));
+                br2.postPage("/get/link/", "slug=" + Encoding.urlEncode(linkID) + "&hoster=" + host);
             } catch (final BrowserException e) {
-                logger.info("A link failed because of a browser exception (probably timeout): " + currentLink);
+                logger.info("A link failed because of a browser exception (probably timeout): " + br2.getURL());
                 continue;
             }
-            final String finallink = br2.getRegex("\"url\":\"(http[^<>\"]*?)\"").getMatch(0);
+            final String finallink = br2.getRegex("\"url\"\\s*:\\s*\"(http[^<>\"]*?)\"").getMatch(0);
             // not sure of best action here, but seems some are either down or require account?. Continue with the results
-            if (br2.containsHTML("url\":\"not authorized\"") || br2.containsHTML("\"url\":\"\"")) {
+            if (br2.containsHTML("url\"\\s*:\\s*\"not authorized\"") || br2.containsHTML("\"url\"\\s*:\\s*\"\"")) {
                 continue;
             }
             if (finallink == null) {
