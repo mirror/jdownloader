@@ -66,7 +66,7 @@ public class NovaUpMovcom extends PluginForHost {
         setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML("This file no longer exists on our servers") || br.getURL().contains("novamov.com/index.php")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+        if (br.containsHTML("This file no longer exists on our servers|The file has failed to convert!") || br.getURL().contains("novamov.com/index.php")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
         // onlinecheck für Videolinks
         if (downloadLink.getDownloadURL().contains("video")) {
             String filename = br.getRegex("name=\"title\" content=\"Watch(.*?)online\"").getMatch(0);

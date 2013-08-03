@@ -39,7 +39,6 @@ import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.Property;
-import jd.config.SubConfiguration;
 import jd.controlling.AccountController;
 import jd.http.Browser;
 import jd.http.Cookie;
@@ -70,17 +69,17 @@ import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.os.CrossSystem;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "cyberlocker.ch" }, urls = { "https?://(www\\.)?cyberlocker\\.ch/((vid)?embed-)?[a-z0-9]{12}" }, flags = { 2 })
+@HostPlugin(revision = "$Revision: 19496 $", interfaceVersion = 2, names = { "enjoybox.in" }, urls = { "https?://(www\\.)?enjoybox\\.in/((vid)?embed-)?[a-z0-9]{12}" }, flags = { 0 })
 @SuppressWarnings("deprecation")
-public class CyberLockerCh extends PluginForHost {
+public class EnjoyBoxIn extends PluginForHost {
 
     // Site Setters
     // primary website url, take note of redirects
-    private final String               COOKIE_HOST                  = "http://cyberlocker.ch";
+    private final String               COOKIE_HOST                  = "http://enjoybox.in";
     // domain names used within download links.
-    private final String               DOMAINS                      = "(cyberlocker\\.ch)";
+    private final String               DOMAINS                      = "(enjoybox\\.in)";
     private final String               PASSWORDTEXT                 = "<br><b>Passwor(d|t):</b> <input";
-    private final String               MAINTENANCE                  = ">This server is in maintenance mode|<h3>Video is encoding or we are having technical difficulties\\.";
+    private final String               MAINTENANCE                  = ">This server is in maintenance mode";
     private final String               dllinkRegex                  = "https?://(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|([\\w\\-]+\\.)?" + DOMAINS + ")(:\\d{1,5})?/(files(/(dl|download))?|d|cgi-bin/dl\\.cgi)/(\\d+/)?([a-z0-9]+/){1,4}[^/<>\r\n\t]+";
     private final boolean              useVidEmbed                  = false;
     private final boolean              useAltEmbed                  = false;
@@ -99,27 +98,27 @@ public class CyberLockerCh extends PluginForHost {
     // XfileShare Version 3.0.7.3
     // last XfileSharingProBasic compare :: 2.6.2.1
     // protocol: no https
-    // captchatype: null
+    // captchatype: 4dignum
     // other: no redirects
     // mods:
 
     private void setConstants(final Account account) {
         if (account != null && account.getBooleanProperty("free")) {
             // free account
-            chunks = -2;
-            resumes = true;
+            chunks = 1;
+            resumes = false;
             acctype = "Free Account";
             directlinkproperty = "freelink2";
         } else if (account != null && !account.getBooleanProperty("free")) {
             // prem account
-            chunks = -10;
+            chunks = 0;
             resumes = true;
             acctype = "Premium Account";
             directlinkproperty = "premlink";
         } else {
             // non account
-            chunks = -2;
-            resumes = true;
+            chunks = 1;
+            resumes = false;
             acctype = "Non Account";
             directlinkproperty = "freelink";
         }
@@ -139,17 +138,17 @@ public class CyberLockerCh extends PluginForHost {
     }
 
     public boolean hasAutoCaptcha() {
-        return false;
+        return true;
     }
 
     public boolean hasCaptcha(final DownloadLink downloadLink, final jd.plugins.Account acc) {
         if (acc == null) {
             /* no account, yes we can expect captcha */
-            return false;
+            return true;
         }
         if (Boolean.TRUE.equals(acc.getBooleanProperty("free"))) {
             /* free accounts also have captchas */
-            return false;
+            return true;
         }
         return false;
     }
@@ -159,10 +158,10 @@ public class CyberLockerCh extends PluginForHost {
      * 
      * @category 'Experimental', Mods written July 2012 - 2013
      * */
-    public CyberLockerCh(PluginWrapper wrapper) {
+    public EnjoyBoxIn(PluginWrapper wrapper) {
         super(wrapper);
         setConfigElements();
-        this.enablePremium(COOKIE_HOST + "/premium.html");
+        // this.enablePremium(COOKIE_HOST + "/premium.html");
     }
 
     @Override
@@ -618,7 +617,7 @@ public class CyberLockerCh extends PluginForHost {
             account.setValid(false);
             throw e;
         }
-        final String space[] = cbr.getRegex("<td>Used space:</td>.*?<td.*?b>([0-9\\.]+) of [0-9\\.]+ (KB|MB|GB|TB)</b>").getRow(0);
+        final String space[] = cbr.getRegex(">Used space:</td>.*?<td.*?b>([0-9\\.]+) ?(KB|MB|GB|TB)?</b>").getRow(0);
         if ((space != null && space.length != 0) && (!inValidate(space[0]) && !inValidate(space[1]))) {
             // free users it's provided by default
             ai.setUsedSpace(space[0] + " " + space[1]);
@@ -1734,67 +1733,6 @@ public class CyberLockerCh extends PluginForHost {
                 }
             });
         } catch (Throwable e) {
-        }
-    }
-
-    private static void showFreeDialog(final String domain) {
-        try {
-            SwingUtilities.invokeAndWait(new Runnable() {
-
-                @Override
-                public void run() {
-                    try {
-                        String lng = System.getProperty("user.language");
-                        String message = null;
-                        String title = null;
-                        String tab = "                        ";
-                        if ("de".equalsIgnoreCase(lng)) {
-                            title = domain + " Free Download";
-                            message = "Du lädst im kostenlosen Modus von " + domain + ".\r\n";
-                            message += "Wie bei allen anderen Hostern holt JDownloader auch hier das Beste für dich heraus!\r\n\r\n";
-                            message += tab + "  Falls du allerdings mehrere Dateien\r\n" + "          - und das möglichst mit Fullspeed und ohne Unterbrechungen - \r\n" + "             laden willst, solltest du dir den Premium Modus anschauen.\r\n\r\nUnserer Erfahrung nach lohnt sich das - Aber entscheide am besten selbst. Jetzt ausprobieren?  ";
-                        } else {
-                            title = domain + " Free Download";
-                            message = "You are using the " + domain + " Free Mode.\r\n";
-                            message += "JDownloader always tries to get the best out of each hoster's free mode!\r\n\r\n";
-                            message += tab + "   However, if you want to download multiple files\r\n" + tab + "- possibly at fullspeed and without any wait times - \r\n" + tab + "you really should have a look at the Premium Mode.\r\n\r\nIn our experience, Premium is well worth the money. Decide for yourself, though. Let's give it a try?   ";
-                        }
-                        if (CrossSystem.isOpenBrowserSupported()) {
-                            int result = JOptionPane.showConfirmDialog(jd.gui.swing.jdgui.JDGui.getInstance().getMainFrame(), message, title, JOptionPane.YES_NO_OPTION, JOptionPane.INFORMATION_MESSAGE, null);
-                            if (JOptionPane.OK_OPTION == result) CrossSystem.openURL(new URL("http://update3.jdownloader.org/jdserv/BuyPremiumInterface/redirect?" + domain + "&freedialog"));
-                        }
-                    } catch (Throwable e) {
-                    }
-                }
-            });
-        } catch (Throwable e) {
-        }
-    }
-
-    private void checkShowFreeDialog() {
-        SubConfiguration config = null;
-        try {
-            config = getPluginConfig();
-            if (config.getBooleanProperty("premAdShown", Boolean.FALSE) == false) {
-                if (config.getProperty("premAdShown2") == null) {
-                    File checkFile = JDUtilities.getResourceFile("tmp/cyblock");
-                    if (!checkFile.exists()) {
-                        checkFile.mkdirs();
-                        showFreeDialog("cyberlocker.ch");
-                    }
-                } else {
-                    config = null;
-                }
-            } else {
-                config = null;
-            }
-        } catch (final Throwable e) {
-        } finally {
-            if (config != null) {
-                config.setProperty("premAdShown", Boolean.TRUE);
-                config.setProperty("premAdShown2", "shown");
-                config.save();
-            }
         }
     }
 
