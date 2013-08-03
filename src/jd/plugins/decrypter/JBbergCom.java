@@ -96,8 +96,6 @@ public class JBbergCom extends PluginForDecrypt {
         for (final String singleLink : links) {
             if (filter.add(singleLink) == false) continue;
             final Browser br2 = br.cloneBrowser();
-            br2.getHeaders().put("Accept", "*/*");
-            br2.getHeaders().put("X-Requested-With", "XMLHttpRequest");
             try {
                 br2.getPage(singleLink);
 
@@ -107,7 +105,12 @@ public class JBbergCom extends PluginForDecrypt {
                 // if (waittime != null) wait = Integer.parseInt(waittime);
                 // sleep(wait * 1001l, param);
                 String host = new Regex(singleLink, "/redirect/" + linkID + "/([^/]+)").getMatch(0);
-
+                if (host == null) {
+                    logger.warning("Could not determine 'host");
+                    return null;
+                }
+                br2.getHeaders().put("Accept", "*/*");
+                br2.getHeaders().put("X-Requested-With", "XMLHttpRequest");
                 br2.postPage("/get/link/", "slug=" + Encoding.urlEncode(linkID) + "&hoster=" + host);
             } catch (final BrowserException e) {
                 logger.info("A link failed because of a browser exception (probably timeout): " + br2.getURL());
