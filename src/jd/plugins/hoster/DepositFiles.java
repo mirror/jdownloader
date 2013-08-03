@@ -925,6 +925,8 @@ public class DepositFiles extends PluginForHost {
                 }
                 // no expire date shown by API within login... kinda lame I know... && cookie session is set with login
                 br.setFollowRedirects(true);
+                // we need to save cookies from browser into mainpage, otherwise cookies session wont send with request!
+                mainpageCookies(br);
                 br.getPage(MAINPAGE.string + "/de/gold/");
                 String expire = br.getRegex("Gold-Zugriff: <b>(.*?)</b></div>").getMatch(0);
                 if (expire == null) expire = br.getRegex("Gold Zugriff bis: <b>(.*?)</b></div>").getMatch(0);
@@ -1082,6 +1084,15 @@ public class DepositFiles extends PluginForHost {
         String result = br.getRegex("\"" + object + "\":\"([^\"]+)").getMatch(0);
         if (result == null) result = br.getRegex("\"" + object + "\":(\\d+)").getMatch(0);
         return result;
+    }
+
+    private void mainpageCookies(Browser ibr) {
+        String current_host = new Regex(br.getURL(), "(https?://[^/])").getMatch(0);
+        /** Save cookies */
+        final Cookies add = br.getCookies(current_host);
+        for (final Cookie c : add.getCookies()) {
+            br.setCookie(MAINPAGE.string, c.getKey(), c.getValue());
+        }
     }
 
     private String checkDirectLink(DownloadLink downloadLink) {
