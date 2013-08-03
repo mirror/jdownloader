@@ -48,7 +48,7 @@ public class RestFileCom extends PluginForHost {
 
     private String              correctedBR         = "";
     private static final String PASSWORDTEXT        = "(<br><b>Password:</b> <input|<br><b>Passwort:</b> <input)";
-    private static final String COOKIE_HOST         = "http://restfile.ws";
+    private static final String COOKIE_HOST         = "http://restfile.ca";
     private static final String MAINTENANCE         = ">This server is in maintenance mode";
     private static final String MAINTENANCEUSERTEXT = "This server is under Maintenance";
     private static final String ALLWAIT_SHORT       = "Waiting till new downloads can be started";
@@ -63,7 +63,7 @@ public class RestFileCom extends PluginForHost {
     // other: redirects
     @Override
     public void correctDownloadLink(DownloadLink link) {
-        link.setUrlDownload("http://restfile.ws/" + new Regex(link.getDownloadURL(), "([a-z0-9]{12})$").getMatch(0));
+        link.setUrlDownload("http://restfile.ca/" + new Regex(link.getDownloadURL(), "([a-z0-9]{12})$").getMatch(0));
     }
 
     @Override

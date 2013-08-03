@@ -349,7 +349,8 @@ public class PremiumizeMe extends PluginForHost {
             logBytes.write(((LogSource) logger).toString().getBytes("UTF-8"));
             logBytes.close();
             postString = postString + "&error=" + Encoding.urlEncode(bos.toString("UTF-8"));
-            br.postPage("https://api.premiumize.me/pm-api/jderror.php?method=log", postString);
+            Browser br2 = br.cloneBrowser();
+            br2.postPage("https://api.premiumize.me/pm-api/jderror.php?method=log", postString);
         } catch (final Throwable e) {
             LogSource.exception(logger, e);
         }
