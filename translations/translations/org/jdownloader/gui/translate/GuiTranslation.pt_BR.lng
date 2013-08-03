@@ -941,6 +941,7 @@ premiumaccounttablemodel_column_trafficleft_tempdisabled=Temp. desativado %s1
 premiumaccounttablemodel_column_trafficleft_unlimited=Ilimitado
 premiumaccounttablemodel_column_user=Usuário
 proxytablemodel_atleast_one_rotate_required=Rotação de Proxy require pelo menos uma entrada ativa.
+quicksettings_SettingsMenuContainer=Ajustes Rápidos
 searchcategory_filename=Nome do Arquivo
 searchcategory_filename_help=Por favor, insira o nome do arquivo pelo qual está procurando...
 searchcategory_hoster=Servidor
