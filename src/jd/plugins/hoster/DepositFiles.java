@@ -80,6 +80,8 @@ public class DepositFiles extends PluginForHost {
     public static StringContainer MAINPAGE                 = new StringContainer();
     public static final String    DOMAINS                  = "(depositfiles\\.(com|org)|dfiles\\.(eu|ru))";
 
+    private String                protocol                 = null;
+
     public String                 DLLINKREGEX2             = "<div id=\"download_url\" style=\"display:none;\">.*?<form action=\"(.*?)\" method=\"get";
     private final Pattern         FILE_INFO_NAME           = Pattern.compile("(?s)Dateiname: <b title=\"(.*?)\">.*?</b>", Pattern.CASE_INSENSITIVE);
     private final Pattern         FILE_INFO_SIZE           = Pattern.compile(">Datei Gr.*?sse: <b>([^<>\"]*?)</b>");
@@ -342,6 +344,7 @@ public class DepositFiles extends PluginForHost {
 
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
+        setConstants();
         requestFileInformation(downloadLink);
         doFree(downloadLink);
     }
@@ -380,7 +383,7 @@ public class DepositFiles extends PluginForHost {
                 logger.info("Entering form-handling.");
                 final Form form = new Form();
                 form.setMethod(MethodType.POST);
-                form.setAction(fixLinkSSL(br.getURL()));
+                form.setAction(br.getURL().replaceFirst("https?://", protocol));
                 form.put("gateway_result", "1");
                 // Important: Setup Cookie
                 final String keks = br.getRegex("(adv_.*?);").getMatch(0);
@@ -399,7 +402,7 @@ public class DepositFiles extends PluginForHost {
                 if (br.containsHTML("\"file_password\"")) {
                     logger.info("This file seems to be password protected.");
                     if (passCode == null) passCode = getUserInput(null, downloadLink);
-                    br.postPage(fixLinkSSL(br.getURL()), "file_password=" + passCode);
+                    br.postPage(br.getURL().replaceFirst("https?://", protocol), "file_password=" + passCode);
                     logger.info("Put password \"" + passCode + "\" entered by user in the DLForm.");
                     if (br.containsHTML("(>The file's password is incorrect. Please check your password and try to enter it again\\.<|\"file_password\")")) {
                         logger.info("The entered password (" + passCode + ") was wrong, retrying...");
@@ -484,6 +487,12 @@ public class DepositFiles extends PluginForHost {
         }
         downloadLink.setProperty("finallink", finallink);
         dl.startDownload();
+    }
+
+    private void setConstants() {
+        // set session protocol based on user setting and jd version && java version
+        protocol = fixLinkSSL("https://");
+        if (isJava7nJDStable()) protocol = "http://";
     }
 
     public boolean isFreeAccount(Account acc, boolean force) throws IOException {
@@ -692,6 +701,7 @@ public class DepositFiles extends PluginForHost {
 
     @Override
     public void handlePremium(final DownloadLink downloadLink, final Account account) throws Exception {
+        setConstants();
         requestFileInformation(downloadLink);
         synchronized (PREMLOCK) {
             if (isFreeAccount(account, false)) {
@@ -728,7 +738,7 @@ public class DepositFiles extends PluginForHost {
             if (br.containsHTML("\"file_password\"")) {
                 logger.info("This file seems to be password protected.");
                 if (passCode == null) passCode = getUserInput(null, downloadLink);
-                br.postPage(fixLinkSSL(br.getURL()), "file_password=" + passCode);
+                br.postPage(br.getURL().replaceFirst("https?://", protocol), "file_password=" + passCode);
                 logger.info("Put password \"" + passCode + "\" entered by user in the DLForm.");
                 if (br.containsHTML("(>The file's password is incorrect. Please check your password and try to enter it again\\.<|\"file_password\")")) {
                     logger.info("The entered password (" + passCode + ") was wrong, retrying...");
@@ -1086,10 +1096,6 @@ public class DepositFiles extends PluginForHost {
 
     private void checkSsl() {
         PREFERSSL = getPluginConfig().getBooleanProperty(SSL_CONNECTION, false);
-        if (isJava7nJDStable()) {
-            showSSLWarning(this.getHost());
-            PREFERSSL = false;
-        }
     }
 
     private String fixLinkSSL(String link) {

@@ -228,7 +228,7 @@ public class FourSharedCom extends PluginForHost {
                     final String ttt = br.getRegex(" var c = (\\d+);").getMatch(0);
                     int tt = 20;
                     if (ttt != null) {
-                        /* logger.info */System.out.println("Waittime detected, waiting " + ttt.trim() + " seconds from now on...");
+                        logger.info("Waittime detected, waiting " + ttt.trim() + " seconds from now on...");
                         tt = Integer.parseInt(ttt);
                     }
                     sleep(tt * 1000l, downloadLink);
