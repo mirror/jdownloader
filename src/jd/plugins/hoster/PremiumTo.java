@@ -85,7 +85,7 @@ public class PremiumTo extends PluginForHost {
             if (br.getCookie("http://premium.to", "auth") != null) {
                 // page = br.getPage("http://premium.to/account.php");
                 traffic = br.getPage("http://premium.to/traffic.php").trim() + " MB";
-                hosts = br.getPage("http://premium.to/hosters.php");
+                hosts = br.getPage("http://premium.to/hosts.php");
             }
         } catch (Exception e) {
             // account.setTempDisabled(true);
