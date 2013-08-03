@@ -24,5 +24,5 @@ jd_plugins_optional_jdshutdown=Apagado Automático
 jd_plugins_optional_jdshutdown_description=Apaga, suspende, hiberna, o cierra JDownloader automáticamente cuando las descargas han finalizado.
 lit_shutdownn=Apagado Automático
 show_admin=Se requieren derechos de Administrador para configurar JDownloader para Hibernar o Suspender
-shutdown_toggle_action_disabled=Habilitar Apagado al Finalizar las Descargas
-shutdown_toggle_action_enabled=Deshabilitar Apagado al Finalizar las Descargas
+shutdown_toggle_action_disabled2=Apagar al finalizar las Descargas
+shutdown_toggle_action_enabled2=Apagar al finalizar las Descargas
