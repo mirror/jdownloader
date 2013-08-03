@@ -715,8 +715,16 @@ public class DepositFiles extends PluginForHost {
             }
         }
         if (useAPI.get()) {
-            apiHandlePremium(downloadLink, account);
-        } else {
+            try {
+                apiHandlePremium(downloadLink, account);
+            } catch (PluginException e) {
+                if (e instanceof PluginException && e.getLinkStatus() == 4194304)
+                    useAPI.set(false);
+                else
+                    throw e;
+            }
+        }
+        if (!useAPI.get()) {
             webHandlePremium(downloadLink, account);
         }
     }
@@ -916,7 +924,8 @@ public class DepositFiles extends PluginForHost {
                 } catch (Throwable e) {
                 }
                 // no expire date shown by API within login... kinda lame I know... && cookie session is set with login
-                if (!br.getURL().contains("/gold/")) br.getPage(MAINPAGE.string + "/de/gold/");
+                br.setFollowRedirects(true);
+                br.getPage(MAINPAGE.string + "/de/gold/");
                 String expire = br.getRegex("Gold-Zugriff: <b>(.*?)</b></div>").getMatch(0);
                 if (expire == null) expire = br.getRegex("Gold Zugriff bis: <b>(.*?)</b></div>").getMatch(0);
                 if (expire == null) expire = br.getRegex("Gold(-| )(Zugriff|Zugang)( bis)?: <b>(.*?)</b></div>").getMatch(3);
