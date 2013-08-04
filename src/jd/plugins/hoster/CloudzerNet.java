@@ -33,6 +33,8 @@ import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
 
 import jd.PluginWrapper;
+import jd.config.ConfigContainer;
+import jd.config.ConfigEntry;
 import jd.config.Property;
 import jd.config.SubConfiguration;
 import jd.crypt.Base64;
@@ -52,6 +54,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.download.RAFDownload;
 import jd.utils.JDUtilities;
+import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.os.CrossSystem;
@@ -63,14 +66,15 @@ public class CloudzerNet extends PluginForHost {
         public String string = null;
     }
 
-    private static AtomicInteger   maxPrem          = new AtomicInteger(1);
-    private char[]                 FILENAMEREPLACES = new char[] { '_' };
-    private Pattern                IPREGEX          = Pattern.compile("(([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9]))", Pattern.CASE_INSENSITIVE);
-    private static AtomicBoolean   hasDled          = new AtomicBoolean(false);
-    private static AtomicLong      timeBefore       = new AtomicLong(0);
-    private String                 LASTIP           = "LASTIP";
-    private static StringContainer lastIP           = new StringContainer();
-    private static final long      RECONNECTWAIT    = 3600000;
+    private static AtomicInteger   maxPrem              = new AtomicInteger(1);
+    private char[]                 FILENAMEREPLACES     = new char[] { '_' };
+    private Pattern                IPREGEX              = Pattern.compile("(([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9]))", Pattern.CASE_INSENSITIVE);
+    private static AtomicBoolean   hasDled              = new AtomicBoolean(false);
+    private static AtomicLong      timeBefore           = new AtomicLong(0);
+    private String                 LASTIP               = "LASTIP";
+    private static StringContainer lastIP               = new StringContainer();
+    private static final long      RECONNECTWAIT        = 3600000;
+    private static final String    EXPERIMENTALHANDLING = "EXPERIMENTALHANDLING";
 
     private static void showFreeDialog(final String domain) {
         try {
@@ -185,6 +189,7 @@ public class CloudzerNet extends PluginForHost {
         super(wrapper);
         this.enablePremium("http://cloudzer.net/");
         this.setStartIntervall(2000l);
+        this.setConfigElements();
     }
 
     public String filterPackageID(String packageIdentifier) {
@@ -386,7 +391,7 @@ public class CloudzerNet extends PluginForHost {
              * Reconnect handling to prevent having to enter a captcha just to see that a limit has been reached
              */
             logger.info("New Download: currentIP = " + currentIP);
-            if (hasDled.get() && ipChanged(currentIP, downloadLink) == false) {
+            if (hasDled.get() && ipChanged(currentIP, downloadLink) == false && this.getPluginConfig().getBooleanProperty(EXPERIMENTALHANDLING, false)) {
                 long result = System.currentTimeMillis() - timeBefore.get();
                 if (result < RECONNECTWAIT && result > 0) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, RECONNECTWAIT - result);
             }
@@ -812,6 +817,11 @@ public class CloudzerNet extends PluginForHost {
         String lastIP = link.getStringProperty(LASTIP, null);
         if (lastIP == null) lastIP = CloudzerNet.lastIP.string;
         return !currentIP.equals(lastIP);
+    }
+
+    public void setConfigElements() {
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), EXPERIMENTALHANDLING, JDL.L("plugins.hoster.cloudzernet.activateExperimentalReconnectHandling", "Activate experimental reconnect handling for freeusers: Prevents having to enter captchas in between downloads.")).setDefaultValue(false));
+
     }
 
     @Override
