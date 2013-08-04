@@ -103,6 +103,7 @@ public class OteUploadCom extends PluginForHost {
     // other: no redirects
     // mods: API && API work arounds for times of failure...
     // mods: they use heavy js. loads of stuff gets cleaned up from html comments.. make sure you use br.
+    // mods: captcha handling for login, modified login form
 
     private void setConstants(final Account account) {
         if (account != null && account.getBooleanProperty("free")) {
@@ -771,12 +772,20 @@ public class OteUploadCom extends PluginForHost {
                     }
                 }
                 loginform = cleanForm(loginform);
+                final String rand = br.getRegex("name=\"rand\" value=\"([a-z0-9]+)\"").getMatch(0);
+                if (rand != null) loginform.put("rand", rand);
                 loginform.put("login", Encoding.urlEncode(account.getUser()));
                 loginform.put("password", Encoding.urlEncode(account.getPass()));
                 loginform.put("redirect", Encoding.urlEncode("/?op=my_account"));
-                // check form for login captcha crap.
-                DownloadLink dummyLink = new DownloadLink(null, "Account", this.getHost(), COOKIE_HOST, true);
-                loginform = captchaForm(dummyLink, loginform);
+                loginform.put("file_id", "");
+                loginform.remove("tos");
+                loginform.remove("submit");
+                // Check for stupid login plaintext captcha
+                if (cbr.containsHTML(";background:#ccc;text\\-align")) {
+                    logger.info("Detected captcha method \"Plaintext Captcha\"");
+                    final String code = solvePlaintextCaptcha(cbr.toString());
+                    loginform.put("code", code);
+                }
                 // end of check form for login captcha crap.
                 sendForm(loginform);
                 if (br.getCookie(COOKIE_HOST, "login") == null || br.getCookie(COOKIE_HOST, "xfss") == null) {
@@ -1286,24 +1295,8 @@ public class OteUploadCom extends PluginForHost {
     private Form captchaForm(DownloadLink downloadLink, Form form) throws Exception {
         if (form.containsHTML(";background:#ccc;text-align")) {
             logger.info("Detected captcha method \"Plaintext Captcha\"");
-            /** Captcha method by ManiacMansion */
-            String[][] letters = form.getRegex("<span style=\"position:absolute;padding-left:(\\d+)px;padding-top:\\d+px;\">(&#\\d+;)</span>").getMatches();
-            if (letters == null || letters.length == 0) {
-                letters = br.getRegex("<span style='position:absolute;padding-left:(\\d+)px;padding-top:\\d+px;'>(&#\\d+;)</span>").getMatches();
-                if (letters == null || letters.length == 0) {
-                    logger.warning("plaintext captchahandling broken!");
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-            }
-            final SortedMap<Integer, String> capMap = new TreeMap<Integer, String>();
-            for (String[] letter : letters) {
-                capMap.put(Integer.parseInt(letter[0]), Encoding.htmlDecode(letter[1]));
-            }
-            final StringBuilder code = new StringBuilder();
-            for (String value : capMap.values()) {
-                code.append(value);
-            }
-            form.put("code", code.toString());
+            final String code = solvePlaintextCaptcha(form.toString());
+            form.put("code", code);
         } else if (form.containsHTML("/captchas/")) {
             logger.info("Detected captcha method \"Standard Captcha\"");
             final String[] sitelinks = HTMLParser.getHttpLinks(form.getHtmlCode(), null);
@@ -1370,6 +1363,27 @@ public class OteUploadCom extends PluginForHost {
             form.put("capcode", result);
         }
         return form;
+    }
+
+    private String solvePlaintextCaptcha(final String source) throws PluginException {
+        /** Captcha method by ManiacMansion */
+        String[][] letters = new Regex(source, "<span style=\"position:absolute;padding-left:(\\d+)px;padding-top:\\d+px;\">(&#\\d+;)</span>").getMatches();
+        if (letters == null || letters.length == 0) {
+            letters = br.getRegex("<span style='position:absolute;padding-left:(\\d+)px;padding-top:\\d+px;'>(&#\\d+;)</span>").getMatches();
+            if (letters == null || letters.length == 0) {
+                logger.warning("plaintext captchahandling broken!");
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+        }
+        final SortedMap<Integer, String> capMap = new TreeMap<Integer, String>();
+        for (String[] letter : letters) {
+            capMap.put(Integer.parseInt(letter[0]), Encoding.htmlDecode(letter[1]));
+        }
+        final StringBuilder code = new StringBuilder();
+        for (String value : capMap.values()) {
+            code.append(value);
+        }
+        return code.toString();
     }
 
     /**
