@@ -4,6 +4,7 @@ DuplicateAction_DuplicateAction_=Duplikovať pravidlo
 Extraction_onShutdownRequest_=Rozbalovanie stále prebieha!
 Extraction_onShutdownRequest_msg=Prerušiť rozbaľovanie?
 ImportAction_tt=Importovať pravidla z *.jdfilter (*.jdregexfilter) súborov
+LinkCollector_addCrawledLink_variouspackage=Rôzne súbory
 LinkCollector_archiv=%s1
 Main_run_autostart_=Spúšťam sťahovanie
 OptionalContainer_OptionalContainer=Viac akcií...
