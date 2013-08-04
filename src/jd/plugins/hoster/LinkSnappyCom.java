@@ -139,7 +139,7 @@ public class LinkSnappyCom extends PluginForHost {
                 continue;
             }
         }
-        if (dl.getConnection().getResponseCode() == 503) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 503", 10 * 60 * 1000l);
+        if (dl.getConnection().getResponseCode() == 503) stupidServerError();
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -176,7 +176,7 @@ public class LinkSnappyCom extends PluginForHost {
             failed = false;
             break;
         }
-        if (failed) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 503", 10 * 60 * 1000l);
+        if (failed) stupidServerError();
     }
 
     private void postPageSecure(final String page, final String postData) throws IOException, PluginException {
@@ -199,7 +199,7 @@ public class LinkSnappyCom extends PluginForHost {
             failed = false;
             break;
         }
-        if (failed) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 503", 10 * 60 * 1000l);
+        if (failed) stupidServerError();
     }
 
     @Override
@@ -214,6 +214,11 @@ public class LinkSnappyCom extends PluginForHost {
         getPageSecure("http://gen.linksnappy.com/lseAPI.php?act=USERDETAILS&username=" + account.getUser() + "&password=" + JDHash.getMD5(account.getPass()));
         if (br.containsHTML("\"status\":\"ERROR\"")) return false;
         return true;
+    }
+
+    private void stupidServerError() throws PluginException {
+        // Only wait 30 seconds because without forcing it, those servers will always bring up errors
+        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 503", 30 * 1000l);
     }
 
     /** Not needed anymore but is still working */
