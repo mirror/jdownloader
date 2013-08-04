@@ -838,7 +838,7 @@ public class DepositFiles extends PluginForHost {
         if (accountData != null && accountData.containsKey("token")) {
             result = accountData.get("token").toString();
         }
-        return result.replaceAll("(%2B|%2F)", "/");
+        return result.replace("%2F", "/");
     }
 
     private Browser apiPrepBr(Browser ibr) {
@@ -895,9 +895,10 @@ public class DepositFiles extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             }
             String token = getJson("token");
-            if (token != null)
-                token = token.replaceAll("\\\\/|\\+", "/").replace("=", "%3D");
-            else
+            if (token != null) {
+                token = token.replaceAll("\\\\/", "/");
+                token = Encoding.urlEncode(token);
+            } else
                 token = br.getCookie(br.getHost(), "autologin");
             if (token == null) {
                 logger.warning("Could not find 'token'");
