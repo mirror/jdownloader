@@ -679,7 +679,9 @@ public class SecondLevelLaunch {
                         // parse Menu Data. This will result in a better direct feeling when using the contextmenu the first time
                         DownloadListContextMenuManager.getInstance().getMenuData();
                         LinkgrabberContextMenuManager.getInstance().getMenuData();
-                        ExtFileSystemView.runSambaScanner();
+                        if (CFG_GENERAL.CFG.isSambaPrefetchEnabled()) {
+                            ExtFileSystemView.runSambaScanner();
+                        }
                     }
                 }.start();
             }

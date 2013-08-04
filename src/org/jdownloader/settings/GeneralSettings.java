@@ -406,4 +406,9 @@ public interface GeneralSettings extends ConfigInterface {
 
     void setDeleteEmptySubFoldersAfterDeletingDownloadedFilesEnabled(boolean b);
 
+    @AboutConfig
+    @DefaultBooleanValue(true)
+    boolean isSambaPrefetchEnabled();
+
+    void setSambaPrefetchEnabled(boolean b);
 }
