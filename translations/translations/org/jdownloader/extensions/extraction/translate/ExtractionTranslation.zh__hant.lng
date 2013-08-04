@@ -22,6 +22,7 @@ contextmenu_extract_show_result=顯示解壓縮日誌
 contextmenu_extract_to=設定解壓縮路徑
 contextmenu_main=壓縮檔
 contextmenu_password=設定壓縮檔密碼
+crash_message=似乎在解壓縮檔案時是當機。\r\n請檢查下面的詳細資訊。您想要傳送 bug 報告嗎？
 crash_title=JDownloader 當掉！
 date=日期
 description=解壓縮所有常用類型的壓縮檔 (zip、rar、7zip、......)
