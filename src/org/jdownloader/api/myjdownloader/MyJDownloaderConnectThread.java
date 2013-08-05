@@ -244,6 +244,8 @@ public class MyJDownloaderConnectThread extends Thread {
                         }
                         MyJDownloaderConnectionRequest request = null;
                         boolean waitForResponse = false;
+                        /* make sure we have at least one alive thread */
+                        startWaitingConnections(false);
                         synchronized (waitingConnections) {
                             for (MyJDownloaderWaitingConnectionThread waitingThread : waitingConnections) {
                                 if (request == null) request = new MyJDownloaderConnectionRequest(api.getSessionInfo().getSessionToken(), currentHelper);
