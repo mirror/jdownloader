@@ -522,8 +522,6 @@ public class MyJDownloaderConnectThread extends Thread {
                 SessionInfo sessionInfo = sessionInfoStorable._getSessionInfo();
                 if (sessionInfo == null) return;
                 lapi.setSessionInfo(sessionInfo);
-                lapi.keepalive();
-                sessionValid.set(true);
             } catch (final Throwable e) {
                 logger.log(e);
             }
