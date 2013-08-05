@@ -6,6 +6,7 @@ import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import jd.controlling.reconnect.ReconnectConfig;
 import jd.controlling.reconnect.ReconnectException;
 import jd.controlling.reconnect.ReconnectInvoker;
 import jd.controlling.reconnect.ReconnectResult;
@@ -22,6 +23,7 @@ import jd.nutils.JDHash;
 import jd.nutils.encoding.Encoding;
 import jd.utils.JDUtilities;
 
+import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.Regex;
 import org.appwork.utils.net.httpconnection.HTTPProxy;
 import org.w3c.dom.Document;
@@ -165,8 +167,8 @@ public class LiveHeaderInvoker extends ReconnectInvoker {
         br.setVerbose(true);
         /* set custom timeouts here because 10secs is a LONG time ;) */
         br.setCookiesExclusive(true);
-        br.setReadTimeout(20000);
-        br.setConnectTimeout(20000);
+        br.setReadTimeout(JsonConfig.create(ReconnectConfig.class).getReconnectBrowserReadTimeout());
+        br.setConnectTimeout(JsonConfig.create(ReconnectConfig.class).getReconnectBrowserConnectTimeout());
         br.setProxy(HTTPProxy.NONE);
         br.setLogger(logger);
         /* we have to handle 401 special */
