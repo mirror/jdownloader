@@ -17,6 +17,8 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 
 import jd.PluginWrapper;
@@ -109,6 +111,10 @@ public class EsouboryCz extends PluginForHost {
 
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
+        handleDL(link, account);
+    }
+
+    private void handleDL(final DownloadLink link, final Account account) throws Exception {
         String finallink = checkDirectLink(link, "esouborydirectlink");
         if (finallink == null) {
             br.getPage("http://www.esoubory.cz/api/filelink?token=" + getToken(account) + "&url=" + Encoding.urlEncode(link.getDownloadURL()));
@@ -117,13 +123,9 @@ public class EsouboryCz extends PluginForHost {
             finallink = finallink.replace("\\", "");
             link.setProperty("esouborydirectlink", finallink);
         }
-        handleDL(link, finallink, account);
-    }
-
-    private void handleDL(final DownloadLink link, String dllink, final Account account) throws Exception {
         /* we want to follow redirects in final stage */
         br.setFollowRedirects(true);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, -2);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, finallink, true, -2);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -131,16 +133,10 @@ public class EsouboryCz extends PluginForHost {
         dl.startDownload();
     }
 
-    // /** no override to keep plugin compatible to old stable */
-    // public void handleMultiHost(final DownloadLink link, final Account acc) throws Exception {
-    // prepBr();
-    // showMessage(link, "Task 1: Generating Link");
-    // String dllink = br.getPage("http:///?filenium&filez=" + Encoding.urlEncode(link.getDownloadURL()));
-    // if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-    // dllink = dllink.replaceAll("\\\\/", "/");
-    // showMessage(link, "Task 2: Download begins!");
-    // handleDL(link, dllink, acc);
-    // }
+    /** no override to keep plugin compatible to old stable */
+    public void handleMultiHost(final DownloadLink link, final Account acc) throws Exception {
+        handleDL(link, acc);
+    }
 
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
@@ -151,27 +147,27 @@ public class EsouboryCz extends PluginForHost {
         prepBr();
         br.getPage("http://www.esoubory.cz/api/accountinfo?token=" + getToken(account));
         ai.setTrafficLeft(SizeFormatter.getSize(getJson("credit") + "MB"));
-        // br.getPage("http://www.esoubory.cz/api/list");
-        // String hostsSup = br.getRegex("\"list\":\"(.*?)\"").getMatch(0);
-        // hostsSup = hostsSup.replace("\\", "");
-        // hostsSup = hostsSup.replace("http://www.", "");
-        // hostsSup = hostsSup.replace("http://", "");
-        // hostsSup = hostsSup.replace("https://www.", "");
-        // hostsSup = hostsSup.replace("https://", "");
-        // final String[] hosts = hostsSup.split(";");
-        // final ArrayList<String> supportedHosts = new ArrayList<String>(Arrays.asList(hosts));
-        // if (supportedHosts.contains("uploaded.net") || supportedHosts.contains("ul.to") || supportedHosts.contains("uploaded.to")) {
-        // if (!supportedHosts.contains("uploaded.net")) {
-        // supportedHosts.add("uploaded.net");
-        // }
-        // if (!supportedHosts.contains("ul.to")) {
-        // supportedHosts.add("ul.to");
-        // }
-        // if (!supportedHosts.contains("uploaded.to")) {
-        // supportedHosts.add("uploaded.to");
-        // }
-        // }
-        // ai.setProperty("multiHostSupport", supportedHosts);
+        br.getPage("http://www.esoubory.cz/api/list");
+        String hostsSup = br.getRegex("\"list\":\"(.*?)\"").getMatch(0);
+        hostsSup = hostsSup.replace("\\", "");
+        hostsSup = hostsSup.replace("http://www.", "");
+        hostsSup = hostsSup.replace("http://", "");
+        hostsSup = hostsSup.replace("https://www.", "");
+        hostsSup = hostsSup.replace("https://", "");
+        final String[] hosts = hostsSup.split(";");
+        final ArrayList<String> supportedHosts = new ArrayList<String>(Arrays.asList(hosts));
+        if (supportedHosts.contains("uploaded.net") || supportedHosts.contains("ul.to") || supportedHosts.contains("uploaded.to")) {
+            if (!supportedHosts.contains("uploaded.net")) {
+                supportedHosts.add("uploaded.net");
+            }
+            if (!supportedHosts.contains("ul.to")) {
+                supportedHosts.add("ul.to");
+            }
+            if (!supportedHosts.contains("uploaded.to")) {
+                supportedHosts.add("uploaded.to");
+            }
+        }
+        ai.setProperty("multiHostSupport", supportedHosts);
         return ai;
     }
 
