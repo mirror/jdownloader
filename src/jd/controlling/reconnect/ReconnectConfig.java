@@ -104,6 +104,18 @@ public interface ReconnectConfig extends ConfigInterface {
     void setIPCheckReadTimeout(int ms);
 
     @AboutConfig
+    @DefaultIntValue(30000)
+    int getReconnectBrowserReadTimeout();
+
+    void setReconnectBrowserReadTimeout(int ms);
+
+    @AboutConfig
+    @DefaultIntValue(30000)
+    int getReconnectBrowserConnectTimeout();
+
+    void setReconnectBrowserConnectTimeout(int ms);
+
+    @AboutConfig
     @DefaultIntValue(5)
     @DescriptionForConfigEntry("Auto Reconnect Wizard performs a few reconnects for each successful script to find the fastest one. The more rounds we use, the better the result will be, but the longer it will take.")
     @SpinnerValidator(min = 1, max = 20)
