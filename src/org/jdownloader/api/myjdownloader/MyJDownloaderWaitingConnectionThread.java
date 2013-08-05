@@ -89,11 +89,11 @@ public class MyJDownloaderWaitingConnectionThread extends Thread {
         this.setName("MyJDownloaderWaitingConnectionThread");
         logger = connectThread.getLogger();
         this.connectThread = connectThread;
+        running.set(true);
     }
 
     @Override
     public void run() {
-        running.set(true);
         try {
             while (running.get()) {
                 MyJDownloaderConnectionRequest request = null;
