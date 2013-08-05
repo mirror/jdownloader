@@ -1,5 +1,6 @@
 package org.jdownloader.api.myjdownloader;
 
+import java.io.File;
 import java.io.IOException;
 import java.net.ConnectException;
 import java.net.InetSocketAddress;
@@ -18,15 +19,21 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
 import org.appwork.exceptions.WTFException;
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.Application;
 import org.appwork.utils.Exceptions;
+import org.appwork.utils.Hash;
 import org.appwork.utils.NullsafeAtomicReference;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.awfc.AWFCUtils;
+import org.appwork.utils.formatter.HexFormatter;
 import org.appwork.utils.logging2.LogSource;
 import org.jdownloader.api.myjdownloader.MyJDownloaderSettings.MyJDownloaderError;
 import org.jdownloader.api.myjdownloader.MyJDownloaderWaitingConnectionThread.MyJDownloaderConnectionRequest;
 import org.jdownloader.api.myjdownloader.MyJDownloaderWaitingConnectionThread.MyJDownloaderConnectionResponse;
 import org.jdownloader.api.myjdownloader.api.MyJDownloaderAPI;
+import org.jdownloader.myjdownloader.client.SessionInfo;
 import org.jdownloader.myjdownloader.client.exceptions.AuthException;
 import org.jdownloader.myjdownloader.client.exceptions.EmailInvalidException;
 import org.jdownloader.myjdownloader.client.exceptions.EmailNotValidatedException;
@@ -109,6 +116,8 @@ public class MyJDownloaderConnectThread extends Thread {
     private final ArrayList<MyJDownloaderWaitingConnectionThread>  waitingConnections        = new ArrayList<MyJDownloaderWaitingConnectionThread>();
     private final int                                              minimumWaitingConnections = 1;
     private final int                                              maximumWaitingConnections = 4;
+    private final File                                             sessionInfoCache;
+    private final static Object                                    SESSIONLOCK               = new Object();
 
     public MyJDownloaderConnectThread(MyJDownloaderController myJDownloaderExtension) {
         setName("MyJDownloaderConnectThread");
@@ -124,6 +133,8 @@ public class MyJDownloaderConnectThread extends Thread {
         }
         deviceConnectionHelper = helper.toArray(new DeviceConnectionHelper[helper.size()]);
         notifyInterests = new HashSet<NotificationRequestMessage.TYPE>();
+        sessionInfoCache = Application.getResource("tmp/myjd.session");
+        loadSessionInfo();
     }
 
     public boolean putResponse(MyJDownloaderConnectionResponse response) {
@@ -232,16 +243,20 @@ public class MyJDownloaderConnectThread extends Thread {
                             setConnected(MyJDownloaderConnectionStatus.PENDING);
                         }
                         MyJDownloaderConnectionRequest request = null;
+                        boolean waitForResponse = false;
                         synchronized (waitingConnections) {
                             for (MyJDownloaderWaitingConnectionThread waitingThread : waitingConnections) {
                                 if (request == null) request = new MyJDownloaderConnectionRequest(api.getSessionInfo().getSessionToken(), currentHelper);
                                 if (waitingThread.putRequest(request)) {
+                                    waitForResponse = true;
                                     request = null;
                                     continue;
+                                } else if (waitingThread.isRunning()) {
+                                    waitForResponse = true;
                                 }
                             }
                         }
-                        MyJDownloaderConnectionResponse response = pollResponse(true);
+                        MyJDownloaderConnectionResponse response = pollResponse(waitForResponse);
                         while (response != null) {
                             DeviceConnectionStatus status = handleResponse(response);
                             if (!DeviceConnectionStatus.OK.equals(status) && !DeviceConnectionStatus.OK_SYNC.equals(status)) {
@@ -463,6 +478,10 @@ public class MyJDownloaderConnectThread extends Thread {
         int max = minimumWaitingConnections;
         if (minimumORmaximum) max = maximumWaitingConnections;
         synchronized (waitingConnections) {
+            for (int index = waitingConnections.size() - 1; index >= 0; index--) {
+                MyJDownloaderWaitingConnectionThread thread = waitingConnections.get(index);
+                if (!thread.isRunning()) waitingConnections.remove(index);
+            }
             for (int index = waitingConnections.size(); index < max; index++) {
                 MyJDownloaderWaitingConnectionThread thread = new MyJDownloaderWaitingConnectionThread(this);
                 waitingConnections.add(thread);
@@ -472,8 +491,43 @@ public class MyJDownloaderConnectThread extends Thread {
     }
 
     private void validateSession() {
+        saveSessionInfo();
         startWaitingConnections(false);
         sessionValid.set(true);
+    }
+
+    private void saveSessionInfo() {
+        synchronized (SESSIONLOCK) {
+            try {
+                MyJDownloaderAPI lapi = api;
+                if (lapi == null) return;
+                SessionInfo session = lapi.getSessionInfo();
+                if (session == null) return;
+                JSonStorage.saveTo(sessionInfoCache, false, HexFormatter.hexToByteArray(Hash.getMD5(CFG_MYJD.PASSWORD.getValue())), JSonStorage.serializeToJson(new SessionInfoStorable(session)));
+            } catch (final Throwable e) {
+                logger.log(e);
+            }
+        }
+    }
+
+    private void loadSessionInfo() {
+        synchronized (SESSIONLOCK) {
+            try {
+                if (!sessionInfoCache.exists()) return;
+                MyJDownloaderAPI lapi = api;
+                if (lapi == null) return;
+                SessionInfoStorable sessionInfoStorable = JSonStorage.restoreFrom(sessionInfoCache, false, HexFormatter.hexToByteArray(Hash.getMD5(CFG_MYJD.PASSWORD.getValue())), new TypeRef<SessionInfoStorable>() {
+                }, null);
+                if (sessionInfoStorable == null) return;
+                SessionInfo sessionInfo = sessionInfoStorable._getSessionInfo();
+                if (sessionInfo == null) return;
+                lapi.setSessionInfo(sessionInfo);
+                lapi.keepalive();
+                sessionValid.set(true);
+            } catch (final Throwable e) {
+                logger.log(e);
+            }
+        }
     }
 
     protected void ensureValidSession() throws MyJDownloaderException {

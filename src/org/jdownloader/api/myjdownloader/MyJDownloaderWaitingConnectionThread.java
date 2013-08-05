@@ -143,6 +143,10 @@ public class MyJDownloaderWaitingConnectionThread extends Thread {
         }
     }
 
+    public boolean isRunning() {
+        return running.get();
+    }
+
     public boolean putRequest(MyJDownloaderConnectionRequest request) {
         synchronized (connectionRequest) {
             if (running.get() == false) return false;

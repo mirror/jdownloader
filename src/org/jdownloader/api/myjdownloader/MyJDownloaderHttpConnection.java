@@ -164,7 +164,6 @@ public class MyJDownloaderHttpConnection extends HttpConnection {
             payloadEncryptionToken = api.getServerEncryptionToken();
         } else {
             // The request origin is a remote client
-
             try {
                 payloadEncryptionToken = api.getDeviceEncryptionTokenBySession(parser.getSessionToken());
             } catch (NoSuchAlgorithmException e) {
