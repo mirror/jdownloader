@@ -776,7 +776,7 @@ public class OteUploadCom extends PluginForHost {
                 if (rand != null) loginform.put("rand", rand);
                 loginform.put("login", Encoding.urlEncode(account.getUser()));
                 loginform.put("password", Encoding.urlEncode(account.getPass()));
-                loginform.put("redirect", Encoding.urlEncode("/?op=my_account"));
+                loginform.put("redirect", "https%3A%2F%2Fwww.oteupload.com%2F");
                 loginform.put("file_id", "");
                 loginform.remove("tos");
                 loginform.remove("submit");
@@ -786,6 +786,8 @@ public class OteUploadCom extends PluginForHost {
                     final String code = solvePlaintextCaptcha(cbr.toString());
                     loginform.put("code", code);
                 }
+                // Login too fast -> Site says "Wrong captcha"
+                Thread.sleep(5 * 1000l);
                 // end of check form for login captcha crap.
                 sendForm(loginform);
                 if (br.getCookie(COOKIE_HOST, "login") == null || br.getCookie(COOKIE_HOST, "xfss") == null) {
