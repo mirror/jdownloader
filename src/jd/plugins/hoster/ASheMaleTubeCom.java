@@ -63,10 +63,7 @@ public class ASheMaleTubeCom extends PluginForHost {
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML("(<title>aShemaleTube\\.com \\- Video Not Found</title>|>Video was not found</div>)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("<h1>([^<>/]+)<div class=\"g\\-plusone\"").getMatch(0);
-        if (filename == null) {
-            filename = br.getRegex("<title>(.*?)</title>").getMatch(0);
-        }
+        String filename = br.getRegex("<h1>([^<>/]+)</h1>").getMatch(0);
         dllink = br.getRegex("\\'file\\': \"(http://.*?)\"").getMatch(0);
         if (dllink == null) dllink = br.getRegex("\"(http://(www\\.)?vipstreamservice\\.com/key=.*?)\"").getMatch(0);
         if (filename == null || dllink == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
