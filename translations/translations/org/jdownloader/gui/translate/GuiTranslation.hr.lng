@@ -941,6 +941,7 @@ premiumaccounttablemodel_column_trafficleft_tempdisabled=Privrem. isključeno %s
 premiumaccounttablemodel_column_trafficleft_unlimited=Neograničeno
 premiumaccounttablemodel_column_user=Korisničko ime
 proxytablemodel_atleast_one_rotate_required=Za Proxy rotaciju je potreban najmanje jedan aktivni unos.
+quicksettings_SettingsMenuContainer=Brze postavke
 searchcategory_filename=Naziv datoteke
 searchcategory_filename_help=Molimo unesite naziv tražene datoteke...
 searchcategory_hoster=Servis
