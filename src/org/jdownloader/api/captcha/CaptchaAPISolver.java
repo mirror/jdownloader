@@ -175,7 +175,12 @@ public class CaptchaAPISolver extends ChallengeSolver<Object> implements Captcha
 
     @SuppressWarnings("unchecked")
     public boolean solve(long id, String result) throws InvalidCaptchaIDException, InvalidChallengeTypeException {
+        // the current webinterface sends an empty result when the user clicks on refresh
+        if (StringUtils.isEmpty(result)) {
+            //
+            return skip(id, SkipRequest.REFRESH);
 
+        }
         SolverJob<?> job = ChallengeResponseController.getInstance().getJobById(id);
         if (job == null || !(job.getChallenge() instanceof ImageCaptchaChallenge) || job.isDone()) { throw new InvalidCaptchaIDException(); }
 
@@ -215,7 +220,7 @@ public class CaptchaAPISolver extends ChallengeSolver<Object> implements Captcha
 
         SolverJob<Object> job = (SolverJob<Object>) ChallengeResponseController.getInstance().getJobById(id);
         if (job == null) throw new InvalidCaptchaIDException();
-        ChallengeResponseController.getInstance().setSkipRequest(SkipRequest.SINGLE, this, job.getChallenge());
+        ChallengeResponseController.getInstance().setSkipRequest(type, this, job.getChallenge());
         return true;
     }
 

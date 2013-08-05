@@ -111,6 +111,12 @@ public class BasicCaptchaDialogHandler extends ChallengeDialogHandler<BasicCaptc
 
         } catch (InterruptedException e) {
             throw new DialogClosedException(Dialog.RETURN_INTERRUPT);
+        } finally {
+            try {
+                dialog.dispose();
+            } catch (Exception e) {
+
+            }
         }
         result = dialog.getResult();
         try {
