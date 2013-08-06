@@ -17,12 +17,14 @@ import java.awt.image.BufferedImage;
 
 import javax.swing.JComponent;
 import javax.swing.JLabel;
+import javax.swing.JWindow;
 import javax.swing.SwingConstants;
 import javax.swing.Timer;
 
 import org.appwork.swing.ExtJWindow;
 import org.appwork.swing.MigPanel;
 import org.appwork.swing.components.ExtButton;
+import org.appwork.utils.Application;
 import org.appwork.utils.ColorUtils;
 import org.appwork.utils.images.IconIO;
 import org.appwork.utils.swing.SwingUtils;
@@ -30,8 +32,6 @@ import org.jdownloader.gui.jdtrayicon.ScreenStack;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.updatev2.gui.LAFOptions;
-
-import com.sun.awt.AWTUtilities;
 
 public abstract class AbstractNotifyWindow extends ExtJWindow implements ActionListener {
 
@@ -79,21 +79,42 @@ public abstract class AbstractNotifyWindow extends ExtJWindow implements ActionL
 
         content.add(comp);
         pack();
-        try {
-            AWTUtilities.setWindowOpaque(this, false);
 
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        setWindowOpaque(this, false);
 
-        try {
-            AWTUtilities.setWindowOpacity(this, 0f);
-
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        setWindowOpacity(this, 0f);
 
         fader = new Fader(this);
+    }
+
+    public static void setWindowOpaque(JWindow window, boolean b) {
+        try {
+
+            com.sun.awt.AWTUtilities.setWindowOpaque(window, b);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    public static float getWindowOpacity(JWindow owner) {
+        if (Application.getJavaVersion() >= Application.JAVA17) {
+            return owner.getOpacity();
+        } else {
+            return com.sun.awt.AWTUtilities.getWindowOpacity(owner);
+        }
+    }
+
+    public static void setWindowOpacity(JWindow window, float f) {
+        try {
+            if (Application.getJavaVersion() >= Application.JAVA17) {
+                window.setOpacity(f);
+            } else {
+                com.sun.awt.AWTUtilities.setWindowOpacity(window, f);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     public void setVisible(boolean b) {

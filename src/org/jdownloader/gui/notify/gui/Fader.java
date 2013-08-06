@@ -32,7 +32,7 @@ public class Fader implements ActionListener {
         }
         float alpha = destAlpha;
         try {
-            alpha = AWTUtilities.getWindowOpacity(owner);
+            alpha = AbstractNotifyWindow.getWindowOpacity(owner);
         } catch (Exception e1) {
 
         }
@@ -56,11 +56,9 @@ public class Fader implements ActionListener {
         loc.y += dy / f;
 
         owner.setLocation(loc);
-        try {
-            AWTUtilities.setWindowOpacity(owner, alpha);
-        } catch (Exception e1) {
 
-        }
+        AbstractNotifyWindow.setWindowOpacity(owner, alpha);
+
     }
 
     private void stop() {
