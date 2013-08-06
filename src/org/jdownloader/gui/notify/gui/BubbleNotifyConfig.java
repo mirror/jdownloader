@@ -18,7 +18,7 @@ public interface BubbleNotifyConfig extends ConfigInterface {
     }
 
     @AboutConfig
-    @DefaultEnumValue("TOP_RIGHT")
+    @DefaultEnumValue("BOTTOM_RIGHT")
     @DescriptionForConfigEntry("Position Anchor for the First Bubble. TOP_RIGHT means, that the topright corner of the bubble is the reference anchor")
     public Anchor getAnchor();
 
@@ -28,12 +28,12 @@ public interface BubbleNotifyConfig extends ConfigInterface {
     public int getAnchorX();
 
     @AboutConfig
-    @DefaultIntValue(0)
+    @DefaultIntValue(-1)
     @DescriptionForConfigEntry("Y Position of the first bubble. 0 is top screen edge -1 is bottom screen edge")
     public int getAnchorY();
 
     @AboutConfig
-    @DefaultEnumValue("BOTTOM_RIGHT")
+    @DefaultEnumValue("TOP_RIGHT")
     @DescriptionForConfigEntry("Animation End Anchor. TOP_RIGHT means, that the topright corner of the bubble is the reference anchor")
     public Anchor getEndAnchor();
 
@@ -43,7 +43,7 @@ public interface BubbleNotifyConfig extends ConfigInterface {
     public int getEndX();
 
     @AboutConfig
-    @DefaultIntValue(0)
+    @DefaultIntValue(-1)
     @DescriptionForConfigEntry("Animation End Y Position. 0 is top screen edge -1 is bottom screen edge")
     public int getEndY();
 
