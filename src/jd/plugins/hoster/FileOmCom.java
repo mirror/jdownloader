@@ -532,7 +532,7 @@ public class FileOmCom extends PluginForHost {
             if (cbr.containsHTML("\">Skipped countdown<")) throw new PluginException(LinkStatus.ERROR_FATAL, "Fatal countdown error (countdown skipped)");
         }
         // monitor this
-        if (cbr.containsHTML("(class=\"err\">You have reached the download(\\-| )limit[^<]+for last[^<]+)")) {
+        if (cbr.containsHTML("(class=\"err\">(<center>)?You have reached the download(\\-| )limit[^<]+for last[^<]+)")) {
             /*
              * Indication of when you've reached the max download limit for that given session! Usually shows how long the session was
              * recorded from x time (hours|days) which can trigger false positive below wait handling. As its only indication of what's
@@ -1685,9 +1685,9 @@ public class FileOmCom extends PluginForHost {
     }
 
     private boolean isJava7nJDStable() {
-        if (System.getProperty("jd.revision.jdownloaderrevision") == null && System.getProperty("java.version").matches("1\\.[7-9].+")) 
+        if (System.getProperty("jd.revision.jdownloaderrevision") == null && System.getProperty("java.version").matches("1\\.[7-9].+"))
             return true;
-         else
+        else
             return false;
     }
 
