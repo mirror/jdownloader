@@ -586,14 +586,23 @@ public class TbCm extends PluginForDecrypt {
 
                 // **** MP4 *****
                 if (mp4) {
+                    if (q240p) {
+                        this.put(133, new Object[] { DestinationFormat.VIDEOMP4, "H.264", "AAC", "Stereo", "240p" });
+                    }
+                    if (q480p) {
+                        this.put(135, new Object[] { DestinationFormat.VIDEOMP4, "H.264", "AAC", "Stereo", "480p" });
+                    }
                     if (q360p) {
                         // 270p / 360p
                         this.put(18, new Object[] { DestinationFormat.VIDEOMP4, "H.264", "AAC", "Stereo", "360p" });
+                        this.put(134, new Object[] { DestinationFormat.VIDEOMP4, "H.264", "AAC", "Stereo", "360p" });
                     }
                     if (q720p) {
+                        this.put(136, new Object[] { DestinationFormat.VIDEOMP4, "H.264", "AAC", "Stereo", "720p" });
                         this.put(22, new Object[] { DestinationFormat.VIDEOMP4, "H.264", "AAC", "Stereo", "720p" });
                     }
                     if (q1080p) {
+                        this.put(137, new Object[] { DestinationFormat.VIDEOMP4, "H.264", "AAC", "Stereo", "1080p" });
                         this.put(37, new Object[] { DestinationFormat.VIDEOMP4, "H.264", "AAC", "Stereo", "1080p" });
                     }
                     // maybe this varies?? wiki says 3072p but I've seen less. eg :: 38 2048x1536 9 0 115,
@@ -734,8 +743,8 @@ public class TbCm extends PluginForDecrypt {
                 String ytID = getVideoID(currentVideoUrl);
 
                 /*
-                 * We match against users resolution and file encoding type. This allows us to use their upper and lower limits. It will
-                 * return multiple results if they are in the same quality rating
+                 * We match against users resolution and file encoding type. This allows us to use their upper and lower limits. It will return multiple results
+                 * if they are in the same quality rating
                  */
                 if (best) {
                     final HashMap<Integer, String[]> bestFound = new HashMap<Integer, String[]>();
@@ -1005,6 +1014,41 @@ public class TbCm extends PluginForDecrypt {
         return dlink;
     }
 
+    private HashMap<Integer, String[]> parseLinks(String html5_fmt_map, boolean allowVideoOnly) {
+        final HashMap<Integer, String[]> links = new HashMap<Integer, String[]>();
+        if (html5_fmt_map != null) {
+            if (html5_fmt_map.contains(UNSUPPORTEDRTMP)) { return links; }
+            String[] html5_hits = new Regex(html5_fmt_map, "(.*?)(,|$)").getColumn(0);
+            if (html5_hits != null) {
+                for (String hit : html5_hits) {
+                    hit = unescape(hit);
+                    String hitUrl = new Regex(hit, "url=(http.*?)(\\&|$)").getMatch(0);
+                    String sig = new Regex(hit, "url=http.*?(\\&|$)(sig|signature)=(.*?)(\\&|$)").getMatch(2);
+                    if (sig == null) sig = new Regex(hit, "(sig|signature)=(.*?)(\\&|$)").getMatch(1);
+                    if (sig == null) sig = new Regex(hit, "(sig|signature)%3D(.*?)%26").getMatch(1);
+                    if (sig == null) sig = decryptSignature(new Regex(hit, "s=(.*?)(\\&|$)").getMatch(0));
+                    String hitFmt = new Regex(hit, "itag=(\\d+)").getMatch(0);
+                    String hitQ = new Regex(hit, "quality=(.*?)(\\&|$)").getMatch(0);
+                    if (hitQ == null && allowVideoOnly) hitQ = "unknown";
+                    if (hitUrl != null && hitFmt != null && hitQ != null) {
+                        hitUrl = unescape(hitUrl.replaceAll("\\\\/", "/"));
+                        if (hitUrl.startsWith("http%253A")) {
+                            hitUrl = Encoding.htmlDecode(hitUrl);
+                        }
+                        String[] inst = null;
+                        if (hitUrl.contains("sig")) {
+                            inst = new String[] { Encoding.htmlDecode(Encoding.urlDecode(hitUrl, true)), hitQ };
+                        } else {
+                            inst = new String[] { Encoding.htmlDecode(Encoding.urlDecode(hitUrl, true) + "&signature=" + sig), hitQ };
+                        }
+                        links.put(Integer.parseInt(hitFmt), inst);
+                    }
+                }
+            }
+        }
+        return links;
+    }
+
     private HashMap<Integer, String[]> parseLinks(Browser br, final String videoURL, String YT_FILENAME, boolean ythack, boolean tryGetDetails) throws InterruptedException, IOException {
         final HashMap<Integer, String[]> links = new HashMap<Integer, String[]>();
         String html5_fmt_map = br.getRegex("\"html5_fmt_map\": \\[(.*?)\\]").getMatch(0);
@@ -1041,31 +1085,15 @@ public class TbCm extends PluginForDecrypt {
                 return null;
             }
             if (html5_fmt_map != null) {
-                if (html5_fmt_map.contains(UNSUPPORTEDRTMP)) { return links; }
-                String[] html5_hits = new Regex(html5_fmt_map, "(.*?)(,|$)").getColumn(0);
-                if (html5_hits != null) {
-                    for (String hit : html5_hits) {
-                        hit = unescape(hit);
-                        String hitUrl = new Regex(hit, "url=(http.*?)(\\&|$)").getMatch(0);
-                        String sig = new Regex(hit, "url=http.*?(\\&|$)(sig|signature)=(.*?)(\\&|$)").getMatch(2);
-                        if (sig == null) sig = new Regex(hit, "(sig|signature)=(.*?)(\\&|$)").getMatch(1);
-                        if (sig == null) sig = decryptSignature(new Regex(hit, "s=(.*?)(\\&|$)").getMatch(0));
-                        String hitFmt = new Regex(hit, "itag=(\\d+)").getMatch(0);
-                        String hitQ = new Regex(hit, "quality=(.*?)(\\&|$)").getMatch(0);
-                        if (hitUrl != null && hitFmt != null && hitQ != null) {
-                            hitUrl = unescape(hitUrl.replaceAll("\\\\/", "/"));
-                            if (hitUrl.startsWith("http%253A")) {
-                                hitUrl = Encoding.htmlDecode(hitUrl);
-                            }
-                            String[] inst = null;
-                            if (hitUrl.contains("sig")) {
-                                inst = new String[] { Encoding.htmlDecode(Encoding.urlDecode(hitUrl, true)), hitQ };
-                            } else {
-                                inst = new String[] { Encoding.htmlDecode(Encoding.urlDecode(hitUrl, true) + "&signature=" + sig), hitQ };
-                            }
-                            links.put(Integer.parseInt(hitFmt), inst);
-                        }
-                    }
+                HashMap<Integer, String[]> ret = parseLinks(html5_fmt_map, false);
+                if (ret.size() == 0) return links;
+                links.putAll(ret);
+                if (false) {
+                    /* not playable by vlc */
+                    /* check for adaptive fmts */
+                    String adaptive = br.getRegex("\"adaptive_fmts\": \"(.*?)\"").getMatch(0);
+                    ret = parseLinks(adaptive, true);
+                    links.putAll(ret);
                 }
             } else {
                 if (br.containsHTML("reason=Unfortunately")) return null;
