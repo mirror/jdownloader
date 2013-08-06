@@ -72,6 +72,7 @@ public class DataFileCom extends PluginForHost {
         if (br.containsHTML("<div class=\"error\\-msg\">")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         // Deleted file
         if (br.containsHTML(">Sorry but this file has been deleted")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("ErrorCode 7: Download file count limit")) return AvailableStatus.UNCHECKABLE;
         final String filename = br.getRegex("class=\"file\\-name\">([^<>\"]*?)</div>").getMatch(0);
         final String filesize = br.getRegex(">Filesize:<span class=\"lime\">([^<>\"]*?)</span>").getMatch(0);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -88,6 +89,7 @@ public class DataFileCom extends PluginForHost {
     }
 
     private void doFree(final DownloadLink downloadLink) throws Exception {
+        if (br.containsHTML("ErrorCode 7: Download file count limit")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Download file count limit", 10 * 60 * 1000l); }
         if (br.containsHTML(PREMIUMONLY)) {
             // not possible to download under handleFree!
             throw new PluginException(LinkStatus.ERROR_FATAL, "This file can only be downloaded by premium users");
