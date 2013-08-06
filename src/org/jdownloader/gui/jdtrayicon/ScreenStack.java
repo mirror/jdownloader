@@ -3,7 +3,9 @@ package org.jdownloader.gui.jdtrayicon;
 import java.awt.GraphicsDevice;
 import java.util.ArrayList;
 
-public class ScreenStack extends ArrayList<Notify> {
+import org.jdownloader.gui.notify.gui.AbstractNotifyWindow;
+
+public class ScreenStack extends ArrayList<AbstractNotifyWindow> {
 
     private GraphicsDevice screen;
 

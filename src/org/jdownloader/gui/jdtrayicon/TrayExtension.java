@@ -23,7 +23,6 @@ import java.awt.Point;
 import java.awt.SystemTray;
 import java.awt.Toolkit;
 import java.awt.TrayIcon;
-import java.awt.TrayIcon.MessageType;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ComponentEvent;
@@ -45,22 +44,12 @@ import javax.swing.JFrame;
 import javax.swing.SwingUtilities;
 
 import jd.SecondLevelLaunch;
-import jd.controlling.linkcollector.LinkCollector;
-import jd.controlling.linkcollector.LinkCollectorEvent;
 import jd.controlling.linkcollector.LinkCollectorHighlightListener;
-import jd.controlling.linkcrawler.CrawledLink;
-import jd.controlling.linkcrawler.CrawledPackage;
-import jd.controlling.reconnect.Reconnecter;
-import jd.controlling.reconnect.ReconnecterEvent;
-import jd.controlling.reconnect.ReconnecterListener;
-import jd.controlling.reconnect.ipcheck.IPController;
 import jd.gui.swing.jdgui.JDGui;
 import jd.gui.swing.jdgui.MainFrameClosingHandler;
-import jd.gui.swing.jdgui.components.toolbar.actions.UpdateAction;
 import jd.gui.swing.jdgui.views.settings.sidebar.CheckBoxedEntry;
 import jd.plugins.AddonPanel;
 
-import org.appwork.storage.config.handler.BooleanKeyHandler;
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.Application;
 import org.appwork.utils.IO;
@@ -82,21 +71,16 @@ import org.jdownloader.extensions.AbstractExtension;
 import org.jdownloader.extensions.ExtensionConfigPanel;
 import org.jdownloader.extensions.StartException;
 import org.jdownloader.extensions.StopException;
-import org.jdownloader.gui.GuiUtils;
-import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.jdtrayicon.translate.TrayiconTranslation;
 import org.jdownloader.gui.jdtrayicon.translate._TRAY;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
-import org.jdownloader.updatev2.InstallLog;
 import org.jdownloader.updatev2.RestartController;
 import org.jdownloader.updatev2.SmartRlyExitRequest;
-import org.jdownloader.updatev2.UpdateController;
-import org.jdownloader.updatev2.UpdaterListener;
 
-public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTranslation> implements MouseListener, MouseMotionListener, WindowStateListener, ActionListener, MainFrameClosingHandler, CheckBoxedEntry, UpdaterListener {
+public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTranslation> implements MouseListener, MouseMotionListener, WindowStateListener, ActionListener, MainFrameClosingHandler, CheckBoxedEntry {
 
     // private LinkCollectorHighlightListener highListener = new LinkCollectorHighlightListener() {
     //
@@ -143,13 +127,9 @@ public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTransla
     // }
     // };
 
-    private ReconnecterListener reconnectListener;
-
     @Override
     protected void stop() throws StopException {
-        UpdateController.getInstance().getEventSender().removeListener(this);
-        Reconnecter.getInstance().getEventSender().removeListener(reconnectListener);
-        LinkCollector.getInstance().getEventsender().removeListener(linkcollectorHighlighListener);
+
         removeTrayIcon();
         if (guiFrame != null) {
             JDGui.getInstance().setClosingHandler(null);
@@ -180,12 +160,7 @@ public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTransla
             if (CrossSystem.isLinux()) LogController.CL().severe("Make sure your Notification Area is enabled!");
             throw new StartException("Tray isn't supported!");
         }
-        UpdateController.getInstance().getEventSender().removeListener(this);
-        UpdateController.getInstance().getEventSender().addListener(this, true);
-        LinkCollector.getInstance().getEventsender().removeListener(linkcollectorHighlighListener);
-        LinkCollector.getInstance().getEventsender().addListener(linkcollectorHighlighListener, true);
-        Reconnecter.getInstance().getEventSender().removeListener(reconnectListener);
-        Reconnecter.getInstance().getEventSender().addListener(reconnectListener, true);
+
         SecondLevelLaunch.GUI_COMPLETE.executeWhenReached(new Runnable() {
 
             public void run() {
@@ -199,6 +174,7 @@ public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTransla
                                 initGUI(true);
                                 LogController.CL(TrayExtension.class).info("Systemtray OK");
                             }
+
                         } catch (Exception e) {
                             LogController.CL(TrayExtension.class).log(e);
                         }
@@ -207,7 +183,7 @@ public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTransla
                 };
             }
         });
-        onUpdatesAvailable(false, null);
+
     }
 
     @Override
@@ -259,124 +235,6 @@ public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTransla
 
     public TrayExtension() {
         setTitle(_TRAY._.jd_plugins_optional_jdtrayicon_jdlighttray());
-        reconnectListener = new ReconnecterListener() {
-
-            @Override
-            public void onReconnectSettingsUpdated(ReconnecterEvent event) {
-            }
-
-            @Override
-            public void onBeforeReconnect(final ReconnecterEvent event) {
-                if (!getSettings().isBallonNotifyOnReconnectStartEnabled()) return;
-                new EDTRunner() {
-
-                    @Override
-                    protected void runInEDT() {
-
-                        final TrayIcon ti = trayIcon;
-                        if (ti != null) {
-                            // overwrite old actions
-                            setListener(new ActionListener() {
-
-                                public void actionPerformed(ActionEvent e) {
-
-                                }
-                            });
-
-                            showTrayMessage(ti, CFG_TRAY_CONFIG.BALLON_NOTIFY_ON_RECONNECT_START_ENABLED, _TRAY._.balloon_reconnect(), _TRAY._.balloon_reconnect_start_msg(), MessageType.INFO);
-
-                        }
-                    }
-                };
-            }
-
-            @Override
-            public void onAfterReconnect(final ReconnecterEvent event) {
-                if (!getSettings().isBallonNotifyOnReconnectEndEnabled()) return;
-                new EDTRunner() {
-
-                    @Override
-                    protected void runInEDT() {
-
-                        final TrayIcon ti = trayIcon;
-                        if (ti != null) {
-                            // overwrite old actions
-                            setListener(new ActionListener() {
-
-                                public void actionPerformed(ActionEvent e) {
-
-                                }
-                            });
-                            if (!(Boolean) event.getParameter()) {
-                                showTrayMessage(ti, CFG_TRAY_CONFIG.BALLON_NOTIFY_ON_RECONNECT_END_ENABLED, _TRAY._.balloon_reconnect(), _TRAY._.balloon_reconnect_end_msg_failed(IPController.getInstance().getIP()), MessageType.ERROR);
-                            } else {
-                                showTrayMessage(ti, CFG_TRAY_CONFIG.BALLON_NOTIFY_ON_RECONNECT_END_ENABLED, _TRAY._.balloon_reconnect(), _TRAY._.balloon_reconnect_end_msg(IPController.getInstance().getIP()), MessageType.INFO);
-                            }
-
-                        }
-                    }
-                };
-            }
-        };
-        linkcollectorHighlighListener = new LinkCollectorHighlightListener() {
-            @Override
-            public void onLinkCollectorContentAdded(final LinkCollectorEvent event) {
-                if (!getSettings().isBallonNotifyOnNewLinkgrabberPackageEnabled()) return;
-                if (event.getParameters().length > 0 && event.getParameter(0) instanceof CrawledPackage) {
-                    // new Package
-                    new EDTRunner() {
-
-                        @Override
-                        protected void runInEDT() {
-                            if (GuiUtils.isActiveWindow(JDGui.getInstance().getMainFrame())) return;
-                            final TrayIcon ti = trayIcon;
-                            if (ti != null) {
-                                setListener(new ActionListener() {
-
-                                    public void actionPerformed(ActionEvent e) {
-                                        JDGui.getInstance().requestPanel(JDGui.Panels.LINKGRABBER, null);
-                                        JDGui.getInstance().setFrameState(FrameState.TO_FRONT_FOCUSED);
-                                    }
-                                });
-
-                                showTrayMessage(ti, CFG_TRAY_CONFIG.BALLON_NOTIFY_ON_NEW_LINKGRABBER_PACKAGE_ENABLED, _TRAY._.balloon_new_package(), _TRAY._.balloon_new_package_msg(((CrawledPackage) event.getParameter(0)).getName()), MessageType.INFO);
-
-                            }
-                        }
-                    };
-
-                }
-            }
-
-            @Override
-            public void onHighLight(CrawledLink parameter) {
-                new EDTRunner() {
-
-                    @Override
-                    protected void runInEDT() {
-                        if (!getSettings().isBallonNotifyOnNewLinkgrabberLinksEnabled()) return;
-                        if (GuiUtils.isActiveWindow(JDGui.getInstance().getMainFrame())) return;
-                        final TrayIcon ti = trayIcon;
-                        if (ti != null) {
-                            setListener(new ActionListener() {
-
-                                public void actionPerformed(ActionEvent e) {
-                                    JDGui.getInstance().requestPanel(JDGui.Panels.LINKGRABBER, null);
-                                    JDGui.getInstance().setFrameState(FrameState.TO_FRONT_FOCUSED);
-                                }
-                            });
-                            showTrayMessage(ti, CFG_TRAY_CONFIG.BALLON_NOTIFY_ON_NEW_LINKGRABBER_LINKS_ENABLED, _TRAY._.balloon_new_links(), _TRAY._.balloon_new_links_msg(LinkCollector.getInstance().getPackages().size(), LinkCollector.getInstance().getChildrenCount()), MessageType.INFO);
-
-                        }
-                    }
-                };
-            }
-
-            @Override
-            public boolean isThisListenerEnabled() {
-                return true;
-            }
-        };
 
     }
 
@@ -593,7 +451,7 @@ public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTransla
 
     public void mousePressed(MouseEvent e) {
         trayIconTooltip.hideTooltip();
-        clearListener();
+
         if (e.getSource() instanceof TrayIcon) {
             if (!CrossSystem.isMac()) {
                 if (e.getClickCount() >= (getSettings().isToogleWindowStatusWithSingleClickEnabled() ? 1 : 2) && !SwingUtilities.isRightMouseButton(e)) {
@@ -900,112 +758,6 @@ public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTransla
     public boolean isActive() {
 
         return trayIconPopup != null && trayIconPopup.hasBeenRecentlyActive();
-    }
-
-    @Override
-    public void onUpdatesAvailable(boolean selfupdate, InstallLog installlog) {
-
-        if (UpdateController.getInstance().hasPendingUpdates() && !updatesNotified) {
-            updatesNotified = true;
-            new EDTRunner() {
-
-                @Override
-                protected void runInEDT() {
-                    if (!getSettings().isBallonNotifyOnUpdateAvailableEnabled()) return;
-
-                    final TrayIcon ti = trayIcon;
-                    if (ti != null) {
-                        setListener(new ActionListener() {
-
-                            public void actionPerformed(ActionEvent e) {
-                                new UpdateAction(null).actionPerformed(e);
-                            }
-                        });
-
-                        showTrayMessage(ti, CFG_TRAY_CONFIG.BALLON_NOTIFY_ON_UPDATE_AVAILABLE_ENABLED, _TRAY._.balloon_updates(), _TRAY._.balloon_updates_msg(), MessageType.INFO);
-
-                    }
-                }
-            };
-        } else if (!UpdateController.getInstance().hasPendingUpdates()) {
-            updatesNotified = false;
-        }
-    }
-
-    protected void showTrayMessage(final TrayIcon ti, final BooleanKeyHandler keyhandler, final String caption, final String text, final MessageType info) {
-        if (!keyhandler.isEnabled()) return;
-        new Thread("Show Message") {
-            public void run() {
-                synchronized (TrayExtension.this) {
-                    if (!keyhandler.isEnabled()) return;
-                    boolean ballontipsEnabled = true;
-                    if (CrossSystem.isWindows()) {
-                        try {
-                            // WIN xp and maybe other windows versions
-                            if (ballontipsEnabled && readEnableBalloonTips() == 0) {
-                                // ballon tipps disabled
-                                ballontipsEnabled = false;
-                            }
-                        } catch (Exception e) {
-                            // not available
-                        }
-
-                    }
-                    if (!ballontipsEnabled) {
-                        try {
-                            Dialog.getInstance().showConfirmDialog(0, _TRAY._.enabled_os_ballons(), _TRAY._.enabled_os_ballons_msg(), NewTheme.I().getIcon(IconKey.ICON_QUESTION, 32), _GUI._.lit_yes(), _GUI._.lit_no());
-
-                            if (CrossSystem.isWindows()) {
-                                writeEnableBalloonTips(1);
-
-                            }
-
-                        } catch (DialogNoAnswerException e) {
-                            CFG_TRAY_CONFIG.BALLON_NOTIFY_ON_NEW_LINKGRABBER_LINKS_ENABLED.setValue(false);
-                            CFG_TRAY_CONFIG.BALLON_NOTIFY_ON_NEW_LINKGRABBER_PACKAGE_ENABLED.setValue(false);
-                            CFG_TRAY_CONFIG.BALLON_NOTIFY_ON_RECONNECT_END_ENABLED.setValue(false);
-                            CFG_TRAY_CONFIG.BALLON_NOTIFY_ON_RECONNECT_START_ENABLED.setValue(false);
-                            CFG_TRAY_CONFIG.BALLON_NOTIFY_ON_UPDATE_AVAILABLE_ENABLED.setValue(false);
-                            return;
-
-                        }
-                    }
-                    new EDTRunner() {
-
-                        @Override
-                        protected void runInEDT() {
-                            ti.displayMessage(caption, text, info);
-                        }
-                    };
-
-                }
-            }
-        }.start();
-
-    }
-
-    protected void setListener(final ActionListener actionListener) {
-        TrayIcon ti = trayIcon;
-        clearListener();
-        if (ti != null) {
-            ti.addActionListener(new ActionListener() {
-
-                @Override
-                public void actionPerformed(ActionEvent e) {
-                    actionListener.actionPerformed(e);
-                    clearListener();
-                }
-            });
-        }
-    }
-
-    private void clearListener() {
-        TrayIcon ti = trayIcon;
-        if (ti != null) {
-            for (ActionListener al : ti.getActionListeners()) {
-                ti.removeActionListener(al);
-            }
-        }
     }
 
 }

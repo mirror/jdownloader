@@ -30,6 +30,7 @@ import org.appwork.utils.swing.EDTRunner;
 import org.jdownloader.extensions.ExtensionController;
 import org.jdownloader.extensions.ExtensionControllerListener;
 import org.jdownloader.extensions.LazyExtension;
+import org.jdownloader.gui.notify.gui.BubbleNotifyConfigPanel;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings;
 
 public class SettingsSidebarModel extends DefaultListModel implements GenericConfigEventListener<Object>, ExtensionControllerListener {
@@ -53,6 +54,7 @@ public class SettingsSidebarModel extends DefaultListModel implements GenericCon
     private SingleReachableState         TREE_COMPLETE    = new SingleReachableState("TREE_COMPLETE");
     private final JList                  list;
     protected MyJDownloaderSettingsPanel myJDownloader;
+    protected BubbleNotifyConfigPanel        notifierPanel;
 
     public SettingsSidebarModel(JList list) {
         super();
@@ -170,6 +172,18 @@ public class SettingsSidebarModel extends DefaultListModel implements GenericCon
         }.getReturnValue();
     }
 
+    private BubbleNotifyConfigPanel getNotifierConfigPanel() {
+        if (notifierPanel != null) return notifierPanel;
+
+        return new EDTHelper<BubbleNotifyConfigPanel>() {
+            public BubbleNotifyConfigPanel edtRun() {
+                if (notifierPanel != null) return notifierPanel;
+                notifierPanel = new BubbleNotifyConfigPanel();
+                return notifierPanel;
+            }
+        }.getReturnValue();
+    }
+
     private MyJDownloaderSettingsPanel getMyJDownloaderPanel() {
         if (myJDownloader != null) return myJDownloader;
 
@@ -253,6 +267,7 @@ public class SettingsSidebarModel extends DefaultListModel implements GenericCon
                         getBasicAuthentication();
                         getPluginSettings();
                         getGUISettings();
+                        getNotifierConfigPanel();
                         getMyJDownloaderPanel();
                         getLinkgrabber();
                         getPackagizer();
@@ -270,6 +285,7 @@ public class SettingsSidebarModel extends DefaultListModel implements GenericCon
                                 addElement(getBasicAuthentication());
                                 addElement(getPluginSettings());
                                 addElement(getGUISettings());
+                                addElement(getNotifierConfigPanel());
                                 addElement(getMyJDownloaderPanel());
                                 addElement(getLinkgrabber());
                                 addElement(getPackagizer());

@@ -209,4 +209,8 @@ public class LAFOptions {
     public Color getColorForTablePackageRowBackground() {
         return createColor(cfg.getColorForTablePackageRowBackground());
     }
+
+    public Color getColorForPanelHeaderForeGround() {
+        return createColor(cfg.getColorForPanelHeaderForeground());
+    }
 }

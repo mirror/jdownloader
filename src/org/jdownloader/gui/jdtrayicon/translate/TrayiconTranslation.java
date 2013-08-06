@@ -1,7 +1,5 @@
 package org.jdownloader.gui.jdtrayicon.translate;
 
-import jd.controlling.reconnect.ipcheck.IP;
-
 import org.appwork.txtresource.Default;
 import org.appwork.txtresource.Defaults;
 import org.appwork.txtresource.TranslateInterface;
@@ -119,62 +117,5 @@ public interface TrayiconTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Tray Icon Manager" })
     String TrayMenuManager_getName();
-
-    @Default(lngs = { "en" }, values = { "New Links added" })
-    String balloon_new_links();
-
-    @Default(lngs = { "en" }, values = { "%s2 Link(s) in %s1 Package(s)" })
-    String balloon_new_links_msg(int packagcount, int childrenCount);
-
-    @Default(lngs = { "en" }, values = { "New Package added" })
-    String balloon_new_package();
-
-    @Default(lngs = { "en" }, values = { "A new Package has been added to the Linkgrabber: %s1" })
-    String balloon_new_package_msg(String name);
-
-    @Default(lngs = { "en" }, values = { "Ballon Notifications" })
-    String plugins_optional_JDLightTray_ballon();
-
-    @Default(lngs = { "en" }, values = { "New Linkgrabber Packages" })
-    String plugins_optional_JDLightTray_ballon_newPackages();
-
-    @Default(lngs = { "en" }, values = { "Ballon Notifications are tiny messages that notify you when special events occur. These messages only appear if JDownloader is not the focused Window!" })
-    String plugins_optional_JDLightTray_ballon_desc();
-
-    @Default(lngs = { "en" }, values = { "New Linkgrabber Links" })
-    String plugins_optional_JDLightTray_ballon_newlinks();
-
-    @Default(lngs = { "en" }, values = { "New Updates found" })
-    String plugins_optional_JDLightTray_ballon_updates();
-
-    @Default(lngs = { "en" }, values = { "JDownloader Updates available!" })
-    String balloon_updates();
-
-    @Default(lngs = { "en" }, values = { "New Updates for JDownloader are available.\r\nClick here to start Installation!" })
-    String balloon_updates_msg();
-
-    @Default(lngs = { "en" }, values = { "A Reconnect process starts now.\r\nA new IP is required to continue downloads." })
-    String balloon_reconnect_start_msg();
-
-    @Default(lngs = { "en" }, values = { "Reconnect failed!\r\nYour IP is %s1" })
-    String balloon_reconnect_end_msg_failed(IP ip);
-
-    @Default(lngs = { "en" }, values = { "Reconnect successful!\r\nYour new IP is %s1" })
-    String balloon_reconnect_end_msg(IP ip);
-
-    @Default(lngs = { "en" }, values = { "Before a Reconnect" })
-    String plugins_optional_JDLightTray_ballon_reconnectstart();
-
-    @Default(lngs = { "en" }, values = { "After a Reconnect" })
-    String plugins_optional_JDLightTray_ballon_reconnectend();
-
-    @Default(lngs = { "en" }, values = { "JDownloader Reconnect" })
-    String balloon_reconnect();
-
-    @Default(lngs = { "en" }, values = { "Balloon Notification is disabled!" })
-    String enabled_os_ballons();
-
-    @Default(lngs = { "en" }, values = { "JDownloader would like to show you tiny notify messages about important events, but your Windows System is set up to hide these messages.\r\nClick [Yes] if you want JDownloader to correct this and show these balloon notifications.\r\nIt may be required to reboot your System for the changes to take effect." })
-    String enabled_os_ballons_msg();
 
 }

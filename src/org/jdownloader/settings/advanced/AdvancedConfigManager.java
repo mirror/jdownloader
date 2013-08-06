@@ -13,6 +13,7 @@ import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.swing.synthetica.SyntheticaSettings;
 import org.appwork.utils.logging2.LogConfig;
 import org.appwork.utils.logging2.LogSource;
+import org.jdownloader.gui.notify.gui.CFG_BUBBLE;
 import org.jdownloader.gui.shortcuts.ShortcutSettings;
 import org.jdownloader.jdserv.stats.StatsManagerConfig;
 import org.jdownloader.logging.LogController;
@@ -71,6 +72,7 @@ public class AdvancedConfigManager {
         register(JsonConfig.create(UpdateSettings.class));
         register(JsonConfig.create(SyntheticaSettings.class));
         register(JsonConfig.create(SoundSettings.class));
+        register(CFG_BUBBLE.CFG);
         register(CFG_CAPTCHA.CFG);
         register(CFG_SILENTMODE.CFG);
         try {

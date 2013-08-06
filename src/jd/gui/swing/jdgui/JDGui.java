@@ -110,6 +110,7 @@ import org.jdownloader.controlling.FileCreationManager;
 import org.jdownloader.gui.GuiUtils;
 import org.jdownloader.gui.helpdialogs.HelpDialog;
 import org.jdownloader.gui.jdtrayicon.TrayExtension;
+import org.jdownloader.gui.notify.BubbleNotify;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.downloads.DownloadsView;
 import org.jdownloader.gui.views.linkgrabber.LinkGrabberView;
@@ -257,6 +258,7 @@ public class JDGui implements UpdaterListener, OwnerFinder {
         } catch (Exception e1) {
             logger.log(e1);
         }
+        BubbleNotify.getInstance();
     }
 
     public void disposeView(View view) {
