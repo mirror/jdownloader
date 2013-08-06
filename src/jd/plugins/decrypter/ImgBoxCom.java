@@ -27,33 +27,48 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "imgbox.com" }, urls = { "http://(www\\.)?imgbox\\.com/g/[A-Za-z0-9]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "imgbox.com" }, urls = { "http://(www\\.)?imgbox\\.com/(g/)?[A-Za-z0-9]+" }, flags = { 0 })
 public class ImgBoxCom extends PluginForDecrypt {
 
     public ImgBoxCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
+    private static final String GALLERYLINK = "http://(www\\.)?imgbox\\.com/g/[A-Za-z0-9]+";
+
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
         br.getPage(parameter);
-        if (br.containsHTML("The specified gallery could not be found")) {
-            logger.info("Link offline: " + parameter);
-            return decryptedLinks;
-        }
-        final String fpName = br.getRegex("<h1 style=\"padding\\-left:15px;\">(.*?)</h1>").getMatch(0);
-        final String[] links = br.getRegex("\"(http://t\\.imgbox\\.com/.*?)\"").getColumn(0);
-        if (links == null || links.length == 0) {
-            logger.warning("Decrypter broken for link: " + parameter);
-            return null;
-        }
-        for (String singleLink : links)
-            decryptedLinks.add(createDownloadlink("directhttp://" + singleLink.replace("t.imgbox.com/", "o.imgbox.com/")));
-        if (fpName != null) {
-            FilePackage fp = FilePackage.getInstance();
-            fp.setName(Encoding.htmlDecode(fpName.trim()));
-            fp.addLinks(decryptedLinks);
+        if (parameter.matches(GALLERYLINK)) {
+            if (br.containsHTML("The specified gallery could not be found")) {
+                logger.info("Link offline: " + parameter);
+                return decryptedLinks;
+            }
+            final String fpName = br.getRegex("<h1 style=\"padding\\-left:15px;\">(.*?)</h1>").getMatch(0);
+            final String[] links = br.getRegex("\"(http://t\\.imgbox\\.com/.*?)\"").getColumn(0);
+            if (links == null || links.length == 0) {
+                logger.warning("Decrypter broken for link: " + parameter);
+                return null;
+            }
+            for (String singleLink : links)
+                decryptedLinks.add(createDownloadlink("directhttp://" + singleLink.replace("t.imgbox.com/", "o.imgbox.com/")));
+            if (fpName != null) {
+                FilePackage fp = FilePackage.getInstance();
+                fp.setName(Encoding.htmlDecode(fpName.trim()));
+                fp.addLinks(decryptedLinks);
+            }
+        } else {
+            if (br.containsHTML("The image in question does not exist")) {
+                logger.info("Link offline: " + parameter);
+                return decryptedLinks;
+            }
+            final String finallink = br.getRegex("\"(http://[a-z0-9\\-]+\\.imgbox\\.com/[^<>\"]*?\\?st[^<>\"]*?)\"").getMatch(0);
+            if (finallink == null) {
+                logger.warning("Decrypter broken for link: " + parameter);
+                return null;
+            }
+            decryptedLinks.add(createDownloadlink("directhttp://" + Encoding.htmlDecode(finallink)));
         }
         return decryptedLinks;
     }

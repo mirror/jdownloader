@@ -28,7 +28,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "goo.im" }, urls = { "http://(www\\.)?goo\\.im/gapps/[^<>\"/]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "goo.im" }, urls = { "http://(www\\.)?goo\\.im/[^<>\"]+" }, flags = { 0 })
 public class GooIm extends PluginForHost {
 
     public GooIm(PluginWrapper wrapper) {
@@ -66,7 +66,10 @@ public class GooIm extends PluginForHost {
         if (br.containsHTML(">The file you requested was not found<")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("<h3>Filename: ([^<>\"]*?)</h3>").getMatch(0);
         if (filename == null) filename = br.getRegex("<title>Goo\\.im Downloads \\- Downloading ([^<>\"]*?)</title>").getMatch(0);
-        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (filename == null) {
+            if (!br.containsHTML(">Please wait while we prepare your download")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         link.setName(Encoding.htmlDecode(filename.trim()));
         final String md5 = br.getRegex("class=\\'nounderline\\'>MD5sum: ([a-z0-9]{32})</h3>").getMatch(0);
         if (md5 != null) link.setMD5Hash(md5);

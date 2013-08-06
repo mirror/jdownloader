@@ -1283,10 +1283,16 @@ public class RyuShareCom extends PluginForHost {
             logger.info("Detected captcha method \"Key Captcha\"");
             final Browser captcha = br.cloneBrowser();
             cleanupBrowser(captcha, form.getHtmlCode());
+            String result = null;
             final PluginForDecrypt keycplug = JDUtilities.getPluginForDecrypt("linkcrypt.ws");
-            final jd.plugins.decrypter.LnkCrptWs.KeyCaptcha kc = ((jd.plugins.decrypter.LnkCrptWs) keycplug).getKeyCaptcha(captcha);
-            final String result = kc.showDialog(downloadLink.getDownloadURL());
-            if (result != null && "CANCEL".equals(result)) { throw new PluginException(LinkStatus.ERROR_FATAL); }
+            try {
+                final jd.plugins.decrypter.LnkCrptWs.KeyCaptcha kc = ((jd.plugins.decrypter.LnkCrptWs) keycplug).getKeyCaptcha(br);
+                result = kc.showDialog(downloadLink.getDownloadURL());
+            } catch (final Throwable e) {
+                result = null;
+            }
+            if (result == null) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+            if ("CANCEL".equals(result)) throw new PluginException(LinkStatus.ERROR_FATAL);
             form.put("capcode", result);
         }
         return form;
@@ -1749,9 +1755,9 @@ public class RyuShareCom extends PluginForHost {
     }
 
     private boolean isJava7nJDStable() {
-        if (System.getProperty("jd.revision.jdownloaderrevision") == null && System.getProperty("java.version").matches("1\\.[7-9].+")) 
+        if (System.getProperty("jd.revision.jdownloaderrevision") == null && System.getProperty("java.version").matches("1\\.[7-9].+"))
             return true;
-         else
+        else
             return false;
     }
 

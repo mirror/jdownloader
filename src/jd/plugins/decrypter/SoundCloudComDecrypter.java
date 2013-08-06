@@ -82,7 +82,7 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
         br.setFollowRedirects(true);
         boolean decryptList = parameter.matches(".*?soundcloud\\.com/[a-z\\-_0-9]+/(tracks|favorites)(\\?page=\\d+)?");
         if (!decryptList) {
-            decryptList = !parameter.matches(".*?soundcloud\\.com/[A-Za-z\\-_0-9]+/[A-Za-z\\-_0-9]+(/[A-Za-z\\-_0-9]+)?");
+            decryptList = !parameter.matches(".*?soundcloud\\.com/[A-Za-z\\-_0-9]+/([A-Za-z\\-_0-9]+/([A-Za-z\\-_0-9]+)?|[A-Za-z\\-_0-9]+/?)");
             if (!decryptList) decryptList = (parameter.contains("/groups/") || parameter.contains("/sets/"));
         }
         if (decryptList) {
