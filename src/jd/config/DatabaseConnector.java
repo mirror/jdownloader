@@ -17,7 +17,6 @@
 package jd.config;
 
 import java.io.BufferedInputStream;
-import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
@@ -31,11 +30,10 @@ import java.util.HashMap;
 import jd.utils.JDUtilities;
 
 import org.appwork.exceptions.WTFException;
-import org.appwork.utils.formatter.HexFormatter;
 import org.appwork.utils.logging2.LogSource;
+import org.appwork.utils.net.HexInputStream;
 import org.appwork.utils.net.LimitedInputStream;
 import org.jdownloader.logging.LogController;
-import org.seamless.util.io.IO;
 import org.tmatesoft.svn.core.internal.util.CountingInputStream;
 
 public class DatabaseConnector {
@@ -94,7 +92,7 @@ public class DatabaseConnector {
                                     }
                                 }
                                 if (objectStopIndex == -1) { throw new WTFException(); }
-                                logger.info("Found Entry: " + name + "Start: " + objectStartIndex + " End: " + objectStopIndex + " Size: " + (objectStopIndex - objectStartIndex));
+                                logger.info("Found Entry: " + name + " Start: " + objectStartIndex + " End: " + objectStopIndex + " Size: " + (objectStopIndex - objectStartIndex));
                                 objectIndices.put(searchForEntriesType[searchForEntriesIndex] + name, new Long[] { objectStartIndex, objectStopIndex });
                                 continue insertLoop;
                             }
@@ -141,8 +139,7 @@ public class DatabaseConnector {
             fis = new FileInputStream(configpath + "database.script");
             fis.skip(startIndex);
             LimitedInputStream is = new LimitedInputStream(fis, stopIndex - startIndex);
-            byte[] hex = IO.readBytes(is);
-            return new ObjectInputStream(new ByteArrayInputStream(HexFormatter.hexToByteArray(new String(hex, "ASCII")))) {
+            return new ObjectInputStream(new HexInputStream(is)) {
                 /*
                  * IDEA from http://sanjitmohanty.wordpress.com/2011/11/23/making-jvm-to-ignore-serialversionuids-mismatch/
                  * 
