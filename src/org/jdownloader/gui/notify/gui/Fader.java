@@ -10,14 +10,14 @@ import com.sun.awt.AWTUtilities;
 
 public class Fader implements ActionListener {
 
-    private static final int FPS = 25;
-    private AbstractNotifyWindow           owner;
-    private Timer            faderTimer;
-    private long             start;
-    private FadeType         type;
-    private long             end;
-    private Point            destLocation;
-    private float            destAlpha;
+    private static final int     FPS = 25;
+    private AbstractNotifyWindow owner;
+    private Timer                faderTimer;
+    private long                 start;
+    private FadeType             type;
+    private long                 end;
+    private Point                destLocation;
+    private float                destAlpha;
 
     public Fader(AbstractNotifyWindow notify) {
         this.owner = notify;
@@ -30,7 +30,12 @@ public class Fader implements ActionListener {
         if (steps <= 0) {
             stop();
         }
-        float alpha = AWTUtilities.getWindowOpacity(owner);
+        float alpha = destAlpha;
+        try {
+            alpha = AWTUtilities.getWindowOpacity(owner);
+        } catch (Exception e1) {
+
+        }
         Point loc = owner.getLocation();
         Point dLoc = destLocation;
         if (dLoc == null) {
@@ -51,9 +56,11 @@ public class Fader implements ActionListener {
         loc.y += dy / f;
 
         owner.setLocation(loc);
+        try {
+            AWTUtilities.setWindowOpacity(owner, alpha);
+        } catch (Exception e1) {
 
-        AWTUtilities.setWindowOpacity(owner, alpha);
-
+        }
     }
 
     private void stop() {

@@ -79,8 +79,20 @@ public abstract class AbstractNotifyWindow extends ExtJWindow implements ActionL
 
         content.add(comp);
         pack();
-        AWTUtilities.setWindowOpaque(this, false);
-        AWTUtilities.setWindowOpacity(this, 0f);
+        try {
+            AWTUtilities.setWindowOpaque(this, false);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        try {
+            AWTUtilities.setWindowOpacity(this, 0f);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
         fader = new Fader(this);
     }
 

@@ -56,33 +56,4 @@ public interface TrayConfig extends ExtensionConfigInterface {
 
     public void setTrayOnlyVisibleIfWindowIsHiddenEnabled(boolean b);
 
-    @DefaultBooleanValue(true)
-    @AboutConfig
-    public boolean isBallonNotifyOnNewLinkgrabberLinksEnabled();
-
-    public void setBallonNotifyOnNewLinkgrabberLinksEnabled(boolean b);
-
-    @DefaultBooleanValue(true)
-    @AboutConfig
-    public boolean isBallonNotifyOnNewLinkgrabberPackageEnabled();
-
-    public void setBallonNotifyOnNewLinkgrabberPackageEnabled(boolean b);
-
-    @DefaultBooleanValue(true)
-    @AboutConfig
-    public boolean isBallonNotifyOnUpdateAvailableEnabled();
-
-    public void setBallonNotifyOnUpdateAvailableEnabled(boolean b);
-
-    @DefaultBooleanValue(true)
-    @AboutConfig
-    public boolean isBallonNotifyOnReconnectStartEnabled();
-
-    public void setBallonNotifyOnReconnectStartEnabled(boolean b);
-
-    @DefaultBooleanValue(true)
-    @AboutConfig
-    public boolean isBallonNotifyOnReconnectEndEnabled();
-
-    public void setBallonNotifyOnReconnectEndEnabled(boolean b);
 }

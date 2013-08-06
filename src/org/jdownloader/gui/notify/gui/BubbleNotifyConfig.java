@@ -1,7 +1,6 @@
 package org.jdownloader.gui.notify.gui;
 
-import jd.plugins.ExtensionConfigInterface;
-
+import org.appwork.storage.config.ConfigInterface;
 import org.appwork.storage.config.annotations.AboutConfig;
 import org.appwork.storage.config.annotations.DefaultBooleanValue;
 import org.appwork.storage.config.annotations.DefaultEnumValue;
@@ -9,7 +8,7 @@ import org.appwork.storage.config.annotations.DefaultIntValue;
 import org.appwork.storage.config.annotations.DefaultStringValue;
 import org.appwork.storage.config.annotations.DescriptionForConfigEntry;
 
-public interface BubbleNotifyConfig extends ExtensionConfigInterface {
+public interface BubbleNotifyConfig extends ConfigInterface {
 
     public static enum Anchor {
         BOTTOM_LEFT,
