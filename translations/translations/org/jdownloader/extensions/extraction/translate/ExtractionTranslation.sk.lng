@@ -1,3 +1,6 @@
+ValidateArchiveAction_ValidateArchiveAction=Skontrolovať %s1
+ValidateArchiveAction_ValidateArchiveAction_multi=Skontrolovať archívy
+ValidateArchiveAction_ValidateArchiveAction_object_=Skontrolovať archív(y)
 ValidateArchiveAction_actionPerformed_=Archiv má %s1 častí a je kompletný.
 ValidateArchiveAction_actionPerformed_bad=Archív má %s1 častí a je nekompletný.
 archivename=Názov archívu
