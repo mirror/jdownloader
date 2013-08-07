@@ -7,10 +7,8 @@ import java.awt.event.ActionListener;
 import javax.swing.JFrame;
 
 import jd.controlling.linkcollector.LinkCollector;
-import jd.controlling.linkcollector.LinkCollectorEvent;
 import jd.controlling.linkcollector.LinkCollectorHighlightListener;
 import jd.controlling.linkcrawler.CrawledLink;
-import jd.controlling.linkcrawler.CrawledPackage;
 import jd.controlling.reconnect.Reconnecter;
 import jd.controlling.reconnect.ReconnecterEvent;
 import jd.controlling.reconnect.ReconnecterListener;
@@ -85,41 +83,7 @@ public class BubbleNotify implements UpdaterListener, ReconnecterListener {
     }
 
     private void initLinkCollectorListener() {
-
         LinkCollector.getInstance().getEventsender().addListener(new LinkCollectorHighlightListener() {
-            @Override
-            public void onLinkCollectorContentAdded(final LinkCollectorEvent event) {
-
-                if (!CFG_BUBBLE.CFG.isBubbleNotifyOnNewLinkgrabberPackageEnabled()) return;
-                if (event.getParameters().length > 0 && event.getParameter(0) instanceof CrawledPackage) {
-                    // new Package
-                    new EDTRunner() {
-
-                        @Override
-                        protected void runInEDT() {
-
-                            switch (((CrawledPackage) event.getParameter(0)).getType()) {
-                            case NORMAL:
-
-                                BasicNotify no = new BasicNotify(CFG_BUBBLE.BUBBLE_NOTIFY_ON_NEW_LINKGRABBER_PACKAGE_ENABLED, _GUI._.balloon_new_package(), _GUI._.balloon_new_package_msg(((CrawledPackage) event.getParameter(0)).getName()), NewTheme.I().getIcon(IconKey.ICON_PACKAGE_NEW, 32));
-                                no.setActionListener(new ActionListener() {
-
-                                    public void actionPerformed(ActionEvent e) {
-                                        JDGui.getInstance().requestPanel(JDGui.Panels.LINKGRABBER, null);
-                                        JDGui.getInstance().setFrameState(FrameState.TO_FRONT_FOCUSED);
-                                    }
-                                });
-                                show(no);
-                                break;
-
-                            //
-                            }
-                        }
-
-                    };
-
-                }
-            }
 
             @Override
             public void onHighLight(CrawledLink parameter) {
@@ -127,8 +91,6 @@ public class BubbleNotify implements UpdaterListener, ReconnecterListener {
 
                     @Override
                     protected void runInEDT() {
-                        if (!CFG_BUBBLE.CFG.isBubbleNotifyOnNewLinkgrabberLinksEnabled()) return;
-
                         BasicNotify no = new BasicNotify(CFG_BUBBLE.BUBBLE_NOTIFY_ON_NEW_LINKGRABBER_LINKS_ENABLED, _GUI._.balloon_new_links(), _GUI._.balloon_new_links_msg(LinkCollector.getInstance().getPackages().size(), LinkCollector.getInstance().getChildrenCount()), NewTheme.I().getIcon(IconKey.ICON_LINKGRABBER, 32));
                         no.setActionListener(new ActionListener() {
 
@@ -138,14 +100,13 @@ public class BubbleNotify implements UpdaterListener, ReconnecterListener {
                             }
                         });
                         show(no);
-
                     }
                 };
             }
 
             @Override
             public boolean isThisListenerEnabled() {
-                return true;
+                return CFG_BUBBLE.CFG.isBubbleNotifyOnNewLinkgrabberLinksEnabled();
             }
         });
 
@@ -168,15 +129,12 @@ public class BubbleNotify implements UpdaterListener, ReconnecterListener {
 
     @Override
     public void onUpdatesAvailable(boolean selfupdate, InstallLog installlog) {
-
+        if (!CFG_BUBBLE.CFG.isBubbleNotifyOnUpdateAvailableEnabled()) return;
         if (UpdateController.getInstance().hasPendingUpdates() && !updatesNotified) {
             updatesNotified = true;
             new EDTRunner() {
-
                 @Override
                 protected void runInEDT() {
-                    if (!CFG_BUBBLE.CFG.isBubbleNotifyOnUpdateAvailableEnabled()) return;
-
                     BasicNotify no = new BasicNotify(CFG_BUBBLE.BUBBLE_NOTIFY_ON_UPDATE_AVAILABLE_ENABLED, _GUI._.balloon_updates(), _GUI._.balloon_updates_msg(), NewTheme.I().getIcon("update", 32));
                     no.setActionListener(new ActionListener() {
 
@@ -185,7 +143,6 @@ public class BubbleNotify implements UpdaterListener, ReconnecterListener {
                         }
                     });
                     show(no);
-
                 }
             };
         } else if (!UpdateController.getInstance().hasPendingUpdates()) {
@@ -197,12 +154,9 @@ public class BubbleNotify implements UpdaterListener, ReconnecterListener {
     public void onBeforeReconnect(final ReconnecterEvent event) {
         if (!CFG_BUBBLE.CFG.isBubbleNotifyOnReconnectStartEnabled()) return;
         new EDTRunner() {
-
             @Override
             protected void runInEDT() {
-
                 BasicNotify no = new BasicNotify(CFG_BUBBLE.BUBBLE_NOTIFY_ON_RECONNECT_START_ENABLED, _GUI._.balloon_reconnect(), _GUI._.balloon_reconnect_start_msg(), NewTheme.I().getIcon("reconnect", 32));
-
                 show(no);
             }
         };
@@ -215,20 +169,13 @@ public class BubbleNotify implements UpdaterListener, ReconnecterListener {
 
             @Override
             protected void runInEDT() {
-
-                if (!(Boolean) event.getParameter()) {
-
-                    BasicNotify no = new BasicNotify(CFG_BUBBLE.BUBBLE_NOTIFY_ON_RECONNECT_END_ENABLED, _GUI._.balloon_reconnect(), _GUI._.balloon_reconnect_end_msg_failed(IPController.getInstance().getIP()), NewTheme.I().getIcon("error", 32));
-
-                    show(no);
-
+                BasicNotify no = null;
+                if (Boolean.FALSE.equals(event.getParameter())) {
+                    no = new BasicNotify(CFG_BUBBLE.BUBBLE_NOTIFY_ON_RECONNECT_END_ENABLED, _GUI._.balloon_reconnect(), _GUI._.balloon_reconnect_end_msg_failed(IPController.getInstance().getIP()), NewTheme.I().getIcon("error", 32));
                 } else {
-
-                    BasicNotify no = new BasicNotify(CFG_BUBBLE.BUBBLE_NOTIFY_ON_RECONNECT_END_ENABLED, _GUI._.balloon_reconnect(), _GUI._.balloon_reconnect_end_msg_failed(IPController.getInstance().getIP()), NewTheme.I().getIcon("ok", 32));
-
-                    show(no);
+                    no = new BasicNotify(CFG_BUBBLE.BUBBLE_NOTIFY_ON_RECONNECT_END_ENABLED, _GUI._.balloon_reconnect(), _GUI._.balloon_reconnect_end_msg(IPController.getInstance().getIP()), NewTheme.I().getIcon("ok", 32));
                 }
-
+                show(no);
             }
         };
     }
