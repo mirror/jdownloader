@@ -28,11 +28,11 @@ import org.jdownloader.logging.LogController;
 
 public class SubConfiguration extends Property implements Serializable {
 
-    private static final long                                  serialVersionUID = 7803718581558607222L;
-    protected String                                           name;
-    transient protected boolean                                valid            = false;
-    protected Storage                                          json             = null;
-    transient private static HashMap<String, SubConfiguration> SUB_CONFIGS      = new HashMap<String, SubConfiguration>();
+    private static final long                          serialVersionUID = 7803718581558607222L;
+    protected String                                   name;
+    protected transient boolean                        valid            = false;
+    protected transient Storage                        json             = null;
+    protected static HashMap<String, SubConfiguration> SUB_CONFIGS      = new HashMap<String, SubConfiguration>();
 
     public SubConfiguration() {
     }
@@ -80,15 +80,6 @@ public class SubConfiguration extends Property implements Serializable {
         super.setProperty(key, value);
         /* this changes changeFlag in JSonStorage to signal that it must be saved */
         json.put("saveWorkaround", System.currentTimeMillis());
-    }
-
-    @Override
-    public void copyTo(Property dest) {
-        super.copyTo(dest);
-        if (dest != null && dest instanceof SubConfiguration) {
-            /* this changes changeFlag in JSonStorage to signal that it must be saved */
-            ((SubConfiguration) dest).json.put("saveWorkaround", System.currentTimeMillis());
-        }
     }
 
     @Override
