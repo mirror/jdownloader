@@ -262,7 +262,7 @@ public class LinkCollectorAPIImpl implements LinkCollectorAPI {
         }
 
         List<FilePackage> frets = LinkCollector.getInstance().convert(lks, true);
-        dc.addAll(frets);
+        dc.addAllAt(frets, dc.getPackages().size());
 
         return true;
     }
