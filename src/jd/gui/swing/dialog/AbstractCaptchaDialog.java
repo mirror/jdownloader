@@ -37,7 +37,6 @@ import javax.sound.sampled.LineEvent;
 import javax.sound.sampled.LineEvent.Type;
 import javax.sound.sampled.LineListener;
 import javax.swing.BorderFactory;
-import javax.swing.Icon;
 import javax.swing.JButton;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
@@ -310,7 +309,11 @@ public abstract class AbstractCaptchaDialog extends AbstractDialog<Object> {
             mi = new JMenuItem(new AppAction() {
                 {
                     setName(_GUI._.AbstractCaptchaDialog_createPopup_skip_and_disable_all_downloads_from(getHost()));
-                    setSmallIcon(getHostIcon());
+                    try {
+                        setSmallIcon(getDomainInfo().getIcon(16));
+                    } catch (final Throwable e) {
+                        e.printStackTrace();
+                    }
                 }
 
                 @Override
@@ -581,18 +584,9 @@ public abstract class AbstractCaptchaDialog extends AbstractDialog<Object> {
     public String getHost() {
         switch (type) {
         case HOSTER:
-
-            return ((PluginForHost) plugin).getDomainInfo().getTld();
+            return ((PluginForHost) plugin).getDomainInfo(((PluginForHost) plugin).getDownloadLink()).getTld();
         case CRAWLER:
             return ((PluginForDecrypt) plugin).getHost();
-        }
-        return null;
-    }
-
-    protected Icon getHostIcon() {
-        try {
-            return DomainInfo.getInstance(getHost()).getIcon(16);
-        } catch (Exception e) {
         }
         return null;
     }
