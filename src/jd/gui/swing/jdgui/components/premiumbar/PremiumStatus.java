@@ -31,7 +31,6 @@ import jd.controlling.AccountControllerEvent;
 import jd.controlling.AccountControllerListener;
 import jd.controlling.IOEQ;
 import jd.controlling.accountchecker.AccountChecker;
-import jd.gui.swing.jdgui.JDGui;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.PluginForHost;
@@ -109,6 +108,11 @@ public class PremiumStatus extends JPanel implements MouseListener {
                         redrawTimer = new DelayedRunnable(IOEQ.TIMINGQUEUE, 5000, 20000) {
 
                             @Override
+                            public String getID() {
+                                return "PremiumStatusRedraw";
+                            }
+
+                            @Override
                             public void delayedrun() {
                                 redraw();
                             }
@@ -163,7 +167,7 @@ public class PremiumStatus extends JPanel implements MouseListener {
             if (domainInfo == null) {
                 PluginForHost plugin = JDUtilities.getPluginForHost(acc.getHoster());
                 if (plugin != null) {
-                    domainInfo = plugin.getDomainInfo();
+                    domainInfo = plugin.getDomainInfo(null);
                     domainInfos.put(acc.getHoster(), domainInfo);
                     domains.add(domainInfo);
                 }
@@ -194,23 +198,6 @@ public class PremiumStatus extends JPanel implements MouseListener {
     }
 
     public void mouseClicked(MouseEvent e) {
-        if (e.getSource() instanceof TinyProgressBar) {
-            final TinyProgressBar tpb = (TinyProgressBar) e.getSource();
-            if (e.isPopupTrigger() || e.getButton() == MouseEvent.BUTTON3) {
-            } else {
-                IOEQ.add(new Runnable() {
-                    @Override
-                    public void run() {
-                        PluginForHost plugin = tpb.getDomainInfo().findPlugin();
-                        if (plugin != null && plugin.hasConfig()) {
-                            JDGui.getInstance().requestPanel(JDGui.Panels.CONFIGPANEL, plugin.getConfig());
-                        }
-                    }
-                });
-
-            }
-        }
-
     }
 
     public void mouseEntered(MouseEvent e) {
