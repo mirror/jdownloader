@@ -20,35 +20,41 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.Serializable;
 import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.concurrent.ConcurrentHashMap;
 
 import org.appwork.exceptions.WTFException;
+import org.appwork.utils.NullsafeAtomicReference;
 
 /**
- * Von dieser Klasse kann abgeleitet werden wenn die Neue Klasse Properties unterstützen soll. Die SimpleGUI elemente nutzen das um einfache
- * Dialogelemente zu erstellen. Ein Automatisiertes speichern/laden wird dadurch möglich
+ * Von dieser Klasse kann abgeleitet werden wenn die Neue Klasse Properties unterstützen soll. Die SimpleGUI elemente nutzen das um einfache Dialogelemente zu
+ * erstellen. Ein Automatisiertes speichern/laden wird dadurch möglich
  * 
  * @author JD-Team
  * 
  */
 public class Property implements Serializable {
 
-    private static final long       serialVersionUID = -6093927038856757256L;
+    private static final long                                                    serialVersionUID     = -6093927038856757256L;
     /**
      * Nullvalue used to remove a key completly.
      */
-    public static final Object      NULL             = new Object();
+    public static final Object                                                   NULL                 = new Object();
+    /* do not remove to keep stable compatibility */
+    private HashMap<String, Object>                                              properties           = null;
 
-    private HashMap<String, Object> properties       = null;
+    private transient NullsafeAtomicReference<ConcurrentHashMap<String, Object>> threadSafeproperties = new NullsafeAtomicReference<ConcurrentHashMap<String, Object>>(null);
 
     public Property() {
     }
 
     private void readObject(ObjectInputStream stream) throws IOException, ClassNotFoundException {
-        /* deserialize object and then fill other stuff(transient..) */
+        /* deserialize object and set all transient variables */
         stream.defaultReadObject();
-        if (properties != null && properties.isEmpty()) {
-            properties = null;
-        }
+        threadSafeproperties = new NullsafeAtomicReference<ConcurrentHashMap<String, Object>>(null);
+        setProperties(properties);
     }
 
     /**
@@ -127,19 +133,8 @@ public class Property implements Serializable {
     /**
      * Returns the internal HashMap Properties
      */
-    public HashMap<String, Object> getProperties() {
-        return properties;
-    }
-
-    public void copyTo(Property dest) {
-        if (dest != null && dest != this) {
-            if (properties != null) {
-                if (dest.properties == null) {
-                    dest.properties = new HashMap<String, Object>();
-                }
-                dest.properties.putAll(this.properties);
-            }
-        }
+    public Map<String, Object> getProperties() {
+        return threadSafeproperties.get();
     }
 
     /**
@@ -149,8 +144,10 @@ public class Property implements Serializable {
      * @return Value for key
      */
     public Object getProperty(final String key) {
-        if (properties == null) return null;
-        return properties.get(key);
+        ConcurrentHashMap<String, Object> lthreadSafeproperties = threadSafeproperties.get();
+        if (lthreadSafeproperties == null) return null;
+        if (key == null) { throw new WTFException("key ==null is forbidden!"); }
+        return lthreadSafeproperties.get(key);
     }
 
     /**
@@ -191,20 +188,37 @@ public class Property implements Serializable {
     }
 
     public boolean hasProperty(final String key) {
-        if (properties == null) return false;
-        return properties.containsKey(key);
+        ConcurrentHashMap<String, Object> lthreadSafeproperties = threadSafeproperties.get();
+        if (lthreadSafeproperties == null) return false;
+        if (key == null) { throw new WTFException("key ==null is forbidden!"); }
+        return lthreadSafeproperties.containsKey(key);
     }
 
-    /**
-     * setzt die interne prperties hashMap
-     * 
-     * @param properties
-     */
-    public void setProperties(final HashMap<String, Object> properties) {
-        if (properties != null && properties.isEmpty()) {
-            this.properties = null;
+    public void setProperties(final Map<String, Object> properties) {
+        this.properties = null;
+        if (properties == null || properties.isEmpty()) {
+            threadSafeproperties.set(null);
         } else {
-            this.properties = properties;
+            ConcurrentHashMap<String, Object> lthreadSafeproperties = new ConcurrentHashMap<String, Object>(8, 0.9f, 1);
+            Iterator<Entry<String, Object>> it = properties.entrySet().iterator();
+            while (it.hasNext()) {
+                Entry<String, Object> next = it.next();
+                if (next.getKey() == null || next.getValue() == null) {
+                    //
+                    continue;
+                }
+                lthreadSafeproperties.put(next.getKey(), next.getValue());
+            }
+            threadSafeproperties.set(lthreadSafeproperties);
+        }
+    }
+
+    private ConcurrentHashMap<String, Object> threadSafeCreateProperties() {
+        while (true) {
+            ConcurrentHashMap<String, Object> lthreadSafeproperties = threadSafeproperties.get();
+            if (lthreadSafeproperties != null) return lthreadSafeproperties;
+            lthreadSafeproperties = new ConcurrentHashMap<String, Object>(8, 0.9f, 1);
+            if (threadSafeproperties.compareAndSet(null, lthreadSafeproperties)) { return lthreadSafeproperties; }
         }
     }
 
@@ -216,21 +230,15 @@ public class Property implements Serializable {
      */
     public void setProperty(final String key, final Object value) {
         if (key == null) { throw new WTFException("key ==null is forbidden!"); }
-        if (value == NULL) {
-            if (properties != null) {
-                properties.remove(key);
+        ConcurrentHashMap<String, Object> lthreadSafeproperties = threadSafeproperties.get();
+        if (value == NULL || value == null) {
+            /* null values are not allowed in concurrentHashMaps */
+            if (lthreadSafeproperties != null) {
+                lthreadSafeproperties.remove(key);
             }
             return;
         }
-        if (properties == null) {
-            properties = new HashMap<String, Object>();
-        }
-        final Object old = getProperty(key);
-        if (old == null && value == null) {
-            /* old and new values are null , so nothing changed */
-            return;
-        }
-        properties.put(key, value);
+        threadSafeCreateProperties().put(key, value);
     }
 
     /**
@@ -241,7 +249,8 @@ public class Property implements Serializable {
     // @Override
     @Override
     public String toString() {
-        if (properties != null) return (properties.size() == 0) ? "" : "Property: " + properties;
+        ConcurrentHashMap<String, Object> lthreadSafeproperties = threadSafeproperties.get();
+        if (lthreadSafeproperties != null) return (lthreadSafeproperties.size() == 0) ? "" : "Property: " + lthreadSafeproperties;
         return "no properties set";
     }
 
