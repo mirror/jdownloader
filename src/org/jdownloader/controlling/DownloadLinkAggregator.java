@@ -9,8 +9,9 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
 import org.jdownloader.extensions.extraction.ExtractionStatus;
+import org.jdownloader.gui.views.SelectionInfo;
 
-public class DownloadLinkAggregator {
+public class DownloadLinkAggregator implements MirrorPackageSetup {
 
     private int totalCount;
 
@@ -53,25 +54,54 @@ public class DownloadLinkAggregator {
         return finishedCount;
     }
 
-    private int  onlineStatusUnkownCount;
-    private int  enabledCount;
-    private int  disabledCount;
-    private long totalBytes;
-    private long bytesLoaded;
-    private int  finishedCount;
+    private int     onlineStatusUnkownCount;
+    private int     enabledCount;
+    private int     disabledCount;
+    private long    totalBytes;
+    private long    bytesLoaded;
+    private int     finishedCount;
 
-    private long eta;
+    private long    eta;
 
-    public DownloadLinkAggregator(FilePackage fp, boolean mirrorHandlingEnabled) {
+    private boolean localFileUsageEnabled = false;
+
+    public void setLocalFileUsageEnabled(boolean fileSizeCheckEnabled) {
+        this.localFileUsageEnabled = fileSizeCheckEnabled;
+    }
+
+    private boolean mirrorHandlingEnabled = true;
+
+    private int     localFileCount;
+
+    public boolean isMirrorHandlingEnabled() {
+        return mirrorHandlingEnabled;
+    }
+
+    public void setMirrorHandlingEnabled(boolean mirrorHandlingEnabled) {
+        this.mirrorHandlingEnabled = mirrorHandlingEnabled;
+    }
+
+    public DownloadLinkAggregator(FilePackage fp) {
         boolean readL = fp.getModifyLock().readLock();
         try {
-            update(fp.getChildren(), mirrorHandlingEnabled);
+
+            update(fp.getChildren());
         } finally {
             fp.getModifyLock().readUnlock(readL);
         }
     }
 
-    private void update(List<DownloadLink> children, boolean mirrorHandlingEnabled) {
+    public DownloadLinkAggregator() {
+
+    }
+
+    public DownloadLinkAggregator(SelectionInfo<FilePackage, DownloadLink> si) {
+
+        update(si.getChildren());
+
+    }
+
+    public void update(List<DownloadLink> children) {
         int total = 0;
         int enabled = 0;
         int disabled = 0;
@@ -83,16 +113,17 @@ public class DownloadLinkAggregator {
         long bytesToDo = 0;
         int finished = 0;
         long speed = 0;
+        int localFileCount = 0;
         HashMap<String, MirrorPackage> dupeSet = new HashMap<String, MirrorPackage>();
         MirrorPackage list;
         for (DownloadLink link : children) {
-            if (mirrorHandlingEnabled) {
+            if (isMirrorHandlingEnabled()) {
                 String mirrorID = createDupeID(link);
                 // TODO:Check if this can result in an endless loop
                 while (true) {
                     list = dupeSet.get(mirrorID);
                     if (list == null) {
-                        dupeSet.put(mirrorID, list = new MirrorPackage(mirrorID));
+                        dupeSet.put(mirrorID, list = new MirrorPackage(mirrorID, this));
                     }
                     String newID = list.add(link);
                     if (newID != null) {
@@ -104,7 +135,22 @@ public class DownloadLinkAggregator {
             } else {
                 speed += link.getDownloadSpeed();
                 totalBytes += link.getDownloadMax();
-                bytesLoaded += link.getDownloadCurrent();
+                if (isLocalFileUsageEnabled()) {
+                    File a = new File(link.getFileOutput() + ".part");
+                    if (a.exists()) {
+                        bytesLoaded += a.length();
+                        localFileCount++;
+                    } else {
+                        a = new File(link.getFileOutput());
+                        if (a.exists()) {
+                            bytesLoaded += a.length();
+                            localFileCount++;
+                        }
+                    }
+
+                } else {
+                    bytesLoaded += link.getDownloadCurrent();
+                }
                 bytesToDo += Math.max(0, link.getDownloadMax() - link.getDownloadSize());
                 total++;
                 if (link.getLinkStatus().isFinished() && (new File(link.getFileOutput()).exists() || link.getExtractionStatus() == ExtractionStatus.SUCCESSFUL)) {
@@ -133,6 +179,9 @@ public class DownloadLinkAggregator {
                 list = e.getValue();
                 totalBytes += list.getTotalBytes();
                 bytesLoaded += list.getBytesLoaded();
+                if (list.getBytesLoaded() > 0 && isLocalFileUsageEnabled()) {
+                    localFileCount++;
+                }
                 bytesToDo += Math.max(0, list.getTotalBytes() - list.getBytesLoaded());
                 speed += list.getSpeed();
                 total++;
@@ -155,6 +204,7 @@ public class DownloadLinkAggregator {
             }
 
         }
+        this.localFileCount = localFileCount;
         this.totalCount = total;
         this.onlineStatusOfflineCount = offline;
         this.onlineStatusOnlineCount = online;
@@ -170,6 +220,16 @@ public class DownloadLinkAggregator {
             eta = -1;
         }
 
+    }
+
+    public int getLocalFileCount() {
+        if (!isLocalFileUsageEnabled()) throw new IllegalStateException("isLocalFileUsageEnabled() is disabled");
+        return localFileCount;
+    }
+
+    @Override
+    public boolean isLocalFileUsageEnabled() {
+        return localFileUsageEnabled;
     }
 
     public long getEta() {

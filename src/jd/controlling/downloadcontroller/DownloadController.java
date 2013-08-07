@@ -63,13 +63,13 @@ import org.appwork.utils.StringUtils;
 import org.appwork.utils.event.Eventsender;
 import org.appwork.utils.event.queue.Queue.QueuePriority;
 import org.appwork.utils.event.queue.QueueAction;
+import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.swing.IconDialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.appwork.utils.zip.ZipIOReader;
 import org.appwork.utils.zip.ZipIOWriter;
-import org.jdownloader.controlling.AggregatedNumbers;
 import org.jdownloader.controlling.DownloadLinkAggregator;
 import org.jdownloader.controlling.DownloadLinkWalker;
 import org.jdownloader.controlling.FileCreationManager;
@@ -821,15 +821,17 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
     }
 
     public static void deleteLinksRequest(final SelectionInfo<FilePackage, DownloadLink> si, String msg) {
-        AggregatedNumbers agg = new AggregatedNumbers(si);
-        if (agg.getLinkCount() == 0) {
+        DownloadLinkAggregator agg = new DownloadLinkAggregator();
+        agg.setLocalFileUsageEnabled(true);
+        agg.update(si.getChildren());
+        if (agg.getTotalCount() == 0) {
             new IconDialog(0, _GUI._.lit_ups_something_is_wrong(), _GUI._.DownloadController_deleteLinksRequest_nolinks(), NewTheme.I().getIcon("robot_sos", 256), null).show();
 
             return;
         }
         boolean confirmed = si.isShiftDown();
 
-        ConfirmDeleteLinksDialog dialog = new ConfirmDeleteLinksDialog(msg + "\r\n" + _GUI._.DeleteSelectionAction_actionPerformed_affected(agg.getLinkCount(), agg.getLoadedBytesString(), DownloadController.getInstance().getChildrenCount() - agg.getLinkCount()), agg.getLoadedBytes());
+        ConfirmDeleteLinksDialog dialog = new ConfirmDeleteLinksDialog(msg + "\r\n" + _GUI._.DeleteSelectionAction_actionPerformed_affected2(agg.getTotalCount(), SizeFormatter.formatBytes(agg.getBytesLoaded()), DownloadController.getInstance().getChildrenCount() - agg.getTotalCount(), agg.getLocalFileCount()), agg.getBytesLoaded());
         dialog.setRecycleSupported(JDFileUtils.isTrashSupported());
 
         dialog.setDeleteFilesFromDiskEnabled(si.isShiftDown());
@@ -928,7 +930,7 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
      * @param fp
      */
     public static void removePackageIfFinished(FilePackage fp) {
-        if (new DownloadLinkAggregator(fp, true).isFinished()) {
+        if (new DownloadLinkAggregator(fp).isFinished()) {
             if (DownloadController.getInstance().askForRemoveVetos(fp)) {
                 DownloadController.getInstance().logger.info("Remove Package " + fp.getName() + " because Finished and CleanupPackageFinished!");
                 DownloadController.getInstance().removePackage(fp);

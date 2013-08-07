@@ -24,14 +24,15 @@ public class MirrorPackage {
         return bytesLoaded;
     }
 
-    private long    bytesLoaded = 0;
-    private long    bytesTotal  = -1;
-    private boolean online      = false;
-    private boolean offline     = true;
-    private boolean enabled     = false;
-    private String  md5         = null;
-    private String  sha1        = null;
-    private long    speed;
+    private long               bytesLoaded = 0;
+    private long               bytesTotal  = -1;
+    private boolean            online      = false;
+    private boolean            offline     = true;
+    private boolean            enabled     = false;
+    private String             md5         = null;
+    private String             sha1        = null;
+    private long               speed;
+    private MirrorPackageSetup setup;
 
     public boolean isOffline() {
         return offline;
@@ -45,8 +46,9 @@ public class MirrorPackage {
         return online;
     }
 
-    public MirrorPackage(String mirrorID) {
+    public MirrorPackage(String mirrorID, MirrorPackageSetup setup) {
         id = mirrorID;
+        this.setup = setup;
         list = new ArrayList<DownloadLink>();
     }
 
@@ -65,7 +67,21 @@ public class MirrorPackage {
             return id + "/" + link.getSha1Hash().toLowerCase(Locale.ENGLISH);
         }
         finished |= link.getLinkStatus().isFinished() && (new File(link.getFileOutput()).exists() || link.getExtractionStatus() == ExtractionStatus.SUCCESSFUL);
-        if (link.isEnabled()) {
+
+        if (setup.isLocalFileUsageEnabled()) {
+            File a = new File(link.getFileOutput() + ".part");
+            if (a.exists()) {
+                bytesLoaded = Math.max(bytesLoaded, a.length());
+            } else {
+                a = new File(link.getFileOutput());
+                if (a.exists()) {
+
+                    bytesLoaded = Math.max(bytesLoaded, a.length());
+                }
+            }
+
+        } else {
+
             bytesLoaded = Math.max(bytesLoaded, link.getDownloadCurrent());
         }
         if (StringUtils.isEmpty(md5) && StringUtils.isNotEmpty(link.getMD5Hash())) {

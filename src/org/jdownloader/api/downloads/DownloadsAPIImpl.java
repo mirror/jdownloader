@@ -50,7 +50,7 @@ public class DownloadsAPIImpl implements DownloadsAPI {
             boolean readL = fp.getModifyLock().readLock();
             try {
 
-                DownloadLinkAggregator aggregate = new DownloadLinkAggregator(fp, true);
+                DownloadLinkAggregator aggregate = new DownloadLinkAggregator(fp);
                 FilePackageAPIStorable fps = new FilePackageAPIStorable(fp);
 
                 QueryResponseMap infomap = new QueryResponseMap();

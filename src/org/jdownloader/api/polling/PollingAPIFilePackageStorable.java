@@ -21,7 +21,7 @@ public class PollingAPIFilePackageStorable implements Storable {
 
     public PollingAPIFilePackageStorable(FilePackage link) {
         this.fp = link;
-        numbers = new DownloadLinkAggregator(fp, true);
+        numbers = new DownloadLinkAggregator(fp);
 
     }
 

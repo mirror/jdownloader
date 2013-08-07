@@ -2269,8 +2269,8 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Keep all downloaded Files - just remove Links from JDownloader" })
     String ConfirmDeleteLinksDialog_layoutDialogContent_no_filedelete2();
 
-    @Default(lngs = { "en" }, values = { "\r\n%s1 Links(s) to delete\r\n%s2 Files on Disk\r\nLinks left in Downloadlist: %s3" })
-    String DeleteSelectionAction_actionPerformed_affected(int linkCount, String bytes, int i);
+    @Default(lngs = { "en" }, values = { "\r\n%s1 Links(s) to delete\r\n%s4 Files(%s2) on Disk\r\nLinks left in Downloadlist: %s3" })
+    String DeleteSelectionAction_actionPerformed_affected2(int linkCount, String bytes, int linksLeft, int localFileCount);
 
     @Default(lngs = { "en" }, values = { "Do you want to delete all selected & disabled Downloadlinks?" })
     String DeleteDisabledLinksFromListAndDiskAction_actionPerformed_object_();
