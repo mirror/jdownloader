@@ -19,11 +19,13 @@ import jd.gui.swing.jdgui.components.toolbar.actions.UpdateAction;
 import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.events.GenericConfigEventListener;
 import org.appwork.storage.config.handler.KeyHandler;
+import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.WindowManager.FrameState;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.notify.gui.AbstractNotifyWindow;
 import org.jdownloader.gui.notify.gui.Balloner;
+import org.jdownloader.gui.notify.gui.BubbleNotifyConfig.Anchor;
 import org.jdownloader.gui.notify.gui.CFG_BUBBLE;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
@@ -56,20 +58,62 @@ public class BubbleNotify implements UpdaterListener, ReconnecterListener {
                 return JDGui.getInstance().getMainFrame();
             }
         };
+
         GenericConfigEventListener<Object> update = new GenericConfigEventListener<Object>() {
 
             @Override
             public void onConfigValueModified(KeyHandler<Object> keyHandler, Object newValue) {
                 ballooner.setScreenID(CFG_BUBBLE.CFG.getScreenID());
-                ballooner.setStartPoint(new Point(CFG_BUBBLE.CFG.getStartX(), CFG_BUBBLE.CFG.getStartY()), CFG_BUBBLE.CFG.getStartAnchor());
-                ballooner.setEndPoint(new Point(CFG_BUBBLE.CFG.getEndX(), CFG_BUBBLE.CFG.getEndY()), CFG_BUBBLE.CFG.getEndAnchor());
-                ballooner.setAnchorPoint(new Point(CFG_BUBBLE.CFG.getAnchorX(), CFG_BUBBLE.CFG.getAnchorY()), CFG_BUBBLE.CFG.getAnchor());
+
+                if (CFG_BUBBLE.CFG.getAnimationStartPositionAnchor() == Anchor.SYSTEM_DEFAULT) {
+                    switch (CrossSystem.getOS().getFamily()) {
+                    case WINDOWS:
+                        // bottom right position 10 pixel margin
+                        ballooner.setStartPoint(new Point(-11, -1), Anchor.TOP_RIGHT);
+                        break;
+                    default:
+                        // top right position 10 pixel margin
+                        ballooner.setStartPoint(new Point(-11, 0), Anchor.BOTTOM_RIGHT);
+                    }
+
+                } else {
+                    ballooner.setStartPoint(new Point(CFG_BUBBLE.CFG.getAnimationStartPositionX(), CFG_BUBBLE.CFG.getAnimationStartPositionY()), CFG_BUBBLE.CFG.getAnimationStartPositionAnchor());
+                }
+
+                if (CFG_BUBBLE.CFG.getAnimationEndPositionAnchor() == Anchor.SYSTEM_DEFAULT) {
+                    switch (CrossSystem.getOS().getFamily()) {
+                    case WINDOWS:
+                        // move out to the right
+                        ballooner.setEndPoint(new Point(-1, -11), Anchor.BOTTOM_LEFT);
+                        break;
+                    default:
+                        // move out to the right
+                        ballooner.setEndPoint(new Point(-1, 10), Anchor.TOP_LEFT);
+                    }
+
+                } else {
+                    ballooner.setEndPoint(new Point(CFG_BUBBLE.CFG.getAnimationEndPositionX(), CFG_BUBBLE.CFG.getAnimationEndPositionY()), CFG_BUBBLE.CFG.getAnimationEndPositionAnchor());
+                }
+
+                if (CFG_BUBBLE.CFG.getFinalPositionAnchor() == Anchor.SYSTEM_DEFAULT) {
+                    switch (CrossSystem.getOS().getFamily()) {
+                    case WINDOWS:
+                        ballooner.setAnchorPoint(new Point(-11, -11), Anchor.BOTTOM_RIGHT);
+                        break;
+                    default:
+                        ballooner.setAnchorPoint(new Point(-11, 10), Anchor.TOP_RIGHT);
+                    }
+
+                } else {
+                    ballooner.setAnchorPoint(new Point(CFG_BUBBLE.CFG.getFinalPositionX(), CFG_BUBBLE.CFG.getFinalPositionY()), CFG_BUBBLE.CFG.getFinalPositionAnchor());
+                }
 
             }
 
             @Override
             public void onConfigValidatorError(KeyHandler<Object> keyHandler, Object invalidValue, ValidationException validateException) {
             }
+
         };
 
         CFG_BUBBLE.CFG._getStorageHandler().getEventSender().addListener(update);

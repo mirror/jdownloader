@@ -50,10 +50,11 @@ public abstract class AbstractNotifyWindow extends ExtJWindow implements ActionL
         return endLocation;
     }
 
-    private int   timeout   = 15000;
-    private int   fadeSpeed = FADE_SPEED;
-    private Point startLocation;
-    private int   round     = 10;
+    private int      timeout   = 15000;
+    private int      fadeSpeed = FADE_SPEED;
+    private Point    startLocation;
+    private int      round     = 10;
+    private Balloner controller;
 
     public AbstractNotifyWindow(String caption, JComponent comp) {
         super();
@@ -137,6 +138,8 @@ public abstract class AbstractNotifyWindow extends ExtJWindow implements ActionL
 
             fader.fadeIn(getFadeSpeed());
 
+        } else {
+            dispose();
         }
         if (b && getTimeout() > 0) {
             timer = new Timer(getTimeout(), this);
@@ -146,7 +149,7 @@ public abstract class AbstractNotifyWindow extends ExtJWindow implements ActionL
     }
 
     protected int getFadeSpeed() {
-        // if (true) return 10000;
+
         return fadeSpeed;
     }
 
@@ -264,8 +267,9 @@ public abstract class AbstractNotifyWindow extends ExtJWindow implements ActionL
         }
         fader.fadeOut(getFadeSpeed());
         fader.moveTo(endLocation.x, endLocation.y, getFadeSpeed());
-
+        controller.remove(this);
         // dispose();
+
     }
 
     protected BufferedImage getSoftClipWorkaroundImage(Graphics2D g2d, int width, int height) {
@@ -327,6 +331,10 @@ public abstract class AbstractNotifyWindow extends ExtJWindow implements ActionL
 
     public Point getStartLocation() {
         return startLocation;
+    }
+
+    public void setController(Balloner balloner) {
+        this.controller = balloner;
     }
 
 }

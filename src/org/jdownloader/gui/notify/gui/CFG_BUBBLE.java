@@ -25,59 +25,59 @@ public class CFG_BUBBLE {
      * here. Like \display0 for your main screen
      **/
     public static final StringKeyHandler                   SCREEN_ID                                        = SH.getKeyHandler("ScreenID", StringKeyHandler.class);
-    // -1
-    /**
-     * Animation Start X Position. 0 is left screen edge -1 is right screen edge
-     **/
-    public static final IntegerKeyHandler                  START_X                                          = SH.getKeyHandler("StartX", IntegerKeyHandler.class);
-    // -1
-    /**
-     * Animation Start Y Position. 0 is top screen edge -1 is bottom screen edge
-     **/
-    public static final IntegerKeyHandler                  START_Y                                          = SH.getKeyHandler("StartY", IntegerKeyHandler.class);
-    // true
-    public static final BooleanKeyHandler                  BUBBLE_NOTIFY_ON_RECONNECT_START_ENABLED         = SH.getKeyHandler("BubbleNotifyOnReconnectStartEnabled", BooleanKeyHandler.class);
-    // true
-    public static final BooleanKeyHandler                  BUBBLE_NOTIFY_ON_UPDATE_AVAILABLE_ENABLED        = SH.getKeyHandler("BubbleNotifyOnUpdateAvailableEnabled", BooleanKeyHandler.class);
-    // 0
-    /**
-     * Y Position of the first bubble. 0 is top screen edge -1 is bottom screen edge
-     **/
-    public static final IntegerKeyHandler                  ANCHOR_Y                                         = SH.getKeyHandler("AnchorY", IntegerKeyHandler.class);
-    // 0
-    /**
-     * Animation End Y Position. 0 is top screen edge -1 is bottom screen edge
-     **/
-    public static final IntegerKeyHandler                  END_Y                                            = SH.getKeyHandler("EndY", IntegerKeyHandler.class);
-    // -1
-    /**
-     * X Position of the first bubble. 0 is left screen edge -1 is right screen edge
-     **/
-    public static final IntegerKeyHandler                  ANCHOR_X                                         = SH.getKeyHandler("AnchorX", IntegerKeyHandler.class);
-    // true
-    public static final BooleanKeyHandler                  BUBBLE_NOTIFY_ON_NEW_LINKGRABBER_PACKAGE_ENABLED = SH.getKeyHandler("BubbleNotifyOnNewLinkgrabberPackageEnabled", BooleanKeyHandler.class);
-    // TOP_RIGHT
-    /**
-     * Animation Start Anchor. TOP_RIGHT means, that the topright corner of the bubble is the reference anchor
-     **/
-    public static final EnumKeyHandler                     START_ANCHOR                                     = SH.getKeyHandler("StartAnchor", EnumKeyHandler.class);
-    // true
-    public static final BooleanKeyHandler                  BUBBLE_NOTIFY_ON_NEW_LINKGRABBER_LINKS_ENABLED   = SH.getKeyHandler("BubbleNotifyOnNewLinkgrabberLinksEnabled", BooleanKeyHandler.class);
-    // BOTTOM_RIGHT
+    // SYSTEM_DEFAULT
     /**
      * Animation End Anchor. TOP_RIGHT means, that the topright corner of the bubble is the reference anchor
      **/
-    public static final EnumKeyHandler                     END_ANCHOR                                       = SH.getKeyHandler("EndAnchor", EnumKeyHandler.class);
-    // true
-    public static final BooleanKeyHandler                  BUBBLE_NOTIFY_ON_RECONNECT_END_ENABLED           = SH.getKeyHandler("BubbleNotifyOnReconnectEndEnabled", BooleanKeyHandler.class);
-    // TOP_RIGHT
+    public static final EnumKeyHandler                     ANIMATION_END_POSITION_ANCHOR                    = SH.getKeyHandler("AnimationEndPositionAnchor", EnumKeyHandler.class);
+    // SYSTEM_DEFAULT
     /**
      * Position Anchor for the First Bubble. TOP_RIGHT means, that the topright corner of the bubble is the reference anchor
      **/
-    public static final EnumKeyHandler                     ANCHOR                                           = SH.getKeyHandler("Anchor", EnumKeyHandler.class);
+    public static final EnumKeyHandler                     FINAL_POSITION_ANCHOR                            = SH.getKeyHandler("FinalPositionAnchor", EnumKeyHandler.class);
+    // true
+    public static final BooleanKeyHandler                  BUBBLE_NOTIFY_ON_RECONNECT_START_ENABLED         = SH.getKeyHandler("BubbleNotifyOnReconnectStartEnabled", BooleanKeyHandler.class);
+    // SYSTEM_DEFAULT
+    /**
+     * Animation Start Anchor. TOP_RIGHT means, that the topright corner of the bubble is the reference anchor
+     **/
+    public static final EnumKeyHandler                     ANIMATION_START_POSITION_ANCHOR                  = SH.getKeyHandler("AnimationStartPositionAnchor", EnumKeyHandler.class);
+    // true
+    public static final BooleanKeyHandler                  BUBBLE_NOTIFY_ON_UPDATE_AVAILABLE_ENABLED        = SH.getKeyHandler("BubbleNotifyOnUpdateAvailableEnabled", BooleanKeyHandler.class);
+    // true
+    public static final BooleanKeyHandler                  BUBBLE_NOTIFY_ON_NEW_LINKGRABBER_PACKAGE_ENABLED = SH.getKeyHandler("BubbleNotifyOnNewLinkgrabberPackageEnabled", BooleanKeyHandler.class);
+    // true
+    public static final BooleanKeyHandler                  BUBBLE_NOTIFY_ON_NEW_LINKGRABBER_LINKS_ENABLED   = SH.getKeyHandler("BubbleNotifyOnNewLinkgrabberLinksEnabled", BooleanKeyHandler.class);
+    // true
+    public static final BooleanKeyHandler                  BUBBLE_NOTIFY_ON_RECONNECT_END_ENABLED           = SH.getKeyHandler("BubbleNotifyOnReconnectEndEnabled", BooleanKeyHandler.class);
+    // -1
+    /**
+     * Animation End Y Position. 0 is top screen edge -1 is bottom screen edge
+     **/
+    public static final IntegerKeyHandler                  ANIMATION_END_POSITION_Y                         = SH.getKeyHandler("AnimationEndPositionY", IntegerKeyHandler.class);
     // -1
     /**
      * Animation End X Position. 0 is left screen edge -1 is right screen edge
      **/
-    public static final IntegerKeyHandler                  END_X                                            = SH.getKeyHandler("EndX", IntegerKeyHandler.class);
+    public static final IntegerKeyHandler                  ANIMATION_END_POSITION_X                         = SH.getKeyHandler("AnimationEndPositionX", IntegerKeyHandler.class);
+    // -1
+    /**
+     * X Position of the first bubble. 0 is left screen edge -1 is right screen edge
+     **/
+    public static final IntegerKeyHandler                  FINAL_POSITION_X                                 = SH.getKeyHandler("FinalPositionX", IntegerKeyHandler.class);
+    // -1
+    /**
+     * Animation Start Y Position. 0 is top screen edge -1 is bottom screen edge
+     **/
+    public static final IntegerKeyHandler                  ANIMATION_START_POSITION_Y                       = SH.getKeyHandler("AnimationStartPositionY", IntegerKeyHandler.class);
+    // -1
+    /**
+     * Animation Start X Position. 0 is left screen edge -1 is right screen edge
+     **/
+    public static final IntegerKeyHandler                  ANIMATION_START_POSITION_X                       = SH.getKeyHandler("AnimationStartPositionX", IntegerKeyHandler.class);
+    // -1
+    /**
+     * Y Position of the first bubble. 0 is top screen edge -1 is bottom screen edge
+     **/
+    public static final IntegerKeyHandler                  FINAL_POSITION_Y                                 = SH.getKeyHandler("FinalPositionY", IntegerKeyHandler.class);
 }

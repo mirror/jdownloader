@@ -14,38 +14,39 @@ public interface BubbleNotifyConfig extends ConfigInterface {
         BOTTOM_LEFT,
         BOTTOM_RIGHT,
         TOP_LEFT,
-        TOP_RIGHT
+        TOP_RIGHT,
+        SYSTEM_DEFAULT
     }
 
     @AboutConfig
-    @DefaultEnumValue("BOTTOM_RIGHT")
+    @DefaultEnumValue("SYSTEM_DEFAULT")
     @DescriptionForConfigEntry("Position Anchor for the First Bubble. TOP_RIGHT means, that the topright corner of the bubble is the reference anchor")
-    public Anchor getAnchor();
+    public Anchor getFinalPositionAnchor();
 
     @AboutConfig
     @DefaultIntValue(-1)
     @DescriptionForConfigEntry("X Position of the first bubble. 0 is left screen edge -1 is right screen edge")
-    public int getAnchorX();
+    public int getFinalPositionX();
 
     @AboutConfig
     @DefaultIntValue(-1)
     @DescriptionForConfigEntry("Y Position of the first bubble. 0 is top screen edge -1 is bottom screen edge")
-    public int getAnchorY();
+    public int getFinalPositionY();
 
     @AboutConfig
-    @DefaultEnumValue("TOP_RIGHT")
+    @DefaultEnumValue("SYSTEM_DEFAULT")
     @DescriptionForConfigEntry("Animation End Anchor. TOP_RIGHT means, that the topright corner of the bubble is the reference anchor")
-    public Anchor getEndAnchor();
+    public Anchor getAnimationEndPositionAnchor();
 
     @AboutConfig
     @DefaultIntValue(-1)
     @DescriptionForConfigEntry("Animation End X Position. 0 is left screen edge -1 is right screen edge")
-    public int getEndX();
+    public int getAnimationEndPositionX();
 
     @AboutConfig
     @DefaultIntValue(-1)
     @DescriptionForConfigEntry("Animation End Y Position. 0 is top screen edge -1 is bottom screen edge")
-    public int getEndY();
+    public int getAnimationEndPositionY();
 
     @DefaultStringValue("\\display9999")
     @AboutConfig
@@ -53,19 +54,19 @@ public interface BubbleNotifyConfig extends ConfigInterface {
     public String getScreenID();
 
     @AboutConfig
-    @DefaultEnumValue("TOP_RIGHT")
+    @DefaultEnumValue("SYSTEM_DEFAULT")
     @DescriptionForConfigEntry("Animation Start Anchor. TOP_RIGHT means, that the topright corner of the bubble is the reference anchor")
-    public Anchor getStartAnchor();
+    public Anchor getAnimationStartPositionAnchor();
 
     @AboutConfig
     @DefaultIntValue(-1)
     @DescriptionForConfigEntry("Animation Start X Position. 0 is left screen edge -1 is right screen edge")
-    public int getStartX();
+    public int getAnimationStartPositionX();
 
     @AboutConfig
     @DefaultIntValue(-1)
     @DescriptionForConfigEntry("Animation Start Y Position. 0 is top screen edge -1 is bottom screen edge")
-    public int getStartY();
+    public int getAnimationStartPositionY();
 
     @DefaultBooleanValue(true)
     @AboutConfig
@@ -87,11 +88,11 @@ public interface BubbleNotifyConfig extends ConfigInterface {
     @AboutConfig
     public boolean isBubbleNotifyOnUpdateAvailableEnabled();
 
-    public void setAnchor(Anchor a);
+    public void setFinalPositionAnchor(Anchor a);
 
-    public void setAnchorX(int i);
+    public void setFinalPositionX(int i);
 
-    public void setAnchorY(int i);
+    public void setFinalPositionY(int i);
 
     public void setBubbleNotifyOnNewLinkgrabberLinksEnabled(boolean b);
 
@@ -103,17 +104,17 @@ public interface BubbleNotifyConfig extends ConfigInterface {
 
     public void setBubbleNotifyOnUpdateAvailableEnabled(boolean b);
 
-    public void setEndAnchor(Anchor a);
+    public void setAnimationEndPositionAnchor(Anchor a);
 
-    public void setEndX(int i);
+    public void setAnimationEndPositionX(int i);
 
-    public void setEndY(int i);
+    public void setAnimationEndPositionY(int i);
 
     public void setScreenID(String string);
 
-    public void setStartAnchor(Anchor a);
+    public void setAnimationStartPositionAnchor(Anchor a);
 
-    public void setStartX(int i);
+    public void setAnimationStartPositionX(int i);
 
-    public void setStartY(int i);
+    public void setAnimationStartPositionY(int i);
 }

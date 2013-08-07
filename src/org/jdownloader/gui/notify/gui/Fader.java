@@ -79,7 +79,7 @@ public class Fader implements ActionListener {
 
         }
         srcAlpha = alpha;
-        destAlpha = 0.1f;
+        destAlpha = 1.0f;
         ensureFader();
     }
 

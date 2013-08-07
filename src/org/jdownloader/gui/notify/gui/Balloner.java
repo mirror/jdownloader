@@ -40,12 +40,13 @@ public class Balloner implements ComponentListener {
 
                 screenStack.add(notify);
                 notify.setScreenStack(screenStack);
+                notify.setController(Balloner.this);
                 notify.addComponentListener(Balloner.this);
 
                 layout(screenStack);
                 notify.setVisible(true);
                 notify.setAlwaysOnTop(true);
-                System.out.println("LOC: " + notify.getBounds() + " - " + notify.getLocationOnScreen());
+
                 // WindowManager.getInstance().setVisible(notify, true, FrameState.TO_FRONT);
             }
         };
@@ -75,7 +76,10 @@ public class Balloner implements ComponentListener {
             Point el = calculateLocation(bounds, ps, endAnchor, endPoint);
             Point position = calculateLocation(bounds, ps, anchor, anchorPoint);
             position.y += y;
-
+            if (el.x != position.x) {
+                // move left or right
+                el.y += y;
+            }
             n.setStartLocation(sl);
             n.setEndLocation(el);
             n.setPreferedLocation(position.x, position.y);
@@ -113,14 +117,14 @@ public class Balloner implements ComponentListener {
         int px = 0;
         int py = 0;
         if (point.x < 0) {
-            px = bounds.x + bounds.width + point.x + 1 - getMargin();
+            px = bounds.x + bounds.width + point.x + 1;
         } else {
-            px = bounds.x + startPoint.x + -getMargin();
+            px = bounds.x + startPoint.x;
         }
         if (point.y < 0) {
-            py = bounds.y + bounds.height + point.y + 1 - getMargin();
+            py = bounds.y + bounds.height + point.y + 1;
         } else {
-            py = bounds.y + point.y + getMargin();
+            py = bounds.y + point.y;
         }
 
         return new Point(px - ax, py - ay);
@@ -181,7 +185,6 @@ public class Balloner implements ComponentListener {
         int biggestIntersection = -1;
 
         for (final GraphicsDevice screen : screens) {
-            System.out.println(screen.getIDstring());
 
             final Rectangle bounds = screen.getDefaultConfiguration().getBounds();
             final Insets insets = Toolkit.getDefaultToolkit().getScreenInsets(screen.getDefaultConfiguration());
@@ -229,12 +232,16 @@ public class Balloner implements ComponentListener {
 
         if (e.getSource() instanceof AbstractNotifyWindow) {
             AbstractNotifyWindow notify = ((AbstractNotifyWindow) e.getSource());
-            notify.dispose();
-            ScreenStack screenStack = getScreenStack();
-            screenStack.remove(notify);
-            layout(screenStack);
+            remove(notify);
         }
 
+    }
+
+    public void remove(AbstractNotifyWindow notify) {
+
+        ScreenStack screenStack = getScreenStack();
+        screenStack.remove(notify);
+        layout(screenStack);
     }
 
     public void setStartPoint(Point point, Anchor anchor) {
