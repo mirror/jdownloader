@@ -6,11 +6,9 @@ import java.awt.event.ActionListener;
 
 import javax.swing.Timer;
 
-import com.sun.awt.AWTUtilities;
-
 public class Fader implements ActionListener {
 
-    private static final int     FPS = 15;
+    private static final int     FPS = 25;
     private AbstractNotifyWindow owner;
     private Timer                faderTimer;
     private long                 start;
@@ -51,7 +49,7 @@ public class Fader implements ActionListener {
     }
 
     private void stop() {
-        AWTUtilities.setWindowOpacity(owner, destAlpha);
+        AbstractNotifyWindow.setWindowOpacity(owner, destAlpha);
         owner.setVisible(destAlpha > 0);
         if (destLocation != null) {
             owner.setLocation(destLocation);
@@ -81,7 +79,7 @@ public class Fader implements ActionListener {
 
         }
         srcAlpha = alpha;
-        destAlpha = 1.0f;
+        destAlpha = 0.1f;
         ensureFader();
     }
 

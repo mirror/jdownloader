@@ -50,16 +50,10 @@ public abstract class AbstractNotifyWindow extends ExtJWindow implements ActionL
         return endLocation;
     }
 
-    private int   timeout      = 15000;
-    private int   fadeSpeed    = FADE_SPEED;
+    private int   timeout   = 15000;
+    private int   fadeSpeed = FADE_SPEED;
     private Point startLocation;
-    private float pixelOpacity = -1;
-
-    public float getPixelOpacity() {
-        return pixelOpacity;
-    }
-
-    private static final int ROUND = 5;
+    private int   round     = 10;
 
     public AbstractNotifyWindow(String caption, JComponent comp) {
         super();
@@ -82,23 +76,6 @@ public abstract class AbstractNotifyWindow extends ExtJWindow implements ActionL
 
             }
 
-            public void paint(Graphics g) {
-                Graphics2D g2d = (Graphics2D) g.create();
-                if (getPixelOpacity() >= 0 && getPixelOpacity() <= 1) {
-                    g2d.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, getPixelOpacity()));
-                }
-                super.paint(g2d);
-            }
-
-            protected void paintChildren(Graphics g) {
-                Graphics2D g2d = (Graphics2D) g.create();
-                if (getPixelOpacity() >= 0 && getPixelOpacity() <= 1) {
-                    g2d.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, getPixelOpacity()));
-                }
-
-                super.paintChildren(g);
-            }
-
         };
 
         setContentPane(content);
@@ -106,26 +83,23 @@ public abstract class AbstractNotifyWindow extends ExtJWindow implements ActionL
 
         content.add(comp);
         pack();
+        round = 0;
+        try {
 
-        setWindowOpaque(this, false);
+            com.sun.awt.AWTUtilities.setWindowOpaque(this, false);
+            round = 10;
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
 
         setWindowOpacity(this, 0f);
 
         fader = new Fader(this);
-    }
 
-    public static void setWindowOpaque(AbstractNotifyWindow window, boolean b) {
-        try {
-
-            com.sun.awt.AWTUtilities.setWindowOpaque(window, b);
-
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
     }
 
     public static float getWindowOpacity(AbstractNotifyWindow owner) {
-        if (owner.getPixelOpacity() >= 0) { return owner.getPixelOpacity(); }
+
         if (Application.getJavaVersion() >= Application.JAVA17) {
             return owner.getOpacity();
         } else {
@@ -141,6 +115,7 @@ public abstract class AbstractNotifyWindow extends ExtJWindow implements ActionL
             if (gd.isWindowTranslucencySupported(WindowTranslucency.TRANSLUCENT)) {
                 if (Application.getJavaVersion() >= Application.JAVA17) {
                     window.setOpacity(f);
+
                     return;
                 } else {
                     com.sun.awt.AWTUtilities.setWindowOpacity(window, f);
@@ -151,15 +126,7 @@ public abstract class AbstractNotifyWindow extends ExtJWindow implements ActionL
 
             // e.printStackTrace();
         }
-        if (gd.isWindowTranslucencySupported(WindowTranslucency.PERPIXEL_TRANSLUCENT)) {
-            window.setPixelOpacity(f);
-        }
-    }
 
-    private void setPixelOpacity(float f) {
-        pixelOpacity = f;
-
-        repaint();
     }
 
     public void setVisible(boolean b) {
@@ -179,6 +146,7 @@ public abstract class AbstractNotifyWindow extends ExtJWindow implements ActionL
     }
 
     protected int getFadeSpeed() {
+        // if (true) return 10000;
         return fadeSpeed;
     }
 
@@ -312,13 +280,13 @@ public abstract class AbstractNotifyWindow extends ExtJWindow implements ActionL
         g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
         g2.setColor(Color.WHITE);
         // rendering the shape
-        g2.fillRoundRect(0, 0, getWidth(), getHeight(), ROUND, ROUND);
+        g2.fillRoundRect(0, 0, getWidth(), getHeight(), round, round);
         g2.setComposite(AlphaComposite.SrcAtop);
         // rendering the actuall contents
         Paint p = new GradientPaint(0, 0, LAFOptions.getInstance().getColorForPanelHeaderBackground(), 0, TOP_MARGIN, LAFOptions.getInstance().getColorForScrollbarsMouseOverState());
         g2.setPaint(p);
 
-        g2.fillRoundRect(0, 0, width, height, ROUND, ROUND);
+        g2.fillRoundRect(0, 0, width, height, round, round);
 
         p = new GradientPaint(0, 0, LAFOptions.getInstance().getColorForPanelBackground(), 0, TOP_MARGIN, LAFOptions.getInstance().getColorForPanelBackground().brighter());
         g2.setPaint(p);
@@ -327,7 +295,7 @@ public abstract class AbstractNotifyWindow extends ExtJWindow implements ActionL
 
         g2.setColor(LAFOptions.getInstance().getColorForPanelHeaderLine());
 
-        g2.drawRoundRect(0, 0, getWidth() - 1, getHeight() - 1, ROUND, ROUND);
+        g2.drawRoundRect(0, 0, getWidth() - 1, getHeight() - 1, round, round);
         g2.dispose();
         return img;
     }
