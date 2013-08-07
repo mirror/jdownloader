@@ -54,7 +54,7 @@ public class StreamingProvider {
                             LinkedList<Account> accounts = AccountController.getInstance().getValidAccounts(remoteLink.getHost());
                             oldClassLoader = Thread.currentThread().getContextClassLoader();
                             final DownloadLink mirror = new DownloadLink(remoteLink.getDefaultPlugin(), remoteLink.getName(), remoteLink.getHost(), remoteLink.getDownloadURL(), true);
-                            remoteLink.copyTo(mirror);
+                            mirror.setProperties(remoteLink.getProperties());
                             PluginClassLoaderChild cl;
                             Thread.currentThread().setContextClassLoader(cl = PluginClassLoader.getInstance().getChild());
                             final PluginForHost plugin = remoteLink.getDefaultPlugin().getLazyP().newInstance(cl);
@@ -151,6 +151,10 @@ public class StreamingProvider {
                         super.closeInputStream(streamingInputStream);
                         if (outputStream != null) {
                             DelayedRunnable delayedOutputStreamCloser = new DelayedRunnable(IOEQ.TIMINGQUEUE, 10000) {
+                                @Override
+                                public String getID() {
+                                    return "CloseInputStream";
+                                }
 
                                 @Override
                                 public void delayedrun() {
