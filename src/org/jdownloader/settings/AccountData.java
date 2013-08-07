@@ -1,6 +1,7 @@
 package org.jdownloader.settings;
 
 import java.util.HashMap;
+import java.util.Map;
 
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
@@ -8,15 +9,15 @@ import jd.plugins.AccountInfo;
 import org.appwork.storage.Storable;
 
 public class AccountData implements Storable {
-    private HashMap<String, Object> properties;
+    private Map<String, Object> properties;
 
-    private String                  hoster;
+    private String              hoster;
 
-    public HashMap<String, Object> getProperties() {
+    public Map<String, Object> getProperties() {
         return properties;
     }
 
-    public void setProperties(HashMap<String, Object> properties) {
+    public void setProperties(Map<String, Object> properties) {
         this.properties = properties;
     }
 
@@ -44,23 +45,23 @@ public class AccountData implements Storable {
         this.password = password;
     }
 
-    private int                     maxSimultanDownloads;
-    private String                  password;
-    private HashMap<String, Object> infoProperties;
-    private long                    createTime;
-    private long                    trafficLeft;
-    private long                    trafficMax;
-    private long                    validUntil;
-    private boolean                 active;
-    private boolean                 enabled;
-    private boolean                 tempDisabled;
-    private boolean                 valid;
+    private int                 maxSimultanDownloads;
+    private String              password;
+    private Map<String, Object> infoProperties;
+    private long                createTime;
+    private long                trafficLeft;
+    private long                trafficMax;
+    private long                validUntil;
+    private boolean             active;
+    private boolean             enabled;
+    private boolean             tempDisabled;
+    private boolean             valid;
 
-    private boolean                 trafficUnlimited;
-    private boolean                 specialtraffic;
-    private String                  user;
+    private boolean             trafficUnlimited;
+    private boolean             specialtraffic;
+    private String              user;
 
-    private boolean                 concurrentUsePossible = true;
+    private boolean             concurrentUsePossible = true;
 
     public boolean isConcurrentUsePossible() {
         return concurrentUsePossible;
@@ -82,8 +83,7 @@ public class AccountData implements Storable {
             ret.infoProperties = a.getAccountInfo().getProperties();
             if (ret.infoProperties == null) {
                 /*
-                 * we need at least an empty hashmap, so account restore also
-                 * restores account info
+                 * we need at least an empty hashmap, so account restore also restores account info
                  */
                 ret.infoProperties = new HashMap<String, Object>();
             }
@@ -107,11 +107,11 @@ public class AccountData implements Storable {
         return ret;
     }
 
-    public HashMap<String, Object> getInfoProperties() {
+    public Map<String, Object> getInfoProperties() {
         return infoProperties;
     }
 
-    public void setInfoProperties(HashMap<String, Object> infoProperties) {
+    public void setInfoProperties(Map<String, Object> infoProperties) {
         this.infoProperties = infoProperties;
     }
 
