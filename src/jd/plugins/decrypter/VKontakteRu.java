@@ -761,9 +761,6 @@ public class VKontakteRu extends PluginForDecrypt {
                     break;
                 }
             }
-            if (br.containsHTML("40232431_28476898")) {
-                logger.info("");
-            }
 
             // First get all photo links
             // Correct browser html
