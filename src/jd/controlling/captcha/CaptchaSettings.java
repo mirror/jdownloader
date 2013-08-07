@@ -76,6 +76,7 @@ public interface CaptchaSettings extends ConfigInterface {
 
     @AboutConfig
     @DefaultIntValue(300000)
+    @SpinnerValidator(min = 60000, max = Integer.MAX_VALUE)
     @org.appwork.storage.config.annotations.DescriptionForConfigEntry("Milliseconds after which a Captcha Dialog will appear even if Auto 9kw Service is still running")
     int getCaptchaDialog9kwTimeout();
 
