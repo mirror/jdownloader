@@ -7,6 +7,9 @@ import java.awt.GradientPaint;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.GraphicsConfiguration;
+import java.awt.GraphicsDevice;
+import java.awt.GraphicsDevice.WindowTranslucency;
+import java.awt.GraphicsEnvironment;
 import java.awt.Paint;
 import java.awt.Point;
 import java.awt.RenderingHints;
@@ -17,7 +20,6 @@ import java.awt.image.BufferedImage;
 
 import javax.swing.JComponent;
 import javax.swing.JLabel;
-import javax.swing.JWindow;
 import javax.swing.SwingConstants;
 import javax.swing.Timer;
 
@@ -35,7 +37,7 @@ import org.jdownloader.updatev2.gui.LAFOptions;
 
 public abstract class AbstractNotifyWindow extends ExtJWindow implements ActionListener {
 
-    private static final int FADE_SPEED    = 500;
+    private static final int FADE_SPEED    = 900;
     private static final int BOTTOM_MARGIN = 5;
     private static final int TOP_MARGIN    = 20;
     private MigPanel         content;
@@ -48,10 +50,16 @@ public abstract class AbstractNotifyWindow extends ExtJWindow implements ActionL
         return endLocation;
     }
 
-    private int              timeout   = 15000;
-    private int              fadeSpeed = FADE_SPEED;
-    private Point            startLocation;
-    private static final int ROUND     = 5;
+    private int   timeout      = 15000;
+    private int   fadeSpeed    = FADE_SPEED;
+    private Point startLocation;
+    private float pixelOpacity = -1;
+
+    public float getPixelOpacity() {
+        return pixelOpacity;
+    }
+
+    private static final int ROUND = 5;
 
     public AbstractNotifyWindow(String caption, JComponent comp) {
         super();
@@ -67,9 +75,28 @@ public abstract class AbstractNotifyWindow extends ExtJWindow implements ActionL
 
                 // Create a soft clipped image for the background
                 BufferedImage img = getSoftClipWorkaroundImage(g2d, width, height);
+
                 g2d.drawImage(img, 0, 0, null);
 
                 g2d.dispose();
+
+            }
+
+            public void paint(Graphics g) {
+                Graphics2D g2d = (Graphics2D) g.create();
+                if (getPixelOpacity() >= 0 && getPixelOpacity() <= 1) {
+                    g2d.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, getPixelOpacity()));
+                }
+                super.paint(g2d);
+            }
+
+            protected void paintChildren(Graphics g) {
+                Graphics2D g2d = (Graphics2D) g.create();
+                if (getPixelOpacity() >= 0 && getPixelOpacity() <= 1) {
+                    g2d.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, getPixelOpacity()));
+                }
+
+                super.paintChildren(g);
             }
 
         };
@@ -87,7 +114,7 @@ public abstract class AbstractNotifyWindow extends ExtJWindow implements ActionL
         fader = new Fader(this);
     }
 
-    public static void setWindowOpaque(JWindow window, boolean b) {
+    public static void setWindowOpaque(AbstractNotifyWindow window, boolean b) {
         try {
 
             com.sun.awt.AWTUtilities.setWindowOpaque(window, b);
@@ -97,7 +124,8 @@ public abstract class AbstractNotifyWindow extends ExtJWindow implements ActionL
         }
     }
 
-    public static float getWindowOpacity(JWindow owner) {
+    public static float getWindowOpacity(AbstractNotifyWindow owner) {
+        if (owner.getPixelOpacity() >= 0) { return owner.getPixelOpacity(); }
         if (Application.getJavaVersion() >= Application.JAVA17) {
             return owner.getOpacity();
         } else {
@@ -105,16 +133,33 @@ public abstract class AbstractNotifyWindow extends ExtJWindow implements ActionL
         }
     }
 
-    public static void setWindowOpacity(JWindow window, float f) {
+    public static void setWindowOpacity(AbstractNotifyWindow window, float f) {
+        GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
+        GraphicsDevice gd = ge.getDefaultScreenDevice();
         try {
-            if (Application.getJavaVersion() >= Application.JAVA17) {
-                window.setOpacity(f);
-            } else {
-                com.sun.awt.AWTUtilities.setWindowOpacity(window, f);
+
+            if (gd.isWindowTranslucencySupported(WindowTranslucency.TRANSLUCENT)) {
+                if (Application.getJavaVersion() >= Application.JAVA17) {
+                    window.setOpacity(f);
+                    return;
+                } else {
+                    com.sun.awt.AWTUtilities.setWindowOpacity(window, f);
+                    return;
+                }
             }
         } catch (Exception e) {
-            e.printStackTrace();
+
+            // e.printStackTrace();
         }
+        if (gd.isWindowTranslucencySupported(WindowTranslucency.PERPIXEL_TRANSLUCENT)) {
+            window.setPixelOpacity(f);
+        }
+    }
+
+    private void setPixelOpacity(float f) {
+        pixelOpacity = f;
+
+        repaint();
     }
 
     public void setVisible(boolean b) {
@@ -249,8 +294,8 @@ public abstract class AbstractNotifyWindow extends ExtJWindow implements ActionL
             timer.stop();
             timer = null;
         }
-        fader.fadeOut(FADE_SPEED);
-        fader.moveTo(endLocation.x, endLocation.y, FADE_SPEED);
+        fader.fadeOut(getFadeSpeed());
+        fader.moveTo(endLocation.x, endLocation.y, getFadeSpeed());
 
         // dispose();
     }
@@ -288,7 +333,7 @@ public abstract class AbstractNotifyWindow extends ExtJWindow implements ActionL
     }
 
     public void setPreferedLocation(int x, int y) {
-        fader.moveTo(x, y, FADE_SPEED);
+        fader.moveTo(x, y, getFadeSpeed());
     }
 
     public void setScreenStack(ScreenStack screenStack) {

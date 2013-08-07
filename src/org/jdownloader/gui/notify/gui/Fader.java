@@ -10,51 +10,40 @@ import com.sun.awt.AWTUtilities;
 
 public class Fader implements ActionListener {
 
-    private static final int     FPS = 25;
+    private static final int     FPS = 15;
     private AbstractNotifyWindow owner;
     private Timer                faderTimer;
     private long                 start;
-    private FadeType             type;
     private long                 end;
     private Point                destLocation;
     private float                destAlpha;
+    private float                srcAlpha;
+    private Point                srcLocation;
 
     public Fader(AbstractNotifyWindow notify) {
         this.owner = notify;
     }
 
+    public static double getValue(double t) {
+        // seriously...
+        return (6 * t * t * t * t * t + -15 * t * t * t * t + 10 * t * t * t);
+    }
+
     @Override
     public void actionPerformed(ActionEvent e) {
-        long timedif = end - System.currentTimeMillis();
-        long steps = FPS * timedif / 1000;
-        if (steps <= 0) {
-            stop();
-        }
-        float alpha = destAlpha;
-        try {
-            alpha = AbstractNotifyWindow.getWindowOpacity(owner);
-        } catch (Exception e1) {
 
-        }
-        Point loc = owner.getLocation();
-        Point dLoc = destLocation;
-        if (dLoc == null) {
-            dLoc = loc;
-        }
-        int dx = dLoc.x - loc.x;
-        int dy = dLoc.y - loc.y;
-
-        float d = destAlpha - alpha;
-        if (Math.abs(d) <= 0.01d && Math.abs(dx) < 2 && Math.abs(dy) < 2) {
-
+        long timedif = System.currentTimeMillis() - start;
+        if (timedif > end - start) {
             stop();
             return;
         }
-        double f = Math.sqrt(steps);
-        alpha += d / f;
-        loc.x += dx / f;
-        loc.y += dy / f;
 
+        double percent = (timedif) / (double) (end - start);
+        double factor = getValue(percent);
+        float alpha = (float) (srcAlpha + factor * (destAlpha - srcAlpha));
+        Point loc = new Point();
+        loc.x = (int) (srcLocation.x + factor * (destLocation.x - srcLocation.x));
+        loc.y = (int) (srcLocation.y + factor * (destLocation.y - srcLocation.y));
         owner.setLocation(loc);
 
         AbstractNotifyWindow.setWindowOpacity(owner, alpha);
@@ -74,23 +63,24 @@ public class Fader implements ActionListener {
         }
     }
 
-    public enum FadeType {
-        IN,
-        OUT
-
-    }
-
     public void moveTo(int x, int y, int time) {
         start = System.currentTimeMillis();
         end = start + time;
         ensureFader();
+        srcLocation = owner.getLocation();
         destLocation = new Point(x, y);
     }
 
     public void fadeIn(int i) {
         start = System.currentTimeMillis();
         end = start + i;
-        type = FadeType.IN;
+        float alpha = destAlpha;
+        try {
+            alpha = AbstractNotifyWindow.getWindowOpacity(owner);
+        } catch (Exception e1) {
+
+        }
+        srcAlpha = alpha;
         destAlpha = 1.0f;
         ensureFader();
     }
@@ -106,7 +96,13 @@ public class Fader implements ActionListener {
     public void fadeOut(int i) {
         start = System.currentTimeMillis();
         end = start + i;
-        type = FadeType.OUT;
+        float alpha = destAlpha;
+        try {
+            alpha = AbstractNotifyWindow.getWindowOpacity(owner);
+        } catch (Exception e1) {
+
+        }
+        srcAlpha = alpha;
         destAlpha = 0f;
         ensureFader();
     }
