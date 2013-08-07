@@ -25,6 +25,7 @@ import jd.config.Property;
 import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
@@ -54,7 +55,7 @@ public class SpeedyShareCom extends PluginForHost {
 
     @Override
     public void correctDownloadLink(DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replaceAll("//(www\\.)?(speedy\\.sh|speedyshare\\.com)/(files?/)?", "//www.speedyshare.com/"));
+        link.setUrlDownload("http://www.speedyshare.com/files/" + new Regex(link.getDownloadURL(), "([A-Za-z0-9]+)$").getMatch(0));
     }
 
     @Override
@@ -90,7 +91,6 @@ public class SpeedyShareCom extends PluginForHost {
         if (br.containsHTML(PREMIUMONLY)) downloadLink.getLinkStatus().setStatusText(JDL.L("plugins.hoster.speedysharecom.errors.only4premium", PREMIUMONLYTEXT));
         br.setFollowRedirects(false);
         return AvailableStatus.TRUE;
-
     }
 
     @Override

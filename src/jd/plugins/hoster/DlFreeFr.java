@@ -24,6 +24,7 @@ import java.util.regex.Pattern;
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
+import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.DownloadLink;
@@ -133,7 +134,7 @@ public class DlFreeFr extends PluginForHost {
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception {
+    public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         if (HTML) {
             logger.info("InDirect download");
@@ -145,14 +146,16 @@ public class DlFreeFr extends PluginForHost {
             String filesize = br.getRegex(Pattern.compile("Taille:</td>.*?<td.*?>(.*?)soit", Pattern.DOTALL | Pattern.CASE_INSENSITIVE)).getMatch(0);
             if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
 
-            /* special captcha handling */
-            boolean isCaptchaResolved = false;
-            for (int i = 0; i < 5; i++) {
-                isCaptchaResolved = breakCaptcha(captchaForm, downloadLink);
-                if (isCaptchaResolved) break;
-            }
-            if (!isCaptchaResolved) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+            // Old
+            // /* special captcha handling */
+            // boolean isCaptchaResolved = false;
+            // for (int i = 0; i < 5; i++) {
+            // isCaptchaResolved = breakCaptcha(captchaForm, downloadLink);
+            // if (isCaptchaResolved) break;
+            // }
+            // if (!isCaptchaResolved) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
 
+            // Really old
             // PluginForHost recplug =
             // JDUtilities.getPluginForHost("DirectHTTP");
             // jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP)
@@ -179,6 +182,10 @@ public class DlFreeFr extends PluginForHost {
             // if
             // (br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)"))
             // throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+
+            final String file = br.getRegex("type=\"hidden\" name=\"file\" value=\"([^<>\"]*?)\"").getMatch(0);
+            if (file == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            br.postPage("http://dl.free.fr/getfile.pl", "submit=Valider+et+t%C3%A9l%C3%A9charger+le+fichier&file=" + Encoding.urlEncode(file));
             final String dlLink = br.getRedirectLocation();
             if (dlLink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dlLink, true, 1);

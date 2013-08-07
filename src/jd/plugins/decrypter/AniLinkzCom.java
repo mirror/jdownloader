@@ -44,7 +44,7 @@ import jd.utils.JDUtilities;
 @SuppressWarnings("deprecation")
 public class AniLinkzCom extends PluginForDecrypt {
 
-    private final String                   supported_hoster  = "(4shared\\.com|animeuploads\\.com|auengine\\.com|cizgifilmlerizle\\.com|dailymotion\\.com|gorillavid\\.in|mp4upload\\.com|myspace\\.com|nowvideo\\.eu|novamov\\.com|putlocker\\.com|rutube\\.ru|stagevu\\.com|upload2\\.com|uploadc\\.com|veevr\\.com|veoh\\.com|video44\\.net|videobb\\.com|videobam\\.com|videoweed\\.com|videozer\\.com|yourupload\\.com|youtube\\.com|zshare\\.net)";
+    private final String                   supported_hoster  = "(4shared\\.com|animeuploads\\.com|auengine\\.com|cizgifilmlerizle\\.com|dailymotion\\.com|gorillavid\\.in|mp4upload\\.com|myspace\\.com|nowvideo\\.eu|novamov\\.com|putlocker\\.com|rutube\\.ru|stagevu\\.com|upload2\\.com|uploadc\\.com|veevr\\.com|veoh\\.com|video44\\.net|videobb\\.com|videobam\\.com|videoweed\\.com|videozer\\.com|yourupload\\.com|youtube\\.com|zshare\\.net|player\\.vimeo\\.com)";
     private final String                   invalid_links     = "http://(www\\.)?anilinkz\\.com/(search|affiliates|get|img|dsa|forums|files|category|\\?page=|faqs|.*?-list|.*?-info|\\?random).*?";
     private String                         parameter         = null;
     private String                         fpName            = null;

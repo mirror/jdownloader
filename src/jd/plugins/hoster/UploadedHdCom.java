@@ -59,7 +59,10 @@ public class UploadedHdCom extends PluginForHost {
     // DTemplate modified heavily by raztoki
     // protocol: no https
     // captchatype: null
-    // mods:
+    // mods: everything
+
+    private static final String LIMITREACHEDURL = "You+must+wait+10+minutes+between+downloads";
+    private static final String PREMIUMONLYURL  = "You+must+register+for+a+premium+account+to+download+files+of+this+size";
 
     private void setConstants(final Account account) {
         if (account != null && account.getBooleanProperty("free")) {
@@ -179,10 +182,21 @@ public class UploadedHdCom extends PluginForHost {
                 }
             }
         }
+        if (br.getURL().contains(LIMITREACHEDURL)) {
+            downloadLink.getLinkStatus().setStatusText("Cannot check links when a downloadlimit is reached");
+            return AvailableStatus.UNCHECKABLE;
+        }
+        if (br.getURL().contains(PREMIUMONLYURL)) {
+            downloadLink.getLinkStatus().setStatusText("");
+            return AvailableStatus.TRUE;
+        }
         if (br.getURL().matches(".+/(error|index)\\.(php|html).*?") || br.containsHTML(">File has been removed\\.<")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         final Regex fInfo = br.getRegex("<th class=\"descr\">[\t\n\r ]+<strong>([^<>\"]*?) \\((\\d+(\\.\\d+)? (KB|MB|GB))\\)<br/>");
-        final String filename = fInfo.getMatch(0);
-        final String filesize = fInfo.getMatch(1);
+        String filename = fInfo.getMatch(0);
+        String filesize = fInfo.getMatch(1);
+        // Maybe a multimedia file (audio/video)
+        if (filename == null) filename = br.getRegex("<title>([^<>\"]*?) \\- UploadedHD</title>").getMatch(0);
+        if (filesize == null) filesize = br.getRegex("Tamaño De Archivo:[\t\n\r ]+</td>[\t\n\r ]+<td>([^<>\"]*?)</td>").getMatch(0);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         downloadLink.setName(Encoding.htmlDecode(filename.trim()));
         downloadLink.setDownloadSize(SizeFormatter.getSize(filesize));
@@ -196,7 +210,7 @@ public class UploadedHdCom extends PluginForHost {
         doFree(downloadLink);
     }
 
-    private void doFree(DownloadLink downloadLink) throws Exception {
+    private void doFree(final DownloadLink downloadLink) throws Exception {
         if (isDownloadable) {
             dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadLink.getDownloadURL(), resumes, chunks);
             if (dl.getConnection().getContentType().contains("html")) {
@@ -207,6 +221,25 @@ public class UploadedHdCom extends PluginForHost {
             }
             dl.startDownload();
         } else {
+            // Happens if the user isn't logged in
+            if (br.getURL().equals("http://www.uploadedhd.com/register.php")) {
+                try {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+                } catch (final Throwable e) {
+                    if (e instanceof PluginException) throw (PluginException) e;
+                }
+                throw new PluginException(LinkStatus.ERROR_FATAL, "This file can only be downloaded by registered/premium users");
+            }
+            // Happens when the user is logged in but isn't allowed to download a specified link
+            if (br.getURL().contains(PREMIUMONLYURL)) {
+                try {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+                } catch (final Throwable e) {
+                    if (e instanceof PluginException) throw (PluginException) e;
+                }
+                throw new PluginException(LinkStatus.ERROR_FATAL, "This file can only be downloaded by registered/premium users");
+            }
+            if (br.getURL().contains(LIMITREACHEDURL)) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
             boolean captcha = false;
             int wait = 60;
             final String waittime = br.getRegex("\\$\\('\\.download-timer-seconds'\\)\\.html\\((\\d+)\\);").getMatch(0);
@@ -322,7 +355,12 @@ public class UploadedHdCom extends PluginForHost {
             br.getPage(link.getDownloadURL());
             doFree(link);
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, link.getDownloadURL(), resumes, chunks);
+        String dllink = link.getDownloadURL();
+        if (!isDownloadable) {
+            dllink = br.getRegex("(m4v|mp3): \"(http://[^<>\"]*?)\"").getMatch(1);
+            if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resumes, chunks);
         if (dl.getConnection().getContentType().contains("html")) {
             logger.warning("The final dllink seems not to be a file!");
             br.followConnection();
