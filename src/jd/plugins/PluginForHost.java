@@ -23,6 +23,7 @@ import java.io.IOException;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Map;
 import java.util.Map.Entry;
 import java.util.regex.Pattern;
 
@@ -36,7 +37,6 @@ import jd.controlling.captcha.CaptchaSettings;
 import jd.controlling.captcha.SkipException;
 import jd.controlling.captcha.SkipRequest;
 import jd.controlling.downloadcontroller.DownloadController;
-import jd.controlling.downloadcontroller.SingleDownloadController;
 import jd.http.Browser;
 import jd.nutils.Formatter;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -84,8 +84,7 @@ import org.jdownloader.translate._JDT;
 public abstract class PluginForHost extends Plugin {
     private static Pattern[]            PATTERNS              = new Pattern[] {
                                                               /**
-                                                               * these patterns should split filename and fileextension (extension must
-                                                               * include the point)
+                                                               * these patterns should split filename and fileextension (extension must include the point)
                                                                */
                                                               // multipart rar archives
             Pattern.compile("(.*)(\\.pa?r?t?\\.?[0-9]+.*?\\.rar$)", Pattern.CASE_INSENSITIVE),
@@ -233,7 +232,6 @@ public abstract class PluginForHost extends Plugin {
         final String status = linkStatus.getStatusText();
         int latest = linkStatus.getLatestStatus();
         try {
-            linkStatus.addStatus(LinkStatus.WAITING_USERIO);
             linkStatus.setStatusText(_JDT._.gui_downloadview_statustext_jac());
             try {
                 final BufferedImage img = ImageProvider.read(file);
@@ -279,7 +277,6 @@ public abstract class PluginForHost extends Plugin {
             try {
                 ChallengeResponseController.getInstance().handle(c);
             } finally {
-                linkStatus.removeStatus(LinkStatus.WAITING_USERIO);
                 linkStatus.addStatus(latest);
                 linkStatus.setStatusText(status);
             }
@@ -518,8 +515,7 @@ public abstract class PluginForHost extends Plugin {
     }
 
     /**
-     * Hier werden Treffer fuer Downloadlinks dieses Anbieters in diesem Text gesucht. Gefundene Links werden dann in einem ArrayList
-     * zurueckgeliefert
+     * Hier werden Treffer fuer Downloadlinks dieses Anbieters in diesem Text gesucht. Gefundene Links werden dann in einem ArrayList zurueckgeliefert
      * 
      * @param data
      *            Ein Text mit beliebig vielen Downloadlinks dieses Anbieters
@@ -565,8 +561,7 @@ public abstract class PluginForHost extends Plugin {
     }
 
     /*
-     * OVERRIDE this function if you need to modify the link, ATTENTION: you have to use new browser instances, this plugin might not have
-     * one!
+     * OVERRIDE this function if you need to modify the link, ATTENTION: you have to use new browser instances, this plugin might not have one!
      */
     public void correctDownloadLink(final DownloadLink link) throws Exception {
     }
@@ -687,7 +682,7 @@ public abstract class PluginForHost extends Plugin {
     // @Override DO NEVER USE OVERRIDE ON THIS METHOD BEFORE NEXT STABLE UPDATE.
     public Object getInfoGenerator(Account account) {
         AccountInfo ai = account.getAccountInfo();
-        HashMap<String, Object> props = null;
+        Map<String, Object> props = null;
         if (ai == null) return null;
         props = ai.getProperties();
         if (props == null || props.size() == 0) return null;
@@ -754,8 +749,8 @@ public abstract class PluginForHost extends Plugin {
          * 
          * in fetchAccountInfo we don't have to synchronize because we create a new instance of AccountInfo and fill it
          * 
-         * if you need customizable maxDownloads, please use getMaxSimultanDownload to handle this you are in multihost when account host
-         * does not equal link host!
+         * if you need customizable maxDownloads, please use getMaxSimultanDownload to handle this you are in multihost when account host does not equal link
+         * host!
          * 
          * 
          * 
@@ -812,20 +807,19 @@ public abstract class PluginForHost extends Plugin {
     }
 
     public void sleep(long i, DownloadLink downloadLink, String message) throws PluginException {
-        SingleDownloadController dlc = downloadLink.getDownloadLinkController();
         PluginProgress progress = new PluginProgress(i, i, null);
         progress.setIcon(NewTheme.I().getIcon("wait", 16));
         progress.setProgressSource(this);
         try {
             downloadLink.setPluginProgress(progress);
-            while (i > 0 && dlc != null && !dlc.isAborted()) {
+            while (i > 0) {
                 i -= 1000;
                 progress.setCurrent(i);
                 String msg = message + _JDT._.gui_download_waittime_status2(Formatter.formatSeconds(i / 1000));
                 progress.setMessage(msg);
                 downloadLink.getLinkStatus().setStatusText(msg);
                 synchronized (this) {
-                    this.wait(1000);
+                    wait(1000);
                 }
             }
         } catch (InterruptedException e) {
@@ -834,15 +828,8 @@ public abstract class PluginForHost extends Plugin {
             downloadLink.setPluginProgress(null);
             downloadLink.getLinkStatus().setStatusText(null);
         }
+        if (downloadLink.getDownloadLinkController().isAborting()) throw new PluginException(LinkStatus.TODO);
 
-    }
-
-    /**
-     * may only be used from within the plugin, because it only works when SingleDownloadController is still running
-     */
-    protected boolean isAborted(DownloadLink downloadLink) {
-        SingleDownloadController dlc = downloadLink.getDownloadLinkController();
-        return (dlc != null && dlc.isAborted());
     }
 
     public Browser getBrowser() {
@@ -885,12 +872,12 @@ public abstract class PluginForHost extends Plugin {
         return null;
     }
 
-    public String getCustomFavIconURL() {
+    public String getCustomFavIconURL(DownloadLink link) {
         return getHost();
     }
 
-    public DomainInfo getDomainInfo() {
-        String host = getCustomFavIconURL();
+    public DomainInfo getDomainInfo(DownloadLink link) {
+        String host = getCustomFavIconURL(link);
         if (host == null) host = getHost();
         return DomainInfo.getInstance(host);
     }
@@ -898,21 +885,15 @@ public abstract class PluginForHost extends Plugin {
     public static void main(String[] args) throws IOException {
         try {
             File home = new File(Application.getRessourceURL(PluginForHost.class.getName().replace(".", "/") + ".class").toURI()).getParentFile().getParentFile().getParentFile().getParentFile();
-
             File hostPluginsDir = new File(home, "src/jd/plugins/hoster/");
-
             for (File f : hostPluginsDir.listFiles()) {
                 if (f.getName().endsWith(".java")) {
-
                     StringBuilder method = new StringBuilder();
                     String src = IO.readFileToString(f);
-
                     if (src.toLowerCase().contains("captcha")) {
-
                         if (new Regex(src, "(boolean\\s+hasCaptcha\\(\\s*DownloadLink .*?\\,\\s*Account .*?\\))").matches()) {
                             continue;
                         }
-
                         if (src.contains("enablePremium")) {
                             method.append("\r\n/* NO OVERRIDE!! We need to stay 0.9*compatible */");
                             method.append("\r\npublic boolean hasCaptcha(DownloadLink link, jd.plugins.Account acc) {");
@@ -979,8 +960,8 @@ public abstract class PluginForHost extends Plugin {
     }
 
     /**
-     * Some hosters have bad filenames. Rapidshare for example replaces all special chars and spaces with _. Plugins can try to autocorrect
-     * this based on other downloadlinks
+     * Some hosters have bad filenames. Rapidshare for example replaces all special chars and spaces with _. Plugins can try to autocorrect this based on other
+     * downloadlinks
      * 
      * @param cache
      *            TODO
@@ -1076,8 +1057,7 @@ public abstract class PluginForHost extends Plugin {
                     /* no prototypesplit available yet, create new one */
                     if (pattern != null) {
                         /*
-                         * a pattern does exist, we must use the same one to make sure the *filetypes* match (eg . part01.rar and .r01 with
-                         * same filename
+                         * a pattern does exist, we must use the same one to make sure the *filetypes* match (eg . part01.rar and .r01 with same filename
                          */
                         prototypesplit = new Regex(prototypeName, pattern).getMatch(0);
                     } else {
