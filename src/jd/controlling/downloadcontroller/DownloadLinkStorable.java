@@ -1,6 +1,7 @@
 package jd.controlling.downloadcontroller;
 
 import java.util.HashMap;
+import java.util.Map;
 
 import jd.crypt.JDCrypt;
 import jd.plugins.DownloadLink;
@@ -57,15 +58,12 @@ public class DownloadLinkStorable implements Storable {
         this.link.setName(name);
     }
 
-    public HashMap<String, Object> getProperties() {
+    public Map<String, Object> getProperties() {
         if (crypt()) return null;
-        /* WORKAROUND for Idiots using null as HashMap Key :p */
-        HashMap<String, Object> properties = link.getProperties();
-        if (properties != null) properties.remove(null);
         return link.getProperties();
     }
 
-    public void setProperties(HashMap<String, Object> props) {
+    public void setProperties(Map<String, Object> props) {
         if (props == null || props.size() == 0) return;
         this.link.setProperties(props);
     }
@@ -191,9 +189,8 @@ public class DownloadLinkStorable implements Storable {
      */
     public String getPropertiesString() {
         if (crypt()) {
-            HashMap<String, Object> properties = link.getProperties();
-            if (properties != null) properties.remove(null);
-            byte[] crypted = JDCrypt.encrypt(JSonStorage.toString(properties), KEY);
+            Map<String, Object> properties = link.getProperties();
+            byte[] crypted = JDCrypt.encrypt(JSonStorage.serializeToJson(properties), KEY);
             return CRYPTED + Base64.encodeToString(crypted, false);
         }
         return null;
@@ -206,7 +203,7 @@ public class DownloadLinkStorable implements Storable {
     public void setPropertiesString(String propertiesString) {
         if (propertiesString != null && propertiesString.startsWith(CRYPTED)) {
             byte[] bytes = Base64.decodeFast(propertiesString.substring(CRYPTED.length()));
-            HashMap<String, Object> properties = JSonStorage.restoreFromString(JDCrypt.decrypt(bytes, KEY), new TypeRef<HashMap<String, Object>>() {
+            Map<String, Object> properties = JSonStorage.restoreFromString(JDCrypt.decrypt(bytes, KEY), new TypeRef<HashMap<String, Object>>() {
             });
             link.setProperties(properties);
         }

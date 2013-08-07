@@ -1,7 +1,7 @@
 package jd.controlling.downloadcontroller;
 
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.Map;
 
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
@@ -47,14 +47,12 @@ public class FilePackageStorable implements Storable {
         filePackage.setName(name);
     }
 
-    public HashMap<String, Object> getProperties() {
+    public Map<String, Object> getProperties() {
         /* WORKAROUND for Idiots using null as HashMap Key :p */
-        HashMap<String, Object> properties = filePackage.getProperties();
-        if (properties != null) properties.remove(null);
         return filePackage.getProperties();
     }
 
-    public void setProperties(HashMap<String, Object> props) {
+    public void setProperties(Map<String, Object> props) {
         filePackage.setProperties(props);
     }
 
