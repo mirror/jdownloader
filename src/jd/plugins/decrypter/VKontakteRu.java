@@ -160,7 +160,9 @@ public class VKontakteRu extends PluginForDecrypt {
                         getPageSafe(newLink);
                     } else if (br.containsHTML("class=\"group_like_enter_desc\"")) {
                         // For open community links
-                        final String wallID = br.getRegex("class=\"post all own\" onmouseover=\"wall\\.postOver\\(\\'((\\-)?\\d+)").getMatch(0);
+                        String wallID = br.getRegex("class=\"post all own\" onmouseover=\"wall\\.postOver\\(\\'((\\-)?\\d+)").getMatch(0);
+                        // Hm try to get it from another place
+                        if (wallID == null) wallID = br.getRegex("href=\"/wall((\\-)?\\d+)_\\d+\" onclick=\"return showWiki").getMatch(0);
                         if (wallID == null) {
                             logger.warning("Failed to find wallID for open-community-link: " + parameter);
                             return null;
@@ -725,7 +727,7 @@ public class VKontakteRu extends PluginForDecrypt {
         String endOffset = br.getRegex("href=\"/wall(\\-)?" + userID + "[^<>\"/]*?offset=(\\d+)\" onclick=\"return nav\\.go\\(this, event\\)\"><div class=\"pg_in\">\\&raquo;</div>").getMatch(1);
         if (endOffset == null) {
             int highestFoundOffset = 10;
-            final String[] offsets = br.getRegex("\\&offset=(\\d+)\"").getColumn(0);
+            final String[] offsets = br.getRegex("(\\?|\\&)offset=(\\d+)\"").getColumn(1);
             if (offsets != null && offsets.length != 0) {
                 for (final String offset : offsets) {
                     final int curOffset = Integer.parseInt(offset);
@@ -758,6 +760,9 @@ public class VKontakteRu extends PluginForDecrypt {
                     logger.info("Wall decrypted, stopping...");
                     break;
                 }
+            }
+            if (br.containsHTML("40232431_28476898")) {
+                logger.info("");
             }
 
             // First get all photo links

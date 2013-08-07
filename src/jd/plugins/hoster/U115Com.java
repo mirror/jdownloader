@@ -23,6 +23,7 @@ import java.util.Map;
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
+import jd.controlling.AccountController;
 import jd.http.Browser;
 import jd.http.Cookie;
 import jd.http.Cookies;
@@ -99,7 +100,7 @@ public class U115Com extends PluginForHost {
         link.setFinalFileName(Encoding.htmlDecode(filename));
         link.setDownloadSize(SizeFormatter.getSize(filesize));
         parseSHA1(link, br);
-        if (true) link.getLinkStatus().setStatusText(JDL.L("plugins.hoster.u115com.only4registered", ACCOUNTNEEDEDUSERTEXT));
+        if (AccountController.getInstance().getValidAccount(this) == null) link.getLinkStatus().setStatusText(JDL.L("plugins.hoster.u115com.only4registered", ACCOUNTNEEDEDUSERTEXT));
         return AvailableStatus.TRUE;
     }
 
@@ -263,15 +264,18 @@ public class U115Com extends PluginForHost {
     private String[] findIdsByFilename(final String plainfilename) throws IOException {
         // Access filelist in account
         br.getPage("http://web.api.115.com/files?aid=1&cid=0&o=&asc=0&offset=0&show_dir=1&limit=66&source=&format=json&_t=" + System.currentTimeMillis());
-        String[] fileIDs = new String[2];
+        final String[] fileIDs = new String[2];
+        final String dataText = br.getRegex("\"data\":\\[(.*?\\})\\]").getMatch(0);
+        if (dataText == null) return fileIDs;
         // Search new ID of the added file via filename
-        String[] files = br.getRegex("(\\{\"fid\":\".*?\\})").getColumn(0);
+        final String[] files = dataText.split("\\}");
         for (final String file : files) {
             String currentFilename = new Regex(file, "\"n\":\"([^<>\"]*?)\"").getMatch(0);
             if (currentFilename == null) continue;
             currentFilename = unescape(currentFilename);
             if (currentFilename.equals(plainfilename)) {
                 fileIDs[0] = new Regex(file, "\"fid\":\"([a-z0-9]+)\"").getMatch(0);
+                if (fileIDs[0] == null) fileIDs[0] = new Regex(file, "\"fid\":([0-9]+)").getMatch(0);
                 fileIDs[1] = new Regex(file, "\"pc\":\"([a-z0-9]+)\"").getMatch(0);
                 break;
             }
