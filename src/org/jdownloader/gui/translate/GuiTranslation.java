@@ -171,9 +171,6 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "%s1 links" })
     String gui_downloadlist_delete_size_packagev2(Object s1);
 
-    @Default(lngs = { "en" }, values = { "Reset selected downloads?" })
-    String gui_downloadlist_reset();
-
     @Default(lngs = { "en" }, values = { "Load DLC file" })
     String gui_filechooser_loaddlc();
 
@@ -3013,6 +3010,9 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Time to Live (in ms)" })
     String BubbleNotifyConfigPanel_BubbleNotifyConfigPanel_timeout();
 
-    @Default(lngs = { "en" }, values = { "Animation duration (Fade in & Out)" })
+    @Default(lngs = { "en" }, values = { "Animation duration (Fade in & Out time in ms)" })
     String BubbleNotifyConfigPanel_BubbleNotifyConfigPanel_fadetime();
+
+    @Default(lngs = { "en" }, values = { "Reset selected link(s)?\r\nThis would reset %s1 Link(s) & delete %s3 file(s)(%s2) from harddisk." })
+    String gui_downloadlist_reset2(int totalCount, String formatBytes, int localFileCount);
 }

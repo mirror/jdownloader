@@ -103,6 +103,7 @@ import org.appwork.utils.swing.dialog.DialogNoAnswerException;
 import org.appwork.utils.swing.dialog.InternDialog;
 import org.appwork.utils.swing.dialog.OwnerFinder;
 import org.appwork.utils.swing.dialog.WindowStack;
+import org.appwork.utils.swing.dialog.WindowZHandler;
 import org.appwork.utils.swing.dialog.locator.DialogLocator;
 import org.appwork.utils.swing.dialog.locator.RememberRelativeDialogLocator;
 import org.appwork.utils.swing.locator.AbstractLocator;
@@ -558,19 +559,20 @@ public class JDGui implements UpdaterListener, OwnerFinder {
             }
 
         });
-
-        AbstractDialog.WINDOW_STATE_ON_VISIBLE = CFG_GUI.CFG.getNewDialogFrameState();
-        CFG_GUI.NEW_DIALOG_FRAME_STATE.getEventSender().addListener(new GenericConfigEventListener<Enum>() {
+        AbstractDialog.ZHANDLER = new WindowZHandler() {
 
             @Override
-            public void onConfigValidatorError(KeyHandler<Enum> keyHandler, Enum invalidValue, ValidationException validateException) {
+            public FrameState getWindowStateOnVisible(AbstractDialog<?> d) {
+                for (final Window w : Window.getWindows()) {
+                    if (WindowManager.getInstance().hasFocus(w)) {
+                        //
+                        return FrameState.TO_FRONT_FOCUSED;
+                    }
+                }
+                return CFG_GUI.CFG.getNewDialogFrameState();
             }
+        };
 
-            @Override
-            public void onConfigValueModified(KeyHandler<Enum> keyHandler, Enum newValue) {
-                AbstractDialog.WINDOW_STATE_ON_VISIBLE = CFG_GUI.CFG.getNewDialogFrameState();
-            }
-        });
     }
 
     private void initFrame(final String string) {

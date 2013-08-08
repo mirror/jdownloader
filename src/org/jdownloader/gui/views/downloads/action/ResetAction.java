@@ -8,7 +8,9 @@ import jd.gui.UserIO;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
+import org.appwork.utils.formatter.SizeFormatter;
 import org.jdownloader.actions.SelectionAppAction;
+import org.jdownloader.controlling.DownloadLinkAggregator;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo;
 
@@ -25,7 +27,12 @@ public class ResetAction extends SelectionAppAction<FilePackage, DownloadLink> {
     public void actionPerformed(ActionEvent e) {
         IOEQ.add(new Runnable() {
             public void run() {
-                if (UserIO.isOK(UserIO.getInstance().requestConfirmDialog(UserIO.DONT_SHOW_AGAIN | UserIO.DONT_SHOW_AGAIN_IGNORES_CANCEL, _GUI._.gui_downloadlist_reset() + " (" + _GUI._.gui_downloadlist_delete_size_packagev2(getSelection().getChildren().size()) + ")"))) {
+
+                DownloadLinkAggregator agg = new DownloadLinkAggregator();
+                agg.setLocalFileUsageEnabled(true);
+                agg.update(getSelection().getChildren());
+
+                if (UserIO.isOK(UserIO.getInstance().requestConfirmDialog(UserIO.DONT_SHOW_AGAIN | UserIO.DONT_SHOW_AGAIN_IGNORES_CANCEL, _GUI._.gui_downloadlist_reset2(agg.getTotalCount(), SizeFormatter.formatBytes(agg.getBytesLoaded()), agg.getLocalFileCount())))) {
                     for (DownloadLink link : getSelection().getChildren()) {
                         if (link.getLinkStatus().isPluginActive()) {
                             /*
