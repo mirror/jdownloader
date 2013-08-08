@@ -73,7 +73,7 @@ public class CloudzerNet extends PluginForHost {
     private static AtomicLong      timeBefore           = new AtomicLong(0);
     private String                 LASTIP               = "LASTIP";
     private static StringContainer lastIP               = new StringContainer();
-    private static final long      RECONNECTWAIT        = 3600000;
+    private static final long      RECONNECTWAIT        = 10802000;
     private static final String    EXPERIMENTALHANDLING = "EXPERIMENTALHANDLING";
 
     private static void showFreeDialog(final String domain) {

@@ -86,7 +86,7 @@ public class Uploadedto extends PluginForHost {
     private static StringContainer lastIP                       = new StringContainer();
     private static AtomicBoolean   usePremiumAPI                = new AtomicBoolean(true);
     private boolean                usePremiumDownloadAPI        = true;
-    private static final long      RECONNECTWAIT                = 10800000;
+    private static final long      RECONNECTWAIT                = 10802000;
     private static final String    NOCHUNKS                     = "NOCHUNKS";
     private static final String    NORESUME                     = "NORESUME";
     private static final String    SSL_CONNECTION               = "SSL_CONNECTION";
