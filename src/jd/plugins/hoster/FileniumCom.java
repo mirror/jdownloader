@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedList;
+import java.util.Locale;
 import java.util.Map;
 
 import jd.PluginWrapper;
@@ -176,6 +177,7 @@ public class FileniumCom extends PluginForHost {
     }
 
     private void handleDL(final DownloadLink link, String dllink, final boolean liveLink, final Account account) throws Exception {
+        // Right now this errorhandling doesn't make that much sense but if the connection limits change, it could help
         final boolean chunkError = link.getBooleanProperty("chunkerror", false);
         int maxChunks = 1;
         if (chunkError) maxChunks = 1;
@@ -220,6 +222,8 @@ public class FileniumCom extends PluginForHost {
             if (br.containsHTML(">Error: Al recuperar enlace\\. No disponible temporalmente, disculpa las molestias<")) tempUnavailableHoster(account, link, 60 * 60 * 1000l);
             // Hmm not sure but in my tests this only happened when the host link was offline
             if (br.containsHTML(DLFAILED)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            // Seems like we're on the mainpage -> Traffic exhausted
+            if (br.containsHTML("filenium\\.com/favicon\\.ico\"")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
         }
 
         /* temp disabled the host */
@@ -229,17 +233,17 @@ public class FileniumCom extends PluginForHost {
     /** no override to keep plugin compatible to old stable */
     public void handleMultiHost(final DownloadLink link, final Account acc) throws Exception {
         login(acc, false);
-        showMessage(link, "Task 1: Generating Link");
+        showMessage(link, "Task 1: Generating ink");
         String dllink = br.getPage("http://" + SELECTEDDOMAIN + "/?filenium&filez=" + Encoding.urlEncode(link.getDownloadURL()));
         // This can either mean that it's a temporary error or that the hoster should be deactivated
         if (br.containsHTML(DLFAILED)) {
-            int timesFailed = link.getIntegerProperty("timesfailed", 0);
+            int timesFailed = link.getIntegerProperty("timesfailedfilenium", 0);
             if (timesFailed <= 2) {
                 timesFailed++;
-                link.setProperty("timesfailed", timesFailed);
+                link.setProperty("timesfailedfilenium", timesFailed);
                 throw new PluginException(LinkStatus.ERROR_RETRY, "Server error");
             } else {
-                link.setProperty("timesfailed", Property.NULL);
+                link.setProperty("timesfailedfilenium", Property.NULL);
                 tempUnavailableHoster(acc, link, 60 * 60 * 1000l);
             }
         }
@@ -258,7 +262,7 @@ public class FileniumCom extends PluginForHost {
         account.setMaxSimultanDownloads(8);
         final String expire = br.getRegex("(?i)<expiration\\-txt>([^<]+)").getMatch(0);
         if (expire != null) {
-            ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "dd/MM/yyyy hh:mm:ss", null));
+            ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "dd/MM/yyyy hh:mm:ss", Locale.ENGLISH));
         }
         String acctype = br.getRegex("(?i)<type>(\\w+)</type>").getMatch(0);
         if (acctype != null) {
@@ -304,8 +308,25 @@ public class FileniumCom extends PluginForHost {
                     }
                 }
                 br.getPage("http://" + SELECTEDDOMAIN + "/checkuserjd?user=" + Encoding.urlEncode(account.getUser()) + "&passwd=" + Encoding.urlEncode(account.getPass()));
-                if (br.getCookie("http://filenium.com", "secureid") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-                if (!br.containsHTML("type>premium<")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                final String lang = System.getProperty("user.language");
+                if (br.getCookie("http://filenium.com", "secureid") == null) {
+                    if ("de".equalsIgnoreCase(lang)) {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    } else {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    }
+                }
+                // if (!br.containsHTML("type>premium<")) {
+                // if ("de".equalsIgnoreCase(lang)) {
+                // throw new PluginException(LinkStatus.ERROR_PREMIUM,
+                // "\r\nDer eingegebene Account ist ein kostenloser Account.\r\nFür diesen Anbieter unterstützt JDownloader nur premium Accounts!",
+                // PluginException.VALUE_ID_PREMIUM_DISABLE);
+                // } else {
+                // throw new PluginException(LinkStatus.ERROR_PREMIUM,
+                // "\r\nPThe added account is a free account.\r\nFor this service, JDownloader only supports premium accounts!",
+                // PluginException.VALUE_ID_PREMIUM_DISABLE);
+                // }
+                // }
                 /** Save cookies */
                 final HashMap<String, String> cookies = new HashMap<String, String>();
                 final Cookies add = this.br.getCookies("http://filenium.com");
@@ -347,7 +368,7 @@ public class FileniumCom extends PluginForHost {
         }
     }
 
-    private void showMessage(DownloadLink link, String message) {
+    private void showMessage(final DownloadLink link, final String message) {
         link.getLinkStatus().setStatusText(message);
     }
 

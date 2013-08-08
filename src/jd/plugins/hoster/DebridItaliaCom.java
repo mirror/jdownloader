@@ -23,6 +23,7 @@ import java.util.HashMap;
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
+import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
@@ -33,7 +34,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "debriditalia.com" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32423" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "debriditalia.com" }, urls = { "REGEX_NOT_POSSIBLE_RANDOMasdfasdfsadfsdgfd32423" }, flags = { 2 })
 public class DebridItaliaCom extends PluginForHost {
 
     private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap = new HashMap<Account, HashMap<String, Long>>();
@@ -128,16 +129,33 @@ public class DebridItaliaCom extends PluginForHost {
     /** no override to keep plugin compatible to old stable */
     public void handleMultiHost(final DownloadLink link, final Account acc) throws Exception {
 
-        final String encodedLink = Encoding.urlEncode(link.getDownloadURL());
-        /** Way without API */
-        // br.postPage("http://www.debriditalia.com/downloader.php",
-        // "fpass=&op=genera2&generalink=%3E%3E%3E+Get+premium+links+%3C%3C%3C&links=" + encodedLink);
-        // br.postPage("http://www.debriditalia.com/linkgen2.php", "xjxfun=convertiLink&xjxr=" + System.currentTimeMillis() +
-        // "&xjxargs[]=S%3C!%5BCDATA%5B" + encodedLink + "&xjxargs[]=S&xjxargs[]=Slink0&xjxargs[]=S&xjxargs[]=S");
-        br.getPage("http://debriditalia.com/api.php?generate=on&u=" + Encoding.urlEncode(acc.getUser()) + "&p=" + Encoding.urlEncode(acc.getPass()) + "&link=" + encodedLink);
-        if (br.containsHTML("ERROR: not_available")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 5 * 60 * 1000l);
-        final String dllink = br.getRegex("(https?://(\\w+\\.)?debriditalia\\.com/dl/.+)").getMatch(0);
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        showMessage(link, "Generating link");
+        String dllink = checkDirectLink(link, "debriditaliadirectlink");
+        if (dllink == null) {
+            final String encodedLink = Encoding.urlEncode(link.getDownloadURL());
+            /** Way without API */
+            // br.postPage("http://www.debriditalia.com/downloader.php",
+            // "fpass=&op=genera2&generalink=%3E%3E%3E+Get+premium+links+%3C%3C%3C&links=" + encodedLink);
+            // br.postPage("http://www.debriditalia.com/linkgen2.php", "xjxfun=convertiLink&xjxr=" + System.currentTimeMillis() +
+            // "&xjxargs[]=S%3C!%5BCDATA%5B" + encodedLink + "&xjxargs[]=S&xjxargs[]=Slink0&xjxargs[]=S&xjxargs[]=S");
+            br.getPage("http://debriditalia.com/api.php?generate=on&u=" + Encoding.urlEncode(acc.getUser()) + "&p=" + Encoding.urlEncode(acc.getPass()) + "&link=" + encodedLink);
+            // Either server error or the host is broken (we have to find out by retrying)
+            if (br.containsHTML("ERROR: not_available")) {
+                int timesFailed = link.getIntegerProperty("timesfaileddebriditalia", 0);
+                if (timesFailed <= 2) {
+                    timesFailed++;
+                    link.setProperty("timesfaileddebriditalia", timesFailed);
+                    throw new PluginException(LinkStatus.ERROR_RETRY, "Server error");
+                } else {
+                    link.setProperty("timesfaileddebriditalia", Property.NULL);
+                    tempUnavailableHoster(acc, link, 60 * 60 * 1000l);
+                }
+
+            }
+            dllink = br.getRegex("(https?://(\\w+\\.)?debriditalia\\.com/dl/.+)").getMatch(0);
+            if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, Encoding.htmlDecode(dllink.trim()), true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
@@ -146,6 +164,8 @@ public class DebridItaliaCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
 
         }
+        // Directlinks can be used for up to 2 days
+        link.setProperty("debriditaliadirectlink", dllink);
         dl.startDownload();
     }
 
@@ -240,6 +260,29 @@ public class DebridItaliaCom extends PluginForHost {
             }
         }
         return true;
+    }
+
+    private void showMessage(DownloadLink link, String message) {
+        link.getLinkStatus().setStatusText(message);
+    }
+
+    private String checkDirectLink(final DownloadLink downloadLink, final String property) {
+        String dllink = downloadLink.getStringProperty(property);
+        if (dllink != null) {
+            try {
+                final Browser br2 = br.cloneBrowser();
+                URLConnectionAdapter con = br2.openGetConnection(dllink);
+                if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
+                    downloadLink.setProperty(property, Property.NULL);
+                    dllink = null;
+                }
+                con.disconnect();
+            } catch (Exception e) {
+                downloadLink.setProperty(property, Property.NULL);
+                dllink = null;
+            }
+        }
+        return dllink;
     }
 
     @Override
