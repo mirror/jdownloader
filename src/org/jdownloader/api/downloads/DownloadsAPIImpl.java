@@ -34,6 +34,11 @@ public class DownloadsAPIImpl implements DownloadsAPI {
     }
 
     @Override
+    public String getJDState() {
+        return DownloadWatchDog.getInstance().getStateMachine().getState().getLabel();
+    }
+
+    @Override
     public List<FilePackageAPIStorable> queryPackages(APIQuery queryParams) {
         DownloadController dlc = DownloadController.getInstance();
         DownloadWatchDog dwd = DownloadWatchDog.getInstance();

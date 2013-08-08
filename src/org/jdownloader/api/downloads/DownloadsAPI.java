@@ -17,6 +17,8 @@ public interface DownloadsAPI extends RemoteAPIInterface {
 
     boolean pause(Boolean value);
 
+    String getJDState();
+
     /*
      * Queries
      */
