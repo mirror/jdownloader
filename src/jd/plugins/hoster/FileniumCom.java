@@ -70,6 +70,7 @@ public class FileniumCom extends PluginForHost {
     private final String                                   domains            = "domains";
     private String                                         SELECTEDDOMAIN     = domainsList[0];
     private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap = new HashMap<Account, HashMap<String, Long>>();
+    private static final String                            DLFAILED           = "<title>Error: Cannot get access at this time, check your link or advise us of this error to fix\\.</title>";
 
     public Browser newBrowser() {
         br = new Browser();
@@ -175,15 +176,29 @@ public class FileniumCom extends PluginForHost {
     }
 
     private void handleDL(final DownloadLink link, String dllink, final boolean liveLink, final Account account) throws Exception {
+        final boolean chunkError = link.getBooleanProperty("chunkerror", false);
+        int maxChunks = 1;
+        if (chunkError) maxChunks = 1;
         /* we want to follow redirects in final stage */
         br.setFollowRedirects(true);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, maxChunks);
         if (dl.getConnection().isContentDisposition()) {
             /* contentdisposition, lets download it */
-            if (!dl.startDownload()) throw new PluginException(LinkStatus.ERROR_RETRY, "Server error");
+            if (!dl.startDownload()) {
+                if (chunkError) {
+                    // Wait and allow chunks again for the next try
+                    link.setProperty("chunkerror", false);
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 5 * 60 * 1000l);
+                } else {
+                    // Retry again without chunks
+                    link.setProperty("chunkerror", true);
+                    throw new PluginException(LinkStatus.ERROR_RETRY, "Possible chunk error");
+                }
+            }
             return;
         } else {
-            if (liveLink == false && dl.getConnection().getResponseCode() == 404) {
+            final int responseCode = dl.getConnection().getResponseCode();
+            if (liveLink == false && responseCode == 404) {
                 /* link is a pre-generated one and 404 = file offline */
                 try {
                     dl.getConnection().disconnect();
@@ -191,11 +206,20 @@ public class FileniumCom extends PluginForHost {
                 }
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
+            if (responseCode == 503) {
+                try {
+                    dl.getConnection().disconnect();
+                } catch (final Throwable e) {
+                }
+                throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Connection limit reached!", 5 * 60 * 1000l);
+            }
             /*
              * download is not contentdisposition, so remove this host from premiumHosts list
              */
             br.followConnection();
             if (br.containsHTML(">Error: Al recuperar enlace\\. No disponible temporalmente, disculpa las molestias<")) tempUnavailableHoster(account, link, 60 * 60 * 1000l);
+            // Hmm not sure but in my tests this only happened when the host link was offline
+            if (br.containsHTML(DLFAILED)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
 
         /* temp disabled the host */
@@ -207,7 +231,18 @@ public class FileniumCom extends PluginForHost {
         login(acc, false);
         showMessage(link, "Task 1: Generating Link");
         String dllink = br.getPage("http://" + SELECTEDDOMAIN + "/?filenium&filez=" + Encoding.urlEncode(link.getDownloadURL()));
-        if (br.containsHTML("<title>Error: Cannot get access at this time, check your link or advise us of this error to fix\\.</title>")) tempUnavailableHoster(acc, link, 60 * 60 * 1000l);
+        // This can either mean that it's a temporary error or that the hoster should be deactivated
+        if (br.containsHTML(DLFAILED)) {
+            int timesFailed = link.getIntegerProperty("timesfailed", 0);
+            if (timesFailed <= 2) {
+                timesFailed++;
+                link.setProperty("timesfailed", timesFailed);
+                throw new PluginException(LinkStatus.ERROR_RETRY, "Server error");
+            } else {
+                link.setProperty("timesfailed", Property.NULL);
+                tempUnavailableHoster(acc, link, 60 * 60 * 1000l);
+            }
+        }
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dllink = dllink.replaceAll("\\\\/", "/");
         showMessage(link, "Task 2: Download begins!");
@@ -220,7 +255,7 @@ public class FileniumCom extends PluginForHost {
         login(account, true);
         account.setValid(true);
         account.setConcurrentUsePossible(true);
-        account.setMaxSimultanDownloads(-1);
+        account.setMaxSimultanDownloads(8);
         final String expire = br.getRegex("(?i)<expiration\\-txt>([^<]+)").getMatch(0);
         if (expire != null) {
             ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "dd/MM/yyyy hh:mm:ss", null));

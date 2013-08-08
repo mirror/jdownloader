@@ -1,5 +1,5 @@
 //jDownloader - Downloadmanager
-//Copyright (C) 2010  JD-Team support@jdownloader.org
+//Copyright (C) 2012  JD-Team support@jdownloader.org
 //
 //This program is free software: you can redistribute it and/or modify
 //it under the terms of the GNU General Public License as published by
@@ -20,7 +20,7 @@ import java.io.IOException;
 
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
+import jd.parser.html.Form;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -28,22 +28,16 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-import org.appwork.utils.formatter.SizeFormatter;
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "divxhosting.net" }, urls = { "http://(www\\.)?divxhosting\\.net/watch\\-[a-z0-9]+\\.html" }, flags = { 0 })
+public class DivxHostingNet extends PluginForHost {
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "freedisc.pl" }, urls = { "http://(www\\.)?freedisc\\.pl/(#\\!)?[a-z0-9]+,f\\-\\d+" }, flags = { 0 })
-public class FreeDiscPl extends PluginForHost {
-
-    public FreeDiscPl(PluginWrapper wrapper) {
+    public DivxHostingNet(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     @Override
     public String getAGBLink() {
-        return "http://freedisc.pl/regulations";
-    }
-
-    public void correctDownloadLink(DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replace("/#!", "/"));
+        return "http://www.divxhosting.net/tos.html";
     }
 
     @Override
@@ -51,23 +45,25 @@ public class FreeDiscPl extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
-        if (br.containsHTML("Ten plik został usunięty przez użytkownika lub administratora")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        final String filename = br.getRegex("itemprop=\"name\">([^<>\"]*?)</h2>").getMatch(0);
-        String filesize = br.getRegex("class=\\'frameFilesSize\\'>Rozmiar pliku</div>[\t\n\r ]+<div class=\\'frameFilesCountNumber\\'>([^<>\"]*?)</div>").getMatch(0);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        link.setFinalFileName(Encoding.htmlDecode(filename.trim()));
-        link.setDownloadSize(SizeFormatter.getSize(filesize));
+        if (br.getURL().equals("http://www.divxhosting.net/404.html")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = br.getRegex(">Watch ([^<>\"]*?) Videos</a>").getMatch(0);
+        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        link.setName(Encoding.htmlDecode(filename.trim()));
         return AvailableStatus.TRUE;
     }
 
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        final String dllink = "http://freedisc.pl/download/" + new Regex(downloadLink.getDownloadURL(), "(\\d+)$").getMatch(0);
+        final Form human = br.getForm(0);
+        if (human == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        human.setAction(br.getURL());
+        br.submitForm(human);
+        final String dllink = br.getRegex("\"(http://[a-z0-9]+\\.divxhosting\\.net/files/[^<>\"]*?)\"").getMatch(0);
+        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
-            if (br.getURL().contains("freedisc.pl/pierrw,f-")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 5 * 60 * 1000l);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
