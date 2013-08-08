@@ -67,6 +67,8 @@ public interface MyJDownloaderSettings extends ConfigInterface {
     public boolean isAutoConnectEnabled();
 
     public static enum MyJDownloaderError {
+        @EnumLabel("Outdated, please update your JDownloader")
+        OUTDATED,
         @EnumLabel("No Error -  everything is fine")
         NONE,
         @EnumLabel("Username/email is unknown")

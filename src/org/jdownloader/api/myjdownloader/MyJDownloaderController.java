@@ -184,6 +184,11 @@ public class MyJDownloaderController implements ShutdownVetoListener, GenericCon
             CFG_MYJD.CFG.setAutoConnectEnabled(false);
             stop();
             break;
+        case OUTDATED:
+            Dialog.getInstance().showMessageDialog(0, "MyJDownloader", _JDT._.MyJDownloaderController_onError_outdated());
+            CFG_MYJD.CFG.setAutoConnectEnabled(false);
+            stop();
+            break;
         case BAD_LOGINS:
             Dialog.getInstance().showMessageDialog(0, "MyJDownloader", _JDT._.MyJDownloaderController_onError_badlogins());
             CFG_MYJD.CFG.setAutoConnectEnabled(false);
