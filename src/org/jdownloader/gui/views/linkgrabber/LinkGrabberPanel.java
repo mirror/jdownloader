@@ -25,6 +25,7 @@ import jd.gui.swing.jdgui.JDGui;
 import jd.gui.swing.jdgui.interfaces.SwitchPanel;
 import net.miginfocom.swing.MigLayout;
 
+import org.appwork.storage.config.JsonConfig;
 import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.events.GenericConfigEventListener;
 import org.appwork.storage.config.handler.KeyHandler;
@@ -51,6 +52,7 @@ import org.jdownloader.gui.views.linkgrabber.contextmenu.LinkgrabberContextMenuM
 import org.jdownloader.gui.views.linkgrabber.overview.LinkgrabberOverViewHeader;
 import org.jdownloader.gui.views.linkgrabber.overview.LinkgrabberOverview;
 import org.jdownloader.images.NewTheme;
+import org.jdownloader.settings.GraphicalUserInterfaceSettings;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings.NewLinksInLinkgrabberAction;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
 import org.jdownloader.updatev2.gui.LAFOptions;
@@ -301,13 +303,41 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
         });
 
         searchField = new SearchField<LinktablesSearchCategory, CrawledPackage, CrawledLink>(table, LinktablesSearchCategory.FILENAME) {
+            @Override
+            public void setSelectedCategory(LinktablesSearchCategory selectedCategory) {
+                super.setSelectedCategory(selectedCategory);
+                JsonConfig.create(GraphicalUserInterfaceSettings.class).setSelectedLinkgrabberSearchCategory(selectedCategory);
+            }
+
+            @Override
+            public boolean isFiltered(CrawledPackage e) {
+                if (LinktablesSearchCategory.PACKAGE == selectedCategory) {
+
+                    for (Pattern filterPattern : filterPatterns) {
+                        if (filterPattern.matcher(e.getName()).find()) return false;
+                    }
+                    return true;
+
+                }
+                return false;
+            }
 
             @Override
             public boolean isFiltered(CrawledLink v) {
-                for (Pattern filterPattern : filterPatterns) {
-                    if (filterPattern.matcher(v.getName()).find()) return false;
+
+                switch (selectedCategory) {
+                case FILENAME:
+                    for (Pattern filterPattern : filterPatterns) {
+                        if (filterPattern.matcher(v.getName()).find()) return false;
+                    }
+                    return true;
+                case HOSTER:
+                    for (Pattern filterPattern : filterPatterns) {
+                        if (filterPattern.matcher(v.getHost()).find()) return false;
+                    }
+                    return true;
                 }
-                return true;
+                return false;
 
             }
 
@@ -327,6 +357,8 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
             public void keyPressed(KeyEvent e) {
             }
         });
+        searchField.setSelectedCategory(JsonConfig.create(GraphicalUserInterfaceSettings.class).getSelectedLinkgrabberSearchCategory());
+        searchField.setCategories(new LinktablesSearchCategory[] { LinktablesSearchCategory.FILENAME, LinktablesSearchCategory.HOSTER, LinktablesSearchCategory.PACKAGE });
         leftBar.add(searchField, "height 24!,aligny top");
 
         leftBar.add(filteredAdd, "height 24!,hidemode 3,gapleft 4");

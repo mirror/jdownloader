@@ -75,6 +75,8 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
 
     LinktablesSearchCategory getSelectedDownloadSearchCategory();
 
+    LinktablesSearchCategory getSelectedLinkgrabberSearchCategory();
+
     @DefaultStringValue("standard")
     @AboutConfig
     @DescriptionForConfigEntry("Icon Theme ID. Make sure that ./themes/<ID>/ exists")
@@ -307,6 +309,9 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
 
     @DefaultEnumValue("FILENAME")
     void setSelectedDownloadSearchCategory(LinktablesSearchCategory selectedCategory);
+
+    @DefaultEnumValue("FILENAME")
+    void setSelectedLinkgrabberSearchCategory(LinktablesSearchCategory selectedCategory);
 
     void setSortColumnHighlightEnabled(boolean b);
 

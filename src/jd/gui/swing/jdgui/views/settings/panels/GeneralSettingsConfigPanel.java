@@ -34,9 +34,10 @@ import org.jdownloader.settings.CleanAfterDownloadAction;
 import org.jdownloader.settings.GeneralSettings;
 import org.jdownloader.settings.IfFileExistsAction;
 import org.jdownloader.settings.staticreferences.CFG_GENERAL;
+import org.jdownloader.settings.staticreferences.CFG_LINKGRABBER;
 import org.jdownloader.translate._JDT;
 
-public class ConfigPanelGeneral extends AbstractConfigPanel {
+public class GeneralSettingsConfigPanel extends AbstractConfigPanel {
 
     public String getTitle() {
         return _JDT._.gui_settings_general_title();
@@ -63,7 +64,7 @@ public class ConfigPanelGeneral extends AbstractConfigPanel {
 
     private Checkbox                           simpleContainer;
 
-    public ConfigPanelGeneral() {
+    public GeneralSettingsConfigPanel() {
         super();
 
         downloadFolder = new FolderChooser();
@@ -99,6 +100,10 @@ public class ConfigPanelGeneral extends AbstractConfigPanel {
         addPair(_GUI._.system_download_autostart(), null, startDownloadsAfterAppStart);
         addPair(_GUI._.system_download_autostart_countdown(), CFG_GENERAL.SHOW_COUNTDOWNON_AUTO_START_DOWNLOADS, startDownloadTimeout);
         config = org.jdownloader.settings.staticreferences.CFG_GENERAL.CFG;
+        /* Linkgrabber */
+
+        this.addHeader(_GUI._.GeneralSettingsConfigPanel_GeneralSettingsConfigPanel_linkgrabber(), NewTheme.I().getIcon("linkgrabber", 32));
+        addPair(_GUI._.GeneralSettingsConfigPanel_GeneralSettingsConfigPanel_various_package(), null, new Checkbox(CFG_LINKGRABBER.VARIOUS_PACKAGE_ENABLED));
         /* File Writing */
         autoCRC = new Checkbox();
         this.addHeader(_GUI._.gui_config_download_write(), NewTheme.I().getIcon("hashsum", 32));

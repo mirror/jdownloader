@@ -3015,4 +3015,10 @@ public interface GuiTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Reset selected link(s)?\r\nThis would reset %s1 Link(s) & delete %s3 file(s)(%s2) from harddisk." })
     String gui_downloadlist_reset2(int totalCount, String formatBytes, int localFileCount);
+
+    @Default(lngs = { "en" }, values = { "Linkgrabber" })
+    String GeneralSettingsConfigPanel_GeneralSettingsConfigPanel_linkgrabber();
+
+    @Default(lngs = { "en" }, values = { "Group single files in a 'various package'" })
+    String GeneralSettingsConfigPanel_GeneralSettingsConfigPanel_various_package();
 }

@@ -8,7 +8,7 @@ import javax.swing.JList;
 
 import jd.gui.swing.jdgui.JDGui;
 import jd.gui.swing.jdgui.views.settings.panels.BasicAuthentication;
-import jd.gui.swing.jdgui.views.settings.panels.ConfigPanelGeneral;
+import jd.gui.swing.jdgui.views.settings.panels.GeneralSettingsConfigPanel;
 import jd.gui.swing.jdgui.views.settings.panels.GUISettings;
 import jd.gui.swing.jdgui.views.settings.panels.MyJDownloaderSettingsPanel;
 import jd.gui.swing.jdgui.views.settings.panels.ReconnectSettings;
@@ -36,7 +36,7 @@ import org.jdownloader.settings.GraphicalUserInterfaceSettings;
 public class SettingsSidebarModel extends DefaultListModel implements GenericConfigEventListener<Object>, ExtensionControllerListener {
 
     private static final long            serialVersionUID = -204494527404304349L;
-    private ConfigPanelGeneral           cfg;
+    private GeneralSettingsConfigPanel           cfg;
 
     private ReconnectSettings            rcs;
     private ProxyConfig                  pc;
@@ -88,13 +88,13 @@ public class SettingsSidebarModel extends DefaultListModel implements GenericCon
         });
     }
 
-    private ConfigPanelGeneral getConfigPanelGeneral() {
+    private GeneralSettingsConfigPanel getConfigPanelGeneral() {
         if (cfg != null) return cfg;
 
-        return new EDTHelper<ConfigPanelGeneral>() {
-            public ConfigPanelGeneral edtRun() {
+        return new EDTHelper<GeneralSettingsConfigPanel>() {
+            public GeneralSettingsConfigPanel edtRun() {
                 if (cfg != null) return cfg;
-                cfg = new ConfigPanelGeneral();
+                cfg = new GeneralSettingsConfigPanel();
                 return cfg;
             }
         }.getReturnValue();

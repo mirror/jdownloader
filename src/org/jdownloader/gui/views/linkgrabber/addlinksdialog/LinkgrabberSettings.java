@@ -31,6 +31,12 @@ public interface LinkgrabberSettings extends ConfigInterface {
 
     void setAutoExtractionEnabled(boolean b);
 
+    @AboutConfig
+    @DefaultBooleanValue(true)
+    boolean isVariousPackageEnabled();
+
+    void setVariousPackageEnabled(boolean b);
+
     @DefaultIntValue(600)
     int getAddDialogWidth();
 

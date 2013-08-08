@@ -498,7 +498,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                             List<CrawledLink> add = new ArrayList<CrawledLink>(1);
                             add.add(link);
                             LinkCollector.this.moveOrAddAt(getOfflineCrawledPackage(), add, -1);
-                        } else if (!ignoreSpecialPackages && org.jdownloader.settings.staticreferences.CFG_LINKGRABBER.VARIOUS_PACKAGE_LIMIT.getValue() > 0) {
+                        } else if (!ignoreSpecialPackages && org.jdownloader.settings.staticreferences.CFG_LINKGRABBER.VARIOUS_PACKAGE_LIMIT.getValue() > 0 && CFG_LINKGRABBER.VARIOUS_PACKAGE_ENABLED.isEnabled()) {
                             java.util.List<CrawledLink> list = getIdentifiedMap(identifier, variousMap);
                             list.add(link);
                             if (list.size() > org.jdownloader.settings.staticreferences.CFG_LINKGRABBER.VARIOUS_PACKAGE_LIMIT.getValue()) {

@@ -10,7 +10,7 @@ import javax.swing.event.ListSelectionListener;
 
 import jd.SecondLevelLaunch;
 import jd.gui.swing.jdgui.interfaces.SwitchPanel;
-import jd.gui.swing.jdgui.views.settings.panels.ConfigPanelGeneral;
+import jd.gui.swing.jdgui.views.settings.panels.GeneralSettingsConfigPanel;
 import jd.gui.swing.jdgui.views.settings.sidebar.ConfigSidebar;
 import net.miginfocom.swing.MigLayout;
 
@@ -91,7 +91,7 @@ public class ConfigurationPanel extends SwitchPanel implements ListSelectionList
     }
 
     public void restoreSelection(final boolean onlyOnEmptySelection) {
-        Class<?> selected = ConfigPanelGeneral.class;
+        Class<?> selected = GeneralSettingsConfigPanel.class;
         try {
             String panelClass = cfg.getActiveConfigPanel();
             selected = Class.forName(panelClass);
