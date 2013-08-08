@@ -9,17 +9,14 @@ import javax.swing.JComponent;
 import javax.swing.JRadioButton;
 import javax.swing.JSeparator;
 
-import jd.SecondLevelLaunch;
-import jd.gui.swing.laf.LookAndFeelController;
+import jd.plugins.DownloadLink;
 
 import org.appwork.swing.MigPanel;
 import org.appwork.swing.components.ExtTextArea;
 import org.appwork.uio.UIOManager;
-import org.appwork.utils.Application;
+import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.swing.dialog.AbstractDialog;
 import org.appwork.utils.swing.dialog.Dialog;
-import org.appwork.utils.swing.dialog.DialogCanceledException;
-import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.settings.IfFileExistsAction;
 import org.jdownloader.translate._JDT;
@@ -42,15 +39,16 @@ public class IfFileExistsDialog extends AbstractDialog<IfFileExistsAction> imple
     private JRadioButton overwrite;
     private JRadioButton rename;
     private String       packageID;
+    private DownloadLink downloadLink;
 
-    public IfFileExistsDialog(String filepath, String packagename, String packageID) {
+    public IfFileExistsDialog(DownloadLink downloadLink) {
         super(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN | UIOManager.LOGIC_COUNTDOWN, _JDT._.jd_controlling_SingleDownloadController_askexists_title(), null, null, null);
         //
-        this.packagename = packagename;
-        this.packageID = packageID;
-        this.path = filepath;
+        this.packagename = downloadLink.getFilePackage().getName();
+        this.packageID = downloadLink.getFilePackage().getName() + "_" + downloadLink.getFilePackage().getCreated();
+        this.path = downloadLink.getFileOutput();
+        this.downloadLink = downloadLink;
         setTimeout(60000);
-
     }
 
     @Override
@@ -66,24 +64,6 @@ public class IfFileExistsDialog extends AbstractDialog<IfFileExistsAction> imple
         return result;
     }
 
-    public static void main(String[] args) {
-
-        try {
-            Application.setApplication(".jd_home");
-            SecondLevelLaunch.statics();
-
-            LookAndFeelController.getInstance().setUIManager();
-
-            IfFileExistsAction res = Dialog.getInstance().showDialog(new IfFileExistsDialog("c:/apfelbaum.txt", "obst", "z87fdghfdfdjg38fd_3"));
-            System.out.println(res);
-        } catch (DialogClosedException e) {
-            e.printStackTrace();
-        } catch (DialogCanceledException e) {
-            e.printStackTrace();
-        }
-
-    }
-
     protected String getDontShowAgainLabelText() {
 
         return _GUI._.IfFileExistsDialog_getDontShowAgainLabelText_();
@@ -95,7 +75,12 @@ public class IfFileExistsDialog extends AbstractDialog<IfFileExistsAction> imple
         ExtTextArea txt = new ExtTextArea();
         txt.setLabelMode(true);
         txt.setToolTipText(path);
-        txt.setText(_JDT._.jd_controlling_SingleDownloadController_askexists(new File(path).getName(), packagename));
+        File localFile = new File(downloadLink.getFileOutput());
+        if (!localFile.exists()) {
+            localFile = new File(downloadLink.getFileOutput() + ".part");
+        }
+
+        txt.setText(_JDT._.jd_controlling_SingleDownloadController_askexists2(new File(path).getName(), packagename, SizeFormatter.formatBytes(localFile.length()), downloadLink.getDomainInfo().getTld()));
         p.add(txt);
 
         skip = new JRadioButton(_GUI._.IfFileExistsDialog_layoutDialogContent_skip_());

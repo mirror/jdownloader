@@ -492,7 +492,7 @@ public class SingleDownloadController extends BrowserSettingsThread implements S
             case ASK_FOR_EACH_FILE:
                 doAction = DownloadWatchDog.getInstance().getSession().getOnFileExistsAction(downloadLink.getFilePackage());
                 if (doAction == null || doAction == IfFileExistsAction.ASK_FOR_EACH_FILE) {
-                    IfFileExistsDialog d = new IfFileExistsDialog(downloadLink.getFileOutput(), downloadLink.getFilePackage().getName(), downloadLink.getFilePackage().getName() + "_" + downloadLink.getFilePackage().getCreated());
+                    IfFileExistsDialog d = new IfFileExistsDialog(downloadLink);
                     IfFileExistsDialogInterface io = d.show();
                     d = null;
                     doAction = io.getAction();

@@ -195,8 +195,8 @@ public interface JdownloaderTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Reconnect failed too often! Autoreconnect is disabled! Please check your reconnect Settings!" })
     String jd_controlling_reconnect_Reconnector_progress_failed2();
 
-    @Default(lngs = { "en" }, values = { "The file '%s1' in package %s2 already exists. What do you want to do?" })
-    String jd_controlling_SingleDownloadController_askexists(String s1, String packagename);
+    @Default(lngs = { "en" }, values = { "There is a problem downloading the file '%s1' in package '%s2' from hoster %s4.\r\nThe file '%s1' (%s3) already exists. What do you want to do?" })
+    String jd_controlling_SingleDownloadController_askexists2(String s1, String packagename, String size, String hoster);
 
     @Default(lngs = { "en" }, values = { "Captcha wrong" })
     String downloadlink_status_error_captcha_wrong();
