@@ -48,13 +48,27 @@ public class JACSolver extends ChallengeSolver<String> {
     }
 
     @Override
+    public String getName() {
+        return "Auto Solver";
+    }
+
+    @Override
     public long getTimeout() {
 
         return 30000;
     }
 
     public boolean canHandle(Challenge<?> c) {
-        return CFG_CAPTCHA.JANTI_CAPTCHA_ENABLED.isEnabled() && super.canHandle(c);
+        return true;
+    }
+
+    @Override
+    public void enqueue(SolverJob<String> job) {
+        if (CFG_CAPTCHA.JANTI_CAPTCHA_ENABLED.isEnabled() && super.canHandle(job.getChallenge())) {
+            super.enqueue(job);
+        } else {
+
+        }
     }
 
     @Override

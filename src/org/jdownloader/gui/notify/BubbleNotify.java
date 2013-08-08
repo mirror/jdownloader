@@ -13,6 +13,7 @@ import jd.controlling.reconnect.Reconnecter;
 import jd.controlling.reconnect.ReconnecterEvent;
 import jd.controlling.reconnect.ReconnecterListener;
 import jd.controlling.reconnect.ipcheck.IPController;
+import jd.gui.swing.dialog.AbstractCaptchaDialog;
 import jd.gui.swing.jdgui.JDGui;
 import jd.gui.swing.jdgui.components.toolbar.actions.UpdateAction;
 
@@ -22,6 +23,11 @@ import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.WindowManager.FrameState;
+import org.jdownloader.captcha.event.ChallengeResponseListener;
+import org.jdownloader.captcha.v2.AbstractResponse;
+import org.jdownloader.captcha.v2.ChallengeResponseController;
+import org.jdownloader.captcha.v2.ChallengeSolver;
+import org.jdownloader.captcha.v2.solverjob.SolverJob;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.notify.gui.AbstractNotifyWindow;
 import org.jdownloader.gui.notify.gui.Balloner;
@@ -33,7 +39,7 @@ import org.jdownloader.updatev2.InstallLog;
 import org.jdownloader.updatev2.UpdateController;
 import org.jdownloader.updatev2.UpdaterListener;
 
-public class BubbleNotify implements UpdaterListener, ReconnecterListener {
+public class BubbleNotify implements UpdaterListener, ReconnecterListener, ChallengeResponseListener {
     private static final BubbleNotify INSTANCE = new BubbleNotify();
 
     /**
@@ -58,7 +64,7 @@ public class BubbleNotify implements UpdaterListener, ReconnecterListener {
                 return JDGui.getInstance().getMainFrame();
             }
         };
-
+        ChallengeResponseController.getInstance().getEventSender().addListener(this);
         GenericConfigEventListener<Object> update = new GenericConfigEventListener<Object>() {
 
             @Override
@@ -131,11 +137,12 @@ public class BubbleNotify implements UpdaterListener, ReconnecterListener {
 
             @Override
             public void onHighLight(CrawledLink parameter) {
+                if (!CFG_BUBBLE.BUBBLE_NOTIFY_ON_NEW_LINKGRABBER_LINKS_ENABLED.isEnabled()) return;
                 new EDTRunner() {
 
                     @Override
                     protected void runInEDT() {
-                        BasicNotify no = new BasicNotify(CFG_BUBBLE.BUBBLE_NOTIFY_ON_NEW_LINKGRABBER_LINKS_ENABLED, _GUI._.balloon_new_links(), _GUI._.balloon_new_links_msg(LinkCollector.getInstance().getPackages().size(), LinkCollector.getInstance().getChildrenCount()), NewTheme.I().getIcon(IconKey.ICON_LINKGRABBER, 32));
+                        BasicNotify no = new BasicNotify(_GUI._.balloon_new_links(), _GUI._.balloon_new_links_msg(LinkCollector.getInstance().getPackages().size(), LinkCollector.getInstance().getChildrenCount()), NewTheme.I().getIcon(IconKey.ICON_LINKGRABBER, 32));
                         no.setActionListener(new ActionListener() {
 
                             public void actionPerformed(ActionEvent e) {
@@ -156,7 +163,8 @@ public class BubbleNotify implements UpdaterListener, ReconnecterListener {
 
     }
 
-    private void show(final AbstractNotifyWindow no) {
+    public void show(final AbstractNotifyWindow no) {
+        if (JDGui.getInstance().isSilentModeActive() && !CFG_BUBBLE.BUBBLE_NOTIFY_ENABLED_DURING_SILENT_MODE.isEnabled()) return;
         new EDTRunner() {
 
             @Override
@@ -173,13 +181,13 @@ public class BubbleNotify implements UpdaterListener, ReconnecterListener {
 
     @Override
     public void onUpdatesAvailable(boolean selfupdate, InstallLog installlog) {
-        if (!CFG_BUBBLE.CFG.isBubbleNotifyOnUpdateAvailableEnabled()) return;
+        if (!CFG_BUBBLE.BUBBLE_NOTIFY_ON_UPDATE_AVAILABLE_ENABLED.isEnabled()) return;
         if (UpdateController.getInstance().hasPendingUpdates() && !updatesNotified) {
             updatesNotified = true;
             new EDTRunner() {
                 @Override
                 protected void runInEDT() {
-                    BasicNotify no = new BasicNotify(CFG_BUBBLE.BUBBLE_NOTIFY_ON_UPDATE_AVAILABLE_ENABLED, _GUI._.balloon_updates(), _GUI._.balloon_updates_msg(), NewTheme.I().getIcon("update", 32));
+                    BasicNotify no = new BasicNotify(_GUI._.balloon_updates(), _GUI._.balloon_updates_msg(), NewTheme.I().getIcon("update", 32));
                     no.setActionListener(new ActionListener() {
 
                         public void actionPerformed(ActionEvent e) {
@@ -196,11 +204,11 @@ public class BubbleNotify implements UpdaterListener, ReconnecterListener {
 
     @Override
     public void onBeforeReconnect(final ReconnecterEvent event) {
-        if (!CFG_BUBBLE.CFG.isBubbleNotifyOnReconnectStartEnabled()) return;
+        if (!CFG_BUBBLE.BUBBLE_NOTIFY_ON_RECONNECT_START_ENABLED.isEnabled()) return;
         new EDTRunner() {
             @Override
             protected void runInEDT() {
-                BasicNotify no = new BasicNotify(CFG_BUBBLE.BUBBLE_NOTIFY_ON_RECONNECT_START_ENABLED, _GUI._.balloon_reconnect(), _GUI._.balloon_reconnect_start_msg(), NewTheme.I().getIcon("reconnect", 32));
+                BasicNotify no = new BasicNotify(_GUI._.balloon_reconnect(), _GUI._.balloon_reconnect_start_msg(), NewTheme.I().getIcon("reconnect", 32));
                 show(no);
             }
         };
@@ -208,19 +216,57 @@ public class BubbleNotify implements UpdaterListener, ReconnecterListener {
 
     @Override
     public void onAfterReconnect(final ReconnecterEvent event) {
-        if (!CFG_BUBBLE.CFG.isBubbleNotifyOnReconnectEndEnabled()) return;
+        if (!CFG_BUBBLE.BUBBLE_NOTIFY_ON_RECONNECT_END_ENABLED.isEnabled()) return;
         new EDTRunner() {
 
             @Override
             protected void runInEDT() {
                 BasicNotify no = null;
                 if (Boolean.FALSE.equals(event.getParameter())) {
-                    no = new BasicNotify(CFG_BUBBLE.BUBBLE_NOTIFY_ON_RECONNECT_END_ENABLED, _GUI._.balloon_reconnect(), _GUI._.balloon_reconnect_end_msg_failed(IPController.getInstance().getIP()), NewTheme.I().getIcon("error", 32));
+                    no = new BasicNotify(_GUI._.balloon_reconnect(), _GUI._.balloon_reconnect_end_msg_failed(IPController.getInstance().getIP()), NewTheme.I().getIcon("error", 32));
                 } else {
-                    no = new BasicNotify(CFG_BUBBLE.BUBBLE_NOTIFY_ON_RECONNECT_END_ENABLED, _GUI._.balloon_reconnect(), _GUI._.balloon_reconnect_end_msg(IPController.getInstance().getIP()), NewTheme.I().getIcon("ok", 32));
+                    no = new BasicNotify(_GUI._.balloon_reconnect(), _GUI._.balloon_reconnect_end_msg(IPController.getInstance().getIP()), NewTheme.I().getIcon("ok", 32));
                 }
                 show(no);
             }
         };
+    }
+
+    public void hide(final AbstractNotifyWindow notify) {
+        new EDTRunner() {
+
+            @Override
+            protected void runInEDT() {
+                ballooner.hide(notify);
+            }
+        };
+
+    }
+
+    @Override
+    public void onNewJobAnswer(SolverJob<?> job, AbstractResponse<?> response) {
+    }
+
+    @Override
+    public void onJobDone(SolverJob<?> job) {
+    }
+
+    @Override
+    public void onNewJob(SolverJob<?> job) {
+        switch (AbstractCaptchaDialog.getWindowState()) {
+        case TO_BACK:
+        case OS_DEFAULT:
+
+            CaptchaNotify notify = new CaptchaNotify(job);
+            show(notify);
+        }
+    }
+
+    @Override
+    public void onJobSolverEnd(ChallengeSolver<?> solver, SolverJob<?> job) {
+    }
+
+    @Override
+    public void onJobSolverStart(ChallengeSolver<?> solver, SolverJob<?> job) {
     }
 }

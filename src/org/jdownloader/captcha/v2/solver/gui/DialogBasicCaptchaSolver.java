@@ -31,6 +31,7 @@ public class DialogBasicCaptchaSolver extends ChallengeSolver<String> {
     private Captcha9kwSettings                    config9kw;
     private CaptchaBrotherHoodSettings            configcbh;
     private CaptchaResolutorCaptchaSettings       configresolutor;
+    private BasicCaptchaDialogHandler             handler;
     private static final DialogBasicCaptchaSolver INSTANCE = new DialogBasicCaptchaSolver();
 
     public static DialogBasicCaptchaSolver getInstance() {
@@ -46,6 +47,11 @@ public class DialogBasicCaptchaSolver extends ChallengeSolver<String> {
         if (job.getChallenge() instanceof BasicCaptchaChallenge) {
             super.enqueue(job);
         }
+    }
+
+    @Override
+    public String getName() {
+        return "Dialog";
     }
 
     @Override
@@ -87,7 +93,7 @@ public class DialogBasicCaptchaSolver extends ChallengeSolver<String> {
                 checkInterruption();
                 BasicCaptchaChallenge captchaChallenge = (BasicCaptchaChallenge) job.getChallenge();
                 // we do not need another queue
-                final BasicCaptchaDialogHandler handler = new BasicCaptchaDialogHandler(captchaChallenge);
+                handler = new BasicCaptchaDialogHandler(captchaChallenge);
                 job.getEventSender().addListener(jacListener = new ChallengeSolverJobListener() {
 
                     @Override
@@ -131,10 +137,18 @@ public class DialogBasicCaptchaSolver extends ChallengeSolver<String> {
                 } finally {
                     job.getLogger().info("Dialog closed. Response far: " + job.getResponse());
                     if (jacListener != null) job.getEventSender().removeListener(jacListener);
+                    handler = null;
                 }
             }
         }
 
+    }
+
+    public void requestFocus(Challenge<?> challenge) {
+        BasicCaptchaDialogHandler hndlr = handler;
+        if (hndlr != null) {
+            hndlr.requestFocus();
+        }
     }
 
 }

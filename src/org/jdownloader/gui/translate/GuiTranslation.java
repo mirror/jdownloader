@@ -2988,4 +2988,31 @@ public interface GuiTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "JDownloader would like to show you tiny notify messages about important events, but your Windows System is set up to hide these messages.\r\nClick [Yes] if you want JDownloader to correct this and show these balloon notifications.\r\nIt may be required to reboot your System for the changes to take effect." })
     String enabled_os_ballons_msg();
+
+    @Default(lngs = { "en" }, values = { "Bubble Settings" })
+    String BubbleNotifyConfigPanel_BubbleNotifyConfigPanel_settings_();
+
+    @Default(lngs = { "en" }, values = { "Show Bubbles while Silent Mode is active" })
+    String BubbleNotifyConfigPanel_BubbleNotifyConfigPanel_silent_();
+
+    @Default(lngs = { "en" }, values = { "Captcha Input required: %s1" })
+    String CaptchaNotify_CaptchaNotify_title_(String host);
+
+    @Default(lngs = { "en" }, values = { "Click here to solve the Captcha" })
+    String CaptchaNotify_CaptchaNotifyPanel_text();
+
+    @Default(lngs = { "en" }, values = { "No Solution for this Captcha Challenge found" })
+    String CaptchaNotify_update();
+
+    @Default(lngs = { "en" }, values = { "Pending. This Solver is still running" })
+    String CaptchaNotify_pending();
+
+    @Default(lngs = { "en" }, values = { "Show a Bubble if a Captcha Dialog is waiting in the Background" })
+    String plugins_optional_JDLightTray_ballon_captcha();
+
+    @Default(lngs = { "en" }, values = { "Time to Live (in ms)" })
+    String BubbleNotifyConfigPanel_BubbleNotifyConfigPanel_timeout();
+
+    @Default(lngs = { "en" }, values = { "Animation duration (Fade in & Out)" })
+    String BubbleNotifyConfigPanel_BubbleNotifyConfigPanel_fadetime();
 }

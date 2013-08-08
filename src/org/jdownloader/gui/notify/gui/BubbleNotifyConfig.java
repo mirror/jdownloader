@@ -117,4 +117,28 @@ public interface BubbleNotifyConfig extends ConfigInterface {
     public void setAnimationStartPositionX(int i);
 
     public void setAnimationStartPositionY(int i);
+
+    @AboutConfig()
+    @DefaultBooleanValue(false)
+    public boolean isBubbleNotifyEnabledDuringSilentMode();
+
+    public void setBubbleNotifyEnabledDuringSilentMode(boolean b);
+
+    @AboutConfig()
+    @DefaultBooleanValue(true)
+    public boolean isBubbleNotifyOnCaptchaInBackgroundEnabled();
+
+    public void setBubbleNotifyOnCaptchaInBackgroundEnabled(boolean b);
+
+    @AboutConfig
+    @DefaultIntValue(15000)
+    public int getDefaultTimeout();
+
+    public void setDefaultTimeout(int ms);
+
+    @AboutConfig
+    @DefaultIntValue(900)
+    public int getFadeAnimationDuration();
+
+    public void setFadeAnimationDuration(int ms);
 }

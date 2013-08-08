@@ -41,6 +41,11 @@ public class CBSolver extends ChallengeSolver<String> {
     }
 
     @Override
+    public String getName() {
+        return "Captcha Brotherhood";
+    }
+
+    @Override
     public boolean canHandle(Challenge<?> c) {
 
         return CFG_CAPTCHA.CAPTCHA_EXCHANGE_SERVICES_ENABLED.isEnabled() && config.isEnabled() && super.canHandle(c);

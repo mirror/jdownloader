@@ -1,6 +1,7 @@
 package org.jdownloader.captcha.v2.solverjob;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -267,6 +268,12 @@ public class SolverJob<T> {
             }
         }
         if (kill) kill();
+    }
+
+    public Collection<ChallengeSolver<T>> getSolverList() {
+        synchronized (solverList) {
+            return Collections.unmodifiableCollection(solverList);
+        }
     }
 
     // public void cancel() {

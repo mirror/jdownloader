@@ -26,6 +26,7 @@ import jd.plugins.FilePackage;
 
 import org.appwork.exceptions.WTFException;
 import org.appwork.scheduler.DelayedRunnable;
+import org.appwork.utils.Application;
 import org.jdownloader.controlling.contextmenu.ActionData;
 import org.jdownloader.controlling.contextmenu.ContextMenuManager;
 import org.jdownloader.controlling.contextmenu.MenuContainerRoot;
@@ -160,6 +161,9 @@ public class MainToolbarManager extends ContextMenuManager<FilePackage, Download
         // }
         OptionalContainer opt;
         mr.add(opt = new OptionalContainer(false));
+        if (!Application.isJared(MainToolBar.class)) {
+            opt.add(DoAnyThingForADeveloperAction.class);
+        }
         opt.add(new MenuItemData(OpenDefaultDownloadFolderAction.class));
         opt.add(new MenuItemData(ShowSettingsAction.class));
         opt.add(new MenuItemData(ExitToolbarAction.class));
@@ -183,6 +187,7 @@ public class MainToolbarManager extends ContextMenuManager<FilePackage, Download
         opt.add(KnowledgeAction.class);
         opt.add(LogSendAction.class);
         opt.add(RenameAction.class);
+
         CaptchaQuickSettingsContainer ocr;
         opt.add(ocr = new CaptchaQuickSettingsContainer());
         ocr.add(CaptchaExchangeToogleAction.class);

@@ -111,8 +111,7 @@ public abstract class AbstractCaptchaDialog extends AbstractDialog<Object> {
 
     }
 
-    @Override
-    protected FrameState getWindowStateOnVisible() {
+    public static FrameState getWindowState() {
         for (Window w : Window.getWindows()) {
             if (WindowManager.getInstance().hasFocus(w)) return FrameState.TO_FRONT_FOCUSED;
         }
@@ -126,6 +125,12 @@ public abstract class AbstractCaptchaDialog extends AbstractDialog<Object> {
         }
 
         return ret;
+
+    }
+
+    @Override
+    protected FrameState getWindowStateOnVisible() {
+        return getWindowState();
     }
 
     @Override
@@ -652,10 +657,12 @@ public abstract class AbstractCaptchaDialog extends AbstractDialog<Object> {
         // getDialog().setModalityType(ModalityType.MODELESS);
         final LAFOptions lafOptions = LAFOptions.getInstance();
         MigPanel field = new MigPanel("ins 0,wrap 1", "[grow,fill]", "[grow,fill]");
+        SwingUtils.setOpaque(field, false);
         // field.setOpaque(false);
         getDialog().setMinimumSize(new Dimension(0, 0));
         // getDialog().setIconImage(hosterInfo.getFavIcon().getImage());
         final JPanel panel = new JPanel(new MigLayout("ins 0,wrap 1", "[fill,grow]", "[grow,fill]10[]"));
+        SwingUtils.setOpaque(panel, false);
         LAFOptions.getInstance().applyBackground(lafOptions.getColorForPanelBackground(), field);
 
         MigPanel headerPanel = null;
@@ -664,6 +671,7 @@ public abstract class AbstractCaptchaDialog extends AbstractDialog<Object> {
             // setBorder(new JTextField().getBorder());
 
             headerPanel = new MigPanel("ins 0 0 1 0", "[grow,fill]", "[]");
+            SwingUtils.setOpaque(headerPanel, false);
             headerPanel.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, LAFOptions.getInstance().getColorForPanelHeaderLine()));
 
             LAFOptions.getInstance().applyBackground(lafOptions.getColorForPanelHeaderBackground(), headerPanel);
@@ -730,7 +738,7 @@ public abstract class AbstractCaptchaDialog extends AbstractDialog<Object> {
             // setBorder(new JTextField().getBorder());
 
             headerPanel = new MigPanel("ins 0 0 1 0", "[grow,fill]", "[grow,fill]");
-
+            SwingUtils.setOpaque(headerPanel, false);
             headerPanel.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, (LAFOptions.getInstance().getColorForPanelHeaderLine())));
 
             LAFOptions.getInstance().applyBackground(lafOptions.getColorForPanelHeaderBackground(), headerPanel);
@@ -823,7 +831,8 @@ public abstract class AbstractCaptchaDialog extends AbstractDialog<Object> {
             }
 
         };
-        iconPanel.setOpaque(false);
+        SwingUtils.setOpaque(iconPanel, false);
+
         // iconPanel.add(refreshBtn, "alignx right,aligny bottom");
         iconPanel.addMouseMotionListener(new MouseAdapter() {
 

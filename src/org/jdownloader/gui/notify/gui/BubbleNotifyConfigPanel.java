@@ -19,6 +19,7 @@ package org.jdownloader.gui.notify.gui;
 import javax.swing.ImageIcon;
 
 import jd.gui.swing.jdgui.views.settings.components.Checkbox;
+import jd.gui.swing.jdgui.views.settings.components.Spinner;
 import jd.gui.swing.jdgui.views.settings.components.StateUpdateListener;
 
 import org.jdownloader.gui.settings.AbstractConfigPanel;
@@ -44,7 +45,11 @@ public class BubbleNotifyConfigPanel extends AbstractConfigPanel implements Stat
         addPair(_GUI._.plugins_optional_JDLightTray_ballon_updates(), null, new Checkbox(CFG_BUBBLE.BUBBLE_NOTIFY_ON_UPDATE_AVAILABLE_ENABLED));
         addPair(_GUI._.plugins_optional_JDLightTray_ballon_reconnectstart(), null, new Checkbox(CFG_BUBBLE.BUBBLE_NOTIFY_ON_RECONNECT_START_ENABLED));
         addPair(_GUI._.plugins_optional_JDLightTray_ballon_reconnectend(), null, new Checkbox(CFG_BUBBLE.BUBBLE_NOTIFY_ON_RECONNECT_END_ENABLED));
-
+        addPair(_GUI._.plugins_optional_JDLightTray_ballon_captcha(), null, new Checkbox(CFG_BUBBLE.BUBBLE_NOTIFY_ON_CAPTCHA_IN_BACKGROUND_ENABLED));
+        this.addHeader(_GUI._.BubbleNotifyConfigPanel_BubbleNotifyConfigPanel_settings_(), NewTheme.I().getIcon("settings", 32));
+        addPair(_GUI._.BubbleNotifyConfigPanel_BubbleNotifyConfigPanel_silent_(), null, new Checkbox(CFG_BUBBLE.BUBBLE_NOTIFY_ENABLED_DURING_SILENT_MODE));
+        addPair(_GUI._.BubbleNotifyConfigPanel_BubbleNotifyConfigPanel_timeout(), null, new Spinner(CFG_BUBBLE.DEFAULT_TIMEOUT));
+        addPair(_GUI._.BubbleNotifyConfigPanel_BubbleNotifyConfigPanel_fadetime(), null, new Spinner(CFG_BUBBLE.FADE_ANIMATION_DURATION));
     }
 
     @Override

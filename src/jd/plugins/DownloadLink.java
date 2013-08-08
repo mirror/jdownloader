@@ -1113,7 +1113,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
         PluginForHost plugin = this.liveplugin;
         if (plugin != null && preferOriginalDomainInfo == false) {
             /* live plugin available, lets use it */
-            return plugin.getDomainInfo();
+            return plugin.getDomainInfo(this);
         } else {
             if (domainInfo == null) {
                 if ("ftp".equalsIgnoreCase(getHost()) || "DirectHTTP".equalsIgnoreCase(getHost()) || "http links".equalsIgnoreCase(getHost())) {

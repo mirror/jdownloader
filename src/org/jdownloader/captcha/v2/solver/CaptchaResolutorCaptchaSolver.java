@@ -70,6 +70,11 @@ public class CaptchaResolutorCaptchaSolver extends ChallengeSolver<String> {
     }
 
     @Override
+    public String getName() {
+        return "Resolutor Captcha";
+    }
+
+    @Override
     public void solve(final SolverJob<String> job) throws InterruptedException, SolverException {
         if (StringUtils.isEmpty(config.getUser()) || StringUtils.isEmpty(config.getPass())) return;
         if (job.getChallenge() instanceof BasicCaptchaChallenge && CFG_CAPTCHA.CAPTCHA_EXCHANGE_SERVICES_ENABLED.isEnabled()) {

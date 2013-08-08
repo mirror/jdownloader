@@ -10,9 +10,12 @@ import jd.gui.swing.dialog.DialogType;
 import org.appwork.uio.UserIODefinition.CloseReason;
 import org.appwork.utils.swing.EDTHelper;
 import org.appwork.utils.swing.EDTRunner;
+import org.appwork.utils.swing.WindowManager;
+import org.appwork.utils.swing.WindowManager.FrameState;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
+import org.appwork.utils.swing.dialog.InternDialog;
 import org.jdownloader.DomainInfo;
 import org.jdownloader.captcha.v2.challenge.stringcaptcha.BasicCaptchaChallenge;
 
@@ -33,6 +36,7 @@ public class BasicCaptchaDialogHandler extends ChallengeDialogHandler<BasicCaptc
 
     @Override
     protected void showDialog(DialogType dialogType, int flag, Image[] images) throws DialogClosedException, DialogCanceledException, HideCaptchasByHostException, HideCaptchasByPackageException, StopCurrentActionException, HideAllCaptchasException, RefreshException {
+
         CaptchaDialog d = new CaptchaDialog(flag, dialogType, getHost(), images, captchaChallenge.getExplain()) {
             public void dispose() {
                 super.dispose();
@@ -155,6 +159,22 @@ public class BasicCaptchaDialogHandler extends ChallengeDialogHandler<BasicCaptc
 
     public String getSuggest() {
         return suggest;
+    }
+
+    public void requestFocus() {
+        new EDTRunner() {
+
+            @Override
+            protected void runInEDT() {
+                CaptchaDialog d = dialog;
+                if (d != null) {
+                    InternDialog<Object> win = d.getDialog();
+                    if (win != null) {
+                        WindowManager.getInstance().setZState(win, FrameState.TO_FRONT_FOCUSED);
+                    }
+                }
+            }
+        };
     }
 
     // public void setResponse(CaptchaResult resp) {

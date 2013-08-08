@@ -193,4 +193,9 @@ public class Captcha9kwSolver extends ChallengeSolver<String> implements Challen
             });
         }
     }
+
+    @Override
+    public String getName() {
+        return "9kw.eu";
+    }
 }

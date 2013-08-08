@@ -20,8 +20,9 @@ import org.jdownloader.settings.staticreferences.CFG_CAPTCHA;
 import org.jdownloader.settings.staticreferences.CFG_SILENTMODE;
 
 public class DialogClickCaptchaSolver extends ChallengeSolver<ClickedPoint> {
-    private CaptchaSettings    config;
-    private Captcha9kwSettings config9kw;
+    private CaptchaSettings           config;
+    private Captcha9kwSettings        config9kw;
+    private ClickCaptchaDialogHandler handler;
 
     private DialogClickCaptchaSolver() {
         super(1);
@@ -48,6 +49,18 @@ public class DialogClickCaptchaSolver extends ChallengeSolver<ClickedPoint> {
     }
 
     @Override
+    public String getName() {
+        return "Dialog";
+    }
+
+    public void requestFocus(Challenge<?> challenge) {
+        ClickCaptchaDialogHandler hndlr = handler;
+        if (hndlr != null) {
+            hndlr.requestFocus();
+        }
+    }
+
+    @Override
     public void solve(SolverJob<ClickedPoint> solverJob) throws InterruptedException, SkipException {
         synchronized (DialogBasicCaptchaSolver.getInstance()) {
             if (solverJob.getChallenge() instanceof ClickCaptchaChallenge && CFG_CAPTCHA.CAPTCHA_DIALOGS_ENABLED.isEnabled()) {
@@ -70,7 +83,7 @@ public class DialogClickCaptchaSolver extends ChallengeSolver<ClickedPoint> {
                 checkInterruption();
                 ClickCaptchaChallenge captchaChallenge = (ClickCaptchaChallenge) solverJob.getChallenge();
                 checkInterruption();
-                ClickCaptchaDialogHandler handler = new ClickCaptchaDialogHandler(captchaChallenge);
+                handler = new ClickCaptchaDialogHandler(captchaChallenge);
 
                 handler.run();
 

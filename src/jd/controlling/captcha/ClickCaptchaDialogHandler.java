@@ -9,9 +9,13 @@ import jd.gui.swing.dialog.DialogType;
 
 import org.appwork.uio.UserIODefinition.CloseReason;
 import org.appwork.utils.swing.EDTHelper;
+import org.appwork.utils.swing.EDTRunner;
+import org.appwork.utils.swing.WindowManager;
+import org.appwork.utils.swing.WindowManager.FrameState;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
+import org.appwork.utils.swing.dialog.InternDialog;
 import org.jdownloader.DomainInfo;
 import org.jdownloader.captcha.v2.challenge.clickcaptcha.ClickCaptchaChallenge;
 import org.jdownloader.captcha.v2.challenge.clickcaptcha.ClickedPoint;
@@ -128,6 +132,22 @@ public class ClickCaptchaDialogHandler extends ChallengeDialogHandler<ClickCaptc
 
         }
 
+    }
+
+    public void requestFocus() {
+        new EDTRunner() {
+
+            @Override
+            protected void runInEDT() {
+                ClickCaptchaDialog d = dialog;
+                if (d != null) {
+                    InternDialog<Object> win = d.getDialog();
+                    if (win != null) {
+                        WindowManager.getInstance().setZState(win, FrameState.TO_FRONT_FOCUSED);
+                    }
+                }
+            }
+        };
     }
 
 }

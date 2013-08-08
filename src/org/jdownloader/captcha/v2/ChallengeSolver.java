@@ -44,7 +44,7 @@ public abstract class ChallengeSolver<T> {
 
     }
 
-    public boolean isJobDone(SolverJob<T> job) {
+    public boolean isJobDone(SolverJob<?> job) {
         synchronized (map) {
             return !map.containsKey(job);
         }
@@ -143,5 +143,7 @@ public abstract class ChallengeSolver<T> {
     public long getTimeout() {
         return -1;
     }
+
+    public abstract String getName();
 
 }

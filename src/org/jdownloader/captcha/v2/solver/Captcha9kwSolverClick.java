@@ -35,6 +35,11 @@ public class Captcha9kwSolverClick extends ChallengeSolver<ClickedPoint> impleme
     }
 
     @Override
+    public String getName() {
+        return "9kw.eu";
+    }
+
+    @Override
     public Class<ClickedPoint> getResultType() {
         return ClickedPoint.class;
     }

@@ -1,5 +1,6 @@
 package org.jdownloader.gui.notify.gui;
 
+import java.awt.AWTEvent;
 import java.awt.AlphaComposite;
 import java.awt.Color;
 import java.awt.Component;
@@ -12,10 +13,14 @@ import java.awt.GraphicsDevice.WindowTranslucency;
 import java.awt.GraphicsEnvironment;
 import java.awt.Paint;
 import java.awt.Point;
+import java.awt.Rectangle;
 import java.awt.RenderingHints;
+import java.awt.Toolkit;
 import java.awt.Transparency;
+import java.awt.event.AWTEventListener;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.MouseEvent;
 import java.awt.image.BufferedImage;
 
 import javax.swing.JComponent;
@@ -35,9 +40,8 @@ import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.updatev2.gui.LAFOptions;
 
-public abstract class AbstractNotifyWindow extends ExtJWindow implements ActionListener {
+public abstract class AbstractNotifyWindow<T extends JComponent> extends ExtJWindow implements ActionListener, AWTEventListener {
 
-    private static final int FADE_SPEED    = 900;
     private static final int BOTTOM_MARGIN = 5;
     private static final int TOP_MARGIN    = 20;
     private MigPanel         content;
@@ -50,15 +54,19 @@ public abstract class AbstractNotifyWindow extends ExtJWindow implements ActionL
         return endLocation;
     }
 
-    private int      timeout   = 15000;
-    private int      fadeSpeed = FADE_SPEED;
-    private Point    startLocation;
-    private int      round     = 10;
-    private Balloner controller;
+    private int       timeout = 15000;
 
-    public AbstractNotifyWindow(String caption, JComponent comp) {
+    private Point     startLocation;
+    private int       round   = 10;
+    private Balloner  controller;
+    private T         contentComponent;
+    private long      endTime = 0;
+    private boolean   mouseOver;
+    private Rectangle bounds;
+
+    public AbstractNotifyWindow(String caption, T comp) {
         super();
-
+        bounds = new Rectangle();
         content = new MigPanel("ins 2 5 10 5,wrap 1", "[grow,fill]", "[][grow,fill]") {
 
             @Override
@@ -81,7 +89,7 @@ public abstract class AbstractNotifyWindow extends ExtJWindow implements ActionL
 
         setContentPane(content);
         content.add(createHeader(caption));
-
+        contentComponent = comp;
         content.add(comp);
         pack();
         round = 0;
@@ -96,7 +104,30 @@ public abstract class AbstractNotifyWindow extends ExtJWindow implements ActionL
         setWindowOpacity(this, 0f);
 
         fader = new Fader(this);
+        timeout = CFG_BUBBLE.DEFAULT_TIMEOUT.getValue();
+        if (timeout > 0) {
+            timeout += getFadeSpeed();
+        }
+    }
 
+    // @Override
+    // public void mouseClicked(MouseEvent e) {
+    // System.out.println(e);
+    // }
+    //
+    // @Override
+    // public void mousePressed(MouseEvent e) {
+    // System.out.println(e);
+    // }
+    //
+    // @Override
+    // public void mouseReleased(MouseEvent e) {
+    // System.out.println(e);
+    // }
+    //
+
+    public T getContentComponent() {
+        return contentComponent;
     }
 
     public static float getWindowOpacity(AbstractNotifyWindow owner) {
@@ -130,18 +161,106 @@ public abstract class AbstractNotifyWindow extends ExtJWindow implements ActionL
 
     }
 
+    @Override
+    public void eventDispatched(AWTEvent e) {
+        if (e instanceof MouseEvent) {
+            MouseEvent m = (MouseEvent) e;
+
+            if (!mouseOver && m.getID() == MouseEvent.MOUSE_ENTERED) {
+                if (isMouseOver(m.getLocationOnScreen(), this)) {
+                    mouseOver = true;
+
+                    onMouseEntered(m);
+                    return;
+                }
+
+            } else if (mouseOver && m.getID() == MouseEvent.MOUSE_EXITED) {
+
+                if (!isMouseOver(m.getLocationOnScreen(), this)) {
+
+                    mouseOver = false;
+
+                    onMouseExited(m);
+                    return;
+                }
+
+            } else if (m.getID() == MouseEvent.MOUSE_CLICKED) {
+
+                if (isMouseOver(m.getLocationOnScreen(), contentComponent)) {
+
+                    onMouseClicked(m);
+                    return;
+                }
+            }
+        }
+
+    }
+
+    protected void onMouseClicked(MouseEvent m) {
+    }
+
+    protected boolean isMouseOver(Point loc, Component comp) {
+        comp.getBounds(bounds);
+        Point los = comp.getLocationOnScreen();
+        bounds.x = los.x;
+        bounds.y = los.y;
+        // System.out.println(bounds + " - " + getBounds() + " - " + loc + "  " + bounds.contains(loc) + " - " + getBounds().contains(loc));
+
+        if (loc.x >= bounds.x && loc.x <= bounds.x + bounds.width) {
+
+            if (loc.y >= bounds.y && loc.y <= bounds.y + bounds.height) {
+                //
+                return true;
+            }
+        }
+        return false;
+    }
+
+    // @Override
+    // public void mouseEntered(MouseEvent e) {
+
+    // }
+
+    // @Override
+    // public void mouseExited(MouseEvent e) {
+    //
+
+    // }
+    protected void onMouseExited(MouseEvent m) {
+        System.out.println("Exit");
+        if (endTime > 0 && timer == null) {
+            timer = new Timer((int) Math.max(2000l, endTime - System.currentTimeMillis()), this);
+            timer.setRepeats(false);
+            timer.start();
+        }
+    }
+
+    private void onMouseEntered(MouseEvent e) {
+        System.out.println("Enter");
+        if (timer != null) {
+            timer.stop();
+            timer = null;
+        }
+    }
+
     public void setVisible(boolean b) {
-
+        if (b == isVisible()) return;
         super.setVisible(b);
-
+        Toolkit.getDefaultToolkit().removeAWTEventListener(this);
         if (b) {
 
+            Toolkit.getDefaultToolkit().addAWTEventListener(this, AWTEvent.MOUSE_EVENT_MASK);
             fader.fadeIn(getFadeSpeed());
 
         } else {
+            if (timer != null) {
+                timer.stop();
+                timer = null;
+            }
             dispose();
         }
         if (b && getTimeout() > 0) {
+            endTime = System.currentTimeMillis() + getTimeout();
             timer = new Timer(getTimeout(), this);
             timer.setRepeats(false);
             timer.start();
@@ -150,11 +269,7 @@ public abstract class AbstractNotifyWindow extends ExtJWindow implements ActionL
 
     protected int getFadeSpeed() {
 
-        return fadeSpeed;
-    }
-
-    public void setFadeSpeed(int fadeSpeed) {
-        this.fadeSpeed = fadeSpeed;
+        return CFG_BUBBLE.FADE_ANIMATION_DURATION.getValue();
     }
 
     @Override
@@ -167,6 +282,7 @@ public abstract class AbstractNotifyWindow extends ExtJWindow implements ActionL
     }
 
     protected int getTimeout() {
+
         return timeout;
     }
 

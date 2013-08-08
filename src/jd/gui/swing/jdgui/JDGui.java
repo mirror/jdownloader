@@ -558,6 +558,19 @@ public class JDGui implements UpdaterListener, OwnerFinder {
             }
 
         });
+
+        AbstractDialog.WINDOW_STATE_ON_VISIBLE = CFG_GUI.CFG.getNewDialogFrameState();
+        CFG_GUI.NEW_DIALOG_FRAME_STATE.getEventSender().addListener(new GenericConfigEventListener<Enum>() {
+
+            @Override
+            public void onConfigValidatorError(KeyHandler<Enum> keyHandler, Enum invalidValue, ValidationException validateException) {
+            }
+
+            @Override
+            public void onConfigValueModified(KeyHandler<Enum> keyHandler, Enum newValue) {
+                AbstractDialog.WINDOW_STATE_ON_VISIBLE = CFG_GUI.CFG.getNewDialogFrameState();
+            }
+        });
     }
 
     private void initFrame(final String string) {

@@ -152,6 +152,10 @@ public class Balloner implements ComponentListener {
         return bounds;
     }
 
+    public void hide(AbstractNotifyWindow notify) {
+        notify.onClose();
+    }
+
     private ScreenStack getScreenStack() {
         final GraphicsDevice screen = getScreenDevice();
         synchronized (stacks) {

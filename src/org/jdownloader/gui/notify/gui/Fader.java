@@ -51,36 +51,65 @@ public class Fader implements ActionListener {
     private void stop() {
         AbstractNotifyWindow.setWindowOpacity(owner, destAlpha);
         owner.setVisible(destAlpha > 0);
+
+        srcAlpha = destAlpha;
+        srcLocation = destLocation;
         if (destLocation != null) {
             owner.setLocation(destLocation);
         }
 
         if (faderTimer != null) {
             faderTimer.stop();
+
             faderTimer = null;
         }
     }
 
     public void moveTo(int x, int y, int time) {
+        Point p = new Point(x, y);
+        if (destLocation != null && destLocation.equals(p)) return;
+        udpateLocation();
+        updateAlpha();
+
+        destLocation = p;
+
+        if (destLocation.equals(srcLocation)) return;
+
+        updateTimer(time);
+        ensureFader();
+
+    }
+
+    protected void updateTimer(int time) {
         start = System.currentTimeMillis();
         end = start + time;
-        ensureFader();
+
+    }
+
+    protected void udpateLocation() {
         srcLocation = owner.getLocation();
-        destLocation = new Point(x, y);
     }
 
     public void fadeIn(int i) {
-        start = System.currentTimeMillis();
-        end = start + i;
-        float alpha = destAlpha;
+        if (destAlpha == 1.0f) return;
+
+        udpateLocation();
+        updateAlpha();
+
+        destAlpha = 1.0f;
+        if (srcAlpha == destAlpha) return;
+
+        updateTimer(i);
+        ensureFader();
+    }
+
+    protected void updateAlpha() {
         try {
-            alpha = AbstractNotifyWindow.getWindowOpacity(owner);
+            srcAlpha = AbstractNotifyWindow.getWindowOpacity(owner);
         } catch (Exception e1) {
+            srcAlpha = destAlpha;
 
         }
-        srcAlpha = alpha;
-        destAlpha = 1.0f;
-        ensureFader();
     }
 
     protected void ensureFader() {
@@ -88,20 +117,19 @@ public class Fader implements ActionListener {
             faderTimer = new Timer(1000 / FPS, this);
             faderTimer.setRepeats(true);
             faderTimer.start();
+
         }
     }
 
     public void fadeOut(int i) {
-        start = System.currentTimeMillis();
-        end = start + i;
-        float alpha = destAlpha;
-        try {
-            alpha = AbstractNotifyWindow.getWindowOpacity(owner);
-        } catch (Exception e1) {
+        if (destAlpha == 0f) return;
 
-        }
-        srcAlpha = alpha;
+        updateAlpha();
+        udpateLocation();
         destAlpha = 0f;
+        if (srcAlpha == destAlpha) return;
+
+        updateTimer(i);
         ensureFader();
     }
 

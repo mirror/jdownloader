@@ -54,6 +54,11 @@ public class CaptchaAPISolver extends ChallengeSolver<Object> implements Captcha
     }
 
     @Override
+    public String getName() {
+        return "MyJDownloader";
+    }
+
+    @Override
     public void solve(SolverJob<Object> solverJob) throws InterruptedException, SolverException, SkipException {
 
     }
@@ -140,7 +145,7 @@ public class CaptchaAPISolver extends ChallengeSolver<Object> implements Captcha
         }
     }
 
-    public boolean isJobDone(SolverJob<Object> job) {
+    public boolean isJobDone(SolverJob<?> job) {
         if (!isMyJDownloaderActive()) return true;
         // if (job.areDone(DialogBasicCaptchaSolver.getInstance(), DialogClickCaptchaSolver.getInstance())) return true;
 
