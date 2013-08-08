@@ -39,8 +39,6 @@ import jd.plugins.PluginForHost;
 public class LinkSnappyCom extends PluginForHost {
 
     private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap = new HashMap<Account, HashMap<String, Long>>();
-    private static Object                                  LOCK               = new Object();
-    private static final String                            COOKIE_HOST        = "http://linksnappy.com";
 
     public LinkSnappyCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -204,6 +202,11 @@ public class LinkSnappyCom extends PluginForHost {
         if (failed) stupidServerError();
     }
 
+    private void stupidServerError() throws PluginException {
+        // Only wait 10 seconds because without forcing it, these servers will always bring up errors
+        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 503", 10 * 1000l);
+    }
+
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
@@ -216,11 +219,6 @@ public class LinkSnappyCom extends PluginForHost {
         getPageSecure("http://gen.linksnappy.com/lseAPI.php?act=USERDETAILS&username=" + account.getUser() + "&password=" + JDHash.getMD5(account.getPass()));
         if (br.containsHTML("\"status\":\"ERROR\"")) return false;
         return true;
-    }
-
-    private void stupidServerError() throws PluginException {
-        // Only wait 30 seconds because without forcing it, those servers will always bring up errors
-        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 503", 30 * 1000l);
     }
 
     /** Not needed anymore but is still working */

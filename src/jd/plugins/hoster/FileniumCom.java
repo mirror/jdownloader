@@ -180,7 +180,7 @@ public class FileniumCom extends PluginForHost {
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
         if (dl.getConnection().isContentDisposition()) {
             /* contentdisposition, lets download it */
-            if (!dl.startDownload()) tempUnavailableHoster(account, link, 60 * 60 * 1000l);
+            if (!dl.startDownload()) throw new PluginException(LinkStatus.ERROR_RETRY, "Server error");
             return;
         } else {
             if (liveLink == false && dl.getConnection().getResponseCode() == 404) {
@@ -207,6 +207,7 @@ public class FileniumCom extends PluginForHost {
         login(acc, false);
         showMessage(link, "Task 1: Generating Link");
         String dllink = br.getPage("http://" + SELECTEDDOMAIN + "/?filenium&filez=" + Encoding.urlEncode(link.getDownloadURL()));
+        if (br.containsHTML("<title>Error: Cannot get access at this time, check your link or advise us of this error to fix\\.</title>")) tempUnavailableHoster(acc, link, 60 * 60 * 1000l);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dllink = dllink.replaceAll("\\\\/", "/");
         showMessage(link, "Task 2: Download begins!");
