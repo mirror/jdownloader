@@ -1286,9 +1286,14 @@ public class TbCm extends PluginForDecrypt {
             sb.append(s.charAt(2));
             sb.append(s.charAt(12));
         } else if (s.length() == 87) {
-            sb.append(s.substring(4, 23));
+            sb.append(new StringBuilder(s.substring(54, 84)).reverse());
+            sb.append(s.charAt(3));
+            sb.append(new StringBuilder(s.substring(41, 53)).reverse());
             sb.append(s.charAt(86));
-            sb.append(s.substring(24, 85));
+            sb.append(new StringBuilder(s.substring(11, 40)).reverse());
+            sb.append(s.charAt(0));
+            sb.append(new StringBuilder(s.substring(4, 10)).reverse());
+            sb.append(s.charAt(53));
         } else if (s.length() == 86) {
             sb.append(s.substring(83, 85));
             sb.append(s.charAt(26));
@@ -1311,12 +1316,11 @@ public class TbCm extends PluginForDecrypt {
             sb.append(s.substring(66, 82));
             sb.append(s.charAt(21));
         } else if (s.length() == 84) {
-            sb.append(new StringBuilder(s.substring(37, 84)).reverse());
-            sb.append(s.charAt(2));
-            sb.append(new StringBuilder(s.substring(27, 36)).reverse());
-            sb.append(s.charAt(3));
-            sb.append(new StringBuilder(s.substring(4, 26)).reverse());
-            sb.append(s.charAt(26));
+            sb.append(new StringBuilder(s.substring(28, 84)).reverse());
+            sb.append(s.charAt(0));
+            sb.append(new StringBuilder(s.substring(6, 27)).reverse());
+            sb.append(new StringBuilder(s.substring(1, 3)).reverse());
+            sb.append(s.charAt(27));
         } else if (s.length() == 83) {
             sb.append(s.substring(0, 15));
             sb.append(s.charAt(80));
