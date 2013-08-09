@@ -425,11 +425,11 @@ public class VimeoCom extends PluginForHost {
             else
                 formattedFilename = formattedFilename.replace("*date*", "");
         }
-        if (formattedFilename.contains("*channel*")) {
+        if (formattedFilename.contains("*channelname*")) {
             if (channelName != null)
-                formattedFilename = formattedFilename.replace("*channel*", channelName);
+                formattedFilename = formattedFilename.replace("*channelname*", channelName);
             else
-                formattedFilename = formattedFilename.replace("*channel*", "");
+                formattedFilename = formattedFilename.replace("*channelname*", "");
         }
         formattedFilename = formattedFilename.replace("*ext*", ".mp4");
         // Insert filename at the end to prevent errors with tags

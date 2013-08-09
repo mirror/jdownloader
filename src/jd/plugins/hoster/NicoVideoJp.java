@@ -17,8 +17,14 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 
 import jd.PluginWrapper;
+import jd.config.ConfigContainer;
+import jd.config.ConfigEntry;
+import jd.config.SubConfiguration;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.Account;
@@ -37,10 +43,37 @@ public class NicoVideoJp extends PluginForHost {
     private static final String MAINPAGE               = "http://www.nicovideo.jp/";
 
     private static final String ONLYREGISTEREDUSERTEXT = "Only downloadable for registered users";
+    private static final String CUSTOM_DATE            = "CUSTOM_DATE";
+    private static final String CUSTOM_FILENAME        = "CUSTOM_FILENAME";
 
     public NicoVideoJp(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("https://secure.nicovideo.jp/secure/register");
+        setConfigElements();
+    }
+
+    @Override
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException, ParseException {
+        this.setBrowserExclusive();
+        br.setCustomCharset("utf-8");
+        br.setFollowRedirects(true);
+        br.getPage(link.getDownloadURL());
+        if (br.containsHTML("<title>ニコニコ動画　ログインフォーム</title>") || br.getURL().contains("/secure/") || br.getURL().contains("login_form?")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = br.getRegex("<meta property=\"og:title\" content=\"([^<>\"]*?)\"").getMatch(0);
+        if (filename == null) filename = br.getRegex("<h1 itemprop=\"name\">([^<>\"]*?)</h1>").getMatch(0);
+        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+
+        link.setProperty("plainfilename", filename);
+        final String date = br.getRegex("property=\"video:release_date\" content=\"(\\d{4}\\-\\d{2}\\-\\d{2}T\\d{2}:\\d{2}\\+\\d{4})\"").getMatch(0);
+        if (date != null) link.setProperty("originaldate", date);
+        final String channel = br.getRegex("Uploader: <strong itemprop=\"name\">([^<>\"]*?)</strong>").getMatch(0);
+        if (channel != null) link.setProperty("channel", channel);
+
+        filename = getFormattedFilename(link);
+        link.setFinalFileName(filename);
+        link.getLinkStatus().setStatusText(JDL.L("plugins.hoster.nicovideojp.only4registered", ONLYREGISTEREDUSERTEXT));
+
+        return AvailableStatus.TRUE;
     }
 
     @Override
@@ -115,19 +148,73 @@ public class NicoVideoJp extends PluginForHost {
         if (br.getCookie(MAINPAGE, "user_session") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
     }
 
+    private String getFormattedFilename(final DownloadLink downloadLink) throws ParseException {
+        String videoName = downloadLink.getStringProperty("plainfilename", null);
+        final SubConfiguration cfg = SubConfiguration.getConfig("nicovideo.jp");
+        String formattedFilename = cfg.getStringProperty(CUSTOM_FILENAME, defaultCustomFilename);
+        if (formattedFilename == null || formattedFilename.equals("")) formattedFilename = defaultCustomFilename;
+
+        String date = downloadLink.getStringProperty("originaldate", null);
+        final String channelName = downloadLink.getStringProperty("channel", null);
+
+        String formattedDate = null;
+        if (date != null && formattedFilename.contains("*date*")) {
+            date = date.replace("T", ":");
+            final String userDefinedDateFormat = cfg.getStringProperty(CUSTOM_DATE, "dd.MM.yyyy_HH-mm-ss");
+            // 2009-08-30T22:49+0900
+            SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd:HH:mm+ssss");
+            Date dateStr = formatter.parse(date);
+
+            formattedDate = formatter.format(dateStr);
+            Date theDate = formatter.parse(formattedDate);
+
+            if (userDefinedDateFormat != null) {
+                try {
+                    formatter = new SimpleDateFormat(userDefinedDateFormat);
+                    formattedDate = formatter.format(theDate);
+                } catch (Exception e) {
+                    // prevent user error killing plugin.
+                    formattedDate = "";
+                }
+            }
+            if (formattedDate != null)
+                formattedFilename = formattedFilename.replace("*date*", formattedDate);
+            else
+                formattedFilename = formattedFilename.replace("*date*", "");
+        }
+        if (formattedFilename.contains("*channelname*")) {
+            if (channelName != null)
+                formattedFilename = formattedFilename.replace("*channelname*", channelName);
+            else
+                formattedFilename = formattedFilename.replace("*channelname*", "");
+        }
+        formattedFilename = formattedFilename.replace("*ext*", ".flv");
+        // Insert filename at the end to prevent errors with tags
+        formattedFilename = formattedFilename.replace("*videoname*", videoName);
+
+        return formattedFilename;
+    }
+
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
-        this.setBrowserExclusive();
-        br.setCustomCharset("utf-8");
-        br.setFollowRedirects(true);
-        br.getPage(link.getDownloadURL());
-        if (br.containsHTML("<title>ニコニコ動画　ログインフォーム</title>") || br.getURL().contains("/secure/") || br.getURL().contains("login_form?")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("<meta property=\"og:title\" content=\"([^<>\"]*?)\"").getMatch(0);
-        if (filename == null) filename = br.getRegex("<h1 itemprop=\"name\">([^<>\"]*?)</h1>").getMatch(0);
-        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        link.setFinalFileName(filename.trim() + ".flv");
-        link.getLinkStatus().setStatusText(JDL.L("plugins.hoster.nicovideojp.only4registered", ONLYREGISTEREDUSERTEXT));
-        return AvailableStatus.TRUE;
+    public String getDescription() {
+        return "JDownloader's nicovideo.jp Plugin helps downloading videoclips. JDownloader provides settings for the filenames.";
+    }
+
+    private final static String defaultCustomFilename = "*videoname**ext*";
+
+    private void setConfigElements() {
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "Filename settings:"));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), CUSTOM_DATE, JDL.L("plugins.hoster.nicovideojp.customdate", "Define how the date should look.")).setDefaultValue("dd.MM.yyyy_HH-mm-ss"));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "Customize the filename! Example: '*channelname*_*date*_*videoname**ext*'"));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), CUSTOM_FILENAME, JDL.L("plugins.hoster.nicovideojp.customfilename", "Define how the filenames should look:")).setDefaultValue(defaultCustomFilename));
+        final StringBuilder sb = new StringBuilder();
+        sb.append("Explanation of the available tags:\r\n");
+        sb.append("*channelname* = name of the channel/uploader\r\n");
+        sb.append("*date* = date when the video was posted - appears in the user-defined format above\r\n");
+        sb.append("*videoname* = name of the video without extension\r\n");
+        sb.append("*ext* = the extension of the file, in this case usually '.flv'");
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, sb.toString()));
     }
 
     @Override
