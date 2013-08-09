@@ -55,6 +55,9 @@ public class LinkSnappyCom extends PluginForHost {
         return 20;
     }
 
+    private DownloadLink currentLink = null;
+    private Account      currentAcc  = null;
+
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ac = new AccountInfo();
@@ -110,7 +113,10 @@ public class LinkSnappyCom extends PluginForHost {
 
     /** no override to keep plugin compatible to old stable */
     public void handleMultiHost(final DownloadLink link, final Account account) throws Exception {
+        currentLink = link;
+        currentAcc = account;
         br.setFollowRedirects(true);
+
         for (int i = 1; i <= 10; i++) {
             getPageSecure("http://gen.linksnappy.com/genAPI.php?genLinks=" + encode("{\"link\"+:+\"" + link.getDownloadURL() + "\",+\"username\"+:+\"" + account.getUser() + "\",+\"password\"+:+\"" + account.getPass() + "\"}"));
             if (br.containsHTML("\"error\":\"Invalid file URL format\\.\"")) tempUnavailableHoster(account, link, 60 * 60 * 1000);
@@ -202,9 +208,18 @@ public class LinkSnappyCom extends PluginForHost {
         if (failed) stupidServerError();
     }
 
+    // Max 10 retries via link, 5 seconds waittime between = max 2 minutes trying -> Then deactivate host
     private void stupidServerError() throws PluginException {
-        // Only wait 10 seconds because without forcing it, these servers will always bring up errors
-        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 503", 10 * 1000l);
+        int timesFailed = currentLink.getIntegerProperty("timesfailedlinksnappy", 0);
+        if (timesFailed <= 9) {
+            timesFailed++;
+            currentLink.setProperty("timesfailedlinksnappy", timesFailed);
+            // Only wait 10 seconds because without forcing it, these servers will always bring up errors
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 503", 5 * 1000l);
+        } else {
+            currentLink.setProperty("timesfailedlinksnappy", Property.NULL);
+            tempUnavailableHoster(currentAcc, currentLink, 60 * 60 * 1000l);
+        }
     }
 
     @Override
