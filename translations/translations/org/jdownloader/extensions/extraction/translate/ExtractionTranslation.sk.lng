@@ -17,6 +17,7 @@ contextmenu_extract=Extrahovať teraz
 contextmenu_extract_to=Nastaviť cestu pre rozbalenie
 contextmenu_main=Archív(y)
 contextmenu_password=Nastaviť heslo archívu
+crash_title=JDownloader havaroval!
 date=Dátum
 downloadedbad=Súbor musí byť stiahnutý
 downloadedok=Súbor už existuje

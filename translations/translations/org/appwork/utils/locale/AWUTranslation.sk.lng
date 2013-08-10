@@ -28,6 +28,7 @@ DIALOG_FILECHOOSER_helpButtonText=Pomocník
 DIALOG_FILECHOOSER_homeFolderAccessibleName=Domovský priečinok
 DIALOG_FILECHOOSER_listViewButtonAccessibleName=Zoznam
 DIALOG_FILECHOOSER_networkfolder=Sieť
+DIALOG_FILECHOOSER_newFolderAccessibleName=Nový priečinok
 DIALOG_FILECHOOSER_newFolderErrorSeparator=:
 DIALOG_FILECHOOSER_newFolderErrorText=Chyba pri vytváraní nového priečinku
 DIALOG_FILECHOOSER_newFolderParentDoesntExistText=Nemožno vytvoriť priečinok.\r\n\r\nSystém nemôže nájsť zadanú cestu.
