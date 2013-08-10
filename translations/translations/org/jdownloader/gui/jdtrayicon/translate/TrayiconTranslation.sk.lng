@@ -1,7 +1,10 @@
 plugins_optional_trayIcon_dl_finished=Dokončené:
 plugins_optional_trayIcon_dl_running=Prebieha:
 plugins_optional_trayIcon_dl_total=Celkovo:
+plugins_optional_trayIcon_downloads=Sťahovanie:
 plugins_optional_trayIcon_eta=Zostáva:
 plugins_optional_trayIcon_progress=Priebeh:
 plugins_optional_trayIcon_speed=Rýchlosť:
+popup_exit=Ukončiť JDownloader
+popup_pause=Pozastaviť sťahovanie
 popup_update=Skontrolovať aktualizácie
