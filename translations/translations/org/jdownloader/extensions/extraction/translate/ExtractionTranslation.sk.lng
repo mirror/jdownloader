@@ -4,6 +4,7 @@ ValidateArchiveAction_ValidateArchiveAction_object_=Skontrolovať archív(y)
 ValidateArchiveAction_actionPerformed_=Archiv má %s1 častí a je kompletný.
 ValidateArchiveAction_actionPerformed_bad=Archív má %s1 častí a je nekompletný.
 archivename=Názov archívu
+cannot_extract_incopmplete=Nemožno extrahovať %s1. Archív je nekompletný!
 close=Zavrieť
 context_password=Heslo pre rozbalenie
 context_password_msg=Nastaviť heslo pre rozbalenie %s1.

@@ -34,6 +34,7 @@ DIALOG_FILECHOOSER_newFolderErrorText=Chyba pri vytváraní nového priečinku
 DIALOG_FILECHOOSER_newFolderParentDoesntExistText=Nemožno vytvoriť priečinok.\r\n\r\nSystém nemôže nájsť zadanú cestu.
 DIALOG_FILECHOOSER_newFolderParentDoesntExistTitleText=Nemožno vytvoriť priečinok
 DIALOG_FILECHOOSER_openButtonText=Otvoriť
+DIALOG_FILECHOOSER_openButtonToolTipText=Otvorí vybraný súbor
 DIALOG_FILECHOOSER_openDialogTitleText=Otvoriť
 DIALOG_FILECHOOSER_saveButtonText=Uložiť
 DIALOG_FILECHOOSER_saveButtonToolTipText=Uložiť vybraný súbor

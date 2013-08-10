@@ -86,6 +86,7 @@ gui_settings_proxy_title=Správca pripojení
 gui_settings_reconnect_title=Znovupripojenie
 gui_settings_reconnect_title_method=Metóda znovupripojenia
 gui_warning_reconnectFailed=Znovupripojenie zlyhalo!
+gui_warning_reconnectSuccess=Znovu-pripojenie bolo úspešné
 gui_warning_reconnect_running=prebieha...
 gui_warning_reconnectunknown=Neznáme Znovupripojenie
 image_description=Obrázkové súbory: jpg, png, gif,...

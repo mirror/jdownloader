@@ -25,6 +25,7 @@ errordialog_defaultio=Počas aktualizácie došlo k neočakávanej chybe IO.\nSk
 errordialog_frametitle=Došlo k chybe
 errordialog_message=Počas aktualizácie došlo k neočakávanej chybe.\nSkúste to znova alebo kontaktujte našu podporu.
 errordialog_noconnection=JDownloader sa nemohol pripojiť k aktualizačnému serveru.\nUistite sa, že ste pripojení na Internet.
+errordialog_not_enough_space=Nie je dostatok voľného miesta na disku C:.\nUistite sa, či je aspoň %s1 voľného miesta (%s2 je potrebných) a reštartujte aktualizáciu.
 errordialog_selfupdate_failed=Nepodarilo sa nainštalovať aktualizáciu. Skúste to znova neskôr.\nAk sa tento problém "nevyrieši sám" po niekoľkých hodinách, obráťte sa na našu podporu alebo preinštalujte JDownloader.
 errordialog_server_error=Aktualizačný server nie je dostupný. Skúste to znova neskôr alebo kontaktujte našu podporu.
 errordialog_server_locked=Aktualizáčný server je zaneprázdnený. Skúste to znova o niekoľko minút.
