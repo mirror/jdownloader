@@ -349,6 +349,7 @@ buyaction_title=Kúpiť premiový účet
 buyaction_title_buy_account=Pokračovať
 checksumcolumnmd5=Kontrolný súčet
 downloadview_all=Všetky sťahovania
+downloadview_failed=Neúspešné sťahovania
 downloadview_running=Prebiehajúce sťahovania
 downloadview_successful=Úspešné sťahovania
 extensionManager_title=Rozširujúce moduly
