@@ -1,3 +1,4 @@
+action_tooltip=Povoľte pre vypnutie systému po dokončení sťahovania
 addons_jdshutdown_statusmessage_disabled=JDownloader NEvypne tento počítač
 addons_jdshutdown_statusmessage_enabled=JDownloader vypne tento počítač po ukončení sťahovaní
 gui_config_jdshutdown_close=Zatvoriť JD
