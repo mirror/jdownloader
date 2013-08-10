@@ -46,13 +46,36 @@ public class ImgBoxCom extends PluginForDecrypt {
                 return decryptedLinks;
             }
             final String fpName = br.getRegex("<h1 style=\"padding\\-left:15px;\">(.*?)</h1>").getMatch(0);
-            final String[] links = br.getRegex("\"(http://t\\.imgbox\\.com/.*?)\"").getColumn(0);
+            final String[] links = br.getRegex("\"(/[A-Za-z0-9]+)\" class=\"gallery_img\"").getColumn(0);
             if (links == null || links.length == 0) {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
             }
-            for (String singleLink : links)
-                decryptedLinks.add(createDownloadlink("directhttp://" + singleLink.replace("t.imgbox.com/", "o.imgbox.com/")));
+            for (String singleLink : links) {
+                try {
+                    if (this.isAbort()) {
+                        logger.info("Decryption aborted...");
+                        return decryptedLinks;
+                    }
+                } catch (final Throwable e) {
+                    // Not available in old 0.9.581 Stable
+                }
+                singleLink = "http://imgbox.com" + singleLink;
+                br.getPage(singleLink);
+                final DownloadLink dl = decryptSingle();
+                if (dl == null) {
+                    logger.warning("Decrypter broken for link: " + parameter);
+                    logger.warning("Failed on singleLink: " + singleLink);
+                    return null;
+                }
+                dl.setAvailable(true);
+                try {
+                    distribute(dl);
+                } catch (final Throwable e) {
+                    // Not available in old 0.9.581 Stable
+                }
+                decryptedLinks.add(dl);
+            }
             if (fpName != null) {
                 FilePackage fp = FilePackage.getInstance();
                 fp.setName(Encoding.htmlDecode(fpName.trim()));
@@ -63,14 +86,20 @@ public class ImgBoxCom extends PluginForDecrypt {
                 logger.info("Link offline: " + parameter);
                 return decryptedLinks;
             }
-            final String finallink = br.getRegex("\"(http://[a-z0-9\\-]+\\.imgbox\\.com/[^<>\"]*?\\?st[^<>\"]*?)\"").getMatch(0);
-            if (finallink == null) {
+            final DownloadLink dl = decryptSingle();
+            if (dl == null) {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
             }
-            decryptedLinks.add(createDownloadlink("directhttp://" + Encoding.htmlDecode(finallink)));
+            decryptedLinks.add(dl);
         }
         return decryptedLinks;
+    }
+
+    private DownloadLink decryptSingle() {
+        final String finallink = br.getRegex("\"(http://[a-z0-9\\-]+\\.imgbox\\.com/[^<>\"]*?\\?st[^<>\"]*?)\"").getMatch(0);
+        if (finallink == null) { return null; }
+        return createDownloadlink("directhttp://" + Encoding.htmlDecode(finallink));
     }
 
     /* NO OVERRIDE!! */

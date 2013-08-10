@@ -92,7 +92,8 @@ public class VKontakteRu extends PluginForDecrypt {
         prepBrowser(br);
         if (parameter.matches(PATTERN_PHOTO_SINGLE)) {
             /**
-             * Single photo links, those are just passed to the hosterplugin! Example:http://vk.com/photo125005168_269986868
+             * Single photo links, those are just passed to the hosterplugin!
+             * Example:http://vk.com/photo125005168_269986868
              */
             final DownloadLink decryptedPhotolink = getSinglePhotoDownloadLink(new Regex(parameter, "((\\-)?\\d+_\\d+)").getMatch(0));
             decryptedLinks.add(decryptedPhotolink);
@@ -108,7 +109,8 @@ public class VKontakteRu extends PluginForDecrypt {
                 br.setFollowRedirects(true);
                 br.getPage(parameter);
                 /**
-                 * Retry if login failed Those are 2 different errormessages but refreshing the cookies works fine for both
+                 * Retry if login failed Those are 2 different errormessages but
+                 * refreshing the cookies works fine for both
                  * */
                 String cookie = br.getCookie("http://vk.com", "remixsid");
                 if (br.containsHTML(">Security Check<") || "deleted".equals(cookie) || cookie == null || cookie.equals("")) {
@@ -137,7 +139,8 @@ public class VKontakteRu extends PluginForDecrypt {
                     newLink = MAINPAGE + "/albums" + new Regex(parameter, "(\\d+)$").getMatch(0);
                     getPageSafe(newLink);
                 } else {
-                    // No case matched, in order to avoid too many requests we only access the link here in this case
+                    // No case matched, in order to avoid too many requests we
+                    // only access the link here in this case
                     if (!br.getURL().equals(parameter)) getPageSafe(parameter);
                     if (br.containsHTML("id=\"profile_main_actions\"")) {
                         // Change profile links -> albums links
@@ -209,28 +212,35 @@ public class VKontakteRu extends PluginForDecrypt {
                     decryptedLinks = decryptSingleVideo(decryptedLinks, parameter);
                 } else if (parameter.matches(PATTERN_VIDEO_ALBUM)) {
                     /**
-                     * Video-Albums Example: http://vk.com/videos575934598 Example2: http://vk.com/video?section=tagged&id=46468795637
+                     * Video-Albums Example: http://vk.com/videos575934598
+                     * Example2:
+                     * http://vk.com/video?section=tagged&id=46468795637
                      */
                     decryptedLinks = decryptVideoAlbum(decryptedLinks, parameter);
                     logger.info("Decrypted " + decryptedLinks.size() + " video-links out of a video album");
                 } else if (parameter.matches(PATTERN_VIDEO_COMMUNITY_ALBUM)) {
-                    /** Community-Albums Exaple: http://vk.com/video?gid=41589556 */
+                    /**
+                     * Community-Albums Exaple: http://vk.com/video?gid=41589556
+                     */
                     decryptCommunityVideoAlbum(decryptedLinks, parameter);
                     logger.info("Decrypted " + decryptedLinks.size() + " community-video-links out of a community-video-album");
                 } else if (parameter.matches(PATTERN_PHOTO_ALBUM)) {
                     /**
-                     * Photo album Examples: http://vk.com/photos575934598 http://vk.com/id28426816 http://vk.com/album87171972_0
+                     * Photo album Examples: http://vk.com/photos575934598
+                     * http://vk.com/id28426816 http://vk.com/album87171972_0
                      */
                     decryptedLinks = decryptPhotoAlbum(decryptedLinks, parameter);
                     logger.info("Decrypted " + decryptedLinks.size() + " photo-links out of a single-photo-album-link");
                 } else if (parameter.matches(PATTERN_PHOTO_ALBUMS)) {
                     /**
-                     * Photo albums lists/overviews Example: http://vk.com/albums46486585
+                     * Photo albums lists/overviews Example:
+                     * http://vk.com/albums46486585
                      */
                     decryptedLinks = decryptPhotoAlbums(decryptedLinks, parameter);
                     logger.info("Decrypted " + decryptedLinks.size() + " photo-album-links out of a multiple-photo-albums-link");
                 } else {
-                    // Unsupported link -> Errorhandling -> Either link offline or plugin broken
+                    // Unsupported link -> Errorhandling -> Either link offline
+                    // or plugin broken
                     if (!parameter.matches(PATTERN_WALL_LINK)) {
                         if (br.containsHTML("class=\"profile_blocked\"")) {
                             final DownloadLink offline = createDownloadlink("http://vkontaktedecrypted.ru/videolink/" + new Random().nextInt(10000000));
@@ -382,6 +392,12 @@ public class VKontakteRu extends PluginForDecrypt {
             numberOfEntrys = br.getRegex("count: (\\d+),").getMatch(0);
             if (numberOfEntrys == null) {
                 numberOfEntrys = br.getRegex("</a>(\\d+) zdj\\&#281;\\&#263;<span").getMatch(0);
+                if (numberOfEntrys == null) {
+                    numberOfEntrys = br.getRegex("\"count\":(\\d+)").getMatch(0);
+                    if (numberOfEntrys == null) {
+                        numberOfEntrys = br.getRegex(">(\\d+) photos in the album<").getMatch(0);
+                    }
+                }
             }
         }
         if (numberOfEntrys == null) {
@@ -582,7 +598,8 @@ public class VKontakteRu extends PluginForDecrypt {
         }
 
         /**
-         * We couldn't find any external videos so it must be on their servers -> send it to the hosterplugin
+         * We couldn't find any external videos so it must be on their servers
+         * -> send it to the hosterplugin
          */
         final FilePackage fp = FilePackage.getInstance();
         final String embedHash = br.getRegex("\\\\\"hash2\\\\\":\\\\\"([a-z0-9]+)\\\\\"").getMatch(0);
@@ -696,8 +713,8 @@ public class VKontakteRu extends PluginForDecrypt {
         final int numberOfFoundVideos = decryptedData.size();
         logger.info("Found " + numberOfFoundVideos + " videos...");
         /**
-         * Those links will go through the decrypter again, then they'll finally end up in the vkontakte hoster plugin or in other video
-         * plugins
+         * Those links will go through the decrypter again, then they'll finally
+         * end up in the vkontakte hoster plugin or in other video plugins
          */
         for (String singleVideo : decryptedData) {
             singleVideo = singleVideo.replace(", ", "_");

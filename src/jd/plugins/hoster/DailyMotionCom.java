@@ -66,6 +66,7 @@ public class DailyMotionCom extends PluginForHost {
         br.setFollowRedirects(true);
         br.setCookie("http://www.dailymotion.com", "family_filter", "off");
         br.setCookie("http://www.dailymotion.com", "lang", "en_US");
+        prepBrowser();
         if (downloadLink.getBooleanProperty("offline", false)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (downloadLink.getBooleanProperty("countryblock", false)) {
@@ -83,9 +84,15 @@ public class DailyMotionCom extends PluginForHost {
                 logger.warning("dllink is null...");
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
+            br.setFollowRedirects(false);
             URLConnectionAdapter con = null;
             try {
                 con = br.openGetConnection(dllink);
+                if (con.getResponseCode() == 302) {
+                    br.followConnection();
+                    dllink = br.getRedirectLocation().replace("#cell=core&comment=", "");
+                    con = br.openGetConnection(dllink);
+                }
                 if (con.getResponseCode() == 410 || con.getContentType().contains("html")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 downloadLink.setDownloadSize(con.getLongContentLength());
             } finally {
@@ -187,6 +194,12 @@ public class DailyMotionCom extends PluginForHost {
         rtmp.setUrl(stream[0]);
         rtmp.setSwfVfy(stream[1]);
         rtmp.setResume(true);
+    }
+
+    private void prepBrowser() {
+        br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:22.0) Gecko/20100101 Firefox/22.0");
+        br.getHeaders().put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
+        br.getHeaders().put("Accept-Language", "en-US,en;q=0.5");
     }
 
     @Override

@@ -73,7 +73,7 @@ public class UpToBoxCom extends PluginForHost {
     // mods:
     // non account: 1 * 1 (no resume)
     // free account: same as above
-    // premium account: 20 * unlimited (previous settings, not tested)
+    // premium account: 20 * 3 = max 60 connections
     // protocol: no https
     // captchatype: 4dignum
     // other: no redirects
@@ -306,14 +306,19 @@ public class UpToBoxCom extends PluginForHost {
     }
 
     /**
-     * Prevents more than one free download from starting at a given time. One step prior to dl.startDownload(), it adds a slot to maxFree
-     * which allows the next singleton download to start, or at least try.
+     * Prevents more than one free download from starting at a given time. One
+     * step prior to dl.startDownload(), it adds a slot to maxFree which allows
+     * the next singleton download to start, or at least try.
      * 
-     * This is needed because xfileshare(website) only throws errors after a final dllink starts transferring or at a given step within pre
-     * download sequence. But this template(XfileSharingProBasic) allows multiple slots(when available) to commence the download sequence,
-     * this.setstartintival does not resolve this issue. Which results in x(20) captcha events all at once and only allows one download to
-     * start. This prevents wasting peoples time and effort on captcha solving and|or wasting captcha trading credits. Users will experience
-     * minimal harm to downloading as slots are freed up soon as current download begins.
+     * This is needed because xfileshare(website) only throws errors after a
+     * final dllink starts transferring or at a given step within pre download
+     * sequence. But this template(XfileSharingProBasic) allows multiple
+     * slots(when available) to commence the download sequence,
+     * this.setstartintival does not resolve this issue. Which results in x(20)
+     * captcha events all at once and only allows one download to start. This
+     * prevents wasting peoples time and effort on captcha solving and|or
+     * wasting captcha trading credits. Users will experience minimal harm to
+     * downloading as slots are freed up soon as current download begins.
      * 
      * @param controlFree
      *            (+1|-1)
@@ -526,7 +531,8 @@ public class UpToBoxCom extends PluginForHost {
         String availabletraffic = new Regex(correctedBR, "Traffic available.*?:</TD><TD><b>([^<>\"\\']+)</b>").getMatch(0);
         if (availabletraffic != null && !availabletraffic.contains("nlimited") && !availabletraffic.equalsIgnoreCase(" Mb")) {
             availabletraffic.trim();
-            // need to set 0 traffic left, as getSize returns positive result, even when negative value supplied.
+            // need to set 0 traffic left, as getSize returns positive result,
+            // even when negative value supplied.
             if (!availabletraffic.startsWith("-")) {
                 ai.setTrafficLeft(SizeFormatter.getSize(availabletraffic));
             } else {
@@ -546,7 +552,8 @@ public class UpToBoxCom extends PluginForHost {
             } catch (final Throwable e) {
             }
         } else {
-            // alternative xfileshare expire time, usually shown on 'extend premium account' page
+            // alternative xfileshare expire time, usually shown on 'extend
+            // premium account' page
             getPage("/?op=payments");
             String expire = new Regex(correctedBR, "Premium(\\-| )Account expires?:([^\n\r]+)</center>").getMatch(1);
             if (expire != null) {
@@ -562,7 +569,7 @@ public class UpToBoxCom extends PluginForHost {
                 long waittime = ((days * 86400000) + (hours * 3600000) + (minutes * 60000) + (seconds * 1000));
                 ai.setValidUntil(System.currentTimeMillis() + waittime);
                 try {
-                    maxPrem.set(20);
+                    maxPrem.set(3);
                     account.setMaxSimultanDownloads(-1);
                     account.setConcurrentUsePossible(true);
                 } catch (final Throwable e) {

@@ -91,11 +91,13 @@ public class UlozTo extends PluginForHost {
         // not sure if this is still needed with 2012/02/01 changes
         handleRedirect(downloadLink);
         // For age restricted links
-        if (br.containsHTML("do=askAgeForm\\-submit")) {
-            br.postPage(br.getURL() + "?do=askAgeForm-submit", "agree=Souhlas%C3%ADm");
+        final String ageFormToken = br.getRegex("id=\"frmaskAgeForm\\-_token_\" value=\"([^<>\"]*?)\"").getMatch(0);
+        if (ageFormToken != null) {
+            br.postPage(br.getURL() + "?do=askAgeForm-submit", "agree=Souhlas%C3%ADm&_token_=" + ageFormToken);
             handleRedirect(downloadLink);
         }
-        // Wrong links show the mainpage so here we check if we got the mainpage or not
+        // Wrong links show the mainpage so here we check if we got the mainpage
+        // or not
         if (br.containsHTML("(multipart/form\\-data|Chybka 404 \\- požadovaná stránka nebyla nalezena<br>|<title>Ulož\\.to</title>|<title>404 - Page not found</title>)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (br.containsHTML(PASSWORDPROTECTED)) {
             String filename = br.getRegex("<title>([^<>]+) \\| Uloz\\.to</title>").getMatch(0);
