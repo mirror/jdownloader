@@ -312,6 +312,7 @@ UpdateAction_runInEDT_updates_pendings=Kliknite tu pre inštaláciu pripravenýc
 account_remove_action_msg=Naozaj odstrániť %s1
 account_remove_action_title=Naozaj odstrániť %s1 účet/účty?
 accountdialog_check=Skontrolovať účet
+accountdialog_check_expired=Prihlasovacie údaje sú správne, ale platnosť Vášho účtu %s1 už vypršala.
 accountdialog_check_expired_renew=Obnoviť / predĺžiť účet teraz!
 accountdialog_check_expired_title=Obnoviť účet
 accountdialog_check_failed=Kontrola účtu zlyhala
