@@ -1,1 +1,4 @@
+jd_plugins_optional_interfaces_jdflashgot_security_btn_allow=Povoliť!
 jd_plugins_optional_interfaces_jdflashgot_security_btn_deny=Zakázať prístup!
+jd_plugins_optional_interfaces_jdflashgot_security_message=Externá aplikácia sa pokúša pridať odkazy
+jd_plugins_optional_interfaces_jdflashgot_security_title=Externá žiadosť od %s1!
