@@ -100,7 +100,6 @@ public class DiskYandexNet extends PluginForHost {
             if (br.containsHTML("(<title>The file you are looking for could not be found\\.|>Nothing found</span>|<title>Nothing found — Yandex\\.Disk</title>)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             filename = br.getRegex("<title>(.*?) \\— Yandex\\.Disk</title>").getMatch(0);
             if (filename == null) filename = br.getRegex("b\\-text_title\">(.*?)</span>").getMatch(0);
-            // class="b-text">161 МБ, загружен <span
             filesize = br.getRegex("<span class=\"b\\-text\">(.*?), uploaded").getMatch(0);
             if (filesize == null) filesize = br.getRegex("(\\d+(\\.\\d+)? ?(KB|MB|GB))").getMatch(0);
         }

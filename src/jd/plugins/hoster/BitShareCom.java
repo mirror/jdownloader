@@ -295,7 +295,7 @@ public class BitShareCom extends PluginForHost {
             // Remove new line
             dllink = dllink.trim();
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, -3);
-            if (dl.getConnection().getContentType().contains("html")) {
+            if (dl.getConnection().getContentType().contains("html") && dl.getConnection().getLongContentLength() < link.getDownloadSize()) {
                 logger.warning("The final dllink seems not to be a file!");
                 br.followConnection();
                 errorHandling(link, br);
@@ -325,7 +325,8 @@ public class BitShareCom extends PluginForHost {
                 br.setCookiesExclusive(true);
                 if (agent == null) {
                     /*
-                     * we first have to load the plugin, before we can reference it
+                     * we first have to load the plugin, before we can reference
+                     * it
                      */
                     JDUtilities.getPluginForHost("mediafire.com");
                     agent = jd.plugins.hoster.MediafireCom.stringUserAgent();
