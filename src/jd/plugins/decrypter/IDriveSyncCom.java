@@ -26,6 +26,7 @@ import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
 import org.appwork.utils.formatter.SizeFormatter;
@@ -48,6 +49,10 @@ public class IDriveSyncCom extends PluginForDecrypt {
             decryptedLinks.add(dl);
             return decryptedLinks;
         }
+        final String fid = new Regex(parameter, "view\\?k=(.+)").getMatch(0);
+        String fpName = br.getRegex("property=\\'og:title\\' content=\\'([^<>\"]*?) \\- IDriveSync\\'").getMatch(0);
+        if (fpName == null) fpName = fid;
+        fpName = Encoding.htmlDecode(fpName.trim());
         final String fList = br.getRegex("\"file_list\":\\[(.*?)\\],").getMatch(0);
         if (fList == null) {
             logger.warning("Decrypter broken for link: " + parameter);
@@ -58,6 +63,7 @@ public class IDriveSyncCom extends PluginForDecrypt {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
+        long totalSize = 0;
         for (final String linkInfo : links) {
             final String filename = getJson("name", linkInfo);
             final String filesize = getJson("size", linkInfo);
@@ -66,16 +72,34 @@ public class IDriveSyncCom extends PluginForDecrypt {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
             }
+            final long fsize = SizeFormatter.getSize(filesize);
             final DownloadLink dl = createDownloadlink("http://idrivesyncdecrypted.com/" + System.currentTimeMillis() + new Random().nextInt(100000));
             dl.setFinalFileName(Encoding.htmlDecode(filename.trim()));
             dl.setProperty("directfilename", Encoding.htmlDecode(filename.trim()));
-            dl.setDownloadSize(SizeFormatter.getSize(filesize));
+            dl.setDownloadSize(fsize);
             dl.setProperty("directfilesize", filesize);
             dl.setProperty("dllink", "https://www.idrivesync.com" + dlurl.replace("\\", ""));
             dl.setProperty("mainlink", parameter);
             dl.setAvailable(true);
             decryptedLinks.add(dl);
+            totalSize += fsize;
         }
+        if (br.containsHTML(">Download as Zip<")) {
+            final String zipName = fpName + ".zip";
+            final DownloadLink dl = createDownloadlink("http://idrivesyncdecrypted.com/" + System.currentTimeMillis() + new Random().nextInt(100000));
+            dl.setFinalFileName(zipName);
+            dl.setProperty("directfilename", zipName);
+            dl.setDownloadSize(totalSize);
+            dl.setProperty("directfilesize", Long.toString(totalSize));
+            dl.setProperty("dllink", "https://www.idrivesync.com/share/downloadAsZip?k=" + fid);
+            dl.setProperty("mainlink", parameter);
+            dl.setAvailable(true);
+            decryptedLinks.add(dl);
+        }
+
+        final FilePackage fp = FilePackage.getInstance();
+        fp.setName(fpName);
+        fp.addLinks(decryptedLinks);
         return decryptedLinks;
     }
 

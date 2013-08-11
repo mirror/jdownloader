@@ -61,12 +61,43 @@ public class DivxHostingNet extends PluginForHost {
         br.submitForm(human);
         final String dllink = br.getRegex("\"(http://[a-z0-9]+\\.divxhosting\\.net/files/[^<>\"]*?)\"").getMatch(0);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        fixFilename(downloadLink);
         dl.startDownload();
+    }
+
+    /**
+     * @param downloadLink
+     */
+    private void fixFilename(final DownloadLink downloadLink) {
+        String oldName = downloadLink.getFinalFileName();
+        if (oldName == null) oldName = downloadLink.getName();
+        final String serverFilename = Encoding.htmlDecode(getFileNameFromHeader(dl.getConnection()));
+        String newExtension = null;
+        // some streaming sites do not provide proper file.extension within
+        // headers (Content-Disposition or the fail over getURL()).
+        if (serverFilename == null) {
+            logger.info("Server filename is null, keeping filename: " + oldName);
+        } else {
+            if (serverFilename.contains(".")) {
+                newExtension = serverFilename.substring(serverFilename.lastIndexOf("."));
+            } else {
+                logger.info("HTTP headers don't contain filename.extension information");
+            }
+        }
+        if (newExtension != null && !oldName.endsWith(newExtension)) {
+            String oldExtension = null;
+            if (oldName.contains(".")) oldExtension = oldName.substring(oldName.lastIndexOf("."));
+            if (oldExtension != null && oldExtension.length() <= 5) {
+                downloadLink.setFinalFileName(oldName.replace(oldExtension, newExtension));
+            } else {
+                downloadLink.setFinalFileName(oldName + newExtension);
+            }
+        }
     }
 
     @Override

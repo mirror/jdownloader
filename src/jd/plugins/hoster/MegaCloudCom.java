@@ -20,8 +20,8 @@ import java.io.IOException;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
+import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
-import jd.parser.html.Form;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -31,7 +31,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision: 19117 $", interfaceVersion = 2, names = { "megacloud.com" }, urls = { "https?://(www\\.)?megacloud\\.com/s/[a-zA-Z0-9]{10}/[^/<> ]+|http://mc\\.tt/[a-zA-Z0-9]{10}" }, flags = { 0 })
+@HostPlugin(revision = "$Revision: 19117 $", interfaceVersion = 2, names = { "megacloud.com" }, urls = { "https?://(www\\.)?megaclouddecrypted\\.com/s/[a-zA-Z0-9]{10,}/[^/<>]+" }, flags = { 0 })
 public class MegaCloudCom extends PluginForHost {
 
     private static final String mainPage = "http://megacloud.com";
@@ -45,21 +45,14 @@ public class MegaCloudCom extends PluginForHost {
     }
 
     @Override
-    public void correctDownloadLink(DownloadLink link) throws IOException {
-        if (link.getDownloadURL().contains("mc.tt/")) {
-            Browser cbr = new Browser();
-            prepBrowser(cbr);
-            cbr.getPage(link.getDownloadURL());
-            String redirect = cbr.getRedirectLocation();
-            if (redirect != null) {
-                link.setUrlDownload(redirect);
-            }
-        }
+    public void correctDownloadLink(final DownloadLink link) throws IOException {
+        link.setUrlDownload(link.getDownloadURL().replace("megaclouddecrypted.com/", "megacloud.com/"));
     }
 
     public void prepBrowser(final Browser br) {
         // define custom browser headers and language settings.
         br.getHeaders().put("Accept-Language", "en-gb, en;q=0.9");
+        br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:22.0) Gecko/20100101 Firefox/22.0");
     }
 
     @Override
@@ -70,7 +63,10 @@ public class MegaCloudCom extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         this.setBrowserExclusive();
+        // Check offline from decrypter
+        if (link.getBooleanProperty("offline", false)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         prepBrowser(br);
+        br.getPage("https://www.megacloud.com/s/b7CC8CmllT2");
         br.getPage(link.getDownloadURL());
 
         if (br.containsHTML(">Error 404<")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -95,43 +91,36 @@ public class MegaCloudCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
 
-        if (br.containsHTML(">File unavailable \\- This file has exceeded the daily bandwidth limit, please try again later")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "This file has exceeded the daily bandwidth limit, please try again later", 60 * 60 * 1000l);
-
-        String user_id = new Regex(filter, "user_id\":(\\d+)").getMatch(0);
-        String file_system_id = new Regex(filter, "file_system_id\":(\\d+)").getMatch(0);
-        if (user_id == null || file_system_id == null) {
+        final String user_id = new Regex(filter, "user_id\":(\\d+)").getMatch(0);
+        final String file_system_id = new Regex(filter, "file_system_id\":(\\d+)").getMatch(0);
+        final String action = br.getRegex("action_root=\"(http[^<>\"]*?)\"").getMatch(0);
+        if (user_id == null || file_system_id == null || action == null) {
+            if (br.containsHTML(">File unavailable \\- This file has exceeded the daily bandwidth limit, please try again later")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "This file has exceeded the daily bandwidth limit, please try again later", 60 * 60 * 1000l);
             logger.warning("Could not find the first required vaules");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
 
-        Browser ajax = this.br.cloneBrowser();
+        final Browser ajax = this.br.cloneBrowser();
         ajax.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
         ajax.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         ajax.getHeaders().put("Content-Type", "application/x-www-form-urlencoded");
+        ajax.getHeaders().put("accept-charseactiont", null);
         ajax.postPage("https://www.megacloud.com/ajax/get_download_token.php", "form_submit=true&user_id=" + user_id + "&fsid=" + file_system_id);
 
-        String download_token = ajax.getRegex("download_token\":\"([^\"]+)").getMatch(0);
+        final String download_token = ajax.getRegex("download_token\":\"([^\"]+)").getMatch(0);
         if (download_token == null) {
             logger.warning("Could not find the 'download_token'");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
 
-        Form download = br.getFormbyProperty("id", "dlForm");
-        if (download == null) {
-            logger.warning("Could not find the 'download' form");
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        download.put("fsid", file_system_id);
-        download.put("token", download_token.replaceAll("\\\\/", "/"));
-        if ((download.getAction() == null || download.getAction().equals("")) && download.containsHTML("action_root")) {
-            String action = new Regex(download, "action_root=(http[^\"\\}]+)").getMatch(0);
-            if (action == null) {
-                logger.warning("Could not find 'action_root'");
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            download.setAction(action);
-        }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, download, true, 0);
+        final String postData = "fsid=" + file_system_id + "&userid=" + user_id + "&token=" + Encoding.urlEncode(download_token);
+
+        ajax.getHeaders().put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
+        ajax.getHeaders().put("Content-Type", "application/x-www-form-urlencoded");
+        ajax.getHeaders().put("Accept-Charset", null);
+        ajax.getHeaders().put("Accept-Language", "en-US,en;q=0.5");
+
+        dl = jd.plugins.BrowserAdapter.openDownload(ajax, downloadLink, action, postData, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

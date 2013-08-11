@@ -33,7 +33,7 @@ import org.appwork.utils.formatter.SizeFormatter;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "disk.yandex.net" }, urls = { "https?://(www\\.)?((((mail|disk)\\.)?yandex\\.(net|com|com\\.tr|ru|ua)/(disk/)?public/(\\?hash=[A-Za-z0-9%/\\+=]+|#[A-Za-z0-9%\\/+=]+))|(yadi\\.sk|yadisk\\.cc)/d/[A-Za-z0-9\\-_]+)" }, flags = { 0 })
 public class DiskYandexNet extends PluginForHost {
 
-    private static final String primaryURLs = "https?://(www\\.)?((mail|disk)\\.)?yandex\\.(net|com|com\\.tr|ru|ua)/(disk/)?public/(\\?hash=[A-Za-z0-9%/\\+=]+|#[A-Za-z0-9%\\/+=]+)";
+    private static final String primaryURLs = "https?://(www\\.)?((mail|disk)\\.)?yandex\\.(net|com|com\\.tr|ru|ua)/(disk/)?public/(\\?hash=[A-Za-z0-9%/\\+=\\&]+|#[A-Za-z0-9%\\/+=]+)";
     private static final String shortURLs   = "https?://(www\\.)?(yadi\\.sk|yadisk\\.cc)/d/[A-Za-z0-9\\-_]+";
 
     public DiskYandexNet(PluginWrapper wrapper) {
@@ -67,6 +67,7 @@ public class DiskYandexNet extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         setBrowserExclusive();
+        br.getHeaders().put("Accept-Language", "en-US,en;q=0.5");
         br.setFollowRedirects(true);
         // redirect links
         if (link.getDownloadURL().matches(shortURLs)) {
@@ -74,13 +75,15 @@ public class DiskYandexNet extends PluginForHost {
             if (link.getDownloadURL().matches(shortURLs)) {
                 if (br.containsHTML("This link was removed or not found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            if (!br.getURL().matches(primaryURLs)) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            link.setUrlDownload(new Regex(br.getURL(), "(" + primaryURLs + ")").getMatch(0));
-            // lets format back into single url format, as short links redirect to different the different domains depending on geolcoation
+            final String newUrl = Encoding.htmlDecode(br.getURL()).replace("&locale=ru", "");
+            if (!newUrl.matches(primaryURLs)) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            link.setUrlDownload(new Regex(newUrl, "(" + primaryURLs + ")").getMatch(0));
+            // lets format back into single url format, as short links redirect
+            // to different the different domains depending on geolcoation
             // and we need English for Error catching!
             correctDownloadLink(link);
         }
-        br.getPage(link.getDownloadURL());
+        br.getPage(link.getDownloadURL() + "&locale=en");
         String filename;
         String filesize;
         if (br.getURL().contains("&final=true")) {
@@ -97,6 +100,7 @@ public class DiskYandexNet extends PluginForHost {
             if (br.containsHTML("(<title>The file you are looking for could not be found\\.|>Nothing found</span>|<title>Nothing found — Yandex\\.Disk</title>)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             filename = br.getRegex("<title>(.*?) \\— Yandex\\.Disk</title>").getMatch(0);
             if (filename == null) filename = br.getRegex("b\\-text_title\">(.*?)</span>").getMatch(0);
+            // class="b-text">161 МБ, загружен <span
             filesize = br.getRegex("<span class=\"b\\-text\">(.*?), uploaded").getMatch(0);
             if (filesize == null) filesize = br.getRegex("(\\d+(\\.\\d+)? ?(KB|MB|GB))").getMatch(0);
         }
@@ -118,7 +122,9 @@ public class DiskYandexNet extends PluginForHost {
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         if (br.getURL().contains("&final=true")) {
             // this is prob wrong
-            // br.postPage("/handlers.jsx", "_c&public_url=1&_handlers=disk-file-info&_locale=en&_page=disk-share&_service=disk&hash=" +
+            // br.postPage("/handlers.jsx",
+            // "_c&public_url=1&_handlers=disk-file-info&_locale=en&_page=disk-share&_service=disk&hash="
+            // +
             // Encoding.urlEncode(getHashID(downloadLink)));
             logger.warning("Component disabled. Please report the source URL to JDownloader Development Team so we can fix!");
         } else {

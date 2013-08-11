@@ -63,7 +63,7 @@ public class GigabyteUploadCom extends PluginForHost {
         final String server = br.getRegex("server: \\'(http://[^<>\"]*?)\\'").getMatch(0);
         if (server == null || neededIDs.getMatches().length == 0) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         final String dllink = server + "/files/" + neededIDs.getMatch(2) + "/" + neededIDs.getMatch(0) + "/gigabyteupload/" + neededIDs.getMatch(1) + ".flv";
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

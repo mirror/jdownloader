@@ -48,6 +48,7 @@ public class PremiumizeMe extends PluginForHost {
 
     private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap = new HashMap<Account, HashMap<String, Long>>();
     private static final String                            SENDDEBUGLOG       = "SENDDEBUGLOG";
+    private static final String                            NOCHUNKS           = "NOCHUNKS";
 
     public PremiumizeMe(PluginWrapper wrapper) {
         super(wrapper);
@@ -159,17 +160,49 @@ public class PremiumizeMe extends PluginForHost {
             maxConnections = 1;
         }
 
+        if (link.getBooleanProperty(PremiumizeMe.NOCHUNKS, false) == true) {
+            maxConnections = 1;
+        }
+
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resume, maxConnections);
         if (dl.getConnection().isContentDisposition()) {
             /* contentdisposition, lets download it */
-            dl.startDownload();
+            if (!this.dl.startDownload()) {
+                try {
+                    if (dl.externalDownloadStop()) return;
+                } catch (final Throwable e) {
+                }
+                /* unknown error, we disable multiple chunks */
+                if (link.getBooleanProperty(PremiumizeMe.NOCHUNKS, false) == false) {
+                    link.setProperty(PremiumizeMe.NOCHUNKS, Boolean.valueOf(true));
+                    throw new PluginException(LinkStatus.ERROR_RETRY);
+                }
+                return;
+            }
             return;
         } else if (dl.getConnection().getContentType() != null && !dl.getConnection().getContentType().contains("html") && !dl.getConnection().getContentType().contains("text")) {
-            /* no content disposition, but api says that some hoster might not have one */
-            dl.startDownload();
+            /*
+             * no content disposition, but api says that some hoster might not
+             * have one
+             */
+            if (!this.dl.startDownload()) {
+                try {
+                    if (dl.externalDownloadStop()) return;
+                } catch (final Throwable e) {
+                }
+                /* unknown error, we disable multiple chunks */
+                if (link.getBooleanProperty(PremiumizeMe.NOCHUNKS, false) == false) {
+                    link.setProperty(PremiumizeMe.NOCHUNKS, Boolean.valueOf(true));
+                    throw new PluginException(LinkStatus.ERROR_RETRY);
+                }
+                return;
+            }
             return;
         } else {
-            /* download is not contentdisposition, so remove this host from premiumHosts list */
+            /*
+             * download is not contentdisposition, so remove this host from
+             * premiumHosts list
+             */
             br.followConnection();
             sendErrorLog(link, account);
             handleAPIErrors(br, account, link);
@@ -223,9 +256,11 @@ public class PremiumizeMe extends PluginForHost {
         String fairUse = br.getRegex("fairuse_left\":([\\d\\.]+)").getMatch(0);
         if (fairUse != null) {
             // 7 day rolling average
-            // AVERAGE = way to display percentage value. prevent controlling from using figure. Just a GUI display for the user.
+            // AVERAGE = way to display percentage value. prevent controlling
+            // from using figure. Just a GUI display for the user.
             // "fairuse_left":0.99994588120502,
-            // ai.setTrafficLeft(AVERAGE(Integer.parseInt(fairUse.trim()) * 100));
+            // ai.setTrafficLeft(AVERAGE(Integer.parseInt(fairUse.trim()) *
+            // 100));
         }
         String trafficleft_bytes = br.getRegex("trafficleft_bytes\":(-?[\\d\\.]+)").getMatch(0);
         if (trafficleft_bytes != null) {
@@ -251,8 +286,10 @@ public class PremiumizeMe extends PluginForHost {
         br = newBrowser();
         br.getPage("https://api.premiumize.me/pm-api/v1.php?method=accountstatus&params[login]=" + Encoding.urlEncode(account.getUser()) + "&params[pass]=" + Encoding.urlEncode(account.getPass()));
         handleAPIErrors(br, account, null);
-        // if (br.containsHTML("type\":\"free\"")) { throw new PluginException(LinkStatus.ERROR_PREMIUM,
-        // "This is a free account. Free accounts are not supported!", PluginException.VALUE_ID_PREMIUM_DISABLE); }
+        // if (br.containsHTML("type\":\"free\"")) { throw new
+        // PluginException(LinkStatus.ERROR_PREMIUM,
+        // "This is a free account. Free accounts are not supported!",
+        // PluginException.VALUE_ID_PREMIUM_DISABLE); }
     }
 
     private void showMessage(DownloadLink link, String message) {
@@ -319,7 +356,10 @@ public class PremiumizeMe extends PluginForHost {
                 /* only disable plugin for this link */
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, statusMessage, 3 * 60 * 1000l);
             case 503:
-                /* temp multihoster issue, maintenance period, block host for 3 mins */
+                /*
+                 * temp multihoster issue, maintenance period, block host for 3
+                 * mins
+                 */
                 if (statusMessage == null) statusMessage = "Hoster temporarily not possible";
                 // tempUnavailableHoster(account, downloadLink, 3 * 60 * 1000);
                 /* only disable plugin for this link */

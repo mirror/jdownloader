@@ -91,6 +91,7 @@ public class DailyMotionCom extends PluginForHost {
                 if (con.getResponseCode() == 302) {
                     br.followConnection();
                     dllink = br.getRedirectLocation().replace("#cell=core&comment=", "");
+                    br.getHeaders().put("Referer", dllink);
                     con = br.openGetConnection(dllink);
                 }
                 if (con.getResponseCode() == 410 || con.getContentType().contains("html")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -197,9 +198,11 @@ public class DailyMotionCom extends PluginForHost {
     }
 
     private void prepBrowser() {
-        br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:22.0) Gecko/20100101 Firefox/22.0");
+        br.getHeaders().put("User-Agent", "Mozilla/5.0 (X11; U; Linux i686; en-US; rv:1.9.0.10) Gecko/2009042523 Ubuntu/9.04 (jaunty) Firefox/3.0.10");
         br.getHeaders().put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
-        br.getHeaders().put("Accept-Language", "en-US,en;q=0.5");
+        br.getHeaders().put("Accept-Language", "de, en-gb;q=0.9, en;q=0.8");
+        br.getHeaders().put("Accept-Encoding", "gzip");
+        br.getHeaders().put("Accept-Charset", "ISO-8859-1,utf-8;q=0.7,*;q=0.7");
     }
 
     @Override

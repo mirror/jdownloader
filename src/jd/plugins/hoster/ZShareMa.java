@@ -30,7 +30,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "zshare.ma" }, urls = { "http://(www\\.)?(www\\d+\\.)?zshare\\.ma/[a-z0-9]{12}" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "zshare.ma" }, urls = { "http://(www\\.)?(www\\d+\\.)?zshare(\\.net)?\\.ma/[a-z0-9]{12}" }, flags = { 0 })
 public class ZShareMa extends PluginForHost {
 
     public ZShareMa(PluginWrapper wrapper) {
@@ -42,9 +42,15 @@ public class ZShareMa extends PluginForHost {
         return "http://www2.zshare.ma/";
     }
 
+    public void correctDownloadLink(DownloadLink link) {
+        link.setUrlDownload(link.getDownloadURL().replace("zshare.ma/", "zshare.net.ma/"));
+    }
+
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
+        // Correct old links
+        correctDownloadLink(link);
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
         if (br.containsHTML("(>No such file<|>Possible causes of this error could be)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -64,14 +70,19 @@ public class ZShareMa extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
         br.setFollowRedirects(false);
-        final Form dlform = br.getFormbyProperty("name", "F1");
+        Form dlform = br.getForm(1);
         if (dlform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        dlform.remove("method_premium");
         br.submitForm(dlform);
         String dllink = br.getRedirectLocation();
-        if (dllink == null) {
-            dllink = br.getRegex("\"(http://www\\d+\\.zshare\\.ma/files/[^<>\"]*?)\"").getMatch(0);
-            if (dllink == null) dllink = br.getRegex(">Click <A[\t\n\r ]+href=\"(http://[^<>\"]*?)\"").getMatch(0);
+        dlform = br.getFormbyProperty("name", "F1");
+        if (dllink == null && dlform != null) {
+            waitTime(System.currentTimeMillis(), downloadLink);
+            br.submitForm(dlform);
+            dllink = br.getRedirectLocation();
         }
+        if (dllink == null) dllink = br.getRegex("\"(http://www\\d+\\.zshare(\\.net)?\\.ma/files/[^<>\"]*?)\"").getMatch(0);
+        if (dllink == null) dllink = br.getRegex(">Click <A[\t\n\r ]+href=\"(http://[^<>\"]*?)\"").getMatch(0);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
         if (dl.getConnection().getContentType().contains("html")) {
@@ -80,6 +91,18 @@ public class ZShareMa extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
+    }
+
+    private void waitTime(long timeBefore, final DownloadLink downloadLink) throws PluginException {
+        int passedTime = (int) ((System.currentTimeMillis() - timeBefore) / 1000) - 1;
+        /** Ticket Time */
+        final String ttt = br.getRegex("id=\"countdown\">([^<>\"]*?)</span>").getMatch(0);
+        if (ttt != null) {
+            int tt = Integer.parseInt(ttt.trim());
+            tt -= passedTime;
+            logger.info("Waittime detected, waiting " + ttt + " - " + passedTime + " seconds from now on...");
+            if (tt > 0) sleep(tt * 1000l, downloadLink);
+        }
     }
 
     @Override
