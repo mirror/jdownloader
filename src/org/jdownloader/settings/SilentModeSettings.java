@@ -77,4 +77,11 @@ public interface SilentModeSettings extends ConfigInterface {
     @AboutConfig
     boolean isManualEnabled();
 
+    @DescriptionForConfigEntry("[ms] After the given time without user interaction, JDownloader will autoactivate the silent mode, and disable it if there is user interaction again.")
+    @DefaultLongValue(0)
+    @AboutConfig
+    long getAutoSilentModeInIdleState();
+
+    void setAutoSilentModeInIdleState(long ms);
+
 }

@@ -108,6 +108,7 @@ import org.appwork.utils.swing.dialog.locator.DialogLocator;
 import org.appwork.utils.swing.dialog.locator.RememberRelativeDialogLocator;
 import org.appwork.utils.swing.locator.AbstractLocator;
 import org.jdownloader.controlling.FileCreationManager;
+import org.jdownloader.crosssystem.idlegetter.IdleGetter;
 import org.jdownloader.gui.GuiUtils;
 import org.jdownloader.gui.helpdialogs.HelpDialog;
 import org.jdownloader.gui.jdtrayicon.TrayExtension;
@@ -210,6 +211,8 @@ public class JDGui implements UpdaterListener, OwnerFinder {
     private Thread                  trayIconChecker;
 
     private JPanel                  waitingPane;
+
+    protected long                  lastUserInput;
 
     private JDGui() {
         logger = LogController.getInstance().getLogger("Gui");
@@ -831,8 +834,8 @@ public class JDGui implements UpdaterListener, OwnerFinder {
     }
 
     /**
-     * under Linux EDT and XAWT can cause deadlock when we call getDefaultConfiguration() inside EDT, so I moved this to work outside EDT and only put the
-     * mainframe stuff into EDT
+     * under Linux EDT and XAWT can cause deadlock when we call getDefaultConfiguration() inside EDT, so I moved this to work outside EDT
+     * and only put the mainframe stuff into EDT
      * 
      * restores the dimension and location to the window
      */
@@ -1045,6 +1048,14 @@ public class JDGui implements UpdaterListener, OwnerFinder {
     }
 
     public boolean isSilentModeActive() {
+        if (IdleGetter.getInstance().getIdleTimeSinceLastUserInput() > CFG_SILENTMODE.CFG.getAutoSilentModeInIdleState() && CFG_SILENTMODE.CFG.getAutoSilentModeInIdleState() > 0) {
+            //
+            System.out.println("Silent mode :" + IdleGetter.getInstance().getIdleTimeSinceLastUserInput());
+            return true;
+
+        } else {
+            System.out.println("No idle: " + IdleGetter.getInstance().getIdleTimeSinceLastUserInput());
+        }
 
         Boolean ret = new EDTHelper<Boolean>() {
             @Override
@@ -1459,8 +1470,8 @@ public class JDGui implements UpdaterListener, OwnerFinder {
     }
 
     /**
-     * Sets the window to tray or restores it. This method contains a lot of workarounds for individual system problems... Take care to avoid sideeffects when
-     * changing anything
+     * Sets the window to tray or restores it. This method contains a lot of workarounds for individual system problems... Take care to
+     * avoid sideeffects when changing anything
      * 
      * @param minimize
      */

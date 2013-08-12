@@ -156,7 +156,7 @@ public class ManagerTreeModel extends DefaultTreeModel implements TreeModel {
     protected void fireTreeStructureChanged(Object source, Object[] path, int[] childIndices, Object[] children) {
         // String before = JSonStorage.toString(data);
         // make sure that we have valid menu structure
-        data.validate();
+        data.validateFull();
         // String after = JSonStorage.toString(data);
         // if (!before.equals(after)) {
         // Dialog.getInstance().showMessageDialog("Menu Structure not allowed!");
