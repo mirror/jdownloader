@@ -40,12 +40,19 @@ public class GeneralFilesCom extends PluginForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        br.setFollowRedirects(true);
         final String parameter = param.toString().replaceAll("(general\\-files\\.com|generalfiles\\.org)/", "generalfiles.me/");
         br.getPage(parameter);
-        if (br.containsHTML(">File was removed from filehosting<")) {
+
+        if (br.containsHTML(">File was removed from filehosting<|>The file no longer exists at this location")) {
             logger.info("Link offline: " + parameter);
             return decryptedLinks;
         }
+        if (br.getURL().equals("http://www." + currenthost + "/")) {
+            logger.info("Link offline: " + parameter);
+            return decryptedLinks;
+        }
+
         String fpName = br.getRegex("<h4 class=\"file\\-header\\-2\">([^<>\"]*?)</h4>").getMatch(0);
         if (fpName == null) fpName = new Regex(parameter, "/download/[a-z0-9]+/([^<>\"/]*?)\\.html").getMatch(0);
         fpName = Encoding.htmlDecode(fpName.trim());

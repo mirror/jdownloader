@@ -65,6 +65,10 @@ public class TopAmateurPornComDecrypter extends PluginForDecrypt {
         tempID = br.getRegex("\\&settings=(http://(www\\.)?eroxia\\.com/playerConfig\\.php[^<>\"]*?)\"").getMatch(0);
         if (tempID != null) {
             br.getPage(Encoding.htmlDecode(tempID));
+            if (br.containsHTML(">404: File Not Found</")) {
+                logger.info("Link offline: " + parameter);
+                return decryptedLinks;
+            }
             tempID = br.getRegex("flvMask:(http://[^<>\"]*?);").getMatch(0);
             if (tempID == null) {
                 logger.warning("Decrypter broken for link: " + parameter);

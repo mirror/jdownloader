@@ -42,6 +42,12 @@ public class HulkShareComFolder extends PluginForDecrypt {
         if (parameter.matches("https?://(www\\.)?(hulkshare\\.com|hu\\/lk)/(dl/|static|browse|images|terms|contact|audible|search|people|upload|featured|mobile|group).*?")) { return decryptedLinks; }
         br.setFollowRedirects(false);
         br.setCookie("http://hulkshare.com/", "lang", "english");
+        try {
+            // They have huge pages
+            br.setLoadLimit(4194304);
+        } catch (final Throwable e) {
+            // Not available in old Stable
+        }
         br.getPage(parameter);
         String argh = br.getRedirectLocation();
         if (br.containsHTML("class=\"bigDownloadBtn") || br.containsHTML(">The owner of this file doesn\\'t allow downloading") || argh != null) {

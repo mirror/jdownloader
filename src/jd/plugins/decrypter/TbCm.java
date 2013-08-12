@@ -175,7 +175,8 @@ public class TbCm extends PluginForDecrypt {
     }
 
     /**
-     * Converts the Google Closed Captions subtitles to SRT subtitles. It runs after the completed download.
+     * Converts the Google Closed Captions subtitles to SRT subtitles. It runs
+     * after the completed download.
      * 
      * @param downloadlink
      *            . The finished link to the Google CC subtitle file.
@@ -334,8 +335,10 @@ public class TbCm extends PluginForDecrypt {
         this.possibleconverts = new HashMap<DestinationFormat, ArrayList<Info>>();
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         if (PLUGIN_DISABLED.get() == true) return decryptedLinks;
-        // should consider looking for videoId with regex "((\\?|&)v=|/embed/)([a-z0-9\\-_]+)")
-        // along with playlist references, rather than cleaning up this way as it's leading to false positives.
+        // should consider looking for videoId with regex
+        // "((\\?|&)v=|/embed/)([a-z0-9\\-_]+)")
+        // along with playlist references, rather than cleaning up this way as
+        // it's leading to false positives.
         String parameter = param.toString().replace("watch#!v", "watch?v");
         parameter = parameter.replaceFirst("(verify_age\\?next_url=\\/?)", "");
         parameter = parameter.replaceFirst("(%3Fv%3D)", "?v=");
@@ -465,9 +468,22 @@ public class TbCm extends PluginForDecrypt {
             }
 
             String next = null;
-            int videoNumberCounter = 1;
+            int videoNumberCounter = 0;
 
             do {
+                try {
+                    if (this.isAbort()) {
+                        if (videoNumberCounter > 0) {
+                            logger.info("Decryption aborted by user, found " + videoNumberCounter + " links, stopping...");
+                            break;
+                        } else {
+                            logger.info("Decryption aborted by user, stopping...");
+                            return decryptedLinks;
+                        }
+                    }
+                } catch (final Throwable e) {
+                }
+
                 String content = unescape(br.toString());
 
                 if (content.contains("iframe style=\"display:block;border:0;\" src=\"/error")) {
@@ -475,16 +491,16 @@ public class TbCm extends PluginForDecrypt {
                     return null;
                 }
 
-                String[][] links = new Regex(content, "a href=\"(/watch\\?v=[a-z\\-_A-Z0-9]+)\" class=\"ux\\-thumb\\-wrap yt\\-uix\\-sessionlink yt\\-uix\\-contextlink contains\\-addto").getMatches();
+                String[][] links = new Regex(content, "a href=\"(/watch\\?v=[a-z\\-_A-Z0-9]+)\" class=\"ux\\-thumb\\-wrap yt\\-uix\\-sessionlink yt\\-uix\\-contextlink").getMatches();
 
                 for (String[] url : links) {
+                    videoNumberCounter++;
                     String video = Encoding.htmlDecode(url[0]);
                     if (!video.startsWith("http://www.youtube.com")) video = "http://www.youtube.com" + video;
                     final String[] finalInformation = new String[2];
                     finalInformation[0] = video;
                     finalInformation[1] = playlistNumberFormat.format(videoNumberCounter);
                     linkstodecrypt.add(finalInformation);
-                    videoNumberCounter++;
                 }
 
                 next = new Regex(content, "data\\-uix\\-load\\-more\\-href=\"(/[^<>\"]*?)\"").getMatch(0);
@@ -493,7 +509,9 @@ public class TbCm extends PluginForDecrypt {
                     next = Encoding.htmlDecode(next);
                     br.getPage("http://www.youtube.com" + next);
                 }
+                logger.info("Found " + videoNumberCounter + " links, continuing if there is more...");
             } while (next != null && next.length() > 0);
+            logger.info("Found a total number of " + videoNumberCounter + " videos for link: " + parameter);
         } else {
             // Handle single video
             final String[] finalInformation = new String[2];
@@ -572,7 +590,8 @@ public class TbCm extends PluginForDecrypt {
 
                 // **** 3GP *****
                 if (threegp) {
-                    // according to wiki the video format is unknown. we rate this as mono! need to look into 3gp more to confirm.
+                    // according to wiki the video format is unknown. we rate
+                    // this as mono! need to look into 3gp more to confirm.
                     if (q144p) {
                         this.put(17, new Object[] { DestinationFormat.VIDEO3GP, "H.264", "AAC", "Stereo", "144p" });
                     }
@@ -605,7 +624,8 @@ public class TbCm extends PluginForDecrypt {
                         this.put(137, new Object[] { DestinationFormat.VIDEOMP4, "H.264", "AAC", "Stereo", "1080p" });
                         this.put(37, new Object[] { DestinationFormat.VIDEOMP4, "H.264", "AAC", "Stereo", "1080p" });
                     }
-                    // maybe this varies?? wiki says 3072p but I've seen less. eg :: 38 2048x1536 9 0 115,
+                    // maybe this varies?? wiki says 3072p but I've seen less.
+                    // eg :: 38 2048x1536 9 0 115,
                     if (original) {
                         this.put(38, new Object[] { DestinationFormat.VIDEOMP4, "H.264", "AAC", "Stereo", "3072p" });
                     }
@@ -692,7 +712,8 @@ public class TbCm extends PluginForDecrypt {
                 HashMap<Integer, String[]> LinksFound = this.getLinks(currentVideoUrl, prem, this.br, 0);
                 String error = br.getRegex("<div id=\"unavailable\\-message\" class=\"\">[\t\n\r ]+<span class=\"yt\\-alert\\-vertical\\-trick\"></span>[\t\n\r ]+<div class=\"yt\\-alert\\-message\">([^<>\"]*?)</div>").getMatch(0);
                 // Removed due wrong offline detection
-                // if (error == null) error = br.getRegex("<div class=\"yt\\-alert\\-message\">(.*?)</div>").getMatch(0);
+                // if (error == null) error =
+                // br.getRegex("<div class=\"yt\\-alert\\-message\">(.*?)</div>").getMatch(0);
                 if (error == null) error = br.getRegex("reason=([^<>\"/]*?)(\\&|$)").getMatch(0);
                 if (br.containsHTML(UNSUPPORTEDRTMP)) error = "RTMP video download isn't supported yet!";
                 if ((LinksFound == null || LinksFound.isEmpty()) && error != null) {
@@ -739,12 +760,15 @@ public class TbCm extends PluginForDecrypt {
                     if (id != null) YT_FILENAME = id;
                 }
 
-                // ytid are case sensitive, you can not effectively dupe check 100% reliablity with lower case only.
+                // ytid are case sensitive, you can not effectively dupe check
+                // 100% reliablity with lower case only.
                 String ytID = getVideoID(currentVideoUrl);
 
                 /*
-                 * We match against users resolution and file encoding type. This allows us to use their upper and lower limits. It will return multiple results
-                 * if they are in the same quality rating
+                 * We match against users resolution and file encoding type.
+                 * This allows us to use their upper and lower limits. It will
+                 * return multiple results if they are in the same quality
+                 * rating
                  */
                 if (best) {
                     final HashMap<Integer, String[]> bestFound = new HashMap<Integer, String[]>();
@@ -782,9 +806,11 @@ public class TbCm extends PluginForDecrypt {
                         if (LinksFound.containsKey(43) && ytVideo.containsKey(43)) bestFound.put(43, LinksFound.get(43));
                         // 360p(3d) mp4
                         if (LinksFound.containsKey(82) && ytVideo.containsKey(82)) bestFound.put(82, LinksFound.get(82));
-                        // 360p(3d) webm ** need to figure out which is what, could create a dupe when saving .
+                        // 360p(3d) webm ** need to figure out which is what,
+                        // could create a dupe when saving .
                         if (LinksFound.containsKey(100) && ytVideo.containsKey(100)) bestFound.put(100, LinksFound.get(100));
-                        // 360p(3d) webm ** need to figure out which is what, could create a dupe when saving.
+                        // 360p(3d) webm ** need to figure out which is what,
+                        // could create a dupe when saving.
                         if (LinksFound.containsKey(101) && ytVideo.containsKey(101)) bestFound.put(101, LinksFound.get(101));
                     } else if ((LinksFound.containsKey(5) && ytVideo.containsKey(5)) || (LinksFound.containsKey(6) && ytVideo.containsKey(6)) || (LinksFound.containsKey(13) && ytVideo.containsKey(13)) || (LinksFound.containsKey(36) && ytVideo.containsKey(36)) || (LinksFound.containsKey(83) && ytVideo.containsKey(83))) {
                         // 240p flv @ video bit rate @ 0.25Mbit/second
@@ -792,7 +818,9 @@ public class TbCm extends PluginForDecrypt {
                             bestFound.put(5, LinksFound.get(5));
                         // 240p flv @ video bit rate @ 0.8Mbit/second
                         else if (LinksFound.containsKey(6) && ytVideo.containsKey(6)) bestFound.put(6, LinksFound.get(6));
-                        // 240p 3gp mono ** according to wiki this has the highest video rate. but we rate this as mono! need to look into
+                        // 240p 3gp mono ** according to wiki this has the
+                        // highest video rate. but we rate this as mono! need to
+                        // look into
                         // 3gp more to confirm
                         if (LinksFound.containsKey(13) && ytVideo.containsKey(13) && !LinksFound.containsKey(36))
                             bestFound.put(13, LinksFound.get(13));
@@ -824,7 +852,8 @@ public class TbCm extends PluginForDecrypt {
                         cMode = DestinationFormat.UNKNOWN;
                         vQuality = "(" + LinksFound.get(format)[1] + "_" + format + ")";
                         /*
-                         * we do not want to download unknown formats at the moment
+                         * we do not want to download unknown formats at the
+                         * moment
                          */
                         continue;
                     }
@@ -910,7 +939,8 @@ public class TbCm extends PluginForDecrypt {
                             name = YT_FILENAME + desc + convertTo.getExtFirst();
                             thislink.setProperty("name", name);
                         } else {
-                            // because demuxer will fail when mp3 file already exists
+                            // because demuxer will fail when mp3 file already
+                            // exists
                             name = YT_FILENAME + desc + ".tmp";
                             thislink.setProperty("name", name);
                         }

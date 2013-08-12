@@ -45,7 +45,13 @@ public class NmStrm24Com extends PluginForDecrypt {
         String parameter = param.toString();
         br.setFollowRedirects(true);
         br.getPage(parameter);
+        // Offline 1
         if (br.containsHTML("Seite nicht gefunden<")) {
+            logger.info("Link offline: " + parameter);
+            return decryptedLinks;
+        }
+        // Offline 2
+        if (br.containsHTML("class=\\'status\\-msg\\-hidden\\'>Die Seite, nach der Sie im Blog suchen, ist nicht vorhanden")) {
             logger.info("Link offline: " + parameter);
             return decryptedLinks;
         }
@@ -81,7 +87,8 @@ public class NmStrm24Com extends PluginForDecrypt {
                     logger.warning("Couldn't 'findLink' within selected text, possible plugin error!");
                     logger.warning("Inform JDownloader Development Team if you think that's the case.");
                 } else if (dllink.equalsIgnoreCase("offline")) {
-                    // we don't want to return null as this will, indicate plugin defect.
+                    // we don't want to return null as this will, indicate
+                    // plugin defect.
                     logger.info("A offline hoster was referenced. Continuing anyway....");
                 } else {
                     final DownloadLink dl = createDownloadlink(dllink);
