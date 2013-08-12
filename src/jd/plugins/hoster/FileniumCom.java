@@ -177,7 +177,8 @@ public class FileniumCom extends PluginForHost {
     }
 
     private void handleDL(final DownloadLink link, String dllink, final boolean liveLink, final Account account) throws Exception {
-        // Right now this errorhandling doesn't make that much sense but if the connection limits change, it could help
+        // Right now this errorhandling doesn't make that much sense but if the
+        // connection limits change, it could help
         final boolean chunkError = link.getBooleanProperty("chunkerror", false);
         int maxChunks = 1;
         if (chunkError) maxChunks = 1;
@@ -216,12 +217,12 @@ public class FileniumCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Connection limit reached!", 5 * 60 * 1000l);
             }
             /*
-             * download is not contentdisposition, so remove this host from premiumHosts list
+             * download is not contentdisposition, so remove this host from
+             * premiumHosts list
              */
             br.followConnection();
             if (br.containsHTML(">Error: Al recuperar enlace\\. No disponible temporalmente, disculpa las molestias<")) tempUnavailableHoster(account, link, 60 * 60 * 1000l);
-            // Hmm not sure but in my tests this only happened when the host link was offline
-            if (br.containsHTML(DLFAILED)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            generalErrorhandling(link, account);
             // Seems like we're on the mainpage -> Traffic exhausted
             if (br.containsHTML("filenium\\.com/favicon\\.ico\"")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
         }
@@ -235,7 +236,16 @@ public class FileniumCom extends PluginForHost {
         login(acc, false);
         showMessage(link, "Task 1: Generating ink");
         String dllink = br.getPage("http://" + SELECTEDDOMAIN + "/?filenium&filez=" + Encoding.urlEncode(link.getDownloadURL()));
-        // This can either mean that it's a temporary error or that the hoster should be deactivated
+        generalErrorhandling(link, acc);
+        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        dllink = dllink.replaceAll("\\\\/", "/");
+        showMessage(link, "Task 2: Download begins!");
+        handleDL(link, dllink, true, acc);
+    }
+
+    private void generalErrorhandling(final DownloadLink link, final Account acc) throws PluginException {
+        // This can either mean that it's a temporary error or that the hoster
+        // should be deactivated
         if (br.containsHTML(DLFAILED)) {
             int timesFailed = link.getIntegerProperty("timesfailedfilenium", 0);
             if (timesFailed <= 2) {
@@ -247,10 +257,6 @@ public class FileniumCom extends PluginForHost {
                 tempUnavailableHoster(acc, link, 60 * 60 * 1000l);
             }
         }
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        dllink = dllink.replaceAll("\\\\/", "/");
-        showMessage(link, "Task 2: Download begins!");
-        handleDL(link, dllink, true, acc);
     }
 
     @Override

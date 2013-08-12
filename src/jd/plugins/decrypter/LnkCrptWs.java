@@ -420,7 +420,8 @@ public class LnkCrptWs extends PluginForDecrypt {
             setServer();
             setPath();
             if (!smBr.getURL().contains("solvemedia.com/")) {
-                // when we retry solving a solvemedia session, we reuse smBr, browser already contains the info we need!
+                // when we retry solving a solvemedia session, we reuse smBr,
+                // browser already contains the info we need!
                 smBr.getPage(server + path + challenge);
             }
             if (noscript) {
@@ -471,7 +472,8 @@ public class LnkCrptWs extends PluginForDecrypt {
 
         /**
          * @default false
-         * @parameter if true uses "https://api-secure.solvemedia.com" instead of "http://api.solvemedia.com"
+         * @parameter if true uses "https://api-secure.solvemedia.com" instead
+         *            of "http://api.solvemedia.com"
          */
         public void setSecure(boolean secure) {
             if (secure) secure = true;
@@ -479,7 +481,8 @@ public class LnkCrptWs extends PluginForDecrypt {
 
         /**
          * @default true
-         * @parameter if false uses "_challenge.js" instead of "challenge.noscript" as url path
+         * @parameter if false uses "_challenge.js" instead of
+         *            "challenge.noscript" as url path
          */
         public void setNoscript(boolean noscript) {
             if (!noscript) noscript = false;
@@ -578,7 +581,8 @@ public class LnkCrptWs extends PluginForDecrypt {
             } catch (final Throwable e) {
                 /* ignore rhino Exceptions */
                 try {
-                    // query = engine.eval(query).toString() + new Regex(js, doc + "=\"([^\"]+)").getMatch(0);
+                    // query = engine.eval(query).toString() + new Regex(js, doc
+                    // + "=\"([^\"]+)").getMatch(0);
                     query = new Regex(js, doc + "=\"([^\"]+)").getMatch(0);
                 } catch (Throwable e1) {
                 }
@@ -702,8 +706,10 @@ public class LnkCrptWs extends PluginForDecrypt {
                 }
 
                 /* Bilderdownload und Verarbeitung */
-                sscGetImagest(stImgs[0], stImgs[1], stImgs[2], Boolean.parseBoolean(stImgs[3]));// fragmentierte Puzzleteile
-                sscGetImagest(sscStc[0], sscStc[1], sscStc[2], Boolean.parseBoolean(sscStc[3]));// fragmentiertes Hintergrundbild
+                sscGetImagest(stImgs[0], stImgs[1], stImgs[2], Boolean.parseBoolean(stImgs[3]));// fragmentierte
+                                                                                                // Puzzleteile
+                sscGetImagest(sscStc[0], sscStc[1], sscStc[2], Boolean.parseBoolean(sscStc[3]));// fragmentiertes
+                                                                                                // Hintergrundbild
 
                 if (sscStc == null || sscStc.length == 0 || stImgs == null || stImgs.length == 0 || fmsImg == null || fmsImg.size() == 0) return "CANCEL";
 
@@ -719,7 +725,12 @@ public class LnkCrptWs extends PluginForDecrypt {
 
                     // avoid imports here
                     jd.gui.swing.dialog.AbstractCaptchaDialog.playCaptchaSound();
-                    out = org.appwork.utils.swing.dialog.Dialog.getInstance().showDialog(vC);
+                    try {
+                        out = org.appwork.utils.swing.dialog.Dialog.getInstance().showDialog(vC);
+                    } catch (final Throwable e) {
+                        out = null;
+                    }
+                    if (out == null) throw new DecrypterException(DecrypterException.CAPTCHA);
                     if (vC.getReturnmask() == 4) {
                         out = "CANCEL";
                     }
@@ -987,7 +998,8 @@ public class LnkCrptWs extends PluginForDecrypt {
                     Browser.download(fragmentedPic, dlpic.openGetConnection(imgUrl));
                     /* TODO: replace with ImageProvider.read in future */
                     IMAGE[i] = ImageIO.read(fragmentedPic);
-                    // IMAGE[i] = Toolkit.getDefaultToolkit().getImage(new URL(imgUrl));
+                    // IMAGE[i] = Toolkit.getDefaultToolkit().getImage(new
+                    // URL(imgUrl));
                 } catch (final IOException e) {
                     e.printStackTrace();
                 }
@@ -1339,13 +1351,15 @@ public class LnkCrptWs extends PluginForDecrypt {
             final MediaTracker mt = new MediaTracker(this);
             for (final String imgUrl : imagesUrl) {
                 try {
-                    // fragmentedPic = Application.getRessource("captchas/" + imgUrl.substring(imgUrl.lastIndexOf("/") + 1));
+                    // fragmentedPic = Application.getRessource("captchas/" +
+                    // imgUrl.substring(imgUrl.lastIndexOf("/") + 1));
                     fragmentedPic = JDUtilities.getResourceFile("captchas/" + imgUrl.substring(imgUrl.lastIndexOf("/") + 1));
                     fragmentedPic.deleteOnExit();
                     Browser.download(fragmentedPic, dlpic.openGetConnection(imgUrl));
                     /* TODO: replace with ImageProvider.read in future */
                     IMAGE[i] = ImageIO.read(fragmentedPic);
-                    // IMAGE[i] = Toolkit.getDefaultToolkit().getImage(new URL(imgUrl));
+                    // IMAGE[i] = Toolkit.getDefaultToolkit().getImage(new
+                    // URL(imgUrl));
                 } catch (final IOException e) {
                     e.printStackTrace();
                 }
@@ -1485,8 +1499,9 @@ public class LnkCrptWs extends PluginForDecrypt {
     }
 
     /**
-     * if packed js contain 'soft hyphen' encoding as \u00ad(unicode) or %C2%AD(uft-8) then result is broken in rhino
-     * decodeURIComponent('\u00ad') --> is empty.
+     * if packed js contain 'soft hyphen' encoding as \u00ad(unicode) or
+     * %C2%AD(uft-8) then result is broken in rhino decodeURIComponent('\u00ad')
+     * --> is empty.
      */
     public static class JavaScriptUnpacker {
 
@@ -1531,9 +1546,15 @@ public class LnkCrptWs extends PluginForDecrypt {
 
     public static String IMAGEREGEX(final String b) {
         final KeyCaptchaShowDialogTwo v = new KeyCaptchaShowDialogTwo();
-        /* CHECK: we should always use getBytes("UTF-8") or with wanted charset, never system charset! */
+        /*
+         * CHECK: we should always use getBytes("UTF-8") or with wanted charset,
+         * never system charset!
+         */
         final byte[] o = JDHash.getMD5(Encoding.Base64Decode("Yzg0MDdhMDhiM2M3MWVhNDE4ZWM5ZGM2NjJmMmE1NmU0MGNiZDZkNWExMTRhYTUwZmIxZTEwNzllMTdmMmI4Mw==") + JDHash.getMD5("V2UgZG8gbm90IGVuZG9yc2UgdGhlIHVzZSBvZiBKRG93bmxvYWRlci4=")).getBytes();
-        /* CHECK: we should always use new String (bytes,charset) to avoid issues with system charset and utf-8 */
+        /*
+         * CHECK: we should always use new String (bytes,charset) to avoid
+         * issues with system charset and utf-8
+         */
         if (b != null) { return new String(v.D(o, JDHexUtils.getByteArray(b))); }
         return new String(v.D(o, JDHexUtils.getByteArray("E3CEACB19040D08244C9E5C29D115AE220F83AB417")));
     }
@@ -1663,7 +1684,8 @@ public class LnkCrptWs extends PluginForDecrypt {
         String decryptedJS = null;
         for (String c : containers) {
             decryptedJS = JavaScriptUnpacker.decode(c);
-            String[] row = new Regex(decryptedJS, "href=\"(http.*?)\".*?(dlc|ccf|rsdf)").getRow(0);// all container
+            String[] row = new Regex(decryptedJS, "href=\"(http.*?)\".*?(dlc|ccf|rsdf)").getRow(0);// all
+                                                                                                   // container
             if (row == null) row = new Regex(decryptedJS, "href=\"([^\"]+)\"[^>]*>.*?<img.*?image/(.*?)\\.").getRow(0); // cnl
             if (row == null) row = new Regex(decryptedJS, "(http://linkcrypt\\.ws/container/[^\"]+)\".*?http://linkcrypt\\.ws/image/([a-z]+)\\.").getRow(0); // fallback
             if (row != null) {
