@@ -463,6 +463,9 @@ public interface JdownloaderTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Skipped - File already exists" })
     String DownloadLink_setSkipped_statusmessage_file_exists();
 
+    @Default(lngs = { "en" }, values = { "Skipped - File is loading" })
+    String DownloadLink_setSkipped_statusmessage_file_loading();
+
     @Default(lngs = { "en" }, values = { "Proxy Authentication failed" })
     String plugins_errors_proxy_auth();
 
@@ -492,5 +495,8 @@ public interface JdownloaderTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "JDownloader could not connect to the My JDownloader service: %s1" })
     String MyJDownloaderController_onError_unknown(String string);
+
+    @Default(lngs = { "en" }, values = { "JDownloader could not connect to the My JDownloader service. Please update your JDownloader!" })
+    String MyJDownloaderController_onError_outdated();
 
 }
