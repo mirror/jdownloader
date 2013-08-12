@@ -2,7 +2,6 @@ package org.jdownloader.gui.mainmenu;
 
 import javax.swing.JPopupMenu;
 
-import jd.controlling.IOEQ;
 import jd.gui.swing.jdgui.menu.JDMenuBar;
 import jd.gui.swing.jdgui.menu.actions.AboutAction;
 import jd.gui.swing.jdgui.menu.actions.ExitAction;
@@ -82,13 +81,16 @@ public class MainMenuManager extends ContextMenuManager<FilePackage, DownloadLin
     }
 
     /**
-     * Create a new instance of DownloadListContextMenuManager. This is a singleton class. Access the only existing instance by using
-     * {@link #getInstance()}.
+     * Create a new instance of DownloadListContextMenuManager. This is a singleton class. Access the only existing instance by using {@link #getInstance()}.
      */
 
     private MainMenuManager() {
         super();
-        updateDelayer = new DelayedRunnable(IOEQ.TIMINGQUEUE, 1000l, 2000) {
+        updateDelayer = new DelayedRunnable(1000l, 2000) {
+            @Override
+            public String getID() {
+                return "MainMenuManager";
+            }
 
             @Override
             public void delayedrun() {

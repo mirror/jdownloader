@@ -9,6 +9,7 @@ import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledPackage;
 import jd.controlling.linkcrawler.CrawledPackage.TYPE;
 
+import org.appwork.utils.event.queue.Queue;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.jdownloader.gui.translate._GUI;
@@ -54,6 +55,11 @@ public class SetDownloadFolderInLinkgrabberAction extends SetDownloadFolderActio
     @Override
     protected void move(CrawledPackage pkg, List<CrawledLink> selectedLinksByPackage) {
         LinkCollector.getInstance().moveOrAddAt(pkg, selectedLinksByPackage, -1);
+    }
+
+    @Override
+    protected Queue getQueue() {
+        return LinkCollector.getInstance().getQueue();
     }
 
 }

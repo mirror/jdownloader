@@ -2,6 +2,7 @@ package jd.gui.swing.jdgui.views.settings.panels.proxy;
 
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.util.List;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
@@ -10,7 +11,7 @@ import javax.swing.ImageIcon;
 import javax.swing.JScrollPane;
 import javax.swing.event.ListSelectionEvent;
 
-import jd.controlling.IOEQ;
+import jd.controlling.TaskQueue;
 import jd.controlling.proxy.ProxyController;
 import jd.controlling.proxy.ProxyEvent;
 import jd.controlling.proxy.ProxyInfo;
@@ -22,6 +23,7 @@ import org.appwork.swing.components.ExtButton;
 import org.appwork.swing.exttable.utils.MinimumSelectionObserver;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.event.DefaultEventListener;
+import org.appwork.utils.event.queue.QueueAction;
 import org.appwork.utils.swing.EDTRunner;
 import org.jdownloader.gui.settings.AbstractConfigPanel;
 import org.jdownloader.gui.translate._GUI;
@@ -159,23 +161,24 @@ public class ProxyConfig extends AbstractConfigPanel implements DefaultEventList
 
     @Override
     public void updateContents() {
-        IOEQ.add(new Runnable() {
+        TaskQueue.getQueue().add(new QueueAction<Void, RuntimeException>() {
 
-            public void run() {
-
+            @Override
+            protected Void run() throws RuntimeException {
+                final List<ProxyInfo> list = ProxyController.getInstance().getList();
                 new EDTRunner() {
-
                     @Override
                     protected void runInEDT() {
-                        table.getModel()._fireTableStructureChanged(ProxyController.getInstance().getList(), false);
-                        cb.setModel(ProxyController.getInstance().getList().toArray(new ProxyInfo[] {}));
+                        table.getModel()._fireTableStructureChanged(list, false);
+                        cb.setModel(list.toArray(new ProxyInfo[] {}));
                         cb.setValue(ProxyController.getInstance().getDefaultProxy());
-
+                        table.repaint();
                     }
                 };
+                return null;
             }
+        });
 
-        }, true);
     }
 
     /*
@@ -186,16 +189,18 @@ public class ProxyConfig extends AbstractConfigPanel implements DefaultEventList
     @Override
     protected void onShow() {
         super.onShow();
-        synchronized (this) {
-            if (timer != null) timer.cancel(false);
-            timer = IOEQ.TIMINGQUEUE.scheduleWithFixedDelay(new Runnable() {
-
-                public void run() {
-                    table.repaint();
-                }
-
-            }, 250, 1000, TimeUnit.MILLISECONDS);
+        ScheduledFuture<?> ltimer = timer;
+        if (ltimer != null) {
+            ltimer.cancel(false);
         }
+        ltimer = TaskQueue.TIMINGQUEUE.scheduleWithFixedDelay(new Runnable() {
+
+            public void run() {
+                table.repaint();
+            }
+
+        }, 250, 1000, TimeUnit.MILLISECONDS);
+        timer = ltimer;
         ProxyController.getInstance().getEventSender().addListener(this);
     }
 
@@ -207,36 +212,34 @@ public class ProxyConfig extends AbstractConfigPanel implements DefaultEventList
     @Override
     protected void onHide() {
         super.onHide();
-        synchronized (this) {
-            if (timer != null) {
-                timer.cancel(false);
-                timer = null;
-            }
+        ScheduledFuture<?> ltimer = timer;
+        timer = null;
+        if (ltimer != null) {
+            ltimer.cancel(false);
         }
         ProxyController.getInstance().getEventSender().removeListener(this);
     }
 
     public void onEvent(ProxyEvent<ProxyInfo> event) {
+        final List<ProxyInfo> list = ProxyController.getInstance().getList();
         switch (event.getType()) {
         case REFRESH:
             new EDTRunner() {
                 @Override
                 protected void runInEDT() {
-
-                    table.getModel()._fireTableStructureChanged(ProxyController.getInstance().getList(), false);
-                    cb.setModel(ProxyController.getInstance().getList().toArray(new ProxyInfo[] {}));
+                    table.getModel()._fireTableStructureChanged(list, false);
+                    cb.setModel(list.toArray(new ProxyInfo[] {}));
                     cb.setValue(ProxyController.getInstance().getDefaultProxy());
                     table.repaint();
                 };
             };
             break;
-
         default:
             new EDTRunner() {
                 @Override
                 protected void runInEDT() {
-                    table.getModel()._fireTableStructureChanged(ProxyController.getInstance().getList(), false);
-                    cb.setModel(ProxyController.getInstance().getList().toArray(new ProxyInfo[] {}));
+                    table.getModel()._fireTableStructureChanged(list, false);
+                    cb.setModel(list.toArray(new ProxyInfo[] {}));
                     cb.setValue(ProxyController.getInstance().getDefaultProxy());
                     table.repaint();
                 };

@@ -50,6 +50,7 @@ public class RemoveOptionsAction extends AbstractAction {
 
     public void actionPerformed(ActionEvent e) {
         JPopupMenu popup = new JPopupMenu();
+        final boolean hasData = table.getModel().getTableData().size() > 0;
         java.util.List<AbstractNode> selection = table.getModel().getSelectedObjects();
 
         SelectionInfo<CrawledPackage, CrawledLink> si = new SelectionInfo<CrawledPackage, CrawledLink>(null, selection, null, null, e, table);
@@ -59,8 +60,20 @@ public class RemoveOptionsAction extends AbstractAction {
                 setName(_GUI._.RemoveOptionsAction_actionPerformed_selection_());
             }
         });
-        popup.add(new RemoveNonSelectedAction(si));
-        popup.add(new RemoveOfflineAction(null));
+        popup.add(new RemoveNonSelectedAction(si) {
+            @Override
+            public boolean isEnabled() {
+                if (hasData == false) return false;
+                return super.isEnabled();
+            }
+        });
+        popup.add(new RemoveOfflineAction(si) {
+            @Override
+            public boolean isEnabled() {
+                if (hasData == false) return false;
+                return super.isEnabled();
+            }
+        });
 
         popup.add(new RemoveIncompleteArchives(new SelectionInfo<CrawledPackage, CrawledLink>(null, new ArrayList<AbstractNode>(LinkGrabberTableModel.getInstance().getAllPackageNodes()), null, null, e, table)));
         popup.add(new ClearFilteredLinksAction(null));

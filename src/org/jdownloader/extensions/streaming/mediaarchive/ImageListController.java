@@ -11,7 +11,7 @@ public class ImageListController extends MediaListController<ImageMediaItem> {
     @Override
     protected String objectToJson(ImageMediaItem mi) {
 
-        return JSonStorage.toString(ImageItemStorable.create(mi));
+        return JSonStorage.serializeToJson(ImageItemStorable.create(mi));
     }
 
     @Override

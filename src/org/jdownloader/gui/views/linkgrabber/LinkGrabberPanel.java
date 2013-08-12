@@ -14,7 +14,6 @@ import javax.swing.JToggleButton;
 import javax.swing.ScrollPaneConstants;
 import javax.swing.SwingUtilities;
 
-import jd.controlling.IOEQ;
 import jd.controlling.linkcollector.LinkCollector;
 import jd.controlling.linkcollector.LinkCollectorEvent;
 import jd.controlling.linkcollector.LinkCollectorHighlightListener;
@@ -31,7 +30,9 @@ import org.appwork.storage.config.events.GenericConfigEventListener;
 import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.swing.MigPanel;
 import org.appwork.swing.components.ExtButton;
+import org.appwork.utils.NullsafeAtomicReference;
 import org.appwork.utils.event.queue.Queue.QueuePriority;
+import org.appwork.utils.event.queue.QueueAction;
 import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.WindowManager.FrameState;
 import org.jdownloader.actions.AppAction;
@@ -85,8 +86,7 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
     private JButton                                                            popupRemove;
     private JToggleButton                                                      showHideSidebar;
     private AutoConfirmButton                                                  autoConfirm;
-    private LinkgrabberOverview                                                overView;
-    private OverviewHeaderScrollPane                                           overViewScrollBar;
+    private NullsafeAtomicReference<OverviewHeaderScrollPane>                  overViewScrollBar = new NullsafeAtomicReference<OverviewHeaderScrollPane>(null);
     private JToggleButton                                                      bottomBar;
 
     public LinkGrabberPanel() {
@@ -107,11 +107,13 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
             }
 
             public void actionPerformed(ActionEvent e) {
-                IOEQ.add(new Runnable() {
+                LinkCollector.getInstance().getQueue().add(new QueueAction<Void, RuntimeException>() {
+
                     @Override
-                    public void run() {
+                    protected Void run() throws RuntimeException {
                         java.util.List<CrawledLink> filteredStuff = LinkCollector.getInstance().getFilteredStuff(true);
                         LinkCollector.getInstance().addCrawlerJob(filteredStuff);
+                        return null;
                     }
                 });
             }
@@ -138,6 +140,7 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
                         try {
                             System.out.println("Highlight");
                             if (CFG_GUI.CFG.isSwitchToLinkgrabberTabOnNewLinksAddedEnabled()) JDGui.getInstance().requestPanel(JDGui.Panels.LINKGRABBER, null);
+
                             switch (CFG_GUI.CFG.getNewLinksAction()) {
                             case FOCUS:
                                 JDGui.getInstance().setFrameState(FrameState.TO_FRONT_FOCUSED);
@@ -148,43 +151,7 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
                             case TO_FRONT:
                                 JDGui.getInstance().setFrameState(FrameState.TO_FRONT);
                                 break;
-
-                            //
-                            // case NEVER:
-                            //
-                            // JDGui.getInstance().flashTaskbar();
-                            //
-                            // break;
-                            // case MAINFRAME_IS_MAXIMIZED_OR_ICONIFIED_OR_TOTRAY:
-                            // JDGui.getInstance().setFrameStatus(UIConstants.WINDOW_STATUS_FOREGROUND_NO_FOCUS);
-                            //
-                            // break;
-                            //
-                            // case MAINFRAME_IS_MAXIMIZED:
-                            //
-                            // if (JDGui.getInstance().getMainFrame().getState() != JFrame.ICONIFIED &&
-                            // JDGui.getInstance().getMainFrame().isVisible()) {
-                            //
-                            // JDGui.getInstance().setFrameStatus(UIConstants.WINDOW_STATUS_FOREGROUND_NO_FOCUS);
-                            //
-                            // } else {
-                            // JDGui.getInstance().flashTaskbar();
-                            // }
-                            //
-                            // break;
-                            //
-                            // case MAINFRAME_IS_MAXIMIZED_OR_ICONIFIED:
-                            // if (JDGui.getInstance().getMainFrame().isVisible()) {
-                            // JDGui.getInstance().setFrameStatus(UIConstants.WINDOW_STATUS_FOREGROUND_NO_FOCUS);
-                            // } else {
-                            // JDGui.getInstance().flashTaskbar();
-                            // }
-                            // break;
-                            //
-                            // default:
-                            // //
                             }
-
                         } catch (Throwable e) {
                         }
                     }
@@ -280,7 +247,7 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
                 org.jdownloader.settings.staticreferences.CFG_GUI.CFG.setLinkgrabberSidebarVisible(!org.jdownloader.settings.staticreferences.CFG_GUI.CFG.isLinkgrabberSidebarVisible());
             }
         });
-        showHideSidebar.setSelected(org.jdownloader.settings.staticreferences.CFG_GUI.LINKGRABBER_SIDEBAR_ENABLED.getValue());
+        showHideSidebar.setSelected(org.jdownloader.settings.staticreferences.CFG_GUI.CFG.isLinkgrabberSidebarVisible());
         leftBar = new MigPanel("ins 0", "[]1[]3[]1[]3[grow,fill]0[]", "[]");
         rightBar = new MigPanel("ins 0", "[]0[]1[]0[]0", "[]");
 
@@ -400,25 +367,31 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
     }
 
     private Component getOverView() {
-        if (overView == null) {
-            overView = new LinkgrabberOverview(table);
-            overViewScrollBar = new OverviewHeaderScrollPane(overView);
-
-            LAFOptions.getInstance().applyPanelBackground(overViewScrollBar);
-
-            // overViewScrollBar.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_NEVER);
-            // overViewScrollBar.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
-            overViewScrollBar.setColumnHeaderView(new LinkgrabberOverViewHeader() {
+        OverviewHeaderScrollPane ret = overViewScrollBar.get();
+        if (ret != null) {
+            return ret;
+        } else {
+            final LinkgrabberOverview loverView = new LinkgrabberOverview(table) {
+                @Override
+                public void removeListeners() {
+                    super.removeListeners();
+                    overViewScrollBar.set(null);
+                }
+            };
+            ret = new OverviewHeaderScrollPane(loverView);
+            final OverviewHeaderScrollPane finalRet = ret;
+            LAFOptions.getInstance().applyPanelBackground(ret);
+            ret.setColumnHeaderView(new LinkgrabberOverViewHeader() {
 
                 @Override
                 protected void onCloseAction() {
                     CFG_GUI.LINKGRABBER_OVERVIEW_VISIBLE.setValue(false);
-
+                    loverView.removeListeners();
                 }
-
             });
+            overViewScrollBar.compareAndSet(null, ret);
         }
-        return overViewScrollBar;
+        return ret;
     }
 
     private void layoutComponents() {

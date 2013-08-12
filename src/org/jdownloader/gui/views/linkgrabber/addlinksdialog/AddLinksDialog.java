@@ -29,7 +29,6 @@ import javax.swing.SwingConstants;
 import javax.swing.SwingUtilities;
 
 import jd.controlling.ClipboardMonitoring;
-import jd.controlling.IOEQ;
 import jd.controlling.linkcollector.LinkCollectingJob;
 import jd.gui.swing.jdgui.JDGui;
 import jd.gui.swing.jdgui.views.settings.panels.packagizer.VariableAction;
@@ -120,7 +119,12 @@ public class AddLinksDialog extends AbstractDialog<LinkCollectingJob> {
     public AddLinksDialog() {
         super(UIOManager.BUTTONS_HIDE_OK, _GUI._.AddLinksDialog_AddLinksDialog_(), null, _GUI._.AddLinksDialog_AddLinksDialog_confirm(), null);
         config = JsonConfig.create(LinkgrabberSettings.class);
-        delayedValidate = new DelayedRunnable(IOEQ.TIMINGQUEUE, 500l, 10000l) {
+        delayedValidate = new DelayedRunnable(500l, 10000l) {
+
+            @Override
+            public String getID() {
+                return "AddLinksDialog";
+            }
 
             @Override
             public void delayedrun() {
@@ -598,7 +602,7 @@ public class AddLinksDialog extends AbstractDialog<LinkCollectingJob> {
         autoPasswords.addAll(PasswordUtils.getPasswords(txt));
 
         if (autoPasswords.size() > 1) {
-            password.setText(JSonStorage.toString(autoPasswords));
+            password.setText(JSonStorage.serializeToJson(autoPasswords));
         } else if (autoPasswords.size() > 0) {
             password.setText(autoPasswords.toArray(new String[] {})[0]);
         }

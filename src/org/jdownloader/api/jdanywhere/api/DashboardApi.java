@@ -108,7 +108,7 @@ public class DashboardApi implements IDashboardApi {
         // }
         ret.put("reconnect", CFG_RECONNECT.AUTO_RECONNECT_ENABLED.isEnabled());
         ret.put("clipboard", org.jdownloader.settings.staticreferences.CFG_GUI.CLIPBOARD_MONITORED.isEnabled());
-        ret.put("stopafter", DownloadWatchDog.getInstance().isStopMarkSet());
+        ret.put("stopafter", DownloadWatchDog.getInstance().getSession().isStopMarkSet());
         ret.put("premium", org.jdownloader.settings.staticreferences.CFG_GENERAL.USE_AVAILABLE_ACCOUNTS.isEnabled());
         if (running == 0) {
             ret.put("speed", 0);
@@ -211,8 +211,7 @@ public class DashboardApi implements IDashboardApi {
     /*
      * (non-Javadoc)
      * 
-     * @see org.jdownloader.extensions.jdanywhere.api.IDashboardApi#speedMeter(org.appwork.remoteapi.RemoteAPIRequest,
-     * org.appwork.remoteapi.RemoteAPIResponse)
+     * @see org.jdownloader.extensions.jdanywhere.api.IDashboardApi#speedMeter(org.appwork.remoteapi.RemoteAPIRequest, org.appwork.remoteapi.RemoteAPIResponse)
      */
     @Override
     public void speedMeter(RemoteAPIRequest request, RemoteAPIResponse response) throws InternalApiException {

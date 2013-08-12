@@ -52,12 +52,14 @@ import org.appwork.controlling.StateEventListener;
 import org.appwork.exceptions.WTFException;
 import org.appwork.scheduler.DelayedRunnable;
 import org.appwork.swing.components.tooltips.ToolTipController;
+import org.appwork.utils.event.queue.QueueAction;
 import org.appwork.utils.swing.EDTHelper;
 import org.appwork.utils.swing.EDTRunner;
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.controlling.DownloadLinkWalker;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
+import org.jdownloader.plugins.SkipReason;
 import org.jdownloader.updatev2.gui.LAFOptions;
 
 public class StatusBarImpl extends JPanel implements DownloadWatchdogListener {
@@ -216,6 +218,10 @@ public class StatusBarImpl extends JPanel implements DownloadWatchdogListener {
         redoLayout();
 
         updateDelayer = new DelayedRunnable(ToolTipController.EXECUTER, 1000, 2000) {
+            @Override
+            public String getID() {
+                return "StatusBar";
+            }
 
             @Override
             public void delayedrun() {
@@ -322,21 +328,28 @@ public class StatusBarImpl extends JPanel implements DownloadWatchdogListener {
                 ldownloadWatchdogIndicator.addMouseListener(new MouseListener() {
 
                     public void mouseReleased(MouseEvent e) {
-                        DownloadController.getInstance().set(new DownloadLinkWalker() {
+                        DownloadController.getInstance().getQueue().add(new QueueAction<Void, RuntimeException>() {
 
                             @Override
-                            public void handle(DownloadLink link) {
-                                link.setSkipReason(null);
-                            }
+                            protected Void run() throws RuntimeException {
+                                DownloadController.getInstance().set(new DownloadLinkWalker() {
 
-                            @Override
-                            public boolean accept(FilePackage fp) {
-                                return true;
-                            }
+                                    @Override
+                                    public void handle(DownloadLink link) {
+                                        if (link.getSkipReason() != SkipReason.PLUGIN_DEFECT) link.setSkipReason(null);
+                                    }
 
-                            @Override
-                            public boolean accept(DownloadLink link) {
-                                return true;
+                                    @Override
+                                    public boolean accept(FilePackage fp) {
+                                        return true;
+                                    }
+
+                                    @Override
+                                    public boolean accept(DownloadLink link) {
+                                        return true;
+                                    }
+                                });
+                                return null;
                             }
                         });
                     }

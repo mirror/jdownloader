@@ -21,20 +21,12 @@ import java.awt.Image;
 import java.awt.Point;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
-import java.io.File;
-import java.net.MalformedURLException;
 
 import javax.swing.JComponent;
 
-import jd.SecondLevelLaunch;
-import jd.gui.swing.laf.LookAndFeelController;
-
 import org.appwork.swing.components.ExtTextField;
 import org.appwork.uio.UIOManager;
-import org.appwork.utils.Application;
 import org.appwork.utils.swing.dialog.Dialog;
-import org.appwork.utils.swing.dialog.DialogCanceledException;
-import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.jdownloader.DomainInfo;
 import org.jdownloader.captcha.v2.challenge.clickcaptcha.ClickedPoint;
 import org.jdownloader.gui.translate._GUI;
@@ -43,24 +35,6 @@ import org.jdownloader.gui.translate._GUI;
  * This Dialog is used to display a Inputdialog for the captchas
  */
 public class ClickCaptchaDialog extends AbstractCaptchaDialog {
-    public static void main(String[] args) {
-        AbstractCaptchaDialog cp;
-        try {
-            Application.setApplication(".jd_home");
-            SecondLevelLaunch.statics();
-            cp = new ClickCaptchaDialog(UIOManager.LOGIC_COUNTDOWN, DialogType.HOSTER, DomainInfo.getInstance("wupload.com"), getGifImages(new File("C:/Users/Thomas/.BuildServ/applications/beta/sources/JDownloader/src/org/jdownloader/extensions/webinterface/webinterface/themes/main/images/core/load.gif").toURI().toURL()), "Enter both words...");
-
-            LookAndFeelController.getInstance().setUIManager();
-
-            Dialog.getInstance().showDialog(cp);
-        } catch (DialogClosedException e) {
-            e.printStackTrace();
-        } catch (DialogCanceledException e) {
-            e.printStackTrace();
-        } catch (MalformedURLException e) {
-            e.printStackTrace();
-        }
-    }
 
     private Point resultPoint = null;
 

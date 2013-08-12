@@ -37,11 +37,11 @@ public class RemoveOptionsAction extends AppAction {
     public void actionPerformed(ActionEvent e) {
         JPopupMenu popup = new JPopupMenu();
         java.util.List<AbstractNode> selection = table.getModel().getSelectedObjects();
-        popup.add(new RemoveAllVisibleDownloadsAction());
+        SelectionInfo<FilePackage, DownloadLink> si = new SelectionInfo<FilePackage, DownloadLink>(null, selection, null, null, e, DownloadsTableModel.getInstance().getTable());
+        popup.add(new RemoveAllVisibleDownloadsAction(si));
 
         JMenu m = new JMenu(_GUI._.RemoveOptionsAction_actionPerformed_selected());
         m.setIcon(NewTheme.I().getIcon("delete", 18));
-        SelectionInfo<FilePackage, DownloadLink> si = new SelectionInfo<FilePackage, DownloadLink>(null, selection, null, null, e, DownloadsTableModel.getInstance().getTable());
         m.add(new DeleteSelectedLinks(si));
         m.add(new DeleteDisabledSelectedLinks(si));
         m.add(new DeleteSelectedAndFailedLinksAction(si));
@@ -52,13 +52,6 @@ public class RemoveOptionsAction extends AppAction {
         popup.add(new RemoveNonSelectedAction(selection));
         popup.add(new RemoveOfflineAction());
 
-        // popup.add(new CleanupDownloads());
-        // popup.add(new CleanupPackages());
-        // popup.addSeparator();
-        // popup.add(new RemoveDupesAction());
-        // popup.add(new RemoveDisabledAction());
-        // popup.add(new RemoveOfflineAction());
-        // popup.add(new RemoveFailedAction());
         int[] insets = LAFOptions.getInstance().getPopupBorderInsets();
 
         Dimension pref = popup.getPreferredSize();

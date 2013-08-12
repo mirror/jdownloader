@@ -88,7 +88,7 @@ public class ExtractAction<PackageType extends AbstractPackageNode<ChildrenType,
                     @Override
                     public void run() throws Exception {
                         if (archive.isComplete()) {
-                            controller = _getExtension().addToQueue(archive);
+                            controller = _getExtension().addToQueue(archive, true);
                             if (controller != null) {
                                 final ExtractionListener listener = new ExtractionListener() {
 
@@ -101,7 +101,6 @@ public class ExtractAction<PackageType extends AbstractPackageNode<ChildrenType,
                                                 break;
                                             case EXTRACTION_FAILED:
                                             case EXTRACTION_FAILED_CRC:
-
                                                 if (controller.getException() != null) {
                                                     Dialog.getInstance().showExceptionDialog(org.jdownloader.extensions.extraction.translate.T._.extraction_failed(archiveStartFile.getName()), controller.getException().getLocalizedMessage(), controller.getException());
                                                 } else {

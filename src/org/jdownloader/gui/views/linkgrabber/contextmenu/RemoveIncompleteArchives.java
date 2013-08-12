@@ -4,7 +4,6 @@ import java.awt.event.ActionEvent;
 import java.util.ArrayList;
 import java.util.List;
 
-import jd.controlling.IOEQ;
 import jd.controlling.linkcollector.LinkCollector;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledPackage;
@@ -42,10 +41,9 @@ public class RemoveIncompleteArchives extends SelectionAppAction<CrawledPackage,
     public void actionPerformed(ActionEvent e) {
 
         if (!isEnabled()) return;
-        IOEQ.add(new Runnable() {
-
+        Thread thread = new Thread() {
+            @Override
             public void run() {
-
                 try {
                     for (Archive a : new ValidateArchiveAction<CrawledPackage, CrawledLink>((ExtractionExtension) ExtensionController.getInstance().getExtension(ExtractionExtension.class)._getExtension(), getSelection()).getArchives()) {
                         final DummyArchive da = a.createDummyArchive();
@@ -71,11 +69,12 @@ public class RemoveIncompleteArchives extends SelectionAppAction<CrawledPackage,
                 } catch (Throwable e) {
                     Log.exception(e);
                 }
-
             }
-
-        }, true);
-
+        };
+        thread.setDaemon(true);
+        thread.setPriority(Thread.MIN_PRIORITY);
+        thread.setName(getClass().getName());
+        thread.start();
     }
 
 }

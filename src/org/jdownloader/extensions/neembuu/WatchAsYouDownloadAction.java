@@ -57,21 +57,7 @@ public class WatchAsYouDownloadAction extends AppAction {
             fp.setProperty(org.jdownloader.extensions.neembuu.NeembuuExtension.INITIATED_BY_WATCH_ACTION, true);
 
             // resetting all links, everytime, to ensure that not even one file is ignored
-            /* TODO: proper sync here */
-            for (DownloadLink link : fp.getChildren()) {
-                if (link.getLinkStatus().isPluginActive()) {
-                    /*
-                     * download is still active, let DownloadWatchdog handle the reset
-                     */
-                    DownloadWatchDog.getInstance().resetSingleDownloadController(link.getDownloadLinkController());
-                } else {
-                    /* we can do the reset ourself */
-                    DownloadWatchDog.getInstance().removeIPBlockTimeout(link);
-                    DownloadWatchDog.getInstance().removeTempUnavailTimeout(link);
-                    link.reset();
-                }
-            }
-
+            /* TODO: RESET must be done again */
             DownloadWatchDog.getInstance().forceDownload((java.util.List<DownloadLink>) fp.getChildren());
         }
     }

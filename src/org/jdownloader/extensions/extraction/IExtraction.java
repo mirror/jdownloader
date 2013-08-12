@@ -84,6 +84,10 @@ public abstract class IExtraction {
         this.config = extractionConfig;
     }
 
+    public final ExtractionConfig getConfig() {
+        return config;
+    }
+
     /**
      * The logger for the ouputs.
      * 
@@ -93,9 +97,13 @@ public abstract class IExtraction {
         this.logger = logger;
     }
 
+    public final LogSource getLogger() {
+        return logger;
+    }
+
     /**
-     * Builds an {@link Archive} with an finished {@link DownloadLink}. If the {@link DownloadLink} contains only a part of an multipart
-     * archive, it has not to be to first one (eg. test.part1.rar).
+     * Builds an {@link Archive} with an finished {@link DownloadLink}. If the {@link DownloadLink} contains only a part of an multipart archive, it has not to
+     * be to first one (eg. test.part1.rar).
      * 
      * @param link
      *            An complete downloaded file.
@@ -122,8 +130,8 @@ public abstract class IExtraction {
     public abstract void extract(ExtractionController controller);
 
     /**
-     * Checks if the extraction method can be used on the system. If it's not possible the method should try to fix that. If that fails it
-     * should return false. The extraction method will not be used anymore in this session for extraction.
+     * Checks if the extraction method can be used on the system. If it's not possible the method should try to fix that. If that fails it should return false.
+     * The extraction method will not be used anymore in this session for extraction.
      * 
      * @return True if all works.
      */
@@ -137,8 +145,8 @@ public abstract class IExtraction {
     public abstract int getCrackProgress();
 
     /**
-     * Is used to let the extraction method prepare for the extraction. Will be called after the system started an extraction, but before
-     * the {@link crackPassword} and {@link extract}.
+     * Is used to let the extraction method prepare for the extraction. Will be called after the system started an extraction, but before the
+     * {@link crackPassword} and {@link extract}.
      * 
      * @return False if we need a password to extract
      */

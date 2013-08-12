@@ -2,7 +2,7 @@ package org.jdownloader.gui.views.components.packagetable.context;
 
 import java.awt.event.ActionEvent;
 
-import jd.controlling.IOEQ;
+import jd.controlling.TaskQueue;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledPackage;
 import jd.controlling.packagecontroller.AbstractNode;
@@ -12,6 +12,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.event.queue.QueueAction;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
@@ -45,10 +46,10 @@ public class SetCommentAction<PackageType extends AbstractPackageNode<ChildrenTy
 
         try {
             final String comment = Dialog.getInstance().showInputDialog(Dialog.STYLE_LARGE | Dialog.STYLE_HIDE_ICON, _GUI._.SetCommentAction_actionPerformed_dialog_title_(), "", def, null, null, null);
-            IOEQ.add(new Runnable() {
+            TaskQueue.getQueue().add(new QueueAction<Void, RuntimeException>() {
 
                 @Override
-                public void run() {
+                protected Void run() throws RuntimeException {
                     for (AbstractNode n : getSelection().getRawSelection()) {
                         if (n instanceof DownloadLink) {
                             ((DownloadLink) n).setComment(comment);
@@ -60,9 +61,10 @@ public class SetCommentAction<PackageType extends AbstractPackageNode<ChildrenTy
                             ((CrawledPackage) n).setComment(comment);
                         }
                     }
+                    return null;
                 }
-            }, true);
 
+            });
         } catch (DialogClosedException e1) {
         } catch (DialogCanceledException e1) {
         }

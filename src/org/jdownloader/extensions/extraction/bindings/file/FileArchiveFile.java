@@ -3,7 +3,6 @@ package org.jdownloader.extensions.extraction.bindings.file;
 import java.awt.Color;
 import java.io.File;
 
-import org.jdownloader.controlling.FileCreationManager;
 import org.jdownloader.extensions.extraction.Archive;
 import org.jdownloader.extensions.extraction.ArchiveFile;
 import org.jdownloader.extensions.extraction.ExtractionController;
@@ -45,8 +44,8 @@ public class FileArchiveFile implements ArchiveFile {
         return exists();
     }
 
-    public boolean deleteFile() {
-        return FileCreationManager.getInstance().delete(file);
+    public void deleteFile() {
+        file.delete();
     }
 
     public boolean exists() {

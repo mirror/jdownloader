@@ -37,9 +37,11 @@ import org.jdownloader.extensions.extraction.ExtractionControllerConstants;
  * 
  */
 class MultiCallback implements ISequentialOutStream {
-    private FileOutputStream     fos = null;
+    private FileOutputStream     fos     = null;
     private CPUPriority          priority;
-    private BufferedOutputStream bos = null;
+    private BufferedOutputStream bos     = null;
+    protected long               written = 0;
+    protected final File         file;
 
     MultiCallback(File file, ExtractionController con, ExtractionConfig config, boolean shouldCrc) throws FileNotFoundException {
         priority = config.getCPUPriority();
@@ -47,6 +49,7 @@ class MultiCallback implements ISequentialOutStream {
             this.priority = null;
         }
         int maxbuffersize = Math.max(config.getBufferSize() * 1024, 10240);
+        this.file = file;
         fos = new FileOutputStream(file, false);
         bos = new BufferedOutputStream(fos, maxbuffersize);
     }
@@ -54,6 +57,7 @@ class MultiCallback implements ISequentialOutStream {
     public int write(byte[] data) throws SevenZipException {
         try {
             bos.write(data);
+            written += data.length;
             if (priority != null && !CPUPriority.HIGH.equals(priority)) {
                 synchronized (this) {
                     try {
@@ -69,6 +73,14 @@ class MultiCallback implements ISequentialOutStream {
         return data.length;
     }
 
+    public File getFile() {
+        return file;
+    }
+
+    public long getWritten() {
+        return written;
+    }
+
     /**
      * Closes the unpacking.
      * 
@@ -76,20 +88,25 @@ class MultiCallback implements ISequentialOutStream {
      */
     void close() throws IOException {
         try {
-            bos.flush();
-        } catch (Throwable e) {
-        }
-        try {
-            bos.close();
-        } catch (Throwable e) {
-        }
-        try {
-            fos.flush();
-        } catch (Throwable e) {
-        }
-        try {
-            fos.close();
-        } catch (Throwable e) {
+            try {
+                bos.flush();
+            } catch (Throwable e) {
+            }
+            try {
+                bos.close();
+            } catch (Throwable e) {
+            }
+            try {
+                fos.flush();
+            } catch (Throwable e) {
+            }
+            try {
+                fos.close();
+            } catch (Throwable e) {
+            }
+        } finally {
+            bos = null;
+            fos = null;
         }
 
     }

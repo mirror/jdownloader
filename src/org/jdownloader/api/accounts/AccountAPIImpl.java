@@ -24,6 +24,7 @@ import org.appwork.remoteapi.exceptions.InternalApiException;
 import org.appwork.utils.images.IconIO;
 import org.appwork.utils.logging.Log;
 import org.appwork.utils.net.HTTPHeader;
+import org.jdownloader.DomainInfo;
 import org.jdownloader.plugins.controller.host.HostPluginController;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin;
 
@@ -75,7 +76,6 @@ public class AccountAPIImpl implements AccountAPI {
         final Collection<LazyHostPlugin> allPLugins = HostPluginController.getInstance().list();
         // Filter - only premium plugins should be here
         final java.util.List<LazyHostPlugin> plugins = new ArrayList<LazyHostPlugin>();
-
         List<String> ret = new ArrayList<String>();
         for (LazyHostPlugin lhp : allPLugins) {
             if (lhp.isPremium()) {
@@ -120,7 +120,7 @@ public class AccountAPIImpl implements AccountAPI {
             out = RemoteAPI.getOutputStream(response, request, RemoteAPI.gzip(request), false);
 
             LazyHostPlugin plugin = HostPluginController.getInstance().get(premiumHoster);
-            if (plugin != null) ImageIO.write(IconIO.toBufferedImage(plugin.getIcon().getImage()), "png", out);
+            if (plugin != null) ImageIO.write(IconIO.toBufferedImage(DomainInfo.getInstance(plugin.getHost()).getFavIcon().getImage()), "png", out);
 
         } catch (IOException e) {
             Log.exception(e);

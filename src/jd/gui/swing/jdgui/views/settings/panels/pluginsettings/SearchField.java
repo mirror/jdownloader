@@ -19,8 +19,6 @@ import javax.swing.BorderFactory;
 import javax.swing.JRootPane;
 import javax.swing.border.Border;
 
-import jd.controlling.IOEQ;
-
 import org.appwork.scheduler.DelayedRunnable;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.swing.components.ExtTextField;
@@ -58,7 +56,11 @@ public class SearchField extends ExtTextField implements MouseMotionListener, Mo
         setHelpText(_GUI._.pluginsettings_search_helptext());
         setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
         popIcon = NewTheme.I().getImage("popupButton", -1);
-        delayedFilter = new DelayedRunnable(IOEQ.TIMINGQUEUE, 150l, 2000l) {
+        delayedFilter = new DelayedRunnable(150l, 2000l) {
+            @Override
+            public String getID() {
+                return "SearchField";
+            }
 
             @Override
             public void delayedrun() {

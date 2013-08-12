@@ -59,7 +59,7 @@ public class SizeColumn extends ExtColumn<AbstractNode> {
             public int compare(final AbstractNode o1, final AbstractNode o2) {
                 final long s1 = getBytes(o1);
                 final long s2 = getBytes(o2);
-                if (s1 == s2) { return 0; }
+                if (s1 == s2) return 0;
                 if (this.getSortOrderIdentifier() != ExtColumn.SORT_ASC) {
                     return s1 > s2 ? -1 : 1;
                 } else {

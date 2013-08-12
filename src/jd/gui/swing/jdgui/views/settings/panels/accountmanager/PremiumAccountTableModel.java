@@ -7,6 +7,7 @@ import java.awt.event.MouseEvent;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.concurrent.ScheduledExecutorService;
 
 import javax.swing.Icon;
 import javax.swing.JButton;
@@ -18,7 +19,6 @@ import jd.SecondLevelLaunch;
 import jd.controlling.AccountController;
 import jd.controlling.AccountControllerEvent;
 import jd.controlling.AccountControllerListener;
-import jd.controlling.IOEQ;
 import jd.controlling.accountchecker.AccountChecker;
 import jd.controlling.accountchecker.AccountCheckerEventListener;
 import jd.nutils.Formatter;
@@ -39,6 +39,7 @@ import org.appwork.swing.exttable.columns.ExtTextColumn;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.renderer.RendererMigPanel;
+import org.jdownloader.DomainInfo;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
 
@@ -61,7 +62,13 @@ public class PremiumAccountTableModel extends ExtTableModel<AccountEntry> implem
     public PremiumAccountTableModel(final AccountManagerSettings accountManagerSettings) {
         super("PremiumAccountTableModel2");
         this.accountManagerSettings = accountManagerSettings;
-        delayedFill = new DelayedRunnable(IOEQ.TIMINGQUEUE, 250l) {
+        ScheduledExecutorService scheduler = DelayedRunnable.getNewScheduledExecutorService();
+        delayedFill = new DelayedRunnable(scheduler, 250l) {
+
+            @Override
+            public String getID() {
+                return "PremiumAccountTableFill";
+            }
 
             @Override
             public void delayedrun() {
@@ -69,7 +76,12 @@ public class PremiumAccountTableModel extends ExtTableModel<AccountEntry> implem
             }
 
         };
-        delayedUpdate = new DelayedRunnable(IOEQ.TIMINGQUEUE, 250l) {
+        delayedUpdate = new DelayedRunnable(scheduler, 250l) {
+
+            @Override
+            public String getID() {
+                return "PremiumAccountTableUpdate";
+            }
 
             @Override
             public void delayedrun() {
@@ -179,7 +191,7 @@ public class PremiumAccountTableModel extends ExtTableModel<AccountEntry> implem
 
             @Override
             protected Icon getIcon(AccountEntry value) {
-                return value.getAccount().getDomainInfo().getFavIcon();
+                return DomainInfo.getInstance(value.getAccount().getHoster()).getFavIcon();
             }
 
             @Override

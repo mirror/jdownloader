@@ -12,7 +12,7 @@ public class AudioListController extends MediaListController<AudioMediaItem> {
     @Override
     protected String objectToJson(AudioMediaItem mi) {
 
-        return JSonStorage.toString(AudioItemStorable.create(mi));
+        return JSonStorage.serializeToJson(AudioItemStorable.create(mi));
     }
 
     @Override

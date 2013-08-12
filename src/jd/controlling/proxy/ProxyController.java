@@ -13,7 +13,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import jd.config.SubConfiguration;
-import jd.controlling.IOEQ;
 import jd.plugins.Account;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForHost;
@@ -109,7 +108,11 @@ public class ProxyController {
         // }
         // });
         eventSender.addListener(new DefaultEventListener<ProxyEvent<ProxyInfo>>() {
-            DelayedRunnable asyncSaving = new DelayedRunnable(IOEQ.TIMINGQUEUE, 5000l, 60000l) {
+            DelayedRunnable asyncSaving = new DelayedRunnable(5000l, 60000l) {
+                                            @Override
+                                            public String getID() {
+                                                return "ProxyController";
+                                            }
 
                                             @Override
                                             public void delayedrun() {
@@ -222,6 +225,7 @@ public class ProxyController {
         }
         config.setNoneDefault(none == ldefaultproxy);
         config.setNoneRotationEnabled(none.isProxyRotationEnabled());
+        config._getStorageHandler().write();
     }
 
     private List<HTTPProxy> restoreFromOldConfig() {
@@ -762,7 +766,7 @@ public class ProxyController {
         save.setNoneDefault(none == ldefaultproxy);
         save.setNoneRotationEnabled(none.isProxyRotationEnabled());
 
-        IO.secureWrite(saveTo, JSonStorage.toString(save).getBytes("UTF-8"));
+        IO.secureWrite(saveTo, JSonStorage.serializeToJson(save).getBytes("UTF-8"));
     }
 
     public String getLatestProfilePath() {

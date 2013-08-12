@@ -5,10 +5,11 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
 
-import jd.controlling.IOEQ;
+import jd.controlling.TaskQueue;
 import jd.controlling.proxy.ProxyController;
 
 import org.appwork.utils.Regex;
+import org.appwork.utils.event.queue.QueueAction;
 import org.appwork.utils.net.httpconnection.HTTPProxy;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
@@ -76,10 +77,12 @@ public class ImportPlainTextAction extends AppAction {
                 }
 
             }
-            IOEQ.add(new Runnable() {
+            TaskQueue.getQueue().add(new QueueAction<Void, RuntimeException>() {
 
-                public void run() {
+                @Override
+                protected Void run() throws RuntimeException {
                     ProxyController.getInstance().addProxy(list);
+                    return null;
                 }
             });
         } catch (DialogClosedException e1) {

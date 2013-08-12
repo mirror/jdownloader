@@ -26,6 +26,7 @@ import javax.swing.JLabel;
 import javax.swing.JSeparator;
 import javax.swing.JTextArea;
 
+import jd.controlling.TaskQueue;
 import jd.gui.swing.jdgui.views.settings.components.Checkbox;
 import jd.gui.swing.jdgui.views.settings.components.PasswordInput;
 import jd.gui.swing.jdgui.views.settings.components.SettingsButton;
@@ -37,6 +38,7 @@ import org.appwork.storage.config.events.GenericConfigEventListener;
 import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.swing.MigPanel;
 import org.appwork.swing.components.ExtButton;
+import org.appwork.utils.event.queue.QueueAction;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.SwingUtils;
@@ -130,8 +132,16 @@ public class MyJDownloaderSettingsPanel extends AbstractConfigPanel implements G
 
             @Override
             public void actionPerformed(ActionEvent e) {
-                MyJDownloaderController.getInstance().disconnect();
-                MyJDownloaderController.getInstance().connect();
+                TaskQueue.getQueue().add(new QueueAction<Void, RuntimeException>() {
+
+                    @Override
+                    protected Void run() throws RuntimeException {
+                        MyJDownloaderController.getInstance().disconnect();
+                        MyJDownloaderController.getInstance().connect();
+                        return null;
+                    }
+                });
+
             }
         };
         connectAction = new AppAction() {
@@ -141,7 +151,14 @@ public class MyJDownloaderSettingsPanel extends AbstractConfigPanel implements G
 
             @Override
             public void actionPerformed(ActionEvent e) {
-                MyJDownloaderController.getInstance().connect();
+                TaskQueue.getQueue().add(new QueueAction<Void, RuntimeException>() {
+
+                    @Override
+                    protected Void run() throws RuntimeException {
+                        MyJDownloaderController.getInstance().connect();
+                        return null;
+                    }
+                });
             }
         };
         disconnectAction = new AppAction() {
@@ -151,7 +168,14 @@ public class MyJDownloaderSettingsPanel extends AbstractConfigPanel implements G
 
             @Override
             public void actionPerformed(ActionEvent e) {
-                MyJDownloaderController.getInstance().disconnect();
+                TaskQueue.getQueue().add(new QueueAction<Void, RuntimeException>() {
+
+                    @Override
+                    protected Void run() throws RuntimeException {
+                        MyJDownloaderController.getInstance().disconnect();
+                        return null;
+                    }
+                });
             }
         };
         connectButton = new ExtButton(connectAction);
@@ -272,20 +296,15 @@ public class MyJDownloaderSettingsPanel extends AbstractConfigPanel implements G
                     connectButton.setAction(connectAction);
                     if (MyJDownloaderController.validateLogins(cUser, cPass)) {
                         if ((cUser == null || !cUser.equals(CFG_MYJD.EMAIL.getValue())) || (cPass == null || !cPass.equals(CFG_MYJD.PASSWORD.getValue())) || (cDevice == null || !cDevice.equals(CFG_MYJD.DEVICE_NAME.getValue()))) {
-
                             reconnectAction.setEnabled(true);
                             connectButton.setAction(reconnectAction);
-
                         }
                     }
                     switch (connectionStatus) {
+                    case PENDING:
                     case CONNECTED:
                         status.setForeground(Color.GREEN);
                         status.setText(_GUI._.MyJDownloaderSettingsPanel_runInEDT_connected_2() + "\r\n" + _GUI._.MyJDownloaderSettingsPanel_runInEDT_connections(connections));
-                        break;
-                    case PENDING:
-                        status.setForeground(Color.YELLOW.darker());
-                        status.setText(_GUI._.MyJDownloaderSettingsPanel_runInEDT_pending());
                         break;
                     }
                 } else {

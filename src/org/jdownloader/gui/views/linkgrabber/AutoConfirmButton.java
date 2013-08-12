@@ -12,7 +12,7 @@ import javax.swing.Timer;
 import javax.swing.event.TableModelEvent;
 import javax.swing.event.TableModelListener;
 
-import jd.controlling.IOEQ;
+import jd.controlling.TaskQueue;
 import jd.controlling.linkchecker.LinkChecker;
 import jd.controlling.linkchecker.LinkCheckerEvent;
 import jd.controlling.linkchecker.LinkCheckerListener;
@@ -31,6 +31,7 @@ import org.appwork.scheduler.DelayedRunnable;
 import org.appwork.swing.components.ExtButton;
 import org.appwork.utils.event.predefined.changeevent.ChangeEvent;
 import org.appwork.utils.event.predefined.changeevent.ChangeListener;
+import org.appwork.utils.event.queue.QueueAction;
 import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.jdownloader.gui.translate._GUI;
@@ -166,7 +167,13 @@ public class AutoConfirmButton extends ExtButton implements ChangeListener, Tabl
                 }
             }
         });
-        delayer = new DelayedRunnable(IOEQ.TIMINGQUEUE, waittime, -1) {
+        delayer = new DelayedRunnable(waittime, -1) {
+
+            @Override
+            public String getID() {
+                return "AutoConfirmButton";
+            }
+
             @Override
             public void delayedrun() {
                 new EDTRunner() {
@@ -174,23 +181,24 @@ public class AutoConfirmButton extends ExtButton implements ChangeListener, Tabl
                     protected void runInEDT() {
                         timer.stop();
                         setVisible(false);
-                        IOEQ.add(new Runnable() {
+                        TaskQueue.getQueue().add(new QueueAction<Void, RuntimeException>() {
 
-                            public void run() {
+                            @Override
+                            protected Void run() throws RuntimeException {
                                 java.util.List<AbstractNode> list = new ArrayList<AbstractNode>();
-                                boolean autoStart = org.jdownloader.settings.staticreferences.CFG_LINKFILTER.LINKGRABBER_AUTO_START_ENABLED.getValue();
-
+                                boolean autoStart = org.jdownloader.settings.staticreferences.CFG_LINKFILTER.LINKGRABBER_AUTO_START_ENABLED.isEnabled();
+                                boolean autoConfirm = CFG_LINKFILTER.LINKGRABBER_AUTO_CONFIRM_ENABLED.isEnabled();
                                 for (CrawledLink l : LinkGrabberTableModel.getInstance().getAllChildrenNodes()) {
                                     if (l.getLinkState() == LinkState.OFFLINE) continue;
-                                    if (l.isAutoConfirmEnabled() || CFG_LINKFILTER.LINKGRABBER_AUTO_CONFIRM_ENABLED.isEnabled()) {
+                                    if (l.isAutoConfirmEnabled() || autoConfirm) {
                                         list.add(l);
                                         if (l.isAutoStartEnabled()) autoStart = true;
                                     }
                                 }
-
                                 ConfirmAutoAction ca = new ConfirmAutoAction(new SelectionInfo<CrawledPackage, CrawledLink>(null, list, null, null, null, LinkGrabberTableModel.getInstance().getTable()));
                                 ca.setAutoStart(autoStart ? AutoStartOptions.ENABLED : AutoStartOptions.DISABLED);
                                 ca.actionPerformed(null);
+                                return null;
                             }
                         });
                     }
@@ -221,16 +229,18 @@ public class AutoConfirmButton extends ExtButton implements ChangeListener, Tabl
 
     }
 
-    private synchronized void update() {
+    private void update() {
         final boolean enabled = !LinkChecker.isChecking() && !LinkCrawler.isCrawling();
         if (enabled == active) return;
-        if (enabled) {
-            this.active = true;
-            LinkGrabberTableModel.getInstance().removeTableModelListener(this);
-            LinkGrabberTableModel.getInstance().addTableModelListener(this);
-        } else {
-            active = false;
-            LinkGrabberTableModel.getInstance().removeTableModelListener(this);
+        synchronized (this) {
+            if (enabled == active) return;
+            if (enabled) {
+                this.active = true;
+                LinkGrabberTableModel.getInstance().addTableModelListener(this);
+            } else {
+                active = false;
+                LinkGrabberTableModel.getInstance().removeTableModelListener(this);
+            }
         }
     }
 

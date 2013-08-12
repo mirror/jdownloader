@@ -6,7 +6,6 @@ import javax.swing.JLabel;
 import org.appwork.swing.MigPanel;
 import org.appwork.utils.swing.SwingUtils;
 import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.gui.views.downloads.table.DownloadsTableModel;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
 
 public class DataEntry {
@@ -80,9 +79,9 @@ public class DataEntry {
 
     }
 
-    public void updateVisibility() {
+    public void updateVisibility(boolean hasSelectedObjects) {
         if (CFG_GUI.OVERVIEW_PANEL_SMART_INFO_VISIBLE.isEnabled() || (!CFG_GUI.OVERVIEW_PANEL_SELECTED_INFO_VISIBLE.isEnabled() && !CFG_GUI.OVERVIEW_PANEL_TOTAL_INFO_VISIBLE.isEnabled() && !CFG_GUI.OVERVIEW_PANEL_VISIBLE_ONLY_INFO_VISIBLE.isEnabled())) {
-            if (DownloadsTableModel.getInstance().getSelectedObjects().size() > 0) {
+            if (hasSelectedObjects) {
                 filtered.setVisible(false);
                 total.setVisible(false);
                 selected.setVisible(true);

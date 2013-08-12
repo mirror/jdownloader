@@ -13,7 +13,6 @@ import javax.swing.JTextField;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 
-import jd.controlling.IOEQ;
 import jd.gui.swing.jdgui.JDGui;
 
 import org.appwork.scheduler.DelayedRunnable;
@@ -101,7 +100,12 @@ public class AdvancedSettings extends AbstractConfigPanel implements DocumentLis
         add(filterText, "gapleft 37,spanx,growx,pushx");
         filterText.getDocument().addDocumentListener(this);
         add(new JScrollPane(table = new AdvancedTable()));
-        delayedRefresh = new DelayedRunnable(IOEQ.TIMINGQUEUE, 200, 1000) {
+        delayedRefresh = new DelayedRunnable(200, 1000) {
+
+            @Override
+            public String getID() {
+                return "AdvancedSettings";
+            }
 
             @Override
             public void delayedrun() {

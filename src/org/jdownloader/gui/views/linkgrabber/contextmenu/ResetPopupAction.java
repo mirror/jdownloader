@@ -28,4 +28,9 @@ public class ResetPopupAction extends SelectionAppAction<CrawledPackage, Crawled
         new ResetAction(selection).actionPerformed(e);
     }
 
+    @Override
+    public boolean isEnabled() {
+        return true;
+    }
+
 }

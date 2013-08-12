@@ -8,7 +8,6 @@ public class LinkStatusJobStorable implements Storable {
     private int     status;
     private String  statusText;
     private boolean isFinished;
-    private boolean isActive;
     private boolean inProgress;
 
     public String getLinkID() {
@@ -41,14 +40,6 @@ public class LinkStatusJobStorable implements Storable {
 
     public void setFinished(boolean isFinished) {
         this.isFinished = isFinished;
-    }
-
-    public boolean isActive() {
-        return isActive;
-    }
-
-    public void setActive(boolean isActive) {
-        this.isActive = isActive;
     }
 
     public boolean isInProgress() {

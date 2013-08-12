@@ -216,7 +216,7 @@ public class DownloadsAPIImpl implements DownloadsAPI {
                 infomap.put("linkStatus", new LinkStatusAPIStorable(dl.getLinkStatus()));
             }
             if (queryParams._getQueryParam("running", Boolean.class, false)) {
-                infomap.put("running", dwd.getRunningDownloadLinks().contains(dl));
+                infomap.put("running", dwd.getRunningDownloadLinks().contains(dl.getDownloadLinkController()));
             }
             if (queryParams._getQueryParam("skipped", Boolean.class, false)) {
                 infomap.put("skipped", dl.isSkipped());
@@ -396,19 +396,8 @@ public class DownloadsAPIImpl implements DownloadsAPI {
 
     @Override
     public boolean resetLinks(List<Long> linkIds, List<Long> packageIds) {
-        for (DownloadLink link : getAllTheLinks(linkIds, packageIds)) {
-            if (link.getLinkStatus().isPluginActive()) {
-                /*
-                 * download is still active, let DownloadWatchdog handle the reset
-                 */
-                DownloadWatchDog.getInstance().resetSingleDownloadController(link.getDownloadLinkController());
-            } else {
-                /* we can do the reset ourself */
-                DownloadWatchDog.getInstance().removeIPBlockTimeout(link);
-                DownloadWatchDog.getInstance().removeTempUnavailTimeout(link);
-                link.reset();
-            }
-        }
+        List<DownloadLink> links = getAllTheLinks(linkIds, packageIds);
+        DownloadWatchDog.getInstance().reset(links);
         return true;
     }
 

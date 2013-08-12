@@ -13,6 +13,7 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginsC;
 
+import org.appwork.utils.event.queue.QueueThread;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.logging2.LogSourceProvider;
 import org.jdownloader.extensions.extraction.ExtractionController;
@@ -93,9 +94,9 @@ public class LogController extends LogSourceProvider {
             } else if (currentThread instanceof SingleDownloadController) {
                 /* we are inside a SingleDownloadController, lets reuse the logger from hosterPlugin */
                 logger = ((SingleDownloadController) currentThread).getLogger();
-            } else if (currentThread instanceof ExtractionQueue) {
+            } else if (currentThread instanceof QueueThread && ((QueueThread) currentThread).getQueue() instanceof ExtractionQueue) {
                 /* we are inside an ExtractionController */
-                ExtractionController currentExtraction = ((ExtractionQueue) currentThread).getCurrentQueueEntry();
+                ExtractionController currentExtraction = ((ExtractionQueue) ((QueueThread) currentThread).getQueue()).getCurrentQueueEntry();
                 if (currentExtraction != null) logger = currentExtraction.getLogger();
             } else if (currentThread instanceof LinkCheckerThread) {
                 /* we are inside a LinkCheckerThread */

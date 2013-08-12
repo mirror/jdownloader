@@ -21,6 +21,7 @@ import java.awt.event.MouseListener;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 import javax.swing.JPanel;
@@ -29,7 +30,6 @@ import jd.SecondLevelLaunch;
 import jd.controlling.AccountController;
 import jd.controlling.AccountControllerEvent;
 import jd.controlling.AccountControllerListener;
-import jd.controlling.IOEQ;
 import jd.controlling.accountchecker.AccountChecker;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
@@ -91,7 +91,8 @@ public class PremiumStatus extends JPanel implements MouseListener {
 
                     @Override
                     public void run() {
-                        IOEQ.TIMINGQUEUE.scheduleWithFixedDelay(new Runnable() {
+                        ScheduledExecutorService scheduler = DelayedRunnable.getNewScheduledExecutorService();
+                        scheduler.scheduleWithFixedDelay(new Runnable() {
 
                             public void run() {
                                 /*
@@ -105,7 +106,7 @@ public class PremiumStatus extends JPanel implements MouseListener {
                             }
 
                         }, 1, 5, TimeUnit.MINUTES);
-                        redrawTimer = new DelayedRunnable(IOEQ.TIMINGQUEUE, 5000, 20000) {
+                        redrawTimer = new DelayedRunnable(scheduler, 5000, 20000) {
 
                             @Override
                             public String getID() {

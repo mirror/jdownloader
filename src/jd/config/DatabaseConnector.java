@@ -25,7 +25,7 @@ import java.io.InvalidClassException;
 import java.io.ObjectInputStream;
 import java.io.ObjectStreamClass;
 import java.lang.reflect.Field;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 
 import jd.utils.JDUtilities;
 
@@ -38,13 +38,17 @@ import org.tmatesoft.svn.core.internal.util.CountingInputStream;
 
 public class DatabaseConnector {
 
-    private HashMap<String, Long[]> objectIndices = new HashMap<String, Long[]>();
+    private LinkedHashMap<String, Long[]> objectIndices = new LinkedHashMap<String, Long[]>();
 
-    private String                  configpath    = JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath() + "/config/";
-    private final LogSource         logger;
+    private final String                  configpath;
 
     public DatabaseConnector() {
-        logger = LogController.CL(false);
+        this(JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath() + "/config/");
+    }
+
+    public DatabaseConnector(String path) {
+        configpath = path;
+        LogSource logger = LogController.CL();
         File dataBase = null;
         if (!(dataBase = new File(configpath + "database.script")).exists()) {
             logger.info("Found no old database to import!");
@@ -135,6 +139,7 @@ public class DatabaseConnector {
 
     private Object readObject(long startIndex, long stopIndex) {
         FileInputStream fis = null;
+        final LogSource logger = LogController.CL();
         try {
             fis = new FileInputStream(configpath + "database.script");
             fis.skip(startIndex);
@@ -181,7 +186,7 @@ public class DatabaseConnector {
                 }
             }.readObject();
         } catch (Throwable e) {
-            e.printStackTrace();
+            logger.log(e);
             return null;
         } finally {
             try {
@@ -195,18 +200,12 @@ public class DatabaseConnector {
      * Returns the saved linklist
      */
     public Object getLinks() {
-        Long[] indices = null;
-        synchronized (this) {
-            indices = objectIndices.get("links_links");
-        }
+        Long[] indices = objectIndices.get("links_links");
         Object ret = null;
         if (indices != null) {
             ret = readObject(indices[0], indices[1]);
         }
         return ret;
-    }
-
-    public void save() {
     }
 
 }

@@ -31,7 +31,7 @@ public class ManagerTreeModel extends DefaultTreeModel implements TreeModel {
         new Thread("LoadMenuContainerRoor") {
 
             public void run() {
-                MenuContainerRoot menuContainerRoot2 = JSonStorage.restoreFromString(JSonStorage.toString(menuContainerRoot), new TypeRef<MenuContainerRoot>() {
+                MenuContainerRoot menuContainerRoot2 = JSonStorage.restoreFromString(JSonStorage.serializeToJson(menuContainerRoot), new TypeRef<MenuContainerRoot>() {
                 });
                 menuContainerRoot2.validateFull();
 

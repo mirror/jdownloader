@@ -23,27 +23,15 @@ import java.awt.event.FocusListener;
 import java.awt.event.MouseListener;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowFocusListener;
-import java.io.File;
-import java.io.IOException;
-import java.net.MalformedURLException;
 
 import javax.swing.JComponent;
 
-import jd.SecondLevelLaunch;
-import jd.gui.swing.laf.LookAndFeelController;
-
-import org.appwork.storage.config.JsonConfig;
 import org.appwork.swing.components.ExtTextField;
 import org.appwork.uio.UIOManager;
-import org.appwork.utils.Application;
 import org.appwork.utils.StringUtils;
-import org.appwork.utils.ImageProvider.ImageProvider;
 import org.appwork.utils.swing.dialog.Dialog;
-import org.appwork.utils.swing.dialog.DialogCanceledException;
-import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.jdownloader.DomainInfo;
 import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.settings.SoundSettings;
 
 /**
  * This Dialog is used to display a Inputdialog for the captchas
@@ -52,30 +40,6 @@ public class CaptchaDialog extends AbstractCaptchaDialog implements ActionListen
 
     private ExtTextField textField;
     private String       suggest;
-
-    public static void main(String[] args) {
-        AbstractCaptchaDialog cp;
-        try {
-            Application.setApplication(".jd_home");
-            SecondLevelLaunch.statics();
-            JsonConfig.create(SoundSettings.class).setCaptchaSoundVolume(100);
-            // getGifImages(new
-            // File("C:/Users/Thomas/.BuildServ/applications/beta/sources/JDownloader/src/org/jdownloader/extensions/webinterface/webinterface/themes/main/images/core/load.gif").toURI().toURL())
-            cp = new CaptchaDialog(UIOManager.LOGIC_COUNTDOWN, DialogType.HOSTER, DomainInfo.getInstance("wupload.com"), ImageProvider.read(new File("C:\\Users\\Thomas\\.jd_home\\captchas\\rusfolder.ru_10.07.2012_11.36.41.860.png")), "Enter both words...");
-
-            LookAndFeelController.getInstance().setUIManager();
-
-            Dialog.getInstance().showDialog(cp);
-        } catch (DialogClosedException e) {
-            e.printStackTrace();
-        } catch (DialogCanceledException e) {
-            e.printStackTrace();
-        } catch (MalformedURLException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
 
     public CaptchaDialog(final int flag, DialogType type, final DomainInfo DomainInfo, final Image image, final String explain) {
         this(flag, type, DomainInfo, new Image[] { image }, explain);

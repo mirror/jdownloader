@@ -4,7 +4,6 @@ import java.awt.event.ActionEvent;
 
 import javax.swing.ImageIcon;
 
-import jd.controlling.IOEQ;
 import jd.controlling.linkcollector.LinkCollector;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledPackage;
@@ -12,7 +11,7 @@ import jd.gui.swing.jdgui.MainTabbedPane;
 import jd.plugins.FilePackage;
 
 import org.appwork.utils.ImageProvider.ImageProvider;
-import org.appwork.utils.swing.EDTRunner;
+import org.appwork.utils.event.queue.QueueAction;
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.extensions.streaming.StreamingExtension;
 import org.jdownloader.extensions.streaming.T;
@@ -37,28 +36,20 @@ public class AddToLibraryAction extends AppAction {
     @Override
     public void actionPerformed(ActionEvent e) {
         if (!isEnabled()) return;
-        IOEQ.add(new Runnable() {
+        MainTabbedPane.getInstance().setSelectedComponent(extension.getGUI());
+        LinkCollector.getInstance().getQueue().add(new QueueAction<Void, RuntimeException>() {
 
-            public void run() {
-
-                new EDTRunner() {
-
-                    @Override
-                    protected void runInEDT() {
-                        MainTabbedPane.getInstance().setSelectedComponent(extension.getGUI());
-                    }
-                };
+            @Override
+            protected Void run() throws RuntimeException {
                 for (CrawledPackage cp : selection.getAllPackages()) {
-
                     for (FilePackage fp : LinkCollector.getInstance().convert(selection.getSelectedLinksByPackage(cp), false)) {
-
                         extension.getMediaArchiveController().mount(fp);
                     }
                 }
-
+                return null;
             }
+        });
 
-        }, true);
     }
 
 }

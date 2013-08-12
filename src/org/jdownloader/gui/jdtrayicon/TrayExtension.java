@@ -44,7 +44,6 @@ import javax.swing.JFrame;
 import javax.swing.SwingUtilities;
 
 import jd.SecondLevelLaunch;
-import jd.controlling.linkcollector.LinkCollectorHighlightListener;
 import jd.gui.swing.jdgui.JDGui;
 import jd.gui.swing.jdgui.MainFrameClosingHandler;
 import jd.gui.swing.jdgui.views.settings.sidebar.CheckBoxedEntry;
@@ -81,51 +80,6 @@ import org.jdownloader.updatev2.RestartController;
 import org.jdownloader.updatev2.SmartRlyExitRequest;
 
 public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTranslation> implements MouseListener, MouseMotionListener, WindowStateListener, ActionListener, MainFrameClosingHandler, CheckBoxedEntry {
-
-    // private LinkCollectorHighlightListener highListener = new LinkCollectorHighlightListener() {
-    //
-    // @Override
-    // public void onHighLight(CrawledLink parameter) {
-    // if (guiFrame != null && !guiFrame.isVisible()) {
-    // /*
-    // * dont try to restore jd if password required
-    // */
-    // if (CFG_GUI.PASSWORD_PROTECTION_ENABLED.isEnabled() && !StringUtils.isEmpty(CFG_GUI.PASSWORD.getValue())) {
-    // /**
-    // * do nothing , because a password is set
-    // */
-    // return;
-    // }
-    // }
-    // miniIt(false);
-    // if (iconified) {
-    // /*
-    // * restore normale state,if windows was iconified
-    // */
-    // new EDTHelper<Object>() {
-    // @Override
-    // public Object edtRun() {
-    // /*
-    // * after this normal , its back to iconified
-    // */
-    // guiFrame.setState(JFrame.NORMAL);
-    // return null;
-    // }
-    // }.start();
-    // }
-    // }
-    //
-    // @Override
-    // public boolean isThisListenerEnabled() {
-    // return true;
-    // // LinkgrabberResultsOption option =
-    // // getSettings().getShowLinkgrabbingResultsOption();
-    // // if ((guiFrame != null && !guiFrame.isVisible() && option ==
-    // // LinkgrabberResultsOption.ONLY_IF_MINIMIZED) || option ==
-    // // LinkgrabberResultsOption.ALWAYS) { return true; }
-    // // return false;
-    // }
-    // };
 
     @Override
     protected void stop() throws StopException {
@@ -211,19 +165,11 @@ public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTransla
 
     private TrayMouseAdapter                    ma;
 
-    private boolean                             iconified       = false;
-
-    private Thread                              trayIconChecker = null;
-
     private ExtensionConfigPanel<TrayExtension> configPanel;
 
     private long                                lastCloseRequest;
 
     private boolean                             asking;
-
-    private LinkCollectorHighlightListener      linkcollectorHighlighListener;
-
-    private boolean                             updatesNotified;
 
     public ExtensionConfigPanel<TrayExtension> getConfigPanel() {
         return configPanel;
@@ -235,7 +181,6 @@ public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTransla
 
     public TrayExtension() {
         setTitle(_TRAY._.jd_plugins_optional_jdtrayicon_jdlighttray());
-
     }
 
     public static int readEnableBalloonTips() throws UnsupportedEncodingException, IOException {
@@ -415,8 +360,8 @@ public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTransla
 
                         } catch (Throwable e) {
                             /*
-                             * on Gnome3, Unity, this can happen because icon might be blacklisted, see here
-                             * http://www.webupd8.org/2011/04/how-to-re-enable -notification-area.html
+                             * on Gnome3, Unity, this can happen because icon might be blacklisted, see here http://www.webupd8.org/2011/04/how-to-re-enable
+                             * -notification-area.html
                              * 
                              * dconf-editor", then navigate to desktop > unity > panel and whitelist JDownloader
                              * 
@@ -597,7 +542,6 @@ public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTransla
         int newState = evt.getNewState();
         if (System.currentTimeMillis() - lastCloseRequest < 1000 || asking) return;
         if ((oldState & JFrame.ICONIFIED) == 0 && (newState & JFrame.ICONIFIED) != 0) {
-            iconified = true;
 
             switch (getSettings().getOnMinimizeAction()) {
 
@@ -612,7 +556,7 @@ public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTransla
             }
             // Frame was not iconified
         } else if ((oldState & JFrame.ICONIFIED) != 0 && (newState & JFrame.ICONIFIED) == 0) {
-            iconified = false;
+
             // Frame was iconified
         }
     }

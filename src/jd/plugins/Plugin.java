@@ -22,6 +22,7 @@ import java.io.File;
 import java.net.URL;
 import java.util.Calendar;
 import java.util.Random;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -50,16 +51,18 @@ import org.jdownloader.translate._JDT;
  */
 public abstract class Plugin implements ActionListener {
 
-    public static final String HTTP_LINKS_HOST  = "http links";
-    public static final String DIRECT_HTTP_HOST = "DirectHTTP";
-    public static final String FTP_HOST         = "ftp";
+    public static final String           HTTP_LINKS_HOST  = "http links";
+    public static final String           DIRECT_HTTP_HOST = "DirectHTTP";
+    public static final String           FTP_HOST         = "ftp";
 
     /* to keep 0.95xx comp */
     /* switch this on every stable update */
     // protected static Logger logger = jd.controlling.JDLogger.getLogger();
 
     /* afer 0.95xx */
-    protected Logger           logger           = LogController.TRASH;
+    protected Logger                     logger           = LogController.TRASH;
+
+    protected CopyOnWriteArrayList<File> cleanUpCaptchaFiles          = new CopyOnWriteArrayList<File>();
 
     public void setLogger(Logger logger) {
         if (logger == null) logger = LogController.TRASH;
@@ -182,6 +185,9 @@ public abstract class Plugin implements ActionListener {
 
     public void clean() {
         br = null;
+        for (File clean : cleanUpCaptchaFiles) {
+            clean.delete();
+        }
     }
 
     /**
@@ -251,9 +257,8 @@ public abstract class Plugin implements ActionListener {
         }
         final Calendar calendar = Calendar.getInstance();
         final String date = String.format("%1$td.%1$tm.%1$tY_%1$tH.%1$tM.%1$tS.", calendar) + new Random().nextInt(999);
-
         final File dest = JDUtilities.getResourceFile("captchas/" + this.getHost() + "_" + date + extension, true);
-        dest.deleteOnExit();
+        cleanUpCaptchaFiles.add(dest);
         return dest;
     }
 

@@ -8,6 +8,7 @@ import java.nio.channels.AsynchronousCloseException;
 import java.nio.channels.ClosedByInterruptException;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Logger;
 
 import jd.controlling.downloadcontroller.SingleDownloadController;
@@ -35,26 +36,22 @@ public class RAFChunk extends Thread {
      * Wird durch die Speedbegrenzung ein chunk uter diesen Wert geregelt, so wird er weggelassen. Sehr niedrig geregelte chunks haben einen kleinen Buffer und
      * eine sehr hohe Intervalzeit. Das fuehrt zu verstaerkt intervalartigem laden und ist ungewuenscht
      */
-    public static final long                MIN_CHUNKSIZE        = 1 * 1024 * 1024;
+    public static final long                MIN_CHUNKSIZE    = 1 * 1024 * 1024;
 
-    private long                            chunkBytesLoaded     = 0;
+    private long                            chunkBytesLoaded = 0;
 
     private URLConnectionAdapter            connection;
 
     private long                            endByte;
 
-    private int                             id                   = -1;
+    private final int                       id;
 
     private MeteredThrottledInputStream     inputStream;
 
     private long                            startByte;
-    private long                            bytes2Do             = -1;
+    private long                            bytes2Do         = -1;
 
-    private boolean                         connectionclosed     = false;
-
-    private boolean                         addedtoStartedChunks = false;
-
-    private boolean                         clonedconnection     = false;
+    private AtomicBoolean                   connectionclosed = new AtomicBoolean(false);
 
     private long                            requestedEndByte;
 
@@ -67,7 +64,22 @@ public class RAFChunk extends Thread {
     private PluginForHost                   plugin;
 
     private LinkStatus                      linkStatus;
-    protected ReusableByteArrayOutputStream buffer               = null;
+    protected ReusableByteArrayOutputStream buffer           = null;
+    private AtomicBoolean                   running          = new AtomicBoolean(false);
+
+    private URLConnectionAdapter            originalConnection;
+
+    public URLConnectionAdapter getOriginalConnection() {
+        return originalConnection;
+    }
+
+    public URLConnectionAdapter getCurrentConnection() {
+        return connection;
+    }
+
+    public boolean isRunning() {
+        return running.get();
+    }
 
     /**
      * Die Connection wird entsprechend der start und endbytes neu aufgebaut.
@@ -76,13 +88,14 @@ public class RAFChunk extends Thread {
      * @param endByte
      * @param connection
      */
-    public RAFChunk(long startByte, long endByte, URLConnectionAdapter connection, OldRAFDownload dl, DownloadLink link) {
-        super("DownloadChunkRAF");
+    public RAFChunk(long startByte, long endByte, URLConnectionAdapter connection, OldRAFDownload dl, DownloadLink link, int id) {
+        super("DownloadChunkRAF:" + link.getName());
+        running.set(true);
         this.startByte = startByte;
+        this.id = id;
         this.endByte = endByte;
         this.requestedEndByte = endByte;
-        this.connection = connection;
-        this.clonedconnection = false;
+        this.originalConnection = connection;
         this.dl = dl;
         this.downloadLink = link;
         this.plugin = link.getLivePlugin();
@@ -108,22 +121,6 @@ public class RAFChunk extends Thread {
 
     private void addChunkBytesLoaded(long limit) {
         chunkBytesLoaded += limit;
-    }
-
-    /**
-     * is this Chunk using the root connection or a cloned one
-     * 
-     * @return
-     */
-    public boolean isClonedConnection() {
-        return clonedconnection;
-    }
-
-    private void setChunkStartet() {
-        /* Chunk kann nur einmal gestartet werden */
-        if (addedtoStartedChunks) return;
-        dl.getChunksStarted().incrementAndGet();
-        addedtoStartedChunks = true;
     }
 
     /**
@@ -186,37 +183,38 @@ public class RAFChunk extends Thread {
                 br.setCurrentURL(null);
             }
             URLConnectionAdapter con = null;
-            clonedconnection = true;
-            if (connection.getRequestMethod() == RequestMethod.POST) {
-                connection.getRequest().getHeaders().put("Range", "bytes=" + start + "-" + end);
-                con = br.openRequestConnection(connection.getRequest());
-            } else {
-                br.getHeaders().put("Range", "bytes=" + start + "-" + end);
-                con = br.openGetConnection(connection.getURL() + "");
-            }
-            if (!con.isOK()) {
-                try {
-                    /* always close connections that got opened */
-                    con.disconnect();
-                } catch (Throwable e) {
-                }
-                if (con.getResponseCode() != 416) {
-                    dl.error(LinkStatus.ERROR_DOWNLOAD_FAILED, "Server: " + con.getResponseMessage());
+            boolean returnConnection = false;
+            try {
+                if (connection.getRequestMethod() == RequestMethod.POST) {
+                    connection.getRequest().getHeaders().put("Range", "bytes=" + start + "-" + end);
+                    con = br.openRequestConnection(connection.getRequest());
                 } else {
-                    logger.warning("HTTP 416, maybe finished last chunk?");
+                    br.getHeaders().put("Range", "bytes=" + start + "-" + end);
+                    con = br.openGetConnection(connection.getURL() + "");
                 }
-                return null;
-            }
-            if (con.getHeaderField("Location") != null) {
-                try {
-                    /* always close connections that got opened */
-                    con.disconnect();
-                } catch (Throwable e) {
+                if (!con.isOK()) {
+                    if (con.getResponseCode() != 416) {
+                        dl.error(LinkStatus.ERROR_DOWNLOAD_FAILED, "Server: " + con.getResponseMessage());
+                    } else {
+                        logger.warning("HTTP 416, maybe finished last chunk?");
+                    }
+                    return null;
                 }
-                dl.error(LinkStatus.ERROR_DOWNLOAD_FAILED, "Server: Redirect");
-                return null;
+                if (con.getHeaderField("Location") != null) {
+                    dl.error(LinkStatus.ERROR_DOWNLOAD_FAILED, "Server: Redirect");
+                    return null;
+                }
+                returnConnection = true;
+                return con;
+            } finally {
+                if (!returnConnection) {
+                    try {
+                        /* always close connections that got opened */
+                        con.disconnect();
+                    } catch (Throwable e) {
+                    }
+                }
             }
-            return con;
         } catch (Exception e) {
             dl.addException(e);
             dl.error(LinkStatus.ERROR_RETRY, Exceptions.getStackTrace(e));
@@ -247,7 +245,10 @@ public class RAFChunk extends Thread {
             if (dl == null) throw new WTFException("connection null");
             connection.setReadTimeout(dl.getReadTimeout());
             connection.setConnectTimeout(dl.getRequestTimeout());
-            inputStream = new MeteredThrottledInputStream(connection.getInputStream(), new AverageSpeedMeter(10));
+            inputStream = new MeteredThrottledInputStream(connection.getInputStream(), new AverageSpeedMeter(10)) {
+                public void close() throws IOException {
+                };
+            };
             dl.getManagedConnetionHandler().addThrottledConnection(inputStream);
             int towrite = 0;
             int read = 0;
@@ -303,7 +304,7 @@ public class RAFChunk extends Thread {
                 } catch (NullPointerException e) {
                     if (inputStream == null) {
                         /* connection is closed and steam is null */
-                        if (!isExternalyAborted() && !connectionclosed) {
+                        if (!isExternalyAborted() && !connectionclosed.get()) {
                             LogSource.exception(logger, e);
                             throw e;
                         }
@@ -328,16 +329,16 @@ public class RAFChunk extends Thread {
                     break;
                 } catch (AsynchronousCloseException e3) {
                     LogSource.exception(logger, e3);
-                    if (!isExternalyAborted() && !connectionclosed) throw e3;
+                    if (!isExternalyAborted() && !connectionclosed.get()) throw e3;
                     towrite = -1;
                     break;
                 } catch (IOException e4) {
                     LogSource.exception(logger, e4);
-                    if (!isExternalyAborted() && !connectionclosed) throw e4;
+                    if (!isExternalyAborted() && !connectionclosed.get()) throw e4;
                     towrite = -1;
                     break;
                 }
-                if (towrite == -1 || isExternalyAborted() || connectionclosed) {
+                if (towrite == -1 || isExternalyAborted() || connectionclosed.get()) {
                     logger.warning("towrite: " + towrite + " exClosed: " + isExternalyAborted() + " conClosed: " + connectionclosed);
                     break;
                 }
@@ -401,10 +402,9 @@ public class RAFChunk extends Thread {
                 inputStream = null;
             }
             try {
-                if (this.clonedconnection) {
-                    /* cloned connection, we can disconnect now */
-                    this.connection.disconnect();
-                    this.connection = null;
+                /* we can close cloned connections here */
+                if (getOriginalConnection() != getCurrentConnection()) {
+                    getCurrentConnection().disconnect();
                 }
             } catch (Throwable e) {
             }
@@ -439,11 +439,6 @@ public class RAFChunk extends Thread {
     }
 
     public int getID() {
-        if (id < 0) {
-            synchronized (dl.getChunks()) {
-                id = dl.getChunks().indexOf(this);
-            }
-        }
         return id;
     }
 
@@ -470,7 +465,7 @@ public class RAFChunk extends Thread {
     private boolean isExternalyAborted() {
         DownloadInterface dli = downloadLink.getDownloadInstance();
         SingleDownloadController sdc = downloadLink.getDownloadLinkController();
-        return isInterrupted() || (dli != null && dli.externalDownloadStop()) || (sdc != null && sdc.isAborted());
+        return isInterrupted() || (dli != null && dli.externalDownloadStop()) || (sdc != null && sdc.isAborting());
     }
 
     /**
@@ -479,26 +474,9 @@ public class RAFChunk extends Thread {
     public void run() {
         try {
             run0();
-            while (true) {
-                /* wait for all chunks being started */
-                if (dl.getChunksStarted().get() == dl.getChunkNum()) {
-                    break;
-                }
-                try {
-                    Thread.sleep(1000);
-                } catch (InterruptedException e) {
-                    break;
-                }
-                /* external abort, proceed to close connection */
-                if (this.isExternalyAborted()) break;
-            }
         } finally {
-            try {
-                dl.addToChunksInProgress(-1);
-            } catch (Throwable e) {
-                LogSource.exception(logger, e);
-            }
-            dl.onChunkFinished();
+            running.set(false);
+            dl.onChunkFinished(this);
         }
     }
 
@@ -508,7 +486,7 @@ public class RAFChunk extends Thread {
             if (startByte >= endByte && endByte > 0 || startByte >= dl.getFileSize() && endByte > 0) return;
             if (dl.getChunkNum() > 1) {
                 /* we requested multiple chunks */
-                connection = copyConnection(connection);
+                connection = copyConnection(getOriginalConnection());
                 if (connection == null) {
                     /* copy failed!, lets check if this is the last chunk */
                     if (startByte >= dl.getFileSize() && dl.getFileSize() > 0) {
@@ -521,7 +499,7 @@ public class RAFChunk extends Thread {
                     return;
                 }
             } else if (startByte > 0) {
-                connection = copyConnection(connection);
+                connection = copyConnection(getOriginalConnection());
                 // workaround fuer fertigen endchunk
                 if (startByte >= dl.getFileSize() && dl.getFileSize() > 0) {
                     downloadLink.getLinkStatus().removeStatus(LinkStatus.ERROR_DOWNLOAD_FAILED);
@@ -540,6 +518,8 @@ public class RAFChunk extends Thread {
                     // logger.finest(connection.toString());
                     return;
                 }
+            } else {
+                connection = getOriginalConnection();
             }
             long[] ContentRange = connection.getRange();
             if (startByte >= 0) {
@@ -585,17 +565,13 @@ public class RAFChunk extends Thread {
                 }
                 endByte = cRequestedEndByte;
             }
-            dl.addChunksDownloading(+1);
-            setChunkStartet();
             download();
-            dl.addChunksDownloading(-1);
             logger.finer("Chunk finished " + getID() + " " + getBytesLoaded() + " bytes");
         } finally {
-            setChunkStartet();
             try {
                 /* we can close cloned connections here */
-                if (this.clonedconnection) {
-                    connection.disconnect();
+                if (getOriginalConnection() != getCurrentConnection()) {
+                    getCurrentConnection().disconnect();
                 }
             } catch (Throwable e) {
             }
@@ -617,7 +593,11 @@ public class RAFChunk extends Thread {
     }
 
     public void closeConnections() {
-        connectionclosed = true;
+        connectionclosed.set(true);
+        if (Thread.currentThread().isAlive() == false) {
+            running.set(false);
+        }
+        super.interrupt();
         try {
             inputStream.close();
         } catch (Throwable e) {
@@ -625,7 +605,13 @@ public class RAFChunk extends Thread {
             inputStream = null;
         }
         try {
-            connection.disconnect();
+            getCurrentConnection().disconnect();
+        } catch (Throwable e) {
+        } finally {
+            originalConnection = null;
+        }
+        try {
+            getOriginalConnection().disconnect();
         } catch (Throwable e) {
         } finally {
             connection = null;
@@ -634,10 +620,6 @@ public class RAFChunk extends Thread {
 
     public MeteredThrottledInputStream getInputStream() {
         return inputStream;
-    }
-
-    @Deprecated
-    public void setInProgress(boolean b) {
     }
 
 }

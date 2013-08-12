@@ -133,7 +133,7 @@ public class GrowlExtension extends AbstractExtension<GrowlConfig, GrowlTranslat
 
     public void onStateChange(StateEvent event) {
         if (DownloadWatchDog.IDLE_STATE == event.getNewState() || DownloadWatchDog.STOPPED_STATE == event.getNewState()) {
-            if (DownloadWatchDog.getInstance().getDownloadssincelastStart() > 0) growlNotification(T._.jd_plugins_optional_JDGrowlNotification_allfinished(), "", "All downloads finished");
+            if (DownloadWatchDog.getInstance().getSession().getDownloadsStarted().get() > 0) growlNotification(T._.jd_plugins_optional_JDGrowlNotification_allfinished(), "", "All downloads finished");
         }
     }
 

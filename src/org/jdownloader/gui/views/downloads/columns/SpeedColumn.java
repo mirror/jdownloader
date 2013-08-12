@@ -138,7 +138,7 @@ public class SpeedColumn extends ExtTextColumn<AbstractNode> {
         if (isSpeedWarning(obj)) {
 
             try {
-                Dialog.getInstance().showDialog(new PremiumInfoDialog(DomainInfo.getInstance(((DownloadLink) obj).getHost()), _GUI._.SpeedColumn_onSingleClick_object_(((DownloadLink) obj).getHost()), "SpeedColumn") {
+                Dialog.getInstance().showDialog(new PremiumInfoDialog((((DownloadLink) obj).getDomainInfo(true)), _GUI._.SpeedColumn_onSingleClick_object_(((DownloadLink) obj).getHost()), "SpeedColumn") {
                     protected String getDescription(DomainInfo info2) {
                         return _GUI._.SpeedColumn_getDescription_object_(info2.getTld());
                     }

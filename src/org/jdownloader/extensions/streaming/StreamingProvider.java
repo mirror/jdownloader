@@ -7,7 +7,6 @@ import java.util.HashMap;
 import java.util.LinkedList;
 
 import jd.controlling.AccountController;
-import jd.controlling.IOEQ;
 import jd.http.Browser;
 import jd.http.Request;
 import jd.http.URLConnectionAdapter;
@@ -150,7 +149,7 @@ public class StreamingProvider {
 
                         super.closeInputStream(streamingInputStream);
                         if (outputStream != null) {
-                            DelayedRunnable delayedOutputStreamCloser = new DelayedRunnable(IOEQ.TIMINGQUEUE, 10000) {
+                            DelayedRunnable delayedOutputStreamCloser = new DelayedRunnable(10000) {
                                 @Override
                                 public String getID() {
                                     return "CloseInputStream";

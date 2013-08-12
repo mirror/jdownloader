@@ -18,10 +18,11 @@ package org.jdownloader.extensions.extraction;
 
 import java.awt.Color;
 import java.io.File;
-import java.util.ArrayList;
 
+import jd.controlling.TaskQueue;
 import jd.gui.UserIO;
 
+import org.appwork.utils.event.queue.QueueAction;
 import org.appwork.utils.logging2.LogSource;
 import org.jdownloader.controlling.FileCreationEvent;
 import org.jdownloader.controlling.FileCreationManager;
@@ -41,31 +42,17 @@ public class ExtractionListenerList implements ExtractionListener {
     }
 
     public void onExtractionEvent(ExtractionEvent event) {
-        ExtractionController controller = event.getCaller();
-        LogSource logger = controller.getLogger();
-        // if (controller.getProgressController() != null) return;
-
-        // Falls der link entfernt wird während dem entpacken
-        // if (controller.getArchiv().getFirstArchiveFile().getFilePackage() ==
-        // FilePackage.getDefaultFilePackage() &&
-        // controller.getProgressController() == null) {
-        // logger.warning("LINK GOT REMOVED_: " +
-        // controller.getArchiv().getFirstArchiveFile());
-        // ProgressController progress = new
-        // ProgressController(T._.plugins_optional_extraction_progress_extractfile(controller.getArchiv().getFirstArchiveFile().getFileOutput()),
-        // 100, ex.getIconKey());
-        // controller.setProgressController(progress);
-        // }
-
+        final ExtractionController controller = event.getCaller();
+        final LogSource logger = controller.getLogger();
         switch (event.getType()) {
         case QUEUED:
 
             controller.getArchiv().setStatus(ExtractionStatus.IDLE);
             controller.getArchiv().getFirstArchiveFile().setMessage(T._.plugins_optional_extraction_status_queued());
-
             break;
         case EXTRACTION_FAILED:
             try {
+                logger.warning("Extraction failed");
                 ArchiveFile af = null;
                 if (controller.getException() != null) {
                     if (controller.getException() instanceof ExtractionException) {
@@ -75,7 +62,6 @@ public class ExtractionListenerList implements ExtractionListener {
                 for (ArchiveFile link : controller.getArchiv().getArchiveFiles()) {
                     if (link == null) continue;
                     if (af == link) {
-
                         link.setStatus(ExtractionStatus.ERROR_CRC);
                         link.setMessage(T._.failed(controller.getException().getMessage()));
                     } else if (controller.getException() != null) {
@@ -85,19 +71,16 @@ public class ExtractionListenerList implements ExtractionListener {
                         link.setStatus(ExtractionStatus.ERROR);
                         link.setMessage(T._.failed_no_details());
                     }
-
                 }
-                java.util.List<File> removed = new ArrayList<File>();
                 for (File f : controller.getArchiv().getExtractedFiles()) {
                     if (f.exists()) {
                         if (!FileCreationManager.getInstance().delete(f)) {
                             logger.warning("Could not delete file " + f.getAbsolutePath());
                         } else {
-                            removed.add(f);
+                            logger.warning("Deleted file " + f.getAbsolutePath());
                         }
                     }
                 }
-                if (removed.size() > 0) FileCreationManager.getInstance().getEventSender().fireEvent(new FileCreationEvent(controller, FileCreationEvent.Type.REMOVE_FILES, removed.toArray(new File[removed.size()])));
             } finally {
                 controller.getArchiv().setStatus(ExtractionStatus.ERROR);
                 controller.getArchiv().setActive(false);
@@ -109,7 +92,7 @@ public class ExtractionListenerList implements ExtractionListener {
             // //
             // controller.getArchiv().getFirstArchiveFile().requestGuiUpdate();
 
-            if (ex.getSettings().isAskForUnknownPasswordsEnabled()) {
+            if (ex.getSettings().isAskForUnknownPasswordsEnabled() || controller.isAskForUnknownPassword()) {
                 String pass = UserIO.getInstance().requestInputDialog(0, T._.plugins_optional_extraction_askForPassword(controller.getArchiv().getFirstArchiveFile().getName()), "");
                 if (pass == null || pass.length() == 0) {
 
@@ -163,12 +146,11 @@ public class ExtractionListenerList implements ExtractionListener {
             break;
         case EXTRACTION_FAILED_CRC:
             try {
+                logger.warning("Extraction failed(CRC)");
                 if (controller.getArchiv().getCrcError().size() != 0) {
                     for (ArchiveFile link : controller.getArchiv().getCrcError()) {
                         if (link == null) continue;
-
                         link.setStatus(ExtractionStatus.ERROR_CRC);
-
                     }
                 } else {
                     for (ArchiveFile link : controller.getArchiv().getArchiveFiles()) {
@@ -176,17 +158,15 @@ public class ExtractionListenerList implements ExtractionListener {
                         link.setMessage(T._.plugins_optional_extraction_error_extrfailedcrc());
                     }
                 }
-                java.util.List<File> removed = new ArrayList<File>();
                 for (File f : controller.getArchiv().getExtractedFiles()) {
                     if (f.exists()) {
                         if (!FileCreationManager.getInstance().delete(f)) {
                             logger.warning("Could not delete file " + f.getAbsolutePath());
                         } else {
-                            removed.add(f);
+                            logger.warning("Deleted file " + f.getAbsolutePath());
                         }
                     }
                 }
-                if (removed.size() > 0) FileCreationManager.getInstance().getEventSender().fireEvent(new FileCreationEvent(controller, FileCreationEvent.Type.REMOVE_FILES, removed.toArray(new File[removed.size()])));
             } finally {
                 controller.getArchiv().setStatus(ExtractionStatus.ERROR_CRC);
                 controller.getArchiv().setActive(false);
@@ -195,16 +175,26 @@ public class ExtractionListenerList implements ExtractionListener {
             break;
         case FINISHED:
             try {
-                FileCreationManager.getInstance().getEventSender().fireEvent(new FileCreationEvent(controller, FileCreationEvent.Type.NEW_FILES, controller.getArchiv().getExtractedFiles().toArray(new File[controller.getArchiv().getExtractedFiles().size()])));
-                if (ex.getSettings().isDeleteInfoFilesAfterExtraction()) {
-                    File fileOutput = new File(controller.getArchiv().getFirstArchiveFile().getFilePath());
-                    File infoFiles = new File(fileOutput.getParentFile(), fileOutput.getName().replaceFirst("(?i)(\\.pa?r?t?\\.?[0-9]+\\.rar|\\.rar)$", "") + ".info");
-                    if (infoFiles.exists() && FileCreationManager.getInstance().delete(infoFiles)) {
-                        logger.info(infoFiles.getName() + " removed");
-                    }
-                }
-                controller.getArchiv().setStatus(ExtractionStatus.SUCCESSFUL);
+                TaskQueue.getQueue().add(new QueueAction<Void, RuntimeException>() {
 
+                    @Override
+                    protected Void run() throws RuntimeException {
+                        FileCreationManager.getInstance().getEventSender().fireEvent(new FileCreationEvent(controller, FileCreationEvent.Type.NEW_FILES, controller.getArchiv().getExtractedFiles().toArray(new File[controller.getArchiv().getExtractedFiles().size()])));
+                        if (ex.getSettings().isDeleteInfoFilesAfterExtraction()) {
+                            File fileOutput = new File(controller.getArchiv().getFirstArchiveFile().getFilePath());
+                            File infoFiles = new File(fileOutput.getParentFile(), fileOutput.getName().replaceFirst("(?i)(\\.pa?r?t?\\.?[0-9]+\\.rar|\\.rar)$", "") + ".info");
+                            if (infoFiles.exists() && infoFiles.delete()) {
+                                logger.info(infoFiles.getName() + " removed");
+                            }
+                        }
+                        for (ArchiveFile link : controller.getArchiv().getArchiveFiles()) {
+                            if (link == null) continue;
+                            link.setStatus(ExtractionStatus.SUCCESSFUL);
+                        }
+                        return null;
+                    }
+                });
+                controller.getArchiv().setStatus(ExtractionStatus.SUCCESSFUL);
             } finally {
                 controller.getArchiv().setActive(false);
                 ex.onFinished(controller);
@@ -216,7 +206,7 @@ public class ExtractionListenerList implements ExtractionListener {
             break;
         case CLEANUP:
             try {
-
+                logger.warning("Cleanup");
                 ArchiveFile af = null;
                 if (controller.getException() != null) {
                     if (controller.getException() instanceof ExtractionException) {
@@ -224,8 +214,6 @@ public class ExtractionListenerList implements ExtractionListener {
                         af.deleteFile();
                     }
                 }
-
-                java.util.List<File> removed = new ArrayList<File>();
                 if (controller.gotKilled()) {
                     controller.getArchiv().getFirstArchiveFile().setMessage(null);
                     for (File f : controller.getArchiv().getExtractedFiles()) {
@@ -233,12 +221,11 @@ public class ExtractionListenerList implements ExtractionListener {
                             if (!FileCreationManager.getInstance().delete(f)) {
                                 logger.warning("Could not delete file " + f.getAbsolutePath());
                             } else {
-                                removed.add(f);
+                                logger.warning("Deleted file " + f.getAbsolutePath());
                             }
                         }
                     }
                 }
-                if (removed.size() > 0) FileCreationManager.getInstance().getEventSender().fireEvent(new FileCreationEvent(controller, FileCreationEvent.Type.REMOVE_FILES, removed.toArray(new File[removed.size()])));
             } finally {
                 controller.getArchiv().setActive(false);
                 controller.getArchiv().getFirstArchiveFile().setProgress(0, 0, null);
@@ -257,6 +244,7 @@ public class ExtractionListenerList implements ExtractionListener {
             break;
         case FILE_NOT_FOUND:
             try {
+                logger.warning("FileNotFound");
                 if (controller.getArchiv().getCrcError().size() != 0) {
                     controller.getArchiv().setStatus(ExtractionStatus.ERRROR_FILE_NOT_FOUND);
                 } else {
@@ -267,17 +255,15 @@ public class ExtractionListenerList implements ExtractionListener {
 
                     controller.getArchiv().setStatus(ExtractionStatus.ERROR_CRC);
                 }
-                java.util.List<File> removed = new ArrayList<File>();
                 for (File f : controller.getArchiv().getExtractedFiles()) {
                     if (f.exists()) {
                         if (!FileCreationManager.getInstance().delete(f)) {
                             logger.warning("Could not delete file " + f.getAbsolutePath());
                         } else {
-                            removed.add(f);
+                            logger.warning("Deleted file " + f.getAbsolutePath());
                         }
                     }
                 }
-                if (removed.size() > 0) FileCreationManager.getInstance().getEventSender().fireEvent(new FileCreationEvent(controller, FileCreationEvent.Type.REMOVE_FILES, removed.toArray(new File[removed.size()])));
             } finally {
                 controller.getArchiv().setActive(false);
                 ex.onFinished(controller);

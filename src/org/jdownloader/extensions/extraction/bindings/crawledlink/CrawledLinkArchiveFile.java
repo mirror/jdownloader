@@ -16,6 +16,7 @@ import org.jdownloader.gui.views.components.packagetable.LinkTreeUtils;
 public class CrawledLinkArchiveFile implements ArchiveFile {
 
     private java.util.List<CrawledLink> links;
+
     private String                      name;
     private long                        size;
     private Archive                     archive;
@@ -77,8 +78,7 @@ public class CrawledLinkArchiveFile implements ArchiveFile {
         return true;
     }
 
-    public boolean deleteFile() {
-        return false;
+    public void deleteFile() {
     }
 
     public boolean exists() {

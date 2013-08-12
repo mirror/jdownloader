@@ -3,7 +3,7 @@ package jd.gui.swing.jdgui.components.toolbar.actions;
 import java.awt.event.ActionEvent;
 import java.util.ArrayList;
 
-import jd.controlling.IOEQ;
+import jd.controlling.TaskQueue;
 import jd.controlling.downloadcontroller.DownloadWatchDog;
 import jd.controlling.downloadcontroller.event.DownloadWatchdogListener;
 import jd.controlling.linkcrawler.CrawledLink;
@@ -17,6 +17,7 @@ import jd.gui.swing.jdgui.interfaces.View;
 import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.events.GenericConfigEventListener;
 import org.appwork.storage.config.handler.KeyHandler;
+import org.appwork.utils.event.queue.QueueAction;
 import org.appwork.utils.swing.EDTRunner;
 import org.jdownloader.controlling.contextmenu.Customizer;
 import org.jdownloader.gui.event.GUIEventSender;
@@ -34,8 +35,7 @@ import org.jdownloader.translate._JDT;
 public class StartDownloadsAction extends ToolBarAction implements DownloadWatchdogListener, GUIListener, GenericConfigEventListener<Enum> {
 
     /**
-     * Create a new instance of StartDownloadsAction. This is a singleton class. Access the only existing instance by using
-     * {@link #getInstance()}.
+     * Create a new instance of StartDownloadsAction. This is a singleton class. Access the only existing instance by using {@link #getInstance()}.
      */
     public StartDownloadsAction() {
 
@@ -51,8 +51,10 @@ public class StartDownloadsAction extends ToolBarAction implements DownloadWatch
 
     public void actionPerformed(final ActionEvent e) {
         if (JDGui.getInstance().isCurrentPanel(Panels.LINKGRABBER)) {
-            IOEQ.add(new Runnable() {
-                public void run() {
+            TaskQueue.getQueue().add(new QueueAction<Void, RuntimeException>() {
+
+                @Override
+                protected Void run() throws RuntimeException {
                     switch (CFG_GUI.CFG.getStartButtonActionInLinkgrabberContext()) {
                     case ADD_ALL_LINKS_AND_START_DOWNLOADS:
                         java.util.List<AbstractNode> packages = new ArrayList<AbstractNode>(LinkGrabberTableModel.getInstance().getAllPackageNodes());
@@ -60,17 +62,13 @@ public class StartDownloadsAction extends ToolBarAction implements DownloadWatch
                         ca.setAutoStart(AutoStartOptions.ENABLED);
                         ca.actionPerformed(null);
                         break;
-
                     case START_DOWNLOADS_ONLY:
                         DownloadWatchDog.getInstance().startDownloads();
                         break;
-
-                    case DISABLED:
-                        return;
                     }
-
+                    return null;
                 }
-            }, true);
+            });
         } else {
             DownloadWatchDog.getInstance().startDownloads();
         }

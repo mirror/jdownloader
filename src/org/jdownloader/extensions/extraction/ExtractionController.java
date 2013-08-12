@@ -20,19 +20,19 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashSet;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
-import jd.controlling.IOEQ;
 import jd.controlling.downloadcontroller.DownloadWatchDog;
 import jd.controlling.downloadcontroller.DownloadWatchDog.DISKSPACECHECK;
 
+import org.appwork.scheduler.DelayedRunnable;
 import org.appwork.storage.JSonStorage;
 import org.appwork.utils.Exceptions;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.event.queue.QueueAction;
 import org.appwork.utils.logging2.LogSource;
-import org.jdownloader.controlling.FileCreationEvent;
 import org.jdownloader.controlling.FileCreationManager;
 import org.jdownloader.extensions.extraction.ExtractionEvent.Type;
 import org.jdownloader.logging.LogController;
@@ -45,7 +45,7 @@ import org.jdownloader.logging.LogController;
  */
 public class ExtractionController extends QueueAction<Void, RuntimeException> {
     private java.util.List<String> passwordList;
-    private int                    passwordListSize = 0;
+    private int                    passwordListSize      = 0;
     private Exception              exception;
     private boolean                removeAfterExtraction;
     private Archive                archive;
@@ -56,11 +56,12 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> {
     private boolean                removeDownloadLinksAfterExtraction;
     private ExtractionExtension    extension;
     private final LogSource        logger;
-    private FileSignatures         fileSignatures   = null;
+    private FileSignatures         fileSignatures        = null;
     private boolean                overwriteFiles;
     private File                   extractToFolder;
-    private boolean                successful       = false;
+    private boolean                successful            = false;
     private ExtractLogFileWriter   crashLog;
+    private boolean                askForUnknownPassword = false;
 
     public boolean isSuccessful() {
         return successful;
@@ -77,7 +78,6 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> {
 
     ExtractionController(ExtractionExtension extractionExtension, Archive archiv) {
         this.archive = archiv;
-
         logger = LogController.CL(false);
         logger.setAllowTimeoutFlush(false);
         logger.info("Extraction of" + archive);
@@ -129,7 +129,13 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> {
     @Override
     public Void run() {
         // let's write an info file. and delete if after extraction. this wy we have infosfiles if the extraction crashes jd
-        crashLog = new ExtractLogFileWriter(archive.getName(), archive.getFirstArchiveFile().getFilePath(), archive.getFactory().getID());
+        crashLog = new ExtractLogFileWriter(archive.getName(), archive.getFirstArchiveFile().getFilePath(), archive.getFactory().getID()) {
+            @Override
+            public void write(String string) {
+                super.write(string);
+                logger.info(string);
+            }
+        };
         try {
             fireEvent(ExtractionEvent.Type.START);
             archive.onStartExtracting();
@@ -210,17 +216,15 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> {
                                 return null;
                             }
                         }
-
                         fireEvent(ExtractionEvent.Type.PASSWORD_FOUND);
                         logger.info("Found password for " + archive + "->" + archive.getFinalPassword());
 
-                        /* avoid duplicates */
-                        pwList.remove(archive.getFinalPassword());
-                        pwList.add(0, archive.getFinalPassword());
-                        extractor.config.setPasswordList(pwList);
+                    }
+                    if (StringUtils.isNotEmpty(archive.getFinalPassword())) {
+                        extension.addPassword(archive.getFinalPassword());
                     }
                 }
-                DISKSPACECHECK check = DownloadWatchDog.getInstance().checkFreeDiskSpace(getExtractToFolder(), archive.getContentView().getTotalSize());
+                DISKSPACECHECK check = DownloadWatchDog.getInstance().checkFreeDiskSpace(getExtractToFolder(), null, archive.getContentView().getTotalSize());
                 if (DISKSPACECHECK.FAILED.equals(check) || DISKSPACECHECK.INVALIDFOLDER.equals(check)) {
                     fireEvent(ExtractionEvent.Type.NOT_ENOUGH_SPACE);
                     logger.info("Not enough harddisk space for unpacking archive " + archive.getFirstArchiveFile().getFilePath());
@@ -244,7 +248,8 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> {
                 logger.info("Execute unpacking of " + archive);
                 logger.info("Extract to " + getExtractToFolder());
                 crashLog.write("Use Password: " + archive.getFinalPassword());
-                timer = IOEQ.TIMINGQUEUE.scheduleWithFixedDelay(new Runnable() {
+                ScheduledExecutorService scheduler = DelayedRunnable.getNewScheduledExecutorService();
+                timer = scheduler.scheduleWithFixedDelay(new Runnable() {
                     public void run() {
                         fireEvent(ExtractionEvent.Type.EXTRACTING);
                     }
@@ -252,17 +257,20 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> {
                 }, 1, 2, TimeUnit.SECONDS);
                 crashLog.write("Start Extracting " + extractor);
                 try {
-
                     extractor.extract(this);
                 } finally {
+                    timer.cancel(false);
+                    scheduler.shutdown();
+                    extractor.close();
                     crashLog.write("Extractor Returned");
                     if (extractor.getLastAccessedArchiveFile() != null) crashLog.write("Last used File: " + extractor.getLastAccessedArchiveFile());
                     fireEvent(ExtractionEvent.Type.EXTRACTING);
-                    timer.cancel(false);
-                    extractor.close();
                 }
                 if (gotKilled()) { return null; }
-                if (extractor.getException() != null) exception = extractor.getException();
+                if (extractor.getException() != null) {
+                    exception = extractor.getException();
+                    logger.log(exception);
+                }
                 if (exception != null) {
                     crashLog.write("Exception occured: \r\n" + Exceptions.getStackTrace(exception));
                 }
@@ -270,16 +278,13 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> {
                 crashLog.write("ExitCode: " + archive.getExitCode());
                 switch (archive.getExitCode()) {
                 case ExtractionControllerConstants.EXIT_CODE_SUCCESS:
-                    logger.info("Unpacking successful for " + archive);
-
+                    logger.info("Unpacking successful for " + archive + " interrupted: " + archive.getGotInterrupted());
                     archive.getSettings().setExtractionInfo(new ExtractionInfo(getExtractToFolder(), archive));
-
-                    crashLog.write("Info: \r\n" + JSonStorage.toString(new ExtractionInfo(getExtractToFolder(), archive)));
+                    crashLog.write("Info: \r\n" + JSonStorage.serializeToJson(new ExtractionInfo(getExtractToFolder(), archive)));
                     crashLog.write("Successful");
                     successful = true;
                     fireEvent(ExtractionEvent.Type.FINISHED);
                     logger.clear();
-
                     break;
                 case ExtractionControllerConstants.EXIT_CODE_INCOMPLETE_ERROR:
                     logger.warning("Archive seems to be incomplete " + archive);
@@ -290,21 +295,18 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> {
                 case ExtractionControllerConstants.EXIT_CODE_CRC_ERROR:
                     logger.warning("A CRC error occurred when unpacking " + archive);
                     crashLog.write("CRC Error occured");
-
                     crashLog.write("Failed");
                     fireEvent(ExtractionEvent.Type.EXTRACTION_FAILED_CRC);
                     break;
                 case ExtractionControllerConstants.EXIT_CODE_USER_BREAK:
                     logger.info("User interrupted unpacking of " + archive);
                     crashLog.write("Interrupted by User");
-
                     crashLog.write("Failed");
                     fireEvent(ExtractionEvent.Type.EXTRACTION_FAILED);
                     break;
                 case ExtractionControllerConstants.EXIT_CODE_CREATE_ERROR:
                     logger.warning("Could not create Outputfile for" + archive);
                     crashLog.write("Could not create Outputfile");
-
                     crashLog.write("Failed");
                     fireEvent(ExtractionEvent.Type.EXTRACTION_FAILED);
                     break;
@@ -312,29 +314,23 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> {
                     logger.warning("Unable to write unpacked data on harddisk for " + archive);
                     this.exception = new ExtractionException("Write to disk error");
                     crashLog.write("Harddisk write Error");
-
                     crashLog.write("Failed");
                     fireEvent(ExtractionEvent.Type.EXTRACTION_FAILED);
                     break;
                 case ExtractionControllerConstants.EXIT_CODE_FATAL_ERROR:
                     logger.warning("A unknown fatal error occurred while unpacking " + archive);
                     crashLog.write("Unknown Fatal Error");
-
                     crashLog.write("Failed");
                     fireEvent(ExtractionEvent.Type.EXTRACTION_FAILED);
                     break;
                 case ExtractionControllerConstants.EXIT_CODE_WARNING:
-
                     logger.warning("Non fatal error(s) occurred while unpacking " + archive);
-
                     crashLog.write("Unknown Non Fatal Error");
-
                     crashLog.write("Failed");
                     fireEvent(ExtractionEvent.Type.EXTRACTION_FAILED);
                     break;
                 default:
                     crashLog.write("Failed...unknown reason");
-
                     crashLog.write("Failed");
                     fireEvent(ExtractionEvent.Type.EXTRACTION_FAILED);
                     break;
@@ -348,7 +344,6 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> {
             logger.log(e);
             this.exception = e;
             crashLog.write("Exception occured: \r\n" + Exceptions.getStackTrace(e));
-
             crashLog.write("Failed");
             fireEvent(ExtractionEvent.Type.EXTRACTION_FAILED);
         } finally {
@@ -378,20 +373,14 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> {
      * Deletes the archive files.
      */
     void removeArchiveFiles() {
-        java.util.List<File> removed = new ArrayList<File>();
         for (ArchiveFile link : archive.getArchiveFiles()) {
             if (removeAfterExtraction) {
-                if (!link.deleteFile()) {
-                    logger.warning("Could not delete archive: " + link);
-                } else {
-                    removed.add(new File(link.getFilePath()));
-                }
+                link.deleteFile();
             }
             if (isRemoveDownloadLinksAfterExtraction()) {
                 link.deleteLink();
             }
         }
-        if (removed.size() > 0) FileCreationManager.getInstance().getEventSender().fireEvent(new FileCreationEvent(this, FileCreationEvent.Type.REMOVE_FILES, removed.toArray(new File[removed.size()])));
     }
 
     /**
@@ -489,6 +478,21 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> {
 
     public boolean isOverwriteFiles() {
         return overwriteFiles;
+    }
+
+    /**
+     * @return the askForUnknownPassword
+     */
+    public boolean isAskForUnknownPassword() {
+        return askForUnknownPassword;
+    }
+
+    /**
+     * @param askForUnknownPassword
+     *            the askForUnknownPassword to set
+     */
+    public void setAskForUnknownPassword(boolean askForUnknownPassword) {
+        this.askForUnknownPassword = askForUnknownPassword;
     }
 
 }

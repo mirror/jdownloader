@@ -126,7 +126,7 @@ public class PluginFinder {
             /* no cached plugin found, first lets try to find a valid plugin for given host */
             try {
                 LazyHostPlugin hPlugin = HostPluginController.getInstance().get(acc.getHoster());
-                if (hPlugin != null) {
+                if (hPlugin != null && hPlugin.isPremium()) {
                     pluginForHost = hPlugin.getPrototype(null);
                 }
             } catch (final Throwable e) {

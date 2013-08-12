@@ -42,16 +42,8 @@ public class PluginUtils {
     }
 
     public static String askPassword(String message, final DownloadLink link) {
-        try {
-            link.getLinkStatus().addStatus(LinkStatus.WAITING_USERIO);
-
-            if (message == null) message = _JDT._.jd_plugins_PluginUtils_askPassword(link.getName());
-            final String password = askPassword(message, link.getDownloadPassword());
-
-            return password;
-        } finally {
-            link.getLinkStatus().removeStatus(LinkStatus.WAITING_USERIO);
-        }
+        if (message == null) message = _JDT._.jd_plugins_PluginUtils_askPassword(link.getName());
+        return askPassword(message, link.getDownloadPassword());
     }
 
     public static String askPassword(String message, final CryptedLink link) {

@@ -89,10 +89,8 @@ public class DownloadLinkStorable implements Storable {
 
         LinkStatus ls = link.getLinkStatus();
         LinkStatusJobStorable lsj = new LinkStatusJobStorable();
-
-        lsj.setActive(ls.isPluginActive());
         lsj.setFinished(ls.isFinished());
-        lsj.setInProgress(ls.isPluginInProgress());
+        lsj.setInProgress(link.getDownloadLinkController() != null);
         lsj.setLinkID(link.getUniqueID().toString());
         lsj.setStatus(ls.getStatus());
         lsj.setStatusText(ls.getMessage(false));

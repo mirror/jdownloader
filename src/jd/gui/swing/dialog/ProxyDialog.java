@@ -74,6 +74,11 @@ public class ProxyDialog extends AbstractDialog<HTTPProxy> implements CaretListe
         this.delayer = new DelayedRunnable(ToolTipController.EXECUTER, 2000) {
 
             @Override
+            public String getID() {
+                return "ProxyDialog";
+            }
+
+            @Override
             public void delayedrun() {
                 new EDTRunner() {
 

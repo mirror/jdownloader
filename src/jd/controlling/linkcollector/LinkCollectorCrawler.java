@@ -40,8 +40,4 @@ public class LinkCollectorCrawler extends LinkCrawler implements LinkCollectorLi
     public void onLinkCollectorContentAdded(LinkCollectorEvent event) {
     }
 
-    @Override
-    public void onLinkCollectorContentModified(LinkCollectorEvent event) {
-    }
-
 }

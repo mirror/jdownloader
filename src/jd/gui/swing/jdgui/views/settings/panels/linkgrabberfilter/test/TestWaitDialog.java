@@ -10,7 +10,6 @@ import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JScrollPane;
 
-import jd.controlling.IOEQ;
 import jd.controlling.linkchecker.LinkChecker;
 import jd.controlling.linkchecker.LinkCheckerHandler;
 import jd.controlling.linkcrawler.CrawledLink;
@@ -62,7 +61,11 @@ public class TestWaitDialog extends AbstractDialog<List<CrawledLink>> {
         super(UIOManager.BUTTONS_HIDE_OK, title, null, null, _GUI._.literally_close());
         this.url = string;
         linkFilterController = controller;
-        delayer = new DelayedRunnable(IOEQ.TIMINGQUEUE, 200, 1000) {
+        delayer = new DelayedRunnable(200, 1000) {
+            @Override
+            public String getID() {
+                return "TestWaitDialog";
+            }
 
             @Override
             public void delayedrun() {

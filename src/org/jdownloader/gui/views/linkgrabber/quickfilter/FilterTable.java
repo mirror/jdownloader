@@ -7,6 +7,8 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.concurrent.CopyOnWriteArraySet;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.swing.JPopupMenu;
 import javax.swing.KeyStroke;
@@ -15,7 +17,7 @@ import javax.swing.event.TableModelEvent;
 import javax.swing.event.TableModelListener;
 
 import jd.SecondLevelLaunch;
-import jd.controlling.IOEQ;
+import jd.controlling.TaskQueue;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledPackage;
 import jd.controlling.packagecontroller.AbstractNode;
@@ -28,6 +30,8 @@ import org.appwork.storage.config.handler.BooleanKeyHandler;
 import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.swing.exttable.ExtColumn;
 import org.appwork.swing.exttable.columns.ExtCheckColumn;
+import org.appwork.utils.event.queue.Queue;
+import org.appwork.utils.event.queue.QueueAction;
 import org.appwork.utils.swing.EDTRunner;
 import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.components.packagetable.PackageControllerTableModel;
@@ -42,24 +46,66 @@ import org.jdownloader.updatev2.gui.LAFOptions;
 
 public abstract class FilterTable extends BasicJDTable<Filter> implements PackageControllerTableModelFilter<CrawledPackage, CrawledLink> {
 
+    private static class FilterTableUpdater {
+
+        private AtomicBoolean update = new AtomicBoolean(false);
+        private FilterTable   table;
+
+        public FilterTable getTable() {
+            return table;
+        }
+
+        private FilterTableUpdater(FilterTable table) {
+            this.table = table;
+        }
+
+        public AtomicBoolean getUpdate() {
+            return update;
+        }
+
+    }
+
     /**
      * 
      */
-    private static final long                   serialVersionUID = -5917220196056769905L;
-    protected java.util.List<Filter>            filters          = new ArrayList<Filter>();
-    protected volatile boolean                  enabled          = false;
-    private HeaderInterface                     header;
-    private LinkGrabberTable                    linkgrabberTable;
-    private DelayedRunnable                     delayedRefresh;
+    private static final long                              serialVersionUID   = -5917220196056769905L;
+    protected java.util.List<Filter>                       filters            = new ArrayList<Filter>();
+    protected volatile boolean                             enabled            = false;
+    private HeaderInterface                                header;
+    private LinkGrabberTable                               linkgrabberTable;
+    protected static final long                            REFRESH_MIN        = 200l;
+    protected static final long                            REFRESH_MAX        = 2000l;
+    /* all instances share single DelayedRunnable to avoid multiple refreshing */
+    private static CopyOnWriteArraySet<FilterTableUpdater> filterTableUpdates = new CopyOnWriteArraySet<FilterTable.FilterTableUpdater>();
+    private static DelayedRunnable                         delayedRefresh     = new DelayedRunnable(REFRESH_MIN, REFRESH_MAX) {
+                                                                                  @Override
+                                                                                  public String getID() {
+                                                                                      return "FilterTable";
+                                                                                  }
 
-    private TableModelListener                  listener;
-    private BooleanKeyHandler                   visibleKeyHandler;
-    private Filter                              filterException;
-    private GenericConfigEventListener<Boolean> sidebarListener;
+                                                                                  @Override
+                                                                                  public void delayedrun() {
+                                                                                      TaskQueue.getQueue().add(new QueueAction<Void, RuntimeException>(Queue.QueuePriority.HIGH) {
 
-    protected static final long                 REFRESH_MIN      = 200l;
-    protected static final long                 REFRESH_MAX      = 2000l;
-    private static final Object                 LOCK             = new Object();
+                                                                                          @Override
+                                                                                          protected Void run() throws RuntimeException {
+                                                                                              for (FilterTableUpdater filterTable : filterTableUpdates) {
+                                                                                                  if (filterTable.getUpdate().getAndSet(false)) {
+                                                                                                      filterTable.getTable().updateNow();
+                                                                                                  }
+                                                                                              }
+                                                                                              return null;
+                                                                                          }
+                                                                                      });
+                                                                                  }
+
+                                                                              };
+
+    private TableModelListener                             listener;
+    private BooleanKeyHandler                              visibleKeyHandler;
+    private Filter                                         filterException;
+    private GenericConfigEventListener<Boolean>            sidebarListener;
+    private final FilterTableUpdater                       filterTableUpdater;
 
     public FilterTable(HeaderInterface hosterFilter, LinkGrabberTable table, final BooleanKeyHandler visible) {
         super(new FilterTableModel());
@@ -67,20 +113,11 @@ public abstract class FilterTable extends BasicJDTable<Filter> implements Packag
         this.visibleKeyHandler = visible;
         header.setFilterCount(0);
         this.linkgrabberTable = table;
-        delayedRefresh = new DelayedRunnable(IOEQ.TIMINGQUEUE, REFRESH_MIN, REFRESH_MAX) {
-
-            @Override
-            public void delayedrun() {
-                updateNow();
-
-            }
-
-        };
-
+        filterTableUpdater = new FilterTableUpdater(this);
         listener = new TableModelListener() {
 
             public void tableChanged(TableModelEvent e) {
-                delayedRefresh.run();
+                requestUpdate();
             }
         };
         this.setShowVerticalLines(false);
@@ -106,24 +143,21 @@ public abstract class FilterTable extends BasicJDTable<Filter> implements Packag
         // ColorUtils.getAlphaInstance(new JLabel().getForeground(), 6)));
         this.setIntercellSpacing(new Dimension(0, 0));
 
-        init();
         sidebarListener = new GenericConfigEventListener<Boolean>() {
 
             @Override
             public void onConfigValueModified(KeyHandler<Boolean> keyHandler, Boolean newValue) {
                 if (Boolean.TRUE.equals(newValue) && org.jdownloader.settings.staticreferences.CFG_GUI.CFG.isLinkgrabberSidebarEnabled()) {
                     enabled = true;
+                    filterTableUpdates.add(filterTableUpdater);
                     linkgrabberTable.getModel().addFilter(FilterTable.this);
-
                     linkgrabberTable.getModel().addTableModelListener(listener);
                     FilterTable.super.setVisible(true);
                 } else {
-                    FilterTable.this.linkgrabberTable.getModel().removeTableModelListener(listener);
-
                     enabled = false;
-                    /* filter disabled */
-
+                    filterTableUpdates.remove(filterTableUpdater);
                     linkgrabberTable.getModel().removeFilter(FilterTable.this);
+                    FilterTable.this.linkgrabberTable.getModel().removeTableModelListener(listener);
                     FilterTable.super.setVisible(false);
                 }
                 updateAllFiltersInstant();
@@ -146,6 +180,11 @@ public abstract class FilterTable extends BasicJDTable<Filter> implements Packag
 
     }
 
+    protected void requestUpdate() {
+        filterTableUpdater.getUpdate().set(true);
+        delayedRefresh.run();
+    }
+
     protected void onSelectionChanged() {
         updateSelection();
     }
@@ -154,12 +193,10 @@ public abstract class FilterTable extends BasicJDTable<Filter> implements Packag
 
         // clear selection in other filter tables if we switched to a new one
         if (this.hasFocus()) {
-
             // org.jdownloader.settings.statics.LINKFILTER.CFG
             if (org.jdownloader.settings.staticreferences.CFG_LINKGRABBER.QUICK_VIEW_SELECTION_ENABLED.getValue()) {
                 java.util.List<Filter> selection = getSelectedFilters();
                 java.util.List<AbstractNode> newSelection = getMatches(selection);
-
                 getLinkgrabberTable().getModel().setSelectedObjects(newSelection);
             }
         }
@@ -288,21 +325,13 @@ public abstract class FilterTable extends BasicJDTable<Filter> implements Packag
     }
 
     protected void updateNow() {
-
         reset();
         java.util.List<Filter> newData = updateQuickFilerTableData();
-        // for (Iterator<Filter> it = newData.iterator(); it.hasNext();) {
-        // if (it.next().getCounter() == 0) {
-        // it.remove();
-        // }
-        // }
         setVisible(newData.size() > 0);
         filters = newData;
         if (visibleKeyHandler.getValue()) {
-            //
             getModel()._fireTableStructureChanged(newData, true);
         }
-
     }
 
     protected int getCountWithout(Filter filter, java.util.List<CrawledLink> filteredLinks) {
@@ -324,9 +353,6 @@ public abstract class FilterTable extends BasicJDTable<Filter> implements Packag
             }
         }
         return ret;
-    }
-
-    protected void init() {
     }
 
     public LinkGrabberTable getLinkgrabberTable() {
@@ -352,11 +378,10 @@ public abstract class FilterTable extends BasicJDTable<Filter> implements Packag
     }
 
     protected void updateAllFiltersInstant() {
-        java.util.List<PackageControllerTableModelFilter<CrawledPackage, CrawledLink>> tableFilters = getLinkgrabberTable().getModel().getTableFilters();
-
+        final java.util.List<PackageControllerTableModelFilter<CrawledPackage, CrawledLink>> tableFilters = getLinkgrabberTable().getModel().getTableFilters();
         for (PackageControllerTableModelFilter<CrawledPackage, CrawledLink> f : tableFilters) {
             if (f instanceof FilterTable) {
-                ((FilterTable) f).updateNow();
+                ((FilterTable) f).requestUpdate();
             }
         }
     }

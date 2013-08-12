@@ -120,8 +120,7 @@ public class FavIcons {
 
     }
 
-    public static ImageIcon getFavIcon(String favIconhost, FavIconRequestor requestor, boolean useOriginalHost) {
-        String host = useOriginalHost == false ? Browser.getHost(favIconhost) : favIconhost;
+    public static ImageIcon getFavIcon(String host, FavIconRequestor requestor) {
         if (host == null) return null;
         ImageIcon image = null;
         synchronized (LOCK) {
@@ -171,7 +170,29 @@ public class FavIcons {
                             }
                             return;
                         }
-                        BufferedImage favicon = downloadFavIcon(host);
+
+                        String tryHost = host;
+                        ArrayList<String> tryHosts = new ArrayList<String>();
+                        int index = 0;
+                        /* this loop adds every subdomain and the tld to tryHosts and we try to fetch a favIcon in same order */
+                        while (true) {
+                            tryHosts.add(tryHost);
+                            if ((index = tryHost.indexOf(".")) >= 0 && tryHost.length() >= index + 1) {
+                                tryHost = tryHost.substring(index + 1);
+                                if (tryHost.indexOf(".") >= 0) {
+                                    continue;
+                                } else {
+                                    break;
+                                }
+                            } else {
+                                break;
+                            }
+                        }
+                        BufferedImage favicon = null;
+                        for (String tryHost2 : tryHosts) {
+                            favicon = downloadFavIcon(tryHost2);
+                            if (favicon != null) break;
+                        }
                         synchronized (LOCK) {
                             java.util.List<FavIconRequestor> requestors = QUEUE.remove(host);
                             if (favicon == null) {

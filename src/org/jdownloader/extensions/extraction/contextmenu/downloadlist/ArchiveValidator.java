@@ -26,6 +26,7 @@ public class ArchiveValidator {
                 lock = VALIDATIONLOCKS.get(selection);
                 if (lock == null) {
                     lock = new Object();
+                    VALIDATIONLOCKS.put(selection, lock);
                 }
             }
         }
@@ -46,6 +47,5 @@ public class ArchiveValidator {
                 }
             }
         }
-
     }
 }

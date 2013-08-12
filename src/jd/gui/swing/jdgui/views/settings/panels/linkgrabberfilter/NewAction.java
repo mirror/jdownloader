@@ -4,11 +4,12 @@ import java.awt.event.ActionEvent;
 
 import javax.swing.AbstractAction;
 
-import jd.controlling.IOEQ;
+import jd.controlling.TaskQueue;
 import jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter.editdialog.ConditionDialog;
 import jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter.editdialog.ExceptionsRuleDialog;
 import jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter.editdialog.FilterRuleDialog;
 
+import org.appwork.utils.event.queue.QueueAction;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
@@ -62,15 +63,14 @@ public class NewAction extends AbstractAddAction {
         try {
             Dialog.getInstance().showDialog(d);
             rule.setEnabled(true);
-            IOEQ.add(new Runnable() {
+            TaskQueue.getQueue().add(new QueueAction<Void, RuntimeException>() {
 
-                public void run() {
-
+                @Override
+                protected Void run() throws RuntimeException {
                     LinkFilterController.getInstance().add(rule);
-
+                    return null;
                 }
-
-            }, true);
+            });
         } catch (DialogClosedException e1) {
             e1.printStackTrace();
         } catch (DialogCanceledException e1) {

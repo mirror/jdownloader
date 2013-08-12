@@ -13,7 +13,6 @@ public class DeleteQuickAction extends DeleteSelectionAction {
     public DeleteQuickAction(SelectionInfo<FilePackage, DownloadLink> si) {
         super(si);
         setName(_GUI._.DeleteQuickAction_DeleteQuickAction_object_());
-
     }
 
 }

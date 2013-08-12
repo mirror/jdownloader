@@ -14,6 +14,7 @@ public class LinkCrawlerThread extends BrowserSettingsThread {
         super(r);
         setName("LinkCrawler:" + linkCrawlerThread.incrementAndGet());
         setDaemon(true);
+        setPriority(MIN_PRIORITY);
     }
 
     protected void setCurrentLinkCrawler(LinkCrawler crawler) {

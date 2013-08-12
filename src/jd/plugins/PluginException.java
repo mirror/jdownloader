@@ -16,6 +16,8 @@
 
 package jd.plugins;
 
+import org.jdownloader.plugins.SkipReason;
+
 public class PluginException extends Exception {
 
     private static final long serialVersionUID              = -413339039711789194L;
@@ -28,6 +30,7 @@ public class PluginException extends Exception {
     private int               linkStatus                    = -1;
     private String            errorMessage                  = null;
     private long              value                         = -1;
+    private SkipReason        skipReason                    = null;
 
     public PluginException(int linkStatus) {
         this.linkStatus = linkStatus;
@@ -42,12 +45,15 @@ public class PluginException extends Exception {
     public PluginException(int linkStatus, String errorMessage) {
         this(linkStatus);
         this.errorMessage = errorMessage;
-
     }
 
     public PluginException(int linkStatus, long value) {
         this(linkStatus);
         this.value = value;
+    }
+
+    public PluginException(SkipReason skipReason) {
+        this.skipReason = skipReason;
     }
 
     public String getErrorMessage() {
@@ -62,14 +68,20 @@ public class PluginException extends Exception {
         return value;
     }
 
+    public SkipReason getSkipReason() {
+        return skipReason;
+    }
+
     public void setValue(long value) {
         this.value = value;
     }
 
     public void fillLinkStatus(LinkStatus linkStatus) {
-        linkStatus.addStatus(this.linkStatus);
-        if (value >= 0) linkStatus.setValue(value);
-        if (errorMessage != null) linkStatus.setErrorMessage(errorMessage);
+        if (getSkipReason() == null) {
+            linkStatus.addStatus(this.linkStatus);
+            if (value >= 0) linkStatus.setValue(value);
+            if (errorMessage != null) linkStatus.setErrorMessage(errorMessage);
+        }
     }
 
     public int getLinkStatus() {

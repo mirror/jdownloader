@@ -10,12 +10,12 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 
-import org.jdownloader.actions.AppAction;
+import org.appwork.utils.event.queue.QueueAction;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.downloads.table.DownloadsTableModel;
 
-public class RemoveOfflineAction extends AppAction {
+public class RemoveOfflineAction extends DeleteAppAction {
 
     /**
      * 
@@ -23,27 +23,33 @@ public class RemoveOfflineAction extends AppAction {
     private static final long serialVersionUID = -6341297356888158708L;
 
     public RemoveOfflineAction() {
+        super(null);
         setName(_GUI._.RemoveOfflineAction_RemoveOfflineAction_object_());
         setIconKey("remove_offline");
     }
 
-    public void actionPerformed(ActionEvent e) {
-
-        final List<DownloadLink> nodesToDelete = DownloadController.getInstance().getChildrenByFilter(new AbstractPackageChildrenNodeFilter<DownloadLink>() {
-
-            @Override
-            public int returnMaxResults() {
-                return 0;
-            }
+    public void actionPerformed(final ActionEvent e) {
+        DownloadController.getInstance().getQueue().add(new QueueAction<Void, RuntimeException>() {
 
             @Override
-            public boolean acceptNode(DownloadLink node) {
-                if (node.getLinkStatus().hasStatus(LinkStatus.ERROR_FILE_NOT_FOUND)) return true;
-                return node.getAvailableStatus() == AvailableStatus.FALSE;
+            protected Void run() throws RuntimeException {
+                final List<DownloadLink> nodesToDelete = DownloadController.getInstance().getChildrenByFilter(new AbstractPackageChildrenNodeFilter<DownloadLink>() {
+
+                    @Override
+                    public int returnMaxResults() {
+                        return 0;
+                    }
+
+                    @Override
+                    public boolean acceptNode(DownloadLink node) {
+                        if (node.getLinkStatus().hasStatus(LinkStatus.ERROR_FILE_NOT_FOUND)) return true;
+                        return node.getAvailableStatus() == AvailableStatus.FALSE;
+                    }
+                });
+                deleteLinksRequest(new SelectionInfo<FilePackage, DownloadLink>(null, nodesToDelete, null, null, e, DownloadsTableModel.getInstance().getTable()), _GUI._.RemoveOfflineAction_actionPerformed());
+
+                return null;
             }
         });
-
-        DownloadController.deleteLinksRequest(new SelectionInfo<FilePackage, DownloadLink>(null, nodesToDelete, null, null, e, DownloadsTableModel.getInstance().getTable()), _GUI._.RemoveOfflineAction_actionPerformed());
     }
-
 }

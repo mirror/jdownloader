@@ -7,6 +7,4 @@ public interface FileCreationListener extends EventListener {
 
     void onNewFile(Object caller, File[] fileList);
 
-    void onRemoveFile(Object caller, File[] fileList);
-
 }

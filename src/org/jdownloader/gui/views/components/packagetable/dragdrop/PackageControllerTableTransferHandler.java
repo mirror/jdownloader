@@ -8,7 +8,6 @@ import javax.swing.JComponent;
 import javax.swing.JTable;
 import javax.swing.TransferHandler;
 
-import jd.controlling.IOEQ;
 import jd.controlling.packagecontroller.AbstractNode;
 import jd.controlling.packagecontroller.AbstractPackageChildrenNode;
 import jd.controlling.packagecontroller.AbstractPackageNode;
@@ -252,7 +251,7 @@ public abstract class PackageControllerTableTransferHandler<PackageType extends 
             /* dropOn,merge or paste */
             if (afterElement != null && afterElement instanceof AbstractPackageNode) {
                 final Object element = afterElement;
-                IOEQ.getQueue().add(new QueueAction<Void, RuntimeException>(prio) {
+                table.getController().getQueue().add(new QueueAction<Void, RuntimeException>(prio) {
 
                     @Override
                     protected Void run() throws RuntimeException {
@@ -283,7 +282,7 @@ public abstract class PackageControllerTableTransferHandler<PackageType extends 
                 } else {
                     dest = null;
                 }
-                IOEQ.getQueue().add(new QueueAction<Void, RuntimeException>(prio) {
+                table.getController().getQueue().add(new QueueAction<Void, RuntimeException>(prio) {
 
                     @Override
                     protected Void run() throws RuntimeException {
@@ -310,7 +309,7 @@ public abstract class PackageControllerTableTransferHandler<PackageType extends 
                     afterL = null;
                     destP = null;
                 }
-                IOEQ.getQueue().add(new QueueAction<Void, RuntimeException>(prio) {
+                table.getController().getQueue().add(new QueueAction<Void, RuntimeException>(prio) {
 
                     @Override
                     protected Void run() throws RuntimeException {

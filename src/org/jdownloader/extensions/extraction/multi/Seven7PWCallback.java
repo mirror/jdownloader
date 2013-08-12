@@ -15,7 +15,7 @@ import org.appwork.utils.ReusableByteArrayOutputStream;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.extensions.extraction.FileSignatures;
 
-public class Seven7ExtractorCallback implements IArchiveExtractCallback, ICryptoGetTextPassword {
+public class Seven7PWCallback implements IArchiveExtractCallback, ICryptoGetTextPassword {
 
     private final AtomicBoolean        passwordfound;
     private final ISevenZipInArchive   inArchive;
@@ -23,7 +23,7 @@ public class Seven7ExtractorCallback implements IArchiveExtractCallback, ICrypto
     private SignatureCheckingOutStream signatureOutStream;
     private boolean                    optimized;
 
-    public Seven7ExtractorCallback(ISevenZipInArchive inArchive, AtomicBoolean passwordfound, String password, ReusableByteArrayOutputStream buffer, long maxPWCheckSize, FileSignatures filesignatures, boolean optimized) {
+    public Seven7PWCallback(ISevenZipInArchive inArchive, AtomicBoolean passwordfound, String password, ReusableByteArrayOutputStream buffer, long maxPWCheckSize, FileSignatures filesignatures, boolean optimized) {
         this.passwordfound = passwordfound;
         this.inArchive = inArchive;
         this.password = password;
@@ -67,12 +67,10 @@ public class Seven7ExtractorCallback implements IArchiveExtractCallback, ICrypto
 
     @Override
     public void prepareOperation(ExtractAskMode extractaskmode) throws SevenZipException {
-        int hh = 1;
     }
 
     @Override
     public void setOperationResult(ExtractOperationResult extractoperationresult) throws SevenZipException {
-        int hh = 1;
     }
 
     @Override

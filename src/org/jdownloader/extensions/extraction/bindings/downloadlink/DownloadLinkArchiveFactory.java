@@ -94,7 +94,6 @@ public class DownloadLinkArchiveFactory extends DownloadLinkArchiveFile implemen
                 }
             }
             return CrossSystem.fixPathSeperators(path);
-
         } catch (Exception e) {
             Log.exception(e);
         }
@@ -147,6 +146,14 @@ public class DownloadLinkArchiveFactory extends DownloadLinkArchiveFile implemen
 
     public Collection<? extends String> getGuessedPasswordList(Archive archive) {
         HashSet<String> ret = new HashSet<String>();
+        for (ArchiveFile af : archive.getArchiveFiles()) {
+            if (af instanceof DownloadLinkArchiveFile) {
+                for (DownloadLink link : ((DownloadLinkArchiveFile) af).getDownloadLinks()) {
+                    String pw = link.getDownloadPassword();
+                    if (StringUtils.isEmpty(pw) == false) ret.add(pw);
+                }
+            }
+        }
         return ret;
     }
 

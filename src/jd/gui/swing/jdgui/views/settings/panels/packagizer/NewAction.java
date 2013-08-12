@@ -2,8 +2,9 @@ package jd.gui.swing.jdgui.views.settings.panels.packagizer;
 
 import java.awt.event.ActionEvent;
 
-import jd.controlling.IOEQ;
+import jd.controlling.TaskQueue;
 
+import org.appwork.utils.event.queue.QueueAction;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
@@ -32,14 +33,14 @@ public class NewAction extends AbstractAddAction {
         try {
             Dialog.getInstance().showDialog(d);
             rule.setEnabled(true);
-            IOEQ.add(new Runnable() {
+            TaskQueue.getQueue().add(new QueueAction<Void, RuntimeException>() {
 
-                public void run() {
+                @Override
+                protected Void run() throws RuntimeException {
                     PackagizerController.getInstance().add(rule);
+                    return null;
                 }
-
-            }, true);
-
+            });
         } catch (DialogClosedException e1) {
             e1.printStackTrace();
         } catch (DialogCanceledException e1) {

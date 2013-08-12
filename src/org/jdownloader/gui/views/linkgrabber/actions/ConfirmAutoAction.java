@@ -3,12 +3,13 @@ package org.jdownloader.gui.views.linkgrabber.actions;
 import java.awt.Image;
 import java.awt.event.ActionEvent;
 import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
 
-import jd.controlling.IOEQ;
 import jd.controlling.downloadcontroller.DownloadController;
 import jd.controlling.downloadcontroller.DownloadWatchDog;
 import jd.controlling.linkcollector.LinkCollector;
@@ -64,7 +65,6 @@ public class ConfirmAutoAction extends SelectionAppAction<CrawledPackage, Crawle
     private AutoStartOptions autoStart = AutoStartOptions.AUTO;
 
     public AutoStartOptions getAutoStart() {
-
         return autoStart;
     }
 
@@ -105,17 +105,14 @@ public class ConfirmAutoAction extends SelectionAppAction<CrawledPackage, Crawle
     public ConfirmAutoAction(SelectionInfo<CrawledPackage, CrawledLink> selectionInfo) {
         super(selectionInfo);
         setAutoStart(AutoStartOptions.AUTO);
-
     }
 
     public void actionPerformed(ActionEvent e) {
         if (!isEnabled()) return;
-        IOEQ.add(new Runnable() {
+        Thread thread = new Thread() {
 
             public void run() {
-
                 try {
-
                     // this validation step also copies the passwords from the CRawledlinks in the archive settings
                     for (Archive a : new ValidateArchiveAction<CrawledPackage, CrawledLink>((ExtractionExtension) ExtensionController.getInstance().getExtension(ExtractionExtension.class)._getExtension(), getSelection()).getArchives()) {
                         final DummyArchive da = a.createDummyArchive();
@@ -157,37 +154,45 @@ public class ConfirmAutoAction extends SelectionAppAction<CrawledPackage, Crawle
                 } catch (Throwable e) {
                     Log.exception(e);
                 }
-                boolean addTop = org.jdownloader.settings.staticreferences.CFG_LINKFILTER.LINKGRABBER_ADD_AT_TOP.getValue();
-                java.util.List<FilePackage> fpkgs = new ArrayList<FilePackage>();
+
+                java.util.List<FilePackage> filePackagesToAdd = new ArrayList<FilePackage>();
+                HashSet<AbstractNode> processedLinks = new HashSet<AbstractNode>();
                 java.util.List<CrawledLink> clinks = new ArrayList<CrawledLink>();
+
                 for (AbstractNode node : getSelection().getRawSelection()) {
                     if (node instanceof CrawledPackage) {
                         /* first convert all CrawledPackages to FilePackages */
                         List<CrawledLink> links = new ArrayList<CrawledLink>(((CrawledPackage) node).getView().getItems());
-                        java.util.List<FilePackage> packages = LinkCollector.getInstance().convert(links, true);
-                        if (packages != null) fpkgs.addAll(packages);
+                        Iterator<CrawledLink> it = links.iterator();
+                        while (it.hasNext()) {
+                            CrawledLink next = it.next();
+                            if (processedLinks.add(next) == false) {
+                                it.remove();
+                            }
+                        }
+                        java.util.List<FilePackage> convertedLinks = LinkCollector.getInstance().convert(links, true);
+                        if (convertedLinks != null) filePackagesToAdd.addAll(convertedLinks);
                     } else if (node instanceof CrawledLink) {
                         /* collect all CrawledLinks */
-                        clinks.add((CrawledLink) node);
+                        if (processedLinks.add(node)) {
+                            clinks.add((CrawledLink) node);
+                        }
                     }
                 }
                 /* convert all selected CrawledLinks to FilePackages */
-
-                java.util.List<FilePackage> frets = LinkCollector.getInstance().convert(clinks, true);
-                if (frets != null) fpkgs.addAll(frets);
+                boolean addTop = org.jdownloader.settings.staticreferences.CFG_LINKFILTER.LINKGRABBER_ADD_AT_TOP.getValue();
+                java.util.List<FilePackage> convertedLinks = LinkCollector.getInstance().convert(clinks, true);
+                if (convertedLinks != null) filePackagesToAdd.addAll(convertedLinks);
                 /* add the converted FilePackages to DownloadController */
-                DownloadController.getInstance().addAllAt(fpkgs, addTop ? 0 : -(fpkgs.size() + 10));
+                /**
+                 * addTop = 0, to insert the packages at the top
+                 * 
+                 * addBottom = negative number -> add at the end
+                 */
+                DownloadController.getInstance().addAllAt(filePackagesToAdd, addTop ? 0 : -(filePackagesToAdd.size() + 10));
                 if (doAutostart()) {
-                    IOEQ.add(new Runnable() {
-
-                        public void run() {
-                            /* start DownloadWatchDog if wanted */
-                            DownloadWatchDog.getInstance().startDownloads();
-                        }
-
-                    }, true);
+                    DownloadWatchDog.getInstance().startDownloads();
                 }
-
                 if (JsonConfig.create(LinkgrabberSettings.class).isAutoSwitchToDownloadTableOnConfirmDefaultEnabled()) {
                     new EDTRunner() {
 
@@ -196,7 +201,6 @@ public class ConfirmAutoAction extends SelectionAppAction<CrawledPackage, Crawle
                             JDGui.getInstance().requestPanel(JDGui.Panels.DOWNLOADLIST, null);
                         }
                     };
-
                 }
 
                 if (isClearListAfterConfirm()) {
@@ -204,7 +208,16 @@ public class ConfirmAutoAction extends SelectionAppAction<CrawledPackage, Crawle
                 }
             }
 
-        }, true);
+        };
+        thread.setDaemon(true);
+        thread.setPriority(Thread.MIN_PRIORITY);
+        thread.setName(getClass().getName());
+        thread.start();
+
     }
 
+    @Override
+    public boolean isEnabled() {
+        return hasSelection();
+    }
 }

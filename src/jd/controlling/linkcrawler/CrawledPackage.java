@@ -298,4 +298,11 @@ public class CrawledPackage implements AbstractPackageNode<CrawledLink, CrawledP
         return lock;
     }
 
+    @Override
+    public boolean hasNotificationListener() {
+        PackageController<CrawledPackage, CrawledLink> n = getControlledBy();
+        if (n != null && n.hasNotificationListener()) return true;
+        return false;
+    }
+
 }

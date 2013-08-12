@@ -24,24 +24,24 @@ import java.awt.TrayIcon;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
-import java.util.concurrent.atomic.AtomicReference;
 
 import jd.gui.swing.jdgui.JDGui;
 
+import org.appwork.utils.NullsafeAtomicReference;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.swing.EDTRunner;
 
 public class TrayMouseAdapter implements MouseListener, MouseMotionListener {
 
-    private TrayExtension           deligate;
-    private AtomicReference<Thread> mouseLocationObserver = new AtomicReference<Thread>(null);
-    private Point                   min;
-    private Point                   max;
-    private Dimension               size;
-    private MouseEvent              lastEvent;
-    private Component               dummy;
-    private LogSource               logger;
-    private static int              TOOLTIP_DELAY         = 1000;
+    private TrayExtension                   deligate;
+    private NullsafeAtomicReference<Thread> mouseLocationObserver = new NullsafeAtomicReference<Thread>(null);
+    private Point                           min;
+    private Point                           max;
+    private Dimension                       size;
+    private MouseEvent                      lastEvent;
+    private Component                       dummy;
+    private LogSource                       logger;
+    private static int                      TOOLTIP_DELAY         = 1000;
 
     public TrayMouseAdapter(TrayExtension lightTray, TrayIcon trayIcon) {
         deligate = lightTray;

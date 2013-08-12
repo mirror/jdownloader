@@ -67,8 +67,7 @@ public class LookAndFeelController implements LAFManagerInterface {
     private LogSource                      logger;
 
     /**
-     * Create a new instance of LookAndFeelController. This is a singleton class. Access the only existing instance by using
-     * {@link #getInstance()}.
+     * Create a new instance of LookAndFeelController. This is a singleton class. Access the only existing instance by using {@link #getInstance()}.
      */
     private LookAndFeelController() {
         config = JsonConfig.create(GraphicalUserInterfaceSettings.class);
@@ -139,46 +138,38 @@ public class LookAndFeelController implements LAFManagerInterface {
                             if (str.contains("svn://svn.jdownloader.org/jdownloader")) {
                                 str = null;
                                 if (Application.getResource("JDownloader.jar").exists()) {
-                                    JarFile jf = new JarFile(Application.getResource("JDownloader.jar"));
+                                    JarFile jf = null;
                                     try {
+                                        jf = new JarFile(Application.getResource("JDownloader.jar"));
                                         JarEntry je = jf.getJarEntry("cfg/synthetica-license.key");
                                         liz = IO.readInputStreamToString(jf.getInputStream(je));
                                     } finally {
-
-                                        jf.close();
+                                        if (jf != null) jf.close();
                                     }
-
                                 }
-
                             }
                         } else {
                             String str = IO.readFileToString(new File(bin.getParent(), ".svn/entries"));
-                            if (str.contains("svn://svn.jdownloader.org/jdownloader/trunk")) {
+                            if (str != null && str.contains("svn://svn.jdownloader.org/jdownloader/trunk")) {
                                 str = null;
                                 if (Application.getResource("JDownloader.jar").exists()) {
-                                    JarFile jf = new JarFile(Application.getResource("JDownloader.jar"));
+                                    JarFile jf = null;
                                     try {
+                                        jf = new JarFile(Application.getResource("JDownloader.jar"));
                                         JarEntry je = jf.getJarEntry("cfg/synthetica-license.key");
                                         liz = IO.readInputStreamToString(jf.getInputStream(je));
                                     } finally {
-
-                                        jf.close();
+                                        if (jf != null) jf.close();
                                     }
-
                                 }
-
                             }
                         }
-
                     }
                 } catch (Exception e) {
-
                 }
-
                 SyntheticaHelper.init(laf, liz);
                 LAFOptions.init(laf);
                 ExtTooltip.createConfig(ExtTooltip.DEFAULT).setForegroundColor((LAFOptions.getInstance().getColorForTooltipForeground()).getRGB());
-
             } else {
                 /* init for all other laf */
 

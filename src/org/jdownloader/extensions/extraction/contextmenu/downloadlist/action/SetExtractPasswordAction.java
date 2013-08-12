@@ -28,11 +28,10 @@ public class SetExtractPasswordAction<PackageType extends AbstractPackageNode<Ch
     @Override
     protected void onAsyncInitDone() {
         super.onAsyncInitDone();
-
     }
 
     public void actionPerformed(ActionEvent e) {
-
+        if (!isEnabled()) return;
         try {
             StringBuilder sb = new StringBuilder();
             HashSet<String> list = new HashSet<String>();

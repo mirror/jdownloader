@@ -106,12 +106,10 @@ public abstract class AbstractConfigPanel extends SwitchPanel {
 
     @Override
     protected void onShow() {
-
         updateContents();
         for (Pair p : pairs) {
             p.update();
         }
-
     }
 
     public abstract void save();

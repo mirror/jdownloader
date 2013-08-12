@@ -2,9 +2,6 @@ package org.jdownloader.gui.views;
 
 import java.awt.event.ActionEvent;
 import java.io.File;
-import java.io.IOException;
-import java.util.HashSet;
-import java.util.LinkedList;
 
 import javax.swing.JButton;
 import javax.swing.JComponent;
@@ -24,6 +21,7 @@ import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
+import org.appwork.utils.swing.dialog.DialogNoAnswerException;
 import org.appwork.utils.swing.dialog.ExtFileChooserDialog;
 import org.appwork.utils.swing.dialog.FileChooserSelectionMode;
 import org.appwork.utils.swing.dialog.dimensor.RememberLastDialogDimension;
@@ -32,6 +30,7 @@ import org.jdownloader.controlling.FileCreationManager;
 import org.jdownloader.controlling.packagizer.PackagizerController;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.linkgrabber.addlinksdialog.DownloadPath;
+import org.jdownloader.logging.LogController;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings;
 
 public class DownloadFolderChooserDialog extends ExtFileChooserDialog {
@@ -160,74 +159,11 @@ public class DownloadFolderChooserDialog extends ExtFileChooserDialog {
     }
 
     /**
-     * checks if the given file is valid as a downloadfolder, this means it must be an existing folder or at least its parent folder must
-     * exist
+     * checks if the given file is valid as a downloadfolder, this means it must be an existing folder or at least its parent folder must exist
      * 
      * @param file
      * @return
      */
-    public static boolean isDownloadFolderValid(File file) {
-
-        if (!file.exists()) {
-            try {
-                switch (CrossSystem.getOSFamily()) {
-                case LINUX:
-                    String[] folders;
-
-                    folders = getPathComponents(file);
-
-                    if (folders.length >= 2) {
-                        if ("media".equals(folders[0])) {
-                            if (!new File("/media/" + folders[1]).exists()) return false;
-                        }
-                    }
-                    break;
-                case MAC:
-
-                    folders = getPathComponents(file);
-
-                    if (folders.length >= 2) {
-                        if ("media".equals(folders[0])) {
-                            if (!new File("/media/" + folders[1]).exists()) return false;
-                        } else if ("Volumes".equals(folders[0])) {
-                            if (!new File("/Volumes/" + folders[1]).exists()) return false;
-                        }
-                    }
-                    break;
-                case WINDOWS:
-                    folders = getPathComponents(file);
-                    if (folders.length > 0) {
-                        if (!new File(folders[0]).exists()) return false;
-                    }
-
-                }
-                // System.out.println(1);
-            } catch (IOException e) {
-                e.printStackTrace();
-                return false;
-            }
-
-        }
-        return true;
-    }
-
-    private static String[] getPathComponents(File file) throws IOException {
-        LinkedList<String> ret = new LinkedList<String>();
-        HashSet<String> loopCheck = new HashSet<String>();
-
-        while (file != null && loopCheck.add(file.getCanonicalPath())) {
-            if (file.getPath().endsWith(File.separatorChar + "")) {
-                // for example c:\ file.getName() would be "" in this case.
-                ret.add(0, file.getPath());
-                break;
-            } else {
-                ret.add(0, file.getName());
-            }
-            file = file.getParentFile();
-        }
-
-        return ret.toArray(new String[] {});
-    }
 
     public static File open(File path, boolean packager, String title) throws DialogClosedException, DialogCanceledException {
 
@@ -262,17 +198,19 @@ public class DownloadFolderChooserDialog extends ExtFileChooserDialog {
         return dest[0];
     }
 
-    public static void handleNonExistingFolders(File file) {
+    public static boolean handleNonExistingFolders(File file) {
         try {
-
+            if (file.exists()) return true;
             Dialog.getInstance().showConfirmDialog(0, _GUI._.DownloadFolderChooserDialog_handleNonExistingFolders_title_(), _GUI._.DownloadFolderChooserDialog_handleNonExistingFolders_msg_(file.getAbsolutePath()));
             if (!FileCreationManager.getInstance().mkdir(file)) {
                 UIOManager.I().showErrorMessage(_GUI._.DownloadFolderChooserDialog_handleNonExistingFolders_couldnotcreatefolder(file.getAbsolutePath()));
+                return false;
+            } else {
+                return true;
             }
-        } catch (DialogClosedException e) {
-            e.printStackTrace();
-        } catch (DialogCanceledException e) {
-            e.printStackTrace();
+        } catch (DialogNoAnswerException e) {
+            LogController.GL.log(e);
+            return false;
         }
     }
 

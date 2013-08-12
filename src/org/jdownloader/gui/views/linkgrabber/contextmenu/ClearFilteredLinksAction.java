@@ -2,11 +2,11 @@ package org.jdownloader.gui.views.linkgrabber.contextmenu;
 
 import java.awt.event.ActionEvent;
 
-import jd.controlling.IOEQ;
 import jd.controlling.linkcollector.LinkCollector;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledPackage;
 
+import org.appwork.utils.event.queue.QueueAction;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogNoAnswerException;
 import org.jdownloader.actions.SelectionAppAction;
@@ -30,14 +30,14 @@ public class ClearFilteredLinksAction extends SelectionAppAction<CrawledPackage,
     public void actionPerformed(ActionEvent e) {
         try {
             Dialog.getInstance().showConfirmDialog(0, _GUI._.literally_are_you_sure(), _GUI._.ClearFilteredLinksAction_msg(LinkCollector.getInstance().getfilteredStuffSize()), null, _GUI._.literally_yes(), _GUI._.literall_no());
-            IOEQ.add(new Runnable() {
+            LinkCollector.getInstance().getQueue().add(new QueueAction<Void, RuntimeException>() {
 
-                public void run() {
-
+                @Override
+                protected Void run() throws RuntimeException {
                     LinkCollector.getInstance().getFilteredStuff(true);
+                    return null;
                 }
-
-            }, true);
+            });
         } catch (DialogNoAnswerException e1) {
         }
     }

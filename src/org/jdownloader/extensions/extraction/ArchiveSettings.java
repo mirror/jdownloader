@@ -128,7 +128,7 @@ public class ArchiveSettings implements Storable {
     }
 
     public ArchiveSettings createClone() {
-        ArchiveSettings ret = JSonStorage.restoreFromString(JSonStorage.toString(this), TYPEREF);
+        ArchiveSettings ret = JSonStorage.restoreFromString(JSonStorage.serializeToJson(this), TYPEREF);
         ret.needsSaving = needsSaving;
         ret.archiveController = archiveController;
         return ret;

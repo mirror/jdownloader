@@ -4,11 +4,11 @@ import java.awt.event.ActionEvent;
 import java.util.List;
 
 import jd.controlling.AccountController;
-import jd.controlling.IOEQ;
+import jd.controlling.TaskQueue;
 
+import org.appwork.utils.event.queue.QueueAction;
 import org.appwork.utils.swing.dialog.Dialog;
-import org.appwork.utils.swing.dialog.DialogCanceledException;
-import org.appwork.utils.swing.dialog.DialogClosedException;
+import org.appwork.utils.swing.dialog.DialogNoAnswerException;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.components.AbstractRemoveAction;
 
@@ -22,43 +22,47 @@ public class RemoveAction extends AbstractRemoveAction {
     private List<AccountEntry>  selection        = null;
 
     public RemoveAction(PremiumAccountTable table) {
-
         this.table = table;
     }
 
     public RemoveAction(List<AccountEntry> selection2, boolean force) {
-
         this.force = force;
         this.selection = selection2;
-
     }
 
     public void actionPerformed(ActionEvent e) {
-        List<AccountEntry> selection = this.selection;
-        if (selection == null && this.table != null) selection = table.getModel().getSelectedObjects();
-        if (selection != null && selection.size() > 0) {
-            final List<AccountEntry> fselection = selection;
-            IOEQ.add(new Runnable() {
-                public void run() {
-                    StringBuilder sb = new StringBuilder();
-                    for (AccountEntry account : fselection) {
-                        if (sb.length() > 0) sb.append("\r\n");
-                        sb.append(account.getAccount().getHoster() + "-Account (" + account.getAccount().getUser() + ")");
-                    }
-                    try {
-                        if (!force) Dialog.getInstance().showConfirmDialog(Dialog.STYLE_LARGE, _GUI._.account_remove_action_title(fselection.size()), _GUI._.account_remove_action_msg(fselection.size() <= 1 ? sb.toString() : "\r\n" + sb.toString()));
-                        for (AccountEntry account : fselection) {
-                            AccountController.getInstance().removeAccount(account.getAccount());
-                        }
-                    } catch (DialogClosedException e1) {
-                        e1.printStackTrace();
-                    } catch (DialogCanceledException e1) {
-                        e1.printStackTrace();
-                    }
-                }
-            });
+        if (!isEnabled()) return;
+        final List<AccountEntry> finalSelection;
+        if (selection != null) {
+            finalSelection = selection;
+        } else if (table != null) {
+            finalSelection = table.getModel().getSelectedObjects();
+        } else {
+            finalSelection = null;
         }
 
+        if (finalSelection != null && finalSelection.size() > 0) {
+            StringBuilder sb = new StringBuilder();
+            for (AccountEntry account : finalSelection) {
+                if (sb.length() > 0) sb.append("\r\n");
+                sb.append(account.getAccount().getHoster() + "-Account (" + account.getAccount().getUser() + ")");
+            }
+            try {
+                if (!force) Dialog.getInstance().showConfirmDialog(Dialog.STYLE_LARGE, _GUI._.account_remove_action_title(finalSelection.size()), _GUI._.account_remove_action_msg(finalSelection.size() <= 1 ? sb.toString() : "\r\n" + sb.toString()));
+                TaskQueue.getQueue().add(new QueueAction<Void, RuntimeException>() {
+
+                    @Override
+                    protected Void run() throws RuntimeException {
+                        for (AccountEntry account : finalSelection) {
+                            AccountController.getInstance().removeAccount(account.getAccount());
+                        }
+                        return null;
+                    }
+                });
+            } catch (DialogNoAnswerException e1) {
+                e1.printStackTrace();
+            }
+        }
     }
 
     @Override

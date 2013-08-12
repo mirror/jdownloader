@@ -1,10 +1,7 @@
 package org.jdownloader.plugins.controller.host;
 
-import javax.swing.ImageIcon;
-
 import jd.plugins.PluginForHost;
 
-import org.jdownloader.DomainInfo;
 import org.jdownloader.plugins.controller.LazyPlugin;
 import org.jdownloader.plugins.controller.PluginClassLoader.PluginClassLoaderChild;
 import org.jdownloader.plugins.controller.UpdateRequiredClassNotFoundException;
@@ -119,10 +116,6 @@ public class LazyHostPlugin extends LazyPlugin<PluginForHost> {
 
     public void setHasLinkRewrite(boolean hasLinkRewrite) {
         this.hasLinkRewrite = hasLinkRewrite;
-    }
-
-    public ImageIcon getIcon() {
-        return DomainInfo.getInstance(getDisplayName()).getFavIcon();
     }
 
     @Override

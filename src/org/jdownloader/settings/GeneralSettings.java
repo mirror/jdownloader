@@ -155,6 +155,14 @@ public interface GeneralSettings extends ConfigInterface {
     int getMaxSimultaneDownloads();
 
     @AboutConfig
+    @DescriptionForConfigEntry("How many downloads more than getMaxSimultaneDownloads should JDownloader download at once when forced?")
+    @SpinnerValidator(min = 1, max = 20)
+    @DefaultIntValue(5)
+    int getMaxForcedDownloads();
+
+    public void setMaxForcedDownloads(int i);
+
+    @AboutConfig
     @DefaultIntValue(1)
     @SpinnerValidator(min = 1, max = 100)
     int getMaxSimultaneDownloadsPerHost();

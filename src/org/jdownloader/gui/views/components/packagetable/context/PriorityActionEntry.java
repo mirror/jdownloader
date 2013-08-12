@@ -2,13 +2,14 @@ package org.jdownloader.gui.views.components.packagetable.context;
 
 import java.awt.event.ActionEvent;
 
-import jd.controlling.IOEQ;
+import jd.controlling.TaskQueue;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.packagecontroller.AbstractNode;
 import jd.controlling.packagecontroller.AbstractPackageChildrenNode;
 import jd.controlling.packagecontroller.AbstractPackageNode;
 import jd.plugins.DownloadLink;
 
+import org.appwork.utils.event.queue.QueueAction;
 import org.jdownloader.actions.SelectionAppAction;
 import org.jdownloader.controlling.Priority;
 import org.jdownloader.gui.views.SelectionInfo;
@@ -33,11 +34,10 @@ public class PriorityActionEntry<PackageType extends AbstractPackageNode<Childre
 
     public void actionPerformed(ActionEvent e) {
         if (getSelection().isEmpty()) return;
-        IOEQ.add(new Runnable() {
+        TaskQueue.getQueue().add(new QueueAction<Void, RuntimeException>() {
 
             @Override
-            public void run() {
-
+            protected Void run() throws RuntimeException {
                 boolean linkGrabber = false;
                 boolean downloadList = false;
                 for (AbstractNode l : getSelection().getChildren()) {
@@ -51,9 +51,9 @@ public class PriorityActionEntry<PackageType extends AbstractPackageNode<Childre
                 }
                 if (linkGrabber) LinkGrabberTableModel.getInstance().setPriorityColumnVisible(true);
                 if (downloadList) DownloadsTableModel.getInstance().setPriorityColumnVisible(true);
+                return null;
             }
-        }, true);
-
+        });
     }
 
 }

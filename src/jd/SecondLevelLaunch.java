@@ -45,7 +45,6 @@ import javax.swing.JWindow;
 
 import jd.controlling.AccountController;
 import jd.controlling.ClipboardMonitoring;
-import jd.controlling.IOEQ;
 import jd.controlling.downloadcontroller.DownloadController;
 import jd.controlling.downloadcontroller.DownloadWatchDog;
 import jd.controlling.linkcollector.LinkCollector;
@@ -539,7 +538,9 @@ public class SecondLevelLaunch {
                     @Override
                     public void run() {
                         try {
-
+                            //DO NOT REMOVE THIS LINE
+                            do not remove me, ask jiaz!
+                            
                             boolean jared = Application.isJared(SecondLevelLaunch.class);
                             ToolTipController.getInstance().setDelay(JsonConfig.create(GraphicalUserInterfaceSettings.class).getTooltipDelay());
                             Thread.currentThread().setName("ExecuteWhenGuiReachedThread: Init Host Plugins");
@@ -606,7 +607,7 @@ public class SecondLevelLaunch {
                             AutoDownloadStartOption doRestartRunninfDownloads = JsonConfig.create(GeneralSettings.class).getAutoStartDownloadOption();
                             boolean closedRunning = JsonConfig.create(GeneralSettings.class).isClosedWithRunningDownloads();
                             if (doRestartRunninfDownloads == AutoDownloadStartOption.ALWAYS || (closedRunning && doRestartRunninfDownloads == AutoDownloadStartOption.ONLY_IF_EXIT_WITH_RUNNING_DOWNLOADS)) {
-                                IOEQ.getQueue().add(new QueueAction<Void, RuntimeException>() {
+                                DownloadController.getInstance().getQueue().add(new QueueAction<Void, RuntimeException>() {
 
                                     @Override
                                     protected Void run() throws RuntimeException {

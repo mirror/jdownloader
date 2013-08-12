@@ -2,7 +2,7 @@ package org.jdownloader.controlling.filter;
 
 import java.util.ArrayList;
 
-import jd.controlling.IOEQ;
+import jd.controlling.TaskQueue;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.LinkCrawlerFilter;
 import jd.plugins.DownloadLink;
@@ -14,6 +14,7 @@ import org.appwork.shutdown.ShutdownRequest;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.event.predefined.changeevent.ChangeEvent;
 import org.appwork.utils.event.predefined.changeevent.ChangeEventSender;
+import org.appwork.utils.event.queue.QueueAction;
 
 public class LinkFilterController implements LinkCrawlerFilter {
     private static final LinkFilterController INSTANCE = new LinkFilterController(false);
@@ -51,8 +52,7 @@ public class LinkFilterController implements LinkCrawlerFilter {
     private boolean                                      testInstance = false;
 
     /**
-     * Create a new instance of LinkFilterController. This is a singleton class. Access the only existing instance by using
-     * {@link #getInstance()}.
+     * Create a new instance of LinkFilterController. This is a singleton class. Access the only existing instance by using {@link #getInstance()}.
      */
     public LinkFilterController(boolean testInstance) {
         eventSender = new ChangeEventSender();
@@ -161,13 +161,15 @@ public class LinkFilterController implements LinkCrawlerFilter {
         if (isTestInstance()) {
             updateInternal();
         } else {
-            IOEQ.add(new Runnable() {
+            TaskQueue.getQueue().add(new QueueAction<Void, RuntimeException>() {
 
-                public void run() {
+                @Override
+                protected Void run() throws RuntimeException {
                     updateInternal();
+                    return null;
                 }
 
-            }, true);
+            });
         }
     }
 
@@ -195,8 +197,8 @@ public class LinkFilterController implements LinkCrawlerFilter {
         synchronized (this) {
             filter.add(linkFilter);
             if (config != null) config.setFilterList(filter);
-            update();
         }
+        update();
     }
 
     public void remove(LinkgrabberFilterRule lf) {
@@ -204,8 +206,8 @@ public class LinkFilterController implements LinkCrawlerFilter {
         synchronized (this) {
             filter.remove(lf);
             if (config != null) config.setFilterList(filter);
-            update();
         }
+        update();
     }
 
     public boolean dropByUrl(CrawledLink link) {

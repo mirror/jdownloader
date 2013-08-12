@@ -108,7 +108,7 @@ public class TaskColumn extends ExtTextColumn<AbstractNode> {
         if (value instanceof DownloadLink) {
             DownloadLink dl = (DownloadLink) value;
             if (JsonConfig.create(GraphicalUserInterfaceSettings.class).isPremiumAlertTaskColumnEnabled()) {
-                if (!dl.getLinkStatus().isPluginActive() && dl.isEnabled() && dl.getLivePlugin() == null) {
+                if (dl.getDownloadLinkController() == null && dl.isEnabled() && dl.getLivePlugin() == null) {
                     if (!dl.isSkipped() && !dl.getLinkStatus().isFinished()) {
                         PluginForHost plugin = dl.getDefaultPlugin();
                         if (plugin == null || !plugin.isPremiumEnabled()) {
@@ -120,7 +120,7 @@ public class TaskColumn extends ExtTextColumn<AbstractNode> {
                         if ((timeout = ProxyController.getInstance().getHostIPBlockTimeout(dl.getHost())) != null) {
                             if (timeout.getLink() != value) {
                                 try {
-                                    Dialog.getInstance().showDialog(new PremiumInfoDialog(DomainInfo.getInstance(((DownloadLink) value).getHost()), _GUI._.TaskColumn_onSingleClick_object_(((DownloadLink) value).getHost()), "TaskColumnReconnect") {
+                                    Dialog.getInstance().showDialog(new PremiumInfoDialog(((DownloadLink) value).getDomainInfo(true), _GUI._.TaskColumn_onSingleClick_object_(((DownloadLink) value).getHost()), "TaskColumnReconnect") {
                                         protected String getDescription(DomainInfo info2) {
                                             return _GUI._.TaskColumn_getDescription_object_(info2.getTld());
                                         }
@@ -171,7 +171,7 @@ public class TaskColumn extends ExtTextColumn<AbstractNode> {
                 return infoIcon;
             } else if (ls.isFailed() || dl.getAvailableStatus() == AvailableStatus.FALSE) { return falseIcon; }
 
-            if (!dl.getLinkStatus().isPluginActive() && dl.isEnabled() && dl.getLivePlugin() == null) {
+            if (dl.getDownloadLinkController() == null && dl.isEnabled() && dl.getLivePlugin() == null) {
                 if (!dl.getLinkStatus().isFinished()) {
                     /* enabled links that are not running */
                     ProxyBlock timeout = null;
@@ -201,7 +201,7 @@ public class TaskColumn extends ExtTextColumn<AbstractNode> {
                 return prog.getMessage();
             }
             if (((DownloadLink) value).isSkipped()) { return ((DownloadLink) value).getSkipReason().getExplanation(); }
-            if (!dl.getLinkStatus().isPluginActive() && dl.isEnabled() && dl.getLivePlugin() == null) {
+            if (dl.getDownloadLinkController() == null && dl.isEnabled() && dl.getLivePlugin() == null) {
                 if (!dl.getLinkStatus().isFinished()) {
                     /* enabled links that are not running */
                     ProxyBlock timeout = null;
@@ -226,22 +226,8 @@ public class TaskColumn extends ExtTextColumn<AbstractNode> {
             }
             if (dl.getLinkStatus().isFinished()) {
                 if (dl.getExtractionStatus() != null) {
-                    switch (dl.getExtractionStatus()) {
-                    case ERROR:
-                        return _GUI._.TaskColumn_getStringValue_extraction_error();
-                    case ERROR_CRC:
-                        return _GUI._.TaskColumn_getStringValue_extraction_error_crc();
-                    case ERROR_NOT_ENOUGH_SPACE:
-                        return _GUI._.TaskColumn_getStringValue_extraction_error_space();
-                    case ERRROR_FILE_NOT_FOUND:
-                        return _GUI._.TaskColumn_getStringValue_extraction_error_file_not_found();
-                    case SUCCESSFUL:
-                        return _GUI._.TaskColumn_getStringValue_extraction_success();
-                    case RUNNING:
-                        // return _GUI._.TaskColumn_getStringValue_extraction_extracting();
-                        return dl.getLinkStatus().getMessage(false);
-                    }
-
+                    String desc = dl.getExtractionStatus().getExplanation();
+                    if (desc != null) return desc;
                 }
             }
             return dl.getLinkStatus().getMessage(false);

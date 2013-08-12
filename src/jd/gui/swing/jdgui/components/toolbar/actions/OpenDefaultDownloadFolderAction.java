@@ -19,7 +19,8 @@ public class OpenDefaultDownloadFolderAction extends ToolBarAction {
     public void actionPerformed(ActionEvent e) {
         final String dlDir = JsonConfig.create(GeneralSettings.class).getDefaultDownloadFolder();
         if (dlDir == null) { return; }
-        CrossSystem.showInExplorer(new File(dlDir));
+        /* we want to open the dlDir and not its parent folder/select it */
+        CrossSystem.openFile(new File(dlDir));
     }
 
     @Override

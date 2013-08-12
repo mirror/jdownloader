@@ -16,7 +16,6 @@ import javax.swing.KeyStroke;
 import javax.swing.ListSelectionModel;
 import javax.swing.table.TableModel;
 
-import jd.controlling.IOEQ;
 import jd.controlling.packagecontroller.AbstractNode;
 import jd.controlling.packagecontroller.AbstractPackageChildrenNode;
 import jd.controlling.packagecontroller.AbstractPackageNode;
@@ -26,11 +25,13 @@ import jd.gui.swing.jdgui.BasicJDTable;
 import org.appwork.exceptions.WTFException;
 import org.appwork.swing.exttable.ExtColumn;
 import org.appwork.swing.exttable.ExtComponentRowHighlighter;
+import org.appwork.utils.event.queue.QueueAction;
 import org.appwork.utils.logging.Log;
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.components.packagetable.PackageControllerTableModel.TOGGLEMODE;
 import org.jdownloader.images.NewTheme;
+import org.jdownloader.logging.LogController;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
 import org.jdownloader.updatev2.gui.LAFOptions;
 
@@ -218,13 +219,14 @@ public abstract class PackageControllerTable<ParentType extends AbstractPackageN
             }
 
             public void actionPerformed(ActionEvent e) {
-                IOEQ.add(new Runnable() {
+                final java.util.List<ParentType> selectedPkgs = getSelectedPackages();
+                final java.util.List<ChildrenType> selectedChld = getSelectedChildren();
+                getController().getQueue().add(new QueueAction<Void, RuntimeException>() {
 
-                    public void run() {
-                        java.util.List<ParentType> selectedPkgs = getSelectedPackages();
-                        java.util.List<ChildrenType> selectedChld = getSelectedChildren();
+                    @Override
+                    protected Void run() throws RuntimeException {
                         boolean moveUpPossible = moveUpPossible(selectedPkgs, selectedChld);
-                        if (moveUpPossible == false) return;
+                        if (moveUpPossible == false) return null;
                         PackageController<ParentType, ChildrenType> pc = getController();
                         if (selectedPkgs.size() > 0) {
                             /* move package to top of list */
@@ -234,9 +236,10 @@ public abstract class PackageControllerTable<ParentType extends AbstractPackageN
                             /* move children to top of package */
                             pc.move(selectedChld, selectedChld.get(0).getParentNode(), null);
                         }
+                        return null;
                     }
 
-                }, true);
+                });
             }
 
         };
@@ -253,13 +256,14 @@ public abstract class PackageControllerTable<ParentType extends AbstractPackageN
             }
 
             public void actionPerformed(ActionEvent e) {
-                IOEQ.add(new Runnable() {
+                final java.util.List<ParentType> selectedPkgs = getSelectedPackages();
+                final java.util.List<ChildrenType> selectedChld = getSelectedChildren();
+                getController().getQueue().add(new QueueAction<Void, RuntimeException>() {
 
-                    public void run() {
-                        java.util.List<ParentType> selectedPkgs = getSelectedPackages();
-                        java.util.List<ChildrenType> selectedChld = getSelectedChildren();
+                    @Override
+                    protected Void run() throws RuntimeException {
                         boolean moveUpPossible = moveUpPossible(selectedPkgs, selectedChld);
-                        if (moveUpPossible == false) return;
+                        if (moveUpPossible == false) return null;
                         PackageController<ParentType, ChildrenType> pc = getController();
                         if (selectedPkgs.size() > 0) {
                             ParentType after = null;
@@ -296,11 +300,10 @@ public abstract class PackageControllerTable<ParentType extends AbstractPackageN
                             }
                             pc.move(selectedChld, pkg, after);
                         }
+                        return null;
                     }
-
-                }, true);
-            }
-
+                });
+            };
         };
         moveDownAction = new AppAction() {
             /**
@@ -315,13 +318,14 @@ public abstract class PackageControllerTable<ParentType extends AbstractPackageN
             }
 
             public void actionPerformed(ActionEvent e) {
-                IOEQ.add(new Runnable() {
+                final java.util.List<ParentType> selectedPkgs = getSelectedPackages();
+                final java.util.List<ChildrenType> selectedChld = getSelectedChildren();
+                getController().getQueue().add(new QueueAction<Void, RuntimeException>() {
 
-                    public void run() {
-                        java.util.List<ParentType> selectedPkgs = getSelectedPackages();
-                        java.util.List<ChildrenType> selectedChld = getSelectedChildren();
+                    @Override
+                    protected Void run() throws RuntimeException {
                         boolean moveDownPossible = moveDownPossible(selectedPkgs, selectedChld);
-                        if (moveDownPossible == false) return;
+                        if (moveDownPossible == false) return null;
                         PackageController<ParentType, ChildrenType> pc = getController();
                         if (selectedPkgs.size() > 0) {
                             ParentType after = null;
@@ -353,11 +357,10 @@ public abstract class PackageControllerTable<ParentType extends AbstractPackageN
                             }
                             pc.move(selectedChld, pkg, after);
                         }
+                        return null;
                     }
-
-                }, true);
+                });
             }
-
         };
         moveBottomAction = new AppAction() {
             /**
@@ -372,13 +375,14 @@ public abstract class PackageControllerTable<ParentType extends AbstractPackageN
             }
 
             public void actionPerformed(ActionEvent e) {
-                IOEQ.add(new Runnable() {
+                final java.util.List<ParentType> selectedPkgs = getSelectedPackages();
+                final java.util.List<ChildrenType> selectedChld = getSelectedChildren();
+                getController().getQueue().add(new QueueAction<Void, RuntimeException>() {
 
-                    public void run() {
-                        java.util.List<ParentType> selectedPkgs = getSelectedPackages();
-                        java.util.List<ChildrenType> selectedChld = getSelectedChildren();
+                    @Override
+                    protected Void run() throws RuntimeException {
                         boolean moveDownPossible = moveDownPossible(selectedPkgs, selectedChld);
-                        if (moveDownPossible == false) return;
+                        if (moveDownPossible == false) return null;
                         PackageController<ParentType, ChildrenType> pc = getController();
                         if (selectedPkgs.size() > 0) {
                             ParentType after = null;
@@ -387,7 +391,7 @@ public abstract class PackageControllerTable<ParentType extends AbstractPackageN
                                 try {
                                     after = pc.getPackages().get(pc.getPackages().size() - 1);
                                 } catch (final Throwable e) {
-                                    Log.exception(e);
+                                    LogController.CL().log(e);
                                 }
                             } finally {
                                 pc.readUnlock(readL);
@@ -401,15 +405,16 @@ public abstract class PackageControllerTable<ParentType extends AbstractPackageN
                             try {
                                 after = pkg.getChildren().get(pkg.getChildren().size() - 1);
                             } catch (final Throwable e) {
-                                Log.exception(e);
+                                LogController.CL().log(e);
                             } finally {
                                 pkg.getModifyLock().readUnlock(readL);
                             }
                             pc.move(selectedChld, pkg, after);
                         }
+                        return null;
                     }
+                });
 
-                }, true);
             }
 
         };

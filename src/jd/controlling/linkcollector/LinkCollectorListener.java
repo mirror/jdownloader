@@ -55,13 +55,6 @@ public interface LinkCollectorListener extends EventListener {
     void onLinkCollectorContentAdded(LinkCollectorEvent event);
 
     /**
-     * content got modified
-     * 
-     * @param event
-     */
-    void onLinkCollectorContentModified(LinkCollectorEvent event);
-
-    /**
      * New link has been added and grouped.<br>
      * Parameter[0]: (CrawledLink) added Link
      */

@@ -831,8 +831,8 @@ public class JDGui implements UpdaterListener, OwnerFinder {
     }
 
     /**
-     * under Linux EDT and XAWT can cause deadlock when we call getDefaultConfiguration() inside EDT, so I moved this to work outside EDT
-     * and only put the mainframe stuff into EDT
+     * under Linux EDT and XAWT can cause deadlock when we call getDefaultConfiguration() inside EDT, so I moved this to work outside EDT and only put the
+     * mainframe stuff into EDT
      * 
      * restores the dimension and location to the window
      */
@@ -1028,14 +1028,20 @@ public class JDGui implements UpdaterListener, OwnerFinder {
         }.waitForEDT();
     }
 
-    public boolean isCurrentPanel(Panels panelID) {
-        switch (panelID) {
-        case DOWNLOADLIST:
-            return JDGui.this.downloadView == mainTabbedPane.getSelectedComponent();
-        case LINKGRABBER:
-            return JDGui.this.linkgrabberView == mainTabbedPane.getSelectedComponent();
-        }
-        return false;
+    public boolean isCurrentPanel(final Panels panelID) {
+        return new EDTHelper<Boolean>() {
+
+            @Override
+            public Boolean edtRun() {
+                switch (panelID) {
+                case DOWNLOADLIST:
+                    return JDGui.this.downloadView == mainTabbedPane.getSelectedComponent();
+                case LINKGRABBER:
+                    return JDGui.this.linkgrabberView == mainTabbedPane.getSelectedComponent();
+                }
+                return false;
+            }
+        }.getReturnValue();
     }
 
     public boolean isSilentModeActive() {
@@ -1093,6 +1099,7 @@ public class JDGui implements UpdaterListener, OwnerFinder {
 
     protected void onGuiInitComplete() {
 
+        mainTabbedPane.notifyCurrentTab();
         ShutdownController.getInstance().addShutdownEvent(new ShutdownEvent() {
 
             @Override
@@ -1224,28 +1231,7 @@ public class JDGui implements UpdaterListener, OwnerFinder {
                     break;
                 case LINKGRABBER:
                     JDGui.this.mainTabbedPane.setSelectedComponent(JDGui.this.linkgrabberView);
-
                     break;
-                case PREMIUMCONFIG:
-                    // ConfigurationView.getInstance().getSidebar().setSelectedTreeEntry(Premium.class);
-                    // JDGui.this.openSettings();
-                    // if (param != null && param instanceof Account) {
-                    // final Premium p = (Premium)
-                    // ConfigurationView.getInstance().getContent();
-                    // p.setSelectedAccount((Account) param);
-                    // }
-                    // break;
-                case CONFIGPANEL:
-                    // if (param instanceof ConfigContainer) {
-                    // if (((ConfigContainer) param).getEntries().isEmpty()) {
-                    // return null; }
-                    // JDGui.this.showConfigPanel((ConfigContainer) param);
-                    // } else if (param instanceof Class<?>) {
-                    // ConfigurationView.getInstance().getSidebar().setSelectedTreeEntry((Class<?>)
-                    // param);
-                    // JDGui.this.openSettings();
-                    // }
-                    // break;
                 default:
                     JDGui.this.mainTabbedPane.setSelectedComponent(JDGui.this.downloadView);
                 }
@@ -1473,8 +1459,8 @@ public class JDGui implements UpdaterListener, OwnerFinder {
     }
 
     /**
-     * Sets the window to tray or restores it. This method contains a lot of workarounds for individual system problems... Take care to
-     * avoid sideeffects when changing anything
+     * Sets the window to tray or restores it. This method contains a lot of workarounds for individual system problems... Take care to avoid sideeffects when
+     * changing anything
      * 
      * @param minimize
      */

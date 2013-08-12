@@ -3,9 +3,7 @@ package jd.plugins;
 public class LinkStatusProperty {
     public static enum Property {
         STATUSTEXT,
-        STATUS,
-        PROGRESS,
-        ACTIVE
+        STATUS
     }
 
     private final Object     value;

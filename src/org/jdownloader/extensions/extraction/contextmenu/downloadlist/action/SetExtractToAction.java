@@ -30,7 +30,7 @@ public class SetExtractToAction<PackageType extends AbstractPackageNode<Children
     }
 
     public void actionPerformed(ActionEvent e) {
-
+        if (!isEnabled()) return;
         File extractto = _getExtension().getFinalExtractToFolder(archives.get(0));
 
         while (extractto != null && !extractto.isDirectory()) {

@@ -30,9 +30,6 @@ public class LinkCollectorEventSender extends Eventsender<LinkCollectorListener,
         case ADD_CONTENT:
             listener.onLinkCollectorContentAdded(event);
             break;
-        case REFRESH_CONTENT:
-            listener.onLinkCollectorContentModified(event);
-            break;
         case ADDED_LINK:
             listener.onLinkCollectorLinkAdded(event, (CrawledLink) event.getParameter());
             break;

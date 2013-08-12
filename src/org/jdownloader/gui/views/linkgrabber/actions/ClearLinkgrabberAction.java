@@ -2,10 +2,10 @@ package org.jdownloader.gui.views.linkgrabber.actions;
 
 import java.awt.event.ActionEvent;
 
-import jd.controlling.IOEQ;
 import jd.controlling.linkcollector.LinkCollector;
 
 import org.appwork.uio.UIOManager;
+import org.appwork.utils.event.queue.QueueAction;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogNoAnswerException;
 import org.jdownloader.actions.AppAction;
@@ -25,16 +25,15 @@ public class ClearLinkgrabberAction extends AppAction {
     public void actionPerformed(ActionEvent e) {
         try {
             Dialog.getInstance().showConfirmDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN | UIOManager.LOGIC_DONT_SHOW_AGAIN_IGNORES_CANCEL, _GUI._.literally_are_you_sure(), _GUI._.ClearAction_actionPerformed_msg(), null, _GUI._.literally_yes(), _GUI._.literall_no());
-            IOEQ.add(new Runnable() {
+            LinkCollector.getInstance().getQueue().add(new QueueAction<Void, RuntimeException>() {
 
-                public void run() {
+                @Override
+                protected Void run() throws RuntimeException {
                     LinkCollector.getInstance().clear();
-
+                    return null;
                 }
-
-            }, true);
+            });
         } catch (DialogNoAnswerException e1) {
         }
     }
-
 }

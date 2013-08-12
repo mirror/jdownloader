@@ -22,6 +22,7 @@ import java.net.SocketException;
 import java.net.SocketTimeoutException;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Logger;
 
 import jd.controlling.AccountController;
@@ -40,10 +41,9 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.download.DownloadInterface;
 
-import org.appwork.controlling.StateMachine;
-import org.appwork.controlling.StateMachineInterface;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.uio.UserIODefinition.CloseReason;
+import org.appwork.utils.NullsafeAtomicReference;
 import org.appwork.utils.Regex;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.net.httpconnection.HTTPProxy;
@@ -62,31 +62,36 @@ import org.jdownloader.settings.GeneralSettings;
 import org.jdownloader.settings.IfFileExistsAction;
 import org.jdownloader.translate._JDT;
 
-public class SingleDownloadController extends BrowserSettingsThread implements StateMachineInterface {
+public class SingleDownloadController extends BrowserSettingsThread {
 
-    public static final Object              DUPELOCK          = new Object();
+    private final static Object                    DUPELOCK         = new Object();
 
-    private boolean                         aborted           = false;
-    private boolean                         handling          = false;
+    /**
+     * signals that abort request has been received
+     */
+    private AtomicBoolean                          abortFlag        = new AtomicBoolean(false);
+    /**
+     * signals the activity of this SingleDownloadController
+     */
+    private AtomicBoolean                          activityFlag     = new AtomicBoolean(false);
+    /**
+     * signals the activity of the plugin in use
+     */
+    private NullsafeAtomicReference<PluginForHost> processingPlugin = new NullsafeAtomicReference<PluginForHost>(null);
 
-    private PluginForHost                   originalPlugin    = null;
-    private PluginForHost                   livePlugin        = null;
+    private PluginForHost                          originalPlugin   = null;
+    private PluginForHost                          livePlugin       = null;
 
-    private DownloadLink                    downloadLink;
+    private final DownloadLink                     downloadLink;
+    private final LinkStatus                       linkStatus;
+    private final Account                          account;
 
-    private LinkStatus                      linkStatus;
+    private final DownloadSpeedManager             connectionHandler;
 
-    private Account                         account           = null;
-    private SingleDownloadControllerHandler handler           = null;
-
-    private StateMachine                    stateMachine;
-
-    private DownloadSpeedManager            connectionHandler = null;
-
-    private Throwable                       exception         = null;
-
-    private LogSource                       downloadLogger    = null;
-    private long                            startTimestamp    = -1;
+    private Throwable                              exception        = null;
+    private final LogSource                        downloadLogger;
+    private long                                   startTimestamp   = -1;
+    private final Runnable                         finalize;
 
     public long getStartTimestamp() {
         return startTimestamp;
@@ -96,66 +101,21 @@ public class SingleDownloadController extends BrowserSettingsThread implements S
         return connectionHandler;
     }
 
-    public static final org.appwork.controlling.State IDLE_STATE    = new org.appwork.controlling.State("IDLE");
-    public static final org.appwork.controlling.State RUNNING_STATE = new org.appwork.controlling.State("RUNNING");
-    public static final org.appwork.controlling.State FINAL_STATE   = new org.appwork.controlling.State("FINAL_STATE");
-    static {
-        IDLE_STATE.addChildren(RUNNING_STATE);
-        RUNNING_STATE.addChildren(FINAL_STATE);
-    }
-
-    public SingleDownloadControllerHandler getHandler() {
-        return handler;
-    }
-
-    public void setHandler(SingleDownloadControllerHandler handler) {
-        this.handler = handler;
-    }
-
-    /**
-     * Erstellt einen Thread zum Start des Downloadvorganges
-     * 
-     * @param controller
-     *            Controller
-     * @param dlink
-     *            Link, der heruntergeladen werden soll
-     */
-    public SingleDownloadController(DownloadLink dlink, Account account) {
-        this(dlink, account, null, null);
-    }
-
-    public SingleDownloadController(DownloadLink dlink, Account account, DownloadSpeedManager cmanager) {
-        this(dlink, account, null, cmanager);
-    }
-
-    public SingleDownloadController(DownloadLink dlink, Account account, ProxyInfo proxy, DownloadSpeedManager manager) {
-        super("Download: " + dlink.getName() + "_" + dlink.getHost());
+    public SingleDownloadController(SingleDownloadControllerActivator activator, DownloadSpeedManager manager, Runnable finalize) {
+        super("Download");
+        this.finalize = finalize;
+        activityFlag.set(true);
         this.connectionHandler = manager;
-        stateMachine = new StateMachine(this, IDLE_STATE, FINAL_STATE);
-        downloadLink = dlink;
+        downloadLink = activator.getLink();
+        setName("Download: " + downloadLink.getName() + "_" + downloadLink.getHost());
         linkStatus = downloadLink.getLinkStatus();
-        /* mark link plugin active */
-        linkStatus.setActive(true);
         setPriority(Thread.MIN_PRIORITY);
-        downloadLink.setDownloadLinkController(this);
-        this.account = account;
-        this.setCurrentProxy(proxy);
-        downloadLogger = LogController.getInstance().getLogger(dlink.getDefaultPlugin());
+        this.account = activator.getAccount();
+        this.setCurrentProxy(activator.getProxy());
+        downloadLogger = LogController.getInstance().getLogger(downloadLink.getDefaultPlugin());
         downloadLogger.setAllowTimeoutFlush(false);
         downloadLogger.info("Start Download of " + downloadLink.getDownloadURL());
         super.setLogger(downloadLogger);
-    }
-
-    public boolean preDownloadCheck(Runnable runOkay, Runnable runFailed) throws Exception {
-        synchronized (DUPELOCK) {
-            if (DownloadWatchDog.preDownloadCheck(downloadLink)) {
-                if (runOkay != null) runOkay.run();
-                return true;
-            } else {
-                if (runFailed != null) runFailed.run();
-                return false;
-            }
-        }
     }
 
     @Override
@@ -172,38 +132,49 @@ public class SingleDownloadController extends BrowserSettingsThread implements S
         return account;
     }
 
-    /**
-     * Bricht den Downloadvorgang ab.
-     */
-    public SingleDownloadController abortDownload() {
-        if (aborted == true || !handling) return this;
-        if (downloadLink.getLinkStatus().isPluginActive() == false) return this;
-        aborted = true;
-        Thread abortThread = new Thread() {
+    public boolean isAborting() {
+        return abortFlag.get();
+    }
 
-            @Override
-            public void run() {
-                while (downloadLink.getLinkStatus().isPluginActive()) {
-                    DownloadInterface dli = downloadLink.getDownloadInstance();
-                    if (dli != null && downloadLink.getLinkStatus().hasStatus(LinkStatus.DOWNLOADINTERFACE_IN_PROGRESS)) {
-                        /* finally a downloadInterface available to abort */
-                        dli.stopDownload();
-                        break;
-                    }
-                    try {
-                        Thread.sleep(1000);
-                    } catch (InterruptedException e) {
-                        downloadLogger.log(e);
+    public boolean isActive() {
+        return activityFlag.get();
+    }
+
+    public void abort() {
+        if (activityFlag.get() == false) {
+            /* this singleDownloadController is no longer active */
+            return;
+        }
+        if (abortFlag.getAndSet(true) == false) {
+            /* this is our initial abort request */
+            Thread abortThread = new Thread() {
+
+                @Override
+                public void run() {
+                    while (activityFlag.get()) {
+                        DownloadInterface dli = downloadLink.getDownloadInstance();
+                        if (dli != null) {
+                            dli.stopDownload();
+                        }
+                        synchronized (activityFlag) {
+                            if (activityFlag.get() == false) return;
+                            try {
+                                activityFlag.wait(1000);
+                            } catch (final InterruptedException e) {
+                            }
+                        }
                     }
                 }
-            }
 
-        };
-        abortThread.setDaemon(true);
-        abortThread.setName("Abort: " + downloadLink.getName() + "_" + downloadLink.getHost());
-        abortThread.start();
-        interrupt();
-        return this;
+            };
+            abortThread.setDaemon(true);
+            abortThread.setName("Abort: " + downloadLink.getName() + "_" + downloadLink.getUniqueID());
+            abortThread.start();
+            if (processingPlugin.get() != null) {
+                /* do not interrupt the SingleDownloadController itself */
+                interrupt();
+            }
+        }
     }
 
     public DownloadLink getDownloadLink() {
@@ -212,24 +183,28 @@ public class SingleDownloadController extends BrowserSettingsThread implements S
 
     private void handlePlugin() {
         try {
+            /**
+             * request gui refresh
+             */
+            downloadLink.getFilePackage().getView().requestUpdate();
             startTimestamp = System.currentTimeMillis();
-
             linkStatus.setStatusText(_JDT._.gui_download_create_connection());
+            SkipReason pluginException = null;
             if ((downloadLink.getLinkStatus().getRetryCount()) <= livePlugin.getMaxRetries(downloadLink, getAccount())) {
                 final long sizeBefore = Math.max(0, downloadLink.getDownloadCurrent());
                 long traffic = 0;
                 try {
-                    /* check ob Datei existiert oder bereits geladen wird */
-                    if (!preDownloadCheck(new Runnable() {
+                    /**
+                     * checks for existing/already active singeDownloadControllers
+                     */
+                    DownloadWatchDog.getInstance().localFileCheck(this, new ExceptionRunnable() {
 
                         @Override
-                        public void run() {
-                            linkStatus.setInProgress(true);
+                        public void run() throws Exception {
+                            processingPlugin.set(livePlugin);
                         }
-                    }, null)) return;
-
+                    }, null);
                     try {
-                        handling = true;
                         try {
                             if (originalPlugin != livePlugin) {
                                 /*
@@ -264,10 +239,15 @@ public class SingleDownloadController extends BrowserSettingsThread implements S
                         exception = e;
                         throw e;
                     } finally {
-                        handling = false;
+                        processingPlugin.set(null);
                     }
                 } catch (PluginException e) {
-                    e.fillLinkStatus(downloadLink.getLinkStatus());
+                    exception = e;
+                    if (e.getSkipReason() != null) {
+                        pluginException = e.getSkipReason();
+                    } else {
+                        e.fillLinkStatus(downloadLink.getLinkStatus());
+                    }
                 } catch (UnknownHostException e) {
                     linkStatus.addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
                     linkStatus.setErrorMessage(_JDT._.plugins_errors_nointernetconn());
@@ -298,7 +278,6 @@ public class SingleDownloadController extends BrowserSettingsThread implements S
                     linkStatus.setValue(JsonConfig.create(GeneralSettings.class).getDownloadUnknownIOExceptionWaittime());
                 } catch (IOException e) {
                     LogSource.exception(logger, e);
-
                     linkStatus.addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
                     linkStatus.setErrorMessage(_JDT._.plugins_errors_hosterproblem());
                     linkStatus.setValue(JsonConfig.create(GeneralSettings.class).getDownloadUnknownIOExceptionWaittime());
@@ -330,70 +309,95 @@ public class SingleDownloadController extends BrowserSettingsThread implements S
                     }
                 }
             }
-            if (isAborted() && !linkStatus.isFinished()) {
+            if (isAborting() && !linkStatus.isFinished()) {
                 linkStatus.setErrorMessage(null);
                 linkStatus.setStatus(LinkStatus.TODO);
                 return;
             }
-            if (linkStatus.isFailed()) {
-                downloadLogger.warning("\r\nError occured- " + downloadLink.getLinkStatus());
-            }
-            if (handler != null) {
-                /* special handler is used */
-                if (handler.handleDownloadLink(downloadLink, account)) return;
-            }
-            switch (linkStatus.getLatestStatus()) {
-            case LinkStatus.ERROR_LOCAL_IO:
-                onErrorLocalIO();
-                break;
-            case LinkStatus.ERROR_IP_BLOCKED:
-                onErrorIPWaittime();
-                break;
-            case LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE:
-                onErrorDownloadTemporarilyUnavailable();
-                break;
-            case LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE:
-                onErrorHostTemporarilyUnavailable();
-                break;
-            case LinkStatus.ERROR_FILE_NOT_FOUND:
-                onErrorFileNotFound();
-                break;
-            case LinkStatus.ERROR_FATAL:
-                onErrorFatal();
-                break;
-            case LinkStatus.ERROR_CAPTCHA:
-                onErrorCaptcha();
-                break;
-            case LinkStatus.ERROR_PREMIUM:
-                onErrorPremium();
-                break;
-            case LinkStatus.ERROR_DOWNLOAD_INCOMPLETE:
-                onErrorIncomplete();
-                break;
-            case LinkStatus.ERROR_ALREADYEXISTS:
-                onErrorFileExists();
-                break;
-            case LinkStatus.ERROR_DOWNLOAD_FAILED:
-                onErrorDownloadFailed();
-                break;
-            case LinkStatus.ERROR_PLUGIN_DEFECT:
-                onErrorPluginDefect();
-                break;
-            case LinkStatus.ERROR_NO_CONNECTION:
-            case LinkStatus.ERROR_TIMEOUT_REACHED:
-                onErrorNoConnection();
-                break;
-            default:
-                if (linkStatus.hasStatus(LinkStatus.FINISHED)) {
-                    onDownloadFinishedSuccessFull();
-                } else {
-                    retry();
+            if (pluginException != null) {
+                downloadLogger.info("SkipReason Exception: " + pluginException);
+                switch (pluginException) {
+                case FILE_EXISTS:
+                    onErrorFileExists();
+                    break;
+                case INVALID_DESTINATION:
+                    onErrorLocalIO();
+                    break;
+                case DISK_FULL:
+                    onDiskFull();
+                    break;
+                case FILE_IN_PROCESS:
+                    onFileInProcess();
+                    break;
+                default:
+                    throw exception;
+                }
+            } else {
+                if (linkStatus.isFailed()) {
+                    downloadLogger.warning("\r\nError occured- " + downloadLink.getLinkStatus());
+                }
+                switch (linkStatus.getLatestStatus()) {
+                case LinkStatus.ERROR_LOCAL_IO:
+                    onErrorLocalIO();
+                    break;
+                case LinkStatus.ERROR_IP_BLOCKED:
+                    onErrorIPWaittime();
+                    break;
+                case LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE:
+                    onErrorDownloadTemporarilyUnavailable();
+                    break;
+                case LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE:
+                    onErrorHostTemporarilyUnavailable();
+                    break;
+                case LinkStatus.ERROR_FILE_NOT_FOUND:
+                    onErrorFileNotFound();
+                    break;
+                case LinkStatus.ERROR_FATAL:
+                    onErrorFatal();
+                    break;
+                case LinkStatus.ERROR_CAPTCHA:
+                    onErrorCaptcha();
+                    break;
+                case LinkStatus.ERROR_PREMIUM:
+                    onErrorPremium();
+                    break;
+                case LinkStatus.ERROR_DOWNLOAD_INCOMPLETE:
+                    onErrorIncomplete();
+                    break;
+                case LinkStatus.ERROR_ALREADYEXISTS:
+                    onErrorFileExists();
+                    break;
+                case LinkStatus.ERROR_DOWNLOAD_FAILED:
+                    onErrorDownloadFailed();
+                    break;
+                case LinkStatus.ERROR_PLUGIN_DEFECT:
+                    onErrorPluginDefect();
+                    break;
+                case LinkStatus.ERROR_TIMEOUT_REACHED:
+                    onErrorNoConnection();
+                    break;
+                default:
+                    if (linkStatus.hasStatus(LinkStatus.FINISHED)) {
+                        onDownloadFinishedSuccessFull();
+                    } else {
+                        retry();
+                    }
                 }
             }
         } catch (Throwable e) {
             downloadLogger.log(e);
             downloadLogger.severe("Error in Plugin Version: " + downloadLink.getLivePlugin().getVersion());
         }
+    }
+
+    private void onFileInProcess() {
+        downloadLogger.severe("FileInProcess on: " + downloadLink.getFileOutput());
+        downloadLink.setSkipReason(SkipReason.FILE_IN_PROCESS);
+    }
+
+    private void onDiskFull() {
+        downloadLogger.severe("DiskFull on: " + downloadLink.getFileOutput());
+        downloadLink.setSkipReason(SkipReason.DISK_FULL);
     }
 
     protected void onErrorCaptcha() {
@@ -427,15 +431,6 @@ public class SingleDownloadController extends BrowserSettingsThread implements S
         }
         String orgMessage = downloadLink.getLinkStatus().getErrorMessage();
         downloadLink.getLinkStatus().setErrorMessage(_JDT._.controller_status_plugindefective() + (orgMessage == null ? "" : " " + orgMessage));
-    }
-
-    /**
-     * download aborted by user?
-     * 
-     * @return
-     */
-    public boolean isAborted() {
-        return aborted;
     }
 
     protected void onDownloadFinishedSuccessFull() {
@@ -485,7 +480,6 @@ public class SingleDownloadController extends BrowserSettingsThread implements S
     }
 
     private void onErrorFileExists() {
-        /* we synchronize here to avoid ugly concurrency issues */
         synchronized (DUPELOCK) {
             IfFileExistsAction doAction = JsonConfig.create(GeneralSettings.class).getIfFileExistsAction();
             switch (doAction) {
@@ -562,6 +556,10 @@ public class SingleDownloadController extends BrowserSettingsThread implements S
 
     }
 
+    public PluginForHost getPlugin() {
+        return processingPlugin.get();
+    }
+
     protected void onErrorFileNotFound() {
         downloadLogger.severe("Link is no longer available:" + downloadLink.getDownloadURL());
         downloadLink.setAvailable(false);
@@ -618,8 +616,8 @@ public class SingleDownloadController extends BrowserSettingsThread implements S
             linkStatus.setErrorMessage(_JDT._.controller_status_tempunavailable());
         }
         /*
-         * Value<0 bedeutet das der link dauerhauft deaktiviert bleiben soll. value>0 gibt die zeit an die der link deaktiviert bleiben muss
-         * in ms. value==0 macht default 30 mins Der DownloadWatchdoggibt den Link wieder frei ewnn es zeit ist.
+         * Value<0 bedeutet das der link dauerhauft deaktiviert bleiben soll. value>0 gibt die zeit an die der link deaktiviert bleiben muss in ms. value==0
+         * macht default 30 mins Der DownloadWatchdoggibt den Link wieder frei ewnn es zeit ist.
          */
         if (linkStatus.getValue() > 0) {
             linkStatus.setWaitTime(linkStatus.getValue());
@@ -692,135 +690,130 @@ public class SingleDownloadController extends BrowserSettingsThread implements S
     @Override
     public void run() {
         try {
-            stateMachine.setStatus(RUNNING_STATE);
-            linkStatus.setStatusText(null);
-            linkStatus.setErrorMessage(null);
-            linkStatus.resetWaitTime();
-            /*
-             * we are going to download this link, create new liveplugin instance here
-             */
-            /* we want a fresh ClassLoader for this download! */
-            PluginClassLoaderChild cl;
-            this.setContextClassLoader(cl = PluginClassLoader.getInstance().getChild());
             try {
-                originalPlugin = downloadLink.getDefaultPlugin().getLazyP().newInstance(cl);
-            } catch (UpdateRequiredClassNotFoundException e) {
-                downloadLogger.log(e);
-                downloadLink.getLinkStatus().setStatus(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            if (account != null && !account.getHoster().equalsIgnoreCase(downloadLink.getHost())) {
-                /* another plugin to handle this download! ->multihoster */
+                linkStatus.setStatusText(null);
+                linkStatus.setErrorMessage(null);
+                linkStatus.resetWaitTime();
+                /*
+                 * we are going to download this link, create new liveplugin instance here
+                 */
+                /* we want a fresh ClassLoader for this download! */
+                PluginClassLoaderChild cl;
+                this.setContextClassLoader(cl = PluginClassLoader.getInstance().getChild());
                 try {
-                    LazyHostPlugin lazy = HostPluginController.getInstance().get(account.getHoster());
-                    downloadLink.setLivePlugin(lazy.newInstance(cl));
+                    originalPlugin = downloadLink.getDefaultPlugin().getLazyP().newInstance(cl);
                 } catch (UpdateRequiredClassNotFoundException e) {
                     downloadLogger.log(e);
                     downloadLink.getLinkStatus().setStatus(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
-            } else {
-                downloadLink.setLivePlugin(originalPlugin);
-            }
-            livePlugin = downloadLink.getLivePlugin();
-            if (livePlugin != null && originalPlugin != null) {
-
-                livePlugin.setLogger(downloadLogger);
-
-                /*
-                 * handle is only called in download situation, that why we create a new browser instance here
-                 */
-                livePlugin.setBrowser(new Browser());
-                if (originalPlugin != livePlugin) {
-                    /* we have 2 different plugins -> multihoster */
-                    originalPlugin.setBrowser(new Browser());
-
-                    originalPlugin.setLogger(downloadLogger);
-                    originalPlugin.setDownloadLink(downloadLink);
+                if (account != null && !account.getHoster().equalsIgnoreCase(downloadLink.getHost())) {
+                    /* another plugin to handle this download! ->multihoster */
+                    try {
+                        LazyHostPlugin lazy = HostPluginController.getInstance().get(account.getHoster());
+                        downloadLink.setLivePlugin(lazy.newInstance(cl));
+                    } catch (UpdateRequiredClassNotFoundException e) {
+                        downloadLogger.log(e);
+                        downloadLink.getLinkStatus().setStatus(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
+                } else {
+                    downloadLink.setLivePlugin(originalPlugin);
                 }
-                if (downloadLink.getDownloadURL() == null) {
-                    downloadLink.getLinkStatus().setStatusText(_JDT._.controller_status_containererror());
-                    downloadLink.getLinkStatus().setErrorMessage(_JDT._.controller_status_containererror());
-                    downloadLink.setEnabled(false);
-                    return;
-                }
+                livePlugin = downloadLink.getLivePlugin();
+                if (livePlugin != null && originalPlugin != null) {
 
-                handlePlugin();
-                try {
+                    livePlugin.setLogger(downloadLogger);
+
+                    /*
+                     * handle is only called in download situation, that why we create a new browser instance here
+                     */
+                    livePlugin.setBrowser(new Browser());
                     if (originalPlugin != livePlugin) {
-                        originalPlugin.validateLastChallengeResponse();
+                        /* we have 2 different plugins -> multihoster */
+                        originalPlugin.setBrowser(new Browser());
+
+                        originalPlugin.setLogger(downloadLogger);
+                        originalPlugin.setDownloadLink(downloadLink);
                     }
-                    livePlugin.validateLastChallengeResponse();
-                } catch (final Throwable e) {
-                    downloadLogger.log(e);
-                }
-                if (isAborted() && !linkStatus.isFinished()) {
-                    /* download aborted */
-                    LogController.GL.info("\r\nDownload stopped- " + downloadLink.getName());
-                    downloadLogger.clear();
-                } else if (linkStatus.isFinished()) {
-                    /* error free */
-                    LogController.GL.finest("\r\nFinished- " + downloadLink.getLinkStatus());
-                    LogController.GL.info("\r\nFinished- " + downloadLink.getName() + "->" + downloadLink.getFileOutput());
-                    downloadLogger.clear();
-                    FileCreationManager.getInstance().getEventSender().fireEvent(new FileCreationEvent(this, FileCreationEvent.Type.NEW_FILES, new File[] { new File(downloadLink.getFileOutput()) }));
-                    switch (org.jdownloader.settings.staticreferences.CFG_GENERAL.CFG.getCleanupAfterDownloadAction()) {
+                    if (downloadLink.getDownloadURL() == null) {
+                        downloadLink.getLinkStatus().setStatusText(_JDT._.controller_status_containererror());
+                        downloadLink.getLinkStatus().setErrorMessage(_JDT._.controller_status_containererror());
+                        downloadLink.setEnabled(false);
+                        return;
+                    }
 
-                    case CLEANUP_IMMEDIATELY:
-                        LogController.GL.info("Remove Link " + downloadLink.getName() + " because Finished and CleanupImmediately!");
-
-                        java.util.List<DownloadLink> remove = new ArrayList<DownloadLink>();
-                        remove.add(downloadLink);
-                        if (DownloadController.getInstance().askForRemoveVetos(remove)) {
-                            DownloadController.getInstance().removeChildren(remove);
+                    handlePlugin();
+                    try {
+                        if (originalPlugin != livePlugin) {
+                            originalPlugin.validateLastChallengeResponse();
                         }
-                        break;
-
-                    case CLEANUP_AFTER_PACKAGE_HAS_FINISHED:
-
-                        FilePackage fp = downloadLink.getFilePackage();
-
-                        DownloadController.removePackageIfFinished(fp);
-
-                        break;
+                        livePlugin.validateLastChallengeResponse();
+                    } catch (final Throwable e) {
+                        downloadLogger.log(e);
                     }
-
+                    if (isAborting() && !linkStatus.isFinished()) {
+                        /* download aborted */
+                        LogController.GL.info("\r\nDownload stopped- " + downloadLink.getName());
+                        downloadLogger.clear();
+                    } else if (linkStatus.isFinished()) {
+                        /* error free */
+                        LogController.GL.finest("\r\nFinished- " + downloadLink.getLinkStatus());
+                        LogController.GL.info("\r\nFinished- " + downloadLink.getName() + "->" + downloadLink.getFileOutput());
+                        downloadLogger.clear();
+                        FileCreationManager.getInstance().getEventSender().fireEvent(new FileCreationEvent(this, FileCreationEvent.Type.NEW_FILES, new File[] { new File(downloadLink.getFileOutput()) }));
+                        switch (org.jdownloader.settings.staticreferences.CFG_GENERAL.CFG.getCleanupAfterDownloadAction()) {
+                        case CLEANUP_IMMEDIATELY:
+                            LogController.GL.info("Remove Link " + downloadLink.getName() + " because Finished and CleanupImmediately!");
+                            java.util.List<DownloadLink> remove = new ArrayList<DownloadLink>();
+                            remove.add(downloadLink);
+                            if (DownloadController.getInstance().askForRemoveVetos(remove)) {
+                                DownloadController.getInstance().removeChildren(remove);
+                            }
+                            break;
+                        case CLEANUP_AFTER_PACKAGE_HAS_FINISHED:
+                            FilePackage fp = downloadLink.getFilePackage();
+                            DownloadController.removePackageIfFinished(fp);
+                            break;
+                        }
+                    }
+                }
+            } finally {
+                try {
+                    /* cleanup the DownloadInterface/Controller references */
+                    downloadLink.setDownloadInstance(null);
+                    downloadLink.setLivePlugin(null);
+                    downloadLogger.close();
+                    if (originalPlugin != livePlugin) {
+                        /* we have 2 different plugins */
+                        originalPlugin.clean();
+                        originalPlugin.setDownloadLink(null);
+                    }
+                    if (livePlugin != null) {
+                        livePlugin.clean();
+                        livePlugin.setDownloadLink(null);
+                    }
+                    /**
+                     * request gui refresh
+                     */
+                    downloadLink.getFilePackage().getView().requestUpdate();
+                } finally {
+                    synchronized (activityFlag) {
+                        activityFlag.set(false);
+                        activityFlag.notifyAll();
+                    }
+                    exception = null;
+                    livePlugin = null;
+                    originalPlugin = null;
+                    this.setContextClassLoader(null);
                 }
             }
         } finally {
-            downloadLogger.close();
-            try {
-                linkStatus.setInProgress(false);
-                /* cleanup the DownloadInterface/Controller references */
-                downloadLink.setDownloadLinkController(null);
-                downloadLink.setDownloadInstance(null);
-                downloadLink.setLivePlugin(null);
-                if (originalPlugin != livePlugin) {
-                    /* we have 2 different plugins */
-                    originalPlugin.clean();
-                    originalPlugin.setDownloadLink(null);
-                }
-                if (livePlugin != null) {
-                    livePlugin.clean();
-                    livePlugin.setDownloadLink(null);
-                }
-            } finally {
-                linkStatus.setActive(false);
-                stateMachine.setStatus(FINAL_STATE);
-                linkStatus = null;
-                exception = null;
-                livePlugin = null;
-                originalPlugin = null;
-                this.setContextClassLoader(null);
-            }
+            if (finalize != null) finalize.run();
         }
     }
 
     @Override
     public void setLogger(Logger logger) {
         /* we dont allow external changes */
-    }
-
-    public StateMachine getStateMachine() {
-        return stateMachine;
     }
 
 }

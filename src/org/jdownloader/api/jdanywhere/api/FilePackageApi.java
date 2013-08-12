@@ -46,7 +46,7 @@ public class FilePackageApi implements IFilePackageApi {
             for (FilePackage fpkg : dlc.getPackages()) {
                 ret.add(new FilePackageStorable(fpkg));
             }
-            String returnValue = JSonStorage.toString(ret);
+            String returnValue = JSonStorage.serializeToJson(ret);
             return Helper.compress(returnValue);
             // return ret;
         } catch (IOException e) {
@@ -135,9 +135,7 @@ public class FilePackageApi implements IFilePackageApi {
     public boolean reset(long ID) {
         try {
             FilePackage fpkg = Helper.getFilePackageFromID(ID);
-            for (DownloadLink link : fpkg.getChildren()) {
-                link.reset();
-            }
+            DownloadWatchDog.getInstance().reset(fpkg.getChildren());
             return true;
         } finally {
         }

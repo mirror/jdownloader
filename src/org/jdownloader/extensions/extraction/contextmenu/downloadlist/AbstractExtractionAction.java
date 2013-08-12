@@ -2,7 +2,6 @@ package org.jdownloader.extensions.extraction.contextmenu.downloadlist;
 
 import java.util.List;
 
-import jd.controlling.IOEQ;
 import jd.controlling.packagecontroller.AbstractPackageChildrenNode;
 import jd.controlling.packagecontroller.AbstractPackageNode;
 
@@ -18,12 +17,13 @@ public abstract class AbstractExtractionAction<PackageType extends AbstractPacka
 
     public AbstractExtractionAction(SelectionInfo<PackageType, ChildrenType> selection) {
         super(selection);
-
     }
 
     protected void onAsyncInitDone() {
         if (archives != null && archives.size() > 0) {
-            setEnabled(true);
+            super.setEnabled(true);
+        } else {
+            super.setEnabled(false);
         }
 
     }
@@ -34,28 +34,22 @@ public abstract class AbstractExtractionAction<PackageType extends AbstractPacka
     }
 
     public void setEnabled(boolean newValue) {
-
         if (!newValue && getSelection() != null) {
-            IOEQ.add(new Runnable() {
-
-                @Override
+            Thread thread = new Thread() {
                 public void run() {
                     asynchInit();
-
                     new EDTRunner() {
-
                         @Override
                         protected void runInEDT() {
 
                             onAsyncInitDone();
-
                         }
-
                     };
-
-                }
-
-            });
+                };
+            };
+            thread.setDaemon(true);
+            thread.setName("SetEnabled: " + getClass().getName());
+            thread.start();
         }
         super.setEnabled(newValue);
     }

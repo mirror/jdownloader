@@ -2,7 +2,6 @@ package org.jdownloader.gui.toolbar;
 
 import javax.swing.JPopupMenu;
 
-import jd.controlling.IOEQ;
 import jd.gui.swing.jdgui.components.toolbar.MainToolBar;
 import jd.gui.swing.jdgui.components.toolbar.actions.AutoReconnectToggleAction;
 import jd.gui.swing.jdgui.components.toolbar.actions.ClipBoardToggleAction;
@@ -101,13 +100,16 @@ public class MainToolbarManager extends ContextMenuManager<FilePackage, Download
     }
 
     /**
-     * Create a new instance of DownloadListContextMenuManager. This is a singleton class. Access the only existing instance by using
-     * {@link #getInstance()}.
+     * Create a new instance of DownloadListContextMenuManager. This is a singleton class. Access the only existing instance by using {@link #getInstance()}.
      */
 
     private MainToolbarManager() {
         super();
-        updateDelayer = new DelayedRunnable(IOEQ.TIMINGQUEUE, 1000l, 2000) {
+        updateDelayer = new DelayedRunnable(1000l, 2000) {
+            @Override
+            public String getID() {
+                return "MainToolbarManager";
+            }
 
             @Override
             public void delayedrun() {

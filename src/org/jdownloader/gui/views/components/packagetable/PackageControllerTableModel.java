@@ -5,8 +5,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.concurrent.ScheduledThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.ScheduledExecutorService;
 
 import javax.swing.Icon;
 
@@ -14,11 +13,14 @@ import jd.controlling.packagecontroller.AbstractNode;
 import jd.controlling.packagecontroller.AbstractPackageChildrenNode;
 import jd.controlling.packagecontroller.AbstractPackageNode;
 import jd.controlling.packagecontroller.ChildComparator;
+import jd.controlling.packagecontroller.ChildrenView;
 import jd.controlling.packagecontroller.PackageController;
 
 import org.appwork.scheduler.DelayedRunnable;
 import org.appwork.swing.exttable.ExtColumn;
 import org.appwork.swing.exttable.ExtTableModel;
+import org.appwork.utils.event.queue.Queue;
+import org.appwork.utils.event.queue.QueueAction;
 import org.appwork.utils.logging.Log;
 import org.appwork.utils.swing.EDTRunner;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
@@ -66,27 +68,69 @@ public abstract class PackageControllerTableModel<PackageType extends AbstractPa
         return tableFilters;
     }
 
-    private Object                      LOCK  = new Object();
+    private Object                   LOCK  = new Object();
 
-    private ScheduledThreadPoolExecutor queue = new ScheduledThreadPoolExecutor(1);
+    private ScheduledExecutorService queue = DelayedRunnable.getNewScheduledExecutorService();
 
-    private DelayedRunnable             asyncRecreateFast;
+    private DelayedRunnable          asyncRecreateFast;
 
     public PackageControllerTableModel(final PackageController<PackageType, ChildrenType> pc, String id) {
         super(id);
-        queue.setKeepAliveTime(10000, TimeUnit.MILLISECONDS);
-        queue.allowCoreThreadTimeOut(true);
         resetSorting();
         this.pc = pc;
-        asyncRefresh = new DelayedRunnable(queue, 150l, 250l) {
+        asyncRefresh = new DelayedRunnable(queue, 150l, 500l) {
+
+            @Override
+            public String getID() {
+                return "PackageControllerTableModel_Refresh" + pc.getClass().getName();
+            }
 
             @Override
             public void delayedrun() {
-                java.util.List<PackageType> packages = getAllPackageNodes();
-                for (PackageType pkg : packages) {
-                    if (pkg.getView() != null && pkg.getView().updateRequired()) {
-                        pkg.getView().aggregate();
+                fireRepaint();
+            }
+        };
+        asyncRecreate = new DelayedRunnable(queue, 50l, 1000l) {
+
+            @Override
+            public String getID() {
+                return "PackageControllerTableModel_Recreate" + pc.getClass().getName();
+            }
+
+            @Override
+            public void delayedrun() {
+                fireStructureChange();
+            }
+        };
+
+        asyncRecreateFast = new DelayedRunnable(queue, 10l, 50l) {
+
+            @Override
+            public String getID() {
+                return "PackageControllerTableModel_RecreateFast" + pc.getClass().getName();
+            }
+
+            @Override
+            public void delayedrun() {
+                fireStructureChange();
+            }
+        };
+    }
+
+    private void fireRepaint() {
+        pc.getQueue().add(new QueueAction<Void, RuntimeException>(Queue.QueuePriority.HIGH) {
+
+            @Override
+            protected Void run() throws RuntimeException {
+                ArrayList<ChildrenView<ChildrenType>> viewUpdates = new ArrayList<ChildrenView<ChildrenType>>();
+                for (AbstractNode node : getTableData()) {
+                    if (node instanceof AbstractPackageNode) {
+                        ChildrenView<ChildrenType> view = ((AbstractPackageNode) node).getView();
+                        if (view.updateRequired()) viewUpdates.add(view);
                     }
+                }
+                for (ChildrenView<ChildrenType> view : viewUpdates) {
+                    view.aggregate();
                 }
                 new EDTRunner() {
                     @Override
@@ -95,21 +139,21 @@ public abstract class PackageControllerTableModel<PackageType extends AbstractPa
                         getTable().repaint();
                     }
                 };
+                return null;
             }
-        };
-        asyncRecreate = new DelayedRunnable(queue, 50l, 1000l) {
-            @Override
-            public void delayedrun() {
-                _fireTableStructureChanged(getTableData(), true);
-            }
-        };
+        });
+    }
 
-        asyncRecreateFast = new DelayedRunnable(queue, 10l, 50l) {
+    private void fireStructureChange() {
+        pc.getQueue().add(new QueueAction<Void, RuntimeException>(Queue.QueuePriority.HIGH) {
+
             @Override
-            public void delayedrun() {
+            protected Void run() throws RuntimeException {
                 _fireTableStructureChanged(getTableData(), true);
+                return null;
             }
-        };
+
+        });
     }
 
     public void resetSorting() {
@@ -122,7 +166,7 @@ public abstract class PackageControllerTableModel<PackageType extends AbstractPa
         }
     }
 
-    public ScheduledThreadPoolExecutor getThreadPool() {
+    public ScheduledExecutorService getThreadPool() {
         return queue;
     }
 
@@ -152,7 +196,6 @@ public abstract class PackageControllerTableModel<PackageType extends AbstractPa
 
     public void sortPackageChildren(final AbstractPackageNode pkg, ChildComparator<ChildrenType> comparator) {
         this.resetSorting();
-
         pc.sortPackageChildren((PackageType) pkg, comparator);
     }
 
@@ -162,6 +205,7 @@ public abstract class PackageControllerTableModel<PackageType extends AbstractPa
 
     public void toggleFilePackageExpand(final AbstractPackageNode fp2, final TOGGLEMODE mode) {
         synchronized (tableModifiers) {
+            final java.util.List<PackageType> selectedPackages = PackageControllerTableModel.this.getTable().getSelectedPackages();
             tableModifiers.add(new TableDataModifier() {
 
                 @Override
@@ -180,7 +224,6 @@ public abstract class PackageControllerTableModel<PackageType extends AbstractPa
                         break;
                     }
                     if (mode != TOGGLEMODE.CURRENT) {
-                        java.util.List<PackageType> selectedPackages = PackageControllerTableModel.this.getTable().getSelectedPackages();
                         if (selectedPackages.size() > 1) {
                             for (PackageType fp : selectedPackages) {
                                 fp.setExpanded(cur);
@@ -248,8 +291,7 @@ public abstract class PackageControllerTableModel<PackageType extends AbstractPa
     }
 
     /*
-     * we override sort to have a better sorting of packages/files, to keep their structure alive,data is only used to specify the size of
-     * the new ArrayList
+     * we override sort to have a better sorting of packages/files, to keep their structure alive,data is only used to specify the size of the new ArrayList
      */
     @Override
     public java.util.List<AbstractNode> sort(final java.util.List<AbstractNode> data, ExtColumn<AbstractNode> column) {

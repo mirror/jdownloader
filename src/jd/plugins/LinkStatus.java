@@ -31,119 +31,100 @@ public class LinkStatus implements Serializable {
     /**
      * Controlling: Link is in queue and is waiting for beeing processed
      */
-    public static final int   TODO                                 = 1 << 0;
+    public static final int TODO                                 = 1 << 0;
 
     /**
      * Controlling & Downloadinterface: Link has been downloaded
      */
-    public final static int   FINISHED                             = 1 << 1;
+    public final static int FINISHED                             = 1 << 1;
 
     /**
      * Plugins: a unknown error occured
      */
-    public final static int   ERROR_RETRY                          = 1 << 2;
+    public final static int ERROR_RETRY                          = 1 << 2;
 
     /**
      * Plugins: captcha input has been wrong
      */
-    public final static int   ERROR_CAPTCHA                        = 1 << 3;
+    public final static int ERROR_CAPTCHA                        = 1 << 3;
 
     /**
      * Plugins: Download Limit has been reached. Ip is blocked
      */
-    public final static int   ERROR_IP_BLOCKED                     = 1 << 4;
+    public final static int ERROR_IP_BLOCKED                     = 1 << 4;
 
     /**
      * Plugins & Downloadinterface: File not found - file not available any more
      */
-    public final static int   ERROR_FILE_NOT_FOUND                 = 1 << 5;
+    public final static int ERROR_FILE_NOT_FOUND                 = 1 << 5;
 
     /**
      * Plugins & Controlling: A Premium error occured. check value flag for further details
      */
-    public static final int   ERROR_PREMIUM                        = 1 << 8;
+    public static final int ERROR_PREMIUM                        = 1 << 8;
 
     /**
      * Downloadinterface: The download started, but has not been finished successfully
      */
-    public static final int   ERROR_DOWNLOAD_INCOMPLETE            = 1 << 9;
+    public static final int ERROR_DOWNLOAD_INCOMPLETE            = 1 << 9;
 
     /**
      * Controlling: DownloadLink is in progress. Download or plugin is running
      */
-    public static final int   DOWNLOADINTERFACE_IN_PROGRESS        = 1 << 10;
+    public static final int DOWNLOADINTERFACE_IN_PROGRESS        = 1 << 10;
 
     /**
      * Plugins:Download is not possible right now. May be back later. Maybe server problems or anything like this
      */
-    public static final int   ERROR_TEMPORARILY_UNAVAILABLE        = 1 << 11;
+    public static final int ERROR_TEMPORARILY_UNAVAILABLE        = 1 << 11;
 
     /**
      * hoster is temporarily not available, dont try other links for this host
      */
-    public static final int   ERROR_HOSTER_TEMPORARILY_UNAVAILABLE = 1 << 12;
+    public static final int ERROR_HOSTER_TEMPORARILY_UNAVAILABLE = 1 << 12;
 
     /**
      * Controlling & Downloadinterface: The destination file already exists on harddisk
      */
-    public static final int   ERROR_ALREADYEXISTS                  = 1 << 13;
+    public static final int ERROR_ALREADYEXISTS                  = 1 << 13;
 
     /**
      * Downloadinterface: The actual download failed. Example: Chunkerrors
      */
-    public static final int   ERROR_DOWNLOAD_FAILED                = 1 << 14;
-
-    /**
-     * DownloadInterface: A Connection Timeout occured. Maybe no connection to the internet?
-     */
-    public static final int   ERROR_NO_CONNECTION                  = 1 << 15;
+    public static final int ERROR_DOWNLOAD_FAILED                = 1 << 14;
 
     /**
      * Plugins & Downloadinterface: Serious fatal error. No retry. Download will be canceled finally.
      */
-    public static final int   ERROR_FATAL                          = 1 << 17;
-
-    /**
-     * Controlling: The plugin is in progress.
-     */
-    public static final int   PLUGIN_IN_PROGRESS                   = 1 << 18;
+    public static final int ERROR_FATAL                          = 1 << 17;
 
     /**
      * DownloadINterface & Controlling a timeout occured
      */
-    public static final int   ERROR_TIMEOUT_REACHED                = 1 << 20;
+    public static final int ERROR_TIMEOUT_REACHED                = 1 << 20;
 
     /**
      * Downloadinterface Local IO problem. we could not write to harddisk
      */
-    public static final int   ERROR_LOCAL_IO                       = 1 << 21;
+    public static final int ERROR_LOCAL_IO                       = 1 << 21;
 
     /**
      * Plugin out of date. This flag says that the plugin noticed parsing problems and might be out of date.
      */
-    public static final int   ERROR_PLUGIN_DEFECT                  = 1 << 22;
+    public static final int ERROR_PLUGIN_DEFECT                  = 1 << 22;
 
-    /**
-     * We are waiting for user input.
-     */
-    public static final int   WAITING_USERIO                       = 1 << 23;
     /**
      * Error in post processing. for example downloading
      */
-    public static final int   ERROR_POST_PROCESS                   = 1 << 24;
+    public static final int ERROR_POST_PROCESS                   = 1 << 24;
     /**
      * Hash Check failed after download process
      */
-    public static final int   VALUE_FAILED_HASH                    = 1 << 27;
-
-    private transient boolean isActive                             = false;
-    private transient boolean inProgress                           = false;
+    public static final int VALUE_FAILED_HASH                    = 1 << 27;
 
     private void readObject(final java.io.ObjectInputStream stream) throws java.io.IOException, ClassNotFoundException {
-        /* nach dem deserialisieren sollen die transienten neu geholt werden */
+        /* make sure we set transient variables here */
         stream.defaultReadObject();
-        isActive = false;
-        this.inProgress = false;
     }
 
     private static final long  serialVersionUID = 3885661829491436448L;
@@ -215,7 +196,6 @@ public class LinkStatus implements Serializable {
             if (statusText != null) return statusText;
             return _JDT._.downloadlink_status_error_post_process();
         case LinkStatus.ERROR_TIMEOUT_REACHED:
-        case LinkStatus.ERROR_NO_CONNECTION:
             return _JDT._.downloadlink_status_error_no_connection();
         case LinkStatus.ERROR_PREMIUM:
             if (errorMessage != null) return errorMessage;
@@ -232,8 +212,6 @@ public class LinkStatus implements Serializable {
             if (errorMessage != null) return errorMessage;
             if (statusText != null) return statusText;
             return _JDT._.downloadlink_status_error_fatal();
-        case LinkStatus.WAITING_USERIO:
-            return _JDT._.downloadlink_status_waitinguserio();
         }
         if (downloadLink.getAvailableStatus() == AvailableStatus.FALSE) return _JDT._.gui_download_onlinecheckfailed();
         return null;
@@ -272,15 +250,7 @@ public class LinkStatus implements Serializable {
     }
 
     public boolean isFailed() {
-        return !isActive && !inProgress && !hasOnlyStatus(FINISHED | ERROR_ALREADYEXISTS | ERROR_IP_BLOCKED | TODO | DOWNLOADINTERFACE_IN_PROGRESS | WAITING_USERIO);
-    }
-
-    public boolean isPluginActive() {
-        return isActive;
-    }
-
-    public boolean isPluginInProgress() {
-        return this.inProgress;
+        return downloadLink.getDownloadLinkController() == null && !hasOnlyStatus(FINISHED | ERROR_ALREADYEXISTS | ERROR_IP_BLOCKED | TODO | DOWNLOADINTERFACE_IN_PROGRESS);
     }
 
     public boolean isStatus(final int status) {
@@ -314,21 +284,7 @@ public class LinkStatus implements Serializable {
     }
 
     public void setErrorMessage(final String string) {
-        if (!downloadLink.isAborted() || string == null) {
-            errorMessage = string;
-        }
-    }
-
-    public void setInProgress(final boolean b) {
-        if (b == this.inProgress) return;
-        this.inProgress = b;
-        notifyChanges(new LinkStatusProperty(this, LinkStatusProperty.Property.PROGRESS, b));
-    }
-
-    public void setActive(final boolean b) {
-        if (b == isActive) return;
-        isActive = b;
-        notifyChanges(new LinkStatusProperty(this, LinkStatusProperty.Property.ACTIVE, b));
+        errorMessage = string;
     }
 
     private void notifyChanges(LinkStatusProperty property) {

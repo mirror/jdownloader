@@ -231,6 +231,7 @@ public abstract class PluginForDecrypt extends Plugin {
             exception = e;
             LogSource.exception(logger, e);
         } finally {
+            clean();
             lastChallengeResponse = null;
             this.currentLink = null;
         }

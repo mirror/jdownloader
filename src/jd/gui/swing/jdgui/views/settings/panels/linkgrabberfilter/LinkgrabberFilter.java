@@ -286,7 +286,6 @@ public class LinkgrabberFilter extends JPanel implements SettingsComponent {
     }
 
     public void update() {
-
         filterTable.getModel()._fireTableStructureChanged(LinkFilterController.getInstance().listFilters(), true);
         exceptionsTable.getModel()._fireTableStructureChanged(LinkFilterController.getInstance().listExceptions(), true);
     }

@@ -20,15 +20,11 @@ public class QuickFilterHosterTable extends FilterTable {
      * 
      */
     private static final long             serialVersionUID = 658947589171018284L;
-    private LinkedHashMap<String, Filter> filterMap;
+    private LinkedHashMap<String, Filter> filterMap        = new LinkedHashMap<String, Filter>();
 
     public QuickFilterHosterTable(Header hosterFilter, LinkGrabberTable table) {
         super(hosterFilter, table, org.jdownloader.settings.staticreferences.CFG_LINKFILTER.LINKGRABBER_HOSTER_QUICKFILTER_ENABLED);
 
-    }
-
-    public void init() {
-        filterMap = new LinkedHashMap<String, Filter>();
     }
 
     @SuppressWarnings("unchecked")
@@ -49,7 +45,7 @@ public class QuickFilterHosterTable extends FilterTable {
                      * create new filter entry and set its icon
                      */
                     filter = createFilter(hoster);
-                    filter.setIcon(FavIcons.getFavIcon(hoster, filter, true));
+                    filter.setIcon(FavIcons.getFavIcon(hoster, filter));
                     filterMap.put(hoster, filter);
                 }
                 filtersInUse.add(filter);
@@ -78,7 +74,7 @@ public class QuickFilterHosterTable extends FilterTable {
                              * create new filter entry and set its icon
                              */
                             filter = createFilter(hoster);
-                            filter.setIcon(FavIcons.getFavIcon(hoster, filter, true));
+                            filter.setIcon(FavIcons.getFavIcon(hoster, filter));
                             filterMap.put(hoster, filter);
                         }
                         filtersInUse.add(filter);

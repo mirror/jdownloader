@@ -227,7 +227,7 @@ public class PluginSettingsPanel extends JPanel implements SettingsComponent, Ac
 
                         if (selectedItem instanceof LazyHostPlugin) {
                             header.setText(_GUI._.PluginSettingsPanel_runInEDT_plugin_header_text_host(selectedItem.getDisplayName()));
-                            header.setIcon(((LazyHostPlugin) selectedItem).getIcon());
+                            header.setIcon(DomainInfo.getInstance(((LazyHostPlugin) selectedItem).getHost()).getFavIcon());
                         } else {
                             header.setText(_GUI._.PluginSettingsPanel_runInEDT_plugin_header_text_decrypt(selectedItem.getDisplayName()));
                             header.setIcon(decryterIcon);

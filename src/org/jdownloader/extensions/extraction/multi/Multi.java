@@ -35,6 +35,7 @@ import net.sf.sevenzipjbinding.ArchiveFormat;
 import net.sf.sevenzipjbinding.ExtractOperationResult;
 import net.sf.sevenzipjbinding.IInStream;
 import net.sf.sevenzipjbinding.ISevenZipInArchive;
+import net.sf.sevenzipjbinding.PropID;
 import net.sf.sevenzipjbinding.SevenZip;
 import net.sf.sevenzipjbinding.SevenZipException;
 import net.sf.sevenzipjbinding.impl.RandomAccessFileInStream;
@@ -47,10 +48,8 @@ import org.appwork.utils.Files;
 import org.appwork.utils.Regex;
 import org.appwork.utils.ReusableByteArrayOutputStream;
 import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.StringFormatter;
 import org.appwork.utils.os.CrossSystem;
-import org.jdownloader.controlling.FileCreationManager;
 import org.jdownloader.extensions.extraction.Archive;
 import org.jdownloader.extensions.extraction.ArchiveFactory;
 import org.jdownloader.extensions.extraction.ArchiveFile;
@@ -265,6 +264,25 @@ public class Multi extends IExtraction {
         return archive;
     }
 
+    public void setLastModifiedDate(ISimpleInArchiveItem item, File extractTo) {
+        // Set last write time
+        try {
+            if (config.isUseOriginalFileDate()) {
+                Date date = item.getLastWriteTime();
+                if (date != null && date.getTime() >= 0) {
+                    if (!extractTo.setLastModified(date.getTime())) {
+                        logger.warning("Could not set last write/modified time for " + item.getPath());
+                        return;
+                    }
+                }
+            } else {
+                extractTo.setLastModified(System.currentTimeMillis());
+            }
+        } catch (final Throwable e) {
+            logger.log(e);
+        }
+    }
+
     @Override
     public boolean checkCommand() {
         File tmp = null;
@@ -280,7 +298,7 @@ public class Multi extends IExtraction {
             } catch (final Throwable e) {
             }
             logger.finer("Lib Path: " + tmp);
-            FileCreationManager.getInstance().mkdir(tmp);
+            tmp.mkdirs();
             SevenZip.initSevenZipFromPlatformJAR(libID, tmp);
         } catch (Throwable e) {
             if (e instanceof UnsatisfiedLinkError && CrossSystem.isWindows()) {
@@ -452,7 +470,7 @@ public class Multi extends IExtraction {
                     File f = archive.getFactory().toFile(link.getFilePath().replace(REGEX_EXTENSION_RAR, ".rev"));
                     if (f.exists() && f.getName().toLowerCase(Locale.ENGLISH).endsWith(".rev")) {
                         logger.info("Deleting rar recovery volume " + f.getAbsolutePath());
-                        if (!FileCreationManager.getInstance().delete(f)) {
+                        if (!f.delete()) {
                             logger.warning("Could not deleting rar recovery volume " + f.getAbsolutePath());
                         }
                     }
@@ -514,201 +532,106 @@ public class Multi extends IExtraction {
     public void extract(final ExtractionController ctrl) {
         try {
             ctrl.setProgress(0.0d);
-            final double size = archive.getContentView().getTotalSize() / 100.0d;
-            progressInBytes = 0l;
-
-            for (ISimpleInArchiveItem item : inArchive.getSimpleInterface().getArchiveItems()) {
-                // Skip folders
-                if (item == null || item.isFolder()) {
-                    continue;
+            if (ArchiveFormat.SEVEN_ZIP == format) {
+                ArrayList<Integer> allItems = new ArrayList<Integer>();
+                for (int i = 0; i < inArchive.getNumberOfItems(); i++) {
+                    final Boolean isFolder = (Boolean) inArchive.getProperty(i, PropID.IS_FOLDER);
+                    if (Boolean.TRUE.equals(isFolder)) continue;
+                    allItems.add(i);
                 }
-                if (ctrl.gotKilled()) { throw new SevenZipException("Extraction has been aborted"); }
-                String path = item.getPath();
-
-                if (StringUtils.isEmpty(path)) {
-                    // example: test.tar.gz contains a test.tar file, that has
-                    // NO name. we create a dummy name here.
-                    String archivename = archive.getFactory().toFile(archive.getFirstArchiveFile().getFilePath()).getName();
-                    int in = archivename.lastIndexOf(".");
-                    if (in > 0) {
-                        path = archivename.substring(0, in);
-                    }
+                int[] items = new int[allItems.size()];
+                int index = 0;
+                for (Integer item : allItems) {
+                    items[index++] = item;
                 }
-                writeCrashLog("Start Extracting " + path + " " + SizeFormatter.formatBytes(item.getSize()));
-                if (filter(item.getPath())) {
-                    writeCrashLog("Skip File - filtered");
-                    logger.info("Filtering file " + item.getPath() + " in " + archive.getFirstArchiveFile().getFilePath());
-                    progressInBytes += item.getSize();
-                    ctrl.setProgress(progressInBytes / size);
-                    continue;
-                }
-                if (CrossSystem.isWindows()) {
-                    String pathParts[] = path.split("\\" + File.separator);
-                    /* remove invalid path chars */
-                    for (int pathIndex = 0; pathIndex < pathParts.length - 1; pathIndex++) {
-                        pathParts[pathIndex] = CrossSystem.alleviatePathParts(pathParts[pathIndex]);
-                    }
-                    StringBuilder sb = new StringBuilder();
-                    for (String pathPartItem : pathParts) {
-                        if (sb.length() > 0) sb.append(File.separator);
-                        sb.append(pathPartItem);
-                    }
-                    path = sb.toString();
-                }
-                String lastTryFilename = controller.getExtractToFolder().getAbsoluteFile() + File.separator + path;
-                String filename = lastTryFilename;
+                Seven7ExtractCallback callback = null;
                 try {
-                    /* getBytes wanted as we interact with native code and need native charset here */
-                    filename = new String(filename.getBytes(), Charset.defaultCharset());
-                } catch (Exception e) {
-                    logger.warning("Encoding " + Charset.defaultCharset().toString() + " not supported. Using default filename.");
+                    inArchive.extract(items, false, callback = new Seven7ExtractCallback(this, inArchive, ctrl, archive, config));
+                } catch (SevenZipException e) {
+                    e.printStackTrace();
+                } finally {
+                    if (callback != null) callback.close();
                 }
-
-                File extractTo = new File(filename);
-                writeCrashLog("Extract To " + extractTo.getAbsolutePath());
-                logger.info("Extract " + filename);
-                if (extractTo.exists()) {
-                    /* file already exists */
-                    writeCrashLog("File exists");
-                    if (controller.isOverwriteFiles()) {
-
-                        if (!FileCreationManager.getInstance().delete(extractTo)) {
-                            writeCrashLog("Overwrite Failed");
-                            setException(new Exception("Could not overwrite(delete) " + extractTo));
-                            archive.setExitCode(ExtractionControllerConstants.EXIT_CODE_CREATE_ERROR);
-                            return;
-                        } else {
-                            writeCrashLog("Overwrite Done");
-                        }
-                    } else {
-                        /* skip file */
-                        writeCrashLog("Skip File");
-                        archive.addExtractedFiles(extractTo);
-                        progressInBytes += item.getSize();
-                        ctrl.setProgress(progressInBytes / size);
+                if (callback != null) {
+                    if (callback.hasError()) { return; }
+                }
+            } else {
+                final double size = archive.getContentView().getTotalSize() / 100.0d;
+                progressInBytes = 0l;
+                for (ISimpleInArchiveItem item : inArchive.getSimpleInterface().getArchiveItems()) {
+                    // Skip folders
+                    if (item == null || item.isFolder()) {
                         continue;
                     }
-                }
-                if ((!extractTo.getParentFile().exists() && !FileCreationManager.getInstance().mkdir(extractTo.getParentFile()))) {
-                    setException(new Exception("Could not create folder for File " + extractTo));
-                    writeCrashLog("Folder creation failed: " + extractTo.getParent());
-                    archive.setExitCode(ExtractionControllerConstants.EXIT_CODE_CREATE_ERROR);
-                    return;
-                }
-                String fixedFilename = null;
-                while (true) {
-                    try {
-                        if (!extractTo.createNewFile()) {
-                            writeCrashLog("Could not create File");
-                            setException(new Exception("Could not create File " + extractTo));
-                            archive.setExitCode(ExtractionControllerConstants.EXIT_CODE_CREATE_ERROR);
-                            return;
-                        }
-                        break;
-                    } catch (final IOException e) {
-                        logger.log(e);
-                        if (fixedFilename == null) {
-                            /* first try, we try again with lastTryFilename */
-                            fixedFilename = lastTryFilename;
-                            extractTo = new File(fixedFilename);
-                            writeCrashLog("Retry new Path: " + extractTo.getAbsolutePath());
-                            continue;
-                        } else if (fixedFilename == lastTryFilename) {
-                            /* second try, we try with modified filename */
-                            /* Invalid Chars could have occured, try to remove them */
-                            logger.severe("Invalid Chars could have occured, try to remove them");
-                            File parent = extractTo.getParentFile();
-                            String brokenFilename = extractTo.getName();
-                            /* new String so == returns false */
-                            fixedFilename = new String(brokenFilename.replaceAll("[^\\w\\s\\.\\(\\)\\[\\],]", ""));
-                            logger.severe("Replaced " + brokenFilename + " with " + fixedFilename);
-                            extractTo = new File(parent, fixedFilename);
-                            writeCrashLog("Retry new Path: " + extractTo.getAbsolutePath());
-                            continue;
-                        } else {
-
-                            setException(e);
-                            archive.setExitCode(ExtractionControllerConstants.EXIT_CODE_CREATE_ERROR);
-                            return;
-                        }
+                    if (ctrl.gotKilled()) { throw new SevenZipException("Extraction has been aborted"); }
+                    AtomicBoolean skipped = new AtomicBoolean(false);
+                    File extractTo = getExtractFilePath(item, ctrl, skipped, size);
+                    if (skipped.get()) {
+                        /* file is skipped */
+                        continue;
                     }
-                }
-
-                archive.addExtractedFiles(extractTo);
-
-                // MultiCallback call = new MultiCallback(extractTo, controller,
-                // config, item.getCRC() > 0 ? true : false);
-
-                MultiCallback call = new MultiCallback(extractTo, controller, config, false) {
-
-                    @Override
-                    public int write(byte[] data) throws SevenZipException {
-                        try {
-                            if (ctrl.gotKilled()) throw new SevenZipException("Extraction has been aborted");
-                            return super.write(data);
-                        } finally {
-                            progressInBytes += data.length;
-                            ctrl.setProgress(progressInBytes / size);
-                        }
-
-                    }
-
-                };
-                ExtractOperationResult res;
-                try {
-                    if (item.isEncrypted()) {
-                        String pw = archive.getFinalPassword();
-                        if (pw == null) { throw new IOException("Password is null!"); }
-                        res = item.extractSlow(call, pw);
-                    } else {
-                        res = item.extractSlow(call);
-                    }
-                } finally {
-                    /* always close files, thats why its best in finally branch */
-                    call.close();
-                }
-                // Set last write time
-                if (config.isUseOriginalFileDate()) {
-                    Date date = item.getLastWriteTime();
-                    if (date != null && date.getTime() >= 0) {
-                        if (!extractTo.setLastModified(date.getTime())) {
-                            logger.warning("Could not set last write/modified time for " + item.getPath());
-                        }
-                    }
-                } else {
-                    extractTo.setLastModified(System.currentTimeMillis());
-                }
-
-                if (item.getSize() != extractTo.length()) {
-                    if (ExtractOperationResult.OK == res) {
-                        logger.info("Size missmatch for " + item.getPath() + ", but Extraction returned OK?! Archive seems incomplete");
-                        archive.setExitCode(ExtractionControllerConstants.EXIT_CODE_INCOMPLETE_ERROR);
+                    if (extractTo == null) {
+                        /* error */
                         return;
                     }
-                    logger.info("Size missmatch for " + item.getPath() + " is " + extractTo.length() + " but should be " + item.getSize());
-                    for (ArchiveFile link : getAffectedArchiveFileFromArchvieFiles(item.getPath())) {
-                        writeCrashLog("CRC Error in " + link);
-                        archive.addCrcError(link);
+                    archive.addExtractedFiles(extractTo);
+                    MultiCallback call = new MultiCallback(extractTo, controller, config, false) {
+
+                        @Override
+                        public int write(byte[] data) throws SevenZipException {
+                            try {
+                                if (ctrl.gotKilled()) throw new SevenZipException("Extraction has been aborted");
+                                return super.write(data);
+                            } finally {
+                                progressInBytes += data.length;
+                                ctrl.setProgress(progressInBytes / size);
+                            }
+                        }
+                    };
+                    ExtractOperationResult res;
+                    try {
+                        if (item.isEncrypted()) {
+                            String pw = archive.getFinalPassword();
+                            if (pw == null) { throw new IOException("Password is null!"); }
+                            res = item.extractSlow(call, pw);
+                        } else {
+                            res = item.extractSlow(call);
+                        }
+                    } finally {
+                        /* always close files, thats why its best in finally branch */
+                        call.close();
                     }
-                    archive.setExitCode(ExtractionControllerConstants.EXIT_CODE_CRC_ERROR);
-                    return;
-                }
-                switch (res) {
-                case OK:
-                    /* extraction successfully ,continue with next file */
-                    break;
-                case CRCERROR:
-                    logger.info("CRC Error for " + item.getPath());
-                    writeCrashLog("CRC Error in " + item.getPath());
-                    archive.setExitCode(ExtractionControllerConstants.EXIT_CODE_CRC_ERROR);
-                    return;
-                default:
-                    archive.setExitCode(ExtractionControllerConstants.EXIT_CODE_FATAL_ERROR);
-                    return;
+                    setLastModifiedDate(item, extractTo);
+                    if (item.getSize() != extractTo.length()) {
+                        if (ExtractOperationResult.OK == res) {
+                            logger.info("Size missmatch for " + item.getPath() + ", but Extraction returned OK?! Archive seems incomplete");
+                            archive.setExitCode(ExtractionControllerConstants.EXIT_CODE_INCOMPLETE_ERROR);
+                            return;
+                        }
+                        logger.info("Size missmatch for " + item.getPath() + " is " + extractTo.length() + " but should be " + item.getSize());
+                        for (ArchiveFile link : getAffectedArchiveFileFromArchvieFiles(item.getPath())) {
+                            writeCrashLog("CRC Error in " + link);
+                            archive.addCrcError(link);
+                        }
+                        archive.setExitCode(ExtractionControllerConstants.EXIT_CODE_CRC_ERROR);
+                        return;
+                    }
+                    switch (res) {
+                    case OK:
+                        /* extraction successfully ,continue with next file */
+                        break;
+                    case CRCERROR:
+                        logger.info("CRC Error for " + item.getPath());
+                        writeCrashLog("CRC Error in " + item.getPath());
+                        archive.setExitCode(ExtractionControllerConstants.EXIT_CODE_CRC_ERROR);
+                        return;
+                    default:
+                        archive.setExitCode(ExtractionControllerConstants.EXIT_CODE_FATAL_ERROR);
+                        return;
+                    }
                 }
             }
         } catch (MultiSevenZipException e) {
-
             setException(e);
             logger.log(e);
             archive.setExitCode(e.getExitCode());
@@ -740,7 +663,6 @@ public class Multi extends IExtraction {
         for (String entry : filter) {
             if (file.contains(entry)) { return true; }
         }
-
         return false;
     }
 
@@ -759,6 +681,111 @@ public class Multi extends IExtraction {
     // return link;
     // }
     //
+
+    public File getExtractFilePath(ISimpleInArchiveItem item, ExtractionController ctrl, AtomicBoolean skipped, double size) throws SevenZipException {
+        String path = item.getPath();
+        if (StringUtils.isEmpty(path)) {
+            // example: test.tar.gz contains a test.tar file, that has
+            // NO name. we create a dummy name here.
+            String archivename = archive.getFactory().toFile(archive.getFirstArchiveFile().getFilePath()).getName();
+            int in = archivename.lastIndexOf(".");
+            if (in > 0) {
+                path = archivename.substring(0, in);
+            }
+        }
+        if (filter(item.getPath())) {
+            logger.info("Filtering file " + item.getPath() + " in " + archive.getFirstArchiveFile().getFilePath());
+            progressInBytes += item.getSize();
+            ctrl.setProgress(progressInBytes / size);
+            skipped.set(true);
+            return null;
+        }
+        if (CrossSystem.isWindows()) {
+            String pathParts[] = path.split("\\" + File.separator);
+            /* remove invalid path chars */
+            for (int pathIndex = 0; pathIndex < pathParts.length - 1; pathIndex++) {
+                pathParts[pathIndex] = CrossSystem.alleviatePathParts(pathParts[pathIndex]);
+            }
+            StringBuilder sb = new StringBuilder();
+            for (String pathPartItem : pathParts) {
+                if (sb.length() > 0) sb.append(File.separator);
+                sb.append(pathPartItem);
+            }
+            path = sb.toString();
+        }
+        String lastTryFilename = controller.getExtractToFolder().getAbsoluteFile() + File.separator + path;
+        String filename = lastTryFilename;
+        try {
+            logger.info("Filename(before native): " + filename);
+            /* getBytes wanted as we interact with native code and need native charset here */
+            filename = new String(filename.getBytes("UTF-8"), Charset.defaultCharset());
+            logger.info("Filename(after native): " + filename);
+        } catch (Exception e) {
+            logger.log(e);
+            logger.warning("Encoding " + Charset.defaultCharset().toString() + " not supported. Using default filename.");
+        }
+
+        File extractTo = new File(filename);
+        logger.info("Extract " + filename);
+        if (extractTo.exists()) {
+            /* file already exists */
+
+            if (controller.isOverwriteFiles()) {
+                if (!extractTo.delete()) {
+                    setException(new Exception("Could not overwrite(delete) " + extractTo));
+                    archive.setExitCode(ExtractionControllerConstants.EXIT_CODE_CREATE_ERROR);
+                    return null;
+                }
+            } else {
+                /* skip file */
+                archive.addExtractedFiles(extractTo);
+                progressInBytes += item.getSize();
+                ctrl.setProgress(progressInBytes / size);
+                skipped.set(true);
+                return null;
+            }
+        }
+        if ((!extractTo.getParentFile().exists() && !extractTo.getParentFile().mkdirs())) {
+            setException(new Exception("Could not create folder for File " + extractTo));
+            archive.setExitCode(ExtractionControllerConstants.EXIT_CODE_CREATE_ERROR);
+            return null;
+        }
+        String fixedFilename = null;
+        while (true) {
+            try {
+                if (!extractTo.createNewFile()) {
+                    setException(new Exception("Could not create File " + extractTo));
+                    archive.setExitCode(ExtractionControllerConstants.EXIT_CODE_CREATE_ERROR);
+                    return null;
+                }
+                break;
+            } catch (final IOException e) {
+                logger.log(e);
+                if (fixedFilename == null) {
+                    /* first try, we try again with lastTryFilename */
+                    fixedFilename = lastTryFilename;
+                    extractTo = new File(fixedFilename);
+                    continue;
+                } else if (fixedFilename == lastTryFilename) {
+                    /* second try, we try with modified filename */
+                    /* Invalid Chars could have occured, try to remove them */
+                    logger.severe("Invalid Chars could have occured, try to remove them");
+                    File parent = extractTo.getParentFile();
+                    String brokenFilename = extractTo.getName();
+                    /* new String so == returns false */
+                    fixedFilename = new String(brokenFilename.replaceAll("[^\\w\\s\\.\\(\\)\\[\\],]", ""));
+                    logger.severe("Replaced " + brokenFilename + " with " + fixedFilename);
+                    extractTo = new File(parent, fixedFilename);
+                    continue;
+                } else {
+                    setException(e);
+                    archive.setExitCode(ExtractionControllerConstants.EXIT_CODE_CREATE_ERROR);
+                    return null;
+                }
+            }
+        }
+        return extractTo;
+    }
 
     @Override
     public boolean findPassword(final ExtractionController ctl, String password, boolean optimized) throws ExtractionException {
@@ -814,13 +841,21 @@ public class Multi extends IExtraction {
                     passwordfound.set(true);
                     return true;
                 }
-                int[] in = new int[inArchive.getNumberOfItems()];
-                for (int i = 0; i < in.length; i++) {
-                    in[i] = i;
+                ArrayList<Integer> allItems = new ArrayList<Integer>();
+                for (int i = 0; i < inArchive.getNumberOfItems(); i++) {
+                    final Boolean isFolder = (Boolean) inArchive.getProperty(i, PropID.IS_FOLDER);
+                    if (Boolean.TRUE.equals(isFolder)) continue;
+                    allItems.add(i);
+                }
+                int[] items = new int[allItems.size()];
+                int index = 0;
+                for (Integer item : allItems) {
+                    items[index++] = item;
                 }
                 try {
-                    inArchive.extract(in, false, new Seven7ExtractorCallback(inArchive, passwordfound, password, buffer, config.getMaxCheckedFileSizeDuringOptimizedPasswordFindingInBytes(), ctl.getFileSignatures(), optimized));
+                    inArchive.extract(items, false, new Seven7PWCallback(inArchive, passwordfound, password, buffer, config.getMaxCheckedFileSizeDuringOptimizedPasswordFindingInBytes(), ctl.getFileSignatures(), optimized));
                 } catch (SevenZipException e) {
+                    e.printStackTrace();
                     // An error will be thrown if the write method
                     // returns
                     // 0.
@@ -858,8 +893,7 @@ public class Multi extends IExtraction {
                                 ExtractOperationResult result = item.extractSlow(signatureOutStream, password);
                                 if (ExtractOperationResult.DATAERROR.equals(result)) {
                                     /*
-                                     * 100% wrong password, DO NOT CONTINUE as unrar already might have cleaned up (nullpointer in native ->
-                                     * crash jvm)
+                                     * 100% wrong password, DO NOT CONTINUE as unrar already might have cleaned up (nullpointer in native -> crash jvm)
                                      */
                                     return false;
                                 }
@@ -910,7 +944,7 @@ public class Multi extends IExtraction {
      * @throws FileNotFoundException
      * @throws SevenZipException
      */
-    private List<ArchiveFile> getAffectedArchiveFileFromArchvieFiles(String path) throws FileNotFoundException, SevenZipException {
+    protected List<ArchiveFile> getAffectedArchiveFileFromArchvieFiles(String path) throws FileNotFoundException, SevenZipException {
         java.util.List<ArchiveFile> result = new ArrayList<ArchiveFile>();
 
         if (archive.getType() == ArchiveType.MULTI || archive.getType() == ArchiveType.SINGLE_FILE) {
@@ -1007,23 +1041,18 @@ public class Multi extends IExtraction {
                     }
                 }
             }
-
             if (archive.getType() == ArchiveType.SINGLE_FILE) {
                 if (matches(archive.getFirstArchiveFile().getFilePath(), REGEX_EXTENSION_RAR)) {
                     format = ArchiveFormat.RAR;
-
                 } else if (matches(archive.getFirstArchiveFile().getFilePath(), _7Z$)) {
                     format = ArchiveFormat.SEVEN_ZIP;
-
                 } else if (matches(archive.getFirstArchiveFile().getFilePath(), ZIP$)) {
-
                     format = ArchiveFormat.ZIP;
                 } else if (matches(archive.getFirstArchiveFile().getFilePath(), GZ$)) {
                     format = ArchiveFormat.GZIP;
                 } else if (matches(archive.getFirstArchiveFile().getFilePath(), BZ2$)) {
                     format = ArchiveFormat.BZIP2;
                 }
-
                 stream = new RandomAccessFileInStream(new RandomAccessFile(archive.getFirstArchiveFile().getFilePath(), "r"));
                 inArchive = SevenZip.openInArchive(format, stream);
             } else if (archive.getType() == ArchiveType.MULTI) {
@@ -1032,7 +1061,6 @@ public class Multi extends IExtraction {
                 inArchive = SevenZip.openInArchive(ArchiveFormat.SEVEN_ZIP, inStream);
             } else if (archive.getType() == ArchiveType.MULTI_RAR) {
                 raropener = new RarOpener(archive) {
-
                     @Override
                     protected void onStreamUpdate(ExtRandomAccessFileInStream extRandomAccessFileInStream) {
                         super.onStreamUpdate(extRandomAccessFileInStream);
@@ -1041,7 +1069,6 @@ public class Multi extends IExtraction {
                 };
                 raropener.setLogger(logger);
                 IInStream inStream = raropener.getStream(archive.getFirstArchiveFile());
-
                 inArchive = SevenZip.openInArchive(ArchiveFormat.RAR, inStream, raropener);
             } else {
                 return false;

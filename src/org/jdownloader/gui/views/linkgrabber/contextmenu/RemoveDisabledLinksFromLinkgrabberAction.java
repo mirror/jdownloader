@@ -4,7 +4,6 @@ import java.awt.event.ActionEvent;
 import java.util.ArrayList;
 import java.util.List;
 
-import jd.controlling.IOEQ;
 import jd.controlling.linkcollector.LinkCollector;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledPackage;
@@ -30,26 +29,18 @@ public class RemoveDisabledLinksFromLinkgrabberAction extends SelectionAppAction
     }
 
     public void actionPerformed(ActionEvent e) {
-
-        IOEQ.add(new Runnable() {
-
-            public void run() {
-                List<CrawledLink> filtered = new ArrayList<CrawledLink>();
-
-                for (CrawledLink cl : getSelection().getChildren()) {
-                    if (!cl.isEnabled()) filtered.add(cl);
-                }
-                try {
-                    if (filtered.size() > 0) {
-                        Dialog.getInstance().showConfirmDialog(0, _GUI._.literally_are_you_sure(), _GUI._.RemoveDisabledAction_actionPerformed_msg(), null, _GUI._.literally_yes(), _GUI._.literall_no());
-
-                        LinkCollector.getInstance().removeChildren(filtered);
-                    }
-                } catch (DialogNoAnswerException e1) {
-                }
+        if (!isEnabled()) return;
+        List<CrawledLink> filtered = new ArrayList<CrawledLink>();
+        for (CrawledLink cl : getSelection().getChildren()) {
+            if (!cl.isEnabled()) filtered.add(cl);
+        }
+        try {
+            if (filtered.size() > 0) {
+                Dialog.getInstance().showConfirmDialog(0, _GUI._.literally_are_you_sure(), _GUI._.RemoveDisabledAction_actionPerformed_msg(), null, _GUI._.literally_yes(), _GUI._.literall_no());
+                LinkCollector.getInstance().removeChildren(filtered);
             }
-
-        }, true);
-
+        } catch (DialogNoAnswerException e1) {
+        }
     }
+
 }

@@ -10,19 +10,19 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
 
-import jd.controlling.IOEQ;
-
+import org.appwork.utils.event.queue.Queue;
 import org.appwork.utils.event.queue.Queue.QueuePriority;
 import org.appwork.utils.event.queue.QueueAction;
+import org.appwork.utils.logging.Log;
 import org.appwork.utils.logging2.LogSource;
 import org.jdownloader.gui.views.components.packagetable.dragdrop.MergePosition;
 import org.jdownloader.logging.LogController;
 
 public abstract class PackageController<PackageType extends AbstractPackageNode<ChildType, PackageType>, ChildType extends AbstractPackageChildrenNode<PackageType>> implements AbstractNodeNotifier {
-    private final AtomicLong  structureChanged = new AtomicLong(0);
-    private final AtomicLong  childrenChanged  = new AtomicLong(0);
-    private final AtomicLong  contentChanged   = new AtomicLong(0);
-    protected final LogSource logger           = LogController.CL();
+    protected final AtomicLong structureChanged = new AtomicLong(0);
+    protected final AtomicLong childrenChanged  = new AtomicLong(0);
+    protected final AtomicLong contentChanged   = new AtomicLong(0);
+    protected final LogSource  logger           = LogController.CL();
 
     public long getPackageControllerChanges() {
         return structureChanged.get();
@@ -55,17 +55,32 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
     }
 
     protected ArrayList<PackageType> packages = new ArrayList<PackageType>();
-    private ModifyLock               lock     = new ModifyLock();
+    protected ModifyLock             lock     = new ModifyLock();
+    protected final Queue            QUEUE    = new Queue(getClass().getName()) {
+
+                                                  @Override
+                                                  public void killQueue() {
+                                                      Log.exception(new Throwable("YOU CANNOT KILL ME!"));
+                                                      /*
+                                                       * this queue can't be killed
+                                                       */
+                                                  }
+
+                                              };
 
     /**
-     * add a Package at given position position in this PackageController. in case the Package is already controlled by this
-     * PackageController this function does move it to the given position
+     * add a Package at given position position in this PackageController. in case the Package is already controlled by this PackageController this function
+     * does move it to the given position
      * 
      * @param pkg
      * @param index
      */
     protected void addmovePackageAt(final PackageType pkg, final int index) {
         addmovePackageAt(pkg, index, false);
+    }
+
+    public Queue getQueue() {
+        return QUEUE;
     }
 
     /**
@@ -80,14 +95,14 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
 
     public void sortPackageChildren(final PackageType pkg, final ChildComparator<ChildType> comparator) {
         if (pkg != null && comparator != null) {
-            IOEQ.getQueue().add(new QueueAction<Void, RuntimeException>() {
+            QUEUE.add(new QueueAction<Void, RuntimeException>() {
 
                 @Override
                 protected Void run() throws RuntimeException {
                     pkg.setCurrentSorter(comparator);
                     pkg.sort();
                     structureChanged.incrementAndGet();
-                    _controllerStructureChanged(this.getQueuePrio());
+                    _controllerPackageNodeStructureChanged(pkg, this.getQueuePrio());
                     return null;
                 }
 
@@ -97,7 +112,7 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
 
     protected void addmovePackageAt(final PackageType pkg, final int index, final boolean allowEmpty) {
         if (pkg != null) {
-            IOEQ.getQueue().add(new QueueAction<Void, RuntimeException>() {
+            QUEUE.add(new QueueAction<Void, RuntimeException>() {
 
                 @Override
                 protected Void run() throws RuntimeException {
@@ -225,7 +240,7 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
     public void removePackage(final PackageType pkg) {
 
         if (pkg != null) {
-            IOEQ.getQueue().add(new QueueAction<Void, RuntimeException>() {
+            QUEUE.add(new QueueAction<Void, RuntimeException>() {
 
                 @Override
                 protected Void run() throws RuntimeException {
@@ -273,7 +288,7 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
     public void removeChildren(final List<ChildType> removechildren) {
 
         if (removechildren != null && removechildren.size() > 0) {
-            IOEQ.getQueue().add(new QueueAction<Void, RuntimeException>() {
+            QUEUE.add(new QueueAction<Void, RuntimeException>() {
 
                 @Override
                 protected Void run() throws RuntimeException {
@@ -351,7 +366,7 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
     public void merge(final PackageType dest, final java.util.List<ChildType> srcLinks, final java.util.List<PackageType> srcPkgs, final MergePosition mergeposition) {
         if (dest == null) return;
         if (srcLinks == null && srcPkgs == null) return;
-        IOEQ.getQueue().add(new QueueAction<Void, RuntimeException>() {
+        QUEUE.add(new QueueAction<Void, RuntimeException>() {
             @Override
             protected Void run() throws RuntimeException {
                 int positionMerge = 0;
@@ -392,7 +407,7 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
 
     public void moveOrAddAt(final PackageType pkg, final List<ChildType> movechildren, final int index) {
         if (pkg != null && movechildren != null && movechildren.size() > 0) {
-            IOEQ.getQueue().add(new QueueAction<Void, RuntimeException>() {
+            QUEUE.add(new QueueAction<Void, RuntimeException>() {
                 /**
                  * Kinf of binarysearch to add new links in a sorted list
                  * 
@@ -509,7 +524,6 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
                     } finally {
                         pkg.getModifyLock().writeUnlock();
                     }
-                    pkg.nodeUpdated(null, jd.controlling.packagecontroller.AbstractNodeNotifier.NOTIFY.STRUCTURE_CHANCE, null);
                     structureChanged.incrementAndGet();
                     if (newChildren) childrenChanged.incrementAndGet();
                     _controllerPackageNodeStructureChanged(pkg, this.getQueuePrio());
@@ -525,8 +539,7 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
     }
 
     /**
-     * remove the given children from the package. also removes the package from this PackageController in case it is empty after removal of
-     * the children
+     * remove the given children from the package. also removes the package from this PackageController in case it is empty after removal of the children
      * 
      * @param pkg
      * @param children
@@ -534,7 +547,7 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
     public void removeChildren(final PackageType pkg, final List<ChildType> children, final boolean doNotifyParentlessLinks) {
 
         if (pkg != null && children != null && children.size() > 0) {
-            IOEQ.getQueue().add(new QueueAction<Void, RuntimeException>() {
+            QUEUE.add(new QueueAction<Void, RuntimeException>() {
 
                 @Override
                 protected Void run() throws RuntimeException {
@@ -568,7 +581,6 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
                     } finally {
                         pkg.getModifyLock().writeUnlock();
                     }
-                    pkg.nodeUpdated(null, jd.controlling.packagecontroller.AbstractNodeNotifier.NOTIFY.STRUCTURE_CHANCE, null);
                     if (links.size() > 0) {
                         controller.structureChanged.incrementAndGet();
                         if (doNotifyParentlessLinks) {
@@ -586,7 +598,7 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
     }
 
     public void clear() {
-        IOEQ.getQueue().add(new QueueAction<Void, RuntimeException>() {
+        QUEUE.add(new QueueAction<Void, RuntimeException>() {
 
             @Override
             protected Void run() throws RuntimeException {
@@ -600,7 +612,7 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
 
     public void move(final java.util.List<PackageType> srcPkgs, final PackageType afterDest) {
         if (srcPkgs == null || srcPkgs.size() == 0) return;
-        IOEQ.getQueue().add(new QueueAction<Void, RuntimeException>() {
+        QUEUE.add(new QueueAction<Void, RuntimeException>() {
             @Override
             protected Void run() throws RuntimeException {
                 PackageType internalafterDest = afterDest;
@@ -621,7 +633,7 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
 
     public void move(final java.util.List<ChildType> srcLinks, final PackageType dstPkg, final ChildType afterLink) {
         if (dstPkg == null || srcLinks == null || srcLinks.size() == 0) return;
-        IOEQ.getQueue().add(new QueueAction<Void, RuntimeException>() {
+        QUEUE.add(new QueueAction<Void, RuntimeException>() {
             @Override
             protected Void run() throws RuntimeException {
                 int destination = 0;

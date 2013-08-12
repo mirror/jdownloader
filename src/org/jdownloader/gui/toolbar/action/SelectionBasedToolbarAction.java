@@ -31,23 +31,19 @@ public abstract class SelectionBasedToolbarAction extends ToolBarAction implemen
 
     @Override
     public void onGuiMainTabSwitch(View oldView, View newView) {
-
         try {
             LinkGrabberTableModel.getInstance().getTable().getEventSender().removeListener(this);
             DownloadsTableModel.getInstance().getTable().getEventSender().removeListener(this);
 
             if (newView instanceof LinkGrabberView) {
                 table = LinkGrabberTableModel.getInstance().getTable();
-
             } else if (newView instanceof DownloadsView) {
                 table = DownloadsTableModel.getInstance().getTable();
-
             } else {
                 table = null;
                 setEnabled(false);
             }
             if (table != null) {
-
                 table.getEventSender().addListener(this, true);
             }
             onSelectionUpdate(table == null ? null : table.getModel().getSelectedObjects());
@@ -60,15 +56,18 @@ public abstract class SelectionBasedToolbarAction extends ToolBarAction implemen
             setVisible(true);
             return;
         }
-        if (isShowInDownloadView() && table != null && table instanceof DownloadsTable) {
-            setVisible(true);
-            return;
-        }
-        if (isshowInLinkgrabberView() && table != null && table instanceof LinkGrabberTable) {
-            setVisible(true);
-            return;
+        if (table != null) {
+            if (isShowInDownloadView() && table instanceof DownloadsTable) {
+                setVisible(true);
+                return;
+            }
+            if (isshowInLinkgrabberView() && table instanceof LinkGrabberTable) {
+                setVisible(true);
+                return;
+            }
         }
         setVisible(false);
+
     }
 
     @Override

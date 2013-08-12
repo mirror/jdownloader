@@ -15,14 +15,16 @@ import javax.swing.ImageIcon;
 import javax.swing.JComboBox;
 
 import jd.controlling.AccountController;
-import jd.controlling.IOEQ;
+import jd.controlling.TaskQueue;
 
 import org.appwork.swing.components.searchcombo.SearchComboBox;
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.event.queue.QueueAction;
 import org.appwork.utils.images.IconIO;
 import org.appwork.utils.images.Interpolation;
 import org.appwork.utils.os.CrossSystem;
+import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.dialog.ComboBoxDialog;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
@@ -66,8 +68,16 @@ public class BuyAction extends AbstractAction {
     }
 
     public void actionPerformed(ActionEvent e) {
-        IOEQ.add(new Runnable() {
-            public void run() {
+        final List<AccountEntry> selection;
+        if (table != null) {
+            selection = table.getModel().getSelectedObjects();
+        } else {
+            selection = null;
+        }
+        TaskQueue.getQueue().add(new QueueAction<Void, RuntimeException>() {
+
+            @Override
+            protected Void run() throws RuntimeException {
                 final Collection<LazyHostPlugin> pluginsAll = HostPluginController.getInstance().list();
                 final java.util.List<LazyHostPlugin> plugins = new ArrayList<LazyHostPlugin>();
                 /* only show plugins with account support */
@@ -76,8 +86,7 @@ public class BuyAction extends AbstractAction {
                 }
                 final LazyHostPlugin[] options = plugins.toArray(new LazyHostPlugin[plugins.size()]);
                 LazyHostPlugin plg = HostPluginController.getInstance().get(getPreselectedHoster());
-                if (table != null && plg == null) {
-                    List<AccountEntry> selection = table.getModel().getSelectedObjects();
+                if (plg == null) {
                     if (selection != null && selection.size() > 0) {
 
                         for (Iterator<?> iterator = plugins.iterator(); iterator.hasNext();) {
@@ -90,99 +99,105 @@ public class BuyAction extends AbstractAction {
                     }
                 }
                 final LazyHostPlugin defaultSelection = plg;
-                try {
+                new EDTRunner() {
 
-                    final ComboBoxDialog d = new ComboBoxDialog(0, _GUI._.buyaction_title(), _GUI._.buyaction_message(), options, 0, NewTheme.I().getIcon("buy", 32), _GUI._.buyaction_title_buy_account(), null, null) {
-                        private SearchComboBox<LazyHostPlugin> combo;
-
-                        @Override
-                        protected void packed() {
-                            super.packed();
-                            combo.requestFocus();
-
-                        }
-
-                        protected String getIconConstraints() {
-                            // TODO Auto-generated method stub
-                            return "gapright 10,gaptop 2,width 32!,height 32!,alignx center, aligny center";
-                        }
-
-                        @Override
-                        protected JComboBox getComboBox(final Object[] options2) {
-
-                            combo = new SearchComboBox<LazyHostPlugin>(plugins) {
-
-                                /**
-								 * 
-								 */
-                                private static final long serialVersionUID = -7421876925835937449L;
+                    @Override
+                    protected void runInEDT() {
+                        try {
+                            final ComboBoxDialog d = new ComboBoxDialog(0, _GUI._.buyaction_title(), _GUI._.buyaction_message(), options, 0, NewTheme.I().getIcon("buy", 32), _GUI._.buyaction_title_buy_account(), null, null) {
+                                private SearchComboBox<LazyHostPlugin> combo;
 
                                 @Override
-                                protected Icon getIconForValue(LazyHostPlugin value) {
-                                    if (value == null) return null;
-                                    return DomainInfo.getInstance(value.getDisplayName()).getFavIcon();
+                                protected void packed() {
+                                    super.packed();
+                                    combo.requestFocus();
+
+                                }
+
+                                protected String getIconConstraints() {
+                                    // TODO Auto-generated method stub
+                                    return "gapright 10,gaptop 2,width 32!,height 32!,alignx center, aligny center";
                                 }
 
                                 @Override
-                                protected String getTextForValue(LazyHostPlugin value) {
-                                    if (value == null) return null;
-                                    return value.getDisplayName();
+                                protected JComboBox getComboBox(final Object[] options2) {
+
+                                    combo = new SearchComboBox<LazyHostPlugin>(plugins) {
+
+                                        /**
+                                         * 
+                                         */
+                                        private static final long serialVersionUID = -7421876925835937449L;
+
+                                        @Override
+                                        protected Icon getIconForValue(LazyHostPlugin value) {
+                                            if (value == null) return null;
+                                            return DomainInfo.getInstance(value.getDisplayName()).getFavIcon();
+                                        }
+
+                                        @Override
+                                        protected String getTextForValue(LazyHostPlugin value) {
+                                            if (value == null) return null;
+                                            return value.getDisplayName();
+                                        }
+
+                                    };
+
+                                    final ComboBoxDialog _this = this;
+                                    combo.addActionListener(new ActionListener() {
+
+                                        public void actionPerformed(ActionEvent e) {
+                                            Object item = combo.getSelectedItem();
+                                            if (item == null) {
+                                                _this.setIcon(null);
+                                                return;
+                                            }
+                                            DomainInfo domainInfo = DomainInfo.getInstance(((LazyHostPlugin) item).getDisplayName());
+                                            String tld = domainInfo.getTld();
+                                            Image ic = null;
+                                            if (NewTheme.I().hasIcon("fav/big." + tld)) {
+                                                ic = NewTheme.I().getImage("fav/big." + tld, -1);
+                                            }
+                                            if (ic == null && NewTheme.I().hasIcon("fav/" + tld)) {
+                                                ic = NewTheme.I().getImage("fav/" + tld, -1);
+                                            }
+                                            if (ic != null) {
+                                                _this.setIcon(new ImageIcon(IconIO.getScaledInstance(ic, Math.min(ic.getWidth(null), 32), Math.min(ic.getHeight(null), 32), Interpolation.BILINEAR, true)));
+                                                return;
+                                            } else {
+                                                _this.setIcon(domainInfo.getFavIcon());
+                                            }
+                                        }
+                                    });
+                                    combo.setSelectedItem(defaultSelection);
+                                    return combo;
                                 }
 
                             };
 
-                            final ComboBoxDialog _this = this;
-                            combo.addActionListener(new ActionListener() {
+                            Dialog.getInstance().showDialog(d);
+                            if (d.getReturnValue() < 0) return;
+                            LazyHostPlugin buyIt = options[d.getReturnValue()];
+                            if (buyIt == null || StringUtils.isEmpty(buyIt.getPremiumUrl())) return;
+                            CrossSystem.openURLOrShowMessage(AccountController.createFullBuyPremiumUrl(buyIt.getPremiumUrl(), "accountmanager" + (table == null ? "/context" : "/table")));
+                            try {
+                                BuyAndAddPremiumAccount dia;
+                                UIOManager.I().show(BuyAndAddPremiumDialogInterface.class, dia = new BuyAndAddPremiumAccount(DomainInfo.getInstance(buyIt.getHost()), "accountmanager" + (table == null ? "/context" : "/table")));
+                                dia.throwCloseExceptions();
+                            } catch (DialogClosedException e1) {
+                                e1.printStackTrace();
+                            } catch (DialogCanceledException e1) {
+                                e1.printStackTrace();
+                            }
 
-                                public void actionPerformed(ActionEvent e) {
-                                    Object item = combo.getSelectedItem();
-                                    if (item == null) {
-                                        _this.setIcon(null);
-                                        return;
-                                    }
-                                    DomainInfo domainInfo = DomainInfo.getInstance(((LazyHostPlugin) item).getDisplayName());
-                                    String tld = domainInfo.getTld();
-                                    Image ic = null;
-                                    if (NewTheme.I().hasIcon("fav/big." + tld)) {
-                                        ic = NewTheme.I().getImage("fav/big." + tld, -1);
-                                    }
-                                    if (ic == null && NewTheme.I().hasIcon("fav/" + tld)) {
-                                        ic = NewTheme.I().getImage("fav/" + tld, -1);
-                                    }
-                                    if (ic != null) {
-                                        _this.setIcon(new ImageIcon(IconIO.getScaledInstance(ic, Math.min(ic.getWidth(null), 32), Math.min(ic.getHeight(null), 32), Interpolation.BILINEAR, true)));
-                                        return;
-                                    } else {
-                                        _this.setIcon(domainInfo.getFavIcon());
-                                    }
-                                }
-                            });
-                            combo.setSelectedItem(defaultSelection);
-                            return combo;
+                        } catch (DialogClosedException e1) {
+                            e1.printStackTrace();
+                        } catch (DialogCanceledException e1) {
+                            e1.printStackTrace();
                         }
-
-                    };
-
-                    Dialog.getInstance().showDialog(d);
-                    if (d.getReturnValue() < 0) return;
-                    LazyHostPlugin buyIt = options[d.getReturnValue()];
-                    if (buyIt == null || StringUtils.isEmpty(buyIt.getPremiumUrl())) return;
-                    CrossSystem.openURLOrShowMessage(AccountController.createFullBuyPremiumUrl(buyIt.getPremiumUrl(), "accountmanager" + (table == null ? "/context" : "/table")));
-                    try {
-                        BuyAndAddPremiumAccount dia;
-                        UIOManager.I().show(BuyAndAddPremiumDialogInterface.class, dia = new BuyAndAddPremiumAccount(DomainInfo.getInstance(buyIt.getHost()), "accountmanager" + (table == null ? "/context" : "/table")));
-                        dia.throwCloseExceptions();
-                    } catch (DialogClosedException e1) {
-                        e1.printStackTrace();
-                    } catch (DialogCanceledException e1) {
-                        e1.printStackTrace();
                     }
-
-                } catch (DialogClosedException e1) {
-                    e1.printStackTrace();
-                } catch (DialogCanceledException e1) {
-                    e1.printStackTrace();
-                }
+                };
+                return null;
             }
         });
 

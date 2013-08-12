@@ -43,8 +43,7 @@ public class ArchiveController implements DownloadControllerListener, LinkCollec
     private LogSource                        logger;
 
     /**
-     * Create a new instance of ArchiveController. This is a singleton class. Access the only existing instance by using
-     * {@link #getInstance()}.
+     * Create a new instance of ArchiveController. This is a singleton class. Access the only existing instance by using {@link #getInstance()}.
      */
     private ArchiveController() {
         map = new HashMap<String, ArchiveSettings>();
@@ -69,13 +68,12 @@ public class ArchiveController implements DownloadControllerListener, LinkCollec
 
     protected void save() {
         synchronized (map) {
-
             for (Entry<String, ArchiveSettings> e : map.entrySet()) {
                 try {
                     if (e.getValue().needsSaving()) {
                         File path = getPathByID(e.getKey());
                         logger.info("Save " + path);
-                        IO.secureWrite(path, JSonStorage.toString(e.getValue()).getBytes("UTF-8"));
+                        IO.secureWrite(path, JSonStorage.serializeToJson(e.getValue()).getBytes("UTF-8"));
                     }
                 } catch (Exception e1) {
                     logger.log(e1);
@@ -89,15 +87,12 @@ public class ArchiveController implements DownloadControllerListener, LinkCollec
     }
 
     public ArchiveSettings getArchiveSettings(ArchiveFactory archiveFactory) {
-
         return getArchiveSettings(archiveFactory.getID(), archiveFactory.getDefaultAutoExtract());
     }
 
     private ArchiveSettings getArchiveSettings(String id, BooleanStatus defaultAutoExtract) {
-        ArchiveSettings ret = map.get(id);
-        if (ret != null) return ret;
         synchronized (this) {
-            ret = map.get(id);
+            ArchiveSettings ret = map.get(id);
             if (ret != null) return ret;
             ret = createSettingsObject(id);
             if (ret.getAutoExtract() == null || BooleanStatus.UNSET.equals(ret.getAutoExtract())) {
@@ -105,17 +100,15 @@ public class ArchiveController implements DownloadControllerListener, LinkCollec
                 ret.setAutoExtract(defaultAutoExtract);
             }
             map.put(id, ret);
+            return ret;
         }
-        return ret;
     }
 
     private ArchiveSettings createSettingsObject(String id) {
         try {
             File path = getPathByID(id);
             if (path.exists()) {
-
                 ArchiveSettings instance = JSonStorage.restoreFromString(IO.readFileToString(path), typeRef);
-
                 instance.assignController(this);
                 return instance;
             }
@@ -235,11 +228,6 @@ public class ArchiveController implements DownloadControllerListener, LinkCollec
 
     @Override
     public void onLinkCollectorContentAdded(LinkCollectorEvent event) {
-
-    }
-
-    @Override
-    public void onLinkCollectorContentModified(LinkCollectorEvent event) {
 
     }
 

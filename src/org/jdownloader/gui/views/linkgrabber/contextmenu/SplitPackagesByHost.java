@@ -6,7 +6,6 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map.Entry;
 
-import jd.controlling.IOEQ;
 import jd.controlling.linkcollector.LinkCollector;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledPackage;
@@ -35,10 +34,10 @@ public class SplitPackagesByHost extends SelectionAppAction<CrawledPackage, Craw
     }
 
     public void actionPerformed(ActionEvent e) {
-        IOEQ.add(new Runnable() {
+        LinkCollector.getInstance().getQueue().add(new QueueAction<Void, RuntimeException>() {
 
             @Override
-            public void run() {
+            protected Void run() throws RuntimeException {
                 HashMap<String, java.util.List<CrawledLink>> splitMap = new HashMap<String, java.util.List<CrawledLink>>();
 
                 CrawledPackage samePkg = null;
@@ -75,18 +74,11 @@ public class SplitPackagesByHost extends SelectionAppAction<CrawledPackage, Craw
                     } else {
                         newPkg.setName(getNewPackageName(null, host));
                     }
-                    IOEQ.getQueue().add(new QueueAction<Object, RuntimeException>() {
-
-                        @Override
-                        protected Object run() {
-                            LinkCollector.getInstance().moveOrAddAt(newPkg, links, -1);
-                            return null;
-                        }
-
-                    });
+                    LinkCollector.getInstance().moveOrAddAt(newPkg, links, -1);
                 }
+                return null;
             }
-        }, true);
+        });
     }
 
     public String getNewPackageName(String oldPackageName, String host) {

@@ -25,7 +25,7 @@ public class ExportAction extends AppAction {
     /**
      * 
      */
-    private static final long         serialVersionUID = 1L;
+    private static final long              serialVersionUID = 1L;
     private java.util.List<PackagizerRule> rules;
 
     public ExportAction() {
@@ -75,7 +75,7 @@ public class ExportAction extends AppAction {
             if (rules == null) {
                 rules = PackagizerController.getInstance().list();
             }
-            String str = JSonStorage.toString(rules);
+            String str = JSonStorage.serializeToJson(rules);
             File saveto = d.getSelectedFile();
             if (saveto == null) return;
             if (!saveto.getName().endsWith(ext)) {

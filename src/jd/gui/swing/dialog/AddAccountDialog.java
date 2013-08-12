@@ -55,6 +55,7 @@ import org.appwork.utils.swing.dialog.ProgressDialog.ProgressGetter;
 import org.jdownloader.DomainInfo;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
+import org.jdownloader.logging.LogController;
 import org.jdownloader.plugins.accounts.AccountFactory;
 import org.jdownloader.plugins.accounts.EditAccountPanel;
 import org.jdownloader.plugins.accounts.Notifier;
@@ -62,6 +63,7 @@ import org.jdownloader.plugins.controller.PluginClassLoader;
 import org.jdownloader.plugins.controller.UpdateRequiredClassNotFoundException;
 import org.jdownloader.plugins.controller.host.HostPluginController;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin;
+import org.jdownloader.plugins.controller.host.PluginFinder;
 
 public class AddAccountDialog extends AbstractDialog<Integer> {
 
@@ -125,6 +127,8 @@ public class AddAccountDialog extends AbstractDialog<Integer> {
         ProgressDialog pd = new ProgressDialog(new ProgressGetter() {
 
             public void run() throws Exception {
+                PluginForHost hostPlugin = new PluginFinder().assignPlugin(ac, true, LogController.CL());
+                if (hostPlugin != null) ac.setPlugin(hostPlugin);
                 AccountCheckJob job = AccountChecker.getInstance().check(ac, true);
                 job.waitChecked();
             }

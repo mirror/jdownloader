@@ -24,10 +24,10 @@ public class ExportAction extends AppAction {
     /**
      * 
      */
-    private static final long                serialVersionUID = 1L;
+    private static final long                     serialVersionUID = 1L;
     private java.util.List<LinkgrabberFilterRule> rules;
 
-    private LinkgrabberFilter                linkgrabberFilter;
+    private LinkgrabberFilter                     linkgrabberFilter;
 
     public ExportAction(LinkgrabberFilter linkgrabberFilter) {
         setName(_GUI._.LinkgrabberFilter_LinkgrabberFilter_export());
@@ -81,7 +81,7 @@ public class ExportAction extends AppAction {
             d.setMultiSelection(false);
             Dialog.I().showDialog(d);
 
-            String str = JSonStorage.toString(exportList);
+            String str = JSonStorage.serializeToJson(exportList);
             File saveto = d.getSelectedFile();
             if (!saveto.getName().endsWith(ext)) {
                 saveto = new File(saveto.getAbsolutePath() + ext);

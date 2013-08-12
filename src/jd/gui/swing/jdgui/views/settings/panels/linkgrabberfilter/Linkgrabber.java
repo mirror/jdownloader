@@ -18,9 +18,11 @@ package jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter;
 
 import javax.swing.ImageIcon;
 
-import jd.controlling.IOEQ;
+import jd.controlling.TaskQueue;
 import jd.gui.swing.jdgui.views.settings.sidebar.CheckBoxedEntry;
 
+import org.appwork.utils.event.queue.Queue.QueuePriority;
+import org.appwork.utils.event.queue.QueueAction;
 import org.jdownloader.extensions.Header;
 import org.jdownloader.extensions.StartException;
 import org.jdownloader.extensions.StopException;
@@ -67,15 +69,14 @@ public class Linkgrabber extends AbstractConfigPanel implements CheckBoxedEntry 
 
     @Override
     public void updateContents() {
+        TaskQueue.getQueue().add(new QueueAction<Void, RuntimeException>(QueuePriority.HIGH) {
 
-        IOEQ.add(new Runnable() {
-
-            public void run() {
-                filter.update();
+            @Override
+            protected Void run() throws RuntimeException {
+                if (isShown()) filter.update();
+                return null;
             }
-
-        }, true);
-
+        });
     }
 
     public ImageIcon _getIcon(int size) {

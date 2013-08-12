@@ -25,8 +25,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.concurrent.ScheduledThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 
 import jd.config.Property;
@@ -43,7 +41,6 @@ import jd.plugins.AccountInfo;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.utils.JDUtilities;
 
 import org.appwork.scheduler.DelayedRunnable;
 import org.appwork.shutdown.ShutdownController;
@@ -55,6 +52,7 @@ import org.appwork.utils.event.Eventsender;
 import org.appwork.utils.logging2.LogSource;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.plugins.controller.PluginClassLoader;
+import org.jdownloader.plugins.controller.PluginClassLoader.PluginClassLoaderChild;
 import org.jdownloader.plugins.controller.host.PluginFinder;
 import org.jdownloader.settings.AccountData;
 import org.jdownloader.settings.AccountSettings;
@@ -68,8 +66,6 @@ public class AccountController implements AccountControllerListener {
     private static HashMap<Account, Long>                                        blockedAccounts  = new HashMap<Account, Long>();
 
     private static AccountController                                             INSTANCE         = new AccountController();
-
-    public final ScheduledThreadPoolExecutor                                     TIMINGQUEUE      = new ScheduledThreadPoolExecutor(1);
 
     private final Eventsender<AccountControllerListener, AccountControllerEvent> broadcaster      = new Eventsender<AccountControllerListener, AccountControllerEvent>() {
 
@@ -90,8 +86,6 @@ public class AccountController implements AccountControllerListener {
 
     private AccountController() {
         super();
-        TIMINGQUEUE.setKeepAliveTime(10000, TimeUnit.MILLISECONDS);
-        TIMINGQUEUE.allowCoreThreadTimeOut(true);
         config = JsonConfig.create(AccountSettings.class);
         ShutdownController.getInstance().addShutdownEvent(new ShutdownEvent() {
 
@@ -112,7 +106,12 @@ public class AccountController implements AccountControllerListener {
                 acc.setAccountController(this);
             }
         }
-        delayedSaver = new DelayedRunnable(TIMINGQUEUE, 5000, 30000) {
+        delayedSaver = new DelayedRunnable(5000, 30000) {
+
+            @Override
+            public String getID() {
+                return "AccountController";
+            }
 
             @Override
             public void delayedrun() {
@@ -163,10 +162,18 @@ public class AccountController implements AccountControllerListener {
                 return ai;
             }
         }
-        Thread.currentThread().setContextClassLoader(PluginClassLoader.getInstance().getChild());
-        final PluginForHost plugin = JDUtilities.getNewPluginForHostInstance(account.getHoster());
-        if (plugin == null) {
-            LogController.CL().severe("AccountCheck: Failed because plugin " + account.getHoster() + " is missing!");
+        PluginClassLoaderChild cl;
+        Thread.currentThread().setContextClassLoader(cl = PluginClassLoader.getInstance().getChild());
+        PluginForHost plugin = null;
+        try {
+            plugin = account.getPlugin().getLazyP().newInstance(cl);
+            if (plugin == null) {
+                LogController.CL().severe("AccountCheck: Failed because plugin " + account.getHoster() + " is missing!");
+                account.setEnabled(false);
+                return null;
+            }
+        } catch (final Throwable e) {
+            LogController.CL().log(e);
             account.setEnabled(false);
             return null;
         }
@@ -441,11 +448,21 @@ public class AccountController implements AccountControllerListener {
             if (StringUtils.isEmpty(host)) {
                 for (String hoster : HOSTER_ACCOUNTS.keySet()) {
                     java.util.List<Account> ret2 = HOSTER_ACCOUNTS.get(hoster);
-                    if (ret2 != null) ret.addAll(ret2);
+                    if (ret2 != null) {
+                        for (Account acc : ret2) {
+                            if (acc.getPlugin() == null) continue;
+                            ret.add(acc);
+                        }
+                    }
                 }
             } else {
                 java.util.List<Account> ret2 = HOSTER_ACCOUNTS.get(host);
-                if (ret2 != null) ret.addAll(ret2);
+                if (ret2 != null) {
+                    for (Account acc : ret2) {
+                        if (acc.getPlugin() == null) continue;
+                        ret.add(acc);
+                    }
+                }
             }
         }
         return ret;
@@ -463,6 +480,7 @@ public class AccountController implements AccountControllerListener {
             ret = HOSTER_ACCOUNTS.get(host);
             if (ret != null) {
                 for (Account acc : ret) {
+                    if (acc.getPlugin() == null) continue;
                     if (acc.isEnabled() && acc.isValid()) return true;
                 }
             }
@@ -481,6 +499,7 @@ public class AccountController implements AccountControllerListener {
                     continue;
                 }
                 for (Account acc : next.getValue()) {
+                    if (acc.getPlugin() == null) continue;
                     if (!acc.isEnabled() || !acc.isValid()) {
                         /*
                          * we remove every invalid/disabled/tempdisabled/blocked account
@@ -614,6 +633,7 @@ public class AccountController implements AccountControllerListener {
                     continue;
                 }
                 for (Account acc : next.getValue()) {
+                    if (acc.getPlugin() == null) continue;
                     if (!acc.isEnabled() || !acc.isValid() || acc.isTempDisabled()) {
                         /*
                          * we remove every invalid/disabled/tempdisabled/blocked account

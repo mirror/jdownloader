@@ -25,7 +25,8 @@ import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import java.util.Vector;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -33,8 +34,10 @@ import java.util.logging.Logger;
 import jd.controlling.downloadcontroller.DownloadController;
 import jd.controlling.downloadcontroller.DownloadWatchDog;
 import jd.controlling.downloadcontroller.DownloadWatchDog.DISKSPACECHECK;
+import jd.controlling.downloadcontroller.ExceptionRunnable;
 import jd.controlling.downloadcontroller.FileIsLockedException;
 import jd.controlling.downloadcontroller.ManagedThrottledConnectionHandler;
+import jd.controlling.downloadcontroller.SingleDownloadController;
 import jd.http.Browser;
 import jd.http.Request;
 import jd.http.URLConnectionAdapter;
@@ -60,6 +63,7 @@ import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.jdownloader.controlling.FileCreationManager;
+import org.jdownloader.plugins.SkipReason;
 import org.jdownloader.settings.GeneralSettings;
 import org.jdownloader.statistics.StatsManager;
 import org.jdownloader.translate._JDT;
@@ -67,23 +71,15 @@ import org.jdownloader.updatev2.InternetConnectionSettings;
 
 public class OldRAFDownload extends DownloadInterface {
 
-    public static final Object HASHCHECKLOCK            = new Object();
-    private RandomAccessFile   outputPartFile;
-    private File               outputCompleteFile;
-    private boolean            connected;
-    private Vector<RAFChunk>   chunks                   = new Vector<RAFChunk>();
-    private volatile int       chunksDownloading        = 0;
+    public static final Object                  HASHCHECKLOCK            = new Object();
+    private RandomAccessFile                    outputPartFileRaf;
+    private File                                outputCompleteFile;
+    private File                                outputPartFile;
+    private AtomicBoolean                       connected                = new AtomicBoolean(false);
+    private CopyOnWriteArrayList<RAFChunk>      chunks                   = new CopyOnWriteArrayList<RAFChunk>();
 
-    private volatile int       chunksInProgress         = 0;
-
-    protected long             totalLinkBytesLoaded     = 0;
-    protected AtomicLong       totalLinkBytesLoadedLive = new AtomicLong(0);
-
-    private AtomicInteger      chunksStarted            = new AtomicInteger(0);
-
-    public AtomicInteger getChunksStarted() {
-        return chunksStarted;
-    }
+    protected long                              totalLinkBytesLoaded     = 0;
+    protected AtomicLong                        totalLinkBytesLoadedLive = new AtomicLong(0);
 
     private Vector<Integer>                     errors                   = new Vector<Integer>();
 
@@ -92,10 +88,8 @@ public class OldRAFDownload extends DownloadInterface {
     private int                                 readTimeout              = 100000;
     private int                                 requestTimeout           = 100000;
 
-    /** normal stop of download (eg manually or reconnect request) */
-    private volatile boolean                    externalStop             = false;
-
-    private boolean                             waitFlag                 = true;
+    private AtomicBoolean                       terminated               = new AtomicBoolean(false);
+    private AtomicBoolean                       abort                    = new AtomicBoolean(false);
 
     private boolean                             fatalErrorOccured        = false;
 
@@ -107,11 +101,11 @@ public class OldRAFDownload extends DownloadInterface {
     protected Browser                           browser;
     protected URLConnectionAdapter              connection;
 
-    protected DownloadLink                      downloadLink;
+    protected final DownloadLink                downloadLink;
 
-    protected LinkStatus                        linkStatus;
+    protected final LinkStatus                  linkStatus;
     public Logger                               logger;
-    protected PluginForHost                     plugin;
+    protected final PluginForHost               plugin;
 
     public static final String                  PROPERTY_DOFILESIZECHECK = "DOFILESIZECHECK";
     protected Request                           request                  = null;
@@ -146,12 +140,7 @@ public class OldRAFDownload extends DownloadInterface {
         return resume;
     }
 
-    public synchronized void addToChunksInProgress(long i) {
-        chunksInProgress += i;
-    }
-
     public OldRAFDownload(PluginForHost plugin, DownloadLink downloadLink, Request request) throws IOException, PluginException {
-        downloadLink.setDownloadInstance(this);
         connectionHandler = new ManagedThrottledConnectionHandler(downloadLink);
         this.downloadLink = downloadLink;
         this.plugin = plugin;
@@ -162,19 +151,12 @@ public class OldRAFDownload extends DownloadInterface {
         requestTimeout = JsonConfig.create(InternetConnectionSettings.class).getHttpConnectTimeout();
         readTimeout = JsonConfig.create(InternetConnectionSettings.class).getHttpReadTimeout();
         this.request = request;
+        /* setDownloadInstance after all variables are set! */
+        downloadLink.setDownloadInstance(this);
     }
 
     public Vector<Exception> getExceptions() {
         return exceptions;
-    }
-
-    /**
-     * Public for dummy mode
-     * 
-     * @param i
-     */
-    public synchronized void addChunksDownloading(long i) {
-        chunksDownloading += i;
     }
 
     /**
@@ -215,9 +197,9 @@ public class OldRAFDownload extends DownloadInterface {
     }
 
     public URLConnectionAdapter connect() throws Exception {
+        if (connected.getAndSet(true) == true) throw new IllegalStateException("Already connected");
         logger.finer("Connect...");
         if (request == null) throw new IllegalStateException("Wrong Mode. Instance is in direct Connection mode");
-        this.connected = true;
         boolean resumed = false;
         if (this.isRangeRequestSupported() && this.checkResumabled()) {
             /* we can continue to resume the download */
@@ -397,8 +379,8 @@ public class OldRAFDownload extends DownloadInterface {
         if (doFilesizeCheck() && (totalLinkBytesLoaded <= 0 || totalLinkBytesLoaded != getFileSize() && getFileSize() > 0)) {
             if (totalLinkBytesLoaded > getFileSize()) {
                 /*
-                 * workaround for old bug deep in this downloadsystem. more data got loaded (maybe just counting bug) than filesize. but in
-                 * most cases the file is okay! WONTFIX because new downloadsystem is on its way
+                 * workaround for old bug deep in this downloadsystem. more data got loaded (maybe just counting bug) than filesize. but in most cases the file
+                 * is okay! WONTFIX because new downloadsystem is on its way
                  */
                 logger.severe("Filesize: " + getFileSize() + " Loaded: " + totalLinkBytesLoaded);
                 if (!linkStatus.isFailed()) {
@@ -432,43 +414,42 @@ public class OldRAFDownload extends DownloadInterface {
     /**
      * ueber error() kann ein fehler gemeldet werden. DIe Methode entscheided dann ob dieser fehler zu einem Abbruch fuehren muss
      */
-    protected synchronized void error(int id, String string) {
-        /* if we recieved external stop, then we dont have to handle errors */
-        if (externalDownloadStop()) return;
+    protected void error(int id, String string) {
+        boolean terminate = false;
+        synchronized (this) {
+            /* if we recieved external stop, then we dont have to handle errors */
+            if (externalDownloadStop()) return;
 
-        logger.severe("Error occured (" + id + "): ");
+            logger.severe("Error occured (" + id + "): ");
 
-        if (errors.indexOf(id) < 0) errors.add(id);
-        if (fatalErrorOccured) return;
+            if (errors.indexOf(id) < 0) errors.add(id);
+            if (fatalErrorOccured) return;
 
-        linkStatus.addStatus(id);
+            linkStatus.addStatus(id);
 
-        linkStatus.setErrorMessage(string);
-        switch (id) {
-        case LinkStatus.ERROR_RETRY:
-        case LinkStatus.ERROR_FATAL:
-        case LinkStatus.ERROR_TIMEOUT_REACHED:
-        case LinkStatus.ERROR_FILE_NOT_FOUND:
-        case LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE:
-        case LinkStatus.ERROR_LOCAL_IO:
-        case LinkStatus.ERROR_NO_CONNECTION:
-        case LinkStatus.ERROR_ALREADYEXISTS:
-        case LinkStatus.ERROR_DOWNLOAD_FAILED:
-            fatalErrorOccured = true;
-            terminate();
+            linkStatus.setErrorMessage(string);
+            switch (id) {
+            case LinkStatus.ERROR_RETRY:
+            case LinkStatus.ERROR_FATAL:
+            case LinkStatus.ERROR_TIMEOUT_REACHED:
+            case LinkStatus.ERROR_FILE_NOT_FOUND:
+            case LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE:
+            case LinkStatus.ERROR_LOCAL_IO:
+            case LinkStatus.ERROR_ALREADYEXISTS:
+            case LinkStatus.ERROR_DOWNLOAD_FAILED:
+                fatalErrorOccured = true;
+                terminate = true;
+            }
         }
+        if (terminate) terminate(false);
     }
 
     /**
-     * Wartet bis alle Chunks fertig sind, aktuelisiert den downloadlink regelmaesig und fordert beim Controller eine aktualisierung des
-     * links an
+     * Wartet bis alle Chunks fertig sind, aktuelisiert den downloadlink regelmaesig und fordert beim Controller eine aktualisierung des links an
      */
-    protected void onChunkFinished() {
-        synchronized (this) {
-            if (waitFlag) {
-                waitFlag = false;
-                notify();
-            }
+    protected void onChunkFinished(RAFChunk chunk) {
+        synchronized (chunks) {
+            chunks.notifyAll();
         }
     }
 
@@ -545,7 +526,7 @@ public class OldRAFDownload extends DownloadInterface {
                 linkStatus.setStatus(LinkStatus.FINISHED);
                 return true;
             }
-            if (!connected) connect();
+            if (connected.get() == false) connect();
             if (connection != null && connection.getHeaderField("Content-Encoding") != null && connection.getHeaderField("Content-Encoding").equalsIgnoreCase("gzip")) {
                 /* GZIP Encoding kann weder chunk noch resume */
                 setResume(false);
@@ -585,14 +566,27 @@ public class OldRAFDownload extends DownloadInterface {
                     downloadLink.setVerifiedFileSize(connection.getLongContentLength());
                 }
             }
-            if (!downloadLink.getDownloadLinkController().preDownloadCheck(null, null)) return false;
-            File fileOutput = new File(downloadLink.getFileOutput());
+            final SingleDownloadController dlc = downloadLink.getDownloadLinkController();
             try {
-                DownloadWatchDog.getInstance().getSession().getFileAccessManager().setLock(fileOutput, downloadLink);
-            } catch (FileIsLockedException e) {
-                throw new PluginException(LinkStatus.ERROR_ALREADYEXISTS, _JDT._.downloadlink_status_error_file_exists());
-            }
-            try {
+                DownloadWatchDog.getInstance().localFileCheck(dlc, new ExceptionRunnable() {
+
+                    @Override
+                    public void run() throws Exception {
+                        createOutputChannel();
+                        try {
+                            /* first lock the part file */
+                            DownloadWatchDog.getInstance().getSession().getFileAccessManager().lock(outputPartFile, dlc);
+                        } catch (FileIsLockedException e) {
+                            throw new PluginException(SkipReason.FILE_IN_PROCESS);
+                        }
+                        try {
+                            /* then lock the final file */
+                            DownloadWatchDog.getInstance().getSession().getFileAccessManager().lock(outputCompleteFile, dlc);
+                        } catch (FileIsLockedException e) {
+                            throw new PluginException(SkipReason.FILE_EXISTS);
+                        }
+                    }
+                }, null);
                 setupChunks();
                 /* download in progress so file should be online ;) */
                 downloadLink.setAvailable(true);
@@ -600,7 +594,9 @@ public class OldRAFDownload extends DownloadInterface {
                 onChunksReady();
                 return handleErrors();
             } finally {
-                DownloadWatchDog.getInstance().getSession().getFileAccessManager().unlock(fileOutput, downloadLink);
+                cleanupDownladInterface();
+                DownloadWatchDog.getInstance().getSession().getFileAccessManager().unlock(outputCompleteFile, dlc);
+                DownloadWatchDog.getInstance().getSession().getFileAccessManager().unlock(outputPartFile, dlc);
             }
         } catch (PluginException e) {
             error(e.getLinkStatus(), e.getErrorMessage());
@@ -614,6 +610,7 @@ public class OldRAFDownload extends DownloadInterface {
             handleErrors();
             return false;
         } finally {
+            cleanupDownladInterface();
             try {
                 downloadLink.addDownloadTime(System.currentTimeMillis() - getStartTimeStamp());
             } catch (final Throwable e) {
@@ -623,12 +620,6 @@ public class OldRAFDownload extends DownloadInterface {
             } catch (final Throwable e) {
             }
             linkStatus.removeStatus(LinkStatus.DOWNLOADINTERFACE_IN_PROGRESS);
-            try {
-                this.connection.disconnect();
-            } catch (Throwable e) {
-            }
-            /* make sure file is really closed */
-            cleanupDownladInterface();
         }
     }
 
@@ -670,7 +661,7 @@ public class OldRAFDownload extends DownloadInterface {
 
     @Override
     public boolean externalDownloadStop() {
-        return externalStop;
+        return abort.get();
     }
 
     protected boolean doFilesizeCheck() {
@@ -678,30 +669,30 @@ public class OldRAFDownload extends DownloadInterface {
     }
 
     /** signal that we stopped download external */
-    public synchronized void stopDownload() {
-        if (externalStop) return;
-        logger.info("externalStop recieved");
-        externalStop = true;
-        terminate();
+    public void stopDownload() {
+        if (abort.getAndSet(true) == false) {
+            logger.info("externalStop recieved");
+            terminate(false);
+        }
     }
 
     protected void waitForChunks() {
         try {
             logger.finer("Wait for chunks");
-            while (chunksInProgress > 0) {
-                synchronized (this) {
-                    if (waitFlag) {
-                        try {
-                            this.wait();
-                        } catch (final InterruptedException e) {
-                        } catch (Exception e) {
-                            // logger.log(Level.SEVERE,"Exception occurred",e);
-                            terminate();
-                            return;
+            mainLoop: while (true) {
+                try {
+                    synchronized (chunks) {
+                        for (RAFChunk chunk : chunks) {
+                            if (chunk.isAlive() && chunk.isRunning()) {
+                                chunks.wait(1000);
+                                continue mainLoop;
+                            }
                         }
                     }
+                    break;
+                } catch (InterruptedException e) {
+                    terminate(true);
                 }
-                waitFlag = true;
             }
             /* set the *real loaded* bytes here */
             downloadLink.setDownloadCurrent(totalLinkBytesLoaded);
@@ -711,35 +702,38 @@ public class OldRAFDownload extends DownloadInterface {
     }
 
     /**
-     * Bricht den Download komplett ab.
+     * terminate this DownloadInterface, abort all running chunks
      */
-    protected void terminate() {
-        if (!externalDownloadStop()) logger.severe("A critical Downloaderror occured. Terminate...");
-        int oldSize = -1;
-        ArrayList<RAFChunk> stopChunks = new ArrayList<RAFChunk>();
-        while (true) {
-            oldSize = stopChunks.size();
-            synchronized (chunks) {
-                stopChunks = new ArrayList<RAFChunk>(chunks);
-            }
-            boolean allClosed = true;
-            if (stopChunks.size() != oldSize) {
-                /* new Chunks found in this loop */
-                allClosed = false;
-            }
-            for (RAFChunk ch : stopChunks) {
-                try {
-                    if (ch.getInputStream() != null) allClosed = false;
-                    ch.closeConnections();
-                } catch (final Throwable e) {
+    protected void terminate(boolean forcedWaiting) {
+        if (terminated.getAndSet(true) == false || forcedWaiting) {
+            if (!externalDownloadStop()) logger.severe("A critical Downloaderror occured. Terminate...");
+            while (true) {
+                synchronized (chunks) {
+                    boolean wait = false;
+                    for (RAFChunk chunk : chunks) {
+                        if (chunk.isRunning()) {
+                            chunk.closeConnections();
+                            if (chunk == Thread.currentThread()) {
+                                /**
+                                 * a thread should not wait for its own death :)
+                                 */
+                                continue;
+                            } else {
+                                wait = true;
+                            }
+                        }
+                    }
+                    if (wait) {
+                        try {
+                            chunks.wait(1000);
+                        } catch (InterruptedException e) {
+                            LogSource.exception(logger, e);
+                            break;
+                        }
+                    } else {
+                        break;
+                    }
                 }
-                ch.interrupt();
-            }
-            if (allClosed) break;
-            try {
-                Thread.sleep(200);
-            } catch (final InterruptedException e) {
-                break;
             }
         }
     }
@@ -781,34 +775,24 @@ public class OldRAFDownload extends DownloadInterface {
     }
 
     /**
-     * Setzt vor ! dem download dden requesttimeout. Sollte nicht zu niedrig sein weil sonst das automatische kopieren der Connections fehl
-     * schlaegt.,
+     * Setzt vor ! dem download dden requesttimeout. Sollte nicht zu niedrig sein weil sonst das automatische kopieren der Connections fehl schlaegt.,
      */
     public void setRequestTimeout(int requestTimeout) {
         this.requestTimeout = requestTimeout;
     }
 
-    public Vector<RAFChunk> getChunks() {
-        return chunks;
-    }
-
     protected void onChunksReady() {
         logger.info("Close connections if they are not closed yet");
         try {
-            for (RAFChunk c : this.getChunks()) {
+            for (RAFChunk c : chunks) {
                 c.closeConnections();
             }
         } finally {
-            logger.info("Close File. Let AV programs run");
-            try {
-                outputPartFile.close();
-            } catch (Throwable e) {
-            }
+            closeOutputChannel();
         }
         downloadLink.getLinkStatus().setStatusText(null);
         if (!handleErrors()) return;
         try {
-            File part = new File(outputCompleteFile.getAbsolutePath() + ".part");
             /* lets check the hash/crc/sfv */
             if (JsonConfig.create(GeneralSettings.class).isHashCheckEnabled()) {
                 synchronized (HASHCHECKLOCK) {
@@ -824,17 +808,17 @@ public class OldRAFDownload extends DownloadInterface {
                         /* MD5 Check */
                         type = "MD5";
                         downloadLink.getLinkStatus().setStatusText(_JDT._.system_download_doCRC2("MD5"));
-                        String hashFile = Hash.getMD5(part);
+                        String hashFile = Hash.getMD5(outputPartFile);
                         success = hash.equalsIgnoreCase(hashFile);
                     } else if (!StringUtils.isEmpty(hash = downloadLink.getSha1Hash()) && hash.length() == 40) {
                         /* SHA1 Check */
                         type = "SHA1";
                         downloadLink.getLinkStatus().setStatusText(_JDT._.system_download_doCRC2("SHA1"));
-                        String hashFile = Hash.getSHA1(part);
+                        String hashFile = Hash.getSHA1(outputPartFile);
                         success = hash.equalsIgnoreCase(hashFile);
                     } else if ((hash = new Regex(downloadLink.getName(), ".*?\\[([A-Fa-f0-9]{8})\\]").getMatch(0)) != null) {
                         type = "CRC32";
-                        String hashFile = Long.toHexString(Hash.getCRC32(part));
+                        String hashFile = Long.toHexString(Hash.getCRC32(outputPartFile));
                         success = hash.equalsIgnoreCase(hashFile);
                     } else {
                         DownloadLink sfv = null;
@@ -858,7 +842,7 @@ public class OldRAFDownload extends DownloadInterface {
                                 if (sfvText != null && sfvText.contains(downloadLink.getName())) {
                                     downloadLink.getLinkStatus().setStatusText(_JDT._.system_download_doCRC2("CRC32"));
                                     type = "CRC32";
-                                    String crc = Long.toHexString(Hash.getCRC32(part));
+                                    String crc = Long.toHexString(Hash.getCRC32(outputPartFile));
                                     success = new Regex(sfvText, downloadLink.getName() + "\\s*" + crc).matches();
                                 }
                             }
@@ -875,34 +859,29 @@ public class OldRAFDownload extends DownloadInterface {
             /* rename part file to final filename */
             while (retry > 0) {
                 /* first we try normal rename method */
-                if ((renameOkay = part.renameTo(outputCompleteFile)) == true) {
+                if ((renameOkay = outputPartFile.renameTo(outputCompleteFile)) == true) {
                     break;
                 }
                 /* this may fail because something might lock the file */
-                try {
-                    Thread.sleep(1000);
-                } catch (InterruptedException e) {
-                    break;
-                }
+                Thread.sleep(1000);
                 retry--;
             }
             /* Fallback */
             if (renameOkay == false) {
                 /* rename failed, lets try fallback */
-                logger.severe("Could not rename file " + part + " to " + outputCompleteFile);
+                logger.severe("Could not rename file " + outputPartFile + " to " + outputCompleteFile);
                 logger.severe("Try copy workaround!");
                 try {
-                    DISKSPACECHECK freeSpace = DownloadWatchDog.getInstance().checkFreeDiskSpace(part.getParentFile(), part.length());
+                    DISKSPACECHECK freeSpace = DownloadWatchDog.getInstance().checkFreeDiskSpace(outputPartFile.getParentFile(), downloadLink.getDownloadLinkController(), outputPartFile.length());
                     if (DISKSPACECHECK.FAILED.equals(freeSpace)) throw new Throwable("not enough diskspace free to copy part to complete file");
-                    IO.copyFile(part, outputCompleteFile);
+                    IO.copyFile(outputPartFile, outputCompleteFile);
                     renameOkay = true;
-                    FileCreationManager.getInstance().delete(part);
+                    outputPartFile.delete();
                 } catch (Throwable e) {
                     LogSource.exception(logger, e);
                     /* error happened, lets delete complete file */
-                    if (outputCompleteFile.exists() && outputCompleteFile.length() != part.length()) {
+                    if (outputCompleteFile.exists() && outputCompleteFile.length() != outputPartFile.length()) {
                         FileCreationManager.getInstance().delete(outputCompleteFile);
-                        outputCompleteFile.deleteOnExit();
                     }
                 }
                 if (!renameOkay) {
@@ -927,18 +906,22 @@ public class OldRAFDownload extends DownloadInterface {
                     } catch (final Throwable e) {
                         // LogSource.exception(logger, e);
                     }
-                    StatsManager.I().onFileDownloaded(outputCompleteFile, downloadLink, speed, startDelay, getChunks().size());
+                    StatsManager.I().onFileDownloaded(outputCompleteFile, downloadLink, speed, startDelay, chunks.size());
                 }
 
                 /* save absolutepath as final location property */
                 downloadLink.setFinalFileOutput(outputCompleteFile.getAbsolutePath());
-                Date last = TimeFormatter.parseDateString(connection.getHeaderField("Last-Modified"));
-                if (last != null && JsonConfig.create(GeneralSettings.class).isUseOriginalLastModified()) {
-                    /* set original lastModified timestamp */
-                    outputCompleteFile.setLastModified(last.getTime());
-                } else {
-                    /* set current timestamp as lastModified timestamp */
-                    outputCompleteFile.setLastModified(System.currentTimeMillis());
+                try {
+                    Date last = TimeFormatter.parseDateString(connection.getHeaderField("Last-Modified"));
+                    if (last != null && JsonConfig.create(GeneralSettings.class).isUseOriginalLastModified()) {
+                        /* set original lastModified timestamp */
+                        outputCompleteFile.setLastModified(last.getTime());
+                    } else {
+                        /* set current timestamp as lastModified timestamp */
+                        outputCompleteFile.setLastModified(System.currentTimeMillis());
+                    }
+                } catch (final Throwable e) {
+                    LogSource.exception(logger, e);
                 }
             }
         } catch (Exception e) {
@@ -970,11 +953,6 @@ public class OldRAFDownload extends DownloadInterface {
                 this.setupVirginStart();
             }
         } catch (Exception e) {
-            try {
-                logger.info("CLOSE HD FILE");
-                outputPartFile.close();
-            } catch (Throwable e2) {
-            }
             addException(e);
             throw e;
         }
@@ -1000,18 +978,16 @@ public class OldRAFDownload extends DownloadInterface {
             setChunkNum(1);
         }
         logger.finer("Start Download in " + getChunkNum() + " chunks. Chunksize: " + partSize);
-
-        createOutputChannel();
         downloadLink.setChunksProgress(new long[chunkNum]);
 
-        addToChunksInProgress(getChunkNum());
         int start = 0;
 
         long rangePosition = 0;
+        int id = 0;
         if (connection.getRange() != null && connection.getRange()[1] != connection.getRange()[2] - 1) {
             // Erster range schon angefordert
 
-            chunk = new RAFChunk(0, rangePosition = connection.getRange()[1], connection, this, downloadLink);
+            chunk = new RAFChunk(0, rangePosition = connection.getRange()[1], connection, this, downloadLink, id++);
             rangePosition++;
             logger.finer("Setup chunk 0: " + chunk);
             addChunk(chunk);
@@ -1020,9 +996,9 @@ public class OldRAFDownload extends DownloadInterface {
 
         for (int i = start; i < getChunkNum(); i++) {
             if (i == getChunkNum() - 1) {
-                chunk = new RAFChunk(rangePosition, -1, connection, this, downloadLink);
+                chunk = new RAFChunk(rangePosition, -1, connection, this, downloadLink, id++);
             } else {
-                chunk = new RAFChunk(rangePosition, rangePosition + partSize - 1, connection, this, downloadLink);
+                chunk = new RAFChunk(rangePosition, rangePosition + partSize - 1, connection, this, downloadLink, id++);
                 rangePosition = rangePosition + partSize;
             }
             logger.finer("Setup chunk " + i + ": " + chunk);
@@ -1039,8 +1015,8 @@ public class OldRAFDownload extends DownloadInterface {
     protected void addChunk(RAFChunk chunk) {
         synchronized (chunks) {
             chunks.add(chunk);
+            chunk.startChunk();
         }
-        chunk.startChunk();
     }
 
     protected void addChunk(Chunk chunk) {
@@ -1052,23 +1028,23 @@ public class OldRAFDownload extends DownloadInterface {
     }
 
     private void createOutputChannel() throws FileNotFoundException {
-        outputCompleteFile = new File(downloadLink.getFileOutput());
-        outputPartFile = new RandomAccessFile(outputCompleteFile.getAbsolutePath() + ".part", "rw");
+        String fileOutput = downloadLink.getFileOutput();
+        outputCompleteFile = new File(fileOutput);
+        outputPartFile = new File(fileOutput + ".part");
+        outputPartFileRaf = new RandomAccessFile(outputPartFile, "rw");
     }
 
     private void setupResume() throws FileNotFoundException {
         long parts = getFileSize() / getChunkNum();
         logger.info("Resume: " + getFileSize() + " partsize: " + parts);
         RAFChunk chunk;
-        this.createOutputChannel();
-        addToChunksInProgress(getChunkNum());
-
+        int id = 0;
         for (int i = 0; i < getChunkNum(); i++) {
             if (i == getChunkNum() - 1) {
-                chunk = new RAFChunk(downloadLink.getChunksProgress()[i] == 0 ? 0 : downloadLink.getChunksProgress()[i] + 1, -1, connection, this, downloadLink);
+                chunk = new RAFChunk(downloadLink.getChunksProgress()[i] == 0 ? 0 : downloadLink.getChunksProgress()[i] + 1, -1, connection, this, downloadLink, id++);
                 chunk.setLoaded((downloadLink.getChunksProgress()[i] - i * parts + 1));
             } else {
-                chunk = new RAFChunk(downloadLink.getChunksProgress()[i] == 0 ? 0 : downloadLink.getChunksProgress()[i] + 1, (i + 1) * parts - 1, connection, this, downloadLink);
+                chunk = new RAFChunk(downloadLink.getChunksProgress()[i] == 0 ? 0 : downloadLink.getChunksProgress()[i] + 1, (i + 1) * parts - 1, connection, this, downloadLink, id++);
                 chunk.setLoaded((downloadLink.getChunksProgress()[i] - i * parts + 1));
             }
             logger.finer("Setup chunk " + i + ": " + chunk);
@@ -1095,13 +1071,13 @@ public class OldRAFDownload extends DownloadInterface {
     protected boolean writeChunkBytes(RAFChunk chunk) {
         try {
             synchronized (outputPartFile) {
-                outputPartFile.seek(chunk.getWritePosition());
-                outputPartFile.write(chunk.buffer.getInternalBuffer(), 0, chunk.buffer.size());
+                outputPartFileRaf.seek(chunk.getWritePosition());
+                outputPartFileRaf.write(chunk.buffer.getInternalBuffer(), 0, chunk.buffer.size());
                 if (chunk.getID() >= 0) {
                     downloadLink.getChunksProgress()[chunk.getID()] = chunk.getCurrentBytesPosition() - 1;
                 }
             }
-            DownloadController.getInstance().requestSaving(true);
+            DownloadController.getInstance().requestSaving();
             return true;
         } catch (Exception e) {
             LogSource.exception(logger, e);
@@ -1147,8 +1123,22 @@ public class OldRAFDownload extends DownloadInterface {
 
     public void cleanupDownladInterface() {
         try {
-            this.outputPartFile.close();
+            this.connection.disconnect();
         } catch (Throwable e) {
+        }
+        closeOutputChannel();
+    }
+
+    private void closeOutputChannel() {
+        try {
+            RandomAccessFile loutputPartFileRaf = outputPartFileRaf;
+            if (loutputPartFileRaf != null) {
+                logger.info("Close File. Let AV programs run");
+                loutputPartFileRaf.close();
+            }
+        } catch (Throwable e) {
+        } finally {
+            outputPartFileRaf = null;
         }
     }
 

@@ -55,14 +55,20 @@ public class PollingAPIImpl implements PollingAPI {
     private PollingResultAPIStorable getAggregatedNumbers() {
         PollingResultAPIStorable prs = new PollingResultAPIStorable();
         prs.setEventName("aggregatedNumbers");
-
+        SelectionInfo<FilePackage, DownloadLink> selDc = null;
         boolean dcrl = dc.readLock();
-        SelectionInfo<FilePackage, DownloadLink> selDc = new SelectionInfo<FilePackage, DownloadLink>(null, dc.getPackages(), null, null, null, null);
-        dc.readUnlock(dcrl);
-
+        try {
+            selDc = new SelectionInfo<FilePackage, DownloadLink>(null, dc.getPackages(), null, null, null, null);
+        } finally {
+            dc.readUnlock(dcrl);
+        }
         boolean lcrl = lc.readLock();
-        SelectionInfo<CrawledPackage, CrawledLink> selLc = new SelectionInfo<CrawledPackage, CrawledLink>(null, lc.getPackages(), null, null, null, null);
-        lc.readUnlock(lcrl);
+        SelectionInfo<CrawledPackage, CrawledLink> selLc = null;
+        try {
+            selLc = new SelectionInfo<CrawledPackage, CrawledLink>(null, lc.getPackages(), null, null, null, null);
+        } finally {
+            lc.readUnlock(lcrl);
+        }
 
         QueryResponseMap eventData = new QueryResponseMap();
         eventData.put("data", new AggregatedNumbersAPIStorable(new AggregatedNumbers(selDc), new AggregatedCrawlerNumbers(selLc)));
@@ -102,7 +108,7 @@ public class PollingAPIImpl implements PollingAPI {
                 boolean readL = fp.getModifyLock().readLock();
                 try {
                     for (DownloadLink dl : fp.getChildren()) {
-                        if (dwd.getRunningDownloadLinks().contains(dl)) {
+                        if (dwd.getRunningDownloadLinks().contains(dl.getDownloadLinkController())) {
                             PollingAPIDownloadLinkStorable pdls = new PollingAPIDownloadLinkStorable(dl);
                             fps.getLinks().add(pdls);
                         }

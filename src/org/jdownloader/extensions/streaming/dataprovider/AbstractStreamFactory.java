@@ -26,6 +26,11 @@ public abstract class AbstractStreamFactory implements StreamFactoryInterface, S
         exceptions = new ArrayList<Throwable>();
         this.closer = new DelayedRunnable(EXECUTER, 5 * 1000l) {
             @Override
+            public String getID() {
+                return "AbstractStreamFactory";
+            }
+
+            @Override
             public void delayedrun() {
                 synchronized (activeStreams) {
 

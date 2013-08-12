@@ -21,7 +21,6 @@ import jd.controlling.AccountController;
 import jd.controlling.AccountControllerEvent;
 import jd.controlling.accountchecker.AccountCheckerThread;
 
-import org.jdownloader.DomainInfo;
 import org.jdownloader.controlling.UniqueAlltimeID;
 
 public class Account extends Property {
@@ -293,7 +292,4 @@ public class Account extends Property {
         return true;
     }
 
-    public DomainInfo getDomainInfo() {
-        return DomainInfo.getInstance(getHoster());
-    }
 }

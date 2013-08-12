@@ -29,7 +29,7 @@ public class CleanupAutoDeleteLinksEnabledToggleAction<PackageType extends Abstr
     }
 
     public void actionPerformed(ActionEvent e) {
-
+        if (!isEnabled()) return;
         for (Archive archive : archives) {
             archive.getSettings().setRemoveDownloadLinksAfterExtraction(isSelected() ? BooleanStatus.TRUE : BooleanStatus.FALSE);
         }

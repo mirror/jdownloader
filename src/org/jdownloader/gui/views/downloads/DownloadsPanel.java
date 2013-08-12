@@ -17,6 +17,7 @@ import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.events.GenericConfigEventListener;
 import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.swing.MigPanel;
+import org.appwork.utils.NullsafeAtomicReference;
 import org.appwork.utils.swing.EDTRunner;
 import org.jdownloader.gui.components.OverviewHeaderScrollPane;
 import org.jdownloader.gui.views.components.HeaderScrollPane;
@@ -33,15 +34,14 @@ public class DownloadsPanel extends SwitchPanel implements DownloadControllerLis
     /**
      * 
      */
-    private static final long   serialVersionUID = -2610465878903778445L;
-    private DownloadsTable      table;
-    private JScrollPane         tableScrollPane;
-    private DownloadsTableModel tableModel;
-    private ScheduledFuture<?>  timer            = null;
-    private BottomBar           bottomBar;
-    private DownloadOverview    overView;
-    private HeaderScrollPane    overViewScrollBar;
-    private MigPanel            loaderPanel;
+    private static final long                         serialVersionUID  = -2610465878903778445L;
+    private DownloadsTable                            table;
+    private JScrollPane                               tableScrollPane;
+    private DownloadsTableModel                       tableModel;
+    private ScheduledFuture<?>                        timer             = null;
+    private BottomBar                                 bottomBar;
+    private NullsafeAtomicReference<HeaderScrollPane> overViewScrollBar = new NullsafeAtomicReference<HeaderScrollPane>(null);
+    private MigPanel                                  loaderPanel;
 
     public DownloadsPanel() {
         super(new MigLayout("ins 0, wrap 2", "[grow,fill]2[fill]", "[grow, fill]2[]2[]"));
@@ -103,30 +103,32 @@ public class DownloadsPanel extends SwitchPanel implements DownloadControllerLis
     }
 
     private Component getOverView() {
-        if (overView == null) {
-            overView = new DownloadOverview(table);
-            overViewScrollBar = new OverviewHeaderScrollPane(overView);
-
-            LAFOptions.getInstance().applyPanelBackground(overViewScrollBar);
-
-            // overViewScrollBar.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_NEVER);
-            // overViewScrollBar.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
-            overViewScrollBar.setColumnHeaderView(new OverViewHeader() {
+        HeaderScrollPane ret = overViewScrollBar.get();
+        if (ret != null) {
+            return ret;
+        } else {
+            final DownloadOverview loverView = new DownloadOverview(table) {
+                @Override
+                public void removeListeners() {
+                    super.removeListeners();
+                    overViewScrollBar.set(null);
+                }
+            };
+            ret = new OverviewHeaderScrollPane(loverView);
+            final HeaderScrollPane finalRet = ret;
+            LAFOptions.getInstance().applyPanelBackground(ret);
+            ret.setColumnHeaderView(new OverViewHeader() {
 
                 @Override
                 protected void onCloseAction() {
-                    setOverViewVisible(false);
-
+                    CFG_GUI.DOWNLOAD_PANEL_OVERVIEW_VISIBLE.setValue(false);
+                    loverView.removeListeners();
                 }
 
             });
+            overViewScrollBar.compareAndSet(null, ret);
         }
-        return overViewScrollBar;
-    }
-
-    protected void setOverViewVisible(final boolean b) {
-        CFG_GUI.DOWNLOAD_PANEL_OVERVIEW_VISIBLE.setValue(b);
-
+        return ret;
     }
 
     // private void createSidebar() {
@@ -209,8 +211,8 @@ public class DownloadsPanel extends SwitchPanel implements DownloadControllerLis
                     long contentChanges = DownloadController.getInstance().getContentChanges();
                     if (lastContentChanges != contentChanges && tableModel.isFilteredView()) {
                         /*
-                         * in case we have content changes(eg downloads started) and an active filteredView, we need to recreate the
-                         * tablemodel to reflect possible status changes in filtered view
+                         * in case we have content changes(eg downloads started) and an active filteredView, we need to recreate the tablemodel to reflect
+                         * possible status changes in filtered view
                          */
                         tableModel.recreateModel();
                     } else {

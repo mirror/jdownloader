@@ -3,13 +3,14 @@ package org.jdownloader.gui.views.components.packagetable.context;
 import java.awt.event.ActionEvent;
 import java.util.List;
 
-import jd.controlling.IOEQ;
+import jd.controlling.TaskQueue;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.packagecontroller.AbstractNode;
 import jd.controlling.packagecontroller.AbstractPackageChildrenNode;
 import jd.controlling.packagecontroller.AbstractPackageNode;
 import jd.plugins.DownloadLink;
 
+import org.appwork.utils.event.queue.QueueAction;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogNoAnswerException;
 import org.jdownloader.actions.SelectionAppAction;
@@ -42,9 +43,10 @@ public class SetDownloadPassword<PackageType extends AbstractPackageNode<Childre
         }
         try {
             final String newPW = Dialog.getInstance().showInputDialog(0, _GUI._.SetDownloadPassword_SetDownloadPassword_(), _GUI._.jd_gui_userio_defaulttitle_input(), defaultPW, NewTheme.I().getIcon("password", 32), null, null);
-            IOEQ.add(new Runnable() {
+            TaskQueue.getQueue().add(new QueueAction<Void, RuntimeException>() {
 
-                public void run() {
+                @Override
+                protected Void run() throws RuntimeException {
                     for (AbstractNode l : newSelection) {
                         DownloadLink dl = null;
                         if (l instanceof CrawledLink) {
@@ -54,9 +56,8 @@ public class SetDownloadPassword<PackageType extends AbstractPackageNode<Childre
                         }
                         if (dl != null) dl.setDownloadPassword(newPW);
                     }
-
+                    return null;
                 }
-
             });
         } catch (DialogNoAnswerException e1) {
         }

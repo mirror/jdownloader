@@ -116,6 +116,7 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
     private ShutdownVetoListener              listener          = null;
 
     private boolean                           lazyInitOnStart   = false;
+    private static final Object               LOCK              = new Object();
 
     public ExtractionExtension() throws StartException {
         super();
@@ -208,7 +209,7 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
     /**
      * Adds an archive to the extraction queue.
      */
-    public synchronized ExtractionController addToQueue(final Archive archive) {
+    public synchronized ExtractionController addToQueue(final Archive archive, boolean forceAskForUnknownPassword) {
         // check if we have this archive already in queue.
 
         for (ExtractionController ec : extractionQueue.getJobs()) {
@@ -230,6 +231,7 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
         archive.getFactory().fireArchiveAddedToQueue(archive);
 
         ExtractionController controller = new ExtractionController(this, archive);
+        controller.setAskForUnknownPassword(forceAskForUnknownPassword);
         controller.setOverwriteFiles(isOverwriteFiles(archive));
         controller.setRemoveAfterExtract(isRemoveFilesAfterExtractEnabled(archive));
         controller.setRemoveDownloadLinksAfterExtraction(isRemoveDownloadLinksAfterExtractEnabled(archive));
@@ -413,6 +415,18 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
             }
         });
 
+    }
+
+    public void addPassword(String pw) {
+        if (StringUtils.isEmpty(pw)) return;
+        synchronized (LOCK) {
+            java.util.List<String> pwList = getSettings().getPasswordList();
+            if (pwList == null) pwList = new ArrayList<String>();
+            /* avoid duplicates */
+            pwList.remove(pw);
+            pwList.add(0, pw);
+            getSettings().setPasswordList(pwList);
+        }
     }
 
     @Override
@@ -635,7 +649,7 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
                     logger.info("archive size " + archive.getArchiveFiles().size());
                     logger.info("archive complete " + archive.isComplete());
                     if (archive.isActive() || archive.getArchiveFiles().size() < 1 || !archive.isComplete() || !isAutoExtractEnabled(archive)) { return; }
-                    this.addToQueue(archive);
+                    this.addToQueue(archive, false);
                 }
 
             } else if (caller instanceof ExtractionController && getSettings().isDeepExtractionEnabled()) {
@@ -647,7 +661,7 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
                             Archive ar = buildArchive(fac);
                             ar.getSettings().setExtractPath(archiveStartFile.getParent());
                             if (ar.isActive() || ar.getArchiveFiles().size() < 1 || !ar.isComplete() || !isAutoExtractEnabled(ar)) continue;
-                            addToQueue(ar);
+                            addToQueue(ar, false);
                         }
                     }
                 } catch (Exception e) {
@@ -660,7 +674,7 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
                         if (isLinkSupported(fac)) {
                             Archive ar = buildArchive(fac);
                             if (ar.isActive() || ar.getArchiveFiles().size() < 1 || !ar.isComplete() || !isAutoExtractEnabled(ar)) continue;
-                            addToQueue(ar);
+                            addToQueue(ar, false);
                         }
                     }
                 } catch (Exception e) {
@@ -682,11 +696,6 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
             return CFG_LINKGRABBER.AUTO_EXTRACTION_ENABLED.isEnabled();
         }
         return false;
-
-    }
-
-    @Override
-    public void onRemoveFile(Object caller, File[] fileList) {
 
     }
 
@@ -724,7 +733,6 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
 
                 path = archive.getFactory().createExtractSubPath(path, archive);
                 File ret = new File(path);
-                // System.out.println(1);
                 ret = appendSubFolder(archive, ret);
                 return ret;
             }

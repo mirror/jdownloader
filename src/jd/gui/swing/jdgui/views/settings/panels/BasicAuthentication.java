@@ -18,8 +18,12 @@ package jd.gui.swing.jdgui.views.settings.panels;
 
 import javax.swing.ImageIcon;
 
+import jd.controlling.TaskQueue;
+import jd.controlling.authentication.AuthenticationController;
 import jd.gui.swing.jdgui.views.settings.panels.basicauthentication.BasicAuthenticationPanel;
 
+import org.appwork.utils.event.queue.Queue.QueuePriority;
+import org.appwork.utils.event.queue.QueueAction;
 import org.jdownloader.gui.settings.AbstractConfigPanel;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.translate._JDT;
@@ -36,7 +40,6 @@ public class BasicAuthentication extends AbstractConfigPanel {
         super();
         this.addHeader(getTitle(), NewTheme.I().getIcon("basicauth", 32));
         this.addDescriptionPlain(_JDT._.gui_settings_basicauth_description());
-
         add(BasicAuthenticationPanel.getInstance());
     }
 
@@ -51,6 +54,13 @@ public class BasicAuthentication extends AbstractConfigPanel {
 
     @Override
     public void updateContents() {
-        BasicAuthenticationPanel.getInstance().update();
+        TaskQueue.getQueue().add(new QueueAction<Void, RuntimeException>(QueuePriority.HIGH) {
+
+            @Override
+            protected Void run() throws RuntimeException {
+                if (isShown()) BasicAuthenticationPanel.getInstance().getTable().getModel()._fireTableStructureChanged(AuthenticationController.getInstance().list(), false);
+                return null;
+            }
+        });
     }
 }

@@ -31,8 +31,7 @@ public class AuthenticationController {
     private ChangeEventSender                eventSender = new ChangeEventSender();
 
     /**
-     * Create a new instance of AuthenticationController. This is a singleton class. Access the only existing instance by using
-     * {@link #getInstance()}.
+     * Create a new instance of AuthenticationController. This is a singleton class. Access the only existing instance by using {@link #getInstance()}.
      */
     private AuthenticationController() {
         config = JsonConfig.create(AuthenticationControllerSettings.class);
@@ -97,7 +96,7 @@ public class AuthenticationController {
         if (selectedObjects == null) return;
         synchronized (this) {
             ArrayList<AuthenticationInfo> newList = new ArrayList<AuthenticationInfo>(list);
-            newList.removeAll(selectedObjects);
+            if (!newList.removeAll(selectedObjects)) return;
             list = newList;
             config.setList(list);
         }

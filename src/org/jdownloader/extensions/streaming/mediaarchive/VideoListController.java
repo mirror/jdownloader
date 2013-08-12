@@ -12,7 +12,7 @@ public class VideoListController extends MediaListController<VideoMediaItem> {
     @Override
     protected String objectToJson(VideoMediaItem mi) {
 
-        return JSonStorage.toString(VideoItemStorable.create(mi));
+        return JSonStorage.serializeToJson(VideoItemStorable.create(mi));
     }
 
     @Override

@@ -266,8 +266,8 @@ public class JDAnywhereEventPublisher implements EventPublisher, DownloadWatchdo
                         }
                     } else {
                         LinkStatus linkStatus = dl.getLinkStatus();
-                        if (linkStatus.getLatestStatus() == 2 && linkStatus.isPluginActive()) { // && linkStatus.getStatus() !=
-                                                                                                // linkStatus.getLatestStatus()) {
+                        if (linkStatus.getLatestStatus() == 2 && dl.getDownloadLinkController() != null) { // && linkStatus.getStatus() !=
+                            // linkStatus.getLatestStatus()) {
                             data.put("linkID", dl.getUniqueID().getID());
                             data.put("packageID", dl.getFilePackage().getUniqueID().toString());
                             data.put("action", "Finished");
@@ -590,10 +590,6 @@ public class JDAnywhereEventPublisher implements EventPublisher, DownloadWatchdo
                 if (object instanceof CrawledPackage) linkCollectorApiPackageAdded((CrawledPackage) event.getParameter());
             }
         }
-    }
-
-    @Override
-    public void onLinkCollectorContentModified(LinkCollectorEvent event) {
     }
 
     @Override

@@ -9,4 +9,6 @@ public interface AbstractNodeNotifier {
 
     void nodeUpdated(AbstractNode source, NOTIFY notify, Object param);
 
+    boolean hasNotificationListener();
+
 }

@@ -184,7 +184,7 @@ public class JDownloaderToolBarAPIImpl implements JDownloaderToolBarAPI, StateEv
         }
         ret.put("reconnect", CFG_RECONNECT.AUTO_RECONNECT_ENABLED.isEnabled());
         ret.put("clipboard", org.jdownloader.settings.staticreferences.CFG_GUI.CLIPBOARD_MONITORED.isEnabled());
-        ret.put("stopafter", DownloadWatchDog.getInstance().isStopMarkSet());
+        ret.put("stopafter", DownloadWatchDog.getInstance().getSession().isStopMarkSet());
         ret.put("premium", org.jdownloader.settings.staticreferences.CFG_GENERAL.USE_AVAILABLE_ACCOUNTS.isEnabled());
         if (running == 0) {
             ret.put("speed", 0);

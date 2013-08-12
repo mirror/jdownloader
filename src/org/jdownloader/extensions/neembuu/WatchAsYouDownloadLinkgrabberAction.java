@@ -23,7 +23,6 @@ import java.util.List;
 
 import javax.swing.ImageIcon;
 
-import jd.controlling.IOEQ;
 import jd.controlling.downloadcontroller.DownloadController;
 import jd.controlling.downloadcontroller.DownloadWatchDog;
 import jd.controlling.linkcollector.LinkCollector;
@@ -33,6 +32,7 @@ import jd.controlling.packagecontroller.AbstractNode;
 import jd.plugins.FilePackage;
 
 import org.appwork.utils.ImageProvider.ImageProvider;
+import org.appwork.utils.event.queue.QueueAction;
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
@@ -61,17 +61,17 @@ public class WatchAsYouDownloadLinkgrabberAction extends AppAction {
         setSmallIcon(new ImageIcon(ImageProvider.merge(add, play, 0, 0, 9, 10)));
         this.autostart = true;
         /*
-         * } else { setName(_GUI._.ConfirmAction_ConfirmAction_context_add()); setSmallIcon(NewTheme.I().getIcon("add", 20)); this.autostart
-         * = false; }
+         * } else { setName(_GUI._.ConfirmAction_ConfirmAction_context_add()); setSmallIcon(NewTheme.I().getIcon("add", 20)); this.autostart = false; }
          */
         this.values = arrayList;
     }
 
     public void actionPerformed(ActionEvent e) {
         if (!isEnabled()) return;
-        IOEQ.add(new Runnable() {
+        LinkCollector.getInstance().getQueue().add(new QueueAction<Void, RuntimeException>() {
 
-            public void run() {
+            @Override
+            protected Void run() throws RuntimeException {
                 boolean addTop = org.jdownloader.settings.staticreferences.CFG_LINKFILTER.LINKGRABBER_ADD_AT_TOP.getValue();
                 java.util.List<FilePackage> fpkgs = new ArrayList<FilePackage>();
                 java.util.List<CrawledLink> clinks = new ArrayList<CrawledLink>();
@@ -102,18 +102,12 @@ public class WatchAsYouDownloadLinkgrabberAction extends AppAction {
                 /* add the converted FilePackages to DownloadController */
                 DownloadController.getInstance().addAllAt(fpkgs, addTop ? 0 : -(fpkgs.size() + 10));
                 if (autostart) {
-                    IOEQ.add(new Runnable() {
-
-                        public void run() {
-                            /* start DownloadWatchDog if wanted */
-                            DownloadWatchDog.getInstance().startDownloads();
-                        }
-
-                    }, true);
+                    /* start DownloadWatchDog if wanted */
+                    DownloadWatchDog.getInstance().startDownloads();
                 }
+                return null;
             }
-
-        }, true);
+        });
     }
 
     @Override

@@ -2,10 +2,11 @@ package jd.gui.swing.jdgui.views.settings.panels.proxy;
 
 import java.awt.event.ActionEvent;
 
-import jd.controlling.IOEQ;
+import jd.controlling.TaskQueue;
 import jd.controlling.proxy.ProxyController;
 import jd.gui.swing.dialog.ProxyDialog;
 
+import org.appwork.utils.event.queue.QueueAction;
 import org.appwork.utils.net.httpconnection.HTTPProxy;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogNoAnswerException;
@@ -33,10 +34,12 @@ public class ProxyAddAction extends AbstractAddAction {
         try {
             final HTTPProxy proxy = Dialog.getInstance().showDialog(proxyDialog);
             if (proxy == null) return;
-            IOEQ.add(new Runnable() {
+            TaskQueue.getQueue().add(new QueueAction<Void, RuntimeException>() {
 
-                public void run() {
+                @Override
+                protected Void run() throws RuntimeException {
                     ProxyController.getInstance().addProxy(proxy);
+                    return null;
                 }
             });
         } catch (final DialogNoAnswerException e1) {

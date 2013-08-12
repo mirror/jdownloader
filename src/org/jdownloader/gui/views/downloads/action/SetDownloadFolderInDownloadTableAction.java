@@ -6,6 +6,7 @@ import jd.controlling.downloadcontroller.DownloadController;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
+import org.appwork.utils.event.queue.Queue;
 import org.jdownloader.controlling.packagizer.PackagizerController;
 import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.components.packagetable.context.SetDownloadFolderAction;
@@ -41,6 +42,11 @@ public class SetDownloadFolderInDownloadTableAction extends SetDownloadFolderAct
     @Override
     protected void set(FilePackage pkg, String absolutePath) {
         pkg.setDownloadDirectory(PackagizerController.replaceDynamicTags(absolutePath, pkg.getName()));
+    }
+
+    @Override
+    protected Queue getQueue() {
+        return DownloadController.getInstance().getQueue();
     }
 
 }

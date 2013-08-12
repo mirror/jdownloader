@@ -1,10 +1,11 @@
 package org.jdownloader.gui.views.components.packagetable.context;
 
 import java.awt.event.ActionEvent;
+import java.util.List;
 
 import javax.swing.ImageIcon;
 
-import jd.controlling.IOEQ;
+import jd.controlling.TaskQueue;
 import jd.controlling.downloadcontroller.DownloadWatchDog;
 import jd.controlling.packagecontroller.AbstractPackageChildrenNode;
 import jd.controlling.packagecontroller.AbstractPackageNode;
@@ -14,7 +15,9 @@ import jd.plugins.download.DownloadInterface;
 
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.ImageProvider.ImageProvider;
+import org.appwork.utils.event.queue.QueueAction;
 import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.jdownloader.actions.SelectionAppAction;
 import org.jdownloader.gui.translate._GUI;
@@ -81,11 +84,11 @@ public class EnabledAction<PackageType extends AbstractPackageNode<ChildrenType,
 
     public void actionPerformed(ActionEvent e) {
         if (!isEnabled()) return;
-        IOEQ.add(new Runnable() {
+        TaskQueue.getQueue().add(new QueueAction<Void, RuntimeException>() {
 
-            public void run() {
-                boolean enable = state.equals(State.ALL_DISABLED);
-
+            @Override
+            protected Void run() throws RuntimeException {
+                final boolean enable = state.equals(State.ALL_DISABLED);
                 if (!enable) {
                     int count = 0;
                     if (DownloadWatchDog.getInstance().isRunning()) {
@@ -102,17 +105,37 @@ public class EnabledAction<PackageType extends AbstractPackageNode<ChildrenType,
                         }
                     }
                     if (count > 0) {
-                        if (!UIOManager.I().showConfirmDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI._.lit_are_you_sure(), _GUI._.EnableAction_run_msg_(SizeFormatter.formatBytes(DownloadWatchDog.getInstance().getNonResumableBytes()), count), NewTheme.I().getIcon("stop", 32), _GUI._.lit_yes(), _GUI._.lit_no())) {
+                        final int finalCount = count;
+                        new EDTRunner() {
 
-                        return; }
+                            @Override
+                            protected void runInEDT() {
+                                if (!UIOManager.I().showConfirmDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI._.lit_are_you_sure(), _GUI._.EnableAction_run_msg_(SizeFormatter.formatBytes(DownloadWatchDog.getInstance().getNonResumableBytes()), finalCount), NewTheme.I().getIcon("stop", 32), _GUI._.lit_yes(), _GUI._.lit_no())) { return; }
+                                setEnabled(enable, getSelection().getChildren());
+                            }
+                        };
+                        return null;
                     }
-
                 }
-                for (ChildrenType a : getSelection().getChildren()) {
-                    a.setEnabled(enable);
-                }
+                setEnabled(enable, getSelection().getChildren());
+                return null;
             }
-        }, true);
+        });
+    }
+
+    private void setEnabled(final boolean b, final List<ChildrenType> children) {
+        if (children != null && children.size() > 0) {
+            TaskQueue.getQueue().add(new QueueAction<Void, RuntimeException>() {
+
+                @Override
+                protected Void run() throws RuntimeException {
+                    for (ChildrenType a : children) {
+                        a.setEnabled(b);
+                    }
+                    return null;
+                }
+            });
+        }
     }
 
 }

@@ -25,13 +25,12 @@ public class LinkCollectorEventPublisher implements EventPublisher, LinkCollecto
         FILTERED_LINKS_EMPTY,
         FILTERED_LINKS_AVAILABLE,
         ABORT,
-        CONTENT_MODIFIED,
         DUPE_ADDED,
         CONTENT_REMOVED
     }
 
     public LinkCollectorEventPublisher() {
-        eventIDs = new String[] { EVENTID.CONTENT_REMOVED.name(), EVENTID.DUPE_ADDED.name(), EVENTID.CONTENT_MODIFIED.name(), EVENTID.ABORT.name(), EVENTID.CONTENT_ADDED.name(), EVENTID.LINK_ADDED.name(), EVENTID.STRUCTURE_REFRESH.name(), EVENTID.LIST_LOADED.name(), EVENTID.DATA_REFRESH.name(), EVENTID.FILTERED_LINKS_EMPTY.name(), EVENTID.FILTERED_LINKS_AVAILABLE.name() };
+        eventIDs = new String[] { EVENTID.CONTENT_REMOVED.name(), EVENTID.DUPE_ADDED.name(), EVENTID.ABORT.name(), EVENTID.CONTENT_ADDED.name(), EVENTID.LINK_ADDED.name(), EVENTID.STRUCTURE_REFRESH.name(), EVENTID.LIST_LOADED.name(), EVENTID.DATA_REFRESH.name(), EVENTID.FILTERED_LINKS_EMPTY.name(), EVENTID.FILTERED_LINKS_AVAILABLE.name() };
     }
 
     @Override
@@ -95,14 +94,6 @@ public class LinkCollectorEventPublisher implements EventPublisher, LinkCollecto
     @Override
     public void onLinkCollectorContentAdded(LinkCollectorEvent event) {
         SimpleEventObject eventObject = new SimpleEventObject(this, EVENTID.CONTENT_ADDED.name(), null);
-        for (EventsSender eventSender : eventSenders) {
-            eventSender.publishEvent(eventObject, null);
-        }
-    }
-
-    @Override
-    public void onLinkCollectorContentModified(LinkCollectorEvent event) {
-        SimpleEventObject eventObject = new SimpleEventObject(this, EVENTID.CONTENT_MODIFIED.name(), null);
         for (EventsSender eventSender : eventSenders) {
             eventSender.publishEvent(eventObject, null);
         }

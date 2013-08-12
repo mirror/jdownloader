@@ -5,10 +5,6 @@ import java.util.List;
 
 import javax.swing.JComponent;
 
-import jd.controlling.IOEQ;
-import jd.plugins.DownloadLink;
-import jd.plugins.FilePackage;
-
 import org.appwork.utils.swing.EDTRunner;
 import org.jdownloader.controlling.contextmenu.MenuContainer;
 import org.jdownloader.extensions.ExtensionNotLoadedException;
@@ -26,12 +22,9 @@ public class CleanupSubMenu extends MenuContainer {
 
         final JComponent ret = super.addTo(root, selection);
         ret.setEnabled(false);
-        IOEQ.add(new Runnable() {
-
-            @Override
+        Thread thread = new Thread() {
             public void run() {
-
-                List<Archive> archives = ArchiveValidator.validate((SelectionInfo<FilePackage, DownloadLink>) selection).getArchives();
+                List<Archive> archives = ArchiveValidator.validate((SelectionInfo<?, ?>) selection).getArchives();
                 if (archives != null && archives.size() > 0) {
                     new EDTRunner() {
 
@@ -41,10 +34,11 @@ public class CleanupSubMenu extends MenuContainer {
                         }
                     };
                 }
-
-            }
-
-        });
+            };
+        };
+        thread.setDaemon(true);
+        thread.setName("SetEnabled: " + getClass().getName());
+        thread.start();
         return ret;
     }
 

@@ -10,10 +10,6 @@ public class FileCreationEvent extends SimpleEvent<Object, Object, FileCreationE
         /**
          * Parameter[0] File[]
          */
-        REMOVE_FILES,
-        /**
-         * Parameter[0] File[]
-         */
         NEW_FILES,
         /**
          * Parameter[0] File

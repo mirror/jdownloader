@@ -3,12 +3,14 @@ package org.jdownloader.extensions.extraction.gui.config;
 import java.awt.event.ActionEvent;
 import java.io.File;
 import java.util.ArrayList;
+import java.util.List;
 
 import javax.swing.JMenu;
 import javax.swing.JPopupMenu;
 import javax.swing.JSeparator;
 import javax.swing.text.BadLocationException;
 
+import jd.controlling.TaskQueue;
 import jd.gui.swing.jdgui.views.settings.components.Checkbox;
 import jd.gui.swing.jdgui.views.settings.components.ComboBox;
 import jd.gui.swing.jdgui.views.settings.components.FolderChooser;
@@ -23,6 +25,8 @@ import org.appwork.app.gui.copycutpaste.PasteAction;
 import org.appwork.app.gui.copycutpaste.SelectAction;
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.event.queue.Queue;
+import org.appwork.utils.event.queue.QueueAction;
 import org.appwork.utils.logging.Log;
 import org.appwork.utils.swing.EDTRunner;
 import org.jdownloader.actions.AppAction;
@@ -206,48 +210,61 @@ public class ExtractionConfigPanel extends ExtensionConfigPanel<ExtractionExtens
 
     @Override
     public void updateContents() {
-        final ExtractionConfig s = extension.getSettings();
-        new EDTRunner() {
+        TaskQueue.getQueue().add(new QueueAction<Void, RuntimeException>(Queue.QueuePriority.HIGH) {
+
             @Override
-            protected void runInEDT() {
-                toggleDefaultEnabled.getComponent().setSelected(CFG_LINKGRABBER.AUTO_EXTRACTION_ENABLED.getValue());
-                toggleCustomizedPath.getComponent().setSelected(s.isCustomExtractionPathEnabled());
+            protected Void run() throws RuntimeException {
+                final ExtractionConfig s = extension.getSettings();
                 String path = s.getCustomExtractionPath();
                 if (path == null) path = new File(org.appwork.storage.config.JsonConfig.create(GeneralSettings.class).getDefaultDownloadFolder(), "extracted").getAbsolutePath();
-                customPath.getComponent().setText(path);
-                toggleDeleteArchives.getComponent().setSelected(s.isDeleteArchiveFilesAfterExtraction());
-                toggleDeleteArchiveDownloadLinks.getComponent().setSelected(s.isDeleteArchiveDownloadlinksAfterExtraction());
-                toggleOverwriteExisting.getComponent().setSelected(s.isOverwriteExistingFilesEnabled());
-                toggleUseSubpath.getComponent().setSelected(s.isSubpathEnabled());
-                subPath.getComponent().setText(s.getSubPath());
-                subPathMinFiles.getComponent().setValue(s.getSubPathFilesTreshhold());
-                toggleUseSubpathOnlyIfNotFoldered.getComponent().setSelected(s.isSubpathEnabledIfAllFilesAreInAFolder());
-
-                StringBuilder sb = new StringBuilder();
-                for (String line : s.getBlacklistPatterns()) {
-                    if (sb.length() > 0) sb.append(System.getProperty("line.separator"));
-                    sb.append(line);
-                }
-                blacklist.getComponent().setText(sb.toString());
-                sb = new StringBuilder();
-                java.util.List<String> pwList = s.getPasswordList();
+                final String finalPath = path;
+                final String[] blackListPatterns = s.getBlacklistPatterns();
+                List<String> pwList = s.getPasswordList();
                 if (pwList == null) pwList = new ArrayList<String>();
-                for (String line : pwList) {
-                    if (sb.length() > 0) sb.append(System.getProperty("line.separator"));
-                    sb.append(line);
-                }
-                passwordlist.getComponent().setText(sb.toString());
-                if (s.getCPUPriority() == CPUPriority.HIGH) {
-                    cpupriority.getComponent().setValue(T._.settings_cpupriority_high());
-                } else if (s.getCPUPriority() == CPUPriority.MIDDLE) {
-                    cpupriority.getComponent().setValue(T._.settings_cpupriority_middle());
-                } else {
-                    cpupriority.getComponent().setValue(T._.settings_cpupriority_low());
-                }
+                final List<String> finalpwList = pwList;
+                new EDTRunner() {
+                    @Override
+                    protected void runInEDT() {
+                        toggleDefaultEnabled.getComponent().setSelected(CFG_LINKGRABBER.AUTO_EXTRACTION_ENABLED.getValue());
+                        toggleCustomizedPath.getComponent().setSelected(s.isCustomExtractionPathEnabled());
+                        customPath.getComponent().setText(finalPath);
+                        toggleDeleteArchives.getComponent().setSelected(s.isDeleteArchiveFilesAfterExtraction());
+                        toggleDeleteArchiveDownloadLinks.getComponent().setSelected(s.isDeleteArchiveDownloadlinksAfterExtraction());
+                        toggleOverwriteExisting.getComponent().setSelected(s.isOverwriteExistingFilesEnabled());
+                        toggleUseSubpath.getComponent().setSelected(s.isSubpathEnabled());
+                        subPath.getComponent().setText(s.getSubPath());
+                        subPathMinFiles.getComponent().setValue(s.getSubPathFilesTreshhold());
+                        toggleUseSubpathOnlyIfNotFoldered.getComponent().setSelected(s.isSubpathEnabledIfAllFilesAreInAFolder());
 
-                toggleUseOriginalFileDate.getComponent().setSelected(s.isUseOriginalFileDate());
+                        StringBuilder sb = new StringBuilder();
+                        if (blackListPatterns != null) {
+                            for (String line : blackListPatterns) {
+                                if (sb.length() > 0) sb.append(System.getProperty("line.separator"));
+                                sb.append(line);
+                            }
+                        }
+                        blacklist.getComponent().setText(sb.toString());
+                        sb = new StringBuilder();
+                        if (finalpwList != null) {
+                            for (String line : finalpwList) {
+                                if (sb.length() > 0) sb.append(System.getProperty("line.separator"));
+                                sb.append(line);
+                            }
+                        }
+                        passwordlist.getComponent().setText(sb.toString());
+                        if (s.getCPUPriority() == CPUPriority.HIGH) {
+                            cpupriority.getComponent().setValue(T._.settings_cpupriority_high());
+                        } else if (s.getCPUPriority() == CPUPriority.MIDDLE) {
+                            cpupriority.getComponent().setValue(T._.settings_cpupriority_middle());
+                        } else {
+                            cpupriority.getComponent().setValue(T._.settings_cpupriority_low());
+                        }
+                        toggleUseOriginalFileDate.getComponent().setSelected(s.isUseOriginalFileDate());
+                    }
+                };
+                return null;
             }
-        };
+        });
     }
 
     private void updateHeaders(boolean b) {

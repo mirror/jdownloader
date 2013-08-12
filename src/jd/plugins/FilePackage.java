@@ -56,6 +56,7 @@ public class FilePackage extends Property implements Serializable, AbstractPacka
 
     static {
         FP = new FilePackage() {
+
             private static final long serialVersionUID = 1L;
 
             @Override
@@ -70,10 +71,6 @@ public class FilePackage extends Property implements Serializable, AbstractPacka
             public void setControlledBy(PackageController<FilePackage, DownloadLink> controller) {
             }
 
-            @Override
-            public UniqueAlltimeID getUniqueID() {
-                return null;
-            }
         };
         FP.setName(_JDT._.controller_packages_defaultname());
         FP.downloadLinkList = new ArrayList<DownloadLink>() {
@@ -110,6 +107,10 @@ public class FilePackage extends Property implements Serializable, AbstractPacka
             @Override
             public boolean addAll(int index, Collection<? extends DownloadLink> c) {
                 return false;
+            }
+
+            public ArrayList<DownloadLink> getDownloadLinkList() {
+                return new ArrayList<DownloadLink>();
             }
 
         };
@@ -192,7 +193,6 @@ public class FilePackage extends Property implements Serializable, AbstractPacka
         /* till refactoring is complete */
         this.downloadLinkList = new ArrayList<DownloadLink>();
         setName(null);
-
     }
 
     /**
@@ -203,7 +203,7 @@ public class FilePackage extends Property implements Serializable, AbstractPacka
      * @throws ClassNotFoundException
      */
     private void readObject(ObjectInputStream stream) throws IOException, ClassNotFoundException {
-        /* deserialize object and then fill other stuff(transient..) */
+        /* deserialize object and and set all transient variables */
         stream.defaultReadObject();
         try {
             isExpanded = getBooleanProperty(PROPERTY_EXPANDED, false);
@@ -363,7 +363,7 @@ public class FilePackage extends Property implements Serializable, AbstractPacka
         String lFolder = getDownloadDirectory();
         if (lFolder != null && lFolder.equals(folder)) return;
         downloadDirectory = folder;
-        nodeUpdated(this, AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, new FilePackageProperty(this, FilePackageProperty.Property.FOLDER, getDownloadDirectory()));
+        if (hasNotificationListener()) nodeUpdated(this, AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, new FilePackageProperty(this, FilePackageProperty.Property.FOLDER, getDownloadDirectory()));
     }
 
     /**
@@ -378,7 +378,7 @@ public class FilePackage extends Property implements Serializable, AbstractPacka
         }
         if (lName != null && lName.equals(name)) return;
         this.name = name.trim();
-        nodeUpdated(this, AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, new FilePackageProperty(this, FilePackageProperty.Property.NAME, getName()));
+        if (hasNotificationListener()) nodeUpdated(this, AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, new FilePackageProperty(this, FilePackageProperty.Property.NAME, getName()));
     }
 
     /**
@@ -488,6 +488,13 @@ public class FilePackage extends Property implements Serializable, AbstractPacka
         AbstractNode lsource = source;
         if (lsource == null) lsource = this;
         n.nodeUpdated(lsource, notify, param);
+    }
+
+    @Override
+    public boolean hasNotificationListener() {
+        PackageController<FilePackage, DownloadLink> n = getControlledBy();
+        if (n != null && n.hasNotificationListener()) return true;
+        return false;
     }
 
     @Override

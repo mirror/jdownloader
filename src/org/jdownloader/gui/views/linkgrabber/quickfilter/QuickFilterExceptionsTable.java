@@ -38,24 +38,10 @@ public class QuickFilterExceptionsTable extends FilterTable {
      * 
      */
     private static final long           serialVersionUID = 658947589171018284L;
-    private HashMap<FilterRule, Filter> filterMap;
+    private HashMap<FilterRule, Filter> filterMap        = new HashMap<FilterRule, Filter>(); ;
 
     public QuickFilterExceptionsTable(CustomFilterHeader exceptions, LinkGrabberTable table) {
         super(exceptions, table, org.jdownloader.settings.staticreferences.CFG_LINKFILTER.LINKGRABBER_EXCEPTIONS_QUICKFILTER_ENABLED);
-
-    }
-
-    protected void updateFilters() {
-        filterMap = new HashMap<FilterRule, Filter>();
-        java.util.List<LinkgrabberFilterRuleWrapper> fileFilter = LinkFilterController.getInstance().getAcceptFileFilter();
-        java.util.List<LinkgrabberFilterRuleWrapper> urlFilter = LinkFilterController.getInstance().getAcceptUrlFilter();
-
-        setup(fileFilter);
-        setup(urlFilter);
-
-    }
-
-    protected void init() {
         SecondLevelLaunch.INIT_COMPLETE.executeWhenReached(new Runnable() {
 
             @Override
@@ -70,6 +56,16 @@ public class QuickFilterExceptionsTable extends FilterTable {
                 updateFilters();
             }
         });
+    }
+
+    protected void updateFilters() {
+        filterMap = new HashMap<FilterRule, Filter>();
+        java.util.List<LinkgrabberFilterRuleWrapper> fileFilter = LinkFilterController.getInstance().getAcceptFileFilter();
+        java.util.List<LinkgrabberFilterRuleWrapper> urlFilter = LinkFilterController.getInstance().getAcceptUrlFilter();
+
+        setup(fileFilter);
+        setup(urlFilter);
+
     }
 
     protected java.util.List<Filter> updateQuickFilerTableData() {

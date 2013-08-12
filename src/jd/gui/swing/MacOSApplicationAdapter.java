@@ -18,11 +18,12 @@ package jd.gui.swing;
 
 import java.awt.Image;
 import java.io.File;
+import java.util.HashMap;
 
 import javax.swing.JFrame;
 
 import jd.SecondLevelLaunch;
-import jd.controlling.IOEQ;
+import jd.controlling.TaskQueue;
 import jd.controlling.downloadcontroller.DownloadController;
 import jd.controlling.downloadcontroller.DownloadWatchDog;
 import jd.controlling.downloadcontroller.event.DownloadWatchdogListener;
@@ -41,6 +42,7 @@ import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.events.GenericConfigEventListener;
 import org.appwork.storage.config.handler.EnumKeyHandler;
 import org.appwork.storage.config.handler.KeyHandler;
+import org.appwork.utils.event.queue.QueueAction;
 import org.appwork.utils.swing.EDTHelper;
 import org.appwork.utils.swing.WindowManager;
 import org.appwork.utils.swing.WindowManager.FrameState;
@@ -108,11 +110,12 @@ public class MacOSApplicationAdapter implements QuitHandler, AboutHandler, Prefe
 
             @Override
             public void run() {
-                IOEQ.add(new Runnable() {
+                TaskQueue.getQueue().add(new QueueAction<Void, RuntimeException>() {
 
                     @Override
-                    public void run() {
+                    protected Void run() throws RuntimeException {
                         com.apple.eawt.Application.getApplication().setDockIconImage(NewTheme.I().getImage("logo/jd_logo_128_128", 128));
+                        return null;
                     }
                 });
                 EnumKeyHandler MacDOCKProgressDisplay = JsonConfig.create(GraphicalUserInterfaceSettings.class)._getStorageHandler().getKeyHandler("MacDockProgressDisplay", EnumKeyHandler.class);
@@ -179,13 +182,13 @@ public class MacOSApplicationAdapter implements QuitHandler, AboutHandler, Prefe
                 @Override
                 public void run() {
                     int lastPercent = -1;
+                    HashMap<Integer, Image> imageCache = new HashMap<Integer, Image>();
                     try {
                         while (Thread.currentThread() == dockUpdater) {
                             try {
                                 try {
                                     Thread.sleep(5000);
                                 } catch (InterruptedException e) {
-                                    LogController.GL.log(e);
                                     break;
                                 }
                                 final AggregatedNumbers aggn = new AggregatedNumbers(new SelectionInfo<FilePackage, DownloadLink>(null, DownloadController.getInstance().getAllChildren(), null, null, null, null));
@@ -196,19 +199,25 @@ public class MacOSApplicationAdapter implements QuitHandler, AboutHandler, Prefe
                                 final int finalpercent = percent;
                                 if (lastPercent == finalpercent) continue;
                                 lastPercent = finalpercent;
-                                final Image image = new EDTHelper<Image>() {
+                                Image image = imageCache.get(finalpercent);
+                                if (image == null) {
+                                    image = new EDTHelper<Image>() {
+
+                                        @Override
+                                        public Image edtRun() {
+                                            return new IconBadgePainter(NewTheme.I().getImage("logo/jd_logo_128_128", 128)).getImage(finalpercent, finalpercent + "");
+                                        }
+
+                                    }.getReturnValue();
+                                    imageCache.put(finalpercent, image);
+                                }
+                                final Image finalImage = image;
+                                TaskQueue.getQueue().add(new QueueAction<Void, RuntimeException>() {
 
                                     @Override
-                                    public Image edtRun() {
-                                        return new IconBadgePainter(NewTheme.I().getImage("logo/jd_logo_128_128", 128)).getImage(finalpercent, finalpercent + "");
-                                    }
-
-                                }.getReturnValue();
-                                IOEQ.add(new Runnable() {
-
-                                    @Override
-                                    public void run() {
-                                        com.apple.eawt.Application.getApplication().setDockIconImage(image);
+                                    protected Void run() throws RuntimeException {
+                                        com.apple.eawt.Application.getApplication().setDockIconImage(finalImage);
+                                        return null;
                                     }
                                 });
                             } catch (final Throwable e) {
@@ -217,10 +226,12 @@ public class MacOSApplicationAdapter implements QuitHandler, AboutHandler, Prefe
                         }
                     } finally {
                         /* restore default Icon */
-                        IOEQ.add(new Runnable() {
+                        TaskQueue.getQueue().add(new QueueAction<Void, RuntimeException>() {
+
                             @Override
-                            public void run() {
+                            protected Void run() throws RuntimeException {
                                 com.apple.eawt.Application.getApplication().setDockIconImage(NewTheme.I().getImage("logo/jd_logo_128_128", 128));
+                                return null;
                             }
                         });
                         /* release reference if this thread is current dockUpdater */

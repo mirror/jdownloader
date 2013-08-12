@@ -2,6 +2,7 @@ package jd.gui.swing.jdgui.views.settings.panels.reconnect;
 
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
@@ -9,7 +10,6 @@ import javax.swing.JButton;
 import javax.swing.JLabel;
 import javax.swing.SwingConstants;
 
-import jd.controlling.IOEQ;
 import jd.controlling.reconnect.ReconnectConfig;
 import jd.controlling.reconnect.Reconnecter;
 import jd.controlling.reconnect.ipcheck.IP;
@@ -18,6 +18,7 @@ import jd.gui.swing.jdgui.views.settings.components.SettingsComponent;
 import jd.gui.swing.jdgui.views.settings.components.StateUpdateListener;
 import jd.nutils.Formatter;
 
+import org.appwork.scheduler.DelayedRunnable;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.swing.MigPanel;
 import org.appwork.utils.logging.Log;
@@ -126,7 +127,8 @@ public class ReconnectTester extends MigPanel implements SettingsComponent, Acti
         this.lblBeforeIpLabel.setEnabled(true);
         this.lblCurrentIP.setText("?");
         final long timel = System.currentTimeMillis();
-        final ScheduledFuture<?> timer = IOEQ.TIMINGQUEUE.scheduleAtFixedRate(new Runnable() {
+        final ScheduledExecutorService scheduler = DelayedRunnable.getNewScheduledExecutorService();
+        final ScheduledFuture<?> timer = scheduler.scheduleAtFixedRate(new Runnable() {
 
             public void run() {
                 new EDTRunner() {
@@ -190,6 +192,7 @@ public class ReconnectTester extends MigPanel implements SettingsComponent, Acti
                     config.setMaxReconnectRetryNum(retries);
                 } finally {
                     timer.cancel(true);
+                    scheduler.shutdown();
                     new EDTRunner() {
 
                         @Override

@@ -2,7 +2,6 @@ package org.jdownloader.gui.views.downloads.action;
 
 import java.awt.event.ActionEvent;
 
-import jd.controlling.IOEQ;
 import jd.controlling.downloadcontroller.DownloadWatchDog;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
@@ -27,16 +26,7 @@ public class ResumeAction extends SelectionAppAction<FilePackage, DownloadLink> 
     }
 
     public void actionPerformed(ActionEvent e) {
-        IOEQ.add(new Runnable() {
-            public void run() {
-                for (DownloadLink link : getSelection().getChildren()) {
-                    if (!link.getLinkStatus().isPluginActive() && (link.getLinkStatus().isFailed() || link.isSkipped())) {
-                        link.getLinkStatus().reset(true);
-                        DownloadWatchDog.getInstance().removeIPBlockTimeout(link);
-                        DownloadWatchDog.getInstance().removeTempUnavailTimeout(link);
-                    }
-                }
-            }
-        });
+        if (!isEnabled()) return;
+        DownloadWatchDog.getInstance().resume(getSelection().getChildren());
     }
 }

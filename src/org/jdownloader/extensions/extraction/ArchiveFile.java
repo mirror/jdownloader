@@ -18,7 +18,7 @@ public interface ArchiveFile {
      */
     public boolean isValid();
 
-    public boolean deleteFile();
+    public void deleteFile();
 
     public void deleteLink();
 

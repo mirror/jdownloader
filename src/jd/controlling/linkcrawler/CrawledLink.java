@@ -9,7 +9,6 @@ import jd.controlling.linkcollector.LinkCollectingJob;
 import jd.controlling.packagecontroller.AbstractNode;
 import jd.controlling.packagecontroller.AbstractNodeNotifier;
 import jd.controlling.packagecontroller.AbstractPackageChildrenNode;
-import jd.http.Browser;
 import jd.plugins.Account;
 import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
@@ -93,12 +92,11 @@ public class CrawledLink implements AbstractPackageChildrenNode<CrawledPackage>,
     }
 
     /**
-     * Linkid should be unique for a certain link. in most cases, this is the url itself, but somtimes (youtube e.g.) the id contains info
-     * about how to prozess the file afterwards.
+     * Linkid should be unique for a certain link. in most cases, this is the url itself, but somtimes (youtube e.g.) the id contains info about how to prozess
+     * the file afterwards.
      * 
      * example:<br>
-     * 2 youtube links may have the same url, but the one will be converted into mp3, and the other stays flv. url is the same, but linkID
-     * different.
+     * 2 youtube links may have the same url, but the one will be converted into mp3, and the other stays flv. url is the same, but linkID different.
      * 
      * @return
      */
@@ -165,13 +163,14 @@ public class CrawledLink implements AbstractPackageChildrenNode<CrawledPackage>,
         return cLink;
     }
 
-    private CryptedLink          cLink      = null;
+    private CryptedLink          cLink          = null;
     private String               url;
-    private CrawledLink          sourceLink = null;
-    private String               name       = null;
+    private CrawledLink          sourceLink     = null;
+    private String               name           = null;
     private FilterRule           matchingFilter;
 
     private volatile ArchiveInfo archiveInfo;
+    private UniqueAlltimeID      previousParent = null; ;
 
     public CrawledLink(DownloadLink dlLink) {
         this.dlLink = dlLink;
@@ -228,7 +227,7 @@ public class CrawledLink implements AbstractPackageChildrenNode<CrawledPackage>,
         } else {
             this.name = name;
         }
-        nodeUpdated(this, AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, new CrawledLinkProperty(this, CrawledLinkProperty.Property.NAME, getName()));
+        if (hasNotificationListener()) nodeUpdated(this, AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, new CrawledLinkProperty(this, CrawledLinkProperty.Property.NAME, getName()));
     }
 
     /* returns unmodified name variable */
@@ -276,7 +275,11 @@ public class CrawledLink implements AbstractPackageChildrenNode<CrawledPackage>,
         return parent;
     }
 
-    public void setParentNode(CrawledPackage parent) {
+    public synchronized void setParentNode(CrawledPackage parent) {
+        if (this.parent == parent) return;
+        if (this.parent != null) {
+            this.previousParent = this.parent.getUniqueID();
+        }
         this.parent = parent;
     }
 
@@ -293,7 +296,7 @@ public class CrawledLink implements AbstractPackageChildrenNode<CrawledPackage>,
     public void setEnabled(boolean b) {
         if (b == enabledState) return;
         enabledState = b;
-        nodeUpdated(this, AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, new CrawledLinkProperty(this, CrawledLinkProperty.Property.ENABLED, b));
+        if (hasNotificationListener()) nodeUpdated(this, AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, new CrawledLinkProperty(this, CrawledLinkProperty.Property.ENABLED, b));
     }
 
     public long getCreated() {
@@ -385,7 +388,7 @@ public class CrawledLink implements AbstractPackageChildrenNode<CrawledPackage>,
 
     public DomainInfo getDomainInfo() {
         if (dlLink != null) { return dlLink.getDomainInfo(); }
-        return DomainInfo.getInstance(Browser.getHost(getURL(), false));
+        return null;
     }
 
     public CrawledLinkModifier getCustomCrawledLinkModifier() {
@@ -481,6 +484,18 @@ public class CrawledLink implements AbstractPackageChildrenNode<CrawledPackage>,
         }
         if (lsource == null) lsource = this;
         lparent.nodeUpdated(lsource, notify, param);
+    }
+
+    @Override
+    public boolean hasNotificationListener() {
+        CrawledPackage lparent = parent;
+        if (lparent != null && lparent.hasNotificationListener()) return true;
+        return false;
+    }
+
+    @Override
+    public UniqueAlltimeID getPreviousParentNodeID() {
+        return previousParent;
     }
 
     public String getArchiveID() {

@@ -2,7 +2,6 @@ package org.jdownloader.gui.views.linkgrabber.contextmenu;
 
 import java.awt.event.ActionEvent;
 
-import jd.controlling.IOEQ;
 import jd.controlling.linkcollector.LinkCollector;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledPackage;
@@ -10,6 +9,7 @@ import jd.controlling.linkcrawler.CrawledPackage.TYPE;
 import jd.plugins.DownloadLink.AvailableStatus;
 
 import org.appwork.uio.UIOManager;
+import org.appwork.utils.event.queue.QueueAction;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogNoAnswerException;
 import org.jdownloader.actions.SelectionAppAction;
@@ -48,14 +48,14 @@ public class RemoveSelectionLinkgrabberAction extends SelectionAppAction<Crawled
             if (containsOnline) {
                 Dialog.getInstance().showConfirmDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN | UIOManager.LOGIC_DONT_SHOW_AGAIN_IGNORES_CANCEL, _GUI._.literally_are_you_sure(), _GUI._.ClearAction_actionPerformed_selected_msg(), null, _GUI._.literally_yes(), _GUI._.literall_no());
             }
-            IOEQ.add(new Runnable() {
-
-                public void run() {
-
+            LinkCollector.getInstance().getQueue().add(new QueueAction<Void, RuntimeException>() {
+                @Override
+                protected Void run() throws RuntimeException {
                     LinkCollector.getInstance().removeChildren(getSelection().getChildren());
-                }
 
-            }, true);
+                    return null;
+                }
+            });
         } catch (DialogNoAnswerException e1) {
         }
     }

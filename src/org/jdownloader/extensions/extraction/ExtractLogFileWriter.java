@@ -53,7 +53,6 @@ public class ExtractLogFileWriter {
 
     public void close() {
         try {
-
             output.close();
             File newFile;
             newFile = Archive.getArchiveLogFileById(id);
@@ -61,7 +60,6 @@ public class ExtractLogFileWriter {
             file.renameTo(newFile);
             file = newFile;
         } catch (Exception e) {
-
         }
     }
 

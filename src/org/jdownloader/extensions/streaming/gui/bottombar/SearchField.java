@@ -24,8 +24,6 @@ import javax.swing.JPopupMenu;
 import javax.swing.JRootPane;
 import javax.swing.border.Border;
 
-import jd.controlling.IOEQ;
-
 import org.appwork.scheduler.DelayedRunnable;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.swing.components.ExtTextField;
@@ -64,7 +62,11 @@ public abstract class SearchField<SearchCat extends SearchCatInterface> extends 
         setHelpText(_GUI._.SearchField_SearchField_helptext());
         setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
         popIcon = NewTheme.I().getImage("popupButton", -1);
-        delayedFilter = new DelayedRunnable(IOEQ.TIMINGQUEUE, 150l, 2000l) {
+        delayedFilter = new DelayedRunnable(150l, 2000l) {
+            @Override
+            public String getID() {
+                return "SearchFieldStreaming";
+            }
 
             @Override
             public void delayedrun() {

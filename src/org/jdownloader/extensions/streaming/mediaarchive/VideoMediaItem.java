@@ -130,7 +130,7 @@ public class VideoMediaItem extends MediaItem {
     private static final LogSource LOGGER = LogController.getInstance().getLogger(AudioStream.class.getName());
 
     public String toString() {
-        return getContainerFormat() + " SysBitRate: " + getSystemBitrate() + " Duration: " + getDuration() + "\r\n " + JSonStorage.toString(getVideoStreams()) + "\r\n" + JSonStorage.toString(getAudioStreams());
+        return getContainerFormat() + " SysBitRate: " + getSystemBitrate() + " Duration: " + getDuration() + "\r\n " + JSonStorage.serializeToJson(getVideoStreams()) + "\r\n" + JSonStorage.toString(getAudioStreams());
     }
 
     private Class<? extends AbstractAudioVideoContainer> mapDlnaContainer() {

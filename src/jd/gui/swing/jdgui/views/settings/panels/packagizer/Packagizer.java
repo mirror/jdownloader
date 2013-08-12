@@ -18,9 +18,10 @@ package jd.gui.swing.jdgui.views.settings.panels.packagizer;
 
 import javax.swing.ImageIcon;
 
-import jd.controlling.IOEQ;
+import jd.controlling.TaskQueue;
 import jd.gui.swing.jdgui.views.settings.sidebar.CheckBoxedEntry;
 
+import org.appwork.utils.event.queue.QueueAction;
 import org.jdownloader.controlling.packagizer.PackagizerController;
 import org.jdownloader.extensions.Header;
 import org.jdownloader.extensions.StartException;
@@ -60,15 +61,15 @@ public class Packagizer extends AbstractConfigPanel implements CheckBoxedEntry {
 
     @Override
     public void updateContents() {
+        TaskQueue.getQueue().add(new QueueAction<Void, RuntimeException>() {
 
-        IOEQ.add(new Runnable() {
-
-            public void run() {
+            @Override
+            protected Void run() throws RuntimeException {
                 packagizer.getTable().getModel()._fireTableStructureChanged(PackagizerController.getInstance().list(), false);
+                return null;
             }
 
-        }, true);
-
+        });
     }
 
     public String getName() {

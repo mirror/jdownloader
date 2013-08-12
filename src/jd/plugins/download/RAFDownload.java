@@ -30,4 +30,8 @@ public class RAFDownload extends OldRAFDownload {
     public RAFDownload(PluginForHost plugin, DownloadLink downloadLink, Request request) throws IOException, PluginException {
         super(plugin, downloadLink, request);
     }
+
+    @Deprecated
+    public void addChunksDownloading(int i) {
+    }
 }

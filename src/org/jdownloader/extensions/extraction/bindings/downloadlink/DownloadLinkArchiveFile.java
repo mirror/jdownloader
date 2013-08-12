@@ -6,13 +6,13 @@ import java.util.ArrayList;
 import java.util.List;
 
 import jd.controlling.downloadcontroller.DownloadController;
+import jd.controlling.downloadcontroller.DownloadWatchDog;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginProgress;
 
-import org.jdownloader.controlling.FileCreationManager;
 import org.jdownloader.extensions.extraction.Archive;
 import org.jdownloader.extensions.extraction.ArchiveFile;
 import org.jdownloader.extensions.extraction.ExtractionController;
@@ -88,13 +88,8 @@ public class DownloadLinkArchiveFile implements ArchiveFile {
         return false;
     }
 
-    public boolean deleteFile() {
-        boolean ret = false;
-        for (DownloadLink l : downloadLinks) {
-            ret = ret || FileCreationManager.getInstance().delete(new File(l.getFileOutput()));
-
-        }
-        return ret;
+    public void deleteFile() {
+        DownloadWatchDog.getInstance().delete(downloadLinks, null);
     }
 
     public boolean exists() {
@@ -126,7 +121,6 @@ public class DownloadLinkArchiveFile implements ArchiveFile {
 
                 break;
             case ERROR_NOT_ENOUGH_SPACE:
-
                 downloadLink.getLinkStatus().setStatus(LinkStatus.ERROR_POST_PROCESS);
                 downloadLink.getLinkStatus().setErrorMessage(T._.plugins_optional_extraction_status_notenoughspace());
                 // link.setMessage(T._.plugins_optional_extraction_status_notenoughspace());

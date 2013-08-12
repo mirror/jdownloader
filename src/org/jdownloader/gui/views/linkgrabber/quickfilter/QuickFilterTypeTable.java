@@ -3,6 +3,7 @@ package org.jdownloader.gui.views.linkgrabber.quickfilter;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 import jd.SecondLevelLaunch;
 import jd.controlling.linkcollector.LinkCollector;
@@ -21,12 +22,12 @@ import org.jdownloader.images.NewTheme;
 import org.jdownloader.translate._JDT;
 
 public class QuickFilterTypeTable extends FilterTable {
-    private static final long      serialVersionUID = 2109715691047942399L;
-    private java.util.List<Filter> allFilters;
+    private static final long            serialVersionUID = 2109715691047942399L;
+    private CopyOnWriteArrayList<Filter> allFilters       = new CopyOnWriteArrayList<Filter>();
 
     public QuickFilterTypeTable(Header filetypeFilter, LinkGrabberTable table2Filter) {
         super(filetypeFilter, table2Filter, org.jdownloader.settings.staticreferences.CFG_LINKFILTER.LINKGRABBER_FILETYPE_QUICKFILTER_ENABLED);
-
+        init();
     }
 
     protected java.util.List<Filter> updateQuickFilerTableData() {
@@ -92,9 +93,7 @@ public class QuickFilterTypeTable extends FilterTable {
         SecondLevelLaunch.INIT_COMPLETE.executeWhenReached(new Runnable() {
             public void run() {
                 final ArrayList<ExtensionFilter> knownExtensionFilters = new ArrayList<ExtensionFilter>();
-                ExtensionFilter filter;
-                allFilters = new ArrayList<Filter>();
-                allFilters.add(filter = new ExtensionFilter(AudioExtensions.AA) {
+                ExtensionFilter filter = new ExtensionFilter(AudioExtensions.AA) {
                     protected String getID() {
                         return "Type_Audio";
                     }
@@ -110,7 +109,8 @@ public class QuickFilterTypeTable extends FilterTable {
                         updateAllFiltersInstant();
                     }
 
-                });
+                };
+                allFilters.add(filter);
                 knownExtensionFilters.add(filter);
                 allFilters.add(filter = new ExtensionFilter(VideoExtensions.ASF) {
                     protected String getID() {

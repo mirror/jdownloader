@@ -1,6 +1,5 @@
 package org.jdownloader.settings.staticreferences;
 
-import org.appwork.storage.config.ConfigUtils;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.storage.config.handler.BooleanKeyHandler;
 import org.appwork.storage.config.handler.EnumKeyHandler;
@@ -11,9 +10,6 @@ import org.appwork.storage.config.handler.StringKeyHandler;
 import org.jdownloader.api.myjdownloader.MyJDownloaderSettings;
 
 public class CFG_MYJD {
-    public static void main(String[] args) {
-        ConfigUtils.printStaticMappings(MyJDownloaderSettings.class);
-    }
 
     // Static Mappings for interface org.jdownloader.api.myjdownloader.MyJDownloaderSettings
     public static final MyJDownloaderSettings                 CFG                  = JsonConfig.create(MyJDownloaderSettings.class);

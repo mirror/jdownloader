@@ -211,7 +211,7 @@ public class ProgressColumn extends ExtProgressColumn<AbstractNode> {
                 return (progress.getTotal());
             } else if (dLink.getLinkStatus().isFinished()) {
                 return 100;
-            } else if (block != null && !dLink.getLinkStatus().isPluginActive() && !dLink.isSkipped() && dLink.isEnabled()) {
+            } else if (block != null && dLink.getDownloadLinkController() == null && !dLink.isSkipped() && dLink.isEnabled()) {
                 return block.getBlockedUntil();
             } else if (dLink.getDownloadCurrent() > 0 || dLink.getDownloadSize() > 0) { return (dLink.getDownloadSize());
 
@@ -250,7 +250,7 @@ public class ProgressColumn extends ExtProgressColumn<AbstractNode> {
                 return (progress.getCurrent());
             } else if (dLink.getLinkStatus().isFinished()) {
                 return 100;
-            } else if (block != null && !dLink.getLinkStatus().isPluginActive() && !dLink.isSkipped() && dLink.isEnabled()) {
+            } else if (block != null && dLink.getDownloadLinkController() == null && !dLink.isSkipped() && dLink.isEnabled()) {
                 return block.getBlockedTimeout();
             } else if (dLink.getDownloadCurrent() > 0 || dLink.getDownloadSize() > 0) { return (dLink.getDownloadCurrent()); }
         }

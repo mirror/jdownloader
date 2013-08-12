@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import jd.controlling.downloadcontroller.DownloadController;
+import jd.controlling.downloadcontroller.DownloadWatchDog;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
@@ -50,7 +51,7 @@ public class DownloadLinkApi implements IDownloadLinkApi {
                     for (DownloadLink link : fpkg.getChildren()) {
                         links.add(new DownloadLinkStorable(link));
                     }
-                    String returnValue = JSonStorage.toString(links);
+                    String returnValue = JSonStorage.serializeToJson(links);
                     try {
                         return Helper.compress(returnValue);
                     } catch (IOException e) {
@@ -82,9 +83,7 @@ public class DownloadLinkApi implements IDownloadLinkApi {
     public boolean reset(final List<Long> linkIds) {
         List<DownloadLink> list = Helper.getFilteredDownloadLinks(linkIds);
         if (list != null && !list.isEmpty()) {
-            for (DownloadLink dl : list) {
-                dl.reset();
-            }
+            DownloadWatchDog.getInstance().reset(list);
         }
         return true;
     }

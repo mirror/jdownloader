@@ -40,10 +40,6 @@ public class LinkStatusAPIStorable implements Storable {
         return ls.getRemainingWaittime();
     }
 
-    public Boolean getPluginInProgress() {
-        return ls.isPluginInProgress();
-    }
-
     public Boolean getFinished() {
         return ls.isFinished();
     }
@@ -54,10 +50,6 @@ public class LinkStatusAPIStorable implements Storable {
 
     public Long getWaitTime() {
         return ls.getWaitTime();
-    }
-
-    public Boolean getPluginActive() {
-        return ls.isPluginActive();
     }
 
     public Integer getLatestStatus() {

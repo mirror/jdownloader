@@ -40,6 +40,7 @@ public class ValidateArchivesAction<PackageType extends AbstractPackageNode<Chil
     }
 
     public void actionPerformed(ActionEvent e) {
+        if (!isEnabled()) return;
         for (Archive archive : archives) {
             try {
                 DummyArchive da = archive.createDummyArchive();

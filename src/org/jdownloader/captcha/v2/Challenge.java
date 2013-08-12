@@ -6,8 +6,11 @@ import java.lang.reflect.Type;
 import jd.controlling.captcha.SkipRequest;
 import jd.plugins.DownloadLink;
 import jd.plugins.Plugin;
+import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 
+import org.appwork.exceptions.WTFException;
+import org.jdownloader.DomainInfo;
 import org.jdownloader.captcha.v2.challenge.clickcaptcha.ClickCaptchaChallenge;
 import org.jdownloader.captcha.v2.challenge.stringcaptcha.ImageCaptchaChallenge;
 import org.jdownloader.captcha.v2.solverjob.ResponseList;
@@ -96,6 +99,19 @@ public abstract class Challenge<T> {
         if (plugin == null) return null;
         if (plugin instanceof PluginForHost) { return ((PluginForHost) plugin).getDownloadLink(); }
         return null;
+    }
+
+    public static DomainInfo getDomainInfo(Challenge<?> challenge) {
+        Plugin plugin = getPlugin(challenge);
+        if (plugin == null) throw new WTFException("no plugin for this challenge!?");
+        if (plugin instanceof PluginForHost) {
+            DownloadLink dl = getDownloadLink(challenge);
+            if (dl != null) return dl.getDomainInfo(true);
+        } else if (plugin instanceof PluginForDecrypt) {
+            DomainInfo ret = DomainInfo.getInstance(getHost(challenge));
+            if (ret != null) return ret;
+        }
+        throw new WTFException("no domaininfo for this challenge!?");
     }
 
     private static Plugin getPlugin(Challenge<?> challenge) {

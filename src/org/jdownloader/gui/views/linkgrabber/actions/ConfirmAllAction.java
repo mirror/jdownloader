@@ -4,17 +4,17 @@ import java.awt.Image;
 import java.awt.event.ActionEvent;
 import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
-import java.util.ArrayList;
 
 import javax.swing.ImageIcon;
 import javax.swing.KeyStroke;
 
-import jd.controlling.IOEQ;
+import jd.controlling.TaskQueue;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledPackage;
-import jd.controlling.packagecontroller.AbstractNode;
 
 import org.appwork.utils.ImageProvider.ImageProvider;
+import org.appwork.utils.event.queue.Queue.QueuePriority;
+import org.appwork.utils.event.queue.QueueAction;
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo;
@@ -60,19 +60,17 @@ public class ConfirmAllAction extends AppAction {
     }
 
     public void actionPerformed(final ActionEvent e) {
+        TaskQueue.getQueue().add(new QueueAction<Void, RuntimeException>(QueuePriority.HIGH) {
 
-        IOEQ.add(new Runnable() {
-
-            public void run() {
-
-                java.util.List<AbstractNode> packages = new ArrayList<AbstractNode>(LinkGrabberTableModel.getInstance().getAllPackageNodes());
-
-                ConfirmAutoAction ca = new ConfirmAutoAction(new SelectionInfo<CrawledPackage, CrawledLink>(null, packages, null, null, e, LinkGrabberTableModel.getInstance().getTable()));
+            @Override
+            protected Void run() throws RuntimeException {
+                final SelectionInfo<CrawledPackage, CrawledLink> si = new SelectionInfo<CrawledPackage, CrawledLink>(null, LinkGrabberTableModel.getInstance().getAllPackageNodes(), null, null, e, LinkGrabberTableModel.getInstance().getTable());
+                ConfirmAutoAction ca = new ConfirmAutoAction(si);
                 ca.setAutoStart(autostart ? AutoStartOptions.ENABLED : AutoStartOptions.DISABLED);
                 ca.actionPerformed(null);
+                return null;
             }
-
-        }, true);
+        });
     }
 
 }

@@ -2,6 +2,7 @@ package org.jdownloader;
 
 import java.awt.image.BufferedImage;
 import java.util.HashMap;
+import java.util.Locale;
 
 import javax.swing.ImageIcon;
 
@@ -46,10 +47,11 @@ public class DomainInfo implements FavIconRequestor, Comparable<DomainInfo> {
      * 
      * @return
      */
-    public synchronized ImageIcon getFavIcon() {
+    public ImageIcon getFavIcon() {
         ImageIcon ia = null;
-        if (hosterIcon != null) {
-            ia = hosterIcon.get();
+        MinTimeWeakReference<ImageIcon> lhosterIcon = hosterIcon;
+        if (lhosterIcon != null) {
+            ia = lhosterIcon.get();
             // cleanup;
             if (ia == null) {
                 resetFavIcon();
@@ -60,7 +62,7 @@ public class DomainInfo implements FavIconRequestor, Comparable<DomainInfo> {
         if (!hosterIconRequested) {
             hosterIconRequested = true;
             // load it
-            ia = FavIcons.getFavIcon(getTld(), this, true);
+            ia = FavIcons.getFavIcon(getTld(), this);
             if (ia != null) {
                 ia = setFavIcon(ia);
                 return ia;
@@ -79,13 +81,14 @@ public class DomainInfo implements FavIconRequestor, Comparable<DomainInfo> {
         hosterIcon = null;
     }
 
-    public synchronized ImageIcon setFavIcon(ImageIcon icon) {
+    public ImageIcon setFavIcon(ImageIcon icon) {
         if (icon == null) {
-            if (hosterIcon != null) {
-                icon = hosterIcon.get();
+            MinTimeWeakReference<ImageIcon> lhosterIcon = hosterIcon;
+            if (lhosterIcon != null) {
+                icon = lhosterIcon.get();
             }
             if (icon == null) {
-                icon = FavIcons.getFavIcon(getTld(), this, true);
+                icon = FavIcons.getFavIcon(getTld(), this);
             }
         } else {
             icon = new ImageIcon(IconIO.getScaledInstance(icon.getImage(), WIDTH, HEIGHT, Interpolation.BICUBIC, true));
@@ -95,44 +98,42 @@ public class DomainInfo implements FavIconRequestor, Comparable<DomainInfo> {
     }
 
     private static HashMap<String, DomainInfo> CACHE = new HashMap<String, DomainInfo>();
+    private static final Object                LOCK  = new Object();
 
-    public static DomainInfo getInstance(String host) {
-        if (host == null) return null;
-        // WARNING: can be a memleak
-        synchronized (CACHE) {
-            DomainInfo ret = CACHE.get(host);
+    public static DomainInfo getInstance(String tld) {
+        if (tld == null) return null;
+        String lcaseTld = tld.toLowerCase(Locale.ENGLISH);
+        DomainInfo ret = CACHE.get(lcaseTld);
+        if (ret != null) return ret;
+        synchronized (LOCK) {
+            ret = CACHE.get(lcaseTld);
+            if (ret != null) return ret;
+            HashMap<String, DomainInfo> newCache = new HashMap<String, DomainInfo>(CACHE);
             if (ret == null) {
-                CACHE.put(host, ret = new DomainInfo(host));
+                newCache.put(lcaseTld, ret = new DomainInfo(tld));
+                CACHE = newCache;
             }
             return ret;
         }
     }
 
     /**
-     * returns a high quality icon for this domain. most domains do not support this and will return null; the icon is NOT cached. use with
-     * care
+     * returns a high quality icon for this domain. most domains do not support this and will return null; the icon is NOT cached. use with care
      * 
      * @param i
      * @return
      */
     public ImageIcon getIcon(int size) {
-
         ImageIcon ret = null;
         if (NewTheme.I().hasIcon("fav/big." + getTld())) {
             ret = NewTheme.I().getIcon("fav/big." + getTld(), -1);
         }
-
         if (ret == null && NewTheme.I().hasIcon("fav/" + getTld())) {
             ret = NewTheme.I().getIcon("fav/" + getTld(), -1);
         }
-
-        if (ret != null && ret.getIconHeight() >= size && ret.getIconWidth() >= size) {
-
-        return new ImageIcon(IconIO.getScaledInstance((BufferedImage) ret.getImage(), size, size));
-
-        }
+        if (ret != null && ret.getIconHeight() >= size && ret.getIconWidth() >= size) { return new ImageIcon(IconIO.getScaledInstance((BufferedImage) ret.getImage(), size, size)); }
         if (!hosterIconRequested) getFavIcon();
-        ret = FavIcons.getFavIcon(getTld(), null, true);
+        ret = FavIcons.getFavIcon(getTld(), null);
         if (ret.getIconHeight() >= size && ret.getIconWidth() >= size) { return new ImageIcon(IconIO.getScaledInstance((BufferedImage) ret.getImage(), size, size)); }
         return null;
     }

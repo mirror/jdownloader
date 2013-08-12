@@ -5,7 +5,6 @@ import java.awt.event.MouseEvent;
 import java.io.File;
 import java.util.ArrayList;
 
-import jd.controlling.IOEQ;
 import jd.controlling.linkcollector.LinkCollector;
 import jd.controlling.linkcollector.LinknameCleaner;
 import jd.controlling.linkcrawler.CrawledLink;
@@ -93,7 +92,7 @@ public class DownloadFolderColumn extends ExtTextColumn<AbstractNode> {
             return;
         }
         if (object instanceof CrawledPackage) {
-            IOEQ.getQueue().add(new QueueAction<Object, RuntimeException>(org.appwork.utils.event.queue.Queue.QueuePriority.HIGH) {
+            LinkCollector.getInstance().getQueue().add(new QueueAction<Object, RuntimeException>(org.appwork.utils.event.queue.Queue.QueuePriority.HIGH) {
                 @Override
                 protected Object run() {
                     ((CrawledPackage) object).setDownloadFolder(value);
@@ -105,7 +104,7 @@ public class DownloadFolderColumn extends ExtTextColumn<AbstractNode> {
             final CrawledPackage p = ((CrawledLink) object).getParentNode();
             try {
                 Dialog.getInstance().showConfirmDialog(Dialog.LOGIC_DONOTSHOW_BASED_ON_TITLE_ONLY | Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _JDT._.SetDownloadFolderAction_actionPerformed_(p.getName()), _JDT._.SetDownloadFolderAction_msg(p.getName(), 1), null, _JDT._.SetDownloadFolderAction_yes(), _JDT._.SetDownloadFolderAction_no());
-                IOEQ.getQueue().add(new QueueAction<Object, RuntimeException>(org.appwork.utils.event.queue.Queue.QueuePriority.HIGH) {
+                LinkCollector.getInstance().getQueue().add(new QueueAction<Object, RuntimeException>(org.appwork.utils.event.queue.Queue.QueuePriority.HIGH) {
                     @Override
                     protected Object run() {
                         p.setDownloadFolder(value);
@@ -131,7 +130,7 @@ public class DownloadFolderColumn extends ExtTextColumn<AbstractNode> {
 
             final java.util.List<CrawledLink> links = new ArrayList<CrawledLink>();
             links.add((CrawledLink) object);
-            IOEQ.getQueue().add(new QueueAction<Object, RuntimeException>(org.appwork.utils.event.queue.Queue.QueuePriority.HIGH) {
+            LinkCollector.getInstance().getQueue().add(new QueueAction<Object, RuntimeException>(org.appwork.utils.event.queue.Queue.QueuePriority.HIGH) {
 
                 @Override
                 protected Object run() {

@@ -2,16 +2,17 @@ package jd.gui.swing.jdgui.views.settings.panels.proxy;
 
 import java.awt.event.ActionEvent;
 
-import jd.controlling.IOEQ;
+import jd.controlling.TaskQueue;
 import jd.controlling.proxy.ProxyController;
 import jd.controlling.proxy.ProxyInfo;
 
+import org.appwork.utils.event.queue.QueueAction;
 import org.jdownloader.gui.views.components.AbstractRemoveAction;
 
 public class ProxyDeleteAction extends AbstractRemoveAction {
 
     private java.util.List<ProxyInfo> selected = null;
-    private ProxyTable           table;
+    private ProxyTable                table;
 
     public ProxyDeleteAction(ProxyTable table) {
 
@@ -22,7 +23,7 @@ public class ProxyDeleteAction extends AbstractRemoveAction {
     public ProxyDeleteAction(final java.util.List<ProxyInfo> selected, boolean force) {
         super();
         this.selected = selected;
-      
+
     }
 
     @Override
@@ -47,15 +48,23 @@ public class ProxyDeleteAction extends AbstractRemoveAction {
 
     public void actionPerformed(ActionEvent e) {
         if (!isEnabled()) return;
-        IOEQ.add(new Runnable() {
-            public void run() {
-                if (selected == null) selected = table.getModel().getSelectedObjects();
-                for (ProxyInfo proxy : selected) {
-                    ProxyController.getInstance().remove(proxy);
-                }
-                selected = null;
-            }
-        });
+        final java.util.List<ProxyInfo> finalSelection;
+        if (selected == null) {
+            finalSelection = table.getModel().getSelectedObjects();
+        } else {
+            finalSelection = selected;
+        }
+        if (finalSelection != null && finalSelection.size() > 0) {
+            TaskQueue.getQueue().add(new QueueAction<Void, RuntimeException>() {
 
+                @Override
+                protected Void run() throws RuntimeException {
+                    for (ProxyInfo proxy : finalSelection) {
+                        ProxyController.getInstance().remove(proxy);
+                    }
+                    return null;
+                }
+            });
+        }
     }
 }

@@ -16,7 +16,7 @@ import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.appwork.utils.swing.dialog.InternDialog;
-import org.jdownloader.DomainInfo;
+import org.jdownloader.captcha.v2.Challenge;
 import org.jdownloader.captcha.v2.challenge.clickcaptcha.ClickCaptchaChallenge;
 import org.jdownloader.captcha.v2.challenge.clickcaptcha.ClickedPoint;
 
@@ -30,7 +30,7 @@ public class ClickCaptchaDialogHandler extends ChallengeDialogHandler<ClickCaptc
     }
 
     public ClickCaptchaDialogHandler(ClickCaptchaChallenge captchaChallenge) {
-        super(DomainInfo.getInstance(captchaChallenge.getPlugin().getHost()), captchaChallenge);
+        super(Challenge.getDomainInfo(captchaChallenge), captchaChallenge);
 
     }
 

@@ -24,7 +24,6 @@ import javax.swing.JPopupMenu;
 import javax.swing.JRootPane;
 import javax.swing.border.Border;
 
-import jd.controlling.IOEQ;
 import jd.controlling.packagecontroller.AbstractPackageChildrenNode;
 import jd.controlling.packagecontroller.AbstractPackageNode;
 
@@ -64,7 +63,7 @@ public class SearchField<SearchCat extends SearchCatInterface, PackageType exten
     private boolean                                        mouseoverClose   = false;
     private boolean                                        closeEnabled     = false;
 
-    public SearchField(PackageControllerTable<PackageType, ChildType> table2Filter, SearchCat defCategory) {
+    public SearchField(final PackageControllerTable<PackageType, ChildType> table2Filter, SearchCat defCategory) {
         super();
         this.table2Filter = table2Filter;
         img = NewTheme.I().getImage("search", SIZE);
@@ -75,10 +74,16 @@ public class SearchField<SearchCat extends SearchCatInterface, PackageType exten
         setHelpText(_GUI._.SearchField_SearchField_helptext());
         setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
         popIcon = NewTheme.I().getImage("popupButton", -1);
-        delayedFilter = new DelayedRunnable(IOEQ.TIMINGQUEUE, 150l, 2000l) {
+        delayedFilter = new DelayedRunnable(150l, 2000l) {
+
+            @Override
+            public String getID() {
+                return "SearchField" + table2Filter.getModel().getModelID();
+            }
 
             @Override
             public void delayedrun() {
+                System.out.println("update filter");
                 updateFilter();
             }
 

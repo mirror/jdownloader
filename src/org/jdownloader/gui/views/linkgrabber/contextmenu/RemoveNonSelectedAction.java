@@ -1,15 +1,16 @@
 package org.jdownloader.gui.views.linkgrabber.contextmenu;
 
 import java.awt.event.ActionEvent;
+import java.util.HashSet;
 import java.util.List;
 
-import jd.controlling.IOEQ;
 import jd.controlling.linkcollector.LinkCollector;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledPackage;
 import jd.controlling.packagecontroller.AbstractPackageChildrenNodeFilter;
 
 import org.appwork.uio.UIOManager;
+import org.appwork.utils.event.queue.QueueAction;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogNoAnswerException;
 import org.jdownloader.actions.SelectionAppAction;
@@ -25,7 +26,6 @@ public class RemoveNonSelectedAction extends SelectionAppAction<CrawledPackage, 
 
     public RemoveNonSelectedAction(SelectionInfo<CrawledPackage, CrawledLink> si) {
         super(si);
-
         setName(_GUI._.RemoveNonSelectedAction_RemoveNonSelectedAction_object_());
         setIconKey("ok");
     }
@@ -35,14 +35,15 @@ public class RemoveNonSelectedAction extends SelectionAppAction<CrawledPackage, 
         try {
             Dialog.getInstance().showConfirmDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN | UIOManager.LOGIC_DONT_SHOW_AGAIN_IGNORES_CANCEL, _GUI._.literally_are_you_sure(), _GUI._.ClearAction_actionPerformed_notselected_msg(), null, _GUI._.literally_yes(), _GUI._.literall_no());
 
-            IOEQ.add(new Runnable() {
-
-                public void run() {
-
+            LinkCollector.getInstance().getQueue().add(new QueueAction<Void, RuntimeException>() {
+                @Override
+                protected Void run() throws RuntimeException {
+                    final HashSet<CrawledLink> set = new HashSet<CrawledLink>();
+                    set.addAll(getSelection().getChildren());
                     List<CrawledLink> nonselected = LinkCollector.getInstance().getChildrenByFilter(new AbstractPackageChildrenNodeFilter<CrawledLink>() {
 
                         public boolean acceptNode(CrawledLink node) {
-                            return !getSelection().getChildren().contains(node);
+                            return !set.contains(node);
                         }
 
                         public int returnMaxResults() {
@@ -51,11 +52,16 @@ public class RemoveNonSelectedAction extends SelectionAppAction<CrawledPackage, 
 
                     });
                     LinkCollector.getInstance().removeChildren(nonselected);
+                    return null;
                 }
-
-            }, true);
+            });
         } catch (DialogNoAnswerException e1) {
         }
+    }
+
+    @Override
+    public boolean isEnabled() {
+        return getSelection() != null;
     }
 
 }

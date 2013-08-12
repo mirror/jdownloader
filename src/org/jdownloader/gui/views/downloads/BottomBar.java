@@ -89,12 +89,10 @@ public class BottomBar extends MigPanel {
             @Override
             public boolean isFiltered(FilePackage e) {
                 if (LinktablesSearchCategory.PACKAGE == selectedCategory) {
-
                     for (Pattern filterPattern : filterPatterns) {
                         if (filterPattern.matcher(e.getName()).find()) return false;
                     }
                     return true;
-
                 }
                 return false;
             }
@@ -151,7 +149,7 @@ public class BottomBar extends MigPanel {
                                                                                             public boolean isFiltered(DownloadLink v) {
                                                                                                 switch (selectedItem) {
                                                                                                 case RUNNING:
-                                                                                                    return !v.isEnabled() || !v.getLinkStatus().isPluginActive();
+                                                                                                    return !v.isEnabled() || v.getDownloadLinkController() == null;
                                                                                                 case SUCCESSFUL:
                                                                                                     return !(v.getLinkStatus().isFinished());
                                                                                                 case FAILED:

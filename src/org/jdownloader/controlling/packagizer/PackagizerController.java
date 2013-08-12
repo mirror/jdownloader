@@ -8,7 +8,7 @@ import java.util.HashMap;
 import java.util.Locale;
 import java.util.regex.Pattern;
 
-import jd.controlling.IOEQ;
+import jd.controlling.TaskQueue;
 import jd.controlling.downloadcontroller.SingleDownloadController;
 import jd.controlling.linkcollector.PackagizerInterface;
 import jd.controlling.linkcrawler.CrawledLink;
@@ -25,6 +25,7 @@ import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.event.predefined.changeevent.ChangeEvent;
 import org.appwork.utils.event.predefined.changeevent.ChangeEventSender;
+import org.appwork.utils.event.queue.QueueAction;
 import org.appwork.utils.logging.Log;
 import org.appwork.utils.os.CrossSystem;
 import org.jdownloader.controlling.FileCreationEvent;
@@ -240,9 +241,8 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
         synchronized (this) {
             list.add(linkFilter);
             if (config != null) config.setRuleList(list);
-            update();
         }
-
+        update();
     }
 
     public void setList(java.util.List<PackagizerRule> tableData) {
@@ -250,22 +250,22 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
             list.clear();
             list.addAll(tableData);
             if (config != null) config.setRuleList(list);
-
-            update();
         }
+        update();
     }
 
     public void update() {
         if (isTestInstance()) {
             updateInternal();
         } else {
-            IOEQ.add(new Runnable() {
+            TaskQueue.getQueue().add(new QueueAction<Void, RuntimeException>() {
 
-                public void run() {
+                @Override
+                protected Void run() throws RuntimeException {
                     updateInternal();
+                    return null;
                 }
-
-            }, true);
+            });
         }
     }
 
@@ -300,9 +300,8 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
         synchronized (this) {
             list.addAll(all);
             if (config != null) config.setRuleList(list);
-            update();
         }
-
+        update();
     }
 
     public void remove(PackagizerRule lf) {
@@ -310,9 +309,8 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
         synchronized (this) {
             list.remove(lf);
             if (config != null) config.setRuleList(list);
-            update();
         }
-
+        update();
     }
 
     public void runByFile(CrawledLink link) {
@@ -374,7 +372,6 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
                 ret = ret.replace(PACKAGETAG, CrossSystem.alleviatePathParts(packageName));
             }
             ret = CrossSystem.fixPathSeperators(ret);
-
         }
         if (ret.contains(DATETAG)) {
             int start = ret.indexOf(DATETAG);
@@ -550,10 +547,6 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
                 FileCreationManager.getInstance().getEventSender().fireEvent(new FileCreationEvent(this, FileCreationEvent.Type.NEW_FILES, new File[] { newFile }));
             }
         }
-    }
-
-    @Override
-    public void onRemoveFile(Object caller, File[] fileList) {
     }
 
 }

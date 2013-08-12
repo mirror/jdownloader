@@ -358,6 +358,7 @@ public class LinkChecker<E extends CheckableLink> {
             };
             newThread.setName("LinkChecker: " + LINKCHECKER_THREAD_NUM.incrementAndGet() + ":" + threadHost);
             newThread.setDaemon(true);
+            newThread.setPriority(Thread.MIN_PRIORITY);
             CHECK_THREADS.put(threadHost, newThread);
             newThread.start();
         }

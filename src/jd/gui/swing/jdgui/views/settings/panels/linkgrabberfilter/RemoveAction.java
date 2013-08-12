@@ -1,10 +1,12 @@
 package jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter;
 
 import java.awt.event.ActionEvent;
+import java.util.List;
 
-import jd.controlling.IOEQ;
+import jd.controlling.TaskQueue;
 
 import org.appwork.swing.exttable.ExtTable;
+import org.appwork.utils.event.queue.QueueAction;
 import org.jdownloader.controlling.filter.LinkFilterController;
 import org.jdownloader.controlling.filter.LinkgrabberFilterRule;
 import org.jdownloader.gui.views.components.AbstractRemoveAction;
@@ -13,8 +15,6 @@ import org.jdownloader.translate._JDT;
 public class RemoveAction extends AbstractRemoveAction {
     private static final long                     serialVersionUID = -477419276505058907L;
     private java.util.List<LinkgrabberFilterRule> selected;
-
-    private java.util.List<LinkgrabberFilterRule> remove;
     private boolean                               ignoreSelection  = false;
     private AbstractFilterTable                   table;
     private LinkgrabberFilter                     linkgrabberFilter;
@@ -32,22 +32,25 @@ public class RemoveAction extends AbstractRemoveAction {
 
     public void actionPerformed(ActionEvent e) {
         if (!rly(_JDT._.RemoveAction_actionPerformed_rly_msg())) return;
-        remove = selected;
-        if (remove == null) {
+        if (!isEnabled()) return;
+        final List<LinkgrabberFilterRule> remove;
+        if (selected != null) {
+            remove = selected;
+        } else {
             remove = getTable().getModel().getSelectedObjects();
         }
         if (remove != null && remove.size() > 0) {
-            IOEQ.add(new Runnable() {
+            TaskQueue.getQueue().add(new QueueAction<Void, RuntimeException>() {
 
-                public void run() {
+                @Override
+                protected Void run() throws RuntimeException {
                     for (LinkgrabberFilterRule lf : remove) {
                         LinkFilterController.getInstance().remove(lf);
                     }
                     getTable().getModel()._fireTableStructureChanged(LinkFilterController.getInstance().list(), false);
+                    return null;
                 }
-
-            }, true);
-
+            });
         }
 
     }

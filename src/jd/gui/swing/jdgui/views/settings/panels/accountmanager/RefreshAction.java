@@ -6,10 +6,11 @@ import java.util.List;
 import javax.swing.AbstractAction;
 
 import jd.controlling.AccountController;
-import jd.controlling.IOEQ;
+import jd.controlling.TaskQueue;
 import jd.controlling.accountchecker.AccountChecker;
 import jd.plugins.Account;
 
+import org.appwork.utils.event.queue.QueueAction;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
 
@@ -34,17 +35,21 @@ public class RefreshAction extends AbstractAction {
     }
 
     public void actionPerformed(ActionEvent e) {
-        IOEQ.add(new Runnable() {
-            public void run() {
-                if (selection == null) {
+        if (!isEnabled()) return;
+        TaskQueue.getQueue().add(new QueueAction<Void, RuntimeException>() {
 
+            @Override
+            protected Void run() throws RuntimeException {
+                if (selection == null) {
                     for (Account acc : AccountController.getInstance().list()) {
                         AccountChecker.getInstance().check(acc, true);
                     }
+                } else {
+                    for (AccountEntry acc : selection) {
+                        AccountChecker.getInstance().check(acc.getAccount(), true);
+                    }
                 }
-                for (AccountEntry acc : selection) {
-                    AccountChecker.getInstance().check(acc.getAccount(), true);
-                }
+                return null;
             }
         });
     }

@@ -2,10 +2,11 @@ package jd.gui.swing.jdgui.views.settings.panels.basicauthentication;
 
 import java.awt.event.ActionEvent;
 
-import jd.controlling.IOEQ;
+import jd.controlling.TaskQueue;
 import jd.controlling.authentication.AuthenticationController;
 import jd.controlling.authentication.AuthenticationInfo;
 
+import org.appwork.utils.event.queue.QueueAction;
 import org.jdownloader.gui.views.components.AbstractAddAction;
 
 public class NewAction extends AbstractAddAction {
@@ -19,12 +20,14 @@ public class NewAction extends AbstractAddAction {
     }
 
     public void actionPerformed(ActionEvent e) {
-        IOEQ.add(new Runnable() {
-            public void run() {
+        TaskQueue.getQueue().add(new QueueAction<Void, RuntimeException>() {
+
+            @Override
+            protected Void run() throws RuntimeException {
                 AuthenticationController.getInstance().add(new AuthenticationInfo());
+                return null;
             }
         });
-
     }
 
 }

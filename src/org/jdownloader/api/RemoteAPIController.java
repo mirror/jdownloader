@@ -107,10 +107,12 @@ public class RemoteAPIController {
     }
 
     public boolean register(EventPublisher publisher) {
+        if (publisher == null) return false;
         return eventsapi.register(publisher);
     }
 
     public boolean unregister(EventPublisher publisher) {
+        if (publisher == null) return false;
         return eventsapi.unregister(publisher);
     }
 

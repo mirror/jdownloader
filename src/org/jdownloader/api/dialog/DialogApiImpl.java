@@ -223,7 +223,7 @@ public class DialogApiImpl implements EventPublisher, DialogApiInterface {
                     key = key.substring(2);
                 }
                 Object value = data.get(key);
-                String json = JSonStorage.toString(value);
+                String json = JSonStorage.serializeToJson(value);
                 Object retValue = JSonStorage.restoreFromString(json, new TypeRef(method.getGenericReturnType()) {
                 });
                 return retValue;

@@ -4,8 +4,6 @@ import javax.swing.AbstractAction;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 
-import jd.controlling.IOEQ;
-import jd.controlling.authentication.AuthenticationController;
 import jd.gui.swing.jdgui.views.settings.components.SettingsComponent;
 import net.miginfocom.swing.MigLayout;
 
@@ -31,8 +29,7 @@ public class BasicAuthenticationPanel extends JPanel implements SettingsComponen
     private AuthTable table;
 
     /**
-     * Create a new instance of AccountManager. This is a singleton class. Access the only existing instance by using {@link #getInstance()}
-     * .
+     * Create a new instance of AccountManager. This is a singleton class. Access the only existing instance by using {@link #getInstance()} .
      */
     private BasicAuthenticationPanel() {
         super(new MigLayout("ins 0,wrap 1", "[grow,fill]", "[grow,fill][]"));
@@ -60,14 +57,8 @@ public class BasicAuthenticationPanel extends JPanel implements SettingsComponen
         return false;
     }
 
-    public void update() {
-        /* refresh table when we switch to it */
-        IOEQ.add(new Runnable() {
-
-            public void run() {
-                table.getModel()._fireTableStructureChanged(AuthenticationController.getInstance().list(), false);
-            }
-
-        }, true);
+    public AuthTable getTable() {
+        return table;
     }
+
 }

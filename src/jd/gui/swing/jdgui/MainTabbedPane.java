@@ -32,6 +32,7 @@ import jd.gui.swing.jdgui.interfaces.View;
 import jd.gui.swing.jdgui.maintab.ClosableTabHeader;
 import jd.gui.swing.jdgui.views.ClosableView;
 
+import org.appwork.utils.swing.EDTRunner;
 import org.jdownloader.gui.event.GUIEvent;
 import org.jdownloader.gui.event.GUIEventSender;
 
@@ -117,6 +118,17 @@ public class MainTabbedPane extends JTabbedPane {
             }
 
         });
+    }
+
+    public void notifyCurrentTab() {
+        new EDTRunner() {
+
+            @Override
+            protected void runInEDT() {
+                View comp = (View) getSelectedComponent();
+                GUIEventSender.getInstance().fireEvent(new GUIEvent(MainTabbedPane.this, GUIEvent.Type.TAB_SWITCH, latestSelection, comp));
+            }
+        };
     }
 
     @Override

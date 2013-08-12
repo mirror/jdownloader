@@ -7,9 +7,6 @@ public class FileCreationEventSender extends Eventsender<FileCreationListener, F
     @Override
     protected void fireEvent(FileCreationListener listener, FileCreationEvent event) {
         switch (event.getType()) {
-        case REMOVE_FILES:
-            listener.onRemoveFile(event.getCaller(), event.getFiles());
-            break;
         case NEW_FILES:
             listener.onNewFile(event.getCaller(), event.getFiles());
             break;

@@ -152,7 +152,7 @@ public class FilePackageView extends ChildrenView<DownloadLink> {
                     /* ETA calculation */
                     if (link.isEnabled() && !link.getLinkStatus().isFinished()) {
                         /* link must be enabled and not finished state */
-                        boolean linkRunning = link.getLinkStatus().isPluginActive();
+                        boolean linkRunning = link.getDownloadLinkController() != null;
                         if (linkRunning || eta.contains(link.getName()) == false) {
                             if (linkRunning) {
                                 fpRunning = true;
@@ -316,7 +316,7 @@ public class FilePackageView extends ChildrenView<DownloadLink> {
                     /* ETA calculation */
                     if (link.isEnabled() && !link.getLinkStatus().isFinished()) {
                         /* link must be enabled and not finished state */
-                        boolean linkRunning = link.getLinkStatus().isPluginActive();
+                        boolean linkRunning = link.getDownloadLinkController() != null;
                         if (linkRunning || eta.contains(link.getName()) == false) {
                             if (linkRunning) {
                                 fpRunning = true;

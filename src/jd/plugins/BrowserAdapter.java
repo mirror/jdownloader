@@ -33,6 +33,8 @@ public class BrowserAdapter {
         PluginForHost livePlugin = downloadLink.getLivePlugin();
         DownloadInterfaceFactory ret = null;
         if (livePlugin != null && (ret = livePlugin.getCustomizedDownloadFactory()) != null) return ret.getDownloadInterface(downloadLink, request);
+        // if ("DirectHTTP".equals(downloadLink.getHost()) || "http links".equals(downloadLink.getHost())) { return new ChunkedBrowserDownload(livePlugin,
+        // downloadLink, request); }
         return RAFDownload.download(downloadLink, request);
     }
 
@@ -42,6 +44,12 @@ public class BrowserAdapter {
         PluginForHost livePlugin = downloadLink.getLivePlugin();
         DownloadInterfaceFactory ret = null;
         if (livePlugin != null && (ret = livePlugin.getCustomizedDownloadFactory()) != null) return ret.getDownloadInterface(downloadLink, request, b, i);
+        // if ("DirectHTTP".equals(downloadLink.getHost()) || "http links".equals(downloadLink.getHost())) {
+        // ChunkedBrowserDownload ret2 = new ChunkedBrowserDownload(livePlugin, downloadLink, request);
+        // ret2.setResumable(b);
+        // ret2.setMaxConnections(i);
+        // return ret2;
+        // }
         return RAFDownload.download(downloadLink, request, b, i);
     }
 

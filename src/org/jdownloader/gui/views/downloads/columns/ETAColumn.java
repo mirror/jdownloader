@@ -181,7 +181,7 @@ public class ETAColumn extends ExtTextColumn<AbstractNode> {
                     ProxyBlock timeout = null;
                     if ((timeout = ProxyController.getInstance().getHostIPBlockTimeout(dlLink.getHost())) != null && timeout.getLink() == dlLink) {
                         try {
-                            Dialog.getInstance().showDialog(new PremiumInfoDialog(DomainInfo.getInstance(((DownloadLink) value).getHost()), _GUI._.TaskColumn_onSingleClick_object_(((DownloadLink) value).getHost()), "TaskColumnReconnect") {
+                            Dialog.getInstance().showDialog(new PremiumInfoDialog((((DownloadLink) value).getDomainInfo(true)), _GUI._.TaskColumn_onSingleClick_object_(((DownloadLink) value).getHost()), "TaskColumnReconnect") {
                                 protected String getDescription(DomainInfo info2) {
                                     return _GUI._.TaskColumn_getDescription_object_(info2.getTld());
                                 }

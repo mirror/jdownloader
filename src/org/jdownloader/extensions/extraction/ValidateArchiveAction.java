@@ -26,9 +26,8 @@ import org.jdownloader.images.NewTheme;
 
 public class ValidateArchiveAction<PackageType extends AbstractPackageNode<ChildrenType, PackageType>, ChildrenType extends AbstractPackageChildrenNode<PackageType>> extends AppAction {
 
-    private ExtractionExtension                      extractor;
-    private java.util.List<Archive>                  archives;
-    private SelectionInfo<PackageType, ChildrenType> si;
+    private ExtractionExtension     extractor;
+    private java.util.List<Archive> archives;
 
     public ValidateArchiveAction(ExtractionExtension extractionExtension, Archive... as) {
         if (as.length > 1) {
@@ -48,7 +47,6 @@ public class ValidateArchiveAction<PackageType extends AbstractPackageNode<Child
     public ValidateArchiveAction(ExtractionExtension extractionExtension, SelectionInfo<PackageType, ChildrenType> si) {
         setName(T._.ValidateArchiveAction_ValidateArchiveAction_object_());
         setSmallIcon(new ImageIcon(ImageProvider.merge(NewTheme.I().getImage("archive", 18), NewTheme.I().getImage("ok", 11), -1, 0, 6, 8)));
-        this.si = si;
         //
         extractor = extractionExtension;
         archives = new ArrayList<Archive>();

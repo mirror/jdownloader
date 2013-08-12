@@ -8,6 +8,7 @@ import javax.swing.event.DocumentListener;
 import javax.swing.event.PopupMenuEvent;
 import javax.swing.event.PopupMenuListener;
 
+import jd.controlling.downloadcontroller.DownloadWatchDog;
 import jd.gui.swing.jdgui.views.settings.panels.packagizer.VariableAction;
 
 import org.appwork.app.gui.copycutpaste.CopyAction;
@@ -17,6 +18,7 @@ import org.appwork.app.gui.copycutpaste.PasteAction;
 import org.appwork.app.gui.copycutpaste.SelectAction;
 import org.appwork.swing.components.ExtTextField;
 import org.appwork.swing.components.pathchooser.PathChooser;
+import org.appwork.uio.UIOManager;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.jdownloader.controlling.packagizer.PackagizerController;
@@ -121,7 +123,6 @@ public class FolderChooser extends PathChooser implements SettingsComponent {
         file = checkPath(file);
         if (file == null) return null;
         DownloadPath.saveList(file.getAbsolutePath());
-
         return file.getAbsolutePath();
     }
 
@@ -132,14 +133,13 @@ public class FolderChooser extends PathChooser implements SettingsComponent {
         if (index >= 0) {
             path = path.substring(0, index);
             checkPath = new File(path);
-
         }
-
-        if (!checkPath.exists()) {
-            DownloadFolderChooserDialog.handleNonExistingFolders(checkPath);
+        File forbidden = null;
+        if ((forbidden = DownloadWatchDog.getInstance().validateDestination(checkPath)) != null) {
+            UIOManager.I().showErrorMessage(_GUI._.DownloadFolderChooserDialog_handleNonExistingFolders_couldnotcreatefolder(forbidden.getAbsolutePath()));
+            return null;
         }
-        if (!DownloadFolderChooserDialog.isDownloadFolderValid(checkPath)) return null;
-
+        if (DownloadFolderChooserDialog.handleNonExistingFolders(checkPath) == false) return null;
         return file;
     }
 }

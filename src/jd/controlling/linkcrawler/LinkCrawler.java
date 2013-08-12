@@ -7,7 +7,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.PriorityBlockingQueue;
-import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -80,7 +80,7 @@ public class LinkCrawler {
     private List<LazyHostPlugin>                    pHosts;
     protected final PluginClassLoaderChild          classLoader;
 
-    public final static ScheduledThreadPoolExecutor TIMINGQUEUE                 = new ScheduledThreadPoolExecutor(1);
+    protected final static ScheduledExecutorService TIMINGQUEUE                 = DelayedRunnable.getNewScheduledExecutorService();
 
     public boolean isDoDuplicateFinderFinalCheck() {
         if (parentCrawler != null) parentCrawler.isDoDuplicateFinderFinalCheck();
@@ -100,8 +100,6 @@ public class LinkCrawler {
                                                       };
 
     static {
-        TIMINGQUEUE.setKeepAliveTime(10000, TimeUnit.MILLISECONDS);
-        TIMINGQUEUE.allowCoreThreadTimeOut(true);
         int maxThreads = Math.max(JsonConfig.create(LinkCrawlerConfig.class).getMaxThreads(), 1);
         int keepAlive = Math.max(JsonConfig.create(LinkCrawlerConfig.class).getThreadKeepAlive(), 100);
 

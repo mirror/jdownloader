@@ -10,48 +10,56 @@ import jd.controlling.packagecontroller.AbstractPackageChildrenNodeFilter;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
-import org.jdownloader.actions.AppAction;
+import org.appwork.utils.event.queue.QueueAction;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.downloads.table.DownloadsTableModel;
 
-public class RemoveNonSelectedAction extends AppAction {
+public class RemoveNonSelectedAction extends DeleteAppAction {
 
     /**
      * 
      */
-    private static final long            serialVersionUID = 6855083561629297363L;
-    private java.util.List<AbstractNode> selection;
+    private static final long        serialVersionUID = 6855083561629297363L;
+    private final List<AbstractNode> nodeSelection;
 
     public RemoveNonSelectedAction(java.util.List<AbstractNode> selection) {
-        this.selection = selection;
-
+        super(null);
+        this.nodeSelection = selection;
         setName(_GUI._.RemoveNonSelectedAction_RemoveNonSelectedAction_object_());
         setIconKey("ok");
     }
 
-    public void actionPerformed(ActionEvent e) {
+    public void actionPerformed(final ActionEvent e) {
         if (!isEnabled()) return;
-
-        // LinkCollector.getInstance().getChildrenByFilter(filter)
-
-        final SelectionInfo<FilePackage, DownloadLink> selectionInfo = new SelectionInfo<FilePackage, DownloadLink>(null, selection, null, null, e, DownloadsTableModel.getInstance().getTable());
-        final HashSet<DownloadLink> set = new HashSet<DownloadLink>();
-        set.addAll(selectionInfo.getChildren());
-        List<DownloadLink> nodesToDelete = DownloadController.getInstance().getChildrenByFilter(new AbstractPackageChildrenNodeFilter<DownloadLink>() {
+        final SelectionInfo<FilePackage, DownloadLink> selectionInfo = new SelectionInfo<FilePackage, DownloadLink>(null, nodeSelection, null, null, e, DownloadsTableModel.getInstance().getTable());
+        DownloadController.getInstance().getQueue().add(new QueueAction<Void, RuntimeException>() {
 
             @Override
-            public int returnMaxResults() {
-                return 0;
-            }
+            protected Void run() throws RuntimeException {
+                final HashSet<DownloadLink> set = new HashSet<DownloadLink>();
+                set.addAll(selectionInfo.getChildren());
+                List<DownloadLink> nodesToDelete = DownloadController.getInstance().getChildrenByFilter(new AbstractPackageChildrenNodeFilter<DownloadLink>() {
 
-            @Override
-            public boolean acceptNode(DownloadLink node) {
-                return !set.contains(node);
+                    @Override
+                    public int returnMaxResults() {
+                        return 0;
+                    }
+
+                    @Override
+                    public boolean acceptNode(DownloadLink node) {
+                        return !set.contains(node);
+                    }
+                });
+                deleteLinksRequest(new SelectionInfo<FilePackage, DownloadLink>(null, nodesToDelete, null, null, e, DownloadsTableModel.getInstance().getTable()), _GUI._.RemoveNonSelectedAction_actionPerformed());
+                return null;
             }
         });
+    }
 
-        DownloadController.deleteLinksRequest(new SelectionInfo<FilePackage, DownloadLink>(null, nodesToDelete, null, null, e, DownloadsTableModel.getInstance().getTable()), _GUI._.RemoveNonSelectedAction_actionPerformed());
+    @Override
+    public boolean isEnabled() {
+        return nodeSelection != null;
     }
 
 }

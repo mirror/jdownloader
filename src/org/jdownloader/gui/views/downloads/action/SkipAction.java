@@ -4,7 +4,7 @@ import java.awt.event.ActionEvent;
 
 import javax.swing.ImageIcon;
 
-import jd.controlling.IOEQ;
+import jd.controlling.TaskQueue;
 import jd.controlling.downloadcontroller.DownloadWatchDog;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
@@ -13,6 +13,7 @@ import jd.plugins.download.DownloadInterface;
 
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.ImageProvider.ImageProvider;
+import org.appwork.utils.event.queue.QueueAction;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.jdownloader.actions.SelectionAppAction;
@@ -77,9 +78,10 @@ public class SkipAction extends SelectionAppAction<FilePackage, DownloadLink> {
 
     public void actionPerformed(ActionEvent e) {
         if (!isEnabled()) return;
-        IOEQ.add(new Runnable() {
+        TaskQueue.getQueue().add(new QueueAction<Void, RuntimeException>() {
 
-            public void run() {
+            @Override
+            protected Void run() throws RuntimeException {
                 boolean enable = state.equals(State.ALL_UNSKIPPED);
                 if (enable) {
                     int count = 0;
@@ -93,16 +95,12 @@ public class SkipAction extends SelectionAppAction<FilePackage, DownloadLink> {
                                     count++;
                                 }
                             }
-
                         }
                     }
                     if (count > 0) {
-                        if (!UIOManager.I().showConfirmDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI._.lit_are_you_sure(), _GUI._.SkipAction_run_msg_(SizeFormatter.formatBytes(DownloadWatchDog.getInstance().getNonResumableBytes()), count), NewTheme.I().getIcon("skipped", 32), _GUI._.lit_yes(), _GUI._.lit_no())) {
-
-                        return; }
+                        if (!UIOManager.I().showConfirmDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI._.lit_are_you_sure(), _GUI._.SkipAction_run_msg_(SizeFormatter.formatBytes(DownloadWatchDog.getInstance().getNonResumableBytes()), count), NewTheme.I().getIcon("skipped", 32), _GUI._.lit_yes(), _GUI._.lit_no())) { return null; }
                     }
                 }
-
                 for (DownloadLink a : getSelection().getChildren()) {
                     // keep skipreason if a reason is set
                     if (enable) {
@@ -112,10 +110,10 @@ public class SkipAction extends SelectionAppAction<FilePackage, DownloadLink> {
                     } else {
                         a.setSkipReason(SkipReason.NONE);
                     }
-
                 }
+                return null;
             }
-        }, true);
+        });
     }
 
     @Override

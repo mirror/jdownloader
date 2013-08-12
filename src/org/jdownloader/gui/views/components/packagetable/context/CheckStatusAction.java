@@ -4,15 +4,15 @@ import java.awt.event.ActionEvent;
 import java.util.ArrayList;
 import java.util.List;
 
-import jd.controlling.IOEQ;
+import jd.controlling.TaskQueue;
 import jd.controlling.linkchecker.LinkChecker;
 import jd.controlling.linkcrawler.CheckableLink;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.packagecontroller.AbstractPackageChildrenNode;
 import jd.controlling.packagecontroller.AbstractPackageNode;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 
+import org.appwork.utils.event.queue.QueueAction;
 import org.jdownloader.actions.SelectionAppAction;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo;
@@ -30,25 +30,22 @@ public class CheckStatusAction<PackageType extends AbstractPackageNode<ChildrenT
 
     public void actionPerformed(ActionEvent e) {
         if (!isEnabled()) return;
-        IOEQ.add(new Runnable() {
+        TaskQueue.getQueue().add(new QueueAction<Void, RuntimeException>() {
 
-            public void run() {
+            @Override
+            protected Void run() throws RuntimeException {
                 List<ChildrenType> children = getSelection().getChildren();
                 java.util.List<CheckableLink> checkableLinks = new ArrayList<CheckableLink>(children.size());
                 for (AbstractPackageChildrenNode l : children) {
-                    if (l instanceof DownloadLink) {
-                        ((DownloadLink) l).setAvailableStatus(AvailableStatus.UNCHECKED);
-                        checkableLinks.add(((DownloadLink) l));
-                    } else if (l instanceof CrawledLink) {
-                        ((CrawledLink) l).getDownloadLink().setAvailableStatus(AvailableStatus.UNCHECKED);
-                        checkableLinks.add(((CrawledLink) l));
+                    if (l instanceof DownloadLink || l instanceof CrawledLink) {
+                        checkableLinks.add(((CheckableLink) l));
                     }
                 }
                 LinkChecker<CheckableLink> linkChecker = new LinkChecker<CheckableLink>(true);
                 linkChecker.check(checkableLinks);
+                return null;
             }
-
-        }, true);
+        });
     }
 
 }

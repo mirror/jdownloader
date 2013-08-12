@@ -252,12 +252,12 @@ public abstract class ContextMenuManager<PackageType extends AbstractPackageNode
     }
 
     public void setMenuData(MenuContainerRoot root) {
-        String rootString = JSonStorage.toString(root);
-        String orgDefString = JSonStorage.toString(setupDefaultStructure());
+        String rootString = JSonStorage.serializeToJson(root);
+        String orgDefString = JSonStorage.serializeToJson(setupDefaultStructure());
         MenuContainerRoot def = JSonStorage.restoreFromString(orgDefString, new TypeRef<MenuContainerRoot>() {
         });
         def.validate();
-        String defaultString = JSonStorage.toString(def);
+        String defaultString = JSonStorage.serializeToJson(def);
         if (rootString.equals(defaultString)) {
             root = null;
         }
@@ -300,7 +300,7 @@ public abstract class ContextMenuManager<PackageType extends AbstractPackageNode
 
     public void saveTo(MenuContainerRoot root, File saveTo) throws UnsupportedEncodingException, IOException {
 
-        IO.secureWrite(saveTo, JSonStorage.toString(new MenuStructure(root, getUnused(root))).getBytes("UTF-8"));
+        IO.secureWrite(saveTo, JSonStorage.serializeToJson(new MenuStructure(root, getUnused(root))).getBytes("UTF-8"));
     }
 
     public MenuStructure readFrom(File file) throws IOException {

@@ -29,7 +29,7 @@ public class CleanupAutoDeleteFilesEnabledToggleAction<PackageType extends Abstr
     }
 
     public void actionPerformed(ActionEvent e) {
-
+        if (!isEnabled()) return;
         for (Archive archive : archives) {
             archive.getSettings().setRemoveFilesAfterExtraction(isSelected() ? BooleanStatus.TRUE : BooleanStatus.FALSE);
         }

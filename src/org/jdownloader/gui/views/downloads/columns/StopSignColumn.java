@@ -60,13 +60,13 @@ public class StopSignColumn extends ExtTextColumn<AbstractNode> {
 
     @Override
     protected Icon getIcon(AbstractNode value) {
-        if (DownloadWatchDog.getInstance().isStopMark(value)) { return icon; }
+        if (DownloadWatchDog.getInstance().getSession().isStopMark(value)) { return icon; }
         return null;
     }
 
     @Override
     protected String getTooltipText(AbstractNode obj) {
-        if (DownloadWatchDog.getInstance().isStopMark(obj)) { return _GUI._.jd_gui_swing_jdgui_views_downloadview_TableRenderer_stopmark(); }
+        if (DownloadWatchDog.getInstance().getSession().isStopMark(obj)) { return _GUI._.jd_gui_swing_jdgui_views_downloadview_TableRenderer_stopmark(); }
         return null;
     }
 

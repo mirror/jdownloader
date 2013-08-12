@@ -1,6 +1,5 @@
 package jd.plugins;
 
-
 public class DownloadLinkProperty {
     public static enum Property {
         RESET,
