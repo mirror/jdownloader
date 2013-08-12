@@ -27,16 +27,22 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "gogoanime.com", "goodanime.net", "gooddrama.net" }, urls = { "http://(www\\.)?gogoanime\\.com/(?!category|thumbs|sitemap|img|xmlrpc|fav|images|ads)[a-z0-9\\-_]+(/\\d+)?", "http://(www\\.)?goodanime\\.net/(?!category|thumbs|sitemap|img|xmlrpc|fav|images|ads)[a-z0-9\\-_]+(/\\d+)?", "http://(www\\.)?gooddrama\\.net/(?!category|thumbs|sitemap|img|xmlrpc|fav|images|ads)([a-z0-9\\-_]+/?){2}([\\d\\-]+)?" }, flags = { 0, 0, 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "gogoanime.com", "goodanime.net", "gooddrama.net" }, urls = { "http://(www\\.)?gogoanime\\.com/[a-z0-9\\-_]+(/\\d+)?", "http://(www\\.)?goodanime\\.net/[a-z0-9\\-_]+(/\\d+)?", "http://(www\\.)?gooddrama\\.net/([a-z0-9\\-_]+/?){2}([\\d\\-]+)?" }, flags = { 0, 0, 0 })
 public class GogoanimeCom extends PluginForDecrypt {
 
     public GogoanimeCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
+    private static final String INVALIDLINKS = "http://(www\\.)?(gooddrama\\.net|gogoanime\\.com|goodanime\\.net)/(category|thumbs|sitemap|img|xmlrpc|fav|images|ads|gga\\-contact).*?";
+
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
+        if (parameter.matches(INVALIDLINKS)) {
+            logger.info("Link invalid: " + parameter);
+            return decryptedLinks;
+        }
         br.setFollowRedirects(true);
         try {
             br.getPage(parameter);

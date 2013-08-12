@@ -44,6 +44,8 @@ public class Indowebster extends PluginForHost {
         return "http://www.indowebster.com/policy-tos.php";
     }
 
+    private static final String NOCHUNKS = "NOCHUNKS";
+
     private String getDLLink() throws Exception {
         final Regex importantStuff = br.getRegex("\\$\\.post\\(\\'(http://[^<>\"]+)\\',\\{(.*?)\\}");
         final String action = importantStuff.getMatch(0);
@@ -68,66 +70,6 @@ public class Indowebster extends PluginForHost {
     @Override
     public int getMaxSimultanFreeDownloadNum() {
         return -1;
-    }
-
-    @Override
-    public void handleFree(final DownloadLink link) throws Exception {
-        requestFileInformation(link);
-        if (br.containsHTML("Storage Maintenance, Back Later")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Storage maintenance", 60 * 60 * 1000l); }
-        if (br.containsHTML(">404 Page Not Found<")) { throw new PluginException(LinkStatus.ERROR_FATAL, "Unknown server error (404)"); }
-        String passCode = link.getStringProperty("pass", null);
-        if (br.containsHTML(PASSWORDTEXT)) {
-            final String valueName = br.getRegex("type=\"password\" name=\"(.*?)\"").getMatch(0);
-            if (valueName == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
-            if (passCode == null) {
-                passCode = Plugin.getUserInput("Password?", link);
-            }
-            br.postPage(link.getDownloadURL(), valueName + "=" + Encoding.urlEncode(passCode));
-            if (br.containsHTML(PASSWORDTEXT)) { throw new PluginException(LinkStatus.ERROR_RETRY, "Wrong password"); }
-        }
-        String ad_url = br.getRegex("<a id=\"download\" href=\"(http://.*?)\"").getMatch(0);
-        if (ad_url == null) {
-            ad_url = br.getRegex("\"(http://v\\d+\\.indowebster\\.com/downloads/jgjbcf/[a-z0-9]+)\"").getMatch(0);
-        }
-        if (ad_url == null) {
-            logger.warning("ad_url is null!");
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        if (!ad_url.startsWith("http://")) {
-            ad_url = "http://www.indowebster.com/" + ad_url;
-        }
-        br.getPage(ad_url);
-        final String realName = br.getRegex("<strong id=\"filename\">(\\[\\w+\\.indowebster\\.com\\])?(.*?)</strong>").getMatch(1);
-        if (realName != null) {
-            link.setFinalFileName(Encoding.htmlDecode(realName));
-        }
-        /**
-         * If we reach this line the password should be correct even if the download fails
-         */
-        if (passCode != null) {
-            link.setProperty("pass", passCode);
-        }
-        final String waittime = br.getRegex("var s = (\\d+);").getMatch(0);
-        int wait = 25;
-        if (waittime != null) {
-            wait = Integer.parseInt(waittime);
-        }
-        sleep(wait * 1001l, link);
-        String dllink = getDLLink();
-        if (dllink == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
-        dllink = dllink.trim();
-        br.setDebug(true);
-        br.setReadTimeout(180 * 1001);
-        br.setConnectTimeout(180 * 1001);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
-            if (br.containsHTML(">404 Not Found<")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 60 * 60 * 1000l); }
-            if (br.containsHTML(">Indowebster\\.com under maintenance")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.indowebster.undermaintenance", "Under maintenance"), 30 * 60 * 1000l); }
-            if (br.containsHTML("But Our Download Server Can be Accessed from Indonesia Only")) { throw new PluginException(LinkStatus.ERROR_FATAL, "Download Server Can be Accessed from Indonesia Only"); }
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        dl.startDownload();
     }
 
     @Override
@@ -173,6 +115,81 @@ public class Indowebster extends PluginForHost {
             downloadLink.getLinkStatus().setStatusText(JDL.L("plugins.hoster.indowebstercom.passwordprotected", "This link is password protected"));
         }
         return AvailableStatus.TRUE;
+    }
+
+    @Override
+    public void handleFree(final DownloadLink link) throws Exception {
+        requestFileInformation(link);
+        if (br.containsHTML("Storage Maintenance, Back Later")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Storage maintenance", 60 * 60 * 1000l); }
+        if (br.containsHTML(">404 Page Not Found<")) { throw new PluginException(LinkStatus.ERROR_FATAL, "Unknown server error (404)"); }
+        String passCode = link.getStringProperty("pass", null);
+        if (br.containsHTML(PASSWORDTEXT)) {
+            final String valueName = br.getRegex("type=\"password\" name=\"(.*?)\"").getMatch(0);
+            if (valueName == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+            if (passCode == null) {
+                passCode = Plugin.getUserInput("Password?", link);
+            }
+            br.postPage(link.getDownloadURL(), valueName + "=" + Encoding.urlEncode(passCode));
+            if (br.containsHTML(PASSWORDTEXT)) { throw new PluginException(LinkStatus.ERROR_RETRY, "Wrong password"); }
+        }
+        String ad_url = br.getRegex("<a id=\"download\" href=\"(http://.*?)\"").getMatch(0);
+        if (ad_url == null) {
+            ad_url = br.getRegex("\"(http://v\\d+\\.indowebster\\.com/downloads/jgjbcf/[a-z0-9]+)\"").getMatch(0);
+        }
+        if (ad_url == null) {
+            logger.warning("ad_url is null!");
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        if (!ad_url.startsWith("http://")) {
+            ad_url = "http://www.indowebster.com/" + ad_url;
+        }
+        br.getPage(ad_url);
+        final String realName = br.getRegex("<strong id=\"filename\">(\\[\\w+\\.indowebster\\.com\\])?(.*?)</strong>").getMatch(1);
+        if (realName != null) {
+            link.setFinalFileName(Encoding.htmlDecode(realName));
+        }
+        /**
+         * If we reach this line the password should be correct even if the
+         * download fails
+         */
+        if (passCode != null) {
+            link.setProperty("pass", passCode);
+        }
+        final String waittime = br.getRegex("var s = (\\d+);").getMatch(0);
+        int wait = 25;
+        if (waittime != null) {
+            wait = Integer.parseInt(waittime);
+        }
+        sleep(wait * 1001l, link);
+        String dllink = getDLLink();
+        if (dllink == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+        dllink = dllink.trim();
+        br.setDebug(true);
+        br.setReadTimeout(180 * 1001);
+        br.setConnectTimeout(180 * 1001);
+
+        int maxChunks = 0;
+        if (link.getBooleanProperty(Indowebster.NOCHUNKS, false)) maxChunks = 1;
+
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, maxChunks);
+        if (dl.getConnection().getContentType().contains("html")) {
+            br.followConnection();
+            if (br.containsHTML(">404 Not Found<")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 60 * 60 * 1000l); }
+            if (br.containsHTML(">Indowebster\\.com under maintenance")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.indowebster.undermaintenance", "Under maintenance"), 30 * 60 * 1000l); }
+            if (br.containsHTML("But Our Download Server Can be Accessed from Indonesia Only")) { throw new PluginException(LinkStatus.ERROR_FATAL, "Download Server Can be Accessed from Indonesia Only"); }
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        if (!this.dl.startDownload()) {
+            try {
+                if (dl.externalDownloadStop()) return;
+            } catch (final Throwable e) {
+            }
+            /* unknown error, we disable multiple chunks */
+            if (link.getBooleanProperty(Indowebster.NOCHUNKS, false) == false) {
+                link.setProperty(Indowebster.NOCHUNKS, Boolean.valueOf(true));
+                throw new PluginException(LinkStatus.ERROR_RETRY);
+            }
+        }
     }
 
     @Override

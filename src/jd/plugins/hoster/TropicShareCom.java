@@ -51,6 +51,8 @@ public class TropicShareCom extends PluginForHost {
         return "http://tropicshare.com/pages/6-Terms-of-service.html";
     }
 
+    private static final String NOCHUNKS = "NOCHUNKS";
+
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
@@ -153,14 +155,26 @@ public class TropicShareCom extends PluginForHost {
         requestFileInformation(link);
         login(account, false);
         // br.getPage(link.getDownloadURL());
+        int maxChunks = 0;
+        if (link.getBooleanProperty(TropicShareCom.NOCHUNKS, false)) maxChunks = 1;
         final String dllink = "http://tropicshare.com/files/download/premium/" + new Regex(link.getDownloadURL(), "(\\d+)$").getMatch(0);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, Encoding.htmlDecode(dllink), true, 0);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, Encoding.htmlDecode(dllink), true, maxChunks);
         if (dl.getConnection().getContentType().contains("html")) {
             logger.warning("The final dllink seems not to be a file!");
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dl.startDownload();
+        if (!this.dl.startDownload()) {
+            try {
+                if (dl.externalDownloadStop()) return;
+            } catch (final Throwable e) {
+            }
+            /* unknown error, we disable multiple chunks */
+            if (link.getBooleanProperty(TropicShareCom.NOCHUNKS, false) == false) {
+                link.setProperty(TropicShareCom.NOCHUNKS, Boolean.valueOf(true));
+                throw new PluginException(LinkStatus.ERROR_RETRY);
+            }
+        }
     }
 
     @Override
