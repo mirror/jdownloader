@@ -20,6 +20,7 @@ contextmenu_main=Archív(y)
 contextmenu_password=Nastaviť heslo archívu
 crash_title=JDownloader havaroval!
 date=Dátum
+description=Extrahuje všetky bežné typy archívov (zip, rar, 7zip, ...)
 downloadedbad=Súbor musí byť stiahnutý
 downloadedok=Súbor už existuje
 dummyarchivedialog_title=Archív %s1
