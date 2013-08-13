@@ -102,7 +102,7 @@ public class YunFileCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         br.followConnection();
-        if (br.containsHTML("<title> \\- Yunfile\\.com \\- Free File Hosting and Sharing, Permanently Save </title>")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("<title> \\- Yunfile\\.com \\- Free File Hosting and Sharing, Permanently Save </title>|Access denied<")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("class=\"title\">Downloading:\\&nbsp;\\&nbsp;([^<>\"]*?)</h2>").getMatch(0);
         if (filename == null) filename = br.getRegex("<title>([^<>\"]*?) \\- Yunfile\\.com \\- Free File Hosting and Sharing, Permanently Save </title>").getMatch(0);
         final String filesize = br.getRegex("File Size: <b>([^<>\"]*?)</b>").getMatch(0);

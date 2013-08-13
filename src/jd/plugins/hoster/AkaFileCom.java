@@ -100,7 +100,7 @@ public class AkaFileCom extends PluginForHost {
     // protocol: has https but, not setup correctly
     // captchatype: null
     // other: no redirects
-    // mods: redirects to some lame .php pages. added extra validation of acceptable dllink
+    // mods: redirects to some lame .php pages. added extra validation of acceptable dllink, removed one correctBR regex to prevent errors
 
     private void setConstants(final Account account) {
         if (account != null && account.getBooleanProperty("free")) {
@@ -201,7 +201,7 @@ public class AkaFileCom extends PluginForHost {
             }
         }
 
-        if (cbr.containsHTML("(No such file|>File Not Found<|>The file was removed by|Reason for deletion:\n|<li>The file (expired|deleted by (its owner|administration)))")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (cbr.containsHTML("(No such file|>File Not Found<|>The file was removed by|Reason for deletion:\n|<li>The file (expired|deleted by (its owner|administration))|the file looks deleted from our dedicated servers)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (cbr.containsHTML(MAINTENANCE)) {
             downloadLink.getLinkStatus().setStatusText(MAINTENANCEUSERTEXT);
             return AvailableStatus.TRUE;
@@ -472,7 +472,6 @@ public class AkaFileCom extends PluginForHost {
             }
         }
         regexStuff.add("<!(--.*?--)>");
-        regexStuff.add("(<div[^>]+display: ?none;[^>]+>.*?</div>)");
         regexStuff.add("(visibility:hidden>.*?<)");
 
         for (String aRegex : regexStuff) {
@@ -1685,9 +1684,9 @@ public class AkaFileCom extends PluginForHost {
     }
 
     private boolean isJava7nJDStable() {
-        if (System.getProperty("jd.revision.jdownloaderrevision") == null && System.getProperty("java.version").matches("1\\.[7-9].+")) 
+        if (System.getProperty("jd.revision.jdownloaderrevision") == null && System.getProperty("java.version").matches("1\\.[7-9].+"))
             return true;
-         else
+        else
             return false;
     }
 

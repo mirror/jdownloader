@@ -176,6 +176,7 @@ public class SuperLoadCz extends PluginForHost {
         if (!dl.getConnection().isContentDisposition()) {
             /* download is not contentdisposition, so remove this host from premiumHosts list */
             br.followConnection();
+            if (br.containsHTML(">Omlouváme se, ale soubor se nepovedlo stáhnout")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 30 * 60 * 1000l);
             /* temp disabled the host */
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         } else {
