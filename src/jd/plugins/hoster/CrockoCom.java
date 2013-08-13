@@ -56,6 +56,8 @@ public class CrockoCom extends PluginForHost {
         link.setUrlDownload(link.getDownloadURL().replace("easy-share.com/", "crocko.com/"));
     }
 
+    // TODO: Implement API if possible: http://www.crocko.com/de/developers.html
+
     @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         AccountInfo ai = new AccountInfo();

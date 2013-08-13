@@ -98,6 +98,11 @@ public class ImgSrcRu extends PluginForDecrypt {
                 }
             }
 
+            if (br.getURL().contains("http://imgsrc.ru/main/search.php")) {
+                logger.info("Link offline: " + parameter);
+                return decryptedLinks;
+            }
+
             username = br.getRegex("on ([^\">\r\n ]+)\\.iMGSRC\\.RU( @ iMGSRC\\.RU)?").getMatch(0);
             if (username == null) {
                 logger.warning("Decrypter broken for link: " + parameter);
