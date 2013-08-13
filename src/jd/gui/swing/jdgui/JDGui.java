@@ -64,7 +64,6 @@ import jd.gui.swing.jdgui.components.StatusBarImpl;
 import jd.gui.swing.jdgui.components.toolbar.MainToolBar;
 import jd.gui.swing.jdgui.interfaces.View;
 import jd.gui.swing.jdgui.menu.JDMenuBar;
-import jd.gui.swing.jdgui.views.settings.ConfigPanel;
 import jd.gui.swing.jdgui.views.settings.ConfigurationView;
 import jd.gui.swing.jdgui.views.settings.sidebar.AddonConfig;
 import jd.nutils.Screen;
@@ -139,12 +138,6 @@ public class JDGui implements UpdaterListener, OwnerFinder {
      * @author Coalado
      */
     public static enum Panels {
-        CONFIG,
-
-        /**
-         * Represents a configview. Parameter is a {@link ConfigContainer} or the {@link Class} reference to an {@link ConfigPanel}.
-         */
-        CONFIGPANEL,
 
         /**
          * Represents the {@link DownloadView}.
@@ -155,10 +148,6 @@ public class JDGui implements UpdaterListener, OwnerFinder {
          * Represents the {@link LinkgrabberView}.
          */
         LINKGRABBER,
-        /**
-         * Displays the {@link Premium}-ConfigPanel. The parameter is the account which should be selected.
-         */
-        PREMIUMCONFIG
 
     }
 
@@ -1232,7 +1221,7 @@ public class JDGui implements UpdaterListener, OwnerFinder {
      * @see Panels
      */
 
-    public void requestPanel(final Panels panel, final Object param) {
+    public void requestPanel(final Panels panel) {
         new EDTHelper<Object>() {
             @Override
             public Object edtRun() {

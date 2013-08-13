@@ -3,6 +3,7 @@ package jd.gui.swing.jdgui.views.settings.panels.pluginsettings;
 import javax.swing.ImageIcon;
 
 import org.jdownloader.gui.settings.AbstractConfigPanel;
+import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.plugins.controller.host.HostPluginController;
 import org.jdownloader.translate._JDT;
@@ -12,7 +13,7 @@ public class PluginSettings extends AbstractConfigPanel {
     private PluginSettingsPanel psp;
 
     public String getTitle() {
-        return _JDT._.gui_settings_plugins_title();
+        return _GUI._.PluginSettings_getTitle();
     }
 
     public PluginSettings() {

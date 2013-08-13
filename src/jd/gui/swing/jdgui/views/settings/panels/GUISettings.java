@@ -200,7 +200,7 @@ public class GUISettings extends AbstractConfigPanel implements StateUpdateListe
 
                     @Override
                     protected void runInEDT() {
-                        JDGui.getInstance().requestPanel(JDGui.Panels.DOWNLOADLIST, null);
+                        JDGui.getInstance().requestPanel(JDGui.Panels.DOWNLOADLIST);
 
                         DownloadListContextMenuManager.getInstance().openGui();
                     }
@@ -221,7 +221,7 @@ public class GUISettings extends AbstractConfigPanel implements StateUpdateListe
 
                     @Override
                     protected void runInEDT() {
-                        JDGui.getInstance().requestPanel(JDGui.Panels.LINKGRABBER, null);
+                        JDGui.getInstance().requestPanel(JDGui.Panels.LINKGRABBER);
 
                         LinkgrabberContextMenuManager.getInstance().openGui();
                     }

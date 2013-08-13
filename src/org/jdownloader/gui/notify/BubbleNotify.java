@@ -146,7 +146,7 @@ public class BubbleNotify implements UpdaterListener, ReconnecterListener, Chall
                         no.setActionListener(new ActionListener() {
 
                             public void actionPerformed(ActionEvent e) {
-                                JDGui.getInstance().requestPanel(JDGui.Panels.LINKGRABBER, null);
+                                JDGui.getInstance().requestPanel(JDGui.Panels.LINKGRABBER);
                                 JDGui.getInstance().setFrameState(FrameState.TO_FRONT_FOCUSED);
                             }
                         });

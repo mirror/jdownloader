@@ -139,7 +139,7 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
                     protected void runInEDT() {
                         try {
                             System.out.println("Highlight");
-                            if (CFG_GUI.CFG.isSwitchToLinkgrabberTabOnNewLinksAddedEnabled()) JDGui.getInstance().requestPanel(JDGui.Panels.LINKGRABBER, null);
+                            if (CFG_GUI.CFG.isSwitchToLinkgrabberTabOnNewLinksAddedEnabled()) JDGui.getInstance().requestPanel(JDGui.Panels.LINKGRABBER);
 
                             switch (CFG_GUI.CFG.getNewLinksAction()) {
                             case FOCUS:

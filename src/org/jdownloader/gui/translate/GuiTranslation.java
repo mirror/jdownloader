@@ -3021,4 +3021,53 @@ public interface GuiTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Group single files in a 'various package'" })
     String GeneralSettingsConfigPanel_GeneralSettingsConfigPanel_various_package();
+
+    @Default(lngs = { "en" }, values = { "Captchas" })
+    String AntiCaptchaConfigPanel_getTitle();
+
+    @Default(lngs = { "en" }, values = { "Plugins" })
+    String PluginSettings_getTitle();
+
+    @Default(lngs = { "en" }, values = { "Many services ask you to enter a so called 'Captcha'. Usually, a captcha is a tiny image that contains a few letters. You have to type these letters to proove that you are human. JDownloader will try to solve these captchas without asking you. However, there are captchas that are too hard to read for JDownloader - thus JD will ask you." })
+    String AntiCaptchaConfigPanel_onShow_description();
+
+    @Default(lngs = { "en" }, values = { "Captcha Solver Services" })
+    String AntiCaptchaConfigPanel_AntiCaptchaConfigPanel_solver();
+
+    @Default(lngs = { "en" }, values = { "Play Notify Sound for Captchas" })
+    String AntiCaptchaConfigPanel_AntiCaptchaConfigPanel_sounds();
+
+    @Default(lngs = { "en" }, values = { "Download Captchas auto close after timeout" })
+    String AntiCaptchaConfigPanel_AntiCaptchaConfigPanel_countdown_download();
+
+    @Default(lngs = { "en" }, values = { "Some captchas are too hard for JDownloader to auto recognize. There are a few Captcha Solver Services that help you to get these captchas solved anyways..." })
+    String AntiCaptchaConfigPanel_onShow_description_solver();
+
+    @Default(lngs = { "en" }, values = { "Solver: " })
+    String CESSettingsPanel_CESSettingsPanel_choose_();
+
+    @Default(lngs = { "en" }, values = { "Captcha Exchange Service: %s1" })
+    String CESSettingsPanel_runInEDT_header(String displayName);
+
+    @Default(lngs = { "en" }, values = { "The my.JDownloader.org Service sends all captcha requests to your mobile or any other internet device. Use this service if you want to solve captchas remotly." })
+    String MyJDownloaderService_createPanel_description_();
+
+    @Default(lngs = { "en" }, values = { "Earn 'credits' by solving captchas for others. In return, others solve your captchas while you are not in front of your computer. Check out the service's website for more details." })
+    String AntiCaptchaConfigPanel_onShow_description_ces();
+
+    @Default(lngs = { "en" }, values = { "Visit the Website" })
+    String lit_open_website();
+
+    @Default(lngs = { "en" }, values = { "Enter Api Key" })
+    String NinekwService_createPanel_apikey();
+
+    @Default(lngs = { "en" }, values = { "Enter your 9kw.eu API Key below. If you do not have an account yet, click the Link above and register for an account. It's free!" })
+    String NinekwService_createPanel_logins_();
+
+    @Default(lngs = { "en" }, values = { "Enable 9kw.eu Service" })
+    String NinekwService_createPanel_enabled();
+
+    @Default(lngs = { "en" }, values = { "Enter your Captcha Brotherhood Logins below. If you do not have an account yet, click the Link above and register for an account. It's free!" })
+    String captchabrotherhoodService_createPanel_logins_();
+
 }

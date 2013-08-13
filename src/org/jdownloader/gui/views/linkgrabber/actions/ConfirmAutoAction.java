@@ -198,7 +198,7 @@ public class ConfirmAutoAction extends SelectionAppAction<CrawledPackage, Crawle
 
                         @Override
                         protected void runInEDT() {
-                            JDGui.getInstance().requestPanel(JDGui.Panels.DOWNLOADLIST, null);
+                            JDGui.getInstance().requestPanel(JDGui.Panels.DOWNLOADLIST);
                         }
                     };
                 }

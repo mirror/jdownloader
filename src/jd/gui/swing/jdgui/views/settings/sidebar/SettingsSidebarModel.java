@@ -8,12 +8,13 @@ import javax.swing.JList;
 
 import jd.gui.swing.jdgui.JDGui;
 import jd.gui.swing.jdgui.views.settings.panels.BasicAuthentication;
-import jd.gui.swing.jdgui.views.settings.panels.GeneralSettingsConfigPanel;
 import jd.gui.swing.jdgui.views.settings.panels.GUISettings;
+import jd.gui.swing.jdgui.views.settings.panels.GeneralSettingsConfigPanel;
 import jd.gui.swing.jdgui.views.settings.panels.MyJDownloaderSettingsPanel;
 import jd.gui.swing.jdgui.views.settings.panels.ReconnectSettings;
 import jd.gui.swing.jdgui.views.settings.panels.accountmanager.AccountManagerSettings;
 import jd.gui.swing.jdgui.views.settings.panels.advanced.AdvancedSettings;
+import jd.gui.swing.jdgui.views.settings.panels.anticaptcha.AntiCaptchaConfigPanel;
 import jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter.Linkgrabber;
 import jd.gui.swing.jdgui.views.settings.panels.packagizer.Packagizer;
 import jd.gui.swing.jdgui.views.settings.panels.pluginsettings.PluginSettings;
@@ -36,7 +37,7 @@ import org.jdownloader.settings.GraphicalUserInterfaceSettings;
 public class SettingsSidebarModel extends DefaultListModel implements GenericConfigEventListener<Object>, ExtensionControllerListener {
 
     private static final long            serialVersionUID = -204494527404304349L;
-    private GeneralSettingsConfigPanel           cfg;
+    private GeneralSettingsConfigPanel   cfg;
 
     private ReconnectSettings            rcs;
     private ProxyConfig                  pc;
@@ -54,7 +55,8 @@ public class SettingsSidebarModel extends DefaultListModel implements GenericCon
     private SingleReachableState         TREE_COMPLETE    = new SingleReachableState("TREE_COMPLETE");
     private final JList                  list;
     protected MyJDownloaderSettingsPanel myJDownloader;
-    protected BubbleNotifyConfigPanel        notifierPanel;
+    protected BubbleNotifyConfigPanel    notifierPanel;
+    protected AntiCaptchaConfigPanel     ac;
 
     public SettingsSidebarModel(JList list) {
         super();
@@ -144,6 +146,18 @@ public class SettingsSidebarModel extends DefaultListModel implements GenericCon
                 if (ba != null) return ba;
                 ba = new BasicAuthentication();
                 return ba;
+            }
+        }.getReturnValue();
+    }
+
+    private AntiCaptchaConfigPanel getAntiCaptchaConfigPanel() {
+        if (ac != null) return ac;
+
+        return new EDTHelper<AntiCaptchaConfigPanel>() {
+            public AntiCaptchaConfigPanel edtRun() {
+                if (ac != null) return ac;
+                ac = new AntiCaptchaConfigPanel();
+                return ac;
             }
         }.getReturnValue();
     }
@@ -266,6 +280,7 @@ public class SettingsSidebarModel extends DefaultListModel implements GenericCon
                         getAccountManagerSettings();
                         getBasicAuthentication();
                         getPluginSettings();
+                        getAntiCaptchaConfigPanel();
                         getGUISettings();
                         getNotifierConfigPanel();
                         getMyJDownloaderPanel();
@@ -284,6 +299,7 @@ public class SettingsSidebarModel extends DefaultListModel implements GenericCon
                                 addElement(getAccountManagerSettings());
                                 addElement(getBasicAuthentication());
                                 addElement(getPluginSettings());
+                                addElement(getAntiCaptchaConfigPanel());
                                 addElement(getGUISettings());
                                 addElement(getNotifierConfigPanel());
                                 addElement(getMyJDownloaderPanel());

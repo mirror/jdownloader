@@ -263,6 +263,10 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
 
     void setActivePluginConfigPanel(String name);
 
+    void setActiveCESConfigPanel(String name);
+
+    String getActiveCESConfigPanel();
+
     void setBalloonNotificationEnabled(boolean b);
 
     void setCaptchaScaleFactor(int b);
