@@ -376,7 +376,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                     if (folders.length >= 3) {
                         if ("media".equals(folders[1])) {
                             /* 0:/ | 1:media | 2:mounted volume */
-                            checking = new File("/media/" + folders[1]);
+                            checking = new File("/media/" + folders[2]);
                         }
                     }
                     break;
@@ -385,10 +385,10 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                     if (folders.length >= 3) {
                         if ("media".equals(folders[1])) {
                             /* 0:/ | 1:media | 2:mounted volume */
-                            checking = new File("/media/" + folders[1]);
+                            checking = new File("/media/" + folders[2]);
                         } else if ("Volumes".equals(folders[1])) {
                             /* 0:/ | 1:Volumes | 2:mounted volume */
-                            checking = new File("/Volumes/" + folders[1]);
+                            checking = new File("/Volumes/" + folders[2]);
                         }
                     }
                     break;
