@@ -31,6 +31,8 @@ import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathFactory;
 
 import jd.PluginWrapper;
+import jd.config.ConfigContainer;
+import jd.config.ConfigEntry;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -39,27 +41,41 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.download.DownloadInterface;
+import jd.utils.locale.JDL;
 
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "arte.tv", "liveweb.arte.tv", "videos.arte.tv" }, urls = { "http://(www\\.)?arte\\.tv/[a-z]{2}/videos/.+", "http://liveweb\\.arte\\.tv/[a-z]{2}/videos?/.+", "http://videos\\.arte\\.tv/[a-z]{2}/videos/.+" }, flags = { 32, 32, 32 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "arte.tv", "liveweb.arte.tv", "videos.arte.tv" }, urls = { "http://(www\\.)?arte\\.tv/[a-z]{2}/videos/.+", "http://liveweb\\.arte\\.tv/[a-z]{2}/videos?/.+", "decrypted://(videos|www).arte\\.tv/(guide/[a-z]{2}/[0-9\\-]+|[a-z]{2}/videos)/.+" }, flags = { 32, 32, 32 })
 public class ArteTv extends PluginForHost {
 
-    private String   CLIPURL     = null;
-    private String   EXPIRED     = null;
-    private String   FLASHPLAYER = null;
-    private String   clipData;
+    private String              CLIPURL     = null;
+    private String              EXPIRED     = null;
+    private String              FLASHPLAYER = null;
+    private String              clipData;
 
-    private Document doc;
+    private Document            doc;
+
+    private static final String Q_SUBTITLES = "Q_SUBTITLES";
+    private static final String Q_BEST      = "Q_BEST";
+    private static final String Q_LOW       = "Q_LOW";
+    private static final String Q_HIGH      = "Q_HIGH";
+    private static final String Q_VERYHIGH  = "Q_VERYHIGH";
+    private static final String Q_HD        = "Q_HD";
 
     public ArteTv(PluginWrapper wrapper) {
         super(wrapper);
+        setConfigElements();
+    }
+
+    @Override
+    public void correctDownloadLink(DownloadLink link) {
+        link.setUrlDownload(link.getDownloadURL().replaceFirst("decrypted://", "http://"));
     }
 
     private boolean checkDateExpiration(String s) {
-        if (s == null) { return false; }
+        if (s == null) return false;
         EXPIRED = s;
         SimpleDateFormat df = new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss Z", Locale.getDefault());
         try {
@@ -70,7 +86,7 @@ public class ArteTv extends PluginForHost {
                 df = new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss Z", Locale.ENGLISH);
                 date = df.parse(s);
             }
-            if (date.getTime() < System.currentTimeMillis()) { return true; }
+            if (date.getTime() < System.currentTimeMillis()) return true;
             SimpleDateFormat dfto = new SimpleDateFormat("dd. MMM yyyy 'ab' HH:mm 'Uhr'");
             EXPIRED = dfto.format(date);
         } catch (Throwable e) {
@@ -84,6 +100,14 @@ public class ArteTv extends PluginForHost {
             dl = new RTMPDownload(this, downloadLink, CLIPURL);
             setupRTMPConnection(dl);
             ((RTMPDownload) dl).startDownload();
+        } else if (CLIPURL.startsWith("http")) {
+            br.setFollowRedirects(true);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, CLIPURL, true, 0);
+            if (dl.getConnection().getContentType().contains("html")) {
+                br.followConnection();
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            dl.startDownload();
         } else {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -113,11 +137,14 @@ public class ArteTv extends PluginForHost {
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws Exception {
         br.setFollowRedirects(true);
         String link = downloadLink.getDownloadURL();
-        String lang = new Regex(link, "http://\\w+.arte.tv/(\\w+)/.+").getMatch(0);
+
+        if (downloadLink.getBooleanProperty("offline", false)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+
+        String lang = new Regex(link, "http://\\w+.arte.tv/(guide/)?(\\w+)/.+").getMatch(1);
         lang = lang != null && "de".equalsIgnoreCase(lang) ? "De" : lang;
         lang = lang != null && "fr".equalsIgnoreCase(lang) ? "Fr" : lang;
 
-        String expiredBefore = null, expiredAfter = null, status = null, fileName = null;
+        String expiredBefore = null, expiredAfter = null, status = null, fileName = null, ext = "";
         clipData = br.getPage(link);
 
         if (!"Error 404".equalsIgnoreCase(getClipData("title")) || lang == null) {
@@ -130,6 +157,12 @@ public class ArteTv extends PluginForHost {
                 fileName = paras.get("name" + lang);
                 CLIPURL = paras.get("urlHd");
                 CLIPURL = CLIPURL == null ? paras.get("urlSd") : CLIPURL;
+            } else if (link.startsWith("http://www.arte.tv/guide/")) {
+                expiredBefore = downloadLink.getStringProperty("VRA", null);
+                expiredAfter = downloadLink.getStringProperty("VRU", null);
+                fileName = downloadLink.getStringProperty("directName", null);
+                CLIPURL = downloadLink.getStringProperty("directURL", null);
+                FLASHPLAYER = downloadLink.getStringProperty("flashplayer", null);
             } else {
                 paras = requestVideosArte();
                 expiredBefore = paras.get("dateVideo");
@@ -161,15 +194,21 @@ public class ArteTv extends PluginForHost {
                 status = "Cette vidéo n'est plus actuellement pas disponible!";
             }
         }
-        if (status != null) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, status); }
-
-        if (fileName == null || CLIPURL == null) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
-
-        String ext = CLIPURL.substring(CLIPURL.lastIndexOf("."), CLIPURL.length());
-        if (ext.length() > 4) {
-            ext = new Regex(ext, Pattern.compile("\\w/(mp4):", Pattern.CASE_INSENSITIVE)).getMatch(0);
+        if (status != null) {
+            logger.warning(status);
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
         }
-        ext = ext == null ? ".flv" : "." + ext;
+
+        if (fileName == null || CLIPURL == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+
+        if (!link.startsWith("http://www.arte.tv/guide/")) {
+            ext = CLIPURL.substring(CLIPURL.lastIndexOf("."), CLIPURL.length());
+            if (ext.length() > 4) {
+                ext = new Regex(ext, Pattern.compile("\\w/(mp4):", Pattern.CASE_INSENSITIVE)).getMatch(0);
+            }
+            ext = ext == null ? ".flv" : "." + ext;
+        }
+
         if (fileName.endsWith(".")) {
             fileName = fileName.substring(0, fileName.length() - 1);
         }
@@ -259,6 +298,24 @@ public class ArteTv extends PluginForHost {
             } catch (Throwable e) {
             }
         }
+    }
+
+    @Override
+    public String getDescription() {
+        return "JDownloader's ZDF Plugin helps downloading videoclips from zdf.de. ZDF provides different video qualities.";
+    }
+
+    private void setConfigElements() {
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), Q_SUBTITLES, JDL.L("plugins.hoster.arte.subtitles", "Download subtitle whenever possible")).setEnabled(false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
+        final ConfigEntry bestonly = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), Q_BEST, JDL.L("plugins.hoster.arte.best", "Load Best Version ONLY")).setDefaultValue(false);
+        getConfig().addEntry(bestonly);
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), Q_LOW, JDL.L("plugins.hoster.arte.loadlow", "Load low version")).setDefaultValue(true).setEnabledCondidtion(bestonly, false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), Q_HIGH, JDL.L("plugins.hoster.arte.loadhigh", "Load high version")).setDefaultValue(true).setEnabledCondidtion(bestonly, false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), Q_VERYHIGH, JDL.L("plugins.hoster.arte.loadveryhigh", "Load veryhigh version")).setDefaultValue(true).setEnabledCondidtion(bestonly, false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), Q_HD, JDL.L("plugins.hoster.arte.loadhd", "Load HD version")).setDefaultValue(true).setEnabledCondidtion(bestonly, false));
+
     }
 
 }
