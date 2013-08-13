@@ -41,9 +41,11 @@ import jd.plugins.PluginForDecrypt;
 public class ProDjCm extends PluginForDecrypt {
 
     // DEV NOTES
-    // other: Because they have so many domains, Please becareful with the regex, \\w can not be used twice either side of (sub.)?domains as
+    // other: Because they have so many domains, Please becareful with the
+    // regex, \\w can not be used twice either side of (sub.)?domains as
     // it effectively lets all site links match.
-    // other: As of march 12 they redirect to promodj.com but it's too hard to rename prior to processing, as redirects do not necessarily
+    // other: As of march 12 they redirect to promodj.com but it's too hard to
+    // rename prior to processing, as redirects do not necessarily
     // carry the same parameters.
 
     private static final String HOSTS = "(djkolya\\.net|pdj\\.(cc|ru)|promodeejay\\.(net|ru)|promodj\\.(ru|com))";
@@ -70,7 +72,8 @@ public class ProDjCm extends PluginForDecrypt {
         // this is needed! do not disable
         br.setFollowRedirects(true);
 
-        // these types here need to be done before first page grab!! as they could be files prelisten links are direct links!
+        // these types here need to be done before first page grab!! as they
+        // could be files prelisten links are direct links!
         if (parameter.matches(".+/prelisten/\\d+")) {
             handlePrelisten(decryptedLinks, filter, parameter);
         } else if (parameter.matches(".+/(download|source)/\\d+/.+")) {
@@ -91,8 +94,10 @@ public class ProDjCm extends PluginForDecrypt {
                 return decryptedLinks;
             }
 
-            // this is needed because /groups/ can contain all sorts of link types. This is instead of returning back to the plugin. Only
-            // downside it reduces the threading ability, but positively controls connections all within one instance.
+            // this is needed because /groups/ can contain all sorts of link
+            // types. This is instead of returning back to the plugin. Only
+            // downside it reduces the threading ability, but positively
+            // controls connections all within one instance.
             passItOn(decryptedLinks, filter, parameter);
         }
 
@@ -185,6 +190,10 @@ public class ProDjCm extends PluginForDecrypt {
         String dllink = br.getRegex("<a class=\"bigload1\" promenade=\"\\d+\" href=\"(https?://" + HOSTS + "/download/\\d+/[^\"<>]+)").getMatch(0);
         if (dllink == null) {
             dllink = br.getRegex("<a id=\"download_flasher\" href=\"(https?://" + HOSTS + "/download/\\d+/[^\"<>]+)").getMatch(0);
+            if (dllink == null) {
+                dllink = br.getRegex("\"URL\":\"(http:[^<>\"]*?)\"").getMatch(0);
+                if (dllink != null) dllink = Encoding.htmlDecode(dllink.replace("\\", ""));
+            }
         }
         // give the ability to return multiple formats audio sections...
         if (grabThis.matches(".*/(acapellas|mixes|podcasts|promos|radioshows|realtones|remixes|samples|tracks)/\\d+")) {
@@ -195,7 +204,8 @@ public class ProDjCm extends PluginForDecrypt {
                 if (dllink != null) linksFound.add(dllink);
             }
         } else if (dllink == null && grabThis.contains("/videos/")) {
-            // this type seems to have advertised links escaped but not always /download/able! Need to switch to alternative method.
+            // this type seems to have advertised links escaped but not always
+            // /download/able! Need to switch to alternative method.
             String holder = br.getRegex("swf.addVariable\\('jsonText', '(.*?)\\);").getMatch(0);
             if (holder == null) {
                 logger.warning("parseDownload issue, with finding dllink. Please report this issue to JDownloader Development Team! " + grabThis);
@@ -204,11 +214,14 @@ public class ProDjCm extends PluginForDecrypt {
                 holder = Encoding.urlDecode(holder, false).replaceAll("\\\\/", "/");
                 dllink = new Regex(holder, "\"play\":\\{\"@url\":\"(https?://[^\"]+)").getMatch(0);
                 if (dllink != null) {
-                    // lets add current dllink to the HashSet because the finallink is actually dynamically created each time you request.
+                    // lets add current dllink to the HashSet because the
+                    // finallink is actually dynamically created each time you
+                    // request.
                     if (filter.add(dllink) == true) {
                         linksFound.add(dllink);
                         try {
-                            // like apple trailers they have the final url inside so called video...
+                            // like apple trailers they have the final url
+                            // inside so called video...
                             Browser br2 = br.cloneBrowser();
                             URLConnectionAdapter con = br2.openGetConnection(dllink);
                             long test = con.getContentLength();
@@ -221,7 +234,8 @@ public class ProDjCm extends PluginForDecrypt {
                             dllink = null;
                         }
 
-                        // the following is not really needed.. though might be good to send it anyway.
+                        // the following is not really needed.. though might be
+                        // good to send it anyway.
                         customHeaders.add(new String[] { "Referer", br.getURL() });
                         customHeaders.add(new String[] { "Accept", "*/*" });
                         customHeaders.add(new String[] { "Accept-Encoding", "gzip, deflate" });
@@ -268,7 +282,8 @@ public class ProDjCm extends PluginForDecrypt {
         ArrayList<String> imgsArray = new ArrayList<String>();
 
         if (!album) {
-            // place this first, then use null for each possible combination album link but with tag to photo requested.
+            // place this first, then use null for each possible combination
+            // album link but with tag to photo requested.
             fuid = new Regex(grabThis, "#(foto|full)(\\d+)").getMatch(1);
             if (fuid == null) fuid = new Regex(grabThis, "/foto/\\d+/(\\d+)").getMatch(0);
             String single = br.getRegex("(\\{[\r\n\t ]+fotoID: ?" + fuid + "[^\\}]+)").getMatch(0);
@@ -315,7 +330,8 @@ public class ProDjCm extends PluginForDecrypt {
                 link.setFinalFileName(Plugin.getFileNameFromHeader(con));
                 link.setDownloadSize(con.getLongContentLength());
                 link.setAvailable(true);
-                // links seem to generate each time you hit downloadlink! I will assume short time to live!
+                // links seem to generate each time you hit downloadlink! I will
+                // assume short time to live!
                 // link.setUrlDownload(br2.getURL());
             }
             con.disconnect();

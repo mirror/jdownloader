@@ -39,13 +39,16 @@ public class MinUsComDecrypter extends PluginForDecrypt {
         super(wrapper);
     }
 
+    private static final String INVALIDLINKS  = "https?://([a-zA-Z0-9]+\\.)?(minus\\.com|min\\.us)/(directory|explore|httpsmobile|pref|recent|search|smedia|uploads|mobile)";
+    private static final String INVALIDLINKS2 = "https?://(www\\.)?blog\\.(minus\\.com|min\\.us)/.+";
+
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         // they have subdomains like userprofile.minus.com/
         String parameter = param.toString().replace("dev.min", "min").replace("min.us/", "minus.com/");
 
         // ignore trash here... uses less memory allocations
-        if (parameter.matches("https?://([a-zA-Z0-9]+\\.)?(minus\\.com|min\\.us)/(directory|explore|httpsmobile|pref|recent|search|smedia|uploads)") || parameter.matches("https?://(www\\.)?blog\\.(minus\\.com|min\\.us)/.+")) {
+        if (parameter.matches(INVALIDLINKS) || parameter.matches(INVALIDLINKS2)) {
             // /uploads is not supported
             return decryptedLinks;
         }

@@ -55,7 +55,7 @@ public class LiveMixTapesCom extends PluginForHost {
         link.setUrlDownload(link.getDownloadURL().replace("/mixtapes/", "/download/"));
     }
 
-    private void doFree(DownloadLink downloadLink) throws Exception, PluginException {
+    private void doFree(final DownloadLink downloadLink) throws Exception, PluginException {
         br.setFollowRedirects(false);
         String dllink = null;
         if (br.containsHTML(MUSTBELOGGEDIN)) {
@@ -68,6 +68,13 @@ public class LiveMixTapesCom extends PluginForHost {
             }
             if (dllink == null) throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.livemixtapescom.only4registered", ONLYREGISTEREDUSERTEXT));
         } else {
+
+            final String timeRemaining = br.getRegex("TimeRemaining = (\\d+);").getMatch(0);
+            if (timeRemaining != null) {
+                downloadLink.getLinkStatus().setStatusText("Not yet released, cannot download");
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
+            }
+
             final String timestamp = br.getRegex("name=\"timestamp\" value=\"(\\d+)\"").getMatch(0);
             if (timestamp == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             if (br.containsHTML("<img src=\"/captcha/captcha\\.gif\\?\\d+")) {
@@ -89,7 +96,8 @@ public class LiveMixTapesCom extends PluginForHost {
                 // int waittime = 40;
                 // String wait =
                 // br.getRegex("<span id=\"counter\">(\\d+)</span>").getMatch(0);
-                // if (wait == null) wait = br.getRegex("wait: (\\d+)").getMatch(0);
+                // if (wait == null) wait =
+                // br.getRegex("wait: (\\d+)").getMatch(0);
                 // if (wait != null) {
                 // waittime = Integer.parseInt(wait);
                 // if (waittime > 1000) waittime = waittime / 1000;
@@ -198,6 +206,13 @@ public class LiveMixTapesCom extends PluginForHost {
                 return AvailableStatus.TRUE;
             }
         } else {
+            final String timeRemaining = br.getRegex("TimeRemaining = (\\d+);").getMatch(0);
+            if (timeRemaining != null) {
+                link.getLinkStatus().setStatusText("Not yet released, cannot download");
+                link.setName(Encoding.htmlDecode(br.getRegex("<title>([^<>\"]*?)</title>").getMatch(0)));
+                return AvailableStatus.TRUE;
+            }
+
             final Regex fileInfo = br.getRegex("<td height=\"35\"><div[^>]+>(.*?)</div></td>[\t\n\r ]+<td align=\"center\">((\\d+(\\.\\d+)? ?(KB|MB|GB)))</td>");
             filename = fileInfo.getMatch(0);
             filesize = fileInfo.getMatch(1);

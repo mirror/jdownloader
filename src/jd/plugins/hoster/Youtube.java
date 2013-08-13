@@ -54,6 +54,11 @@ public class Youtube extends PluginForHost {
     private static final String FORMATINNAME            = "FORMATINNAME";
     private static final String PLAYLISTNUMBERINNAME    = "PLAYLISTNUMBERINNAME";
     private static final String USEUPLOADERINNAME       = "USEUPLOADERINNAME";
+
+    private static final String CUSTOM_DATE             = "CUSTOM_DATE";
+    private static final String CUSTOM_FILENAME         = "CUSTOM_FILENAME";
+    private static final String VIDEONUMBERFORMAT       = "VIDEONUMBERFORMAT";
+
     private static final String ALLOW_MP3               = "ALLOW_MP3_V2";
     private static final String ALLOW_MP4               = "ALLOW_MP4_V2";
     private static final String ALLOW_WEBM              = "ALLOW_WEBM_V2";
@@ -113,7 +118,8 @@ public class Youtube extends PluginForHost {
         int i;
         for (i = 0; i < s.length(); i++) {
             ch = s.charAt(i);
-            // prevents StringIndexOutOfBoundsException with ending char equals case trigger
+            // prevents StringIndexOutOfBoundsException with ending char equals
+            // case trigger
             if (s.length() != i + 1) {
                 switch (ch) {
                 case '%':
@@ -302,7 +308,8 @@ public class Youtube extends PluginForHost {
                 String checkConnection = br.getRegex("iframeUri: \\'(https.*?)\\'").getMatch(0);
                 if (checkConnection != null) {
                     /*
-                     * don't know if this is important but seems to set pstMsg to 1 ;)
+                     * don't know if this is important but seems to set pstMsg
+                     * to 1 ;)
                      */
                     checkConnection = unescape(checkConnection);
                     try {
@@ -424,7 +431,8 @@ public class Youtube extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
-        // For streaming extension to tell her that these links can be streamed without account
+        // For streaming extension to tell her that these links can be streamed
+        // without account
         // System.out.println("Youtube: " + downloadLink);
 
         if (downloadLink.getBooleanProperty("subtitle", false) || downloadLink.getBooleanProperty("thumbnail", false)) {
@@ -499,16 +507,33 @@ public class Youtube extends PluginForHost {
         return "JDownloader's YouTube Plugin helps downloading videoclips from youtube.com. YouTube provides different video formats and qualities. JDownloader is able to extract audio after download, and save it as mp3 file. \r\n - Hear your favourite YouTube Clips on your MP3 Player.";
     }
 
+    private final static String defaultCustomFilename = "*videoname**quality**ext*";
+
     private void setConfigElements() {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX_INDEX, getPluginConfig(), ISVIDEOANDPLAYLIST, new String[] { JDL.L("plugins.host.youtube.isvideoandplaylist.video", "Only add video"), JDL.L("plugins.host.youtube.isvideoandplaylist.playlist", "Add playlist and video"), JDL.L("plugins.host.youtube.isvideoandplaylist.ask", "Ask everytime") }, JDL.L("plugins.host.youtube.isvideoandplaylist", "If a video also contains a playlist?")).setDefaultValue(2));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
+
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "Customize the filename properties"));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), CUSTOM_DATE, JDL.L("plugins.hoster.youtube.customdate", "Define how the date should look:")).setDefaultValue("dd.MM.yyyy_hh-mm-ss"));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), VIDEONUMBERFORMAT, JDL.L("plugins.hoster.youtube.customvideonumber", "Define how the videonumbers should look:")).setDefaultValue("0000"));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "Customize the filename! Example: '*channelname*_*date*_*videoname*_*videonumber**quality*'"));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), CUSTOM_FILENAME, JDL.L("plugins.hoster.youtube.customfilename", "Define how the filenames should look:")).setDefaultValue(defaultCustomFilename));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
+        final StringBuilder sb = new StringBuilder();
+        sb.append("Explanation of the available tags:\r\n");
+        sb.append("*channelname* = name of the channel/uploader\r\n");
+        sb.append("*date* = date when the video was posted - appears in the user-defined format above\r\n");
+        sb.append("*videoname* = name of the video without extension\r\n");
+        sb.append("*videoid* = id of the video: 'youtube.com/watch?v=YOUTUBE_VIDEO_ID'\r\n");
+        sb.append("*videonumber* = number of the video (position in playlist or 'user' link)\r\n");
+        sb.append("*quality* = the quality of the video e.g. '(1080p_H.264-AAC)'\r\n");
+        sb.append("*ext* = extension of the video e.g. '.mp4'");
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, sb.toString()));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), FAST_CHECK, JDL.L("plugins.hoster.youtube.fast", "Fast LinkCheck (filesize won't be shown in linkgrabber)?")).setDefaultValue(false));
-        ConfigEntry id = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), IDASFILENAME, JDL.L("plugins.hoster.youtube.idasfilename", "Use Video-ID as filename?")).setDefaultValue(false);
-        getConfig().addEntry(id);
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), IDINFILENAME, JDL.L("plugins.hoster.youtube.idinfilename", "Use Video-ID additionally in filename?")).setDefaultValue(false).setEnabledCondidtion(id, false));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), USEUPLOADERINNAME, JDL.L("plugins.hoster.youtube.useuploaderinname", "Use uploader name in filename?")).setDefaultValue(false));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), FORMATINNAME, JDL.L("plugins.hoster.youtube.formatinname", "Use format in filename?")).setDefaultValue(true));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), PLAYLISTNUMBERINNAME, JDL.L("plugins.hoster.youtube.playlistvideonumberinname", "Use video numbers in filename (works for playlist,user and course links)?")).setDefaultValue(false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_SUBTITLES, JDL.L("plugins.hoster.youtube.grabsubtitles", "Grab subtitles?")).setDefaultValue(true));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), GROUP_FORMAT, JDL.L("plugins.hoster.youtube.groupbyformat", "Group by format?")).setDefaultValue(false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));

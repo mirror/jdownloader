@@ -23,7 +23,9 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.net.URLEncoder;
 import java.text.DecimalFormat;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
@@ -134,6 +136,10 @@ public class TbCm extends PluginForDecrypt {
 
     private static final String                 NAME_SUBTITLES      = "subtitles";
     private static final String                 NAME_THUMBNAILS     = "thumbnails";
+
+    private static final String                 CUSTOM_DATE         = "CUSTOM_DATE";
+    private static final String                 CUSTOM_FILENAME     = "CUSTOM_FILENAME";
+    private static final String                 VIDEONUMBERFORMAT   = "VIDEONUMBERFORMAT";
 
     public static boolean ConvertFile(final DownloadLink downloadlink, final DestinationFormat InType, final DestinationFormat OutType) {
         System.out.println("Convert " + downloadlink.getName() + " - " + InType.getText() + " - " + OutType.getText());
@@ -330,6 +336,8 @@ public class TbCm extends PluginForDecrypt {
         return super.canHandle(data);
     }
 
+    private final static String defaultCustomFilename = "*videoname**quality**ext*";
+
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, final ProgressController progress) throws Exception {
         canHandle();
         this.possibleconverts = new HashMap<DestinationFormat, ArrayList<Info>>();
@@ -395,7 +403,6 @@ public class TbCm extends PluginForDecrypt {
             }
         }
 
-        final DecimalFormat playlistNumberFormat = new DecimalFormat("0000");
         // Parse playlist
         if (parameter.contains("view_play_list") || parameter.contains("playlist") || parameter.contains("g/c/") || parameter.contains("grid/user/") || choice == 1) {
             if (parameter.contains("g/c/") || parameter.contains("grid/user/")) {
@@ -423,7 +430,7 @@ public class TbCm extends PluginForDecrypt {
                     video = "http://www.youtube.com" + video;
                     final String[] finalInformation = new String[2];
                     finalInformation[0] = video;
-                    finalInformation[1] = playlistNumberFormat.format(videoNumberCounter);
+                    finalInformation[1] = Integer.toString(videoNumberCounter);
                     linkstodecrypt.add(finalInformation);
                     videoNumberCounter++;
                 }
@@ -454,7 +461,7 @@ public class TbCm extends PluginForDecrypt {
                 videoID = "http://www.youtube.com" + videoID;
                 final String[] finalInformation = new String[2];
                 finalInformation[0] = videoID;
-                finalInformation[1] = playlistNumberFormat.format(videoNumberCounter);
+                finalInformation[1] = Integer.toString(videoNumberCounter);
                 linkstodecrypt.add(finalInformation);
                 videoNumberCounter++;
             }
@@ -499,7 +506,7 @@ public class TbCm extends PluginForDecrypt {
                     if (!video.startsWith("http://www.youtube.com")) video = "http://www.youtube.com" + video;
                     final String[] finalInformation = new String[2];
                     finalInformation[0] = video;
-                    finalInformation[1] = playlistNumberFormat.format(videoNumberCounter);
+                    finalInformation[1] = Integer.toString(videoNumberCounter);
                     linkstodecrypt.add(finalInformation);
                 }
 
@@ -732,33 +739,57 @@ public class TbCm extends PluginForDecrypt {
                     }
                 }
 
-                /* First get the filename */
+                /** FILENAME PART1 START */
                 String YT_FILENAME = "";
                 if (LinksFound.containsKey(-1)) {
                     YT_FILENAME = LinksFound.get(-1)[0];
                     LinksFound.remove(-1);
                 }
+                SimpleDateFormat formatter = new SimpleDateFormat("dd.MM.yyyy");
+                String date = br.getRegex("id=\"eow\\-date\" class=\"watch\\-video\\-date\" >(\\d{2}\\.\\d{2}\\.\\d{4})</span>").getMatch(0);
+                if (date == null) {
+                    formatter = new SimpleDateFormat("dd MMM yyyy");
+                    date = br.getRegex("class=\"watch\\-video\\-date\" >(\\d{2} [A-Za-z]{3} \\d{4})</span>").getMatch(0);
+                }
+                final String channelName = br.getRegex("temprop=\"url\" href=\"http://(www\\.)?youtube\\.com/user/([^<>\"]*?)\"").getMatch(1);
+                final String videoid = getVideoID(currentVideoUrl);
+                final int playlistNumberInt = Integer.parseInt(currentPlaylistVideoNumber);
+                String formattedFilename = cfg.getStringProperty(CUSTOM_FILENAME, defaultCustomFilename);
+                if ((!formattedFilename.contains("*videoname*") && !formattedFilename.contains("*videoid*")) || !formattedFilename.contains("*ext*")) formattedFilename = defaultCustomFilename;
+                if (formattedFilename == null || formattedFilename.equals("")) formattedFilename = "*videoname**quality**ext*";
+                String partnumberformat = cfg.getStringProperty(VIDEONUMBERFORMAT);
+                if (partnumberformat == null || partnumberformat.equals("")) partnumberformat = "0000";
 
-                // Use uploader name in filename
-                if (cfg.getBooleanProperty("USEUPLOADERINNAME", false)) {
-                    String uploadername = br.getRegex("feature=watch\"[^>]+dir=\"ltr\">(.*?)</a>(\\s+)?<span class=\"yt\\-user").getMatch(0);
-                    if (uploadername != null) YT_FILENAME = uploadername + " - " + YT_FILENAME;
+                final DecimalFormat df = new DecimalFormat(partnumberformat);
+
+                String formattedDate = null;
+                if (date != null) {
+                    final String userDefinedDateFormat = cfg.getStringProperty(CUSTOM_DATE, "dd.MM.yyyy_HH-mm-ss");
+                    Date dateStr = formatter.parse(date);
+                    formattedDate = formatter.format(dateStr);
+                    Date theDate = formatter.parse(formattedDate);
+
+                    formatter = new SimpleDateFormat(userDefinedDateFormat);
+                    formattedDate = formatter.format(theDate);
                 }
 
-                if (cfg.getBooleanProperty("IDINFILENAME_V2", false) && !cfg.getBooleanProperty("ISASFILENAME", false)) {
-                    String id = getVideoID(currentVideoUrl);
-                    if (id != null) YT_FILENAME = YT_FILENAME + " - " + id;
+                formattedFilename = formattedFilename.replace("*videonumber*", df.format(playlistNumberInt));
+                if (channelName != null) {
+                    formattedFilename = formattedFilename.replace("*channelname*", channelName);
+                } else {
+                    formattedFilename = formattedFilename.replace("*channelname*", "");
                 }
-
-                if (cfg.getBooleanProperty("PLAYLISTNUMBERINNAME", false) && !currentPlaylistVideoNumber.equals("-1")) {
-                    YT_FILENAME = currentPlaylistVideoNumber + "." + YT_FILENAME;
+                if (formattedFilename.contains("*videoid*")) {
+                    formattedFilename = formattedFilename.replace("*videoid*", videoid);
+                } else {
+                    formattedFilename = formattedFilename.replace("*videoid*", "");
                 }
-
-                /* prefer videoID as filename? */
-                if (cfg.getBooleanProperty("ISASFILENAME", false)) {
-                    String id = getVideoID(currentVideoUrl);
-                    if (id != null) YT_FILENAME = id;
+                if (formattedDate != null) {
+                    formattedFilename = formattedFilename.replace("*date*", formattedDate);
+                } else {
+                    formattedFilename = formattedFilename.replace("*date*", "");
                 }
+                /** FILENAME PART1 END */
 
                 // ytid are case sensitive, you can not effectively dupe check
                 // 100% reliablity with lower case only.
@@ -912,6 +943,7 @@ public class TbCm extends PluginForDecrypt {
                     }
 
                     for (final Info info : next.getValue()) {
+                        String currentFilename = null;
                         final DownloadLink thislink = this.createDownloadlink(info.link.replaceFirst("http", "httpJDYoutube"));
                         thislink.setProperty("ALLOW_DUPE", true);
                         filePackage.add(thislink);
@@ -931,19 +963,27 @@ public class TbCm extends PluginForDecrypt {
                             desc = "(3D)" + desc;
                             break;
                         }
-                        thislink.setFinalFileName(YT_FILENAME + desc + convertTo.getExtFirst());
+                        /** FILENAME PART2 START */
+                        currentFilename = formattedFilename;
+                        currentFilename = currentFilename.replace("*quality*", desc);
+                        currentFilename = currentFilename.replace("*ext*", convertTo.getExtFirst());
+                        currentFilename = currentFilename.replace("*videoname*", YT_FILENAME);
+
+                        thislink.setFinalFileName(currentFilename);
                         thislink.setProperty("size", info.size);
                         if (info.size > 0) thislink.setProperty("VERIFIEDFILESIZE", info.size);
-                        String name = null;
                         if (convertTo != DestinationFormat.AUDIOMP3) {
-                            name = YT_FILENAME + desc + convertTo.getExtFirst();
-                            thislink.setProperty("name", name);
+                            thislink.setProperty("name", currentFilename);
                         } else {
                             // because demuxer will fail when mp3 file already
                             // exists
-                            name = YT_FILENAME + desc + ".tmp";
-                            thislink.setProperty("name", name);
+                            String audioName = formattedFilename;
+                            audioName = audioName.replace("*quality*", desc);
+                            audioName = audioName.replace("*ext*", ".tmp");
+                            audioName = audioName.replace("*videoname*", YT_FILENAME);
+                            thislink.setProperty("name", audioName);
                         }
+                        /** FILENAME PART2 END */
                         thislink.setProperty("convertto", convertTo.name());
                         thislink.setProperty("videolink", currentVideoUrl);
                         thislink.setProperty("valid", true);
@@ -980,9 +1020,15 @@ public class TbCm extends PluginForDecrypt {
                         dlink.setProperty("ALLOW_DUPE", true);
                         dlink.setBrowserUrl(currentVideoUrl);
 
-                        String name = YT_FILENAME + " (" + track[3] + ").xml";
-                        dlink.setFinalFileName(name);
-                        dlink.setProperty("name", name);
+                        /** FILENAME PART3 START */
+                        String subtitleName = formattedFilename;
+                        subtitleName = subtitleName.replace("*ext*", " (" + track[3] + ").xml");
+                        subtitleName = subtitleName.replace("*quality*", " " + NAME_SUBTITLES);
+                        subtitleName = subtitleName.replace("*videoname*", YT_FILENAME);
+                        dlink.setFinalFileName(subtitleName);
+                        dlink.setProperty("name", subtitleName);
+                        /** FILENAME PART3 END */
+
                         dlink.setProperty("subtitle", true);
 
                         filePackage.add(dlink);

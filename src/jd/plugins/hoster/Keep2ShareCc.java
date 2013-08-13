@@ -305,7 +305,11 @@ public class Keep2ShareCc extends PluginForHost {
                     ai.setStatus("Premium Lifetime User");
                 }
             } else {
-                ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "yyyy.MM.dd", Locale.ENGLISH));
+                // Expired but actually we still got one day ('today')
+                if (br.containsHTML("\\(1 day\\)"))
+                    ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "yyyy.MM.dd", Locale.ENGLISH) + 24 * 60 * 60 * 1000l);
+                else
+                    ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "yyyy.MM.dd", Locale.ENGLISH));
                 ai.setStatus("Premium User");
             }
             account.setProperty("free", false);
