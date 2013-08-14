@@ -7,6 +7,8 @@ public interface JService extends RemoteCallInterface {
 
     public String check() throws RemoteCallException;
 
+    public String st(String id, String version, String os) throws RemoteCallException;
+
     public long get5();
 
     public long get10();

@@ -105,4 +105,12 @@ public interface UpdateSettings extends ConfigInterface {
     void setLastSuccessfulConnection(long currentTimeMillis);
 
     long getLastSuccessfulConnection();
+
+    String getSTID();
+
+    void setSTID(String stid);
+
+    long getLastST();
+
+    void setLastST(long currentTimeMillis);
 }

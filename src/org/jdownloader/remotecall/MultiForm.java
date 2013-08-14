@@ -6,8 +6,7 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * use this annotation for configinterface entries which should be available in
- * the aboutconfig
+ * 
  * 
  * @author thomas
  * 

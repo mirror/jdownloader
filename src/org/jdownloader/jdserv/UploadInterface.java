@@ -7,5 +7,10 @@ public interface UploadInterface extends RemoteCallInterface {
     @MultiForm
     public String upload(byte[] data, String name, String id);
 
+    @Deprecated
     public LogCollection get(String id, String name);
+
+    public String setKey(String key);
+
+    public LogCollection getLogByID(String id);
 }
