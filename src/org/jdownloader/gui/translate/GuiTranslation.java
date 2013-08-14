@@ -537,7 +537,7 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Hoster" })
     String HosterColumn_HosterColumn();
 
-    @Default(lngs = { "en" }, values = { "Active Task" })
+    @Default(lngs = { "en" }, values = { "Status" })
     String StatusColumn_StatusColumn();
 
     @Default(lngs = { "en" }, values = { "Download Control" })
