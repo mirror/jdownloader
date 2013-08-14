@@ -745,6 +745,7 @@ linkgrabber_onlinestatus_uncheckable=im Moment nicht prüfbar
 linkgrabber_onlinestatus_unchecked=nicht überprüft
 lit_add=Hinzufügen
 lit_are_you_sure=Bist du dir sicher?
+lit_delete=Löschen
 lit_error_occured=Ein Fehler ist aufgetreten...
 lit_export=Exportieren
 lit_import=Importieren
