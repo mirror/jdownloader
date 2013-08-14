@@ -84,10 +84,12 @@ public class NmLdsrg extends PluginForDecrypt {
         }
 
         for (final String link : links) {
-            Browser br2 = br.cloneBrowser();
-            if (!parameter.contains("/redirect/")) {
-                br2.getPage(link);
-            }
+            final Browser br2 = br.cloneBrowser();
+            // TODO: Check
+            // if (!parameter.contains("/redirect/")) {
+            // br2.getPage(link);
+            // }
+            br2.getPage(link);
             if (br2.containsHTML("No htmlCode read")) {
                 logger.info("Link offline: " + link);
                 continue;
@@ -105,7 +107,8 @@ public class NmLdsrg extends PluginForDecrypt {
             // they check if you hit up this step or not!!
             // <iframe id="ad" scrolling="auto" src="http://www.anime-loads.org/redirect/animemanga" frameborder="0"
             // allowtransparency="true"></iframe>
-            String ad_redirect = br2.getRegex("<iframe[^>]+id=\"ad\"[^>]+src=(\"|')?((https?://(www\\.)?anime\\-loads\\.org)?/redirect/[a-z]+)").getMatch(1);
+            // <iframe id="ad" scrolling="auto" src="http://www.anime-loads.org/redirect/animemanga/69e398ca6a4cfb2fa46771f6b75ac3f6"
+            String ad_redirect = br2.getRegex("<iframe[^>]+id=\"ad\"[^>]+src=(\"|')?((https?://(www\\.)?anime\\-loads\\.org)?/redirect/[a-z]+(/[a-z0-9]+)?)").getMatch(1);
             if (ad_redirect == null) {
                 logger.warning("Could not find 'ad_redirect' : " + br.getURL());
             } else {

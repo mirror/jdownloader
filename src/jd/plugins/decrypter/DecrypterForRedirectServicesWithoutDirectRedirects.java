@@ -38,7 +38,6 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
-import jd.utils.locale.JDL;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "potlocker.net", "mblink.info", "madlink.sk", "zo.mu", "peeplink.in", "lnx.lu", "handsupbr.com", "mkv2.info", "searchonzippy.eu", "sharmota.com", "adcrun.ch", "allsubs.org", "egcenter.com", "komp3.net", "url.bilgiportal.com", "tinymoviez.info", "getunite.com", "hflix.in", "focus.de", "hnzoom.com", "basemp3.ru", "stream2k.eu", "share-films.net", "leechmf.com", "protetorbr.com", "adv.li", "lezlezlez.com", "dwz.cn", "digitaldripped.com", "guardlink.org", "url.cn", "q32.ru", "shrk.biz", "icefilms.info", "mediaboom.org", "vimeo.com", "unlimfiles.com", "adfoc.us", "mrbrownee70.com", "alturl.com", "trancearoundtheworld.com", "egfire.net", "damasgate.com", "freeonsmash.com", "lnk.co", "trackstash.com", "fburls.com", "myurl.in", "h-url.in", "dropbox.com", "filep.info", "grou.ps", "linkexterno.com",
         "eskimotube.com", "m4u.in", "4p5.com", "t.co", "telona.biz", "madmimi.com", "href.hu", "hide.linkleak.org", "migre.me", "degracaemaisgostoso.info", "altervista.org", "agaleradodownload.com", "musicloud.fm", "wowebook.be", "link.songs.pk + songspk.info", "imageto.net", "clubteam.eu", "jforum.uni.cc", "linksole.com", "deurl.me", "yourfileplace.com", "muzgruz.ru", "zero10.net", "aiotool.net", "chip.de/c1_videos", "nbanews.us", "top2tech.com", "umquetenha.org", "oneclickmoviez.com/dwnl/", "1tool.biz", "file4ever.us and catchfile.net", "zero10.net and gamz.us", "official.fm", "hypem.com", "academicearth.org", "skreemr.org", "tm-exchange.com", "adiarimore.com", "mafia.to/download", "newgrounds.com", "accuratefiles.com", "slutdrive.com", "view.stern.de", "fileblip.com", "warcraft.ingame.de", "mixconnect.com", "twiturm.com", "ebooksdownloadfree.com", "freebooksearcher.info",
@@ -324,12 +323,17 @@ public class DecrypterForRedirectServicesWithoutDirectRedirects extends PluginFo
             final String fid = new Regex(parameter, "mixconnect\\.com/listen/.*?-mid(\\d+)").getMatch(0);
             br.getPage("http://www.mixconnect.com/downloadcheck.php?id=" + fid);
             final String dlHash = br.getRegex("dlhash\":\"([a-z0-9]+)\"").getMatch(0);
-            if (dlHash == null) { return null; }
-            br.postPage("http://www.mixconnect.com/createdownload.php?id=" + fid, "dlhash=" + dlHash);
-            finallink = br.toString();
-            if (!finallink.startsWith("data/") || finallink.length() > 500) { return null; }
-            if (finallink.equals("data/zip/.zip")) { throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore.")); }
-            finallink = "directhttp://http://mixconnect.com/" + finallink;
+            if (dlHash == null) {
+                br.getPage(parameter);
+                finallink = br.getRegex("mp3:\"http://mixconnect\\.com(http://[^<>\"]*?)\"").getMatch(0);
+                dh = true;
+            } else {
+                br.postPage("http://www.mixconnect.com/createdownload.php?id=" + fid, "dlhash=" + dlHash);
+                finallink = br.toString();
+                if (!finallink.startsWith("data/") || finallink.length() > 500) { return null; }
+                if (finallink.equals("data/zip/.zip")) finallink = null;
+                dh = true;
+            }
         } else if (parameter.contains("twiturm.com/")) {
             finallink = br.getRegex("<div id=\"player\">[\r\t\n ]+<a href=\"(http://.*?)\">").getMatch(0);
             if (finallink == null) {
