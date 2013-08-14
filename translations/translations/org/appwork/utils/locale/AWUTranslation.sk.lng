@@ -92,3 +92,4 @@ progress=%s3% %s1/%s2
 proxy_direct=Priame %s1
 proxy_none=Priame
 proxydialog_title=Žiadne pripojenie na Internet
+tableheader_tooltip_normal=%s1

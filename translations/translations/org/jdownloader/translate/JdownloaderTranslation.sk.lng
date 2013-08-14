@@ -12,6 +12,7 @@ Mainstart_now=Začať ihneď!
 MyJDownloaderController_onError_account_unconfirmed=Váš e-mail pre "Môj JDownloader" ešte nebol potvrdený!\nSkontrolujte si prosím svoje e-maily a kliknite na odkaz pre jeho potvrdenie.
 OptionalContainer_OptionalContainer=Viac akcií...
 PackagizerSettings_folderbypackage_rule_name=Vytvoriť podpriečinok podľa názvu balíčka
+SetDownloadFolderAction_actionPerformed_=Rozdeliť balíček %s1
 SetDownloadFolderAction_yes=Balíček
 StartDownloadsAction_createTooltip_=Spustiť sťahovanie
 archive_description=Súbory archívov: rar, zip,...

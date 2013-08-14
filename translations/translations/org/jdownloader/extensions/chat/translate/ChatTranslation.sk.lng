@@ -5,5 +5,6 @@ jd_plugins_optional_jdchat_closeTab=Zavrieť kartu
 jd_plugins_optional_jdchat_jdchat=JDChat
 plugins_optional_jdchat_enternick=Vaša prezývka
 settings_nick=Vaše meno
+settings_perform=Vykonať tieto akcie po pripojení k chatu:
 settings_userlist_position_left=Ľavá strana
 settings_userlist_position_right=Pravá strana
