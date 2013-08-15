@@ -92,8 +92,6 @@ public class FlashxTv extends PluginForHost {
         if (thirdLink == null) thirdLink = getPlainData(regex);
         if (thirdLink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         br.getPage(thirdLink);
-        if (br.containsHTML("wrong user/ip")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 1 * 60 * 1000l);
-
         dllink = br.getRegex("<file>(http://[^<>\"]*?)</file>").getMatch(0);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, -5);
