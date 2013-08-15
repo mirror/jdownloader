@@ -561,12 +561,12 @@ public class UpToBoxCom extends PluginForHost {
                 String tmphrs = new Regex(expire, "(\\d+)\\s+hours?").getMatch(0);
                 String tmpmin = new Regex(expire, "(\\d+)\\s+minutes?").getMatch(0);
                 String tmpsec = new Regex(expire, "(\\d+)\\s+seconds?").getMatch(0);
-                long days = 0, hours = 0, minutes = 0, seconds = 0;
+                long years = 0, days = 0, hours = 0, minutes = 0, seconds = 0;
                 if (tmpdays != null) days = Integer.parseInt(tmpdays);
                 if (tmphrs != null) hours = Integer.parseInt(tmphrs);
                 if (tmpmin != null) minutes = Integer.parseInt(tmpmin);
                 if (tmpsec != null) seconds = Integer.parseInt(tmpsec);
-                long waittime = ((days * 86400000) + (hours * 3600000) + (minutes * 60000) + (seconds * 1000));
+                long waittime = ((years * 86400000 * 365) + (days * 86400000) + (hours * 3600000) + (minutes * 60000) + (seconds * 1000));
                 ai.setValidUntil(System.currentTimeMillis() + waittime);
                 try {
                     maxPrem.set(3);

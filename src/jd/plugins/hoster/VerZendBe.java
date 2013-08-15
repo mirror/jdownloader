@@ -559,12 +559,12 @@ public class VerZendBe extends PluginForHost {
                 logger.info("Waittime regexes seem to be broken");
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, 60 * 60 * 1000l);
             } else {
-                long days = 0, hours = 0, minutes = 0, seconds = 0;
+                long years = 0, days = 0, hours = 0, minutes = 0, seconds = 0;
                 if (!inValidate(tmpdays)) days = Integer.parseInt(tmpdays);
                 if (!inValidate(tmphrs)) hours = Integer.parseInt(tmphrs);
                 if (!inValidate(tmpmin)) minutes = Integer.parseInt(tmpmin);
                 if (!inValidate(tmpsec)) seconds = Integer.parseInt(tmpsec);
-                long waittime = ((days * 86400000) + (hours * 3600000) + (minutes * 60000) + (seconds * 1000));
+                long waittime = ((years * 86400000 * 365) + (days * 86400000) + (hours * 3600000) + (minutes * 60000) + (seconds * 1000));
                 logger.info("Detected waittime #2, waiting " + waittime + "milliseconds");
                 /** Not enough wait time to reconnect->Wait and try again */
                 if (waittime < 180000) {
@@ -652,16 +652,18 @@ public class VerZendBe extends PluginForHost {
                 getPage("/?op=payments");
                 String expireSecond = cbr.getRegex("Premium(\\-| )Account expires?:([^\n\r]+)").getMatch(1);
                 if (!inValidate(expireSecond)) {
+                    String tmpYears = new Regex(expireSecond, "(\\d+)\\s+years?").getMatch(0);
                     String tmpdays = new Regex(expireSecond, "(\\d+)\\s+days?").getMatch(0);
                     String tmphrs = new Regex(expireSecond, "(\\d+)\\s+hours?").getMatch(0);
                     String tmpmin = new Regex(expireSecond, "(\\d+)\\s+minutes?").getMatch(0);
                     String tmpsec = new Regex(expireSecond, "(\\d+)\\s+seconds?").getMatch(0);
-                    long days = 0, hours = 0, minutes = 0, seconds = 0;
+                    long years = 0, days = 0, hours = 0, minutes = 0, seconds = 0;
+                    if (!inValidate(tmpYears)) years = Integer.parseInt(tmpYears);
                     if (!inValidate(tmpdays)) days = Integer.parseInt(tmpdays);
                     if (!inValidate(tmphrs)) hours = Integer.parseInt(tmphrs);
                     if (!inValidate(tmpmin)) minutes = Integer.parseInt(tmpmin);
                     if (!inValidate(tmpsec)) seconds = Integer.parseInt(tmpsec);
-                    expireS = ((days * 86400000) + (hours * 3600000) + (minutes * 60000) + (seconds * 1000)) + System.currentTimeMillis();
+                    expireS = ((years * 86400000 * 365) + (days * 86400000) + (hours * 3600000) + (minutes * 60000) + (seconds * 1000)) + System.currentTimeMillis();
                 }
                 if (expireD == 0 && expireS == 0) {
                     ai.setExpired(true);
@@ -1685,9 +1687,9 @@ public class VerZendBe extends PluginForHost {
     }
 
     private boolean isJava7nJDStable() {
-        if (System.getProperty("jd.revision.jdownloaderrevision") == null && System.getProperty("java.version").matches("1\\.[7-9].+")) 
+        if (System.getProperty("jd.revision.jdownloaderrevision") == null && System.getProperty("java.version").matches("1\\.[7-9].+"))
             return true;
-         else
+        else
             return false;
     }
 
