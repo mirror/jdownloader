@@ -37,7 +37,6 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.JDUtilities;
 
-//http://videos.arte.tv/de/videos/galaxis-milchstrasse--7613656.html
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "www.arte.tv" }, urls = { "http://(videos|www).arte\\.tv/(guide/[a-z]{2}/[0-9\\-]+|[a-z]{2}/videos)/.+" }, flags = { 0 })
 public class ArteMediathekDecrypter extends PluginForDecrypt {
 

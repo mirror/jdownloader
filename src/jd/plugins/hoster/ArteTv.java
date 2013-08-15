@@ -302,7 +302,7 @@ public class ArteTv extends PluginForHost {
 
     @Override
     public String getDescription() {
-        return "JDownloader's ZDF Plugin helps downloading videoclips from zdf.de. ZDF provides different video qualities.";
+        return "JDownloader's Arte Plugin helps downloading videoclips from arte.tv. Arte+7 provides different video qualities.";
     }
 
     private void setConfigElements() {
