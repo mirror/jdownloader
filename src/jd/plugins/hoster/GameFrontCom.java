@@ -27,6 +27,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
@@ -55,10 +56,19 @@ public class GameFrontCom extends PluginForHost {
     private boolean AVAILABLECHECKFAILED = true;
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(false);
         br.setReadTimeout(3 * 60 * 1000);
+
+        String agent = null;
+        if (agent == null) {
+            /* we first have to load the plugin, before we can reference it */
+            JDUtilities.getPluginForHost("mediafire.com");
+            agent = jd.plugins.hoster.MediafireCom.stringUserAgent();
+        }
+        br.getHeaders().put("User-Agent", agent);
+
         for (int i = 0; i <= 3; i++) {
             final URLConnectionAdapter con = br.openGetConnection(downloadLink.getDownloadURL());
             if (con.getResponseCode() == 502) continue;
@@ -102,8 +112,15 @@ public class GameFrontCom extends PluginForHost {
         String fileID = new Regex(downloadLink.getDownloadURL(), "gamefront\\.com/files/(\\d+)").getMatch(0);
         if (fileID == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         br.setFollowRedirects(true);
+
+        // if (downloadLink.getBooleanProperty("specialstuff", false)) {
+        // br.getHeaders().put("Accept", "*/*");
+        // br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+        // br.postPage("http://www.gamefront.com/files/service/request",
+        // "token=iicJfwAa6vKSUZA%2BU0OqkjHqyTItn8RdRHUCAqeD%2FgtbGsw6vFV9piu7ordQeZSJxiOlJUxQIi5PIl1PpDHvoRATQa2VYXcT7CyftiNYFuE21taC4FkYYKa6i005wTgcgfCI2C2oKTc%2Fxtijzz4ya3SEXYMHpvlrlvLmY0gI2VgNbWBQXPLaKzb6hVkGDS1W");
+        // }
+
         br.getPage("http://www.gamefront.com/files/service/thankyou?id=" + fileID);
-        br.setFollowRedirects(true);
         String finallink = br.getRegex("If it does not, <a href=\"(http://.*?)\"").getMatch(0);
         if (finallink == null) finallink = br.getRegex("http-equiv=\"refresh\" content=\"\\d+;url=(http://.*?)\"").getMatch(0);
         if (finallink == null) finallink = br.getRegex("(\"|')(http://media\\d+\\.gamefront\\.com/personal/\\d+/\\d+/[a-z0-9]+/.*?)(\"|')").getMatch(1);
@@ -116,7 +133,11 @@ public class GameFrontCom extends PluginForHost {
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, finallink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
-            if (br.containsHTML("(<title>404 - Not Found</title>|<h1>404 - Not Found</h1>)")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 60 * 60 * 1000l);
+            if (br.containsHTML("(<title>404 - Not Found</title>|<h1>404 - Not Found</h1>)")) {
+                // downloadLink.setProperty("specialstuff", true);
+                // throw new PluginException(LinkStatus.ERROR_RETRY);
+                // throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 60 * 60 * 1000l);
+            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();

@@ -107,6 +107,7 @@ public class DailyMotionComDecrypter extends PluginForDecrypt {
             return decryptedLinks;
         }
         VIDEOSOURCE = br.getRegex("\"sequence\":\"([^<>\"]*?)\"").getMatch(0);
+        if (VIDEOSOURCE == null) VIDEOSOURCE = br.getRegex("%2Fsequence%2F(.*?)</object>").getMatch(0);
         FILENAME = br.getRegex("<meta itemprop=\"name\" content=\"([^<>\"]*?)\"").getMatch(0);
         if (FILENAME == null) {
             FILENAME = br.getRegex("<meta property=\"og:title\" content=\"([^<>\"]*?)\"").getMatch(0);

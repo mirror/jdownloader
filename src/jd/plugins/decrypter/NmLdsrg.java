@@ -105,8 +105,6 @@ public class NmLdsrg extends PluginForDecrypt {
             ajax.getHeaders().put("X-Requested-With", "XMLHttpRequest");
 
             // they check if you hit up this step or not!!
-            // <iframe id="ad" scrolling="auto" src="http://www.anime-loads.org/redirect/animemanga" frameborder="0"
-            // allowtransparency="true"></iframe>
             // <iframe id="ad" scrolling="auto" src="http://www.anime-loads.org/redirect/animemanga/69e398ca6a4cfb2fa46771f6b75ac3f6"
             String ad_redirect = br2.getRegex("<iframe[^>]+id=\"ad\"[^>]+src=(\"|')?((https?://(www\\.)?anime\\-loads\\.org)?/redirect/[a-z]+(/[a-z0-9]+)?)").getMatch(1);
             if (ad_redirect == null) {

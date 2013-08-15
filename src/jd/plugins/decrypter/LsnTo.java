@@ -21,6 +21,7 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
@@ -31,7 +32,7 @@ import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "lesen.to" }, urls = { "http://(www\\.)?lesen\\.to/protection/folder_\\d+\\.html" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "lesen.to" }, urls = { "http://(www\\.)?lesen\\.to/(protection/folder_\\d+\\.html|wp/tipp/Download/\\d+/)" }, flags = { 0 })
 public class LsnTo extends PluginForDecrypt {
 
     private static final String RECAPTCHA = "(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)";
@@ -45,6 +46,22 @@ public class LsnTo extends PluginForDecrypt {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
         br.getPage(parameter);
+
+        if (parameter.matches("http://(www\\.)?lesen\\.to/wp/tipp/Download/\\d+/")) {
+            final String redirect = br.getRedirectLocation();
+            if (redirect == null) {
+                logger.info("Cannot decrypt link: " + parameter);
+                logger.info("Unsupported link: " + redirect);
+                return decryptedLinks;
+            }
+            final String newLink = new Regex(redirect, "(http://(www\\.)?lesen\\.to/protection/folder_\\d+\\.html)").getMatch(0);
+            if (newLink == null) {
+                logger.warning("Decrypter broken for link: " + parameter);
+                return null;
+            }
+            br.getPage(newLink);
+        }
+
         boolean failed = true;
         if (br.containsHTML(RECAPTCHA)) {
             for (int i = 0; i <= 5; i++) {
