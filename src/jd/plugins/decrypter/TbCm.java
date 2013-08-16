@@ -181,8 +181,7 @@ public class TbCm extends PluginForDecrypt {
     }
 
     /**
-     * Converts the Google Closed Captions subtitles to SRT subtitles. It runs
-     * after the completed download.
+     * Converts the Google Closed Captions subtitles to SRT subtitles. It runs after the completed download.
      * 
      * @param downloadlink
      *            . The finished link to the Google CC subtitle file.
@@ -796,10 +795,8 @@ public class TbCm extends PluginForDecrypt {
                 String ytID = getVideoID(currentVideoUrl);
 
                 /*
-                 * We match against users resolution and file encoding type.
-                 * This allows us to use their upper and lower limits. It will
-                 * return multiple results if they are in the same quality
-                 * rating
+                 * We match against users resolution and file encoding type. This allows us to use their upper and lower limits. It will return multiple results
+                 * if they are in the same quality rating
                  */
                 if (best) {
                     final HashMap<Integer, String[]> bestFound = new HashMap<Integer, String[]>();
@@ -883,8 +880,7 @@ public class TbCm extends PluginForDecrypt {
                         cMode = DestinationFormat.UNKNOWN;
                         vQuality = "(" + LinksFound.get(format)[1] + "_" + format + ")";
                         /*
-                         * we do not want to download unknown formats at the
-                         * moment
+                         * we do not want to download unknown formats at the moment
                          */
                         continue;
                     }
@@ -1368,14 +1364,13 @@ public class TbCm extends PluginForDecrypt {
             sb.append(s.charAt(2));
             sb.append(s.charAt(12));
         } else if (s.length() == 87) {
-            sb.append(new StringBuilder(s.substring(54, 84)).reverse());
-            sb.append(s.charAt(3));
-            sb.append(new StringBuilder(s.substring(41, 53)).reverse());
-            sb.append(s.charAt(86));
-            sb.append(new StringBuilder(s.substring(11, 40)).reverse());
-            sb.append(s.charAt(0));
-            sb.append(new StringBuilder(s.substring(4, 10)).reverse());
-            sb.append(s.charAt(53));
+            sb.append(s.substring(6, 27));
+            sb.append(s.charAt(4));
+            sb.append(s.substring(28, 39));
+            sb.append(s.charAt(27));
+            sb.append(s.substring(40, 59));
+            sb.append(s.charAt(2));
+            sb.append(s.substring(60));
         } else if (s.length() == 86) {
             sb.append(s.substring(5, 20));
             sb.append(s.charAt(2));
@@ -1396,10 +1391,14 @@ public class TbCm extends PluginForDecrypt {
             sb.append(new StringBuilder(s.substring(1, 3)).reverse());
             sb.append(s.charAt(27));
         } else if (s.length() == 83) {
-            sb.append(s.substring(0, 15));
-            sb.append(s.charAt(80));
-            sb.append(s.substring(16, 80));
-            sb.append(s.charAt(15));
+            sb.append(new StringBuilder(s.substring(65, 82)).reverse());
+            sb.append(s.charAt(82));
+            sb.append(new StringBuilder(s.substring(53, 64)).reverse());
+            sb.append(s.charAt(45));
+            sb.append(new StringBuilder(s.substring(46, 52)).reverse());
+            sb.append(s.charAt(1));
+            sb.append(new StringBuilder(s.substring(2, 45)).reverse());
+            sb.append(s.charAt(0));
         } else if (s.length() == 82) {
             sb.append(s.charAt(36));
             sb.append(new StringBuilder(s.substring(68, 80)).reverse());
