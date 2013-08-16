@@ -17,7 +17,6 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
-import java.util.Random;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -31,10 +30,10 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pornstarnetwork.com" }, urls = { "http://(www\\.)?pornstarnetwork\\.com/video/([a-z0-9\\-_]+)?\\d+\\.html" }, flags = { 0 })
-public class PornStarNetworkCom extends PluginForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uflash.tv" }, urls = { "http://(www\\.)?uflash\\.tv/video/\\d+" }, flags = { 0 })
+public class UflashTv extends PluginForHost {
 
-    public PornStarNetworkCom(PluginWrapper wrapper) {
+    public UflashTv(PluginWrapper wrapper) {
         super(wrapper);
     }
 
@@ -42,35 +41,31 @@ public class PornStarNetworkCom extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "http://www.pornstarnetwork.com/terms.html";
+        return "http://www.uflash.tv/static/terms";
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML("(>Page not Found<|>Sorry, the page you are looking for cannot be found)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("<div id=\"viewTitle\"><h1>Video \\- ([^<>\"]*?) \\&nbsp;</h1></div>").getMatch(0);
-        if (filename == null) filename = br.getRegex("<title>([^<>\"]*?)</title>").getMatch(0);
-        br.getPage("http://www.pornstarnetwork.com/streaming/getVideosZ/cntid/" + new Regex(downloadLink.getDownloadURL(), "(\\d+)\\.html$").getMatch(0) + "/quality/sd/" + new Random().nextInt(1000));
-        DLLINK = br.getRegex("swfUrl=(http[^<>\"]*?)\\&").getMatch(0);
-        if (DLLINK == null) {
-            br.getPage("http://www.pornstarnetwork.com/streaming/getAuthUrl/cntid/" + new Regex(downloadLink.getDownloadURL(), "(\\d+)\\.html$").getMatch(0) + "/quality/sd/format/h264/" + new Random().nextInt(1000));
-            DLLINK = br.getRegex("swfUrl=(http[^<>\"]*?)\\&").getMatch(0);
+        if (br.getURL().contains("uflash.tv/error/video_missing")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = br.getRegex("VIDEO \\| ([^<>\"]*?) \\| UFLASH\\.TV").getMatch(0);
+        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        filename = Encoding.htmlDecode(filename.trim());
+        if (br.containsHTML(">This is a private video")) {
+            downloadLink.getLinkStatus().setStatusText("Private videos are only downloadable via account");
+            downloadLink.setName(filename + ".flv");
+            return AvailableStatus.TRUE;
         }
-        if (filename == null || DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        br.getPage("http://www.uflash.tv/media/player/config.x12.php?vkey=" + new Regex(downloadLink.getDownloadURL(), "(\\d+)$").getMatch(0));
+        DLLINK = br.getRegex("<src>(http://[^<>\"]*?)</src>").getMatch(0);
+        if (DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         DLLINK = Encoding.htmlDecode(DLLINK);
-        filename = filename.trim();
         String ext = DLLINK.substring(DLLINK.lastIndexOf("."));
-        if ((ext == null || ext.length() > 5) && ext.contains(".mp4"))
-            ext = ".mp4";
-        else if ((ext == null || ext.length() > 5) && ext.contains(".flv"))
-            ext = ".flv";
-        else
-            ext = ".mp4";
-        downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + ext);
-        Browser br2 = br.cloneBrowser();
+        if (ext == null || ext.length() > 5) ext = ".flv";
+        downloadLink.setFinalFileName(filename + ext);
+        final Browser br2 = br.cloneBrowser();
         // In case the link redirects to the finallink
         br2.setFollowRedirects(true);
         URLConnectionAdapter con = null;
@@ -90,8 +85,16 @@ public class PornStarNetworkCom extends PluginForHost {
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception {
+    public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
+        if (br.containsHTML(">This is a private video")) {
+            try {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+            } catch (final Throwable e) {
+                if (e instanceof PluginException) throw (PluginException) e;
+            }
+            throw new PluginException(LinkStatus.ERROR_FATAL, "Private videos are only downloadable via account");
+        }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();

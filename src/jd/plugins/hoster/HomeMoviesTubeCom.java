@@ -66,8 +66,8 @@ public class HomeMoviesTubeCom extends PluginForHost {
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML("(The file you have requested was not found and/or has been deleted|\">Sorry, this video has been deleted|<title>404: File Not Found </title>)") || br.getURL().contains("homemoviestube.com/404.php")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("<div id=\"header\"><h2><span class=\"blue\">(.*?)</span></h2>").getMatch(0);
-        if (filename == null) filename = br.getRegex("<title>(.*?)</title>").getMatch(0);
+        String filename = br.getRegex("<title>(.*?) at HomeMoviesTube\\.com</title>").getMatch(0);
+        if (filename == null) filename = br.getRegex("<h1 class=\"header\">[\t\n\r ]+<span class=\"cnt\">([^<>\"]*?)</span>").getMatch(0);
         DLLINK = br.getRegex("settings=(http://.*?)\"").getMatch(0);
         if (DLLINK == null) DLLINK = br.getRegex("(http://(www\\.)?homemoviestube\\.com/playerConfig\\.php\\?.*?)\"").getMatch(0);
         if (filename == null || DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -76,7 +76,9 @@ public class HomeMoviesTubeCom extends PluginForHost {
         if (DLLINK == null) DLLINK = br.getRegex("flvMask:(http://.*?);").getMatch(0);
         if (DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         filename = filename.trim();
-        downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + DLLINK.subSequence(DLLINK.length() - 4, DLLINK.length()));
+        String ext = DLLINK.substring(DLLINK.lastIndexOf("."));
+        if (ext == null || ext.length() > 5) ext = ".flv";
+        downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + ext);
         Browser br2 = br.cloneBrowser();
         // In case the link redirects to the finallink
         br2.setFollowRedirects(true);

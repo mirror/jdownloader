@@ -67,8 +67,8 @@ public class JudgePornCom extends PluginForHost {
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
         if (br.getURL().equals("http://www.judgeporn.com/categories/") || br.containsHTML("<title>Free Hardcore Porn Videos and Porn Fucking Movies</title>")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("<div class=\"tab_top2\"><div class=\"reg0\">([^<>]+)</div>").getMatch(0);
-        if (filename == null) filename = br.getRegex("<title>([^<]+]) at Judge Porn</title>").getMatch(0);
+        String filename = br.getRegex("<title>([^<>\"]*?) at Judge Porn</title>").getMatch(0);
+        if (filename == null) filename = br.getRegex("<h1>([^<>\"]*?)</h1>").getMatch(0);
         if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         DLLINK = br.getRegex("video_url: encodeURIComponent\\(\\'(http?://[^\\']+)").getMatch(0);
         if (DLLINK == null) {

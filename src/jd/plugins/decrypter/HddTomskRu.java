@@ -31,7 +31,6 @@ import jd.plugins.FilePackage;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.JDUtilities;
-import jd.utils.locale.JDL;
 
 @DecrypterPlugin(revision = "$Revision: 20458 $", interfaceVersion = 2, names = { "hdd.tomsk.ru" }, urls = { "http://(www|download\\.)?hdd\\.tomsk\\.ru/desk/(?!notfound)[a-z]{8}" }, flags = { 0 })
 public class HddTomskRu extends PluginForDecrypt {
@@ -61,7 +60,10 @@ public class HddTomskRu extends PluginForDecrypt {
         String redirectLocation = br.getRedirectLocation();
 
         /* No such desk */
-        if (redirectLocation != null && redirectLocation.equals(jd.plugins.hoster.HddTomskRu.NOTFOUND)) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Wrong URL or the package no longer exists."));
+        if (redirectLocation != null && (redirectLocation.equals(jd.plugins.hoster.HddTomskRu.NOTFOUND) || redirectLocation.equals("http://hdd.tomsk.ru/desk/notfound"))) {
+            logger.info("Link offline: " + parameter);
+            return decryptedLinks;
+        }
 
         /* Password protected desk */
         if (redirectLocation == null && br.containsHTML(PWTEXT)) {

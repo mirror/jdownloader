@@ -206,8 +206,8 @@ public class VideoFCTwoCom extends PluginForHost {
     private AvailableStatus requestVideo(DownloadLink downloadLink) throws Exception {
         String dllink = downloadLink.getDownloadURL();
         br.getPage(dllink);
-        if (br.containsHTML("This content has already been deleted")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
-        String filename = br.getRegex("<title>.*?◎?(.*?) -").getMatch(0);
+        if (br.containsHTML("This content has already been deleted") || br.getURL().contains("/err.php") || br.getURL().contains("/404.php")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+        String filename = br.getRegex("<title>.*?◎?(.*?) \\-").getMatch(0);
         if (filename == null) {
             filename = br.getRegex("title=\".*?◎([^\"]+)").getMatch(0);
         }
