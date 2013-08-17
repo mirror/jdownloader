@@ -744,10 +744,12 @@ public class TbCm extends PluginForDecrypt {
                     YT_FILENAME = LinksFound.get(-1)[0];
                     LinksFound.remove(-1);
                 }
-                SimpleDateFormat formatter = new SimpleDateFormat("dd.MM.yyyy");
+                // replacing default Locate to be compatible with page language 
+                Locale locale = Locale.ENGLISH;
+                SimpleDateFormat formatter = new SimpleDateFormat("dd.MM.yyyy", locale);
                 String date = br.getRegex("id=\"eow\\-date\" class=\"watch\\-video\\-date\" >(\\d{2}\\.\\d{2}\\.\\d{4})</span>").getMatch(0);
                 if (date == null) {
-                    formatter = new SimpleDateFormat("dd MMM yyyy");
+                    formatter = new SimpleDateFormat("dd MMM yyyy", locale);
                     date = br.getRegex("class=\"watch\\-video\\-date\" >(\\d{2} [A-Za-z]{3} \\d{4})</span>").getMatch(0);
                 }
                 final String channelName = br.getRegex("temprop=\"url\" href=\"http://(www\\.)?youtube\\.com/user/([^<>\"]*?)\"").getMatch(1);
@@ -795,8 +797,8 @@ public class TbCm extends PluginForDecrypt {
                 String ytID = getVideoID(currentVideoUrl);
 
                 /*
-                 * We match against users resolution and file encoding type. This allows us to use their upper and lower limits. It will return multiple results
-                 * if they are in the same quality rating
+                 * We match against users resolution and file encoding type. This allows us to use their upper and lower limits. It will
+                 * return multiple results if they are in the same quality rating
                  */
                 if (best) {
                     final HashMap<Integer, String[]> bestFound = new HashMap<Integer, String[]>();
