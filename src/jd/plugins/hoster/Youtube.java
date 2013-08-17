@@ -43,7 +43,7 @@ import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "youtube.com" }, urls = { "(httpJDYoutube://[\\w\\.\\-]*?youtube\\.com/(videoplayback\\?.+|get_video\\?.*?video_id=.+&.+(&fmt=\\d+)?))|(httpJDYoutube://video\\.google\\.com/timedtext\\?type=track&name=.*?\\&lang=[a-z\\-]{2,}\\&v=[a-z\\-_A-Z0-9]+)|(httpJDYoutube://img\\.youtube.com/vi/[a-z\\-_A-Z0-9]+/(hqdefault|mqdefault|default|maxresdefault).jpg)" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "youtube.com" }, urls = { "(httpJDYoutube://[\\w\\.\\-]*?youtube\\.com/(videoplayback\\?.+|get_video\\?.*?video_id=.+\\&.+(\\&fmt=\\d+)?))|(httpJDYoutube://video\\.google\\.com/timedtext\\?type=track&name=.*?\\&lang=[a-z\\-]{2,}\\&v=[a-z\\-_A-Z0-9]+)|(httpJDYoutube://img\\.youtube.com/vi/[a-z\\-_A-Z0-9]+/(hqdefault|mqdefault|default|maxresdefault)\\.jpg)" }, flags = { 2 })
 public class Youtube extends PluginForHost {
 
     private static Object       lock                    = new Object();
@@ -308,8 +308,7 @@ public class Youtube extends PluginForHost {
                 String checkConnection = br.getRegex("iframeUri: \\'(https.*?)\\'").getMatch(0);
                 if (checkConnection != null) {
                     /*
-                     * don't know if this is important but seems to set pstMsg
-                     * to 1 ;)
+                     * don't know if this is important but seems to set pstMsg to 1 ;)
                      */
                     checkConnection = unescape(checkConnection);
                     try {
@@ -434,6 +433,8 @@ public class Youtube extends PluginForHost {
         // For streaming extension to tell her that these links can be streamed
         // without account
         // System.out.println("Youtube: " + downloadLink);
+
+        if (downloadLink.getBooleanProperty("offline", false)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
 
         if (downloadLink.getBooleanProperty("subtitle", false) || downloadLink.getBooleanProperty("thumbnail", false)) {
             URLConnectionAdapter urlConnection = null;

@@ -49,11 +49,15 @@ public class GfsSexCom extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
         if (br.getURL().contains("gfssex.com/?=index") || br.containsHTML("(<title>Newest Porn Videos at GFs Sex</title>|>Gfs Sex Videos Currently Being Watched)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("\\?image=1\"")) {
+            downloadLink.getLinkStatus().setStatusText("Galleries are not supported (yet), please contact our support if you want them to be supported!");
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         String filename = br.getRegex("</span>Currently Watching: (.*?)<span class=").getMatch(0);
         if (filename == null) filename = br.getRegex("<title>(.*?) at GFs Sex</title>").getMatch(0);
         DLLINK = br.getRegex("settings=(http://(www\\.)?gfssex\\.com/.*?)(\\||%7C)").getMatch(0);

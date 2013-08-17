@@ -31,6 +31,7 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.Map.Entry;
+import java.util.Random;
 import java.util.Scanner;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.regex.Pattern;
@@ -728,9 +729,15 @@ public class TbCm extends PluginForDecrypt {
                     if (error != null) logger.info("Reason: " + error.trim());
                     continue;
                 }
+                final String videoid = getVideoID(currentVideoUrl);
                 if (LinksFound == null || LinksFound.isEmpty()) {
                     if (linkstodecrypt.size() == 1) {
                         if (verifyAge || this.br.getURL().toLowerCase().indexOf("youtube.com/get_video_info?") != -1 && !prem) { throw new DecrypterException(DecrypterException.ACCOUNT); }
+                        final DownloadLink offline = createDownloadlink("httpJDYoutube://r20---sn-4g57kner.c.youtube.com/videoplayback?sver=3&id=a3a288054be22ded&ipbits=8&itag=43&expire=1376781178&ratebypass=yes&fexp=927826%2C903903%2C920604%2C932237%2C927839%2C916626%2C931005%2C909546%2C906397%2C929117%2C929121%2C929906%2C929907%2C929922%2C929127%2C929129%2C929131%2C929930%2C925720%2C925722%2C925718%2C925714%2C929917%2C929919%2C929933%2C912521%2C932306%2C913428%2C920605%2C904830%2C919373%2C930803%2C904122%2C938701%2C919008%2C911423%2C909549%2C900816%2C912711%2C935802%2C904494%2C906001&ms=au&cp=U0hWS1dTT19MUkNONl9PTVNCOnozWXhMQzNfazJD&ip=87.160.200.202&key=yt1&mt=1376758530&sparams=cp%2Cid%2Cip%2Cipbits%2Citag%2Cratebypass%2Csource%2Cupn%2Cexpire&mv=m&upn=VoejVd34qx8&source=youtube&signature=7D265E3116EA58DFDE26BF4A210B5B33753FCD69." + new Random().nextInt(100000));
+                        offline.setAvailable(false);
+                        offline.setProperty("offline", true);
+                        offline.setName(videoid);
+                        decryptedLinks.add(offline);
                         logger.info("Video unavailable: " + currentVideoUrl);
                         continue;
                     } else {
@@ -744,7 +751,7 @@ public class TbCm extends PluginForDecrypt {
                     YT_FILENAME = LinksFound.get(-1)[0];
                     LinksFound.remove(-1);
                 }
-                // replacing default Locate to be compatible with page language 
+                // replacing default Locate to be compatible with page language
                 Locale locale = Locale.ENGLISH;
                 SimpleDateFormat formatter = new SimpleDateFormat("dd.MM.yyyy", locale);
                 String date = br.getRegex("id=\"eow\\-date\" class=\"watch\\-video\\-date\" >(\\d{2}\\.\\d{2}\\.\\d{4})</span>").getMatch(0);
@@ -753,7 +760,6 @@ public class TbCm extends PluginForDecrypt {
                     date = br.getRegex("class=\"watch\\-video\\-date\" >(\\d{2} [A-Za-z]{3} \\d{4})</span>").getMatch(0);
                 }
                 final String channelName = br.getRegex("temprop=\"url\" href=\"http://(www\\.)?youtube\\.com/user/([^<>\"]*?)\"").getMatch(1);
-                final String videoid = getVideoID(currentVideoUrl);
                 final int playlistNumberInt = Integer.parseInt(currentPlaylistVideoNumber);
                 String formattedFilename = cfg.getStringProperty(CUSTOM_FILENAME, defaultCustomFilename);
                 if ((!formattedFilename.contains("*videoname*") && !formattedFilename.contains("*videoid*")) || !formattedFilename.contains("*ext*")) formattedFilename = defaultCustomFilename;
@@ -1066,6 +1072,16 @@ public class TbCm extends PluginForDecrypt {
                 logger.log(java.util.logging.Level.SEVERE, "Exception occurred", e);
                 // return null;
             }
+        }
+
+        // No links found -> Link is probably offline
+        if (decryptedLinks == null || decryptedLinks.isEmpty()) {
+            if (verifyAge || this.br.getURL().toLowerCase().indexOf("youtube.com/get_video_info?") != -1 && !prem) { throw new DecrypterException(DecrypterException.ACCOUNT); }
+            final DownloadLink offline = createDownloadlink("httpJDYoutube://r20---sn-4g57kner.c.youtube.com/videoplayback?sver=3&id=a3a288054be22ded&ipbits=8&itag=43&expire=1376781178&ratebypass=yes&fexp=927826%2C903903%2C920604%2C932237%2C927839%2C916626%2C931005%2C909546%2C906397%2C929117%2C929121%2C929906%2C929907%2C929922%2C929127%2C929129%2C929131%2C929930%2C925720%2C925722%2C925718%2C925714%2C929917%2C929919%2C929933%2C912521%2C932306%2C913428%2C920605%2C904830%2C919373%2C930803%2C904122%2C938701%2C919008%2C911423%2C909549%2C900816%2C912711%2C935802%2C904494%2C906001&ms=au&cp=U0hWS1dTT19MUkNONl9PTVNCOnozWXhMQzNfazJD&ip=33.33.333.666&key=yt1&mt=1376758530&sparams=cp%2Cid%2Cip%2Cipbits%2Citag%2Cratebypass%2Csource%2Cupn%2Cexpire&mv=m&upn=VoejVd34qx8&source=youtube&signature=7D265E3116EA58DFDE26BF4A210B5B33753FCD69." + new Random().nextInt(100000));
+            offline.setAvailable(false);
+            offline.setProperty("offline", true);
+            offline.setName(getVideoID(parameter));
+            decryptedLinks.add(offline);
         }
 
         return decryptedLinks;

@@ -78,7 +78,7 @@ public class UniBytesCom extends PluginForHost {
         prepBrowser();
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
-        if (br.containsHTML("(<p>File not found or removed</p>|>\\s+Page Not Found\\s+<)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("(<p>File not found or removed</p>|>\\s+Page Not Found\\s+<|File not found)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (br.containsHTML(FATALSERVERERROR)) return AvailableStatus.UNCHECKABLE;
         if (br.containsHTML(SECURITYCAPTCHA)) {
             link.getLinkStatus().setStatusText("Can't check status, security captcha...");
