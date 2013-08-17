@@ -86,14 +86,21 @@ public class FlashxTv extends PluginForHost {
         if (seclink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         br.getPage(seclink);
         if (br.containsHTML("We are currently performing maintenance on this server")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "This server is under maintenance", 30 * 60 * 1000l);
+        // 2.1
+        regex = "\"(http://play\\.flashx\\.tv/player/[^\"]+)\"";
+        String seclinkgk = br.getRegex(regex).getMatch(0);
+        if (seclinkgk == null) seclinkgk = getPlainData(regex);
+        if (seclinkgk == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         // 3
         regex = "config=(http://play.flashx.tv/nuevo/[^\"]+)\"";
         String thirdLink = br.getRegex(regex).getMatch(0);
         if (thirdLink == null) thirdLink = getPlainData(regex);
         if (thirdLink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        br.getPage(seclinkgk);
         br.getPage(thirdLink);
         dllink = br.getRegex("<file>(http://[^<>\"]*?)</file>").getMatch(0);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, -5);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
