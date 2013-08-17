@@ -119,3 +119,6 @@ proxy_none=Direktno
 proxy_socks4=%s1:%s2 (Socks4 Proxy)
 proxy_socks5=%s1:%s2 (Socks5 Proxy)
 proxydialog_title=Nema Konekcije na Internet
+tableheader_tooltip_locked=%s1 (Promjena veličine je zaključana)
+tableheader_tooltip_normal=%s1
+unLockColumnWidthAction=otključaj širinu kolone
