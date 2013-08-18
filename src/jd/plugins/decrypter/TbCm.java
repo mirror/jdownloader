@@ -1391,14 +1391,14 @@ public class TbCm extends PluginForDecrypt {
             sb.append(s.charAt(2));
             sb.append(s.substring(21));
         } else if (s.length() == 85) {
-            sb.append(s.substring(2, 8));
+            sb.append(new StringBuilder(s.substring(35, 84)).reverse());
             sb.append(s.charAt(0));
-            sb.append(s.substring(9, 21));
-            sb.append(s.charAt(65));
-            sb.append(s.substring(22, 65));
-            sb.append(s.charAt(84));
-            sb.append(s.substring(66, 82));
-            sb.append(s.charAt(21));
+            sb.append(new StringBuilder(s.substring(28, 34)).reverse());
+            sb.append(s.charAt(3));
+            sb.append(new StringBuilder(s.substring(20, 27)).reverse());
+            sb.append(s.charAt(34));
+            sb.append(new StringBuilder(s.substring(4, 19)).reverse());
+            sb.append(s.charAt(27));
         } else if (s.length() == 84) {
             sb.append(new StringBuilder(s.substring(28, 84)).reverse());
             sb.append(s.charAt(0));
