@@ -396,8 +396,7 @@ public class HulkLoadCom extends PluginForHost {
     public String getDllink() {
         String dllink = br.getRedirectLocation();
         if (dllink == null) {
-            // "http://up4.hulkload.com/files/3/15ln7xkuiz55z9/Eliza Knight - Rules of Chivalry, The 01 - Lady's Charade, A.rar"
-            dllink = new Regex(correctedBR, "\"(https?://(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|([\\w\\-]+\\.)?" + DOMAINS + ")/files/[^<>]*?)\"").getMatch(0);
+            dllink = new Regex(correctedBR, "(https?://(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|([\\w\\-]+\\.)?" + DOMAINS + ")/files/[^<>]*?)\"").getMatch(0);
             if (dllink == null) {
                 final String cryptedScripts[] = new Regex(correctedBR, "p\\}\\((.*?)\\.split\\('\\|'\\)").getColumn(0);
                 if (cryptedScripts != null && cryptedScripts.length != 0) {
