@@ -76,9 +76,11 @@ public class FlashxTv extends PluginForHost {
         String dllink = null;
         // 1
         String regex = "\"(http://(flashx\\.tv/player/embed_player\\.php|play\\.flashx\\.tv/player/embed\\.php)\\?[^<>\"]*?)\"";
+        String regexgk = "\"(http://play\\.flashx\\.tv/player/gk\\.php[^\"]+)\"";
         final String firstlink = br.getRegex(regex).getMatch(0);
         if (firstlink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         br.getPage(firstlink);
+        String seclinkgk = br.getRegex(regexgk).getMatch(0);
         // 2
         regex = "\"(http://play\\.flashx\\.tv/player/[^\"]+)\"";
         String seclink = br.getRegex(regex).getMatch(0);
@@ -87,9 +89,8 @@ public class FlashxTv extends PluginForHost {
         br.getPage(seclink);
         if (br.containsHTML("We are currently performing maintenance on this server")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "This server is under maintenance", 30 * 60 * 1000l);
         // 2.1
-        regex = "\"(http://play\\.flashx\\.tv/player/[^\"]+)\"";
-        String seclinkgk = br.getRegex(regex).getMatch(0);
-        if (seclinkgk == null) seclinkgk = getPlainData(regex);
+        if (seclinkgk == null) seclinkgk = br.getRegex(regexgk).getMatch(0);
+        if (seclinkgk == null) seclinkgk = getPlainData(regexgk);
         if (seclinkgk == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         // 3
         regex = "config=(http://play.flashx.tv/nuevo/[^\"]+)\"";
