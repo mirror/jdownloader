@@ -80,12 +80,12 @@ public class GorillaVidIn extends PluginForHost {
     private final String               DOMAINS                      = "(gorillavid\\.in)";
     private final String               PASSWORDTEXT                 = "<br><b>Passwor(d|t):</b> <input";
     private final String               MAINTENANCE                  = ">This server is in maintenance mode";
-    private final String               dllinkRegex                  = "https?://(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|([\\w\\-]+\\.)?" + DOMAINS + ")(:\\d{1,5})?/(files(/(dl|download))?|d|cgi-bin/dl\\.cgi)/(\\d+/)?([a-z0-9]+/){1,4}[^/<>\r\n\t]+";
+    private final String               dllinkRegex                  = "https?://\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}(:\\d{1,5})?/(\\d+/)?([a-z0-9]+/)[^/<>\r\n\t]+";
     private final boolean              useVidEmbed                  = false;
     private final boolean              useAltEmbed                  = true;
     private final boolean              supportsHTTPS                = false;
     private final boolean              enforcesHTTPS                = false;
-    private final boolean              useRUA                       = false;
+    private final boolean              useRUA                       = true;
     private final boolean              useAltExpire                 = true;
     private final boolean              useAltLinkCheck              = false;
     private final boolean              skipableRecaptcha            = true;
@@ -350,6 +350,9 @@ public class GorillaVidIn extends PluginForHost {
                 download1 = cleanForm(download1);
                 // end of backward compatibility
                 download1.remove("method_premium");
+                download1.remove(null);
+                download1.setAction(this.br.getURL());
+                this.waitTime(System.currentTimeMillis(), downloadLink);
                 sendForm(download1);
                 checkErrors(downloadLink, account, false);
                 getDllink();
@@ -510,7 +513,7 @@ public class GorillaVidIn extends PluginForHost {
         int passedTime = (int) ((System.currentTimeMillis() - timeBefore) / 1000) - 1;
         /** Ticket Time */
         String ttt = cbr.getRegex("id=\"countdown_str\">[^<>\"]+<span id=\"[^<>\"]+\"( class=\"[^<>\"]+\")?>([\n ]+)?(\\d+)([\n ]+)?</span>").getMatch(2);
-        if (inValidate(ttt)) ttt = cbr.getRegex("id=\"countdown_str\"[^>]+>Wait[^>]+>(\\d+)\\s?+</span>").getMatch(0);
+        if (inValidate(ttt)) ttt = cbr.getRegex(">Wait <span id=\"[a-z0-9]+\">(\\d+)</span> seconds<").getMatch(0);
         if (!inValidate(ttt)) {
             int tt = Integer.parseInt(ttt);
             tt -= passedTime;

@@ -46,7 +46,7 @@ import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "movpod.in" }, urls = { "https?://(www\\.)?movpod\\.in/[a-z0-9]{12}" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "movpod.in" }, urls = { "https?://(www\\.)?movpod\\.(in|net)/[a-z0-9]{12}" }, flags = { 0 })
 public class MovPodIn extends PluginForHost {
 
     private String               correctedBR                  = "";
@@ -59,14 +59,14 @@ public class MovPodIn extends PluginForHost {
     private static final String  PREMIUMONLY2                 = JDL.L("hoster.xfilesharingprobasic.errors.premiumonly2", "Only downloadable via premium or registered");
     private static final boolean VIDEOHOSTER                  = false;
     // note: can not be negative -x or 0 .:. [1-*]
-    private static AtomicInteger totalMaxSimultanFreeDownload = new AtomicInteger(20);
+    private static AtomicInteger totalMaxSimultanFreeDownload = new AtomicInteger(2);
     // don't touch
     private static AtomicInteger maxFree                      = new AtomicInteger(1);
 
     // DEV NOTES
     // XfileSharingProBasic Version 2.5.8.9
     // mods: getdllink
-    // non account: 8 * 20
+    // non account: 2 * 1
     // free account: chunk * maxdl
     // premium account: chunk * maxdl
     // protocol: no https
@@ -75,7 +75,7 @@ public class MovPodIn extends PluginForHost {
 
     @Override
     public void correctDownloadLink(DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replace("https://", "http://"));
+        link.setUrlDownload(link.getDownloadURL().replace("https://", "http://").replace("movpod.net/", "movpod.in/"));
     }
 
     @Override
@@ -102,6 +102,8 @@ public class MovPodIn extends PluginForHost {
         // define custom browser headers and language settings.
         br.getHeaders().put("Accept-Language", "en-gb, en;q=0.9, de;q=0.8");
         br.setCookie(COOKIE_HOST, "lang", "english");
+        JDUtilities.getPluginForHost("mediafire.com");
+        br.getHeaders().put("User-Agent", jd.plugins.hoster.MediafireCom.stringUserAgent());
     }
 
     @Override
@@ -185,7 +187,7 @@ public class MovPodIn extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        doFree(downloadLink, true, -8, "freelink");
+        doFree(downloadLink, true, -2, "freelink");
     }
 
     @SuppressWarnings("unused")
@@ -210,6 +212,8 @@ public class MovPodIn extends PluginForHost {
             Form download1 = getFormByKey("op", "download1");
             if (download1 != null) {
                 download1.remove("method_premium");
+                download1.remove(null);
+                this.waitTime(System.currentTimeMillis(), downloadLink);
                 sendForm(download1);
                 checkErrors(downloadLink, false, passCode);
             }
@@ -396,7 +400,7 @@ public class MovPodIn extends PluginForHost {
         if (brg == null) brg = br;
         String dllink = brg.getRedirectLocation();
         if (dllink == null) {
-            dllink = new Regex(brg, "file:([ ]+)?\"(http://[^<>\"]*?)\"").getMatch(1);
+            dllink = new Regex(brg, "(https?://\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}(:\\d{1,5})?/(\\d+/)?[a-z0-9]+/[^<>\"]*?)\"").getMatch(0);
         }
         return dllink;
     }
@@ -438,7 +442,7 @@ public class MovPodIn extends PluginForHost {
     private void waitTime(long timeBefore, final DownloadLink downloadLink) throws PluginException {
         int passedTime = (int) ((System.currentTimeMillis() - timeBefore) / 1000) - 1;
         /** Ticket Time */
-        final String ttt = new Regex(correctedBR, "id=\"countdown_str\">[^<>\"]+<span id=\"[^<>\"]+\"( class=\"[^<>\"]+\")?>([\n ]+)?(\\d+)([\n ]+)?</span>").getMatch(2);
+        final String ttt = new Regex(correctedBR, ">Wait <span id=\"[a-z0-9]+\">(\\d+)</span> seconds<").getMatch(0);
         if (ttt != null) {
             int tt = Integer.parseInt(ttt);
             tt -= passedTime;

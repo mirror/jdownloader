@@ -26,6 +26,7 @@ import java.util.zip.GZIPOutputStream;
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
+import jd.config.Property;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -182,8 +183,7 @@ public class PremiumizeMe extends PluginForHost {
             return;
         } else if (dl.getConnection().getContentType() != null && !dl.getConnection().getContentType().contains("html") && !dl.getConnection().getContentType().contains("text")) {
             /*
-             * no content disposition, but api says that some hoster might not
-             * have one
+             * no content disposition, but api says that some hoster might not have one
              */
             if (!this.dl.startDownload()) {
                 try {
@@ -200,8 +200,7 @@ public class PremiumizeMe extends PluginForHost {
             return;
         } else {
             /*
-             * download is not contentdisposition, so remove this host from
-             * premiumHosts list
+             * download is not contentdisposition, so remove this host from premiumHosts list
              */
             br.followConnection();
             sendErrorLog(link, account);
@@ -211,11 +210,22 @@ public class PremiumizeMe extends PluginForHost {
     }
 
     @Override
-    public void handleMultiHost(DownloadLink link, Account account) throws Exception {
+    public void handleMultiHost(final DownloadLink link, final Account account) throws Exception {
         br = newBrowser();
         showMessage(link, "Task 1: Generating Link");
         /* request Download */
         br.getPage("https://api.premiumize.me/pm-api/v1.php?method=directdownloadlink&params[login]=" + Encoding.urlEncode(account.getUser()) + "&params[pass]=" + Encoding.urlEncode(account.getPass()) + "&params[link]=" + Encoding.urlEncode(link.getDownloadURL()));
+        if (br.containsHTML(">403 Forbidden<")) {
+            int timesFailed = link.getIntegerProperty("timesfailedpremiumize", 0);
+            if (timesFailed <= 2) {
+                timesFailed++;
+                link.setProperty("timesfailedpremiumize", timesFailed);
+                throw new PluginException(LinkStatus.ERROR_RETRY, "Server error");
+            } else {
+                link.setProperty("timesfailedpremiumize", Property.NULL);
+                tempUnavailableHoster(account, link, 60 * 60 * 1000l);
+            }
+        }
         handleAPIErrors(br, account, link);
         String dllink = br.getRegex("location\":\"(http[^\"]+)").getMatch(0);
         if (dllink == null) {
@@ -357,8 +367,7 @@ public class PremiumizeMe extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, statusMessage, 3 * 60 * 1000l);
             case 503:
                 /*
-                 * temp multihoster issue, maintenance period, block host for 3
-                 * mins
+                 * temp multihoster issue, maintenance period, block host for 3 mins
                  */
                 if (statusMessage == null) statusMessage = "Hoster temporarily not possible";
                 // tempUnavailableHoster(account, downloadLink, 3 * 60 * 1000);

@@ -85,7 +85,7 @@ public class BackinNet extends PluginForHost {
     private final boolean              useAltEmbed                  = false;
     private final boolean              supportsHTTPS                = false;
     private final boolean              enforcesHTTPS                = false;
-    private final boolean              useRUA                       = false;
+    private final boolean              useRUA                       = true;
     private final boolean              useAltExpire                 = true;
     private final boolean              useAltLinkCheck              = false;
     private final boolean              skipableRecaptcha            = true;
@@ -99,7 +99,7 @@ public class BackinNet extends PluginForHost {
     // last XfileSharingProBasic compare :: 2.6.2.1
     // protocol: no https
     // captchatype: recaptcha
-    // mods:
+    // mods: server errorhandling, another correctBR regex
     // other: no redirects
 
     private void setConstants(final Account account) {
@@ -474,6 +474,7 @@ public class BackinNet extends PluginForHost {
         regexStuff.add("<!(--.*?--)>");
         regexStuff.add("(<div[^>]+display: ?none;[^>]+>.*?</div>)");
         regexStuff.add("(visibility:hidden>.*?<)");
+        regexStuff.add("<span><a href=\"([^<>\"]*?)\"><font color=\"#fff\">");
 
         for (String aRegex : regexStuff) {
             String results[] = new Regex(toClean, aRegex).getColumn(0);
@@ -606,7 +607,7 @@ public class BackinNet extends PluginForHost {
 
     private void checkServerErrors() throws NumberFormatException, PluginException {
         if (cbr.containsHTML("No file")) throw new PluginException(LinkStatus.ERROR_FATAL, "Server error");
-        if (cbr.containsHTML("(File Not Found|<h1>404 Not Found</h1>|<h1>The page cannot be found</h1>)")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 30 * 60 * 1000l);
+        if (cbr.containsHTML("(File Not Found|<h1>404 Not Found</h1>|<h1>The page cannot be found</h1>|Link expired)")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 30 * 60 * 1000l);
     }
 
     @Override

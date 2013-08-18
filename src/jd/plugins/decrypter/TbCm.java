@@ -757,7 +757,7 @@ public class TbCm extends PluginForDecrypt {
                 String date = br.getRegex("id=\"eow\\-date\" class=\"watch\\-video\\-date\" >(\\d{2}\\.\\d{2}\\.\\d{4})</span>").getMatch(0);
                 if (date == null) {
                     formatter = new SimpleDateFormat("dd MMM yyyy", locale);
-                    date = br.getRegex("class=\"watch\\-video\\-date\" >(\\d{2} [A-Za-z]{3} \\d{4})</span>").getMatch(0);
+                    date = br.getRegex("class=\"watch\\-video\\-date\" >([ ]+)?(\\d{1,2} [A-Za-z]{3} \\d{4})</span>").getMatch(1);
                 }
                 final String channelName = br.getRegex("temprop=\"url\" href=\"http://(www\\.)?youtube\\.com/user/([^<>\"]*?)\"").getMatch(1);
                 final int playlistNumberInt = Integer.parseInt(currentPlaylistVideoNumber);
