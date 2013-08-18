@@ -61,7 +61,7 @@ import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 import de.savemytube.flv.FLV;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "youtube.com" }, urls = { "https?://(www\\.)?youtube\\.com/(embed/|.*?watch.*?v(%3D|=)|view_play_list\\?p=|playlist\\?(p|list)=|.*?g/c/|.*?grid/user/|v/|user/|course\\?list=)[a-z\\-_A-Z0-9]+(.*?page=\\d+)?(.*?list=[a-z\\-_A-Z0-9]+)?" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "youtube.com" }, urls = { "https?://([a-z]+\\.)?youtube\\.com/(embed/|.*?watch.*?v(%3D|=)|view_play_list\\?p=|playlist\\?(p|list)=|.*?g/c/|.*?grid/user/|v/|user/|course\\?list=)[a-z\\-_A-Z0-9]+(.*?page=\\d+)?(.*?list=[a-z\\-_A-Z0-9]+)?" }, flags = { 0 })
 public class TbCm extends PluginForDecrypt {
     private static AtomicBoolean PLUGIN_CHECKED  = new AtomicBoolean(false);
     private static AtomicBoolean PLUGIN_DISABLED = new AtomicBoolean(false);
@@ -122,10 +122,9 @@ public class TbCm extends PluginForDecrypt {
     }
 
     private final Pattern                       StreamingShareLink  = Pattern.compile("\\< streamingshare=\"youtube\\.com\" name=\"(.*?)\" dlurl=\"(.*?)\" brurl=\"(.*?)\" convertto=\"(.*?)\" comment=\"(.*?)\" \\>", Pattern.CASE_INSENSITIVE);
-
-    static public final Pattern                 YT_FILENAME_PATTERN = Pattern.compile("<meta name=\"title\" content=\"(.*?)\">", Pattern.CASE_INSENSITIVE);
-    private static final String                 COURSE_LINK         = "http://(www\\.)?youtube\\.com/course\\?list=[A-Z0-9]+";
-    private static final String                 UNSUPPORTEDRTMP     = "itag%2Crtmpe%2";
+    private final Pattern                       YT_FILENAME_PATTERN = Pattern.compile("<meta name=\"title\" content=\"(.*?)\">", Pattern.CASE_INSENSITIVE);
+    private final String                        COURSE_LINK         = "http://(www\\.)?youtube\\.com/course\\?list=[A-Z0-9]+";
+    private final String                        UNSUPPORTEDRTMP     = "itag%2Crtmpe%2";
 
     HashMap<DestinationFormat, ArrayList<Info>> possibleconverts    = null;
 
@@ -135,12 +134,12 @@ public class TbCm extends PluginForDecrypt {
 
     private HashMap<String, FilePackage>        filepackages        = new HashMap<String, FilePackage>();
 
-    private static final String                 NAME_SUBTITLES      = "subtitles";
-    private static final String                 NAME_THUMBNAILS     = "thumbnails";
+    private final String                        NAME_SUBTITLES      = "subtitles";
+    private final String                        NAME_THUMBNAILS     = "thumbnails";
 
-    private static final String                 CUSTOM_DATE         = "CUSTOM_DATE";
-    private static final String                 CUSTOM_FILENAME     = "CUSTOM_FILENAME";
-    private static final String                 VIDEONUMBERFORMAT   = "VIDEONUMBERFORMAT";
+    private final String                        CUSTOM_DATE         = "CUSTOM_DATE";
+    private final String                        CUSTOM_FILENAME     = "CUSTOM_FILENAME";
+    private final String                        VIDEONUMBERFORMAT   = "VIDEONUMBERFORMAT";
 
     public static boolean ConvertFile(final DownloadLink downloadlink, final DestinationFormat InType, final DestinationFormat OutType) {
         System.out.println("Convert " + downloadlink.getName() + " - " + InType.getText() + " - " + OutType.getText());
@@ -343,10 +342,8 @@ public class TbCm extends PluginForDecrypt {
         this.possibleconverts = new HashMap<DestinationFormat, ArrayList<Info>>();
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         if (PLUGIN_DISABLED.get() == true) return decryptedLinks;
-        // should consider looking for videoId with regex
-        // "((\\?|&)v=|/embed/)([a-z0-9\\-_]+)")
-        // along with playlist references, rather than cleaning up this way as
-        // it's leading to false positives.
+        // should consider looking for videoId with regex "((\\?|&)v=|/embed/)([a-z0-9\\-_]+)")
+        // along with playlist references, rather than cleaning up this way as it's leading to false positives.
         String parameter = param.toString().replace("watch#!v", "watch?v");
         parameter = parameter.replaceFirst("(verify_age\\?next_url=\\/?)", "");
         parameter = parameter.replaceFirst("(%3Fv%3D)", "?v=");
@@ -597,8 +594,7 @@ public class TbCm extends PluginForDecrypt {
 
                 // **** 3GP *****
                 if (threegp) {
-                    // according to wiki the video format is unknown. we rate
-                    // this as mono! need to look into 3gp more to confirm.
+                    // according to wiki the video format is unknown. we rate this as mono! need to look into 3gp more to confirm.
                     if (q144p) {
                         this.put(17, new Object[] { DestinationFormat.VIDEO3GP, "H.264", "AAC", "Stereo", "144p" });
                     }
@@ -631,8 +627,7 @@ public class TbCm extends PluginForDecrypt {
                         this.put(137, new Object[] { DestinationFormat.VIDEOMP4, "H.264", "AAC", "Stereo", "1080p" });
                         this.put(37, new Object[] { DestinationFormat.VIDEOMP4, "H.264", "AAC", "Stereo", "1080p" });
                     }
-                    // maybe this varies?? wiki says 3072p but I've seen less.
-                    // eg :: 38 2048x1536 9 0 115,
+                    // maybe this varies?? wiki says 3072p but I've seen less. eg :: 38 2048x1536 9 0 115,
                     if (original) {
                         this.put(38, new Object[] { DestinationFormat.VIDEOMP4, "H.264", "AAC", "Stereo", "3072p" });
                     }
@@ -719,8 +714,7 @@ public class TbCm extends PluginForDecrypt {
                 HashMap<Integer, String[]> LinksFound = this.getLinks(currentVideoUrl, prem, this.br, 0);
                 String error = br.getRegex("<div id=\"unavailable\\-message\" class=\"\">[\t\n\r ]+<span class=\"yt\\-alert\\-vertical\\-trick\"></span>[\t\n\r ]+<div class=\"yt\\-alert\\-message\">([^<>\"]*?)</div>").getMatch(0);
                 // Removed due wrong offline detection
-                // if (error == null) error =
-                // br.getRegex("<div class=\"yt\\-alert\\-message\">(.*?)</div>").getMatch(0);
+                // if (error == null) error = br.getRegex("<div class=\"yt\\-alert\\-message\">(.*?)</div>").getMatch(0);
                 if (error == null) error = br.getRegex("reason=([^<>\"/]*?)(\\&|$)").getMatch(0);
                 if (br.containsHTML(UNSUPPORTEDRTMP)) error = "RTMP video download isn't supported yet!";
                 if ((LinksFound == null || LinksFound.isEmpty()) && error != null) {
@@ -754,12 +748,14 @@ public class TbCm extends PluginForDecrypt {
                 // replacing default Locate to be compatible with page language
                 Locale locale = Locale.ENGLISH;
                 SimpleDateFormat formatter = new SimpleDateFormat("dd.MM.yyyy", locale);
-                String date = br.getRegex("id=\"eow\\-date\" class=\"watch\\-video\\-date\" >(\\d{2}\\.\\d{2}\\.\\d{4})</span>").getMatch(0);
+                String date = br.getRegex("id=\"eow-date\" class=\"watch-video-date\" >(\\d{2}\\.\\d{2}\\.\\d{4})</span>").getMatch(0);
                 if (date == null) {
                     formatter = new SimpleDateFormat("dd MMM yyyy", locale);
-                    date = br.getRegex("class=\"watch\\-video\\-date\" >([ ]+)?(\\d{1,2} [A-Za-z]{3} \\d{4})</span>").getMatch(1);
+                    date = br.getRegex("class=\"watch-video-date\" >([ ]+)?(\\d{1,2} [A-Za-z]{3} \\d{4})</span>").getMatch(1);
                 }
-                final String channelName = br.getRegex("temprop=\"url\" href=\"http://(www\\.)?youtube\\.com/user/([^<>\"]*?)\"").getMatch(1);
+                final String channelName = br.getRegex("feature=watch\"[^>]+dir=\"ltr[^>]+>(.*?)</a>(\\s+)?<span class=\"yt-user").getMatch(0);
+                // userName != channelName
+                final String userName = br.getRegex("temprop=\"url\" href=\"http://(www\\.)?youtube\\.com/user/([^<>\"]*?)\"").getMatch(1);
                 final int playlistNumberInt = Integer.parseInt(currentPlaylistVideoNumber);
                 String formattedFilename = cfg.getStringProperty(CUSTOM_FILENAME, defaultCustomFilename);
                 if ((!formattedFilename.contains("*videoname*") && !formattedFilename.contains("*videoid*")) || !formattedFilename.contains("*ext*")) formattedFilename = defaultCustomFilename;
@@ -786,6 +782,11 @@ public class TbCm extends PluginForDecrypt {
                 } else {
                     formattedFilename = formattedFilename.replace("*channelname*", "");
                 }
+                if (userName != null) {
+                    formattedFilename = formattedFilename.replace("*username*", userName);
+                } else {
+                    formattedFilename = formattedFilename.replace("*username*", "");
+                }
                 if (formattedFilename.contains("*videoid*")) {
                     formattedFilename = formattedFilename.replace("*videoid*", videoid);
                 } else {
@@ -798,8 +799,7 @@ public class TbCm extends PluginForDecrypt {
                 }
                 /** FILENAME PART1 END */
 
-                // ytid are case sensitive, you can not effectively dupe check
-                // 100% reliablity with lower case only.
+                // ytid are case sensitive, you can not effectively dupe check 100% reliability with lower case only.
                 String ytID = getVideoID(currentVideoUrl);
 
                 /*
@@ -845,8 +845,7 @@ public class TbCm extends PluginForDecrypt {
                         // 360p(3d) webm ** need to figure out which is what,
                         // could create a dupe when saving .
                         if (LinksFound.containsKey(100) && ytVideo.containsKey(100)) bestFound.put(100, LinksFound.get(100));
-                        // 360p(3d) webm ** need to figure out which is what,
-                        // could create a dupe when saving.
+                        // 360p(3d) webm ** need to figure out which is what, could create a dupe when saving.
                         if (LinksFound.containsKey(101) && ytVideo.containsKey(101)) bestFound.put(101, LinksFound.get(101));
                     } else if ((LinksFound.containsKey(5) && ytVideo.containsKey(5)) || (LinksFound.containsKey(6) && ytVideo.containsKey(6)) || (LinksFound.containsKey(13) && ytVideo.containsKey(13)) || (LinksFound.containsKey(36) && ytVideo.containsKey(36)) || (LinksFound.containsKey(83) && ytVideo.containsKey(83))) {
                         // 240p flv @ video bit rate @ 0.25Mbit/second
@@ -855,9 +854,7 @@ public class TbCm extends PluginForDecrypt {
                         // 240p flv @ video bit rate @ 0.8Mbit/second
                         else if (LinksFound.containsKey(6) && ytVideo.containsKey(6)) bestFound.put(6, LinksFound.get(6));
                         // 240p 3gp mono ** according to wiki this has the
-                        // highest video rate. but we rate this as mono! need to
-                        // look into
-                        // 3gp more to confirm
+                        // highest video rate. but we rate this as mono! need to look into 3gp more to confirm
                         if (LinksFound.containsKey(13) && ytVideo.containsKey(13) && !LinksFound.containsKey(36))
                             bestFound.put(13, LinksFound.get(13));
                         // 240p 3gp stereo
@@ -1326,8 +1323,8 @@ public class TbCm extends PluginForDecrypt {
             }
         }
         /* html5_fmt_map */
-        if (br.getRegex(TbCm.YT_FILENAME_PATTERN).count() != 0 && fileNameFound == false) {
-            YT_FILENAME = Encoding.htmlDecode(br.getRegex(TbCm.YT_FILENAME_PATTERN).getMatch(0).trim());
+        if (br.getRegex(YT_FILENAME_PATTERN).count() != 0 && fileNameFound == false) {
+            YT_FILENAME = Encoding.htmlDecode(br.getRegex(YT_FILENAME_PATTERN).getMatch(0).trim());
             fileNameFound = true;
         }
         HashMap<Integer, String[]> links = parseLinks(br, video, YT_FILENAME, ythack, false);

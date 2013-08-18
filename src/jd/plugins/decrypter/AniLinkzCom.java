@@ -44,7 +44,7 @@ import jd.utils.JDUtilities;
 @SuppressWarnings("deprecation")
 public class AniLinkzCom extends PluginForDecrypt {
 
-    private final String                   supported_hoster  = "(4shared\\.com|animeuploads\\.com|auengine\\.com|cizgifilmlerizle\\.com|dailymotion\\.com|gorillavid\\.in|mp4upload\\.com|myspace\\.com|nowvideo\\.eu|novamov\\.com|putlocker\\.com|rutube\\.ru|stagevu\\.com|upload2\\.com|uploadc\\.com|veevr\\.com|veoh\\.com|video44\\.net|videobb\\.com|videobam\\.com|videoweed\\.com|videozer\\.com|yourupload\\.com|youtube\\.com|zshare\\.net|player\\.vimeo\\.com)";
+    private final String                   supported_hoster  = "(4shared\\.com|animeuploads\\.com|auengine\\.com|cizgifilmlerizle\\.com|dailymotion\\.com|gorillavid\\.in|mp4upload\\.com|movreel\\.com|myspace\\.com|nowvideo\\.eu|novamov\\.com|putlocker\\.com|rutube\\.ru|stagevu\\.com|upload2\\.com|uploadc\\.com|veevr\\.com|veoh\\.com|video44\\.net|videobb\\.com|videobam\\.com|videoweed\\.com|videozer\\.com|yourupload\\.com|youtube\\.com|zshare\\.net|player\\.vimeo\\.com)";
     private final String                   invalid_links     = "http://(www\\.)?anilinkz\\.com/(search|affiliates|get|img|dsa|forums|files|category|\\?page=|faqs|.*?-list|.*?-info|\\?random).*?";
     private String                         parameter         = null;
     private String                         fpName            = null;
@@ -193,6 +193,10 @@ public class AniLinkzCom extends PluginForDecrypt {
         if (!inValidate(escapeAll)) {
             escapeAll = escapeAll.replaceAll("[A-Z~!@#\\$\\*\\{\\}\\[\\]\\-\\+\\.]?", "");
             escapeAll = Encoding.htmlDecode(escapeAll);
+            escapeAll = Encoding.urlDecode(escapeAll, false);
+            // cleanup crap
+            if (new Regex(escapeAll, "https?://[^\"]+(cizgifilmlerizle\\.com|animeuploads\\.com)/[^\"]+<div[^>]+").matches()) 
+                escapeAll = escapeAll.replaceAll("<div[^>]+>", "");
         } else if (inValidate(escapeAll) || new Regex(escapeAll, "(/img/\\w+dead\\.jpg|http://www\\./media)").matches()) {
             // escapeAll == null / not online yet... || offline results within escapeAll
             if (br.containsHTML("This page will be updated as soon as"))
@@ -210,12 +214,22 @@ public class AniLinkzCom extends PluginForDecrypt {
         String link = new Regex(escapeAll, "\"(https?://(www\\.)?youtube\\.com/v/[^<>\"]*?)\"").getMatch(0); // not sure this is needed
         if (inValidate(link)) link = new Regex(escapeAll, "(https?://(\\w+\\.)?vureel\\.com/playwire\\.php\\?vid=\\d+)").getMatch(0);
         // with stagevu they are directly imported finallink and not embed player. We want the image for the uid, return to hoster.
-        if (inValidate(link)) {
+        if (inValidate(link) && escapeAll.contains("stagevu.com/")) {
             String stagevu = new Regex(escapeAll, "previewImage=\"https?://stagevu\\.com/img/thumbnail/([a-z]{12})").getMatch(0);
             if (!inValidate(stagevu)) {
                 link = "http://stagevu.com/video/" + stagevu;
+            } else {
+                // error
+            }
+        } else if (inValidate(link) && escapeAll.contains("smotri.com/")) {
+            String smotri = new Regex(escapeAll, "file=(v\\d+)").getMatch(0);
+            if (!inValidate(smotri)) {
+                link = "http://smotri.com/video/view/?id=" + smotri;
+            } else {
+                // error
             }
         }
+
         // generic fail overs
         if (inValidate(link)) link = new Regex(escapeAll, "<iframe src=\"(https?://([^<>\"]+)?" + supported_hoster + "/[^<>\"]+)\"").getMatch(0);
         if (inValidate(link)) link = new Regex(escapeAll, "(href|url|file)=\"?(https?://([^<>\"]+)?" + supported_hoster + "/[^<>\"]+)\"").getMatch(1);

@@ -46,44 +46,39 @@ import jd.utils.locale.JDL;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "youtube.com" }, urls = { "(httpJDYoutube://[\\w\\.\\-]*?youtube\\.com/(videoplayback\\?.+|get_video\\?.*?video_id=.+\\&.+(\\&fmt=\\d+)?))|(httpJDYoutube://video\\.google\\.com/timedtext\\?type=track&name=.*?\\&lang=[a-z\\-]{2,}\\&v=[a-z\\-_A-Z0-9]+)|(httpJDYoutube://img\\.youtube.com/vi/[a-z\\-_A-Z0-9]+/(hqdefault|mqdefault|default|maxresdefault)\\.jpg)" }, flags = { 2 })
 public class Youtube extends PluginForHost {
 
-    private static Object       lock                    = new Object();
-    private boolean             prem                    = false;
-    private static final String ISVIDEOANDPLAYLIST      = "ISVIDEOANDPLAYLIST";
-    private static final String IDASFILENAME            = "ISASFILENAME";
-    private static final String IDINFILENAME            = "IDINFILENAME_V2";
-    private static final String FORMATINNAME            = "FORMATINNAME";
-    private static final String PLAYLISTNUMBERINNAME    = "PLAYLISTNUMBERINNAME";
-    private static final String USEUPLOADERINNAME       = "USEUPLOADERINNAME";
+    private static Object lock                    = new Object();
+    private boolean       prem                    = false;
+    private final String  ISVIDEOANDPLAYLIST      = "ISVIDEOANDPLAYLIST";
 
-    private static final String CUSTOM_DATE             = "CUSTOM_DATE";
-    private static final String CUSTOM_FILENAME         = "CUSTOM_FILENAME";
-    private static final String VIDEONUMBERFORMAT       = "VIDEONUMBERFORMAT";
+    private final String  CUSTOM_DATE             = "CUSTOM_DATE";
+    private final String  CUSTOM_FILENAME         = "CUSTOM_FILENAME";
+    private final String  VIDEONUMBERFORMAT       = "VIDEONUMBERFORMAT";
 
-    private static final String ALLOW_MP3               = "ALLOW_MP3_V2";
-    private static final String ALLOW_MP4               = "ALLOW_MP4_V2";
-    private static final String ALLOW_WEBM              = "ALLOW_WEBM_V2";
-    private static final String ALLOW_FLV               = "ALLOW_FLV_V2";
-    private static final String ALLOW_3GP               = "ALLOW_3GP_V2";
-    private static final String ALLOW_3D                = "ALLOW_3D_V2";
-    private static final String ALLOW_144P              = "ALLOW_144P_V2";
-    private static final String ALLOW_240P              = "ALLOW_240P_V2";
-    private static final String ALLOW_360P              = "ALLOW_360P_V2";
-    private static final String ALLOW_480P              = "ALLOW_480P_V2";
-    private static final String ALLOW_520P              = "ALLOW_520P_V2";
-    private static final String ALLOW_720P              = "ALLOW_720P_V2";
-    private static final String ALLOW_1080P             = "ALLOW_1080P_V2";
-    private static final String ALLOW_ORIGINAL          = "ALLOW_ORIGINAL_V2";
-    private static final String ALLOW_BEST              = "ALLOW_BEST2";
-    private static final String ALLOW_SUBTITLES         = "ALLOW_SUBTITLES_V2";
-    private static final String GROUP_FORMAT            = "GROUP_FORMAT";
-    private static final String ALLOW_THUMBNAIL_MAX     = "ALLOW_THUMBNAIL_MAX";
-    private static final String ALLOW_THUMBNAIL_HQ      = "ALLOW_THUMBNAIL_HQ";
-    private static final String ALLOW_THUMBNAIL_MQ      = "ALLOW_THUMBNAIL_MQ";
-    private static final String ALLOW_THUMBNAIL_DEFAULT = "ALLOW_THUMBNAIL_DEFAULT";
-    private static final String FAST_CHECK              = "FAST_CHECK2";
-    private static final String PROXY_ACTIVE            = "PROXY_ACTIVE";
-    private static final String PROXY_ADDRESS           = "PROXY_ADDRESS";
-    private static final String PROXY_PORT              = "PROXY_PORT";
+    private final String  ALLOW_MP3               = "ALLOW_MP3_V2";
+    private final String  ALLOW_MP4               = "ALLOW_MP4_V2";
+    private final String  ALLOW_WEBM              = "ALLOW_WEBM_V2";
+    private final String  ALLOW_FLV               = "ALLOW_FLV_V2";
+    private final String  ALLOW_3GP               = "ALLOW_3GP_V2";
+    private final String  ALLOW_3D                = "ALLOW_3D_V2";
+    private final String  ALLOW_144P              = "ALLOW_144P_V2";
+    private final String  ALLOW_240P              = "ALLOW_240P_V2";
+    private final String  ALLOW_360P              = "ALLOW_360P_V2";
+    private final String  ALLOW_480P              = "ALLOW_480P_V2";
+    private final String  ALLOW_520P              = "ALLOW_520P_V2";
+    private final String  ALLOW_720P              = "ALLOW_720P_V2";
+    private final String  ALLOW_1080P             = "ALLOW_1080P_V2";
+    private final String  ALLOW_ORIGINAL          = "ALLOW_ORIGINAL_V2";
+    private final String  ALLOW_BEST              = "ALLOW_BEST2";
+    private final String  ALLOW_SUBTITLES         = "ALLOW_SUBTITLES_V2";
+    private final String  GROUP_FORMAT            = "GROUP_FORMAT";
+    private final String  ALLOW_THUMBNAIL_MAX     = "ALLOW_THUMBNAIL_MAX";
+    private final String  ALLOW_THUMBNAIL_HQ      = "ALLOW_THUMBNAIL_HQ";
+    private final String  ALLOW_THUMBNAIL_MQ      = "ALLOW_THUMBNAIL_MQ";
+    private final String  ALLOW_THUMBNAIL_DEFAULT = "ALLOW_THUMBNAIL_DEFAULT";
+    private final String  FAST_CHECK              = "FAST_CHECK2";
+    private final String  PROXY_ACTIVE            = "PROXY_ACTIVE";
+    private final String  PROXY_ADDRESS           = "PROXY_ADDRESS";
+    private final String  PROXY_PORT              = "PROXY_PORT";
 
     @Override
     public String getAGBLink() {
@@ -118,8 +113,7 @@ public class Youtube extends PluginForHost {
         int i;
         for (i = 0; i < s.length(); i++) {
             ch = s.charAt(i);
-            // prevents StringIndexOutOfBoundsException with ending char equals
-            // case trigger
+            // prevents StringIndexOutOfBoundsException with ending char equals case trigger
             if (s.length() != i + 1) {
                 switch (ch) {
                 case '%':
@@ -430,8 +424,7 @@ public class Youtube extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
-        // For streaming extension to tell her that these links can be streamed
-        // without account
+        // For streaming extension to tell her that these links can be streamed without account
         // System.out.println("Youtube: " + downloadLink);
 
         if (downloadLink.getBooleanProperty("offline", false)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -508,7 +501,8 @@ public class Youtube extends PluginForHost {
         return "JDownloader's YouTube Plugin helps downloading videoclips from youtube.com. YouTube provides different video formats and qualities. JDownloader is able to extract audio after download, and save it as mp3 file. \r\n - Hear your favourite YouTube Clips on your MP3 Player.";
     }
 
-    private final static String defaultCustomFilename = "*videoname**quality**ext*";
+    // always keep the old format, you wont annoy people during large changes!
+    private final String defaultCustomFilename = "*videoname**quality**ext*";
 
     private void setConfigElements() {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX_INDEX, getPluginConfig(), ISVIDEOANDPLAYLIST, new String[] { JDL.L("plugins.host.youtube.isvideoandplaylist.video", "Only add video"), JDL.L("plugins.host.youtube.isvideoandplaylist.playlist", "Add playlist and video"), JDL.L("plugins.host.youtube.isvideoandplaylist.ask", "Ask everytime") }, JDL.L("plugins.host.youtube.isvideoandplaylist", "If a video also contains a playlist?")).setDefaultValue(2));
@@ -520,12 +514,13 @@ public class Youtube extends PluginForHost {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), VIDEONUMBERFORMAT, JDL.L("plugins.hoster.youtube.customvideonumber", "Define how the videonumbers should look:")).setDefaultValue("0000"));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "Customize the filename! Example: '*channelname*_*date*_*videoname*_*videonumber**quality*'"));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "Customize the filename! Example: '*channelname* - *videoname* - *videoid* *quality**ext*'"));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), CUSTOM_FILENAME, JDL.L("plugins.hoster.youtube.customfilename", "Define how the filenames should look:")).setDefaultValue(defaultCustomFilename));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         final StringBuilder sb = new StringBuilder();
         sb.append("Explanation of the available tags:\r\n");
-        sb.append("*channelname* = name of the channel/uploader\r\n");
+        sb.append("*channelname* = uploaders/channels text name (nice name, allows long names & spaces)\r\n");
+        sb.append("*username* = uploaders/channels user name (youtube.com/users/example = example)\r\n");
         sb.append("*date* = date when the video was posted - appears in the user-defined format above\r\n");
         sb.append("*videoname* = name of the video without extension\r\n");
         sb.append("*videoid* = id of the video: 'youtube.com/watch?v=YOUTUBE_VIDEO_ID'\r\n");
