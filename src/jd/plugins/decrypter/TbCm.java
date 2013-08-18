@@ -402,8 +402,9 @@ public class TbCm extends PluginForDecrypt {
 
         // Parse playlist
         if (parameter.contains("view_play_list") || parameter.contains("playlist") || parameter.contains("g/c/") || parameter.contains("grid/user/") || choice == 1) {
+            String id = null;
             if (parameter.contains("g/c/") || parameter.contains("grid/user/")) {
-                String id = new Regex(parameter, "g/c/([a-z\\-_A-Z0-9]+)").getMatch(0);
+                id = new Regex(parameter, "g/c/([a-z\\-_A-Z0-9]+)").getMatch(0);
                 if (id == null) {
                     id = new Regex(parameter, "grid/user/([a-z\\-_A-Z0-9]+)").getMatch(0);
                     if (id == null) {
@@ -411,7 +412,10 @@ public class TbCm extends PluginForDecrypt {
                     }
                 }
                 if (id != null) parameter = "http://www.youtube.com/view_play_list?p=" + id;
+            } else {
+                id = new Regex(parameter, "list=([A-Z0-9]+)").getMatch(0);
             }
+            if (id != null) parameter = "http://www.youtube.com/view_play_list?p=" + id;
 
             String page = parameter;
             int videoNumberCounter = 1;
