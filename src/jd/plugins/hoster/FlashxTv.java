@@ -76,7 +76,7 @@ public class FlashxTv extends PluginForHost {
         String dllink = null;
         // 1
         String regex = "\"(http://(flashx\\.tv/player/embed_player\\.php|play\\.flashx\\.tv/player/embed\\.php)\\?[^<>\"]*?)\"";
-        String regexgk = "\"(http://play\\.flashx\\.tv/player/gk\\.php[^\"]+)\"";
+        String regexgk = "\"(http://play\\.flashx\\.tv/player/pf\\.php[^\"]+)\"";
         final String firstlink = br.getRegex(regex).getMatch(0);
         if (firstlink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         br.getPage(firstlink);
