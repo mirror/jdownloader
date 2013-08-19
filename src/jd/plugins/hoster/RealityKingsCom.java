@@ -56,8 +56,9 @@ public class RealityKingsCom extends PluginForHost {
         link.setUrlDownload(decodedurl);
     }
 
-    public static final String VIDEOLINK = "http://(www\\.)?members\\.rk\\.com/\\?a=update\\.download\\&site=[a-z0-9]+\\&id=\\d+\\&download=[A-Za-z0-9%=\\+]+";
-    public static final String PICLINK   = "http://(www\\.)?imagesr\\.rk\\.com/content/[a-z0-9]+/pictures/[a-z0-9\\-_]+/[a-z0-9\\-_]+\\.zip\\?nvb=\\d+\\&nva=\\d+&hash=[a-z0-9]+";
+    public static final String VIDEOLINK    = "http://(www\\.)?members\\.rk\\.com/\\?a=update\\.download\\&site=[a-z0-9]+\\&id=\\d+\\&download=[A-Za-z0-9%=\\+]+";
+    public static final String PICLINK      = "http://(www\\.)?imagesr\\.rk\\.com/content/[a-z0-9]+/pictures/[a-z0-9\\-_]+/[a-z0-9\\-_]+\\.zip\\?nvb=\\d+\\&nva=\\d+&hash=[a-z0-9]+";
+    private boolean            LIMITREACHED = false;
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
@@ -66,20 +67,23 @@ public class RealityKingsCom extends PluginForHost {
         final Account aa = AccountController.getInstance().getValidAccount(this);
         if (aa != null) {
             login(this.br, aa, false);
-            final Browser br2 = br.cloneBrowser();
             // In case the link redirects to the finallink
-            br2.setFollowRedirects(true);
             URLConnectionAdapter con = null;
             try {
-                con = br2.openGetConnection(link.getDownloadURL());
+                con = br.openGetConnection(link.getDownloadURL());
                 if (con.getResponseCode() == 401) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                if (con.getContentType().contains("html")) con = br2.openGetConnection(link.getDownloadURL());
+                if (con.getResponseCode() == 509) {
+                    link.getLinkStatus().setStatusText("Cannot get filesize/name while limit is exeeded");
+                    LIMITREACHED = true;
+                    return AvailableStatus.TRUE;
+                }
+                if (con.getContentType().contains("html")) con = br.openGetConnection(link.getDownloadURL());
                 if (!con.getContentType().contains("html")) {
                     link.setDownloadSize(con.getLongContentLength());
                     link.setFinalFileName(Encoding.htmlDecode(getFileNameFromHeader(con)));
                 } else {
                     link.setName(new Regex(link.getDownloadURL(), "([A-Za-z0-9%=\\+]+)$").getMatch(0));
-                    br2.followConnection();
+                    br.followConnection();
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
                 return AvailableStatus.TRUE;
@@ -182,6 +186,7 @@ public class RealityKingsCom extends PluginForHost {
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         requestFileInformation(link);
+        if (LIMITREACHED) { throw new PluginException(LinkStatus.ERROR_PREMIUM, "Limit exeeded", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE); }
         login(this.br, account, false);
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, link.getDownloadURL(), true, 0);
         if (dl.getConnection().getContentType().contains("html")) {

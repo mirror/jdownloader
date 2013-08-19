@@ -22,6 +22,7 @@ import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
@@ -69,12 +70,20 @@ public class RealityKingsCom extends PluginForDecrypt {
             return null;
         }
         if (downloadlinks != null && downloadlinks.length != 0) {
-            for (final String videolink : downloadlinks)
-                decryptedLinks.add(createDownloadlink("http://members.rkdecrypted.com" + videolink));
+            for (final String videolink : downloadlinks) {
+                final DownloadLink dl = createDownloadlink("http://members.rkdecrypted.com" + videolink);
+                dl.setName(new Regex(videolink, "([A-Za-z0-9%=\\+]+)$").getMatch(0));
+                dl.setAvailable(true);
+                decryptedLinks.add(dl);
+            }
         }
         if (piclinks != null && piclinks.length != 0) {
-            for (final String piclink : piclinks)
-                decryptedLinks.add(createDownloadlink(piclink.replace("imagesr.rk.com/", "imagesr.rkdecrypted.com/")));
+            for (final String piclink : piclinks) {
+                final DownloadLink dl = createDownloadlink(piclink.replace("imagesr.rk.com/", "imagesr.rkdecrypted.com/"));
+                dl.setName(new Regex(piclink, "([A-Za-z0-9%=\\+]+)$").getMatch(0));
+                dl.setAvailable(true);
+                decryptedLinks.add(dl);
+            }
         }
 
         if (fpName != null) {
