@@ -99,7 +99,7 @@ public class EasyBytezCom extends PluginForHost {
     // XfileShare Version 3.0.7.3
     // last XfileSharingProBasic compare :: 2.6.2.1
     // protocol: no https
-    // captchatype: null 4dignum recaptcha solvemedia keycaptcha
+    // captchatype: null
     // other: no redirects
     // mods:
     // other: sister site, zingload.com
@@ -729,7 +729,8 @@ public class EasyBytezCom extends PluginForHost {
                 loginform = cleanForm(loginform);
                 loginform.put("login", Encoding.urlEncode(account.getUser()));
                 loginform.put("password", Encoding.urlEncode(account.getPass()));
-                loginform.put("redirect", Encoding.urlEncode("/?op=my_account"));
+                loginform.put("redirect", Encoding.urlEncode("http://www.easybytez.com/"));
+                loginform.remove(null);
                 // check form for login captcha crap.
                 DownloadLink dummyLink = new DownloadLink(null, "Account", this.getHost(), COOKIE_HOST, true);
                 loginform = captchaForm(dummyLink, loginform);
