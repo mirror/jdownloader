@@ -1,5 +1,5 @@
 //jDownloader - Downloadmanager
-//Copyright (C) 2012  JD-Team support@jdownloader.org
+//Copyright (C) 2010  JD-Team support@jdownloader.org
 //
 //This program is free software: you can redistribute it and/or modify
 //it under the terms of the GNU General Public License as published by
@@ -19,6 +19,8 @@ package jd.plugins.hoster;
 import java.io.IOException;
 
 import jd.PluginWrapper;
+import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -28,44 +30,48 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uplds.com" }, urls = { "http://(www\\.)?uplds\\.com/index\\.php/files/get/[A-Za-z0-9_\\-]+" }, flags = { 0 })
-public class UpldsCom extends PluginForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "microsoft.com" }, urls = { "http://(www\\.)?microsoft\\.com/(en\\-us|de\\-de)/download/(details|confirmation)\\.aspx\\?id=\\d+" }, flags = { 0 })
+public class MicrosoftCom extends PluginForHost {
 
-    public UpldsCom(PluginWrapper wrapper) {
+    public MicrosoftCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     @Override
     public String getAGBLink() {
-        return "http://www.uplds.com/";
+        return "http://www.microsoft.com/en-us/legal/intellectualproperty/copyright/default.aspx";
+    }
+
+    public void correctDownloadLink(DownloadLink link) {
+        link.setUrlDownload("http://www.microsoft.com/en-us/download/details.aspx?id=" + new Regex(link.getDownloadURL(), "(\\d+)$").getMatch(0));
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
+        br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
-        if (br.containsHTML("(File Link Error<|Your file could not be found\\. Please check the download link\\.<|Fatal error:)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("<span id=\"name\">[\t\n\r ]+<nobr>(.*?) <img").getMatch(0);
-        String filesize = br.getRegex("<span id=\"size\">(.*?)</span><br").getMatch(0);
+        if (br.containsHTML(">We are sorry, the page you requested cannot be found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        final String finfotable = br.getRegex("<table class=\"fileinfo\">(.*?)</table>").getMatch(0);
+        if (finfotable == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        final String[] tableContent = new Regex(finfotable, "<p>([^<>\"]*?)</p>").getColumn(0);
+        if (tableContent == null || tableContent.length < 4) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        final String filename = tableContent[2];
+        final String filesize = tableContent[3];
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        link.setName(filename.trim());
+        link.setName(Encoding.htmlDecode(filename.trim()));
         link.setDownloadSize(SizeFormatter.getSize(filesize));
-        final String md5 = br.getRegex("<span id=\"md5\">([a-z0-9]{32})</span>").getMatch(0);
-        if (md5 != null) link.setMD5Hash(md5);
         return AvailableStatus.TRUE;
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
+    public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        br.setFollowRedirects(false);
-        br.postPage(downloadLink.getDownloadURL().replace("/get/", "/gen/"), "pass=&waited=1");
-        String dllink = br.getRedirectLocation();
+        String dllink = br.getRegex("var downloadFileUrl = \"(https?://[^<>\"]*?)\";").getMatch(0);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
-            if (br.containsHTML(">A PHP Error was encountered<")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 30 * 60 * 1000l);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
@@ -81,7 +87,7 @@ public class UpldsCom extends PluginForHost {
     }
 
     @Override
-    public void resetDownloadlink(DownloadLink link) {
+    public void resetDownloadlink(final DownloadLink link) {
     }
 
 }

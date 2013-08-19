@@ -527,8 +527,19 @@ public class Uploadedto extends PluginForHost {
                 }
                 final long passedTime = System.currentTimeMillis() - lastdownload;
                 if (passedTime < RECONNECTWAIT && lastdownload > 0) {
-                    logger.info("Limit must still exist on account, disabling it");
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+                    /**
+                     * Experimental reconnect handling to prevent having to enter a captcha just to see that a limit has been reached
+                     */
+                    logger.info("New Download: currentIP = " + currentIP);
+                    if (hasDled.get() && ipChanged(currentIP, downloadLink) == true) {
+                        logger.info("IP has changed -> Disabling current free account to try to use the next free account");
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+                    } else {
+                        logger.info("IP has not changed, limit active on account and IP -> Throwing IP_BLOCKED exception go get a new IP for the next try");
+                        logger.warning("Reconnect + account = buggy, this code will not work as intended!!");
+                        final long wait = RECONNECTWAIT - passedTime;
+                        throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, wait);
+                    }
                 }
             } else if (account == null && this.getPluginConfig().getBooleanProperty(EXPERIMENTALHANDLING, default_eh)) {
                 /**
@@ -1177,7 +1188,7 @@ public class Uploadedto extends PluginForHost {
     private final boolean default_eh   = false;
 
     public void setConfigElements() {
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ACTIVATEACCOUNTERRORHANDLING, JDL.L("plugins.hoster.uploadedto.activateExperimentalFreeAccountErrorhandling", "Activate experimental free account errorhandling: Switch between free accounts instead of reconnecting if a limit is reached.")).setDefaultValue(default_aaeh));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ACTIVATEACCOUNTERRORHANDLING, JDL.L("plugins.hoster.uploadedto.activateExperimentalFreeAccountErrorhandling", "Activate experimental free account errorhandling: Reconnect and switch between free accounts (to get more dl speed), also prevents having to enter captchas in between downloads.")).setDefaultValue(default_aaeh));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), EXPERIMENTALHANDLING, JDL.L("plugins.hoster.uploadedto.activateExperimentalReconnectHandling", "Activate experimental reconnect handling for freeusers: Prevents having to enter captchas in between downloads.")).setDefaultValue(default_eh));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), PREFER_PREMIUM_DOWNLOAD_API, JDL.L("plugins.hoster.uploadedto.preferAPIdownload", "By enabling this feature, JDownloader downloads via custom download API. On failure it will auto revert to web method!\r\nBy disabling this feature, JDownloader downloads via Web download method. Web method is generally less reliable than API method.")).setDefaultValue(default_ppda));

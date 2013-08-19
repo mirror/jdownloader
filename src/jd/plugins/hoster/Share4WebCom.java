@@ -51,7 +51,7 @@ public class Share4WebCom extends PluginForHost {
         br.setFollowRedirects(true);
         br.setCookie("http://www.share4web.com/", "lang", "en");
         br.getPage(link.getDownloadURL());
-        if (br.containsHTML(">File not found or removed|Page Not Found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML(">File not found or removed|Page Not Found|File not found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (br.containsHTML(SECURITYCAPTCHA)) {
             link.getLinkStatus().setStatusText("Can't check status, security captcha...");
             return AvailableStatus.UNCHECKABLE;

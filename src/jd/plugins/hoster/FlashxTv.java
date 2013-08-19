@@ -102,7 +102,12 @@ public class FlashxTv extends PluginForHost {
         dllink = br.getRegex("<file>(http://[^<>\"]*?)</file>").getMatch(0);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
 
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, -5);
+        int chunks = -2;
+        if (downloadLink.getBooleanProperty(FlashxTv.NOCHUNKS, false)) {
+            chunks = 1;
+        }
+
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, chunks);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             if (br.containsHTML(">404 \\- Not Found<")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 60 * 60 * 1000l);

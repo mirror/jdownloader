@@ -26,8 +26,6 @@ import jd.parser.html.InputField;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
-import jd.plugins.LinkStatus;
-import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision: 20458 $", interfaceVersion = 2, names = { "zomgupload.com" }, urls = { "http://(www\\.)?zomgupload\\.com/[a-z0-9]{12}\\.html" }, flags = { 0 })
@@ -47,6 +45,11 @@ public class ZomgUploadCom extends PluginForDecrypt {
             return decryptedLinks;
         }
 
+        if (br.containsHTML(">File Not Found<")) {
+            logger.info("Link offline: " + parameter);
+            return decryptedLinks;
+        }
+
         Form download1 = getFormByKey("op", "download1");
         if (download1 != null) {
             // stable is lame, issue finding input data fields correctly. eg. closes at ' quotation mark - remove when jd2 goes stable!
@@ -57,7 +60,7 @@ public class ZomgUploadCom extends PluginForDecrypt {
         }
 
         Form dlForm = getFormByKey("op", "download2");
-        if (dlForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (dlForm == null) return null;
         final long timeBefore = System.currentTimeMillis();
 
         int passedTime = (int) ((System.currentTimeMillis() - timeBefore) / 1000) - 1;
@@ -111,7 +114,6 @@ public class ZomgUploadCom extends PluginForDecrypt {
         ret.setMethod(form.getMethod());
         return ret;
     }
-
 
     // TODO: remove this when v2 becomes stable. use br.getFormbyKey(String key, String value)
     /**
