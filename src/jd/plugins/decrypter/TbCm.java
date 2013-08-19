@@ -943,7 +943,8 @@ public class TbCm extends PluginForDecrypt {
                         if (multiple_videos || cfg.getBooleanProperty("GROUP_FORMAT", false))
                             filePackage.setName("YouTube " + convertTo.getText());
                         else
-                            filePackage.setName(YT_FILENAME + " " + convertTo.getText());
+                            // package name should not reference convertTo when user doesn't want to group by type!
+                            filePackage.setName(YT_FILENAME);
                         filepackages.put(convertTo.getText(), filePackage);
                     }
 

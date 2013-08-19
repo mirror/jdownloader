@@ -256,17 +256,11 @@ public class NCryptIn extends PluginForDecrypt {
                         logger.info("Found a broken link for link: " + parameter);
                         continue;
                     }
-                    final DownloadLink dl = createDownloadlink(finallink);
-                    try {
-                        distribute(dl);
-                    } catch (final Throwable e) {
-                        // No available in old 0.851 Stable
-                    }
-                    decryptedLinks.add(dl);
+                    decryptedLinks.add(createDownloadlink(finallink));
                 }
             }
             if (fpName != null) {
-                final FilePackage fp = FilePackage.getInstance();
+                FilePackage fp = FilePackage.getInstance();
                 fp.setName(fpName.trim());
                 fp.addLinks(decryptedLinks);
             }

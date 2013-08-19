@@ -29,7 +29,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rufox.ru" }, urls = { "http://(www\\.)?files\\.rufox\\.ru/\\?k=[a-z0-9]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rufox.ru" }, urls = { "http://(www\\.)?files\\.rufox\\.ru/\\?(Act=byCategory&)?k=[a-z0-9]+" }, flags = { 0 })
 public class RufoxRu extends PluginForHost {
 
     public RufoxRu(PluginWrapper wrapper) {
@@ -42,7 +42,15 @@ public class RufoxRu extends PluginForHost {
     }
 
     @Override
+    public void correctDownloadLink(final DownloadLink link) {
+        if (!link.getDownloadURL().contains("Act=byCategory")) {
+            link.setUrlDownload(link.getDownloadURL().replace("?k", "?Act=byCategory&k"));
+        }
+    }
+
+    @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+        correctDownloadLink(link);
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
@@ -55,8 +63,7 @@ public class RufoxRu extends PluginForHost {
         filesize = filesize.replace("Г", "G");
         filesize = filesize.replace("М", "M");
         filesize = filesize.replaceAll("(к|К)", "k");
-        filesize = filesize.replaceAll("(Б|б)", "");
-        filesize = filesize + "b";
+        filesize = filesize.replaceAll("(Б|б)", "B");
         link.setDownloadSize(SizeFormatter.getSize(filesize));
         return AvailableStatus.TRUE;
     }
