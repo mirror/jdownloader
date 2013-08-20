@@ -51,7 +51,17 @@ public class QiannaoCom extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.setCookie("http://qiannao.com", "language", "en_us");
+        br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:23.0) Gecko/20100101 Firefox/23.0");
+        br.getHeaders().put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
+        br.getHeaders().put("Accept-Language", "en-US,en;q=0.5");
         br.getPage(link.getDownloadURL());
+
+        // Cookies needed to start the download
+        final String vid = br.getRegex("setCookie\\(\"vid\", \"([a-z0-9]+)\"").getMatch(0);
+        if (vid != null) br.setCookie("http://qiannao.com/", "vid", vid);
+        final String vid1 = br.getRegex("setCookie\\(\"vid1\", \"([a-z0-9]+)\"").getMatch(0);
+        if (vid1 != null) br.setCookie("http://qiannao.com/", "vid1", vid1);
+
         String filename = null, filesize = null;
         if (link.getDownloadURL().matches(SPACELINK)) {
             if (br.containsHTML(">文件大小：</div><span class=\"span2\">0 B\\&nbsp;<")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -99,7 +109,7 @@ public class QiannaoCom extends PluginForHost {
     }
 
     private boolean linkOk(final DownloadLink downloadLink, final String dllink) throws IOException {
-        Browser br2 = br.cloneBrowser();
+        final Browser br2 = br.cloneBrowser();
         // In case the link redirects to the finallink
         br2.setFollowRedirects(true);
         URLConnectionAdapter con = null;

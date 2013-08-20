@@ -30,7 +30,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mymedia.yam.com" }, urls = { "http://(www\\.)?mymedia\\.yam\\.com/m/\\d+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mymedia.yam.com" }, urls = { "http://(www\\.)?mymediadecrypted\\.yam\\.com/m/\\d+" }, flags = { 0 })
 public class MymediaYamCom extends PluginForHost {
 
     public MymediaYamCom(PluginWrapper wrapper) {
@@ -44,12 +44,25 @@ public class MymediaYamCom extends PluginForHost {
         return "http://mymedia.yam.com/";
     }
 
+    public void correctDownloadLink(DownloadLink link) {
+        link.setUrlDownload(link.getDownloadURL().replace("mymediadecrypted.yam.com/", "mymedia.yam.com/"));
+    }
+
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
+        br.setCustomCharset("utf-8");
         br.getPage(downloadLink.getDownloadURL());
+        if (br.containsHTML("使用者影音平台存取發生錯誤<|該使用者影音平台關閉中<")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("class=\"heading\"><span style=\\'float:left;\\'>([^<>\"]*?)</span>").getMatch(0);
+        if (filename == null) filename = br.getRegex("<title>yam 天空部落-影音分享\\-(.*?)</title>").getMatch(0);
+        if (br.containsHTML("type=\"password\" id=\"passwd\" name=\"passwd\"")) {
+            if (filename == null) filename = new Regex(downloadLink.getDownloadURL(), "(\\d+)$").getMatch(0);
+            downloadLink.getLinkStatus().setStatusText("Password protected links aren't supported yet. Please contact our support!");
+            downloadLink.setName(Encoding.htmlDecode(filename.trim()));
+            return AvailableStatus.TRUE;
+        }
         if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         br.getPage("http://mymedia.yam.com/api/a/?pID=" + new Regex(downloadLink.getDownloadURL(), "(\\d+)$").getMatch(0));
         DLLINK = br.getRegex("mp3file=(http://.+\\.mp3)").getMatch(0);
@@ -81,6 +94,7 @@ public class MymediaYamCom extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
+        if (br.containsHTML("type=\"password\" id=\"passwd\" name=\"passwd\"")) throw new PluginException(LinkStatus.ERROR_FATAL, "Password protected links aren't supported yet. Please contact our support!");
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();

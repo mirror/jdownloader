@@ -21,6 +21,7 @@ import java.io.IOException;
 import jd.PluginWrapper;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -71,7 +72,7 @@ public class FuxCom extends PluginForHost {
             }
         }
         // seems to be listed in order highest quality to lowest. 20130513
-        String DLLINK = br.getRegex("sources: \\[[\r\n\t ]+\\{[\r\n\t ]+file: \"(http[^\"]+)").getMatch(0);
+        String DLLINK = getDllink();
         if (DLLINK == null) {
             logger.warning("Couldn't find 'DDLINK'");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -102,6 +103,24 @@ public class FuxCom extends PluginForHost {
             } catch (Throwable e) {
             }
         }
+    }
+
+    final String getDllink() {
+        String allLinks = br.getRegex("var playerPlaylistSources = \\[(.*?)\\]").getMatch(0);
+        if (allLinks == null) return null;
+        allLinks = allLinks.replace("\\", "");
+        String finallink = null;
+        final String[] linkList = allLinks.split(",\\{");
+        final String[] qualities = new String[] { "360p", "240p" };
+        for (final String quality : qualities) {
+            for (final String linkInfo : linkList) {
+                if (linkInfo.contains("\"" + quality + "\"")) {
+                    finallink = new Regex(linkInfo, "\"file\":\"(http[^<>\"]*?)\"").getMatch(0);
+                    break;
+                }
+            }
+        }
+        return finallink;
     }
 
     @Override
