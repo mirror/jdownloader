@@ -109,7 +109,10 @@ public class FilesFlashCom extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        String MAINIP = br.getRegex("(http://173\\.231\\.61\\.130/)").getMatch(0);
+        // How do we getRegex from downloadLink?
+        String MAINIP = br.getRegex("(http://filesflash\\.com:8001/)").getMatch(0);
+        if (MAINIP == null) MAINIP = br.getRegex("(http://173\\.231\\.61\\.130:8001/)").getMatch(0);
+        if (MAINIP == null) MAINIP = br.getRegex("(http://173\\.231\\.61\\.130/)").getMatch(0);
         if (MAINIP != null) MAINPAGE = MAINIP;
         final String token = br.getRegex("<input type=\"hidden\" name=\"token\" value=\"(.*?)\"/>").getMatch(0);
         if (token == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
