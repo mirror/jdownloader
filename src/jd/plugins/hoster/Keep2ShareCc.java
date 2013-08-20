@@ -126,6 +126,7 @@ public class Keep2ShareCc extends PluginForHost {
                 final String uniqueID = br.getRegex("name=\"slow_id\" value=\"([^<>\"]*?)\"").getMatch(0);
                 if (uniqueID == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 br.postPage(br.getURL(), "yt0=&slow_id=" + uniqueID);
+                if (br.containsHTML("Free user can't download large files")) throw new PluginException(LinkStatus.ERROR_FATAL, "This file is only available to premium members");
                 Browser br2 = br.cloneBrowser();
                 br2.getPage("http://static.keep2share.cc/ext/evercookie/evercookie.swf");
                 // can be here also, raztoki 20130521!
