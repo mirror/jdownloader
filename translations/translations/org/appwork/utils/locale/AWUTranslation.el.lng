@@ -121,3 +121,4 @@ proxy_socks5=%s1:%s2 (Διακομιστής Socks5)
 proxydialog_title=Δεν υπάρχει σύνδεση στο Διαδίκτυο
 tableheader_tooltip_locked=%s1 (Κλείδωμα αναλογιών)
 tableheader_tooltip_normal=%s1
+unLockColumnWidthAction=Ξεκλείδωμα πλάτους στήλης
