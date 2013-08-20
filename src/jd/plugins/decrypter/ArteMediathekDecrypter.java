@@ -60,19 +60,20 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
         setBrowserExclusive();
         br.setFollowRedirects(false);
         br.getPage(parameter);
-        if (!parameter.contains("tv/guide/") && br.getHttpConnection().getResponseCode() == 200) {
+        int status = br.getHttpConnection().getResponseCode();
+        if (!parameter.contains("tv/guide/") && status == 200) {
             final DownloadLink link = createDownloadlink(parameter.replace("http://", "decrypted://"));
             decryptedLinks.add(link);
             return decryptedLinks;
         }
         /* new arte+7 handling */
-        if (br.getHttpConnection().getResponseCode() == 301) {
+        if (status == 301 || status == 302) {
             br.setFollowRedirects(true);
             if (br.getRedirectLocation() != null) {
                 parameter = br.getRedirectLocation();
                 br.getPage(parameter);
             }
-        } else if (br.getHttpConnection().getResponseCode() != 200) {
+        } else if (status != 200) {
             // Check...if offline, add to llinkgrabber so user can see it
             final DownloadLink link = createDownloadlink(parameter.replace("http://", "decrypted://"));
             link.setAvailable(false);
@@ -111,18 +112,16 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
             int languageVersion = 1;
             String lang = new Regex(data, "/guide/(\\w+)/.+").getMatch(0);
             if (lang != null) {
-                if ("de".equalsIgnoreCase(lang)) lang = "D";
-                if ("fr".equalsIgnoreCase(lang)) {
-                    lang = "F";
-                    languageVersion = 2;
-                }
+                if ("fr".equalsIgnoreCase(lang)) languageVersion = 2;
             }
+            lang = language(languageVersion);
 
             String ID = new Regex(data, "/guide/\\w+/([0-9\\-]+)/").getMatch(0);
             if (ID != null && lang != null) {
                 String title = getTitle(br);
 
-                br.getPage("http://org-www.arte.tv/papi/tvguide/videos/stream/player/" + lang + "/" + ID + "_PLUS7-" + lang + "/ALL/ALL.json");
+                String tvguideUrl = "http://org-www.arte.tv/papi/tvguide/videos/stream/player/" + lang + "/" + ID + "_PLUS7-" + lang + "/ALL/ALL.json";
+                br.getPage(tvguideUrl);
                 if (br.containsHTML("<statuscode>wrongParameter</statuscode>")) return ret;
 
                 /* parsing json */
@@ -136,16 +135,25 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
                     ret.add(link);
                     return ret;
                 }
-                for (String[] ss : new Regex(vsr, "\"(.*?)\"\\s*:\\s*\\{(.*?)\\}").getMatches()) {
-                    String l = new Regex(ss[0], "(\\d)").getMatch(0);
-                    if (l != null) if (Integer.parseInt(l) != languageVersion) continue;
-                    streamValue = new HashMap<String, String>();
-                    for (String[] peng : new Regex(ss[1], "\"(.*?)\"\\s*:\\s*\"?(.*?)\"?,").getMatches()) {
-                        streamValue.put(peng[0], peng[1]);
+                for (int i = 0; i < 2; i++) {
+                    for (String[] ss : new Regex(vsr, "\"(.*?)\"\\s*:\\s*\\{(.*?)\\}").getMatches()) {
+                        String l = new Regex(ss[0], "(\\d)").getMatch(0);
+                        if (l != null) {
+                            if (i == 0) {
+                                if (Integer.parseInt(l) != languageVersion) continue;
+                            } else {
+                                languageVersion = Integer.parseInt(l);
+                            }
+                        }
+                        streamValue = new HashMap<String, String>();
+                        for (String[] peng : new Regex(ss[1], "\"(.*?)\"\\s*:\\s*\"?(.*?)\"?,").getMatches()) {
+                            streamValue.put(peng[0], peng[1]);
+                        }
+                        streamValues.put(ss[0], streamValue);
                     }
-                    streamValues.put(ss[0], streamValue);
-                }
 
+                    if (streamValues.size() > 0) break;
+                }
                 String VRA = br.getRegex("\"VRA\":\"([^\"]+)\"").getMatch(0);
                 String VRU = br.getRegex("\"VRU\":\"([^\"]+)\"").getMatch(0);
 
@@ -201,7 +209,7 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
                     }
                     lastQualityFMT = fmt.toUpperCase(Locale.ENGLISH);
 
-                    final String name = title + "@" + quality + "_" + lang + extension;
+                    final String name = title + "@" + quality + "_" + language(languageVersion) + extension;
                     final DownloadLink link = createDownloadlink(data.replace("http://", "decrypted://") + "&quality=" + quality);
                     link.setAvailable(true);
                     link.setFinalFileName(name);
@@ -209,7 +217,8 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
                     link.setProperty("directURL", url);
                     link.setProperty("directName", name);
                     link.setProperty("directQuality", streamValue.get("quality"));
-                    link.setProperty("streamingType", streamType.split("_")[0]);
+                    link.setProperty("streamingType", streamType);
+                    link.setProperty("tvguideUrl", tvguideUrl);
                     link.setProperty("VRA", convertDateFormat(VRA));
                     link.setProperty("VRU", convertDateFormat(VRU));
                     link.setProperty("flashplayer", "http://www.arte.tv/player/v2//jwplayer6/mediaplayer.6.3.3242.swf");
@@ -281,6 +290,11 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
             }
         }
         return ret;
+    }
+
+    private String language(int id) {
+        if (id == 1) return "D";
+        return "F";
     }
 
     private String convertDateFormat(String s) {

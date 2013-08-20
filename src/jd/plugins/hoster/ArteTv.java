@@ -99,7 +99,12 @@ public class ArteTv extends PluginForHost {
         if (CLIPURL.startsWith("rtmp")) {
             dl = new RTMPDownload(this, downloadLink, CLIPURL);
             setupRTMPConnection(dl);
-            ((RTMPDownload) dl).startDownload();
+            if (!((RTMPDownload) dl).startDownload()) {
+                if (downloadLink.getBooleanProperty("STREAMURLISEXPIRED", false)) {
+                    downloadLink.setProperty("STREAMURLISEXPIRED", false);
+                    refreshStreamingUrl(downloadLink.getStringProperty("tvguideUrl", null), downloadLink);
+                }
+            }
         } else if (CLIPURL.startsWith("http")) {
             br.setFollowRedirects(true);
             dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, CLIPURL, true, 0);
@@ -131,6 +136,31 @@ public class ArteTv extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         download(downloadLink);
+    }
+
+    private void refreshStreamingUrl(String s, DownloadLink d) throws Exception {
+        if (s == null) return;
+        br.getPage(s);
+        HashMap<String, HashMap<String, String>> streamValues = new HashMap<String, HashMap<String, String>>();
+        HashMap<String, String> streamValue;
+        String vsr = br.getRegex("\"VSR\":\\{(.*?\\})\\}").getMatch(0);
+        if (vsr != null) {
+            for (String[] ss : new Regex(vsr, "\"(.*?)\"\\s*:\\s*\\{(.*?)\\}").getMatches()) {
+                streamValue = new HashMap<String, String>();
+                for (String[] peng : new Regex(ss[1], "\"(.*?)\"\\s*:\\s*\"?(.*?)\"?,").getMatches()) {
+                    streamValue.put(peng[0], peng[1]);
+                }
+                streamValues.put(ss[0], streamValue);
+            }
+            String streamingType = d.getStringProperty("streamingType", null);
+            if (streamingType == null) return;
+            if (streamValues.containsKey(streamingType)) {
+                streamValue = new HashMap<String, String>(streamValues.get(streamingType));
+                String url = streamValue.get("url");
+                if (!url.startsWith("mp4:")) url = "mp4:" + url;
+                d.setProperty("directURL", streamValue.get("streamer") + url);
+            }
+        }
     }
 
     @Override

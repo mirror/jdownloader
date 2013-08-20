@@ -323,7 +323,6 @@ public class RtmpDump extends RTMPDownload {
                     }
                 };
 
-                int sizeCalulateBuffer = 0;
                 float progressFloat = 0;
                 boolean runTimeSize = false;
                 long tmplen = 0, fixedlen = 0, calc = 0;
@@ -366,15 +365,13 @@ public class RtmpDump extends RTMPDownload {
                             }
                             BYTESLOADED = SizeFormatter.getSize(line.substring(0, line.toUpperCase().indexOf("KB") + 2));
 
-                            if (sizeCalulateBuffer > 6 && runTimeSize) {
-                                tmplen = (long) (BYTESLOADED * 100.0F / progressFloat);
-                                fixedlen = downloadLink.getDownloadSize();
-                                calc = Math.abs(((fixedlen / 1024) - (tmplen / 1024)) % 1024);
-                                if (calc > 768 && calc < 960) {
-                                    downloadLink.setDownloadSize(tmplen);
+                            if (runTimeSize) {
+                                if (progressFloat > 0.0) {
+                                    tmplen = (long) (BYTESLOADED * 100.0F / progressFloat);
+                                    fixedlen = downloadLink.getDownloadSize();
+                                    calc = Math.abs(((fixedlen / 1024) - (tmplen / 1024)) % 1024);
+                                    if (calc > 768 && calc < 960) downloadLink.setDownloadSize(tmplen);
                                 }
-                            } else {
-                                sizeCalulateBuffer++;
                             }
 
                             if (System.currentTimeMillis() - lastTime > 1000) {
@@ -448,6 +445,16 @@ public class RtmpDump extends RTMPDownload {
             }
             if (error != null) {
                 String e = error.toLowerCase();
+
+                /* special ArteTv handling */
+                if (this.plugin.getLazyP().getClassname().endsWith("ArteTv")) {
+                    if (e.contains("netstream.failed")) {
+                        if (downloadLink.getDownloadSize() > 0) {
+                            downloadLink.setProperty("STREAMURLISEXPIRED", true);
+                            return false;
+                        }
+                    }
+                }
                 if (e.contains("last tag size must be greater/equal zero")) {
                     if (!FixFlv(tmpFile)) return false;
                     downloadLink.getLinkStatus().addStatus(LinkStatus.ERROR_DOWNLOAD_INCOMPLETE);
