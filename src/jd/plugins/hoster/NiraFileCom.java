@@ -18,9 +18,6 @@ package jd.plugins.hoster;
 
 import java.io.File;
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Locale;
-import java.util.Map;
 import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -29,16 +26,12 @@ import java.util.regex.Pattern;
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
-import jd.http.Cookie;
-import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.parser.html.HTMLParser;
 import jd.parser.html.InputField;
-import jd.plugins.Account;
-import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -51,18 +44,17 @@ import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "shareblue.eu" }, urls = { "https?://(www\\.)?shareblue\\.eu/(vidembed\\-)?[a-z0-9]{12}" }, flags = { 2 })
-public class ShareBlueEu extends PluginForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "nirafile.com" }, urls = { "https?://(www\\.)?nirafile\\.com/(vidembed\\-)?[a-z0-9]{12}" }, flags = { 0 })
+public class NiraFileCom extends PluginForHost {
 
     private String               correctedBR                  = "";
     private String               passCode                     = null;
     private static final String  PASSWORDTEXT                 = "<br><b>Passwor(d|t):</b> <input";
     // primary website url, take note of redirects
-    private static final String  COOKIE_HOST                  = "http://shareblue.eu";
+    private static final String  COOKIE_HOST                  = "http://nirafile.com";
     // domain names used within download links.
-    private static final String  DOMAINS                      = "(shareblue\\.eu)";
+    private static final String  DOMAINS                      = "(nirafile\\.com)";
     private static final String  MAINTENANCE                  = ">This server is in maintenance mode";
     private static final String  MAINTENANCEUSERTEXT          = JDL.L("hoster.xfilesharingprobasic.errors.undermaintenance", "This server is under Maintenance");
     private static final String  ALLWAIT_SHORT                = JDL.L("hoster.xfilesharingprobasic.errors.waitingfordownloads", "Waiting till new downloads can be started");
@@ -70,26 +62,23 @@ public class ShareBlueEu extends PluginForHost {
     private static final String  PREMIUMONLY2                 = JDL.L("hoster.xfilesharingprobasic.errors.premiumonly2", "Only downloadable via premium or registered");
     private static final boolean VIDEOHOSTER                  = false;
     private static final boolean SUPPORTSHTTPS                = false;
-    // note: CAN NOT be negative or zero! (ie. -1 or 0) Otherwise math sections
-    // fail. .:. use [1-20]
+    // note: CAN NOT be negative or zero! (ie. -1 or 0) Otherwise math sections fail. .:. use [1-20]
     private static AtomicInteger totalMaxSimultanFreeDownload = new AtomicInteger(1);
     // don't touch the following!
     private static AtomicInteger maxFree                      = new AtomicInteger(1);
-    private static AtomicInteger maxPrem                      = new AtomicInteger(1);
-    private static Object        LOCK                         = new Object();
 
     // DEV NOTES
-    // XfileSharingProBasic Version 2.6.2.0
-    // mods: modified download1 form
-    // non account: 5 * 1
-    // free account: untested, set FREE limits
-    // premium account: 1 * 10
+    // XfileSharingProBasic Version 2.6.2.5
+    // mods: getdllink, availablecheck, fixFilename
+    // non account: 1 * 1
+    // free account: chunks * maxdls
+    // premium account: chunks * maxdls
     // protocol: no https
     // captchatype: null
     // other:
 
     @Override
-    public void correctDownloadLink(DownloadLink link) {
+    public void correctDownloadLink(final DownloadLink link) {
         // link cleanup, but respect users protocol choosing.
         if (!SUPPORTSHTTPS) {
             link.setUrlDownload(link.getDownloadURL().replaceFirst("https://", "http://"));
@@ -107,9 +96,9 @@ public class ShareBlueEu extends PluginForHost {
         return COOKIE_HOST + "/tos.html";
     }
 
-    public ShareBlueEu(PluginWrapper wrapper) {
+    public NiraFileCom(PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium(COOKIE_HOST + "/premium.html");
+        // this.enablePremium(COOKIE_HOST + "/premium.html");
     }
 
     // do not add @Override here to keep 0.* compatibility
@@ -117,15 +106,76 @@ public class ShareBlueEu extends PluginForHost {
         return true;
     }
 
-    // do not add @Override here to keep 0.* compatibility
-    public boolean hasCaptcha() {
-        return true;
+    /* NO OVERRIDE!! We need to stay 0.9*compatible */
+    public boolean hasCaptcha(DownloadLink link, jd.plugins.Account acc) {
+        if (acc == null) {
+            /* no account, yes we can expect captcha */
+            return true;
+        }
+        if (Boolean.TRUE.equals(acc.getBooleanProperty("nopremium"))) {
+            /* free accounts also have captchas */
+            return true;
+        }
+        return false;
     }
 
     public void prepBrowser(final Browser br) {
         // define custom browser headers and language settings.
         br.getHeaders().put("Accept-Language", "en-gb, en;q=0.9");
         br.setCookie(COOKIE_HOST, "lang", "english");
+    }
+
+    @Override
+    public boolean checkLinks(final DownloadLink[] urls) {
+        if (urls == null || urls.length == 0) { return false; }
+        try {
+            final Browser br = new Browser();
+            prepBrowser(br);
+            br.setCookiesExclusive(true);
+            final StringBuilder sb = new StringBuilder();
+            final ArrayList<DownloadLink> links = new ArrayList<DownloadLink>();
+            int index = 0;
+            while (true) {
+                links.clear();
+                while (true) {
+                    /* we test 50 links at once */
+                    if (index == urls.length || links.size() > 50) {
+                        break;
+                    }
+                    links.add(urls[index]);
+                    index++;
+                }
+                sb.delete(0, sb.capacity());
+                sb.append("op=checkfiles&process=Check+URLs&list=");
+                for (final DownloadLink dl : links) {
+                    sb.append(dl.getDownloadURL());
+                    sb.append("%0A");
+                }
+                br.postPage(COOKIE_HOST + "/?op=checkfiles", sb.toString());
+                for (final DownloadLink dllink : links) {
+                    if (br.containsHTML(">" + dllink.getDownloadURL() + "</td><td style=\"color:red;\">Not found\\!</td>")) {
+                        dllink.setAvailable(false);
+                    } else {
+                        final String[][] linkInformation = br.getRegex(">" + dllink.getDownloadURL() + "</td><td style=\"color:green;\">Found</td><td>([^<>\"]*?)</td>").getMatches();
+                        if (linkInformation == null) {
+                            logger.warning("Linkchecker broken for " + this.getHost());
+                            return false;
+                        }
+                        String name = extractFileNameFromURL(dllink.getDownloadURL());
+                        final String size = linkInformation[0][0];
+                        dllink.setAvailable(true);
+                        dllink.setName(Encoding.htmlDecode(name).replace(".html", ""));
+                        dllink.setDownloadSize(SizeFormatter.getSize(size));
+                    }
+                }
+                if (index == urls.length) {
+                    break;
+                }
+            }
+        } catch (final Exception e) {
+            return false;
+        }
+        return true;
     }
 
     @Override
@@ -142,19 +192,18 @@ public class ShareBlueEu extends PluginForHost {
             link.getLinkStatus().setStatusText(PREMIUMONLY2);
             return AvailableStatus.UNCHECKABLE;
         }
-        String[] fileInfo = new String[3];
+        final String[] fileInfo = new String[3];
         scanInfo(fileInfo);
         if (fileInfo[0] == null || fileInfo[0].equals("")) {
             if (correctedBR.contains("You have reached the download(\\-| )limit")) {
                 logger.warning("Waittime detected, please reconnect to make the linkchecker work!");
                 return AvailableStatus.UNCHECKABLE;
             }
-            logger.warning("filename equals null, throwing \"plugin defect\"");
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            fileInfo[0] = new Regex(link.getDownloadURL(), "([a-z0-9]{12})$").getMatch(0);
         }
         if (fileInfo[2] != null && !fileInfo[2].equals("")) link.setMD5Hash(fileInfo[2].trim());
         fileInfo[0] = fileInfo[0].replaceAll("(</b>|<b>|\\.html)", "");
-        link.setFinalFileName(fileInfo[0].trim());
+        link.setName(fileInfo[0].trim());
         if (fileInfo[1] != null && !fileInfo[1].equals("")) link.setDownloadSize(SizeFormatter.getSize(fileInfo[1]));
         return AvailableStatus.TRUE;
     }
@@ -162,7 +211,7 @@ public class ShareBlueEu extends PluginForHost {
     private String[] scanInfo(final String[] fileInfo) {
         // standard traits from base page
         if (fileInfo[0] == null) {
-            fileInfo[0] = new Regex(correctedBR, "You have requested.*?https?://(www\\.)?" + this.getHost() + "/[A-Za-z0-9]{12}/(.*?)</font>").getMatch(1);
+            fileInfo[0] = new Regex(correctedBR, "You have requested.*?https?://(www\\.)?" + DOMAINS + "/[A-Za-z0-9]{12}/(.*?)</font>").getMatch(2);
             if (fileInfo[0] == null) {
                 fileInfo[0] = new Regex(correctedBR, "fname\"( type=\"hidden\")? value=\"(.*?)\"").getMatch(1);
                 if (fileInfo[0] == null) {
@@ -175,6 +224,10 @@ public class ShareBlueEu extends PluginForHost {
                             fileInfo[0] = new Regex(correctedBR, "copy\\(this\\);.+>(.+) \\- [\\d\\.]+ (KB|MB|GB)</a></textarea>[\r\n\t ]+</div>").getMatch(0);
                             if (fileInfo[0] == null) {
                                 fileInfo[0] = new Regex(correctedBR, "copy\\(this\\);.+\\](.+) \\- [\\d\\.]+ (KB|MB|GB)\\[/URL\\]").getMatch(0);
+                                if (fileInfo[0] == null) {
+                                    // Link of the box without filesize
+                                    fileInfo[0] = new Regex(correctedBR, "onFocus=\"copy\\(this\\);\">http://(www\\.)?" + DOMAINS + "/[a-z0-9]{12}/([^<>\"]*?)</textarea").getMatch(2);
+                                }
                             }
                         }
                     }
@@ -197,7 +250,7 @@ public class ShareBlueEu extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        doFree(downloadLink, true, -5, "freelink");
+        doFree(downloadLink, true, 1, "freelink");
     }
 
     @SuppressWarnings("unused")
@@ -220,11 +273,7 @@ public class ShareBlueEu extends PluginForHost {
             final Form download1 = getFormByKey("op", "download1");
             if (download1 != null) {
                 download1.remove("method_premium");
-                download1.remove(null);
-                download1.remove(null);
-                download1.put("method_free", "SLOW Download");
-                // stable is lame, issue finding input data fields correctly.
-                // eg. closes at ' quotation mark - remove when jd2 goes stable!
+                // stable is lame, issue finding input data fields correctly. eg. closes at ' quotation mark - remove when jd2 goes stable!
                 if (downloadLink.getName().contains("'")) {
                     String fname = new Regex(br, "<input type=\"hidden\" name=\"fname\" value=\"([^\"]+)\">").getMatch(0);
                     if (fname != null) {
@@ -303,9 +352,7 @@ public class ShareBlueEu extends PluginForHost {
                     logger.info("Detected captcha method \"Re Captcha\" for this host");
                     final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
                     final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
-                    final String id = new Regex(correctedBR, "\\?k=([A-Za-z0-9%_\\+\\- ]+)\"").getMatch(0);
-                    if (id == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                    rc.setId(id);
+                    rc.findID();
                     rc.load();
                     final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
                     final String c = getCaptchaCode(cf, downloadLink);
@@ -323,10 +370,26 @@ public class ShareBlueEu extends PluginForHost {
                     final String chid = sm.getChallenge(code);
                     dlForm.put("adcopy_challenge", chid);
                     dlForm.put("adcopy_response", "manual_challenge");
+                } else if (br.containsHTML("id=\"capcode\" name= \"capcode\"")) {
+                    logger.info("Detected captcha method \"keycaptca\"");
+                    String result = null;
+                    final PluginForDecrypt keycplug = JDUtilities.getPluginForDecrypt("linkcrypt.ws");
+                    try {
+                        final jd.plugins.decrypter.LnkCrptWs.KeyCaptcha kc = ((jd.plugins.decrypter.LnkCrptWs) keycplug).getKeyCaptcha(br);
+                        result = kc.showDialog(downloadLink.getDownloadURL());
+                    } catch (final Throwable e) {
+                        result = null;
+                    }
+                    if (result == null) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                    if ("CANCEL".equals(result)) throw new PluginException(LinkStatus.ERROR_FATAL);
+                    dlForm.put("capcode", result);
+                    /** wait time is often skippable for reCaptcha handling */
+                    skipWaittime = false;
                 }
                 /* Captcha END */
                 if (password) passCode = handlePassword(dlForm, downloadLink);
                 if (!skipWaittime) waitTime(timeBefore, downloadLink);
+                dlForm.put("method_free", "%3CTur+fileMPL_VAR+method_free%3E");
                 sendForm(dlForm);
                 logger.info("Submitted DLForm");
                 checkErrors(downloadLink, true);
@@ -336,8 +399,16 @@ public class ShareBlueEu extends PluginForHost {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 } else if (dllink == null && br.containsHTML("<Form name=\"F1\" method=\"POST\" action=\"\"")) {
                     dlForm = br.getFormbyProperty("name", "F1");
+                    try {
+                        invalidateLastChallengeResponse();
+                    } catch (final Throwable e) {
+                    }
                     continue;
                 } else {
+                    try {
+                        validateLastChallengeResponse();
+                    } catch (final Throwable e) {
+                    }
                     break;
                 }
             }
@@ -394,8 +465,7 @@ public class ShareBlueEu extends PluginForHost {
         correctedBR = br.toString();
         ArrayList<String> regexStuff = new ArrayList<String>();
 
-        // remove custom rules first!!! As html can change because of generic
-        // cleanup rules.
+        // remove custom rules first!!! As html can change because of generic cleanup rules.
 
         // generic cleanup
         regexStuff.add("<\\!(\\-\\-.*?\\-\\-)>");
@@ -415,7 +485,7 @@ public class ShareBlueEu extends PluginForHost {
     public String getDllink() {
         String dllink = br.getRedirectLocation();
         if (dllink == null) {
-            dllink = new Regex(correctedBR, "(\"|\\')(https?://(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|([\\w\\-]+\\.)?" + DOMAINS + ")(:\\d{1,4})?/(files|d|cgi\\-bin/dl\\.cgi)/(\\d+/)?[a-z0-9]+/[^<>\"/]*?)(\"|\\')").getMatch(1);
+            dllink = new Regex(correctedBR, "(\"|\\')(https?://(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|([\\w\\-\\.]+)?)(:\\d{1,4})?/(files|d|cgi\\-bin/dl\\.cgi)/(\\d+/)?[a-z0-9]+/[^<>\"/]*?)(\"|\\')").getMatch(1);
             if (dllink == null) {
                 final String cryptedScripts[] = new Regex(correctedBR, "p\\}\\((.*?)\\.split\\('\\|'\\)").getColumn(0);
                 if (cryptedScripts != null && cryptedScripts.length != 0) {
@@ -466,7 +536,7 @@ public class ShareBlueEu extends PluginForHost {
         String dllink = downloadLink.getStringProperty(property);
         if (dllink != null) {
             try {
-                Browser br2 = br.cloneBrowser();
+                final Browser br2 = br.cloneBrowser();
                 URLConnectionAdapter con = br2.openGetConnection(dllink);
                 if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
                     downloadLink.setProperty(property, Property.NULL);
@@ -509,8 +579,7 @@ public class ShareBlueEu extends PluginForHost {
         }
     }
 
-    // TODO: remove this when v2 becomes stable. use br.getFormbyKey(String key,
-    // String value)
+    // TODO: remove this when v2 becomes stable. use br.getFormbyKey(String key, String value)
     /**
      * Returns the first form that has a 'key' that equals 'value'.
      * 
@@ -533,25 +602,22 @@ public class ShareBlueEu extends PluginForHost {
         return null;
     }
 
+    /**
+     * @param downloadLink
+     */
     private void fixFilename(final DownloadLink downloadLink) {
         String oldName = downloadLink.getFinalFileName();
         if (oldName == null) oldName = downloadLink.getName();
         final String serverFilename = Encoding.htmlDecode(getFileNameFromHeader(dl.getConnection()));
-        String newExtension = null;
-        // some streaming sites do not provide proper file.extension within
-        // headers (Content-Disposition or the fail over getURL()).
-        if (serverFilename.contains(".")) {
-            newExtension = serverFilename.substring(serverFilename.lastIndexOf("."));
+        // some streaming sites do not provide proper file.extension within headers (Content-Disposition or the fail over getURL()).
+        if (serverFilename == null) {
+            logger.info("Server filename is null, keeping filename: " + oldName);
         } else {
-            logger.info("HTTP headers don't contain filename.extension information");
-        }
-        if (newExtension != null && !oldName.endsWith(newExtension)) {
-            String oldExtension = null;
-            if (oldName.contains(".")) oldExtension = oldName.substring(oldName.lastIndexOf("."));
-            if (oldExtension != null && oldExtension.length() <= 5)
-                downloadLink.setFinalFileName(oldName.replace(oldExtension, newExtension));
-            else
-                downloadLink.setFinalFileName(oldName + newExtension);
+            if (serverFilename.contains(".")) {
+                downloadLink.setFinalFileName(serverFilename);
+            } else {
+                logger.info("HTTP headers don't contain filename.extension information");
+            }
         }
     }
 
@@ -577,8 +643,7 @@ public class ShareBlueEu extends PluginForHost {
     public void checkErrors(final DownloadLink theLink, final boolean checkAll) throws NumberFormatException, PluginException {
         if (checkAll) {
             if (new Regex(correctedBR, PASSWORDTEXT).matches() && correctedBR.contains("Wrong password")) {
-                // handle password has failed in the past, additional try
-                // catching / resetting values
+                // handle password has failed in the past, additional try catching / resetting values
                 logger.warning("Wrong password, the entered password \"" + passCode + "\" is wrong, retrying...");
                 passCode = null;
                 theLink.setProperty("pass", Property.NULL);
@@ -643,174 +708,6 @@ public class ShareBlueEu extends PluginForHost {
     }
 
     @Override
-    public AccountInfo fetchAccountInfo(final Account account) throws Exception {
-        final AccountInfo ai = new AccountInfo();
-        /* reset maxPrem workaround on every fetchaccount info */
-        maxPrem.set(1);
-        try {
-            login(account, true);
-        } catch (final PluginException e) {
-            account.setValid(false);
-            throw e;
-        }
-        final String space[][] = new Regex(correctedBR, ">Used space:</td>.*?<td.*?b>([0-9\\.]+) ?(KB|MB|GB|TB)?</b>").getMatches();
-        if ((space != null && space.length != 0) && (space[0][0] != null && space[0][1] != null)) {
-            // free users it's provided by default
-            ai.setUsedSpace(space[0][0] + " " + space[0][1]);
-        } else if (space != null && space.length != 0) {
-            // premium users the Mb value isn't provided for some reason...
-            ai.setUsedSpace(space[0][0] + "Mb");
-        }
-        account.setValid(true);
-        final String availabletraffic = new Regex(correctedBR, "Traffic available.*?:</TD><TD><b>([^<>\"\\']+)</b>").getMatch(0);
-        if (availabletraffic != null && !availabletraffic.contains("nlimited") && !availabletraffic.equalsIgnoreCase(" Mb")) {
-            availabletraffic.trim();
-            // need to set 0 traffic left, as getSize returns positive result,
-            // even when negative value supplied.
-            if (!availabletraffic.startsWith("-")) {
-                ai.setTrafficLeft(SizeFormatter.getSize(availabletraffic));
-            } else {
-                ai.setTrafficLeft(0);
-            }
-        } else {
-            ai.setUnlimitedTraffic();
-        }
-        if (account.getBooleanProperty("nopremium")) {
-            ai.setStatus("Registered (free) User");
-            try {
-                maxPrem.set(1);
-                // free accounts can still have captcha.
-                totalMaxSimultanFreeDownload.set(maxPrem.get());
-                account.setMaxSimultanDownloads(maxPrem.get());
-                account.setConcurrentUsePossible(false);
-            } catch (final Throwable e) {
-                // not available in old Stable 0.9.581
-            }
-        } else {
-            final String expire = new Regex(correctedBR, "(\\d{1,2} (January|February|March|April|May|June|July|August|September|October|November|December) \\d{4})").getMatch(0);
-            if (expire == null) {
-                ai.setExpired(true);
-                account.setValid(false);
-                return ai;
-            } else {
-                ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "dd MMMM yyyy", Locale.ENGLISH));
-                try {
-                    maxPrem.set(10);
-                    account.setMaxSimultanDownloads(maxPrem.get());
-                    account.setConcurrentUsePossible(true);
-                } catch (final Throwable e) {
-                    // not available in old Stable 0.9.581
-                }
-            }
-            ai.setStatus("Premium User");
-        }
-        return ai;
-    }
-
-    @SuppressWarnings("unchecked")
-    private void login(final Account account, final boolean force) throws Exception {
-        synchronized (LOCK) {
-            try {
-                /** Load cookies */
-                br.setCookiesExclusive(true);
-                prepBrowser(br);
-                final Object ret = account.getProperty("cookies", null);
-                boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
-                if (acmatch) acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
-                if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
-                    final HashMap<String, String> cookies = (HashMap<String, String>) ret;
-                    if (account.isValid()) {
-                        for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
-                            final String key = cookieEntry.getKey();
-                            final String value = cookieEntry.getValue();
-                            this.br.setCookie(COOKIE_HOST, key, value);
-                        }
-                        return;
-                    }
-                }
-                br.setFollowRedirects(true);
-                getPage(COOKIE_HOST + "/login.html");
-                final Form loginform = br.getFormbyProperty("name", "FL");
-                if (loginform == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin broken, please contact the JDownloader Support!\r\nPlugin defekt, bitte den JDownloader Support kontaktieren!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                loginform.put("login", Encoding.urlEncode(account.getUser()));
-                loginform.put("password", Encoding.urlEncode(account.getPass()));
-                sendForm(loginform);
-                if (br.getCookie(COOKIE_HOST, "login") == null || br.getCookie(COOKIE_HOST, "xfss") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nUngültiger Benutzername oder ungültiges Passwort!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                if (!br.getURL().contains("/?op=my_account")) {
-                    getPage("/?op=my_account");
-                }
-                if (!new Regex(correctedBR, "(Premium(\\-| )Account expire|>Renew premium<)").matches()) {
-                    account.setProperty("nopremium", true);
-                } else {
-                    account.setProperty("nopremium", false);
-                }
-                /** Save cookies */
-                final HashMap<String, String> cookies = new HashMap<String, String>();
-                final Cookies add = this.br.getCookies(COOKIE_HOST);
-                for (final Cookie c : add.getCookies()) {
-                    cookies.put(c.getKey(), c.getValue());
-                }
-                account.setProperty("name", Encoding.urlEncode(account.getUser()));
-                account.setProperty("pass", Encoding.urlEncode(account.getPass()));
-                account.setProperty("cookies", cookies);
-            } catch (final PluginException e) {
-                account.setProperty("cookies", Property.NULL);
-                throw e;
-            }
-        }
-    }
-
-    @Override
-    public void handlePremium(final DownloadLink downloadLink, final Account account) throws Exception {
-        passCode = downloadLink.getStringProperty("pass");
-        requestFileInformation(downloadLink);
-        login(account, false);
-        if (account.getBooleanProperty("nopremium")) {
-            requestFileInformation(downloadLink);
-            doFree(downloadLink, true, -5, "freelink2");
-        } else {
-            String dllink = checkDirectLink(downloadLink, "premlink");
-            if (dllink == null) {
-                br.setFollowRedirects(false);
-                getPage(downloadLink.getDownloadURL());
-                dllink = getDllink();
-                if (dllink == null) {
-                    Form dlform = br.getFormbyProperty("name", "F1");
-                    if (dlform != null && new Regex(correctedBR, PASSWORDTEXT).matches()) passCode = handlePassword(dlform, downloadLink);
-                    checkErrors(downloadLink, true);
-                    if (dlform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                    sendForm(dlform);
-                    checkErrors(downloadLink, true);
-                    dllink = getDllink();
-                }
-            }
-            if (dllink == null) {
-                logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            logger.info("Final downloadlink = " + dllink + " starting the download...");
-            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
-            if (dl.getConnection().getContentType().contains("html")) {
-                if (dl.getConnection().getResponseCode() == 503) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Connection limit reached, please contact our support!", 5 * 60 * 1000l);
-                logger.warning("The final dllink seems not to be a file!");
-                br.followConnection();
-                correctBR();
-                checkServerErrors();
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            fixFilename(downloadLink);
-            downloadLink.setProperty("premlink", dllink);
-            dl.startDownload();
-        }
-    }
-
-    @Override
-    public int getMaxSimultanPremiumDownloadNum() {
-        /* workaround for free/premium issue on stable 09581 */
-        return maxPrem.get();
-    }
-
-    @Override
     public void reset() {
     }
 
@@ -818,16 +715,4 @@ public class ShareBlueEu extends PluginForHost {
     public void resetDownloadlink(DownloadLink link) {
     }
 
-    /* NO OVERRIDE!! We need to stay 0.9*compatible */
-    public boolean hasCaptcha(DownloadLink link, jd.plugins.Account acc) {
-        if (acc == null) {
-            /* no account, yes we can expect captcha */
-            return true;
-        }
-        if (Boolean.TRUE.equals(acc.getBooleanProperty("free"))) {
-            /* free accounts also have captchas */
-            return true;
-        }
-        return false;
-    }
 }

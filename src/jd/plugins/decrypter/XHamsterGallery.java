@@ -20,8 +20,10 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
+import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
@@ -46,6 +48,21 @@ public class XHamsterGallery extends PluginForDecrypt {
             logger.info("Link offline: " + parameter);
             return decryptedLinks;
         }
+        if (br.containsHTML(">This gallery is visible for")) {
+            logger.info("This gallery is only visible for specified users, account needed: " + parameter);
+            return decryptedLinks;
+        }
+
+        if (br.containsHTML(">This gallery needs password<")) {
+            for (int i = 1; i <= 3; i++) {
+                String passCode = getUserInput("Password?", param);
+                br.postPage(br.getURL(), "password=" + Encoding.urlEncode(passCode));
+                if (br.containsHTML(">This gallery needs password<")) continue;
+                break;
+            }
+            if (br.containsHTML(">This gallery needs password<")) throw new DecrypterException(DecrypterException.PASSWORD);
+        }
+
         String fpname = br.getRegex("<title>(.*?) \\- \\d+ Pics \\- xHamster\\.com</title>").getMatch(0);
         String[] pagesTemp = br.getRegex("\\'" + parameterWihoutHtml + "-\\d+\\.html\\'>(\\d+)</a>").getColumn(0);
         if (pagesTemp != null && pagesTemp.length != 0) {

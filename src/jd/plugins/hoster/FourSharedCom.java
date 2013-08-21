@@ -296,19 +296,26 @@ public class FourSharedCom extends PluginForHost {
     public void handlePremium(final DownloadLink downloadLink, final Account account) throws Exception {
         requestFileInformation(downloadLink);
         login(account, false);
-        br.getPage(downloadLink.getDownloadURL());
         if (account.getStringProperty("nopremium") != null) {
+            br.getPage(downloadLink.getDownloadURL());
             doFree(downloadLink);
         } else {
-            String pass = handlePassword(downloadLink);
-            // direct download or not?
-            String link = br.getRedirectLocation();
-            if (link == null) {
-                checkErrors(br);
-                link = getDirectDownloadlink();
-                if (link == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+            br.setFollowRedirects(false);
+            br.getPage(downloadLink.getDownloadURL());
+            String dllink = br.getRedirectLocation();
+            String pass = null;
+            if (dllink == null) {
+                pass = handlePassword(downloadLink);
+                // direct download or not?
+                dllink = br.getRedirectLocation();
+                if (dllink == null) {
+                    checkErrors(br);
+                    dllink = br.getRegex("id=\"btnLink\" href=\"(https?://[^<>\"]*?)\"").getMatch(0);
+                    if (dllink == null) dllink = br.getRegex("\"(http://dc\\d+\\.4shared\\.com/download/[^<>\"]*?)\"").getMatch(0);
+                    if (dllink == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+                }
             }
-            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, link, true, 0);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
             final String error = new Regex(dl.getConnection().getURL(), "\\?error(.*)").getMatch(0);
             if (error != null) {
                 dl.getConnection().disconnect();

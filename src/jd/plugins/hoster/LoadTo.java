@@ -64,6 +64,7 @@ public class LoadTo extends PluginForHost {
         this.setBrowserExclusive();
         workAroundTimeOut(br);
         br.setFollowRedirects(true);
+        // Needed to get parallel downloads
         br.getHeaders().put("User-Agent", RandomUserAgent.generate());
         br.getPage(link.getDownloadURL());
         if (br.containsHTML(">Can\\'t find file")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
