@@ -30,15 +30,25 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "videobam.com" }, urls = { "http://(www\\.)?videobam\\.com/(?!user|faq|login|dmca|signup|terms)(videos/download/)?[A-Za-z0-9]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "videobam.com" }, urls = { "http://(www\\.)?videobam\\.com/(?!user|faq|login|dmca|signup|terms)(videos/download/|widget/)?[A-Za-z0-9]+" }, flags = { 0 })
 public class VideoBamCom extends PluginForHost {
 
     public VideoBamCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    public void correctDownloadLink(DownloadLink link) {
-        link.setUrlDownload("http://videobam.com/videos/download/" + new Regex(link.getDownloadURL(), "([A-Za-z0-9]+)$").getMatch(0));
+    public void correctDownloadLink(DownloadLink link) throws PluginException {
+        setFUID(link);
+        link.setUrlDownload("http://videobam.com/videos/download/" + FUID);
+    }
+
+    private String FUID = null;
+
+    private String setFUID(DownloadLink link) throws PluginException {
+        FUID = new Regex(link.getDownloadURL(), "widget/([A-Za-z0-9]+)").getMatch(0);
+        if (FUID == null) FUID = new Regex(link.getDownloadURL(), "([A-Za-z0-9]+)$").getMatch(0);
+        if (FUID == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        return FUID;
     }
 
     @Override
@@ -53,6 +63,7 @@ public class VideoBamCom extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
+        setFUID(downloadLink);
         this.setBrowserExclusive();
         br.setCustomCharset("utf-8");
         br.setFollowRedirects(true);
@@ -61,7 +72,7 @@ public class VideoBamCom extends PluginForHost {
         final String filename = br.getRegex("File name: ([^<>\"]*?)<br />").getMatch(0);
         final String filesize = br.getRegex("File size: ([^<>\"]*?)</div>").getMatch(0);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        downloadLink.setFinalFileName(Encoding.htmlDecode(filename));
+        downloadLink.setName(Encoding.htmlDecode(filename));
         downloadLink.setDownloadSize(SizeFormatter.getSize(filesize));
         return AvailableStatus.TRUE;
     }
@@ -70,21 +81,20 @@ public class VideoBamCom extends PluginForHost {
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         final boolean resume = true;
-        final int chunks = 0;
+        final int chunks = 1;
         final String ajaxDLurl = br.getRegex("\\'(/videos/ajax_download_url/[^<>\"]*?)\\'").getMatch(0);
         if (ajaxDLurl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         // Waittime can be skipped
         // int wait = 30;
-        // final String waittime =
-        // br.getRegex("var timeout = (\\d+);").getMatch(0);
+        // final String waittime = br.getRegex("var timeout = (\\d+);").getMatch(0);
         // if (waittime != null) wait = Integer.parseInt(waittime);
         // sleep(wait * 1001l, downloadLink);
         br.getPage("http://videobam.com" + ajaxDLurl);
         String dllink = null;
         if (br.containsHTML("You can not download more than 1 video per 30 minutes")) {
             // Try stream download, only throw exception if that also fails
-            br.getPage("http://videobam.com/" + new Regex(downloadLink.getDownloadURL(), "([A-Za-z0-9]+)$").getMatch(0));
+            br.getPage("http://videobam.com/" + FUID);
             dllink = br.getRegex("\"url\":\"(http:[^<>\"]*?)\"").getMatch(0);
             if (dllink == null) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 30 * 60 * 1001l);
         } else {

@@ -44,10 +44,12 @@ import jd.utils.JDUtilities;
 @SuppressWarnings("deprecation")
 public class AniLinkzCom extends PluginForDecrypt {
 
-    private final String                   supported_hoster  = "(4shared\\.com|animeuploads\\.com|auengine\\.com|cizgifilmlerizle\\.com|dailymotion\\.com|gorillavid\\.in|mp4upload\\.com|movreel\\.com|myspace\\.com|nowvideo\\.eu|novamov\\.com|putlocker\\.com|rutube\\.ru|stagevu\\.com|upload2\\.com|uploadc\\.com|veevr\\.com|veoh\\.com|video44\\.net|videobb\\.com|videobam\\.com|videoweed\\.com|videozer\\.com|yourupload\\.com|youtube\\.com|zshare\\.net|player\\.vimeo\\.com)";
+    private final String                   supported_hoster  = "(4shared\\.com|animeuploads\\.com|auengine\\.com|cizgifilmlerizle\\.com|dailymotion\\.com|gorillavid\\.in|mp4upload\\.com|movreel\\.com|myspace\\.com|nowvideo\\.eu|novamov\\.com|putlocker\\.com|rutube\\.ru|sockshare\\.com|stagevu\\.com|upload2\\.com|uploadc\\.com|veevr\\.com|veoh\\.com|video44\\.net|videobb\\.com|videobam\\.com|videofun\\.me|videonest\\.net|videoweed\\.com|videozer\\.com|vidzur\\.com|yourupload\\.com|youtube\\.com|zshare\\.net|player\\.vimeo\\.com)";
     private final String                   invalid_links     = "http://(www\\.)?anilinkz\\.com/(search|affiliates|get|img|dsa|forums|files|category|\\?page=|faqs|.*?-list|.*?-info|\\?random).*?";
     private String                         parameter         = null;
     private String                         fpName            = null;
+    private String                         escapeAll         = null;
+    private int                            spart             = 1;
     private Browser                        br2               = new Browser();
     private ArrayList<DownloadLink>        decryptedLinks    = null;
     private boolean                        cloudflare        = false;
@@ -87,7 +89,11 @@ public class AniLinkzCom extends PluginForDecrypt {
 
     @Override
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, final ProgressController progress) throws Exception {
+        // testing purpose lets null/zero/false storables
         decryptedLinks = new ArrayList<DownloadLink>();
+        escapeAll = null;
+        spart = 1;
+
         parameter = param.toString();
         if (parameter.matches(invalid_links)) {
             logger.info("Link invalid: " + parameter);
@@ -188,31 +194,33 @@ public class AniLinkzCom extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    private void parsePage() throws Exception {
-        String escapeAll = br2.getRegex("escapeall\\('(.*)'\\)\\)\\);").getMatch(0);
-        if (!inValidate(escapeAll)) {
-            escapeAll = escapeAll.replaceAll("[A-Z~!@#\\$\\*\\{\\}\\[\\]\\-\\+\\.]?", "");
-            escapeAll = Encoding.htmlDecode(escapeAll);
-            escapeAll = Encoding.urlDecode(escapeAll, false);
-            // cleanup crap
-            if (new Regex(escapeAll, "https?://[^\"]+(cizgifilmlerizle\\.com|animeuploads\\.com)/[^\"]+<div[^>]+").matches()) 
-                escapeAll = escapeAll.replaceAll("<div[^>]+>", "");
-        } else if (inValidate(escapeAll) || new Regex(escapeAll, "(/img/\\w+dead\\.jpg|http://www\\./media)").matches()) {
-            // escapeAll == null / not online yet... || offline results within escapeAll
-            if (br.containsHTML("This page will be updated as soon as"))
-                logger.info("Not been release yet... : " + br2.getURL());
-            else
-                logger.warning("Decrypter out of date for link: " + br2.getURL());
-            DownloadLink dl = createDownloadlink("directhttp://" + br2.getURL());
-            dl.setProperty("OFFLINE", true);
-            dl.setAvailable(false);
-            decryptedLinks.add(dl);
-            return;
+    private boolean parsePage() throws Exception {
+        if (escapeAll != null && spart > 1) {
+            // to prevent over write of escapeAll storable, for split parts within escapeAll
+        } else {
+            escapeAll = br2.getRegex("escapeall\\('(.*)'\\)\\)\\);").getMatch(0);
+            if (!inValidate(escapeAll)) {
+                escapeAll = escapeAll.replaceAll("[A-Z~!@#\\$\\*\\{\\}\\[\\]\\-\\+\\.]?", "");
+                escapeAll = Encoding.htmlDecode(escapeAll);
+                escapeAll = Encoding.urlDecode(escapeAll, false);
+                // cleanup crap
+                if (new Regex(escapeAll, "https?://[^\"]+(cizgifilmlerizle\\.com|animeuploads\\.com)/[^\"]+<div[^>]+").matches()) escapeAll = escapeAll.replaceAll("<div[^>]+>", "");
+            } else if (inValidate(escapeAll) || new Regex(escapeAll, "(/img/\\w+dead\\.jpg|http://www\\./media)").matches()) {
+                // escapeAll == null / not online yet... || offline results within escapeAll
+                if (br.containsHTML("This page will be updated as soon as"))
+                    logger.info("Not been release yet... : " + br2.getURL());
+                else
+                    logger.warning("Decrypter out of date for link: " + br2.getURL());
+                DownloadLink dl = createDownloadlink("directhttp://" + br2.getURL());
+                dl.setProperty("OFFLINE", true);
+                dl.setAvailable(false);
+                decryptedLinks.add(dl);
+                return false;
+            }
         }
 
         // embed links that are not found by generic's
-        String link = new Regex(escapeAll, "\"(https?://(www\\.)?youtube\\.com/v/[^<>\"]*?)\"").getMatch(0); // not sure this is needed
-        if (inValidate(link)) link = new Regex(escapeAll, "(https?://(\\w+\\.)?vureel\\.com/playwire\\.php\\?vid=\\d+)").getMatch(0);
+        String link = new Regex(escapeAll, "(https?://(\\w+\\.)?vureel\\.com/playwire\\.php\\?vid=\\d+)").getMatch(0);
         // with stagevu they are directly imported finallink and not embed player. We want the image for the uid, return to hoster.
         if (inValidate(link) && escapeAll.contains("stagevu.com/")) {
             String stagevu = new Regex(escapeAll, "previewImage=\"https?://stagevu\\.com/img/thumbnail/([a-z]{12})").getMatch(0);
@@ -268,7 +276,17 @@ public class AniLinkzCom extends PluginForDecrypt {
                 }
             }
         }
-        return;
+        // logic to deal with split parts within escapeAll. Uses all existing code within parsePage (see #9373)
+        String[] sprt = new Regex(escapeAll, "(<div class=\"spart\".*?</div>)").getColumn(0);
+        if (sprt != null && sprt.length > 1) {
+            spart = sprt.length;
+            // lets remove previous results from escape all
+            if (spart > 1 && link != null) {
+                escapeAll = escapeAll.replace(link, "");
+                parsePage();
+            }
+        }
+        return true;
     }
 
     /**
