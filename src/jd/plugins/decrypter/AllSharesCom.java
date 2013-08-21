@@ -59,6 +59,10 @@ public class AllSharesCom extends PluginForDecrypt {
             logger.info("Link offline: " + parameter);
             return decryptedLinks;
         }
+        if (br.containsHTML("No htmlCode read")) {
+            logger.info("Link offline (server error): " + parameter);
+            return decryptedLinks;
+        }
         if (br.containsHTML(CAPTCHASTRING)) {
             for (int i = 0; i <= 3; i++) {
                 String captchaLink = br.getRegex(">Enter code to get links\\!</span>[\t\n\r ]+<br/><br/>[\t\n\r ]+<img src=\"(/.*?)\"").getMatch(0);

@@ -60,7 +60,7 @@ public class DatoidCzFolder extends PluginForDecrypt {
             // return null;
             // }
 
-            final String[] links = br.getRegex("\"(/[^<>\"]*?)\">[\t\n\r ]+<div class=\"thumb file\"").getColumn(0);
+            final String[] links = br.getRegex("\"(/[^<>\"]*?)\">[\t\n\r ]+<div class=\"thumb").getColumn(0);
             if (links == null || links.length == 0) {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;

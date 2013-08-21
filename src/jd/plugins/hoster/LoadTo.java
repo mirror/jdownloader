@@ -22,6 +22,7 @@ import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
+import jd.http.RandomUserAgent;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -63,6 +64,7 @@ public class LoadTo extends PluginForHost {
         this.setBrowserExclusive();
         workAroundTimeOut(br);
         br.setFollowRedirects(true);
+        br.getHeaders().put("User-Agent", RandomUserAgent.generate());
         br.getPage(link.getDownloadURL());
         if (br.containsHTML(">Can\\'t find file")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         final String filename = Encoding.htmlDecode(br.getRegex("<title>([^<>\"]*?) // Load\\.to</title>").getMatch(0));

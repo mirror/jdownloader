@@ -42,10 +42,6 @@ public class NmLdsrg extends PluginForDecrypt {
 
     private static boolean loaded = false;
 
-    /*
-     * Note: FilePackage gets overridden when crypt-it.com (link protection service) used. Old posts + streaming links still get caught.
-     */
-
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         ArrayList<String> links = new ArrayList<String>();

@@ -317,8 +317,12 @@ public class DecrypterForRedirectServicesWithoutDirectRedirects extends PluginFo
             dh = true;
         } else if (parameter.contains("mixconnect.com/")) {
             br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-            final String fid = new Regex(parameter, "mixconnect\\.com/listen/.*?-mid(\\d+)").getMatch(0);
+            final String fid = new Regex(parameter, "mixconnect\\.com/listen/.*?\\-mid(\\d+)").getMatch(0);
             br.getPage("http://www.mixconnect.com/downloadcheck.php?id=" + fid);
+            if (br.containsHTML("Unable to resolve the request")) {
+                logger.info("Link offline: " + parameter);
+                return decryptedLinks;
+            }
             final String dlHash = br.getRegex("dlhash\":\"([a-z0-9]+)\"").getMatch(0);
             if (dlHash == null) {
                 br.getPage(parameter);
