@@ -28,7 +28,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mirrorstack.com" }, urls = { "https?://(www\\.)?(filesuploader\\.com|multishared\\.com|onmirror\\.com|multiupload\\.biz|lastbox\\.net|mirrorhive\\.com|mirrorstack\\.com)/([a-z0-9]{12}|[a-z0-9]{1,2}_[a-z0-9]{12})" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mirrorstack.com" }, urls = { "https?://(www\\.)?(zlinx\\.me|filesuploader\\.com|multishared\\.com|onmirror\\.com|multiupload\\.biz|lastbox\\.net|mirrorhive\\.com|mirrorstack\\.com)/([a-z0-9]{1,2}_)?[a-z0-9]{12}" }, flags = { 0 })
 public class MirStkCm extends PluginForDecrypt {
 
     /*
@@ -49,25 +49,23 @@ public class MirStkCm extends PluginForDecrypt {
 
     // 16/12/2012
     // mirrorstack.com = up, multiple pages deep, requiring custom r_counter
-    // uploading.to = down/sudoparked =
-    // 173.192.223.71-static.reverse.softlayer.com
-    // copyload.com = down/sudoparked =
-    // 208.43.167.115-static.reverse.softlayer.com
+    // uploading.to = down/sudoparked = 173.192.223.71-static.reverse.softlayer.com
+    // copyload.com = down/sudoparked = 208.43.167.115-static.reverse.softlayer.com
     // multishared.com = up, custom fields for singleLinks && finallinks
     // onmirror.com = up, finallink are redirects on first singleLink page
     // multiupload.biz = up, multiple pages deep, with waits on last page
     // lastbox.net = up, finallink are redirects on first singleLink page
     // mirrorhive.com = up, finallink are redirects on first singleLink page
-    
-    //05/07/2013
+
+    // 05/07/2013
     // filesuploader.com = up, finallink are redirects on first singleLink page
-    
+
     // version 0.6
 
     // Single link format eg. http://sitedomain/xx_uid. xx = hoster abbreviation
-    private static final String regexSingleLink = "(https?://[^/]+/[a-z0-9]{2}_[a-z0-9]{12})";
+    private final String regexSingleLink = "(https?://[^/]+/[a-z0-9]{2}_[a-z0-9]{12})";
     // Normal link format eg. http://sitedomain/uid
-    private static final String regexNormalLink = "(https?://[^/]+/[a-z0-9]{12})";
+    private final String regexNormalLink = "(https?://[^/]+/[a-z0-9]{12})";
 
     public MirStkCm(PluginWrapper wrapper) {
         super(wrapper);
@@ -76,8 +74,7 @@ public class MirStkCm extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
-        // Easier to set redirects on and off than to define every provider. It
-        // also creates less maintenance if provider changes things up.
+        // Easier to set redirects on and off than to define every provider. It also creates less maintenance if provider changes things up.
         br.setFollowRedirects(true);
         br.getPage(parameter);
         if (br.containsHTML(">(File )?Not Found</")) {
@@ -105,15 +102,13 @@ public class MirStkCm extends PluginForDecrypt {
             logger.warning("Couldn't find singleLinks... :" + parameter);
             return null;
         }
-        // make sites with long waits return back into the script making it
-        // multi-threaded, otherwise singleLinks * results = long time.
+        // make sites with long waits return back into the script making it multi-threaded, otherwise singleLinks * results = long time.
         if (singleLinks.length > 1 && parameter.matches(".+(multiupload\\.biz)/.+")) {
             for (String singleLink : singleLinks) {
                 decryptedLinks.add(createDownloadlink(singleLink));
             }
         } else {
-            // Process links found. Each provider has a slightly different
-            // requirement and outcome
+            // Process links found. Each provider has a slightly different requirement and outcome
             for (String singleLink : singleLinks) {
                 String finallink = null;
                 if (!singleLink.matches(regexSingleLink)) {

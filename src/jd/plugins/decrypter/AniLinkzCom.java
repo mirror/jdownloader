@@ -205,10 +205,13 @@ public class AniLinkzCom extends PluginForDecrypt {
                 escapeAll = Encoding.urlDecode(escapeAll, false);
                 // cleanup crap
                 if (new Regex(escapeAll, "https?://[^\"]+(cizgifilmlerizle\\.com|animeuploads\\.com)/[^\"]+<div[^>]+").matches()) escapeAll = escapeAll.replaceAll("<div[^>]+>", "");
-            } else if (inValidate(escapeAll) || new Regex(escapeAll, "(/img/\\w+dead\\.jpg|http://www\\./media)").matches()) {
+            }
+            if (inValidate(escapeAll) || new Regex(escapeAll, "(/img/\\w+dead\\.jpg|http://www\\./media)").matches()) {
                 // escapeAll == null / not online yet... || offline results within escapeAll
                 if (br.containsHTML("This page will be updated as soon as"))
                     logger.info("Not been release yet... : " + br2.getURL());
+                else if (inValidate(escapeAll))
+                    logger.info("DeadLink!... : " + br2.getURL());
                 else
                     logger.warning("Decrypter out of date for link: " + br2.getURL());
                 DownloadLink dl = createDownloadlink("directhttp://" + br2.getURL());
