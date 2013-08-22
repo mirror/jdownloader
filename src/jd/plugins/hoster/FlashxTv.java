@@ -76,29 +76,31 @@ public class FlashxTv extends PluginForHost {
         String dllink = null;
         // 1
         String regex = "\"(http://(flashx\\.tv/player/embed_player\\.php|play\\.flashx\\.tv/player/embed\\.php)\\?[^<>\"]*?)\"";
-        String regexgk = "\"(http://play\\.flashx\\.tv/player/[a-z]+\\.php[^\']+)\"";
         final String firstlink = br.getRegex(regex).getMatch(0);
         if (firstlink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         br.getPage(firstlink);
-        String seclinkgk = br.getRegex(regexgk).getMatch(0);
         // 2
         regex = "\"(http://play\\.flashx\\.tv/player/[^\"]+)\"";
         String seclink = br.getRegex(regex).getMatch(0);
         if (seclink == null) seclink = getPlainData(regex);
+        logger.info("seclink = " + seclink);
         if (seclink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         br.getPage(seclink);
         if (br.containsHTML("We are currently performing maintenance on this server")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "This server is under maintenance", 30 * 60 * 1000l);
         // 2.1
-        if (seclinkgk == null) seclinkgk = br.getRegex(regexgk).getMatch(0);
-        if (seclinkgk == null) seclinkgk = getPlainData(regexgk);
-        if (seclinkgk == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        /*
+         * String regexgk = "\"(http://play\\.flashx\\.tv/player/[a-z]+\\.php[^\']+)\""; String seclinkgk =
+         * br.getRegex(regexgk).getMatch(0); logger.info("seclinkgk = " + seclinkgk); if (seclinkgk == null) seclinkgk =
+         * getPlainData(regexgk); logger.info("seclinkgk2 = " + seclinkgk); // if (seclinkgk == null) throw new
+         * PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); // br.getPage(seclinkgk);
+         */
         // 3
         regex = "config=(http://play.flashx.tv/nuevo/[^\"]+)\"";
         String thirdLink = br.getRegex(regex).getMatch(0);
         if (thirdLink == null) thirdLink = getPlainData(regex);
         if (thirdLink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        br.getPage(seclinkgk);
         br.getPage(thirdLink);
+        if (br.containsHTML("wrong user/ip")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "View via browser before download!", 3 * 60 * 1000l);
         dllink = br.getRegex("<file>(http://[^<>\"]*?)</file>").getMatch(0);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
 
