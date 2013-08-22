@@ -198,7 +198,7 @@ public class MegaBitShareCom extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        doFree(downloadLink, true, 0, "freelink");
+        doFree(downloadLink, true, 1, "freelink");
     }
 
     @SuppressWarnings("unused")
