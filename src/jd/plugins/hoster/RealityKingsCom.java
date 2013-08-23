@@ -56,9 +56,10 @@ public class RealityKingsCom extends PluginForHost {
         link.setUrlDownload(decodedurl);
     }
 
-    public static final String VIDEOLINK    = "http://(www\\.)?members\\.rk\\.com/\\?a=update\\.download\\&site=[a-z0-9]+\\&id=\\d+\\&download=[A-Za-z0-9%=\\+]+";
-    public static final String PICLINK      = "http://(www\\.)?imagesr\\.rk\\.com/content/[a-z0-9]+/pictures/[a-z0-9\\-_]+/[a-z0-9\\-_]+\\.zip\\?nvb=\\d+\\&nva=\\d+&hash=[a-z0-9]+";
-    private boolean            LIMITREACHED = false;
+    public static final String  VIDEOLINK    = "http://(www\\.)?members\\.rk\\.com/\\?a=update\\.download\\&site=[a-z0-9]+\\&id=\\d+\\&download=[A-Za-z0-9%=\\+]+";
+    public static final String  PICLINK      = "http://(www\\.)?imagesr\\.rk\\.com/content/[a-z0-9]+/pictures/[a-z0-9\\-_]+/[a-z0-9\\-_]+\\.zip\\?nvb=\\d+\\&nva=\\d+&hash=[a-z0-9]+";
+    private boolean             LIMITREACHED = false;
+    private static final String NOCHUNKS     = "NOCHUNKS";
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
@@ -188,13 +189,29 @@ public class RealityKingsCom extends PluginForHost {
         requestFileInformation(link);
         if (LIMITREACHED) { throw new PluginException(LinkStatus.ERROR_PREMIUM, "Limit exeeded", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE); }
         login(this.br, account, false);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, link.getDownloadURL(), true, 0);
+
+        int chunks = 0;
+        if (link.getBooleanProperty(RealityKingsCom.NOCHUNKS, false)) {
+            chunks = 1;
+        }
+
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, link.getDownloadURL(), true, chunks);
         if (dl.getConnection().getContentType().contains("html")) {
             logger.warning("The final dllink seems not to be a file!");
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dl.startDownload();
+        if (!this.dl.startDownload()) {
+            try {
+                if (dl.externalDownloadStop()) return;
+            } catch (final Throwable e) {
+            }
+            /* unknown error, we disable multiple chunks */
+            if (link.getBooleanProperty(RealityKingsCom.NOCHUNKS, false) == false) {
+                link.setProperty(RealityKingsCom.NOCHUNKS, Boolean.valueOf(true));
+                throw new PluginException(LinkStatus.ERROR_RETRY);
+            }
+        }
     }
 
     @Override

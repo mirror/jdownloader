@@ -19,15 +19,20 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 
 import jd.PluginWrapper;
+import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.plugins.Account;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
+import jd.plugins.PluginForHost;
+import jd.utils.JDUtilities;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "xhamster.com" }, urls = { "http://(www\\.)?xhamster\\.com/photos/gallery/[0-9]+/.*?\\.html" }, flags = { 0 })
 public class XHamsterGallery extends PluginForDecrypt {
@@ -42,6 +47,8 @@ public class XHamsterGallery extends PluginForDecrypt {
         allPages.add("1");
         final String parameter = param.toString().replace("www.", "");
         final String parameterWihoutHtml = parameter.replace(".html", "");
+        // Login if possible
+        getUserLogin(false);
         br.getPage(parameter);
         /* Error handling */
         if (br.containsHTML("Sorry, no photos found|>Gallery not found<")) {
@@ -95,6 +102,23 @@ public class XHamsterGallery extends PluginForDecrypt {
         }
 
         return decryptedLinks;
+    }
+
+    private boolean getUserLogin(final boolean force) throws Exception {
+        final PluginForHost hostPlugin = JDUtilities.getPluginForHost("xhamster.com");
+        final Account aa = AccountController.getInstance().getValidAccount(hostPlugin);
+        if (aa == null) {
+            logger.warning("There is no account available, stopping...");
+            return false;
+        }
+        try {
+            ((jd.plugins.hoster.XHamsterCom) hostPlugin).login(this.br, aa, force);
+        } catch (final PluginException e) {
+            aa.setEnabled(false);
+            aa.setValid(false);
+            return false;
+        }
+        return true;
     }
 
     /* NO OVERRIDE!! */

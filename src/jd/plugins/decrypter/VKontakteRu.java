@@ -92,8 +92,7 @@ public class VKontakteRu extends PluginForDecrypt {
         prepBrowser(br);
         if (parameter.matches(PATTERN_PHOTO_SINGLE)) {
             /**
-             * Single photo links, those are just passed to the hosterplugin!
-             * Example:http://vk.com/photo125005168_269986868
+             * Single photo links, those are just passed to the hosterplugin! Example:http://vk.com/photo125005168_269986868
              */
             final DownloadLink decryptedPhotolink = getSinglePhotoDownloadLink(new Regex(parameter, "((\\-)?\\d+_\\d+)").getMatch(0));
             decryptedLinks.add(decryptedPhotolink);
@@ -109,8 +108,7 @@ public class VKontakteRu extends PluginForDecrypt {
                 br.setFollowRedirects(true);
                 br.getPage(parameter);
                 /**
-                 * Retry if login failed Those are 2 different errormessages but
-                 * refreshing the cookies works fine for both
+                 * Retry if login failed Those are 2 different errormessages but refreshing the cookies works fine for both
                  * */
                 String cookie = br.getCookie("http://vk.com", "remixsid");
                 if (br.containsHTML(">Security Check<") || "deleted".equals(cookie) || cookie == null || cookie.equals("")) {
@@ -212,9 +210,7 @@ public class VKontakteRu extends PluginForDecrypt {
                     decryptedLinks = decryptSingleVideo(decryptedLinks, parameter);
                 } else if (parameter.matches(PATTERN_VIDEO_ALBUM)) {
                     /**
-                     * Video-Albums Example: http://vk.com/videos575934598
-                     * Example2:
-                     * http://vk.com/video?section=tagged&id=46468795637
+                     * Video-Albums Example: http://vk.com/videos575934598 Example2: http://vk.com/video?section=tagged&id=46468795637
                      */
                     decryptedLinks = decryptVideoAlbum(decryptedLinks, parameter);
                     logger.info("Decrypted " + decryptedLinks.size() + " video-links out of a video album");
@@ -226,15 +222,13 @@ public class VKontakteRu extends PluginForDecrypt {
                     logger.info("Decrypted " + decryptedLinks.size() + " community-video-links out of a community-video-album");
                 } else if (parameter.matches(PATTERN_PHOTO_ALBUM)) {
                     /**
-                     * Photo album Examples: http://vk.com/photos575934598
-                     * http://vk.com/id28426816 http://vk.com/album87171972_0
+                     * Photo album Examples: http://vk.com/photos575934598 http://vk.com/id28426816 http://vk.com/album87171972_0
                      */
                     decryptedLinks = decryptPhotoAlbum(decryptedLinks, parameter);
                     logger.info("Decrypted " + decryptedLinks.size() + " photo-links out of a single-photo-album-link");
                 } else if (parameter.matches(PATTERN_PHOTO_ALBUMS)) {
                     /**
-                     * Photo albums lists/overviews Example:
-                     * http://vk.com/albums46486585
+                     * Photo albums lists/overviews Example: http://vk.com/albums46486585
                      */
                     decryptedLinks = decryptPhotoAlbums(decryptedLinks, parameter);
                     logger.info("Decrypted " + decryptedLinks.size() + " photo-album-links out of a multiple-photo-albums-link");
@@ -598,8 +592,7 @@ public class VKontakteRu extends PluginForDecrypt {
         }
 
         /**
-         * We couldn't find any external videos so it must be on their servers
-         * -> send it to the hosterplugin
+         * We couldn't find any external videos so it must be on their servers -> send it to the hosterplugin
          */
         final FilePackage fp = FilePackage.getInstance();
         final String embedHash = br.getRegex("\\\\\"hash2\\\\\":\\\\\"([a-z0-9]+)\\\\\"").getMatch(0);
@@ -713,8 +706,8 @@ public class VKontakteRu extends PluginForDecrypt {
         final int numberOfFoundVideos = decryptedData.size();
         logger.info("Found " + numberOfFoundVideos + " videos...");
         /**
-         * Those links will go through the decrypter again, then they'll finally
-         * end up in the vkontakte hoster plugin or in other video plugins
+         * Those links will go through the decrypter again, then they'll finally end up in the vkontakte hoster plugin or in other video
+         * plugins
          */
         for (String singleVideo : decryptedData) {
             singleVideo = singleVideo.replace(", ", "_");
@@ -978,21 +971,21 @@ public class VKontakteRu extends PluginForDecrypt {
     }
 
     private boolean getUserLogin(final boolean force) throws Exception {
-        final PluginForHost vkPlugin = JDUtilities.getPluginForHost("vkontakte.ru");
-        final Account aa = AccountController.getInstance().getValidAccount(vkPlugin);
+        final PluginForHost hostPlugin = JDUtilities.getPluginForHost("vkontakte.ru");
+        final Account aa = AccountController.getInstance().getValidAccount(hostPlugin);
         if (aa == null) {
             logger.warning("There is no account available, stopping...");
             return false;
         }
         try {
-            ((jd.plugins.hoster.VKontakteRuHoster) vkPlugin).login(this.br, aa, force);
+            ((jd.plugins.hoster.VKontakteRuHoster) hostPlugin).login(this.br, aa, force);
         } catch (final PluginException e) {
             aa.setEnabled(false);
             aa.setValid(false);
             return false;
         }
         // Account is valid, let's just add it
-        AccountController.getInstance().addAccount(vkPlugin, aa);
+        AccountController.getInstance().addAccount(hostPlugin, aa);
         return true;
     }
 

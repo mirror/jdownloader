@@ -62,12 +62,18 @@ public class DebridItaliaCom extends PluginForHost {
         final AccountInfo ac = new AccountInfo();
         br.setConnectTimeout(60 * 1000);
         br.setReadTimeout(60 * 1000);
+        br.getHeaders().put("User-Agent", "JDownloader");
         String hosts[] = null;
         ac.setProperty("multiHostSupport", Property.NULL);
         ac.setUnlimitedTraffic();
-        prepApiBr(br);
         if (!loginAPI(account)) {
             ac.setStatus("Account is invalid. Wrong username or password?");
+            account.setValid(false);
+            return ac;
+        }
+        if (br.containsHTML("<status>expired</status>")) {
+            ac.setStatus("Account is expired!");
+            ac.setExpired(true);
             account.setValid(false);
             return ac;
         }
@@ -133,11 +139,6 @@ public class DebridItaliaCom extends PluginForHost {
         String dllink = checkDirectLink(link, "debriditaliadirectlink");
         if (dllink == null) {
             final String encodedLink = Encoding.urlEncode(link.getDownloadURL());
-            /** Way without API */
-            // br.postPage("http://www.debriditalia.com/downloader.php",
-            // "fpass=&op=genera2&generalink=%3E%3E%3E+Get+premium+links+%3C%3C%3C&links=" + encodedLink);
-            // br.postPage("http://www.debriditalia.com/linkgen2.php", "xjxfun=convertiLink&xjxr=" + System.currentTimeMillis() +
-            // "&xjxargs[]=S%3C!%5BCDATA%5B" + encodedLink + "&xjxargs[]=S&xjxargs[]=Slink0&xjxargs[]=S&xjxargs[]=S");
             br.getPage("http://debriditalia.com/api.php?generate=on&u=" + Encoding.urlEncode(acc.getUser()) + "&p=" + Encoding.urlEncode(acc.getPass()) + "&link=" + encodedLink);
             // Either server error or the host is broken (we have to find out by retrying)
             if (br.containsHTML("ERROR: not_available")) {
@@ -174,61 +175,10 @@ public class DebridItaliaCom extends PluginForHost {
         return AvailableStatus.UNCHECKABLE;
     }
 
-    // @SuppressWarnings("unchecked")
-    // private boolean login(final Account account, final boolean force) throws Exception {
-    // synchronized (LOCK) {
-    // try {
-    // /** Load cookies */
-    // br.setCookiesExclusive(true);
-    // final Object ret = account.getProperty("cookies", null);
-    // boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name",
-    // Encoding.urlEncode(account.getUser())));
-    // if (acmatch) acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass",
-    // Encoding.urlEncode(account.getPass())));
-    // if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
-    // final HashMap<String, String> cookies = (HashMap<String, String>) ret;
-    // if (account.isValid()) {
-    // for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
-    // final String key = cookieEntry.getKey();
-    // final String value = cookieEntry.getValue();
-    // this.br.setCookie(COOKIE_HOST, key, value);
-    // }
-    // return true;
-    // }
-    // }
-    // br.setFollowRedirects(true);
-    // br.getPage("http://www.debriditalia.com/login.php?u=" + Encoding.urlEncode(account.getUser()) + "&p=" +
-    // Encoding.urlEncode(account.getPass()) + "&sid=" + System.currentTimeMillis());
-    // if (br.getCookie(COOKIE_HOST, "auth") == null) {
-    // account.setValid(false);
-    // throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nFalscher Benutzername/Passwort!",
-    // PluginException.VALUE_ID_PREMIUM_DISABLE);
-    // }
-    // /** Save cookies */
-    // final HashMap<String, String> cookies = new HashMap<String, String>();
-    // final Cookies add = this.br.getCookies(COOKIE_HOST);
-    // for (final Cookie c : add.getCookies()) {
-    // cookies.put(c.getKey(), c.getValue());
-    // }
-    // account.setProperty("name", Encoding.urlEncode(account.getUser()));
-    // account.setProperty("pass", Encoding.urlEncode(account.getPass()));
-    // account.setProperty("cookies", cookies);
-    // return true;
-    // } catch (final PluginException e) {
-    // account.setProperty("cookies", Property.NULL);
-    // return false;
-    // }
-    // }
-    // }
-
     private boolean loginAPI(final Account acc) throws IOException {
         br.getPage("http://debriditalia.com/api.php?check=on&u=" + Encoding.urlEncode(acc.getUser()) + "&p=" + Encoding.urlEncode(acc.getPass()));
         if (!br.containsHTML("<status>valid</status>")) return false;
         return true;
-    }
-
-    private void prepApiBr(final Browser br) {
-        br.getHeaders().put("User-Agent", "Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.0)");
     }
 
     private void tempUnavailableHoster(final Account account, final DownloadLink downloadLink, long timeout) throws PluginException {
