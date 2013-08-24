@@ -96,7 +96,7 @@ public class OteUploadCom extends PluginForHost {
     private static AtomicInteger totalMaxSimultanFreeDownload = new AtomicInteger(10);
 
     // DEV NOTES
-    // XfileShare Version 3.0.7.3
+    // XfileShare Version 3.0.7.5
     // last XfileSharingProBasic compare :: 2.6.2.1
     // protocol: http && https
     // captchatype: 4dignum
@@ -320,7 +320,7 @@ public class OteUploadCom extends PluginForHost {
     private String[] altAvailStat(final DownloadLink downloadLink, final String[] fileInfo) throws Exception {
         Browser alt = new Browser();
         prepBrowser(alt);
-        alt.postPage(COOKIE_HOST + "/?op=checkfiles", "op=checkfiles&process=Check+URLs&list=" + downloadLink.getDownloadURL());
+        alt.postPage(COOKIE_HOST.replaceFirst("https?://", getProtocol()) + "/?op=checkfiles", "op=checkfiles&process=Check+URLs&list=" + downloadLink.getDownloadURL());
         String[] linkInformation = alt.getRegex(">" + downloadLink.getDownloadURL() + "</td><td style=\"color:[^;]+;\">(\\w+)</td><td>([^<>]+)?</td>").getRow(0);
         if (linkInformation != null && linkInformation[0].equalsIgnoreCase("found")) {
             downloadLink.setAvailable(true);
@@ -966,12 +966,6 @@ public class OteUploadCom extends PluginForHost {
             ai.setTrafficLeft(Long.parseLong(trafficLeft));
         else
             logger.warning("Could not find 'trafficLeft'");
-        try {
-            account.setMaxSimultanDownloads(20);
-            account.setConcurrentUsePossible(true);
-        } catch (final Throwable e) {
-            // not available in old Stable 0.9.581
-        }
         ai.setStatus("Premium User");
         return ai;
     }

@@ -1392,9 +1392,11 @@ public class TbCm extends PluginForDecrypt {
             sb.append(s.charAt(2));
             sb.append(s.substring(60));
         } else if (s.length() == 86) {
-            sb.append(s.substring(5, 20));
-            sb.append(s.charAt(2));
-            sb.append(s.substring(21));
+            sb.append(s.substring(5, 40));
+            sb.append(s.charAt(3));
+            sb.append(s.substring(41, 48));
+            sb.append(s.charAt(0));
+            sb.append(s.substring(49, 86));
         } else if (s.length() == 85) {
             sb.append(new StringBuilder(s.substring(35, 84)).reverse());
             sb.append(s.charAt(0));
@@ -1420,18 +1422,11 @@ public class TbCm extends PluginForDecrypt {
             sb.append(new StringBuilder(s.substring(2, 45)).reverse());
             sb.append(s.charAt(0));
         } else if (s.length() == 82) {
-            sb.append(s.charAt(36));
-            sb.append(new StringBuilder(s.substring(68, 80)).reverse());
-            sb.append(s.charAt(81));
-            sb.append(new StringBuilder(s.substring(41, 67)).reverse());
-            sb.append(s.charAt(33));
-            sb.append(new StringBuilder(s.substring(37, 40)).reverse());
-            sb.append(s.charAt(40));
-            sb.append(s.charAt(35));
+            sb.append(s.substring(1, 19));
             sb.append(s.charAt(0));
-            sb.append(s.charAt(67));
-            sb.append(new StringBuilder(s.substring(1, 33)).reverse());
-            sb.append(s.charAt(34));
+            sb.append(s.substring(20, 68));
+            sb.append(s.charAt(19));
+            sb.append(s.substring(69, 82));
         } else if (s.length() == 81) {
             sb.append(s.charAt(56));
             sb.append(new StringBuilder(s.substring(57, 80)).reverse());
@@ -1446,6 +1441,12 @@ public class TbCm extends PluginForDecrypt {
             sb.append(s.charAt(29));
             sb.append(new StringBuilder(s.substring(1, 9)).reverse());
             sb.append(s.charAt(9));
+        } else if (s.length() == 80) {
+            sb.append(s.substring(1, 19));
+            sb.append(s.charAt(0));
+            sb.append(s.substring(20, 68));
+            sb.append(s.charAt(19));
+            sb.append(s.substring(69, 80));
         } else if (s.length() == 79) {
             sb.append(s.charAt(54));
             sb.append(new StringBuilder(s.substring(55, 78)).reverse());
