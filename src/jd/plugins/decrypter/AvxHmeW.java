@@ -44,8 +44,8 @@ public class AvxHmeW extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink cryptedLink, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         br.clearCookies(getHost());
-        String parameter = cryptedLink.getCryptedUrl().replaceAll("avaxhome.ws", "avaxho.me");
-        parameter = parameter.replaceFirst("avaxhome.bz/", "avaxho.me/");
+        String parameter = cryptedLink.toString().replaceAll("(avaxhow\\.me|avahome\\.bz)", "avaxhome.ws");
+        br.setFollowRedirects(true);
         try {
             br.getPage(parameter);
         } catch (final BrowserException e) {

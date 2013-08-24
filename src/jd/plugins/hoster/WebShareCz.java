@@ -69,11 +69,11 @@ public class WebShareCz extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         br.postPage("https://webshare.cz/api/file_link/", "wst=&ident=" + getFID(downloadLink));
         br.getHeaders().put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
         br.getHeaders().put("Accept-Language", "en-US,en;q=0.5");
         br.getHeaders().put("Referer", null);
+        br.getHeaders().put("X-Requested-With", null);
         final String dllink = getXMLtagValue("link");
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);

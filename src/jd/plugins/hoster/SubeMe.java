@@ -95,7 +95,7 @@ public class SubeMe extends PluginForHost {
     private static final AtomicInteger totalMaxSimultanFreeDownload = new AtomicInteger(20);
 
     // DEV NOTES
-    // XfileShare Version 3.0.7.3
+    // XfileShare Version 3.0.7.5
     // last XfileSharingProBasic compare :: 2.6.2.1
     // protocol: no https
     // captchatype: recaptcha, but never used as of vidembed
@@ -292,7 +292,7 @@ public class SubeMe extends PluginForHost {
     private String[] altAvailStat(final DownloadLink downloadLink, final String[] fileInfo) throws Exception {
         Browser alt = new Browser();
         prepBrowser(alt);
-        alt.postPage(COOKIE_HOST + "/?op=checkfiles", "op=checkfiles&process=Check+URLs&list=" + downloadLink.getDownloadURL());
+        alt.postPage(COOKIE_HOST.replaceFirst("https?://", getProtocol()) + "/?op=checkfiles", "op=checkfiles&process=Check+URLs&list=" + downloadLink.getDownloadURL());
         String[] linkInformation = alt.getRegex(">" + downloadLink.getDownloadURL() + "</td><td style=\"color:[^;]+;\">(\\w+)</td><td>([^<>]+)?</td>").getRow(0);
         if (linkInformation != null && linkInformation[0].equalsIgnoreCase("found")) {
             downloadLink.setAvailable(true);

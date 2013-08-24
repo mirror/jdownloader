@@ -27,7 +27,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "gogoanime.com", "goodanime.net", "gooddrama.net" }, urls = { "http://(www\\.)?gogoanime\\.com/[a-z0-9\\-_]+(/\\d+)?", "http://(www\\.)?goodanime\\.net/[a-z0-9\\-_]+(/\\d+)?", "http://(www\\.)?gooddrama\\.net/([a-z0-9\\-_]+/?){2}([\\d\\-]+)?" }, flags = { 0, 0, 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "gogoanime.com", "goodanime.net", "gooddrama.net" }, urls = { "http://(www\\.)?gogoanime\\.com/(?!flowplayer)[a-z0-9\\-_]+(/\\d+)?", "http://(www\\.)?goodanime\\.net/[a-z0-9\\-_]+(/\\d+)?", "http://(www\\.)?gooddrama\\.net/([a-z0-9\\-_]+/?){2}([\\d\\-]+)?" }, flags = { 0, 0, 0 })
 public class GogoanimeCom extends PluginForDecrypt {
 
     public GogoanimeCom(PluginWrapper wrapper) {

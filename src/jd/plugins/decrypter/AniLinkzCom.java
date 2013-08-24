@@ -44,7 +44,7 @@ import jd.utils.JDUtilities;
 @SuppressWarnings("deprecation")
 public class AniLinkzCom extends PluginForDecrypt {
 
-    private final String                   supported_hoster  = "(4shared\\.com|animeuploads\\.com|auengine\\.com|cizgifilmlerizle\\.com|dailymotion\\.com|gorillavid\\.in|mp4upload\\.com|movreel\\.com|myspace\\.com|nowvideo\\.eu|novamov\\.com|putlocker\\.com|rutube\\.ru|sockshare\\.com|stagevu\\.com|upload2\\.com|uploadc\\.com|veevr\\.com|veoh\\.com|video44\\.net|videobb\\.com|videobam\\.com|videofun\\.me|videonest\\.net|videoweed\\.com|videozer\\.com|vidzur\\.com|yourupload\\.com|youtube\\.com|zshare\\.net|player\\.vimeo\\.com)";
+    private final String                   supported_hoster  = "(4shared\\.com|4vid\\.me|animeuploads\\.com|auengine\\.com|chia\\-anime\\.com|cizgifilmlerizle\\.com|dailymotion\\.com|gogoanime\\.com|gorillavid\\.in|mp4upload\\.com|movreel\\.com|myspace\\.com|nowvideo\\.eu|novamov\\.com|putlocker\\.com|rutube\\.ru|sockshare\\.com|stagevu\\.com|upload2\\.com|uploadc\\.com|veevr\\.com|veoh\\.com|vidbox\\.yt|video44\\.net|videobb\\.com|videobam\\.com|videofun\\.me|videonest\\.net|videoweed\\.com|videozer\\.com|vidzur\\.com|vk\\.com|yourupload\\.com|youtube\\.com|zshare\\.net|player\\.vimeo\\.com)";
     private final String                   invalid_links     = "http://(www\\.)?anilinkz\\.com/(search|affiliates|get|img|dsa|forums|files|category|\\?page=|faqs|.*?-list|.*?-info|\\?random).*?";
     private String                         parameter         = null;
     private String                         fpName            = null;
@@ -187,8 +187,9 @@ public class AniLinkzCom extends PluginForDecrypt {
                 fp.addLinks(decryptedLinks);
             }
             if (decryptedLinks.isEmpty()) {
-                logger.warning("Decrypter out of date for link: " + parameter);
-                return null;
+                // not necessarily an error...
+                // logger.warning("Decrypter out of date for link: " + parameter);
+                // return null;
             }
         }
         return decryptedLinks;
@@ -247,8 +248,10 @@ public class AniLinkzCom extends PluginForDecrypt {
         if (inValidate(link)) link = new Regex(escapeAll, "src=\"(https?://([^<>\"]+)?" + supported_hoster + "/[^<>\"]+)\"").getMatch(0);
         if (!inValidate(link))
             decryptedLinks.add(createDownloadlink(link));
-        else if (inValidate(link) && escapeAll.contains("anilinkz.com/get/")) {
+        else if (inValidate(link) && new Regex(escapeAll, "(anilinkz\\.com/get/|chia\\-anime\\.com)").matches()) {
             String[] aLinks = new Regex(escapeAll, "(http[^\"]+/get/[^\"]+)").getColumn(0);
+            // chia-anime can't be redirected back into dedicated plugin
+            if ((aLinks == null || aLinks.length == 0) && escapeAll.contains("chia-anime.com")) aLinks = new Regex(escapeAll, "url\":\"(https?[^\"]+chia-anime\\.com[^\"]+)").getColumn(0);
             if (aLinks != null && aLinks.length != 0) {
                 for (String aLink : aLinks) {
                     DownloadLink downloadLink = createDownloadlink("directhttp://" + aLink);
@@ -280,7 +283,7 @@ public class AniLinkzCom extends PluginForDecrypt {
             }
         }
         // logic to deal with split parts within escapeAll. Uses all existing code within parsePage (see #9373)
-        String[] sprt = new Regex(escapeAll, "(<div class=\"spart\".*?</div>)").getColumn(0);
+        String[] sprt = new Regex(escapeAll, "(<div class=\"spart\".*?</div>|Part \\d+\r\n)").getColumn(0);
         if (sprt != null && sprt.length > 1) {
             spart = sprt.length;
             // lets remove previous results from escape all
