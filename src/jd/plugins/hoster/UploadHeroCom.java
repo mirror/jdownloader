@@ -84,7 +84,7 @@ public class UploadHeroCom extends PluginForHost {
         requestFileInformation(downloadLink);
         final Regex blockRegex = br.getRegex("/lightbox_block_download\\.php\\?min=(\\d+)\\&sec=(\\d+)\"");
         final String blockmin = blockRegex.getMatch(0);
-        final String blocksec = blockRegex.getMatch(0);
+        final String blocksec = blockRegex.getMatch(1);
         if (blockmin != null && blocksec != null) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, ((Integer.parseInt(blockmin) + 5) * 60 + Integer.parseInt(blocksec)) * 1001l);
         final String captchaLink = br.getRegex("\"(/captchadl\\.php\\?[a-z0-9]+)\"").getMatch(0);
         if (captchaLink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
