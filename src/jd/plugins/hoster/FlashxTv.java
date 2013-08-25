@@ -82,6 +82,7 @@ public class FlashxTv extends PluginForHost {
         final String firstlink = br.getRegex(regex).getMatch(0);
         if (firstlink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         br.getPage(firstlink);
+        br.cloneBrowser().getPage(fx(1)); // ;-)
         String seclinkgk = br.getRegex(fx(0)).getMatch(1);
         // 2
         regex = "\"(http://play\\.flashx\\.tv/player/[^\"]+)\"";
@@ -136,8 +137,9 @@ public class FlashxTv extends PluginForHost {
     }
 
     private String fx(final int i) {
-        final String[] s = new String[1];
+        final String[] s = new String[2];
         s[0] = "f8dbfbfafa57cde11f94b695de5042f1299371b7095fdd9a1e185a3b116e82845888fd3e8900e26f211655e8eb771a74e722299bc69a6263a823d6e66e0f373e5af4c82e5827ffcf25a92ebe5261c8e945a78e856ffc9dad998a2a9528657811c6733e016c8b806b391101aa1b30162b03b18a7534a6719d83c0607d4f625dc08a6e4db2cd63d9c7321c08d37306c3b7d933074e56c2b0a81d8739ac6c6775c51d775c0e345d7b121226c64adc65d86d1db07b2042f449930428adf7d6a9520b60d0f0d6";
+        s[1] = "fd80faf7fb07cce61ec5b2cbda0343fc299c70ba080fd8cc1e4f5f3d153f86855888fc328901e669201751baeb231825e4742c9bc5c76731ad25d3e56b59373c5affcc7a";
         return JDHexUtils.toString(jd.plugins.decrypter.LnkCrptWs.IMAGEREGEX(s[i]));
     }
 
