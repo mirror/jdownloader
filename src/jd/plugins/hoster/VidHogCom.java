@@ -41,6 +41,8 @@ import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
+import org.appwork.utils.formatter.SizeFormatter;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vidhog.com" }, urls = { "https?://(www\\.)?vidhog\\.com/(embed\\-)?[a-z0-9]{12}" }, flags = { 0 })
 public class VidHogCom extends PluginForHost {
 
@@ -55,7 +57,7 @@ public class VidHogCom extends PluginForHost {
 
     // DEV NOTES
     // XfileSharingProBasic Version 2.5.5.0-raz
-    // mods: setStartIntervall
+    // mods: setStartIntervall, many mods, do NOT upgrade!
     // non account: 2 chunk * 2 max dl
     // free account:
     // premium account:
@@ -101,6 +103,7 @@ public class VidHogCom extends PluginForHost {
             return AvailableStatus.TRUE;
         }
         String filename = new Regex(correctedBR, "<strong>\\(<font color=\"red\">([^<>\"]*?)</font>\\)").getMatch(0);
+        if (filename == null) filename = new Regex(correctedBR, "<b>Filename:</b></td><td nowrap>([^<>\"]*?)</td>").getMatch(0);
         if (filename == null || filename.equals("")) {
             if (correctedBR.contains("You have reached the download\\-limit")) {
                 logger.warning("Waittime detected, please reconnect to make the linkchecker work!");
@@ -112,6 +115,8 @@ public class VidHogCom extends PluginForHost {
         filename = filename.replaceAll("(</b>|<b>|\\.html)", "");
         link.setProperty("plainfilename", filename);
         link.setFinalFileName(filename.trim());
+        final String filesize = new Regex(correctedBR, "\\((\\d+ bytes)\\)").getMatch(0);
+        if (filesize != null) link.setDownloadSize(SizeFormatter.getSize(filesize));
         return AvailableStatus.TRUE;
     }
 
@@ -437,7 +442,7 @@ public class VidHogCom extends PluginForHost {
     private void waitTime(long timeBefore, DownloadLink downloadLink) throws PluginException {
         int passedTime = (int) ((System.currentTimeMillis() - timeBefore) / 1000) - 1;
         /** Ticket Time */
-        final String ttt = new Regex(correctedBR, "<font size=4 color=red><span id=\"[a-z0-9]+\">(\\d+)</span></font> seconds").getMatch(0);
+        final String ttt = new Regex(correctedBR, ">Wait <span id=\"[a-z0-9]+\">(\\d+)</span> seconds</span>").getMatch(0);
         if (ttt != null) {
             int tt = Integer.parseInt(ttt);
             tt -= passedTime;

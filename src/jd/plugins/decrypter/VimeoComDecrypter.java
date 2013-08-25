@@ -83,6 +83,10 @@ public class VimeoComDecrypter extends PluginForDecrypt {
                 return decryptedLinks;
             }
         }
+        if (br.containsHTML(">There was a problem loading this video")) {
+            logger.info("vimeo.com: cannot decrypt link (server error): " + parameter);
+            return decryptedLinks;
+        }
 
         handlePW(param, br);
 

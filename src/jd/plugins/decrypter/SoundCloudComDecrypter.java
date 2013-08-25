@@ -92,6 +92,10 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
                 logger.info("Link offline: " + parameter);
                 return decryptedLinks;
             }
+            if (br.containsHTML("<duration type=\"integer\">0</duration>")) {
+                logger.info("Link offline (empty set-link (playlist)): " + parameter);
+                return decryptedLinks;
+            }
             final PluginForHost hostPlugin = JDUtilities.getPluginForHost("soundcloud.com");
             String fpName = null;
             // For sets ("/set/" links)

@@ -86,20 +86,11 @@ public class DebridItaliaCom extends PluginForHost {
         ac.setValidUntil(Long.parseLong(expire) * 1000l);
 
         // now let's get a list of all supported hosts:
-        br.getPage("http://www.debriditalia.com/index.php");
-        hosts = br.getRegex("\"/images/[A-Z0-9]{2}\\.png\" hspace=\"0\" vspace=\"\\d+\" onmouseover=\"tooltip\\.show\\(this\\)\" onmouseout=\"tooltip\\.hide\\(this\\)\" title=\"([^<>\"]*?)\"").getColumn(0);
+        br.getPage("http://debriditalia.com/api.php?hosts");
+        hosts = br.getRegex("\"([^<>\"]*?)\"").getColumn(0);
         ArrayList<String> supportedHosts = new ArrayList<String>();
-        for (String host : hosts) {
-            host = host.toLowerCase();
-            if (host.equals("hotfile")) {
-                supportedHosts.add("hotfile.com");
-            } else if (host.equals("netload")) {
-                supportedHosts.add("netload.in");
-            } else if (host.equals("putlocker")) {
-                supportedHosts.add("putlocker.com");
-            } else if (!host.isEmpty()) {
-                supportedHosts.add(host.trim());
-            }
+        for (final String host : hosts) {
+            supportedHosts.add(host);
         }
         if (supportedHosts.contains("uploaded.net") || supportedHosts.contains("ul.to") || supportedHosts.contains("uploaded.to")) {
             if (!supportedHosts.contains("uploaded.net")) {
