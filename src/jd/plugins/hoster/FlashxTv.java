@@ -30,6 +30,8 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.utils.JDHexUtils;
+import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "flashx.tv" }, urls = { "http://((www\\.)?flashx\\.tv/video/[A-Z0-9]+/|play\\.flashx\\.tv/player/embed\\.php\\?.+|play\\.flashx\\.tv/player/fxtv\\.php\\?.+)" }, flags = { 0 })
@@ -73,34 +75,32 @@ public class FlashxTv extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
+        JDUtilities.getPluginForDecrypt("linkcrypt.ws");
         String dllink = null;
         // 1
         String regex = "\"(http://(flashx\\.tv/player/embed_player\\.php|play\\.flashx\\.tv/player/embed\\.php)\\?[^<>\"]*?)\"";
         final String firstlink = br.getRegex(regex).getMatch(0);
         if (firstlink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         br.getPage(firstlink);
+        String seclinkgk = br.getRegex(fx(0)).getMatch(1);
         // 2
         regex = "\"(http://play\\.flashx\\.tv/player/[^\"]+)\"";
         String seclink = br.getRegex(regex).getMatch(0);
         if (seclink == null) seclink = getPlainData(regex);
-        logger.info("seclink = " + seclink);
         if (seclink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         br.getPage(seclink);
         if (br.containsHTML("We are currently performing maintenance on this server")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "This server is under maintenance", 30 * 60 * 1000l);
         // 2.1
-        /*
-         * String regexgk = "\"(http://play\\.flashx\\.tv/player/[a-z]+\\.php[^\']+)\""; String seclinkgk =
-         * br.getRegex(regexgk).getMatch(0); logger.info("seclinkgk = " + seclinkgk); if (seclinkgk == null) seclinkgk =
-         * getPlainData(regexgk); logger.info("seclinkgk2 = " + seclinkgk); // if (seclinkgk == null) throw new
-         * PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); // br.getPage(seclinkgk);
-         */
+        if (seclinkgk == null) seclinkgk = br.getRegex(fx(0)).getMatch(1);
+        if (seclinkgk == null) seclinkgk = getPlainData(fx(0));
+        if (seclinkgk == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         // 3
         regex = "config=(http://play.flashx.tv/nuevo/[^\"]+)\"";
         String thirdLink = br.getRegex(regex).getMatch(0);
         if (thirdLink == null) thirdLink = getPlainData(regex);
         if (thirdLink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        br.getPage(seclinkgk);
         br.getPage(thirdLink);
-        if (br.containsHTML("wrong user/ip")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "View via browser before download!", 3 * 60 * 1000l);
         dllink = br.getRegex("<file>(http://[^<>\"]*?)</file>").getMatch(0);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
 
@@ -133,6 +133,12 @@ public class FlashxTv extends PluginForHost {
                 }
             }
         }
+    }
+
+    private String fx(final int i) {
+        final String[] s = new String[1];
+        s[0] = "f8dbfbfafa57cde11f94b695de5042f1299371b7095fdd9a1e185a3b116e82845888fd3e8900e26f211655e8eb771a74e722299bc69a6263a823d6e66e0f373e5af4c82e5827ffcf25a92ebe5261c8e945a78e856ffc9dad998a2a9528657811c6733e016c8b806b391101aa1b30162b03b18a7534a6719d83c0607d4f625dc08a6e4db2cd63d9c7321c08d37306c3b7d933074e56c2b0a81d8739ac6c6775c51d775c0e345d7b121226c64adc65d86d1db07b2042f449930428adf7d6a9520b60d0f0d6";
+        return JDHexUtils.toString(jd.plugins.decrypter.LnkCrptWs.IMAGEREGEX(s[i]));
     }
 
     private String getPlainData(String regex) {
