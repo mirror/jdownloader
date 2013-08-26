@@ -85,6 +85,7 @@ public class FaceBookComGallery extends PluginForDecrypt {
                 }
                 decryptedLinks.add(createDownloadlink("directhttp://" + finallink));
             } else {
+                br.getHeaders().put("Accept-Language", "en-US,en;q=0.5");
                 br.setCookie(FACEBOOKMAINPAGE, "locale", "en_GB");
                 /** Login stuff begin */
                 final PluginForHost facebookPlugin = JDUtilities.getPluginForHost("facebook.com");
@@ -194,7 +195,7 @@ public class FaceBookComGallery extends PluginForDecrypt {
                         links = br.getRegex("id=\"pic_(\\d+)\"").getColumn(0);
                     }
                     if (links == null || links.length == 0) {
-                        logger.warning("Decrypter broken for link: " + parameter);
+                        logger.warning("Decrypter broken for the following link or account needed: " + parameter);
                         return null;
                     }
                     boolean stop = false;

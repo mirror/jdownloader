@@ -50,10 +50,6 @@ public class XboxSoZoneCom extends PluginForDecrypt {
         }
         final String[] externalLinks = br.getRegex("\"(http://(www\\.)?cloudstor\\.es/(f|file)/[A-Za-z0-9_]+/)\"").getColumn(0);
         final String[] links = br.getRegex("\"(/dl\\-start/\\d+/(\\d+/)?)\"").getColumn(0);
-        if ((links == null || links.length == 0) && (externalLinks == null || externalLinks.length == 0)) {
-            logger.warning("Decrypter broken for link: " + parameter);
-            return null;
-        }
         if (links != null && links.length != 0) {
             String host = new Regex(parameter, "(http://.*?\\.com)").getMatch(0);
             for (String finallink : links) {
