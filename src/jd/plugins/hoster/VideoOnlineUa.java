@@ -30,7 +30,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "video.online.ua" }, urls = { "http://(www\\.)?video\\.online\\.ua/(embed/)?\\d+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "video.online.ua" }, urls = { "http://video\\.online\\.uadecrypted/\\d+" }, flags = { 0 })
 public class VideoOnlineUa extends PluginForHost {
 
     public VideoOnlineUa(PluginWrapper wrapper) {
@@ -45,7 +45,7 @@ public class VideoOnlineUa extends PluginForHost {
     }
 
     public void correctDownloadLink(DownloadLink link) {
-        link.setUrlDownload("http://video.online.ua/" + new Regex(link.getDownloadURL(), "(\\d+)$").getMatch(0));
+        link.setUrlDownload(link.getDownloadURL().replace("video.online.uadecrypted/", "video.online.ua/"));
     }
 
     @Override

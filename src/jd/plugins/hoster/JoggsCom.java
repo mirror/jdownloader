@@ -29,47 +29,35 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "tubesss.com" }, urls = { "http://(www\\.)?tubesssdecrypted\\.com/videos/\\d+/.*?\\.html" }, flags = { 0 })
-public class TubeSssCom extends PluginForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "joggs.com" }, urls = { "http://(www\\.)?joggs\\.com/videos/[a-z0-9\\-_\\.]+\\d+\\.html" }, flags = { 0 })
+public class JoggsCom extends PluginForHost {
 
-    private String DLLINK = null;
-
-    public TubeSssCom(PluginWrapper wrapper) {
+    public JoggsCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
+    private String DLLINK = null;
+
     @Override
     public String getAGBLink() {
-        return "http://tubesss.com/terms.php";
+        return "http://joggs.com/signup.php";
     }
 
     @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return -1;
-    }
-
-    public void correctDownloadLink(DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replace("tubesssdecrypted.com/", "tubesss.com/"));
-    }
-
-    @Override
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        if (!br.getURL().contains("tubesss.com") || br.containsHTML("<title> at Tubesss\\.com  \\- Free Videos Adult Sex Tube</title>") || br.getURL().equals("http://www.tubesss.com/404.php")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("<title>([^<>\"]*?) at TubeSSS</title>").getMatch(0);
-        DLLINK = br.getRegex("(http://(www\\.)?tubesss\\.com/playerConfig\\.php\\?[^<>\"]*?)\"").getMatch(0);
-        if (filename == null || DLLINK == null || DLLINK.equals("")) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        br.getPage(Encoding.htmlDecode(DLLINK));
-        DLLINK = br.getRegex("flvMask:(https?://[^<>\"]*?);").getMatch(0);
-        if (DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (br.getURL().equals("http://joggs.com/404.php")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = br.getRegex("<title>([^<>\"]*?)</title>").getMatch(0);
+        DLLINK = br.getRegex("name=\"flashvars\" value=\"file=(http[^<>\"]*?)\\&image=").getMatch(0);
+        if (filename == null || DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         DLLINK = Encoding.htmlDecode(DLLINK);
         filename = filename.trim();
-        String ext = ".mp4";
-        if (DLLINK.contains(".flv")) ext = ".flv";
+        String ext = DLLINK.substring(DLLINK.lastIndexOf("."));
+        if (ext == null || ext.length() > 5) ext = ".flv";
         downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + ext);
-        Browser br2 = br.cloneBrowser();
+        final Browser br2 = br.cloneBrowser();
         // In case the link redirects to the finallink
         br2.setFollowRedirects(true);
         URLConnectionAdapter con = null;
@@ -89,7 +77,7 @@ public class TubeSssCom extends PluginForHost {
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception {
+    public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
@@ -100,14 +88,19 @@ public class TubeSssCom extends PluginForHost {
     }
 
     @Override
+    public int getMaxSimultanFreeDownloadNum() {
+        return -1;
+    }
+
+    @Override
     public void reset() {
     }
 
     @Override
-    public void resetDownloadlink(DownloadLink link) {
+    public void resetPluginGlobals() {
     }
 
     @Override
-    public void resetPluginGlobals() {
+    public void resetDownloadlink(DownloadLink link) {
     }
 }

@@ -41,6 +41,12 @@ public class MangaPandaCom extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
         br.getPage(parameter);
+
+        if (br.containsHTML("is not released yet")) {
+            logger.info("No downloadable content available for link: " + parameter);
+            return decryptedLinks;
+        }
+
         final String maxPage = br.getRegex("</select> of (\\d+)</div>").getMatch(0);
         String fpName = br.getRegex("<h1>([^<>\"]*?)</h1>").getMatch(0);
         if (fpName == null || maxPage == null) {

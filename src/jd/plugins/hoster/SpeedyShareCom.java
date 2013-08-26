@@ -25,7 +25,6 @@ import jd.config.Property;
 import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
@@ -55,7 +54,7 @@ public class SpeedyShareCom extends PluginForHost {
 
     @Override
     public void correctDownloadLink(DownloadLink link) {
-        link.setUrlDownload("http://www.speedyshare.com/files/" + new Regex(link.getDownloadURL(), "([A-Za-z0-9]+)$").getMatch(0));
+        link.setUrlDownload(link.getDownloadURL().replace("speedy.sh/", "speedyshare.com/"));
     }
 
     @Override
@@ -70,7 +69,8 @@ public class SpeedyShareCom extends PluginForHost {
 
     public void prepBrowser() {
         // define custom browser headers and language settings.
-        br.getHeaders().put("Accept-Language", "en-gb, en;q=0.9, de;q=0.8");
+        br.getHeaders().put("Accept-Language", "en-US,en;q=0.5");
+        br.getHeaders().put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
     }
 
     @Override
@@ -79,10 +79,9 @@ public class SpeedyShareCom extends PluginForHost {
         br.setFollowRedirects(true);
         prepBrowser();
         br.getPage(downloadLink.getDownloadURL());
-        if (br.getRedirectLocation() != null) br.getPage(br.getRedirectLocation());
         if (br.containsHTML("(class=sizetagtext>not found<|File not found|It has been deleted<|>or it never existed at all)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("\"(og:title|name)\" content=\"Download File: ([^\"]+)").getMatch(1);
-        if (filename == null) filename = br.getRegex("<title>(.+) - Speedy Share - .+</title>").getMatch(0);
+        if (filename == null) filename = br.getRegex("<title>(.+) \\- Speedy Share \\- .+</title>").getMatch(0);
         String filesize = br.getRegex("<div class=sizetagtext>(.*?)</div>").getMatch(0);
         if (filesize == null) filesize = br.getRegex("([\\d\\.]+ (KB|MB|GB|TB))").getMatch(0);
         if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

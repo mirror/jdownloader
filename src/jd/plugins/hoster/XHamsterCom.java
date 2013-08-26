@@ -22,11 +22,13 @@ import java.util.Map;
 
 import jd.PluginWrapper;
 import jd.config.Property;
+import jd.controlling.AccountController;
 import jd.http.Browser;
 import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
@@ -74,19 +76,27 @@ public class XHamsterCom extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
+        final Account aa = AccountController.getInstance().getValidAccount(this);
+        if (aa != null) login(this.br, aa, false);
         br.getPage(downloadLink.getDownloadURL());
         // embeded correction
         if (br.getURL().contains(".com/xembed.php")) {
-            String realpage = br.getRegex("main_url=(http[^&]+)").getMatch(0);
+            String realpage = br.getRegex("main_url=(http[^\\&]+)").getMatch(0);
             if (realpage != null) {
                 br.getPage(realpage);
                 downloadLink.setUrlDownload(br.getURL());
             }
         }
         if (br.containsHTML("(Video Not found|403 Forbidden|>This video was deleted<)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        final String onlyfor = br.getRegex(">([^<>\"]*?)</a>\\'s friends only</div>").getMatch(0);
+        if (onlyfor != null) {
+            downloadLink.getLinkStatus().setStatusText("Only downloadable for friends of " + onlyfor);
+            downloadLink.setName(new Regex(downloadLink.getDownloadURL(), "movies/[0-9]+/(.*?)\\.html").getMatch(0) + ".flv");
+            return AvailableStatus.TRUE;
+        }
         String filename = br.getRegex("<title>(.*?) \\- xHamster\\.com</title>").getMatch(0);
         if (filename == null) {
             filename = br.getRegex("<meta name=\"description\" content=\"(.*?)\"").getMatch(0);
@@ -131,6 +141,15 @@ public class XHamsterCom extends PluginForHost {
     public void doFree(DownloadLink downloadLink) throws Exception {
         // Access the page again to get a new direct link because by checking the availability the first linkisn't valid anymore
         br.getPage(downloadLink.getDownloadURL());
+        final String onlyfor = br.getRegex(">([^<>\"]*?)</a>\\'s friends only</div>").getMatch(0);
+        if (onlyfor != null) {
+            try {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+            } catch (final Throwable e) {
+                if (e instanceof PluginException) throw (PluginException) e;
+            }
+            throw new PluginException(LinkStatus.ERROR_FATAL, "Only downloadable for friends of " + onlyfor);
+        }
         final String dllink = getDllink();
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {

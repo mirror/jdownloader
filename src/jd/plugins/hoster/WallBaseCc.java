@@ -56,7 +56,7 @@ public class WallBaseCc extends PluginForHost {
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
         // Offline1
-        if (br.getURL().equals("http://wallbase.cc/home")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.getURL().equals("http://wallbase.cc/home") || br.getURL().equals("http://wallbase.cc/index.php")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         // Offline2
         if (br.containsHTML("(>Not found \\(404\\)|>The page you requested was not found)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("<title>(.*?) \\- Wallpaper \\(").getMatch(0);
