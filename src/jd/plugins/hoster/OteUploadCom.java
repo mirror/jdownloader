@@ -32,6 +32,8 @@ import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import javax.script.ScriptEngine;
+import javax.script.ScriptEngineManager;
 import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
 
@@ -96,7 +98,7 @@ public class OteUploadCom extends PluginForHost {
     private static AtomicInteger totalMaxSimultanFreeDownload = new AtomicInteger(10);
 
     // DEV NOTES
-    // XfileShare Version 3.0.7.5
+    // XfileShare Version 3.0.7.7
     // last XfileSharingProBasic compare :: 2.6.2.1
     // protocol: http && https
     // captchatype: 4dignum
@@ -167,6 +169,42 @@ public class OteUploadCom extends PluginForHost {
         this.enablePremium(COOKIE_HOST + "/premium.html");
     }
 
+    /**
+     * defines custom browser requirements.
+     * */
+    private Browser prepBrowser(final Browser prepBr) {
+        HashMap<String, String> map = null;
+        synchronized (cloudflareCookies) {
+            map = new HashMap<String, String>(cloudflareCookies);
+        }
+        if (!map.isEmpty()) {
+            for (final Map.Entry<String, String> cookieEntry : map.entrySet()) {
+                final String key = cookieEntry.getKey();
+                final String value = cookieEntry.getValue();
+                prepBr.setCookie(this.getHost(), key, value);
+            }
+        }
+        if (useRUA) {
+            if (agent.string == null) {
+                /* we first have to load the plugin, before we can reference it */
+                JDUtilities.getPluginForHost("mediafire.com");
+                agent.string = jd.plugins.hoster.MediafireCom.stringUserAgent();
+            }
+            prepBr.getHeaders().put("User-Agent", agent.string);
+        }
+        prepBr.getHeaders().put("Accept-Language", "en-gb, en;q=0.8");
+        prepBr.setCookie(COOKIE_HOST, "lang", "english");
+        prepBr.setConnectTimeout(3 * 60 * 1000);
+        prepBr.setReadTimeout(3 * 60 * 1000);
+        // required for native cloudflare support, without the need to repeat requests.
+        try {
+            /* not available in old stable */
+            prepBr.setAllowedResponseCodes(new int[] { 503 });
+        } catch (Throwable e) {
+        }
+        return prepBr;
+    }
+    
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
         // make sure the downloadURL protocol is of site ability and user preference
@@ -320,7 +358,9 @@ public class OteUploadCom extends PluginForHost {
     private String[] altAvailStat(final DownloadLink downloadLink, final String[] fileInfo) throws Exception {
         Browser alt = new Browser();
         prepBrowser(alt);
-        alt.postPage(COOKIE_HOST.replaceFirst("https?://", getProtocol()) + "/?op=checkfiles", "op=checkfiles&process=Check+URLs&list=" + downloadLink.getDownloadURL());
+        // cloudflare initial support is within getPage.. otherwise not needed.
+        alt.getPage(COOKIE_HOST.replaceFirst("https?://", getProtocol()) + "/?op=checkfiles");
+        alt.postPage("/?op=checkfiles", "op=checkfiles&process=Check+URLs&list=" + downloadLink.getDownloadURL());
         String[] linkInformation = alt.getRegex(">" + downloadLink.getDownloadURL() + "</td><td style=\"color:[^;]+;\">(\\w+)</td><td>([^<>]+)?</td>").getRow(0);
         if (linkInformation != null && linkInformation[0].equalsIgnoreCase("found")) {
             downloadLink.setAvailable(true);
@@ -782,12 +822,9 @@ public class OteUploadCom extends PluginForHost {
                 loginform.put("file_id", "");
                 loginform.remove("tos");
                 loginform.remove("submit");
-                // Check for stupid login plaintext captcha
-                if (cbr.containsHTML(";background:#ccc;text\\-align")) {
-                    logger.info("Detected captcha method \"Plaintext Captcha\"");
-                    final String code = solvePlaintextCaptcha(cbr.toString());
-                    loginform.put("code", code);
-                }
+                // check form for login captcha crap.
+                DownloadLink dummyLink = new DownloadLink(null, "Account", this.getHost(), COOKIE_HOST, true);
+                loginform = captchaForm(dummyLink, loginform);
                 // Login too fast -> Site says "Wrong captcha"
                 Thread.sleep(5 * 1000l);
                 // end of check form for login captcha crap.
@@ -1032,6 +1069,7 @@ public class OteUploadCom extends PluginForHost {
     private static AtomicInteger                              maxFreeAccSimDlPerHost = new AtomicInteger(20);
     private static AtomicInteger                              maxPremAccSimDlPerHost = new AtomicInteger(20);
 
+    private static HashMap<String, String>                    cloudflareCookies      = new HashMap<String, String>();
     private static HashMap<Account, HashMap<String, Integer>> hostMap                = new HashMap<Account, HashMap<String, Integer>>();
 
     private static Object                                     LOCK                   = new Object();
@@ -1090,23 +1128,6 @@ public class OteUploadCom extends PluginForHost {
         }
     }
 
-    private Browser prepBrowser(final Browser prepBr) {
-        // define custom browser headers and language settings.
-        if (useRUA) {
-            if (agent.string == null) {
-                /* we first have to load the plugin, before we can reference it */
-                JDUtilities.getPluginForHost("mediafire.com");
-                agent.string = jd.plugins.hoster.MediafireCom.stringUserAgent();
-            }
-            prepBr.getHeaders().put("User-Agent", agent.string);
-        }
-        prepBr.getHeaders().put("Accept-Language", "en-gb, en;q=0.8");
-        prepBr.setCookie(COOKIE_HOST, "lang", "english");
-        prepBr.setConnectTimeout(3 * 60 * 1000);
-        prepBr.setReadTimeout(3 * 60 * 1000);
-        return prepBr;
-    }
-
     public void showAccountDetailsDialog(final Account account) {
         setConstants(account);
         AccountInfo ai = account.getAccountInfo();
@@ -1143,9 +1164,64 @@ public class OteUploadCom extends PluginForHost {
         downloadLink.setProperty("retry", Property.NULL);
     }
 
+    /**
+     * Gets page <br />
+     * - natively supports silly cloudflare anti DDoS crapola
+     * 
+     * @author raztoki
+     */
     private void getPage(final String page) throws Exception {
         if (page == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        br.getPage(page);
+        try {
+            br.getPage(page);
+        } catch (Exception e) {
+            if (e instanceof PluginException) throw (PluginException) e;
+            // should only be picked up now if not JD2
+            if (br.getHttpConnection().getResponseCode() == 503 && br.getHttpConnection().getHeaderFields("server").contains("cloudflare-nginx")) {
+                logger.warning("Cloudflare anti DDoS measures enabled, your version of JD can not support this. In order to go any further you will need to upgrade to JDownloader 2");
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Cloudflare anti DDoS measures enabled");
+            } else
+                throw e;
+        }
+        // prevention is better than cure
+        if (br.getHttpConnection().getResponseCode() == 503 && br.getHttpConnection().getHeaderFields("server").contains("cloudflare-nginx")) {
+            Form cloudflare = br.getFormbyProperty("id", "ChallengeForm");
+            if (cloudflare == null) cloudflare = br.getFormbyProperty("id", "challenge-form");
+            if (cloudflare != null) {
+                String math = br.getRegex("\\$\\(\\'#jschl_answer\\'\\)\\.val\\(([^\\)]+)\\);").getMatch(0);
+                if (math == null) math = br.getRegex("a\\.value = ([\\d\\-\\.\\+\\*/]+);").getMatch(0);
+                if (math == null) {
+                    String variableName = br.getRegex("(\\w+)\\s*=\\s*\\$\\(\'#jschl_answer\'\\);").getMatch(0);
+                    if (variableName != null) variableName = variableName.trim();
+                    math = br.getRegex(variableName + "\\.val\\(([^\\)]+)\\)").getMatch(0);
+                }
+                if (math == null) {
+                    logger.warning("Couldn't find 'math'");
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                // use js for now, but change to Javaluator as the provided string doesn't get evaluated by JS according to Javaluator
+                // author.
+                ScriptEngineManager mgr = new ScriptEngineManager();
+                ScriptEngine engine = mgr.getEngineByName("JavaScript");
+                cloudflare.put("jschl_answer", String.valueOf(((Double) engine.eval("(" + math + ") + " + this.getHost().length())).longValue()));
+                Thread.sleep(5500);
+                br.submitForm(cloudflare);
+                if (br.getFormbyProperty("id", "ChallengeForm") != null || br.getFormbyProperty("id", "challenge-form") != null) {
+                    logger.warning("Possible plugin error within cloudflare handling");
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                // lets save cloudflare cookie to reduce the need repeat cloudFlare()
+                final HashMap<String, String> cookies = new HashMap<String, String>();
+                final Cookies add = br.getCookies(this.getHost());
+                for (final Cookie c : add.getCookies()) {
+                    if (new Regex(c.getKey(), "(cfduid|cf_clearance)").matches()) cookies.put(c.getKey(), c.getValue());
+                }
+                synchronized (cloudflareCookies) {
+                    cloudflareCookies.clear();
+                    cloudflareCookies.putAll(cookies);
+                }
+            }
+        }
         correctBR();
     }
 
@@ -1293,8 +1369,24 @@ public class OteUploadCom extends PluginForHost {
     private Form captchaForm(DownloadLink downloadLink, Form form) throws Exception {
         if (form.containsHTML(";background:#ccc;text-align")) {
             logger.info("Detected captcha method \"Plaintext Captcha\"");
-            final String code = solvePlaintextCaptcha(form.toString());
-            form.put("code", code);
+            /** Captcha method by ManiacMansion */
+            String[][] letters = form.getRegex("<span style=\"position:absolute;padding-left:(\\d+)px;padding-top:\\d+px;\">(&#\\d+;)</span>").getMatches();
+            if (letters == null || letters.length == 0) {
+                letters = cbr.getRegex("<span style='position:absolute;padding-left:(\\d+)px;padding-top:\\d+px;'>(&#\\d+;)</span>").getMatches();
+                if (letters == null || letters.length == 0) {
+                    logger.warning("plaintext captchahandling broken!");
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+            }
+            final SortedMap<Integer, String> capMap = new TreeMap<Integer, String>();
+            for (String[] letter : letters) {
+                capMap.put(Integer.parseInt(letter[0]), Encoding.htmlDecode(letter[1]));
+            }
+            final StringBuilder code = new StringBuilder();
+            for (String value : capMap.values()) {
+                code.append(value);
+            }
+            form.put("code", code.toString());
         } else if (form.containsHTML("/captchas/")) {
             logger.info("Detected captcha method \"Standard Captcha\"");
             final String[] sitelinks = HTMLParser.getHttpLinks(form.getHtmlCode(), null);
@@ -1361,27 +1453,6 @@ public class OteUploadCom extends PluginForHost {
             form.put("capcode", result);
         }
         return form;
-    }
-
-    private String solvePlaintextCaptcha(final String source) throws PluginException {
-        /** Captcha method by ManiacMansion */
-        String[][] letters = new Regex(source, "<span style=\"position:absolute;padding-left:(\\d+)px;padding-top:\\d+px;\">(&#\\d+;)</span>").getMatches();
-        if (letters == null || letters.length == 0) {
-            letters = br.getRegex("<span style='position:absolute;padding-left:(\\d+)px;padding-top:\\d+px;'>(&#\\d+;)</span>").getMatches();
-            if (letters == null || letters.length == 0) {
-                logger.warning("plaintext captchahandling broken!");
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-        }
-        final SortedMap<Integer, String> capMap = new TreeMap<Integer, String>();
-        for (String[] letter : letters) {
-            capMap.put(Integer.parseInt(letter[0]), Encoding.htmlDecode(letter[1]));
-        }
-        final StringBuilder code = new StringBuilder();
-        for (String value : capMap.values()) {
-            code.append(value);
-        }
-        return code.toString();
     }
 
     /**
@@ -1807,6 +1878,7 @@ public class OteUploadCom extends PluginForHost {
                         e.printStackTrace();
                     }
                 }
+
                 httpConnection = con;
                 setHtmlCode(t);
             }
