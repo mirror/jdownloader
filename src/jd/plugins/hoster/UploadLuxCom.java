@@ -45,12 +45,12 @@ public class UploadLuxCom extends PluginForHost {
 
     public UploadLuxCom(PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium("http://uploadlux.com/premium");
+        this.enablePremium("https://uploadlux.com/premium");
     }
 
     @Override
     public String getAGBLink() {
-        return "http://www.uploadlux.com/conditions";
+        return "https://www.uploadlux.com/conditions";
     }
 
     // do not add @Override here to keep 0.* compatibility
@@ -118,7 +118,7 @@ public class UploadLuxCom extends PluginForHost {
         dl.startDownload();
     }
 
-    private static final String  MAINPAGE = "http://uploadlux.com";
+    private final String         MAINPAGE = "https://www.uploadlux.com";
     private static Object        LOCK     = new Object();
     private static AtomicInteger maxPrem  = new AtomicInteger(1);
 
@@ -142,15 +142,16 @@ public class UploadLuxCom extends PluginForHost {
                         return;
                     }
                 }
-                br.setFollowRedirects(false);
+                br.setFollowRedirects(true);
                 br.setCookie(MAINPAGE, "lang", "fr");
-                br.postPage("http://www.uploadlux.com/connexion", "souvenir=on&connexion=Connexion&email=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
+                br.getPage(MAINPAGE + "/connexion");
+                br.postPage("/connexion", "souvenir=on&connexion=Connexion&email=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
                 if (!br.containsHTML("Si cette page reste affichée plus de")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-                br.getPage("http://www.uploadlux.com/profil");
+                br.getPage("/profil");
                 if (br.containsHTML("<b style=\"color: #FF3300\">Premium</b>")) {
-                    account.setProperty("nopremium", false);
+                    account.setProperty("free", false);
                 } else if (br.containsHTML("<b style=\"color: #FF3300\">Membre</b>")) {
-                    account.setProperty("nopremium", true);
+                    account.setProperty("free", true);
                 } else {
                     logger.warning("Unsupported accounttype!");
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -186,7 +187,7 @@ public class UploadLuxCom extends PluginForHost {
         if (space != null) ai.setUsedSpace(space.trim());
         ai.setUnlimitedTraffic();
 
-        if (account.getBooleanProperty("nopremium")) {
+        if (account.getBooleanProperty("free")) {
             ai.setStatus("Registered (free) User");
             try {
                 maxPrem.set(-1);
@@ -221,7 +222,7 @@ public class UploadLuxCom extends PluginForHost {
         if (br.containsHTML(">Fichier privée\\.<")) throw new PluginException(LinkStatus.ERROR_FATAL, "Fichier privée!");
         login(account, false);
         br.setFollowRedirects(false);
-        if (account.getBooleanProperty("nopremium")) {
+        if (account.getBooleanProperty("free")) {
             br.getPage(link.getDownloadURL());
             doFree(link);
         } else {

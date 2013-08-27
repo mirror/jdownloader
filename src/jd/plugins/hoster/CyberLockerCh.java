@@ -200,7 +200,7 @@ public class CyberLockerCh extends PluginForHost {
         }
         return prepBr;
     }
-    
+
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
         // make sure the downloadURL protocol is of site ability and user preference
@@ -389,6 +389,7 @@ public class CyberLockerCh extends PluginForHost {
                 download1 = cleanForm(download1);
                 // end of backward compatibility
                 download1.remove("method_premium");
+                download1.put("method_free", "Free+Download");
                 sendForm(download1);
                 checkErrors(downloadLink, account, false);
                 getDllink();
