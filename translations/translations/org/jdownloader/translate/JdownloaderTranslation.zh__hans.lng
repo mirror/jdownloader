@@ -4,6 +4,7 @@ DownloadLink_setSkipped_statusmessage=跳过
 DownloadLink_setSkipped_statusmessage_account=跳过 - 账号错误
 DownloadLink_setSkipped_statusmessage_captcha=跳过 - 需要验证码
 DownloadLink_setSkipped_statusmessage_disk_full=跳过 - 磁盘已满
+DownloadLink_setSkipped_statusmessage_file_exists=跳过 - 文件已存在
 DownloadWatchDog_onShutdownRequest_=下载在处理中!
 DownloadWatchDog_onShutdownRequest_msg=您是否想要停止正在进行的下载以退出JDownloader?
 DownloadWatchDog_onShutdownRequest_nonresumable=非可续传下载在处理中!
