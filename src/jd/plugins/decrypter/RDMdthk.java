@@ -26,6 +26,7 @@ import jd.PluginWrapper;
 import jd.config.SubConfiguration;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
+import jd.http.Browser.BrowserException;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
@@ -56,9 +57,14 @@ public class RDMdthk extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, final ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
-        br.getPage(parameter);
+        boolean offline = false;
+        try {
+            br.getPage(parameter);
+        } catch (final BrowserException e) {
+            offline = true;
+        }
         // Add offline link so user can see it
-        if (!br.containsHTML("var \\$jPlayer =")) {
+        if (!br.containsHTML("var \\$jPlayer =") || offline) {
             final DownloadLink dl = createDownloadlink(parameter.replace("http://", "decrypted://") + "&quality=offline");
             dl.setAvailable(false);
             dl.setProperty("offline", true);

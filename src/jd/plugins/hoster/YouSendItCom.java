@@ -17,11 +17,8 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
-import java.util.Random;
 
 import jd.PluginWrapper;
-import jd.http.URLConnectionAdapter;
-import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -31,7 +28,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "yousendit.com" }, urls = { "http(s)?://(www\\.)?(yousendit\\.com/(?!cms|signup|aboutus|applications|compare|dropbox).{2,}|rcpt\\.yousendit\\.com/\\d+/[a-z0-9]+)" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "yousendit.com" }, urls = { "http(s)?://(www\\.)?yousenditdecrypted\\.com/download/[A-Za-z0-9]+" }, flags = { 0 })
 public class YouSendItCom extends PluginForHost {
 
     private String DLLINK = null;
@@ -40,25 +37,13 @@ public class YouSendItCom extends PluginForHost {
         super(wrapper);
     }
 
-    private static final String VERIFYRECEPTIENT         = ">Verify Recipient Identity<";
-    private static final String VERIFYRECEPTIENTUSERTEXT = "Recipient Identity verification needed!";
-
-    public void correctDownloadLink(DownloadLink link) {
-        // Downloadlink must be correct, that's really important for this
-        // hoster!
-        String addedLink = link.getDownloadURL();
-        Regex fileIDs = new Regex(addedLink, "rcpt\\.yousendit\\.com/(\\d+)/([a-z0-9]+)");
-        String id0 = fileIDs.getMatch(0);
-        if (id0 == null) id0 = new Regex(addedLink, "send_id=(\\d+)\\&").getMatch(0);
-        String id1 = fileIDs.getMatch(1);
-        if (id1 == null) id1 = new Regex(addedLink, "\\&email=([a-z0-9]+)").getMatch(0);
-        if (id0 != null && id1 != null) addedLink = "https://www.yousendit.com/dl?phi_action=app/orchestrateDownload&rurl=https%253A%252F%252Fwww.yousendit.com%252Ftransfer.php%253Faction%253Dbatch_download%2526send_id%253D" + id0 + "%2526email%253D" + id1;
-        link.setUrlDownload(addedLink);
-    }
-
     @Override
     public String getAGBLink() {
         return "https://yousendit.com/aboutus/legal/terms-of-service";
+    }
+
+    public void correctDownloadLink(DownloadLink link) {
+        link.setUrlDownload(link.getDownloadURL().replace("yousenditdecrypted.com/", "yousendit.com/"));
     }
 
     @Override
@@ -69,116 +54,48 @@ public class YouSendItCom extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
-        if (link.getDownloadURL().contains("directDownload")) {
-            br.getPage(link.getDownloadURL());
-            DLLINK = br.getRedirectLocation();
-            if (DLLINK == null) {
-                logger.warning("DLLINK is null!");
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            br.setFollowRedirects(false);
-            URLConnectionAdapter con = null;
-            try {
-                con = br.openGetConnection(DLLINK);
-                if (!con.getContentType().contains("html")) {
-                    link.setDownloadSize(con.getLongContentLength());
-                    link.setFinalFileName(getFileNameFromHeader(con));
-                } else {
-                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                }
-                return AvailableStatus.TRUE;
-            } finally {
-                try {
-                    con.disconnect();
-                } catch (Throwable e) {
-                }
-            }
+        if (link.getBooleanProperty("offline", false)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        br.setFollowRedirects(true);
+        br.getPage(link.getStringProperty("mainlink", null));
+        // File offline
+        if (br.containsHTML("Download link is invalid")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (link.getStringProperty("fileurl", null) != null) {
+            link.setFinalFileName(link.getStringProperty("directname", null));
+            link.setDownloadSize(SizeFormatter.getSize(link.getStringProperty("directsize", null)));
         } else {
-            br.setFollowRedirects(true);
-            br.getPage(link.getDownloadURL());
-            // File offline
-            if (br.containsHTML("Download link is invalid|File Not Available<")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            // File expired
-            if (br.containsHTML("Sorry, this file has expired and cannot be downloaded")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            // Link invalid
-            if (br.containsHTML(">Error 404")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            // We're on mainpage
-            if (br.containsHTML("<label for=\"recepientemail\"")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            String filename = null;
-            String filesize = null;
-            if (br.containsHTML(VERIFYRECEPTIENT)) {
-                filename = br.getRegex("<div style=\"width:380px;overflow:hidden;\">[\t\n\r ]+<strong>([^<>\"]*?)</strong>").getMatch(0);
-                filesize = br.getRegex(">Size:\\&nbsp;<strong>([^<>\"]*?)</strong>").getMatch(0);
-                link.getLinkStatus().setStatusText("Recipient Identity verification needed!");
-            } else {
-                filename = br.getRegex("style=\"width:390px; display:block; overflow:hidden;\">(.*?)</a>").getMatch(0);
-                if (filename == null) {
-                    filename = br.getRegex("<span style=\\'color:#1F3CD6;\\'>(.*?)</span><").getMatch(0);
-                    if (filename == null) {
-                        filename = br.getRegex("clsDownloadFileName\">(.*?)</").getMatch(0);
-                        if (filename == null) {
-                            filename = br.getRegex(">([^<>]+)</a>\\&nbsp\\; <span>").getMatch(0);
-                            if (filename == null) {
-                                filename = br.getRegex("title=\"([^<>\"]+)\" style=\"w").getMatch(0);
-                            }
-                        }
-                    }
-                }
-                filesize = br.getRegex("\">Size:\\&nbsp;<strong>(.*?)</strong>").getMatch(0);
-                if (filesize == null) {
-                    filesize = br.getRegex(";\\'>Size: (.*?)\\&nbsp;").getMatch(0);
-                    if (filesize == null) {
-                        filesize = br.getRegex("\">Size: (.*?)</").getMatch(0);
-                        if (filesize == null) {
-                            filesize = br.getRegex("(?i)\\(([\\d\\.]+ ?(MB|GB))\\)").getMatch(0);
-                        }
-                    }
-                }
-            }
+            final String filename = br.getRegex("id=\"downloadSingleFilename\">([^<>\"]*?)</span>").getMatch(0);
+            final String filesize = br.getRegex("id=\"downloadSingleFilesize\">([^<>\"]*?)<span>").getMatch(0);
             if (filename == null) {
-                logger.warning("YouSendIt: Can't find filename, Please report this to the JD Developement team!");
+                logger.warning("hightail.com: Can't find filename, Please report this to the JD Developement team!");
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             if (filesize == null) {
-                logger.info("YouSendIt: Can't find filesize, Please report this to the JD Developement team!");
-                logger.info("YouSendIt: Continuing...");
+                logger.info("hightail.com: Can't find filesize, Please report this to the JD Developement team!");
+                logger.info("hightail.com: Continuing...");
             }
-            // Set the final filename here because server sometimes doesn't give
-            // us the correct filename
-            if (!filename.endsWith("..."))
-                link.setFinalFileName(filename.trim());
-            else
-                link.setName(filename.trim() + new Random().nextInt(1000));
+            link.setFinalFileName(filename.trim());
             if (filesize != null) link.setDownloadSize(SizeFormatter.getSize(filesize));
         }
         return AvailableStatus.TRUE;
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
+    public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        if (br.containsHTML(VERIFYRECEPTIENT)) throw new PluginException(LinkStatus.ERROR_FATAL, VERIFYRECEPTIENTUSERTEXT);
-        String dllink = DLLINK;
-        // Nearly all regexes are needed because they have lots of different
-        // downloadlinks...
-        if (dllink == null) {
-            dllink = br.getRegex("<div style=\"width:390px;font-size:14px;font-weight:bold\">[\t\r\n ]+<a href=\"(.*?)\"").getMatch(0);
-            if (dllink == null) {
-                dllink = br.getRegex("onclick=\\'showDownloadProcessing\\(this\\);\\' style=\\'position:absolute;top:10px;right:10px;\\'>[\t\r\n ]+<a href=\"(.*?)\"").getMatch(0);
-                if (dllink == null) {
-                    dllink = br.getRegex("\"(directDownload\\?phi_action=app/directDownload\\&fl=[A-Za-z0-9]+(\\&experience=bas)?)\"").getMatch(0);
-                    if (dllink == null) {
-                        dllink = br.getRegex("<a id=\"download-button\" href=\"(http.*?)\"").getMatch(0);
-                        if (dllink == null) {
-                            dllink = br.getRegex("\"(http(s)?://(www\\.)?yousendit\\.com/transfer\\.php\\?action=check_download\\&ufid=[a-zA-Z0-9]+\\&key=[a-z0-9]+)\"").getMatch(0);
-                        }
-                    }
+        final String fileurl = downloadLink.getStringProperty("fileurl", null);
+        if (fileurl != null) {
+            DLLINK = "https://www.hightail.com/e?phi_action=app/directDownload&fl=" + fileurl;
+        } else {
+            if (DLLINK == null) {
+                DLLINK = br.getRegex("class=\"btn\\-save\" href=\"([^<>\"]*?)\"").getMatch(0);
+                if (DLLINK == null) {
+                    DLLINK = br.getRegex("\"(e\\?phi_action=app/directDownload[^<>\"]*?)\"").getMatch(0);
                 }
+                if (DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                if (!DLLINK.contains("hightail.com")) DLLINK = "https://www.hightail.com/" + DLLINK;
             }
-            if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            if (!dllink.contains("yousendit.com")) dllink = "http://yousendit.com/" + dllink;
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

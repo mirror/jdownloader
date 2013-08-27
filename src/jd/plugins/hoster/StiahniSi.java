@@ -56,16 +56,23 @@ public class StiahniSi extends PluginForHost {
         link.setUrlDownload("http://www.stiahni.si/download.php?id=" + new Regex(link.getDownloadURL(), "(\\d+)$").getMatch(0));
     }
 
+    private static final boolean SKIPWAIT = true;
+
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.getPage("http://www.stiahni.si/download.php?lang=en&id=" + new Regex(link.getDownloadURL(), "(\\d+)$").getMatch(0));
+        br.getHeaders().put("Accept-Language", "en-US,en;q=0.5");
+        br.getPage("http://www.stiahni.si/download.php?lg=en&id=" + new Regex(link.getDownloadURL(), "(\\d+)$").getMatch(0));
         if (br.containsHTML(">Súbor nebol nájdený<|>Súbor nikto nestiahol viac ako")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex(">Download: <a href=\"#\">([^<>\"]*?)</a>").getMatch(0);
-        String filesize = br.getRegex(">Size</td>[\t\n\r ]+<td class=\"value\">([^<>\"]*?)</td>").getMatch(0);
+        String filename = br.getRegex("<title>Download ([^<>\"]*?) \\- Stiahni\\.si</title>").getMatch(0);
+        if (filename == null) filename = br.getRegex("class=\"file_download_name\">([^<>\"]*?)</div>").getMatch(0);
+        final String filesize = br.getRegex("Size: ([^<>\"]*?)<br/>").getMatch(0);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        link.setName(Encoding.htmlDecode(filename.trim()));
+        filename = Encoding.htmlDecode(filename.trim());
+        final String ext = br.getRegex("tiahni\\.si/showicon\\.php\\?id=([a-z0-9]+)\\&").getMatch(0);
+        if (ext != null && !filename.endsWith("." + ext)) filename += "." + ext;
+        link.setName(filename);
         link.setDownloadSize(SizeFormatter.getSize(filesize));
         return AvailableStatus.TRUE;
     }
@@ -73,13 +80,15 @@ public class StiahniSi extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        if (br.containsHTML(">Všetky free sloty sú obsadené")) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "No free slots available at the moment", 10 * 60 * 1000l);
-        final String waittime = br.getRegex("var limit='(\\d+):00'").getMatch(0);
-        int wait = 60;
-        if (waittime != null) wait = Integer.parseInt(waittime) * 60;
-        sleep(wait * 1001l, downloadLink);
+        if (!SKIPWAIT) {
+            if (br.containsHTML("All free slots are currently occupied")) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "No free slots available at the moment", 10 * 60 * 1000l);
+            final String waittime = br.getRegex("var limit='(\\d+):00'").getMatch(0);
+            int wait = 60;
+            if (waittime != null) wait = Integer.parseInt(waittime) * 60;
+            sleep(wait * 1001l, downloadLink);
+        }
         br.setFollowRedirects(false);
-        br.getPage("http://www.stiahni.si/fetch.php?id=" + new Regex(downloadLink.getDownloadURL(), "(\\d+)$").getMatch(0));
+        br.getPage("http://www.stiahni.si/fetch2.php?id=" + new Regex(downloadLink.getDownloadURL(), "(\\d+)$").getMatch(0));
         String dllink = br.getRedirectLocation();
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);

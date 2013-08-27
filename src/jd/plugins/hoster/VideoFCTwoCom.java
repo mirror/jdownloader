@@ -228,6 +228,9 @@ public class VideoFCTwoCom extends PluginForHost {
         /* get url */
         downloadLink.setProperty("ONLYFORPREMIUM", false);
         br.getPage("/ginfo.php?otag=0&tk=null&href=" + Encoding.urlEncode(dllink).replaceAll("\\.", "%2E") + "&upid=" + upid + "&gk=" + gk + "&fversion=" + Encoding.urlEncode("WIN 11,1,102,62").replaceAll("\\+", "%20") + "&playid=null&lang=en&playlistid=null&mimi=" + getMimi(upid) + "&v=" + upid);
+
+        if (br.containsHTML("err_code=403")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+
         br.getHeaders().put("Referer", null);
         String error = br.getRegex("^err_code=(\\d+)$").getMatch(0);
         if (br.getRegex("\\&charge_second=\\d+").matches()) error = "603";

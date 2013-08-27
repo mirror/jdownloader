@@ -52,7 +52,7 @@ public class MyDiskGe extends PluginForHost {
         String dllink = br.getRegex("id=frm action='(.*?)'").getMatch(0);
         if (dllink == null) dllink = br.getRegex("'(http://srv\\d+\\.uauwap\\.com:\\d+/\\d+.*?)'").getMatch(0);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

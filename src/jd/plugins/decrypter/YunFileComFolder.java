@@ -20,6 +20,7 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.Browser.BrowserException;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
@@ -27,7 +28,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "yunfile.com" }, urls = { "http://(www\\.)?(yunfile|filemarkets|yfdisk)\\.com/ls/[a-z0-9]+/([a-z0-9]+)?" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "yunfile.com" }, urls = { "http://(www\\.)?(page\\d+\\.)?(yunfile|filemarkets|yfdisk)\\.com/ls/[a-z0-9]+/([a-z0-9]+)?" }, flags = { 0 })
 public class YunFileComFolder extends PluginForDecrypt {
 
     public YunFileComFolder(PluginWrapper wrapper) {
@@ -39,13 +40,18 @@ public class YunFileComFolder extends PluginForDecrypt {
         String parameter = param.toString().replaceAll("http://(www\\.)?(yunfile|filemarkets|yfdisk)\\.com/", "http://yunfile.com/");
         br.setCookie("http://yunfile.com/", "language", "en_us");
         br.setFollowRedirects(true);
-        br.getPage(parameter);
+        try {
+            br.getPage(parameter);
+        } catch (final BrowserException e) {
+            logger.info("Decrypt failed (server error): " + parameter);
+            return decryptedLinks;
+        }
         if (br.containsHTML("\\[ The uploader has no shared file lists\\.\\! \\]")) {
             logger.info("This link contains no downloadable content: " + parameter);
             return decryptedLinks;
         }
-        final String[] links = br.getRegex("\"(http://(www\\.)?yunfile\\.com/file/[a-z0-9]+/[a-z0-9]+/?)\"").getColumn(0);
-        final String[] folders = br.getRegex("(http://(www\\.)?yunfile\\.com/ls/[a-z0-9]+/[a-z0-9]+)").getColumn(0);
+        final String[] links = br.getRegex("\"(http://(www\\.)?(page\\d+\\.)?yunfile\\.com/file/[a-z0-9]+/[a-z0-9]+/?)\"").getColumn(0);
+        final String[] folders = br.getRegex("(http://(www\\.)?(page\\d+\\.)?yunfile\\.com/ls/[a-z0-9]+/[a-z0-9]+)").getColumn(0);
         if ((links == null || links.length == 0) && (folders == null || folders.length == 0)) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;

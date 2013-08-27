@@ -120,7 +120,7 @@ public class MegaCloudCom extends PluginForHost {
         ajax.getHeaders().put("Accept-Charset", null);
         ajax.getHeaders().put("Accept-Language", "en-US,en;q=0.5");
 
-        dl = jd.plugins.BrowserAdapter.openDownload(ajax, downloadLink, action, postData, true, 0);
+        dl = jd.plugins.BrowserAdapter.openDownload(ajax, downloadLink, action, postData, false, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

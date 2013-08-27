@@ -45,7 +45,6 @@ public class ZMagsCom extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
-        System.out.print(br.toString());
         if (br.containsHTML("(>Publication not found<|>The publication you are trying to view does not exist or may have been deleted|Please check the URL and re\\-enter it in the address line of your browser)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("<meta property=\"og:title\" content=\"(.*?)\"/>").getMatch(0);
         if (filename == null) {

@@ -70,6 +70,7 @@ public class XxxKinKyCom extends PluginForHost {
         if (br.containsHTML("<title> Most Recent Videos \\- Free Sex Adult Videos \\- XXXKinky\\.com</title>") || br.getURL().equals("http://www.xxxkinky.com/videos/?m=e")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("<title>(.*?)\\- Free Porn Videos and Sex Movies at XXX Kinky Porn Tube</title>").getMatch(0);
         DLLINK = br.getRegex("\\'file\\': \\'(http://[^<>\"]*?)\\'").getMatch(0);
+        if (DLLINK == null) DLLINK = br.getRegex("file=(http[^<>\"]*?)\\'\\)").getMatch(0);
         if (filename == null || DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         DLLINK = Encoding.htmlDecode(DLLINK);
         filename = filename.trim();

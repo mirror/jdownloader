@@ -235,6 +235,7 @@ public class DizzCloudCom extends PluginForHost {
             if (dl.getConnection().getContentType().contains("html")) {
                 logger.warning("The final dllink seems not to be a file!");
                 br.followConnection();
+                if (br.containsHTML("Dynamic ip error")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             dl.startDownload();

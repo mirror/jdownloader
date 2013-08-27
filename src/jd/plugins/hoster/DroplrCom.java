@@ -65,7 +65,7 @@ public class DroplrCom extends PluginForHost {
         final String dtoken = br.getRegex("data\\-dtoken=\"([a-z0-9]+)\"").getMatch(0);
         String dllink = br.getRegex("data\\-link=\"(http[^<>\"]*?)\" id=\"download\"").getMatch(0);
         if (dllink == null || dtoken == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        dllink = downloadLink.getDownloadURL().replace("droplr.com/", "d.pr/") + "/download?link=https%3A%2F%2Fs3-us-west-2.amazonaws.com%2Fdroplr.storage%2Ffiles%2Facc_139303%2FmtJJ&filename=01+Belong+To+the+World.m4a&dtoken=b3be344e95e65f803a2d8386eb4af6aad04e0962" + dllink;
+        dllink = downloadLink.getDownloadURL() + "/download?link=" + dllink;
         dllink += "&filename=" + Encoding.urlEncode(downloadLink.getName());
         dllink += "&dtoken=" + dtoken;
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");

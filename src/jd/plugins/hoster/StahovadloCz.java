@@ -56,7 +56,7 @@ public class StahovadloCz extends PluginForHost {
         this.setBrowserExclusive();
         if (link.getDownloadURL().matches(FREELINK)) {
             br.getPage(link.getDownloadURL());
-            if (br.containsHTML(">Neplatný nebo neúplný odkaz")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            if (br.containsHTML(">Neplatný nebo neúplný odkaz|>Soubor již není dostupný")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             String filename = br.getRegex("<dt>Název:</dt>[\t\n\r ]+<dd>([^<>\"]*?)</dd>").getMatch(0);
             if (filename == null) filename = br.getRegex("<title>Stahovadlo\\.cz \\- Soubor ([^<>\"]*?)</title>").getMatch(0);
             String filesize = br.getRegex("<small>\\((\\d+ B)\\)</small>").getMatch(0);

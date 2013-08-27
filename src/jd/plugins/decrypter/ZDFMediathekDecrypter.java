@@ -56,6 +56,14 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
         parameter = parameter.replace("ZDFmediathek#/", "ZDFmediathek/");
+        // Check for invalid links
+        if (parameter.contains("/live/")) {
+            final DownloadLink link = createDownloadlink(parameter.replace("http://", "decrypted://") + "&quality=high");
+            link.setAvailable(false);
+            link.setProperty("offline", true);
+            decryptedLinks.add(link);
+            return decryptedLinks;
+        }
 
         setBrowserExclusive();
         br.setFollowRedirects(true);

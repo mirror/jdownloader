@@ -51,7 +51,7 @@ public class ZalilRu extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
-        if (br.containsHTML(">Файл не найден<")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML(">Файл не найден")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         final Regex fileinfo = br.getRegex("<p align=\"center\">([^<>\"]*?)\\&nbsp;\\&nbsp;\\&nbsp;([^<>\"]*?)<br><br>");
         final String filename = fileinfo.getMatch(0);
         final String filesize = fileinfo.getMatch(1);
