@@ -38,7 +38,7 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "facebook.com" }, urls = { "http(s)?://(www\\.)?(on\\.fb\\.me/[A-Za-z0-9]+\\+?|facebook\\.com/media/set/\\?set=a\\.\\d+\\.\\d+\\.\\d+)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "facebook.com" }, urls = { "http(s)?://(www\\.)?(on\\.fb\\.me/[A-Za-z0-9]+\\+?|facebook\\.com/(media/set/\\?set=|[^<>\"/]*?/media_set\\?set=)a\\.\\d+\\.\\d+\\.\\d+)" }, flags = { 0 })
 public class FaceBookComGallery extends PluginForDecrypt {
 
     public FaceBookComGallery(PluginWrapper wrapper) {

@@ -19,6 +19,7 @@ package jd.plugins.hoster;
 import java.io.IOException;
 
 import jd.PluginWrapper;
+import jd.config.Property;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
@@ -60,36 +61,37 @@ public class TumblrCom extends PluginForHost {
         return -1;
     }
 
-    @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception {
-        requestFileInformation(downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        dl.startDownload();
-    }
+    private static final String ADDITION = "P3BsZWFkPXBsZWFzZS1kb250LWRvd25sb2FkLXRoaXMtb3Itb3VyLWxhd3llcnMtd29udC1sZXQtdXMtaG9zdC1hdWRpbw==";
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML("The URL you requested could not be found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = new Regex(br.getURL(), "tumblr\\.com/post/\\d+/(.+)").getMatch(0);
-        if (filename == null) filename = new Regex(downloadLink.getDownloadURL(), "tumblr\\.com/post/(\\d+)").getMatch(0);
-        filename = filename.trim();
-        if (br.containsHTML(">renderVideo\\(")) {
-            dllink = br.getRegex("\\'(http://[^<>\"/]*?\\.tumblr\\.com/video_file/\\d+/[^<>\"/]*?)\\'").getMatch(0);
-            downloadLink.setFinalFileName(filename + ".mp4");
+        dllink = checkDirectLink(downloadLink, "audiodirectlink");
+        if (dllink != null) {
+            dllink += Encoding.Base64Decode(ADDITION);
         } else {
-            getDllink();
-            if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            dllink = Encoding.htmlDecode(dllink.trim());
-            String ext = dllink.substring(dllink.lastIndexOf("."));
-            if (ext == null || ext.length() > 5) ext = ".mp3";
-            downloadLink.setFinalFileName(filename + ext);
+            String filename = downloadLink.getFinalFileName();
+            if (filename == null) filename = new Regex(br.getURL(), "tumblr\\.com/post/\\d+/(.+)").getMatch(0);
+            if (filename == null) filename = new Regex(downloadLink.getDownloadURL(), "tumblr\\.com/post/(\\d+)").getMatch(0);
+            filename = filename.trim();
+            if (br.containsHTML(">renderVideo\\(")) {
+                dllink = br.getRegex("\\'(http://[^<>\"/]*?\\.tumblr\\.com/video_file/\\d+/[^<>\"/]*?)\\'").getMatch(0);
+                downloadLink.setFinalFileName(filename + ".mp4");
+            } else if (br.containsHTML("class=\"audio_player\"")) {
+                dllink = br.getRegex("\\?audio_file=(http[^<>\"]*?)\\&color").getMatch(0);
+                if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                dllink = Encoding.htmlDecode(dllink.trim()) + Encoding.Base64Decode(ADDITION);
+            } else {
+                getDllink();
+                if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                dllink = Encoding.htmlDecode(dllink.trim());
+                String ext = dllink.substring(dllink.lastIndexOf("."));
+                if (ext == null || ext.length() > 5) ext = ".mp3";
+                downloadLink.setFinalFileName(filename + ext);
+            }
         }
         Browser br2 = br.cloneBrowser();
         // In case the link redirects to the finallink
@@ -109,6 +111,36 @@ public class TumblrCom extends PluginForHost {
             } catch (Throwable e) {
             }
         }
+    }
+
+    @Override
+    public void handleFree(final DownloadLink downloadLink) throws Exception {
+        requestFileInformation(downloadLink);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
+        if (dl.getConnection().getContentType().contains("html")) {
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dl.startDownload();
+    }
+
+    private String checkDirectLink(final DownloadLink downloadLink, final String property) {
+        String dllink = downloadLink.getStringProperty(property);
+        if (dllink != null) {
+            try {
+                final Browser br2 = br.cloneBrowser();
+                URLConnectionAdapter con = br2.openGetConnection(dllink);
+                if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
+                    downloadLink.setProperty(property, Property.NULL);
+                    dllink = null;
+                }
+                con.disconnect();
+            } catch (Exception e) {
+                downloadLink.setProperty(property, Property.NULL);
+                dllink = null;
+            }
+        }
+        return dllink;
     }
 
     @Override

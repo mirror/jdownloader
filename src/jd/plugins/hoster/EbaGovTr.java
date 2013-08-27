@@ -51,6 +51,8 @@ public class EbaGovTr extends PluginForHost {
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
+        br.setConnectTimeout(3 * 60 * 1000);
+        br.setReadTimeout(3 * 60 * 1000);
         final String addedlink = link.getDownloadURL();
         br.getPage(addedlink);
         String filename = null;
@@ -58,10 +60,12 @@ public class EbaGovTr extends PluginForHost {
             if (br.containsHTML(">Aradığınız Sayfa Bulunamadı<|>Bu sayfa kaldırılmış olabilir\\.<")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             filename = br.getRegex("<h3>[^<>\"]+<small>([^<>\"]*?)</small></h3>").getMatch(0);
             DLLINK = br.getRegex("\"(/download\\.php\\?type=[^<>\"]*?)\"").getMatch(0);
+            // Maybe pdf link
+            if (DLLINK == null) DLLINK = br.getRegex("<a class=\"btn success\".*?\"(/out\\.php\\?u=http://[^<>\"]*?)\"").getMatch(0);
             if (DLLINK != null) DLLINK = "http://www.eba.gov.tr" + DLLINK;
         } else if (addedlink.matches(VIDEOLINK)) {
             if (br.containsHTML(">Video Bulunamamıştır<")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            filename = br.getRegex("<title>Video \\| ([^<>\"]*?)\\- Eğitim Bilişim Ağı</title>").getMatch(0);
+            filename = br.getRegex("class=\"active\">([^<>\"]*?)</li>").getMatch(0);
             DLLINK = br.getRegex("assets/themes/base/images/download\\.png\" /><br><a href=\"(http://[^<>\"]*?)\"").getMatch(0);
         } else if (addedlink.matches(AUDIOLINK)) {
             if (br.containsHTML(">Ses Bulunamamıştır<")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
