@@ -22,6 +22,7 @@ import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
@@ -37,16 +38,13 @@ import jd.utils.locale.JDL;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "flashx.tv" }, urls = { "http://((www\\.)?flashx\\.tv/video/[A-Z0-9]+/|play\\.flashx\\.tv/player/embed\\.php\\?.+|play\\.flashx\\.tv/player/fxtv\\.php\\?.+)" }, flags = { 0 })
 public class FlashxTv extends PluginForHost {
 
+    private String              AGENT    = null;
+
+    private static final String NOCHUNKS = "NOCHUNKS";
+
     public FlashxTv(PluginWrapper wrapper) {
         super(wrapper);
     }
-
-    @Override
-    public String getAGBLink() {
-        return "http://flashx.tv/page/3/terms-of-service";
-    }
-
-    private static final String NOCHUNKS = "NOCHUNKS";
 
     @Override
     public void correctDownloadLink(DownloadLink link) {
@@ -57,32 +55,57 @@ public class FlashxTv extends PluginForHost {
         }
     }
 
+    private String fx(final int i) {
+        final String[] s = new String[2];
+        s[0] = "f8dbfbfafa57cde11f94b695de5042f1299371b7095fdd9a1e185a3b116e82845888fd3e8900e26f211655e8eb771a74e722299bc69a6263a823d6e66e0f373e5af4c82e5827ffcf25a92ebe5261c8e945a78e856ffc9dad998a2a9528657811c6733e016c8b806b391101aa1b30162b03b18a7534a6719d83c0607d4f625dc08a6e4db2cd63d9c7321c08d37306c3b7d933074e56c2b0a81d8739ac6c6775c51d775c0e345d7b121226c64adc65d86d1db07b2042f449930428adf7d6a9520b60d0f0d6";
+        s[1] = "fd80faf7fb07cce61ec5b2cbda0343f829c771be0952dc9b1a1c5f68156d87875983fd328c5ce338201554eaef201823e4722c9fc5986267ad21d2b56f0d37355af2cc785879facd24a92ab85761cce440ad8ad86ffb9dae988c2a922c307c11c7263e546c8381653f16";
+        return JDHexUtils.toString(jd.plugins.decrypter.LnkCrptWs.IMAGEREGEX(s[i]));
+    }
+
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
-        this.setBrowserExclusive();
-        br.setFollowRedirects(true);
-        br.setCustomCharset("utf-8");
-        br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:22.0) Gecko/20100101 Firefox/22.0");
-        br.getPage(link.getDownloadURL());
-        if (br.containsHTML("(>Requested page not found|>404 Error<|>Video not found, deleted or abused, sorry\\!<|>Video not found or deleted<)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("<div class=\"video_title\">([^<>\"]*?)</div>").getMatch(0);
-        if (filename == null) filename = br.getRegex("<meta property=\"og:title\" content=\"([^<>\"]*?)\"").getMatch(0);
-        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        link.setFinalFileName(Encoding.htmlDecode(filename.trim()) + ".flv");
-        return AvailableStatus.TRUE;
+    public String getAGBLink() {
+        return "http://flashx.tv/page/3/terms-of-service";
+    }
+
+    @Override
+    public int getMaxSimultanFreeDownloadNum() {
+        return -1;
+    }
+
+    private String getPlainData(String regex) {
+        String encrypted = br.getRegex("<script language=javascript>(.*?)</script>").getMatch(0);
+        String decrypted = null;
+        if (encrypted != null) {
+            Object result = new Object();
+            final ScriptEngineManager manager = new ScriptEngineManager();
+            final ScriptEngine engine = manager.getEngineByName("javascript");
+            try {
+                engine.eval("var decrypted = '';");
+                engine.eval("var document = new Object();");
+                engine.eval("document.write = function(s) { decrypted += s; }");
+                engine.eval(encrypted);
+                result = engine.get("decrypted");
+            } catch (final Throwable e) {
+                return null;
+            }
+            if (result != null) decrypted = new Regex(result.toString(), regex).getMatch(0);
+        }
+        return decrypted;
     }
 
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
+
+        /* we first have to load the plugin, before we can reference it */
         JDUtilities.getPluginForDecrypt("linkcrypt.ws");
         String dllink = null;
         // 1
         String regex = "\"(http://(flashx\\.tv/player/embed_player\\.php|play\\.flashx\\.tv/player/embed\\.php)\\?[^<>\"]*?)\"";
         String firstlink = br.getRegex(regex).getMatch(0);
         if (firstlink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        prepareBrowser("text/html, application/xhtml+xml, */*");
         br.getPage(firstlink);
-        // br.cloneBrowser().getPage(fx(1)); // ;-)
         // 2
         String seclinkgk = br.getRegex(fx(0)).getMatch(1);
         if (seclinkgk == null) seclinkgk = br.getRegex(fx(0)).getMatch(1);
@@ -93,7 +116,10 @@ public class FlashxTv extends PluginForHost {
         String seclink = br.getRegex(regex).getMatch(0);
         if (seclink == null) seclink = getPlainData(regex);
         if (seclink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+
+        prepareBrowser("image/png, image/svg+xml, image/*;q=0.8, */*;q=0.5", firstlink);
         br.getPage(seclinkgk);
+        prepareBrowser("text/html, application/xhtml+xml, */*");
         br.getPage(seclink);
         if (br.containsHTML("We are currently performing maintenance on this server")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "This server is under maintenance", 30 * 60 * 1000l);
         // 4
@@ -101,6 +127,12 @@ public class FlashxTv extends PluginForHost {
         String thirdLink = br.getRegex(regex).getMatch(0);
         if (thirdLink == null) thirdLink = getPlainData(regex);
         if (thirdLink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+
+        Browser br2 = br.cloneBrowser();
+        // br2.getHttpConnection().setRequestMethod(RequestMethod.HEAD);
+        br2.getHeaders().put("Pragma", "no-cache");
+        br2.openGetConnection(fx(1) + thirdLink);
+
         br.getPage(thirdLink);
         dllink = br.getRegex("<file>(http://[^<>\"]*?)</file>").getMatch(0);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -136,41 +168,39 @@ public class FlashxTv extends PluginForHost {
         }
     }
 
-    private String fx(final int i) {
-        final String[] s = new String[2];
-        s[0] = "f8dbfbfafa57cde11f94b695de5042f1299371b7095fdd9a1e185a3b116e82845888fd3e8900e26f211655e8eb771a74e722299bc69a6263a823d6e66e0f373e5af4c82e5827ffcf25a92ebe5261c8e945a78e856ffc9dad998a2a9528657811c6733e016c8b806b391101aa1b30162b03b18a7534a6719d83c0607d4f625dc08a6e4db2cd63d9c7321c08d37306c3b7d933074e56c2b0a81d8739ac6c6775c51d775c0e345d7b121226c64adc65d86d1db07b2042f449930428adf7d6a9520b60d0f0d6";
-        s[1] = "fd80faf7fb07cce61ec5b2cbda0343fc299c70ba080fd8cc1e4f5f3d153f86855888fc328901e669201751baeb231825e4742c9bc5c76731ad25d3e56b59373c5affcc7a";
-        return JDHexUtils.toString(jd.plugins.decrypter.LnkCrptWs.IMAGEREGEX(s[i]));
+    private void prepareBrowser(String... s) {
+        br.getHeaders().put("Accept", s[0]);
+        br.getHeaders().put("Accept-Charset", null);
+        br.getHeaders().put("Accept-Language", "de-DE");
+        br.getHeaders().put("Cache-Control", null);
+        if (s.length > 1) br.getHeaders().put("Referer", s[1]);
+        br.getHeaders().put("Pragma", null);
     }
 
-    private String getPlainData(String regex) {
-        String encrypted = br.getRegex("<script language=javascript>(.*?)</script>").getMatch(0);
-        String decrypted = null;
-        if (encrypted != null) {
-            Object result = new Object();
-            final ScriptEngineManager manager = new ScriptEngineManager();
-            final ScriptEngine engine = manager.getEngineByName("javascript");
-            try {
-                engine.eval("var decrypted = '';");
-                engine.eval("var document = new Object();");
-                engine.eval("document.write = function(s) { decrypted += s; }");
-                engine.eval(encrypted);
-                result = engine.get("decrypted");
-            } catch (final Throwable e) {
-                return null;
-            }
-            if (result != null) decrypted = new Regex(result.toString(), regex).getMatch(0);
+    @Override
+    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
+        this.setBrowserExclusive();
+        br.setFollowRedirects(true);
+        br.setCustomCharset("utf-8");
+
+        if (AGENT == null) {
+            /* we first have to load the plugin, before we can reference it */
+            JDUtilities.getPluginForHost("mediafire.com");
+            AGENT = jd.plugins.hoster.MediafireCom.stringUserAgent();
         }
-        return decrypted;
+        br.getHeaders().put("User-Agent", AGENT);
+
+        br.getPage(link.getDownloadURL());
+        if (br.containsHTML("(>Requested page not found|>404 Error<|>Video not found, deleted or abused, sorry\\!<|>Video not found or deleted<)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = br.getRegex("<div class=\"video_title\">([^<>\"]*?)</div>").getMatch(0);
+        if (filename == null) filename = br.getRegex("<meta property=\"og:title\" content=\"([^<>\"]*?)\"").getMatch(0);
+        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        link.setFinalFileName(Encoding.htmlDecode(filename.trim()) + ".flv");
+        return AvailableStatus.TRUE;
     }
 
     @Override
     public void reset() {
-    }
-
-    @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return -1;
     }
 
     @Override
