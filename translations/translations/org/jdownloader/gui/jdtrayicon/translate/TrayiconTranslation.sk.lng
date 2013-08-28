@@ -6,6 +6,7 @@ JDGui_windowClosing_try_title_=Ukončiť?
 OnCloseAction_exit=Ukončiť aplikáciu
 OnCloseAction_totaskbar=Minimalizovať na panel úloh
 OnCloseAction_totray=Skryť do oblasti oznámení
+OnMinimizeAction_ask=Opýtať sa ma
 OnMinimizeAction_totaskbar=Minimalizovať na panel úloh
 OnMinimizeAction_totray=Skryť do oblasti oznámení
 plugins_optional_JDLightTray_startMinimized=Spustiť minimalizované
