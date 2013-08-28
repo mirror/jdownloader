@@ -152,7 +152,7 @@ public class VKontakteRu extends PluginForDecrypt {
                         getPageSafe(newLink);
                     } else if (br.containsHTML("id=\"public_like_module\"")) {
                         // Change public page links -> wall links
-                        final String wallID = br.getRegex("class=\"wall_text\"><a class=\"author\" href=\"/[A-Za-z0-9\\-_\\.]+\" data\\-from\\-id=\"((\\-)?\\d+)\"").getMatch(0);
+                        final String wallID = br.getRegex("\"wall_oid\":(\\-\\d+)").getMatch(0);
                         if (wallID == null) {
                             logger.warning("Failed to find wallID for public-page-link: " + parameter);
                             return null;

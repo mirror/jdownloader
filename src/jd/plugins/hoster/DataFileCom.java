@@ -56,7 +56,9 @@ public class DataFileCom extends PluginForHost {
         return "http://www.datafile.com/terms.html";
     }
 
-    private static final String PREMIUMONLY = "(\"Sorry\\. Only premium users can download this file\"|>This file can be downloaded only users with<br />Premium account!<)";
+    private static final String  PREMIUMONLY           = "(\"Sorry\\. Only premium users can download this file\"|>This file can be downloaded only users with<br />Premium account!<)";
+    private static final boolean SKIPRECONNECTWAITTIME = true;
+    private static final boolean SKIPWAITTIME          = true;
 
     /**
      * They have a linkchecker but it doesn't show filenames if they're not included in the URL: http://www.datafile.com/linkchecker.html
@@ -108,7 +110,7 @@ public class DataFileCom extends PluginForHost {
             if (tempSeconds != null) tmpsecs = Integer.parseInt(tempSeconds);
             final long wait = (tmphrs * 60 * 60 * 1000) + (tmpmin * 60 * 1000) + (tmpsecs * 1001);
             if (wait == 0) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            if (wait > 610000) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, wait);
+            if (!SKIPRECONNECTWAITTIME && wait > 3601800) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, wait); }
             long timeBefore = System.currentTimeMillis();
             final String rcID = br.getRegex("api/challenge\\?k=([^<>\"]*?)\"").getMatch(0);
             if (rcID == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -120,7 +122,7 @@ public class DataFileCom extends PluginForHost {
             for (int i = 1; i <= 5; i++) {
                 final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
                 final String c = getCaptchaCode(cf, downloadLink);
-                if (i == 1) {
+                if (!SKIPWAITTIME && i == 1) {
                     waitTime(timeBefore, downloadLink, wait);
                 }
                 postPage("https://www.datafile.com/files/ajax.html", "doaction=getFileDownloadLink&recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + Encoding.urlEncode(c) + "&fileid=" + fid);

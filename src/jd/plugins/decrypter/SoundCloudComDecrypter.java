@@ -47,6 +47,15 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        // Sometimes slow servers
+        br.setConnectTimeout(3 * 60 * 1000);
+        br.setReadTimeout(3 * 60 * 1000);
+        try {
+            // They can have huge pages, allow eight times the normal load limit
+            br.setLoadLimit(8388608);
+        } catch (final Throwable e) {
+            // Not available in old 0.9.581 Stable
+        }
         // Login if possible, helps to get links which need the user to be logged in
         final PluginForHost scPlugin = JDUtilities.getPluginForHost("soundcloud.com");
         final Account aa = AccountController.getInstance().getValidAccount(scPlugin);

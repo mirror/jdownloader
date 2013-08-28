@@ -56,22 +56,6 @@ public class MegaConz extends PluginForHost {
         return "https://mega.co.nz/#terms";
     }
 
-    private String useSSL() {
-        if (getPluginConfig().getBooleanProperty(USE_SSL, false)) {
-            return "1";
-        } else {
-            return "0";
-        }
-    }
-
-    private boolean useTMP() {
-        if (getPluginConfig().getBooleanProperty(USE_TMP, false)) {
-            return true;
-        } else {
-            return false;
-        }
-    }
-
     @Override
     public void correctDownloadLink(final DownloadLink link) {
         link.setUrlDownload(link.getDownloadURL().replaceAll("%21", "!"));
@@ -120,28 +104,6 @@ public class MegaConz extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
-    private String decrypt(String input, String keyString) throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, InvalidAlgorithmParameterException, IllegalBlockSizeException, BadPaddingException, UnsupportedEncodingException, PluginException {
-        byte[] b64Dec = b64decode(keyString);
-        int[] intKey = aByte_to_aInt(b64Dec);
-        byte[] key = aInt_to_aByte(intKey[0] ^ intKey[4], intKey[1] ^ intKey[5], intKey[2] ^ intKey[6], intKey[3] ^ intKey[7]);
-        byte[] iv = aInt_to_aByte(0, 0, 0, 0);
-        final IvParameterSpec ivSpec = new IvParameterSpec(iv);
-        final SecretKeySpec skeySpec = new SecretKeySpec(key, "AES");
-        Cipher cipher = Cipher.getInstance("AES/CBC/nopadding");
-        cipher.init(Cipher.DECRYPT_MODE, skeySpec, ivSpec);
-        byte[] unPadded = b64decode(input);
-        int len = 16 - ((unPadded.length - 1) & 15) - 1;
-        byte[] payLoadBytes = new byte[unPadded.length + len];
-        System.arraycopy(unPadded, 0, payLoadBytes, 0, unPadded.length);
-        payLoadBytes = cipher.doFinal(payLoadBytes);
-        String ret = new String(payLoadBytes, "UTF-8");
-        if (ret != null && !ret.startsWith("MEGA{")) {
-            /* verify if the keyString is correct */
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        return ret;
-    }
-
     @Override
     public void handleFree(DownloadLink link) throws Exception {
         requestFileInformation(link);
@@ -181,6 +143,28 @@ public class MegaConz extends PluginForHost {
                 decrypt(link, keyString);
             }
         }
+    }
+
+    private String decrypt(String input, String keyString) throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, InvalidAlgorithmParameterException, IllegalBlockSizeException, BadPaddingException, UnsupportedEncodingException, PluginException {
+        byte[] b64Dec = b64decode(keyString);
+        int[] intKey = aByte_to_aInt(b64Dec);
+        byte[] key = aInt_to_aByte(intKey[0] ^ intKey[4], intKey[1] ^ intKey[5], intKey[2] ^ intKey[6], intKey[3] ^ intKey[7]);
+        byte[] iv = aInt_to_aByte(0, 0, 0, 0);
+        final IvParameterSpec ivSpec = new IvParameterSpec(iv);
+        final SecretKeySpec skeySpec = new SecretKeySpec(key, "AES");
+        Cipher cipher = Cipher.getInstance("AES/CBC/nopadding");
+        cipher.init(Cipher.DECRYPT_MODE, skeySpec, ivSpec);
+        byte[] unPadded = b64decode(input);
+        int len = 16 - ((unPadded.length - 1) & 15) - 1;
+        byte[] payLoadBytes = new byte[unPadded.length + len];
+        System.arraycopy(unPadded, 0, payLoadBytes, 0, unPadded.length);
+        payLoadBytes = cipher.doFinal(payLoadBytes);
+        String ret = new String(payLoadBytes, "UTF-8");
+        if (ret != null && !ret.startsWith("MEGA{")) {
+            /* verify if the keyString is correct */
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        return ret;
     }
 
     public String getError(Browser br) {
@@ -370,19 +354,6 @@ public class MegaConz extends PluginForHost {
 
     }
 
-    @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return 20;
-    }
-
-    @Override
-    public void reset() {
-    }
-
-    @Override
-    public void resetDownloadlink(DownloadLink link) {
-    }
-
     private String getPublicFileID(DownloadLink link) {
         return new Regex(link.getDownloadURL(), "#\\!([a-zA-Z0-9]+)\\!").getMatch(0);
     }
@@ -421,6 +392,35 @@ public class MegaConz extends PluginForHost {
             res[i] = bb.getInt(i * 4);
         }
         return res;
+    }
+
+    private String useSSL() {
+        if (getPluginConfig().getBooleanProperty(USE_SSL, false)) {
+            return "1";
+        } else {
+            return "0";
+        }
+    }
+
+    private boolean useTMP() {
+        if (getPluginConfig().getBooleanProperty(USE_TMP, false)) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    @Override
+    public int getMaxSimultanFreeDownloadNum() {
+        return 20;
+    }
+
+    @Override
+    public void reset() {
+    }
+
+    @Override
+    public void resetDownloadlink(DownloadLink link) {
     }
 
 }

@@ -43,10 +43,10 @@ public class HulkShareComFolder extends PluginForDecrypt {
         br.setFollowRedirects(false);
         br.setCookie("http://hulkshare.com/", "lang", "english");
         try {
-            // They have huge pages
+            // They can have huge pages, allow double of the normal load limit
             br.setLoadLimit(4194304);
         } catch (final Throwable e) {
-            // Not available in old Stable
+            // Not available in old 0.9.581 Stable
         }
         br.getPage(parameter);
         String argh = br.getRedirectLocation();
