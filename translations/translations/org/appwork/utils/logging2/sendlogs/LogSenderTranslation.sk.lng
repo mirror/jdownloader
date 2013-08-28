@@ -1,4 +1,6 @@
 LogAction_actionPerformed_wait_=Čakajte prosím...
+LogAction_actionPerformed_zip_title_=Vytvorenie balíčka s protokolom
+LogAction_getString_uploading_=Príprava logov
 LogModel_getStringValue_between_=Medzi %s1 a %s2
 LogModel_initColumns_time_=Čas
 LogModel_initColumns_x_=Overiť
