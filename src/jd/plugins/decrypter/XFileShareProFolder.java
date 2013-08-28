@@ -41,7 +41,8 @@ public class XFileShareProFolder extends PluginForDecrypt {
     // other: group sister sites or aliased domains together, for easy maintenance.
     // TODO: remove old xfileshare folder plugins after next major update.
 
-    private String HOST = null;
+    private String HOST      = null;
+    private String parameter = null;
 
     /**
      * @author raztoki
@@ -53,7 +54,7 @@ public class XFileShareProFolder extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         HashSet<String> dupe = new HashSet<String>();
-        String parameter = param.toString();
+        parameter = param.toString();
         HOST = new Regex(parameter, "https?://(www\\.)?([^:/]+)").getMatch(1);
         if (HOST == null) {
             logger.warning("Failure finding HOST : " + parameter);
@@ -113,7 +114,7 @@ public class XFileShareProFolder extends PluginForDecrypt {
         if (nextPage != null) {
             nextPage = HTMLEntities.unhtmlentities(nextPage);
             if (dupe.add(nextPage)) {
-                br.getPage(br.getURL() + nextPage);
+                br.getPage(parameter + nextPage);
                 parsePage(dupe, ret);
                 parseNextPage(dupe, ret);
                 return true;
