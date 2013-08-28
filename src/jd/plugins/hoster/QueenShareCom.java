@@ -97,7 +97,7 @@ public class QueenShareCom extends PluginForHost {
     private static final AtomicInteger totalMaxSimultanFreeDownload = new AtomicInteger(20);
 
     // DEV NOTES
-    // XfileShare Version 3.0.7.7
+    // XfileShare Version 3.0.7.8
     // last XfileSharingProBasic compare :: 2.6.2.1
     // protocol: no https
     // captchatype: null, see
@@ -1047,6 +1047,7 @@ public class QueenShareCom extends PluginForHost {
         }
         // prevention is better than cure
         if (br.getHttpConnection().getResponseCode() == 503 && br.getHttpConnection().getHeaderFields("server").contains("cloudflare-nginx")) {
+            String host = new Regex(page, "https?://([^/]+)(:\\d+)?/").getMatch(0);
             Form cloudflare = br.getFormbyProperty("id", "ChallengeForm");
             if (cloudflare == null) cloudflare = br.getFormbyProperty("id", "challenge-form");
             if (cloudflare != null) {
@@ -1065,7 +1066,7 @@ public class QueenShareCom extends PluginForHost {
                 // author.
                 ScriptEngineManager mgr = new ScriptEngineManager();
                 ScriptEngine engine = mgr.getEngineByName("JavaScript");
-                cloudflare.put("jschl_answer", String.valueOf(((Double) engine.eval("(" + math + ") + " + this.getHost().length())).longValue()));
+                cloudflare.put("jschl_answer", String.valueOf(((Double) engine.eval("(" + math + ") + " + host.length())).longValue()));
                 Thread.sleep(5500);
                 br.submitForm(cloudflare);
                 if (br.getFormbyProperty("id", "ChallengeForm") != null || br.getFormbyProperty("id", "challenge-form") != null) {

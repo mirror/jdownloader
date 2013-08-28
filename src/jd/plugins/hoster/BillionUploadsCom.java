@@ -77,7 +77,7 @@ public class BillionUploadsCom extends PluginForHost {
 
     // Site Setters
     // primary website url, take note of redirects
-    private final String               COOKIE_HOST                  = "http://billionuploads.com";
+    private final String               COOKIE_HOST                  = "http://new.billionuploads.com";
     // domain names used within download links.
     private final String               DOMAINS                      = "(billionuploads\\.com)";
     private final String               PASSWORDTEXT                 = "<br><b>Passwor(d|t):</b> <input";
@@ -97,7 +97,7 @@ public class BillionUploadsCom extends PluginForHost {
     private static final AtomicInteger totalMaxSimultanFreeDownload = new AtomicInteger(20);
 
     // DEV NOTES
-    // XfileShare Version 3.0.7.7
+    // XfileShare Version 3.0.7.8
     // last XfileSharingProBasic compare :: 2.6.2.1
     // protocol: no https
     // captchatype: solvemedia
@@ -199,7 +199,7 @@ public class BillionUploadsCom extends PluginForHost {
         }
         return prepBr;
     }
-    
+
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
         // make sure the downloadURL protocol is of site ability and user preference
@@ -287,7 +287,7 @@ public class BillionUploadsCom extends PluginForHost {
                         // fileInfo[0] = cbr.getRegex("Download File:? ?(<[^>]+> ?)+?([^<>\"\\']+)").getMatch(1);
                         // traits from download1 page below.
                         if (inValidate(fileInfo[0])) {
-                            fileInfo[0] = cbr.getRegex("Filename:? ?(<[^>]+> ?)+?([^<>\"']+)").getMatch(1);
+                            fileInfo[0] = cbr.getRegex("File Name:</b></td>[\r\n\t ]+<td.*?>([^<>\"']+)").getMatch(0);
                             // next two are details from sharing box
                             if (inValidate(fileInfo[0])) {
                                 fileInfo[0] = cbr.getRegex("<textarea[^\r\n]+>([^\r\n]+) - [\\d\\.]+ (KB|MB|GB)</a></textarea>").getMatch(0);
@@ -396,6 +396,8 @@ public class BillionUploadsCom extends PluginForHost {
         if (inValidate(dllink)) {
             Form dlForm = getFormByKey(cbr, "op", "download2");
             if (dlForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            // custom form inputs
+            dlForm.put("geekref", "yeahman");
             // how many forms deep do you want to try.
             int repeat = 2;
             for (int i = 0; i <= repeat; i++) {
@@ -1042,6 +1044,7 @@ public class BillionUploadsCom extends PluginForHost {
         }
         // prevention is better than cure
         if (br.getHttpConnection().getResponseCode() == 503 && br.getHttpConnection().getHeaderFields("server").contains("cloudflare-nginx")) {
+            String host = new Regex(page, "https?://([^/]+)(:\\d+)?/").getMatch(0);
             Form cloudflare = br.getFormbyProperty("id", "ChallengeForm");
             if (cloudflare == null) cloudflare = br.getFormbyProperty("id", "challenge-form");
             if (cloudflare != null) {
@@ -1060,7 +1063,7 @@ public class BillionUploadsCom extends PluginForHost {
                 // author.
                 ScriptEngineManager mgr = new ScriptEngineManager();
                 ScriptEngine engine = mgr.getEngineByName("JavaScript");
-                cloudflare.put("jschl_answer", String.valueOf(((Double) engine.eval("(" + math + ") + " + this.getHost().length())).longValue()));
+                cloudflare.put("jschl_answer", String.valueOf(((Double) engine.eval("(" + math + ") + " + host.length())).longValue()));
                 Thread.sleep(5500);
                 br.submitForm(cloudflare);
                 if (br.getFormbyProperty("id", "ChallengeForm") != null || br.getFormbyProperty("id", "challenge-form") != null) {

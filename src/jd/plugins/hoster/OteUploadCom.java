@@ -98,7 +98,7 @@ public class OteUploadCom extends PluginForHost {
     private static AtomicInteger totalMaxSimultanFreeDownload = new AtomicInteger(10);
 
     // DEV NOTES
-    // XfileShare Version 3.0.7.7
+    // XfileShare Version 3.0.7.8
     // last XfileSharingProBasic compare :: 2.6.2.1
     // protocol: http && https
     // captchatype: 4dignum
@@ -204,7 +204,7 @@ public class OteUploadCom extends PluginForHost {
         }
         return prepBr;
     }
-    
+
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
         // make sure the downloadURL protocol is of site ability and user preference
@@ -805,7 +805,11 @@ public class OteUploadCom extends PluginForHost {
                 }
                 br.setFollowRedirects(true);
                 getPage(COOKIE_HOST.replaceFirst("https?://", getProtocol()) + "/login.html");
-                Form loginform = br.getFormbyProperty("name", "FL");
+                // we want the second form... first one has missing values... lets do it this way...
+                Form loginform = null;
+                for (Form form : br.getForms()) {
+                    if (form.hasInputFieldByName("rand")) loginform = form;
+                }
                 if (loginform == null) {
                     if ("de".equalsIgnoreCase(language)) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin defekt, bitte den JDownloader Support kontaktieren!", PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -814,14 +818,9 @@ public class OteUploadCom extends PluginForHost {
                     }
                 }
                 loginform = cleanForm(loginform);
-                final String rand = br.getRegex("name=\"rand\" value=\"([a-z0-9]+)\"").getMatch(0);
-                if (rand != null) loginform.put("rand", rand);
                 loginform.put("login", Encoding.urlEncode(account.getUser()));
                 loginform.put("password", Encoding.urlEncode(account.getPass()));
-                loginform.put("redirect", "https%3A%2F%2Fwww.oteupload.com%2F");
-                loginform.put("file_id", "");
-                loginform.remove("tos");
-                loginform.remove("submit");
+                loginform.put("redirect", Encoding.urlEncode("/?op=my_account"));
                 // check form for login captcha crap.
                 DownloadLink dummyLink = new DownloadLink(null, "Account", this.getHost(), COOKIE_HOST, true);
                 loginform = captchaForm(dummyLink, loginform);
@@ -1185,6 +1184,7 @@ public class OteUploadCom extends PluginForHost {
         }
         // prevention is better than cure
         if (br.getHttpConnection().getResponseCode() == 503 && br.getHttpConnection().getHeaderFields("server").contains("cloudflare-nginx")) {
+            String host = new Regex(page, "https?://([^/]+)(:\\d+)?/").getMatch(0);
             Form cloudflare = br.getFormbyProperty("id", "ChallengeForm");
             if (cloudflare == null) cloudflare = br.getFormbyProperty("id", "challenge-form");
             if (cloudflare != null) {
@@ -1203,7 +1203,7 @@ public class OteUploadCom extends PluginForHost {
                 // author.
                 ScriptEngineManager mgr = new ScriptEngineManager();
                 ScriptEngine engine = mgr.getEngineByName("JavaScript");
-                cloudflare.put("jschl_answer", String.valueOf(((Double) engine.eval("(" + math + ") + " + this.getHost().length())).longValue()));
+                cloudflare.put("jschl_answer", String.valueOf(((Double) engine.eval("(" + math + ") + " + host.length())).longValue()));
                 Thread.sleep(5500);
                 br.submitForm(cloudflare);
                 if (br.getFormbyProperty("id", "ChallengeForm") != null || br.getFormbyProperty("id", "challenge-form") != null) {

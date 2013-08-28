@@ -29,6 +29,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.Locale;
 import java.util.Map.Entry;
 import java.util.Random;
@@ -335,7 +336,8 @@ public class TbCm extends PluginForDecrypt {
         return super.canHandle(data);
     }
 
-    private final static String defaultCustomFilename = "*videoname**quality**ext*";
+    private final static String         defaultCustomFilename = "*videoname**quality**ext*";
+    private final LinkedHashSet<String> dupeList              = new LinkedHashSet<String>();
 
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, final ProgressController progress) throws Exception {
         canHandle();
@@ -358,7 +360,7 @@ public class TbCm extends PluginForDecrypt {
             parameter = parameter.replace("watch#", "watch?");
         }
         if (parameter.contains("v/")) {
-            String id = new Regex(parameter, "v/([a-z\\-_A-Z0-9]+)").getMatch(0);
+            String id = new Regex(parameter, "v/([A-Za-z0-9\\-_]+)").getMatch(0);
             if (id != null) parameter = "http://www.youtube.com/watch?v=" + id;
         }
 
@@ -396,7 +398,7 @@ public class TbCm extends PluginForDecrypt {
             }
 
             if (choice == 0) {
-                parameter = new Regex(parameter, "(http://www\\.youtube\\.com/watch\\?v=[a-z\\-_A-Z0-9]+).*?").getMatch(0);
+                parameter = new Regex(parameter, "(http://www\\.youtube\\.com/watch\\?v=[A-Za-z0-9\\-_]+).*?").getMatch(0);
             }
         }
 
@@ -404,16 +406,16 @@ public class TbCm extends PluginForDecrypt {
         if (parameter.contains("view_play_list") || parameter.contains("playlist") || parameter.contains("g/c/") || parameter.contains("grid/user/") || choice == 1) {
             String id = null;
             if (parameter.contains("g/c/") || parameter.contains("grid/user/")) {
-                id = new Regex(parameter, "g/c/([a-z\\-_A-Z0-9]+)").getMatch(0);
+                id = new Regex(parameter, "g/c/([A-Za-z0-9\\-_]+)").getMatch(0);
                 if (id == null) {
-                    id = new Regex(parameter, "grid/user/([a-z\\-_A-Z0-9]+)").getMatch(0);
+                    id = new Regex(parameter, "grid/user/([A-Za-z0-9\\-_]+)").getMatch(0);
                     if (id == null) {
                         id = new Regex(parameter, "youtube\\.com/playlist\\?list=(.+)").getMatch(0);
                     }
                 }
                 if (id != null) parameter = "http://www.youtube.com/view_play_list?p=" + id;
             } else {
-                id = new Regex(parameter, "list=([A-Z0-9]+)").getMatch(0);
+                id = new Regex(parameter, "list=([A-Za-z0-9\\-_]+)").getMatch(0);
             }
             if (id != null) parameter = "http://www.youtube.com/view_play_list?p=" + id;
 
@@ -423,11 +425,12 @@ public class TbCm extends PluginForDecrypt {
             // Parse every page to get all videos
             do {
                 this.br.getPage(page);
-                String[] videos = this.br.getRegex("<a href=\"(/watch\\?v=[a-z\\-_A-Z0-9]+)\\&amp;list=[a-z\\-_A-Z0-9]+\\&amp;index=\\d+").getColumn(0);
-                if (parameter.contains("list=") && parameter.contains("watch?v=")) videos = this.br.getRegex("<a class=\"yt\\-uix\\-contextlink \" href=\"(/watch\\?v=[a-z\\-_A-Z0-9]+)\\&amp;list=[a-z\\-_A-Z0-9]+").getColumn(0);
+                String[] videos = this.br.getRegex("<a href=\"(/watch\\?v=[A-Za-z0-9\\-_]+)\\&amp;list=[A-Za-z0-9\\-_]+\\&amp;index=\\d+").getColumn(0);
+                if (parameter.contains("list=") && parameter.contains("watch?v=")) videos = this.br.getRegex("<a class=\"yt\\-uix\\-contextlink \" href=\"(/watch\\?v=[A-Za-z0-9\\-_]+)\\&amp;list=[A-Za-z0-9\\-_]+").getColumn(0);
                 if (videos.length == 0) videos = this.br.getRegex("<a href=\"(/watch\\?v=[a-z\\-_A-Z0-9]+)\\&amp;list=[a-z\\-_A-Z0-9]+").getColumn(0);
                 for (String video : videos) {
                     video = Encoding.htmlDecode(video);
+                    if (!dupeList.add(getVideoID(video))) continue;
                     video = "http://www.youtube.com" + video;
                     final String[] finalInformation = new String[2];
                     finalInformation[0] = video;
@@ -437,7 +440,7 @@ public class TbCm extends PluginForDecrypt {
                 }
 
                 // Get all page links
-                String[][] next = br.getRegex("<a href=\"(/playlist\\?list=[a-z\\-_A-Z0-9]+\\&amp;page=\\d+)\" class=\"yt\\-uix\\-button  yt\\-uix\\-pager\\-button yt\\-uix\\-sessionlink yt\\-uix\\-button\\-hh\\-default\" data-sessionlink=\"[A-Za-z0-9=%\\-_]+\" data-page=\"\\d+\"><span class=\"yt\\-uix\\-button\\-content\">[^0-9]+</span></a>").getMatches();
+                String[][] next = br.getRegex("<a href=\"(/playlist\\?list=[A-Za-z0-9\\-_]+\\&amp;page=\\d+)\" class=\"yt\\-uix\\-button  yt\\-uix\\-pager\\-button yt\\-uix\\-sessionlink yt\\-uix\\-button\\-hh\\-default\" data-sessionlink=\"[A-Za-z0-9=%\\-_]+\" data-page=\"\\d+\"><span class=\"yt\\-uix\\-button\\-content\">[^0-9]+</span></a>").getMatches();
 
                 if (next.length == 2 || (next.length == 1 && linkstodecrypt.size() == 100)) {
                     page = "http://www.youtube.com" + unescape(next[next.length - 1][0]);
@@ -459,6 +462,7 @@ public class TbCm extends PluginForDecrypt {
             int videoNumberCounter = 1;
             for (String videoID : videoIDs) {
                 videoID = Encoding.htmlDecode(videoID);
+                if (!dupeList.add(getVideoID(videoID))) continue;
                 videoID = "http://www.youtube.com" + videoID;
                 final String[] finalInformation = new String[2];
                 finalInformation[0] = videoID;
@@ -468,7 +472,7 @@ public class TbCm extends PluginForDecrypt {
             }
         } else if (parameter.contains("/user/")) {
             // Handle user links
-            parameter = "http://www.youtube.com/user/" + new Regex(parameter, "youtube\\.com/user/([a-z\\-_A-Z0-9]+)($|\\?.*?)").getMatch(0);
+            parameter = "http://www.youtube.com/user/" + new Regex(parameter, "youtube\\.com/user/([A-Za-z0-9\\-_]+)($|\\?.*?)").getMatch(0);
             br.getPage(parameter + "/videos?view=0");
             if (br.containsHTML(">404 Not Found<")) {
                 logger.info("The following link is offline: " + parameter);
@@ -476,12 +480,12 @@ public class TbCm extends PluginForDecrypt {
             }
 
             String next = null;
-            int videoNumberCounter = 0;
+            int videoNumberCounter = 1;
 
             do {
                 try {
                     if (this.isAbort()) {
-                        if (videoNumberCounter > 0) {
+                        if (videoNumberCounter > 1) {
                             logger.info("Decryption aborted by user, found " + videoNumberCounter + " links, stopping...");
                             break;
                         } else {
@@ -499,16 +503,16 @@ public class TbCm extends PluginForDecrypt {
                     return null;
                 }
 
-                String[][] links = new Regex(content, "a href=\"(/watch\\?v=[a-z\\-_A-Z0-9]+)\" class=\"ux\\-thumb\\-wrap yt\\-uix\\-sessionlink yt\\-uix\\-contextlink").getMatches();
+                String[] links = new Regex(content, "a href=\"(/watch\\?v=[A-Za-z0-9\\-_]+)\" class=\"ux\\-thumb\\-wrap yt\\-uix\\-sessionlink yt\\-uix\\-contextlink").getColumn(0);
 
-                for (String[] url : links) {
-                    videoNumberCounter++;
-                    String video = Encoding.htmlDecode(url[0]);
-                    if (!video.startsWith("http://www.youtube.com")) video = "http://www.youtube.com" + video;
+                for (String url : links) {
+                    String video = Encoding.htmlDecode(url);
+                    if (!dupeList.add(getVideoID(url))) continue;
                     final String[] finalInformation = new String[2];
                     finalInformation[0] = video;
                     finalInformation[1] = Integer.toString(videoNumberCounter);
                     linkstodecrypt.add(finalInformation);
+                    videoNumberCounter++;
                 }
 
                 next = new Regex(content, "data\\-uix\\-load\\-more\\-href=\"(/[^<>\"]*?)\"").getMatch(0);
@@ -1090,7 +1094,9 @@ public class TbCm extends PluginForDecrypt {
     }
 
     private String getVideoID(String URL) {
-        return new Regex(URL, "v=([a-z\\-_A-Z0-9]+)").getMatch(0);
+        String vuid = new Regex(URL, "v=([A-Za-z0-9\\-_]+)").getMatch(0);
+        if (vuid == null) vuid = new Regex(URL, "v/([A-Za-z0-9\\-_]+)").getMatch(0);
+        return vuid;
     }
 
     private DownloadLink createThumbnailDownloadLink(String name, String link, String browserurl, FilePackage filePackage) {
@@ -1371,18 +1377,14 @@ public class TbCm extends PluginForDecrypt {
             sb.append(s.charAt(0));
             sb.append(new StringBuilder(s.substring(4, 60)).reverse());
         } else if (s.length() == 88) {
-            sb.append(s.charAt(48));
-            sb.append(new StringBuilder(s.substring(68, 82)).reverse());
-            sb.append(s.charAt(82));
-            sb.append(new StringBuilder(s.substring(63, 67)).reverse());
-            sb.append(s.charAt(85));
-            sb.append(new StringBuilder(s.substring(49, 62)).reverse());
-            sb.append(s.charAt(67));
-            sb.append(new StringBuilder(s.substring(13, 48)).reverse());
-            sb.append(s.charAt(3));
-            sb.append(new StringBuilder(s.substring(4, 12)).reverse());
+            sb.append(s.substring(7, 28));
+            sb.append(s.charAt(87));
+            sb.append(s.substring(29, 45));
+            sb.append(s.charAt(55));
+            sb.append(s.substring(46, 55));
             sb.append(s.charAt(2));
-            sb.append(s.charAt(12));
+            sb.append(s.substring(56, 87));
+            sb.append(s.charAt(28));
         } else if (s.length() == 87) {
             sb.append(s.substring(6, 27));
             sb.append(s.charAt(4));
