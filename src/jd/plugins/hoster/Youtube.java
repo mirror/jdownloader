@@ -43,7 +43,7 @@ import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "youtube.com" }, urls = { "(httpJDYoutube://[\\w\\.\\-]*?youtube\\.com/(videoplayback\\?.+|get_video\\?.*?video_id=.+\\&.+(\\&fmt=\\d+)?))|(httpJDYoutube://video\\.google\\.com/timedtext\\?type=track&name=.*?\\&lang=[a-z\\-]{2,}\\&v=[a-z\\-_A-Z0-9]+)|(httpJDYoutube://img\\.youtube.com/vi/[a-z\\-_A-Z0-9]+/(hqdefault|mqdefault|default|maxresdefault)\\.jpg)" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "youtube.com" }, urls = { "((httpJDYoutube|youtubeJDhttps?)://[\\w\\.\\-]*?youtube\\.com/(videoplayback\\?.+|get_video\\?.*?video_id=.+\\&.+(\\&fmt=\\d+)?))|((httpJDYoutube|youtubeJDhttps?)://video\\.google\\.com/timedtext\\?type=track&name=.*?\\&lang=[a-z\\-]{2,}\\&v=[a-z\\-_A-Z0-9]+)|((httpJDYoutube|youtubeJDhttps?)://img\\.youtube.com/vi/[a-z\\-_A-Z0-9]+/(hqdefault|mqdefault|default|maxresdefault)\\.jpg)" }, flags = { 2 })
 public class Youtube extends PluginForHost {
 
     private static Object lock                    = new Object();
@@ -76,6 +76,7 @@ public class Youtube extends PluginForHost {
     private final String  ALLOW_THUMBNAIL_MQ      = "ALLOW_THUMBNAIL_MQ";
     private final String  ALLOW_THUMBNAIL_DEFAULT = "ALLOW_THUMBNAIL_DEFAULT";
     private final String  FAST_CHECK              = "FAST_CHECK2";
+    private final String  PREFER_HTTPS            = "PREFER_HTTPS";
     private final String  PROXY_ACTIVE            = "PROXY_ACTIVE";
     private final String  PROXY_ADDRESS           = "PROXY_ADDRESS";
     private final String  PROXY_PORT              = "PROXY_PORT";
@@ -162,6 +163,14 @@ public class Youtube extends PluginForHost {
         return sb.toString();
     }
 
+    public String preferHTTPS(String s) {
+        boolean prefers = getPluginConfig().getBooleanProperty(PREFER_HTTPS, defaultCustomPreferHTTPS);
+        if (prefers)
+            return s.replaceFirst("http://", "https://");
+        else
+            return s.replaceFirst("https://", "http://");
+    }
+
     public Youtube(final PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://www.youtube.com/login?next=/index");
@@ -170,7 +179,10 @@ public class Youtube extends PluginForHost {
 
     @Override
     public void correctDownloadLink(final DownloadLink link) throws Exception {
+        // old format, leave in so people can continue to download.
         link.setUrlDownload(link.getDownloadURL().replaceFirst("httpJDYoutube", "http"));
+        // new format, allows https links
+        link.setUrlDownload(link.getDownloadURL().replaceFirst("youtubeJDhttp", "http"));
     }
 
     @Override
@@ -296,7 +308,7 @@ public class Youtube extends PluginForHost {
                 }
 
                 br.setFollowRedirects(true);
-                br.getPage("http://www.youtube.com/");
+                br.getPage(preferHTTPS("http://www.youtube.com/"));
                 /* first call to google */
                 br.getPage("https://www.google.com/accounts/ServiceLogin?uilel=3&service=youtube&passive=true&continue=http%3A%2F%2Fwww.youtube.com%2Fsignin%3Faction_handle_signin%3Dtrue%26nomobiletemp%3D1%26hl%3Den_US%26next%3D%252Findex&hl=en_US&ltmpl=sso");
                 String checkConnection = br.getRegex("iframeUri: \\'(https.*?)\\'").getMatch(0);
@@ -328,7 +340,7 @@ public class Youtube extends PluginForHost {
                 br.submitForm(form);
                 if (br.getRedirectLocation() == null) {
                     final String page = Encoding.htmlDecode(br.toString());
-                    final String red = new Regex(page, "url='(http://.*?)'").getMatch(0);
+                    final String red = new Regex(page, "url='(https?://.*?)'").getMatch(0);
                     if (red == null) {
                         account.setValid(false);
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -361,7 +373,7 @@ public class Youtube extends PluginForHost {
                     stepform = br.getForm(0);
                     stepform.remove("nojssubmit");
                     br.submitForm(stepform);
-                    br.getPage("http://www.youtube.com/signin?action_handle_signin=true");
+                    br.getPage(preferHTTPS("http://www.youtube.com/signin?action_handle_signin=true"));
                 } else if (br.containsHTML("class=\"gaia captchahtml desc\"")) {
                     if (true) {
                         account.setValid(false);
@@ -502,12 +514,12 @@ public class Youtube extends PluginForHost {
     }
 
     // always keep the old format, you wont annoy people during large changes!
-    private final String defaultCustomFilename = "*videoname**quality**ext*";
+    public static final String  defaultCustomFilename    = "*videoname**quality**ext*";
+    public static final boolean defaultCustomPreferHTTPS = false;
 
     private void setConfigElements() {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX_INDEX, getPluginConfig(), ISVIDEOANDPLAYLIST, new String[] { JDL.L("plugins.host.youtube.isvideoandplaylist.video", "Only add video"), JDL.L("plugins.host.youtube.isvideoandplaylist.playlist", "Add playlist and video"), JDL.L("plugins.host.youtube.isvideoandplaylist.ask", "Ask everytime") }, JDL.L("plugins.host.youtube.isvideoandplaylist", "If a video also contains a playlist?")).setDefaultValue(2));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
-
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "Customize the filename properties"));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), CUSTOM_DATE, JDL.L("plugins.hoster.youtube.customdate", "Define how the date should look:")).setDefaultValue("dd.MM.yyyy_hh-mm-ss"));
@@ -555,6 +567,8 @@ public class Youtube extends PluginForHost {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_THUMBNAIL_HQ, JDL.L("plugins.hoster.youtube.grabrhumbnailhq", "Grab HQ (480x360) thumbnail?")).setDefaultValue(false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_THUMBNAIL_MQ, JDL.L("plugins.hoster.youtube.grabrhumbnailmq", "Grab MQ (320x180) thumbnail?")).setDefaultValue(false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_THUMBNAIL_DEFAULT, JDL.L("plugins.hoster.youtube.grabrhumbnaildefault", "Grab default (120x90) thumbnail?")).setDefaultValue(false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), PREFER_HTTPS, JDL.L("plugins.hoster.youtube.com.preferHTTPS", "Use Secure Communication (HTTPS://)")).setDefaultValue(defaultCustomPreferHTTPS));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), PROXY_ACTIVE, JDL.L("plugins.hoster.youtube.proxyactive", "Use HTTP Proxy?")).setDefaultValue(false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), PROXY_ADDRESS, JDL.L("plugins.hoster.youtube.proxyaddress", "Proxy Address")));

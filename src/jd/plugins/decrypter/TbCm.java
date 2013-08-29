@@ -62,7 +62,7 @@ import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 import de.savemytube.flv.FLV;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "youtube.com" }, urls = { "https?://([a-z]+\\.)?youtube\\.com/(embed/|.*?watch.*?v(%3D|=)|view_play_list\\?p=|playlist\\?(p|list)=|.*?g/c/|.*?grid/user/|v/|user/|course\\?list=)[a-z\\-_A-Z0-9]+(.*?page=\\d+)?(.*?list=[a-z\\-_A-Z0-9]+)?" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "youtube.com" }, urls = { "https?://([a-z]+\\.)?youtube\\.com/(embed/|.*?watch.*?v(%3D|=)|view_play_list\\?p=|playlist\\?(p|list)=|.*?g/c/|.*?grid/user/|v/|user/|course\\?list=)[A-Za-z0-9\\-_]+(.*?page=\\d+)?(.*?list=[A-Za-z0-9\\-_]+)?" }, flags = { 0 })
 public class TbCm extends PluginForDecrypt {
     private static AtomicBoolean PLUGIN_CHECKED  = new AtomicBoolean(false);
     private static AtomicBoolean PLUGIN_DISABLED = new AtomicBoolean(false);
@@ -124,7 +124,6 @@ public class TbCm extends PluginForDecrypt {
 
     private final Pattern                       StreamingShareLink  = Pattern.compile("\\< streamingshare=\"youtube\\.com\" name=\"(.*?)\" dlurl=\"(.*?)\" brurl=\"(.*?)\" convertto=\"(.*?)\" comment=\"(.*?)\" \\>", Pattern.CASE_INSENSITIVE);
     private final Pattern                       YT_FILENAME_PATTERN = Pattern.compile("<meta name=\"title\" content=\"(.*?)\">", Pattern.CASE_INSENSITIVE);
-    private final String                        COURSE_LINK         = "http://(www\\.)?youtube\\.com/course\\?list=[A-Z0-9]+";
     private final String                        UNSUPPORTEDRTMP     = "itag%2Crtmpe%2";
 
     HashMap<DestinationFormat, ArrayList<Info>> possibleconverts    = null;
@@ -336,32 +335,85 @@ public class TbCm extends PluginForDecrypt {
         return super.canHandle(data);
     }
 
-    private final static String         defaultCustomFilename = "*videoname**quality**ext*";
-    private final LinkedHashSet<String> dupeList              = new LinkedHashSet<String>();
+    /**
+     * Contains a List (of any form 'play|course|user') within provided String
+     */
+    private boolean containsList(String x) {
+        return new Regex(x, "(" + playListRegex + "|" + courseListRegex + "|" + userListRegex + ")").matches();
+    }
+
+    /**
+     * Contains a Video (of any form '(/v/vuid|/watch?.*v=vuid|/embed/vuid)' within provided String
+     */
+    private boolean containsVideo(String x) {
+        return new Regex(x, "((\\?|&)v=|/v/|/embed/)[a-z0-9\\-_]+").matches();
+    }
+
+    /**
+     * Returns host from provided String.
+     */
+    private String getHost(String x) {
+        return new Regex(x, "(https?://[^/]+)").getMatch(0);
+    }
+
+    /**
+     * Returns a ListID from provided String.
+     */
+    private String getListID(String x) {
+        String list = null;
+        // these are /user/ also but we want the id/tag?
+        list = new Regex(parameter, userGridGCRegex).getMatch(1);
+        // /user/
+        if (list == null) list = new Regex(parameter, "/user/([A-Za-z0-9\\-_]+)").getMatch(0);
+        // play && course
+        if (list == null) list = new Regex(x, "list=([A-Za-z0-9\\-_]+)").getMatch(0);
+        return list;
+    }
+
+    private String getVideoID(String URL) {
+        String vuid = new Regex(URL, "v=([A-Za-z0-9\\-_]+)").getMatch(0);
+        if (vuid == null) {
+            vuid = new Regex(URL, "(v|embed)/([A-Za-z0-9\\-_]+)").getMatch(1);
+        }
+        return vuid;
+    }
+
+    private String                      parameter       = null;
+    private String                      host            = null;
+    private String                      luid            = null;
+    private String                      vuid            = null;
+    private String                      next            = null;
+    private final String                playListRegex   = "(\\?|&)(play)?list=[A-Za-z0-9\\-_]+";
+    private final String                courseListRegex = "/course\\?list=[A-Za-z0-9\\-_]+";
+    private final String                userListRegex   = "/user/[A-Za-z0-9\\-_]+";
+    // child of /user/, within #tags
+    private final String                userGridGCRegex = "(g/c/|grid/user/)([A-Za-z0-9\\-_]+)";
+    private final LinkedHashSet<String> dupeList        = new LinkedHashSet<String>();
 
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, final ProgressController progress) throws Exception {
         canHandle();
         this.possibleconverts = new HashMap<DestinationFormat, ArrayList<Info>>();
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         if (PLUGIN_DISABLED.get() == true) return decryptedLinks;
-        // should consider looking for videoId with regex "((\\?|&)v=|/embed/)([a-z0-9\\-_]+)")
-        // along with playlist references, rather than cleaning up this way as it's leading to false positives.
-        String parameter = param.toString().replace("watch#!v", "watch?v");
-        parameter = parameter.replaceFirst("(verify_age\\?next_url=\\/?)", "");
-        parameter = parameter.replaceFirst("(%3Fv%3D)", "?v=");
-        parameter = parameter.replaceFirst("(watch\\?.*?v=)", "watch?v=");
-        parameter = parameter.replaceFirst("/embed/", "/watch?v=");
-
-        this.br.setFollowRedirects(true);
-        this.br.setCookiesExclusive(true);
-        this.br.clearCookies("youtube.com");
+        br.setFollowRedirects(true);
+        br.setCookiesExclusive(true);
+        br.clearCookies("youtube.com");
         br.setCookie("http://youtube.com", "PREF", "hl=en-GB");
-        if (parameter.contains("watch#")) {
-            parameter = parameter.replace("watch#", "watch?");
+
+        // load hoster plugin
+        if (pluginloaded == false) {
+            final PluginForHost plugin = JDUtilities.getPluginForHost("youtube.com");
+            if (plugin == null) throw new IllegalStateException("youtube plugin not found!");
+            pluginloaded = true;
         }
-        if (parameter.contains("v/")) {
-            String id = new Regex(parameter, "v/([A-Za-z0-9\\-_]+)").getMatch(0);
-            if (id != null) parameter = "http://www.youtube.com/watch?v=" + id;
+
+        parameter = preferHTTPS(Encoding.urlDecode(param.toString(), false));
+        host = getHost(parameter);
+        vuid = getVideoID(parameter);
+
+        // cleanup video link, if it's not a list
+        if (!containsList(parameter)) {
+            parameter = getHost(parameter) + "/watch?v=" + vuid;
         }
 
         ArrayList<String[]> linkstodecrypt = new ArrayList<String[]>();
@@ -383,7 +435,7 @@ public class TbCm extends PluginForDecrypt {
 
         // Check if link contains a video and a playlist
         int choice = -1;
-        if (parameter.contains("list=") && parameter.contains("watch?v=")) {
+        if (containsList(parameter) && containsVideo(parameter)) {
             choice = getPluginConfig().getIntegerProperty("ISVIDEOANDPLAYLIST", 2);
             // choice == 0 -> Only video
             // choice == 1 -> Playlist
@@ -398,89 +450,16 @@ public class TbCm extends PluginForDecrypt {
             }
 
             if (choice == 0) {
-                parameter = new Regex(parameter, "(http://www\\.youtube\\.com/watch\\?v=[A-Za-z0-9\\-_]+).*?").getMatch(0);
+                parameter = host + "/watch?v=" + vuid;
             }
         }
 
-        // Parse playlist
-        if (parameter.contains("view_play_list") || parameter.contains("playlist") || parameter.contains("g/c/") || parameter.contains("grid/user/") || choice == 1) {
-            String id = null;
-            if (parameter.contains("g/c/") || parameter.contains("grid/user/")) {
-                id = new Regex(parameter, "g/c/([A-Za-z0-9\\-_]+)").getMatch(0);
-                if (id == null) {
-                    id = new Regex(parameter, "grid/user/([A-Za-z0-9\\-_]+)").getMatch(0);
-                    if (id == null) {
-                        id = new Regex(parameter, "youtube\\.com/playlist\\?list=(.+)").getMatch(0);
-                    }
-                }
-                if (id != null) parameter = "http://www.youtube.com/view_play_list?p=" + id;
-            } else {
-                id = new Regex(parameter, "list=([A-Za-z0-9\\-_]+)").getMatch(0);
-            }
-            if (id != null) parameter = "http://www.youtube.com/view_play_list?p=" + id;
+        int videoNumberCounter = 1;
 
+        // List support
+        if (new Regex(parameter, "(" + playListRegex + "|" + courseListRegex + "|" + userGridGCRegex + ")").matches() || choice == 1) {
+            luid = getListID(parameter);
             String page = parameter;
-            int videoNumberCounter = 1;
-
-            // Parse every page to get all videos
-            do {
-                this.br.getPage(page);
-                String[] videos = this.br.getRegex("<a href=\"(/watch\\?v=[A-Za-z0-9\\-_]+)\\&amp;list=[A-Za-z0-9\\-_]+\\&amp;index=\\d+").getColumn(0);
-                if (parameter.contains("list=") && parameter.contains("watch?v=")) videos = this.br.getRegex("<a class=\"yt\\-uix\\-contextlink \" href=\"(/watch\\?v=[A-Za-z0-9\\-_]+)\\&amp;list=[A-Za-z0-9\\-_]+").getColumn(0);
-                if (videos.length == 0) videos = this.br.getRegex("<a href=\"(/watch\\?v=[a-z\\-_A-Z0-9]+)\\&amp;list=[a-z\\-_A-Z0-9]+").getColumn(0);
-                for (String video : videos) {
-                    video = Encoding.htmlDecode(video);
-                    if (!dupeList.add(getVideoID(video))) continue;
-                    video = "http://www.youtube.com" + video;
-                    final String[] finalInformation = new String[2];
-                    finalInformation[0] = video;
-                    finalInformation[1] = Integer.toString(videoNumberCounter);
-                    linkstodecrypt.add(finalInformation);
-                    videoNumberCounter++;
-                }
-
-                // Get all page links
-                String[][] next = br.getRegex("<a href=\"(/playlist\\?list=[A-Za-z0-9\\-_]+\\&amp;page=\\d+)\" class=\"yt\\-uix\\-button  yt\\-uix\\-pager\\-button yt\\-uix\\-sessionlink yt\\-uix\\-button\\-hh\\-default\" data-sessionlink=\"[A-Za-z0-9=%\\-_]+\" data-page=\"\\d+\"><span class=\"yt\\-uix\\-button\\-content\">[^0-9]+</span></a>").getMatches();
-
-                if (next.length == 2 || (next.length == 1 && linkstodecrypt.size() == 100)) {
-                    page = "http://www.youtube.com" + unescape(next[next.length - 1][0]);
-                } else {
-                    page = "";
-                }
-            } while (page.length() != 0);
-        } else if (parameter.matches(COURSE_LINK)) {
-            br.getPage(parameter);
-            if (br.getURL().contains("youtube.com/oops?ytsession=")) {
-                logger.info("Link offline: " + parameter);
-                return decryptedLinks;
-            }
-            final String[] videoIDs = br.getRegex("href=\"(/watch\\?v=[A-Za-z0-9\\-_]+)\\&amp;list=[A-Z0-9]+\" class=\"yt\\-uix\\-sessionlink\"").getColumn(0);
-            if (videoIDs == null || videoIDs.length == 0) {
-                logger.warning("Decrypter broken for link: " + parameter);
-                return null;
-            }
-            int videoNumberCounter = 1;
-            for (String videoID : videoIDs) {
-                videoID = Encoding.htmlDecode(videoID);
-                if (!dupeList.add(getVideoID(videoID))) continue;
-                videoID = "http://www.youtube.com" + videoID;
-                final String[] finalInformation = new String[2];
-                finalInformation[0] = videoID;
-                finalInformation[1] = Integer.toString(videoNumberCounter);
-                linkstodecrypt.add(finalInformation);
-                videoNumberCounter++;
-            }
-        } else if (parameter.contains("/user/")) {
-            // Handle user links
-            parameter = "http://www.youtube.com/user/" + new Regex(parameter, "youtube\\.com/user/([A-Za-z0-9\\-_]+)($|\\?.*?)").getMatch(0);
-            br.getPage(parameter + "/videos?view=0");
-            if (br.containsHTML(">404 Not Found<")) {
-                logger.info("The following link is offline: " + parameter);
-                return decryptedLinks;
-            }
-
-            String next = null;
-            int videoNumberCounter = 1;
 
             do {
                 try {
@@ -495,19 +474,66 @@ public class TbCm extends PluginForDecrypt {
                     }
                 } catch (final Throwable e) {
                 }
+                // secondary page results will start with /, thats ok. little sleep per page to prevent ddos
+                if (page.startsWith("/"))
+                    Thread.sleep(1000);
+                else
+                    // first link, make it into playlist link
+                    page = host + "/playlist?list=" + luid;
+                br.getPage(page);
+                String[] videos = br.getRegex("href=\"(/watch\\?v=[A-Za-z0-9\\-_]+)&amp;list=" + luid).getColumn(0);
+                // the (g/c/|grid/user/) doesn't return the same luid within url so will fail.
+                if (videos == null || videos.length == 0 && new Regex(parameter, userGridGCRegex).matches()) 
+                    videos = br.getRegex("href=\"(/watch\\?v=[A-Za-z0-9\\-_]+)&amp;list=[A-Z0-9]+").getColumn(0);
+                for (String video : videos) {
+                    video = Encoding.htmlDecode(video);
+                    if (!dupeList.add(getVideoID(video))) continue;
+                    video = host + video;
+                    final String[] finalInformation = new String[2];
+                    finalInformation[0] = video;
+                    finalInformation[1] = Integer.toString(videoNumberCounter);
+                    linkstodecrypt.add(finalInformation);
+                    videoNumberCounter++;
+                }
+                // not all pages are shown on first page! Grab next and continue loop
+                next = br.getRegex("<a href=\"(/playlist\\?list=" + luid + "&amp;page=\\d+)\"[^>]+>Next »<").getMatch(0);
+                if (next != null) Encoding.htmlDecode(next);
+            } while (next != null);
+        }
+        // user support
+        else if (parameter.contains("/user/")) {
+            luid = getListID(parameter);
+            br.getPage(host + "/user/" + luid + "/videos?view=0");
+            if (br.containsHTML(">404 Not Found<")) {
+                logger.info("The following link is offline: " + parameter);
+                return decryptedLinks;
+            }
 
+            do {
+                try {
+                    if (this.isAbort()) {
+                        if (videoNumberCounter > 1) {
+                            logger.info("Decryption aborted by user, found " + videoNumberCounter + " links, stopping...");
+                            break;
+                        } else {
+                            logger.info("Decryption aborted by user, stopping...");
+                            return decryptedLinks;
+                        }
+                    }
+                } catch (final Throwable e) {
+                }
                 String content = unescape(br.toString());
-
-                if (content.contains("iframe style=\"display:block;border:0;\" src=\"/error")) {
+                if (br.containsHTML("iframe style=\"display:block;border:0;\" src=\"/error")) {
                     logger.warning("An unkown error occured");
                     return null;
                 }
 
-                String[] links = new Regex(content, "a href=\"(/watch\\?v=[A-Za-z0-9\\-_]+)\" class=\"ux\\-thumb\\-wrap yt\\-uix\\-sessionlink yt\\-uix\\-contextlink").getColumn(0);
+                String[] links = new Regex(content, "a href=\"(/watch\\?v=[A-Za-z0-9\\-_]+)\" class=\"ux-thumb-wrap yt-uix-sessionlink yt-uix-contextlink").getColumn(0);
 
                 for (String url : links) {
                     String video = Encoding.htmlDecode(url);
                     if (!dupeList.add(getVideoID(url))) continue;
+                    video = host + video;
                     final String[] finalInformation = new String[2];
                     finalInformation[0] = video;
                     finalInformation[1] = Integer.toString(videoNumberCounter);
@@ -515,15 +541,13 @@ public class TbCm extends PluginForDecrypt {
                     videoNumberCounter++;
                 }
 
-                next = new Regex(content, "data\\-uix\\-load\\-more\\-href=\"(/[^<>\"]*?)\"").getMatch(0);
-
-                if (next != null && next.length() > 0) {
+                next = new Regex(content, "data-uix-load-more-href=\"(/[^<>\"]*?)\"").getMatch(0);
+                if (next != null) {
                     next = Encoding.htmlDecode(next);
-                    br.getPage("http://www.youtube.com" + next);
+                    Thread.sleep(1000);
+                    br.getPage(next);
                 }
-                logger.info("Found " + videoNumberCounter + " links, continuing if there is more...");
-            } while (next != null && next.length() > 0);
-            logger.info("Found a total number of " + videoNumberCounter + " videos for link: " + parameter);
+            } while (next != null);
         } else {
             // Handle single video
             final String[] finalInformation = new String[2];
@@ -532,6 +556,7 @@ public class TbCm extends PluginForDecrypt {
             linkstodecrypt.add(finalInformation);
             multiple_videos = false;
         }
+        if (containsList(parameter)) logger.info("Found a total number of " + (videoNumberCounter - 1) + " videos for link: " + parameter);
 
         final SubConfiguration cfg = SubConfiguration.getConfig("youtube.com");
         boolean fast = cfg.getBooleanProperty("FAST_CHECK2", false);
@@ -708,6 +733,7 @@ public class TbCm extends PluginForDecrypt {
                     for (final String debug : info) {
                         logger.info(debug);
                     }
+                    // not sure about streaming links and '"youtubeJD" it never had it before... -raz
                     final DownloadLink thislink = this.createDownloadlink(info[1]);
                     thislink.setProperty("ALLOW_DUPE", true);
                     thislink.setBrowserUrl(info[2]);
@@ -735,7 +761,7 @@ public class TbCm extends PluginForDecrypt {
                 if (LinksFound == null || LinksFound.isEmpty()) {
                     if (linkstodecrypt.size() == 1) {
                         if (verifyAge || this.br.getURL().toLowerCase().indexOf("youtube.com/get_video_info?") != -1 && !prem) { throw new DecrypterException(DecrypterException.ACCOUNT); }
-                        final DownloadLink offline = createDownloadlink("httpJDYoutube://r20---sn-4g57kner.c.youtube.com/videoplayback?sver=3&id=a3a288054be22ded&ipbits=8&itag=43&expire=1376781178&ratebypass=yes&fexp=927826%2C903903%2C920604%2C932237%2C927839%2C916626%2C931005%2C909546%2C906397%2C929117%2C929121%2C929906%2C929907%2C929922%2C929127%2C929129%2C929131%2C929930%2C925720%2C925722%2C925718%2C925714%2C929917%2C929919%2C929933%2C912521%2C932306%2C913428%2C920605%2C904830%2C919373%2C930803%2C904122%2C938701%2C919008%2C911423%2C909549%2C900816%2C912711%2C935802%2C904494%2C906001&ms=au&cp=U0hWS1dTT19MUkNONl9PTVNCOnozWXhMQzNfazJD&ip=87.160.200.202&key=yt1&mt=1376758530&sparams=cp%2Cid%2Cip%2Cipbits%2Citag%2Cratebypass%2Csource%2Cupn%2Cexpire&mv=m&upn=VoejVd34qx8&source=youtube&signature=7D265E3116EA58DFDE26BF4A210B5B33753FCD69." + new Random().nextInt(100000));
+                        final DownloadLink offline = createDownloadlink("youtubeJD" + preferHTTPS("http") + "://r20---sn-4g57kner.c.youtube.com/videoplayback?sver=3&id=a3a288054be22ded&ipbits=8&itag=43&expire=1376781178&ratebypass=yes&fexp=927826%2C903903%2C920604%2C932237%2C927839%2C916626%2C931005%2C909546%2C906397%2C929117%2C929121%2C929906%2C929907%2C929922%2C929127%2C929129%2C929131%2C929930%2C925720%2C925722%2C925718%2C925714%2C929917%2C929919%2C929933%2C912521%2C932306%2C913428%2C920605%2C904830%2C919373%2C930803%2C904122%2C938701%2C919008%2C911423%2C909549%2C900816%2C912711%2C935802%2C904494%2C906001&ms=au&cp=U0hWS1dTT19MUkNONl9PTVNCOnozWXhMQzNfazJD&ip=87.160.200.202&key=yt1&mt=1376758530&sparams=cp%2Cid%2Cip%2Cipbits%2Citag%2Cratebypass%2Csource%2Cupn%2Cexpire&mv=m&upn=VoejVd34qx8&source=youtube&signature=7D265E3116EA58DFDE26BF4A210B5B33753FCD69." + new Random().nextInt(100000));
                         offline.setAvailable(false);
                         offline.setProperty("offline", true);
                         offline.setName(videoid);
@@ -765,8 +791,8 @@ public class TbCm extends PluginForDecrypt {
                 // userName != channelName
                 final String userName = br.getRegex("temprop=\"url\" href=\"http://(www\\.)?youtube\\.com/user/([^<>\"]*?)\"").getMatch(1);
                 final int playlistNumberInt = Integer.parseInt(currentPlaylistVideoNumber);
-                String formattedFilename = cfg.getStringProperty(CUSTOM_FILENAME, defaultCustomFilename);
-                if ((!formattedFilename.contains("*videoname*") && !formattedFilename.contains("*videoid*")) || !formattedFilename.contains("*ext*")) formattedFilename = defaultCustomFilename;
+                String formattedFilename = cfg.getStringProperty(CUSTOM_FILENAME, jd.plugins.hoster.Youtube.defaultCustomFilename);
+                if ((!formattedFilename.contains("*videoname*") && !formattedFilename.contains("*videoid*")) || !formattedFilename.contains("*ext*")) formattedFilename = jd.plugins.hoster.Youtube.defaultCustomFilename;
                 if (formattedFilename == null || formattedFilename.equals("")) formattedFilename = "*videoname**quality**ext*";
                 String partnumberformat = cfg.getStringProperty(VIDEONUMBERFORMAT);
                 if (partnumberformat == null || partnumberformat.equals("")) partnumberformat = "0000";
@@ -861,8 +887,8 @@ public class TbCm extends PluginForDecrypt {
                             bestFound.put(5, LinksFound.get(5));
                         // 240p flv @ video bit rate @ 0.8Mbit/second
                         else if (LinksFound.containsKey(6) && ytVideo.containsKey(6)) bestFound.put(6, LinksFound.get(6));
-                        // 240p 3gp mono ** according to wiki this has the
-                        // highest video rate. but we rate this as mono! need to look into 3gp more to confirm
+                        // 240p 3gp mono ** according to wiki this has the highest video rate. but we rate this as mono! need to look into
+                        // 3gp more to confirm
                         if (LinksFound.containsKey(13) && ytVideo.containsKey(13) && !LinksFound.containsKey(36))
                             bestFound.put(13, LinksFound.get(13));
                         // 240p 3gp stereo
@@ -954,7 +980,7 @@ public class TbCm extends PluginForDecrypt {
 
                     for (final Info info : next.getValue()) {
                         String currentFilename = null;
-                        final DownloadLink thislink = this.createDownloadlink(info.link.replaceFirst("http", "httpJDYoutube"));
+                        final DownloadLink thislink = this.createDownloadlink("youtubeJD" + info.link);
                         thislink.setProperty("ALLOW_DUPE", true);
                         filePackage.add(thislink);
                         thislink.setBrowserUrl(currentVideoUrl);
@@ -985,8 +1011,7 @@ public class TbCm extends PluginForDecrypt {
                         if (convertTo != DestinationFormat.AUDIOMP3) {
                             thislink.setProperty("name", currentFilename);
                         } else {
-                            // because demuxer will fail when mp3 file already
-                            // exists
+                            // because demuxer will fail when mp3 file already exists
                             String audioName = formattedFilename;
                             audioName = audioName.replace("*quality*", desc);
                             audioName = audioName.replace("*ext*", ".tmp");
@@ -1007,26 +1032,29 @@ public class TbCm extends PluginForDecrypt {
 
                 // Grab Subtitles
                 if (cfg.getBooleanProperty("ALLOW_SUBTITLES_V2", true)) {
-                    br.getPage("http://video.google.com/timedtext?type=list&v=" + VIDEOID);
+                    br.getPage(preferHTTPS("http://video.google.com/timedtext?type=list&v=" + VIDEOID));
 
                     FilePackage filePackage = filepackages.get(NAME_SUBTITLES);
 
                     if (filePackage == null) {
                         filePackage = FilePackage.getInstance();
                         filePackage.setProperty("ALLOW_MERGE", true);
+                        String subtitles = "(Subtitles)";
                         if (multiple_videos)
-                            filePackage.setName("Youtube (Subtitles)");
+                            filePackage.setName("Youtube " + subtitles);
+                        else if (!cfg.getBooleanProperty("GROUP_FORMAT", false))
+                            filePackage.setName(YT_FILENAME);
                         else
-                            filePackage.setName(YT_FILENAME + " (Subtitles)");
+                            filePackage.setName(YT_FILENAME + " " + subtitles);
                         filepackages.put(NAME_SUBTITLES, filePackage);
                     }
 
                     String[][] matches = br.getRegex("<track id=\"(.*?)\" name=\"(.*?)\" lang_code=\"(.*?)\" lang_original=\"(.*?)\".*?/>").getMatches();
 
                     for (String[] track : matches) {
-                        String link = "http://video.google.com/timedtext?type=track&name=" + URLEncoder.encode(track[1], "UTF-8") + "&lang=" + URLEncoder.encode(track[2], "UTF-8") + "&v=" + URLEncoder.encode(VIDEOID, "UTF-8");
+                        String link = preferHTTPS("http://video.google.com/timedtext?type=track&name=" + URLEncoder.encode(track[1], "UTF-8") + "&lang=" + URLEncoder.encode(track[2], "UTF-8") + "&v=" + URLEncoder.encode(VIDEOID, "UTF-8"));
 
-                        DownloadLink dlink = this.createDownloadlink(link.replaceFirst("http", "httpJDYoutube"));
+                        DownloadLink dlink = this.createDownloadlink("youtubeJD" + link);
                         dlink.setProperty("ALLOW_DUPE", true);
                         dlink.setBrowserUrl(currentVideoUrl);
 
@@ -1051,10 +1079,13 @@ public class TbCm extends PluginForDecrypt {
                 if ((cfg.getBooleanProperty("ALLOW_THUMBNAIL_HQ", false) || cfg.getBooleanProperty("ALLOW_THUMBNAIL_MQ", false) || cfg.getBooleanProperty("ALLOW_THUMBNAIL_DEFAULT", false) || cfg.getBooleanProperty("ALLOW_THUMBNAIL_MAX", false)) && filePackage == null) {
                     filePackage = FilePackage.getInstance();
                     filePackage.setProperty("ALLOW_MERGE", true);
+                    String thumbnails = "(Thumbnails)";
                     if (multiple_videos)
-                        filePackage.setName("Youtube (Thumbnails)");
+                        filePackage.setName("Youtube " + thumbnails);
+                    else if (!cfg.getBooleanProperty("GROUP_FORMAT", false))
+                        filePackage.setName(YT_FILENAME);
                     else
-                        filePackage.setName(YT_FILENAME + " (Thumbnails)");
+                        filePackage.setName(YT_FILENAME + " " + thumbnails);
                     filepackages.put(NAME_THUMBNAILS, filePackage);
                 }
 
@@ -1083,7 +1114,7 @@ public class TbCm extends PluginForDecrypt {
         // No links found -> Link is probably offline
         if (decryptedLinks == null || decryptedLinks.isEmpty()) {
             if (verifyAge || this.br.getURL().toLowerCase().indexOf("youtube.com/get_video_info?") != -1 && !prem) { throw new DecrypterException(DecrypterException.ACCOUNT); }
-            final DownloadLink offline = createDownloadlink("httpJDYoutube://r20---sn-4g57kner.c.youtube.com/videoplayback?sver=3&id=a3a288054be22ded&ipbits=8&itag=43&expire=1376781178&ratebypass=yes&fexp=927826%2C903903%2C920604%2C932237%2C927839%2C916626%2C931005%2C909546%2C906397%2C929117%2C929121%2C929906%2C929907%2C929922%2C929127%2C929129%2C929131%2C929930%2C925720%2C925722%2C925718%2C925714%2C929917%2C929919%2C929933%2C912521%2C932306%2C913428%2C920605%2C904830%2C919373%2C930803%2C904122%2C938701%2C919008%2C911423%2C909549%2C900816%2C912711%2C935802%2C904494%2C906001&ms=au&cp=U0hWS1dTT19MUkNONl9PTVNCOnozWXhMQzNfazJD&ip=33.33.333.666&key=yt1&mt=1376758530&sparams=cp%2Cid%2Cip%2Cipbits%2Citag%2Cratebypass%2Csource%2Cupn%2Cexpire&mv=m&upn=VoejVd34qx8&source=youtube&signature=7D265E3116EA58DFDE26BF4A210B5B33753FCD69." + new Random().nextInt(100000));
+            final DownloadLink offline = createDownloadlink("youtubeJD" + preferHTTPS("http") + "://r20---sn-4g57kner.c.youtube.com/videoplayback?sver=3&id=a3a288054be22ded&ipbits=8&itag=43&expire=1376781178&ratebypass=yes&fexp=927826%2C903903%2C920604%2C932237%2C927839%2C916626%2C931005%2C909546%2C906397%2C929117%2C929121%2C929906%2C929907%2C929922%2C929127%2C929129%2C929131%2C929930%2C925720%2C925722%2C925718%2C925714%2C929917%2C929919%2C929933%2C912521%2C932306%2C913428%2C920605%2C904830%2C919373%2C930803%2C904122%2C938701%2C919008%2C911423%2C909549%2C900816%2C912711%2C935802%2C904494%2C906001&ms=au&cp=U0hWS1dTT19MUkNONl9PTVNCOnozWXhMQzNfazJD&ip=33.33.333.666&key=yt1&mt=1376758530&sparams=cp%2Cid%2Cip%2Cipbits%2Citag%2Cratebypass%2Csource%2Cupn%2Cexpire&mv=m&upn=VoejVd34qx8&source=youtube&signature=7D265E3116EA58DFDE26BF4A210B5B33753FCD69." + new Random().nextInt(100000));
             offline.setAvailable(false);
             offline.setProperty("offline", true);
             offline.setName(getVideoID(parameter));
@@ -1093,14 +1124,8 @@ public class TbCm extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    private String getVideoID(String URL) {
-        String vuid = new Regex(URL, "v=([A-Za-z0-9\\-_]+)").getMatch(0);
-        if (vuid == null) vuid = new Regex(URL, "v/([A-Za-z0-9\\-_]+)").getMatch(0);
-        return vuid;
-    }
-
     private DownloadLink createThumbnailDownloadLink(String name, String link, String browserurl, FilePackage filePackage) {
-        DownloadLink dlink = this.createDownloadlink(link.replaceFirst("http", "httpJDYoutube"));
+        DownloadLink dlink = this.createDownloadlink("youtubeJD" + link);
         dlink.setProperty("ALLOW_DUPE", true);
         filePackage.add(dlink);
         dlink.setBrowserUrl(browserurl);
@@ -1478,6 +1503,19 @@ public class TbCm extends PluginForDecrypt {
             pluginloaded = true;
         }
         return jd.plugins.hoster.Youtube.unescape(s);
+    }
+
+    private String preferHTTPS(final String s) {
+        if (pluginloaded == false) {
+            final PluginForHost plugin = JDUtilities.getPluginForHost("youtube.com");
+            if (plugin == null) throw new IllegalStateException("youtube plugin not found!");
+            pluginloaded = true;
+        }
+        boolean prefers = getPluginConfig().getBooleanProperty("PREFER_HTTPS", jd.plugins.hoster.Youtube.defaultCustomPreferHTTPS);
+        if (prefers)
+            return s.replaceFirst("http://", "https://");
+        else
+            return s.replaceFirst("https://", "http://");
     }
 
     @Override
