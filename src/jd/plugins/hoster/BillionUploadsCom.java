@@ -32,6 +32,7 @@ import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import javax.script.Invocable;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 import javax.swing.JOptionPane;
@@ -91,6 +92,7 @@ public class BillionUploadsCom extends PluginForHost {
     private final boolean              useAltExpire                 = true;
     private final boolean              useAltLinkCheck              = false;
     private final boolean              skipableRecaptcha            = true;
+    private boolean                    skipableSolveMedia           = true;
 
     // Connection Management
     // note: CAN NOT be negative or zero! (ie. -1 or 0) Otherwise math sections fail. .:. use [1-20]
@@ -396,12 +398,12 @@ public class BillionUploadsCom extends PluginForHost {
         if (inValidate(dllink)) {
             Form dlForm = getFormByKey(cbr, "op", "download2");
             if (dlForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            // custom form inputs
-            dlForm.put("geekref", "yeahman");
             // how many forms deep do you want to try.
             int repeat = 2;
             for (int i = 0; i <= repeat; i++) {
                 dlForm = cleanForm(dlForm);
+                // custom form inputs
+                dlForm.put("geekref", "yeahman");
                 final long timeBefore = System.currentTimeMillis();
                 // md5 can be on the subsequent pages
                 if (inValidate(downloadLink.getMD5Hash())) {
@@ -412,6 +414,7 @@ public class BillionUploadsCom extends PluginForHost {
                     logger.info("The downloadlink seems to be password protected.");
                     dlForm = handlePassword(dlForm, downloadLink);
                 }
+                if (i > 0) skipableSolveMedia = false;
                 /* Captcha START */
                 dlForm = captchaForm(downloadLink, dlForm);
                 /* Captcha END */
@@ -529,6 +532,7 @@ public class BillionUploadsCom extends PluginForHost {
 
     private void getDllink() {
         dllink = br.getRedirectLocation();
+        if (inValidate(dllink)) dllink = getPlainData();
         if (inValidate(dllink) || (!inValidate(dllink) && !dllink.matches(dllinkRegex))) {
             dllink = regexDllink(cbr.toString());
             if (inValidate(dllink)) {
@@ -541,6 +545,30 @@ public class BillionUploadsCom extends PluginForHost {
                 }
             }
         }
+    }
+
+    private String getPlainData() {
+        String fn = br.getRegex("(function rememberSes\\(e\\).*?)[\r\n]+").getMatch(0);
+        String enc = br.getRegex("<span subway=\"metro\">(.*?)</span>").getMatch(0);
+        if (enc == null) return null;
+        if (fn != null) {
+            Object result = new Object();
+            final ScriptEngineManager manager = new ScriptEngineManager();
+            final ScriptEngine engine = manager.getEngineByName("javascript");
+            final Invocable inv = (Invocable) engine;
+            try {
+                engine.eval(fn);
+                result = inv.invokeFunction("flicker", enc.split("XXX")[1]);
+                result = inv.invokeFunction("rememberSes", result);
+            } catch (final Throwable e) {
+                return null;
+            }
+            if (result != null) {
+                String dec = result.toString();
+                if (dec.startsWith("http://") || dec.startsWith("https://")) return dec;
+            }
+        }
+        return null;
     }
 
     private void waitTime(final long timeBefore, final DownloadLink downloadLink) throws PluginException {
@@ -1298,10 +1326,15 @@ public class BillionUploadsCom extends PluginForHost {
             final PluginForDecrypt solveplug = JDUtilities.getPluginForDecrypt("linkcrypt.ws");
             final jd.plugins.decrypter.LnkCrptWs.SolveMedia sm = ((jd.plugins.decrypter.LnkCrptWs) solveplug).getSolveMedia(captcha);
             final File cf = sm.downloadCaptcha(getLocalCaptchaFile());
-            final String code = getCaptchaCode(cf, downloadLink);
-            final String chid = sm.getChallenge(code);
+            String code = ".";
+            String chid = sm.getChallenge();
+            if (!skipableSolveMedia) {
+                code = getCaptchaCode(cf, downloadLink);
+                chid = sm.getChallenge(code);
+            }
             form.put("adcopy_challenge", chid);
-            form.put("adcopy_response", "manual_challenge");
+            form.put("adcopy_response", code);
+            skipableSolveMedia = true;
         } else if (form.containsHTML("id=\"capcode\" name= \"capcode\"")) {
             logger.info("Detected captcha method \"Key Captcha\"");
             final Browser captcha = br.cloneBrowser();
