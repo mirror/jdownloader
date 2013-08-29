@@ -571,11 +571,9 @@ public class RyuShareCom extends PluginForHost {
             if (cbr.containsHTML("\">Skipped countdown<")) throw new PluginException(LinkStatus.ERROR_FATAL, "Fatal countdown error (countdown skipped)");
         }
         // monitor this
-        // premium = <font class="err">You have reached the download-limit: 88888 Mb for last 1 days</font> (even with accounts with
-        // unlimited traffic.)
-        // free = <div class="err">You have reached the download-limit!!!<br><br>Download files instantly with <a
-        // href='http://ryushare.com/?op=payments'>Premium-account</a></div>
-        if (cbr.containsHTML("class=\"err\">You have reached the download(-| )limit(!!!<br><br>Download files instantly|[^\r\n]+for last \\d+ days<)")) {
+        // premium = <font class="err">You have reached the download-limit: 88888 Mb for last 1 days</font> (even with accounts with unlimited traffic.)
+        //     free = <div class="err">You have reached the download-limit!!!<br><br>Download files instantly with <a href='http://ryushare.com/?op=payments'>Premium-account</a></div>
+        if (cbr.containsHTML("class=\"err\">You have reached the download(-| )limit") && !cbr.containsHTML("You have to wait")) {
             /*
              * Indication of when you've reached the max download limit for that given session! Usually shows how long the session was
              * recorded from x time (hours|days) which can trigger false positive below wait handling. As its only indication of what's
