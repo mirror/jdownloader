@@ -1326,7 +1326,7 @@ public class BillionUploadsCom extends PluginForHost {
             final PluginForDecrypt solveplug = JDUtilities.getPluginForDecrypt("linkcrypt.ws");
             final jd.plugins.decrypter.LnkCrptWs.SolveMedia sm = ((jd.plugins.decrypter.LnkCrptWs) solveplug).getSolveMedia(captcha);
             final File cf = sm.downloadCaptcha(getLocalCaptchaFile());
-            String code = ".";
+            String code = "";
             String chid = sm.getChallenge();
             if (!skipableSolveMedia) {
                 code = getCaptchaCode(cf, downloadLink);
