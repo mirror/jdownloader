@@ -90,17 +90,26 @@ public class BoxNet extends PluginForHost {
             DLLINK = "https://www.box.com/index.php?rm=box_download_shared_file&shared_name=" + sharedname + "&file_id=f_" + fileid;
             return AvailableStatus.TRUE;
         } else if (parameter.getDownloadURL().matches(SLINK)) {
-            br.getPage(parameter.getBrowserUrl());
-            if (br.containsHTML("(this shared file or folder link has been removed|<title>Box \\- Free Online File Storage, Internet File Sharing, RSS Sharing, Access Documents \\&amp; Files Anywhere, Backup Data, Share Files</title>)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            if (br.getURL().equals("https://www.box.com/freeshare")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            final Regex fileInfo = br.getRegex("<h2 class=\"gallery_pseudo_icon_text_title bolder white ellipsis ellipsis_\\d+\">(.*?)\\&nbsp;\\(([a-z0-9\\. ]+)\\)");
-            String filename = fileInfo.getMatch(0);
-            if (filename == null) filename = br.getRegex("<title>(.*?) \\- File Shared from Box \\- Free Online File Storage</title>").getMatch(0);
+            // Last compare link: https://app.box.com/s/ubpk2k11ttpcq40vbrww
+            String fileID = parameter.getStringProperty("fileid", null);
+            if (fileID == null) {
+                br.getPage(parameter.getBrowserUrl());
+                if (br.containsHTML("(this shared file or folder link has been removed|<title>Box \\- Free Online File Storage, Internet File Sharing, RSS Sharing, Access Documents \\&amp; Files Anywhere, Backup Data, Share Files</title>)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                if (br.getURL().equals("https://www.box.com/freeshare")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                fileID = br.getRegex("var file_id = \\'(\\d+)\\'").getMatch(0);
+                if (fileID == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            final String sharedName = new Regex(parameter.getDownloadURL(), "([a-z0-9]+)$").getMatch(0);
+            br.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
+            br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+            br.getPage("https://app.box.com/preview/info/f_" + fileID + ".json?shared_name=" + sharedName);
+            final String filename = br.getRegex("\"title\":\"([^<>\"]*?)\"").getMatch(0);
+            final String filesize = br.getRegex("\"size\":\"([^<>\"]*?)\"").getMatch(0);
+            parameter.setProperty("fileid", fileID);
             if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            String filesize = fileInfo.getMatch(1);
             parameter.setName(filename.trim());
             if (filesize != null) parameter.setDownloadSize(SizeFormatter.getSize(filesize));
-            DLLINK = br.getRegex(DLLINKREGEX).getMatch(0);
+            DLLINK = "https://app.box.com/index.php?rm=box_download_shared_file&shared_name=" + sharedName + "&file_id=f_" + fileID;
             br.setFollowRedirects(false);
             return AvailableStatus.TRUE;
         }
@@ -140,30 +149,34 @@ public class BoxNet extends PluginForHost {
     }
 
     @Override
-    public void handleFree(DownloadLink link) throws Exception {
+    public void handleFree(final DownloadLink link) throws Exception {
         // setup referer and cookies for single file downloads
         requestFileInformation(link);
         // site has many redirects, it could be set off from
         // requestFileInformation...
         br.setFollowRedirects(true);
         if (link.getDownloadURL().matches(SLINK) && DLLINK == null) {
-            String fid = br.getRegex("var file_id = \\'(\\d+)\\';").getMatch(0);
-            if (fid == null) {
-                fid = br.getRegex(",typed_id: \\'f_(\\d+)\\'").getMatch(0);
+            if (DLLINK == null) {
+                String fid = br.getRegex("var file_id = \\'(\\d+)\\';").getMatch(0);
                 if (fid == null) {
-                    fid = br.getRegex("\\&amp;file_id=f_(\\d+)\\&amp").getMatch(0);
+                    fid = br.getRegex(",typed_id: \\'f_(\\d+)\\'").getMatch(0);
                     if (fid == null) {
-                        fid = br.getRegex("var single_item_collection = \\{ (\\d+) : item \\};").getMatch(0);
+                        fid = br.getRegex("\\&amp;file_id=f_(\\d+)\\&amp").getMatch(0);
+                        if (fid == null) {
+                            fid = br.getRegex("var single_item_collection = \\{ (\\d+) : item \\};").getMatch(0);
+                        }
                     }
                 }
+                if (fid == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                DLLINK = "http://www.box.com/download/external/f_" + fid + "/0/" + link.getName() + "?shared_file_page=1&shared_name=" + new Regex(link.getDownloadURL(), "http://www\\.box\\.[^/]+/s/(.+)").getMatch(0);
             }
-            if (fid == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            DLLINK = "http://www.box.com/download/external/f_" + fid + "/0/" + link.getName() + "?shared_file_page=1&shared_name=" + new Regex(link.getDownloadURL(), "http://www\\.box\\.[^/]+/s/(.+)").getMatch(0);
         } else if (DLLINK == null) {
             DLLINK = link.getDownloadURL();
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, Encoding.htmlDecode(DLLINK), true, 0);
+        DLLINK = Encoding.htmlDecode(DLLINK);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, DLLINK, true, 0);
         if (!dl.getConnection().isContentDisposition()) {
+            if (dl.getConnection().getResponseCode() == 500) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 5 * 60 * 1000l);
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
