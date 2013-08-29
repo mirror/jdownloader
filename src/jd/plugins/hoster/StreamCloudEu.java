@@ -458,15 +458,18 @@ public class StreamCloudEu extends PluginForHost {
     public String getDllink() {
         String dllink = br.getRedirectLocation();
         if (dllink == null) {
-            dllink = new Regex(correctedBR, "(\"|\\')(https?://(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|([\\w\\-]+\\.)?" + COOKIE_HOST.replaceAll("https?://", "") + ")(:\\d{1,4})?/(files|d|cgi\\-bin/dl\\.cgi)/(\\d+/)?[a-z0-9]+/[^<>\"/]*?)(\"|\\')").getMatch(1);
+            dllink = new Regex(correctedBR, "file: \"(http://[^<>\"]*?)\"").getMatch(0);
             if (dllink == null) {
-                dllink = br.getRegex("\"(http://\\w+.streamcloud\\.eu:\\d+/[a-z0-9]+/video\\.mp4)\"").getMatch(0);
+                dllink = new Regex(correctedBR, "(\"|\\')(https?://(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|([\\w\\-]+\\.)?" + COOKIE_HOST.replaceAll("https?://", "") + ")(:\\d{1,4})?/(files|d|cgi\\-bin/dl\\.cgi)/(\\d+/)?[a-z0-9]+/[^<>\"/]*?)(\"|\\')").getMatch(1);
                 if (dllink == null) {
-                    final String cryptedScripts[] = new Regex(correctedBR, "p\\}\\((.*?)\\.split\\('\\|'\\)").getColumn(0);
-                    if (cryptedScripts != null && cryptedScripts.length != 0) {
-                        for (String crypted : cryptedScripts) {
-                            dllink = decodeDownloadLink(crypted);
-                            if (dllink != null) break;
+                    dllink = br.getRegex("\"(http://\\w+.streamcloud\\.eu:\\d+/[a-z0-9]+/video\\.mp4)\"").getMatch(0);
+                    if (dllink == null) {
+                        final String cryptedScripts[] = new Regex(correctedBR, "p\\}\\((.*?)\\.split\\('\\|'\\)").getColumn(0);
+                        if (cryptedScripts != null && cryptedScripts.length != 0) {
+                            for (String crypted : cryptedScripts) {
+                                dllink = decodeDownloadLink(crypted);
+                                if (dllink != null) break;
+                            }
                         }
                     }
                 }

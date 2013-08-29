@@ -22,6 +22,7 @@ import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -29,7 +30,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "homesexdaily.com" }, urls = { "http://(www\\.)?homesexdaily\\.com/video/.*?\\.html" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "homesexdaily.com" }, urls = { "http://(www\\.)?homesexdaily\\.com/(video/.*?\\.html|flv_player/data/playerConfigEmbed/\\d+\\.xml)" }, flags = { 0 })
 public class HomeSexDailyCom extends PluginForHost {
 
     private String DLLINK = null;
@@ -43,13 +44,15 @@ public class HomeSexDailyCom extends PluginForHost {
         return "http://www.homesexdaily.com/terms/";
     }
 
+    private static final String EMBEDLINK = "http://(www\\.)?homesexdaily\\.com/flv_player/data/playerConfigEmbed/\\d+\\.xml";
+
     @Override
     public int getMaxSimultanFreeDownloadNum() {
         return -1;
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception {
+    public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
@@ -60,15 +63,24 @@ public class HomeSexDailyCom extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML("(This video does not exist\\!<|<title>Home Sex Daily</title>)") || br.getURL().equals("http://www.homesexdaily.com/")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("<div class=\"col\\-l\">[\t\n\r ]+<h1>(.*?)</h1>").getMatch(0);
-        if (filename == null) filename = br.getRegex("<title>(.*?) \\- Home Sex Daily</title>").getMatch(0);
-        DLLINK = br.getRegex("var playlist = \\[ \\{ url: \\'(http://.*?)\\' \\} \\]").getMatch(0);
-        if (DLLINK == null) DLLINK = br.getRegex("\\'(http://(www\\.)?media\\.homesexdaily\\.com:\\d+/flv/.*?)\\'").getMatch(0);
+        String filename = null;
+        if (downloadLink.getDownloadURL().matches(EMBEDLINK)) {
+            // Set name so the extension won't be ".xml" so users can use the filetype filter in a better way, also for offline links
+            downloadLink.setName(new Regex(downloadLink.getDownloadURL(), "(\\d+)\\.xml$").getMatch(0) + ".flv");
+            if (br.containsHTML("<video SD=\"http://www\\.homesexdaily\\.com/files/\"")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            filename = br.getRegex("<title>([^<>\"]*?)</title>").getMatch(0);
+            DLLINK = br.getRegex("<video SD=\"(http://[^<>\"]*?)\"").getMatch(0);
+        } else {
+            if (br.containsHTML("(This video does not exist\\!<|<title>Home Sex Daily</title>)") || br.getURL().equals("http://www.homesexdaily.com/")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            filename = br.getRegex("<div class=\"col\\-l\">[\t\n\r ]+<h1>(.*?)</h1>").getMatch(0);
+            if (filename == null) filename = br.getRegex("<title>(.*?) \\- Home Sex Daily</title>").getMatch(0);
+            DLLINK = br.getRegex("var playlist = \\[ \\{ url: \\'(http://.*?)\\' \\} \\]").getMatch(0);
+            if (DLLINK == null) DLLINK = br.getRegex("\\'(http://(www\\.)?media\\.homesexdaily\\.com:\\d+/flv/.*?)\\'").getMatch(0);
+        }
         if (filename == null || DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         DLLINK = Encoding.htmlDecode(DLLINK);
         filename = filename.trim();

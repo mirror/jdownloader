@@ -42,15 +42,21 @@ public class TopAmateurPornComDecrypter extends PluginForDecrypt {
             logger.info("Link offline: " + parameter);
             return decryptedLinks;
         }
-        String tempID = br.getRedirectLocation();
-        if (tempID != null) {
-            DownloadLink dl = createDownloadlink(tempID);
+        String externID = br.getRedirectLocation();
+        if (externID != null) {
+            DownloadLink dl = createDownloadlink(externID);
             decryptedLinks.add(dl);
             return decryptedLinks;
         }
-        tempID = br.getRegex("\\&url=(http://(www\\.)homesexdaily\\.com/video/.*?\\.html)\\&wm").getMatch(0);
-        if (tempID != null) {
-            decryptedLinks.add(createDownloadlink(tempID));
+        externID = br.getRegex("\\&url=(http://(www\\.)homesexdaily\\.com/video/.*?\\.html)\\&wm").getMatch(0);
+        if (externID == null) externID = br.getRegex("(http://(www\\.)?homesexdaily\\.com/flv_player/data/playerConfigEmbed/\\d+\\.xml)\\'").getMatch(0);
+        if (externID != null) {
+            decryptedLinks.add(createDownloadlink(externID));
+            return decryptedLinks;
+        }
+        externID = br.getRegex("\"(http://(www\\.)?pornhost\\.com/\\d+/?)\"").getMatch(0);
+        if (externID != null) {
+            decryptedLinks.add(createDownloadlink(externID));
             return decryptedLinks;
         }
 
@@ -62,24 +68,24 @@ public class TopAmateurPornComDecrypter extends PluginForDecrypt {
             return null;
         }
         filename = Encoding.htmlDecode(filename.trim());
-        tempID = br.getRegex("\\&settings=(http://(www\\.)?eroxia\\.com/playerConfig\\.php[^<>\"]*?)\"").getMatch(0);
-        if (tempID != null) {
-            br.getPage(Encoding.htmlDecode(tempID));
+        externID = br.getRegex("\\&settings=(http://(www\\.)?eroxia\\.com/playerConfig\\.php[^<>\"]*?)\"").getMatch(0);
+        if (externID != null) {
+            br.getPage(Encoding.htmlDecode(externID));
             if (br.containsHTML(">404: File Not Found</")) {
                 logger.info("Link offline: " + parameter);
                 return decryptedLinks;
             }
-            tempID = br.getRegex("flvMask:(http://[^<>\"]*?);").getMatch(0);
-            if (tempID == null) {
+            externID = br.getRegex("flvMask:(http://[^<>\"]*?);").getMatch(0);
+            if (externID == null) {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
             }
-            final DownloadLink dl = createDownloadlink("directhttp://" + Encoding.htmlDecode(tempID));
+            final DownloadLink dl = createDownloadlink("directhttp://" + Encoding.htmlDecode(externID));
             dl.setFinalFileName(filename + ".flv");
             decryptedLinks.add(dl);
             return decryptedLinks;
         }
-        if (tempID == null) {
+        if (externID == null) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }

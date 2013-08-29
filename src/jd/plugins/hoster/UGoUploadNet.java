@@ -62,8 +62,10 @@ public class UGoUploadNet extends PluginForHost {
     private static final String PREMIUMONLY              = "?e=You+must+register+for+a+premium+account+to+download+files+of+this+size";
     private static final String PREMIUMONLYUSERTEXT      = "Only downloadable for premium users";
     private static final String SIMULTANDLSLIMIT         = "?e=You+have+reached+the+maximum+concurrent+downloads";
+    private static final String SIMULTANDLSLIMITUSERTEXT = "Max. simultan downloads limit reached, wait or reconnect to start more downloads from this host";
+    private static final String DLSLIMIT                 = "?e=You+must+wait+";
+    private static final String DLSLIMITUSERTEXT         = "Max. downloads limit reached, wait or reconnect to start more downloads from this host";
     private static final String ERRORFILE                = "?e=Error%3A+Could+not+open+file+for+reading";
-    private static final String SIMULTANDLSLIMITUSERTEXT = "Max. simultan downloads limit reached, wait to start more downloads from this host";
 
     /** Uses same script as filegig.com */
     @Override
@@ -79,6 +81,11 @@ public class UGoUploadNet extends PluginForHost {
         if (br.getURL().contains(SIMULTANDLSLIMIT)) {
             link.setName(new Regex(link.getDownloadURL(), "([A-Za-z0-9]+)$").getMatch(0));
             link.getLinkStatus().setStatusText(SIMULTANDLSLIMITUSERTEXT);
+            return AvailableStatus.TRUE;
+        }
+        if (br.getURL().contains(DLSLIMIT)) {
+            link.setName(new Regex(link.getDownloadURL(), "([A-Za-z0-9]+)$").getMatch(0));
+            link.getLinkStatus().setStatusText(DLSLIMITUSERTEXT);
             return AvailableStatus.TRUE;
         }
         if (br.getURL().contains("ugoupload.net/index.html")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -101,6 +108,7 @@ public class UGoUploadNet extends PluginForHost {
         if (br.getURL().contains(PREMIUMONLY)) throw new PluginException(LinkStatus.ERROR_FATAL, PREMIUMONLYUSERTEXT);
         if (br.getURL().contains(SIMULTANDLSLIMIT)) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, SIMULTANDLSLIMITUSERTEXT, 1 * 60 * 1000l);
         if (br.getURL().contains(ERRORFILE) || br.containsHTML("Error: Could not open file for reading.")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 30 * 60 * 1000l);
+        if (br.getURL().contains(DLSLIMIT)) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1001l);
         boolean captcha = false;
         int wait = 420;
         final String waittime = br.getRegex("\\$\\(\\'\\.download\\-timer\\-seconds\\'\\)\\.html\\((\\d+)\\);").getMatch(0);

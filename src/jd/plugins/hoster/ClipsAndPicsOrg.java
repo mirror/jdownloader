@@ -20,6 +20,7 @@ import java.io.IOException;
 
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -27,7 +28,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "clips-and-pics.org" }, urls = { "http://(www\\.)?clips\\-and\\-pics\\.orgdecrypted/hosted/media/.*?,\\d+\\.php" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "clips-and-pics.org" }, urls = { "http://clips\\-and\\-pics\\.orgdecrypted/\\d+" }, flags = { 0 })
 public class ClipsAndPicsOrg extends PluginForHost {
 
     private static final String PACKEDJSURL = "http://sbfileserver.org/mediaplayer/encrypt.js";
@@ -40,14 +41,43 @@ public class ClipsAndPicsOrg extends PluginForHost {
         super(wrapper);
     }
 
+    @Override
+    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
+        this.setBrowserExclusive();
+        br.setFollowRedirects(true);
+        final String mainlink = downloadLink.getStringProperty("mainlink", null);
+        br.getPage(mainlink);
+        if (br.getURL().equals("http://www.clips-and-pics.org/")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = new Regex(mainlink, "hosted\\-id\\d+\\-(.*?)\\.html").getMatch(0);
+        if (filename == null) filename = br.getRegex("<div id=\"mid\">[\t\n\r ]+<div class=\"navi_m_top\">(.*?)</div>").getMatch(0);
+        if (filename == null) filename = br.getRegex("<meta name=\"description\" content=\"(.*?)\">").getMatch(0);
+        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        filename = Encoding.htmlDecode(filename.trim());
+        downloadLink.setFinalFileName(filename + ".flv");
+        return AvailableStatus.TRUE;
+    }
+
+    @Override
+    public void handleFree(final DownloadLink downloadLink) throws Exception {
+        requestFileInformation(downloadLink);
+        if (!br.containsHTML(PACKEDJSURL)) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        String linkPart = br.getRegex("encr\\(video_path\\) \\+\\'(/.*?)\\'").getMatch(0);
+        if (linkPart == null) linkPart = br.getRegex("\\'(/videos/\\d+/shower\\d+\\.flv)\\'").getMatch(0);
+        br.getPage("http://sbfileserver.org/show.php");
+        String lolparam = br.getRegex("var video_path =\"(.*?)\";").getMatch(0);
+        if (lolparam == null || linkPart == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        String finallink = "http://www.sbfileserver.org/" + encryptString(lolparam) + linkPart;
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, finallink, true, 0);
+        if (dl.getConnection().getContentType().contains("html")) {
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dl.startDownload();
+    }
+
     private String convert_char(int c, int b, int d, char x) {
         String a = Character.toString(x);
         return fromCharCode(b + (((a.charAt(0) - b) + c) % (c * 2)));
-    }
-
-    public void correctDownloadLink(DownloadLink link) {
-        // Links come from a decrypter
-        link.setUrlDownload(link.getDownloadURL().replace("clips-and-pics.orgdecrypted/", "clips-and-pics.org/"));
     }
 
     private String encryptString(String b) {
@@ -75,37 +105,6 @@ public class ClipsAndPicsOrg extends PluginForHost {
     @Override
     public int getMaxSimultanFreeDownloadNum() {
         return -1;
-    }
-
-    @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception {
-        requestFileInformation(downloadLink);
-        if (!br.containsHTML(PACKEDJSURL)) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        String linkPart = br.getRegex("encr\\(video_path\\) \\+\\'(/.*?)\\'").getMatch(0);
-        if (linkPart == null) linkPart = br.getRegex("\\'(/videos/\\d+/shower\\d+\\.flv)\\'").getMatch(0);
-        br.getPage("http://sbfileserver.org/show.php");
-        String lolparam = br.getRegex("var video_path =\"(.*?)\";").getMatch(0);
-        if (lolparam == null || linkPart == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        String finallink = "http://www.sbfileserver.org/" + encryptString(lolparam) + linkPart;
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, finallink, true, 0);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        dl.startDownload();
-    }
-
-    @Override
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
-        this.setBrowserExclusive();
-        br.setFollowRedirects(true);
-        br.getPage(downloadLink.getDownloadURL());
-        if (br.getURL().equals("http://www.clips-and-pics.org/")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("<div id=\"mid\">[\t\n\r ]+<div class=\"navi_m_top\">(.*?)</div>").getMatch(0);
-        if (filename == null) filename = br.getRegex("<meta name=\"description\" content=\"(.*?)\">").getMatch(0);
-        filename = filename.trim();
-        downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + ".flv");
-        return AvailableStatus.TRUE;
     }
 
     @Override
