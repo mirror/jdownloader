@@ -200,7 +200,7 @@ public class RyuShareCom extends PluginForHost {
         }
         return prepBr;
     }
-    
+
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
         // make sure the downloadURL protocol is of site ability and user preference
@@ -571,8 +571,10 @@ public class RyuShareCom extends PluginForHost {
             if (cbr.containsHTML("\">Skipped countdown<")) throw new PluginException(LinkStatus.ERROR_FATAL, "Fatal countdown error (countdown skipped)");
         }
         // monitor this
-        // premium = <font class="err">You have reached the download-limit: 88888 Mb for last 1 days</font> (even with accounts with unlimited traffic.)
-        //     free = <div class="err">You have reached the download-limit!!!<br><br>Download files instantly with <a href='http://ryushare.com/?op=payments'>Premium-account</a></div>
+        // premium = <font class="err">You have reached the download-limit: 88888 Mb for last 1 days</font> (even with accounts with
+        // unlimited traffic.)
+        // free = <div class="err">You have reached the download-limit!!!<br><br>Download files instantly with <a
+        // href='http://ryushare.com/?op=payments'>Premium-account</a></div>
         if (cbr.containsHTML("class=\"err\">You have reached the download(-| )limit") && !cbr.containsHTML("You have to wait")) {
             /*
              * Indication of when you've reached the max download limit for that given session! Usually shows how long the session was
@@ -746,25 +748,36 @@ public class RyuShareCom extends PluginForHost {
                     }
                 }
                 br.setFollowRedirects(true);
-                getPage(COOKIE_HOST.replaceFirst("https?://", getProtocol()) + "/login.html");
-                Form loginform = br.getFormbyProperty("name", "FL");
-                if (loginform == null) {
-                    if ("de".equalsIgnoreCase(language)) {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin defekt, bitte den JDownloader Support kontaktieren!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    } else {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin broken, please contact the JDownloader Support!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                boolean loginFailed = true;
+                String loginPage = COOKIE_HOST.replaceFirst("https?://", getProtocol()) + "/login.html";
+                for (int i = 1; i <= 2; i++) {
+                    getPage(loginPage);
+                    Form loginform = br.getFormbyProperty("name", "FL");
+                    if (loginform == null) {
+                        if ("de".equalsIgnoreCase(language)) {
+                            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin defekt, bitte den JDownloader Support kontaktieren!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                        } else {
+                            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin broken, please contact the JDownloader Support!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                        }
                     }
+                    loginform = cleanForm(loginform);
+                    loginform.put("login", Encoding.urlEncode(account.getUser()));
+                    loginform.put("password", Encoding.urlEncode(account.getPass()));
+                    loginform.put("redirect", Encoding.urlEncode("/?op=my_account"));
+                    // check form for login captcha crap.
+                    DownloadLink dummyLink = new DownloadLink(null, "Account", this.getHost(), COOKIE_HOST, true);
+                    loginform = captchaForm(dummyLink, loginform);
+                    // end of check form for login captcha crap.
+                    sendForm(loginform);
+                    if (br.getCookie(COOKIE_HOST, "login") == null || br.getCookie(COOKIE_HOST, "xfss") == null) {
+                        // Usually it's just login2 (with (key)captcha) but let's make it dynamic to improve stability
+                        loginPage = br.getRegex("Please click here to login again: <a href=\"(https?://(www\\.)?ryushare\\.com/\\?op=login[^<>\"]*?)\"").getMatch(0);
+                        if (loginPage == null) break;
+                        continue;
+                    }
+                    loginFailed = false;
                 }
-                loginform = cleanForm(loginform);
-                loginform.put("login", Encoding.urlEncode(account.getUser()));
-                loginform.put("password", Encoding.urlEncode(account.getPass()));
-                loginform.put("redirect", Encoding.urlEncode("/?op=my_account"));
-                // check form for login captcha crap.
-                DownloadLink dummyLink = new DownloadLink(null, "Account", this.getHost(), COOKIE_HOST, true);
-                loginform = captchaForm(dummyLink, loginform);
-                // end of check form for login captcha crap.
-                sendForm(loginform);
-                if (br.getCookie(COOKIE_HOST, "login") == null || br.getCookie(COOKIE_HOST, "xfss") == null) {
+                if (loginFailed) {
                     if ("de".equalsIgnoreCase(language)) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     } else {

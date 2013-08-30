@@ -18,6 +18,7 @@ package jd.plugins.hoster;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
+import jd.http.Browser.BrowserException;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.JDHash;
 import jd.nutils.encoding.Encoding;
@@ -55,6 +56,29 @@ public class WatTv extends PluginForHost {
     @Override
     public String getAGBLink() {
         return "http://www.wat.tv/cgu";
+    }
+
+    @Override
+    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
+        setBrowserExclusive();
+        br.setCustomCharset("utf-8");
+        br.setFollowRedirects(true);
+        try {
+            br.getPage(downloadLink.getDownloadURL());
+        } catch (final BrowserException e) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        if (br.getURL().equals("http://www.wat.tv/") || br.containsHTML("<title> WAT TV, vidéos replay musique et films, votre média vidéo \\– Wat\\.tv </title>")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+        String filename = br.getRegex("<meta property=\"og:title\" content=\"(.*?)\"").getMatch(0);
+        if (filename == null || filename.equals("")) {
+            filename = br.getRegex("<meta name=\"name\" content=\"(.*?)\"").getMatch(0);
+        }
+        if (filename == null || filename.equals("")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+        if (filename.endsWith(" - ")) {
+            filename = filename.replaceFirst(" \\- $", "");
+        }
+        downloadLink.setName(filename.trim() + ".flv");
+        return AvailableStatus.TRUE;
     }
 
     public String getFinalLink() throws Exception {
@@ -144,25 +168,6 @@ public class WatTv extends PluginForHost {
         final int rev = Integer.parseInt(prev);
         if (rev < 10000) { return true; }
         return false;
-    }
-
-    @Override
-    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
-        setBrowserExclusive();
-        br.setCustomCharset("utf-8");
-        br.setFollowRedirects(true);
-        br.getPage(downloadLink.getDownloadURL());
-        if (br.getURL().equals("http://www.wat.tv/") || br.containsHTML("<title> WAT TV, vidéos replay musique et films, votre média vidéo \\– Wat\\.tv </title>")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
-        String filename = br.getRegex("<meta property=\"og:title\" content=\"(.*?)\"").getMatch(0);
-        if (filename == null || filename.equals("")) {
-            filename = br.getRegex("<meta name=\"name\" content=\"(.*?)\"").getMatch(0);
-        }
-        if (filename == null || filename.equals("")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
-        if (filename.endsWith(" - ")) {
-            filename = filename.replaceFirst(" \\- $", "");
-        }
-        downloadLink.setName(filename.trim() + ".flv");
-        return AvailableStatus.TRUE;
     }
 
     @Override

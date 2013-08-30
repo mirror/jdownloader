@@ -44,7 +44,7 @@ import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "facebook.com" }, urls = { "https?://(www\\.)?facebook\\.com/(video/video\\.php\\?v=|profile\\.php\\?id=\\d+\\&ref=ts#\\!/video/video\\.php\\?v=|(photo/)?photo\\.php\\?v=|photo\\.php\\?fbid=)\\d+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "facebook.com" }, urls = { "https?://(www\\.)?facebook\\.com/(video/video\\.php\\?v=|video/embed\\?video_id=|profile\\.php\\?id=\\d+\\&ref=ts#\\!/video/video\\.php\\?v=|(photo/)?photo\\.php\\?v=|photo\\.php\\?fbid=)\\d+" }, flags = { 2 })
 public class FaceBookComVideos extends PluginForHost {
 
     private String              FACEBOOKMAINPAGE           = "http://www.facebook.com";
@@ -66,7 +66,7 @@ public class FaceBookComVideos extends PluginForHost {
 
     public void correctDownloadLink(DownloadLink link) {
         String thislink = link.getDownloadURL().replace("https://", "http://");
-        String videoID = new Regex(thislink, "(ts#\\!/video/video\\.php|photo\\.php)\\?v=(\\d+)").getMatch(1);
+        String videoID = new Regex(thislink, "facebook\\.com/(ts#\\!/video/video\\.php\\?v=|photo\\.php\\?v=|video/embed\\?video_id=)(\\d+)").getMatch(1);
         if (videoID != null) thislink = "http://facebook.com/video/video.php?v=" + videoID;
         link.setUrlDownload(thislink);
     }
@@ -88,6 +88,7 @@ public class FaceBookComVideos extends PluginForHost {
         if (!noAccountNeeded) {
             final Account aa = AccountController.getInstance().getValidAccount(this);
             if (aa == null || !aa.isValid()) {
+                link.setName(new Regex(link.getDownloadURL(), "(\\d+)$").getMatch(0));
                 link.getLinkStatus().setStatusText(JDL.L("plugins.hoster.facebookvideos.only4registered", "Links can only be checked if a valid account is entered"));
                 return AvailableStatus.UNCHECKABLE;
             }
@@ -205,12 +206,16 @@ public class FaceBookComVideos extends PluginForHost {
             }
             dl.startDownload();
         } else {
-            try {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
-            } catch (final Throwable e) {
-                if (e instanceof PluginException) throw (PluginException) e;
+            if (downloadLink.getBooleanProperty("nologin", false)) {
+                handleVideo(downloadLink);
+            } else {
+                try {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+                } catch (final Throwable e) {
+                    if (e instanceof PluginException) throw (PluginException) e;
+                }
+                throw new PluginException(LinkStatus.ERROR_FATAL, "This file can only be downloaded by registered users");
             }
-            throw new PluginException(LinkStatus.ERROR_FATAL, "This file can only be downloaded by registered users");
         }
     }
 
@@ -225,6 +230,19 @@ public class FaceBookComVideos extends PluginForHost {
     @Override
     public void handlePremium(final DownloadLink downloadLink, final Account account) throws Exception {
         requestFileInformation(downloadLink);
+        if (DLLINK != null) {
+            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 0);
+            if (dl.getConnection().getContentType().contains("html")) {
+                br.followConnection();
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            dl.startDownload();
+        } else {
+            handleVideo(downloadLink);
+        }
+    }
+
+    public void handleVideo(final DownloadLink downloadLink) throws Exception {
         if (DLLINK == null) {
             boolean preferHD = getPluginConfig().getBooleanProperty(PREFERHD);
             br.getRequest().setHtmlCode(unescape(br.toString()));

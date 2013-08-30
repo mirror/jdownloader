@@ -50,8 +50,11 @@ public class VPornCom extends PluginForHost {
         }
     }
 
+    private static final String INVALIDLINKS = "http://(www\\.)?vporn\\.com/(user|favorite|submitted|thumb)/.+";
+
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
+        if (downloadLink.getDownloadURL().matches(INVALIDLINKS)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());

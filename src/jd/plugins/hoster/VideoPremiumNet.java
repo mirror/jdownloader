@@ -28,6 +28,7 @@ import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Cookie;
 import jd.http.Cookies;
+import jd.http.RandomUserAgent;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
@@ -112,6 +113,7 @@ public class VideoPremiumNet extends PluginForHost {
         // define custom browser headers and language settings.
         br.getHeaders().put("Accept-Language", "en-gb, en;q=0.9, de;q=0.8");
         br.setCookie(COOKIE_HOST, "lang", "english");
+        br.getHeaders().put("User-Agent", RandomUserAgent.generate());
     }
 
     @Override
@@ -201,8 +203,8 @@ public class VideoPremiumNet extends PluginForHost {
                 download1.remove("method_premium");
                 sendForm(download1);
                 checkErrors(downloadLink, false, passCode);
+                dllink = getDllink();
             }
-            dllink = getDllink();
         }
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         rtmpDownload(downloadLink, dllink);

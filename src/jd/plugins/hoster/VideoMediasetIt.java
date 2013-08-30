@@ -55,12 +55,13 @@ public class VideoMediasetIt extends PluginForHost {
         br.setFollowRedirects(true);
         br.setReadTimeout(3 * 60 * 1000);
         br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML("Video non trovato")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("Video non trovato|>Il video che stai cercando non")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (br.containsHTML("silverlight/playerSilverlight\\.js\"")) {
             downloadLink.getLinkStatus().setStatusText("JDownloader can't download MS Silverlight videos!");
             return AvailableStatus.TRUE;
         }
-        String filename = br.getRegex("<title>([^<>\"]*?)\\- Video Mediaset</title>").getMatch(0);
+        String filename = br.getRegex("<title>([^<>]*?)\\- Video Mediaset</title>").getMatch(0);
+        filename = Encoding.htmlDecode(filename.trim()).replace("\"", "'");
         if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         /** Old way */
         // http://cdnselector.xuniplay.fdnames.com/GetCDN.aspx?streamid= + streamID
@@ -73,14 +74,14 @@ public class VideoMediasetIt extends PluginForHost {
         if (dllinks != null && dllinks.length != 0) DLLINK = dllinks[dllinks.length - 1];
         if (DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         if (DLLINK.contains("Error400") || br.containsHTML("/Cartello_NotAvailable\\.wmv")) {
-            downloadLink.getLinkStatus().setStatusText("JDownloader can't download MS Silverlight videos!");
+            downloadLink.getLinkStatus().setStatusText("JDownloader can't download this video (either blocked in your country or MS Silverlight)");
+            downloadLink.setName(filename + ".mp4");
             return AvailableStatus.TRUE;
         }
         DLLINK = Encoding.htmlDecode(DLLINK);
-        filename = filename.trim();
         String ext = DLLINK.substring(DLLINK.lastIndexOf("."));
         if (ext == null || ext.length() > 5) ext = ".f4v";
-        downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + ext);
+        downloadLink.setFinalFileName(filename + ext);
         final Browser br2 = br.cloneBrowser();
         // In case the link redirects to the finallink
         br2.setFollowRedirects(true);
@@ -109,6 +110,7 @@ public class VideoMediasetIt extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         if (br.containsHTML("silverlight/playerSilverlight\\.js\"")) throw new PluginException(LinkStatus.ERROR_FATAL, "JDownloader can't download MS Silverlight videos!");
+        if (DLLINK.contains("Error400") || br.containsHTML("/Cartello_NotAvailable\\.wmv")) throw new PluginException(LinkStatus.ERROR_FATAL, "JDownloader can't download this video (either blocked in your country or MS Silverlight)");
         if (dlImpossible) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error, try again later", 10 * 60 * 1000l);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {

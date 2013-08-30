@@ -330,7 +330,7 @@ public class NCryptIn extends PluginForDecrypt {
             }
             if (file.exists()) file.delete();
         }
-        if (decryptedLinks.size() > 0) { return decryptedLinks; }
+        if (decryptedLinks != null && decryptedLinks.size() > 0) { return decryptedLinks; }
         return null;
     }
 

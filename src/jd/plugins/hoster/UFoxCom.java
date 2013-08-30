@@ -130,7 +130,7 @@ public class UFoxCom extends PluginForHost {
         br.setFollowRedirects(true);
         prepBrowser(br);
         getPage(link.getDownloadURL());
-        if (new Regex(correctedBR, ">ERROR 404 \\- File Not Found<|The file you were looking for could not be found|>The file expired|ufox\\.com/deleted\\.html>").matches()) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (new Regex(correctedBR, ">ERROR 404 \\- File Not Found<|The file you were looking for could not be found|>The file expired|ufox\\.com/deleted\\.html>|>ERROR 404\\- No File<").matches()) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (new Regex(correctedBR, MAINTENANCE).matches()) {
             link.getLinkStatus().setStatusText(MAINTENANCEUSERTEXT);
             return AvailableStatus.TRUE;
