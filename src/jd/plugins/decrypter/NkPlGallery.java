@@ -40,7 +40,7 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "nk.pl" }, urls = { "http://(www\\.)?nk\\.pl/#?profile/\\d+/gallery(/album/\\d+(/\\d+)?|/\\d+|#\\!q(\\?|%3F)album(=|%3D)\\d+)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "nk.pl" }, urls = { "http://(www\\.)?nk\\.pl/#?profile/\\d+/gallery(/album/\\d+(/\\d+)?|/\\d+|#\\!(q(\\?|%3F))*?album(=|%3D)\\d+)" }, flags = { 0 })
 public class NkPlGallery extends PluginForDecrypt {
 
     /* must be static so all plugins share same lock */
@@ -57,7 +57,7 @@ public class NkPlGallery extends PluginForDecrypt {
     }
 
     private String correctCryptedLink(final String parameter) {
-        return parameter.replaceAll("(\\!q\\?album=\\d+|#)", "");
+        return parameter.replaceAll("(\\!(q\\?)*?album=\\d+|#)", "");
     }
 
     @Override
@@ -83,8 +83,12 @@ public class NkPlGallery extends PluginForDecrypt {
                     return null;
                 }
                 decryptedLinks.add(createDownloadlink(finallink));
-            } else if (parameter.matches(".*?nk\\.pl/#profile/\\d+/gallery#\\!q\\?album=\\d+")) {
+            } else if (parameter.matches(".*?nk\\.pl/#profile/\\d+/gallery#\\![q\\?]*?album=\\d+")) {
                 br.setFollowRedirects(true);
+                if (br.containsHTML("<div class=\"blocked_album\">")) {
+                    logger.warning("Gallery for url: " + parameter + " was blocked by the owner.");
+                    return null;
+                }
                 final String galleryID = new Regex(parameter, "album=(\\d+)").getMatch(0);
                 final String galleryCount = br.getRegex("data-count=\"(\\d+)\" data-album-id=\"" + galleryID + "\"").getMatch(0);
                 if (galleryCount == null) {
