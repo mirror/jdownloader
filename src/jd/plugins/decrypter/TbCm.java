@@ -484,8 +484,7 @@ public class TbCm extends PluginForDecrypt {
                 br.getPage(page);
                 String[] videos = br.getRegex("href=\"(/watch\\?v=[A-Za-z0-9\\-_]+)&amp;list=" + luid).getColumn(0);
                 // the (g/c/|grid/user/) doesn't return the same luid within url so will fail.
-                if (videos == null || videos.length == 0 && new Regex(parameter, userGridGCRegex).matches()) 
-                    videos = br.getRegex("href=\"(/watch\\?v=[A-Za-z0-9\\-_]+)&amp;list=[A-Z0-9]+").getColumn(0);
+                if (videos == null || videos.length == 0 && new Regex(parameter, userGridGCRegex).matches()) videos = br.getRegex("href=\"(/watch\\?v=[A-Za-z0-9\\-_]+)&amp;list=[A-Z0-9]+").getColumn(0);
                 for (String video : videos) {
                     video = Encoding.htmlDecode(video);
                     if (!dupeList.add(getVideoID(video))) continue;
@@ -499,7 +498,7 @@ public class TbCm extends PluginForDecrypt {
                 // not all pages are shown on first page! Grab next and continue loop
                 next = br.getRegex("<a href=\"(/playlist\\?list=" + luid + "&amp;page=\\d+)\"[^\r\n]+>Next »<").getMatch(0);
                 if (next != null) {
-                    Encoding.htmlDecode(next);
+                    next = Encoding.htmlDecode(next);
                     // little sleep per page to prevent ddos
                     Thread.sleep(1000);
                 }

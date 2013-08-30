@@ -78,6 +78,9 @@ public class JBbergCom extends PluginForDecrypt {
         if (br.containsHTML(">Oh non, vous avez tué Kenny|>Dommage, la page demandée n'existe pas")) {
             logger.info("Link offline: " + parameter);
             return decryptedLinks;
+        } else if (br.containsHTML("<div class=\"title\">Erreur 404</div>|<div id=\"http-error\">404\\.</div>")) {
+            logger.info("Invalid link: " + parameter);
+            return decryptedLinks;
         }
 
         final String fpName = br.getRegex("file-name\">([^<>\"]+)</h1>").getMatch(0);
@@ -116,9 +119,9 @@ public class JBbergCom extends PluginForDecrypt {
                 logger.info("A link failed because of a browser exception (probably timeout): " + br2.getURL());
                 continue;
             }
-            final String finallink = br2.getRegex("\"url\"\\s*:\\s*\"(http[^<>\"]*?)\"").getMatch(0);
+            final String finallink = br2.getRegex("\"url\"\\s*:\\s*\"(http[^<>\"]+)\"").getMatch(0);
             // not sure of best action here, but seems some are either down or require account?. Continue with the results
-            if (br2.containsHTML("url\"\\s*:\\s*\"not authorized\"") || br2.containsHTML("\"url\"\\s*:\\s*\"\"")) {
+            if (br2.containsHTML("url\"\\s*:\\s*\"not authorized\"") || br2.containsHTML("\"url\"\\s*:\\s*\"\"") || br2.containsHTML("<title>404 Not Found</title>")) {
                 continue;
             }
             if (finallink == null) {
