@@ -136,7 +136,7 @@ public class PlayVidComDecrypter extends PluginForDecrypt {
     }
 
     private String getQuality(String quality) {
-        return new Regex(VIDEOSOURCE, "video_vars\\[video_urls\\]\\[" + quality + "\\]= (http://[^<>\"]*?)\\&").getMatch(0);
+        return new Regex(VIDEOSOURCE, "video_vars\\[video_urls\\]\\[" + quality + "\\]= ?(http://[^<>\"]*?)\\&").getMatch(0);
     }
 
     /* NO OVERRIDE!! */

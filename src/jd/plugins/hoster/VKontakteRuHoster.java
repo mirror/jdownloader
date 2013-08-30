@@ -100,14 +100,17 @@ public class VKontakteRuHoster extends PluginForHost {
             filename = Encoding.htmlDecode(filename.trim());
             if (!linkOk(link, filename)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else {
-            /** Login needed to download */
-            final Account aa = AccountController.getInstance().getValidAccount(this);
-            // This shouldn't happen
-            if (aa == null) {
-                link.getLinkStatus().setStatusText("Only downlodable via account!");
-                return AvailableStatus.UNCHECKABLE;
+            // Only log in if needed
+            boolean noLogin = link.getBooleanProperty("nologin", false);
+            Account aa = null;
+            if (!noLogin) {
+                aa = AccountController.getInstance().getValidAccount(this);
+                if (aa == null) {
+                    link.getLinkStatus().setStatusText("Only downlodable via account!");
+                    return AvailableStatus.UNCHECKABLE;
+                }
+                login(br, aa, false);
             }
-            login(br, aa, false);
             if (link.getDownloadURL().matches(AUDIOLINK)) {
                 String finalFilename = link.getFinalFileName();
                 if (finalFilename == null) finalFilename = link.getName();
@@ -207,39 +210,6 @@ public class VKontakteRuHoster extends PluginForHost {
 
     }
 
-    // Handly all kinds of stuff that disturbs the downloadflow
-    private void getPageSafe(final Account acc, final DownloadLink dl, final String page) throws Exception {
-        br.getPage(page);
-        if (br.getRedirectLocation() != null && br.getRedirectLocation().contains("login.vk.com/?role=fast")) {
-            logger.info("Avoiding 'https://login.vk.com/?role=fast&_origin=' security check by re-logging in...");
-            // Force login
-            login(br, acc, true);
-            br.getPage(page);
-        } else if (br.toString().length() < 100 && br.toString().trim().matches("\\d+<\\!><\\!>\\d+<\\!>\\d+<\\!>\\d+<\\!>[a-z0-9]+")) {
-            logger.info("Avoiding possible outdated cookie/invalid account problem by re-logging in...");
-            // Force login
-            login(br, acc, true);
-            br.getPage(page);
-        }
-        generalErrorhandling();
-    }
-
-    private void postPageSafe(final Account acc, final DownloadLink dl, final String page, final String postData) throws Exception {
-        br.postPage(page, postData);
-        if (br.getRedirectLocation() != null && br.getRedirectLocation().contains("login.vk.com/?role=fast")) {
-            logger.info("Avoiding 'https://login.vk.com/?role=fast&_origin=' security check by re-logging in...");
-            // Force login
-            login(br, acc, true);
-            br.postPage(page, postData);
-        } else if (br.toString().length() < 100 && br.toString().trim().matches("\\d+<\\!><\\!>\\d+<\\!>\\d+<\\!>\\d+<\\!>[a-z0-9]+")) {
-            logger.info("Avoiding possible outdated cookie/invalid account problem by re-logging in...");
-            // Force login
-            login(br, acc, true);
-            br.postPage(page, postData);
-        }
-        generalErrorhandling();
-    }
-
     private void generalErrorhandling() throws PluginException {
         if (br.containsHTML(TEMPORARILYBLOCKED)) { throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Too many requests in a short time", 60 * 1000l); }
     }
@@ -271,16 +241,20 @@ public class VKontakteRuHoster extends PluginForHost {
     }
 
     @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return -1;
-    }
-
-    @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
+        // Doc-links and other links with permission can be downloaded without login
         if (downloadLink.getDownloadURL().matches(DOCLINK)) {
             requestFileInformation(downloadLink);
             doFree(downloadLink);
+        } else if (downloadLink.getBooleanProperty("nologin", false)) {
+            requestFileInformation(downloadLink);
+            doFree(downloadLink);
         } else {
+            try {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+            } catch (final Throwable e) {
+                if (e instanceof PluginException) throw (PluginException) e;
+            }
             throw new PluginException(LinkStatus.ERROR_FATAL, "Download only possible with account!");
         }
     }
@@ -410,6 +384,44 @@ public class VKontakteRuHoster extends PluginForHost {
 
     private String getJson(final String key) {
         return br.getRegex("\"" + key + "\":\"(http:[^<>\"]*?)\"").getMatch(0);
+    }
+
+    // Handle all kinds of stuff that disturbs the downloadflow
+    private void getPageSafe(final Account acc, final DownloadLink dl, final String page) throws Exception {
+        br.getPage(page);
+        if (acc != null && br.getRedirectLocation() != null && br.getRedirectLocation().contains("login.vk.com/?role=fast")) {
+            logger.info("Avoiding 'https://login.vk.com/?role=fast&_origin=' security check by re-logging in...");
+            // Force login
+            login(br, acc, true);
+            br.getPage(page);
+        } else if (acc != null && br.toString().length() < 100 && br.toString().trim().matches("\\d+<\\!><\\!>\\d+<\\!>\\d+<\\!>\\d+<\\!>[a-z0-9]+")) {
+            logger.info("Avoiding possible outdated cookie/invalid account problem by re-logging in...");
+            // Force login
+            login(br, acc, true);
+            br.getPage(page);
+        }
+        generalErrorhandling();
+    }
+
+    private void postPageSafe(final Account acc, final DownloadLink dl, final String page, final String postData) throws Exception {
+        br.postPage(page, postData);
+        if (acc != null && br.getRedirectLocation() != null && br.getRedirectLocation().contains("login.vk.com/?role=fast")) {
+            logger.info("Avoiding 'https://login.vk.com/?role=fast&_origin=' security check by re-logging in...");
+            // Force login
+            login(br, acc, true);
+            br.postPage(page, postData);
+        } else if (acc != null && br.toString().length() < 100 && br.toString().trim().matches("\\d+<\\!><\\!>\\d+<\\!>\\d+<\\!>\\d+<\\!>[a-z0-9]+")) {
+            logger.info("Avoiding possible outdated cookie/invalid account problem by re-logging in...");
+            // Force login
+            login(br, acc, true);
+            br.postPage(page, postData);
+        }
+        generalErrorhandling();
+    }
+
+    @Override
+    public int getMaxSimultanFreeDownloadNum() {
+        return -1;
     }
 
     @Override

@@ -50,13 +50,14 @@ public class QqCom extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+        if (link.getBooleanProperty("offline", false)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         setBrowserExclusive();
         br.setFollowRedirects(true);
         br.setCustomCharset("utf-8");
         if (link.getDownloadURL().matches(DECRYPTEDLINK)) {
             br.getPage(link.getStringProperty("mainlink", null));
-            if (br.containsHTML(">分享文件已过期或者链接错误，请确认后重试。<")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
-            final String[][] linkInfo = br.getRegex("qhref=\"qqdl://(" + link.getStringProperty("qhref", null) + ")\" .*? filesize=\"(\\d+)\" filehash=\"([A-Z0-9]+)\" title=\"(" + link.getStringProperty("plainfilename", null) + ")\"").getMatches();
+            if (br.containsHTML(">很抱歉，此资源已被删除或包含敏感信息不能查看啦<")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            final String[][] linkInfo = br.getRegex("qhref=\"(" + link.getStringProperty("qhref", null) + ")\"").getMatches();
             if (linkInfo == null || linkInfo.length == 0) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
             return AvailableStatus.TRUE;
         } else {
@@ -66,7 +67,7 @@ public class QqCom extends PluginForHost {
                 if (redirect == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 br.getPage(redirect);
             }
-            if (br.containsHTML("(>分享文件已过期或者链接错误，请确认后重试。<|>想了解更多有关QQ旋风资源分享的信息，请访问 <a href=)")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+            if (br.containsHTML("(>分享文件已过期或者链接错误，请确认后重试。<|>想了解更多有关QQ旋风资源分享的信息，请访问 <a href=)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             String filename = br.getRegex("filename:\"([^<>\"]+)\"").getMatch(0);
             if (filename == null) {
                 filename = br.getRegex("class=\"a_filename\" href=\"###\" title=\"([^<>\"]+)\"").getMatch(0);
@@ -84,7 +85,7 @@ public class QqCom extends PluginForHost {
             if (filesize == null) {
                 filesize = br.getRegex("<li>大小：([^<>\"]+)</li>").getMatch(0);
             }
-            if (filename == null || filesize == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+            if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             link.setFinalFileName(Encoding.htmlDecode(filename.trim()));
             link.setDownloadSize(SizeFormatter.getSize(filesize));
         }
@@ -112,7 +113,7 @@ public class QqCom extends PluginForHost {
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
 
         if (dl.getConnection().getResponseCode() == 503) {
-            if (dl.getConnection().getResponseMessage().equals("Service Unavailable")) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, " Service Unavailable!"); }
+            if (dl.getConnection().getResponseMessage().equals("Service Unavailable")) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, " Service Unavailable!");
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 10 * 60 * 1000l);
         }
         if (dl.getConnection().getContentType().contains("html")) {
