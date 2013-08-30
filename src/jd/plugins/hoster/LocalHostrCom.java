@@ -43,16 +43,23 @@ public class LocalHostrCom extends PluginForHost {
     }
 
     public void correctDownloadLink(final DownloadLink link) {
-        link.setUrlDownload("http://hostr.co/" + new Regex(link.getDownloadURL(), "([A-Za-z0-9]+)$").getMatch(0));
+        link.setUrlDownload("https://hostr.co/" + new Regex(link.getDownloadURL(), "([A-Za-z0-9]+)$").getMatch(0));
     }
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
-        br.setFollowRedirects(true);
+        br.setFollowRedirects(false);
         // Correct previously added links
         correctDownloadLink(link);
         br.getPage(link.getDownloadURL());
+        // site has bad redirects happening. missing a slash within ://
+        String rdr = br.getRedirectLocation();
+        if (rdr != null) {
+            if (!rdr.contains("://")) rdr = rdr.replace(":/", "://");
+            br.getPage(rdr);
+        }
+        br.setFollowRedirects(true);
         if (br.containsHTML("(>404<|>File not found|>We can\\'t find the file you\\'re looking for)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         final Regex fInfo = br.getRegex("<h1>([^<>\"]*?)</h1>.*?<h3>([^<>\"]*?)</h3>");
         final Regex gifLinkRegex = br.getRegex("<h1>([^<>\"]*?)<span class=\"bull\">\\&bull;</span> <a class=\"direct\" href=\"[^<>\"]*?\">Direct Link</a> \\(\\d+x\\d+ / ([^<>\"]*?)\\)<a");
@@ -74,7 +81,6 @@ public class LocalHostrCom extends PluginForHost {
         requestFileInformation(downloadLink);
         String dllink = br.getRegex("\"(/file/[^<>\"]*?)\"").getMatch(0);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        dllink = "http://hostr.co" + dllink;
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, "agreed=on", true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
