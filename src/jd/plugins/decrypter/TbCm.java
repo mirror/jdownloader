@@ -395,6 +395,7 @@ public class TbCm extends PluginForDecrypt {
         this.possibleconverts = new HashMap<DestinationFormat, ArrayList<Info>>();
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         if (PLUGIN_DISABLED.get() == true) return decryptedLinks;
+        long startTime = System.currentTimeMillis();
         br.setFollowRedirects(true);
         br.setCookiesExclusive(true);
         br.clearCookies("youtube.com");
@@ -474,12 +475,12 @@ public class TbCm extends PluginForDecrypt {
                     }
                 } catch (final Throwable e) {
                 }
-                // secondary page results will start with /, thats ok. little sleep per page to prevent ddos
-                if (page.startsWith("/"))
-                    Thread.sleep(1000);
-                else
-                    // first link, make it into playlist link
+                // first link, make it into playlist link
+                if (next == null)
                     page = host + "/playlist?list=" + luid;
+                // secondary page results will start with /, thats ok.
+                else
+                    page = next;
                 br.getPage(page);
                 String[] videos = br.getRegex("href=\"(/watch\\?v=[A-Za-z0-9\\-_]+)&amp;list=" + luid).getColumn(0);
                 // the (g/c/|grid/user/) doesn't return the same luid within url so will fail.
@@ -496,8 +497,12 @@ public class TbCm extends PluginForDecrypt {
                     videoNumberCounter++;
                 }
                 // not all pages are shown on first page! Grab next and continue loop
-                next = br.getRegex("<a href=\"(/playlist\\?list=" + luid + "&amp;page=\\d+)\"[^>]+>Next »<").getMatch(0);
-                if (next != null) Encoding.htmlDecode(next);
+                next = br.getRegex("<a href=\"(/playlist\\?list=" + luid + "&amp;page=\\d+)\"[^\r\n]+>Next »<").getMatch(0);
+                if (next != null) {
+                    Encoding.htmlDecode(next);
+                    // little sleep per page to prevent ddos
+                    Thread.sleep(1000);
+                }
             } while (next != null);
         }
         // user support
@@ -1120,6 +1125,8 @@ public class TbCm extends PluginForDecrypt {
             offline.setName(getVideoID(parameter));
             decryptedLinks.add(offline);
         }
+
+        if (!dupeList.isEmpty()) logger.info("Time to decrypt : " + ((System.currentTimeMillis() - startTime) / 1000) + " seconds. Returning " + dupeList.size() + " Videos from List for " + parameter);
 
         return decryptedLinks;
     }
