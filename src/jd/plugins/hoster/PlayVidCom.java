@@ -17,11 +17,16 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.util.LinkedHashMap;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
+import jd.config.Property;
+import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
+import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -57,8 +62,16 @@ public class PlayVidCom extends PluginForHost {
         if (downloadLink.getBooleanProperty("offline", false)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        final String filename = downloadLink.getFinalFileName();
-        DLLINK = downloadLink.getStringProperty("directlink", null);
+        // finalfilename approach is old but we need to keep it for users who still have old links in JD
+        String filename = downloadLink.getFinalFileName();
+        if (filename == null) filename = downloadLink.getStringProperty("directname", null);
+        DLLINK = checkDirectLink(downloadLink, "directlink");
+        if (DLLINK == null) {
+            br.getPage(downloadLink.getStringProperty("mainlink", null));
+            final String videosource = getVideosource(this.br);
+            if (videosource == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            DLLINK = getQuality(downloadLink.getStringProperty("qualityvalue", null), videosource);
+        }
         if (filename == null || DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         downloadLink.setFinalFileName(filename);
         // In case the link redirects to the finallink
@@ -69,6 +82,7 @@ public class PlayVidCom extends PluginForHost {
                 downloadLink.setDownloadSize(con.getLongContentLength());
             else
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            downloadLink.setProperty("directlink", DLLINK);
             return AvailableStatus.TRUE;
         } finally {
             try {
@@ -87,6 +101,53 @@ public class PlayVidCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
+    }
+
+    public static String getVideosource(final Browser br) {
+        String videosource = br.getRegex("flashvars=\"(.*?)\"").getMatch(0);
+        if (videosource == null) return null;
+        videosource = Encoding.htmlDecode(videosource);
+        return videosource;
+    }
+
+    public static LinkedHashMap<String, String> getQualities(final Browser br) {
+        final String videosource = getVideosource(br);
+        if (videosource == null) return null;
+        final LinkedHashMap<String, String> foundqualities = new LinkedHashMap<String, String>();
+        /** Decrypt qualities START */
+        /** First, find all available qualities */
+        final String[] qualities = { "720p", "480p", "360p" };
+        for (final String quality : qualities) {
+            final String currentQualityUrl = getQuality(quality, videosource);
+            if (currentQualityUrl != null) {
+                foundqualities.put(quality, currentQualityUrl);
+            }
+        }
+        /** Decrypt qualities END */
+        return foundqualities;
+    }
+
+    public static String getQuality(final String quality, final String videosource) {
+        return new Regex(videosource, "video_vars\\[video_urls\\]\\[" + quality + "\\]= ?(http://[^<>\"]*?)\\&").getMatch(0);
+    }
+
+    private String checkDirectLink(final DownloadLink downloadLink, final String property) {
+        String dllink = downloadLink.getStringProperty(property);
+        if (dllink != null) {
+            try {
+                final Browser br2 = br.cloneBrowser();
+                URLConnectionAdapter con = br2.openGetConnection(dllink);
+                if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
+                    downloadLink.setProperty(property, Property.NULL);
+                    dllink = null;
+                }
+                con.disconnect();
+            } catch (Exception e) {
+                downloadLink.setProperty(property, Property.NULL);
+                dllink = null;
+            }
+        }
+        return dllink;
     }
 
     @Override

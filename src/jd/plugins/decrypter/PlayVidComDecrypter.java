@@ -24,12 +24,13 @@ import jd.PluginWrapper;
 import jd.config.SubConfiguration;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
+import jd.plugins.PluginForHost;
+import jd.utils.JDUtilities;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "playvid.com" }, urls = { "http://(www\\.)?playvid.com/watch\\?v=[A-Za-z0-9\\-]+" }, flags = { 0 })
 public class PlayVidComDecrypter extends PluginForDecrypt {
@@ -38,7 +39,6 @@ public class PlayVidComDecrypter extends PluginForDecrypt {
         super(wrapper);
     }
 
-    private String                        VIDEOSOURCE    = null;
     private LinkedHashMap<String, String> FOUNDQUALITIES = new LinkedHashMap<String, String>();
     private String                        FILENAME       = null;
     private String                        PARAMETER      = null;
@@ -50,6 +50,7 @@ public class PlayVidComDecrypter extends PluginForDecrypt {
     private static final String           ALLOW_480P     = "ALLOW_480P";
     private static final String           ALLOW_720P     = "ALLOW_720";
 
+    @SuppressWarnings("static-access")
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         PARAMETER = param.toString();
@@ -62,28 +63,25 @@ public class PlayVidComDecrypter extends PluginForDecrypt {
             return decryptedLinks;
         }
         /** Decrypt start */
-        VIDEOSOURCE = br.getRegex("flashvars=\"(.*?)\"").getMatch(0);
         FILENAME = br.getRegex("<meta property=\"og:title\" content=\"([^<>\"]*?)\"").getMatch(0);
         if (FILENAME == null) {
             FILENAME = br.getRegex("<title>([^<>\"]*?)\\- PlayVid</title>").getMatch(0);
         }
-        if (VIDEOSOURCE == null || FILENAME == null) {
+        if (FILENAME == null) {
             logger.warning("Playvid.com decrypter failed..." + PARAMETER);
             return null;
         }
-        VIDEOSOURCE = Encoding.htmlDecode(VIDEOSOURCE);
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(FILENAME);
 
-        /** Decrypt qualities start */
-        /** First, find all available qualities */
-        final String[] qualities = { "720p", "480p", "360p" };
-        for (final String quality : qualities) {
-            final String currentQualityUrl = getQuality(quality);
-            if (currentQualityUrl != null) {
-                FOUNDQUALITIES.put(quality, currentQualityUrl);
-            }
+        /** Decrypt qualities START */
+        final PluginForHost hostPlugin = JDUtilities.getPluginForHost("playvid.com");
+        FOUNDQUALITIES = ((jd.plugins.hoster.PlayVidCom) hostPlugin).getQualities(this.br);
+        if (FOUNDQUALITIES == null) {
+            logger.warning("Decrypter broken for link: " + PARAMETER);
+            return null;
         }
+        /** Decrypt qualities END */
         /** Decrypt qualities, selected by the user */
         final ArrayList<String> selectedQualities = new ArrayList<String>();
         final SubConfiguration cfg = SubConfiguration.getConfig("playvid.com");
@@ -123,20 +121,18 @@ public class PlayVidComDecrypter extends PluginForDecrypt {
         String directlink = FOUNDQUALITIES.get(qualityValue);
         if (directlink != null) {
             directlink = Encoding.htmlDecode(directlink);
+            final String fname = FILENAME + "_" + qualityValue + ".mp4";
             final DownloadLink dl = createDownloadlink("http://playviddecrypted.com/" + System.currentTimeMillis() + new Random().nextInt(10000));
             dl.setProperty("directlink", directlink);
             dl.setProperty("qualityvalue", qualityValue);
             dl.setProperty("mainlink", PARAMETER);
-            dl.setFinalFileName(FILENAME + "_" + qualityValue + ".mp4");
+            dl.setProperty("directname", fname);
+            dl.setFinalFileName(fname);
             if (SubConfiguration.getConfig("playvid.com").getBooleanProperty(FASTLINKCHECK, false)) dl.setAvailable(true);
             return dl;
         } else {
             return null;
         }
-    }
-
-    private String getQuality(String quality) {
-        return new Regex(VIDEOSOURCE, "video_vars\\[video_urls\\]\\[" + quality + "\\]= ?(http://[^<>\"]*?)\\&").getMatch(0);
     }
 
     /* NO OVERRIDE!! */

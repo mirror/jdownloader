@@ -948,7 +948,7 @@ public class VKontakteRu extends PluginForDecrypt {
 
     // Handle all kinds of stuff that disturbs the downloadflow
     private void getPageSafe(final String parameter) throws Exception {
-        // We are already on that page so don't access it again
+        // If our current url is already the one we want to access here, don't access it!
         if (!br.getURL().equals(parameter)) {
             if (br.getURL().contains("login.php?act=security_check")) {
                 br.getPage(parameter);
