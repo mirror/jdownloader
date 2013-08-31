@@ -19,6 +19,7 @@ package jd.plugins.hoster;
 import java.io.IOException;
 
 import jd.PluginWrapper;
+import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -48,15 +49,12 @@ public class DownloadHr extends PluginForHost {
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
+    public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        String fileID = br.getRegex("id=\"unit_long(\\d+)\"").getMatch(0);
-        if (fileID == null) fileID = br.getRegex("id=\"unit_ul(\\d+)\"").getMatch(0);
-        if (fileID == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        // Not neede (yet)
-        // br.getPage(downloadLink.getDownloadURL().replace("software-",
-        // "download-"));
-        br.getPage("http://www.download.hr/redirect.php?fileid=" + fileID);
+        br.getPage(downloadLink.getDownloadURL().replace("/software-", "/download-"));
+        String continueLink = br.getRegex("\"(http://(www\\.)?download\\.hr/go\\.php\\?file=[^<>\"]*?)\"").getMatch(0);
+        if (continueLink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        br.getPage(continueLink);
         String finallink = br.getRedirectLocation();
         if (finallink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, finallink, true, 0);
@@ -81,7 +79,13 @@ public class DownloadHr extends PluginForHost {
         br.getHeaders().put("Accept-Charset", "ISO-8859-1,utf-8;q=0.7,*;q=0.7");
         br.getPage(link.getDownloadURL());
         if ("http://www.download.hr/".equals(br.getRedirectLocation()) || br.containsHTML("<title>Download\\.hr \\- Free Software Downloads</title>")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("<div class=\"File_HeaderLine\">[\t\n\r ]+<b class=\"font\\d+\">(.*?)</b>").getMatch(0);
+        String filename = br.getRegex("<div class=\"TableRightRow pozadina_Bijela uvuci10\">([^<>\"]*?)</a>").getMatch(0);
+        if (filename == null) {
+            final Regex nameStuff = br.getRegex("<b class=\"font20\">([^<>\"]*?)</b> <b class=\"font18\">([^<>\"]*?)</b>");
+            if (nameStuff.getMatches().length != 0) {
+                filename = nameStuff.getMatch(0) + " " + nameStuff.getMatch(1);
+            }
+        }
         String filesize = br.getRegex(">Download</a>[\t\n\r ]+<b class=\"font\\d+\">\\((.*?)\\)</b>").getMatch(0);
         if (filesize == null) filesize = br.getRegex("<span class=\"file_fileinfo_right\">(.*?)</span>").getMatch(0);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

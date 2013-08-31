@@ -40,6 +40,7 @@ public class StileProjectComDecrypter extends PluginForDecrypt {
         String parameter = param.toString();
         br.setFollowRedirects(true);
         br.getPage(parameter);
+        final DownloadLink mainlink = createDownloadlink(parameter.replace("stileproject.com/", "stileprojectdecrypted.com/"));
         String filename = br.getRegex("<title>([^<>\"]*?) \\- StileProject\\.com</title>").getMatch(0);
         String externID = br.getRegex("xvideos\\.com/embedframe/(\\d+)\"").getMatch(0);
         if (externID != null) {
@@ -266,10 +267,15 @@ public class StileProjectComDecrypter extends PluginForDecrypt {
             decryptedLinks.add(createDownloadlink(externID));
             return decryptedLinks;
         }
+        externID = br.getRegex("\"(http://(www\\.)?pornhost\\.com/(embed/)?\\d+)\"").getMatch(0);
+        if (externID != null) {
+            decryptedLinks.add(createDownloadlink(externID));
+            return decryptedLinks;
+        }
         // filename needed for all IDs below here
         if (filename == null) {
-            logger.warning("Decrypter broken for link: " + parameter);
-            return null;
+            decryptedLinks.add(mainlink);
+            return decryptedLinks;
         }
         filename = Encoding.htmlDecode(filename.trim());
         externID = br.getRegex("shufuni\\.com/Flash/.*?flashvars=\"VideoCode=(.*?)\"").getMatch(0);
@@ -400,7 +406,7 @@ public class StileProjectComDecrypter extends PluginForDecrypt {
             decryptedLinks.add(dl);
             return decryptedLinks;
         }
-        decryptedLinks.add(createDownloadlink(parameter.replace("stileproject.com/", "stileprojectdecrypted.com/")));
+        decryptedLinks.add(mainlink);
         return decryptedLinks;
     }
 

@@ -39,7 +39,10 @@ public class HulkShareComFolder extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString().replaceFirst("hu\\.lk/", "hulkshare\\.com/");
-        if (parameter.matches("https?://(www\\.)?(hulkshare\\.com|hu\\/lk)/(dl/|static|browse|images|terms|contact|audible|search|people|upload|featured|mobile|group).*?")) { return decryptedLinks; }
+        if (parameter.matches("https?://(www\\.)?(hulkshare\\.com|hu\\/lk)/(dl/|static|browse|images|terms|contact|audible|search|people|upload|featured|mobile|group|explore).*?")) {
+            logger.info("Invalid link: " + parameter);
+            return decryptedLinks;
+        }
         br.setFollowRedirects(false);
         br.setCookie("http://hulkshare.com/", "lang", "english");
         try {

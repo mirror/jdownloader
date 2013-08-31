@@ -38,6 +38,11 @@ public class MndCm extends PluginForDecrypt {
     @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink parameter, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        try {
+            br.setLoadLimit(4194304);
+        } catch (final Throwable e) {
+            // Not available in old 0.9.581 Stable
+        }
         String url = parameter.toString();
         SubConfiguration cfg = SubConfiguration.getConfig("jamendo.com");
         if (url.contains("/album") || url.contains("list/a")) {

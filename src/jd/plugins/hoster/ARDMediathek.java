@@ -153,7 +153,7 @@ public class ARDMediathek extends PluginForHost {
             ((RTMPDownload) dl).startDownload();
         } else {
             br.setFollowRedirects(true);
-            final String dllink = stream[0];
+            final String dllink = stream[1];
             if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             if (dllink.startsWith("mms")) throw new PluginException(LinkStatus.ERROR_FATAL, "Protocol (mms://) not supported!");
             // Workaround to avoid DOWNLOAD INCOMPLETE errors
