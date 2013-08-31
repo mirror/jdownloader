@@ -479,8 +479,11 @@ public class TbCm extends PluginForDecrypt {
                 if (next == null)
                     page = host + "/playlist?list=" + luid;
                 // secondary page results will start with /, thats ok.
-                else
-                    page = next;
+                else {
+                    page = Encoding.htmlDecode(next);
+                    // little sleep per page to prevent ddos
+                    Thread.sleep(1000);
+                }
                 br.getPage(page);
                 String[] videos = br.getRegex("href=\"(/watch\\?v=[A-Za-z0-9\\-_]+)&amp;list=" + luid).getColumn(0);
                 // the (g/c/|grid/user/) doesn't return the same luid within url so will fail.
@@ -497,11 +500,6 @@ public class TbCm extends PluginForDecrypt {
                 }
                 // not all pages are shown on first page! Grab next and continue loop
                 next = br.getRegex("<a href=\"(/playlist\\?list=" + luid + "&amp;page=\\d+)\"[^\r\n]+>Next »<").getMatch(0);
-                if (next != null) {
-                    next = Encoding.htmlDecode(next);
-                    // little sleep per page to prevent ddos
-                    Thread.sleep(1000);
-                }
             } while (next != null);
         }
         // user support
@@ -547,9 +545,8 @@ public class TbCm extends PluginForDecrypt {
 
                 next = new Regex(content, "data-uix-load-more-href=\"(/[^<>\"]*?)\"").getMatch(0);
                 if (next != null) {
-                    next = Encoding.htmlDecode(next);
                     Thread.sleep(1000);
-                    br.getPage(next);
+                    br.getPage(Encoding.htmlDecode(next));
                 }
             } while (next != null);
         } else {
@@ -1425,9 +1422,13 @@ public class TbCm extends PluginForDecrypt {
             sb.append(s.charAt(2));
             sb.append(s.substring(60));
         } else if (s.length() == 86) {
-            sb.append(new StringBuilder(s.substring(37, 84)).reverse());
+            sb.append(new StringBuilder(s.substring(74, 82)).reverse());
+            sb.append(s.charAt(84));
+            sb.append(new StringBuilder(s.substring(59, 73)).reverse());
             sb.append(s.charAt(0));
-            sb.append(new StringBuilder(s.substring(3, 36)).reverse());
+            sb.append(new StringBuilder(s.substring(36, 58)).reverse());
+            sb.append(s.charAt(85));
+            sb.append(new StringBuilder(s.substring(1, 35)).reverse());
         } else if (s.length() == 85) {
             sb.append(new StringBuilder(s.substring(35, 84)).reverse());
             sb.append(s.charAt(0));
