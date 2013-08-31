@@ -62,7 +62,7 @@ public class MegaDebridEu extends PluginForHost {
         ac.setProperty("multiHostSupport", Property.NULL);
 
         // account is valid, let's fetch account details:
-        br.getPage("http://mega-debrid.eu/api.php?action=connectUser&login=" + user + "&password=" + pw);
+        br.getPage("http://www.mega-debrid.eu/api.php?action=connectUser&login=" + user + "&password=" + pw);
         if (!"ok".equalsIgnoreCase(getJson("response_code"))) {
             ac.setStatus("\r\nInvalid username/password!\r\nFalscher Benutzername/Passwort!");
             logger.severe("mega-debrid.eu: Error, can not parse left days. Account: " + account.getUser() + " Pass: " + account.getPass() + " API response: " + br.toString());
