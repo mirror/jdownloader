@@ -91,15 +91,16 @@ public class BillionUploadsCom extends PluginForHost {
     private final boolean              useRUA                       = true;
     private final boolean              useAltExpire                 = true;
     private final boolean              useAltLinkCheck              = false;
-    private final boolean              skipableRecaptcha            = true;
-    private boolean                    skipableSolveMedia           = true;
+    private final boolean              waitTimeSkipableReCaptcha    = true;
+    private final boolean              waitTimeSkipableSolveMedia   = true;
+    private final boolean              captchaSkipableSolveMedia    = true;
 
     // Connection Management
     // note: CAN NOT be negative or zero! (ie. -1 or 0) Otherwise math sections fail. .:. use [1-20]
     private static final AtomicInteger totalMaxSimultanFreeDownload = new AtomicInteger(20);
 
     // DEV NOTES
-    // XfileShare Version 3.0.7.8
+    // XfileShare Version 3.0.7.9
     // last XfileSharingProBasic compare :: 2.6.2.1
     // protocol: no https
     // captchatype: solvemedia
@@ -414,7 +415,6 @@ public class BillionUploadsCom extends PluginForHost {
                     logger.info("The downloadlink seems to be password protected.");
                     dlForm = handlePassword(dlForm, downloadLink);
                 }
-                if (i > 0) skipableSolveMedia = false;
                 /* Captcha START */
                 dlForm = captchaForm(downloadLink, dlForm);
                 /* Captcha END */
@@ -1049,6 +1049,7 @@ public class BillionUploadsCom extends PluginForHost {
     @Override
     public void resetDownloadlink(final DownloadLink downloadLink) {
         downloadLink.setProperty("retry", Property.NULL);
+        downloadLink.setProperty("captchaTries", Property.NULL);
     }
 
     /**
@@ -1255,6 +1256,7 @@ public class BillionUploadsCom extends PluginForHost {
      * @author raztoki
      * */
     private Form captchaForm(DownloadLink downloadLink, Form form) throws Exception {
+        final int captchaTries = downloadLink.getIntegerProperty("captchaTries", 0);
         if (form.containsHTML(";background:#ccc;text-align")) {
             logger.info("Detected captcha method \"Plaintext Captcha\"");
             /** Captcha method by ManiacMansion */
@@ -1318,7 +1320,7 @@ public class BillionUploadsCom extends PluginForHost {
             form.put("recaptcha_challenge_field", rc.getChallenge());
             form.put("recaptcha_response_field", Encoding.urlEncode(c));
             /** wait time is often skippable for reCaptcha handling */
-            skipWaitTime = skipableRecaptcha;
+            skipWaitTime = waitTimeSkipableReCaptcha;
         } else if (form.containsHTML("solvemedia\\.com/papi/")) {
             logger.info("Detected captcha method \"Solve Media\"");
             final Browser captcha = br.cloneBrowser();
@@ -1328,13 +1330,13 @@ public class BillionUploadsCom extends PluginForHost {
             final File cf = sm.downloadCaptcha(getLocalCaptchaFile());
             String code = "";
             String chid = sm.getChallenge();
-            if (!skipableSolveMedia) {
+            if (!captchaSkipableSolveMedia || captchaTries > 0) {
                 code = getCaptchaCode(cf, downloadLink);
                 chid = sm.getChallenge(code);
             }
             form.put("adcopy_challenge", chid);
             form.put("adcopy_response", code);
-            skipableSolveMedia = true;
+            skipWaitTime = waitTimeSkipableSolveMedia;
         } else if (form.containsHTML("id=\"capcode\" name= \"capcode\"")) {
             logger.info("Detected captcha method \"Key Captcha\"");
             final Browser captcha = br.cloneBrowser();
@@ -1345,6 +1347,7 @@ public class BillionUploadsCom extends PluginForHost {
             if (result != null && "CANCEL".equals(result)) { throw new PluginException(LinkStatus.ERROR_FATAL); }
             form.put("capcode", result);
         }
+        downloadLink.setProperty("captchaTries", (captchaTries + 1));
         return form;
     }
 
