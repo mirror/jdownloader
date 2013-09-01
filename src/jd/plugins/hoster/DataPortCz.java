@@ -33,7 +33,7 @@ import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "dataport.cz" }, urls = { "http://(www\\.)?dataport\\.cz/file/[\\w\\-]+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "dataport.cz" }, urls = { "http://(www\\.)?dataport\\.cz/file/(?!search)[\\w\\-]+" }, flags = { 2 })
 public class DataPortCz extends PluginForHost {
 
     private static final String MAINPAGE = "http://dataport.cz/";

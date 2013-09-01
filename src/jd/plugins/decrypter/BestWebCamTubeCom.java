@@ -26,7 +26,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "bestwebcamtube.com" }, urls = { "http://(www\\.)?bestwebcamtube\\.com/(?!wp\\-includes)(\\?p=\\d+|[a-z0-9\\-]+/)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "bestwebcamtube.com" }, urls = { "http://(www\\.)?bestwebcamtube\\.com/(?!wp\\-includes|sample\\-page)(\\?p=\\d+|[a-z0-9\\-]+/)" }, flags = { 0 })
 public class BestWebCamTubeCom extends PluginForDecrypt {
 
     public BestWebCamTubeCom(PluginWrapper wrapper) {

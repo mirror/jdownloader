@@ -118,6 +118,10 @@ public class CrhyRllCom extends PluginForDecrypt {
                 logger.info("Link can only be decrypted if you own and add a crunchyroll.com account: " + cryptedLink.getCryptedUrl());
                 return decryptedLinks;
             }
+            if (br.containsHTML("This video has not been released yet")) {
+                logger.info("Video is not released yet -> Cannot decrypt link: " + cryptedLink.getCryptedUrl());
+                return decryptedLinks;
+            }
 
             // Get the episode name
             String title = this.nameFromVideoUrl(cryptedLink.getCryptedUrl());

@@ -83,11 +83,11 @@ public class XHamsterCom extends PluginForHost {
         if (aa != null) login(this.br, aa, false);
         br.getPage(downloadLink.getDownloadURL());
         // embeded correction
-        if (br.getURL().contains(".com/xembed.php")) {
+        if (downloadLink.getDownloadURL().contains(".com/xembed.php")) {
             String realpage = br.getRegex("main_url=(http[^\\&]+)").getMatch(0);
             if (realpage != null) {
-                br.getPage(realpage);
-                downloadLink.setUrlDownload(br.getURL());
+                downloadLink.setUrlDownload(Encoding.htmlDecode(realpage));
+                br.getPage(downloadLink.getDownloadURL());
             }
         }
         if (br.containsHTML("(Video Not found|403 Forbidden|>This video was deleted<)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);

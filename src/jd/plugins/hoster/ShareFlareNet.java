@@ -117,13 +117,13 @@ public class ShareFlareNet extends PluginForHost {
                 br.postPage(APIPAGE, sb.toString());
                 for (final DownloadLink dllink : links) {
                     final String fid = getFID(dllink);
-                    final Regex fInfo = br.getRegex("\"name\":\"([^<>\"]*?)\",\"size\":\"(\\d+)\",\"uid\":\"" + fid + "\",\"project\":\"(letitbit\\.net|shareflare\\.net|vip\\-file\\.com)\",\"md5\":\"([a-z0-9]{32}|0)\"");
+                    final Regex fInfo = br.getRegex("\"name\":\"([^<>\"]*?)\",\"size\":(\")?(\\d+)(\")?,\"uid\":\"" + fid + "\",\"project\":\"(letitbit\\.net|shareflare\\.net|vip\\-file\\.com)\",\"md5\":\"([a-z0-9]{32}|0)\"");
                     if (br.containsHTML("\"data\":\\[\\[\\]\\]")) {
                         dllink.setAvailable(false);
                     } else {
-                        final String md5 = fInfo.getMatch(3);
+                        final String md5 = fInfo.getMatch(4);
                         dllink.setFinalFileName(Encoding.htmlDecode(fInfo.getMatch(0)));
-                        dllink.setDownloadSize(Long.parseLong(fInfo.getMatch(1)));
+                        dllink.setDownloadSize(Long.parseLong(fInfo.getMatch(2)));
                         dllink.setAvailable(true);
                         if (!md5.equals("0")) dllink.setMD5Hash(md5);
                     }

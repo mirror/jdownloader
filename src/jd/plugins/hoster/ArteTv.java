@@ -176,6 +176,8 @@ public class ArteTv extends PluginForHost {
 
         String expiredBefore = null, expiredAfter = null, status = null, fileName = null, ext = "";
         clipData = br.getPage(link);
+        if (br.getURL().contains("method=getHome")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML(">Diese Seite existiert leider nicht mehr")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
 
         if (!"Error 404".equalsIgnoreCase(getClipData("title")) || lang == null) {
             HashMap<String, String> paras;
