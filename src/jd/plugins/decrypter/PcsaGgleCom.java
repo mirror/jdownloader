@@ -47,6 +47,12 @@ public class PcsaGgleCom extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString().replace("https://", "http://");
         br.getHeaders().put("Accept-Language", "en-gb, en;q=0.9");
+        // They sometimes have big pages
+        try {
+            br.setLoadLimit(4194304);
+        } catch (final Throwable e) {
+            // Not available in old 0.9.581 Stable
+        }
         br.getPage(parameter);
         /* Error handling */
         if (br.containsHTML("(Hier gibt es nichts zu sehen|Entweder haben Sie keinen Zugriff auf diese Fotos oder es gibt unter dieser Adresse keine|>404 NOT_FOUND</)")) {

@@ -48,25 +48,33 @@ public class AkatsukiSubsNet extends PluginForDecrypt {
             return decryptedLinks;
         }
         if (parameter.matches(PROJECTLINK)) {
+            String fpName = br.getRegex("<title>([^<>\"]*?)\\| Akatsuki\\-Subs</title>").getMatch(0);
+            if (fpName == null) fpName = new Regex(parameter, "/projekte/(laufend|abgeschlossen)/([a-z0-9\\-]+)/").getMatch(1);
+            fpName = Encoding.htmlDecode(fpName.trim());
             // Get all tables
             final String[] tables = br.getRegex("<table (class|id)=\"dl\"(.*?)</table>").getColumn(1);
             for (final String table : tables) {
                 // Get entries of each table
                 final String[] tableEntries = new Regex(table, "<tr(.*?)</tr>").getColumn(0);
                 for (final String tableEntry : tableEntries) {
-                    final String fpName = new Regex(tableEntry, "class=\"first\">([^<>\"]*?)</td>").getMatch(0);
-                    FilePackage fp = null;
-                    if (fpName != null) {
-                        fp = FilePackage.getInstance();
-                        fp.setName(Encoding.htmlDecode(fpName.trim()));
-                    }
+
                     for (final String quality : QUALITIES) {
                         final String[] currentLinks = new Regex(tableEntry, "class=\"" + quality + "\" href=\"(http[^<>\"]*?)\"").getColumn(0);
                         if (currentLinks != null && currentLinks.length != 0) {
+                            int counter = 1;
                             for (final String currentLink : currentLinks) {
                                 final DownloadLink dl = createDownloadlink(currentLink);
-                                if (fp != null) dl._setFilePackage(fp);
+                                FilePackage fp = FilePackage.getInstance();
+                                if (counter == 1) {
+                                    fp.setName(fpName + " (mp4)");
+                                } else if (counter == 2) {
+                                    fp.setName(fpName + " (mkv)");
+                                } else {
+                                    fp.setName(fpName + " (other)");
+                                }
+                                dl._setFilePackage(fp);
                                 decryptedLinks.add(dl);
+                                counter++;
                             }
                         }
                     }
