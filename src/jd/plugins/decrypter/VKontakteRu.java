@@ -197,6 +197,7 @@ public class VKontakteRu extends PluginForDecrypt {
 
                 /** Errorhandling start */
                 if (br.containsHTML("Unknown error")) { throw new DecrypterException(EXCEPTION_LINKOFFLINE); }
+                if (br.containsHTML("Access denied")) { throw new DecrypterException(EXCEPTION_LINKOFFLINE); }
                 /** Errorhandling end */
 
                 /** Decryption process START */

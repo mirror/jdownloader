@@ -61,6 +61,7 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
             final DownloadLink link = createDownloadlink(parameter.replace("http://", "decrypted://") + "&quality=high");
             link.setAvailable(false);
             link.setProperty("offline", true);
+            link.setName(new Regex(parameter, "zdf\\.de/(.+)").getMatch(0));
             decryptedLinks.add(link);
             return decryptedLinks;
         }
@@ -73,6 +74,7 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
             final DownloadLink link = createDownloadlink(parameter.replace("http://", "decrypted://") + "&quality=high");
             link.setAvailable(false);
             link.setProperty("offline", true);
+            link.setName(new Regex(parameter, "zdf\\.de/(.+)").getMatch(0));
             decryptedLinks.add(link);
             return decryptedLinks;
         }
@@ -107,7 +109,14 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
             String ID = new Regex(data, "beitrag/video/(\\d+)").getMatch(0);
             if (ID != null) {
                 br.getPage("/ZDFmediathek/xmlservice/web/beitragsDetails?id=" + ID + "&ak=web");
-                if (br.containsHTML("<statuscode>wrongParameter</statuscode>")) return ret;
+                if (br.containsHTML("<debuginfo>Kein Beitrag mit ID") || br.containsHTML("<statuscode>wrongParameter</statuscode>")) {
+                    final DownloadLink link = createDownloadlink(data.replace("http://", "decrypted://") + "&quality=high");
+                    link.setAvailable(false);
+                    link.setProperty("offline", true);
+                    link.setName(new Regex(data, "zdf\\.de/(.+)").getMatch(0));
+                    ret.add(link);
+                    return ret;
+                }
 
                 String title = getTitle(br);
                 String extension = ".mp4";

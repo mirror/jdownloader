@@ -38,7 +38,7 @@ public class BreakComDecrypter extends PluginForDecrypt {
         br.setFollowRedirects(true);
         final String parameter = param.toString();
         br.getPage("http://www.break.com/embed/" + new Regex(parameter, "(\\d+)$").getMatch(0));
-        final String externID = br.getRegex("(http://(www\\.)?youtube\\.com/watch\\?v=[A-Za-z0-9\\-_]+)\"").getMatch(0);
+        final String externID = br.getRegex("(http://(www\\.)?youtube\\.com/[^<>\"]*?)\"").getMatch(0);
         if (externID != null) {
             decryptedLinks.add(createDownloadlink(externID));
             return decryptedLinks;

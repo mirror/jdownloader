@@ -48,7 +48,7 @@ public class YouPornCom extends PluginForHost {
     }
 
     public void correctDownloadLink(DownloadLink link) {
-        link.setUrlDownload("http://www.youporn.com/watch/" + new Regex(link.getDownloadURL(), "youporn\\.com/watch/(\\d+)/").getMatch(0) + "/" + System.currentTimeMillis() + "/");
+        link.setUrlDownload("http://www.youporn.com/watch/" + new Regex(link.getDownloadURL(), "youporn\\.com/watch/(\\d+)").getMatch(0) + "/" + System.currentTimeMillis() + "/");
     }
 
     public AvailableStatus requestFileInformation(final DownloadLink parameter) throws IOException, PluginException {

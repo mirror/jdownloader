@@ -107,11 +107,15 @@ public class FilthDumpCom extends PluginForDecrypt {
             decryptedLinks.add(dl);
             return decryptedLinks;
         }
-        if (tempID == null) {
-            logger.warning("Decrypter or link broken: " + parameter);
-            return null;
+        tempID = br.getRegex("\\&file=(http://[^<>\"]*?)\\&").getMatch(0);
+        if (tempID != null) {
+            final DownloadLink dl = createDownloadlink("directhttp://" + tempID);
+            dl.setFinalFileName(filename + ".flv");
+            decryptedLinks.add(dl);
+            return decryptedLinks;
         }
-        return decryptedLinks;
+        logger.warning("Decrypter or link broken: " + parameter);
+        return null;
     }
 
     /* NO OVERRIDE!! */

@@ -376,6 +376,9 @@ public class CloudzerNet extends PluginForHost {
     }
 
     public void doFree(final DownloadLink downloadLink, final Account account) throws Exception {
+        br.getHeaders().put("Accept-Encoding", "gzip, deflate, compress");
+        br.getHeaders().put("Accept", "*/*");
+        br.getHeaders().put("User-Agent", "python-requests/1.2.0 CPython/2.7.3 Windows/7 (download.am; ID 148721)");
         logger.info("Free mode");
         checkShowFreeDialog();
         String currentIP = getIP();
