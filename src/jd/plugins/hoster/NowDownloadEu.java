@@ -134,7 +134,7 @@ public class NowDownloadEu extends PluginForHost {
         }
 
         final Regex fileInfo = br.getRegex(">Downloading</span> <br> (.*?) ([\\d+\\.]+ (B|KB|MB|GB|TB))");
-        String filename = br.getRegex("nowdownload\\.(eu|co|ch)/dl/[a-z0-9]+/[a-z0-9]+/([^<>\"]*?)\"").getMatch(1);
+        String filename = br.getRegex("nowdownload\\.(eu|co|ch)/nowdownload/[a-z0-9]+/[a-z0-9]+/[^<>]+/([^<>\"]*?)\"").getMatch(1);
         if (filename == null) filename = fileInfo.getMatch(0).replace("<br>", "");
         String filesize = fileInfo.getMatch(1);
         if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
