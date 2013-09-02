@@ -19,6 +19,7 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -54,8 +55,14 @@ public class DebridItaliaCom extends PluginForHost {
 
     @Override
     public int getMaxSimultanDownload(final DownloadLink link, final Account account) {
-        return 20;
+        return maxPrem.get();
     }
+
+    private static final String  NOCHUNKS                     = "NOCHUNKS";
+    // note: CAN NOT be negative or zero! (ie. -1 or 0) Otherwise math sections fail. .:. use [1-20]
+    private static AtomicInteger totalMaxSimultanFreeDownload = new AtomicInteger(20);
+    // don't touch the following!
+    private static AtomicInteger maxPrem                      = new AtomicInteger(1);
 
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
@@ -148,17 +155,51 @@ public class DebridItaliaCom extends PluginForHost {
             if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
 
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, Encoding.htmlDecode(dllink.trim()), true, 0);
+        int chunks = 0;
+        if (link.getBooleanProperty(DebridItaliaCom.NOCHUNKS, false)) {
+            chunks = 1;
+        }
+
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, Encoding.htmlDecode(dllink.trim()), true, chunks);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
-            if (br.containsHTML("No htmlCode read")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 5 * 60 * 1000l);
+            if (br.containsHTML("No htmlCode read")) {
+                int timesFailed = link.getIntegerProperty("timesfaileddebriditalia2", 0);
+                if (timesFailed <= 4) {
+                    timesFailed++;
+                    link.setProperty("timesfaileddebriditalia2", timesFailed);
+                    throw new PluginException(LinkStatus.ERROR_RETRY, "Server error");
+                } else {
+                    link.setProperty("timesfaileddebriditalia2", Property.NULL);
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 1 * 60 * 1000l);
+                }
+            }
             logger.info("Unhandled download error on debriditalia.com: " + br.toString());
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
 
         }
         // Directlinks can be used for up to 2 days
         link.setProperty("debriditaliadirectlink", dllink);
-        dl.startDownload();
+        try {
+            // add a download slot
+            controlPrem(+1);
+            // start the dl
+
+            if (!this.dl.startDownload()) {
+                try {
+                    if (dl.externalDownloadStop()) return;
+                } catch (final Throwable e) {
+                }
+                /* unknown error, we disable multiple chunks */
+                if (link.getBooleanProperty(DebridItaliaCom.NOCHUNKS, false) == false) {
+                    link.setProperty(DebridItaliaCom.NOCHUNKS, Boolean.valueOf(true));
+                    throw new PluginException(LinkStatus.ERROR_RETRY);
+                }
+            }
+        } finally {
+            // remove download slot
+            controlPrem(-1);
+        }
     }
 
     @Override
@@ -224,6 +265,25 @@ public class DebridItaliaCom extends PluginForHost {
             }
         }
         return dllink;
+    }
+
+    /**
+     * Prevents more than one free download from starting at a given time. One step prior to dl.startDownload(), it adds a slot to maxFree
+     * which allows the next singleton download to start, or at least try.
+     * 
+     * This is needed because xfileshare(website) only throws errors after a final dllink starts transferring or at a given step within pre
+     * download sequence. But this template(XfileSharingProBasic) allows multiple slots(when available) to commence the download sequence,
+     * this.setstartintival does not resolve this issue. Which results in x(20) captcha events all at once and only allows one download to
+     * start. This prevents wasting peoples time and effort on captcha solving and|or wasting captcha trading credits. Users will experience
+     * minimal harm to downloading as slots are freed up soon as current download begins.
+     * 
+     * @param controlFree
+     *            (+1|-1)
+     */
+    public synchronized void controlPrem(final int num) {
+        logger.info("maxFree was = " + maxPrem.get());
+        maxPrem.set(Math.min(Math.max(1, maxPrem.addAndGet(num)), totalMaxSimultanFreeDownload.get()));
+        logger.info("maxFree now = " + maxPrem.get());
     }
 
     @Override

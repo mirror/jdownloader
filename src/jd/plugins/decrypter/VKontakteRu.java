@@ -74,7 +74,7 @@ public class VKontakteRu extends PluginForDecrypt {
     private static final String PATTERN_VIDEO_SINGLE_ORIGINAL   = "https?://(www\\.)?vk\\.com/video(\\-)?\\d+_\\d+";
     private static final String PATTERN_VIDEO_SINGLE_EMBED      = "https?://(www\\.)?vk\\.com/video_ext\\.php\\?oid=\\d+\\&id=\\d+";
     private static final String PATTERN_VIDEO_SINGLE_EMBED_HASH = "https?://(www\\.)?vk\\.com/video_ext\\.php\\?oid=\\d+\\&id=\\d+\\&hash=[a-z0-9]+";
-    private static final String PATTERN_VIDEO_ALBUM             = "https?://(www\\.)?vk\\.com/(video\\?section=tagged\\&id=\\d+|video\\?id=\\d+\\&section=tagged|videos\\d+)";
+    private static final String PATTERN_VIDEO_ALBUM             = "https?://(www\\.)?vk\\.com/(video\\?section=tagged\\&id=\\d+|video\\?id=\\d+\\&section=tagged|videos(\\-)?\\d+)";
     private static final String PATTERN_VIDEO_COMMUNITY_ALBUM   = "https?://(www\\.)?vk\\.com/video\\?gid=\\d+";
     private static final String PATTERN_PHOTO_SINGLE            = "https?://(www\\.)?vk\\.com/photo(\\-)?\\d+_\\d+";
     private static final String PATTERN_PHOTO_ALBUM             = ".*?(tag|album(\\-)?\\d+_|photos)\\d+";
@@ -601,8 +601,8 @@ public class VKontakteRu extends PluginForDecrypt {
 
     private ArrayList<DownloadLink> decryptVideoAlbum(ArrayList<DownloadLink> decryptedLinks, String parameter) throws Exception {
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-        final String albumID = new Regex(parameter, "(\\d+)$").getMatch(0);
-        final int numberOfEntrys = Integer.parseInt(br.getRegex("(\\d+) videos<").getMatch(0));
+        final String albumID = new Regex(parameter, "((\\-)?\\d+)$").getMatch(0);
+        final int numberOfEntrys = Integer.parseInt(br.getRegex("\"videoCount\":(\\d+)").getMatch(0));
         int totalCounter = 0;
         int onlineCounter = 0;
         int offlineCounter = 0;
@@ -622,10 +622,10 @@ public class VKontakteRu extends PluginForDecrypt {
                     logger.warning("Decrypter broken for link: " + parameter);
                     return null;
                 }
-                videos = new Regex(jsVideoArray, "\\[(\\d+, \\d+), \\'").getColumn(0);
+                videos = new Regex(jsVideoArray, "\\[((\\-)?\\d+, \\d+), \\'").getColumn(0);
             } else {
                 br.postPage("https://vk.com/al_video.php", "act=load_videos_silent&al=1&offset=" + totalCounter + "&oid=" + albumID);
-                videos = br.getRegex("\\[(\\d+, \\d+), \\'").getColumn(0);
+                videos = br.getRegex("\\[((\\-)?\\d+, \\d+), \\'").getColumn(0);
             }
             if (videos == null || videos.length == 0) {
                 break;

@@ -597,10 +597,10 @@ public class HulkShareCom extends PluginForHost {
         br.setCookie(COOKIE_HOST, "lang", "english");
         if (link.getBooleanProperty("fileoffline")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         br.getPage(link.getDownloadURL());
-        String argh = br.getRedirectLocation();
+        final String argh = br.getRedirectLocation();
         // Handling for direct links
         if (argh != null) {
-            Browser br2 = br.cloneBrowser();
+            final Browser br2 = br.cloneBrowser();
             // In case the link redirects to the finallink
             br2.setFollowRedirects(true);
             URLConnectionAdapter con = null;
@@ -610,10 +610,10 @@ public class HulkShareCom extends PluginForHost {
                     link.setDownloadSize(con.getLongContentLength());
                     link.setFinalFileName(getFileNameFromHeader(con));
                     link.setProperty("freelink", argh);
+                    return AvailableStatus.TRUE;
                 } else {
-                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                    br.getPage(argh);
                 }
-                return AvailableStatus.TRUE;
             } finally {
                 try {
                     con.disconnect();
@@ -671,7 +671,8 @@ public class HulkShareCom extends PluginForHost {
             logger.warning("The filename equals null, throwing \"file not found\" now...");
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        filename = filename.replaceAll("(</b>|<b>|\\.html)", "");
+        filename = Encoding.htmlDecode(filename.trim().replaceAll("(</b>|<b>|\\.html)", ""));
+        if (br.containsHTML("hulkshare\\.com/socialplayer/hsfbPlayer") && !filename.endsWith(".mp3")) filename += ".mp3";
         link.setFinalFileName(filename.trim());
         if (filesize != null) link.setDownloadSize(SizeFormatter.getSize(filesize));
         return AvailableStatus.TRUE;
