@@ -107,10 +107,13 @@ public class MymediaYamComDecrypter extends PluginForDecrypt {
 
             final DownloadLink dl = createDownloadlink(parameter.replace("mymedia.yam.com/", "mymediadecrypted.yam.com/"));
             String filename = br.getRegex("class=\"heading\"><span style=\\'float:left;\\'>([^<>\"]*?)</span>").getMatch(0);
+            if (filename == null) filename = br.getRegex("<title>yam 天空部落-影音分享\\-(.*?)</title>").getMatch(0);
             if (filename != null) {
-                dl.setName(Encoding.htmlDecode(filename.trim()));
+                // Set to .mp3, can be changed later in hostplugin
+                dl.setName(Encoding.htmlDecode(filename.trim()) + ".mp3");
                 dl.setAvailable(true);
             }
+            if (br.containsHTML("type=\"password\" id=\"passwd\" name=\"passwd\"")) dl.getLinkStatus().setStatusText("Password protected links aren't supported yet. Please contact our support!");
             decryptedLinks.add(dl);
         }
 
