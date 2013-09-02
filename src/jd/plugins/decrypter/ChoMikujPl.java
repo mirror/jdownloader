@@ -81,11 +81,14 @@ public class ChoMikujPl extends PluginForDecrypt {
         parameter = parameter.replace("www.", "");
         br.setFollowRedirects(false);
 
+        // checking if the single link is folder with EXTENSTION in the name
+        boolean folderCheck = false;
         /** Handle single links */
+
         if (linkending != null) {
             String tempExt = null;
             if (linkending.contains(".")) tempExt = linkending.substring(linkending.lastIndexOf("."));
-            final boolean isLinkendingWithoutID = (!linkending.contains(",") && tempExt != null && new Regex(tempExt, Pattern.compile(ENDINGS, Pattern.CASE_INSENSITIVE)).matches());
+            final boolean isLinkendingWithoutID = (!linkending.contains(",") && tempExt != null && new Regex(tempExt, Pattern.compile(ENDINGS, Pattern.CASE_INSENSITIVE & Pattern.CANON_EQ)).matches());
             if (linkending.matches(",\\d+\\.[A-Za-z0-9]{1,5}") || isLinkendingWithoutID) {
                 /**
                  * If the ID is missing but it's a single link we have to access the link to get it's read link and it's download ID.
@@ -102,30 +105,41 @@ public class ChoMikujPl extends PluginForDecrypt {
                         parameter = orgLink;
                     } else {
                         // Hmm nothing to download --> Offline
-                        final DownloadLink dloffline = createDownloadlink(parameter.replace("chomikuj.pl/", "chomikujdecrypted.pl/") + "," + System.currentTimeMillis() + new Random().nextInt(100000));
-                        dloffline.setAvailable(false);
-                        dloffline.setProperty("offline", true);
-                        decryptedLinks.add(dloffline);
-                        return decryptedLinks;
+                        // first check if it is folder - i.e foldername with ENDINGS ("8 Cold fusion 2011 pl brrip x264")
+                        String folderIdCheck = br.getRegex("type=\"hidden\" name=\"FolderId\" value=\"(\\d+)\"").getMatch(0);
+                        if (folderIdCheck == null) folderIdCheck = br.getRegex("name=\"folderId\" type=\"hidden\" value=\"(\\d+)\"").getMatch(0);
+                        // if it is not folder then report offline file
+                        if (folderIdCheck == null) {
+                            final DownloadLink dloffline = createDownloadlink(parameter.replace("chomikuj.pl/", "chomikujdecrypted.pl/") + "," + System.currentTimeMillis() + new Random().nextInt(100000));
+                            dloffline.setAvailable(false);
+                            dloffline.setProperty("offline", true);
+                            decryptedLinks.add(dloffline);
+                            return decryptedLinks;
+                        } else
+                            folderCheck = true;
+
                     }
                 }
-                final DownloadLink dl = createDownloadlink(parameter.replace("chomikuj.pl/", "chomikujdecrypted.pl/") + "," + System.currentTimeMillis() + new Random().nextInt(100000));
-                final Regex info = new Regex(parameter, "/([^<>\"/]*?),(\\d+)(\\..+)$");
-                final String filename = Encoding.htmlDecode(info.getMatch(0)) + info.getMatch(2);
-                final String fileid = info.getMatch(1);
-                String ext = null;
-                if (filename.contains(".")) ext = filename.substring(filename.lastIndexOf("."));
+                // if the single link was not a folder then handle this file
+                if (!folderCheck) {
+                    final DownloadLink dl = createDownloadlink(parameter.replace("chomikuj.pl/", "chomikujdecrypted.pl/") + "," + System.currentTimeMillis() + new Random().nextInt(100000));
+                    final Regex info = new Regex(parameter, "/([^<>\"/]*?),(\\d+)(\\..+)$");
+                    final String filename = Encoding.htmlDecode(info.getMatch(0)) + info.getMatch(2);
+                    final String fileid = info.getMatch(1);
+                    String ext = null;
+                    if (filename.contains(".")) ext = filename.substring(filename.lastIndexOf("."));
 
-                dl.setProperty("fileid", fileid);
-                dl.setName(filename);
-                if ((ext != null && ext.length() <= 5) && ext.matches(VIDEOENDINGS)) dl.setProperty("video", true);
-                try {
-                    distribute(dl);
-                } catch (final Throwable e) {
-                    /* does not exist in 09581 */
+                    dl.setProperty("fileid", fileid);
+                    dl.setName(filename);
+                    if ((ext != null && ext.length() <= 5) && ext.matches(VIDEOENDINGS)) dl.setProperty("video", true);
+                    try {
+                        distribute(dl);
+                    } catch (final Throwable e) {
+                        /* does not exist in 09581 */
+                    }
+                    decryptedLinks.add(dl);
+                    return decryptedLinks;
                 }
-                decryptedLinks.add(dl);
-                return decryptedLinks;
             } else {
                 // Or it's just a specified page of a folder, we remove that to
                 // prevent problems!
@@ -157,7 +171,7 @@ public class ChoMikujPl extends PluginForDecrypt {
         if (ext != null) {
             ext = new Regex(ext, "(" + ENDINGS + ").+$").getMatch(0);
         }
-        if (ext != null && ext.matches(ENDINGS)) {
+        if (ext != null && ext.matches(ENDINGS) && !folderCheck) {
             br.getPage(parameter);
             redirect = br.getRedirectLocation();
             if (redirect != null) {
@@ -213,13 +227,17 @@ public class ChoMikujPl extends PluginForDecrypt {
             br.getPage(br.getRedirectLocation());
         }
         /** Get needed values */
-        String fpName = br.getRegex("<title>(.*?) \\- .*? \\- Chomikuj\\.pl.*?</title>").getMatch(0);
+        String fpName = br.getRegex("<meta name=\"keywords\" content=\"(.+?),(.+?)\" />").getMatch(0);
         if (fpName == null) {
-            fpName = br.getRegex("class=\"T_selected\">(.*?)</span>").getMatch(0);
+            br.getRegex("<title>(.*?) \\- .*? \\- Chomikuj\\.pl.*?</title>").getMatch(0);
             if (fpName == null) {
-                fpName = br.getRegex("<span id=\"ctl00_CT_FW_SelectedFolderLabel\" style=\"font\\-weight:bold;\">(.*?)</span>").getMatch(0);
+                fpName = br.getRegex("class=\"T_selected\">(.*?)</span>").getMatch(0);
+                if (fpName == null) {
+                    fpName = br.getRegex("<span id=\"ctl00_CT_FW_SelectedFolderLabel\" style=\"font\\-weight:bold;\">(.*?)</span>").getMatch(0);
+                }
             }
         }
+
         String chomikID = br.getRegex("name=\"chomikId\" type=\"hidden\" value=\"(\\d+)\"").getMatch(0);
         if (chomikID == null) {
             chomikID = br.getRegex("id=\"__accno\" name=\"__accno\" type=\"hidden\" value=\"(\\d+)\"").getMatch(0);
@@ -359,8 +377,16 @@ public class ChoMikujPl extends PluginForDecrypt {
                 /**
                  * Specified for videos (also works for mp3s, maybe also for other types)
                  */
-                fileIds = tempBr.getRegex("<ul class=\"borderRadius tabGradientBg\">[\t\n\r ]+<li><span>([^<>\"\\']+)</span></li>[\t\n\r ]+<li><span class=\"date\">[^<>\"\\']+</span></li>[\t\n\r ]+</ul>[\t\n\r ]+</div>[\t\n\r ]+<div class=\"fileActionsButtons clear visibleButtons  fileIdContainer\" rel=\"(\\d+)\" style=\"visibility: hidden;\">.*?class=\"expanderHeader downloadAction\" href=\"[^<>\"\\']+\" title=\"[^<>\"\\']+\">[\t\n\r ]+<span class=\"bold\">([^<>\"\\']*?(<span class=\"e\"> </span>[^<>\"\\']*?)?)</span>([^<>\"\\']+)</a>[\t\n\r ]+<img alt=\"pobierz\" class=\"downloadArrow visibleArrow\" src=\"").getMatches();
-                addRegexInt(2, 4, 0, 1, 0);
+                // this will also handle the table data with ratings, also removed
+                // <span class=\"e\"> </span> from Regex, this is removed at the
+                // later stage of parsing
+                fileIds = tempBr.getRegex("<ul class=\"borderRadius tabGradientBg\">([\t\n\r ]+<li>[\t\n\r ]+<span class=\"rating_info\">[\t\n\r ]+<span style=\"display: none\" class=\"ratingTooltip\">.+?</span>[\t\n\r ]+<img src=\".+[\t\n\r ]+</span>[\t\n\r ]+</li>)*?[\t\n\r ]+<li><span>([^<>\"\\']+)</span></li>[\t\n\r ]+<li><span class=\"date\">[^<>\"\\']+</span></li>[\t\n\r ]+</ul>[\t\n\r ]+</div>[\t\n\r ]+<div class=\"fileActionsButtons clear visibleButtons  fileIdContainer\" rel=\"(\\d+)\" style=\"visibility: hidden;\">.*?class=\"expanderHeader downloadAction\" href=\"[^<>\"\\']+\" title=\"[^<>\"\\']+\">[\t\n\r ]+<span class=\"bold\">(.*?)</span>([^<>\"\\']+)</a>[\t\n\r ]+<img alt=\"pobierz\" class=\"downloadArrow visibleArrow\" src=\"").getMatches();
+                addRegexInt(3, 4, 1, 2, 3);
+                // old - without ratings
+                // fileIds =
+                // tempBr.getRegex("<ul class=\"borderRadius tabGradientBg\">[\t\n\r ]+<li><span>([^<>\"\\']+)</span></li>[\t\n\r ]+<li><span class=\"date\">[^<>\"\\']+</span></li>[\t\n\r ]+</ul>[\t\n\r ]+</div>[\t\n\r ]+<div class=\"fileActionsButtons clear visibleButtons  fileIdContainer\" rel=\"(\\d+)\" style=\"visibility: hidden;\">.*?class=\"expanderHeader downloadAction\" href=\"[^<>\"\\']+\" title=\"[^<>\"\\']+\">[\t\n\r ]+<span class=\"bold\">([^<>\"\\']*?(<span class=\"e\"> </span>[^<>\"\\']*?)?)</span>([^<>\"\\']+)</a>[\t\n\r ]+<img alt=\"pobierz\" class=\"downloadArrow visibleArrow\" src=\"").getMatches();
+
+                // addRegexInt(2, 4, 0, 1, 0);
                 /**
                  * Last attempt, only get IDs (no pre-available-check possible)
                  */
@@ -382,11 +408,13 @@ public class ChoMikujPl extends PluginForDecrypt {
                     final DownloadLink dl = createDownloadlink(parameter.replace("chomikuj.pl/", "chomikujdecrypted.pl/") + "," + System.currentTimeMillis() + new Random().nextInt(100000));
                     dl.setProperty("fileid", id[REGEXSORT.get(3)]);
                     if (id.length > 1) {
-                        if (id.length == 6) {
+                        if (id.length == 6)
                             dl.setName(correctFilename(Encoding.htmlDecode(id[REGEXSORT.get(4)].trim())));
-                        } else {
-                            dl.setName(correctFilename(Encoding.htmlDecode(id[REGEXSORT.get(0)].trim()) + id[REGEXSORT.get(1)].trim()));
+                        else {
+                            String fileNameAndExtestion = Encoding.htmlDecode(id[REGEXSORT.get(0)].trim()) + id[REGEXSORT.get(1)].trim();
+                            dl.setName(correctFilename(fileNameAndExtestion.replace("<span class=\"e\"> </span>", "")));
                         }
+
                         dl.setDownloadSize(SizeFormatter.getSize(id[REGEXSORT.get(2)].replace(",", ".")));
                         dl.setAvailable(true);
                         /**
