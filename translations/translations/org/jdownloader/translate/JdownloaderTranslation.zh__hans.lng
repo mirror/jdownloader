@@ -144,3 +144,4 @@ system_download_errors_couldnotoverwrite=不能覆盖存在的文件
 system_download_errors_couldnotrename=不能重命名 Part (部分)文件
 system_download_errors_invalidoutputfile=无效输出文件
 system_download_errors_linkisBlocked=镜像 %s1 正在加载
+video_description=视频文件: mp4, avi, mov,...
