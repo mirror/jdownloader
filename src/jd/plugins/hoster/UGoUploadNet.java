@@ -186,7 +186,6 @@ public class UGoUploadNet extends PluginForHost {
                 }
                 br.setFollowRedirects(true);
                 br.postPage("http://www.ugoupload.net/login.html", "submit=Login&submitme=1&loginUsername=" + Encoding.urlEncode(account.getUser()) + "&loginPassword=" + Encoding.urlEncode(account.getPass()));
-                if (br.getCookie(MAINPAGE, "spf") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 if (br.containsHTML("ugoupload\\.net/upgrade\\.html\">upgrade account</a>") || !br.containsHTML("ugoupload\\.net/upgrade\\.html\">extend account</a>")) {
                     logger.info("Accounttype FREE is not supported!");
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -233,6 +232,7 @@ public class UGoUploadNet extends PluginForHost {
         if (dl.getConnection().getContentType().contains("html")) {
             logger.warning("The final dllink seems not to be a file!");
             br.followConnection();
+            if (br.getURL().contains("e=Error%3A+Could+not+open+file+for+reading")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error: Could not open file for reading", 30 * 60 * 1000l);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
