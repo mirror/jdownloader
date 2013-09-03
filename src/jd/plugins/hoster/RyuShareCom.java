@@ -93,7 +93,7 @@ public class RyuShareCom extends PluginForHost {
     private final boolean              useAltExpire                 = true;
     private final long                 useLoginIndividual           = 6 * 3480000;
     private final boolean              waitTimeSkipableReCaptcha    = true;
-    private final boolean              waitTimeSkipableSolveMedia   = true;
+    private final boolean              waitTimeSkipableSolveMedia   = false;
     private final boolean              waitTimeSkipableKeyCaptcha   = true;
     private final boolean              captchaSkipableSolveMedia    = false;
 
