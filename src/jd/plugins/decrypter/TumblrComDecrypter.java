@@ -136,11 +136,7 @@ public class TumblrComDecrypter extends PluginForDecrypt {
                 }
                 return decryptedLinks;
             }
-            // Try to find the biggest picture
-            for (int i = 2000; i >= 10; i--) {
-                externID = br.getRegex("\"(http://\\d+\\.media\\.tumblr\\.com(/[a-z0-9]{32})?/tumblr_[A-Za-z0-9_]+_" + i + "\\.(jpg|gif|png))\"").getMatch(0);
-                if (externID != null) break;
-            }
+            externID = getBiggestPicture();
             if (externID != null) {
                 final DownloadLink dl = createDownloadlink("directhttp://" + externID);
                 dl.setAvailable(true);
@@ -156,7 +152,7 @@ public class TumblrComDecrypter extends PluginForDecrypt {
         } else if (parameter.matches(".+tumblr\\.com/image/\\d+")) {
             br.setFollowRedirects(false);
             br.getPage(parameter);
-            final String finallink = br.getRegex("class=\"fit_to_screen\" src=\"(http://[^<>\"]*?)\"").getMatch(0);
+            final String finallink = getBiggestPicture();
             if (finallink == null) {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
@@ -194,6 +190,16 @@ public class TumblrComDecrypter extends PluginForDecrypt {
             }
         }
         return decryptedLinks;
+    }
+
+    private String getBiggestPicture() {
+        String image = null;
+        // Try to find the biggest picture
+        for (int i = 2000; i >= 10; i--) {
+            image = br.getRegex("\"(http://\\d+\\.media\\.tumblr\\.com(/[a-z0-9]{32})?/tumblr_[A-Za-z0-9_]+_" + i + "\\.(jpg|gif|png))\"").getMatch(0);
+            if (image != null) break;
+        }
+        return image;
     }
 
     /* NO OVERRIDE!! */

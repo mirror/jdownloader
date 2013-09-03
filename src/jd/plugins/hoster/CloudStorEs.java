@@ -54,16 +54,10 @@ public class CloudStorEs extends PluginForHost {
         return "http://cloudstor.es/policies/tos/";
     }
 
-    public void correctDownloadLink(DownloadLink link) {
-        link.setUrlDownload("http://cloudstor.es/f/" + new Regex(link.getDownloadURL(), "cloudstor\\.es/(f|file)/(.+)").getMatch(1));
-    }
-
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        // Fix old links
-        correctDownloadLink(link);
         br.getPage(link.getDownloadURL());
         if (br.containsHTML(">Error 404: Page Not Found<")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (br.containsHTML(veryBusy)) {

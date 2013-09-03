@@ -49,11 +49,12 @@ public class YPasteCom extends PluginForDecrypt {
         if (br.containsHTML(">This paste is password protected<")) {
             for (int i = 1; i <= 3; i++) {
                 final String pass = getUserInput(null, param);
+                if (pass == null || pass.equals("")) continue;
                 br.postPage(br.getURL(), "password=" + Encoding.urlEncode(pass));
-                if (br.containsHTML(">You have entered an incorrect password<")) continue;
+                if (br.containsHTML(">This paste is password protected<")) continue;
                 break;
             }
-            if (br.containsHTML(">You have entered an incorrect password<")) throw new DecrypterException(DecrypterException.PASSWORD);
+            if (br.containsHTML(">This paste is password protected<")) throw new DecrypterException(DecrypterException.PASSWORD);
         }
         br.getPage(parameter + "/raw/");
         final String[] links = HTMLParser.getHttpLinks(br.toString(), "");
