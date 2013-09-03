@@ -420,13 +420,13 @@ public class LnkCrptWs extends PluginForDecrypt {
             setServer();
             setPath();
             if (!smBr.getURL().contains("solvemedia.com/")) {
-                // when we retry solving a solvemedia session, we reuse smBr,
-                // browser already contains the info we need!
+                // when we retry solving a solvemedia session, we reuse smBr, browser already contains the info we need!
                 smBr.getPage(server + path + challenge);
             }
             if (noscript) {
                 verify = smBr.getForm(0);
                 captchaAddress = smBr.getRegex("<img src=\"(/papi/media\\?c=[^\"]+)").getMatch(0);
+                if (captchaAddress == null) captchaAddress = smBr.getRegex("src=\"(/papi/media\\?c=[^\"]+)").getMatch(0);
                 if (verify == null) throw new Exception("SolveMedia Module fails");
             } else {
                 chId = smBr.getRegex("\"chid\"\\s+?:\\s+?\"(.*?)\",").getMatch(0);
@@ -584,8 +584,7 @@ public class LnkCrptWs extends PluginForDecrypt {
             } catch (final Throwable e) {
                 /* ignore rhino Exceptions */
                 try {
-                    // query = engine.eval(query).toString() + new Regex(js, doc
-                    // + "=\"([^\"]+)").getMatch(0);
+                    // query = engine.eval(query).toString() + new Regex(js, doc + "=\"([^\"]+)").getMatch(0);
                     query = new Regex(js, doc + "=\"([^\"]+)").getMatch(0);
                 } catch (Throwable e1) {
                 }
@@ -709,10 +708,8 @@ public class LnkCrptWs extends PluginForDecrypt {
                 }
 
                 /* Bilderdownload und Verarbeitung */
-                sscGetImagest(stImgs[0], stImgs[1], stImgs[2], Boolean.parseBoolean(stImgs[3]));// fragmentierte
-                                                                                                // Puzzleteile
-                sscGetImagest(sscStc[0], sscStc[1], sscStc[2], Boolean.parseBoolean(sscStc[3]));// fragmentiertes
-                                                                                                // Hintergrundbild
+                sscGetImagest(stImgs[0], stImgs[1], stImgs[2], Boolean.parseBoolean(stImgs[3]));// fragmentierte Puzzleteile
+                sscGetImagest(sscStc[0], sscStc[1], sscStc[2], Boolean.parseBoolean(sscStc[3]));// fragmentiertes Hintergrundbild
 
                 if (sscStc == null || sscStc.length == 0 || stImgs == null || stImgs.length == 0 || fmsImg == null || fmsImg.size() == 0) return "CANCEL";
 
@@ -1001,8 +998,7 @@ public class LnkCrptWs extends PluginForDecrypt {
                     Browser.download(fragmentedPic, dlpic.openGetConnection(imgUrl));
                     /* TODO: replace with ImageProvider.read in future */
                     IMAGE[i] = ImageIO.read(fragmentedPic);
-                    // IMAGE[i] = Toolkit.getDefaultToolkit().getImage(new
-                    // URL(imgUrl));
+                    // IMAGE[i] = Toolkit.getDefaultToolkit().getImage(new URL(imgUrl));
                 } catch (final IOException e) {
                     e.printStackTrace();
                 }
@@ -1354,15 +1350,13 @@ public class LnkCrptWs extends PluginForDecrypt {
             final MediaTracker mt = new MediaTracker(this);
             for (final String imgUrl : imagesUrl) {
                 try {
-                    // fragmentedPic = Application.getRessource("captchas/" +
-                    // imgUrl.substring(imgUrl.lastIndexOf("/") + 1));
+                    // fragmentedPic = Application.getRessource("captchas/" + imgUrl.substring(imgUrl.lastIndexOf("/") + 1));
                     fragmentedPic = JDUtilities.getResourceFile("captchas/" + imgUrl.substring(imgUrl.lastIndexOf("/") + 1));
                     fragmentedPic.deleteOnExit();
                     Browser.download(fragmentedPic, dlpic.openGetConnection(imgUrl));
                     /* TODO: replace with ImageProvider.read in future */
                     IMAGE[i] = ImageIO.read(fragmentedPic);
-                    // IMAGE[i] = Toolkit.getDefaultToolkit().getImage(new
-                    // URL(imgUrl));
+                    // IMAGE[i] = Toolkit.getDefaultToolkit().getImage(new URL(imgUrl));
                 } catch (final IOException e) {
                     e.printStackTrace();
                 }

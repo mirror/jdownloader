@@ -84,15 +84,17 @@ public class BillionUploadsCom extends PluginForHost {
     private final String               PASSWORDTEXT                 = "<br><b>Passwor(d|t):</b> <input";
     private final String               MAINTENANCE                  = ">This server is in maintenance mode";
     private final String               dllinkRegex                  = "https?://(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|([\\w\\-]+\\.)?" + DOMAINS + ")(:\\d{1,5})?/(files(/(dl|download))?|d|cgi-bin/dl\\.cgi)/(\\d+/)?([a-z0-9]+/){1,4}[^/<>\r\n\t]+";
-    private final boolean              useVidEmbed                  = false;
-    private final boolean              useAltEmbed                  = false;
     private final boolean              supportsHTTPS                = false;
     private final boolean              enforcesHTTPS                = false;
     private final boolean              useRUA                       = true;
-    private final boolean              useAltExpire                 = true;
     private final boolean              useAltLinkCheck              = false;
+    private final boolean              useVidEmbed                  = false;
+    private final boolean              useAltEmbed                  = false;
+    private final boolean              useAltExpire                 = true;
+    private final long                 useLoginIndividual           = 6 * 3480000;
     private final boolean              waitTimeSkipableReCaptcha    = true;
     private final boolean              waitTimeSkipableSolveMedia   = true;
+    private final boolean              waitTimeSkipableKeyCaptcha   = true;
     private final boolean              captchaSkipableSolveMedia    = true;
 
     // Connection Management
@@ -100,7 +102,7 @@ public class BillionUploadsCom extends PluginForHost {
     private static final AtomicInteger totalMaxSimultanFreeDownload = new AtomicInteger(20);
 
     // DEV NOTES
-    // XfileShare Version 3.0.7.9
+    // XfileShare Version 3.0.8.0
     // last XfileSharingProBasic compare :: 2.6.2.1
     // protocol: no https
     // captchatype: solvemedia
@@ -308,12 +310,15 @@ public class BillionUploadsCom extends PluginForHost {
             if (inValidate(fileInfo[1])) {
                 fileInfo[1] = cbr.getRegex("</font>[ ]+\\(([^<>\"\\'/]+)\\)(.*?)</font>").getMatch(0);
                 if (inValidate(fileInfo[1])) {
-                    fileInfo[1] = cbr.getRegex("(\\d+(\\.\\d+)? ?(KB|MB|GB))").getMatch(0);
+                    fileInfo[1] = cbr.getRegex("File Size:</b></td>[\r\n\t ]+<td.*?>([^<>\"']+)").getMatch(0);
                     if (inValidate(fileInfo[1])) {
-                        try {
-                            // only needed in rare circumstances
-                            // altAvailStat(downloadLink, fileInfo);
-                        } catch (Exception e) {
+                        fileInfo[1] = cbr.getRegex("(\\d+(\\.\\d+)? ?(KB|MB|GB))").getMatch(0);
+                        if (inValidate(fileInfo[1])) {
+                            try {
+                                // only needed in rare circumstances
+                                // altAvailStat(downloadLink, fileInfo);
+                            } catch (Exception e) {
+                            }
                         }
                     }
                 }
@@ -563,10 +568,7 @@ public class BillionUploadsCom extends PluginForHost {
             } catch (final Throwable e) {
                 return null;
             }
-            if (result != null) {
-                String dec = result.toString();
-                if (dec.startsWith("http://") || dec.startsWith("https://")) return dec;
-            }
+            if (result != null) return regexDllink(result.toString());
         }
         return null;
     }
@@ -609,6 +611,7 @@ public class BillionUploadsCom extends PluginForHost {
             if (account != null) {
                 logger.warning("Your account ( " + account.getUser() + " @ " + acctype + " ) has been temporarily disabled for going over the download session limit. JDownloader parses HTML for error messages, if you believe this is not a valid response please confirm issue within your browser. If you can download within your browser please contact JDownloader Development Team, if you can not download in your browser please take the issue up with " + this.getHost());
                 account.setTempDisabled(true);
+                throw new PluginException(LinkStatus.ERROR_RETRY);
             } else {
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "You've reached the download session limit!", 60 * 60 * 1000l);
             }
@@ -680,13 +683,32 @@ public class BillionUploadsCom extends PluginForHost {
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
         try {
-            login(account, true);
+            // logic to manipulate full login.
+            if (useLoginIndividual >= 1800000 && account.getStringProperty("lastlogin", null) != null && (System.currentTimeMillis() - useLoginIndividual <= Long.parseLong(account.getStringProperty("lastlogin")))) {
+                login(account, false);
+            } else {
+                login(account, true);
+            }
         } catch (final PluginException e) {
             account.setValid(false);
             throw e;
         }
-        String space[] = cbr.getRegex(">Used space:</td>.*?<td.*?b>([0-9\\.]+) ?(KB|MB|GB|TB)?</b>").getRow(0);
-        if (space == null || space.length == 0) space = cbr.getRegex(">Used space:</td><td.*?b>([0-9\\.]+) of [0-9\\.]+ ?(KB|MB|GB|TB)?</b>").getRow(0);
+        // required for when we don't login fully.
+        final String myAccount = "/?op=my_account";
+        if (br.getURL() == null) {
+            br.setFollowRedirects(true);
+            getPage(COOKIE_HOST.replaceFirst("https?://", getProtocol()) + myAccount);
+        } else if (!br.getURL().contains(myAccount)) {
+            getPage(myAccount);
+        }
+        // what type of account?
+        if (!cbr.containsHTML("(Premium(\\-| )Account expire|>Renew premium<)")) {
+            account.setProperty("free", true);
+        } else {
+            account.setProperty("free", false);
+        }
+        String space[] = cbr.getRegex(">Used space.*?<b>([0-9\\.]+) ?(KB|MB|GB|TB)?</b>").getRow(0);
+        if (space == null || space.length == 0) space = cbr.getRegex(">Used space.*?<b>([0-9\\.]+) of [0-9\\.]+ ?(KB|MB|GB|TB)?</b>").getRow(0);
         if ((space != null && space.length != 0) && (!inValidate(space[0]) && !inValidate(space[1]))) {
             // free users it's provided by default
             ai.setUsedSpace(space[0] + " " + space[1]);
@@ -798,14 +820,6 @@ public class BillionUploadsCom extends PluginForHost {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
                 }
-                if (!br.getURL().contains("/?op=my_account")) {
-                    getPage("/?op=my_account");
-                }
-                if (!cbr.containsHTML("(Premium(\\-| )Account expire|>Renew premium<)")) {
-                    account.setProperty("free", true);
-                } else {
-                    account.setProperty("free", false);
-                }
                 /** Save cookies */
                 final HashMap<String, String> cookies = new HashMap<String, String>();
                 final Cookies add = this.br.getCookies(COOKIE_HOST);
@@ -815,8 +829,10 @@ public class BillionUploadsCom extends PluginForHost {
                 account.setProperty("name", Encoding.urlEncode(account.getUser()));
                 account.setProperty("pass", Encoding.urlEncode(account.getPass()));
                 account.setProperty("cookies", cookies);
+                account.setProperty("lastlogin", System.currentTimeMillis());
             } catch (final PluginException e) {
                 account.setProperty("cookies", Property.NULL);
+                account.setProperty("lastlogin", Property.NULL);
                 throw e;
             }
         }
@@ -1346,6 +1362,7 @@ public class BillionUploadsCom extends PluginForHost {
             final String result = kc.showDialog(downloadLink.getDownloadURL());
             if (result != null && "CANCEL".equals(result)) { throw new PluginException(LinkStatus.ERROR_FATAL); }
             form.put("capcode", result);
+            skipWaitTime = waitTimeSkipableKeyCaptcha;
         }
         downloadLink.setProperty("captchaTries", (captchaTries + 1));
         return form;
