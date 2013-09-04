@@ -314,7 +314,6 @@ public class UploadingCom extends PluginForHost {
 
     public void handleFree0(DownloadLink link) throws Exception {
         if (br.containsHTML("that only premium members are")) throw new PluginException(LinkStatus.ERROR_FATAL, "Only for premium members");
-        String currenturl = br.getURL();
         String passCode = null;
         checkErrors(br);
         passCode = link.getStringProperty("pass", null);
@@ -322,46 +321,29 @@ public class UploadingCom extends PluginForHost {
         Browser ajax = this.br.cloneBrowser();
         ajax.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         ajax.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
-        logger.info("Submitting first ajax request");
-        ajax.postPage("http://uploading.com/files/get/?ajax", "code=" + Encoding.urlEncode(fileID) + "&action=second_page");
         int wait = 60;
-        String waitTimer = ajax.getRegex("wait_time\":(\")?(-?\\d+)(\")?").getMatch(1);
+        String waitTimer = ajax.getRegex("<span id=\"timer_secs\">(\\d+)</span>").getMatch(0);
         if (waitTimer != null) wait = Integer.parseInt(waitTimer);
         try {
             sleep(wait * 1001l, link);
         } catch (PluginException e) {
             return;
         }
-        logger.info("Submitting second ajax request");
-        try {
-            String postData = "action=get_link&code=" + Encoding.urlEncode(fileID);
-            // not sure about below if. (old not tested)
-            if (br.containsHTML(PASSWORDTEXT) && passCode == null) {
-                if (passCode == null) passCode = Plugin.getUserInput("Password?", link);
-                postData += "&pass=" + Encoding.urlEncode(passCode);
-            } else if (passCode != null) {
-                postData += "&pass=" + Encoding.urlEncode(passCode);
-            } else
-                postData += "&pass=false";
-            ajax.getHeaders().put("Referer", currenturl);
-            ajax.postPage("http://uploading.com/files/get/?ajax", postData);
-        } catch (Exception e) {
-            // This is the "disconnected" error...(old not tested)
-            logger.warning("FATAL error happened with link: " + link.getDownloadURL());
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        // First Password-Errorhandling (old not tested)
-        if (passCode != null && (br.containsHTML(PASSWORDTEXT) || "The%20entered%20password%20is%20incorrect".equals(br.getCookie(MAINPAGE, "error")))) throw new PluginException(LinkStatus.ERROR_RETRY, "Invalid password");
+        logger.info("Submitting ajax request");
+        ajax.postPage("http://uploading.com/files/get/?ajax", "action=get_link&code=" + Encoding.urlEncode(fileID) + "&pass=false&force_exe=1");
         checkErrors(ajax);
-        String dllink = ajax.getRegex("link\":\"(https?[^<>\"]*?)\"").getMatch(0);
-        if (dllink == null) {
-            logger.warning("Can not find dllink");
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        dllink = dllink.replaceAll("\\\\/", "/");
-        br.getPage(dllink);
-        dllink = br.getRegex("<form id=\"file_form\" action=\"(http://[^<>\"]*?)\"").getMatch(0);
-        if (dllink == null) dllink = br.getRegex("\"(http://fs\\d+\\.uploading\\.com/get_file/[^<>\"]*?)\"").getMatch(0);
+        String nextLink = ajax.getRegex("\"link\":\"(http:[^<>\"]*?)\"").getMatch(0);
+        if (nextLink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        nextLink = nextLink.replace("\\", "");
+        br.getPage(nextLink);
+        checkErrors(br);
+        nextLink = br.getRegex("\\'(http://uploading\\.com/files/acc_thankyou/[^<>\"]*?)\\'").getMatch(0);
+        if (nextLink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        br.getPage(nextLink);
+        checkErrors(br);
+
+        String dllink = br.getRegex("id=\"download_file\" href=\"(http://[^<>\"]*?)\"").getMatch(0);
+        if (dllink == null) dllink = br.getRegex("\"(http://(www\\.)?uploading\\.com/[^<>\"]*?\\?rundownloaderrun)\"").getMatch(0);
         if (dllink == null) {
             logger.warning("Can not find final dllink");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
