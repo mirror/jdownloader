@@ -27,7 +27,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "hulkshare.com" }, urls = { "http://(www\\.)?(hulkshare\\.com|hu\\.lk)/[a-z0-9]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "hulkshare.com" }, urls = { "http://(www\\.)?(hulkshare\\.com|hu\\.lk)/[a-z0-9]+(/[^<>\"/]+)?" }, flags = { 0 })
 public class HulkShareComFolder extends PluginForDecrypt {
 
     public HulkShareComFolder(PluginWrapper wrapper) {
@@ -35,6 +35,7 @@ public class HulkShareComFolder extends PluginForDecrypt {
     }
 
     private static final String HULKSHAREDOWNLOADLINK = "http://(www\\.)?(hulkshare\\.com|hu\\/lk)/[a-z0-9]{12}";
+    private static final String SECONDSINGLELINK      = "http://(www\\.)?(hulkshare\\.com|hu\\.lk)/[a-z0-9]+/[^<>\"/]+";
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
@@ -78,6 +79,15 @@ public class HulkShareComFolder extends PluginForDecrypt {
             decryptedLinks.add(dl);
             return decryptedLinks;
         }
+        if (parameter.matches(SECONDSINGLELINK)) {
+            final String longLink = br.getRegex("longLink = \\'(http://(www\\.)?hulkshare\\.com/[a-z0-9]{12})\\'").getMatch(0);
+            if (longLink == null) {
+                logger.warning("Decrypter broken for link: " + parameter);
+                return null;
+            }
+            decryptedLinks.add(createDownloadlink(longLink.replace("hulkshare.com/", "hulksharedecrypted.com/")));
+            return decryptedLinks;
+        }
         final String uid = br.getRegex("\\?uid=(\\d+)").getMatch(0);
         if (uid == null) {
             logger.warning("Decrypter broken for link: " + parameter);
@@ -93,6 +103,14 @@ public class HulkShareComFolder extends PluginForDecrypt {
                 if (!pages.contains(tempPage)) pages.add(tempPage);
         }
         for (final String currentPage : pages) {
+            try {
+                if (this.isAbort()) {
+                    logger.info("Decryption aborted for link: " + parameter);
+                    return decryptedLinks;
+                }
+            } catch (final Throwable e) {
+                // Not available in old 0.9.581 Stable
+            }
             if (!currentPage.equals("1")) {
                 br.getPage(internalFolderlink + currentPage);
                 if (br.containsHTML("This user has no tracks")) break;

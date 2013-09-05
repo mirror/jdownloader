@@ -633,25 +633,28 @@ public class HulkShareCom extends PluginForHost {
             logger.warning("This file has been subject to a DMCA notice and has accordingly been disabled for public access, throwing \"file not found\" now...");
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String filename = br.getRegex("You have requested.*?http://.*?[a-z0-9]{12}/(.*?)</font>").getMatch(0);
+        String filename = br.getRegex("fileName = \"([^<>]*?)\"").getMatch(0);
         if (filename == null) {
-            filename = br.getRegex("fname\" value=\"(.*?)\"").getMatch(0);
+            filename = br.getRegex("You have requested.*?http://.*?[a-z0-9]{12}/(.*?)</font>").getMatch(0);
             if (filename == null) {
-                filename = br.getRegex("Filename:</b></td><td >(.*?)</td>").getMatch(0);
+                filename = br.getRegex("fname\" value=\"(.*?)\"").getMatch(0);
                 if (filename == null) {
-                    filename = br.getRegex("File ?name.*?nowrap.*?>(.*?)</td").getMatch(0);
+                    filename = br.getRegex("Filename:</b></td><td >(.*?)</td>").getMatch(0);
                     if (filename == null) {
-                        filename = br.getRegex("class=\"jp\\-file\\-string\">(.*?)</div>").getMatch(0);
+                        filename = br.getRegex("File ?name.*?nowrap.*?>(.*?)</td").getMatch(0);
                         if (filename == null) {
-                            filename = br.getRegex("<title>Listen to (.*?) on Hulkshare.*</title>").getMatch(0);
+                            filename = br.getRegex("class=\"jp\\-file\\-string\">(.*?)</div>").getMatch(0);
                             if (filename == null) {
-                                filename = br.getRegex("<h2>[\r\n\t ]+(.*?)[\r\n\t ]+<input").getMatch(0);
+                                filename = br.getRegex("<title>Listen to (.*?) on Hulkshare.*</title>").getMatch(0);
                                 if (filename == null) {
-                                    filename = br.getRegex("<meta property=\"og:title\" content=\"([^\"]+)\"").getMatch(0);
-                                    if (filename == null) { // old, duped from new rule
-                                        filename = br.getRegex("<title>(.*?) - Hulk Share -  Music Distribution Platform</title>").getMatch(0);
+                                    filename = br.getRegex("<h2>[\r\n\t ]+(.*?)[\r\n\t ]+<input").getMatch(0);
+                                    if (filename == null) {
+                                        filename = br.getRegex("<meta property=\"og:title\" content=\"([^\"]+)\"").getMatch(0);
                                         if (filename == null) { // old, duped from new rule
-                                            filename = br.getRegex("<h2>(.*?)</h2>[\r\n\t ]+by").getMatch(0);
+                                            filename = br.getRegex("<title>(.*?) - Hulk Share -  Music Distribution Platform</title>").getMatch(0);
+                                            if (filename == null) { // old, duped from new rule
+                                                filename = br.getRegex("<h2>(.*?)</h2>[\r\n\t ]+by").getMatch(0);
+                                            }
                                         }
                                     }
                                 }
@@ -672,7 +675,8 @@ public class HulkShareCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         filename = Encoding.htmlDecode(filename.trim().replaceAll("(</b>|<b>|\\.html)", ""));
-        if (br.containsHTML("hulkshare\\.com/socialplayer/hsfbPlayer") && !filename.endsWith(".mp3")) filename += ".mp3";
+        final String ext = filename.substring(filename.lastIndexOf("."));
+        if (br.containsHTML("hulkshare\\.com/socialplayer/hsfbPlayer") && (ext == null || ext.length() > 5) && !filename.endsWith(".mp3")) filename += ".mp3";
         link.setFinalFileName(filename.trim());
         if (filesize != null) link.setDownloadSize(SizeFormatter.getSize(filesize));
         return AvailableStatus.TRUE;

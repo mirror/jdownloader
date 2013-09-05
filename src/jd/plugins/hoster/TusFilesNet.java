@@ -70,10 +70,11 @@ public class TusFilesNet extends PluginForHost {
     private static AtomicInteger totalMaxSimultanFreeDownload = new AtomicInteger(2);
     // don't touch
     private static AtomicInteger maxFree                      = new AtomicInteger(1);
+    private static final String  NOCHUNKS                     = "NOCHUNKS";
 
     /** DEV NOTES */
     // XfileSharingProBasic Version 2.5.9.6
-    // mods:
+    // mods: NOCHUNKS handling
     // non account: 1 * 2
     // free account: untested, set same as FREE
     // premium account: 10 * 2
@@ -739,8 +740,13 @@ public class TusFilesNet extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
 
+            int chunks = -10;
+            if (downloadLink.getBooleanProperty(TusFilesNet.NOCHUNKS, false)) {
+                chunks = 1;
+            }
+
             logger.info("Final downloadlink = " + dllink + " starting the download...");
-            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, -10);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, chunks);
             if (dl.getConnection().getContentType().contains("html")) {
                 logger.warning("The final dllink seems not to be a file!");
                 br.followConnection();
@@ -751,7 +757,17 @@ public class TusFilesNet extends PluginForHost {
             if (passCode != null) downloadLink.setProperty("pass", passCode);
             fixFilename(downloadLink);
             downloadLink.setProperty("premlink", dllink);
-            dl.startDownload();
+            if (!this.dl.startDownload()) {
+                try {
+                    if (dl.externalDownloadStop()) return;
+                } catch (final Throwable e) {
+                }
+                /* unknown error, we disable multiple chunks */
+                if (downloadLink.getBooleanProperty(TusFilesNet.NOCHUNKS, false) == false) {
+                    downloadLink.setProperty(TusFilesNet.NOCHUNKS, Boolean.valueOf(true));
+                    throw new PluginException(LinkStatus.ERROR_RETRY);
+                }
+            }
         }
     }
 

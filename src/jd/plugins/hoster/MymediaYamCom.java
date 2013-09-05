@@ -29,6 +29,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.utils.locale.JDL;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mymedia.yam.com" }, urls = { "http://(www\\.)?mymediadecrypted\\.yam\\.com/m/\\d+" }, flags = { 0 })
 public class MymediaYamCom extends PluginForHost {
@@ -48,6 +49,9 @@ public class MymediaYamCom extends PluginForHost {
         link.setUrlDownload(link.getDownloadURL().replace("mymediadecrypted.yam.com/", "mymedia.yam.com/"));
     }
 
+    private static final String MAINTENANCE         = ">進行系統維護作業，<br";
+    private static final String MAINTENANCEUSERTEXT = JDL.L("hoster.mymediayamcom.undermaintenance", "This server is under Maintenance");
+
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
@@ -55,6 +59,10 @@ public class MymediaYamCom extends PluginForHost {
         br.setCustomCharset("utf-8");
         br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML("使用者影音平台存取發生錯誤<|該使用者影音平台關閉中<")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML(MAINTENANCE)) {
+            downloadLink.getLinkStatus().setStatusText(MAINTENANCEUSERTEXT);
+            return AvailableStatus.TRUE;
+        }
         String filename = br.getRegex("class=\"heading\"><span style=\\'float:left;\\'>([^<>\"]*?)</span>").getMatch(0);
         if (filename == null) filename = br.getRegex("<title>yam 天空部落-影音分享\\-(.*?)</title>").getMatch(0);
         if (br.containsHTML("type=\"password\" id=\"passwd\" name=\"passwd\"")) {
@@ -94,6 +102,7 @@ public class MymediaYamCom extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
+        if (br.containsHTML(MAINTENANCE)) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, MAINTENANCEUSERTEXT, 2 * 60 * 60 * 1000l);
         if (br.containsHTML("type=\"password\" id=\"passwd\" name=\"passwd\"")) throw new PluginException(LinkStatus.ERROR_FATAL, "Password protected links aren't supported yet. Please contact our support!");
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
