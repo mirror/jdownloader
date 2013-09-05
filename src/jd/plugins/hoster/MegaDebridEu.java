@@ -17,10 +17,10 @@
 package jd.plugins.hoster;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 
 import jd.PluginWrapper;
-import jd.config.Property;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
@@ -38,16 +38,18 @@ import org.appwork.utils.Regex;
 public class MegaDebridEu extends PluginForHost {
 
     private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap = new HashMap<Account, HashMap<String, Long>>();
-    private static final String                            NOCHUNKS           = "NOCHUNKS";
+    private final String                                   NOCHUNKS           = "NOCHUNKS";
+    private final String                                   mName              = "www.mega-debrid.eu";
+    private final String                                   mProt              = "http://";
 
     public MegaDebridEu(PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium("http://www.mega-debrid.eu/index.php");
+        this.enablePremium(mProt + mName + "/index.php");
     }
 
     @Override
     public String getAGBLink() {
-        return "http://www.mega-debrid.eu/index.php";
+        return mProt + mName + "/index.php";
     }
 
     @Override
@@ -56,55 +58,55 @@ public class MegaDebridEu extends PluginForHost {
         br.setConnectTimeout(60 * 1000);
         br.setReadTimeout(60 * 1000);
         br.setFollowRedirects(true);
-        String user = Encoding.urlEncode(account.getUser());
-        String pw = Encoding.urlEncode(account.getPass());
-        String hosts[] = null;
-        ac.setProperty("multiHostSupport", Property.NULL);
 
         // account is valid, let's fetch account details:
-        br.getPage("http://mega-debrid.eu/api.php?action=connectUser&login=" + user + "&password=" + pw);
+        br.getPage(mProt + mName + "/api.php?action=connectUser&login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
         if (!"ok".equalsIgnoreCase(getJson("response_code"))) {
             ac.setStatus("\r\nInvalid username/password!\r\nFalscher Benutzername/Passwort!");
-            logger.severe("mega-debrid.eu: Error, can not parse left days. Account: " + account.getUser() + " Pass: " + account.getPass() + " API response: " + br.toString());
+            logger.severe("mega-debrid.eu: Error, can not parse left days. Account: " + account.getUser() + "\r\nAPI response:\r\n\r\n" + br.toString());
             account.setValid(false);
             return ac;
         }
         account.setProperty("token", getJson("token"));
         ac.setValidUntil(-1);
-        try {
-            final String daysLeft = getJson("vip_end");
+        final String daysLeft = getJson("vip_end");
+        if (daysLeft != null && !"0".equals(daysLeft))
             ac.setValidUntil(Long.parseLong(daysLeft) * 1000l);
-        } catch (Exception e) {
-            ac.setStatus("Can not get expire date!");
-            logger.severe("Multi-debrid.com: Error, can not parse left days. API response: " + br.toString());
+        else {
+            ac.setStatus("Can not determine account expire time!");
+            logger.severe("Error, can not parse left days. API response:\r\n\r\n" + br.toString());
             account.setValid(false);
             return ac;
         }
 
         // now it's time to get all supported hosts
-        br.getPage("http://www.mega-debrid.eu/api.php?action=getHosters");
+        br.getPage("/api.php?action=getHosters");
         if (!"ok".equalsIgnoreCase(getJson("response_code"))) {
             ac.setStatus("can not get supported hosts");
-            logger.severe("mega-debrid.eu: Error, can not parse supported hosts. API response: " + br.toString());
+            logger.severe("Error, can not parse supported hosts. API response:\r\n\r\n" + br.toString());
             account.setValid(false);
             return ac;
         }
-        String hostsString = (new Regex(br.toString().replace("]", ">").replace('[', '<'), "\"hosters\":<([^>]*)")).getMatch(0);
-        hosts = (new Regex(hostsString, "\"([^\"]*)\"")).getColumn(0);
-        ArrayList<String> supportedHosts = new ArrayList<String>();
-        if (hosts != null) {
-            for (String host : hosts) {
-                if (host.equals("uploaded.net"))
-                    supportedHosts.add("uploaded.to");
-                else
-                    supportedHosts.add(host.trim());
+        String hostsString = br.getRegex("\"hosters\":\\[([^\\]]+)").getMatch(0);
+        String[] hosts = new Regex(hostsString, "\"([^\"]+)\"").getColumn(0);
+        ArrayList<String> supportedHosts = new ArrayList<String>(Arrays.asList(hosts));
+        // workaround for uploaded.to
+        if (supportedHosts.contains("uploaded.net") || supportedHosts.contains("ul.to") || supportedHosts.contains("uploaded.to")) {
+            if (!supportedHosts.contains("uploaded.net")) {
+                supportedHosts.add("uploaded.net");
+            }
+            if (!supportedHosts.contains("ul.to")) {
+                supportedHosts.add("ul.to");
+            }
+            if (!supportedHosts.contains("uploaded.to")) {
+                supportedHosts.add("uploaded.to");
             }
         }
         account.setValid(true);
-        if (supportedHosts.size() == 0) {
-            ac.setStatus("Account valid: 0 Hosts via mega-debrid.eu available");
+        if (supportedHosts.isEmpty()) {
+            ac.setStatus("Account valid: 0 Hosts via available");
         } else {
-            ac.setStatus("Account valid: " + supportedHosts.size() + " Hosts via mega-debrid.eu available");
+            ac.setStatus("Account valid: " + supportedHosts.size() + " Hosts available");
             ac.setProperty("multiHostSupport", supportedHosts);
         }
         return ac;
@@ -126,7 +128,7 @@ public class MegaDebridEu extends PluginForHost {
 
         showMessage(link, "Phase 1/2: Generate download link");
         br.setFollowRedirects(true);
-        br.postPage("http://www.mega-debrid.eu/api.php?action=getLink&token=" + account.getStringProperty("token", null), "link=" + url);
+        br.postPage(mProt + mName + "/api.php?action=getLink&token=" + account.getStringProperty("token", null), "link=" + url);
         if (br.containsHTML("Erreur : Probl\\\\u00e8me D\\\\u00e9brideur")) {
             logger.warning("Unknown error, disabling current host for 3 hours!");
             tempUnavailableHoster(account, link, 3 * 60 * 60 * 1000l);
@@ -141,7 +143,7 @@ public class MegaDebridEu extends PluginForHost {
         showMessage(link, "Phase 2/2: Download");
 
         int maxChunks = 0;
-        if (link.getBooleanProperty(MegaDebridEu.NOCHUNKS, false)) {
+        if (link.getBooleanProperty(NOCHUNKS, false)) {
             maxChunks = 1;
         }
 
@@ -165,13 +167,13 @@ public class MegaDebridEu extends PluginForHost {
             final String errormessage = link.getLinkStatus().getErrorMessage();
             if (errormessage != null && (errormessage.startsWith(JDL.L("download.error.message.rangeheaders", "Server does not support chunkload")) || errormessage.equals("Unerwarteter Mehrfachverbindungsfehlernull"))) {
                 /* unknown error, we disable multiple chunks */
-                if (link.getBooleanProperty(MegaDebridEu.NOCHUNKS, false) == false) {
-                    link.setProperty(MegaDebridEu.NOCHUNKS, Boolean.valueOf(true));
+                if (link.getBooleanProperty(NOCHUNKS, false) == false) {
+                    link.setProperty(NOCHUNKS, Boolean.valueOf(true));
                     throw new PluginException(LinkStatus.ERROR_RETRY);
                 } else {
                     /* unknown error, we disable multiple chunks */
-                    if (link.getBooleanProperty(MegaDebridEu.NOCHUNKS, false) == false) {
-                        link.setProperty(MegaDebridEu.NOCHUNKS, Boolean.valueOf(true));
+                    if (link.getBooleanProperty(NOCHUNKS, false) == false) {
+                        link.setProperty(NOCHUNKS, Boolean.valueOf(true));
                         throw new PluginException(LinkStatus.ERROR_RETRY);
                     }
                 }

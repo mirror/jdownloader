@@ -116,8 +116,7 @@ public class FastShareCz extends PluginForHost {
                 }
                 br.setFollowRedirects(true);
                 br.postPage("http://fastshare.cz/sql.php", "login=" + Encoding.urlEncode(account.getUser()) + "&heslo=" + Encoding.urlEncode(account.getPass()));
-                System.out.println(br.toString());
-                if (br.getURL().contains("fastshare.cz/error=1") || !br.containsHTML(">Kredit: </td>")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                if (br.getURL().contains("fastshare.cz/error=1") || !br.containsHTML(">Kredit</td>")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 // Save cookies
                 final HashMap<String, String> cookies = new HashMap<String, String>();
                 final Cookies add = this.br.getCookies(MAINPAGE);
@@ -143,7 +142,7 @@ public class FastShareCz extends PluginForHost {
             account.setValid(false);
             return ai;
         }
-        String availabletraffic = br.getRegex(">Kredit: </td><td>([^<>\"]*?) \\&nbsp;\\&nbsp;\\&nbsp;<a").getMatch(0);
+        String availabletraffic = br.getRegex(">Kredit</td>[\r\n\t ]+<td[^>]+>([^<>\"&]+)").getMatch(0);
         if (availabletraffic != null) {
             ai.setTrafficLeft(SizeFormatter.getSize(availabletraffic));
         } else {
