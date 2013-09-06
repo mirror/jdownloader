@@ -813,14 +813,14 @@ public class TbCm extends PluginForDecrypt {
 
                 formattedFilename = formattedFilename.replace("*videonumber*", df.format(playlistNumberInt));
                 if (channelName != null) {
-                    formattedFilename = formattedFilename.replace("*channelname*", channelName);
+                    formattedFilename = Encoding.htmlDecode(formattedFilename.replace("*channelname*", channelName));
                 } else {
-                    formattedFilename = formattedFilename.replace("*channelname*", "");
+                    formattedFilename = Encoding.htmlDecode(formattedFilename.replace("*channelname*", ""));
                 }
                 if (userName != null) {
-                    formattedFilename = formattedFilename.replace("*username*", userName);
+                    formattedFilename = Encoding.htmlDecode(formattedFilename.replace("*username*", userName));
                 } else {
-                    formattedFilename = formattedFilename.replace("*username*", "");
+                    formattedFilename = Encoding.htmlDecode(formattedFilename.replace("*username*", ""));
                 }
                 if (formattedFilename.contains("*videoid*")) {
                     formattedFilename = formattedFilename.replace("*videoid*", videoid);
@@ -1422,13 +1422,18 @@ public class TbCm extends PluginForDecrypt {
             sb.append(s.charAt(2));
             sb.append(s.substring(60));
         } else if (s.length() == 86) {
-            sb.append(new StringBuilder(s.substring(74, 82)).reverse());
-            sb.append(s.charAt(84));
-            sb.append(new StringBuilder(s.substring(59, 73)).reverse());
+            sb.append(s.substring(5, 34));
             sb.append(s.charAt(0));
-            sb.append(new StringBuilder(s.substring(36, 58)).reverse());
+            sb.append(s.substring(35, 38));
+            sb.append(s.charAt(3));
+            sb.append(s.substring(39, 45));
+            sb.append(s.charAt(38));
+            sb.append(s.substring(46, 53));
+            sb.append(s.charAt(73));
+            sb.append(s.substring(54, 73));
             sb.append(s.charAt(85));
-            sb.append(new StringBuilder(s.substring(1, 35)).reverse());
+            sb.append(s.substring(74, 85));
+            sb.append(s.charAt(53));
         } else if (s.length() == 85) {
             sb.append(new StringBuilder(s.substring(35, 84)).reverse());
             sb.append(s.charAt(0));
