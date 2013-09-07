@@ -22,6 +22,7 @@ import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -29,7 +30,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "extremetube.com" }, urls = { "http://(www\\.)?extremetube\\.com/video/[a-z0-9\\-]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "extremetube.com" }, urls = { "http://(www\\.)?extremetube\\.com/(video/|embed_player\\.php\\?id=)[a-z0-9\\-]+" }, flags = { 0 })
 public class ExtremeTubeCom extends PluginForHost {
 
     private String DLLINK = null;
@@ -50,6 +51,14 @@ public class ExtremeTubeCom extends PluginForHost {
         return 5;
     }
 
+    public void correctDownloadLink(final DownloadLink link) {
+        if (link.getDownloadURL().matches(EMBEDLINK)) {
+            link.setUrlDownload("http://www.extremetube.com/video/" + new Regex(link.getDownloadURL(), "embed_player\\.php\\?id=(.+)").getMatch(0));
+        }
+    }
+
+    private static final String EMBEDLINK = "http://(www\\.)?extremetube\\.com/embed_player\\.php\\?id=\\d+";
+
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
@@ -64,6 +73,7 @@ public class ExtremeTubeCom extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
+        downloadLink.setName(new Regex(downloadLink.getDownloadURL(), "extremetube\\.com/video/(.+)").getMatch(0));
         // Set cookie so we can watch all videos ;)
         br.setCookie("http://www.extremetube.com/", "age_verified", "1");
         br.setFollowRedirects(true);

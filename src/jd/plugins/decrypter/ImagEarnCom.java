@@ -18,6 +18,7 @@ package jd.plugins.decrypter;
 
 import java.text.DecimalFormat;
 import java.util.ArrayList;
+import java.util.Random;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -62,7 +63,20 @@ public class ImagEarnCom extends PluginForDecrypt {
             DecimalFormat df = new DecimalFormat("0000");
             int counter = 1;
             for (final String singleLink : links) {
-                br.getPage(singleLink);
+                for (int i = 1; i <= 3; i++) {
+                    br.getPage(singleLink);
+                    if (br.containsHTML("Do not use autorefresh programs")) {
+                        this.sleep(new Random().nextInt(4) * 1000l, param);
+                        continue;
+                    }
+                    break;
+                }
+                if (br.containsHTML("Do not use autorefresh programs")) {
+                    logger.warning("Stopped at: " + singleLink);
+                    logger.warning("Decrypter broken for link: " + parameter);
+                    logger.info("JD = blocked");
+                    return null;
+                }
                 final String finallink = getDirectlink();
                 if (finallink == null) {
                     logger.warning("Stopped at: " + singleLink);

@@ -43,13 +43,7 @@ public class FourSexFourCom extends PluginForDecrypt {
         }
         String externID = br.getRegex("name=\"FlashVars\" value=\"options=(http://(www\\.)?extremetube\\.com/embed_player\\.php\\?id=\\d+)\"").getMatch(0);
         if (externID != null) {
-            br.getPage(externID);
-            String finallink = br.getRegex("<click_tag>(http://.*?)</click_tag>").getMatch(0);
-            if (finallink == null) {
-                logger.warning("Decrypter broken for link: " + parameter);
-                return null;
-            }
-            DownloadLink dl = createDownloadlink(finallink);
+            final DownloadLink dl = createDownloadlink(externID);
             decryptedLinks.add(dl);
             return decryptedLinks;
         }
