@@ -30,7 +30,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "trntbl.me" }, urls = { "http://(www\\.)?trntbl\\.me/[a-z0-9]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "trntbl.me" }, urls = { "http://(www\\.)?trntbl\\.me/[a-z0-9\\-]+" }, flags = { 0 })
 public class TrnTblMe extends PluginForDecrypt {
 
     public TrnTblMe(PluginWrapper wrapper) {

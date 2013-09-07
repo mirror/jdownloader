@@ -71,37 +71,42 @@ import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.os.CrossSystem;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "hugefiles.net" }, urls = { "https?://(www\\.)?hugefiles\\.net/((vid)?embed\\-)?[a-z0-9]{12}" }, flags = { 2 })
-public class HugeFilesNet extends PluginForHost {
+@HostPlugin(revision = "$Revision: 19496 $", interfaceVersion = 2, names = { "youwatch.org" }, urls = { "https?://(www\\.)?youwatch\\.org/((vid)?embed-)?[a-z0-9]{12}" }, flags = { 0 })
+@SuppressWarnings("deprecation")
+public class YouWatchOrg extends PluginForHost {
 
     // Site Setters
     // primary website url, take note of redirects
-    private final String               COOKIE_HOST                  = "http://hugefiles.net";
+    private final String               COOKIE_HOST                  = "http://youwatch.org";
     // domain names used within download links.
-    private final String               DOMAINS                      = "(hugefiles\\.net)";
+    private final String               DOMAINS                      = "(youwatch\\.org)";
     private final String               PASSWORDTEXT                 = "<br><b>Passwor(d|t):</b> <input";
     private final String               MAINTENANCE                  = ">This server is in maintenance mode";
-    private final String               dllinkRegex                  = "https?://(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|([\\w\\-]+\\.)?" + DOMAINS + ")(:\\d{1,5})?/(files(/(dl|download))?|d|cgi-bin/dl\\.cgi)/(\\d+/)?([a-z0-9]+/){1,4}[^/<>\r\n\t]+";
-    private final boolean              useVidEmbed                  = false;
-    private final boolean              useAltEmbed                  = true;
+    private final String               dllinkRegex                  = "https?://(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|([\\w\\-]+\\.)?" + DOMAINS + ")(:\\d{1,5})?/((files(/(dl|download))?|d|cgi-bin/dl\\.cgi)/(\\d+/)?([a-z0-9]+/){1,4}[^/<>\r\n\t]+|[a-z0-9]{58}/video\\.mp4)";
     private final boolean              supportsHTTPS                = false;
     private final boolean              enforcesHTTPS                = false;
     private final boolean              useRUA                       = false;
-    private final boolean              useAltExpire                 = true;
     private final boolean              useAltLinkCheck              = false;
-    private final boolean              skipableRecaptcha            = true;
+    private final boolean              useVidEmbed                  = false;
+    private final boolean              useAltEmbed                  = true;
+    private final boolean              useAltExpire                 = true;
+    private final long                 useLoginIndividual           = 6 * 3480000;
+    private final boolean              waitTimeSkipableReCaptcha    = true;
+    private final boolean              waitTimeSkipableSolveMedia   = false;
+    private final boolean              waitTimeSkipableKeyCaptcha   = false;
+    private final boolean              captchaSkipableSolveMedia    = false;
 
     // Connection Management
     // note: CAN NOT be negative or zero! (ie. -1 or 0) Otherwise math sections fail. .:. use [1-20]
     private static final AtomicInteger totalMaxSimultanFreeDownload = new AtomicInteger(20);
 
     // DEV NOTES
-    // XfileShare Version 3.0.7.8
+    // XfileShare Version 3.0.8.0
     // last XfileSharingProBasic compare :: 2.6.2.1
     // protocol: no https
-    // captchatype: recaptcha
+    // captchatype: null
     // other: no redirects
-    // mods: increased timeouts needed. changed the captcha look back to browser from form. removed mobile html
+    // mods: dllinkRegex
 
     private void setConstants(final Account account) {
         if (account != null && account.getBooleanProperty("free")) {
@@ -139,17 +144,17 @@ public class HugeFilesNet extends PluginForHost {
     }
 
     public boolean hasAutoCaptcha() {
-        return true;
+        return false;
     }
 
     public boolean hasCaptcha(final DownloadLink downloadLink, final jd.plugins.Account acc) {
         if (acc == null) {
             /* no account, yes we can expect captcha */
-            return true;
+            return false;
         }
         if (Boolean.TRUE.equals(acc.getBooleanProperty("free"))) {
             /* free accounts also have captchas */
-            return true;
+            return false;
         }
         return false;
     }
@@ -159,10 +164,10 @@ public class HugeFilesNet extends PluginForHost {
      * 
      * @category 'Experimental', Mods written July 2012 - 2013
      * */
-    public HugeFilesNet(PluginWrapper wrapper) {
+    public YouWatchOrg(PluginWrapper wrapper) {
         super(wrapper);
         setConfigElements();
-        this.enablePremium(COOKIE_HOST + "/premium.html");
+        // this.enablePremium(COOKIE_HOST + "/premium.html");
     }
 
     /**
@@ -286,7 +291,7 @@ public class HugeFilesNet extends PluginForHost {
                         // fileInfo[0] = cbr.getRegex("Download File:? ?(<[^>]+> ?)+?([^<>\"\\']+)").getMatch(1);
                         // traits from download1 page below.
                         if (inValidate(fileInfo[0])) {
-                            fileInfo[0] = cbr.getRegex("Filename:? ?(<[^>]+> ?)+?([^<>\"\\']+)").getMatch(1);
+                            fileInfo[0] = cbr.getRegex("Filename:? ?(<[^>]+> ?)+?([^<>\"']+)").getMatch(1);
                             // next two are details from sharing box
                             if (inValidate(fileInfo[0])) {
                                 fileInfo[0] = cbr.getRegex("<textarea[^\r\n]+>([^\r\n]+) - [\\d\\.]+ (KB|MB|GB)</a></textarea>").getMatch(0);
@@ -302,9 +307,9 @@ public class HugeFilesNet extends PluginForHost {
         if (inValidate(fileInfo[1])) {
             fileInfo[1] = cbr.getRegex("\\(([0-9]+ bytes)\\)").getMatch(0);
             if (inValidate(fileInfo[1])) {
-                fileInfo[1] = cbr.getRegex("</font>[ ]+\\(([^<>\"\\'/]+)\\)(.*?)</font>").getMatch(0);
+                fileInfo[1] = cbr.getRegex("</font>[ ]+\\(([^<>\"'/]+)\\)(.*?)</font>").getMatch(0);
                 if (inValidate(fileInfo[1])) {
-                    fileInfo[1] = cbr.getRegex("(\\d+(\\.\\d+)? ?(KB|MB|GB))").getMatch(0);
+                    // fileInfo[1] = cbr.getRegex("(\\d+(\\.\\d+)? ?(KB|MB|GB))").getMatch(0);
                     if (inValidate(fileInfo[1])) {
                         try {
                             // only needed in rare circumstances
@@ -399,6 +404,8 @@ public class HugeFilesNet extends PluginForHost {
             int repeat = 2;
             for (int i = 0; i <= repeat; i++) {
                 dlForm = cleanForm(dlForm);
+                // custom form inputs
+
                 final long timeBefore = System.currentTimeMillis();
                 // md5 can be on the subsequent pages
                 if (inValidate(downloadLink.getMD5Hash())) {
@@ -500,7 +507,7 @@ public class HugeFilesNet extends PluginForHost {
         ArrayList<String> regexStuff = new ArrayList<String>();
 
         // remove custom rules first!!! As html can change because of generic cleanup rules.
-        regexStuff.add("(<div id=\"mobile\" class=\"mobile-version\">*>?)<div class=\"full-version\" id=\"pc-version\">");
+
         // generic cleanup
         // this checks for fake or empty forms from original source and corrects
         for (final Form f : br.getForms()) {
@@ -569,7 +576,7 @@ public class HugeFilesNet extends PluginForHost {
             if (cbr.containsHTML("\">Skipped countdown<")) throw new PluginException(LinkStatus.ERROR_FATAL, "Fatal countdown error (countdown skipped)");
         }
         // monitor this
-        if (cbr.containsHTML("(class=\"err\">(.*</br>)?You have reached the download(\\-| )limit[^<]+for last[^<]+)")) {
+        if (cbr.containsHTML("(class=\"err\">You have reached the download(\\-| )limit[^<]+for last[^<]+)")) {
             /*
              * Indication of when you've reached the max download limit for that given session! Usually shows how long the session was
              * recorded from x time (hours|days) which can trigger false positive below wait handling. As its only indication of what's
@@ -578,6 +585,7 @@ public class HugeFilesNet extends PluginForHost {
             if (account != null) {
                 logger.warning("Your account ( " + account.getUser() + " @ " + acctype + " ) has been temporarily disabled for going over the download session limit. JDownloader parses HTML for error messages, if you believe this is not a valid response please confirm issue within your browser. If you can download within your browser please contact JDownloader Development Team, if you can not download in your browser please take the issue up with " + this.getHost());
                 account.setTempDisabled(true);
+                throw new PluginException(LinkStatus.ERROR_RETRY);
             } else {
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "You've reached the download session limit!", 60 * 60 * 1000l);
             }
@@ -649,12 +657,32 @@ public class HugeFilesNet extends PluginForHost {
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
         try {
-            login(account, true);
+            // logic to manipulate full login.
+            if (useLoginIndividual >= 1800000 && account.getStringProperty("lastlogin", null) != null && (System.currentTimeMillis() - useLoginIndividual <= Long.parseLong(account.getStringProperty("lastlogin")))) {
+                login(account, false);
+            } else {
+                login(account, true);
+            }
         } catch (final PluginException e) {
             account.setValid(false);
             throw e;
         }
-        final String space[] = cbr.getRegex(">Used space: <span[^>]+>([0-9\\.]+) ?(KB|MB|GB|TB)?<").getRow(0);
+        // required for when we don't login fully.
+        final String myAccount = "/?op=my_account";
+        if (br.getURL() == null) {
+            br.setFollowRedirects(true);
+            getPage(COOKIE_HOST.replaceFirst("https?://", getProtocol()) + myAccount);
+        } else if (!br.getURL().contains(myAccount)) {
+            getPage(myAccount);
+        }
+        // what type of account?
+        if (!cbr.containsHTML("(Premium(\\-| )Account expire|>Renew premium<)")) {
+            account.setProperty("free", true);
+        } else {
+            account.setProperty("free", false);
+        }
+        String space[] = cbr.getRegex(">Used space.*?<b>([0-9\\.]+) ?(KB|MB|GB|TB)?</b>").getRow(0);
+        if (space == null || space.length == 0) space = cbr.getRegex(">Used space.*?<b>([0-9\\.]+) of [0-9\\.]+ ?(KB|MB|GB|TB)?</b>").getRow(0);
         if ((space != null && space.length != 0) && (!inValidate(space[0]) && !inValidate(space[1]))) {
             // free users it's provided by default
             ai.setUsedSpace(space[0] + " " + space[1]);
@@ -766,14 +794,6 @@ public class HugeFilesNet extends PluginForHost {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
                 }
-                if (!br.getURL().contains("/?op=my_account")) {
-                    getPage("/?op=my_account");
-                }
-                if (!cbr.containsHTML("(Premium(\\-| )Account expire|>Renew premium<)")) {
-                    account.setProperty("free", true);
-                } else {
-                    account.setProperty("free", false);
-                }
                 /** Save cookies */
                 final HashMap<String, String> cookies = new HashMap<String, String>();
                 final Cookies add = this.br.getCookies(COOKIE_HOST);
@@ -783,8 +803,10 @@ public class HugeFilesNet extends PluginForHost {
                 account.setProperty("name", Encoding.urlEncode(account.getUser()));
                 account.setProperty("pass", Encoding.urlEncode(account.getPass()));
                 account.setProperty("cookies", cookies);
+                account.setProperty("lastlogin", System.currentTimeMillis());
             } catch (final PluginException e) {
                 account.setProperty("cookies", Property.NULL);
+                account.setProperty("lastlogin", Property.NULL);
                 throw e;
             }
         }
@@ -1017,6 +1039,7 @@ public class HugeFilesNet extends PluginForHost {
     @Override
     public void resetDownloadlink(final DownloadLink downloadLink) {
         downloadLink.setProperty("retry", Property.NULL);
+        downloadLink.setProperty("captchaTries", Property.NULL);
     }
 
     /**
@@ -1223,6 +1246,7 @@ public class HugeFilesNet extends PluginForHost {
      * @author raztoki
      * */
     private Form captchaForm(DownloadLink downloadLink, Form form) throws Exception {
+        final int captchaTries = downloadLink.getIntegerProperty("captchaTries", 0);
         if (form.containsHTML(";background:#ccc;text-align")) {
             logger.info("Detected captcha method \"Plaintext Captcha\"");
             /** Captcha method by ManiacMansion */
@@ -1243,7 +1267,7 @@ public class HugeFilesNet extends PluginForHost {
                 code.append(value);
             }
             form.put("code", code.toString());
-        } else if (cbr.containsHTML("/captchas/")) {
+        } else if (form.containsHTML("/captchas/")) {
             logger.info("Detected captcha method \"Standard Captcha\"");
             final String[] sitelinks = HTMLParser.getHttpLinks(form.getHtmlCode(), null);
             if (sitelinks == null || sitelinks.length == 0) {
@@ -1271,13 +1295,13 @@ public class HugeFilesNet extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             form.put("code", code);
-        } else if (cbr.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)")) {
+        } else if (form.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)")) {
             logger.info("Detected captcha method \"Re Captcha\"");
             final Browser captcha = br.cloneBrowser();
-            cleanupBrowser(captcha, cbr.toString());
+            cleanupBrowser(captcha, form.getHtmlCode());
             final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
             final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(captcha);
-            final String id = cbr.getRegex("\\?k=([A-Za-z0-9%_\\+\\- ]+)\"").getMatch(0);
+            final String id = form.getRegex("\\?k=([A-Za-z0-9%_\\+\\- ]+)\"").getMatch(0);
             if (inValidate(id)) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             rc.setId(id);
             rc.load();
@@ -1286,7 +1310,7 @@ public class HugeFilesNet extends PluginForHost {
             form.put("recaptcha_challenge_field", rc.getChallenge());
             form.put("recaptcha_response_field", Encoding.urlEncode(c));
             /** wait time is often skippable for reCaptcha handling */
-            skipWaitTime = skipableRecaptcha;
+            skipWaitTime = waitTimeSkipableReCaptcha;
         } else if (form.containsHTML("solvemedia\\.com/papi/")) {
             logger.info("Detected captcha method \"Solve Media\"");
             final Browser captcha = br.cloneBrowser();
@@ -1294,10 +1318,15 @@ public class HugeFilesNet extends PluginForHost {
             final PluginForDecrypt solveplug = JDUtilities.getPluginForDecrypt("linkcrypt.ws");
             final jd.plugins.decrypter.LnkCrptWs.SolveMedia sm = ((jd.plugins.decrypter.LnkCrptWs) solveplug).getSolveMedia(captcha);
             final File cf = sm.downloadCaptcha(getLocalCaptchaFile());
-            final String code = getCaptchaCode(cf, downloadLink);
-            final String chid = sm.getChallenge(code);
+            String code = "";
+            String chid = sm.getChallenge();
+            if (!captchaSkipableSolveMedia || captchaTries > 0) {
+                code = getCaptchaCode(cf, downloadLink);
+                chid = sm.getChallenge(code);
+            }
             form.put("adcopy_challenge", chid);
-            form.put("adcopy_response", "manual_challenge");
+            form.put("adcopy_response", code);
+            skipWaitTime = waitTimeSkipableSolveMedia;
         } else if (form.containsHTML("id=\"capcode\" name= \"capcode\"")) {
             logger.info("Detected captcha method \"Key Captcha\"");
             final Browser captcha = br.cloneBrowser();
@@ -1307,7 +1336,9 @@ public class HugeFilesNet extends PluginForHost {
             final String result = kc.showDialog(downloadLink.getDownloadURL());
             if (result != null && "CANCEL".equals(result)) { throw new PluginException(LinkStatus.ERROR_FATAL); }
             form.put("capcode", result);
+            skipWaitTime = waitTimeSkipableKeyCaptcha;
         }
+        downloadLink.setProperty("captchaTries", (captchaTries + 1));
         return form;
     }
 

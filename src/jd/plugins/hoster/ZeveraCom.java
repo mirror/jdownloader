@@ -249,9 +249,27 @@ public class ZeveraCom extends PluginForHost {
         // br.getPage(mServ + "/jDownloader.ashx?cmd=accountinfo");
         // grab website page instead.
         br.getPage(mServ + "/Member/Dashboard.aspx");
-        String expire = br.getRegex("(?i)>Expiration date:</label>.+?(\\d+/\\d+/\\d+ [\\d\\:]+ (AM|PM))</label>").getMatch(0);
-        if (expire != null) {
-            ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "MM/dd/yyyy hh:mm:ss a", null));
+        String expireTime = br.getRegex(">Expiration date:</label>.+?(\\d+/\\d+/\\d+ [\\d\\:]+ (AM|PM))<").getMatch(0);
+        String serverTime = br.getRegex(">Server time:</label>.+?(\\d+/\\d+/\\d+ [\\d\\:]+ (AM|PM))<").getMatch(0);
+        long eTime = 0, sTime = 0;
+        if (expireTime != null) {
+            eTime = TimeFormatter.getMilliSeconds(expireTime, "MM/dd/yyyy hh:mm:ss a", null);
+            if (sTime == -1) sTime = TimeFormatter.getMilliSeconds(expireTime, "MM/dd/yyyy hh:mm a", null);
+        }
+        if (serverTime != null) {
+            sTime = TimeFormatter.getMilliSeconds(serverTime, "MM/dd/yyyy hh:mm:ss a", null);
+            if (sTime == -1) sTime = TimeFormatter.getMilliSeconds(serverTime, "MM/dd/yyyy hh:mm a", null);
+        }
+        if (eTime >= 0 && sTime >= 0) {
+            // accounts for different time zones! Should always be correct assuming the user doesn't change time every five minutes. Adjust
+            // expire time based on users current system time.
+            ai.setValidUntil(System.currentTimeMillis() + (eTime - sTime));
+        } else if (eTime >= 0) {
+            // fail over..
+            ai.setValidUntil(eTime);
+        } else {
+            // epic fail?
+            logger.warning("Expire time could not be found/set. Please report to JDownloader Development Team");
         }
         ai.setStatus("Premium User");
         try {

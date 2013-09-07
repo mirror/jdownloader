@@ -815,12 +815,12 @@ public class TbCm extends PluginForDecrypt {
                 if (channelName != null) {
                     formattedFilename = Encoding.htmlDecode(formattedFilename.replace("*channelname*", channelName));
                 } else {
-                    formattedFilename = Encoding.htmlDecode(formattedFilename.replace("*channelname*", ""));
+                    formattedFilename = formattedFilename.replace("*channelname*", "");
                 }
                 if (userName != null) {
                     formattedFilename = Encoding.htmlDecode(formattedFilename.replace("*username*", userName));
                 } else {
-                    formattedFilename = Encoding.htmlDecode(formattedFilename.replace("*username*", ""));
+                    formattedFilename = formattedFilename.replace("*username*", "");
                 }
                 if (formattedFilename.contains("*videoid*")) {
                     formattedFilename = formattedFilename.replace("*videoid*", videoid);

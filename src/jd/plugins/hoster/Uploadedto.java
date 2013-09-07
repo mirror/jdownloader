@@ -129,6 +129,13 @@ public class Uploadedto extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
+    public boolean canHandle(DownloadLink downloadLink, Account account) {
+        if ((account == null || account.getBooleanProperty("free", false)) && downloadLink.getVerifiedFileSize() <= 1048575999)
+            return false;
+        else
+            return true;
+    }
+
     static class Sec {
         public static String d(final byte[] b, final byte[] key) {
             Cipher cipher;
@@ -357,6 +364,7 @@ public class Uploadedto extends PluginForHost {
                     ai.setUnlimitedTraffic();
                     ai.setValidUntil(-1);
                     ai.setStatus("Free account");
+                    account.setProperty("free", true);
                     account.setValid(true);
                 } else if ("premium".equals(tokenType)) {
                     String traffic = br.getRegex("traffic_left\":\\s*?\"?(\\d+)").getMatch(0);
@@ -377,6 +385,7 @@ public class Uploadedto extends PluginForHost {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
                     }
                     ai.setStatus("Premium account");
+                    account.setProperty("free", false);
                     if (!ai.isExpired()) account.setValid(true);
                 } else {
                     usePremiumAPI.set(false);
@@ -711,8 +720,7 @@ public class Uploadedto extends PluginForHost {
             switch (code) {
             case 1:
                 // {"err":{"code":1,"message":"Benutzer nicht vorhanden: e74ac48bef744497c56efaf45072579fbc945b45"}}
-                // user does not exist, when random username entered into login
-                // field.
+                // user does not exist, when random username entered into login field.
             case 2:
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, "User does not exist!", PluginException.VALUE_ID_PREMIUM_DISABLE);
             case 3:
@@ -731,19 +739,14 @@ public class Uploadedto extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, "Disabled because of flood protection", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
             case 18:
                 // {"err":{"code":18,"message":"Das \u00fcbergebene Passwort ist vom Typ sha1, erwartet wurde md5"}}
-                // messaged unescaped: Das übergebene Passwort ist vom Typ sha1,
-                // erwartet wurde md5 effectively they are saying wrong hash
-                // value provided, sha1 provided and expected md5.
-                // been reported by users, seems random for some users and not
-                // others, when sha1 was used
+                // messaged unescaped: Das übergebene Passwort ist vom Typ sha1, erwartet wurde md5
+                // effectively they are saying wrong hash value provided, sha1 provided and expected md5. been reported by users, seems
+                // random for some users and not others, when sha1 was used
             case 19:
                 // {"err":{"code":19,"message":"Das \u00fcbergebene Passwort ist vom Typ md5, erwartet wurde sha1"}}
-                // message unescaped: Das übergebene Passwort ist vom Typ md5,
-                // erwartet wurde sha1
-                // effectively they are saying wrong hash value provided, md5
-                // provided and expected sha1. It also seems to throws this been
-                // given randomly for some users and not others, when md5 was
-                // used (only used for a day to test)
+                // message unescaped: Das übergebene Passwort ist vom Typ md5, erwartet wurde sha1
+                // effectively they are saying wrong hash value provided, md5 provided and expected sha1. It also seems to throws this been
+                // given randomly for some users and not others, when md5 was used (only used for a day to test)
             case 20:
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, "Locked account!", PluginException.VALUE_ID_PREMIUM_DISABLE);
             case 404:
@@ -786,7 +789,7 @@ public class Uploadedto extends PluginForHost {
 
     }
 
-    // Attention!! Do not use qOverride here for stable compatibility reasons
+    // Attention!! Do not use Override here for stable compatibility reasons
     // @Override
     public void showAccountDetailsDialog(Account account) {
 
@@ -797,8 +800,7 @@ public class Uploadedto extends PluginForHost {
     private String api_getAccessToken(Account account, boolean liveToken) throws Exception {
         synchronized (account) {
             try {
-                // DANGER: Even after user changed password this token is still
-                // valid->Uploaded.to was contacted by psp but no response!
+                // DANGER: Even after user changed password this token is still valid->Uploaded.to was contacted by psp but no response!
                 String token = account.getStringProperty("token", null);
                 if (token != null && liveToken == false) return token;
                 /** URLDecoder can make the password invalid or throw an IllegalArgumentException */
@@ -891,6 +893,10 @@ public class Uploadedto extends PluginForHost {
                 if (br.containsHTML(">Download Blocked \\(ip\\)<") || br.containsHTML("Leider haben wir Zugriffe von zu vielen verschiedenen IPs auf Ihren Account feststellen k\\&#246;nnen, Account-Sharing ist laut unseren AGB strengstens untersagt")) {
                     logger.info("Download blocked (IP), disabling account...");
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, "Your account been flagged for 'Account sharing', Please contact " + this.getHost() + " support for resolution.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                } else if (br.containsHTML("You used too many different IPs, Downloads have been blocked for today\\.")) {
+                    // shown in html of the download server, 'You used too many different IPs, Downloads have been blocked for today.'
+                    logger.warning("Your account has been disabled due account access from too many different IP addresses, Please contact " + this.getHost() + " support for resolution.");
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "Your account has been disabled due account access from too many different IP addresses, Please contact " + this.getHost() + " support for resolution.", PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
                 int chunks = 0;
                 boolean resume = true;
@@ -1056,6 +1062,11 @@ public class Uploadedto extends PluginForHost {
             } catch (final Throwable e) {
             }
             if ("No htmlCode read".equalsIgnoreCase(br.toString())) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError", 30 * 60 * 1000l);
+            if (br.containsHTML("You used too many different IPs, Downloads have been blocked for today\\.")) {
+                // shown in html of the download server, 'You used too many different IPs, Downloads have been blocked for today.'
+                logger.warning("Your account has been disabled due account access from too many different IP addresses, Please contact " + this.getHost() + " support for resolution.");
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "Your account has been disabled due account access from too many different IP addresses, Please contact " + this.getHost() + " support for resolution.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+            }
             // unknown error/defect, lets try next time with web method!
             usePremiumAPI.set(false);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

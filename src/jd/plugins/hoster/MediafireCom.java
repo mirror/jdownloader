@@ -789,7 +789,7 @@ public class MediafireCom extends PluginForHost {
                 protected void handlePassword(final String password) throws Exception {
                     curPw = password;
                     final Form form = this.br.getFormbyProperty("name", "form_password");
-                    form.put("downloadp", curPw);
+                    form.put("downloadp", Encoding.urlEncode(curPw));
                     this.br.submitForm(form);
                 }
 
