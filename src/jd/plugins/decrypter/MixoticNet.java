@@ -40,8 +40,12 @@ public class MixoticNet extends PluginForDecrypt {
         if (strParameter.startsWith("http://feedproxy.google.com")) {
             br.getPage(strParameter);
             strParameter = br.getRedirectLocation();
-            br.getPage(strParameter);
-            strParameter = br.getRedirectLocation();
+        }
+        if (strParameter.contains("?")) {
+            int iPosition = strParameter.indexOf('?');
+            if (iPosition > 0) {
+                strParameter = strParameter.substring(0, iPosition);
+            }
         }
         br.setFollowRedirects(false);
         br.getPage(strParameter);
@@ -93,7 +97,7 @@ public class MixoticNet extends PluginForDecrypt {
         // Add all link in a package
         if (strName != null) {
             FilePackage fp = FilePackage.getInstance();
-            fp.setName(strName.trim());
+            fp.setName("Mixotic Mix");
             fp.addLinks(decryptedLinks);
         }
         return decryptedLinks;
