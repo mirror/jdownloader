@@ -388,6 +388,7 @@ gui_column_defaultproxy=Predvolený proxy server
 gui_column_host=Zdroj
 gui_column_pass=Heslo
 gui_column_port=Port
+gui_column_proxytype=Typ proxy
 gui_column_proxytype_default=Tu nastavte predvolený proxy
 gui_column_proxytype_direct=Brána pre priame spojenie
 gui_column_proxytype_http=HTTP Proxy
