@@ -37,7 +37,7 @@ public class TrnTblMe extends PluginForDecrypt {
         super(wrapper);
     }
 
-    private static final int TRACKSPERPAGE = 50;
+    private final int TRACKSPERPAGE = 50;
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
@@ -84,17 +84,24 @@ public class TrnTblMe extends PluginForDecrypt {
                         decryptedLinks.add(createDownloadlink(Encoding.htmlDecode(finallink.trim())));
                         continue;
                     }
+                    // Bandcap
+                    finallink = new Regex(singleInfo, "\"(http[^\"]+bandcamp\\.com/track/[^\"]+)").getMatch(0);
+                    if (finallink != null) {
+                        decryptedLinks.add(createDownloadlink(Encoding.htmlDecode(finallink.trim())));
+                        continue;
+                    }
+
                 }
                 if (finallink == null) {
                     logger.warning("Decrypter broken for link: " + parameter);
                     return null;
                 }
                 finallink = Encoding.htmlDecode(finallink.trim());
-                final String postID = new Regex(finallink, "audio_file/[a-z0-9]+/(\\d+)/").getMatch(0);
+                final String postID = new Regex(finallink, "audio_file/[a-z0-9\\-]+/(\\d+)/").getMatch(0);
                 final String postLink = "http://" + user + ".tumblrdecrypted.com/post/" + postID;
-                final String artist = new Regex(singleInfo, "\"id3\\-artist\":\"([^<>\"]*?)\"").getMatch(0);
-                final String album = new Regex(singleInfo, "\"id3\\-album\":\"([^<>\"]*?)\"").getMatch(0);
-                String title = new Regex(singleInfo, "\"id3\\-title\":\"([^<>\"]*?)\"").getMatch(0);
+                final String artist = new Regex(singleInfo, "\"id3-artist\":\"([^<>\"]*?)\"").getMatch(0);
+                final String album = new Regex(singleInfo, "\"id3-album\":\"([^<>\"]*?)\"").getMatch(0);
+                String title = new Regex(singleInfo, "\"id3-title\":\"([^<>\"]*?)\"").getMatch(0);
                 if (title == null) title = new Regex(singleInfo, "\"slug\":\"([^<>\"]*?)\"").getMatch(0);
                 if (title == null) title = postID;
                 if (artist != null && album != null) {
