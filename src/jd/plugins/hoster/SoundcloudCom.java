@@ -17,11 +17,17 @@
 package jd.plugins.hoster;
 
 import java.io.File;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
 import jd.PluginWrapper;
+import jd.config.ConfigContainer;
+import jd.config.ConfigEntry;
 import jd.config.Property;
+import jd.config.SubConfiguration;
 import jd.controlling.AccountController;
 import jd.http.Browser;
 import jd.http.Cookie;
@@ -48,9 +54,13 @@ public class SoundcloudCom extends PluginForHost {
     public SoundcloudCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium();
+        this.setConfigElements();
     }
 
-    public final static String CLIENTID = "b45b1aa10f1ac2941910a7f0d10f8e28";
+    public final static String  CLIENTID        = "b45b1aa10f1ac2941910a7f0d10f8e28";
+    private static final String CUSTOM_DATE     = "CUSTOM_DATE";
+    private static final String CUSTOM_FILENAME = "CUSTOM_FILENAME";
+    private static final String GRAB500THUMB    = "GRAB500THUMB";
 
     public void correctDownloadLink(DownloadLink link) {
         link.setUrlDownload(link.getDownloadURL().replace("soundclouddecrypted", "soundcloud"));
@@ -119,18 +129,21 @@ public class SoundcloudCom extends PluginForHost {
         url = parameter.getStringProperty("directlink");
         if (url != null) {
             checkDirectLink(parameter, url);
-            if (url != null) return AvailableStatus.TRUE;
+            if (url != null) {
+                parameter.setFinalFileName(getFormattedFilename(parameter));
+                return AvailableStatus.TRUE;
+            }
         }
         br.getPage("https://api.sndcdn.com/resolve?url=" + Encoding.urlEncode(parameter.getDownloadURL()) + "&_status_code_map%5B302%5D=200&_status_format=json&client_id=" + CLIENTID);
         if (br.containsHTML("\"404 \\- Not Found\"")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        AvailableStatus status = checkStatus(parameter, this.br.toString());
+        final AvailableStatus status = checkStatus(parameter, this.br.toString());
         if (status.equals(AvailableStatus.FALSE)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (url == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         checkDirectLink(parameter, url);
         return AvailableStatus.TRUE;
     }
 
-    public AvailableStatus checkStatus(final DownloadLink parameter, final String source) {
+    public AvailableStatus checkStatus(final DownloadLink parameter, final String source) throws ParseException {
         String filename = getXML("title", source);
         if (filename == null) {
             parameter.getLinkStatus().setStatusText(JDL.L("plugins.hoster.SoundCloudCom.status.pluginBroken", "The host plugin is broken!"));
@@ -146,12 +159,11 @@ public class SoundcloudCom extends PluginForHost {
             } catch (Throwable e) {
             }
         }
+        String date = new Regex(source, "<created\\-at type=\"datetime\">([^<>\"]*?)</created-at>").getMatch(0);
         String username = getXML("username", source);
         String type = getXML("original-format", source);
         if (type == null) type = "mp3";
         username = Encoding.htmlDecode(username.trim());
-        if (username != null && !filename.contains(username)) filename += " - " + username;
-        filename += "." + type;
         url = getXML("download-url", source);
         if (url != null) {
             parameter.getLinkStatus().setStatusText(JDL.L("plugins.hoster.SoundCloudCom.status.downloadavailable", "Original file is downloadable"));
@@ -163,8 +175,14 @@ public class SoundcloudCom extends PluginForHost {
             parameter.getLinkStatus().setStatusText(JDL.L("plugins.hoster.SoundCloudCom.status.pluginBroken", "The host plugin is broken!"));
             return AvailableStatus.FALSE;
         }
-        parameter.setFinalFileName(filename);
+
         parameter.setProperty("directlink", url + "?client_id=" + CLIENTID);
+        parameter.setProperty("channel", username);
+        parameter.setProperty("plainfilename", filename);
+        parameter.setProperty("originaldate", date);
+        parameter.setProperty("type", type);
+        final String formattedfilename = getFormattedFilename(parameter);
+        parameter.setFinalFileName(formattedfilename);
         return AvailableStatus.TRUE;
     }
 
@@ -286,6 +304,90 @@ public class SoundcloudCom extends PluginForHost {
         requestFileInformation(link);
         login(this.br, account, false);
         doFree(link);
+    }
+
+    public String getFormattedFilename(final DownloadLink downloadLink) throws ParseException {
+        String songTitle = downloadLink.getStringProperty("plainfilename", null);
+        final SubConfiguration cfg = SubConfiguration.getConfig("soundcloud.com");
+        String formattedFilename = cfg.getStringProperty(CUSTOM_FILENAME, defaultCustomFilename);
+        if (formattedFilename == null || formattedFilename.equals("")) formattedFilename = defaultCustomFilename;
+        if (!formattedFilename.contains("*songtitle") || !formattedFilename.contains("*ext*")) formattedFilename = defaultCustomFilename;
+        String ext = downloadLink.getStringProperty("type", null);
+        if (ext != null)
+            ext = "." + ext;
+        else
+            ext = ".mp3";
+
+        String date = downloadLink.getStringProperty("originaldate", null);
+        final String channelName = downloadLink.getStringProperty("channel", null);
+
+        String formattedDate = null;
+        if (date != null && formattedFilename.contains("*date*")) {
+            // 2011-08-10T22:50:49Z
+            date = date.replace("T", ":");
+            final String userDefinedDateFormat = cfg.getStringProperty(CUSTOM_DATE, "dd.MM.yyyy_HH-mm-ss");
+            SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd:HH:mm");
+            Date dateStr = formatter.parse(date);
+
+            formattedDate = formatter.format(dateStr);
+            Date theDate = formatter.parse(formattedDate);
+
+            if (userDefinedDateFormat != null) {
+                try {
+                    formatter = new SimpleDateFormat(userDefinedDateFormat);
+                    formattedDate = formatter.format(theDate);
+                } catch (Exception e) {
+                    // prevent user error killing plugin.
+                    formattedDate = "";
+                }
+            }
+            if (formattedDate != null)
+                formattedFilename = formattedFilename.replace("*date*", formattedDate);
+            else
+                formattedFilename = formattedFilename.replace("*date*", "");
+        }
+        if (formattedFilename.contains("*channelname*")) {
+            // Check if the channelname already exists in the title
+            if (channelName != null) {
+                if (!songTitle.contains(channelName)) {
+                    formattedFilename = formattedFilename.replace("*channelname*", channelName);
+                } else {
+                    formattedFilename = formattedFilename.replace(" - *channelname*", "");
+                    formattedFilename = formattedFilename.replace("*channelname", "");
+                }
+            } else {
+                formattedFilename = formattedFilename.replace("*channelname*", "");
+            }
+        }
+        formattedFilename = formattedFilename.replace("*ext*", ext);
+        // Insert filename at the end to prevent errors with tags
+        formattedFilename = formattedFilename.replace("*songtitle*", songTitle);
+
+        return formattedFilename;
+    }
+
+    @Override
+    public String getDescription() {
+        return "JDownloader's soundcloud.com plugin helps downloading audiofiles. JDownloader provides settings for the filenames.";
+    }
+
+    private final static String defaultCustomFilename = "*songtitle* - *channelname**ext*";
+
+    private void setConfigElements() {
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), GRAB500THUMB, JDL.L("plugins.hoster.soundcloud.grab500thumb", "Grab 500x500 thumbnail (.jpg)?")).setDefaultValue(false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "Customize the filename properties"));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), CUSTOM_DATE, JDL.L("plugins.hoster.soundcloud.customdate", "Define how the date should look.")).setDefaultValue("dd.MM.yyyy_HH-mm-ss"));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "Customize the filename! Example: '*channelname*_*date*_*videoname**ext*'"));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), CUSTOM_FILENAME, JDL.L("plugins.hoster.soundcloud.customfilename", "Define how the filenames should look:")).setDefaultValue(defaultCustomFilename));
+        final StringBuilder sb = new StringBuilder();
+        sb.append("Explanation of the available tags:\r\n");
+        sb.append("*channelname* = name of the channel/uploader\r\n");
+        sb.append("*date* = date when the video was posted - appears in the user-defined format above\r\n");
+        sb.append("*songtitle* = name of the song without extension\r\n");
+        sb.append("*ext* = the extension of the file, in this case usually '.mp3'");
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, sb.toString()));
     }
 
     @Override

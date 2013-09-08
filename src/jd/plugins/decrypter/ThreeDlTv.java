@@ -50,8 +50,9 @@ public class ThreeDlTv extends PluginForDecrypt {
                 return decryptedLinks;
             }
             final String password = br.getRegex("<th>Passwort:</th><td colspan=\"3\"><input type=\"text\" value=\"([^<>\"]*?)\"").getMatch(0);
-            final String fpName = br.getRegex("<table cellpadding=\"0\" cellspacing=\"0\"><tr><td><div>([^<>\"]*?)</div></td><td").getMatch(0);
-            final String[] folders = br.getRegex("\"(/folder/[a-z0-9]+)\"").getColumn(0);
+            String fpName = br.getRegex("<th>Titel:</th><td>([^<>\"]*?)<br").getMatch(0);
+            if (fpName == null) fpName = br.getRegex("<table cellpadding=\"0\" cellspacing=\"0\"><tr><td><div>([^<>\"]*?)</div></td><td").getMatch(0);
+            final String[] folders = br.getRegex("(/folder/[a-z0-9]+)\"").getColumn(0);
             if (folders == null || folders.length == 0) {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;

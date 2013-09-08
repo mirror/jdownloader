@@ -50,8 +50,8 @@ public class CtDiskComFolder extends PluginForDecrypt {
         br.getPage(parameter);
         String id = new Regex(parameter, domains + "/u/(\\d+)").getMatch(1);
         if (br.containsHTML("(Due to the limitaion of local laws, this url has been disabled\\!<|该用户还未打开完全共享\\。|您目前无法访问他的资源列表\\。)")) {
-            logger.warning("Invalid URL: " + parameter);
-            return null;
+            logger.info("Invalid URL: " + parameter);
+            return decryptedLinks;
         }
 
         // Set package name and prevent null from creating 100s of packages

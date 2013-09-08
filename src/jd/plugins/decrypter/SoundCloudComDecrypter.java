@@ -19,6 +19,7 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 
 import jd.PluginWrapper;
+import jd.config.SubConfiguration;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
@@ -45,6 +46,8 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
     private static final String INVALIDLINKS    = "https?://(www\\.)?soundcloud\\.com/(you/|tour|signup|logout|login|premium|messages|settings|imprint|community\\-guidelines|videos|terms\\-of\\-use|sounds|jobs|press|mobile|#?search|upload|people|dashboard|#).*?";
     private static final String PLAYLISTAPILINK = "https?://(www\\.|m\\.)?api\\.soundcloud\\.com/playlists/\\d+\\?secret_token=[A-Za-z0-9\\-_]+";
 
+    private static final String GRAB500THUMB    = "GRAB500THUMB";
+
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         // Sometimes slow servers
@@ -57,11 +60,11 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
             // Not available in old 0.9.581 Stable
         }
         // Login if possible, helps to get links which need the user to be logged in
-        final PluginForHost scPlugin = JDUtilities.getPluginForHost("soundcloud.com");
-        final Account aa = AccountController.getInstance().getValidAccount(scPlugin);
+        final PluginForHost hostPlugin = JDUtilities.getPluginForHost("soundcloud.com");
+        final Account aa = AccountController.getInstance().getValidAccount(hostPlugin);
         if (aa != null) {
             try {
-                ((jd.plugins.hoster.SoundcloudCom) scPlugin).login(this.br, aa, false);
+                ((jd.plugins.hoster.SoundcloudCom) hostPlugin).login(this.br, aa, false);
             } catch (final PluginException e) {
             }
         }
@@ -125,7 +128,6 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
                 logger.info("Link offline (empty set-link (playlist)): " + parameter);
                 return decryptedLinks;
             }
-            final PluginForHost hostPlugin = JDUtilities.getPluginForHost("soundcloud.com");
             String fpName = null;
             // For sets ("/set/" links)
             if (parameter.contains("/sets/")) {
@@ -185,7 +187,45 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
                 fp.addLinks(decryptedLinks);
             }
         } else {
-            decryptedLinks.add(createDownloadlink(parameter.replace("soundcloud", "soundclouddecrypted")));
+            // If the user wants to download the thumbnail also it's a bit more complicated
+            if (SubConfiguration.getConfig("soundcloud.com").getBooleanProperty(GRAB500THUMB, false)) {
+                try {
+                    br.getPage(parameter);
+                    if (br.containsHTML("\"404 \\- Not Found\"")) {
+                        final DownloadLink dl = createDownloadlink(parameter.replace("soundcloud", "soundclouddecrypted"));
+                        dl.setAvailable(false);
+                        dl.setProperty("offline", true);
+                        decryptedLinks.add(dl);
+                        return decryptedLinks;
+                    }
+                    br.getPage("https://api.sndcdn.com/resolve?url=" + Encoding.urlEncode(parameter) + "&_status_code_map%5B302%5D=200&_status_format=json&client_id=" + CLIENTID);
+                    // Add soundcloud link
+                    final DownloadLink dl = createDownloadlink(parameter.replace("soundcloud", "soundclouddecrypted"));
+                    final AvailableStatus status = ((jd.plugins.hoster.SoundcloudCom) hostPlugin).checkStatus(dl, this.br.toString());
+                    dl.setAvailableStatus(status);
+                    decryptedLinks.add(dl);
+
+                    // Handle artwork stuff
+                    String artworkurl = br.getRegex("<artwork\\-url>(https?://[a-z0-9]+\\.sndcdn\\.com/artworks\\-[a-z0-9\\-]+\\-large\\.jpg\\?[a-z0-9]+)</artwork\\-url>").getMatch(0);
+                    if (artworkurl != null) {
+                        artworkurl = artworkurl.replace("-large.jpg", "-t500x500.jpg");
+                        final DownloadLink thumb = createDownloadlink("directhttp://" + artworkurl);
+                        thumb.setProperty("originaldate", dl.getStringProperty("originaldate", null));
+                        thumb.setProperty("plainfilename", dl.getStringProperty("plainfilename", null));
+                        thumb.setProperty("channel", dl.getStringProperty("channel", null));
+                        thumb.setProperty("type", ".jpg");
+                        final String formattedFilename = ((jd.plugins.hoster.SoundcloudCom) hostPlugin).getFormattedFilename(thumb);
+                        thumb.setFinalFileName(formattedFilename);
+                        thumb.setAvailable(true);
+                        decryptedLinks.add(thumb);
+                    }
+                } catch (final Exception e) {
+                    logger.info("Couldn't get thumbnail, adding song link only");
+                    decryptedLinks.add(createDownloadlink(parameter.replace("soundcloud", "soundclouddecrypted")));
+                }
+            } else {
+                decryptedLinks.add(createDownloadlink(parameter.replace("soundcloud", "soundclouddecrypted")));
+            }
         }
         return decryptedLinks;
     }

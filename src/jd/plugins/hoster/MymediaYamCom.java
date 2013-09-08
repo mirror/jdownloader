@@ -73,12 +73,17 @@ public class MymediaYamCom extends PluginForHost {
         }
         if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         br.getPage("http://mymedia.yam.com/api/a/?pID=" + new Regex(downloadLink.getDownloadURL(), "(\\d+)$").getMatch(0));
-        DLLINK = br.getRegex("mp3file=(http://.+\\.mp3)").getMatch(0);
+        String preferredExt = ".mp3";
+        DLLINK = br.getRegex("mp3file=(http://[^<>\"]*?\\.mp3)").getMatch(0);
+        if (DLLINK == null) {
+            DLLINK = br.getRegex("furl=(http://[^<>\"]*?\\.flv)").getMatch(0);
+            preferredExt = ".flv";
+        }
         if (DLLINK == null || DLLINK.length() > 200) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         DLLINK = Encoding.htmlDecode(DLLINK);
         filename = filename.trim();
         String ext = DLLINK.substring(DLLINK.lastIndexOf("."));
-        if (ext == null || ext.length() > 5) ext = ".mp3";
+        if (ext == null || ext.length() > 5) ext = preferredExt;
         downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + ext);
         final Browser br2 = br.cloneBrowser();
         // In case the link redirects to the finallink

@@ -165,8 +165,12 @@ public class NowVideoEu extends PluginForHost {
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
+    public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
+        doFree(downloadLink);
+    }
+
+    private void doFree(final DownloadLink downloadLink) throws Exception {
         if (br.containsHTML(ISBEINGCONVERTED)) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "This file is being converted!", 2 * 60 * 60 * 1000l);
         final String fKey = br.getRegex("flashvars\\.filekey=\"([^<>\"]*?)\"").getMatch(0);
         if (fKey == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -246,7 +250,8 @@ public class NowVideoEu extends PluginForHost {
         }
         ai.setUnlimitedTraffic();
         account.setValid(true);
-        ai.setStatus("Premium User");
+        // Cannot differ between free- and premiumaccounts (yet)
+        ai.setStatus("Valid account");
         return ai;
     }
 
@@ -258,8 +263,9 @@ public class NowVideoEu extends PluginForHost {
         br.getPage(link.getDownloadURL());
         final String dllink = br.getRegex("\"(http://[a-z0-9]+\\.nowvideo\\.co/dl/[^<>\"]*?)\"").getMatch(0);
         if (dllink == null) {
-            logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            // Try free mode as we cannot differ between accounttypes (yet)
+            doFree(link);
+            return;
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, Encoding.htmlDecode(dllink), true, 0);
         if (dl.getConnection().getContentType().contains("html")) {

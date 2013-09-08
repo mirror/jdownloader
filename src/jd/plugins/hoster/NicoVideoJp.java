@@ -198,7 +198,7 @@ public class NicoVideoJp extends PluginForHost {
 
     @Override
     public String getDescription() {
-        return "JDownloader's nicovideo.jp Plugin helps downloading videoclips. JDownloader provides settings for the filenames.";
+        return "JDownloader's nicovideo.jp plugin helps downloading videoclips. JDownloader provides settings for the filenames.";
     }
 
     private final static String defaultCustomFilename = "*videoname**ext*";

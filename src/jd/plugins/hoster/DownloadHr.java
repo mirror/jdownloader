@@ -49,29 +49,11 @@ public class DownloadHr extends PluginForHost {
     }
 
     @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
-        requestFileInformation(downloadLink);
-        br.getPage(downloadLink.getDownloadURL().replace("/software-", "/download-"));
-        String continueLink = br.getRegex("\"(http://(www\\.)?download\\.hr/go\\.php\\?file=[^<>\"]*?)\"").getMatch(0);
-        if (continueLink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        br.getPage(continueLink);
-        String finallink = br.getRedirectLocation();
-        if (finallink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, finallink, true, 0);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        dl.startDownload();
-    }
-
-    @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(false);
         br.clearCookies(MAINPAGE);
         br.setCookie(MAINPAGE, "dhrgo", "da");
-        br.getHeaders().put("Referer", "http://www.download.hr/download-k-lite-codec-pack-full.html");
         br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows; U; Windows NT 6.1; de; rv:1.9.2.18) Gecko/20110614 Firefox/3.6.18");
         br.getHeaders().put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
         br.getHeaders().put("Accept-Language", "de-de,de;q=0.8,en-us;q=0.5,en;q=0.3");
@@ -92,6 +74,21 @@ public class DownloadHr extends PluginForHost {
         link.setName(filename.trim());
         link.setDownloadSize(SizeFormatter.getSize(filesize));
         return AvailableStatus.TRUE;
+    }
+
+    @Override
+    public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
+        requestFileInformation(downloadLink);
+        br.getPage(downloadLink.getDownloadURL().replace("/software-", "/download-"));
+        String finallink = br.getRegex("\"(http://(www\\.)?download\\.hr/go\\.php\\?file=[^<>\"]*?)\"").getMatch(0);
+        if (finallink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        br.setFollowRedirects(true);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, finallink, true, 0);
+        if (dl.getConnection().getContentType().contains("html")) {
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dl.startDownload();
     }
 
     @Override

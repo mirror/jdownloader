@@ -1,18 +1,18 @@
-//jDownloader - Downloadmanager
-//Copyright (C) 2013  JD-Team support@jdownloader.org
+//    jDownloader - Downloadmanager
+//    Copyright (C) 2013  JD-Team support@jdownloader.org
 //
-//This program is free software: you can redistribute it and/or modify
-//it under the terms of the GNU General Public License as published by
-//the Free Software Foundation, either version 3 of the License, or
-//(at your option) any later version.
+//    This program is free software: you can redistribute it and/or modify
+//    it under the terms of the GNU General Public License as published by
+//    the Free Software Foundation, either version 3 of the License, or
+//    (at your option) any later version.
 //
-//This program is distributed in the hope that it will be useful,
-//but WITHOUT ANY WARRANTY; without even the implied warranty of
-//MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-//GNU General Public License for more details.
+//    This program is distributed in the hope that it will be useful,
+//    but WITHOUT ANY WARRANTY; without even the implied warranty of
+//    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+//    GNU General Public License for more details.
 //
-//You should have received a copy of the GNU General Public License
-//along with this program.  If not, see <http://www.gnu.org/licenses/>.
+//    You should have received a copy of the GNU General Public License
+//    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 package jd.plugins.hoster;
 
@@ -59,7 +59,10 @@ public class RedBunkerNet extends PluginForHost {
     private String               correctedBR                  = "";
     private String               passCode                     = null;
     private static final String  PASSWORDTEXT                 = "<br><b>Passwor(d|t):</b> <input";
+    // primary website url, take note of redirects
     private static final String  COOKIE_HOST                  = "http://redbunker.net";
+    // domain names used within download links.
+    private static final String  DOMAINS                      = "(redbunker\\.net)";
     private static final String  MAINTENANCE                  = ">This server is in maintenance mode";
     private static final String  MAINTENANCEUSERTEXT          = JDL.L("hoster.xfilesharingprobasic.errors.undermaintenance", "This server is under Maintenance");
     private static final String  ALLWAIT_SHORT                = JDL.L("hoster.xfilesharingprobasic.errors.waitingfordownloads", "Waiting till new downloads can be started");
@@ -75,17 +78,17 @@ public class RedBunkerNet extends PluginForHost {
     private static Object        LOCK                         = new Object();
 
     // DEV NOTES
-    // XfileSharingProBasic Version 2.6.0.9
+    // XfileSharingProBasic Version 2.6.2.5
     // mods:
     // non account: 1 * 1
     // free account: untested, set same as FREE
     // premium account: chunks * maxdls
     // protocol: no https
-    // captchatype: 4dignum
+    // captchatype: solvemedia
     // other:
 
     @Override
-    public void correctDownloadLink(DownloadLink link) {
+    public void correctDownloadLink(final DownloadLink link) {
         // link cleanup, but respect users protocol choosing.
         if (!SUPPORTSHTTPS) {
             link.setUrlDownload(link.getDownloadURL().replaceFirst("https://", "http://"));
@@ -113,9 +116,17 @@ public class RedBunkerNet extends PluginForHost {
         return true;
     }
 
-    // do not add @Override here to keep 0.* compatibility
-    public boolean hasCaptcha() {
-        return true;
+    /* NO OVERRIDE!! We need to stay 0.9*compatible */
+    public boolean hasCaptcha(DownloadLink link, jd.plugins.Account acc) {
+        if (acc == null) {
+            /* no account, yes we can expect captcha */
+            return true;
+        }
+        if (Boolean.TRUE.equals(acc.getBooleanProperty("nopremium"))) {
+            /* free accounts also have captchas */
+            return true;
+        }
+        return false;
     }
 
     public void prepBrowser(final Browser br) {
@@ -138,7 +149,7 @@ public class RedBunkerNet extends PluginForHost {
             link.getLinkStatus().setStatusText(PREMIUMONLY2);
             return AvailableStatus.UNCHECKABLE;
         }
-        String[] fileInfo = new String[3];
+        final String[] fileInfo = new String[3];
         scanInfo(fileInfo);
         if (fileInfo[0] == null || fileInfo[0].equals("")) {
             if (correctedBR.contains("You have reached the download(\\-| )limit")) {
@@ -150,7 +161,7 @@ public class RedBunkerNet extends PluginForHost {
         }
         if (fileInfo[2] != null && !fileInfo[2].equals("")) link.setMD5Hash(fileInfo[2].trim());
         fileInfo[0] = fileInfo[0].replaceAll("(</b>|<b>|\\.html)", "");
-        link.setFinalFileName(fileInfo[0].trim());
+        link.setName(fileInfo[0].trim());
         if (fileInfo[1] != null && !fileInfo[1].equals("")) link.setDownloadSize(SizeFormatter.getSize(fileInfo[1]));
         return AvailableStatus.TRUE;
     }
@@ -158,9 +169,27 @@ public class RedBunkerNet extends PluginForHost {
     private String[] scanInfo(final String[] fileInfo) {
         // standard traits from base page
         if (fileInfo[0] == null) {
-            fileInfo[0] = new Regex(correctedBR, "<title>Redbunker\\.net \\- Download ([^<>\"]*?)</title>").getMatch(0);
+            fileInfo[0] = new Regex(correctedBR, "You have requested.*?https?://(www\\.)?" + DOMAINS + "/[A-Za-z0-9]{12}/(.*?)</font>").getMatch(2);
             if (fileInfo[0] == null) {
-                fileInfo[0] = new Regex(correctedBR, "<td><font color=\"red\">([^<>\"]*?)</font></td>").getMatch(1);
+                fileInfo[0] = new Regex(correctedBR, "fname\"( type=\"hidden\")? value=\"(.*?)\"").getMatch(1);
+                if (fileInfo[0] == null) {
+                    fileInfo[0] = new Regex(correctedBR, "<h2>Download File(.*?)</h2>").getMatch(0);
+                    // traits from download1 page below.
+                    if (fileInfo[0] == null) {
+                        fileInfo[0] = new Regex(correctedBR, "Filename:? ?(<[^>]+> ?)+?([^<>\"\\']+)").getMatch(1);
+                        // next two are details from sharing box
+                        if (fileInfo[0] == null) {
+                            fileInfo[0] = new Regex(correctedBR, "copy\\(this\\);.+>(.+) \\- [\\d\\.]+ (KB|MB|GB)</a></textarea>[\r\n\t ]+</div>").getMatch(0);
+                            if (fileInfo[0] == null) {
+                                fileInfo[0] = new Regex(correctedBR, "copy\\(this\\);.+\\](.+) \\- [\\d\\.]+ (KB|MB|GB)\\[/URL\\]").getMatch(0);
+                                if (fileInfo[0] == null) {
+                                    // Link of the box without filesize
+                                    fileInfo[0] = new Regex(correctedBR, "onFocus=\"copy\\(this\\);\">http://(www\\.)?" + DOMAINS + "/[a-z0-9]{12}/([^<>\"]*?)</textarea").getMatch(2);
+                                }
+                            }
+                        }
+                    }
+                }
             }
         }
         if (fileInfo[1] == null) {
@@ -281,9 +310,7 @@ public class RedBunkerNet extends PluginForHost {
                     logger.info("Detected captcha method \"Re Captcha\" for this host");
                     final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
                     final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
-                    final String id = new Regex(correctedBR, "\\?k=([A-Za-z0-9%_\\+\\- ]+)\"").getMatch(0);
-                    if (id == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                    rc.setId(id);
+                    rc.findID();
                     rc.load();
                     final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
                     final String c = getCaptchaCode(cf, downloadLink);
@@ -301,6 +328,21 @@ public class RedBunkerNet extends PluginForHost {
                     final String chid = sm.getChallenge(code);
                     dlForm.put("adcopy_challenge", chid);
                     dlForm.put("adcopy_response", "manual_challenge");
+                } else if (br.containsHTML("id=\"capcode\" name= \"capcode\"")) {
+                    logger.info("Detected captcha method \"keycaptca\"");
+                    String result = null;
+                    final PluginForDecrypt keycplug = JDUtilities.getPluginForDecrypt("linkcrypt.ws");
+                    try {
+                        final jd.plugins.decrypter.LnkCrptWs.KeyCaptcha kc = ((jd.plugins.decrypter.LnkCrptWs) keycplug).getKeyCaptcha(br);
+                        result = kc.showDialog(downloadLink.getDownloadURL());
+                    } catch (final Throwable e) {
+                        result = null;
+                    }
+                    if (result == null) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                    if ("CANCEL".equals(result)) throw new PluginException(LinkStatus.ERROR_FATAL);
+                    dlForm.put("capcode", result);
+                    /** wait time is often skippable for reCaptcha handling */
+                    skipWaittime = false;
                 }
                 /* Captcha END */
                 if (password) passCode = handlePassword(dlForm, downloadLink);
@@ -311,16 +353,23 @@ public class RedBunkerNet extends PluginForHost {
                 dllink = getDllink();
                 if (dllink == null && (!br.containsHTML("<Form name=\"F1\" method=\"POST\" action=\"\"") || i == repeat)) {
                     logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
-                    break;
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 } else if (dllink == null && br.containsHTML("<Form name=\"F1\" method=\"POST\" action=\"\"")) {
                     dlForm = br.getFormbyProperty("name", "F1");
+                    try {
+                        invalidateLastChallengeResponse();
+                    } catch (final Throwable e) {
+                    }
                     continue;
                 } else {
+                    try {
+                        validateLastChallengeResponse();
+                    } catch (final Throwable e) {
+                    }
                     break;
                 }
             }
         }
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         logger.info("Final downloadlink = " + dllink + " starting the download...");
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumable, maxchunks);
         if (dl.getConnection().getContentType().contains("html")) {
@@ -393,7 +442,7 @@ public class RedBunkerNet extends PluginForHost {
     public String getDllink() {
         String dllink = br.getRedirectLocation();
         if (dllink == null) {
-            dllink = new Regex(correctedBR, "(\"|\\')(https?://(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|([\\w\\-]+\\.)?" + COOKIE_HOST.replaceAll("https?://(www\\.)?", "") + ")(:\\d{1,4})?/(files|d|cgi\\-bin/dl\\.cgi)/(\\d+/)?[a-z0-9]+/[^<>\"/]*?)(\"|\\')").getMatch(1);
+            dllink = new Regex(correctedBR, "(\"|\\')(https?://(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|([\\w\\-]+\\.)?" + DOMAINS + ")(:\\d{1,4})?/(files|d|cgi\\-bin/dl\\.cgi)/(\\d+/)?[a-z0-9]+/[^<>\"/]*?)(\"|\\')").getMatch(1);
             if (dllink == null) {
                 final String cryptedScripts[] = new Regex(correctedBR, "p\\}\\((.*?)\\.split\\('\\|'\\)").getColumn(0);
                 if (cryptedScripts != null && cryptedScripts.length != 0) {
@@ -444,7 +493,7 @@ public class RedBunkerNet extends PluginForHost {
         String dllink = downloadLink.getStringProperty(property);
         if (dllink != null) {
             try {
-                Browser br2 = br.cloneBrowser();
+                final Browser br2 = br.cloneBrowser();
                 URLConnectionAdapter con = br2.openGetConnection(dllink);
                 if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
                     downloadLink.setProperty(property, Property.NULL);
@@ -510,24 +559,32 @@ public class RedBunkerNet extends PluginForHost {
         return null;
     }
 
+    /**
+     * @param downloadLink
+     */
     private void fixFilename(final DownloadLink downloadLink) {
         String oldName = downloadLink.getFinalFileName();
         if (oldName == null) oldName = downloadLink.getName();
         final String serverFilename = Encoding.htmlDecode(getFileNameFromHeader(dl.getConnection()));
         String newExtension = null;
         // some streaming sites do not provide proper file.extension within headers (Content-Disposition or the fail over getURL()).
-        if (serverFilename.contains(".")) {
-            newExtension = serverFilename.substring(serverFilename.lastIndexOf("."));
+        if (serverFilename == null) {
+            logger.info("Server filename is null, keeping filename: " + oldName);
         } else {
-            logger.info("HTTP headers don't contain filename.extension information");
+            if (serverFilename.contains(".")) {
+                newExtension = serverFilename.substring(serverFilename.lastIndexOf("."));
+            } else {
+                logger.info("HTTP headers don't contain filename.extension information");
+            }
         }
         if (newExtension != null && !oldName.endsWith(newExtension)) {
             String oldExtension = null;
             if (oldName.contains(".")) oldExtension = oldName.substring(oldName.lastIndexOf("."));
-            if (oldExtension != null && oldExtension.length() <= 5)
+            if (oldExtension != null && oldExtension.length() <= 5) {
                 downloadLink.setFinalFileName(oldName.replace(oldExtension, newExtension));
-            else
+            } else {
                 downloadLink.setFinalFileName(oldName + newExtension);
+            }
         }
     }
 
@@ -618,23 +675,23 @@ public class RedBunkerNet extends PluginForHost {
     }
 
     @Override
-    public AccountInfo fetchAccountInfo(Account account) throws Exception {
-        AccountInfo ai = new AccountInfo();
+    public AccountInfo fetchAccountInfo(final Account account) throws Exception {
+        final AccountInfo ai = new AccountInfo();
         /* reset maxPrem workaround on every fetchaccount info */
         maxPrem.set(1);
         try {
             login(account, true);
-        } catch (PluginException e) {
+        } catch (final PluginException e) {
             account.setValid(false);
-            return ai;
+            throw e;
         }
-        final String space[][] = new Regex(correctedBR, ">Used space:</td>.*?<td.*?b>([0-9\\.]+) ?(KB|MB|GB|TB)?</b>").getMatches();
-        if ((space != null && space.length != 0) && (space[0][0] != null && space[0][1] != null)) {
+        final String space[] = new Regex(correctedBR, ">Used space:</td>.*?<td.*?b>([0-9\\.]+) ?(KB|MB|GB|TB)?</b>").getRow(0);
+        if ((space != null && space.length != 0) && (space[0] != null && space[1] != null)) {
             // free users it's provided by default
-            ai.setUsedSpace(space[0][0] + " " + space[0][1]);
-        } else if (space != null && space.length != 0) {
+            ai.setUsedSpace(space[0] + " " + space[1]);
+        } else if ((space != null && space.length != 0) && space[0] != null) {
             // premium users the Mb value isn't provided for some reason...
-            ai.setUsedSpace(space[0][0] + "Mb");
+            ai.setUsedSpace(space[0] + "Mb");
         }
         account.setValid(true);
         final String availabletraffic = new Regex(correctedBR, "Traffic available.*?:</TD><TD><b>([^<>\"\\']+)</b>").getMatch(0);
@@ -704,12 +761,25 @@ public class RedBunkerNet extends PluginForHost {
                 }
                 br.setFollowRedirects(true);
                 getPage(COOKIE_HOST + "/login.html");
+                final String lang = System.getProperty("user.language");
                 final Form loginform = br.getFormbyProperty("name", "FL");
-                if (loginform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                if (loginform == null) {
+                    if ("de".equalsIgnoreCase(lang)) {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin defekt, bitte den JDownloader Support kontaktieren!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    } else {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin broken, please contact the JDownloader Support!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    }
+                }
                 loginform.put("login", Encoding.urlEncode(account.getUser()));
                 loginform.put("password", Encoding.urlEncode(account.getPass()));
                 sendForm(loginform);
-                if (br.getCookie(COOKIE_HOST, "login") == null || br.getCookie(COOKIE_HOST, "xfss") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                if (br.getCookie(COOKIE_HOST, "login") == null || br.getCookie(COOKIE_HOST, "xfss") == null) {
+                    if ("de".equalsIgnoreCase(lang)) {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    } else {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    }
+                }
                 if (!br.getURL().contains("/?op=my_account")) {
                     getPage("/?op=my_account");
                 }
@@ -792,16 +862,4 @@ public class RedBunkerNet extends PluginForHost {
     public void resetDownloadlink(DownloadLink link) {
     }
 
-    /* NO OVERRIDE!! We need to stay 0.9*compatible */
-    public boolean hasCaptcha(DownloadLink link, jd.plugins.Account acc) {
-        if (acc == null) {
-            /* no account, yes we can expect captcha */
-            return true;
-        }
-        if (Boolean.TRUE.equals(acc.getBooleanProperty("free"))) {
-            /* free accounts also have captchas */
-            return true;
-        }
-        return false;
-    }
 }

@@ -38,7 +38,7 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "facebook.com" }, urls = { "http(s)?://(www\\.)?(on\\.fb\\.me/[A-Za-z0-9]+\\+?|facebook\\.com/(media/set/\\?set=|[^<>\"/]*?/media_set\\?set=)a\\.\\d+\\.\\d+\\.\\d+)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "facebook.com" }, urls = { "http(s)?://(www\\.)?(on\\.fb\\.me/[A-Za-z0-9]+\\+?|facebook\\.com/((media/set/\\?set=|[^<>\"/]*?/media_set\\?set=)a\\.\\d+\\.\\d+\\.\\d+|[a-z0-9]+/photos_albums))" }, flags = { 0 })
 public class FaceBookComGallery extends PluginForDecrypt {
 
     public FaceBookComGallery(PluginWrapper wrapper) {
@@ -52,6 +52,8 @@ public class FaceBookComGallery extends PluginForDecrypt {
     private static final String SINGLEPHOTO            = "http(s)?://(www\\.)?facebook\\.com/photo\\.php\\?fbid=\\d+";
     private int                 DIALOGRETURN           = -1;
     private static final String FASTLINKCHECK_PICTURES = "FASTLINKCHECK_PICTURES";
+    private static final String SET_LINK               = "http(s)?://(www\\.)?facebook\\.com/(media/set/\\?set=|[^<>\"/]*?/media_set\\?set=)a\\.\\d+\\.\\d+\\.\\d+";
+    private static final String ALBUMS_LINK            = "https?://(www\\.)?facebook\\.com/[a-z0-9]+/photos_albums";
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         synchronized (LOCK) {
@@ -84,63 +86,23 @@ public class FaceBookComGallery extends PluginForDecrypt {
                     return null;
                 }
                 decryptedLinks.add(createDownloadlink("directhttp://" + finallink));
+            } else if (parameter.matches(ALBUMS_LINK)) {
+                if (!login()) {
+                    logger.info("Cannot decrypt link without valid account: " + parameter);
+                    return decryptedLinks;
+                }
+                br.getPage(parameter);
+                final String[] links = br.getRegex("class=\"photoTextTitle\" href=\"(https?://(www\\.)?facebook\\.com/[^<>\"]*?)\"").getColumn(0);
+                if (links == null || links.length == 0) return null;
+
             } else {
                 br.getHeaders().put("Accept-Language", "en-US,en;q=0.5");
                 br.setCookie(FACEBOOKMAINPAGE, "locale", "en_GB");
-                /** Login stuff begin */
-                final PluginForHost facebookPlugin = JDUtilities.getPluginForHost("facebook.com");
-                Account aa = AccountController.getInstance().getValidAccount(facebookPlugin);
-                boolean addAcc = false;
-                if (aa == null) {
-                    SubConfiguration config = null;
-                    try {
-                        config = this.getPluginConfig();
-                        if (config.getBooleanProperty("infoShown", Boolean.FALSE) == false) {
-                            if (config.getProperty("infoShown2") == null) {
-                                showFreeDialog();
-                            } else {
-                                config = null;
-                            }
-                        } else {
-                            config = null;
-                        }
-                    } catch (final Throwable e) {
-                    } finally {
-                        if (config != null) {
-                            config.setProperty("infoShown", Boolean.TRUE);
-                            config.setProperty("infoShown2", "shown");
-                            config.save();
-                        }
-                    }
-                    // User wants to use the account
-                    if (this.DIALOGRETURN == 0) {
-                        String username = UserIO.getInstance().requestInputDialog("Enter Loginname for facebook.com :");
-                        if (username == null) {
-                            logger.info("FacebookDecrypter: No username entered while decrypting link: " + parameter);
-                            return decryptedLinks;
-                        }
-                        String password = UserIO.getInstance().requestInputDialog("Enter password for facebook.com :");
-                        if (password == null) {
-                            logger.info("FacebookDecrypter: No password entered while decrypting link: " + parameter);
-                            return decryptedLinks;
-                        }
-                        aa = new Account(username, password);
-                        addAcc = true;
-                    }
+                final boolean loggedIN = login();
+                if (!loggedIN) {
+                    logger.info("Cannot decrypt link without valid account: " + parameter);
+                    return decryptedLinks;
                 }
-                if (aa != null) {
-                    try {
-                        ((jd.plugins.hoster.FaceBookComVideos) facebookPlugin).login(aa, false, this.br);
-                    } catch (final PluginException e) {
-                        aa.setEnabled(false);
-                        aa.setValid(false);
-                        logger.info("Account seems to be invalid, returnung empty linklist!");
-                        return decryptedLinks;
-                    }
-                    // New account is valid, let's add it to the premium overview
-                    if (addAcc) AccountController.getInstance().addAccount(facebookPlugin, aa);
-                }
-                /** Login stuff end */
                 // Redirects from "http" to "https" can happen
                 br.setFollowRedirects(true);
                 br.getPage(parameter);
@@ -202,7 +164,7 @@ public class FaceBookComGallery extends PluginForDecrypt {
                     logger.info("Decrypting page " + i + " of ??");
                     for (final String picID : links) {
                         final DownloadLink dl = createDownloadlink("http://www.facebook.com/photo.php?fbid=" + picID);
-                        if (aa == null) dl.setProperty("nologin", true);
+                        if (!loggedIN) dl.setProperty("nologin", true);
                         if (SubConfiguration.getConfig("facebook.com").getBooleanProperty(FASTLINKCHECK_PICTURES, false)) dl.setAvailable(true);
                         // Set temp name, correct name will be set in hosterplugin later
                         dl.setName(fpName + "_" + picID + ".jpg");
@@ -221,6 +183,58 @@ public class FaceBookComGallery extends PluginForDecrypt {
             }
             return decryptedLinks;
         }
+    }
+
+    private boolean login() throws Exception {
+        /** Login stuff begin */
+        final PluginForHost facebookPlugin = JDUtilities.getPluginForHost("facebook.com");
+        Account aa = AccountController.getInstance().getValidAccount(facebookPlugin);
+        boolean addAcc = false;
+        if (aa == null) {
+            SubConfiguration config = null;
+            try {
+                config = this.getPluginConfig();
+                if (config.getBooleanProperty("infoShown", Boolean.FALSE) == false) {
+                    if (config.getProperty("infoShown2") == null) {
+                        showFreeDialog();
+                    } else {
+                        config = null;
+                    }
+                } else {
+                    config = null;
+                }
+            } catch (final Throwable e) {
+            } finally {
+                if (config != null) {
+                    config.setProperty("infoShown", Boolean.TRUE);
+                    config.setProperty("infoShown2", "shown");
+                    config.save();
+                }
+            }
+            // User wants to use the account
+            if (this.DIALOGRETURN == 0) {
+                String username = UserIO.getInstance().requestInputDialog("Enter Loginname for facebook.com :");
+                if (username == null) { return false; }
+                String password = UserIO.getInstance().requestInputDialog("Enter password for facebook.com :");
+                if (password == null) { return false; }
+                aa = new Account(username, password);
+                addAcc = true;
+            }
+        }
+        if (aa != null) {
+            try {
+                ((jd.plugins.hoster.FaceBookComVideos) facebookPlugin).login(aa, false, this.br);
+            } catch (final PluginException e) {
+                aa.setEnabled(false);
+                aa.setValid(false);
+                logger.info("Account seems to be invalid, returnung empty linklist!");
+                return false;
+            }
+            // New account is valid, let's add it to the premium overview
+            if (addAcc) AccountController.getInstance().addAccount(facebookPlugin, aa);
+        }
+        return true;
+        /** Login stuff end */
     }
 
     private void showFreeDialog() {

@@ -45,6 +45,9 @@ public class FiveFantasticPl extends PluginForHost {
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
+        br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:23.0) Gecko/20100101 Firefox/23.0");
+        br.getHeaders().put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
+        br.getHeaders().put("Accept-Language", "en-US,en;q=0.5");
         br.getPage(link.getDownloadURL());
         if (br.containsHTML("<title>[\t\n\r ]+5fantastic\\.pl \\- najlepszy darmowy dysk internetowy \\- pliki udostępnione przez klubowiczów[\t\n\r ]+</title>")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         final String filename = br.getRegex("<title>[\t\n\r ]+5fantastic\\.pl \\- ([^<>\"]*?) \\- najlepszy darmowy dysk internetowy[\t\n\r ]+</title>").getMatch(0);
@@ -56,17 +59,22 @@ public class FiveFantasticPl extends PluginForHost {
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
+    public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        final String vsKey = br.getRegex("type=\"hidden\" name=\"vs_key\" id=\"vs_key\" value=\"([^<>\"]*?)\"").getMatch(0);
+        final String encodedLink = Encoding.urlEncode(downloadLink.getDownloadURL());
+        String vsKey = br.getRegex("type=\"hidden\" name=\"vs_key\" id=\"vs_key\" value=\"([^<>\"]*?)\"").getMatch(0);
+        if (vsKey == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        vsKey = Encoding.urlEncode(vsKey);
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         br.getHeaders().put("X-MicrosoftAjax", "Delta=true");
         // Download
-        br.postPage(downloadLink.getDownloadURL(), "ctl00%24ScriptManager1=ctl00%24ctnMetryka%24updLnkPobierz%7Cctl00%24ctnMetryka%24lnkPobierz&ctl00_ScriptManager1_HiddenField=&__EVENTTARGET=ctl00%24ctnMetryka%24lnkPobierz&__EVENTARGUMENT=&vs_key=" + Encoding.urlEncode(vsKey) + "&__VIEWSTATE=&ctl00%24hidSuwakStep=0&ctl00%24ctnMetryka%24metrykaPlikuGalerii=0&ctl00%24ctnMetryka%24hidOcena=&ctl00%24ctnMetryka%24inputPrzyjaznyLink=" + Encoding.urlEncode(downloadLink.getDownloadURL()) + "&__ASYNCPOST=true&");
+        br.postPage(br.getURL(), "ctl00%24ScriptManager1=ctl00%24panelLogowania%24updPanelLogowania%7Cctl00%24panelLogowania%24dvZamknijLogowanie&ctl00_ScriptManager1_HiddenField=&vs_key=" + vsKey + "&__VIEWSTATE=&ctl00%24hidSuwakStep=0&ctl00%24panelLogowania%24txtLogin=&ctl00%24panelLogowania%24txtPass=&ctl00%24ctnMetryka%24metrykaPliku%24hidOcena=&ctl00%24ctnMetryka%24metrykaPliku%24inputPrzyjaznyLink=" + encodedLink + "&__EVENTTARGET=ctl00%24panelLogowania%24dvZamknijLogowanie&__EVENTARGUMENT=&__ASYNCPOST=true&");
+        this.sleep(3000, downloadLink);
         // Select FREE download
-        br.postPage(downloadLink.getDownloadURL(), "criptManager1=ctl00%24ctnMetryka%24updPobieraniePliku%7Cctl00%24ctnMetryka%24lnkZgodaNaPobierz&ctl00_ScriptManager1_HiddenField=&vs_key=" + Encoding.urlEncode(vsKey) + "&__VIEWSTATE=&ctl00%24hidSuwakStep=0&ctl00%24ctnMetryka%24metrykaPlikuGalerii=0&ctl00%24ctnMetryka%24hidOcena=&ctl00%24ctnMetryka%24inputPrzyjaznyLink=" + Encoding.urlEncode(downloadLink.getDownloadURL()) + "&__EVENTTARGET=ctl00%24ctnMetryka%24lnkZgodaNaPobierz&__EVENTARGUMENT=&__ASYNCPOST=true&");
+        br.postPage(br.getURL(), "ctl00%24ScriptManager1=ctl00%24ctnMetryka%24metrykaPliku%24updPobieraniePliku%7Cctl00%24ctnMetryka%24metrykaPliku%24lnkZgodaNaPobierz&ctl00_ScriptManager1_HiddenField=&vs_key=" + vsKey + "&__VIEWSTATE=&ctl00%24hidSuwakStep=0&ctl00%24ctnMetryka%24metrykaPliku%24hidOcena=&ctl00%24ctnMetryka%24metrykaPliku%24inputPrzyjaznyLink=" + encodedLink + "&__EVENTTARGET=ctl00%24ctnMetryka%24metrykaPliku%24lnkZgodaNaPobierz&__EVENTARGUMENT=&__ASYNCPOST=true&");
+        this.sleep(3000, downloadLink);
         // Confirm TOS
-        br.postPage(downloadLink.getDownloadURL(), "ctl00%24ScriptManager1=ctl00%24ctnMetryka%24updPobieraniePliku%7Cctl00%24ctnMetryka%24chkAkcepujeRegulamin&ctl00_ScriptManager1_HiddenField=&vs_key=" + Encoding.urlEncode(vsKey) + "&__VIEWSTATE=&ctl00%24hidSuwakStep=0&ctl00%24ctnMetryka%24metrykaPlikuGalerii=0&ctl00%24ctnMetryka%24hidOcena=&ctl00%24ctnMetryka%24inputPrzyjaznyLink=" + Encoding.urlEncode(downloadLink.getDownloadURL()) + "&ctl00%24ctnMetryka%24chkAkcepujeRegulamin=on&__EVENTTARGET=ctl00%24ctnMetryka%24chkAkcepujeRegulamin&__EVENTARGUMENT=&__LASTFOCUS=&__ASYNCPOST=true&");
+        br.postPage(br.getURL(), "ctl00%24ScriptManager1=ctl00%24ctnMetryka%24metrykaPliku%24updPobieraniePliku%7Cctl00%24ctnMetryka%24metrykaPliku%24chkAkcepujeRegulamin&ctl00_ScriptManager1_HiddenField=&vs_key=" + vsKey + "&__VIEWSTATE=&ctl00%24hidSuwakStep=0&ctl00%24ctnMetryka%24metrykaPliku%24hidOcena=&ctl00%24ctnMetryka%24metrykaPliku%24inputPrzyjaznyLink=" + encodedLink + "&ctl00%24ctnMetryka%24metrykaPliku%24chkAkcepujeRegulamin=on&__EVENTTARGET=ctl00%24ctnMetryka%24metrykaPliku%24chkAkcepujeRegulamin&__EVENTARGUMENT=&__LASTFOCUS=&__ASYNCPOST=true&");
         if (br.containsHTML("Z Twojego numeru IP jest już pobierany plik. Poczekaj na zwolnienie zasobów, albo ściągnij plik za punkty")) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Download in progress detected from your IP!", 10 * 60 * 1000l); }
         final String dllink = br.getRegex("\"(https?://[a-z0-9]+\\.5fantastic\\.pl/download\\.php\\?[^<>\"]*?)\"").getMatch(0);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
