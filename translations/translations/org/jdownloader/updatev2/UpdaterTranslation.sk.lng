@@ -59,4 +59,5 @@ update_dialog_news_button=Otvoriť zoznam zmien
 update_dialog_news_button_url=http://www.jdownloader.org/changelog
 update_dialog_title_updates_available=Aktualizácia(e) k dispozícii
 update_dialog_yes=Áno (odporúčane)
+update_in_next_session=Zrušiť a nepýtať sa znova až pokiaľ sa nereštartuje program
 updatedplugins=Pluginy boli aktualizované.\nPoužívate najnovšiu verziu JDownloadera.

@@ -1,5 +1,6 @@
 DownloadWatchDog_onShutdownRequest_=Prebieha sťahovanie!
 DownloadWatchDog_onShutdownRequest_msg=Naozaj chcete zastaviť prebiehajúce sťahovanie a ukončiť JDownloader?
+DownloadWatchDog_onShutdownRequest_nonresumable=Práve prebiehajú nenaviazateľné sťahovania!
 DuplicateAction_DuplicateAction_=Duplikovať pravidlo
 Extraction_onShutdownRequest_=Rozbalovanie stále prebieha!
 Extraction_onShutdownRequest_msg=Prerušiť rozbaľovanie?
@@ -96,6 +97,7 @@ gui_warning_reconnectSuccess=Znovu-pripojenie bolo úspešné
 gui_warning_reconnect_running=prebieha...
 gui_warning_reconnectunknown=Neznáme Znovupripojenie
 image_description=Obrázkové súbory: jpg, png, gif,...
+jd_controlling_SingleDownloadController_askexists=Súbor '%s1' z balíku %s2 už existuje. Čo chcete urobiť?
 jd_controlling_SingleDownloadController_askexists_title=Súbor už existuje
 jd_plugins_PluginUtils_askPassword=Prosím zadajte heslo pre %s1
 literally_yes=Áno

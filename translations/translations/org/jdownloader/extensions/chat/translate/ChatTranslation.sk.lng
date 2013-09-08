@@ -1,6 +1,7 @@
 ChatExtensionGuiToggleAction_selected=Zavrieť Chat
 ChatExtensionGuiToggleAction_selected_tt=Zavrieť kartu s Chatom
 description=Kontaktovať vývojárov a podporovateľov JDownloadera
+jd_plugins_optional_jdchat_JDChat_topic_tooltip=Správa dňa
 jd_plugins_optional_jdchat_closeTab=Zavrieť kartu
 jd_plugins_optional_jdchat_jdchat=JDChat
 plugins_optional_jdchat_enternick=Vaša prezývka
