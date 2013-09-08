@@ -130,7 +130,7 @@ public class Uploadedto extends PluginForHost {
     }
 
     public boolean canHandle(DownloadLink downloadLink, Account account) {
-        if ((account == null || account.getBooleanProperty("free", false)) && downloadLink.getVerifiedFileSize() <= 1048575999)
+        if ((account == null || account.getBooleanProperty("free", false)) && downloadLink.getVerifiedFileSize() >= 1048575999)
             return false;
         else
             return true;
