@@ -1,2 +1,15 @@
+JDGui_windowClosing_try_answer_tray=Esconder para área notificação
+JDGui_windowClosing_try_asnwer_close=Sair JDownloader
+OnCloseAction_exit=Sair Aplicação
+OnMinimizeAction_ask=Perguntar-me
+OnMinimizeAction_totray=Fechar para área de notificação
+plugins_optional_JDLightTray_hideifframevisible=Esconder para área notificação se janela é visível
+plugins_optional_trayIcon_dl_running=Em curso:
 plugins_optional_trayIcon_dl_total=Total:
+plugins_optional_trayIcon_downloads=Descargas:
+plugins_optional_trayIcon_eta=Tempo previsto:
 plugins_optional_trayIcon_speed=Velocidade:
+popup_exit=Sair JDownloader
+popup_pause=Pausar descargas
+popup_reconnect=Reconectar agora
+popup_update=Verificar Actualizações
