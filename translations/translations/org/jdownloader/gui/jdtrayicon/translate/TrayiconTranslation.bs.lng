@@ -15,6 +15,7 @@ plugins_optional_JDLightTray_startMinimized=Startaj minimizirano
 plugins_optional_JDLightTray_tooltip=Prikaži Tooltip
 plugins_optional_trayIcon_dl_total=Ukupno:
 plugins_optional_trayIcon_downloads=Downloadi:
+plugins_optional_trayIcon_speed=Brzina:
 popup_clipboardtoggle=Omogućen je Posmatrač clipboard-a
 popup_downloadfolder=Otvori Download folder
 popup_exit=Napusti JDownloader

@@ -1,6 +1,9 @@
 AddContainerAction_delete_container_title=Izbrisati Kontejner Dokumente?
 CaptchaQuickSettingsContainer_CaptchaQuickSettingsContainer=Pristup Captcha Podešenjima
 DownloadLink_setSkipped_statusmessage=Preskočeno
+DownloadLink_setSkipped_statusmessage_account=Preskočeno - Nedostaje nalog
+DownloadLink_setSkipped_statusmessage_captcha=Preskočeno - Potreban je captcha
+DownloadLink_setSkipped_statusmessage_disk_full=Preskočeno - Pun disk
 DownloadWatchDog_onShutdownRequest_=U toku su Download-i!
 DownloadWatchDog_onShutdownRequest_msg=Želite li da zaustavite aktivne download-e da zatvorite JDownloader?
 DownloadWatchDog_onShutdownRequest_nonresumable=Nema pokrenutih download-a koji se mogu nastaviti!
@@ -27,6 +30,7 @@ SetDownloadFolderAction_msg=Zamijeni Download Folder za cijeli Paket %s1, ili sa
 SetDownloadFolderAction_no=Izbor
 SetDownloadFolderAction_yes=Paket
 StartDownloadsAction_createTooltip_=Pokreni Download-e
+audiofilter_description=Preskočeno - Dokument već postoji
 basics_no=Ne
 basics_yes=Da
 configheader_enabled=Omogućeno

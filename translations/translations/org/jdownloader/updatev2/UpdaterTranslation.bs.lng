@@ -1,5 +1,6 @@
 RestartController_confirmToExit_=Srvarno Izaći?
 RestartController_confirmToExit_msg=Da li stvarno želite da zatvorite JDownloader?
+RestartController_confirmTorestart_title=Stvarno restartovati?
 confirmdialog_new_update_available_answer_later=Kasnije
 confirmdialog_new_update_available_answer_later_install=Kasnije
 confirmdialog_new_update_available_answer_now=Preuzmi sada
