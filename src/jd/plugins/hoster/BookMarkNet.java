@@ -64,7 +64,7 @@ public class BookMarkNet extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        if (br.getURL().contains("book-mark.net/404.php") || br.containsHTML("(>The file has been removed for|>404: File Not Found <)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.getURL().contains("book-mark.net/404.php") || br.getURL().equals("http://www.book-mark.net/") || br.containsHTML("(>The file has been removed for|>404: File Not Found <)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("<div id=\"main\">[\t\n\r ]+<h1>(.*?)</h1>").getMatch(0);
         if (filename == null) filename = br.getRegex("<title>(.*?) \\- free porn Teen, Hardcore, Blowjob, Big Cock</title>").getMatch(0);
         DLLINK = br.getRegex("addParam\\(\"flashvars\",\"file=(http://.*?)\\&autostart=").getMatch(0);
