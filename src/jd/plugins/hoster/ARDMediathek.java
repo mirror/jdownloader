@@ -92,9 +92,13 @@ public class ARDMediathek extends PluginForHost {
             String newUrl[] = br.getRegex("mediaCollection\\.addMediaStream\\((\\d+), (" + downloadLink.getStringProperty("directQuality", "1") + "), \"([^\"]+|)\", \"([^\"]+)\", \"([^\"]+)\"\\);").getRow(0);
             // http
             if (newUrl == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            downloadLink.setProperty("directURL", newUrl[3] + "@");
+            String url = newUrl[2];
+            String path = newUrl[3];
+            downloadLink.setProperty("directURL", path + "@");
             // rtmp
-            if ("0".equals(downloadLink.getStringProperty("streamingType", "1"))) downloadLink.setProperty("directURL", newUrl[1] + "@" + newUrl[2].split("\\?")[0]);
+            if ("0".equals(downloadLink.getStringProperty("streamingType", "1"))) {
+                if (!isEmpty(url) && url.startsWith("rtmp")) downloadLink.setProperty("directURL", newUrl[2] + "@" + newUrl[3].split("\\?")[0]);
+            }
         }
         String finalName = downloadLink.getStringProperty("directName", null);
         if (finalName == null) finalName = getTitle(br) + ".mp4";
@@ -310,6 +314,10 @@ public class ARDMediathek extends PluginForHost {
     @Override
     public String getDescription() {
         return "JDownloader's ARD Plugin helps downloading videoclips from ardmediathek.de and daserste.de. You can choose between different video qualities.";
+    }
+
+    private boolean isEmpty(String ip) {
+        return ip == null || ip.trim().length() == 0;
     }
 
     private void setConfigElements() {

@@ -170,13 +170,23 @@ public class RDMdthk extends PluginForDecrypt {
                 final HashMap<String, DownloadLink> bestMap = new HashMap<String, DownloadLink>();
                 String lastQualityFMT = null;
                 for (String quality[] : br.getRegex("mediaCollection\\.addMediaStream\\((\\d+), (\\d+), \"([^\"]+|)\", \"([^\"]+)\", \"([^\"]+)\"\\);").getMatches()) {
+                    // rtmp --> hds
+                    url = quality[3];
+                    if ("akamai".equals(quality[4])) {
+                        if (url.endsWith("manifest.f4m")) continue;
+                    }
+                    if ("default".equals(quality[4])) {
+                        if (url.endsWith("m3u")) continue;
+                    }
+                    if (!url.startsWith("http://")) {
+                        if (isEmpty(quality[2])) continue;
+                    }
                     // get streamtype id
                     t = Integer.valueOf(quality[0]);
-                    // http t=1
-                    url = quality[3] + "@";
-                    // rtmp t=0
-                    if (t == 0) url = quality[2] + "@" + quality[3].split("\\?")[0];
-                    if (t == 1 && url.endsWith("m3u8@") || t > 1) continue;
+                    // http or hds t=0 or t=1
+                    url += "@";
+                    // rtmp t=?
+                    if (quality[2].startsWith("rtmp")) url = quality[2] + "@" + quality[3].split("\\?")[0];
                     fmt = "hd";
 
                     // only http streams for old stable
@@ -303,6 +313,10 @@ public class RDMdthk extends PluginForDecrypt {
         if (title != null) title = Encoding.htmlDecode(title + (titleUT != null ? "__" + titleUT.replaceAll(":$", "") : "").trim());
         if (title == null) title = "UnknownTitle_" + System.currentTimeMillis();
         return title;
+    }
+
+    private boolean isEmpty(String ip) {
+        return ip == null || ip.trim().length() == 0;
     }
 
     /* NO OVERRIDE!! */
