@@ -71,15 +71,15 @@ import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.os.CrossSystem;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "swankshare.com" }, urls = { "https?://(www\\.)?swankshare\\.com/((vid)?embed-)?[a-z0-9]{12}" }, flags = { 0 })
+@HostPlugin(revision = "$Revision: 19496 $", interfaceVersion = 2, names = { "dogupload.com" }, urls = { "https?://(www\\.)?dogupload\\.com/((vid)?embed-)?[a-z0-9]{12}" }, flags = { 0 })
 @SuppressWarnings("deprecation")
-public class SwankShareCom extends PluginForHost {
+public class DogUploadCom extends PluginForHost {
 
     // Site Setters
     // primary website url, take note of redirects
-    private final String               COOKIE_HOST                  = "http://swankshare.com";
+    private final String               COOKIE_HOST                  = "http://dogupload.com";
     // domain names used within download links.
-    private final String               DOMAINS                      = "(swankshare\\.com)";
+    private final String               DOMAINS                      = "(dogupload\\.com)";
     private final String               PASSWORDTEXT                 = "<br><b>Passwor(d|t):</b> <input";
     private final String               MAINTENANCE                  = ">This server is in maintenance mode";
     private final String               dllinkRegex                  = "https?://(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|([\\w\\-]+\\.)?" + DOMAINS + ")(:\\d{1,5})?/(files(/(dl|download))?|d|cgi-bin/dl\\.cgi)/(\\d+/)?([a-z0-9]+/){1,4}[^/<>\r\n\t]+";
@@ -105,13 +105,13 @@ public class SwankShareCom extends PluginForHost {
     // last XfileSharingProBasic compare :: 2.6.2.1
     // captchatype: recaptcha
     // other: no redirects
-    // mods: filechecking using br for fields within html comments
+    // mods:
 
     private void setConstants(final Account account) {
         if (account != null && account.getBooleanProperty("free")) {
             // free account
-            chunks = -2;
-            resumes = true;
+            chunks = 1;
+            resumes = false;
             acctype = "Free Account";
             directlinkproperty = "freelink2";
         } else if (account != null && !account.getBooleanProperty("free")) {
@@ -122,8 +122,8 @@ public class SwankShareCom extends PluginForHost {
             directlinkproperty = "premlink";
         } else {
             // non account
-            chunks = -2;
-            resumes = true;
+            chunks = 1; // tested
+            resumes = false;
             acctype = "Non Account";
             directlinkproperty = "freelink";
         }
@@ -163,7 +163,7 @@ public class SwankShareCom extends PluginForHost {
      * 
      * @category 'Experimental', Mods written July 2012 - 2013
      * */
-    public SwankShareCom(PluginWrapper wrapper) {
+    public DogUploadCom(PluginWrapper wrapper) {
         super(wrapper);
         setConfigElements();
         // this.enablePremium(COOKIE_HOST + "/premium.html");
@@ -290,7 +290,7 @@ public class SwankShareCom extends PluginForHost {
                         // fileInfo[0] = cbr.getRegex("Download File:? ?(<[^>]+> ?)+?([^<>\"\\']+)").getMatch(1);
                         // traits from download1 page below.
                         if (inValidate(fileInfo[0])) {
-                            fileInfo[0] = br.getRegex("Filename:? ?(<[^>]+> ?)+?([^<>\"']+)").getMatch(1);
+                            fileInfo[0] = cbr.getRegex("Filename:? ?(<[^>]+> ?)+?([^<>\"']+)").getMatch(1);
                             // next two are details from sharing box
                             if (inValidate(fileInfo[0])) {
                                 fileInfo[0] = cbr.getRegex("<textarea[^\r\n]+>([^\r\n]+) - [\\d\\.]+ (KB|MB|GB)</a></textarea>").getMatch(0);
@@ -304,7 +304,7 @@ public class SwankShareCom extends PluginForHost {
             }
         }
         if (inValidate(fileInfo[1])) {
-            fileInfo[1] = br.getRegex("\\(([0-9]+ bytes)\\)").getMatch(0);
+            fileInfo[1] = cbr.getRegex("\\(([0-9]+ bytes)\\)").getMatch(0);
             if (inValidate(fileInfo[1])) {
                 fileInfo[1] = cbr.getRegex("</font>[ ]+\\(([^<>\"'/]+)\\)(.*?)</font>").getMatch(0);
                 if (inValidate(fileInfo[1])) {

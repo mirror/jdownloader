@@ -28,7 +28,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mirrorstack.com" }, urls = { "https?://(www\\.)?(zlinx\\.me|filesuploader\\.com|multishared\\.com|onmirror\\.com|multiupload\\.biz|lastbox\\.net|mirrorhive\\.com|mirrorstack\\.com)/([a-z0-9]{1,2}_)?[a-z0-9]{12}" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mirrorstack.com" }, urls = { "https?://(www\\.)?(pdownload\\.net|zlinx\\.me|filesuploader\\.com|multishared\\.com|onmirror\\.com|multiupload\\.biz|lastbox\\.net|mirrorhive\\.com|mirrorstack\\.com)/([a-z0-9]{1,2}_)?[a-z0-9]{12}" }, flags = { 0 })
 public class MirStkCm extends PluginForDecrypt {
 
     /*
@@ -59,6 +59,8 @@ public class MirStkCm extends PluginForDecrypt {
 
     // 05/07/2013
     // filesuploader.com = up, finallink are redirects on first singleLink page
+    // 09/09/2013
+    // pdownload.net = up, finallinks are redriects on first singleLink page
 
     // version 0.6
 

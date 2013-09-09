@@ -71,19 +71,19 @@ import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.os.CrossSystem;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "swankshare.com" }, urls = { "https?://(www\\.)?swankshare\\.com/((vid)?embed-)?[a-z0-9]{12}" }, flags = { 0 })
+@HostPlugin(revision = "$Revision: 19496 $", interfaceVersion = 2, names = { "videoslim.net" }, urls = { "https?://(www\\.)?videoslim\\.net/((vid)?embed-)?[a-z0-9]{12}" }, flags = { 0 })
 @SuppressWarnings("deprecation")
-public class SwankShareCom extends PluginForHost {
+public class VideoSlimNet extends PluginForHost {
 
     // Site Setters
     // primary website url, take note of redirects
-    private final String               COOKIE_HOST                  = "http://swankshare.com";
+    private final String               COOKIE_HOST                  = "http://videoslim.net";
     // domain names used within download links.
-    private final String               DOMAINS                      = "(swankshare\\.com)";
+    private final String               DOMAINS                      = "(videoslim\\.net)";
     private final String               PASSWORDTEXT                 = "<br><b>Passwor(d|t):</b> <input";
     private final String               MAINTENANCE                  = ">This server is in maintenance mode";
     private final String               dllinkRegex                  = "https?://(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|([\\w\\-]+\\.)?" + DOMAINS + ")(:\\d{1,5})?/(files(/(dl|download))?|d|cgi-bin/dl\\.cgi)/(\\d+/)?([a-z0-9]+/){1,4}[^/<>\r\n\t]+";
-    private final boolean              supportsHTTPS                = false;
+    private final boolean              supportsHTTPS                = true;
     private final boolean              enforcesHTTPS                = false;
     private final boolean              useRUA                       = false;
     private final boolean              useAltLinkCheck              = false;
@@ -103,9 +103,9 @@ public class SwankShareCom extends PluginForHost {
     // DEV NOTES
     // XfileShare Version 3.0.8.0
     // last XfileSharingProBasic compare :: 2.6.2.1
-    // captchatype: recaptcha
+    // captchatype: null
     // other: no redirects
-    // mods: filechecking using br for fields within html comments
+    // mods:
 
     private void setConstants(final Account account) {
         if (account != null && account.getBooleanProperty("free")) {
@@ -122,7 +122,7 @@ public class SwankShareCom extends PluginForHost {
             directlinkproperty = "premlink";
         } else {
             // non account
-            chunks = -2;
+            chunks = -2; // tested
             resumes = true;
             acctype = "Non Account";
             directlinkproperty = "freelink";
@@ -149,11 +149,11 @@ public class SwankShareCom extends PluginForHost {
     public boolean hasCaptcha(final DownloadLink downloadLink, final jd.plugins.Account acc) {
         if (acc == null) {
             /* no account, yes we can expect captcha */
-            return true;
+            return false;
         }
         if (Boolean.TRUE.equals(acc.getBooleanProperty("free"))) {
             /* free accounts also have captchas */
-            return true;
+            return false;
         }
         return false;
     }
@@ -163,7 +163,7 @@ public class SwankShareCom extends PluginForHost {
      * 
      * @category 'Experimental', Mods written July 2012 - 2013
      * */
-    public SwankShareCom(PluginWrapper wrapper) {
+    public VideoSlimNet(PluginWrapper wrapper) {
         super(wrapper);
         setConfigElements();
         // this.enablePremium(COOKIE_HOST + "/premium.html");
@@ -290,7 +290,7 @@ public class SwankShareCom extends PluginForHost {
                         // fileInfo[0] = cbr.getRegex("Download File:? ?(<[^>]+> ?)+?([^<>\"\\']+)").getMatch(1);
                         // traits from download1 page below.
                         if (inValidate(fileInfo[0])) {
-                            fileInfo[0] = br.getRegex("Filename:? ?(<[^>]+> ?)+?([^<>\"']+)").getMatch(1);
+                            fileInfo[0] = cbr.getRegex("Filename:? ?(<[^>]+> ?)+?([^<>\"']+)").getMatch(1);
                             // next two are details from sharing box
                             if (inValidate(fileInfo[0])) {
                                 fileInfo[0] = cbr.getRegex("<textarea[^\r\n]+>([^\r\n]+) - [\\d\\.]+ (KB|MB|GB)</a></textarea>").getMatch(0);
@@ -304,7 +304,7 @@ public class SwankShareCom extends PluginForHost {
             }
         }
         if (inValidate(fileInfo[1])) {
-            fileInfo[1] = br.getRegex("\\(([0-9]+ bytes)\\)").getMatch(0);
+            fileInfo[1] = cbr.getRegex("\\(([0-9]+ bytes)\\)").getMatch(0);
             if (inValidate(fileInfo[1])) {
                 fileInfo[1] = cbr.getRegex("</font>[ ]+\\(([^<>\"'/]+)\\)(.*?)</font>").getMatch(0);
                 if (inValidate(fileInfo[1])) {
