@@ -346,18 +346,8 @@ public class SoundcloudCom extends PluginForHost {
             else
                 formattedFilename = formattedFilename.replace("*date*", "");
         }
-        if (formattedFilename.contains("*channelname*")) {
-            // Check if the channelname already exists in the title
-            if (channelName != null) {
-                if (!songTitle.contains(channelName)) {
-                    formattedFilename = formattedFilename.replace("*channelname*", channelName);
-                } else {
-                    formattedFilename = formattedFilename.replace(" - *channelname*", "");
-                    formattedFilename = formattedFilename.replace("*channelname", "");
-                }
-            } else {
-                formattedFilename = formattedFilename.replace("*channelname*", "");
-            }
+        if (formattedFilename.contains("*channelname*") && channelName != null) {
+            formattedFilename = formattedFilename.replace("*channelname*", channelName);
         }
         formattedFilename = formattedFilename.replace("*ext*", ext);
         // Insert filename at the end to prevent errors with tags

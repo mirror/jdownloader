@@ -43,7 +43,7 @@ public class AdltDlCom extends PluginForDecrypt {
         br.setFollowRedirects(true);
         br.getPage(parameter);
         // Offline1
-        if (br.containsHTML(">Sorry, the page could not be found, or has been removed")) {
+        if (br.containsHTML("404 Not Found<|Sorry, the page could not be found")) {
             logger.info("Link offline: " + parameter);
             return decryptedLinks;
         }

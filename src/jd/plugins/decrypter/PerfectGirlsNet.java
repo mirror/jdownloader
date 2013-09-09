@@ -148,9 +148,27 @@ public class PerfectGirlsNet extends PluginForDecrypt {
             decryptedLinks.add(createDownloadlink(externID));
             return decryptedLinks;
         }
+        // empflix.com 1
         externID = br.getRegex("player\\.empflix\\.com/video/(\\d+)\"").getMatch(0);
         if (externID != null) {
             decryptedLinks.add(createDownloadlink("http://www.empflix.com/videos/" + System.currentTimeMillis() + "-" + externID + ".html"));
+            return decryptedLinks;
+        }
+        // empflix.com 2
+        externID = br.getRegex("empflix\\.com/embedding_player/player[^<>\"/]*?\\.swf\".*?value=\"config=embedding_feed\\.php\\?viewkey=([^<>\"]*?)\"").getMatch(0);
+        if (externID != null) {
+            // Find original empflix link and add it to the list
+            br.getPage("http://www.empflix.com/embedding_player/embedding_feed.php?viewkey=" + externID);
+            if (br.containsHTML(">Sorry, this video is no longer available")) {
+                logger.info("Link offline: " + parameter);
+                return decryptedLinks;
+            }
+            final String finallink = br.getRegex("<link>(http://.*?)</link>").getMatch(0);
+            if (finallink == null) {
+                logger.warning("decrypter broken for link: " + parameter);
+                return null;
+            }
+            decryptedLinks.add(createDownloadlink(Encoding.htmlDecode(finallink)));
             return decryptedLinks;
         }
         externID = br.getRegex("name=\\'yp_embed_video\\'><a href=\\'(http://(www\\.)?youporn\\.com/watch/\\d+)").getMatch(0);

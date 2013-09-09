@@ -35,9 +35,10 @@ public class AkatsukiSubsNet extends PluginForDecrypt {
         super(wrapper);
     }
 
-    private static final String   PROJECTLINK = "http://(www\\.)?akatsuki\\-subs\\.net/projekte/(laufend|abgeschlossen)/[a-z0-9\\-]+/";
-    private static final String   RELEASELINK = "http://(www\\.)?akatsuki\\-subs\\.net/\\d+/releases/op/[a-z0-9\\-]+\\-\\d+/";
-    private static final String[] QUALITIES   = { "hd", "ru boxvideo", "sd", "rs", "bt" };
+    private static final String   PROJECTLINK      = "http://(www\\.)?akatsuki\\-subs\\.net/projekte/(laufend|abgeschlossen)/[a-z0-9\\-]+/";
+    private static final String   RELEASELINK      = "http://(www\\.)?akatsuki\\-subs\\.net/\\d+/releases/op/[a-z0-9\\-]+\\-\\d+/";
+    private static final String[] QUALITIES        = { "hd", "ru boxvideo", "sd", "rs", "bt" };
+    private static final String   SERVEROVERLOADED = ">Server \\&uuml;berlastet\\!<";
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
@@ -45,6 +46,10 @@ public class AkatsukiSubsNet extends PluginForDecrypt {
         br.getPage(parameter);
         if (br.containsHTML(">Seite nicht gefunden")) {
             logger.info("Link offline: " + parameter);
+            return decryptedLinks;
+        }
+        if (br.containsHTML(SERVEROVERLOADED)) {
+            logger.info("Cannot decrypt link because servers are overloaded: " + parameter);
             return decryptedLinks;
         }
         if (parameter.matches(PROJECTLINK)) {

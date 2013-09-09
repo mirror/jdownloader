@@ -28,16 +28,22 @@ import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
 //EmbedDecrypter 0.1.1
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fapdu.com" }, urls = { "http://(www\\.)?fapdu\\.com/(?!search|embed|sitemaps|rss|hd|register|community|pornstars|videos|pics|emo|channels)[a-z0-9\\-]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fapdu.com" }, urls = { "http://(www\\.)?fapdu\\.com/[a-z0-9\\-]+" }, flags = { 0 })
 public class FapduCom extends PluginForDecrypt {
 
     public FapduCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
+    private static final String INVALIDLINK = "http://(www\\.)?fapdu\\.com/(search|embed|sitemaps|rss|hd|register|community|pornstars|videos|pics|emo|channels).*?";
+
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
+        if (parameter.matches(INVALIDLINK)) {
+            logger.info("Link invalid: " + parameter);
+            return decryptedLinks;
+        }
         br.getPage(parameter);
         // Offline link
         if (br.containsHTML(">This video was removed")) {

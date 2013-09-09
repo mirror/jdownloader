@@ -29,7 +29,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "eroxia.com" }, urls = { "http://(www\\.)?eroxiadecrypted.com/[A-Za-z0-9_\\-]+/\\d+/.*?\\.html" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "eroxia.com" }, urls = { "http://(www\\.)?eroxiadecrypted.com/([A-Za-z0-9_\\-]+/\\d+/.*?|video/[a-z0-9\\-]+\\d+)\\.html" }, flags = { 0 })
 public class EroxiaCom extends PluginForHost {
 
     public EroxiaCom(PluginWrapper wrapper) {
@@ -56,11 +56,16 @@ public class EroxiaCom extends PluginForHost {
         String filename = br.getRegex("<h1 class=\"detail\\-title\">([^<>\"]*?)</h1>").getMatch(0);
         if (filename == null) filename = br.getRegex("<title>([^<>\"]*?)\\- Eroxia\\.com</title>").getMatch(0);
         if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        DLLINK = br.getRegex("(http://(www\\.)?eroxia\\.com/playerConfig\\.php\\?[^<>\"/\\&]*?)\"").getMatch(0);
-        if (DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        br.getPage(Encoding.htmlDecode(DLLINK));
-        DLLINK = br.getRegex("flvMask:(http://[^<>\"]*?);").getMatch(0);
-        if (DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        // Try to find direct link first
+        DLLINK = br.getRegex("url: \\'(http://[^<>\"]*?)\\'").getMatch(0);
+        if (DLLINK == null) {
+            // No direct link there -> 2nd way
+            DLLINK = br.getRegex("(http://(www\\.)?eroxia\\.com/playerConfig\\.php\\?[^<>\"/\\&]*?)\"").getMatch(0);
+            if (DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            br.getPage(Encoding.htmlDecode(DLLINK));
+            DLLINK = br.getRegex("flvMask:(http://[^<>\"]*?);").getMatch(0);
+            if (DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         DLLINK = Encoding.htmlDecode(DLLINK);
         filename = filename.trim();
         String ext = DLLINK.substring(DLLINK.lastIndexOf("."));

@@ -67,7 +67,7 @@ public class TopkySk extends PluginForDecrypt {
             }
         }
         // extract topky.sk vids
-        final String finallink = br.getRegex("name=\"FlashVars\" value=\"file=(http://[^<>\"]*?)\\&").getMatch(0);
+        final String finallink = br.getRegex("<source src=\"(http[^<>\"]*?)\"").getMatch(0);
         if (finallink != null) decryptedLinks.add(createDownloadlink("directhttp://" + finallink));
         if (decryptedLinks == null || decryptedLinks.size() == 0) {
             logger.info("Found no downloadable content for link: " + parameter);

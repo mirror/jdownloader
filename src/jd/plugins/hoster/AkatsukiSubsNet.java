@@ -30,7 +30,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "akatsuki-subs.net" }, urls = { "http://(www\\.)?downloads\\.akatsuki\\-subs\\.net/file\\-\\d+\\.htm" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "akatsuki-subs.net" }, urls = { "http://(www\\.)?(downloads|archiv)\\.akatsuki\\-subs\\.net/file\\-\\d+\\.htm" }, flags = { 0 })
 public class AkatsukiSubsNet extends PluginForHost {
 
     public AkatsukiSubsNet(PluginWrapper wrapper) {
@@ -41,6 +41,8 @@ public class AkatsukiSubsNet extends PluginForHost {
     public String getAGBLink() {
         return "http://akatsuki-subs.net/";
     }
+
+    private static final String  SERVEROVERLOADED             = ">Server \\&uuml;berlastet\\!<";
 
     // note: CAN NOT be negative or zero! (ie. -1 or 0) Otherwise math sections fail. .:. use [1-20]
     private static AtomicInteger totalMaxSimultanFreeDownload = new AtomicInteger(20);
@@ -53,6 +55,10 @@ public class AkatsukiSubsNet extends PluginForHost {
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
         if (br.containsHTML("Kein Download mit der angegebenen ID gefunden")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML(SERVEROVERLOADED)) {
+            link.getLinkStatus().setStatusText("Server overloaded");
+            return AvailableStatus.UNCHECKABLE;
+        }
         final String filename = br.getRegex(">Downloade: <span class=\"highlight\">([^<>\"]*?)</span>").getMatch(0);
         if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         link.setName(Encoding.htmlDecode(filename.trim()));
@@ -68,6 +74,8 @@ public class AkatsukiSubsNet extends PluginForHost {
         if (br.containsHTML(">Du hast das Limit an Downloads für diese Datei innerhalb von")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1000l);
         // Limit on all links (IP)
         if (br.containsHTML(">Du hast das Limit an Downloads innerhalb von")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1000l);
+        // Server overloaded
+        if (br.containsHTML(SERVEROVERLOADED)) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Server overloaded", 5 * 60 * 1000l);
         br.setFollowRedirects(false);
         final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
         final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);

@@ -45,6 +45,8 @@ public class ImgTigerCom extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
+        // Name shown if the link is offline
+        downloadLink.setName(new Regex(downloadLink.getDownloadURL(), "viewer\\.php\\?file=(\\d+\\.jpg)").getMatch(0));
         br.setFollowRedirects(true);
         br.setConnectTimeout(3 * 60 * 1000);
         br.setReadTimeout(3 * 60 * 1000);
