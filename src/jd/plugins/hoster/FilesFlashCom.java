@@ -35,7 +35,7 @@ import jd.utils.locale.JDL;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filesflash.com" }, urls = { "http://(www\\.)?(filesflash\\.com|173\\.231\\.61\\.130)(:\\d+)?/[a-z0-9]+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filesflash.com" }, urls = { "http://(www\\.)?(filesflash\\.(com|net)|173\\.231\\.61\\.130)(:\\d+)?/[a-z0-9]+" }, flags = { 2 })
 public class FilesFlashCom extends PluginForHost {
 
     private static final String IPBLOCKED = "(>Your IP address is already downloading another link|Please wait for that download to finish\\.|Free users may only download one file at a time\\.)";
@@ -46,10 +46,14 @@ public class FilesFlashCom extends PluginForHost {
         this.enablePremium("http://filesflash.com/premium.php");
     }
 
-    /** Leave urls unchange as for some countries, only urls with the port in it are accessable */
+    /** Leave most of the urls unchanged as for some countries, only urls with the port in it are accessable */
     // public void correctDownloadLink(DownloadLink link) {
     // link.setUrlDownload("http://filesflash.com/" + new Regex(link.getDownloadURL(), "([a-z0-9]+)$").getMatch(0));
     // }
+
+    public void correctDownloadLink(final DownloadLink link) {
+        link.setUrlDownload(link.getDownloadURL().replace("filesflash.net/", "filesflash.com/"));
+    }
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {

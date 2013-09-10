@@ -29,7 +29,7 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
 //http://www.hornoxe.com/hornoxe-com-picdump-273/
-@DecrypterPlugin(revision = "$Revision: 18325 $", interfaceVersion = 2, names = { "hornoxe.com" }, urls = { "http://(www\\.)?hornoxe\\.com/.*picdump.*/" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision: 18325 $", interfaceVersion = 2, names = { "hornoxe.com" }, urls = { "5u90hfikrnhirtnDELETE_ME_DUPLICATEfrh5ujbrhukfswikninehntimbno" }, flags = { 0 })
 public class HrnxCm extends PluginForDecrypt {
 
     public HrnxCm(PluginWrapper wrapper) {

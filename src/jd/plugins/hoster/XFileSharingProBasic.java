@@ -78,7 +78,7 @@ public class XFileSharingProBasic extends PluginForHost {
     private static Object        LOCK                         = new Object();
 
     // DEV NOTES
-    // XfileSharingProBasic Version 2.6.2.5
+    // XfileSharingProBasic Version 2.6.2.6
     // mods:
     // non account: chunks * maxdls
     // free account: chunks * maxdls
@@ -143,7 +143,7 @@ public class XFileSharingProBasic extends PluginForHost {
         if (new Regex(correctedBR, "(No such file|>File Not Found<|>The file was removed by|Reason for deletion:\n)").matches()) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (new Regex(correctedBR, MAINTENANCE).matches()) {
             link.getLinkStatus().setStatusText(MAINTENANCEUSERTEXT);
-            return AvailableStatus.TRUE;
+            return AvailableStatus.UNCHECKABLE;
         }
         if (br.getURL().contains("/?op=login&redirect=")) {
             link.getLinkStatus().setStatusText(PREMIUMONLY2);

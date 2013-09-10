@@ -27,45 +27,117 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision: 17655 $", interfaceVersion = 2, names = { "hornoxe.com" }, urls = { "http://(www\\.)?hornoxe\\.com/[^/]+/" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision: 17655 $", interfaceVersion = 2, names = { "hornoxe.com" }, urls = { "http://(www\\.)?hornoxe\\.com/(?!category)[a-z0-9\\-]+/" }, flags = { 0 })
 public class HrnOxCm extends PluginForDecrypt {
 
     public HrnOxCm(PluginWrapper wrapper) {
         super(wrapper);
     }
 
+    private static final String INVALIDLINKS = "http://(www\\.)?hornoxe\\.com/(picdumps|sonstiges|eigener\\-content|comics\\-cartoons|amazon|witze|fun\\-clips|fun\\-bilder|sexy|kurzfilme|bastelstunde|games|fun\\-links|natur\\-technik)/";
+
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
+        if (parameter.matches(INVALIDLINKS)) {
+            logger.info("Link invalid: " + parameter);
+            return decryptedLinks;
+        }
         br.getPage(parameter);
+
+        if (br.containsHTML(">Seite nicht gefunden<")) {
+            logger.info("Link offline: " + parameter);
+            return decryptedLinks;
+        }
+
+        // Check if there are embedded links
+        String externID = br.getRegex("\"(//(www\\.)?youtube\\.com/embed/[^<>\"]*?)\"").getMatch(0);
+        if (externID != null) {
+            decryptedLinks.add(createDownloadlink("http:" + externID));
+        }
+
+        // Check if we have a picdump
+        String[] urls = null;
+        if (parameter.contains("-gifdump")) {
+            urls = br.getRegex("\\'(http://gifdumps\\.hornoxe\\.com/gifdump[^<>\"]*?)\\'").getColumn(0);
+        } else {
+            urls = br.getRegex("\"(http://(www\\.)?hornoxe\\.com/wp\\-content/picdumps/[^<>\"]*?)\"").getColumn(0);
+            if (urls == null || urls.length == 0) urls = br.getRegex("\"(https?://(www\\.)hornoxe\\.com/wp\\-content/uploads/(?!thumb)[^<>\"]+)\"").getColumn(0);
+        }
+        if (urls != null && urls.length != 0) {
+            String title = br.getRegex("<meta property=\"og\\:title\" content=\"(.*?)\" \\/>").getMatch(0);
+            FilePackage fp = null;
+            if (title != null) {
+                fp = FilePackage.getInstance();
+                fp.setName(Encoding.htmlDecode(title.trim()));
+                fp.addLinks(decryptedLinks);
+            }
+
+            add(decryptedLinks, urls, fp);
+            String[] pageqs = br.getRegex("\"page-numbers\" href=\"(.*?nggpage\\=\\d+)").getColumn(0);
+
+            for (String page : pageqs) {
+                br.getPage(page);
+
+                if (parameter.contains("-gifdump")) {
+                    urls = br.getRegex("\\'(http://gifdumps\\.hornoxe\\.com/gifdump[^<>\"]*?)\\'").getColumn(0);
+                } else {
+                    urls = br.getRegex("\"(http://(www\\.)?hornoxe\\.com/wp\\-content/picdumps/[^<>\"]*?)\"").getColumn(0);
+                    if (urls == null || urls.length == 0) urls = br.getRegex("\"(https?://(www\\.)hornoxe\\.com/wp\\-content/uploads[^<>\"]+)\"").getColumn(0);
+                }
+                add(decryptedLinks, urls, fp);
+            }
+            return decryptedLinks;
+        }
 
         String pageName = br.getRegex("og:title\" content=\"(.*?)\" />").getMatch(0);
         if (pageName == null) pageName = br.getRegex("<title>(.*?) \\- Hornoxe\\.com</title>").getMatch(0);
+        if (pageName == null) {
+            logger.warning("Decrypter failed for link: " + parameter);
+            return null;
+        }
+        pageName = Encoding.htmlDecode(pageName.trim());
 
         String file = br.getRegex("file\":\"(https?://videos\\.hornoxe\\.com/[^\"]+)").getMatch(0);
 
-        String image = br.getRegex("image\":\"(https?://(www\\.)hornoxe\\.com/wp\\-content/images/\\d+[^\"]+)").getMatch(0);
-
-        if (file == null || pageName == null) {
+        // Check if it's an image
+        final String image = br.getRegex("\"(https?://(www\\.)hornoxe\\.com/wp\\-content/uploads[^<>\"]+)\"").getMatch(0);
+        if (image != null) {
+            final DownloadLink img = createDownloadlink("directhttp://" + image);
+            img.setFinalFileName(pageName + image.substring(image.lastIndexOf(".")));
+            decryptedLinks.add(img);
             return decryptedLinks;
-        } else {
-            pageName = Encoding.htmlDecode(pageName.trim());
-            if (image != null && image.length() > 0) {
-                DownloadLink img = createDownloadlink("directhttp://" + image);
-                img.setFinalFileName(pageName + image.substring(image.lastIndexOf(".")));
-                decryptedLinks.add(img);
-            }
-            DownloadLink vid = createDownloadlink(file.replace("hornoxe.com", "hornoxedecrypted.com"));
-            vid.setFinalFileName(pageName + file.substring(file.lastIndexOf(".")));
-            vid.setProperty("Referer", parameter);
-            decryptedLinks.add(vid);
         }
 
-        FilePackage fp = FilePackage.getInstance();
+        if (file == null || pageName == null) {
+            logger.warning("Decrypter failed for link: " + parameter);
+            return null;
+        }
+        final DownloadLink vid = createDownloadlink(file.replace("hornoxe.com", "hornoxedecrypted.com"));
+        vid.setFinalFileName(pageName + file.substring(file.lastIndexOf(".")));
+        vid.setProperty("Referer", parameter);
+        decryptedLinks.add(vid);
+
+        final FilePackage fp = FilePackage.getInstance();
         fp.setName(pageName);
         fp.addLinks(decryptedLinks);
 
         return decryptedLinks;
+    }
+
+    private void add(ArrayList<DownloadLink> decryptedLinks, String[] urls, FilePackage fp) {
+
+        for (final String url : urls) {
+            if (url.contains("fliege.gif")) continue;
+            DownloadLink link = createDownloadlink("directhttp://" + url);
+            fp.add(link);
+            decryptedLinks.add(link);
+            try {
+                distribute(link);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
     }
 
     /* NO OVERRIDE!! */

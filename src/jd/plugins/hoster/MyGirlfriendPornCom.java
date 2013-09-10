@@ -48,7 +48,7 @@ public class MyGirlfriendPornCom extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        if (br.getURL().equals("http://www.mygirlfriendporn.com/404.php") || br.containsHTML(">404: File Not Found<|The file you have requested was not found on this server")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.getURL().equals("http://www.mygirlfriendporn.com/404.php") || br.getURL().contains("main.htm") || !br.getURL().contains("mygirlfriendporn.com/") || br.containsHTML(">404: File Not Found<|The file you have requested was not found on this server")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("left; font\\-size: 22px; margin\\-top: 0px; padding\\-top: 0px; \">([^<>\"]*?)</h2>").getMatch(0);
         if (filename == null) filename = br.getRegex("<title>([^<>\"]*?)My Girlfriend Porn</title>").getMatch(0);
         if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

@@ -127,7 +127,7 @@ public class FapduCom extends PluginForDecrypt {
             return decryptedLinks;
         }
         externID = br.getRegex("pornhub\\.com/embed/(\\d+)").getMatch(0);
-        if (externID == null) externID = br.getRegex("pornhub\\.com/view_video\\.php\\?viewkey=(\\d+)").getMatch(0);
+        if (externID == null) externID = br.getRegex("pornhub\\.com/view_video\\.php\\?viewkey=([a-z0-9]+)").getMatch(0);
         if (externID != null) {
             DownloadLink dl = createDownloadlink("http://www.pornhub.com/view_video.php?viewkey=" + externID);
             decryptedLinks.add(dl);
