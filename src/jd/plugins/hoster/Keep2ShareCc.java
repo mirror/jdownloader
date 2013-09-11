@@ -288,7 +288,7 @@ public class Keep2ShareCc extends PluginForHost {
         // account.setValid(false);
         // return ai;
         // }
-        if (br.containsHTML(">Account type:<a href=\"/premium\\.html\"[^>]+>[\r\n\t ]+Free<")) {
+        if (br.containsHTML(">Account type:[\r\n\t ]+<a href=\"/premium\\.html\"[^>]+>Free<")) {
             account.setProperty("free", true);
             ai.setStatus("Registered Free User");
         } else {
