@@ -66,7 +66,7 @@ public class IfolderRu extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         /* too many traffic but can we download download with ad? */
-        boolean withad = br.containsHTML("Вы можете получить этот файл, только если посетите сайт наших");
+        final boolean withad = br.containsHTML(">Вы можете получить этот файл, если посетите сайт наших рекламодателей");
         if (br.containsHTML("На данный момент иностранный трафик у этого файла превышает российский") && !withad) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "At the moment foreign traffic of this file is larger than Russia's");
         br.setFollowRedirects(true);
         br.setDebug(true);
@@ -125,8 +125,8 @@ public class IfolderRu extends PluginForHost {
             captchaForm.put("ints_session", ints_session);
             captchaForm.setAction(br.getURL());
             if (!captchaurl.startsWith("http://")) {
-            	String host = new Regex(br.getURL(), "(https?://.*?)/").getMatch(0);
-            	captchaurl = host + captchaurl;
+                String host = new Regex(br.getURL(), "(https?://.*?)/").getMatch(0);
+                captchaurl = host + captchaurl;
             }
             /* Captcha */
             String captchaCode = getCaptchaCode("ifolder.ru", captchaurl, downloadLink);
@@ -142,9 +142,9 @@ public class IfolderRu extends PluginForHost {
             /* hidden code */
             Regex hiddenCode = br.getRegex("var c = \\[\\'(.*?)\\'\\, \\'hh([a-z0-9]+?)\\'\\];");
             if (hiddenCode.getMatch(0) != null && hiddenCode.getMatch(1) != null) {
-            	captchaForm.put(hiddenCode.getMatch(0), hiddenCode.getMatch(1));
+                captchaForm.put(hiddenCode.getMatch(0), hiddenCode.getMatch(1));
             } else {
-            	logger.info("hidden_code is null, this could cause trouble...");
+                logger.info("hidden_code is null, this could cause trouble...");
             }
             try {
                 br.submitForm(captchaForm);

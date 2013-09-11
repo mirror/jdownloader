@@ -190,7 +190,15 @@ public class FileFactory extends PluginForHost {
                     if (filter == null) dl.setAvailable(false);
                     String size = new Regex(filter, ">([\\d\\.]+ (KB|MB|GB|TB))<").getMatch(0);
                     String name = new Regex(filter, "<a href=\".*?/file/[a-z0-9]+/([^\"]+)").getMatch(0);
-                    if (name != null) dl.setName(name.trim());
+                    if (name != null) {
+                        // Temporary workaround because they don't show full filenames (yet)
+                        name = name.replace("_rar", ".rar");
+                        name = name.replace("_zip", ".zip");
+                        name = name.replace("_avi", ".avi");
+                        name = name.replace("_mkv", ".mkv");
+                        name = name.replace("_mp4", ".mp4");
+                        dl.setName(name.trim());
+                    }
                     if (size != null) dl.setDownloadSize(SizeFormatter.getSize(size));
                     if (filter != null && filter.contains(">Valid</abbr>"))
                         dl.setAvailable(true);
@@ -487,8 +495,13 @@ public class FileFactory extends PluginForHost {
             } else {
                 br.setFollowRedirects(false);
                 br.getPage(downloadLink.getDownloadURL());
+                // Directlink
+                String finallink = br.getRedirectLocation();
+                // No directlink
+                if (finallink == null) finallink = br.getRegex("\"(http://[a-z0-9]+\\.filefactory\\.com/get/[^<>\"]*?)\"").getMatch(0);
+                if (finallink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 br.setFollowRedirects(true);
-                dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, br.getRedirectLocation(), true, 0);
+                dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, finallink, true, 0);
                 if (!dl.getConnection().isContentDisposition()) {
                     br.followConnection();
                     checkErrors(true);
@@ -497,7 +510,7 @@ public class FileFactory extends PluginForHost {
                     if (red == null) red = br.getRegex("downloadLink.*?href=\"(.*?)\"").getMatch(0);
                     logger.finer("Indirect download");
                     br.setFollowRedirects(true);
-                    if (red == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+                    if (red == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, red, true, 0);
                     if (!dl.getConnection().isContentDisposition()) {
                         br.followConnection();
