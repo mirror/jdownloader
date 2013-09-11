@@ -103,7 +103,7 @@ public class BeStreamsNet extends PluginForHost {
     // DEV NOTES
     // XfileShare Version 3.0.8.0
     // last XfileSharingProBasic compare :: 2.6.2.1
-    // captchatype: null 4dignum recaptcha solvemedia keycaptcha
+    // captchatype: null
     // other: no redirects
     // mods:
 

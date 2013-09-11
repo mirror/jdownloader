@@ -34,10 +34,11 @@ public class HrnOxCm extends PluginForDecrypt {
         super(wrapper);
     }
 
-    private static final String INVALIDLINKS = "http://(www\\.)?hornoxe\\.com/(picdumps|sonstiges|eigener\\-content|comics\\-cartoons|amazon|witze|fun\\-clips|fun\\-bilder|sexy|kurzfilme|bastelstunde|games|fun\\-links|natur\\-technik)/";
+    private static final String INVALIDLINKS = "http://(www\\.)?hornoxe\\.com/(picdumps|sonstiges|eigener\\-content|comics\\-cartoons|amazon|witze|fun\\-clips|fun\\-bilder|sexy|kurzfilme|bastelstunde|games|fun\\-links|natur\\-technik|feed)/";
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        br.setFollowRedirects(true);
         String parameter = param.toString();
         if (parameter.matches(INVALIDLINKS)) {
             logger.info("Link invalid: " + parameter);
@@ -45,15 +46,32 @@ public class HrnOxCm extends PluginForDecrypt {
         }
         br.getPage(parameter);
 
-        if (br.containsHTML(">Seite nicht gefunden<")) {
+        if (br.containsHTML(">Seite nicht gefunden<") || br.containsHTML("No htmlCode read") || br.containsHTML(">404 \\- Not Found<")) {
             logger.info("Link offline: " + parameter);
             return decryptedLinks;
         }
+        String pageName = br.getRegex("og:title\" content=\"(.*?)\" />").getMatch(0);
+        if (pageName == null) pageName = br.getRegex("<title>(.*?) \\- Hornoxe\\.com</title>").getMatch(0);
+        if (pageName == null) {
+            logger.warning("Decrypter failed for link: " + parameter);
+            return null;
+        }
+        pageName = Encoding.htmlDecode(pageName.trim());
 
         // Check if there are embedded links
         String externID = br.getRegex("\"(//(www\\.)?youtube\\.com/embed/[^<>\"]*?)\"").getMatch(0);
         if (externID != null) {
             decryptedLinks.add(createDownloadlink("http:" + externID));
+        }
+
+        // Check if we have a single video
+        final String file = br.getRegex("file\":\"(https?://videos\\.hornoxe\\.com/[^\"]+)").getMatch(0);
+        if (file != null) {
+            final DownloadLink vid = createDownloadlink(file.replace("hornoxe.com", "hornoxedecrypted.com"));
+            vid.setFinalFileName(pageName + file.substring(file.lastIndexOf(".")));
+            vid.setProperty("Referer", parameter);
+            decryptedLinks.add(vid);
+            return decryptedLinks;
         }
 
         // Check if we have a picdump
@@ -90,16 +108,6 @@ public class HrnOxCm extends PluginForDecrypt {
             return decryptedLinks;
         }
 
-        String pageName = br.getRegex("og:title\" content=\"(.*?)\" />").getMatch(0);
-        if (pageName == null) pageName = br.getRegex("<title>(.*?) \\- Hornoxe\\.com</title>").getMatch(0);
-        if (pageName == null) {
-            logger.warning("Decrypter failed for link: " + parameter);
-            return null;
-        }
-        pageName = Encoding.htmlDecode(pageName.trim());
-
-        String file = br.getRegex("file\":\"(https?://videos\\.hornoxe\\.com/[^\"]+)").getMatch(0);
-
         // Check if it's an image
         final String image = br.getRegex("\"(https?://(www\\.)hornoxe\\.com/wp\\-content/uploads[^<>\"]+)\"").getMatch(0);
         if (image != null) {
@@ -108,19 +116,6 @@ public class HrnOxCm extends PluginForDecrypt {
             decryptedLinks.add(img);
             return decryptedLinks;
         }
-
-        if (file == null || pageName == null) {
-            logger.warning("Decrypter failed for link: " + parameter);
-            return null;
-        }
-        final DownloadLink vid = createDownloadlink(file.replace("hornoxe.com", "hornoxedecrypted.com"));
-        vid.setFinalFileName(pageName + file.substring(file.lastIndexOf(".")));
-        vid.setProperty("Referer", parameter);
-        decryptedLinks.add(vid);
-
-        final FilePackage fp = FilePackage.getInstance();
-        fp.setName(pageName);
-        fp.addLinks(decryptedLinks);
 
         return decryptedLinks;
     }

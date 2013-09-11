@@ -20,12 +20,9 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
-import jd.http.Browser;
-import jd.nutils.encoding.Encoding;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
-import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
 //http://www.hornoxe.com/hornoxe-com-picdump-273/
@@ -37,44 +34,8 @@ public class HrnxCm extends PluginForDecrypt {
     }
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        String parameter = param.toString();
-        br.getPage(parameter);
-        String[] urls = br.getRegex("ngg\\-gallery\\-thumbnail\"\\s*>.*?<a href\\=\"(http.*?\\.jpg)\"").getColumn(0);
-        String title = br.getRegex("<meta property=\"og\\:title\" content=\"(.*?)\" \\/>").getMatch(0);
-        FilePackage fp = null;
-        if (title != null) {
-            fp = FilePackage.getInstance();
-            fp.setName(Encoding.htmlDecode(title.trim()));
-            fp.addLinks(decryptedLinks);
-        }
-
-        add(decryptedLinks, urls, fp);
-        String[] pageqs = br.getRegex("\"page-numbers\" href=\"(.*?nggpage\\=\\d+)").getColumn(0);
-
-        for (String page : pageqs) {
-            Browser pageBrowser = br.cloneBrowser();
-            pageBrowser.getPage(page);
-
-            urls = pageBrowser.getRegex("ngg\\-gallery\\-thumbnail\"\\s*>.*?<a href\\=\"(http.*?\\.jpg)\"").getColumn(0);
-            add(decryptedLinks, urls, fp);
-        }
-
-        return decryptedLinks;
-    }
-
-    private void add(ArrayList<DownloadLink> decryptedLinks, String[] urls, FilePackage fp) {
-
-        for (String url : urls) {
-            DownloadLink link = createDownloadlink("directhttp://" + url);
-            fp.add(link);
-            decryptedLinks.add(link);
-            try {
-                distribute(link);
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        }
+        logger.warning("Unused decrypter!!!");
+        return null;
     }
 
     /* NO OVERRIDE!! */

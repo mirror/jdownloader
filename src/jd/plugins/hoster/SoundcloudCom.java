@@ -57,10 +57,11 @@ public class SoundcloudCom extends PluginForHost {
         this.setConfigElements();
     }
 
-    public final static String  CLIENTID        = "b45b1aa10f1ac2941910a7f0d10f8e28";
-    private static final String CUSTOM_DATE     = "CUSTOM_DATE";
-    private static final String CUSTOM_FILENAME = "CUSTOM_FILENAME";
-    private static final String GRAB500THUMB    = "GRAB500THUMB";
+    public final static String  CLIENTID           = "b45b1aa10f1ac2941910a7f0d10f8e28";
+    private static final String CUSTOM_DATE        = "CUSTOM_DATE";
+    private static final String CUSTOM_FILENAME    = "CUSTOM_FILENAME";
+    private static final String GRAB500THUMB       = "GRAB500THUMB";
+    private static final String CUSTOM_PACKAGENAME = "CUSTOM_PACKAGENAME";
 
     public void correctDownloadLink(DownloadLink link) {
         link.setUrlDownload(link.getDownloadURL().replace("soundclouddecrypted", "soundcloud"));
@@ -311,7 +312,7 @@ public class SoundcloudCom extends PluginForHost {
         final SubConfiguration cfg = SubConfiguration.getConfig("soundcloud.com");
         String formattedFilename = cfg.getStringProperty(CUSTOM_FILENAME, defaultCustomFilename);
         if (formattedFilename == null || formattedFilename.equals("")) formattedFilename = defaultCustomFilename;
-        if (!formattedFilename.contains("*songtitle") || !formattedFilename.contains("*ext*")) formattedFilename = defaultCustomFilename;
+        if (!formattedFilename.contains("*songtitle*") || !formattedFilename.contains("*ext*")) formattedFilename = defaultCustomFilename;
         String ext = downloadLink.getStringProperty("type", null);
         if (ext != null)
             ext = "." + ext;
@@ -361,15 +362,18 @@ public class SoundcloudCom extends PluginForHost {
         return "JDownloader's soundcloud.com plugin helps downloading audiofiles. JDownloader provides settings for the filenames.";
     }
 
-    private final static String defaultCustomFilename = "*songtitle* - *channelname**ext*";
+    private final static String defaultCustomFilename    = "*songtitle* - *channelname**ext*";
+    private final static String defaultCustomPackagename = "*channelname* - *playlistname*";
 
     private void setConfigElements() {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), GRAB500THUMB, JDL.L("plugins.hoster.soundcloud.grab500thumb", "Grab 500x500 thumbnail (.jpg)?")).setDefaultValue(false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "Customize the filename properties"));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "Customize the filename/packagename properties:"));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), CUSTOM_DATE, JDL.L("plugins.hoster.soundcloud.customdate", "Define how the date should look.")).setDefaultValue("dd.MM.yyyy_HH-mm-ss"));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "Customize the filename! Example: '*channelname*_*date*_*videoname**ext*'"));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "Customize the filename properties:"));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "Customize the filename! Example: '*channelname*_*date*_*songtitle**ext*'"));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), CUSTOM_FILENAME, JDL.L("plugins.hoster.soundcloud.customfilename", "Define how the filenames should look:")).setDefaultValue(defaultCustomFilename));
         final StringBuilder sb = new StringBuilder();
         sb.append("Explanation of the available tags:\r\n");
@@ -378,7 +382,18 @@ public class SoundcloudCom extends PluginForHost {
         sb.append("*songtitle* = name of the song without extension\r\n");
         sb.append("*ext* = the extension of the file, in this case usually '.mp3'");
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, sb.toString()));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "Customize the packagename for playlists and 'soundcloud.com/user' links! Example: '*channelname* - *playlistname*':"));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), CUSTOM_PACKAGENAME, JDL.L("plugins.hoster.soundcloud.custompackagename", "Define how the packagenames should look:")).setDefaultValue(defaultCustomPackagename));
+        final StringBuilder sbpack = new StringBuilder();
+        sbpack.append("Explanation of the available tags:\r\n");
+        sbpack.append("*channelname* = name of the channel/uploader\r\n");
+        sbpack.append("*playlistname* = name of the playlist (= username for 'soundcloud.com/user' links)\r\n");
+        sbpack.append("*date* = date when the linklist was created - appears in the user-defined format above\r\n");
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, sbpack.toString()));
     }
+
+    // CUSTOM_PACKAGENAME
 
     @Override
     public int getMaxSimultanPremiumDownloadNum() {

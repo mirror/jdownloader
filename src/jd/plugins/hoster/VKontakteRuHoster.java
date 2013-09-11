@@ -54,6 +54,7 @@ public class VKontakteRuHoster extends PluginForHost {
     private static final String VIDEOLINK            = "http://vkontaktedecrypted\\.ru/videolink/\\d+";
     private static final String DOCLINK              = "http://vk\\.com/doc\\d+_\\d+\\?hash=[a-z0-9]+";
     private int                 MAXCHUNKS            = 1;
+    private static final String TEMPORARILYBLOCKED   = "You tried to load the same page more than once in one second|Sie haben versucht die Seite mehrfach innerhalb einer Sekunde zu laden";
     /** Settings stuff */
     private final String        USECOOKIELOGIN       = "USECOOKIELOGIN";
     private final String        FASTLINKCHECK        = "FASTLINKCHECK";
@@ -64,7 +65,10 @@ public class VKontakteRuHoster extends PluginForHost {
     private static final String ALLOW_360P           = "ALLOW_360P";
     private static final String ALLOW_480P           = "ALLOW_480P";
     private static final String ALLOW_720P           = "ALLOW_720P";
-    private static final String TEMPORARILYBLOCKED   = "You tried to load the same page more than once in one second|Sie haben versucht die Seite mehrfach innerhalb einer Sekunde zu laden";
+    private static final String VKWALL_GRAB_ALBUMS   = "VKWALL_GRAB_ALBUMS";
+    private static final String VKWALL_GRAB_PHOTOS   = "VKWALL_GRAB_PHOTOS";
+    private static final String VKWALL_GRAB_AUDIO    = "VKWALL_GRAB_AUDIO";
+    private static final String VKWALL_GRAB_VIDEO    = "VKWALL_GRAB_VIDEO";
 
     public VKontakteRuHoster(PluginWrapper wrapper) {
         super(wrapper);
@@ -449,6 +453,13 @@ public class VKontakteRuHoster extends PluginForHost {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_360P, JDL.L("plugins.hoster.vkontakteruhoster.check360", "Grab 360p MP4?")).setDefaultValue(true).setEnabledCondidtion(hq, false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_480P, JDL.L("plugins.hoster.vkontakteruhoster.check480", "Grab 480p MP4?")).setDefaultValue(true).setEnabledCondidtion(hq, false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_720P, JDL.L("plugins.hoster.vkontakteruhoster.check720", "Grab 720p MP4?")).setDefaultValue(true).setEnabledCondidtion(hq, false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "Settings for 'vk.com/wall' links: "));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), VKWALL_GRAB_ALBUMS, JDL.L("plugins.hoster.vkontakteruhoster.wallcheckalbums", "Grab album links ('vk.com/album')?")).setDefaultValue(true));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), VKWALL_GRAB_PHOTOS, JDL.L("plugins.hoster.vkontakteruhoster.wallcheckphotos", "Grab photo links ('vk.com/photo')?")).setDefaultValue(true));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), VKWALL_GRAB_AUDIO, JDL.L("plugins.hoster.vkontakteruhoster.wallcheckaudio", "Grab audio links (.mp3 directlinks)?")).setDefaultValue(true));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), VKWALL_GRAB_VIDEO, JDL.L("plugins.hoster.vkontakteruhoster.wallcheckvideo", "Grab video links ('vk.com/video')?")).setDefaultValue(true));
+
     }
 
     @Override

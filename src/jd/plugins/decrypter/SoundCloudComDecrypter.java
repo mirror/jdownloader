@@ -17,7 +17,9 @@
 package jd.plugins.decrypter;
 
 import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
@@ -43,16 +45,20 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
         super(wrapper);
     }
 
-    private static final String CLIENTID        = "b45b1aa10f1ac2941910a7f0d10f8e28";
-    private static final String INVALIDLINKS    = "https?://(www\\.)?soundcloud\\.com/(you/|tour|signup|logout|login|premium|messages|settings|imprint|community\\-guidelines|videos|terms\\-of\\-use|sounds|jobs|press|mobile|#?search|upload|people|dashboard|#).*?";
-    private static final String PLAYLISTAPILINK = "https?://(www\\.|m\\.)?api\\.soundcloud\\.com/playlists/\\d+\\?secret_token=[A-Za-z0-9\\-_]+";
+    private static final String CLIENTID           = "b45b1aa10f1ac2941910a7f0d10f8e28";
+    private static final String INVALIDLINKS       = "https?://(www\\.)?soundcloud\\.com/(you/|tour|signup|logout|login|premium|messages|settings|imprint|community\\-guidelines|videos|terms\\-of\\-use|sounds|jobs|press|mobile|#?search|upload|people|dashboard|#).*?";
+    private static final String PLAYLISTAPILINK    = "https?://(www\\.|m\\.)?api\\.soundcloud\\.com/playlists/\\d+\\?secret_token=[A-Za-z0-9\\-_]+";
 
-    private static final String GRAB500THUMB    = "GRAB500THUMB";
+    private static final String GRAB500THUMB       = "GRAB500THUMB";
+    private static final String CUSTOM_PACKAGENAME = "CUSTOM_PACKAGENAME";
+    private static final String CUSTOM_DATE        = "CUSTOM_DATE";
 
-    PluginForHost               HOSTPLUGIN      = null;
+    private PluginForHost       HOSTPLUGIN         = null;
+    private SubConfiguration    CFG                = null;
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        final boolean decryptThumb = SubConfiguration.getConfig("soundcloud.com").getBooleanProperty(GRAB500THUMB, false);
+        CFG = SubConfiguration.getConfig("soundcloud.com");
+        final boolean decryptThumb = CFG.getBooleanProperty(GRAB500THUMB, false);
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         // Sometimes slow servers
         br.setConnectTimeout(3 * 60 * 1000);
@@ -132,10 +138,13 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
                 logger.info("Link offline (empty set-link (playlist)): " + parameter);
                 return decryptedLinks;
             }
-            String fpName = null;
+            String username = null;
+            String playlistname = null;
             // For sets ("/set/" links)
             if (parameter.contains("/sets/")) {
-                fpName = (((jd.plugins.hoster.SoundcloudCom) HOSTPLUGIN).getXML("username", br.toString())) + " - " + new Regex(parameter, "/sets/(.+)$").getMatch(0);
+                playlistname = br.getRegex("<title>([^<>\"]*?)</title>").getMatch(0);
+                if (playlistname == null) playlistname = new Regex(parameter, "/sets/(.+)$").getMatch(0);
+                username = (((jd.plugins.hoster.SoundcloudCom) HOSTPLUGIN).getXML("username", br.toString()));
                 final String[] items = br.getRegex("<track>(.*?)</track>").getColumn(0);
                 final String usernameOfSet = new Regex(parameter, "soundcloud\\.com/(.*?)/sets/").getMatch(0);
                 if (items == null || items.length == 0 || usernameOfSet == null) {
@@ -155,8 +164,9 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
                 }
             } else {
                 // Decrypt all tracks of a user
-                fpName = ((jd.plugins.hoster.SoundcloudCom) HOSTPLUGIN).getXML("username", br.toString());
-                if (fpName == null) fpName = getJson("username");
+                username = ((jd.plugins.hoster.SoundcloudCom) HOSTPLUGIN).getXML("username", br.toString());
+                if (username == null) username = getJson("username");
+                if (username == null) username = new Regex(parameter, "soundcloud\\.com/(.+)").getMatch(0);
                 String userID = br.getRegex("<uri>https://api\\.soundcloud\\.com/users/(\\d+)").getMatch(0);
                 if (userID == null) userID = br.getRegex("id type=\"integer\">(\\d+)").getMatch(0);
                 if (userID == null) {
@@ -194,11 +204,15 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
                     decryptedLinks.add(dl);
                 }
             }
-            if (fpName != null) {
-                FilePackage fp = FilePackage.getInstance();
-                fp.setName(Encoding.htmlDecode(fpName.trim()));
-                fp.addLinks(decryptedLinks);
-            }
+            final String date = br.getRegex("<created\\-at type=\"datetime\">([^<>\"]*?)</created\\-at>").getMatch(0);
+            if (username == null) username = "Unknown user";
+            username = Encoding.htmlDecode(username.trim());
+            if (playlistname == null) playlistname = username;
+            playlistname = Encoding.htmlDecode(playlistname.trim());
+            final String fpName = getFormattedPackagename(username, playlistname, date);
+            FilePackage fp = FilePackage.getInstance();
+            fp.setName(fpName);
+            fp.addLinks(decryptedLinks);
         } else {
             // If the user wants to download the thumbnail also it's a bit more complicated
             if (decryptThumb) {
@@ -254,6 +268,47 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
         String result = br.getRegex("\"" + parameter + "\":(\\d+)").getMatch(0);
         if (result == null) result = br.getRegex("\"" + parameter + "\":\"([^\"]+)").getMatch(0);
         return result;
+    }
+
+    private final static String defaultCustomPackagename = "*channelname* - *playlistname*";
+
+    public String getFormattedPackagename(final String channelname, final String playlistname, String date) throws ParseException {
+        String formattedpackagename = CFG.getStringProperty(CUSTOM_PACKAGENAME, defaultCustomPackagename);
+        if (formattedpackagename == null || formattedpackagename.equals("")) formattedpackagename = defaultCustomPackagename;
+        if (!formattedpackagename.contains("*channelname*") && !formattedpackagename.contains("*playlistname*")) formattedpackagename = defaultCustomPackagename;
+
+        String formattedDate = null;
+        if (date != null && formattedpackagename.contains("*date*")) {
+            // 2011-08-10T22:50:49Z
+            date = date.replace("T", ":");
+            final String userDefinedDateFormat = CFG.getStringProperty(CUSTOM_DATE);
+            SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd:HH:mm");
+            Date dateStr = formatter.parse(date);
+
+            formattedDate = formatter.format(dateStr);
+            Date theDate = formatter.parse(formattedDate);
+
+            if (userDefinedDateFormat != null) {
+                try {
+                    formatter = new SimpleDateFormat(userDefinedDateFormat);
+                    formattedDate = formatter.format(theDate);
+                } catch (Exception e) {
+                    // prevent user error killing plugin.
+                    formattedDate = "";
+                }
+            }
+            if (formattedDate != null)
+                formattedpackagename = formattedpackagename.replace("*date*", formattedDate);
+            else
+                formattedpackagename = formattedpackagename.replace("*date*", "");
+        }
+        if (formattedpackagename.contains("*channelname*")) {
+            formattedpackagename = formattedpackagename.replace("*channelname*", channelname);
+        }
+        // Insert playlistname at the end to prevent errors with tags
+        formattedpackagename = formattedpackagename.replace("*playlistname*", playlistname);
+
+        return formattedpackagename;
     }
 
     /* NO OVERRIDE!! */

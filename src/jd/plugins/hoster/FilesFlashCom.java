@@ -51,10 +51,6 @@ public class FilesFlashCom extends PluginForHost {
     // link.setUrlDownload("http://filesflash.com/" + new Regex(link.getDownloadURL(), "([a-z0-9]+)$").getMatch(0));
     // }
 
-    public void correctDownloadLink(final DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replace("filesflash.net/", "filesflash.com/"));
-    }
-
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
@@ -200,4 +196,17 @@ public class FilesFlashCom extends PluginForHost {
         }
         return false;
     }
+
+/* NO OVERRIDE!! We need to stay 0.9*compatible */
+public boolean hasCaptcha(DownloadLink link, jd.plugins.Account acc) {
+if (acc == null) {
+/* no account, yes we can expect captcha */
+return true;
+}
+ if (Boolean.TRUE.equals(acc.getBooleanProperty("free"))) {
+/* free accounts also have captchas */
+return true;
+}
+return false;
+}
 }

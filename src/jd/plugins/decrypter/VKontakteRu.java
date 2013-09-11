@@ -65,6 +65,10 @@ public class VKontakteRu extends PluginForDecrypt {
     private static final String ALLOW_360P                         = "ALLOW_360P";
     private static final String ALLOW_480P                         = "ALLOW_480P";
     private static final String ALLOW_720P                         = "ALLOW_720P";
+    private static final String VKWALL_GRAB_ALBUMS                 = "VKWALL_GRAB_ALBUMS";
+    private static final String VKWALL_GRAB_PHOTOS                 = "VKWALL_GRAB_PHOTOS";
+    private static final String VKWALL_GRAB_AUDIO                  = "VKWALL_GRAB_AUDIO";
+    private static final String VKWALL_GRAB_VIDEO                  = "VKWALL_GRAB_VIDEO";
 
     private static final String FILEOFFLINE                        = "(id=\"msg_back_button\">Wr\\&#243;\\&#263;</button|B\\&#322;\\&#261;d dost\\&#281;pu)";
     private static final String DOMAIN                             = "http://vk.com";
@@ -772,10 +776,29 @@ public class VKontakteRu extends PluginForDecrypt {
             // First get all photo links
             // Correct browser html
             br.getRequest().setHtmlCode(br.toString().replace("&quot;", "'"));
-            final String[][] photoInfo = br.getRegex("showPhoto\\(\\'((\\-)?\\d+_\\d+)\\', \\'((wall|album)(\\-)?\\d+_\\d+)\\', \\{\\'temp\\':\\{(\\'base\\':.*?\\]\\})").getMatches();
-            final String[] albums = br.getRegex("\"(http://vk\\.com/album\\-\\d+_\\d+)\"").getColumn(0);
-            final String[] audiolinks = br.getRegex("<table cellspacing=\"0\" cellpadding=\"0\" width=\"100%\">(.*?)</table>").getColumn(0);
-            final String[] videolinks = br.getRegex("event\\);\"  href=\"(/video(\\-)?\\d+_\\d+(\\?list=[a-z0-9]+)?)\"").getColumn(0);
+
+            /** Grab contents according to the settings START */
+            boolean grabalbums = cfg.getBooleanProperty(VKWALL_GRAB_ALBUMS, false);
+            boolean grabphotos = cfg.getBooleanProperty(VKWALL_GRAB_PHOTOS, false);
+            boolean grabaudio = cfg.getBooleanProperty(VKWALL_GRAB_AUDIO, false);
+            boolean grabvideo = cfg.getBooleanProperty(VKWALL_GRAB_VIDEO, false);
+            if (grabalbums == false && grabphotos == false && grabaudio == false && grabvideo == false) {
+                grabalbums = true;
+                grabphotos = true;
+                grabaudio = true;
+                grabvideo = true;
+            }
+
+            String[] albums = null;
+            if (grabalbums) albums = br.getRegex("\"(http://vk\\.com/album\\-\\d+_\\d+)\"").getColumn(0);
+            String[][] photoInfo = null;
+            if (grabphotos) photoInfo = br.getRegex("showPhoto\\(\\'((\\-)?\\d+_\\d+)\\', \\'((wall|album)(\\-)?\\d+_\\d+)\\', \\{\\'temp\\':\\{(\\'base\\':.*?\\]\\})").getMatches();
+            String[] audiolinks = null;
+            if (grabaudio) audiolinks = br.getRegex("<table cellspacing=\"0\" cellpadding=\"0\" width=\"100%\">(.*?)</table>").getColumn(0);
+            String[] videolinks = null;
+            if (grabvideo) videolinks = br.getRegex("event\\);\"  href=\"(/video(\\-)?\\d+_\\d+(\\?list=[a-z0-9]+)?)\"").getColumn(0);
+            /** Grab contents according to the settings END */
+
             if ((photoInfo == null || photoInfo.length == 0) && (albums == null || albums.length == 0) && (audiolinks == null || audiolinks.length == 0) && (videolinks == null || videolinks.length == 0)) {
                 logger.info("Current offset has no downloadable links, continuing...");
                 continue;

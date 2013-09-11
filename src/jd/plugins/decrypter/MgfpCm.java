@@ -18,6 +18,7 @@ package jd.plugins.decrypter;
 
 import java.text.DecimalFormat;
 import java.util.ArrayList;
+import java.util.Random;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -57,11 +58,19 @@ public class MgfpCm extends PluginForDecrypt {
             try {
                 br.getPage(parameter);
             } catch (final BrowserException e) {
-                logger.info("Link offline: " + parameter);
+                final DownloadLink link = createDownloadlink("http://imagefap.com/imagedecrypted/" + new Random().nextInt(1000000));
+                link.setFinalFileName(new Regex(parameter, "imagefap\\.com/(.+)").getMatch(0));
+                link.setAvailable(false);
+                link.setProperty("offline", true);
+                decryptedLinks.add(link);
                 return decryptedLinks;
             }
-            if (br.getURL().contains("imagefap.com/404.php")) {
-                logger.info("Link offline: " + parameter);
+            if (br.getURL().contains("imagefap.com/404.php") || br.containsHTML(">Could not find gallery<")) {
+                final DownloadLink link = createDownloadlink("http://imagefap.com/imagedecrypted/" + new Random().nextInt(1000000));
+                link.setFinalFileName(new Regex(parameter, "imagefap\\.com/(.+)").getMatch(0));
+                link.setAvailable(false);
+                link.setProperty("offline", true);
+                decryptedLinks.add(link);
                 return decryptedLinks;
             }
             if (br.getRedirectLocation() != null) {
