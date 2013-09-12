@@ -25,7 +25,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "likeupload.net" }, urls = { "NOTUSED://AHSFHASHFASHFASHFASf1" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "NOTUSED-likeupload.net" }, urls = { "NOTUSED://AHSFHASHFASHFASHFASf1" }, flags = { 0 })
 public class LikeUploadNet extends PluginForHost {
 
     private final String COOKIE_HOST = "http://likeupload.org";
