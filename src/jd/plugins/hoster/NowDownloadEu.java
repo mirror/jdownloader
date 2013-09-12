@@ -41,7 +41,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "nowdownload.eu" }, urls = { "http://(www\\.)?nowdownload\\.(eu|co|ch)/(dl(\\d+)?/|down\\.php\\?id=)[a-z0-9]+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "nowdownload.eu", "likeupload.net" }, urls = { "http://(www\\.)?nowdownload\\.(eu|co|ch)/(dl(\\d+)?/|down\\.php\\?id=)[a-z0-9]+", "https?://(www\\.)?likeupload\\.(net|org)/[a-z0-9]{12}" }, flags = { 2, 2 })
 public class NowDownloadEu extends PluginForHost {
 
     public NowDownloadEu(PluginWrapper wrapper) {
@@ -92,7 +92,12 @@ public class NowDownloadEu extends PluginForHost {
     private static final String    TEMPUNAVAILABLEUSERTEXT = "Host says: 'The file is being transfered. Please wait!'";
 
     public void correctDownloadLink(DownloadLink link) {
-        link.setUrlDownload("http://www.nowdownload." + DOMAIN + "/dl/" + new Regex(link.getDownloadURL(), "([a-z0-9]+)$").getMatch(0));
+        if (link.getDownloadURL().contains("likeupload.")) {
+            // all likeupload uid to nowdownload uid contain 0 prefix
+            link.setUrlDownload("http://www.nowdownload." + DOMAIN + "/dl/0" + new Regex(link.getDownloadURL(), "([a-z0-9]{12})$").getMatch(0));
+        } else {
+            link.setUrlDownload("http://www.nowdownload." + DOMAIN + "/dl/" + new Regex(link.getDownloadURL(), "([a-z0-9]+)$").getMatch(0));
+        }
     }
 
     private void correctCurrentDomain() {
@@ -284,6 +289,11 @@ public class NowDownloadEu extends PluginForHost {
     @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
+        if (!account.getUser().matches(".+@.+")) {
+            ai.setStatus("Please enter your E-Mail adress as username!");
+            account.setValid(false);
+            return ai;
+        }
         try {
             login(account, true);
         } catch (PluginException e) {
