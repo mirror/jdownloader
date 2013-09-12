@@ -66,7 +66,7 @@ public class PlayedTo extends PluginForHost {
 
     // DEV NOTES
     // XfileSharingProBasic Version 2.6.0.8
-    // mods: removed filesize regexes, there is no filesize given, replaced dllink regexes with a new one
+    // mods: many, do NOT upgrade!
     // non account: 2 * 1
     // free account: chunks * maxdls
     // premium account: chunks * maxdls
@@ -207,6 +207,9 @@ public class PlayedTo extends PluginForHost {
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
                 }
+                download1.remove("imhuman");
+                download1.put("imhuman", "Continue to Video");
+                waitTime(System.currentTimeMillis(), downloadLink);
                 // end of backward compatibility
                 sendForm(download1);
                 checkErrors(downloadLink, false, passCode);
@@ -378,7 +381,6 @@ public class PlayedTo extends PluginForHost {
 
         // generic cleanup
         regexStuff.add("<\\!(\\-\\-.*?\\-\\-)>");
-        regexStuff.add("(display: ?none;\">.*?</div>)");
         regexStuff.add("(visibility:hidden>.*?<)");
 
         for (String aRegex : regexStuff) {
@@ -479,7 +481,7 @@ public class PlayedTo extends PluginForHost {
     private void waitTime(long timeBefore, final DownloadLink downloadLink) throws PluginException {
         int passedTime = (int) ((System.currentTimeMillis() - timeBefore) / 1000) - 1;
         /** Ticket Time */
-        final String ttt = new Regex(correctedBR, "id=\"countdown_str\">[^<>\"]+<span id=\"[^<>\"]+\"( class=\"[^<>\"]+\")?>([\n ]+)?(\\d+)([\n ]+)?</span>").getMatch(2);
+        final String ttt = new Regex(correctedBR, "var countdownNum = (\\d+);").getMatch(0);
         if (ttt != null) {
             int tt = Integer.parseInt(ttt);
             tt -= passedTime;
