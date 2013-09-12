@@ -21,6 +21,7 @@ import java.lang.reflect.Field;
 
 import jd.PluginWrapper;
 import jd.http.URLConnectionAdapter;
+import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -28,7 +29,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision: 15419 $", interfaceVersion = 2, names = { "imgur.com" }, urls = { "https?://imgurdecrypted.+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision: 15419 $", interfaceVersion = 2, names = { "imgur.com" }, urls = { "https?://imgurdecrypted/download/[A-Za-z0-9]+" }, flags = { 0 })
 public class ImgUrCom extends PluginForHost {
 
     // DEV NOTES
@@ -42,6 +43,8 @@ public class ImgUrCom extends PluginForHost {
     public String getAGBLink() {
         return "http://imgur.com/tos";
     }
+
+    private String DLLINK = null;
 
     @Override
     public void correctDownloadLink(final DownloadLink link) throws Exception {
@@ -69,12 +72,15 @@ public class ImgUrCom extends PluginForHost {
         return AvailableStatus.UNCHECKED;
     }
 
-    public boolean checkLinks(DownloadLink[] urls) {
+    public boolean checkLinks(final DownloadLink[] urls) {
         br.setFollowRedirects(true);
         if (urls == null || urls.length == 0) { return false; }
         try {
-            for (DownloadLink dl : urls) {
-                final URLConnectionAdapter con = br.openGetConnection(dl.getDownloadURL());
+            for (final DownloadLink dl : urls) {
+                // Do NOT use the original "/download/" link as the server (sometimes) sends the wrong content-length which results in
+                // incomplete downloads
+                DLLINK = "http://i.imgur.com/" + new Regex(dl.getDownloadURL(), "imgur\\.com/download/(.+)").getMatch(0) + ".jpg";
+                final URLConnectionAdapter con = br.openGetConnection(DLLINK);
                 if (con.getContentType().contains("html")) {
                     dl.setAvailable(false);
                     continue;
@@ -98,7 +104,7 @@ public class ImgUrCom extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
         br.setFollowRedirects(true);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadLink.getDownloadURL(), true, 0);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
