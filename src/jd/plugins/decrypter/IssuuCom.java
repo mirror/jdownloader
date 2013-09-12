@@ -37,7 +37,7 @@ public class IssuuCom extends PluginForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final String parameter = param.toString().replace("http://www.", "http://");
+        final String parameter = param.toString().replace("http://www.", "http://").toLowerCase();
         br.getPage(parameter);
         if (br.containsHTML(">We can\\'t find what you\\'re looking for")) {
             logger.info("Link offline: " + parameter);

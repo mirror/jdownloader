@@ -19,6 +19,7 @@ package jd.plugins.decrypter;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -42,6 +43,7 @@ public class MvWrldNt extends PluginForDecrypt {
 
     private static final String UNSUPPORTEDLINKS        = "http://(www\\.)?(xxx\\-4\\-free\\.net|mov\\-world\\.net|chili\\-warez\\.net)//?(news/|topliste/|premium_zugang|suche/|faq|pics/index|clips/index|movies/index|streams/index|stories/index|partner/anmelden|kontakt).*?\\.html";
     private static final String SPECIALUNSUPPORTEDLINKS = "http://(www\\.)?chili\\-warez\\.net//[a-z0-9\\-_]+/[a-z0-9\\-_]+/seite\\-\\d+\\.html";
+    private static final String XXX4FREESTREAMLINK      = "http://(www\\.)?xxx\\-4\\-free\\.net/streams/[a-z0-9\\-]+\\.html";
 
     @Override
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, final ProgressController progress) throws Exception {
@@ -65,6 +67,27 @@ public class MvWrldNt extends PluginForDecrypt {
         if (br.getURL().contains("mov-world.net/error.html?error=404") || br.containsHTML(">404 Not Found<")) {
             logger.info("Link offline (error 404): " + parameter);
             return decryptedLinks;
+        }
+
+        if (parameter.matches(XXX4FREESTREAMLINK)) {
+            String externID = br.getRegex("name=\"FlashVars\" value=\"options=(http://(www\\.)?pornhub\\.com/embed_player(_v\\d+)?\\.php\\?id=\\d+)\"").getMatch(0);
+            if (externID != null) {
+                br.getPage(externID);
+                if (br.containsHTML("<link_url>N/A</link_url>") || br.containsHTML("No htmlCode read") || br.containsHTML(">404 Not Found<")) {
+                    final DownloadLink offline = createDownloadlink("http://www.pornhub.com/view_video.php?viewkey=7684385859" + new Random().nextInt(10000000));
+                    offline.setName(externID);
+                    offline.setAvailable(false);
+                    decryptedLinks.add(offline);
+                    return decryptedLinks;
+                }
+                externID = br.getRegex("<link_url>(http://[^<>\"]*?)</link_url>").getMatch(0);
+                if (externID == null) {
+                    logger.warning("Decrypter broken for link: " + parameter);
+                    return null;
+                }
+                decryptedLinks.add(createDownloadlink(externID));
+                return decryptedLinks;
+            }
         }
 
         final String MAINPAGE = "http://" + br.getHost();

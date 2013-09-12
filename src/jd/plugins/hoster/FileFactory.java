@@ -680,7 +680,7 @@ public class FileFactory extends PluginForHost {
                     fileSize = br.getRegex(regex).getMatch(1);
                 }
                 if (fileName == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
-                downloadLink.setName(fileName.trim());
+                downloadLink.setName(Encoding.htmlDecode(fileName.trim()));
                 if (fileSize != null) downloadLink.setDownloadSize(SizeFormatter.getSize(fileSize));
             }
 

@@ -120,7 +120,7 @@ public class PerfectGirlsNet extends PluginForDecrypt {
             decryptedLinks.add(createDownloadlink("http://www.metacafe.com/watch/" + externID + "/" + System.currentTimeMillis()));
             return decryptedLinks;
         }
-        externID = br.getRegex("pornhub\\.com/embed/(\\d+)").getMatch(0);
+        externID = br.getRegex("pornhub\\.com/embed/([a-z0-9]+)").getMatch(0);
         if (externID == null) externID = br.getRegex("pornhub\\.com/view_video\\.php\\?viewkey=(\\d+)").getMatch(0);
         if (externID != null) {
             DownloadLink dl = createDownloadlink("http://www.pornhub.com/view_video.php?viewkey=" + externID);

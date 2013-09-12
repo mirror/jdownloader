@@ -35,7 +35,12 @@ public class PrimeJailBaitCom extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
+        br.setFollowRedirects(true);
         br.getPage(parameter);
+        if (br.containsHTML("images/404\\.png\"") || br.getURL().equals("http://primejailbait.com/404/")) {
+            logger.info("Link offline: " + parameter);
+            return decryptedLinks;
+        }
         String finallink = br.getRegex("<div id=\"bigwall\" class=\"right\">[\t\n\r ]+<img border=0 src=\\'(http://[^<>\"]*?)\\'").getMatch(0);
         if (finallink == null) finallink = br.getRegex("\\'(http://pics\\.primejailbait\\.com/pics/original/[a-z0-9]+\\.jpg)\\'").getMatch(0);
         if (finallink == null) {

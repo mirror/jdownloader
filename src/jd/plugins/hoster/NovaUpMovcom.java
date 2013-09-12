@@ -82,7 +82,8 @@ public class NovaUpMovcom extends PluginForHost {
                 return AvailableStatus.TRUE;
             }
             if (DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            final URLConnectionAdapter con = br.openGetConnection(Encoding.urlDecode(DLLINK, false));
+            DLLINK = Encoding.urlDecode(DLLINK, false);
+            final URLConnectionAdapter con = br.openGetConnection(DLLINK);
             try {
                 downloadLink.setDownloadSize(con.getLongContentLength());
             } finally {

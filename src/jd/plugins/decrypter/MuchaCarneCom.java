@@ -44,6 +44,10 @@ public class MuchaCarneCom extends PluginForDecrypt {
             logger.info("Link offline: " + parameter);
             return decryptedLinks;
         }
+        if (br.containsHTML("<div id=\"playercontent\" style=\"z\\-index:1;\" align=\"center\">[\t\n\r ]+<center>[\t\n\r ]+</center>")) {
+            logger.info("Link offline (empty): " + parameter);
+            return decryptedLinks;
+        }
         br.setFollowRedirects(false);
         String filename = br.getRegex("<title>([^<>\"]*?)\\- MuchaCarne\\.xxx</title>").getMatch(0);
         if (filename == null) filename = br.getRegex("<title>([^<>\"]*?)</title>").getMatch(0);

@@ -256,7 +256,7 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
             thumb.setProperty("originaldate", audiolink.getStringProperty("originaldate", null));
             thumb.setProperty("plainfilename", audiolink.getStringProperty("plainfilename", null));
             thumb.setProperty("channel", audiolink.getStringProperty("channel", null));
-            thumb.setProperty("type", ".jpg");
+            thumb.setProperty("type", "jpg");
             final String formattedFilename = ((jd.plugins.hoster.SoundcloudCom) HOSTPLUGIN).getFormattedFilename(thumb);
             thumb.setFinalFileName(formattedFilename);
             thumb.setAvailable(true);

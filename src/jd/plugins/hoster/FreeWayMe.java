@@ -156,6 +156,7 @@ public class FreeWayMe extends PluginForHost {
                 ac.setUnlimitedTraffic();
             }
         }
+        ac.setProperty("notifications", br.getRegex("notis\":(\\d+)").getMatch(0));
         ac.setProperty("acctype", accountType);
         // now let's get a list of all supported hosts:
         br.getPage("https://www.free-way.me/ajax/jd.php?id=3");
@@ -279,6 +280,7 @@ public class FreeWayMe extends PluginForHost {
                 final String lang = System.getProperty("user.language");
                 final String accType = ai.getStringProperty("acctype", null);
                 final String maxSimultanDls = account.getStringProperty("parallel", null);
+                final String notifications = account.getStringProperty("notifications", "0");
 
                 Set<MultihostContainer> hostList = new HashSet<MultihostContainer>();
 
@@ -314,6 +316,7 @@ public class FreeWayMe extends PluginForHost {
                     panelGenerator.addEntry("Account Typ:", accType);
 
                     if (maxSimultanDls != null) panelGenerator.addEntry("Gleichzeitige Downloads:", maxSimultanDls);
+                    panelGenerator.addEntry("Benachrichtigungen:", notifications);
 
                     panelGenerator.addCategory("Unterstützte Hoster");
                     panelGenerator.addEntry("Anzahl: ", Integer.toString(hostList.size()));
@@ -326,6 +329,7 @@ public class FreeWayMe extends PluginForHost {
                     panelGenerator.addEntry("Account Type:", accType);
 
                     if (maxSimultanDls != null) panelGenerator.addEntry("Simultaneous Downloads:", maxSimultanDls);
+                    panelGenerator.addEntry("Notifications:", notifications);
 
                     panelGenerator.addCategory("Supported Hosts");
                     panelGenerator.addEntry("Amount: ", Integer.toString(hostList.size()));
