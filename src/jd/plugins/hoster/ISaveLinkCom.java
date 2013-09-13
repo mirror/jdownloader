@@ -107,14 +107,11 @@ public class ISaveLinkCom extends PluginForHost {
     // other: no redirects
     // mods:
 
-    // TODO: feature to factor in current download IP. NOTE: this current mod might not work well with JD2 multi-proxing, until thats
-    // implemented.
-
     private void setConstants(final Account account) {
         if (account != null && account.getBooleanProperty("free")) {
             // free account
-            chunks = 0;
-            resumes = true;
+            chunks = 1;
+            resumes = false;
             acctype = "Free Account";
             directlinkproperty = "freelink2";
         } else if (account != null && !account.getBooleanProperty("free")) {
@@ -125,8 +122,8 @@ public class ISaveLinkCom extends PluginForHost {
             directlinkproperty = "premlink";
         } else {
             // non account
-            chunks = 0;
-            resumes = true;
+            chunks = 1;
+            resumes = false;
             acctype = "Non Account";
             directlinkproperty = "freelink";
         }
