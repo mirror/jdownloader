@@ -71,21 +71,21 @@ import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.os.CrossSystem;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "isavelink.com" }, urls = { "https?://(www\\.)?isavelink\\.com/((vid)?embed-)?[a-z0-9]{12}" }, flags = { 2 })
+@HostPlugin(revision = "$Revision: 19496 $", interfaceVersion = 2, names = { "fastsonic.net" }, urls = { "https?://(www\\.)?fastsonic\\.net/((vid)?embed-)?[a-z0-9]{12}" }, flags = { 2 })
 @SuppressWarnings("deprecation")
-public class ISaveLinkCom extends PluginForHost {
+public class FastSonicNet extends PluginForHost {
 
     // Site Setters
     // primary website url, take note of redirects
-    private final String               COOKIE_HOST                  = "http://isavelink.com";
+    private final String               COOKIE_HOST                  = "http://fastsonic.net";
     // domain names used within download links.
-    private final String               DOMAINS                      = "(isavelink\\.com)";
+    private final String               DOMAINS                      = "(fastsonic\\.net)";
     private final String               PASSWORDTEXT                 = "<br><b>Passwor(d|t):</b> <input";
     private final String               MAINTENANCE                  = ">This server is in maintenance mode";
     private final String               dllinkRegex                  = "https?://(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|([\\w\\-]+\\.)?" + DOMAINS + ")(:\\d{1,5})?/(files(/(dl|download))?|d|cgi-bin/dl\\.cgi)/(\\d+/)?([a-z0-9]+/){1,4}[^/<>\r\n\t]+";
     private final boolean              supportsHTTPS                = false;
     private final boolean              enforcesHTTPS                = false;
-    private final boolean              useRUA                       = false;
+    private final boolean              useRUA                       = true;
     private final boolean              useAltLinkCheck              = false;
     private final boolean              useVidEmbed                  = false;
     private final boolean              useAltEmbed                  = false;
@@ -103,29 +103,26 @@ public class ISaveLinkCom extends PluginForHost {
     // DEV NOTES
     // XfileShare Version 3.0.8.0
     // last XfileSharingProBasic compare :: 2.6.2.1
-    // captchatype: null 4dignum recaptcha solvemedia keycaptcha
+    // captchatype: 4dignum
     // other: no redirects
-    // mods:
-
-    // TODO: feature to factor in current download IP. NOTE: this current mod might not work well with JD2 multi-proxing, until thats
-    // implemented.
+    // mods: fetchAccountInfo: regex cbr to br & space regex.
 
     private void setConstants(final Account account) {
         if (account != null && account.getBooleanProperty("free")) {
             // free account
-            chunks = 0;
+            chunks = -2;
             resumes = true;
             acctype = "Free Account";
             directlinkproperty = "freelink2";
         } else if (account != null && !account.getBooleanProperty("free")) {
             // prem account
-            chunks = 0;
+            chunks = -10; // tested
             resumes = true;
             acctype = "Premium Account";
             directlinkproperty = "premlink";
         } else {
             // non account
-            chunks = 0;
+            chunks = -2; // tested
             resumes = true;
             acctype = "Non Account";
             directlinkproperty = "freelink";
@@ -166,7 +163,7 @@ public class ISaveLinkCom extends PluginForHost {
      * 
      * @category 'Experimental', Mods written July 2012 - 2013
      * */
-    public ISaveLinkCom(PluginWrapper wrapper) {
+    public FastSonicNet(PluginWrapper wrapper) {
         super(wrapper);
         setConfigElements();
         this.enablePremium(COOKIE_HOST + "/premium.html");
@@ -285,7 +282,7 @@ public class ISaveLinkCom extends PluginForHost {
         if (inValidate(fileInfo[0])) {
             fileInfo[0] = cbr.getRegex("You have requested.*?https?://(www\\.)?" + DOMAINS + "/" + fuid + "/(.*?)</font>").getMatch(2);
             if (inValidate(fileInfo[0])) {
-                fileInfo[0] = cbr.getRegex("fname\"( type=\"hidden\")? value=\"(.*?)\"").getMatch(1);
+                fileInfo[0] = br.getRegex("fname\"( type=\"hidden\")? value=\"(.*?)\"").getMatch(1);
                 if (inValidate(fileInfo[0])) {
                     fileInfo[0] = cbr.getRegex("<h2>Download File(.*?)</h2>").getMatch(0);
                     if (inValidate(fileInfo[0])) {
@@ -307,15 +304,15 @@ public class ISaveLinkCom extends PluginForHost {
             }
         }
         if (inValidate(fileInfo[1])) {
-            fileInfo[1] = cbr.getRegex("\\(([0-9]+ bytes)\\)").getMatch(0);
+            fileInfo[1] = br.getRegex("\\(([0-9]+ bytes)\\)").getMatch(0);
             if (inValidate(fileInfo[1])) {
-                fileInfo[1] = cbr.getRegex("</font>[ ]+\\(([^<>\"'/]+)\\)(.*?)</font>").getMatch(0);
+                fileInfo[1] = br.getRegex("</font>[ ]+\\(([^<>\"'/]+)\\)(.*?)</font>").getMatch(0);
                 if (inValidate(fileInfo[1])) {
-                    fileInfo[1] = cbr.getRegex("(\\d+(\\.\\d+)? ?(KB|MB|GB))").getMatch(0);
+                    fileInfo[1] = br.getRegex("(\\d+(\\.\\d+)? ?(KB|MB|GB))</font>").getMatch(0);
                     if (inValidate(fileInfo[1])) {
                         try {
                             // only needed in rare circumstances
-                            // altAvailStat(downloadLink, fileInfo);
+                            altAvailStat(downloadLink, fileInfo);
                         } catch (Exception e) {
                         }
                     }
@@ -388,19 +385,20 @@ public class ISaveLinkCom extends PluginForHost {
         // Fourth, continue like normal.
         if (inValidate(dllink)) {
             checkErrors(downloadLink, account, false);
-            Form download1 = getFormByKey(cbr, "op", "download1");
+            Form download1 = getFormByKey(br, "op", "download1");
             if (download1 != null) {
                 // stable is lame, issue finding input data fields correctly. eg. closes at ' quotation mark - remove when jd2 goes stable!
                 download1 = cleanForm(download1);
                 // end of backward compatibility
                 download1.remove("method_premium");
+                if (!download1.hasInputFieldByName("method_free")) download1.put("method_free", "Free+Download");
                 sendForm(download1);
                 checkErrors(downloadLink, account, false);
                 getDllink();
             }
         }
         if (inValidate(dllink)) {
-            Form dlForm = getFormByKey(cbr, "op", "download2");
+            Form dlForm = getFormByKey(br, "op", "download2");
             if (dlForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             // how many forms deep do you want to try.
             int repeat = 2;
@@ -426,14 +424,14 @@ public class ISaveLinkCom extends PluginForHost {
                 logger.info("Submitted DLForm");
                 checkErrors(downloadLink, account, true);
                 getDllink();
-                if (inValidate(dllink) && (getFormByKey(cbr, "op", "download2") == null || i == repeat)) {
+                if (inValidate(dllink) && (getFormByKey(br, "op", "download2") == null || i == repeat)) {
                     if (i == repeat)
                         logger.warning("Exausted repeat count, after 'dllink == null'");
                     else
                         logger.warning("Couldn't find 'download2' and 'dllink == null'");
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                } else if (inValidate(dllink) && getFormByKey(cbr, "op", "download2") != null) {
-                    dlForm = getFormByKey(cbr, "op", "download2");
+                } else if (inValidate(dllink) && getFormByKey(br, "op", "download2") != null) {
+                    dlForm = getFormByKey(br, "op", "download2");
                     continue;
                 } else {
                     break;
@@ -683,7 +681,7 @@ public class ISaveLinkCom extends PluginForHost {
         } else {
             account.setProperty("free", false);
         }
-        String space[] = cbr.getRegex(">Used space.*?<b>([0-9\\.]+) ?(KB|MB|GB|TB)?</b>").getRow(0);
+        String space[] = br.getRegex(">Used space.*?<b>([0-9\\.]+) ?(KB|MB|GB|TB)?</b>").getRow(0);
         if (space == null || space.length == 0) space = cbr.getRegex(">Used space.*?<b>([0-9\\.]+) of [0-9\\.]+ ?(KB|MB|GB|TB)?</b>").getRow(0);
         if ((space != null && space.length != 0) && (!inValidate(space[0]) && !inValidate(space[1]))) {
             // free users it's provided by default
@@ -693,7 +691,7 @@ public class ISaveLinkCom extends PluginForHost {
             ai.setUsedSpace(space[0] + "Mb");
         }
         account.setValid(true);
-        String availabletraffic = cbr.getRegex("Traffic available.*?:</TD><TD><b>([^<>\"']+)</b>").getMatch(0);
+        String availabletraffic = br.getRegex("Traffic available[^\r\n]+:</TD><TD><b>([^<>\"']+)</b>").getMatch(0);
         if (!inValidate(availabletraffic) && !availabletraffic.contains("nlimited") && !availabletraffic.equalsIgnoreCase(" Mb")) {
             availabletraffic = availabletraffic.trim();
             // need to set 0 traffic left, as getSize returns positive result, even when negative value supplied.
@@ -717,7 +715,7 @@ public class ISaveLinkCom extends PluginForHost {
             if (inValidate(expireDay) || useAltExpire) {
                 // A more accurate expire time, down to the second. Usually shown on 'extend premium account' page.
                 getPage("/?op=payments");
-                String expireSecond = cbr.getRegex("Premium(\\-| )Account expires?:([^\n\r]+)").getMatch(1);
+                String expireSecond = br.getRegex("Premium(\\-| )Account expires?:([^\n\r]+)").getMatch(1);
                 if (!inValidate(expireSecond)) {
                     String tmpYears = new Regex(expireSecond, "(\\d+)\\s+years?").getMatch(0);
                     String tmpdays = new Regex(expireSecond, "(\\d+)\\s+days?").getMatch(0);
@@ -771,7 +769,7 @@ public class ISaveLinkCom extends PluginForHost {
                     }
                 }
                 br.setFollowRedirects(true);
-                getPage(COOKIE_HOST.replaceFirst("https?://", getProtocol()) + "/acc_login.html");
+                getPage(COOKIE_HOST.replaceFirst("https?://", getProtocol()) + "/login.html");
                 Form loginform = br.getFormbyProperty("name", "FL");
                 if (loginform == null) {
                     if ("de".equalsIgnoreCase(language)) {
@@ -1208,6 +1206,8 @@ public class ISaveLinkCom extends PluginForHost {
         if (dllink != null) {
             try {
                 Browser br2 = br.cloneBrowser();
+                br2.setReadTimeout(3 * 60 * 1000);
+                br2.setConnectTimeout(3 * 60 * 1000);
                 br2.setFollowRedirects(true);
                 URLConnectionAdapter con = br2.openGetConnection(dllink);
                 if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
