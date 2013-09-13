@@ -423,6 +423,9 @@ public class RtmpDump extends RTMPDownload {
 
             if (downloadLink.getLinkStatus().getStatus() == LinkStatus.ERROR_DOWNLOAD_INCOMPLETE) return false;
             if (error.isEmpty() && line == null) {
+                if (downloadLink.getBooleanProperty("FLVFIXER", false)) {
+                    if (!FixFlv(tmpFile)) return false;
+                }
                 logger.severe("RtmpDump: An unknown error has occured!");
                 downloadLink.getLinkStatus().addStatus(LinkStatus.ERROR_RETRY);
                 /* CHECK: downloadLink.reset was here */

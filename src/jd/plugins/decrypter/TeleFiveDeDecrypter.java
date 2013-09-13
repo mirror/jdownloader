@@ -16,23 +16,119 @@
 
 package jd.plugins.decrypter;
 
-import java.math.BigInteger;
+import java.io.ByteArrayOutputStream;
+import java.io.InputStream;
+import java.io.UnsupportedEncodingException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.zip.Inflater;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
-import jd.http.requests.PostRequest;
+import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
-import jd.utils.JDHexUtils;
+import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "tele5.de" }, urls = { "http://(www\\.)?tele5\\.de/\\w+" }, flags = { 0 })
+import org.appwork.utils.formatter.SizeFormatter;
+import org.w3c.dom.Document;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
+
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "tele5.de" }, urls = { "http://(www\\.)?tele5\\.de/[\\w/\\-]+" }, flags = { 0 })
 public class TeleFiveDeDecrypter extends PluginForDecrypt {
+
+    private static class SWFDecompressor {
+
+        public SWFDecompressor() {
+            super();
+        }
+
+        public byte[] decompress(String s) { // ~2000ms
+            byte[] buffer = new byte[512];
+            InputStream input = null;
+            ByteArrayOutputStream result = null;
+            byte[] enc = null;
+
+            try {
+                URL url = new URL(s);
+                input = url.openStream(); // ~500ms
+                result = new ByteArrayOutputStream();
+
+                try {
+                    int amount;
+                    while ((amount = input.read(buffer)) != -1) { // ~1500ms
+                        result.write(buffer, 0, amount);
+                    }
+                } finally {
+                    try {
+                        input.close();
+                    } catch (Throwable e) {
+                    }
+                    try {
+                        result.close();
+                    } catch (Throwable e2) {
+                    }
+                    enc = result.toByteArray();
+                }
+            } catch (Throwable e3) {
+                e3.getStackTrace();
+                return null;
+            }
+            return uncompress(enc);
+        }
+
+        /**
+         * Strips the uncompressed header bytes from a swf file byte array
+         * 
+         * @param bytes
+         *            of the swf
+         * @return bytes array minus the uncompressed header bytes
+         */
+        private byte[] strip(byte[] bytes) {
+            byte[] compressable = new byte[bytes.length - 8];
+            System.arraycopy(bytes, 8, compressable, 0, bytes.length - 8);
+            return compressable;
+        }
+
+        private byte[] uncompress(byte[] b) {
+            Inflater decompressor = new Inflater();
+            decompressor.setInput(strip(b));
+            ByteArrayOutputStream bos = new ByteArrayOutputStream(b.length - 8);
+            byte[] buffer = new byte[1024];
+
+            try {
+                while (true) {
+                    int count = decompressor.inflate(buffer);
+                    if (count == 0 && decompressor.finished()) {
+                        break;
+                    } else if (count == 0) {
+                        return null;
+                    } else {
+                        bos.write(buffer, 0, count);
+                    }
+                }
+            } catch (Throwable t) {
+            } finally {
+                decompressor.end();
+            }
+
+            byte[] swf = new byte[8 + bos.size()];
+            System.arraycopy(b, 0, swf, 0, 8);
+            System.arraycopy(bos.toByteArray(), 0, swf, 8, bos.size());
+            swf[0] = 70; // F
+            return swf;
+        }
+
+    }
 
     public TeleFiveDeDecrypter(final PluginWrapper wrapper) {
         super(wrapper);
@@ -42,122 +138,155 @@ public class TeleFiveDeDecrypter extends PluginForDecrypt {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
 
-        final String query = new Regex(parameter, "/(\\w+)$").getMatch(0);
-        if (query != null) {
-            DownloadLink link = null;
-            Browser amf = new Browser();
-            getAMFRequest(amf, createAMFRequest(query));
-            HashMap<String, String> values = new HashMap<String, String>();
-            values = AMFParser(amf);
-            if (values == null) return decryptedLinks;
-
-            String type = values.get("type");
-
-            if (type != null && !"stream".equals(type)) {
-                String source = values.get("quelle");
-                if (source != null) {
-                    source = new Regex(source, "src=\"([^\"]+)\"").getMatch(0);
-                    if (source != null) {
-                        link = createDownloadlink(source);
-                    }
-                } else {
-                    String path = values.get("path");
-                    if (path != null) {
-                        String ext = path.substring(path.lastIndexOf("."));
-                        if (ext == null || ext.length() > 5) ext = ".mov";
-                        if (!path.startsWith("http://")) path = "http://www.tele5.de" + path;
-                        link = createDownloadlink("directhttp://" + path);
-                        link.setFinalFileName(values.get("subline") + ext);
-                    }
-                }
-            } else {
-                parameter = parameter.replace("http://", "decrypted://");
-                link = createDownloadlink(parameter);
+        /* parse flash url */
+        br.setFollowRedirects(true);
+        br.getPage(parameter);
+        for (String flashUrl : br.getRegex("rel=\"media:video\"\\s*resource=\"(http[^\"]+)\"").getColumn(0)) {
+            // String flashUrl = br.getRegex("rel=\"media:video\"\\s*resource=\"(http[^\"]+)\"").getMatch(0);
+            String streamerType = br.getRegex("value=\"streamerType=(http|rtmp)").getMatch(0);
+            if (streamerType == null) streamerType = "http";
+            if (flashUrl == null) {
+                logger.warning("tele5 Decrypter broken!");
+                return null;
             }
-            decryptedLinks.add(link);
+            /* decompress flash */
+            String result = getUrlValues(flashUrl);
+            if (result == null) return null;
+            String kdpUrl = new Regex(result, "kdpUrl=([^#]+)#").getMatch(0);
+            if (kdpUrl == null) return null;
+            kdpUrl = Encoding.htmlDecode(kdpUrl);
+
+            /* put url vars into map */
+            Map<String, String> v = new HashMap<String, String>();
+            for (String s : kdpUrl.split("&")) {
+                if (!s.contains("=")) s += "=placeholder";
+                if ("referer=".equals(s)) s += br.getURL();
+                v.put(s.split("=")[0], s.split("=")[1]);
+            }
+            v.put("streamerType", streamerType);
+            boolean isRtmp = "rtmp".equals(streamerType);
+            Browser br2 = br.cloneBrowser();
+            /* create final request */
+            String postData = "2:entryId=" + v.get("entryId");
+            postData += "&2:service=flavorasset";
+            postData += "&clientTag=kdp:3.4.10.3," + v.get("clientTag");
+            postData += "&2:action=getWebPlayableByEntryId";
+            postData += "&3:entryId=" + v.get("entryId");
+            postData += "&1:version=-1";
+            postData += "&3:service=baseentry";
+            postData += "&ks=" + v.get("ks");
+            postData += "&1:service=baseentry";
+            postData += "&3:action=getContextData";
+            postData += "&3:contextDataParams:objectType=KalturaEntryContextDataParams";
+            postData += "&1:entryId=" + v.get("entryId");
+            postData += "&3:contextDataParams:referrer=" + v.get("referer");
+            postData += "&1:action=get";
+            postData += "&ignoreNull=1";
+            Document doc = JDUtilities.parseXmlString(br2.postPage("http://medianac.nacamar.de//api_v3/index.php?service=multirequest&action=null", postData), false);
+
+            /* xml data --> HashMap */
+            // /xml/result/item --> name, ext etc.
+            // /xml/result/item/item --> streaminfo entryId bitraten auflösung usw.
+            final Node root = doc.getChildNodes().item(0);
+            System.out.println(root.getNodeName());
+            NodeList nl = root.getFirstChild().getChildNodes();
+
+            HashMap<String, HashMap<String, String>> KalturaMediaEntry = new HashMap<String, HashMap<String, String>>();
+            HashMap<String, String> KalturaFlavorAsset = null;
+            HashMap<String, String> fileInfo = new HashMap<String, String>();
+
+            for (int i = 0; i < nl.getLength(); i++) {
+                Node childNode = nl.item(i);
+                NodeList t = childNode.getChildNodes();
+
+                for (int j = 0; j < t.getLength(); j++) {
+                    Node g = t.item(j);
+                    if ("item".equals(g.getNodeName())) {
+                        KalturaFlavorAsset = new HashMap<String, String>();
+                        NodeList item = g.getChildNodes();
+
+                        for (int k = 0; k < item.getLength(); k++) {
+                            Node kk = item.item(k);
+                            KalturaFlavorAsset.put(kk.getNodeName(), kk.getTextContent());
+                        }
+                        KalturaMediaEntry.put(String.valueOf(j), KalturaFlavorAsset);
+                        // if (isRtmp) break;
+                        continue;
+                    }
+                    fileInfo.put(g.getNodeName(), g.getTextContent());
+                }
+            }
+            if (fileInfo.size() == 0) return null;
+
+            fileInfo.put("categories", new String(fileInfo.get("categories").getBytes("ISO-8859-1"), "UTF-8"));
+            fileInfo.put("name", new String(fileInfo.get("name").getBytes("ISO-8859-1"), "UTF-8"));
+
+            ArrayList<DownloadLink> newRet = new ArrayList<DownloadLink>();
+            boolean r = true;
+
+            /* creating downloadLinks */
+            for (Entry<String, HashMap<String, String>> next : KalturaMediaEntry.entrySet()) {
+                KalturaFlavorAsset = new HashMap<String, String>(next.getValue());
+                String fName = fileInfo.get("categories");
+                if (isEmpty(fName)) {
+                    fName = br.getRegex("<div id=\"headline\" class=\"grid_\\d+\"><h1>(.*?)</h1><").getMatch(0);
+                    fileInfo.put("categories", fName);
+                }
+                String filename = fileInfo.get("categories") + "__" + fileInfo.get("name").replaceAll("\\|", "-") + "_" + KalturaFlavorAsset.get("width") + "x" + KalturaFlavorAsset.get("height") + "@" + KalturaFlavorAsset.get("bitrate") + "Kbps." + KalturaFlavorAsset.get("fileExt");
+                String dllink = "http://" + v.get("host") + "/p/" + v.get("partnerId") + "/sp/" + v.get("subpId") + "/playManifest/entryId/" + v.get("entryId");
+                dllink += ("http".equals(streamerType) && KalturaFlavorAsset.containsKey("id") ? "/flavorId/" + KalturaFlavorAsset.get("id") : "") + "/format/" + v.get("streamerType");
+                dllink += "/protocol/" + v.get("streamerType") + (v.containsKey("cdnHost") ? "/cdnHost/" + v.get("cdnHost") : "") + (v.containsKey("storageId") ? "/storageId/" + v.get("storageId") : "");
+                dllink += (v.containsKey("ks") ? "/ks/" + v.get("ks") : "") + "/referrer/" + Encoding.Base64Encode(parameter) + (v.containsKey("token") ? "/token/" + v.get("token") : "") + "/a/a.f4m";
+                if (dllink.contains("null")) {
+                    System.out.println("ERROR" + dllink);
+                }
+                if (r) br2.getPage(dllink);
+                /* make dllink */
+                dllink = br2.getRegex("<media url=\"([^\"]+" + KalturaFlavorAsset.get("id") + ".*?)\"").getMatch(0);
+                final DownloadLink link = createDownloadlink(parameter.replace("http://", "decrypted://") + "&quality=" + KalturaFlavorAsset.get("bitrate") + "&vId=" + KalturaFlavorAsset.get("id"));
+                link.setAvailable(true);
+                link.setFinalFileName(filename);
+                link.setBrowserUrl(parameter);
+                link.setDownloadSize(SizeFormatter.getSize(KalturaFlavorAsset.get("size") + "kb"));
+                link.setProperty("streamerType", v.get("streamerType"));
+                link.setProperty("directURL", dllink);
+                if (isRtmp) {
+                    r = false;
+                    String baseUrl = br2.getRegex("<baseURL>(.*?)</baseURL").getMatch(0);
+                    if (baseUrl == null) {
+                        logger.warning("tele5 Decrypter: baseUrl regex broken!");
+                        continue;
+                    }
+                    link.setProperty("directURL", baseUrl + "@" + dllink);
+                }
+                newRet.add(link);
+            }
+
+            if (newRet.size() > 1) {
+                final FilePackage fp = FilePackage.getInstance();
+                fp.setName(fileInfo.get("categories"));
+                fp.addLinks(newRet);
+            }
+            decryptedLinks.addAll(newRet);
         }
         return decryptedLinks;
     }
 
-    private byte[] createAMFRequest(String query) {
-        if (query == null) return null;
-        String data = "0A000000010200";
-        data += getHexLength(query) + JDHexUtils.getHexString(query);
-        return JDHexUtils.getByteArray("000300000001001674656C65352E676574436F6E74656E74506C6179657200022F31000000" + getHexLength(JDHexUtils.toString(data)) + data);
-    }
+    private String getUrlValues(String s) throws UnsupportedEncodingException {
+        SWFDecompressor swfd = new SWFDecompressor();
+        byte[] swfdec = swfd.decompress(s);
+        if (swfdec == null || swfdec.length == 0) return null;
 
-    private String getHexLength(final String s) {
-        String result = Integer.toHexString(s.length());
-        return result.length() % 2 > 0 ? "0" + result : result;
-    }
-
-    private HashMap<String, String> AMFParser(final Browser amf) {
-        /* Parsing key/value pairs from binary amf0 response message to HashMap */
-        String t = amf.toString();
-        /* workaround for browser in stable version */
-        t = t.replaceAll("\r\n", "\n");
-        char[] content = null;
-        try {
-            content = t.toCharArray();
-        } catch (Throwable e) {
-            return null;
-        }
-        HashMap<String, String> result = new HashMap<String, String>();
-        for (int i = 0; i < content.length; i++) {
-            if (content[i] != 3) continue;// Object 0x03
-            i = i + 2;
-            for (int j = i; j < content.length; j++) {
-                int keyLen = content[j];
-                if (keyLen == 0 || keyLen + j >= content.length) {
-                    i = content.length;
-                    break;
-                }
-                String key = "";
-                int k;
-                for (k = 1; k <= keyLen; k++) {
-                    key = key + content[k + j];
-                }
-                String value = "";
-                int v = j + k;
-                int vv = 0;
-                if (content[v] == 2) {// String 0x02
-                    v = v + 2;
-                    int valueLen = content[v];
-                    if (valueLen == 0) value = null;
-                    for (vv = 1; vv <= valueLen; vv++) {
-                        value = value + content[v + vv];
-                    }
-                } else if (content[v] == 0) {// Number 0x00
-                    String r;
-                    for (vv = 1; vv <= 8; vv++) {
-                        r = Integer.toHexString(content[v + vv]);
-                        r = r.length() % 2 > 0 ? "0" + r : r;
-                        value = value + r;
-                    }
-                    /*
-                     * Encoded as 64-bit double precision floating point number IEEE 754 standard
-                     */
-                    value = value != null ? String.valueOf((int) Double.longBitsToDouble(new BigInteger(value, 16).longValue())) : value;
-                } else {
-                    continue;
-                }
-                j = v + vv;
-                result.put(key, value);
+        for (int i = 0; i < swfdec.length; i++) {
+            if (swfdec[i] < 33 || swfdec[i] > 127) {
+                swfdec[i] = 35; // #
             }
         }
-        return result;
+        return new String(swfdec, "UTF8");
     }
 
-    private void getAMFRequest(final Browser amf, final byte[] b) {
-        amf.getHeaders().put("Content-Type", "application/x-amf");
-        try {
-            PostRequest request = (PostRequest) amf.createPostRequest("http://www.tele5.de/gateway/gateway.php", (String) null);
-            request.setPostBytes(b);
-            amf.openRequestConnection(request);
-            amf.loadConnection(null);
-        } catch (Throwable e) {
-            /* does not exist in 09581 */
-        }
+    private boolean isEmpty(String ip) {
+        return ip == null || ip.trim().length() == 0;
     }
 
     /* NO OVERRIDE!! */

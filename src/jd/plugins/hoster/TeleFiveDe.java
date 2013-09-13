@@ -17,14 +17,8 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
-import java.math.BigInteger;
-import java.util.HashMap;
 
 import jd.PluginWrapper;
-import jd.http.Browser;
-import jd.http.requests.PostRequest;
-import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -32,9 +26,8 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.download.DownloadInterface;
-import jd.utils.JDHexUtils;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "tele5.de" }, urls = { "decrypted://(www\\.)?tele5\\.de/\\w+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "tele5.de" }, urls = { "decrypted://(www\\.)?tele5\\.de/[\\w/\\-]+\\&quality=\\d+\\&vId=[_0-9a-z]+" }, flags = { 0 })
 public class TeleFiveDe extends PluginForHost {
 
     private String  DLLINK       = null;
@@ -58,18 +51,6 @@ public class TeleFiveDe extends PluginForHost {
     @Override
     public int getMaxSimultanFreeDownloadNum() {
         return -1;
-    }
-
-    private byte[] createAMFRequest(String query) {
-        if (query == null) return null;
-        String data = "0A000000010200";
-        data += getHexLength(query) + JDHexUtils.getHexString(query);
-        return JDHexUtils.getByteArray("000300000001001674656C65352E676574436F6E74656E74506C6179657200022F31000000" + getHexLength(JDHexUtils.toString(data)) + data);
-    }
-
-    private String getHexLength(final String s) {
-        String result = Integer.toHexString(s.length());
-        return result.length() % 2 > 0 ? "0" + result : result;
     }
 
     @Override
@@ -103,52 +84,16 @@ public class TeleFiveDe extends PluginForHost {
         String[] streamValue = DLLINK.split("@");
         rtmp.setUrl(streamValue[0]);
         rtmp.setPlayPath(streamValue[1]);
-        rtmp.setSwfVfy("http://www.tele5.de/flashmedia/Tele5_Mediaplayer.swf");
+        // rtmp.setLive(true);
+        rtmp.setRealTime();
+        rtmp.setSwfVfy("http://medianac.nacamar.de/p/657/sp/65700/flash/kdp3/v3.4.10.1/kdp3.swf");
         rtmp.setResume(true);
     }
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
-        setBrowserExclusive();
-        br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML("We\\'re sorry, the page you requested cannot be found\\.")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
-        final String pageUrl = downloadLink.getDownloadURL();
-        final String query = new Regex(pageUrl, "/(\\w+)$").getMatch(0);
-
-        Browser amf = new Browser();
-        getAMFRequest(amf, createAMFRequest(query));
-        if (NOTFORSTABLE) throw new PluginException(LinkStatus.ERROR_FATAL, "JDownloader2 is needed!");
-
-        HashMap<String, String> values = new HashMap<String, String>();
-        values = AMFParser(amf);
-        if (values == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-
-        String ext = null;
-        String fileName = values.get("subline");
-        if (fileName == null) {
-            fileName = br.getRegex("<meta name=\"title\" content=\"(.*?), Recorded on ").getMatch(0);
-            if (fileName == null) {
-                fileName = br.getRegex("<title>(.*?),.*?</title>").getMatch(0);
-                if (fileName == null) {
-                    fileName = br.getRegex("<meta property=\"og:title\" content=\"(.*?), Recorded on ").getMatch(0);
-                }
-            }
-        }
-        fileName = fileName.replaceAll("\\|", "_").replaceAll("\\s_\\s", "_").replaceAll(" Â ", "-");
-        try {
-            fileName = new String(fileName.getBytes("ISO-8859-1"), "UTF-8");
-        } catch (Throwable e) {
-        }
-        String media = values.get("filename");
-        if (media != null) {
-            DLLINK = values.get("path");
-            if (DLLINK != null) DLLINK += "@" + media;
-            ext = media.substring(media.lastIndexOf("."));
-            if (ext == null || ext.length() > 5) ext = ".mp4";
-        }
-        if (fileName == null || DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-
-        downloadLink.setName(Encoding.htmlDecode(fileName.trim()) + ext);
+        DLLINK = downloadLink.getStringProperty("directURL");
+        // downloadLink.setProperty("FLVFIXER", true);
         return AvailableStatus.TRUE;
     }
 
@@ -162,76 +107,6 @@ public class TeleFiveDe extends PluginForHost {
 
     @Override
     public void resetPluginGlobals() {
-    }
-
-    private HashMap<String, String> AMFParser(final Browser amf) {
-        /* Parsing key/value pairs from binary amf0 response message to HashMap */
-        String t = amf.toString();
-        /* workaround for browser in stable version */
-        t = t.replaceAll("\r\n", "\n");
-        char[] content = null;
-        try {
-            content = t.toCharArray();
-        } catch (Throwable e) {
-            return null;
-        }
-        HashMap<String, String> result = new HashMap<String, String>();
-        for (int i = 0; i < content.length; i++) {
-            if (content[i] != 3) continue;// Object 0x03
-            i = i + 2;
-            for (int j = i; j < content.length; j++) {
-                int keyLen = content[j];
-                if (keyLen == 0 || keyLen + j >= content.length) {
-                    i = content.length;
-                    break;
-                }
-                String key = "";
-                int k;
-                for (k = 1; k <= keyLen; k++) {
-                    key = key + content[k + j];
-                }
-                String value = "";
-                int v = j + k;
-                int vv = 0;
-                if (content[v] == 2) {// String 0x02
-                    v = v + 2;
-                    int valueLen = content[v];
-                    if (valueLen == 0) value = null;
-                    for (vv = 1; vv <= valueLen; vv++) {
-                        value = value + content[v + vv];
-                    }
-                } else if (content[v] == 0) {// Number 0x00
-                    String r;
-                    for (vv = 1; vv <= 8; vv++) {
-                        r = Integer.toHexString(content[v + vv]);
-                        r = r.length() % 2 > 0 ? "0" + r : r;
-                        value = value + r;
-                    }
-                    /*
-                     * Encoded as 64-bit double precision floating point number IEEE 754 standard
-                     */
-                    value = value != null ? String.valueOf((int) Double.longBitsToDouble(new BigInteger(value, 16).longValue())) : value;
-                } else {
-                    continue;
-                }
-                j = v + vv;
-                result.put(key, value);
-            }
-        }
-        return result;
-    }
-
-    private void getAMFRequest(final Browser amf, final byte[] b) {
-        amf.getHeaders().put("Content-Type", "application/x-amf");
-        try {
-            PostRequest request = (PostRequest) amf.createPostRequest("http://www.tele5.de/gateway/gateway.php", (String) null);
-            request.setPostBytes(b);
-            amf.openRequestConnection(request);
-            amf.loadConnection(null);
-        } catch (Throwable e) {
-            /* does not exist in 09581 */
-            NOTFORSTABLE = true;
-        }
     }
 
 }
