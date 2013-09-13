@@ -156,8 +156,8 @@ public class FreeWayMe extends PluginForHost {
                 ac.setUnlimitedTraffic();
             }
         }
-        ac.setProperty("notifications", br.getRegex("notis\":(\\d+)").getMatch(0));
-        ac.setProperty("acctype", accountType);
+        account.setProperty("notifications", br.getRegex("\"notis\":(\\d+)").getMatch(0));
+        account.setProperty("acctype", accountType);
         // now let's get a list of all supported hosts:
         br.getPage("https://www.free-way.me/ajax/jd.php?id=3");
         hosts = br.getRegex("\"([^\"]*)\"").getColumn(0);
@@ -278,7 +278,7 @@ public class FreeWayMe extends PluginForHost {
                 String windowTitleLangText = null;
                 ArrayList<String> supportedHosts = (ArrayList<String>) supported;
                 final String lang = System.getProperty("user.language");
-                final String accType = ai.getStringProperty("acctype", null);
+                final String accType = account.getStringProperty("acctype", null);
                 final String maxSimultanDls = account.getStringProperty("parallel", null);
                 final String notifications = account.getStringProperty("notifications", "0");
 

@@ -136,9 +136,9 @@ public class JustinTvDecrypt extends PluginForDecrypt {
             if (channelName != null) fpName += Encoding.htmlDecode(channelName.trim()) + " - ";
             if (date != null) {
                 try {
-                    final String userDefinedDateFormat = cfg.getStringProperty("CUSTOM_DATE_2", "dd.MM.yyyy_hh-mm-ss");
+                    final String userDefinedDateFormat = cfg.getStringProperty("CUSTOM_DATE_2", "dd.MM.yyyy_HH-mm-ss");
                     final String[] dateStuff = date.split("T");
-                    SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd:hh:mm:ss");
+                    SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd:HH:mm:ss");
                     Date dateStr = formatter.parse(dateStuff[0] + ":" + dateStuff[1]);
                     String formattedDate = formatter.format(dateStr);
                     Date theDate = formatter.parse(formattedDate);

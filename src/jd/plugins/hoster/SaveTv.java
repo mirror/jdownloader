@@ -46,22 +46,23 @@ import org.appwork.utils.formatter.SizeFormatter;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "save.tv" }, urls = { "https?://(www\\.)?(save\\.tv|free\\.save\\.tv)/STV/M/obj/user/usShowVideoArchiveDetail\\.cfm\\?TelecastID=\\d+" }, flags = { 2 })
 public class SaveTv extends PluginForHost {
 
-    private final String        PREMIUMPOSTPAGE                       = "https://www.save.tv/STV/M/Index.cfm?sk=PREMIUM";
-    private static final String NORANDOMNUMBERS                       = "NORANDOMNUMBERS";
-    private static final String USEORIGINALFILENAME                   = "USEORIGINALFILENAME";
-    private static final String PREFERADSFREE                         = "PREFERADSFREE";
-    private final String        ADSFREEAVAILABLETEXT                  = "Video ist ohne Werbung verfügbar";
-    private final String        ADSFREEANOTVAILABLEANDNOTSELECTEDTEXT = "Video ist nicht ohne Werbung verfügbar";
-    private final String        NOCUTAVAILABLETEXT                    = "Für diese Sendung steht keine Schnittliste zur Verfügung";
-    private static final String PREFERH264MOBILE                      = "PREFERH264MOBILE";
-    private final String        PREFERH264MOBILETEXT                  = "H.264 Mobile Videos bevorzugen (diese sind kleiner)";
-    private static final String USEAPI                                = "USEAPI";
-    private String              SESSIONID                             = null;
-    private final String        APIKEY                                = "Q0FFQjZDQ0YtMDdFNC00MDQ4LTkyMDQtOUU5QjMxOEU3OUIz";
-    private final String        APIPAGE                               = "http://api.save.tv/v2/Api.svc?wsdl";
-    private static Object       LOCK                                  = new Object();
-    private final String        COOKIE_HOST                           = "http://save.tv";
-    private static final String NOCHUNKS                              = "NOCHUNKS";
+    private final String        PREMIUMPOSTPAGE                 = "https://www.save.tv/STV/M/Index.cfm?sk=PREMIUM";
+    private static final String NORANDOMNUMBERS                 = "NORANDOMNUMBERS";
+    private static final String USEORIGINALFILENAME             = "USEORIGINALFILENAME";
+    private static final String PREFERADSFREE                   = "PREFERADSFREE";
+    private final String        ADSFREEAVAILABLETEXT            = JDL.L("plugins.hoster.SaveTv.AdsFreeAvailable", "Video ist werbefrei verfügbar");
+    private final String        ADSFREEANOTVAILABLE             = JDL.L("plugins.hoster.SaveTv.AdsFreeNotAvailable", "Video ist nicht werbefrei verfügbar");
+    private static final String PREFERREDFORMATNOTAVAILABLETEXT = "Das bevorzugte Format (H.264 Mobile) ist (noch) nicht verfügbar. Warte oder ändere die Einstellung!";
+    private final String        NOCUTAVAILABLETEXT              = "Für diese Sendung steht keine Schnittliste zur Verfügung";
+    private static final String PREFERH264MOBILE                = "PREFERH264MOBILE";
+    private final String        PREFERH264MOBILETEXT            = "H.264 Mobile Videos bevorzugen (diese sind kleiner)";
+    private static final String USEAPI                          = "USEAPI";
+    private String              SESSIONID                       = null;
+    private final String        APIKEY                          = "Q0FFQjZDQ0YtMDdFNC00MDQ4LTkyMDQtOUU5QjMxOEU3OUIz";
+    private final String        APIPAGE                         = "http://api.save.tv/v2/Api.svc?wsdl";
+    private static Object       LOCK                            = new Object();
+    private final String        COOKIE_HOST                     = "http://save.tv";
+    private static final String NOCHUNKS                        = "NOCHUNKS";
 
     public SaveTv(PluginWrapper wrapper) {
         super(wrapper);
@@ -74,11 +75,19 @@ public class SaveTv extends PluginForHost {
         link.setUrlDownload(link.getDownloadURL().replaceFirst("https://", "http://").replace("free.save.tv/", "save.tv/"));
     }
 
+    /**
+     * TODO: Known Bugs in API mode: 1. Not all filename settings are applied because API returns another filename in general than site does
+     * 2. API cannot differ between H.264 Mobile and normal videos -> Cannot show any error in case user chose H.264 but it's not available.
+     * --> These are NO FATAL bugs ---> Plugin will work fine with them!
+     */
+
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         prepBrowser(br);
         br.setFollowRedirects(true);
 
+        // Show id in case it is offline or plugin is broken
+        link.setName(new Regex(link.getDownloadURL(), "(\\d+)$").getMatch(0));
         final Account aa = AccountController.getInstance().getValidAccount(this);
         if (aa == null) {
             link.setName(new Regex(link.getDownloadURL(), "(\\d+)$").getMatch(0));
@@ -93,12 +102,19 @@ public class SaveTv extends PluginForHost {
         String filename = null;
         String filesize = null;
         if (SESSIONID != null) {
-            // Check adFree state: http://jdownloader.net:8081/pastebin/110484
-            String preferMobileVideos = "5";
-            if (preferMobileVids) preferMobileVideos = "4";
+            br.getHeaders().put("SOAPAction", "http://tempuri.org/IVideoArchive/GetAdFreeState");
+            br.getHeaders().put("Content-Type", "text/xml");
+            br.postPage(APIPAGE, "<?xml version=\"1.0\" encoding=\"utf-8\"?><v:Envelope xmlns:i=\"http://www.w3.org/2001/XMLSchema-instance\" xmlns:d=\"http://www.w3.org/2001/XMLSchema\" xmlns:c=\"http://schemas.xmlsoap.org/soap/encoding/\" xmlns:v=\"http://schemas.xmlsoap.org/soap/envelope/\"><v:Header /><v:Body><GetAdFreeState xmlns=\"http://tempuri.org/\" id=\"o0\" c:root=\"1\"><sessionId i:type=\"d:string\">" + SESSIONID + "</sessionId><telecastId i:type=\"d:int\">" + getTelecastId(link) + "</telecastId><telecastIdSpecified i:type=\"d:boolean\">true</telecastIdSpecified></GetAdFreeState></v:Body></v:Envelope>");
+            if (br.containsHTML("<a:IsAdFreeAvailable>false</a:IsAdFreeAvailable>")) {
+                link.getLinkStatus().setStatusText(ADSFREEANOTVAILABLE);
+            } else {
+                link.getLinkStatus().setStatusText(ADSFREEAVAILABLETEXT);
+            }
+            String preferMobileVideosString = "5";
+            if (preferMobileVids) preferMobileVideosString = "4";
             br.getHeaders().put("SOAPAction", "http://tempuri.org/IDownload/GetStreamingUrl");
             br.getHeaders().put("Content-Type", "text/xml");
-            br.postPage(APIPAGE, "<?xml version=\"1.0\" encoding=\"utf-8\"?><v:Envelope xmlns:i=\"http://www.w3.org/2001/XMLSchema-instance\" xmlns:d=\"http://www.w3.org/2001/XMLSchema\" xmlns:c=\"http://schemas.xmlsoap.org/soap/encoding/\" xmlns:v=\"http://schemas.xmlsoap.org/soap/envelope/\"><v:Header /><v:Body><GetStreamingUrl xmlns=\"http://tempuri.org/\" id=\"o0\" c:root=\"1\"><sessionId i:type=\"d:string\">" + SESSIONID + "</sessionId><telecastId i:type=\"d:int\">" + getTelecastId(link) + "</telecastId><telecastIdSpecified i:type=\"d:boolean\">true</telecastIdSpecified><recordingFormatId i:type=\"d:int\">" + preferMobileVideos + "</recordingFormatId><recordingFormatIdSpecified i:type=\"d:boolean\">true</recordingFormatIdSpecified><adFree i:type=\"d:boolean\">false</adFree><adFreeSpecified i:type=\"d:boolean\">false</adFreeSpecified></GetStreamingUrl></v:Body></v:Envelope>");
+            br.postPage(APIPAGE, "<?xml version=\"1.0\" encoding=\"utf-8\"?><v:Envelope xmlns:i=\"http://www.w3.org/2001/XMLSchema-instance\" xmlns:d=\"http://www.w3.org/2001/XMLSchema\" xmlns:c=\"http://schemas.xmlsoap.org/soap/encoding/\" xmlns:v=\"http://schemas.xmlsoap.org/soap/envelope/\"><v:Header /><v:Body><GetStreamingUrl xmlns=\"http://tempuri.org/\" id=\"o0\" c:root=\"1\"><sessionId i:type=\"d:string\">" + SESSIONID + "</sessionId><telecastId i:type=\"d:int\">" + getTelecastId(link) + "</telecastId><telecastIdSpecified i:type=\"d:boolean\">true</telecastIdSpecified><recordingFormatId i:type=\"d:int\">" + preferMobileVideosString + "</recordingFormatId><recordingFormatIdSpecified i:type=\"d:boolean\">true</recordingFormatIdSpecified><adFree i:type=\"d:boolean\">false</adFree><adFreeSpecified i:type=\"d:boolean\">false</adFreeSpecified></GetStreamingUrl></v:Body></v:Envelope>");
             filename = br.getRegex("<a:Filename>([^<>\"]*?)</a").getMatch(0);
             filesize = br.getRegex("<a:SizeMB>(\\d+)</a:SizeMB>").getMatch(0);
             if (filename == null || filesize == null) {
@@ -112,17 +128,16 @@ public class SaveTv extends PluginForHost {
             if (br.containsHTML("(Leider ist ein Fehler aufgetreten|Bitte versuchen Sie es später noch einmal)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             filename = br.getRegex("<h2 id=\"archive-detailbox-title\">(.*?)</h2>").getMatch(0);
             if (filename == null) filename = br.getRegex("id=\"telecast-detail\">.*?<h3>(.*?)</h2>").getMatch(0);
-            filesize = br.getRegex("title=\"H\\.264 High Quality\"( )?/>[\t\n\r ]+</a>[\t\n\r ]+<p>[\t\n\r ]+<a class=\"archive\\-detail\\-link\" href=\"javascript:STV\\.Archive\\.Download\\.openWindow\\(\\d+, \\d+, \\d+, \\d+\\);\">Download</a>[\t\n\r ]+\\(ca\\.[ ]+(.*?)\\)").getMatch(1);
+            filesize = br.getRegex(">Download</a>[ \t\n\r]+\\(ca\\.[ ]+([0-9\\.]+ [A-Za-z]{1,5})\\)[ \t\n\r]+</p>").getMatch(0);
             if (preferMobileVids) filesize = br.getRegex("title=\"H\\.264 Mobile\"( )?/>[\t\n\r ]+</a>[\t\n\r ]+<p>[\t\n\r ]+<a class=\"archive\\-detail\\-link\" href=\"javascript:STV\\.Archive\\.Download\\.openWindow\\(\\d+, \\d+, \\d+, \\d+\\);\">Download</a>[\t\n\r ]+\\(ca\\.[ ]+(.*?)\\)").getMatch(1);
-            if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            filesize = filesize.replace(".", "");
+            if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             br.postPage("https://www.save.tv/STV/M/obj/cRecordOrder/croGetAdFreeAvailable.cfm?null.GetAdFreeAvailable", "ajax=true&clientAuthenticationKey=&callCount=1&c0-scriptName=null&c0-methodName=GetAdFreeAvailable&c0-id=" + df.format(new Random().nextInt(1000)) + "_" + System.currentTimeMillis() + "&c0-param0=number:" + getTelecastId(link) + "&xml=true&extend=function (object) {for (property in object) {this[property] = object[property];}return this;}&");
             if (br.containsHTML("= \\'3\\';")) {
                 link.getLinkStatus().setStatusText(JDL.L("plugins.hoster.SaveTv.NoCutListAvailable", NOCUTAVAILABLETEXT));
             } else if (br.containsHTML("= \\'1\\';")) {
-                link.getLinkStatus().setStatusText(JDL.L("plugins.hoster.SaveTv.AdsFreeAvailable", ADSFREEAVAILABLETEXT));
+                link.getLinkStatus().setStatusText(ADSFREEAVAILABLETEXT);
             } else {
-                link.getLinkStatus().setStatusText(JDL.L("plugins.hoster.SaveTv.AdsFreeNotAvailableAndNotSelected", ADSFREEANOTVAILABLEANDNOTSELECTEDTEXT));
+                link.getLinkStatus().setStatusText(ADSFREEANOTVAILABLE);
             }
         }
         filename = filename.trim();
@@ -136,7 +151,10 @@ public class SaveTv extends PluginForHost {
         if (!dontModifyFilename || useOriginalFilename) filename = filename + new Random().nextInt(1000);
         link.setName(filename + ".avi");
         link.setAvailable(true);
-        link.setDownloadSize(SizeFormatter.getSize(filesize.replace(".", "")));
+        if (filesize != null) {
+            filesize = filesize.replace(".", "");
+            link.setDownloadSize(SizeFormatter.getSize(filesize.replace(".", "")));
+        }
         return AvailableStatus.TRUE;
     }
 
@@ -211,6 +229,7 @@ public class SaveTv extends PluginForHost {
             preferMobileVideos = "c0-param1=number:0";
             if (preferMobileVids) preferMobileVideos = "c0-param1=number:1";
             br.postPage("http://www.save.tv/STV/M/obj/cRecordOrder/croGetDownloadUrl.cfm?null.GetDownloadUrl", "ajax=true&clientAuthenticationKey=&callCount=1&c0-scriptName=null&c0-methodName=GetDownloadUrl&c0-id=&c0-param0=number:" + telecastID + "&" + preferMobileVideos + "&c0-param2=boolean:" + downloadWithoutAds + "&xml=true&");
+            if (br.containsHTML("Die Aufnahme liegt nicht im gewünschten Format vor")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, PREFERREDFORMATNOTAVAILABLETEXT, 4 * 60 * 60 * 1000l); }
             dllink = br.getRegex("\\'OK\\',\\'(http://[^<>\"\\']+)\\'").getMatch(0);
             if (dllink == null) dllink = br.getRegex("\\'(http://[^<>\"\\']+/\\?m=dl)\\'").getMatch(0);
         }

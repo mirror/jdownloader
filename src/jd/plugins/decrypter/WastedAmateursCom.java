@@ -39,7 +39,7 @@ public class WastedAmateursCom extends PluginForDecrypt {
         br.getPage(parameter);
         String externID = br.getRedirectLocation();
         if (externID != null) {
-            DownloadLink dl = createDownloadlink(externID);
+            final DownloadLink dl = createDownloadlink(externID);
             decryptedLinks.add(dl);
             return decryptedLinks;
         }

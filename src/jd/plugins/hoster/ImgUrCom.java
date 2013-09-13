@@ -16,12 +16,7 @@
 
 package jd.plugins.hoster;
 
-import java.io.IOException;
-import java.lang.reflect.Field;
-
 import jd.PluginWrapper;
-import jd.http.URLConnectionAdapter;
-import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -29,7 +24,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision: 15419 $", interfaceVersion = 2, names = { "imgur.com" }, urls = { "https?://imgurdecrypted/download/[A-Za-z0-9]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision: 15419 $", interfaceVersion = 2, names = { "imgur.com" }, urls = { "https?://imgurdecrypted\\.com/download/[A-Za-z0-9]+" }, flags = { 0 })
 public class ImgUrCom extends PluginForHost {
 
     // DEV NOTES
@@ -44,67 +39,31 @@ public class ImgUrCom extends PluginForHost {
         return "http://imgur.com/tos";
     }
 
-    private String DLLINK = null;
-
     @Override
     public void correctDownloadLink(final DownloadLink link) throws Exception {
-        link.setUrlDownload(link.getDownloadURL().replace("imgurdecrypted", "imgur.com"));
+        link.setUrlDownload(link.getDownloadURL().replace("imgurdecrypted.com/", "imgur.com/"));
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException {
-        if (checkLinks(new DownloadLink[] { downloadLink }) == false) {
-            downloadLink.setAvailableStatus(AvailableStatus.UNCHECKABLE);
-        } else if (!downloadLink.isAvailabilityStatusChecked()) {
-            downloadLink.setAvailableStatus(AvailableStatus.UNCHECKABLE);
-        }
-        return getAvailableStatus(downloadLink);
-    }
-
-    private AvailableStatus getAvailableStatus(DownloadLink link) {
-        try {
-            final Field field = link.getClass().getDeclaredField("availableStatus");
-            field.setAccessible(true);
-            Object ret = field.get(link);
-            if (ret != null && ret instanceof AvailableStatus) return (AvailableStatus) ret;
-        } catch (final Throwable e) {
-        }
-        return AvailableStatus.UNCHECKED;
-    }
-
-    public boolean checkLinks(final DownloadLink[] urls) {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         br.setFollowRedirects(true);
-        if (urls == null || urls.length == 0) { return false; }
-        try {
-            for (final DownloadLink dl : urls) {
-                // Do NOT use the original "/download/" link as the server (sometimes) sends the wrong content-length which results in
-                // incomplete downloads
-                DLLINK = "http://i.imgur.com/" + new Regex(dl.getDownloadURL(), "imgur\\.com/download/(.+)").getMatch(0) + ".jpg";
-                final URLConnectionAdapter con = br.openGetConnection(DLLINK);
-                if (con.getContentType().contains("html")) {
-                    dl.setAvailable(false);
-                    continue;
-                }
-                String filename = getFileNameFromHeader(con);
-                // at times they do not give you filename extension, url from /download/ page
-                if (dl.getProperty("imgUID") != null)
-                    dl.setFinalFileName(dl.getProperty("imgUID") + filename.substring(filename.lastIndexOf(".")));
-                else
-                    dl.setFinalFileName(filename);
-                dl.setDownloadSize(con.getLongContentLength());
-                dl.setAvailable(true);
-            }
-        } catch (Exception e) {
-            return false;
-        }
-        return true;
+        br.getPage("http://api.imgur.com/2/image/" + link.getStringProperty("imgUID", null));
+        if (br.containsHTML("<message>Image not found</message>")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        final String filesize = br.getRegex("<size>(\\d+)</size>").getMatch(0);
+        final String filename = br.getRegex("<original>https?://i\\.imgur\\.com/([^<>\"]*?)</original>").getMatch(0);
+        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        link.setName(filename);
+        link.setDownloadSize(Long.parseLong(filesize));
+        return AvailableStatus.TRUE;
     }
 
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
         br.setFollowRedirects(true);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 0);
+        final String dllink = br.getRegex("<original>(https?://[^<>\"]*?)</original>").getMatch(0);
+        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

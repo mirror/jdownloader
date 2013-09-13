@@ -38,6 +38,10 @@ public class StolenVideosNet extends PluginForDecrypt {
         br.setFollowRedirects(false);
         String parameter = param.toString();
         br.getPage(parameter);
+        if (br.containsHTML("stolen\\.png\"")) {
+            logger.info("Link offline: " + parameter);
+            return decryptedLinks;
+        }
         String tempID = br.getRedirectLocation();
         if (tempID != null && tempID.length() < 40) {
             logger.info("Link offline: " + parameter);

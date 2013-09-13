@@ -34,12 +34,17 @@ public class ImgBoxCom extends PluginForDecrypt {
         super(wrapper);
     }
 
-    private static final String GALLERYLINK = "http://(www\\.)?imgbox\\.com/g/[A-Za-z0-9]+";
+    private static final String GALLERYLINK    = "http://(www\\.)?imgbox\\.com/g/[A-Za-z0-9]+";
+    private static final String PICTUREOFFLINE = "The image in question does not exist|The image has been deleted due to a DMCA complaint";
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
         br.getPage(parameter);
+        if (br.containsHTML(">The page you were looking for")) {
+            logger.info("Link offline: " + parameter);
+            return decryptedLinks;
+        }
         if (parameter.matches(GALLERYLINK)) {
             if (br.containsHTML("The specified gallery could not be found")) {
                 logger.info("Link offline: " + parameter);
@@ -62,6 +67,10 @@ public class ImgBoxCom extends PluginForDecrypt {
                 }
                 singleLink = "http://imgbox.com" + singleLink;
                 br.getPage(singleLink);
+                if (br.containsHTML(PICTUREOFFLINE)) {
+                    logger.info("Link offline: " + singleLink);
+                    continue;
+                }
                 final DownloadLink dl = decryptSingle();
                 if (dl == null) {
                     logger.warning("Decrypter broken for link: " + parameter);
@@ -82,7 +91,7 @@ public class ImgBoxCom extends PluginForDecrypt {
                 fp.addLinks(decryptedLinks);
             }
         } else {
-            if (br.containsHTML("The image in question does not exist")) {
+            if (br.containsHTML(PICTUREOFFLINE)) {
                 logger.info("Link offline: " + parameter);
                 return decryptedLinks;
             }

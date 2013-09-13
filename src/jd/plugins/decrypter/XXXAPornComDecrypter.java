@@ -43,14 +43,19 @@ public class XXXAPornComDecrypter extends PluginForDecrypt {
             decryptedLinks.add(dl);
             return decryptedLinks;
         }
-        String tempID = br.getRedirectLocation();
-        if (tempID != null) {
-            final DownloadLink dl = createDownloadlink(tempID);
-            decryptedLinks.add(dl);
+        String externID = br.getRedirectLocation();
+        if (externID != null) {
+            decryptedLinks.add(createDownloadlink(externID));
             return decryptedLinks;
         }
-        tempID = br.getRegex("value=\\'conf(ig)?=(http://media\\.amateurcumshots\\.org/flv_player/data/playerConfigEmbed/\\d+\\.xml)").getMatch(1);
-        if (tempID != null) {
+        externID = br.getRegex("\"(http://(www\\.)?submityourflicks\\.com/embedded/\\d+)\"").getMatch(0);
+        if (externID != null) {
+            decryptedLinks.add(createDownloadlink(externID));
+            return decryptedLinks;
+        }
+        externID = br.getRegex("flashvars=\"config=(http://(www\\.)?book\\-mark\\.net/playerconfig/\\d+/\\d+\\.xml)\"").getMatch(0);
+        if (externID == null) externID = br.getRegex("value=\\'conf(ig)?=(http://media\\.amateurcumshots\\.org/flv_player/data/playerConfigEmbed/\\d+\\.xml)").getMatch(1);
+        if (externID != null) {
             logger.info("Link offline: " + parameter);
             return decryptedLinks;
         }

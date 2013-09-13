@@ -21,12 +21,13 @@ import java.util.ArrayList;
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sex.com" }, urls = { "http://(www\\.)?sex\\.com/(pin|picture)/\\d+/" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sex.com" }, urls = { "http://(www\\.)?sex\\.com/(pin/\\d+/|picture/\\d+)" }, flags = { 0 })
 public class SexCom extends PluginForDecrypt {
 
     public SexCom(PluginWrapper wrapper) {
@@ -43,11 +44,12 @@ public class SexCom extends PluginForDecrypt {
             return decryptedLinks;
         }
         String filename = br.getRegex("<title>([^<>\"]*?) \\| Sex Videos and Pictures \\| Sex\\.com</title>").getMatch(0);
-        if (filename == null) filename = br.getRegex("addthis:title=\"([^<>\"]*?)\"").getMatch(0);
-        if (filename == null) {
-            logger.warning("Decrypter broken for link: " + parameter);
-            return null;
-        }
+        if (filename == null || filename.length() <= 2) filename = br.getRegex("addthis:title=\"([^<>\"]*?)\"").getMatch(0);
+        if (filename == null || filename.length() <= 2) filename = br.getRegex("property=\"og:title\" content=\"([^<>]*?)\\-  Pin #\\d+ \\| Sex\\.com\"").getMatch(0);
+        if (filename == null || filename.length() <= 2) filename = br.getRegex("<div class=\"pin\\-header navbar navbar\\-static\\-top\">[\t\n\r ]+<div class=\"navbar\\-inner\">[\t\n\r ]+<h1>([^<>]*?)</h1>").getMatch(0);
+        if (filename == null || filename.length() <= 2) filename = new Regex(parameter, "(\\d+)/?$").getMatch(0);
+        filename = Encoding.htmlDecode(filename.trim());
+        filename = filename.replace("#", "");
         String externID = br.getRegex("<div class=\"from\">From <a rel=\"nofollow\" href=\"(http://[^<>\"]*?)\"").getMatch(0);
         if (externID != null) {
             decryptedLinks.add(createDownloadlink(externID));
@@ -58,7 +60,7 @@ public class SexCom extends PluginForDecrypt {
         if (externID == null) externID = br.getRegex("<div class=\"image_frame\">[\t\n\r ]+<img alt=\"\" title=\"\" src=\"(http://[^<>\"]*?)\"").getMatch(0);
         if (externID != null) {
             DownloadLink dl = createDownloadlink("directhttp://" + externID);
-            dl.setFinalFileName(Encoding.htmlDecode(filename.trim()) + externID.substring(externID.lastIndexOf(".")));
+            dl.setFinalFileName(filename + externID.substring(externID.lastIndexOf(".")));
             decryptedLinks.add(dl);
             return decryptedLinks;
         }
