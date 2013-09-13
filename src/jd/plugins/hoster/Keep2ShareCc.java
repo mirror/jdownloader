@@ -108,7 +108,7 @@ public class Keep2ShareCc extends PluginForHost {
 
     private void doFree(final DownloadLink downloadLink) throws Exception {
         br.setFollowRedirects(false);
-        if (br.containsHTML("File size to large\\!<") || br.containsHTML("Only <b>Premium</b> access<br>")) {
+        if (br.containsHTML("File size to large\\!<") || br.containsHTML("Only <b>Premium</b> access<br>") || br.containsHTML("only for premium members")) {
             try {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
             } catch (final Throwable e) {
