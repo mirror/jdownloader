@@ -84,6 +84,7 @@ gui_settings_basicauth_title=Jednoduché overenie
 gui_settings_downloadcontroll_description=Limity rýchlosti, poradie sťahovania, priority... tu môžete meniť nastavenia pre sťahovanie.
 gui_settings_downloadcontroll_title=Správa sťahovania
 gui_settings_downloadpath_description=Tu môžete nastaviť predvolený priečinok, kam sa budú ukladať sťahované súbory. Zmena predvoleného priečinku, bude mať vplyv len na nové sťahovania.
+gui_settings_filewriting_description=Použitím kontrolného súčtu, JDownloader overí správnosť stiahnutých súborov.
 gui_settings_general_title=Všeobecné
 gui_settings_plugins_description=JDownloader používá tzv. 'prídavné moduly' pre %s1 stránok k automatizácií procesu sťahovania, ktoré by inak trvalo oveľa dlhšie. Niektoré tieto pluginy majú vlastné nastavenia, ktorými môžete ovplivniť ich chovanie.
 gui_settings_plugins_title=Nastavenia prídavných modulov
