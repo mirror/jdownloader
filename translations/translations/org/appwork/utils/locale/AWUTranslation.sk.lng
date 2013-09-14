@@ -76,6 +76,7 @@ connecting=Pripájam...
 crossSystem_open_url_failed_msg=Prosím, otvorte tento odkaz vo svojom prehliadači:
 download_msg=Sťahovanie súboru
 download_title=Sťahovanie
+extdatecolumn_dateandtimeformat=dd.MM.rr HH:mm
 extpasswordeditorcolumn_tooltip=Vaše heslo
 extttable_disable_all=Zakázať všetko
 extttable_enabled_all=Povoliť všetko
