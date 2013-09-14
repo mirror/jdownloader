@@ -17,6 +17,7 @@
 package jd.plugins.hoster;
 
 import jd.PluginWrapper;
+import jd.http.URLConnectionAdapter;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -44,16 +45,35 @@ public class ImgUrCom extends PluginForHost {
         link.setUrlDownload(link.getDownloadURL().replace("imgurdecrypted.com/", "imgur.com/"));
     }
 
+    private String DLLINK = null;
+
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         br.setFollowRedirects(true);
-        br.getPage("http://api.imgur.com/2/image/" + link.getStringProperty("imgUID", null));
-        if (br.containsHTML("<message>Image not found</message>")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        final String filesize = br.getRegex("<size>(\\d+)</size>").getMatch(0);
-        final String filename = br.getRegex("<original>https?://i\\.imgur\\.com/([^<>\"]*?)</original>").getMatch(0);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        link.setName(filename);
-        link.setDownloadSize(Long.parseLong(filesize));
+        DLLINK = link.getStringProperty("directlink", null);
+        if (DLLINK != null) {
+            URLConnectionAdapter con = null;
+            try {
+                con = br.openGetConnection(DLLINK);
+                if (!con.getContentType().contains("html"))
+                    link.setDownloadSize(con.getLongContentLength());
+                else
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            } finally {
+                try {
+                    con.disconnect();
+                } catch (Throwable e) {
+                }
+            }
+        } else {
+            br.getPage("http://api.imgur.com/2/image/" + link.getStringProperty("imgUID", null));
+            if (br.containsHTML("<message>Image not found</message>")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            final String filesize = br.getRegex("<size>(\\d+)</size>").getMatch(0);
+            final String filename = br.getRegex("<original>https?://i\\.imgur\\.com/([^<>\"]*?)</original>").getMatch(0);
+            if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            link.setName(filename);
+            link.setDownloadSize(Long.parseLong(filesize));
+        }
         return AvailableStatus.TRUE;
     }
 
@@ -61,9 +81,9 @@ public class ImgUrCom extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
         br.setFollowRedirects(true);
-        final String dllink = br.getRegex("<original>(https?://[^<>\"]*?)</original>").getMatch(0);
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
+        if (DLLINK == null) DLLINK = br.getRegex("<original>(https?://[^<>\"]*?)</original>").getMatch(0);
+        if (DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

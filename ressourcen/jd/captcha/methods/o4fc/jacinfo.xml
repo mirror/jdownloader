@@ -1,4 +1,4 @@
 <jDownloader>
-  <method name="xfilesharingpro" author="ManiacMansion" services="midupload.com;putshare.com;downupload.com;xfilesharingprobasic"/>
+  <method name="xfilesharingpro" author="ManiacMansion" services="midupload.com;xfilesharingprobasic"/>
   <format type="jpg" letterNum="4"></format>
 </jDownloader>

@@ -61,34 +61,69 @@ public class AdltDlCom extends PluginForDecrypt {
         if (fpName == null) fpName = br.getRegex("<title>([^<>\"\\']+) \\| AdultDDL</title>").getMatch(0);
         final String streamLink = br.getRegex("\\'(http://(www\\.)?putlocker\\.com/embed/[A-Z0-9]+)\\'").getMatch(0);
         if (streamLink != null) decryptedLinks.add(createDownloadlink(streamLink));
-        final String[] cryptedLinks = br.getRegex("\\'(http://secure\\.adultddl\\.ws/\\?decrypt=\\d+)\\'").getColumn(0);
-        if (cryptedLinks == null || cryptedLinks.length == 0) {
+        final String linksText = br.getRegex("<div class=\\'links\\'>(.*?)<div id=\"comment\\-section\"").getMatch(0);
+        if (linksText == null) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
-        for (final String cryptedLink : cryptedLinks) {
-            final String cryptID = new Regex(cryptedLink, "(\\d+)$").getMatch(0);
-            for (int i = 1; i <= 3; i++) {
-                br.postPage("http://secure.adultddl.ws/captcha.php", "submit=Click+Here&decrypt=" + cryptID);
-                final String cLnk = br.getRegex("\\'(/securimage/securimage_show\\.php\\?\\d+)\\'").getMatch(0);
-                if (cLnk == null) {
+        final String decryptPage = new Regex(linksText, "<iframe src=\\'(http://secure\\.adultddl\\.com/\\?decrypt=\\d+)\\'").getMatch(0);
+        if (decryptPage != null) {
+            br.getPage(decryptPage);
+            final String[] cryptedLinks = br.getRegex("\\'(http://secure\\.adultddl\\.ws/\\?decrypt=\\d+)\\'").getColumn(0);
+            if (cryptedLinks == null || cryptedLinks.length == 0) {
+                logger.warning("Decrypter broken for link: " + parameter);
+                return null;
+            }
+            for (final String cryptedLink : cryptedLinks) {
+                final String cryptID = new Regex(cryptedLink, "(\\d+)$").getMatch(0);
+                for (int i = 1; i <= 3; i++) {
+                    br.postPage("http://secure.adultddl.ws/captcha.php", "submit=Click+Here&decrypt=" + cryptID);
+                    final String cLnk = br.getRegex("\\'(/securimage/securimage_show\\.php\\?\\d+)\\'").getMatch(0);
+                    if (cLnk == null) {
+                        logger.warning("Decrypter broken for link: " + parameter);
+                        return null;
+                    }
+                    final String c = getCaptchaCode("http://secure.adultddl.ws" + cLnk, param);
+                    br.postPage("http://secure.adultddl.ws/verify.php", "submit=Submit&captcha_code=" + Encoding.urlEncode(c) + "&decrypt=" + cryptID);
+                    if (br.containsHTML("The CAPTCHA entered was incorrect")) continue;
+                    break;
+                }
+                if (br.containsHTML("The CAPTCHA entered was incorrect")) throw new DecrypterException(DecrypterException.CAPTCHA);
+                final String[] links = HTMLParser.getHttpLinks(br.toString(), "");
+                if ((links == null || links.length == 0) && streamLink == null) {
                     logger.warning("Decrypter broken for link: " + parameter);
                     return null;
                 }
-                final String c = getCaptchaCode("http://secure.adultddl.ws" + cLnk, param);
-                br.postPage("http://secure.adultddl.ws/verify.php", "submit=Submit&captcha_code=" + Encoding.urlEncode(c) + "&decrypt=" + cryptID);
-                if (br.containsHTML("The CAPTCHA entered was incorrect")) continue;
-                break;
+                if (links != null && links.length != 0) {
+                    for (String singleLink : links)
+                        if (!singleLink.contains("adultddl.com/")) {
+                            final DownloadLink dl = createDownloadlink(singleLink);
+                            try {
+                                distribute(dl);
+                            } catch (final Throwable e) {
+                                // Not available in old 0.9.581 Stable
+                            }
+                            decryptedLinks.add(dl);
+                        }
+                }
             }
-            if (br.containsHTML("The CAPTCHA entered was incorrect")) throw new DecrypterException(DecrypterException.CAPTCHA);
-            final String[] links = HTMLParser.getHttpLinks(br.toString(), "");
+        } else {
+            final String[] links = HTMLParser.getHttpLinks(linksText, "");
             if ((links == null || links.length == 0) && streamLink == null) {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
             }
             if (links != null && links.length != 0) {
                 for (String singleLink : links)
-                    if (!singleLink.contains("adultddl.com/")) decryptedLinks.add(createDownloadlink(singleLink));
+                    if (!singleLink.contains("adultddl.com/")) {
+                        final DownloadLink dl = createDownloadlink(singleLink);
+                        try {
+                            distribute(dl);
+                        } catch (final Throwable e) {
+                            // Not available in old 0.9.581 Stable
+                        }
+                        decryptedLinks.add(dl);
+                    }
             }
         }
         if (fpName != null) {

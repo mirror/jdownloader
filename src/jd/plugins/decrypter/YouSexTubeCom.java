@@ -39,14 +39,30 @@ public class YouSexTubeCom extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
         if (!parameter.contains(".html")) parameter += ".html";
-        br.setFollowRedirects(true);
-        final String fid = new Regex(parameter, "you\\-sex\\-tube\\.com/(video|porn)/(.*?)\\.html").getMatch(1);
-        String externID = Encoding.Base64Decode(fid);
-        if (externID != null && !externID.equals(fid)) {
-            decryptedLinks.add(createDownloadlink(externID));
+        br.setFollowRedirects(false);
+        String externID = null;
+        boolean run = true;
+        String redirect = null;
+        do {
+            final String fid = new Regex(parameter, "you\\-sex\\-tube\\.com/(video|porn)/(.*?)\\.html").getMatch(1);
+            externID = Encoding.Base64Decode(fid);
+            if (externID != null && !externID.equals(fid)) {
+                decryptedLinks.add(createDownloadlink(externID));
+                return decryptedLinks;
+            }
+            br.getPage(parameter);
+            redirect = br.getRedirectLocation();
+            if (redirect != null && redirect.contains("you-sex-tube.com/")) {
+                parameter = redirect;
+            } else {
+                run = false;
+            }
+        } while (run);
+        if (redirect != null && !redirect.contains("you-sex-tube.com/")) {
+            final DownloadLink dl = createDownloadlink(redirect);
+            decryptedLinks.add(dl);
             return decryptedLinks;
         }
-        br.getPage(parameter);
         externID = br.getRegex("redtube\\.com/player/\"><param name=\"FlashVars\" value=\"id=(\\d+)\\&").getMatch(0);
         if (externID == null) externID = br.getRegex("embed\\.redtube\\.com/player/\\?id=(\\d+)\\&").getMatch(0);
         if (externID != null) {

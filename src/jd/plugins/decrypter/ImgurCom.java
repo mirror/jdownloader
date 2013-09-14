@@ -56,16 +56,18 @@ public class ImgurCom extends PluginForDecrypt {
             for (final String item : items) {
                 final String filesize = new Regex(item, "<size>(\\d+)</size>").getMatch(0);
                 final String imgUID = new Regex(item, "<hash>([A-Za-z0-9]+)</hash>").getMatch(0);
-                final String filename = new Regex(item, "<original>https?://i\\.imgur\\.com/([^<>\"]*?)</original>").getMatch(0);
-                if (imgUID == null || filesize == null || filename == null) {
+                final String directlink = new Regex(item, "<original>(https?://i\\.imgur\\.com/[^<>\"]*?)</original>").getMatch(0);
+                if (imgUID == null || filesize == null || directlink == null) {
                     logger.warning("Decrypter broken for link: " + parameter);
                     return null;
                 }
+                final String filename = new Regex(directlink, "i\\.imgur\\.com/(.+)").getMatch(0);
                 final DownloadLink dl = createDownloadlink("http://imgurdecrypted.com/download/" + imgUID);
                 dl.setName(filename);
                 dl.setDownloadSize(Long.parseLong(filesize));
                 dl.setAvailable(true);
                 dl.setProperty("imgUID", imgUID);
+                dl.setProperty("directlink", directlink);
                 decryptedLinks.add(dl);
             }
             final FilePackage fp = FilePackage.getInstance();

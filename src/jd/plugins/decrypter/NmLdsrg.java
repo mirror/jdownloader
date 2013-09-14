@@ -55,7 +55,7 @@ public class NmLdsrg extends PluginForDecrypt {
             loaded = true;
         }
         br.getHeaders().put("User-Agent", jd.plugins.hoster.MediafireCom.stringUserAgent());
-        br.getHeaders().put("Accept-Language", "en-gb, en;q=0.8");
+        br.getHeaders().put("Accept-Language", "en-US,en;q=0.5");
         if (parameter.contains("/redirect/")) {
             links.add(parameter);
         } else {
@@ -80,11 +80,15 @@ public class NmLdsrg extends PluginForDecrypt {
         }
 
         for (final String link : links) {
+            try {
+                if (this.isAbort()) {
+                    logger.info("Decryption aborted for link: " + parameter);
+                    return decryptedLinks;
+                }
+            } catch (final Exception e) {
+                // Not available in 0.9.581 Stable
+            }
             final Browser br2 = br.cloneBrowser();
-            // TODO: Check
-            // if (!parameter.contains("/redirect/")) {
-            // br2.getPage(link);
-            // }
             br2.getPage(link);
             if (br2.containsHTML("No htmlCode read")) {
                 logger.info("Link offline: " + link);
@@ -96,13 +100,14 @@ public class NmLdsrg extends PluginForDecrypt {
 
             ajax.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
             ajax.getHeaders().put("Accept-Charset", null);
-            ajax.getHeaders().put("Cache-Control", null);
-            ajax.getHeaders().put("Pragma", null);
+            ajax.getHeaders().put("Cache-Control", "no-cache");
+            ajax.getHeaders().put("Pragma", "no-cache");
+            ajax.getHeaders().put("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8");
             ajax.getHeaders().put("X-Requested-With", "XMLHttpRequest");
 
             // they check if you hit up this step or not!!
             // <iframe id="ad" scrolling="auto" src="http://www.anime-loads.org/redirect/animemanga/69e398ca6a4cfb2fa46771f6b75ac3f6"
-            String ad_redirect = br2.getRegex("<iframe[^>]+id=\"ad\"[^>]+src=(\"|')?((https?://(www\\.)?anime\\-loads\\.org)?/redirect/[a-z]+(/[a-z0-9]+)?)").getMatch(1);
+            String ad_redirect = br2.getRegex("<iframe id=\"[A-Za-z0-9]+\" scrolling=\"auto\" src=\"(http://(www\\.)?anime\\-loads\\.org/redirect/[a-z0-9]+/[a-z0-9]+)\"").getMatch(0);
             if (ad_redirect == null) {
                 logger.warning("Could not find 'ad_redirect' : " + br.getURL());
             } else {

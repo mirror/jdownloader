@@ -288,7 +288,7 @@ public class Keep2ShareCc extends PluginForHost {
         // account.setValid(false);
         // return ai;
         // }
-        if (br.containsHTML(">Account type:[\r\n\t ]+<a href=\"/premium\\.html\"[^>]+>Free<")) {
+        if (br.containsHTML("class=\"free\">Free</a>")) {
             account.setProperty("free", true);
             ai.setStatus("Registered Free User");
         } else {
@@ -326,23 +326,24 @@ public class Keep2ShareCc extends PluginForHost {
         if (account.getBooleanProperty("free")) {
             br.getPage(link.getDownloadURL());
             doFree(link);
+        } else {
+            br.setFollowRedirects(false);
+            br.getPage(link.getDownloadURL());
+            if (br.containsHTML("Traffic limit exceed\\!<")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+            String dllink = br.getRegex("\\'(/file/url\\.html\\?file=[a-z0-9]+)\\'").getMatch(0);
+            if (dllink == null) {
+                logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            dllink = Encoding.htmlDecode(dllink);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
+            if (dl.getConnection().getContentType().contains("html")) {
+                logger.warning("The final dllink seems not to be a file!");
+                br.followConnection();
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            dl.startDownload();
         }
-        br.setFollowRedirects(false);
-        br.getPage(link.getDownloadURL());
-        if (br.containsHTML("Traffic limit exceed\\!<")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
-        String dllink = br.getRegex("\\'(/file/url\\.html\\?file=[a-z0-9]+)\\'").getMatch(0);
-        if (dllink == null) {
-            logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        dllink = Encoding.htmlDecode(dllink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
-        if (dl.getConnection().getContentType().contains("html")) {
-            logger.warning("The final dllink seems not to be a file!");
-            br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        dl.startDownload();
     }
 
     @Override
