@@ -273,7 +273,7 @@ public class FileFactory extends PluginForHost {
                     return ai;
                 }
                 // remove st/nd/rd/th
-                ai.setValidUntil(TimeFormatter.getMilliSeconds(expire.replaceFirst("(st|nd|rd|th)", ""), "dd MMM, YYYY", Locale.UK));
+                ai.setValidUntil(TimeFormatter.getMilliSeconds(expire.replaceFirst("(st|nd|rd|th)", ""), "d MMM, yyyy", Locale.UK));
             }
             String space = br.getRegex("<strong>([0-9\\.]+ ?(KB|MB|GB|TB))</strong>[\r\n\t ]+Free Space").getMatch(0);
             if (space != null) ai.setUsedSpace(space);
