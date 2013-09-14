@@ -65,8 +65,8 @@ public class FileFactory extends PluginForHost {
     private static AtomicInteger maxPrem            = new AtomicInteger(1);
     private final String         NO_SLOT            = ">All free download slots";
     private final String         NO_SLOT_USERTEXT   = "No free slots available";
-    private final String         NOT_AVAILABLE      = "class=\"box error\"";
-    private final String         SERVERFAIL         = "(<p>Your download slot has expired\\.|Unfortunately the file you have requested cannot be downloaded at this time)";
+    private final String         NOT_AVAILABLE      = "class=\"box error\"|have been deleted";
+    private final String         SERVERFAIL         = "(<p>Your download slot has expired\\.|Unfortunately the file you have requested cannot be downloaded at this time|temporarily unavailable)";
     private final String         LOGIN_ERROR        = "The email or password you have entered is incorrect";
     private final String         SERVER_DOWN        = "server hosting the file you are requesting is currently down";
     private final String         CAPTCHALIMIT       = "<p>We have detected several recent attempts to bypass our free download restrictions originating from your IP Address";
@@ -652,7 +652,7 @@ public class FileFactory extends PluginForHost {
                 }
             }
         }
-        if (br.containsHTML("This file has been deleted\\.")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("This file has been deleted\\.|have been deleted")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (br.containsHTML(NOT_AVAILABLE) && !br.containsHTML(NO_SLOT)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (br.containsHTML(SERVER_DOWN)) {
@@ -666,6 +666,8 @@ public class FileFactory extends PluginForHost {
             } else if (br.containsHTML(NO_SLOT)) {
                 downloadLink.getLinkStatus().setErrorMessage(JDL.L("plugins.hoster.filefactorycom.errors.nofreeslots", NO_SLOT_USERTEXT));
                 downloadLink.getLinkStatus().setStatusText(JDL.L("plugins.hoster.filefactorycom.errors.nofreeslots", NO_SLOT_USERTEXT));
+            } else if (br.containsHTML("Server Maintenance")) {
+                downloadLink.getLinkStatus().setStatusText("Server Maintenance");
             } else {
                 String fileName = null;
                 String fileSize = null;
