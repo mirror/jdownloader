@@ -1,3 +1,5 @@
-gui_config_antistandby_whiledl2=Prebieha sťahovanie
-gui_config_antistandby_whilejd2=JDownloader beží
+gui_config_antistandby_whiledl2=prebieha sťahovanie
+gui_config_antistandby_whilejd2=je spustení Jdownloader
 jd_plugins_optional_antistandby_jdantistandby=JD blokátor režimu spánku
+jd_plugins_optional_antistandby_jdantistandby_description=Chráni váš počítač pred prechodom do úsporného režimu alebo režimu spánku, zabezpečuje aby sťahovanie bolo stále aktívne.
+mode=Zabrániť prechodu do pohotovostného režimu / režimu spánku, ak
