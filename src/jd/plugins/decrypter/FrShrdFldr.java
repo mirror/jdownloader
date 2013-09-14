@@ -131,8 +131,9 @@ public class FrShrdFldr extends PluginForDecrypt {
 
         String ran = Long.toString(new Random().nextLong()).substring(1, 11);
         br2.getPage(host + "/pageDownload1/folderContent.jsp?ajax=true&sId=" + sid + "&firstFileToShow=" + offset + "&rnd=" + ran);
-
         String[] filter = br2.getRegex("class=\"fnameCont\">(.*?)</td>").getColumn(0);
+        if (filter == null || filter.length == 0) filter = br2.getRegex("class=\"simpleTumbItem\">.*?</div>[\r\n\t ]+(<a.*?)</div>[\r\n\t ]+</div>").getColumn(0);
+
         if (filter == null || filter.length == 0) {
             logger.warning("Couldn't filter 'folderContent'");
             if (decryptedLinks.size() > 0) {
@@ -152,7 +153,7 @@ public class FrShrdFldr extends PluginForDecrypt {
                         decryptedLinks.add(createDownloadlink(subDir));
                     }
                 } else {
-                    final String dllink = new Regex(entry, "\"(http.*?4shared(\\-china)?\\.com/(?!folder/|dir/)[^\"]+\\.html)").getMatch(0);
+                    final String dllink = new Regex(entry, "\"(http[^\"]+4shared(\\-china)?\\.com/(?!folder/|dir/)[^\"]+\\.html)").getMatch(0);
                     if (dllink == null) {
                         // logger.warning("Couldn't find dllink!");
                         continue;
