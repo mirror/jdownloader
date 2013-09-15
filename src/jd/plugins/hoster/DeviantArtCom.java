@@ -99,6 +99,7 @@ public class DeviantArtCom extends PluginForHost {
             DLLINK = Encoding.htmlDecode(DLLINK.trim());
         } else {
             filesize = br.getRegex("<label>Image Size:</label>([^<>\"]*?)<br>").getMatch(0);
+            if (filesize == null) filesize = br.getRegex("<dt>Image Size</dt><dd>([^<>\"]*?)</dd>").getMatch(0);
             // Maybe its a video
             if (filesize == null) filesize = br.getRegex("<label>File Size:</label>([^<>\"]*?)<br/>").getMatch(0);
 
@@ -198,6 +199,7 @@ public class DeviantArtCom extends PluginForHost {
         if (dllink == null) {
             if (br.containsHTML(">Mature Content</span>")) {
                 dllink = br.getRegex("data\\-gmiclass=\"ResViewSizer_img\".*?src=\"(http://[^<>\"]*?)\"").getMatch(0);
+                if (dllink == null) dllink = br.getRegex("class=\"dev\\-content\\-mature\\-hidden\">[\t\n\r ]+<img collect_rid=\"\\d+:\\d+\" src=\"(http://[^<>\"]*?)\"").getMatch(0);
             } else {
                 dllink = br.getRegex("(name|property)=\"og:image\" content=\"(http://[^<>\"]*?)\"").getMatch(1);
             }
