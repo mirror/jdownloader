@@ -294,6 +294,13 @@ public class VideoPremiumNet extends PluginForHost {
                     if (dllink != null) break;
                 }
             }
+            if (dllink == null) {
+                String in = new Regex(correctedBR, "flashvars = \\{([^\\}]+)\\}").getMatch(0);
+                String out[] = new Regex(in == null ? "" : in, "\"?(file|p2pkey)\"?:\"?(.*?)\"?,").getColumn(1);
+                dllink = new Regex(correctedBR, "swfobject\\.embedSWF\\(\"(http://[^\"]+)\",").getMatch(0);
+                if (out.length != 2 || dllink == null) return null;
+                dllink = out[0] + "@" + out[1] + "@" + dllink;
+            }
         }
         return dllink;
     }

@@ -70,9 +70,9 @@ public class JudgePornCom extends PluginForHost {
         String filename = br.getRegex("<title>([^<>\"]*?) at Judge Porn</title>").getMatch(0);
         if (filename == null) filename = br.getRegex("<h1>([^<>\"]*?)</h1>").getMatch(0);
         if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        DLLINK = br.getRegex("video_url: encodeURIComponent\\(\\'(http?://[^\\']+)").getMatch(0);
+        DLLINK = br.getRegex("video_url:\\s*\'(http?://[^\']+)\'").getMatch(0);
         if (DLLINK == null) {
-            DLLINK = br.getRegex("(https?://(www\\.)judgeporn.com/get_file/.+\\.flv)").getMatch(0);
+            DLLINK = br.getRegex("(https?://(www\\.)?judgeporn\\.com/get_file/[0-9a-z\\/\\.]+)").getMatch(0);
         }
         if (filename == null || DLLINK == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
         DLLINK = Encoding.htmlDecode(DLLINK);

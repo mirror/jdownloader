@@ -40,7 +40,7 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "grooveshark.com" }, urls = { "http://((listen|retro)\\.)?grooveshark\\.com/([#!/%21]+)?((album|artist|playlist|s|user)/.*?/([a-zA-z0-9]+|\\d+)(/music/favorites|/similar)?|popular)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "grooveshark.com" }, urls = { "http://((listen|retro|html5)\\.)?grooveshark\\.com/([#!/%21]+)?((album|artist|playlist|s|user)/.*?/([a-zA-z0-9]+|\\d+)(/music/favorites|/similar)?|popular)" }, flags = { 0 })
 public class GrvShrkCm extends PluginForDecrypt {
 
     private String                  LISTEN           = "http://grooveshark.com/";
@@ -77,6 +77,7 @@ public class GrvShrkCm extends PluginForDecrypt {
         decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
         parameter = parameter.replaceAll("\\?src=\\d+", "");
+        parameter = parameter.replaceAll("html5\\.grooveshark\\.com", "grooveshark\\.com");
         if (parameter.endsWith("similar") || parameter.matches(UNSUPPORTEDLINKS)) {
             logger.warning("Link format is not supported: " + parameter);
             return decryptedLinks;
@@ -152,7 +153,7 @@ public class GrvShrkCm extends PluginForDecrypt {
             String format = "%0" + String.valueOf(decryptedLinks.size()).length() + "d";
             for (DownloadLink dl : decryptedLinks) {
                 String trackNumber = dl.getStringProperty("TrackNum");
-                dl.setName(String.format(format, trackNumber == null ? decryptedLinks.indexOf(dl) + 1 : Integer.parseInt(trackNumber)) + "." + dl.getName());
+                dl.setName(String.format(format, isEmpty(trackNumber) ? decryptedLinks.indexOf(dl) + 1 : Integer.parseInt(trackNumber)) + "." + dl.getName());
             }
         }
 
