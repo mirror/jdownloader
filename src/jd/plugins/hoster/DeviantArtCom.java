@@ -44,15 +44,14 @@ import org.appwork.utils.formatter.SizeFormatter;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "deviantart.com" }, urls = { "https?://[\\w\\.\\-]*?deviantart\\.com/art/[\\w\\-]+" }, flags = { 2 })
 public class DeviantArtCom extends PluginForHost {
 
+    private String        DLLINK              = null;
+    private final String  COOKIE_HOST         = "http://www.deviantart.com";
+    private final String  MATURECONTENTFILTER = ">Mature Content Filter<";
+    private static Object LOCK                = new Object();
+
     /**
      * @author raztoki
      */
-
-    private static final String COOKIE_HOST         = "http://www.deviantart.com";
-    private static Object       LOCK                = new Object();
-    private static final String MATURECONTENTFILTER = ">Mature Content Filter<";
-    private String              DLLINK              = null;
-
     public DeviantArtCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium(COOKIE_HOST.replace("http://", "https://") + "/join/");
@@ -199,7 +198,7 @@ public class DeviantArtCom extends PluginForHost {
         if (dllink == null) {
             if (br.containsHTML(">Mature Content</span>")) {
                 dllink = br.getRegex("data\\-gmiclass=\"ResViewSizer_img\".*?src=\"(http://[^<>\"]*?)\"").getMatch(0);
-                if (dllink == null) dllink = br.getRegex("class=\"dev\\-content\\-mature\\-hidden\">[\t\n\r ]+<img collect_rid=\"\\d+:\\d+\" src=\"(http://[^<>\"]*?)\"").getMatch(0);
+                if (dllink == null) dllink = br.getRegex("<img collect_rid=\"\\d+:\\d+\" src=\"(https?://[^\"]+)").getMatch(0);
             } else {
                 dllink = br.getRegex("(name|property)=\"og:image\" content=\"(http://[^<>\"]*?)\"").getMatch(1);
             }

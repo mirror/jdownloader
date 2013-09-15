@@ -600,8 +600,7 @@ public class FileFactory extends PluginForHost {
                 lbr.setFollowRedirects(true);
                 lbr.getPage(COOKIE_HOST + "/member/signin.php");
                 lbr.postPage("/member/signin.php", "loginEmail=" + Encoding.urlEncode(account.getUser()) + "&loginPassword=" + Encoding.urlEncode(account.getPass()) + "&Submit=Sign+In");
-                if (lbr.containsHTML(LOGIN_ERROR)) { throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE); }
-                if (lbr.getCookie(COOKIE_HOST, "auth") == null) { throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE); }
+                if (lbr.containsHTML(LOGIN_ERROR) || lbr.getCookie(COOKIE_HOST, "auth") == null || "deleted".equalsIgnoreCase(lbr.getCookie(COOKIE_HOST, "auth")) || (lbr.getURL() != null && lbr.getURL().contains("/error.php?code=152"))) { throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE); }
                 // Save cookies
                 final HashMap<String, String> cookies = new HashMap<String, String>();
                 final Cookies add = lbr.getCookies(COOKIE_HOST);
@@ -656,7 +655,7 @@ public class FileFactory extends PluginForHost {
         if (br.containsHTML(NOT_AVAILABLE) && !br.containsHTML(NO_SLOT)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (br.containsHTML(SERVER_DOWN)) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            return AvailableStatus.UNCHECKABLE;
         } else if (br.containsHTML(PASSWORDPROTECTED)) {
             downloadLink.getLinkStatus().setStatusText("This link is password protected");
         } else {
@@ -691,7 +690,7 @@ public class FileFactory extends PluginForHost {
     }
 
     private boolean isPremiumOnly(Browser tbr) {
-        if (tbr.containsHTML("(>This file is only available to Premium Members|Sorry, this file can only be downloaded by Premium members|Please purchase an account in order to instantly download this file|Currently only Premium Members can download files larger)")) {
+        if ((tbr.getURL() != null && tbr.getURL().contains("/error.php?code=258")) || tbr.containsHTML("(Please purchase an account to download this file\\.|>This file is only available to Premium Members|Sorry, this file can only be downloaded by Premium members|Please purchase an account in order to instantly download this file|Currently only Premium Members can download files larger)")) {
             return true;
         } else {
             return false;
