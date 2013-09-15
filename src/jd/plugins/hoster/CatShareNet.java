@@ -193,6 +193,9 @@ public class CatShareNet extends PluginForHost {
             dllink = new Regex(BRBEFORE, "Download: <a href=\"(.*?)\"").getMatch(0);
             if (dllink == null) {
                 dllink = new Regex(BRBEFORE, "(https?://(\\w+\\.)?catshare\\.net/dl/(\\d+/){4}[^\"]+)").getMatch(0);
+                if (dllink == null) {
+                    dllink = new Regex(BRBEFORE, "(https?://\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}/catshare/\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}/dl/(\\d+/){4}[^\"]+)").getMatch(0);
+                }
             }
         }
         return dllink;
