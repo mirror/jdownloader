@@ -104,16 +104,16 @@ public class AboutCom extends PluginForHost {
         if (br.containsHTML("404 Document Not Found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
 
         String filename = br.getRegex("<meta itemprop=\"name\" content=\"([^\"]+)\"").getMatch(0);
-        String playerId = br.getRegex("\\.playerID = \"(\\d+)\"").getMatch(0);
-        String videoId = br.getRegex("\\.videoId = ([^;]+)").getMatch(0);
-        videoId = br.getRegex("var " + videoId + "=\"([^\"]+)").getMatch(0);
-        if (filename == null || playerId == null || videoId == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        String playerKey = br.getRegex("\"playerKey\".value=\"([^\"]+)\"").getMatch(0);
+        String videoPlayer = br.getRegex("\"@videoPlayer\".value=\"([^\"]+)\"").getMatch(0);
+        String playerId = br.getRegex("\"playerID\".value=\"(\\d+)").getMatch(0);
+        if (filename == null || playerKey == null || playerId == null || videoPlayer == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
 
         /* AMF-Request */
         Browser amf = br.cloneBrowser();
 
         amf.getHeaders().put("Content-Type", "application/x-amf");
-        getAMFRequest(amf, createAMFMessage(dlink, videoId), playerId);
+        getAMFRequest(amf, createAMFMessage(dlink, playerKey, videoPlayer), playerKey);
 
         if (NOTFORSTABLE) {
             logger.warning("about.com: JDownloader2 is needed!");
@@ -184,14 +184,13 @@ public class AboutCom extends PluginForHost {
         return sb.toString().replaceAll("#+", "#");
     }
 
-    private byte[] createAMFMessage(String a, String b) {
-        String data = "0A0000000202002835616439303436623430353465336435323262663339366465376366363336383730376561356135110A6363636F6D2E627269676874636F76652E657870657269656E63652E566965776";
-        data += "572457870657269656E6365526571756573741964656C69766572795479706513706C617965724B65791154544C546F6B656E19657870657269656E6365496421636F6E74656E744F76657272696465730755";
-        data += "524C057FFFFFFFE000000006010601054223EDAA2F2200000903010A810353636F6D2E627269676874636F76652E657870657269656E63652E436F6E74656E744F7665727269646515636F6E74656E7449647";
-        data += "319636F6E74656E7452656649641B666561747572656452656649641B636F6E74656E745265664964730D74617267657417636F6E74656E7454797065156665617475726564496413636F6E74656E74496401";
-        data += "06" + getHexLength(b, true) + JDHexUtils.getHexString(b); // 0x06(String marker) + length + String b
-        data += "01010617766964656F506C617965720400057FFFFFFFE0000000057FFFFFFFE0000000";
-        data += "06" + getHexLength(a, true) + JDHexUtils.getHexString(a);
+    private byte[] createAMFMessage(String... s) {
+        String data = "0A0000000202002838363436653830346539333531633838633464643962306630383166316236643062373464363039110A6363636F6D2E627269676874636F76652E657870657269656E63652E566965776572457870657269656E63655265717565737419657870657269656E636549641964656C6976657279547970650755524C13706C617965724B657921636F6E74656E744F76657272696465731154544C546F6B656E054281B0158F580800057FFFFFFFE0000000";
+        data += "06" + getHexLength(s[0], true) + JDHexUtils.getHexString(s[0]); // 0x06(String marker) + length + String b
+        data += "06" + getHexLength(s[1], true) + JDHexUtils.getHexString(s[1]);
+        data += "0903010A810353636F6D2E627269676874636F76652E657870657269656E63652E436F6E74656E744F7665727269646515666561747572656449641B6665617475726564526566496417636F6E74656E745479706513636F6E74656E7449640D74617267657415636F6E74656E744964731B636F6E74656E7452656649647319636F6E74656E745265664964057FFFFFFFE0000000010400057FFFFFFFE00000000617766964656F506C617965720101";
+        data += "06" + getHexLength(s[2], true) + JDHexUtils.getHexString(s[2]);
+        data += "0601";
         return JDHexUtils.getByteArray("0003000000010046636F6D2E627269676874636F76652E657870657269656E63652E457870657269656E636552756E74696D654661636164652E67657444617461466F72457870657269656E636500022F310000" + getHexLength(JDHexUtils.toString(data), false) + data);
     }
 
@@ -241,7 +240,7 @@ public class AboutCom extends PluginForHost {
         amf.getHeaders().put("Content-Type", "application/x-amf");
         try {
             amf.setKeepResponseContentBytes(true);
-            PostRequest request = (PostRequest) amf.createPostRequest("http://c.brightcove.com/services/messagebroker/amf?playerId=" + s, (String) null);
+            PostRequest request = (PostRequest) amf.createPostRequest("http://c.brightcove.com/services/messagebroker/amf?playerKey=" + s, (String) null);
             request.setPostBytes(b);
             amf.openRequestConnection(request);
             amf.loadConnection(null);
