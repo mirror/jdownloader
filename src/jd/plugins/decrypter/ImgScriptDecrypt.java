@@ -75,9 +75,10 @@ public class ImgScriptDecrypt extends PluginForDecrypt {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
         setBrowserExclusive();
+        br.setFollowRedirects(true);
         br.getHeaders().put("User-Agent", RandomUserAgent.generate());
         br.getPage(parameter);
-        if (br.containsHTML(">Image Removed or Bad Link<")) {
+        if (br.containsHTML(">Image Removed or Bad Link<") || br.getURL().contains("/noimage.php")) {
             logger.info("Link offline: " + parameter);
             return decryptedLinks;
         }
