@@ -138,8 +138,9 @@ public class JustinTvDecrypt extends PluginForDecrypt {
                 try {
                     final String userDefinedDateFormat = cfg.getStringProperty("CUSTOM_DATE_2", "dd.MM.yyyy_HH-mm-ss");
                     final String[] dateStuff = date.split("T");
-                    SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd:HH:mm:ss");
-                    Date dateStr = formatter.parse(dateStuff[0] + ":" + dateStuff[1]);
+                    final String input = dateStuff[0] + ":" + dateStuff[1].replace("Z", "GMT");
+                    SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd:HH:mm:ssZ");
+                    Date dateStr = formatter.parse(input);
                     String formattedDate = formatter.format(dateStr);
                     Date theDate = formatter.parse(formattedDate);
 

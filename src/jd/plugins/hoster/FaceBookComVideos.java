@@ -224,7 +224,10 @@ public class FaceBookComVideos extends PluginForHost {
     }
 
     private String getLow() {
-        return br.getRegex("%22sd_src%22%3A%22(http[^<>\"\\']*?)%22").getMatch(0);
+        final String dllink = br.getRegex("%22sd_src%22%3A%22(http[^<>\"\\']*?)%22").getMatch(0);
+        // if (dllink == null) dllink =
+        // br.getRegex("\\\\u002522sd_src\\\\u002522\\\\u00253A\\\\u002522(http[^<>\"/]*?)\\\\u002522\\\\u00252C\\\\u002522thumbnail_src").getMatch(0);
+        return dllink;
     }
 
     @Override
@@ -248,10 +251,10 @@ public class FaceBookComVideos extends PluginForHost {
             br.getRequest().setHtmlCode(unescape(br.toString()));
             if (preferHD) {
                 DLLINK = getHigh();
-                if (DLLINK == null) getLow();
+                if (DLLINK == null) DLLINK = getLow();
             } else {
                 DLLINK = getLow();
-                if (DLLINK == null) getHigh();
+                if (DLLINK == null) DLLINK = getHigh();
             }
             if (DLLINK == null) {
                 logger.warning("Final downloadlink (dllink) is null");

@@ -20,9 +20,7 @@ import java.io.IOException;
 import java.text.DecimalFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.Calendar;
 import java.util.Date;
-import java.util.TimeZone;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
@@ -143,10 +141,8 @@ public class JustinTv extends PluginForHost {
         String formattedDate = null;
         if (date != null) {
             final String userDefinedDateFormat = cfg.getStringProperty(CUSTOM_DATE_2, "dd.MM.yyyy_HH-mm-ss");
-            final TimeZone tz = Calendar.getInstance().getTimeZone().getDefault();
-            final String timezone = tz.getDisplayName();
             final String[] dateStuff = date.split("T");
-            final String input = dateStuff[0] + ":" + dateStuff[1].replace("Z", timezone);
+            final String input = dateStuff[0] + ":" + dateStuff[1].replace("Z", "GMT");
             SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd:HH:mm:ssZ");
             Date dateStr = formatter.parse(input);
             formattedDate = formatter.format(dateStr);

@@ -48,12 +48,12 @@ public class ImagEarnCom extends PluginForDecrypt {
             return decryptedLinks;
         }
         String fpName = br.getRegex("<h3 class=\"page-title\"><strong>([^<>\"/]+)</strong>").getMatch(0);
-        if (parameter.contains("imagearn.com/gallery.php?id=")) {
+        if (parameter.matches("http://(www\\.)?imagearn\\.com//?gallery\\.php\\?id=\\d+")) {
             if (br.containsHTML(">There are no images in this gallery")) {
                 logger.info("Link empty: " + parameter);
                 return decryptedLinks;
             }
-            if (fpName == null) fpName = br.getRegex("<title>(.*?) - Image Earn</title>").getMatch(0);
+            if (fpName == null) fpName = br.getRegex("<title>(.*?) \\- Image Earn</title>").getMatch(0);
             if (fpName == null) {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;

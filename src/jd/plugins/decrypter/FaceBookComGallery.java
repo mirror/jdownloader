@@ -93,9 +93,11 @@ public class FaceBookComGallery extends PluginForDecrypt {
             } else if (parameter.matches(ALBUMS_LINK)) {
                 final boolean loggedIN = login();
                 if (!loggedIN) {
-                    logger.info("Cannot decrypt link without account: " + parameter);
+                    logger.info("Cannot decrypt link without valid account: " + parameter);
+                    return decryptedLinks;
                 }
                 getpagefirsttime(parameter);
+                br.getRequest().setHtmlCode(br.toString().replace("\\", ""));
                 String fpName = br.getRegex("<title id=\"pageTitle\">([^<>\"]*?)\\- Photos \\| Facebook</title>").getMatch(0);
                 final String profileID = br.getRegex("data\\-gt=\"\\&#123;\\&quot;profile_owner\\&quot;:\\&quot;(\\d+)\\&quot;").getMatch(0);
                 final String user = br.getRegex("\"user\":\"(\\d+)\"").getMatch(0);
@@ -112,25 +114,25 @@ public class FaceBookComGallery extends PluginForDecrypt {
 
                     String[] links;
                     if (i > 1) {
-                        String currentLastAlbumid = br.getRegex("\"last_album_id\\\\\":\\\\\"(\\d+)\\\\\"").getMatch(0);
-                        if (currentLastAlbumid == null) currentLastAlbumid = br.getRegex("\"last_fbid\\\\\":(\\d+)").getMatch(0);
-                        // If we have exactly 60 pictures then we reload one
+                        String currentLastAlbumid = br.getRegex("\"last_album_id\":\"(\\d+)\"").getMatch(0);
+                        if (currentLastAlbumid == null) currentLastAlbumid = br.getRegex("\"last_album_id\":(\\d+)").getMatch(0);
+                        // If we have exactly currentMaxPicCount pictures then we reload one
                         // time and got all, 2nd time will then be 0 more links
                         // -> Stop
                         if (currentLastAlbumid == null && dynamicLoadAlreadyDecrypted) {
                             break;
                         } else if (currentLastAlbumid == null) {
                             logger.warning("Decrypter broken for link: " + parameter);
-                            return null;
+                            logger.info("Returning already decrypted links anyways...");
+                            return decryptedLinks;
                         }
-                        // https://www.facebook.com/ajax/pagelet/generic.php/TimelinePhotoAlbumsPagelet?data=%7B%22profile_id%22%3A95051637400%2C%22tab_key%22%3A%22photos_albums%22%2C%22sk%22%3A%22photos_albums%22%2C%22page_index%22%3A1%2C%22last_album_id%22%3A%2210150490406417401%22%7D&__user=100002060730823&__a=1&__dyn=7n8ahyj35CCxl2u5F97Keo98y&__req=a
-                        final String loadLink = MAINPAGE + "/ajax/pagelet/generic.php/TimelinePhotoAlbumsPagelet?data=%7B%22profile_id%22%3A" + profileID + "%2C%22tab_key%22%3A%22photos_albums%22%2C%22sk%22%3A%22photos_albums%22%2C%22page_index%22%3A1%2C%22last_album_id%22%3A%22" + currentLastAlbumid + "%22%7D&__user=" + user + "&__a=1&__dyn=7n8ahyj35CCxl2u5F97Keo98y&__req=a";
+                        final String loadLink = MAINPAGE + "/ajax/pagelet/generic.php/TimelinePhotoAlbumsPagelet?data=%7B%22profile_id%22%3A" + profileID + "%2C%22tab_key%22%3A%22photos_albums%22%2C%22sk%22%3A%22photos_albums%22%2C%22page_index%22%3A" + i + "%2C%22last_album_id%22%3A%22" + currentLastAlbumid + "%22%7D&__user=" + user + "&__a=1&__dyn=&__req=a";
                         br.getPage(loadLink);
-                        links = br.getRegex("class=\\\\\"photoTextTitle\\\\\" href=\\\\\"(https?:\\\\/\\\\/(www\\.)?facebook\\.com\\\\/media\\\\/set\\\\/\\?set=a\\.[0-9\\.]+)\\&amp;type=\\d+\"").getColumn(0);
-                        currentMaxPicCount = 18;
+                        br.getRequest().setHtmlCode(br.toString().replace("\\", ""));
+                        links = br.getRegex("class=\"photoTextTitle\" href=\"(https?://(www\\.)?facebook\\.com/media/set/\\?set=a\\.[0-9\\.]+)\\&amp;type=\\d+\"").getColumn(0);
+                        currentMaxPicCount = 12;
                         dynamicLoadAlreadyDecrypted = true;
                     } else {
-                        //
                         links = br.getRegex("class=\"photoTextTitle\" href=\"(https?://(www\\.)?facebook\\.com/[^<>\"]*?)\"").getColumn(0);
                     }
                     if (links == null || links.length == 0) {
@@ -142,7 +144,7 @@ public class FaceBookComGallery extends PluginForDecrypt {
                     for (final String link : links) {
                         decryptedLinks.add(createDownloadlink(link));
                     }
-                    // 28 links = max number of links per segment
+                    // currentMaxPicCount = max number of links per segment
                     if (links.length < currentMaxPicCount) stop = true;
                     if (stop) {
                         logger.info("Seems like we're done and decrypted all links, stopping at page: " + i);
@@ -168,6 +170,7 @@ public class FaceBookComGallery extends PluginForDecrypt {
                 final String setID = new Regex(parameter, "set=(.+)").getMatch(0);
                 final String profileID = new Regex(parameter, "(\\d+)$").getMatch(0);
                 String fpName = br.getRegex("id=\"pageTitle\">([^<>\"]*?)\\| Facebook</title>").getMatch(0);
+                if (fpName == null) fpName = br.getRegex("id=\"pageTitle\">([^<>\"]*?)</title>").getMatch(0);
                 final String ajaxpipeToken = br.getRegex("\"ajaxpipe_token\":\"([^<>\"]*?)\"").getMatch(0);
                 final String user = br.getRegex("\"user\":\"(\\d+)\"").getMatch(0);
                 if (ajaxpipeToken == null || user == null) {
@@ -177,6 +180,7 @@ public class FaceBookComGallery extends PluginForDecrypt {
                 if (fpName == null) fpName = "Facebook_album_of_user_" + user;
                 fpName = Encoding.htmlDecode(fpName.trim());
                 boolean dynamicLoadAlreadyDecrypted = false;
+                String lastfirstID = "";
 
                 for (int i = 1; i <= 50; i++) {
                     int currentMaxPicCount = 28;
@@ -185,7 +189,7 @@ public class FaceBookComGallery extends PluginForDecrypt {
                     if (i > 1) {
                         String currentLastFbid = br.getRegex("\"last_fbid\\\\\":\\\\\"(\\d+)\\\\\\\"").getMatch(0);
                         if (currentLastFbid == null) currentLastFbid = br.getRegex("\"last_fbid\\\\\":(\\d+)").getMatch(0);
-                        // If we have exactly 60 pictures then we reload one
+                        // If we have exactly currentMaxPicCount pictures then we reload one
                         // time and got all, 2nd time will then be 0 more links
                         // -> Stop
                         if (currentLastFbid == null && dynamicLoadAlreadyDecrypted) {
@@ -209,14 +213,19 @@ public class FaceBookComGallery extends PluginForDecrypt {
                     boolean stop = false;
                     logger.info("Decrypting page " + i + " of ??");
                     for (final String picID : links) {
+                        // Another fail safe to prevent loops
+                        if (picID.equals(lastfirstID)) {
+                            stop = true;
+                        }
                         final DownloadLink dl = createDownloadlink("http://www.facebook.com/photo.php?fbid=" + picID);
                         if (!loggedIN) dl.setProperty("nologin", true);
                         if (SubConfiguration.getConfig("facebook.com").getBooleanProperty(FASTLINKCHECK_PICTURES, false)) dl.setAvailable(true);
                         // Set temp name, correct name will be set in hosterplugin later
                         dl.setName(fpName + "_" + picID + ".jpg");
+                        lastfirstID = picID;
                         decryptedLinks.add(dl);
                     }
-                    // 28 links = max number of links per segment
+                    // currentMaxPicCount = max number of links per segment
                     if (links.length < currentMaxPicCount) stop = true;
                     if (stop) {
                         logger.info("Seems like we're done and decrypted all links, stopping at page: " + i);
