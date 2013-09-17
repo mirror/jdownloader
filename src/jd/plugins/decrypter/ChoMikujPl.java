@@ -227,7 +227,8 @@ public class ChoMikujPl extends PluginForDecrypt {
             br.getPage(br.getRedirectLocation());
         }
         /** Get needed values */
-        String fpName = br.getRegex("<meta name=\"keywords\" content=\"(.+?),(.+?)\" />").getMatch(0);
+        // String fpName = br.getRegex("<meta name=\"keywords\" content=\"(.+?),(.+?)\" />").getMatch(0); // Sorry, which links need this?
+        String fpName = br.getRegex("<meta name=\"keywords\" content=\"(.+?)\" />").getMatch(0);
         if (fpName == null) {
             br.getRegex("<title>(.*?) \\- .*? \\- Chomikuj\\.pl.*?</title>").getMatch(0);
             if (fpName == null) {
