@@ -127,9 +127,19 @@ public class ShareRunCom extends PluginForHost {
             if (filesizelimit != null) {
                 filesizelimit = filesizelimit.trim();
                 logger.warning("As free user you can download files up to " + filesizelimit + " only");
+                try {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+                } catch (final Throwable e) {
+                    if (e instanceof PluginException) throw (PluginException) e;
+                }
                 throw new PluginException(LinkStatus.ERROR_FATAL, "Free users can only download files up to " + filesizelimit);
             } else {
                 logger.warning("Only downloadable via premium");
+                try {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+                } catch (final Throwable e) {
+                    if (e instanceof PluginException) throw (PluginException) e;
+                }
                 throw new PluginException(LinkStatus.ERROR_FATAL, "Only downloadable via premium or registered");
             }
         }

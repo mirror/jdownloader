@@ -46,12 +46,12 @@ import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sharesix.com" }, urls = { "https?://(www\\.)?sharesix\\.com/[a-z0-9]{12}" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sharesix.com", "sharesix.net" }, urls = { "https?://(www\\.)?sharesix\\.com/[a-z0-9]{12}", "https?://(www\\.)?sharesix\\.net/[a-z0-9]{12}" }, flags = { 0, 0 })
 public class ShareSixCom extends PluginForHost {
 
     private String               correctedBR                  = "";
     private static final String  PASSWORDTEXT                 = "<br><b>Passwor(d|t):</b> <input";
-    private final String         COOKIE_HOST                  = "http://sharesix.com";
+    private final String         COOKIE_HOST                  = "http://" + this.getHost();
     private static final String  MAINTENANCE                  = ">This server is in maintenance mode";
     private static final String  MAINTENANCEUSERTEXT          = JDL.L("hoster.xfilesharingprobasic.errors.undermaintenance", "This server is under Maintenance");
     private static final String  ALLWAIT_SHORT                = JDL.L("hoster.xfilesharingprobasic.errors.waitingfordownloads", "Waiting till new downloads can be started");
@@ -62,6 +62,7 @@ public class ShareSixCom extends PluginForHost {
     private static AtomicInteger totalMaxSimultanFreeDownload = new AtomicInteger(2);
     // don't touch
     private static AtomicInteger maxFree                      = new AtomicInteger(1);
+    private static AtomicInteger test                         = new AtomicInteger(0);
 
     // DEV NOTES
     /**
@@ -110,6 +111,8 @@ public class ShareSixCom extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
+        Integer t = test.get();
+        test.set(t + 1);
         br.setFollowRedirects(true);
         prepBrowser(br);
         getPage(link.getDownloadURL());
@@ -551,9 +554,19 @@ public class ShareSixCom extends PluginForHost {
             if (filesizelimit != null) {
                 filesizelimit = filesizelimit.trim();
                 logger.info("As free user you can download files up to " + filesizelimit + " only");
+                try {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+                } catch (final Throwable e) {
+                    if (e instanceof PluginException) throw (PluginException) e;
+                }
                 throw new PluginException(LinkStatus.ERROR_FATAL, PREMIUMONLY1 + " " + filesizelimit);
             } else {
                 logger.info("Only downloadable via premium");
+                try {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+                } catch (final Throwable e) {
+                    if (e instanceof PluginException) throw (PluginException) e;
+                }
                 throw new PluginException(LinkStatus.ERROR_FATAL, PREMIUMONLY2);
             }
         }
