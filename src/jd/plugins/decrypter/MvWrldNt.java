@@ -41,15 +41,16 @@ public class MvWrldNt extends PluginForDecrypt {
         super(wrapper);
     }
 
-    private static final String UNSUPPORTEDLINKS        = "http://(www\\.)?(xxx\\-4\\-free\\.net|mov\\-world\\.net|chili\\-warez\\.net)//?(news/|topliste/|premium_zugang|suche/|faq|pics/index|clips/index|movies/index|movies/seite|streams/index|stories/index|partner/anmelden|kontakt).*?\\.html";
-    private static final String SPECIALUNSUPPORTEDLINKS = "http://(www\\.)?chili\\-warez\\.net//[a-z0-9\\-_]+/[a-z0-9\\-_]+/seite\\-\\d+\\.html";
-    private static final String XXX4FREESTREAMLINK      = "http://(www\\.)?xxx\\-4\\-free\\.net/streams/[a-z0-9\\-]+\\.html";
+    private static final String UNSUPPORTEDLINKS         = "http://(www\\.)?(xxx\\-4\\-free\\.net|mov\\-world\\.net|chili\\-warez\\.net)//?(news/|topliste/|premium_zugang|suche/|faq|pics/index|clips/index|movies/index|movies/seite|streams/index|stories/index|partner/anmelden|kontakt).*?\\.html";
+    private static final String SPECIALUNSUPPORTEDLINKS  = "http://(www\\.)?chili\\-warez\\.net//[a-z0-9\\-_]+/[a-z0-9\\-_]+/seite\\-\\d+\\.html";
+    private static final String SPECIALUNSUPPORTEDLINKS2 = "http://(www\\.)?xxx\\-4\\-free\\.net/stories/[a-z0-9\\-]+\\.html";
+    private static final String XXX4FREESTREAMLINK       = "http://(www\\.)?xxx\\-4\\-free\\.net/streams/[a-z0-9\\-]+\\.html";
 
     @Override
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, final ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
-        if (parameter.matches(UNSUPPORTEDLINKS) || parameter.matches(SPECIALUNSUPPORTEDLINKS)) {
+        if (parameter.matches(UNSUPPORTEDLINKS) || parameter.matches(SPECIALUNSUPPORTEDLINKS) || parameter.matches(SPECIALUNSUPPORTEDLINKS2)) {
             logger.info("Invalid link: " + parameter);
             return decryptedLinks;
         }

@@ -29,7 +29,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "5ilthy.com" }, urls = { "http://(www\\.)?5ilthy\\.com/videos/\\d+/.*?\\.html" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "5ilthy.com" }, urls = { "http://www\\.5ilthy\\.com/decryptedvideolink/\\d+" }, flags = { 0 })
 public class FiveIlthyCom extends PluginForHost {
 
     private String DLLINK = null;
@@ -63,10 +63,9 @@ public class FiveIlthyCom extends PluginForHost {
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.getPage(downloadLink.getDownloadURL());
+        br.getPage(downloadLink.getStringProperty("original5ilthlink", null));
         if (br.getURL().contains("?=index")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("<div class=\"vtitle\"><h2>(.*?)</h2></div>").getMatch(0);
-        if (filename == null) filename = br.getRegex("<title>(.*?) at 5ilthy</title>").getMatch(0);
+        String filename = br.getRegex("<div class=\"hed videotitle\"><h1>(.*?)</h1></div>").getMatch(0);
         DLLINK = br.getRegex("<param name=\"flashvars\" value=\"settings=(http://.*?)\"/>").getMatch(0);
         if (DLLINK == null) DLLINK = br.getRegex("settings=(http://(www\\.)?5ilthy\\.com/playerConfig\\.php\\?.*?)\"").getMatch(0);
         if (filename == null || DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

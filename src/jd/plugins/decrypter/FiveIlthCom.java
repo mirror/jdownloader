@@ -50,12 +50,6 @@ public class FiveIlthCom extends PluginForDecrypt {
             return null;
         }
         filename = filename.trim();
-        tempID = br.getRegex("5ilthy\\.com/media/webmaster_images/\\d+/(\\d+)\\.jpg\"").getMatch(0);
-        if (tempID != null) {
-            DownloadLink dl = createDownloadlink("http://www.5ilthy.com/videos/" + tempID + "/" + Integer.toString(new Random().nextInt(1000000)) + ".html");
-            decryptedLinks.add(dl);
-            return decryptedLinks;
-        }
         tempID = br.getRegex("\\&file=(http://static\\.mofos\\.com/.*?)\\&enablejs").getMatch(0);
         if (tempID != null) {
             DownloadLink dl = createDownloadlink("directhttp://" + tempID);
@@ -63,19 +57,6 @@ public class FiveIlthCom extends PluginForDecrypt {
             decryptedLinks.add(dl);
             return decryptedLinks;
 
-        }
-        tempID = br.getRegex("settings=(http://(www\\.)?.{3,20}/playerConfig\\.php\\?.*?)(\\&overlay|\")").getMatch(0);
-        if (tempID != null) {
-            br.getPage(tempID);
-            String finallink = br.getRegex("defaultVideo:(http://.*?);").getMatch(0);
-            if (finallink == null) {
-                logger.warning("Decrypter broken for link: " + parameter);
-                return null;
-            }
-            DownloadLink dl = createDownloadlink("directhttp://" + finallink);
-            decryptedLinks.add(dl);
-            dl.setFinalFileName(filename + finallink.substring(finallink.length() - 4, finallink.length()));
-            return decryptedLinks;
         }
         tempID = br.getRegex("flashvars=\"\\&file=(.*?)\\&link").getMatch(0);
         if (tempID != null) {
@@ -100,10 +81,9 @@ public class FiveIlthCom extends PluginForDecrypt {
             return decryptedLinks;
 
         }
-        if (tempID == null) {
-            logger.warning("Decrypter broken for link: " + parameter);
-            return null;
-        }
+        final DownloadLink dl = createDownloadlink("http://www.5ilthy.com/decryptedvideolink/" + new Random().nextInt(1000000));
+        dl.setProperty("original5ilthlink", parameter);
+        decryptedLinks.add(dl);
         return decryptedLinks;
     }
 

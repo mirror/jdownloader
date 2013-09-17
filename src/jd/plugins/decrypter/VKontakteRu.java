@@ -42,7 +42,7 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vkontakte.ru" }, urls = { "https?://(www\\.)?vk\\.com/(?!doc\\d+)(audio(\\.php)?(\\?album_id=\\d+\\&id=|\\?id=)(\\-)?\\d+|audios\\d+|(video(\\-)?\\d+_\\d+(\\?list=[a-z0-9]+)?|videos\\d+|(video\\?section=tagged\\&id=\\d+|video\\?id=\\d+\\&section=tagged)|video_ext\\.php\\?oid=\\d+\\&id=\\d+(\\&hash=[a-z0-9]+)?|video\\?gid=\\d+|public\\d+\\?z=video(\\-)?\\d+_\\d+)|(photos|tag)\\d+|albums\\-?\\d+|([A-Za-z0-9_\\-]+#/)?album(\\-)?\\d+_\\d+|photo(\\-)?\\d+_\\d+|wall\\-\\d+(_\\d+)?|[A-Za-z0-9\\-_\\.]+)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vkontakte.ru" }, urls = { "https?://(www\\.)?vk\\.com/(?!doc\\d+)(audio(\\.php)?(\\?album_id=\\d+\\&id=|\\?id=)(\\-)?\\d+|audios\\d+|(video(\\-)?\\d+_\\d+(\\?list=[a-z0-9]+)?|videos\\d+|(video\\?section=tagged\\&id=\\d+|video\\?id=\\d+\\&section=tagged)|video_ext\\.php\\?oid=\\d+\\&id=\\d+(\\&hash=[a-z0-9]+)?|video\\?gid=\\d+|public\\d+\\?z=video(\\-)?\\d+_\\d+|search\\?(c\\[q\\]|c%5Bq%5D)=[^<>\"/]*?\\&c(\\[section\\]|%5Bsection%5D)=video\\&c(\\[sort\\]|%5Bsort%5D)=\\d+\\&z=video(\\-)?\\d+_\\d+)|(photos|tag)\\d+|albums\\-?\\d+|([A-Za-z0-9_\\-]+#/)?album(\\-)?\\d+_\\d+|photo(\\-)?\\d+_\\d+|wall\\-\\d+(_\\d+)?|[A-Za-z0-9\\-_\\.]+)" }, flags = { 0 })
 public class VKontakteRu extends PluginForDecrypt {
 
     /* must be static so all plugins share same lock */
@@ -74,8 +74,9 @@ public class VKontakteRu extends PluginForDecrypt {
     private static final String DOMAIN                             = "http://vk.com";
     private static final String PATTERN_AUDIO_GENERAL              = "https?://(www\\.)?vk\\.com/audio.*?";
     private static final String PATTERN_AUDIO_ALBUM                = "https?://(www\\.)?vk\\.com/(audio(\\.php)?\\?id=(\\-)?\\d+|audios(\\-)?\\d+)";
-    private static final String PATTERN_VIDEO_SINGLE_ALL           = "https?://(www\\.)?vk\\.com/(video(\\-)?\\d+_\\d+(\\?list=[a-z0-9]+)?|video_ext\\.php\\?oid=\\d+\\&id=\\d+(\\&hash=[a-z0-9]+)?|public\\d+\\?z=video(\\-)?\\d+_\\d+)";
+    private static final String PATTERN_VIDEO_SINGLE_ALL           = "https?://(www\\.)?vk\\.com/(video(\\-)?\\d+_\\d+(\\?list=[a-z0-9]+)?|video_ext\\.php\\?oid=\\d+\\&id=\\d+(\\&hash=[a-z0-9]+)?|public\\d+\\?z=video(\\-)?\\d+_\\d+|search\\?(c\\[q\\]|c%5Bq%5D)=[^<>\"/]*?\\&c(\\[section\\]|%5Bsection%5D)=video\\&c(\\[sort\\]|%5Bsort%5D)=\\d+\\&z=video(\\-)?\\d+_\\d+)";
     private static final String PATTERN_VIDEO_SINGLE_PUBLIC        = "https?://(www\\.)?vk\\.com/public\\d+\\?z=video(\\-)?\\d+_\\d+";
+    private static final String PATTERN_VIDEO_SINGLE_SEARCH        = "https?://(www\\.)?vk\\.com/search\\?(c\\[q\\]|c%5Bq%5D)=[^<>\"/]*?\\&c(\\[section\\]|%5Bsection%5D)=video\\&c(\\[sort\\]|%5Bsort%5D)=\\d+\\&z=video(\\-)?\\d+_\\d+";
     private static final String PATTERN_VIDEO_SINGLE_ORIGINAL      = "https?://(www\\.)?vk\\.com/video(\\-)?\\d+_\\d+";
     private static final String PATTERN_VIDEO_SINGLE_ORIGINAL_LIST = "https?://(www\\.)?vk\\.com/video(\\-)?\\d+_\\d+\\?list=[a-z0-9]+";
     private static final String PATTERN_VIDEO_SINGLE_EMBED         = "https?://(www\\.)?vk\\.com/video_ext\\.php\\?oid=\\d+\\&id=\\d+";
@@ -113,6 +114,8 @@ public class VKontakteRu extends PluginForDecrypt {
             loginrequired = false;
             if (parameter.matches(PATTERN_VIDEO_SINGLE_PUBLIC)) {
                 parameter = "https://vk.com/" + new Regex(parameter, "(video(\\-)?\\d+_\\d+)").getMatch(0);
+            } else if (parameter.matches(PATTERN_VIDEO_SINGLE_SEARCH)) {
+                parameter = "https://vk.com/" + new Regex(parameter, "(video(\\-)?\\d+_\\d+)$").getMatch(0);
             }
         }
         /** Check/fix links before browser access END */

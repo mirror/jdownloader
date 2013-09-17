@@ -21,6 +21,7 @@ import java.io.IOException;
 import jd.PluginWrapper;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -77,9 +78,14 @@ public class ShufuniCom extends PluginForHost {
         if (br.getURL().equals("http://www.shufuni.com/videoerrorpage.aspx") || br.containsHTML(">Sorry, this video cannot be found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = null;
         if (downloadLink.getDownloadURL().matches("http://(www\\.)?shufuni\\.com/handlers/FLVStreamingv2\\.ashx\\?videoCode=[A-Z0-9\\-]+")) {
-            if (br.containsHTML(">no flv details<")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            if (br.containsHTML(">no flv details<")) {
+                // Offline, but set nice name anyways
+                downloadLink.setName(new Regex(downloadLink.getDownloadURL(), "videoCode=(.+)").getMatch(0) + ".flv");
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             filename = downloadLink.getFinalFileName();
             if (filename == null) filename = downloadLink.getName();
+            if (filename == null || filename.equals("FLVStreamingv2.ashx")) filename = new Regex(downloadLink.getDownloadURL(), "videoCode=(.+)").getMatch(0);
             dllink = br.getRegex("CDNUrl=(http://[^<>\"]*?)\\&SeekType=").getMatch(0);
             if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             String ext = null;

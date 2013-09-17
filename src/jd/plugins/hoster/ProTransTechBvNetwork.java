@@ -30,9 +30,9 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "hotxvideos.xxx" }, urls = { "http://(www\\.)?hotxvideos\\.xxx/xvideos/\\d+\\.html" }, flags = { 0 })
-public class HotXvideosXxx extends PluginForHost {
+public class ProTransTechBvNetwork extends PluginForHost {
 
-    public HotXvideosXxx(PluginWrapper wrapper) {
+    public ProTransTechBvNetwork(PluginWrapper wrapper) {
         super(wrapper);
     }
 

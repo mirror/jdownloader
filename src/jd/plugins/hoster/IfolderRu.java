@@ -77,7 +77,7 @@ public class IfolderRu extends PluginForHost {
             downloadLink.getLinkStatus().setStatusText(JDL.L("plugins.hoster.ifolderru.errors.ticketwait", "Waiting for ticket"));
             watchAd = domain + "/ints/?".concat(watchAd).replace("';", "");
             br.getPage(watchAd);
-            watchAd = br.getRegex("<font size=\"\\+1\"><a href=(.*?)>").getMatch(0);
+            watchAd = br.getRegex("href=(http://ints\\.rusfolder.[a-z0-9]+/ints/[^<>\"]*?)>").getMatch(0);
             // If they take the waittime out this part is optional
             if (watchAd != null) {
                 br.getPage(watchAd);

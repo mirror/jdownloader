@@ -58,14 +58,14 @@ public class VideoOneCom extends PluginForDecrypt {
         }
 
         br.getPage("http://video-one.com/newvid/" + filename + "?t=" + t + "&h=" + h + "&p=video-one.com/eval/seq/2");
-        if (br.containsHTML(">Video Content Not Available<")) {
+        if (br.containsHTML(">Video Content Not Available<|No htmlCode read")) {
             logger.info("Link offline: " + parameter);
             return decryptedLinks;
         }
 
         String externID = null;
         String fuu = null;
-        final String continueURL = br.getRegex("\"(http://\\d+\\.\\d+\\.\\d+\\.\\d+/visions/[^<>\"]*?)\"").getMatch(0);
+        final String continueURL = br.getRegex("\"(http://(\\d+\\.\\d+\\.\\d+\\.\\d+|[a-z0-9\\.]+)/visions/[^<>\"]*?)\"").getMatch(0);
         /** Maybe crypted? */
         if (continueURL != null) {
             br.getPage(continueURL);

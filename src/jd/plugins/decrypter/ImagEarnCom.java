@@ -28,6 +28,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
+import jd.utils.JDUtilities;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "imagearn.com" }, urls = { "http://(www\\.)?imagearn\\.com//?(gallery|image)\\.php\\?id=\\d+" }, flags = { 0 })
 public class ImagEarnCom extends PluginForDecrypt {
@@ -66,10 +67,19 @@ public class ImagEarnCom extends PluginForDecrypt {
             }
             DecimalFormat df = new DecimalFormat("0000");
             int counter = 1;
+            String currentUA = null;
             for (final String singleLink : links) {
                 for (int i = 1; i <= 3; i++) {
+                    if (currentUA != null) br.getHeaders().put("User-Agent", currentUA);
                     br.getPage(singleLink);
                     if (br.containsHTML("Do not use autorefresh programs")) {
+                        this.sleep(new Random().nextInt(4) * 1000l, param);
+                        continue;
+                    } else if (br.containsHTML("Congratulations you received a ban")) {
+                        logger.info("Trying to avoid ban");
+                        br.clearCookies("http://imagearn.com/");
+                        JDUtilities.getPluginForHost("mediafire.com");
+                        currentUA = jd.plugins.hoster.MediafireCom.stringUserAgent();
                         this.sleep(new Random().nextInt(4) * 1000l, param);
                         continue;
                     }

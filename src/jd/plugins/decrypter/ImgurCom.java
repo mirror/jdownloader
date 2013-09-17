@@ -42,7 +42,11 @@ public class ImgurCom extends PluginForDecrypt {
             final String albumID = new Regex(parameter, "([A-Za-z0-9]+)$").getMatch(0);
             br.getPage("http://api.imgur.com/2/album/" + albumID + "/images");
             if (br.containsHTML("<message>Album not found</message>")) {
-                logger.info("Link offline OR empty album: " + parameter);
+                logger.info("Link offline: " + parameter);
+                return decryptedLinks;
+            }
+            if (br.containsHTML("<album><title/><description/><cover>")) {
+                logger.info("Empty album: " + parameter);
                 return decryptedLinks;
             }
             final String fpName = br.getRegex("<title>([^<>\"]*?)</title>").getMatch(0);

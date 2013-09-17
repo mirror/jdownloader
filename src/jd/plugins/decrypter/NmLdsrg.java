@@ -56,6 +56,11 @@ public class NmLdsrg extends PluginForDecrypt {
         }
         br.getHeaders().put("User-Agent", jd.plugins.hoster.MediafireCom.stringUserAgent());
         br.getHeaders().put("Accept-Language", "en-US,en;q=0.5");
+        try {
+            br.setLoadLimit(4194304);
+        } catch (final Throwable e) {
+            // Not available in old 0.9.581 Stable
+        }
         if (parameter.contains("/redirect/")) {
             links.add(parameter);
         } else {
