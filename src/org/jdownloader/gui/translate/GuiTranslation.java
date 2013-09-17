@@ -3070,4 +3070,19 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Enter your Captcha Brotherhood Logins below. If you do not have an account yet, click the Link above and register for an account. It's free!" })
     String captchabrotherhoodService_createPanel_logins_();
 
+    @Default(lngs = { "en" }, values = { "Finding Links..." })
+    String LinkCrawlerBubble_update_header();
+
+    @Default(lngs = { "en" }, values = { "Parse Clipboard" })
+    String LinkCrawlerBubble_update_header_from_Clipboard();
+
+    @Default(lngs = { "en" }, values = { "Running for %s2...\r\nFound Links: %s1" })
+    String LinkCrawlerBubble_update_running_linkcrawler(int crawledLinksFoundCounter, String time);
+
+    @Default(lngs = { "en" }, values = { "Finished in %s2...\r\nFound Links: %s1" })
+    String LinkCrawlerBubble_update_stopped_linkcrawler(int crawledLinksFoundCounter, String formatMilliSeconds);
+
+    @Default(lngs = { "en" }, values = { "Parse Clipboard: %s1" })
+    String LinkCrawlerBubble_update_header_from_Clipboard_url(String txt);
+
 }

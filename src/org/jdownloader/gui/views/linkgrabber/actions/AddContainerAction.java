@@ -59,7 +59,7 @@ public class AddContainerAction extends AppAction implements CachableInterface {
                 list.append(r.getAbsolutePath());
                 sb.append(r.getAbsolutePath());
             }
-            LinkCrawler lc = LinkCollector.getInstance().addCrawlerJob(new LinkCollectingJob(sb.toString()));
+            LinkCrawler lc = LinkCollector.getInstance().addCrawlerJob(new LinkCollectingJob(sb.toString()).setSource(this));
 
         } catch (DialogNoAnswerException e1) {
         }

@@ -98,7 +98,7 @@ public class MacOSApplicationAdapter implements QuitHandler, AboutHandler, Prefe
                 }
                 if (adapter.openURIlinks != null) {
                     LogController.GL.info("Distribute links: " + adapter.openURIlinks);
-                    LinkCollector.getInstance().addCrawlerJob(new LinkCollectingJob(adapter.openURIlinks));
+                    LinkCollector.getInstance().addCrawlerJob(new LinkCollectingJob(adapter.openURIlinks).setSource(this));
                     adapter.openURIlinks = null;
                 }
             }
@@ -300,7 +300,7 @@ public class MacOSApplicationAdapter implements QuitHandler, AboutHandler, Prefe
         if (swingGui == null || swingGui.getMainFrame() == null) return;
         final JFrame mainFrame = swingGui.getMainFrame();
         if (!mainFrame.isVisible()) {
-            WindowManager.getInstance().setVisible(mainFrame, true,FrameState.OS_DEFAULT);
+            WindowManager.getInstance().setVisible(mainFrame, true, FrameState.OS_DEFAULT);
         }
     }
 
@@ -315,7 +315,7 @@ public class MacOSApplicationAdapter implements QuitHandler, AboutHandler, Prefe
             sb.append("file://");
             sb.append(file.getPath());
         }
-        LinkCollector.getInstance().addCrawlerJob(new LinkCollectingJob(sb.toString()));
+        LinkCollector.getInstance().addCrawlerJob(new LinkCollectingJob(sb.toString()).setSource(this));
     }
 
     public void openURI(AppEvent.OpenURIEvent e) {
@@ -324,7 +324,7 @@ public class MacOSApplicationAdapter implements QuitHandler, AboutHandler, Prefe
         String links = e.getURI().toString();
         if (SecondLevelLaunch.GUI_COMPLETE.isReached()) {
             LogController.GL.info("Distribute links: " + links);
-            LinkCollector.getInstance().addCrawlerJob(new LinkCollectingJob(links));
+            LinkCollector.getInstance().addCrawlerJob(new LinkCollectingJob(links).setSource(this));
         } else {
             openURIlinks = links;
         }

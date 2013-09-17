@@ -140,7 +140,7 @@ public class AutoConfirmButton extends ExtButton implements ChangeListener, Tabl
             }
         });
         try {
-            LinkCrawler.getEventSender().addListener(new LinkCrawlerListener() {
+            LinkCrawler.getGlobalEventSender().addListener(new LinkCrawlerListener() {
 
                 public void onLinkCrawlerEvent(LinkCrawlerEvent event) {
                     if (event.getCaller() instanceof LinkCollectorCrawler) {

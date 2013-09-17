@@ -119,4 +119,16 @@ public class LinkCollectingJob {
     private File        outputFolder;
     private String      packageName;
 
+    private Object      source;
+
+    public Object getSource() {
+        return source;
+    }
+
+    public LinkCollectingJob setSource(Object source) {
+
+        this.source = source;
+        return this;
+    }
+
 }

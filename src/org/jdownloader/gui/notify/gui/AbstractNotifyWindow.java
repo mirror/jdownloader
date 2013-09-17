@@ -63,6 +63,9 @@ public abstract class AbstractNotifyWindow<T extends JComponent> extends ExtJWin
     private long      endTime = 0;
     private boolean   mouseOver;
     private Rectangle bounds;
+    private boolean   disposed;
+    private boolean   closed;
+    private JLabel    headerLbl;
 
     public AbstractNotifyWindow(String caption, T comp) {
         super();
@@ -106,8 +109,13 @@ public abstract class AbstractNotifyWindow<T extends JComponent> extends ExtJWin
         fader = new Fader(this);
         timeout = CFG_BUBBLE.DEFAULT_TIMEOUT.getValue();
         if (timeout > 0) {
-            timeout += getFadeSpeed();
         }
+    }
+
+    public void dispose() {
+        disposed = true;
+        closed = true;
+        super.dispose();
     }
 
     // @Override
@@ -125,6 +133,14 @@ public abstract class AbstractNotifyWindow<T extends JComponent> extends ExtJWin
     // System.out.println(e);
     // }
     //
+
+    public boolean isClosed() {
+        return closed;
+    }
+
+    public boolean isDisposed() {
+        return disposed;
+    }
 
     public T getContentComponent() {
         return contentComponent;
@@ -260,11 +276,20 @@ public abstract class AbstractNotifyWindow<T extends JComponent> extends ExtJWin
             dispose();
         }
         if (b && getTimeout() > 0) {
-            endTime = System.currentTimeMillis() + getTimeout();
-            timer = new Timer(getTimeout(), this);
-            timer.setRepeats(false);
-            timer.start();
+            int to = getTimeout();
+            startTimeout(to);
         }
+    }
+
+    protected void startTimeout(int to) {
+        if (timer != null) {
+            timer.stop();
+        }
+        endTime = System.currentTimeMillis() + to;
+
+        timer = new Timer(to, this);
+        timer.setRepeats(false);
+        timer.start();
     }
 
     protected int getFadeSpeed() {
@@ -290,14 +315,18 @@ public abstract class AbstractNotifyWindow<T extends JComponent> extends ExtJWin
         this.timeout = timeout;
     }
 
+    public void setHeaderText(String txt) {
+        headerLbl.setText(txt);
+    }
+
     private Component createHeader(String caption) {
         MigPanel ret = new MigPanel("ins 0", "[grow,fill][][]", "[]");
-        JLabel lbl = new JLabel(caption);
-        lbl.setForeground(ColorUtils.getAlphaInstance(lbl.getForeground(), 160));
-        lbl.setHorizontalAlignment(SwingConstants.LEFT);
-        ret.add(SwingUtils.toBold(lbl));
+        headerLbl = new JLabel(caption);
+        headerLbl.setForeground(ColorUtils.getAlphaInstance(headerLbl.getForeground(), 160));
+        headerLbl.setHorizontalAlignment(SwingConstants.LEFT);
+        ret.add(SwingUtils.toBold(headerLbl));
         SwingUtils.setOpaque(ret, false);
-        SwingUtils.setOpaque(lbl, false);
+        SwingUtils.setOpaque(headerLbl, false);
         ExtButton settings = new ExtButton() {
             {
                 setToolTipText(_GUI._.Notify_createHeader_settings_tt());
@@ -368,7 +397,7 @@ public abstract class AbstractNotifyWindow<T extends JComponent> extends ExtJWin
         };
         ret.add(closeButton, "width 16!,height 16!");
         SwingUtils.setOpaque(ret, false);
-        SwingUtils.setOpaque(lbl, false);
+        SwingUtils.setOpaque(headerLbl, false);
         SwingUtils.setOpaque(closeButton, false);
         return ret;
     }
@@ -377,12 +406,13 @@ public abstract class AbstractNotifyWindow<T extends JComponent> extends ExtJWin
     }
 
     protected void onClose() {
+        closed = true;
         if (timer != null) {
             timer.stop();
             timer = null;
         }
         fader.fadeOut(getFadeSpeed());
-        fader.moveTo(endLocation.x, endLocation.y, getFadeSpeed());
+        if (endLocation != null) fader.moveTo(endLocation.x, endLocation.y, getFadeSpeed());
         controller.remove(this);
         // dispose();
 

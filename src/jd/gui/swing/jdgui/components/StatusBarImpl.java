@@ -186,7 +186,7 @@ public class StatusBarImpl extends JPanel implements DownloadWatchdogListener {
         SecondLevelLaunch.GUI_COMPLETE.executeWhenReached(new Runnable() {
 
             public void run() {
-                LinkCrawler.getEventSender().addListener(new LinkCrawlerListener() {
+                LinkCrawler.getGlobalEventSender().addListener(new LinkCrawlerListener() {
 
                     public void onLinkCrawlerEvent(LinkCrawlerEvent event) {
                         updateLinkGrabberIndicator();

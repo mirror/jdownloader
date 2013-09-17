@@ -15,6 +15,7 @@ import javax.swing.ScrollPaneConstants;
 import javax.swing.SwingUtilities;
 
 import jd.controlling.linkcollector.LinkCollector;
+import jd.controlling.linkcollector.LinkCollectorCrawler;
 import jd.controlling.linkcollector.LinkCollectorEvent;
 import jd.controlling.linkcollector.LinkCollectorHighlightListener;
 import jd.controlling.linkcollector.LinkCollectorListener;
@@ -91,7 +92,7 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
 
     public LinkGrabberPanel() {
         super(new MigLayout("ins 0, wrap 2", "[grow,fill]2[]2[fill]", "[grow, fill]2[]"));
-        LinkgrabberContextMenuManager.getInstance().setPanel(this);
+
         tableModel = LinkGrabberTableModel.getInstance();
         table = new LinkGrabberTable(this, tableModel);
         tableScrollPane = new JScrollPane(table);
@@ -162,6 +163,18 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
             @Override
             public boolean isThisListenerEnabled() {
                 return org.jdownloader.settings.staticreferences.CFG_GUI.CFG.isLinkgrabberAutoTabSwitchEnabled() || CFG_GUI.CFG.getNewLinksAction() != NewLinksInLinkgrabberAction.NOTHING;
+            }
+
+            @Override
+            public void onLinkCrawlerAdded(LinkCollectorCrawler parameter) {
+            }
+
+            @Override
+            public void onLinkCrawlerStarted(LinkCollectorCrawler parameter) {
+            }
+
+            @Override
+            public void onLinkCrawlerStopped(LinkCollectorCrawler parameter) {
             }
 
         });
@@ -338,6 +351,7 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
         org.jdownloader.settings.staticreferences.CFG_GUI.LINKGRABBER_SIDEBAR_TOGGLE_BUTTON_ENABLED.getEventSender().addListener(this);
         org.jdownloader.settings.staticreferences.CFG_GUI.LINKGRABBER_SIDEBAR_VISIBLE.getEventSender().addListener(this);
         org.jdownloader.settings.staticreferences.CFG_GUI.LINKGRABBER_OVERVIEW_VISIBLE.getEventSender().addListener(this);
+        LinkgrabberContextMenuManager.getInstance().setPanel(this);
 
     }
 
@@ -588,6 +602,18 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
     }
 
     public void onLinkCollectorContentModified(LinkCollectorEvent event) {
+    }
+
+    @Override
+    public void onLinkCrawlerAdded(LinkCollectorCrawler parameter) {
+    }
+
+    @Override
+    public void onLinkCrawlerStarted(LinkCollectorCrawler parameter) {
+    }
+
+    @Override
+    public void onLinkCrawlerStopped(LinkCollectorCrawler parameter) {
     }
 
 }

@@ -193,7 +193,8 @@ public class ClipboardMonitoring {
                         if (!StringUtils.isEmpty(handleThisRound)) {
                             if (firstRoundDone) {
                                 waitTimeout = minWaitTimeout;
-                                LinkCollectingJob job = new LinkCollectingJob(handleThisRound);
+                                LinkCollectingJob job = new LinkCollectingJob(handleThisRound).setSource(ClipboardMonitoring.INSTANCE);
+                                ;
                                 job.setExtractPasswords(PasswordUtils.getPasswords(handleThisRound));
                                 job.setCustomSourceUrl(lastBrowserUrl);
                                 LinkCollector.getInstance().addCrawlerJob(job);
@@ -413,7 +414,8 @@ public class ClipboardMonitoring {
             }
             String content = sb.toString();
             if (!StringUtils.isEmpty(content)) {
-                LinkCollectingJob job = new LinkCollectingJob(content);
+                LinkCollectingJob job = new LinkCollectingJob(content).setSource(ClipboardMonitoring.INSTANCE);
+                ;
                 job.setCustomSourceUrl(browserUrl);
                 job.setExtractPasswords(PasswordUtils.getPasswords(content));
                 LinkCollector.getInstance().addCrawlerJob(job);

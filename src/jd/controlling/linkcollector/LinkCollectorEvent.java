@@ -57,7 +57,22 @@ public class LinkCollectorEvent extends SimpleEvent<LinkCollector, Object, LinkC
          * Dupe link has been added. This event is just to inform<br>
          * Parameter[0]: (CrawledLink) added Link
          */
-        DUPE_LINK
+        DUPE_LINK,
+        /**
+         * A new Crawler has been started.<br>
+         * Parameter[0]: (LinkCollectorCrawler) the crawler
+         */
+        CRAWLER_STARTED,
+        /**
+         * A new Crawler has been added - will start as soon as possible.<br>
+         * Parameter[0]: (LinkCollectorCrawler) the crawler
+         */
+        CRAWLER_ADDED,
+        /**
+         * A new Crawler has been stopped.<br>
+         * Parameter[0]: (LinkCollectorCrawler) the crawler
+         */
+        CRAWLER_STOPPED
 
     }
 

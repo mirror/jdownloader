@@ -181,6 +181,7 @@ public class AddLinksDialog extends AbstractDialog<LinkCollectingJob> {
     @Override
     protected LinkCollectingJob createReturnValue() {
         LinkCollectingJob ret = new LinkCollectingJob();
+        ret.setSource(this);
         ret.setText(input.getText());
         // if (destination.getSelectedIndex() > 0) {
         //

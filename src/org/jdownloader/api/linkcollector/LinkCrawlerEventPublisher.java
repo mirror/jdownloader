@@ -47,7 +47,7 @@ public class LinkCrawlerEventPublisher implements EventPublisher, LinkCrawlerLis
         boolean wasEmpty = eventSenders.isEmpty();
         eventSenders.add(eventsAPI);
         if (wasEmpty && eventSenders.isEmpty() == false) {
-            LinkCrawler.getEventSender().addListener(this, true);
+            LinkCrawler.getGlobalEventSender().addListener(this, true);
         }
     }
 
@@ -55,7 +55,7 @@ public class LinkCrawlerEventPublisher implements EventPublisher, LinkCrawlerLis
     public void unregister(EventsSender eventsAPI) {
         eventSenders.remove(eventsAPI);
         if (eventSenders.isEmpty()) {
-            LinkCrawler.getEventSender().removeListener(this);
+            LinkCrawler.getGlobalEventSender().removeListener(this);
         }
     }
 

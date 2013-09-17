@@ -3,6 +3,7 @@ package org.jdownloader.api.linkcollector;
 import java.util.concurrent.CopyOnWriteArraySet;
 
 import jd.controlling.linkcollector.LinkCollector;
+import jd.controlling.linkcollector.LinkCollectorCrawler;
 import jd.controlling.linkcollector.LinkCollectorEvent;
 import jd.controlling.linkcollector.LinkCollectorListener;
 import jd.controlling.linkcrawler.CrawledLink;
@@ -130,5 +131,17 @@ public class LinkCollectorEventPublisher implements EventPublisher, LinkCollecto
         if (eventSenders.isEmpty()) {
             LinkCollector.getInstance().getEventsender().removeListener(this);
         }
+    }
+
+    @Override
+    public void onLinkCrawlerAdded(LinkCollectorCrawler parameter) {
+    }
+
+    @Override
+    public void onLinkCrawlerStarted(LinkCollectorCrawler parameter) {
+    }
+
+    @Override
+    public void onLinkCrawlerStopped(LinkCollectorCrawler parameter) {
     }
 }

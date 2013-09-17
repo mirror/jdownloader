@@ -9,6 +9,7 @@ import jd.controlling.downloadcontroller.DownloadController;
 import jd.controlling.downloadcontroller.DownloadControllerEvent;
 import jd.controlling.downloadcontroller.DownloadControllerListener;
 import jd.controlling.linkcollector.LinkCollector;
+import jd.controlling.linkcollector.LinkCollectorCrawler;
 import jd.controlling.linkcollector.LinkCollectorEvent;
 import jd.controlling.linkcollector.LinkCollectorListener;
 import jd.controlling.linkcrawler.CrawledLink;
@@ -43,7 +44,8 @@ public class ArchiveController implements DownloadControllerListener, LinkCollec
     private LogSource                        logger;
 
     /**
-     * Create a new instance of ArchiveController. This is a singleton class. Access the only existing instance by using {@link #getInstance()}.
+     * Create a new instance of ArchiveController. This is a singleton class. Access the only existing instance by using
+     * {@link #getInstance()}.
      */
     private ArchiveController() {
         map = new HashMap<String, ArchiveSettings>();
@@ -239,5 +241,17 @@ public class ArchiveController implements DownloadControllerListener, LinkCollec
     @Override
     public void onLinkCollectorDupeAdded(LinkCollectorEvent event, CrawledLink parameter) {
 
+    }
+
+    @Override
+    public void onLinkCrawlerAdded(LinkCollectorCrawler parameter) {
+    }
+
+    @Override
+    public void onLinkCrawlerStarted(LinkCollectorCrawler parameter) {
+    }
+
+    @Override
+    public void onLinkCrawlerStopped(LinkCollectorCrawler parameter) {
     }
 }

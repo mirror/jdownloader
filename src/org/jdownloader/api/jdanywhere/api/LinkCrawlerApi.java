@@ -119,7 +119,7 @@ public class LinkCrawlerApi implements ILinkCrawlerApi {
             File tmp = JDUtilities.getResourceFile("tmp/jd_" + System.currentTimeMillis() + ".dlc", true);
             IO.writeToFile(tmp, dlc.getBytes("UTF-8"));
             String url = "file://" + tmp.getAbsolutePath();
-            LinkCollectingJob job = new LinkCollectingJob(url);
+            LinkCollectingJob job = new LinkCollectingJob(url).setSource(this);
             LinkCollector.getInstance().addCrawlerJob(job);
         } catch (Throwable e) {
 

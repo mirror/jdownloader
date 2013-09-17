@@ -12,7 +12,7 @@ public class AddLinkCommand extends AbstractStartupCommand {
     @Override
     public void run(String command, String... parameters) {
         for (String s : parameters) {
-            LinkCollector.getInstance().addCrawlerJob(new LinkCollectingJob(s));
+            LinkCollector.getInstance().addCrawlerJob(new LinkCollectingJob(s).setSource(this));
         }
     }
 

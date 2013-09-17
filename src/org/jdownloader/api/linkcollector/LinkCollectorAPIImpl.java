@@ -201,7 +201,8 @@ public class LinkCollectorAPIImpl implements LinkCollectorAPI {
     private Boolean addLinks(String links, String packageName, String extractPassword, String downloadPassword, String destinationFolder, boolean autostart) {
         LinkCollector lc = LinkCollector.getInstance();
 
-        LinkCollectingJob lcj = new LinkCollectingJob(links);
+        LinkCollectingJob lcj = new LinkCollectingJob(links).setSource(this);
+        ;
         lcj.setAutoStart(autostart);
         if (autostart) lcj.setPriority(Priority.HIGHEST);
 

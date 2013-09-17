@@ -80,8 +80,97 @@ import org.jdownloader.translate._JDT;
 
 public class LinkCollector extends PackageController<CrawledPackage, CrawledLink> implements LinkCheckerHandler<CrawledLink>, LinkCrawlerHandler, ShutdownVetoListener {
 
+    public static final class CrawledLinkCrawler extends LinkCollectorCrawler {
+        private LinkCollector linkCollector;
+
+        public CrawledLinkCrawler(LinkCollector linkCollector) {
+            this.linkCollector = linkCollector;
+            setFilter(linkCollector.getCrawlerFilter());
+            setHandler(linkCollector);
+        }
+
+        @Override
+        protected void generalCrawledLinkModifier(CrawledLink link) {
+            LinkCollector.crawledLinkModifier(link, link.getSourceJob());
+        }
+
+        @Override
+        protected void crawlerStopped() {
+            linkCollector.onCrawlerStopped(this);
+            super.crawlerStopped();
+
+        }
+
+        @Override
+        protected void crawlerStarted() {
+            linkCollector.onCrawlerStarted(this);
+            super.crawlerStarted();
+
+        }
+    }
+
+    public static final class JobLinkCrawler extends LinkCollectorCrawler {
+        private final LinkCollectingJob   job;
+        private LinkCollectingInformation collectingInfo;
+        private LinkCollector             linkCollector;
+
+        public JobLinkCrawler(LinkCollector linkCollector, LinkCollectingJob job) {
+            this.job = job;
+            collectingInfo = new LinkCollectingInformation(this, linkCollector.getLinkChecker());
+            this.linkCollector = linkCollector;
+            setFilter(linkCollector.getCrawlerFilter());
+            setHandler(linkCollector);
+        }
+
+        public LinkCollectingJob getJob() {
+            return job;
+        }
+
+        @Override
+        protected CrawledLink crawledLinkFactorybyURL(String url) {
+            CrawledLink ret = new CrawledLink(url);
+            ret.setCollectingInfo(collectingInfo);
+            ret.setSourceJob(job);
+            return ret;
+        }
+
+        @Override
+        protected void generalCrawledLinkModifier(CrawledLink link) {
+            LinkCollector.crawledLinkModifier(link, job);
+        }
+
+        @Override
+        protected void crawlerStopped() {
+            linkCollector.onCrawlerStopped(this);
+            super.crawlerStopped();
+
+        }
+
+        @Override
+        protected void crawlerStarted() {
+            linkCollector.onCrawlerStarted(this);
+            super.crawlerStarted();
+
+        }
+    }
+
     public static LinkCollector getInstance() {
         return INSTANCE;
+    }
+
+    private void onCrawlerAdded(LinkCollectorCrawler jobLinkCrawler) {
+
+        eventsender.fireEvent(new LinkCollectorEvent(this, LinkCollectorEvent.TYPE.CRAWLER_ADDED, jobLinkCrawler, QueuePriority.NORM));
+    }
+
+    public void onCrawlerStopped(LinkCollectorCrawler crawledLinkCrawler) {
+        getEventsender().removeListener(crawledLinkCrawler);
+        eventsender.fireEvent(new LinkCollectorEvent(this, LinkCollectorEvent.TYPE.CRAWLER_STOPPED, crawledLinkCrawler, QueuePriority.NORM));
+    }
+
+    public void onCrawlerStarted(LinkCollectorCrawler crawledLinkCrawler) {
+        getEventsender().addListener(crawledLinkCrawler, true);
+        eventsender.fireEvent(new LinkCollectorEvent(this, LinkCollectorEvent.TYPE.CRAWLER_STARTED, crawledLinkCrawler, QueuePriority.NORM));
     }
 
     private transient LinkCollectorEventSender           eventsender          = new LinkCollectorEventSender();
@@ -224,6 +313,18 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
 
             @Override
             public void onLinkCollectorContentAdded(LinkCollectorEvent event) {
+            }
+
+            @Override
+            public void onLinkCrawlerAdded(LinkCollectorCrawler parameter) {
+            }
+
+            @Override
+            public void onLinkCrawlerStarted(LinkCollectorCrawler parameter) {
+            }
+
+            @Override
+            public void onLinkCrawlerStopped(LinkCollectorCrawler parameter) {
             }
 
         });
@@ -618,26 +719,8 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
         lazyInit();
         synchronized (shutdownLock) {
             if (ShutdownController.getInstance().isShutDownRequested()) return null;
-            final LinkCollectorCrawler lc = new LinkCollectorCrawler() {
-                @Override
-                protected void generalCrawledLinkModifier(CrawledLink link) {
-                    crawledLinkModifier(link, link.getSourceJob());
-                }
+            final LinkCollectorCrawler lc = new CrawledLinkCrawler(this);
 
-                @Override
-                protected void crawlerStopped() {
-                    eventsender.removeListener(this);
-                    super.crawlerStopped();
-                }
-
-                @Override
-                protected void crawlerStarted() {
-                    eventsender.addListener(this, true);
-                    super.crawlerStarted();
-                }
-            };
-            lc.setFilter(crawlerFilter);
-            lc.setHandler(this);
             LinkCollectingInformation collectingInfo = new LinkCollectingInformation(lc, linkChecker);
             java.util.List<CrawledLink> jobs = new ArrayList<CrawledLink>(links);
             collectingInfo.setLinkCrawler(lc);
@@ -645,12 +728,14 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
             for (CrawledLink job : jobs) {
                 job.setCollectingInfo(collectingInfo);
             }
+            onCrawlerAdded(lc);
             lc.crawl(jobs);
+
             return lc;
         }
     }
 
-    private void crawledLinkModifier(CrawledLink link, LinkCollectingJob job) {
+    private static void crawledLinkModifier(CrawledLink link, LinkCollectingJob job) {
         if (job != null && link != null) {
             if (link.getDownloadLink() != null) {
                 if (!StringUtils.isEmpty(job.getCustomSourceUrl())) link.getDownloadLink().setBrowserUrl(job.getCustomSourceUrl());
@@ -691,42 +776,19 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
             lazyInit();
             synchronized (shutdownLock) {
                 if (ShutdownController.getInstance().isShutDownRequested()) return null;
-                final LinkCollectorCrawler lc = new LinkCollectorCrawler() {
-                    private LinkCollectingInformation collectingInfo = new LinkCollectingInformation(this, linkChecker);
+                final JobLinkCrawler lc = new JobLinkCrawler(this, job);
 
-                    @Override
-                    protected CrawledLink crawledLinkFactorybyURL(String url) {
-                        CrawledLink ret = new CrawledLink(url);
-                        ret.setCollectingInfo(collectingInfo);
-                        ret.setSourceJob(job);
-                        return ret;
-                    }
-
-                    @Override
-                    protected void generalCrawledLinkModifier(CrawledLink link) {
-                        crawledLinkModifier(link, job);
-                    }
-
-                    @Override
-                    protected void crawlerStopped() {
-                        eventsender.removeListener(this);
-                        super.crawlerStopped();
-                    }
-
-                    @Override
-                    protected void crawlerStarted() {
-                        eventsender.addListener(this, true);
-                        super.crawlerStarted();
-                    }
-                };
-
-                lc.setFilter(crawlerFilter);
-                lc.setHandler(this);
                 String jobText = job.getText();
                 /*
                  * we don't want to keep reference on text during the whole link grabbing/checking/collecting way
                  */
-                job.setText(null);
+
+                onCrawlerAdded(lc);
+                // keep text if it is tiny.
+                // if we have the text in the job, we can display it for example in the balloons
+                if (StringUtils.isNotEmpty(jobText) && jobText.length() > 500) {
+                    job.setText(null);
+                }
                 lc.crawl(jobText, job.getCustomSourceUrl(), job.isDeepAnalyse());
                 return lc;
             }

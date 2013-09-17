@@ -121,7 +121,8 @@ public class ExternInterfaceImpl implements Cnl2APIBasics, Cnl2APIFlash {
         String passwords = HttpRequest.getParameterbyKey(request, "passwords");
         String source = HttpRequest.getParameterbyKey(request, "source");
         String comment = HttpRequest.getParameterbyKey(request, "comment");
-        LinkCollectingJob job = new LinkCollectingJob(urls);
+        LinkCollectingJob job = new LinkCollectingJob(urls).setSource(this);
+        ;
         String dir = HttpRequest.getParameterbyKey(request, "dir");
         if (!StringUtils.isEmpty(dir)) {
             job.setOutputFolder(new File(dir));
@@ -311,7 +312,8 @@ public class ExternInterfaceImpl implements Cnl2APIBasics, Cnl2APIFlash {
                 /*
                  * create LinkCollectingJob to forward general Information like directory, autostart...
                  */
-                LinkCollectingJob job = new LinkCollectingJob(null);
+                LinkCollectingJob job = new LinkCollectingJob(null).setSource(this);
+                ;
                 job.setPackageName(HttpRequest.getParameterbyKey(request, "package"));
                 if (archivePasswords != null) {
                     HashSet<String> passwords = new HashSet<String>();

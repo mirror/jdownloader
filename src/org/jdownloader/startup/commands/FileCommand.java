@@ -20,7 +20,7 @@ public class FileCommand extends AbstractStartupCommand {
 
         for (String s : parameters) {
             if (StringUtils.isNotEmpty(s)) {
-                LinkCollector.getInstance().addCrawlerJob(new LinkCollectingJob("file://" + s));
+                LinkCollector.getInstance().addCrawlerJob(new LinkCollectingJob("file://" + s).setSource(this));
             }
         }
 

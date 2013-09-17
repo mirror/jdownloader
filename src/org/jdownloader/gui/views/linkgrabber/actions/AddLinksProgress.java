@@ -103,7 +103,7 @@ public class AddLinksProgress extends AbstractDialog<Object> {
 
             public void actionPerformed(ActionEvent e) {
                 duration.setText(TimeFormatter.formatMilliSeconds(System.currentTimeMillis() - startTime, 0));
-                old.setText("" + (lc == null ? 0 : lc.crawledLinksFound()));
+                old.setText("" + (lc == null ? 0 : lc.getCrawledLinksFoundCounter()));
                 filtered.setText("" + (lc == null ? 0 : lc.getFilteredLinks().size()));
 
             }
@@ -119,15 +119,15 @@ public class AddLinksProgress extends AbstractDialog<Object> {
 
                 if (lc != null) {
                     lc.waitForCrawling();
-                    System.out.println("JOB DONE: " + lc.crawledLinksFound());
-                    if (!job.isDeepAnalyse() && lc.processedLinks() == 0 && lc.unhandledLinksFound() > 0) {
+                    System.out.println("JOB DONE: " + lc.getCrawledLinksFoundCounter());
+                    if (!job.isDeepAnalyse() && lc.getProcessedLinksCounter() == 0 && lc.getUnhandledLinksFoundCounter() > 0) {
                         try {
                             Dialog.getInstance().showConfirmDialog(0, _GUI._.AddLinksAction_actionPerformed_deep_title(), _GUI._.AddLinksAction_actionPerformed_deep_msg(), null, _GUI._.literally_yes(), _GUI._.literall_no());
                             job.setDeepAnalyse(true);
                             job.setText(txt);
                             lc = LinkCollector.getInstance().addCrawlerJob(job);
                             lc.waitForCrawling();
-                            System.out.println("DEEP JOB DONE: " + lc.crawledLinksFound());
+                            System.out.println("DEEP JOB DONE: " + lc.getCrawledLinksFoundCounter());
                         } catch (DialogClosedException e) {
                             e.printStackTrace();
                         } catch (DialogCanceledException e) {

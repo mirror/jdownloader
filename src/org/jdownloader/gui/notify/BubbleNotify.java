@@ -7,7 +7,9 @@ import java.awt.event.ActionListener;
 import javax.swing.JFrame;
 
 import jd.controlling.linkcollector.LinkCollector;
-import jd.controlling.linkcollector.LinkCollectorHighlightListener;
+import jd.controlling.linkcollector.LinkCollectorCrawler;
+import jd.controlling.linkcollector.LinkCollectorEvent;
+import jd.controlling.linkcollector.LinkCollectorListener;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.reconnect.Reconnecter;
 import jd.controlling.reconnect.ReconnecterEvent;
@@ -22,13 +24,11 @@ import org.appwork.storage.config.events.GenericConfigEventListener;
 import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.swing.EDTRunner;
-import org.appwork.utils.swing.WindowManager.FrameState;
 import org.jdownloader.captcha.event.ChallengeResponseListener;
 import org.jdownloader.captcha.v2.AbstractResponse;
 import org.jdownloader.captcha.v2.ChallengeResponseController;
 import org.jdownloader.captcha.v2.ChallengeSolver;
 import org.jdownloader.captcha.v2.solverjob.SolverJob;
-import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.notify.gui.AbstractNotifyWindow;
 import org.jdownloader.gui.notify.gui.Balloner;
 import org.jdownloader.gui.notify.gui.BubbleNotifyConfig.Anchor;
@@ -133,31 +133,95 @@ public class BubbleNotify implements UpdaterListener, ReconnecterListener, Chall
     }
 
     private void initLinkCollectorListener() {
-        LinkCollector.getInstance().getEventsender().addListener(new LinkCollectorHighlightListener() {
+        LinkCollector.getInstance().getEventsender().addListener(new LinkCollectorListener() {
+
+            // @Override
+            // public void onHighLight(CrawledLink parameter) {
+            // if (!CFG_BUBBLE.BUBBLE_NOTIFY_ON_NEW_LINKGRABBER_LINKS_ENABLED.isEnabled()) return;
+            // new EDTRunner() {
+            //
+            // @Override
+            // protected void runInEDT() {
+            // BasicNotify no = new BasicNotify(_GUI._.balloon_new_links(),
+            // _GUI._.balloon_new_links_msg(LinkCollector.getInstance().getPackages().size(),
+            // LinkCollector.getInstance().getChildrenCount()), NewTheme.I().getIcon(IconKey.ICON_LINKGRABBER, 32));
+            // no.setActionListener(new ActionListener() {
+            //
+            // public void actionPerformed(ActionEvent e) {
+            // JDGui.getInstance().requestPanel(JDGui.Panels.LINKGRABBER);
+            // JDGui.getInstance().setFrameState(FrameState.TO_FRONT_FOCUSED);
+            // }
+            // });
+            // show(no);
+            // }
+            // };
+            // }
+            //
+            // @Override
+            // public boolean isThisListenerEnabled() {
+            // return CFG_BUBBLE.CFG.isBubbleNotifyOnNewLinkgrabberLinksEnabled();
+            // }
 
             @Override
-            public void onHighLight(CrawledLink parameter) {
+            public void onLinkCrawlerAdded(final LinkCollectorCrawler parameter) {
                 if (!CFG_BUBBLE.BUBBLE_NOTIFY_ON_NEW_LINKGRABBER_LINKS_ENABLED.isEnabled()) return;
+
+                // it is important to wait. we could miss events if we do not wait
                 new EDTRunner() {
 
                     @Override
                     protected void runInEDT() {
-                        BasicNotify no = new BasicNotify(_GUI._.balloon_new_links(), _GUI._.balloon_new_links_msg(LinkCollector.getInstance().getPackages().size(), LinkCollector.getInstance().getChildrenCount()), NewTheme.I().getIcon(IconKey.ICON_LINKGRABBER, 32));
-                        no.setActionListener(new ActionListener() {
+                        LinkCrawlerBubble no = new LinkCrawlerBubble(parameter);
+                        parameter.getEventSender().addListener(no, true);
 
-                            public void actionPerformed(ActionEvent e) {
-                                JDGui.getInstance().requestPanel(JDGui.Panels.LINKGRABBER);
-                                JDGui.getInstance().setFrameState(FrameState.TO_FRONT_FOCUSED);
-                            }
-                        });
-                        show(no);
                     }
-                };
+                }.waitForEDT();
+
             }
 
             @Override
-            public boolean isThisListenerEnabled() {
-                return CFG_BUBBLE.CFG.isBubbleNotifyOnNewLinkgrabberLinksEnabled();
+            public void onLinkCrawlerStarted(LinkCollectorCrawler parameter) {
+
+            }
+
+            @Override
+            public void onLinkCrawlerStopped(LinkCollectorCrawler parameter) {
+            }
+
+            @Override
+            public void onLinkCollectorAbort(LinkCollectorEvent event) {
+            }
+
+            @Override
+            public void onLinkCollectorFilteredLinksAvailable(LinkCollectorEvent event) {
+            }
+
+            @Override
+            public void onLinkCollectorFilteredLinksEmpty(LinkCollectorEvent event) {
+            }
+
+            @Override
+            public void onLinkCollectorDataRefresh(LinkCollectorEvent event) {
+            }
+
+            @Override
+            public void onLinkCollectorStructureRefresh(LinkCollectorEvent event) {
+            }
+
+            @Override
+            public void onLinkCollectorContentRemoved(LinkCollectorEvent event) {
+            }
+
+            @Override
+            public void onLinkCollectorContentAdded(LinkCollectorEvent event) {
+            }
+
+            @Override
+            public void onLinkCollectorLinkAdded(LinkCollectorEvent event, CrawledLink parameter) {
+            }
+
+            @Override
+            public void onLinkCollectorDupeAdded(LinkCollectorEvent event, CrawledLink parameter) {
             }
         });
 
@@ -268,5 +332,9 @@ public class BubbleNotify implements UpdaterListener, ReconnecterListener, Chall
 
     @Override
     public void onJobSolverStart(ChallengeSolver<?> solver, SolverJob<?> job) {
+    }
+
+    public void relayout() {
+        ballooner.relayout();
     }
 }

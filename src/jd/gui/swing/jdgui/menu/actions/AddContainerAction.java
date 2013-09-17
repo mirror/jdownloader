@@ -51,7 +51,7 @@ public class AddContainerAction extends AppAction implements CachableInterface {
             sb.append("file://");
             sb.append(r.getAbsolutePath());
         }
-        LinkCollector.getInstance().addCrawlerJob(new LinkCollectingJob(sb.toString()));
+        LinkCollector.getInstance().addCrawlerJob(new LinkCollectingJob(sb.toString()).setSource(this));
     }
 
     @Override

@@ -13,6 +13,7 @@ import javax.swing.event.TableModelListener;
 import jd.SecondLevelLaunch;
 import jd.controlling.TaskQueue;
 import jd.controlling.linkcollector.LinkCollector;
+import jd.controlling.linkcollector.LinkCollectorCrawler;
 import jd.controlling.linkcollector.LinkCollectorEvent;
 import jd.controlling.linkcollector.LinkCollectorListener;
 import jd.controlling.linkcrawler.CrawledLink;
@@ -297,6 +298,18 @@ public class LinkgrabberOverview extends MigPanel implements GenericConfigEventL
             }
         };
 
+    }
+
+    @Override
+    public void onLinkCrawlerAdded(LinkCollectorCrawler parameter) {
+    }
+
+    @Override
+    public void onLinkCrawlerStarted(LinkCollectorCrawler parameter) {
+    }
+
+    @Override
+    public void onLinkCrawlerStopped(LinkCollectorCrawler parameter) {
     }
 
 }

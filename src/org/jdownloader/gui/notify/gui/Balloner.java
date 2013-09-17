@@ -61,7 +61,7 @@ public class Balloner implements ComponentListener {
         int x = 0;
         int width = 0;
         for (AbstractNotifyWindow n : screenStack) {
-
+            n.setPreferredSize(null);
             width = Math.max(width, n.getPreferredSize().width);
 
         }
@@ -261,6 +261,12 @@ public class Balloner implements ComponentListener {
     public void setAnchorPoint(Point point, Anchor anchor) {
         anchorPoint = point;
         this.anchor = anchor;
+    }
+
+    public void relayout() {
+        ScreenStack screenStack = getScreenStack();
+
+        layout(screenStack);
     }
 
 }

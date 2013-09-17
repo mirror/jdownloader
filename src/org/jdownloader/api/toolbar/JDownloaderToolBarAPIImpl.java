@@ -367,7 +367,7 @@ public class JDownloaderToolBarAPIImpl implements JDownloaderToolBarAPI, StateEv
 
     public void addCompleteDom(final String url, final String dom, CrawledLink link) {
 
-        final LinkCollectingJob job = new LinkCollectingJob(dom);
+        final LinkCollectingJob job = new LinkCollectingJob(dom).setSource(this);
         job.setCustomSourceUrl(url);
         AddLinksProgress d = new AddLinksProgress(job) {
             protected String getSearchInText() {
@@ -391,7 +391,7 @@ public class JDownloaderToolBarAPIImpl implements JDownloaderToolBarAPI, StateEv
                     LinkCrawler lc = LinkCollector.getInstance().addCrawlerJob(job);
                     if (lc != null) {
                         lc.waitForCrawling();
-                        System.out.println("JOB DONE: " + lc.crawledLinksFound());
+                        System.out.println("JOB DONE: " + lc.getCrawledLinksFoundCounter());
                     }
 
                 }

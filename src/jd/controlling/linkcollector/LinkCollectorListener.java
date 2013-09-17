@@ -66,4 +66,10 @@ public interface LinkCollectorListener extends EventListener {
      */
     void onLinkCollectorDupeAdded(LinkCollectorEvent event, CrawledLink parameter);
 
+    void onLinkCrawlerAdded(LinkCollectorCrawler parameter);
+
+    void onLinkCrawlerStarted(LinkCollectorCrawler parameter);
+
+    void onLinkCrawlerStopped(LinkCollectorCrawler parameter);
+
 }

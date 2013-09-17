@@ -139,7 +139,7 @@ public class LinkCrawler {
 
     private static LinkCrawlerEventSender EVENTSENDER = new LinkCrawlerEventSender();
 
-    public static LinkCrawlerEventSender getEventSender() {
+    public static LinkCrawlerEventSender getGlobalEventSender() {
         return EVENTSENDER;
     }
 
@@ -190,7 +190,8 @@ public class LinkCrawler {
     /**
      * returns the generation of this LinkCrawler if thisGeneration is true.
      * 
-     * if a parent LinkCrawler does exist and thisGeneration is false, we return the older generation of the parent LinkCrawler or this child
+     * if a parent LinkCrawler does exist and thisGeneration is false, we return the older generation of the parent LinkCrawler or this
+     * child
      * 
      * @param thisGeneration
      * @return
@@ -252,8 +253,8 @@ public class LinkCrawler {
             if (possibleCryptedLinks == null || possibleCryptedLinks.size() == 0) return;
             if (insideCrawlerPlugin()) {
                 /*
-                 * direct decrypt this link because we are already inside a LinkCrawlerThread and this avoids deadlocks on plugin waiting for linkcrawler
-                 * results
+                 * direct decrypt this link because we are already inside a LinkCrawlerThread and this avoids deadlocks on plugin waiting
+                 * for linkcrawler results
                  */
                 distribute(possibleCryptedLinks);
                 return;
@@ -487,8 +488,8 @@ public class LinkCrawler {
                                     if (allPossibleCryptedLinks != null) {
                                         if (insideCrawlerPlugin()) {
                                             /*
-                                             * direct decrypt this link because we are already inside a LinkCrawlerThread and this avoids deadlocks on plugin
-                                             * waiting for linkcrawler results
+                                             * direct decrypt this link because we are already inside a LinkCrawlerThread and this avoids
+                                             * deadlocks on plugin waiting for linkcrawler results
                                              */
                                             for (final CrawledLink decryptThis : allPossibleCryptedLinks) {
                                                 if (generation != this.getCrawlerGeneration(false)) {
@@ -530,8 +531,8 @@ public class LinkCrawler {
                                     if (allPossibleCryptedLinks != null) {
                                         if (insideCrawlerPlugin()) {
                                             /*
-                                             * direct decrypt this link because we are already inside a LinkCrawlerThread and this avoids deadlocks on plugin
-                                             * waiting for linkcrawler results
+                                             * direct decrypt this link because we are already inside a LinkCrawlerThread and this avoids
+                                             * deadlocks on plugin waiting for linkcrawler results
                                              */
                                             for (final CrawledLink decryptThis : allPossibleCryptedLinks) {
                                                 if (generation != this.getCrawlerGeneration(false)) {
@@ -605,7 +606,8 @@ public class LinkCrawler {
                     }
                     if (unnknownHandler != null) {
                         /*
-                         * CrawledLink is unhandled till now , but has an UnknownHandler set, lets call it, maybe it makes the Link handable by a Plugin
+                         * CrawledLink is unhandled till now , but has an UnknownHandler set, lets call it, maybe it makes the Link handable
+                         * by a Plugin
                          */
                         try {
                             unnknownHandler.unhandledCrawledLink(possibleCryptedLink, this);
@@ -762,7 +764,7 @@ public class LinkCrawler {
         return chits;
     }
 
-    private void processHostPlugin(LazyHostPlugin pHost, CrawledLink possibleCryptedLink) {
+    protected void processHostPlugin(LazyHostPlugin pHost, CrawledLink possibleCryptedLink) {
         if (!checkStartNotify()) return;
         ClassLoader oldClassLoader = null;
         try {
@@ -1303,12 +1305,12 @@ public class LinkCrawler {
 
     protected void handleBrokenCrawledLink(CrawledLink link) {
         this.brokenLinksCounter.incrementAndGet();
-        handler.handleBrokenLink(link);
+        getHandler().handleBrokenLink(link);
     }
 
     protected void handleUnhandledCryptedLink(CrawledLink link) {
         this.unhandledLinksCounter.incrementAndGet();
-        handler.handleUnHandledLink(link);
+        getHandler().handleUnHandledLink(link);
     }
 
     protected void handleCrawledLink(CrawledLink link) {
@@ -1364,7 +1366,7 @@ public class LinkCrawler {
         if (isCrawledLinkFiltered(link) == false) {
             /* link is not filtered, so we can process it normally */
             crawledLinksCounter.incrementAndGet();
-            handler.handleFinalLink(link);
+            getHandler().handleFinalLink(link);
         }
     }
 
@@ -1374,31 +1376,31 @@ public class LinkCrawler {
     }
 
     protected boolean isCrawledLinkFiltered(CrawledLink link) {
-        if (filter.dropByUrl(link)) {
+        if (getFilter().dropByUrl(link)) {
             filteredLinksCounter.incrementAndGet();
-            handler.handleFilteredLink(link);
+            getHandler().handleFilteredLink(link);
             return true;
         }
         return false;
     }
 
-    public int crawledLinksFound() {
+    public int getCrawledLinksFoundCounter() {
         return crawledLinksCounter.get();
     }
 
-    public int filteredLinksFound() {
+    public int getFilteredLinksFoundCounter() {
         return filteredLinksCounter.get();
     }
 
-    public int brokenLinksFound() {
+    public int getBrokenLinksFoundCounter() {
         return brokenLinksCounter.get();
     }
 
-    public int unhandledLinksFound() {
+    public int getUnhandledLinksFoundCounter() {
         return unhandledLinksCounter.get();
     }
 
-    public int processedLinks() {
+    public int getProcessedLinksCounter() {
         return crawledLinksCounter.get() + filteredLinksCounter.get() + brokenLinksCounter.get() + processedLinksCounter.get();
     }
 
@@ -1452,13 +1454,13 @@ public class LinkCrawler {
         this.filter = filter;
     }
 
-    public LinkCrawlerFilter getFilter() {
-        return filter;
-    }
-
     public void setHandler(LinkCrawlerHandler handler) {
         if (handler == null) throw new IllegalArgumentException("handler is null");
         this.handler = handler;
+    }
+
+    public LinkCrawlerFilter getFilter() {
+        return filter;
     }
 
     public LinkCrawlerHandler getHandler() {
