@@ -102,7 +102,7 @@ public class GoldBytezCom extends PluginForHost {
     // protocol: no https
     // captchatype: 4dignum
     // other: no redirects
-    // mods:
+    // mods: disabled redirects in handlePremium for account as redirect happens with html...
 
     private void setConstants(final Account account) {
         if (account != null && account.getBooleanProperty("free")) {
@@ -199,7 +199,7 @@ public class GoldBytezCom extends PluginForHost {
         }
         return prepBr;
     }
-    
+
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
         // make sure the downloadURL protocol is of site ability and user preference
@@ -636,6 +636,11 @@ public class GoldBytezCom extends PluginForHost {
                 }
             }
             logger.warning(msg);
+            try {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+            } catch (final Throwable e) {
+                if (e instanceof PluginException) throw (PluginException) e;
+            }
             throw new PluginException(LinkStatus.ERROR_FATAL, msg);
         }
         if (cbr.containsHTML(MAINTENANCE)) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, MAINTENANCEUSERTEXT, 2 * 60 * 60 * 1000l);
@@ -797,6 +802,7 @@ public class GoldBytezCom extends PluginForHost {
         requestFileInformation(downloadLink);
         login(account, false);
         if (account.getBooleanProperty("free")) {
+            br.setFollowRedirects(false);
             getPage(downloadLink.getDownloadURL());
             // if the cached cookie expired, relogin.
             if ((br.getCookie(COOKIE_HOST, "login")) == null || br.getCookie(COOKIE_HOST, "xfss") == null) {

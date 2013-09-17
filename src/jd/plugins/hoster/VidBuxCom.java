@@ -104,9 +104,9 @@ public class VidBuxCom extends PluginForHost {
     // DEV NOTES
     // XfileShare Version 3.0.8.0
     // last XfileSharingProBasic compare :: 2.6.2.1
-    // captchatype: null 4dignum recaptcha solvemedia keycaptcha
+    // captchatype: solvemedia
     // other: no redirects
-    // mods:
+    // mods: captcha mods (experimental, will merge into template if gets used more commonly)
 
     private void setConstants(final Account account) {
         if (account != null && account.getBooleanProperty("free")) {
@@ -396,6 +396,9 @@ public class VidBuxCom extends PluginForHost {
                 captchaForm(downloadLink, download1);
                 sendForm(download1);
                 checkErrors(downloadLink, account, false);
+                // wrong captcha doesn't give '>wrong captcha<' feedback, existing error handling in checkErrors wont pick it up!
+                if (captchaLastUsed != null && getFormByKey(cbr, "op", "download1") != null && containsLastUsedCaptcha(getFormByKey(cbr, "op", "download1").getHtmlCode())) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                if (getFormByKey(cbr, "op", "download1") != null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 getDllink();
             }
         }
@@ -645,6 +648,11 @@ public class VidBuxCom extends PluginForHost {
                 }
             }
             logger.warning(msg);
+            try {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+            } catch (final Throwable e) {
+                if (e instanceof PluginException) throw (PluginException) e;
+            }
             throw new PluginException(LinkStatus.ERROR_FATAL, msg);
         }
         if (cbr.containsHTML(MAINTENANCE)) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, MAINTENANCEUSERTEXT, 2 * 60 * 60 * 1000l);
@@ -925,6 +933,12 @@ public class VidBuxCom extends PluginForHost {
     private Browser                                           cbr                    = new Browser();
 
     private String                                            acctype                = null;
+    private String                                            captchaPlainText       = ";background:#ccc;text-align";
+    private String                                            captchaStandard        = "/captchas/";
+    private String                                            captchaReCaptcha       = "(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)";
+    private String                                            captchaSolveMedia      = "solvemedia\\.com/papi/";
+    private String                                            captchaKeyCaptcha      = "id=\"capcode\" name= \"capcode\"";
+    private String                                            captchaLastUsed        = null;
     private String                                            directlinkproperty     = null;
     private String                                            dllink                 = null;
     private String                                            fuid                   = null;
@@ -1247,9 +1261,10 @@ public class VidBuxCom extends PluginForHost {
      * 
      * @author raztoki
      * */
+    @SuppressWarnings("unused")
     private Form captchaForm(DownloadLink downloadLink, Form form) throws Exception {
         final int captchaTries = downloadLink.getIntegerProperty("captchaTries", 0);
-        if (form.containsHTML(";background:#ccc;text-align")) {
+        if (form.containsHTML(captchaPlainText)) {
             logger.info("Detected captcha method \"Plaintext Captcha\"");
             /** Captcha method by ManiacMansion */
             String[][] letters = form.getRegex("<span style=\"position:absolute;padding-left:(\\d+)px;padding-top:\\d+px;\">(&#\\d+;)</span>").getMatches();
@@ -1269,7 +1284,8 @@ public class VidBuxCom extends PluginForHost {
                 code.append(value);
             }
             form.put("code", code.toString());
-        } else if (form.containsHTML("/captchas/")) {
+            captchaLastUsed = captchaPlainText;
+        } else if (form.containsHTML(captchaStandard)) {
             logger.info("Detected captcha method \"Standard Captcha\"");
             final String[] sitelinks = HTMLParser.getHttpLinks(form.getHtmlCode(), null);
             if (sitelinks == null || sitelinks.length == 0) {
@@ -1297,7 +1313,8 @@ public class VidBuxCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             form.put("code", code);
-        } else if (form.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)")) {
+            captchaLastUsed = captchaStandard;
+        } else if (form.containsHTML(captchaReCaptcha)) {
             logger.info("Detected captcha method \"Re Captcha\"");
             final Browser captcha = br.cloneBrowser();
             cleanupBrowser(captcha, form.getHtmlCode());
@@ -1311,9 +1328,9 @@ public class VidBuxCom extends PluginForHost {
             final String c = getCaptchaCode(cf, downloadLink);
             form.put("recaptcha_challenge_field", rc.getChallenge());
             form.put("recaptcha_response_field", Encoding.urlEncode(c));
-            /** wait time is often skippable for reCaptcha handling */
+            captchaLastUsed = captchaReCaptcha;
             skipWaitTime = waitTimeSkipableReCaptcha;
-        } else if (form.containsHTML("solvemedia\\.com/papi/")) {
+        } else if (form.containsHTML(captchaSolveMedia)) {
             logger.info("Detected captcha method \"Solve Media\"");
             final Browser captcha = br.cloneBrowser();
             cleanupBrowser(captcha, form.getHtmlCode());
@@ -1328,8 +1345,9 @@ public class VidBuxCom extends PluginForHost {
             }
             form.put("adcopy_challenge", chid);
             form.put("adcopy_response", code);
+            captchaLastUsed = captchaSolveMedia;
             skipWaitTime = waitTimeSkipableSolveMedia;
-        } else if (form.containsHTML("id=\"capcode\" name= \"capcode\"")) {
+        } else if (form.containsHTML(captchaKeyCaptcha)) {
             logger.info("Detected captcha method \"Key Captcha\"");
             final Browser captcha = br.cloneBrowser();
             cleanupBrowser(captcha, form.getHtmlCode());
@@ -1338,10 +1356,28 @@ public class VidBuxCom extends PluginForHost {
             final String result = kc.showDialog(downloadLink.getDownloadURL());
             if (result != null && "CANCEL".equals(result)) { throw new PluginException(LinkStatus.ERROR_FATAL); }
             form.put("capcode", result);
+            captchaLastUsed = captchaKeyCaptcha;
             skipWaitTime = waitTimeSkipableKeyCaptcha;
         }
         downloadLink.setProperty("captchaTries", (captchaTries + 1));
         return form;
+    }
+
+    /**
+     * Quick way to see if a given String contains any of the captcha methods we support within this plugin!
+     * */
+    @SuppressWarnings("unused")
+    private boolean containsCaptcha(String s) {
+        if (s == null) return false;
+        return new Regex(s, captchaPlainText + "|" + captchaStandard + "|" + captchaReCaptcha + "|" + captchaSolveMedia + "|" + captchaKeyCaptcha).matches();
+    }
+
+    /**
+     * If String contains captchaLastUsed it will return true
+     * */
+    private boolean containsLastUsedCaptcha(String s) {
+        if (captchaLastUsed == null || s == null) return false;
+        return new Regex(s, captchaLastUsed).matches();
     }
 
     /**
