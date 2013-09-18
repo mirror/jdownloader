@@ -93,8 +93,8 @@ public class ExpressLeechCom extends PluginForHost {
     private final long                 useLoginIndividual           = 6 * 3480000;
     private final boolean              waitTimeSkipableReCaptcha    = true;
     private final boolean              waitTimeSkipableSolveMedia   = false;
-    private final boolean              waitTimeSkipableKeyCaptcha   = false;                                                                                                                                                                               // test
-    private final boolean              captchaSkipableSolveMedia    = false;                                                                                                                                                                               // test
+    private final boolean              waitTimeSkipableKeyCaptcha   = false;
+    private final boolean              captchaSkipableSolveMedia    = false;
 
     // Connection Management
     // note: CAN NOT be negative or zero! (ie. -1 or 0) Otherwise math sections fail. .:. use [1-20]
@@ -547,32 +547,38 @@ public class ExpressLeechCom extends PluginForHost {
     }
 
     private void waitTime(final long timeBefore, final DownloadLink downloadLink) throws PluginException {
-        int passedTime = (int) ((System.currentTimeMillis() - timeBefore) / 1000) - 1;
         /** Ticket Time */
         String ttt = cbr.getRegex("id=\"countdown_str\">[^<>\"]+<span id=\"[^<>\"]+\"( class=\"[^<>\"]+\")?>([\n ]+)?(\\d+)([\n ]+)?</span>").getMatch(2);
         if (inValidate(ttt)) ttt = cbr.getRegex("id=\"countdown_str\"[^>]+>Wait[^>]+>(\\d+)\\s?+</span>").getMatch(0);
         if (!inValidate(ttt)) {
-            int tt = Integer.parseInt(ttt);
-            tt -= passedTime;
-            logger.info("Waittime detected, waiting " + ttt + " - " + passedTime + " seconds from now on...");
+            // remove one second from past, to prevent returning too quickly.
+            long passedTime = ((System.currentTimeMillis() - timeBefore) / 1000) - 1;
+            logger.info("WaitTime detected: Waiting " + ttt + " seconds. Time already expired: " + passedTime + " miliseconds.");
+            long tt = Long.parseLong(ttt) - passedTime;
             if (tt > 0) sleep(tt * 1000l, downloadLink);
         }
     }
 
     private void checkErrors(final DownloadLink theLink, final Account account, final boolean checkAll) throws NumberFormatException, PluginException {
         if (checkAll) {
-            if (cbr.containsHTML("Wrong password|" + PASSWORDTEXT)) {
+            if (cbr.containsHTML(">Expired download session<")) {
+                // not entirely sure why this happens, maybe bad code by SibSoft.
+                // needs to be first otherwise PASSWORDTEXT will be picked up. see: jdlog://1396270118731 expressleech
+                logger.warning("Expired download session, lets retry!");
+                throw new PluginException(LinkStatus.ERROR_RETRY);
+            } else if (cbr.containsHTML("Wrong password|" + PASSWORDTEXT)) {
                 // handle password has failed in the past, additional try catching / resetting values
                 logger.warning("Wrong password, the entered password \"" + passCode + "\" is wrong, retrying...");
                 passCode = null;
                 theLink.setProperty("pass", Property.NULL);
-                throw new PluginException(LinkStatus.ERROR_RETRY, "Wrong password entered");
-            }
-            if (cbr.containsHTML("Wrong captcha")) {
-                logger.warning("Wrong captcha or wrong password!");
+                throw new PluginException(LinkStatus.ERROR_RETRY, "Wrong password supplied");
+            } else if (cbr.containsHTML("Wrong captcha")) {
+                logger.warning("Wrong Captcha response!");
                 throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+            } else if (cbr.containsHTML(">Skipped countdown<")) {
+                logger.warning("Possible Plugin Error: Please report to JDownloader Development Team!");
+                throw new PluginException(LinkStatus.ERROR_FATAL, "Fatal countdown error (countdown skipped)");
             }
-            if (cbr.containsHTML("\">Skipped countdown<")) throw new PluginException(LinkStatus.ERROR_FATAL, "Fatal countdown error (countdown skipped)");
         }
         // monitor this
         if (cbr.containsHTML("(class=\"err\">You have reached the download(\\-| )limit[^<]+for last[^<]+)")) {
@@ -642,6 +648,11 @@ public class ExpressLeechCom extends PluginForHost {
                 }
             }
             logger.warning(msg);
+            try {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+            } catch (final Throwable e) {
+                if (e instanceof PluginException) throw (PluginException) e;
+            }
             throw new PluginException(LinkStatus.ERROR_FATAL, msg);
         }
         if (cbr.containsHTML(MAINTENANCE)) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, MAINTENANCEUSERTEXT, 2 * 60 * 60 * 1000l);
@@ -1226,7 +1237,7 @@ public class ExpressLeechCom extends PluginForHost {
             logger.info("Password Form == null");
             return null;
         }
-        passCode = downloadLink.getStringProperty("pass");
+        passCode = downloadLink.getStringProperty("pass", null);
         if (inValidate(passCode)) passCode = Plugin.getUserInput("Password?", downloadLink);
         if (inValidate(passCode)) {
             logger.info("User has entered blank password, exiting handlePassword");

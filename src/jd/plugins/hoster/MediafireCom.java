@@ -63,8 +63,8 @@ public class MediafireCom extends PluginForHost {
     private static final ArrayList<String> stringAgent = new ArrayList<String>();
 
     /**
-     * Returns a random User-Agent String (common browsers) of specified array. This array contains current user agents gathered from httpd access logs.
-     * Benefits over RandomUserAgent.* are: versions and respective release dates are valid.
+     * Returns a random User-Agent String (common browsers) of specified array. This array contains current user agents gathered from httpd
+     * access logs. Benefits over RandomUserAgent.* are: versions and respective release dates are valid.
      * 
      * @return eg. "Opera/9.80 (X11; Linux i686; U; en) Presto/2.6.30 Version/10.63"
      */
@@ -236,8 +236,8 @@ public class MediafireCom extends PluginForHost {
     private static final ArrayList<String> portableAgent = new ArrayList<String>();
 
     /**
-     * Returns a random User-Agent String (from a portable device) of specified array. This array contains current user agents gathered from httpd access logs.
-     * Benefits over RandomUserAgent.* are: versions and respective release dates are valid.
+     * Returns a random User-Agent String (from a portable device) of specified array. This array contains current user agents gathered from
+     * httpd access logs. Benefits over RandomUserAgent.* are: versions and respective release dates are valid.
      * 
      * @return eg. "Opera/9.80 (Android 4.0.3; Linux; Opera Mobi/ADR-1205181138; U; en) Presto/2.10.254 Version/12.00"
      */
@@ -398,17 +398,20 @@ public class MediafireCom extends PluginForHost {
 
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
+        // old setter - remove after next stable update 20130918
+        account.setProperty("freeaccount", Property.NULL);
+
         final AccountInfo ai = new AccountInfo();
         /* reset maxPrem workaround on every fetchaccount info */
         maxPrem.set(1);
         try {
-            this.login(br, account, true);
+            login(br, account, true);
         } catch (final PluginException e) {
             account.setValid(false);
             return ai;
         }
         account.setValid(true);
-        if (account.getBooleanProperty("freeaccount")) {
+        if (account.getBooleanProperty("free")) {
             ai.setStatus("Registered (free) User");
             ai.setUnlimitedTraffic();
             try {
@@ -419,8 +422,8 @@ public class MediafireCom extends PluginForHost {
             }
         } else {
             br.setFollowRedirects(true);
-            this.br.getPage("http://www.mediafire.com/myaccount.php");
-            String trafficleft = this.br.getRegex("View Statistics</a></span>.+</div>.+class=\"lg-txt\">([^<>]+)</div>").getMatch(0);
+            br.getPage("/myaccount.php");
+            String trafficleft = br.getRegex("View Statistics</a></span>.+</div>.+class=\"lg-txt\">([^<>]+)</div>").getMatch(0);
             if (trafficleft != null) {
                 trafficleft = trafficleft.trim();
                 if (Regex.matches(trafficleft, Pattern.compile("(tb|tbyte|terabyte|tib)", Pattern.CASE_INSENSITIVE))) {
@@ -639,7 +642,7 @@ public class MediafireCom extends PluginForHost {
         requestFileInformation(downloadLink);
         if (downloadLink.getBooleanProperty("privatefolder")) throw new PluginException(LinkStatus.ERROR_FATAL, PRIVATEFOLDERUSERTEXT);
         login(br, account, false);
-        if (account.getBooleanProperty("freeaccount")) {
+        if (account.getBooleanProperty("free", false)) {
             doFree(downloadLink, account);
         } else {
             // TODO: See if there is a way to implement the premium API again: http://developers.mediafire.com/index.php/REST_API
@@ -792,8 +795,8 @@ public class MediafireCom extends PluginForHost {
         Browser.setRequestIntervalLimitGlobal(this.getHost(), 250);
     }
 
-    public void login(final Browser br, final Account account, boolean force) throws Exception {
-        boolean red = br.isFollowingRedirects();
+    public void login(final Browser lbr, final Account account, boolean force) throws Exception {
+        boolean red = lbr.isFollowingRedirects();
         synchronized (CONFIGURATION_KEYS) {
             try {
                 HashMap<String, String> cookies = null;
@@ -802,40 +805,39 @@ public class MediafireCom extends PluginForHost {
                         for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
                             final String key = cookieEntry.getKey();
                             final String value = cookieEntry.getValue();
-                            this.br.setCookie("http://www.mediafire.com/", key, value);
+                            lbr.setCookie("http://www.mediafire.com/", key, value);
                         }
                         return;
                     }
                 }
                 this.setBrowserExclusive();
-                br.setFollowRedirects(true);
-                br.getPage("http://www.mediafire.com/");
-                Form form = br.getFormbyProperty("name", "form_login1");
+                lbr.setFollowRedirects(true);
+                lbr.getPage("http://www.mediafire.com/");
+                Form form = lbr.getFormbyProperty("name", "form_login1");
                 if (form == null) {
-                    form = br.getFormBySubmitvalue("login_email");
+                    form = lbr.getFormBySubmitvalue("login_email");
                 }
                 if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 form.put("login_email", Encoding.urlEncode(account.getUser()));
                 form.put("login_pass", Encoding.urlEncode(account.getPass()));
-                br.submitForm(form);
-                br.getPage("https://www.mediafire.com/myfiles.php");
-                final String cookie = br.getCookie("http://www.mediafire.com", "user");
+                lbr.submitForm(form);
+                lbr.getPage("/myfiles.php");
+                final String cookie = lbr.getCookie("http://www.mediafire.com", "user");
                 if ("x".equals(cookie) || cookie == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-                br.setFollowRedirects(false);
-                br.getPage("https://www.mediafire.com/myaccount/download_options.php");
-                if (br.getRedirectLocation() != null && br.getRedirectLocation().contains("upgrade?utm_source=myaccount")) {
-                    account.setProperty("freeaccount", true);
+                lbr.setFollowRedirects(false);
+                lbr.getPage("https://www.mediafire.com/myaccount/download_options.php");
+                if (lbr.getRedirectLocation() != null && lbr.getRedirectLocation().contains("upgrade?utm_source=myaccount")) {
+                    account.setProperty("free", true);
                 } else {
-                    account.setProperty("freeaccount", Property.NULL);
-                    String di = br.getRegex("di='(.*?)'").getMatch(0);
-                    br.getPage("http://www.mediafire.com/dynamic/download_options.php?enable_me_from_me=0&nocache=" + new Random().nextInt(1000) + "&di=" + di);
-                    // String configurationKey = getAPIKEY(br);
-                    // if (configurationKey == null) throw new
-                    // PluginException(LinkStatus.ERROR_PREMIUM,
+                    account.setProperty("free", false);
+                    String di = lbr.getRegex("di='(.*?)'").getMatch(0);
+                    lbr.getPage("/dynamic/download_options.php?enable_me_from_me=0&nocache=" + new Random().nextInt(1000) + "&di=" + di);
+                    // String configurationKey = getAPIKEY(lbr);
+                    // if (configurationKey == null) throw new PluginException(LinkStatus.ERROR_PREMIUM,
                     // PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
                 cookies = new HashMap<String, String>();
-                final Cookies add = this.br.getCookies("http://www.mediafire.com");
+                final Cookies add = lbr.getCookies("http://www.mediafire.com");
                 for (final Cookie c : add.getCookies()) {
                     cookies.put(c.getKey(), c.getValue());
                 }
@@ -844,7 +846,7 @@ public class MediafireCom extends PluginForHost {
                 MediafireCom.CONFIGURATION_KEYS.remove(account);
                 throw e;
             } finally {
-                br.setFollowRedirects(red);
+                lbr.setFollowRedirects(red);
             }
         }
     }
@@ -858,7 +860,7 @@ public class MediafireCom extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException, InterruptedException {
-        this.br.setFollowRedirects(false);
+        br.setFollowRedirects(false);
         br.setCustomCharset("utf-8");
 
         downloadLink.setProperty("type", Property.NULL);
@@ -956,17 +958,18 @@ public class MediafireCom extends PluginForHost {
         }
 
         // error checking below!
-        if (eBr.getURL().matches(".+/error\\.php\\?errno=38(8|0).*?")) {
+        if (eBr.getURL().matches(".+/error\\.php\\?errno=3(20|80|88).*?")) {
+            // 320 = file is removed by the originating user or MediaFire.
             // 380 = claimed by a copyright holder through a valid DMCA request
             // 388 = identified as copyrighted work
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         if (eBr.getURL().matches(".+/error\\.php\\?errno=394.*?")) {
             /*
-             * The file you attempted to download is an archive that is encrypted or password protected. MediaFire does not support unlimited downloads of
-             * encrypted or password protected archives and the limit for this file has been reached. MediaFire understands the need for users to transfer
-             * encrypted and secured files, we offer this service starting at $1.50 per month. We have informed the owner that sharing of this file has been
-             * limited and how they can resolve this issue.
+             * The file you attempted to download is an archive that is encrypted or password protected. MediaFire does not support
+             * unlimited downloads of encrypted or password protected archives and the limit for this file has been reached. MediaFire
+             * understands the need for users to transfer encrypted and secured files, we offer this service starting at $1.50 per month. We
+             * have informed the owner that sharing of this file has been limited and how they can resolve this issue.
              */
             throw new PluginException(LinkStatus.ERROR_FATAL, "Download not possible, retriction based on uploaders account");
         }
