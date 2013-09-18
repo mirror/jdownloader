@@ -757,7 +757,7 @@ public class VKontakteRu extends PluginForDecrypt {
         if (br.containsHTML(">404 Not Found<")) { throw new DecrypterException(EXCEPTION_LINKOFFLINE); }
 
         /** Find offset start */
-        String endOffset = br.getRegex("href=\"/wall" + userID + "[^<>\"/]*?offset=(\\d+)\" onclick=\"return nav\\.go\\(this, event\\)\"><div class=\"pg_in\">\\&raquo;</div>").getMatch(1);
+        String endOffset = br.getRegex("href=\"/wall" + userID + "[^<>\"/]*?offset=(\\d+)\" onclick=\"return nav\\.go\\(this, event\\)\"><div class=\"pg_in\">\\&raquo;</div>").getMatch(0);
         if (endOffset == null) {
             int highestFoundOffset = 10;
             final String[] offsets = br.getRegex("(\\?|\\&)offset=(\\d+)\"").getColumn(1);

@@ -30,7 +30,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "theamateurzone.info" }, urls = { "http://(www\\.)?theamateurzone\\.info/video/\\d+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "theamateurzone.info" }, urls = { "http://(www\\.)?theamateurzone\\.info/(video/|player/config\\.php\\?vkey=|media/player/config_embed\\.php\\?vkey=)\\d+" }, flags = { 0 })
 public class TheAmateurZoneInfo extends PluginForHost {
 
     public TheAmateurZoneInfo(PluginWrapper wrapper) {
@@ -42,6 +42,10 @@ public class TheAmateurZoneInfo extends PluginForHost {
     @Override
     public String getAGBLink() {
         return "http://www.theamateurzone.info/static/terms";
+    }
+
+    public void correctDownloadLink(final DownloadLink link) {
+        link.setUrlDownload("http://www.theamateurzone.info/video/" + new Regex(link.getDownloadURL(), "(\\d+)$").getMatch(0));
     }
 
     @Override

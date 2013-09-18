@@ -378,7 +378,7 @@ public class SoundcloudCom extends PluginForHost {
         final StringBuilder sb = new StringBuilder();
         sb.append("Explanation of the available tags:\r\n");
         sb.append("*channelname* = name of the channel/uploader\r\n");
-        sb.append("*date* = date when the video was posted - appears in the user-defined format above\r\n");
+        sb.append("*date* = date when the link was posted - appears in the user-defined format above\r\n");
         sb.append("*songtitle* = name of the song without extension\r\n");
         sb.append("*ext* = the extension of the file, in this case usually '.mp3'");
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, sb.toString()));
@@ -392,8 +392,6 @@ public class SoundcloudCom extends PluginForHost {
         sbpack.append("*date* = date when the linklist was created - appears in the user-defined format above\r\n");
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, sbpack.toString()));
     }
-
-    // CUSTOM_PACKAGENAME
 
     @Override
     public int getMaxSimultanPremiumDownloadNum() {

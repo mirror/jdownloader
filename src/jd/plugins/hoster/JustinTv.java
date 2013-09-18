@@ -58,11 +58,11 @@ public class JustinTv extends PluginForHost {
         return -1;
     }
 
-    private static final String FASTLINKCHECK    = "FASTLINKCHECK";
-    private static final String NOCHUNKS         = "NOCHUNKS";
-    private static final String CUSTOM_DATE_2    = "CUSTOM_DATE_2";
-    private static final String CUSTOM_FILENAME  = "CUSTOM_FILENAME_2";
-    private static final String PARTNUMBERFORMAT = "PARTNUMBERFORMAT";
+    private static final String FASTLINKCHECK     = "FASTLINKCHECK";
+    private static final String NOCHUNKS          = "NOCHUNKS";
+    private static final String CUSTOM_DATE_2     = "CUSTOM_DATE_2";
+    private static final String CUSTOM_FILENAME_3 = "CUSTOM_FILENAME_3";
+    private static final String PARTNUMBERFORMAT  = "PARTNUMBERFORMAT";
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException, ParseException {
@@ -127,7 +127,7 @@ public class JustinTv extends PluginForHost {
         String videoName = downloadLink.getStringProperty("plainfilename", null);
 
         final SubConfiguration cfg = SubConfiguration.getConfig("justin.tv");
-        String formattedFilename = cfg.getStringProperty(CUSTOM_FILENAME, defaultCustomFilename);
+        String formattedFilename = cfg.getStringProperty(CUSTOM_FILENAME_3, defaultCustomFilename);
         if (formattedFilename == null || formattedFilename.equals("")) formattedFilename = defaultCustomFilename;
         if (!formattedFilename.contains("*videoname") || !formattedFilename.contains("*ext*")) formattedFilename = defaultCustomFilename;
         String partnumberformat = cfg.getStringProperty(PARTNUMBERFORMAT);
@@ -172,10 +172,10 @@ public class JustinTv extends PluginForHost {
 
     @Override
     public String getDescription() {
-        return "JDownloader's twitch.tv Plugin helps downloading videoclips. JDownloader provides settings for the filenames.";
+        return "JDownloader's twitch.tv plugin helps downloading videoclips. JDownloader provides settings for the filenames.";
     }
 
-    private final static String defaultCustomFilename = "*videoname**ext*";
+    private final static String defaultCustomFilename = "*partnumber**videoname**ext*";
 
     private void setConfigElements() {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), FASTLINKCHECK, JDL.L("plugins.hoster.justintv.fastlinkcheck", "Activate fast linkcheck (filesize won't be shown in linkgrabber)?")).setDefaultValue(false));
@@ -186,7 +186,7 @@ public class JustinTv extends PluginForHost {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), PARTNUMBERFORMAT, JDL.L("plugins.hoster.justintv.custompartnumber", "Define how the partnumbers should look:")).setDefaultValue("00"));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "Customize the filename! Example: '*channelname*_*date*_*videoname*_*partnumber**ext*'"));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), CUSTOM_FILENAME, JDL.L("plugins.hoster.justintv.customfilename", "Define how the filenames should look:")).setDefaultValue(defaultCustomFilename));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), CUSTOM_FILENAME_3, JDL.L("plugins.hoster.justintv.customfilename", "Define how the filenames should look:")).setDefaultValue(defaultCustomFilename));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         final StringBuilder sb = new StringBuilder();
         sb.append("Explanation of the available tags:\r\n");

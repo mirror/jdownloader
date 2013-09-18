@@ -22,7 +22,6 @@ import java.util.ArrayList;
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
-import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
@@ -31,7 +30,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "audiobeats.net" }, urls = { "http://(www\\.)?audiobeats\\.net/(liveset|link|event|artist)\\?id=\\d+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "audiobeats.net" }, urls = { "http://(www\\.)?audiobeats\\.net/((liveset|event|artist|link)\\?id=|link\\.php\\?id=)\\d+" }, flags = { 0 })
 public class DBtsNt extends PluginForDecrypt {
 
     private String                  fpName;
@@ -47,7 +46,7 @@ public class DBtsNt extends PluginForDecrypt {
         // TODO: beim Hinzufügen von Events oder Artisten etc. sollte der
         // Linkgrabber gleiche links auch als gleiche Links erkennen
 
-        Regex urlInfo = new Regex(parameter, "http://[\\w\\.]*?audiobeats\\.net/(liveset|link|event|artist)\\?id=(\\d+)");
+        Regex urlInfo = new Regex(parameter, "http://[\\w\\.]*?audiobeats\\.net/(liveset|link|event|artist).*?\\?id=(\\d+)");
         String type = urlInfo.getMatch(0);
         String id = urlInfo.getMatch(1);
 
@@ -169,7 +168,7 @@ public class DBtsNt extends PluginForDecrypt {
                         if (this.isAbort()) {
                             break;
                         }
-                    } catch (Throwable e) {
+                    } catch (final Throwable e) {
                         /* does not exist in 09581 */
                     }
                     try {
@@ -201,17 +200,10 @@ public class DBtsNt extends PluginForDecrypt {
         br.getPage(aLink);
         String finallink = null;
         String cryptedLink = br.getRegex("\"(http://lsdb\\.eu/download/\\d+\\.html)\"").getMatch(0);
-        if (cryptedLink == null) cryptedLink = br.getRegex("\"(http://djurl\\.com/[A-Za-z0-9]+)\"").getMatch(0);
         if (cryptedLink != null) {
             br.getPage(cryptedLink);
-            if (cryptedLink.contains("djurl.com")) {
-                finallink = br.getRegex("var finalStr = \"(.*?)\";").getMatch(0);
-                if (finallink != null)
-                    finallink = Encoding.Base64Decode(finallink);
-                else
-                    finallink = br.getRegex("var finalLink = \"(.*?)\";").getMatch(0);
-            }
         }
+        finallink = br.getRegex("\"(http://djurl\\.com/[A-Za-z0-9]+)\"").getMatch(0);
         if (finallink == null) {
             finallink = br.getRegex("noresize=\"noresize\">[\t\n\r ]+<frame src=\"((?!http://(www\\.)?audiobeats.net)http.*?)\"").getMatch(0);
             if (finallink == null) {
@@ -220,10 +212,14 @@ public class DBtsNt extends PluginForDecrypt {
                 if (finallink == null) finallink = br.getRedirectLocation();
             }
         }
+        if (finallink == null) {
+            finallink = br.getRegex("\"(http://(www\\.)?audiobeats\\.net/liveset\\?id=[a-z0-9\\-]+)\"").getMatch(0);
+        }
         if (finallink == null) finallink = br.getRegex("<frame src=\"(http://(www\\.)?audiobeats\\.net/Video/[^<>\"]*?)\"").getMatch(0);
         if (!br.containsHTML("3voor12\\.vpro\\.nl")) {
             if (finallink == null) {
-                logger.warning("Decrypter must be defect, detailedLink = " + aLink + " Mainlink = " + parameter);
+                logger.warning("Decrypter must be defect, detailedLink: " + aLink);
+                logger.warning("Mainlink: " + parameter);
                 return false;
             }
             decryptedLinks.add(createDownloadlink(finallink));

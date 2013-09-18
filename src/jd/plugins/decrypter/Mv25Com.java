@@ -28,21 +28,22 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "movie25.com" }, urls = { "http://(www\\.)?movie25\\.com/(movies/[a-z0-9\\-]+\\.html|watch[a-z0-9\\-]+\\.html)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "movie25.com" }, urls = { "http://(www\\.)?movie25\\.(com|so)/(movies/[a-z0-9\\-]+\\.html|watch[a-z0-9\\-]+\\.html)" }, flags = { 0 })
 public class Mv25Com extends PluginForDecrypt {
 
     public Mv25Com(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    private static final String SINGLELINK = "http://(www\\.)?movie25\\.com/watch[a-z0-9\\-]+\\.html";
+    private static final String SINGLELINK = "http://(www\\.)?movie25\\.so/watch[a-z0-9\\-]+\\.html";
+    private static final String DOMAIN     = "movie25.so";
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final String parameter = param.toString();
+        final String parameter = param.toString().replace("movie25.com/", DOMAIN + "/");
         br.setFollowRedirects(true);
         br.getPage(parameter);
-        if (br.getURL().equals("http://www.movie25.com/404.shtml")) {
+        if (br.getURL().equals("http://www." + DOMAIN + "/404.shtml")) {
             logger.info("Link offline: " + parameter);
             return decryptedLinks;
         }
@@ -55,12 +56,13 @@ public class Mv25Com extends PluginForDecrypt {
             decryptedLinks.add(dl);
         } else {
             final String fpName = br.getRegex("property=\"og:title\" content=\"([^<>\"]*?)\"").getMatch(0);
-            final String[] links = br.getRegex("class=\"playing_button\"><span><a href=(http://(www\\.)?movie25\\.com/watch[a-z0-9\\-]+\\.html) target=\"_blank\"").getColumn(0);
+            final String[] links = br.getRegex("<li class=\"playing_button\"><span><a href=\"(/watch[a-z0-9\\-]+\\.html)\" target=\"_blank\"").getColumn(0);
             if (links == null || links.length == 0) {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
             }
-            for (final String singleLink : links) {
+            for (String singleLink : links) {
+                singleLink = "http://www." + DOMAIN + singleLink;
                 try {
                     if (this.isAbort()) {
                         logger.info("Decryption aborted for link: " + parameter);

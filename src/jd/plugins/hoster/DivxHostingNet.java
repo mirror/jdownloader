@@ -20,7 +20,7 @@ import java.io.IOException;
 
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
-import jd.parser.html.Form;
+import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -45,9 +45,9 @@ public class DivxHostingNet extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
-        if (br.getURL().equals("http://www.divxhosting.net/404.html")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.getURL().equals("http://www.divxhosting.net/404.html") || br.containsHTML(">404 Error")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex(">Watch ([^<>\"]*?) Videos</a>").getMatch(0);
-        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (filename == null) filename = new Regex(link.getDownloadURL(), "/watch\\-([a-z0-9]+)\\.html").getMatch(0);
         link.setName(Encoding.htmlDecode(filename.trim()));
         return AvailableStatus.TRUE;
     }
@@ -55,10 +55,7 @@ public class DivxHostingNet extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        final Form human = br.getForm(0);
-        if (human == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        human.setAction(br.getURL());
-        br.submitForm(human);
+        br.postPage(br.getURL(), "goto=download");
         final String dllink = br.getRegex("\"(http://[a-z0-9]+\\.divxhosting\\.net/files/[^<>\"]*?)\"").getMatch(0);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
