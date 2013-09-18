@@ -36,8 +36,6 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
-import org.appwork.utils.formatter.SizeFormatter;
-
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mediafire.com" }, urls = { "https?://(?!download|blog)(\\w+\\.)?(mediafire\\.com|mfi\\.re)/((folder|view)/[a-z0-9]+|[a-z0-9]+#[a-z0-9]+|(?!select_account_type\\.php|reseller|policies|tell_us_what_you_think\\.php|about\\.php|lost_password\\.php|blank\\.html|js/|common_questions/|software/|error\\.php|favicon|acceptable_use_policy\\.php|privacy_policy\\.php|terms_of_service\\.php)(imageview|i/\\?|\\\\?sharekey=|view/\\?|\\?|(?!download|file|\\?JDOWNLOADER|imgbnc\\.php))[a-z0-9,]+)" }, flags = { 0 })
 public class MdfrFldr extends PluginForDecrypt {
 
@@ -70,6 +68,8 @@ public class MdfrFldr extends PluginForDecrypt {
                 decryptedLinks.add(link);
                 return decryptedLinks;
             }
+            logger.warning("Decrypter broken for link: " + parameter);
+            return null;
         } else if (parameter.contains("imageview.php")) {
             String ID = new Regex(parameter, "\\.com/.*?quickkey=(.+)").getMatch(0);
             if (ID != null) {
@@ -102,6 +102,7 @@ public class MdfrFldr extends PluginForDecrypt {
             for (final String ID : linkIDs) {
                 decryptedLinks.add(createDownloadlink("http://www.mediafire.com/download.php?" + ID));
             }
+            return decryptedLinks;
         } else {
             br.setFollowRedirects(false);
             // Private link? Login needed!
@@ -111,98 +112,151 @@ public class MdfrFldr extends PluginForDecrypt {
                 logger.info("Decrypting without logindata...");
             }
             // Check if we have a single link or multiple folders/files
-            final String folderKey = new Regex(parameter, "([a-z0-9]+)$").getMatch(0);
+            final String id = new Regex(parameter, "([a-z0-9]+)$").getMatch(0);
+            Boolean isFile = null;
+            Boolean isFolder = null;
+
             try {
-                apiRequest(this.br, "http://www.mediafire.com/api/file/get_info.php", "?quick_key=" + folderKey);
-                boolean offline = false;
+                /* check if id is a file */
+                apiRequest(this.br, "http://www.mediafire.com/api/file/get_info.php", "?quick_key=" + id);
                 if ("110".equals(this.ERRORCODE)) {
+                    isFile = false;
+                } else {
+                    isFile = true;
+                }
+            } catch (final BrowserException e) {
+                logger.severe(e.getMessage());
+            }
+            if (Boolean.FALSE.equals(isFile) || isFile == null) {
+                try {
+                    /* check if id is a folder */
+                    apiRequest(this.br, "http://www.mediafire.com/api/folder/get_info.php", "?folder_key=" + id);
+                    if ("112".equals(this.ERRORCODE)) {
+                        isFolder = false;
+                    } else {
+                        isFolder = true;
+                    }
+                } catch (final BrowserException e) {
+                    logger.severe(e.getMessage());
+                }
+            }
+
+            if (Boolean.TRUE.equals(isFile)) {
+                final DownloadLink link = createDownloadlink("http://www.mediafire.com/download.php?" + id);
+                link.setAvailable(true);
+                String browser = br.toString();
+                String name = getXML("filename", browser);
+                String size = getXML("size", browser);
+                if (name != null) {
+                    link.setName(Encoding.htmlDecode(name));
+                } else {
+                    link.setName(id);
+                }
+                if (size != null) {
+                    long sizeLong = Long.parseLong(size);
+                    link.setDownloadSize(sizeLong);
                     try {
-                        apiRequest(this.br, "http://www.mediafire.com/api/folder/get_content.php?folder_key=", folderKey + "&content_type=folders");
-                    } catch (final BrowserException e) {
-                        offline = true;
+                        link.setVerifiedFileSize(sizeLong);
+                    } catch (final Throwable ignore) {
                     }
-                    // Offline error or browser exception --> Offline
-                    if ("112".equals(this.ERRORCODE) || offline) {
-                        if (offline) {
-                            // new pages can be folders, and do not work as UID from API. only way thing todo is find the uid and reprobe!
-                            Browser br2 = new Browser();
-                            br2.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/27.0.1453.94 Safari/537.36");
-                            br2.getHeaders().put("Accept-Language", "en-US,en;q=0.8");
-                            br2.getHeaders().put("Connection", "keep-alive");
-                            br2.getHeaders().put("Accept-Charset", null);
-                            br2.getHeaders().put("Pragma", null);
-                            String uid = br2.getRegex("(?-i)afI= '([^']+)").getMatch(0);
-                            if (uid != null) {
-                                // lets return back into itself, and hope we don't create a infinite loop!
-                                final DownloadLink link = createDownloadlink("http://www.mediafire.com/folder/" + uid);
-                                decryptedLinks.add(link);
-                                return decryptedLinks;
-                            }
-                        }
-                        final DownloadLink link = createDownloadlink("http://www.mediafire.com/download.php?" + folderKey);
-                        link.setProperty("offline", true);
-                        link.setName(folderKey);
-                        decryptedLinks.add(link);
-                        return decryptedLinks;
+                }
+                decryptedLinks.add(link);
+                return decryptedLinks;
+            } else if (Boolean.TRUE.equals(isFolder)) {
+                String browser = br.toString();
+                String fpName = getXML("name", browser);
+                String file_count = getXML("file_count", browser);
+                String folder_count = getXML("folder_count", browser);
+                String privacy = getXML("privacy", browser);
+                long filesNum = -1;
+                long foldersNum = -1;
+                if (file_count != null && (filesNum = Long.parseLong(file_count)) > 0) {
+                    FilePackage fp = null;
+                    if (fpName != null) {
+                        fp = FilePackage.getInstance();
+                        fp.setName(Encoding.htmlDecode(fpName));
                     }
-                    final String[] subFolders = br.getRegex("<folderkey>([a-z0-9]+)</folderkey>").getColumn(0);
-                    apiRequest(this.br, "http://www.mediafire.com/api/folder/get_info.php", "?folder_key=" + folderKey);
-                    String fpName = getXML("name", br.toString());
-                    if (fpName == null) fpName = folderKey;
-                    // Decrypt max 100 * 100 = 10 000 links
                     for (int i = 1; i <= 100; i++) {
-                        apiRequest(this.br, "http://www.mediafire.com/api/folder/get_content.php", "?folder_key=" + folderKey + "&content_type=files&chunk=" + i);
+                        try {
+                            apiRequest(this.br, "http://www.mediafire.com/api/folder/get_content.php", "?folder_key=" + id + "&content_type=files&chunk=" + i);
+                        } catch (final BrowserException e) {
+                            logger.severe(e.getMessage());
+                            break;
+                        }
                         final String[] files = br.getRegex("<file>(.*?)</file>").getColumn(0);
-                        for (final String fileInfo : files) {
-                            final DownloadLink link = createDownloadlink("http://www.mediafire.com/download.php?" + getXML("quickkey", fileInfo));
-                            link.setDownloadSize(SizeFormatter.getSize(getXML("size", fileInfo) + "b"));
-                            link.setName(getXML("filename", fileInfo));
-                            if ("private".equals(getXML("privacy", br.toString()))) {
-                                link.setProperty("privatefile", true);
+                        if (files != null) {
+                            for (final String fileInfo : files) {
+                                final DownloadLink link = createDownloadlink("http://www.mediafire.com/download.php?" + getXML("quickkey", fileInfo));
+                                link.setDownloadSize(Long.parseLong(getXML("size", fileInfo)));
+                                link.setName(getXML("filename", fileInfo));
+                                if ("private".equals(privacy)) {
+                                    link.setProperty("privatefile", true);
+                                }
+                                link.setAvailable(true);
+                                if (fp != null) fp.add(link);
+                                decryptedLinks.add(link);
                             }
-                            link.setAvailable(true);
-                            decryptedLinks.add(link);
                         }
                         if (files == null || files.length < 100) break;
                     }
-                    if ((subFolders == null || subFolders.length == 0) && (decryptedLinks == null || decryptedLinks.size() == 0)) {
-                        // Probably private folder which can only be decrypted with an active account
-                        if ("114".equals(ERRORCODE)) {
-                            final DownloadLink link = createDownloadlink("http://www.mediafire.com/download.php?" + new Regex(parameter, "([a-z0-9]+)$").getMatch(0));
-                            link.setProperty("privatefolder", true);
-                            link.setName(folderKey);
-                            link.setAvailable(true);
-                            decryptedLinks.add(link);
-                            return decryptedLinks;
-                        }
-                        logger.warning("Decrypter broken for link: " + parameter);
-                        return null;
-                    }
-                    if (subFolders != null && subFolders.length != 0) {
-                        for (final String folderID : subFolders) {
-                            final DownloadLink link = createDownloadlink("http://www.mediafire.com/folder/" + folderID);
-                            decryptedLinks.add(link);
-                        }
-                    }
-                    if (fpName != null) {
-                        final FilePackage fp = FilePackage.getInstance();
-                        fp.setName(Encoding.htmlDecode(fpName.trim()));
-                        fp.addLinks(decryptedLinks);
-                    }
-                } else {
-                    final DownloadLink link = createDownloadlink("http://www.mediafire.com/download.php?" + folderKey);
-                    link.setName(folderKey);
-                    decryptedLinks.add(link);
                 }
-            } catch (final BrowserException e) {
-                final DownloadLink link = createDownloadlink("http://www.mediafire.com/download.php?" + folderKey);
-                link.setProperty("offline", true);
-                link.setName(folderKey);
-                decryptedLinks.add(link);
+                if (folder_count != null && (foldersNum = Long.parseLong(folder_count)) > 0) {
+                    for (int i = 1; i <= 100; i++) {
+                        try {
+                            apiRequest(this.br, "http://www.mediafire.com/api/folder/get_content.php?folder_key=", id + "&content_type=folders&chunk=" + i);
+                        } catch (final BrowserException e) {
+                            logger.severe(e.getMessage());
+                        }
+                        final String[] subFolders = br.getRegex("<folderkey>([a-z0-9]+)</folderkey>").getColumn(0);
+                        if (subFolders != null) {
+                            for (final String folderID : subFolders) {
+                                final DownloadLink link = createDownloadlink("http://www.mediafire.com/folder/" + folderID);
+                                decryptedLinks.add(link);
+                            }
+                        }
+                        if (subFolders == null || subFolders.length < 100) break;
+                    }
+                }
+                if (foldersNum == -1 && filesNum == -1) {
+                    if ("114".equals(ERRORCODE)) {
+                        final DownloadLink link = createDownloadlink("http://www.mediafire.com/download.php?" + new Regex(parameter, "([a-z0-9]+)$").getMatch(0));
+                        link.setProperty("privatefolder", true);
+                        link.setName(id);
+                        link.setAvailable(true);
+                        decryptedLinks.add(link);
+                        return decryptedLinks;
+                    }
+                    return null;
+                }
                 return decryptedLinks;
             }
+
+            if ("112".equals(this.ERRORCODE) || (isFile != null && isFolder == null)) {
+                /* untested code */
+                // new pages can be folders, and do not work as UID from API. only way thing todo is find the uid and reprobe!
+                Browser br2 = new Browser();
+                br2.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/27.0.1453.94 Safari/537.36");
+                br2.getHeaders().put("Accept-Language", "en-US,en;q=0.8");
+                br2.getHeaders().put("Connection", "keep-alive");
+                br2.getHeaders().put("Accept-Charset", null);
+                br2.getHeaders().put("Pragma", null);
+                br2.getPage(parameter);
+                String uid = br2.getRegex("(?-i)afI= '([^']+)").getMatch(0);
+                if (uid != null && !id.equalsIgnoreCase(uid)) {
+                    // lets return back into itself, and hope we don't create a infinite loop!
+                    final DownloadLink link = createDownloadlink("http://www.mediafire.com/folder/" + uid);
+                    decryptedLinks.add(link);
+                    return decryptedLinks;
+                }
+            }
+
+            final DownloadLink link = createDownloadlink("http://www.mediafire.com/download.php?" + id);
+            link.setAvailable(false);
+            link.setProperty("offline", true);
+            link.setName(id);
+            decryptedLinks.add(link);
+            return decryptedLinks;
         }
-        return decryptedLinks;
     }
 
     private boolean getUserLogin() throws Exception {

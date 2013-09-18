@@ -63,8 +63,8 @@ public class MediafireCom extends PluginForHost {
     private static final ArrayList<String> stringAgent = new ArrayList<String>();
 
     /**
-     * Returns a random User-Agent String (common browsers) of specified array. This array contains current user agents gathered from httpd
-     * access logs. Benefits over RandomUserAgent.* are: versions and respective release dates are valid.
+     * Returns a random User-Agent String (common browsers) of specified array. This array contains current user agents gathered from httpd access logs.
+     * Benefits over RandomUserAgent.* are: versions and respective release dates are valid.
      * 
      * @return eg. "Opera/9.80 (X11; Linux i686; U; en) Presto/2.6.30 Version/10.63"
      */
@@ -236,8 +236,8 @@ public class MediafireCom extends PluginForHost {
     private static final ArrayList<String> portableAgent = new ArrayList<String>();
 
     /**
-     * Returns a random User-Agent String (from a portable device) of specified array. This array contains current user agents gathered from
-     * httpd access logs. Benefits over RandomUserAgent.* are: versions and respective release dates are valid.
+     * Returns a random User-Agent String (from a portable device) of specified array. This array contains current user agents gathered from httpd access logs.
+     * Benefits over RandomUserAgent.* are: versions and respective release dates are valid.
      * 
      * @return eg. "Opera/9.80 (Android 4.0.3; Linux; Opera Mobi/ADR-1205181138; U; en) Presto/2.10.254 Version/12.00"
      */
@@ -884,12 +884,11 @@ public class MediafireCom extends PluginForHost {
             // <response><action>file/get_info</action><message>Unknown or Invalid
             // QuickKey</message><error>110</error><result>Error</result><current_api_version>2.15</current_api_version></response>
 
-            return AvailableStatus.FALSE;
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         downloadLink.setDownloadSize(SizeFormatter.getSize(getXML("size", apiBR.toString() + "b")));
         // stable has issues with utf-8 filenames provided from Content-Disposition, even when customcharset is used..
         downloadLink.setFinalFileName(Encoding.htmlDecode(getXML("filename", apiBR.toString())));
-        downloadLink.setAvailable(true);
         return AvailableStatus.TRUE;
     }
 
@@ -964,10 +963,10 @@ public class MediafireCom extends PluginForHost {
         }
         if (eBr.getURL().matches(".+/error\\.php\\?errno=394.*?")) {
             /*
-             * The file you attempted to download is an archive that is encrypted or password protected. MediaFire does not support
-             * unlimited downloads of encrypted or password protected archives and the limit for this file has been reached. MediaFire
-             * understands the need for users to transfer encrypted and secured files, we offer this service starting at $1.50 per month. We
-             * have informed the owner that sharing of this file has been limited and how they can resolve this issue.
+             * The file you attempted to download is an archive that is encrypted or password protected. MediaFire does not support unlimited downloads of
+             * encrypted or password protected archives and the limit for this file has been reached. MediaFire understands the need for users to transfer
+             * encrypted and secured files, we offer this service starting at $1.50 per month. We have informed the owner that sharing of this file has been
+             * limited and how they can resolve this issue.
              */
             throw new PluginException(LinkStatus.ERROR_FATAL, "Download not possible, retriction based on uploaders account");
         }
