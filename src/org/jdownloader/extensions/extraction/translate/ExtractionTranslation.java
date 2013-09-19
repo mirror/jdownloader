@@ -297,10 +297,7 @@ public interface ExtractionTranslation extends TranslateInterface {
     String extractprogress_label(String percent, String extractedFiles);
 
     @Default(lngs = { "en" }, values = { "Extract after Download" })
-    String contextmenu_disable_auto_extract();
-
-    @Default(lngs = { "en" }, values = { "Extract after Download" })
-    String contextmenu_enable_auto_extract();
+    String contextmenu_disable_auto_extract2();
 
     @Default(lngs = { "en" }, values = { "Extract Archives after Download (Defaultvalue)" })
     String settings_auto_extract_default();
