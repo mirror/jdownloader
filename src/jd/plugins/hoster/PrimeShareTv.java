@@ -53,9 +53,9 @@ public class PrimeShareTv extends PluginForHost {
         br.getHeaders().put("User-Agent", AGENT);
         br.getPage(link.getDownloadURL());
         if (br.containsHTML("(>File not exist<|>The file you have requested does not)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        final Regex info = br.getRegex("<h1>Watch\\&nbsp;[\t\n\r ]+\\(([^<>\"]*?)(\\[\\.\\.\\.\\])?\\)\\&nbsp;<strong>\\((.*?)\\)</strong></h1>");
-        final String filename = info.getMatch(0);
-        final String filesize = info.getMatch(2);
+        final Regex info = br.getRegex("<h1>(Watch|Download)\\&nbsp;[\t\n\r ]+\\(([^<>\"]*?)(\\[\\.\\.\\.\\])?\\)\\&nbsp;<strong>\\((.*?)\\)</strong></h1>");
+        final String filename = info.getMatch(1);
+        final String filesize = info.getMatch(3);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         link.setName(Encoding.htmlDecode(filename.trim()));
         link.setDownloadSize(SizeFormatter.getSize(filesize));

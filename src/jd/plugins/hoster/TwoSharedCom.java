@@ -109,7 +109,7 @@ public class TwoSharedCom extends PluginForHost {
         }
         String finallink = null;
         br.setFollowRedirects(true);
-        String uid = new Regex(downloadLink.getDownloadURL(), "\\.com/file/([^/]+)").getMatch(0);
+        String uid = new Regex(br.getURL(), "\\.com/(audio|file|video|photo|document)/([^/]+)").getMatch(1);
         String link = br.getRegex("(\'|\")(http://[0-9a-z]+\\.2shared\\.com/download/" + uid + "/.*?\\?tsid=[\\w\\-]+)(\'|\")").getMatch(1);
         // special handling for picture-links
         if (br.containsHTML(">Loading image")) {
