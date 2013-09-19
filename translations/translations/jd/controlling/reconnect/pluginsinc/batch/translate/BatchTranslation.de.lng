@@ -1,4 +1,4 @@
-interaction_batchreconnect_batch=Batch Skript
+interaction_batchreconnect_batch=Batch-Skript
 interaction_batchreconnect_executein=Starten in
 interaction_batchreconnect_terminal=Interpreter
 jd_controlling_reconnect_plugins_batch_ExternBatchReconnectPlugin_getName=Externer Batch Reconnect

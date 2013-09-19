@@ -3,7 +3,7 @@ addons_jdshutdown_statusmessage_disabled=Das System wird nach dem Download NICHT
 addons_jdshutdown_statusmessage_enabled=Das System wird nach dem Download heruntergefahren.
 config_active_by_default=Herunterfahren aktiviert lassen
 config_toolbarbutton=Toolbar Schaltfläche sichtbar
-gui_config_jdshutdown_close=JD schließen
+gui_config_jdshutdown_close=JDownloader beenden
 gui_config_jdshutdown_forceshutdown=Herunterfahren erzwingen (Nur einige OS)
 gui_config_jdshutdown_hibernate=Ruhezustand/Hibernate (Nur einige OS)
 gui_config_jdshutdown_mode=Modus:
@@ -13,16 +13,16 @@ install_force=Installiere erzwungenes Herunterfahren
 install_msg=Möchtest du dein System auf das "Herunterfahren-Erzwingen" Feature vorbereiten?
 install_title=Installiere erzwungenes Herunterfahren
 interaction_shutdown_dialog_msg_closejd=<h2><font color="red">JDownloader wird beendet!</font></h2>
-interaction_shutdown_dialog_msg_hibernate=<h2><font color="red">System wird in den Energiesparmodus versetzt!</font></h2>
+interaction_shutdown_dialog_msg_hibernate=<h2><font color="red">System wird in den Ruhezustand versetzt!</font></h2>
 interaction_shutdown_dialog_msg_shutdown=<h2><font color="red">System wird heruntergefahren!</font></h2>
-interaction_shutdown_dialog_msg_standby=<h2><font color="red">System wird in den Ruhezustand versetzt!</font></h2>
+interaction_shutdown_dialog_msg_standby=<h2><font color="red">System wird in den Energiesparmodus versetzt!</font></h2>
 interaction_shutdown_dialog_title_closejd=JDownloader beenden?
 interaction_shutdown_dialog_title_hibernate=Energiesparmodus?
 interaction_shutdown_dialog_title_shutdown=System herunterfahren?
 interaction_shutdown_dialog_title_standby=Ruhezustand?
 jd_plugins_optional_jdshutdown=Herunterfahren
-jd_plugins_optional_jdshutdown_description=Automatisches Herunterfahren, Standby, Ruhezustand deines PC's oder JDownloader schließen wenn die Downloads fertig sind.
+jd_plugins_optional_jdshutdown_description=Automatisch herunterfahren, energiesparen, Ruhezustand deines PCs oder JDownloader schließen, wenn die Downloads abgeschlossen sind.
 lit_shutdownn=Herunterfahren
-show_admin=Es sind administrative Rechte erforderlich um Ruhezustand oder Standby konfigurieren zu können
+show_admin=Es sind administrative Rechte erforderlich, um Ruhezustand oder Energiesparmodus konfigurieren zu können
 shutdown_toggle_action_disabled2=Nach dem Download nicht herunterfahren
 shutdown_toggle_action_enabled2=Nach dem Download herunterfahren

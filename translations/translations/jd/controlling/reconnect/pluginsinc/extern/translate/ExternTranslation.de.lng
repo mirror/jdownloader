@@ -1,4 +1,4 @@
-interaction_externreconnect_command=Befehl (absolute Pfade verwenden)
+interaction_externreconnect_command=Befehl (absolute Ordnerpfade verwenden)
 interaction_externreconnect_dummybat="Spezial Ausführung" für Windows
 interaction_externreconnect_parameter=Parameter (Ein Parameter pro Zeile)
 jd_controlling_reconnect_plugins_extern_ExternReconnectPlugin_getName=3rd Party Reconnect

@@ -1,7 +1,7 @@
 AutoDetectAction_run_failed=UPnP-Geräte gefunden, es konnte jedoch kein Reconnect durchgeführt werden.\nVersuche einen Reconnect über die Live Header Methode.
 AutoDetectUpnpAction_AutoDetectUpnpAction_=Versuche alle UPnP-Reconnect-Geräte in deinem Netzwerk zu finden. Die meisten FRITZ!Box-Router können mit dieser Methode einen Reconnect durchführen.
 UPNPReconnectInvoker_getName_=UPnP-Router Reconnect
-UPNPRouterPlugin_run_error=Es konnten keine UPnP-Geräte gefunden werden. Versuche die Live Header Methode!
+UPNPRouterPlugin_run_error=Es konnten keine UPnP-Geräte gefunden werden. Versuche die Live Header Reconnect-Methode stattdessen!
 UPNPRouterPlugin_run_mesg=Suche alle Netzwerkadapter
 UPNPRouterPlugin_run_wizard_title=UPnP-Router Assistent
 UPNPScannerAction_UPNPScannerAction_tt=Versucht alle UPnP-Reconnect-Geräte in deinem Netzwerk zu finden und gibt dir die Möglichkeit auszuwählen, welches du für den Reconnect verwenden möchtest.
@@ -14,6 +14,6 @@ literally_control_url=Kontroll-URL
 literally_router=UPnP-Router
 literally_service_type=Service Typ
 malformedservicetype=Der Service Type ist falsch, versuche eine UPnP-Autokonfiguration.
-malformedurl=Die Kontroll-URL ist falsch, versuche eine UPnP-Autokonfiguration.
+malformedurl=Die Kontroll-URL ist falsch, versuche UPnP-Autokonfiguration.
 servicetype_help=Gib den Servicetyp (z.B. urn:schemas-upnp-org:service:ConnectionManager:1)
 try_reconnect=Versuche einen UPNP-Reconnect:%s1
