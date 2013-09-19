@@ -134,8 +134,9 @@ public class SelectionInfo<PackageType extends AbstractPackageNode<ChildrenType,
             rawMap.add(node);
             if (node instanceof AbstractPackageChildrenNode) {
                 // if (!has.contains(((AbstractPackageChildrenNode) node).getParentNode())) {
-                if (has.add((AbstractNode) ((AbstractPackageChildrenNode) node).getParentNode())) {
-                    raw.add((AbstractNode) ((AbstractPackageChildrenNode) node).getParentNode());
+                PackageType pkg = (PackageType) ((AbstractPackageChildrenNode) node).getParentNode();
+                if (pkg.isExpanded() && has.add(pkg)) {
+                    raw.add(pkg);
 
                 }
 
