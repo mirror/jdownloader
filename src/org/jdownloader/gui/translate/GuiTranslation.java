@@ -3085,4 +3085,7 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Parse Clipboard: %s1" })
     String LinkCrawlerBubble_update_header_from_Clipboard_url(String txt);
 
+    @Default(lngs = { "en" }, values = { "Pending Downloads" })
+    String downloadview_todo();
+
 }

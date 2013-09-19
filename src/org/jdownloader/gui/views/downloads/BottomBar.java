@@ -139,7 +139,7 @@ public class BottomBar extends MigPanel {
         add(popupRemove, "height 24!,width 12!,aligny top");
 
         add(searchField, "height 24!,aligny top,gapleft 2,pushx,growx");
-        combo = new PseudoCombo(new View[] { View.ALL, View.RUNNING, View.FAILED, View.SUCCESSFUL }) {
+        combo = new PseudoCombo(new View[] { View.ALL, View.RUNNING, View.FAILED, View.SUCCESSFUL, View.TODO }) {
 
             private PackageControllerTableModelFilter<FilePackage, DownloadLink> filter = new PackageControllerTableModelFilter<FilePackage, DownloadLink>() {
 
@@ -154,6 +154,8 @@ public class BottomBar extends MigPanel {
                                                                                                     return !(v.getLinkStatus().isFinished());
                                                                                                 case FAILED:
                                                                                                     return !(v.getLinkStatus().isFailed());
+                                                                                                case TODO:
+                                                                                                    return !v.isEnabled() || v.getDownloadLinkController() != null || v.getLinkStatus().isFinished() || v.getLinkStatus().isFailed();
                                                                                                 }
                                                                                                 return false;
                                                                                             }
