@@ -126,7 +126,7 @@ public class Mv2kTo extends PluginForDecrypt {
                     br2 = br.cloneBrowser();
                     String mirrorParts[] = br.getRegex("<a href=\"(movie\\.php\\?id=\\d+\\&part=\\d)\">").getColumn(0);
                     if (mirrorParts != null && mirrorParts.length > 1) part = mirrorParts.length;
-                    System.arraycopy(mirrorParts, 0, parts, 0, parts.length);
+                    if (mirrorParts != null && mirrorParts.length > 0) System.arraycopy(mirrorParts, 0, parts, 0, parts.length);
                 }
             }
         }

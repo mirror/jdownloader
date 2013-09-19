@@ -41,6 +41,8 @@ public class MymediaYamComDecrypter extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
         br.setCustomCharset("utf-8");
+        br.setReadTimeout(3 * 60 * 60 * 1000);
+        br.setConnectTimeout(3 * 60 * 60 * 1000);
 
         if (parameter.matches(PLAYLISTLINK) || parameter.matches(EMBEDPLAYLISTLINK)) {
             if (parameter.matches(EMBEDPLAYLISTLINK)) {

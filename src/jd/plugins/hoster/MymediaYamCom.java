@@ -57,6 +57,8 @@ public class MymediaYamCom extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.setCustomCharset("utf-8");
+        br.setReadTimeout(3 * 60 * 60 * 1000);
+        br.setConnectTimeout(3 * 60 * 60 * 1000);
         br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML("使用者影音平台存取發生錯誤<|該使用者影音平台關閉中<")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (br.containsHTML(MAINTENANCE)) {

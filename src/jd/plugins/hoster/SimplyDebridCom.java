@@ -32,7 +32,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.TimeFormatter;
 
@@ -226,15 +225,10 @@ public class SimplyDebridCom extends PluginForHost {
                 if (dl.externalDownloadStop()) return;
             } catch (final Throwable e) {
             }
-            final String errormessage = link.getLinkStatus().getErrorMessage();
-            if (errormessage != null && (errormessage.startsWith(JDL.L("download.error.message.rangeheaders", "Server does not support chunkload")) || errormessage.equals("Unerwarteter Mehrfachverbindungsfehlernull"))) {
-                {
-                    /* unknown error, we disable multiple chunks */
-                    if (link.getBooleanProperty(SimplyDebridCom.NOCHUNKS, false) == false) {
-                        link.setProperty(SimplyDebridCom.NOCHUNKS, Boolean.valueOf(true));
-                        throw new PluginException(LinkStatus.ERROR_RETRY);
-                    }
-                }
+            /* unknown error, we disable multiple chunks */
+            if (link.getBooleanProperty(SimplyDebridCom.NOCHUNKS, false) == false) {
+                link.setProperty(SimplyDebridCom.NOCHUNKS, Boolean.valueOf(true));
+                throw new PluginException(LinkStatus.ERROR_RETRY);
             }
         }
     }

@@ -108,9 +108,14 @@ public class DeviantArtCom extends PluginForHost {
                 if (filesize != null) link.setDownloadSize(SizeFormatter.getSize(filesize.replace(",", "")));
                 return AvailableStatus.TRUE;
             }
+            // Try to get server filename
+            filename = br.getRegex("name=\"og:image\" content=\"http://[a-z0-9\\-\\.]+\\.deviantart\\.(net|com)/fs\\d+/i/\\d+/\\d+/\\d+/\\d+/([^<>\"]*?)\"").getMatch(1);
+            // No luck, grab the other one again
+            if (filename == null) filename = br.getRegex("<title>([^<>\"]*?) on deviantART</title>").getMatch(0);
 
             ext = br.getRegex("<strong>Download Image</strong><br><small>([A-Za-z0-9]{1,5}),").getMatch(0);
-            if (ext == null) {
+            if (ext == null) ext = new Regex(filename, "\\.([A-Za-z0-9]{1,5})$").getMatch(0);
+            if (ext == null || ext.length() > 5) {
                 try {
                     String linkWithExt = getDllink();
                     final String toRemove = new Regex(linkWithExt, "(\\?token=.+)").getMatch(0);
@@ -142,7 +147,8 @@ public class DeviantArtCom extends PluginForHost {
                 }
             }
         }
-        link.setFinalFileName(filename + "." + ext.trim().toLowerCase());
+        if (!filename.endsWith(ext)) filename += "." + ext.trim();
+        link.setFinalFileName(filename);
         return AvailableStatus.TRUE;
     }
 

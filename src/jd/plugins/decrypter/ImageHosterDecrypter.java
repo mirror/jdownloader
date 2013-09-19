@@ -214,8 +214,9 @@ public class ImageHosterDecrypter extends PluginForDecrypt {
         } else if (parameter.contains("tuspics.net/")) {
             br.setFollowRedirects(true);
             br.getPage(parameter);
-            finalfilename = br.getRegex("<h5 class=\"clearfix with_tags\">([^<>\"]*?)</h5>").getMatch(0);
-            finallink = br.getRegex("\"(http://[a-z0-9\\-]+\\.tuspics\\.net/img/i/[^<>\"]*?)\"").getMatch(0);
+            finalfilename = br.getRegex("class=\"dotted\\-header\"><span>([^<>\"]*?)</span>").getMatch(0);
+            finallink = br.getRegex("<div class=\"gallery gallery\\-column\\-1 image\\-overlay\">.*?<a href=\"(http://[a-z0-9\\-]+\\.tuspics\\.net/img/i/[^<>\"]*?)\"").getMatch(0);
+            if (finallink == null) finallink = br.getRegex("\"(http://[a-z0-9\\-]+\\.tuspics\\.net/img/i/[^<>\"]*?)\"").getMatch(0);
         } else if (parameter.contains("directupload.net/")) {
             br.setFollowRedirects(true);
             br.getPage(parameter);

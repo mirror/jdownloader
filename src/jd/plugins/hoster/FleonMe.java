@@ -26,7 +26,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.download.DownloadInterface;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fleon.me" }, urls = { "http://(www\\.)?fleon\\.me/[a-z]{2}\\.php\\?Id=[0-9a-f]+" }, flags = { 32 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fleon.me" }, urls = { "http://(www\\.)?fleon\\.me/[a-z]+\\.php\\?Id=[0-9a-f]+" }, flags = { 32 })
 public class FleonMe extends PluginForHost {
 
     private String DLLINK;
@@ -37,7 +37,7 @@ public class FleonMe extends PluginForHost {
 
     @Override
     public void correctDownloadLink(DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replaceAll("[a-z]{2}\\.php\\?Id=", "videos.php?Id="));
+        link.setUrlDownload(link.getDownloadURL().replaceAll("[a-z]+\\.php\\?Id=", "videos.php?Id="));
     }
 
     @Override
@@ -48,6 +48,35 @@ public class FleonMe extends PluginForHost {
     @Override
     public int getMaxSimultanFreeDownloadNum() {
         return -1;
+    }
+
+    @Override
+    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
+        setBrowserExclusive();
+        // Set name so even if its offline it has a nicer name
+        downloadLink.setName(new Regex(downloadLink.getDownloadURL(), "([0-9a-f]+)$").getMatch(0) + ".mp4");
+        br.setFollowRedirects(true);
+        String dllink = downloadLink.getDownloadURL();
+        br.getPage(dllink);
+        if (br.containsHTML(">404 File was removed") || br.getURL().endsWith("404.php") || !br.containsHTML("new SWFObject")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+
+        String flashUrl = br.getRegex("new SWFObject\\(\'/?([^\']+\\d+\\.swf)\',").getMatch(0);
+        String fileName = br.getRegex("addVariable\\(\'file\',\'(.*?)\'\\)").getMatch(0);
+        if (flashUrl == null || fileName == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (!flashUrl.startsWith("http://")) flashUrl = "http://" + br.getHost() + "/" + flashUrl;
+        try {
+            DLLINK = getRtmpUrl(flashUrl);
+        } catch (Throwable e) {
+            throw new PluginException(LinkStatus.ERROR_FATAL, "JD2 BETA needed!");
+        }
+        if (DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        DLLINK = DLLINK + "@" + fileName + "@" + flashUrl + "@" + dllink;
+        if (downloadLink.getBooleanProperty("MOVIE2K", false)) {
+            if (!downloadLink.getName().endsWith(".mp4")) downloadLink.setName(downloadLink.getName() + ".mp4");
+        } else {
+            downloadLink.setName(fileName);
+        }
+        return AvailableStatus.TRUE;
     }
 
     @Override
@@ -74,33 +103,6 @@ public class FleonMe extends PluginForHost {
         } else {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-    }
-
-    @Override
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws Exception {
-        setBrowserExclusive();
-        br.setFollowRedirects(true);
-        String dllink = downloadLink.getDownloadURL();
-        br.getPage(dllink);
-        if (br.containsHTML(">404 File was removed") || br.getURL().endsWith("404.php")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-
-        String flashUrl = br.getRegex("new SWFObject\\(\'/?([^\']+\\d+\\.swf)\',").getMatch(0);
-        String fileName = br.getRegex("addVariable\\(\'file\',\'(.*?)\'\\)").getMatch(0);
-        if (flashUrl == null || fileName == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        if (!flashUrl.startsWith("http://")) flashUrl = "http://" + br.getHost() + "/" + flashUrl;
-        try {
-            DLLINK = getRtmpUrl(flashUrl);
-        } catch (Throwable e) {
-            throw new PluginException(LinkStatus.ERROR_FATAL, "JD2 BETA needed!");
-        }
-        if (DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        DLLINK = DLLINK + "@" + fileName + "@" + flashUrl + "@" + dllink;
-        if (downloadLink.getBooleanProperty("MOVIE2K", false)) {
-            if (!downloadLink.getName().endsWith(".mp4")) downloadLink.setName(downloadLink.getName() + ".mp4");
-        } else {
-            downloadLink.setName(fileName);
-        }
-        return AvailableStatus.TRUE;
     }
 
     @Override

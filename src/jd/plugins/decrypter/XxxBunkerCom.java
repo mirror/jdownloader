@@ -108,7 +108,14 @@ public class XxxBunkerCom extends PluginForDecrypt {
         }
         externID = br.getRegex("file%3D(http[^<>\"]*?)%26amp%").getMatch(0);
         if (externID != null) {
-            final DownloadLink dl = createDownloadlink("directhttp://" + Encoding.htmlDecode(externID));
+            externID = Encoding.deepHtmlDecode(externID);
+            br.getPage(externID);
+            externID = br.getRedirectLocation();
+            if (externID == null) {
+                logger.warning("Decrypter broken for link: " + parameter);
+                return null;
+            }
+            final DownloadLink dl = createDownloadlink("directhttp://" + externID);
             dl.setFinalFileName(Encoding.htmlDecode(filename.trim()) + ".mp4");
             decryptedLinks.add(dl);
             return decryptedLinks;

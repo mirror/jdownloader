@@ -20,8 +20,6 @@ import java.io.IOException;
 
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
-import jd.parser.html.Form;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -46,8 +44,8 @@ public class GigabyteUploadCom extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
-        if (br.containsHTML(">File is currently not available")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("target=\"_blank\">Watch ([^<>\"]*?) Videos</a>").getMatch(0);
+        if (br.containsHTML(">404 Error")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = br.getRegex("<title>([^<>\"]*?)\\- Gigabyte Upload</title>").getMatch(0);
         if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         link.setFinalFileName(Encoding.htmlDecode(filename.trim()) + ".flv");
         return AvailableStatus.TRUE;
@@ -56,13 +54,9 @@ public class GigabyteUploadCom extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        final Form free = br.getForm(0);
-        if (free == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        br.submitForm(free);
-        final Regex neededIDs = br.getRegex("\\|write\\|provider\\|([a-z0-9]+)\\|([a-z0-9]+)\\|flv\\|exactfit\\|autostart\\|([a-z0-9]+)\\|");
-        final String server = br.getRegex("server: \\'(http://[^<>\"]*?)\\'").getMatch(0);
-        if (server == null || neededIDs.getMatches().length == 0) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        final String dllink = server + "/files/" + neededIDs.getMatch(2) + "/" + neededIDs.getMatch(0) + "/gigabyteupload/" + neededIDs.getMatch(1) + ".flv";
+        br.postPage(br.getURL(), "submit=download");
+        final String dllink = br.getRegex("\"(http://[a-z0-9\\-\\.]+\\.gigabyteupload\\.com/files/[^<>\"]*?)\"").getMatch(0);
+        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
