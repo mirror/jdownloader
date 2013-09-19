@@ -8,6 +8,7 @@ import jd.plugins.PluginsC;
 
 import org.jdownloader.plugins.controller.crawler.LazyCrawlerPlugin;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin;
+import org.jdownloader.settings.staticreferences.CFG_GENERAL;
 
 public class LinkCollectorCrawler extends LinkCrawler implements LinkCollectorListener {
 
@@ -15,6 +16,7 @@ public class LinkCollectorCrawler extends LinkCrawler implements LinkCollectorLi
 
     public LinkCollectorCrawler() {
         super(true, true);
+        setDirectHttpEnabled(CFG_GENERAL.CFG.isDirectHTTPCrawlerEnabled());
         eventSender = new LinkCollectorCrawlerEventSender();
     }
 

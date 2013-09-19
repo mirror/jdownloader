@@ -45,42 +45,47 @@ import org.jdownloader.settings.GeneralSettings;
 
 public class LinkCrawler {
 
-    private LazyHostPlugin                          directHTTP                  = null;
-    private LazyHostPlugin                          ftp                         = null;
-    private java.util.List<CrawledLink>             crawledLinks                = new ArrayList<CrawledLink>();
-    private AtomicInteger                           crawledLinksCounter         = new AtomicInteger(0);
-    private java.util.List<CrawledLink>             filteredLinks               = new ArrayList<CrawledLink>();
-    private AtomicInteger                           filteredLinksCounter        = new AtomicInteger(0);
-    private java.util.List<CrawledLink>             brokenLinks                 = new ArrayList<CrawledLink>();
-    private AtomicInteger                           brokenLinksCounter          = new AtomicInteger(0);
-    private java.util.List<CrawledLink>             unhandledLinks              = new ArrayList<CrawledLink>();
-    private AtomicInteger                           unhandledLinksCounter       = new AtomicInteger(0);
-    private AtomicInteger                           processedLinksCounter       = new AtomicInteger(0);
+    private LazyHostPlugin                 directHTTP                  = null;
+    private LazyHostPlugin                 ftp                         = null;
+    private java.util.List<CrawledLink>    crawledLinks                = new ArrayList<CrawledLink>();
+    private AtomicInteger                  crawledLinksCounter         = new AtomicInteger(0);
+    private java.util.List<CrawledLink>    filteredLinks               = new ArrayList<CrawledLink>();
+    private AtomicInteger                  filteredLinksCounter        = new AtomicInteger(0);
+    private java.util.List<CrawledLink>    brokenLinks                 = new ArrayList<CrawledLink>();
+    private AtomicInteger                  brokenLinksCounter          = new AtomicInteger(0);
+    private java.util.List<CrawledLink>    unhandledLinks              = new ArrayList<CrawledLink>();
+    private AtomicInteger                  unhandledLinksCounter       = new AtomicInteger(0);
+    private AtomicInteger                  processedLinksCounter       = new AtomicInteger(0);
 
-    private AtomicInteger                           crawler                     = new AtomicInteger(0);
-    private static AtomicInteger                    CRAWLER                     = new AtomicInteger(0);
-    private HashSet<String>                         duplicateFinderContainer    = new HashSet<String>();
-    private HashSet<String>                         duplicateFinderCrawler      = new HashSet<String>();
-    private HashSet<String>                         duplicateFinderFinal        = new HashSet<String>();
-    private HashSet<String>                         duplicateFinderDeep         = new HashSet<String>();
-    private LinkCrawlerHandler                      handler                     = null;
-    protected static ThreadPoolExecutor             threadPool                  = null;
+    private AtomicInteger                  crawler                     = new AtomicInteger(0);
+    private static AtomicInteger           CRAWLER                     = new AtomicInteger(0);
+    private HashSet<String>                duplicateFinderContainer    = new HashSet<String>();
+    private HashSet<String>                duplicateFinderCrawler      = new HashSet<String>();
+    private HashSet<String>                duplicateFinderFinal        = new HashSet<String>();
+    private HashSet<String>                duplicateFinderDeep         = new HashSet<String>();
+    private LinkCrawlerHandler             handler                     = null;
+    protected static ThreadPoolExecutor    threadPool                  = null;
 
-    private LinkCrawlerFilter                       filter                      = null;
-    private volatile boolean                        allowCrawling               = true;
-    private AtomicInteger                           crawlerGeneration           = new AtomicInteger(0);
-    private LinkCrawler                             parentCrawler               = null;
-    private final long                              created;
+    private LinkCrawlerFilter              filter                      = null;
+    private volatile boolean               allowCrawling               = true;
+    private AtomicInteger                  crawlerGeneration           = new AtomicInteger(0);
+    private LinkCrawler                    parentCrawler               = null;
+    private final long                     created;
 
-    public static final String                      PACKAGE_ALLOW_MERGE         = "ALLOW_MERGE";
-    public static final String                      PACKAGE_CLEANUP_NAME        = "CLEANUP_NAME";
-    public static final String                      PACKAGE_IGNORE_VARIOUS      = "PACKAGE_IGNORE_VARIOUS";
-    public static final UniqueAlltimeID             PERMANENT_OFFLINE_ID        = new UniqueAlltimeID();
-    private boolean                                 doDuplicateFinderFinalCheck = true;
-    private List<LazyHostPlugin>                    pHosts;
-    protected final PluginClassLoaderChild          classLoader;
+    public static final String             PACKAGE_ALLOW_MERGE         = "ALLOW_MERGE";
+    public static final String             PACKAGE_CLEANUP_NAME        = "CLEANUP_NAME";
+    public static final String             PACKAGE_IGNORE_VARIOUS      = "PACKAGE_IGNORE_VARIOUS";
+    public static final UniqueAlltimeID    PERMANENT_OFFLINE_ID        = new UniqueAlltimeID();
+    private boolean                        doDuplicateFinderFinalCheck = true;
+    private List<LazyHostPlugin>           pHosts;
+    protected final PluginClassLoaderChild classLoader;
+    private boolean                        directHttpEnabled           = true;
 
-    protected final static ScheduledExecutorService TIMINGQUEUE                 = DelayedRunnable.getNewScheduledExecutorService();
+    public void setDirectHttpEnabled(boolean directHttpEnabled) {
+        this.directHttpEnabled = directHttpEnabled;
+    }
+
+    protected final static ScheduledExecutorService TIMINGQUEUE = DelayedRunnable.getNewScheduledExecutorService();
 
     public boolean isDoDuplicateFinderFinalCheck() {
         if (parentCrawler != null) parentCrawler.isDoDuplicateFinderFinalCheck();
@@ -618,7 +623,7 @@ public class LinkCrawler {
                         continue mainloopretry;
                     }
                     /* now we will check for normal http links */
-                    if (directHTTP != null) {
+                    if (directHTTP != null && isDirectHttpEnabled()) {
                         url = url.replaceFirst("http://", "httpviajd://");
                         url = url.replaceFirst("https://", "httpsviajd://");
                         /* create new CrawledLink that holds the modified CrawledLink */
@@ -713,6 +718,10 @@ public class LinkCrawler {
         } finally {
             checkFinishNotify();
         }
+    }
+
+    public boolean isDirectHttpEnabled() {
+        return directHttpEnabled;
     }
 
     public java.util.List<CrawledLink> getCrawlableLinks(Pattern pattern, CrawledLink possibleCryptedLink, CrawledLinkModifier modifier) {

@@ -419,4 +419,12 @@ public interface GeneralSettings extends ConfigInterface {
     boolean isSambaPrefetchEnabled();
 
     void setSambaPrefetchEnabled(boolean b);
+
+    @AboutConfig
+    @DefaultBooleanValue(true)
+    @DescriptionForConfigEntry("If disabled, JDownloader will only grab links that have an dedicated HostPlugin (no basic Http Links)")
+    boolean isDirectHTTPCrawlerEnabled();
+
+    void setDirectHTTPCrawlerEnabled(boolean b);
+
 }
