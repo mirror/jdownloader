@@ -14,6 +14,7 @@ public class DownloadsView extends View {
     public DownloadsView() {
         super();
         this.setContent(new DownloadsPanel());
+
     }
 
     @Override

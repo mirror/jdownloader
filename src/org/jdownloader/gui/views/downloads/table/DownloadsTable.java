@@ -11,23 +11,17 @@ import java.util.EventObject;
 
 import javax.swing.DropMode;
 import javax.swing.JPopupMenu;
-import javax.swing.JProgressBar;
 import javax.swing.JScrollPane;
 import javax.swing.JSeparator;
 import javax.swing.JTable;
 import javax.swing.Timer;
 import javax.swing.TransferHandler;
 
-import jd.SecondLevelLaunch;
-import jd.controlling.downloadcontroller.DownloadController;
 import jd.controlling.packagecontroller.AbstractNode;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import net.miginfocom.swing.MigLayout;
 
-import org.appwork.swing.MigPanel;
-import org.appwork.swing.components.circlebar.CircledProgressBar;
-import org.appwork.swing.components.circlebar.ImagePainter;
 import org.appwork.swing.exttable.DropHighlighter;
 import org.appwork.swing.exttable.ExtCheckBoxMenuItem;
 import org.appwork.swing.exttable.ExtColumn;
@@ -54,66 +48,12 @@ public class DownloadsTable extends PackageControllerTable<FilePackage, Download
         onSelectionChanged();
         setAutoResizeMode(JTable.AUTO_RESIZE_LAST_COLUMN);
 
-        final MigPanel loaderPanel = new MigPanel("ins 0,wrap 1", "[grow,fill]", "[grow,fill][]");
-        // loaderPanel.setPreferredSize(new Dimension(200, 200));
-
-        loaderPanel.setOpaque(false);
-        loaderPanel.setBackground(null);
-
-        final CircledProgressBar loader = new CircledProgressBar() {
-            public int getAnimationFPS() {
-                return 25;
-            }
-        };
-
-        loader.setValueClipPainter(new ImagePainter(NewTheme.I().getImage("robot", 256), 1.0f));
-
-        loader.setNonvalueClipPainter(new ImagePainter(NewTheme.I().getImage("robot", 256), 0.1f));
-        ((ImagePainter) loader.getValueClipPainter()).setBackground(null);
-        ((ImagePainter) loader.getValueClipPainter()).setForeground(null);
-        loader.setIndeterminate(true);
-
-        loaderPanel.add(loader);
-
-        final JProgressBar ph = new JProgressBar();
-
-        ph.setString(_GUI._.DownloadsTable_DownloadsTable_init_plugins());
-
-        SecondLevelLaunch.HOST_PLUGINS_COMPLETE.executeWhenReached(new Runnable() {
-
-            @Override
-            public void run() {
-                new EDTRunner() {
-
-                    @Override
-                    protected void runInEDT() {
-                        ph.setString(_GUI._.DownloadsTable_DownloadsTable_object_wait_for_loading_links());
-
-                    }
-
-                };
-            }
-        });
-
-        ph.setStringPainted(true);
-        ph.setIndeterminate(true);
-        loaderPanel.add(ph, "alignx center");
         // loaderPanel.setSize(400, 400);
 
         final LayoutManager orgLayout = getLayout();
         final Component rendererPane = getComponent(0);
 
         setLayout(new MigLayout("ins 0", "[grow]", "[grow]"));
-        removeAll();
-        add(loaderPanel, "alignx center,aligny 20%");
-
-        DownloadController.DOWNLOADLIST_LOADED.executeWhenReached(new Runnable() {
-
-            @Override
-            public void run() {
-                removeLoaderPanel(loaderPanel, orgLayout, rendererPane);
-            }
-        });
 
     }
 
@@ -151,21 +91,6 @@ public class DownloadsTable extends PackageControllerTable<FilePackage, Download
         popup.add(new JSeparator());
         popup.add(new ExtCheckBoxMenuItem(new HorizontalScrollbarAction(this, CFG_GUI.HORIZONTAL_SCROLLBARS_IN_DOWNLOAD_TABLE_ENABLED)));
         return popup;
-    }
-
-    protected void removeLoaderPanel(final MigPanel loaderPanel, final LayoutManager orgLayout, final Component rendererPane) {
-        new EDTRunner() {
-
-            @Override
-            protected void runInEDT() {
-                remove(loaderPanel);
-                setLayout(orgLayout);
-
-                loaderPanel.setVisible(false);
-                add(rendererPane);
-                repaint();
-            }
-        };
     }
 
     protected boolean onDoubleClick(final MouseEvent e, final AbstractNode obj) {
