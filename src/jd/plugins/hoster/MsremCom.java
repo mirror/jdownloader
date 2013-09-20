@@ -93,15 +93,15 @@ public class MsremCom extends PluginForHost {
     private final long                 useLoginIndividual           = 6 * 3480000;
     private final boolean              waitTimeSkipableReCaptcha    = true;
     private final boolean              waitTimeSkipableSolveMedia   = false;
-    private final boolean              waitTimeSkipableKeyCaptcha   = false;                                                                                                                                                                               // test
-    private final boolean              captchaSkipableSolveMedia    = false;                                                                                                                                                                               // test
+    private final boolean              waitTimeSkipableKeyCaptcha   = false;
+    private final boolean              captchaSkipableSolveMedia    = false;
 
     // Connection Management
     // note: CAN NOT be negative or zero! (ie. -1 or 0) Otherwise math sections fail. .:. use [1-20]
     private static final AtomicInteger totalMaxSimultanFreeDownload = new AtomicInteger(20);
 
     // DEV NOTES
-    // XfileShare Version 3.0.8.0
+    // XfileShare Version 3.0.8.1
     // last XfileSharingProBasic compare :: 2.6.2.1
     // captchatype: null
     // other: no redirects
@@ -287,7 +287,7 @@ public class MsremCom extends PluginForHost {
                     fileInfo[0] = cbr.getRegex("<h2>Download File(.*?)</h2>").getMatch(0);
                     if (inValidate(fileInfo[0])) {
                         // can cause new line finds, so check if it matches.
-                        // fileInfo[0] = cbr.getRegex("Download File:? ?(<[^>]+> ?)+?([^<>\"\\']+)").getMatch(1);
+                        // fileInfo[0] = cbr.getRegex("Download File:? ?(<[^>]+> ?)+?([^<>\"']+)").getMatch(1);
                         // traits from download1 page below.
                         if (inValidate(fileInfo[0])) {
                             fileInfo[0] = cbr.getRegex("Filename:? ?(<[^>]+> ?)+?([^<>\"']+)").getMatch(1);
@@ -547,32 +547,41 @@ public class MsremCom extends PluginForHost {
     }
 
     private void waitTime(final long timeBefore, final DownloadLink downloadLink) throws PluginException {
-        int passedTime = (int) ((System.currentTimeMillis() - timeBefore) / 1000) - 1;
         /** Ticket Time */
         String ttt = cbr.getRegex("id=\"countdown_str\">[^<>\"]+<span id=\"[^<>\"]+\"( class=\"[^<>\"]+\")?>([\n ]+)?(\\d+)([\n ]+)?</span>").getMatch(2);
         if (inValidate(ttt)) ttt = cbr.getRegex("id=\"countdown_str\"[^>]+>Wait[^>]+>(\\d+)\\s?+</span>").getMatch(0);
         if (!inValidate(ttt)) {
-            int tt = Integer.parseInt(ttt);
-            tt -= passedTime;
-            logger.info("Waittime detected, waiting " + ttt + " - " + passedTime + " seconds from now on...");
+            // remove one second from past, to prevent returning too quickly.
+            final long passedTime = ((System.currentTimeMillis() - timeBefore) / 1000) - 1;
+            final long tt = Long.parseLong(ttt) - passedTime;
+            logger.info("WaitTime detected: " + ttt + " second(s). Elapsed Time: " + (passedTime > 0 ? passedTime : 0) + " second(s). Remaining Time: " + tt + " second(s)");
             if (tt > 0) sleep(tt * 1000l, downloadLink);
         }
     }
 
     private void checkErrors(final DownloadLink theLink, final Account account, final boolean checkAll) throws NumberFormatException, PluginException {
         if (checkAll) {
+            if (cbr.containsHTML(">Expired download session<")) {
+                // This shouldn't ever happen....
+                logger.warning("Expired download session, lets retry!");
+                throw new PluginException(LinkStatus.ERROR_RETRY);
+            }
+            if (cbr.containsHTML("Wrong captcha")) {
+                logger.warning("Wrong Captcha response!");
+                throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+            }
+            if (cbr.containsHTML(">Skipped countdown<")) {
+                logger.warning("Possible Plugin Error: Please report to JDownloader Development Team!");
+                throw new PluginException(LinkStatus.ERROR_FATAL, "Fatal countdown error (countdown skipped)");
+            }
+            // MUST BE LAST IF STATEMENT due to PASSWORDTEXT, as it could be displayed with wrong captcha && skipped countdown.
             if (cbr.containsHTML("Wrong password|" + PASSWORDTEXT)) {
                 // handle password has failed in the past, additional try catching / resetting values
                 logger.warning("Wrong password, the entered password \"" + passCode + "\" is wrong, retrying...");
                 passCode = null;
                 theLink.setProperty("pass", Property.NULL);
-                throw new PluginException(LinkStatus.ERROR_RETRY, "Wrong password entered");
+                throw new PluginException(LinkStatus.ERROR_RETRY, "Wrong password supplied");
             }
-            if (cbr.containsHTML("Wrong captcha")) {
-                logger.warning("Wrong captcha or wrong password!");
-                throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-            }
-            if (cbr.containsHTML("\">Skipped countdown<")) throw new PluginException(LinkStatus.ERROR_FATAL, "Fatal countdown error (countdown skipped)");
         }
         // monitor this
         if (cbr.containsHTML("(class=\"err\">You have reached the download(\\-| )limit[^<]+for last[^<]+)")) {
@@ -620,28 +629,44 @@ public class MsremCom extends PluginForHost {
         }
         if (cbr.containsHTML("You're using all download slots for IP")) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, 10 * 60 * 1001l); }
         if (cbr.containsHTML("Error happened when generating Download Link")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error!", 10 * 60 * 1000l);
-        /** Error handling for only-premium links */
-        if (cbr.containsHTML("( can download files up to |Upgrade your account to download bigger files|>Upgrade your account to download larger files|>The file you requested reached max downloads limit for Free Users|Please Buy Premium To download this file<|This file reached max downloads limit|>This file is available for Premium Users only\\.<)")) {
+        /** Error handling for account based restrictions */
+        // non account && free account (you would hope..)
+        final String an = "( can download files up to |This file reached max downloads limit|>The file you requested reached max downloads limit for Free Users)";
+        // these errors imply an account been used already. So we assume (Free Account), which is the case for most sites.
+        final String fa = "(Upgrade your account to download (bigger|larger) files)";
+        // these errors imply (Premium Required) from the outset.
+        final String pr = "(Please Buy Premium To download this file<|>This file is available for Premium Users only\\.<)";
+        // let the fun begin!
+        if (cbr.containsHTML(an + "|" + fa + "|" + pr)) {
             String msg = null;
+            String fileSizeLimit = cbr.getRegex("You can download files up to(.*?)only").getMatch(0);
+            if (!inValidate(fileSizeLimit)) fileSizeLimit = " :: You can download files up to " + fileSizeLimit.trim();
             if (account != null) {
                 msg = account.getUser() + " @ " + acctype;
+                if (account.getBooleanProperty("free", false) && cbr.containsHTML(an + "|" + fa + "|" + pr)) {
+                    // free
+                    msg += " :: Only downloadable via premium account." + (!inValidate(fileSizeLimit) ? fileSizeLimit : "");
+                    theLink.setProperty("requiresPremiumAccount", true);
+                } else {
+                    // premium: different account required??
+                    msg += " :: Not downloadable via your account type.";
+                }
             } else {
                 msg = "Guest @ " + acctype;
-            }
-            String filesizelimit = cbr.getRegex("You can download files up to(.*?)only").getMatch(0);
-            if (filesizelimit != null) {
-                filesizelimit = filesizelimit.trim();
-                msg += " :: You can download files up to " + filesizelimit + " only.";
-            } else {
-                if (account != null && account.getBooleanProperty("free", false)) {
-                    msg += " :: Only downloadable via premium account.";
-                } else if (account != null && !account.getBooleanProperty("free", false)) {
-                    msg += " :: Not downloadable via your account type.";
-                } else {
+                if (cbr.containsHTML(pr)) {
+                    msg += " :: Only downloadable via premium account." + (!inValidate(fileSizeLimit) ? fileSizeLimit : "");
+                    theLink.setProperty("requiresPremiumAccount", true);
+                } else if (cbr.containsHTML(an)) {
                     msg += " :: Only downloadable via premium or registered.";
+                    theLink.setProperty("requiresAnyAccount", true);
                 }
             }
             logger.warning(msg);
+            try {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+            } catch (final Throwable e) {
+                if (e instanceof PluginException) throw (PluginException) e;
+            }
             throw new PluginException(LinkStatus.ERROR_FATAL, msg);
         }
         if (cbr.containsHTML(MAINTENANCE)) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, MAINTENANCEUSERTEXT, 2 * 60 * 60 * 1000l);
@@ -956,6 +981,22 @@ public class MsremCom extends PluginForHost {
         public String string = null;
     }
 
+    /**
+     * Rules to prevent new downloads from commencing
+     * 
+     * */
+    public boolean canHandle(DownloadLink downloadLink, Account account) {
+        // Prevent another download method of the same account type from starting, when downloadLink marked as requiring premium account to
+        // download.
+        if (downloadLink.getBooleanProperty("requiresPremiumAccount", false) && (account == null || account.getBooleanProperty("free", false)))
+            return false;
+        // Prevent another non account download method from starting, when account been determined as required.
+        else if (downloadLink.getBooleanProperty("requiresAnyAccount", false) && account == null)
+            return false;
+        else
+            return true;
+    }
+
     @SuppressWarnings("unused")
     public void setConfigElements() {
         if (supportsHTTPS && enforcesHTTPS) {
@@ -1039,6 +1080,8 @@ public class MsremCom extends PluginForHost {
     public void resetDownloadlink(final DownloadLink downloadLink) {
         downloadLink.setProperty("retry", Property.NULL);
         downloadLink.setProperty("captchaTries", Property.NULL);
+        downloadLink.setProperty("requiresAnyAccount", Property.NULL);
+        downloadLink.setProperty("requiresPremiumAccount", Property.NULL);
     }
 
     /**
@@ -1226,7 +1269,7 @@ public class MsremCom extends PluginForHost {
             logger.info("Password Form == null");
             return null;
         }
-        passCode = downloadLink.getStringProperty("pass");
+        passCode = downloadLink.getStringProperty("pass", null);
         if (inValidate(passCode)) passCode = Plugin.getUserInput("Password?", downloadLink);
         if (inValidate(passCode)) {
             logger.info("User has entered blank password, exiting handlePassword");

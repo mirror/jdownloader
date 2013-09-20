@@ -101,7 +101,7 @@ public class FourSaveFileCom extends PluginForHost {
     private static final AtomicInteger totalMaxSimultanFreeDownload = new AtomicInteger(20);
 
     // DEV NOTES
-    // XfileShare Version 3.0.8.0
+    // XfileShare Version 3.0.8.1
     // last XfileSharingProBasic compare :: 2.6.2.1
     // captchatype: recaptcha
     // other: no redirects
@@ -287,7 +287,7 @@ public class FourSaveFileCom extends PluginForHost {
                     fileInfo[0] = cbr.getRegex("<h2[^>]+>(.*?) - [\\d\\.]+ (KB|MB|GB)</h2>").getMatch(0);
                     if (inValidate(fileInfo[0])) {
                         // can cause new line finds, so check if it matches.
-                        // fileInfo[0] = cbr.getRegex("Download File:? ?(<[^>]+> ?)+?([^<>\"\\']+)").getMatch(1);
+                        // fileInfo[0] = cbr.getRegex("Download File:? ?(<[^>]+> ?)+?([^<>\"']+)").getMatch(1);
                         // traits from download1 page below.
                         if (inValidate(fileInfo[0])) {
                             fileInfo[0] = cbr.getRegex("Filename:? ?(<[^>]+> ?)+?([^<>\"']+)").getMatch(1);
@@ -555,9 +555,9 @@ public class FourSaveFileCom extends PluginForHost {
         if (inValidate(ttt)) ttt = cbr.getRegex("id=\"countdown_str\"[^>]+>Wait[^>]+>(\\d+)\\s?+</span>").getMatch(0);
         if (!inValidate(ttt)) {
             // remove one second from past, to prevent returning too quickly.
-            long passedTime = ((System.currentTimeMillis() - timeBefore) / 1000) - 1;
-            logger.info("WaitTime detected: Waiting " + ttt + " seconds. Time already expired: " + passedTime + " miliseconds.");
-            long tt = Long.parseLong(ttt) - passedTime;
+            final long passedTime = ((System.currentTimeMillis() - timeBefore) / 1000) - 1;
+            final long tt = Long.parseLong(ttt) - passedTime;
+            logger.info("WaitTime detected: " + ttt + " second(s). Elapsed Time: " + (passedTime > 0 ? passedTime : 0) + " second(s). Remaining Time: " + tt + " second(s)");
             if (tt > 0) sleep(tt * 1000l, downloadLink);
         }
     }
@@ -565,22 +565,25 @@ public class FourSaveFileCom extends PluginForHost {
     private void checkErrors(final DownloadLink theLink, final Account account, final boolean checkAll) throws NumberFormatException, PluginException {
         if (checkAll) {
             if (cbr.containsHTML(">Expired download session<")) {
-                // not entirely sure why this happens, maybe bad code by SibSoft.
-                // needs to be first otherwise PASSWORDTEXT will be picked up. see: jdlog://1396270118731 expressleech
+                // This shouldn't ever happen....
                 logger.warning("Expired download session, lets retry!");
                 throw new PluginException(LinkStatus.ERROR_RETRY);
-            } else if (cbr.containsHTML("Wrong password|" + PASSWORDTEXT)) {
+            }
+            if (cbr.containsHTML("Wrong captcha")) {
+                logger.warning("Wrong Captcha response!");
+                throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+            }
+            if (cbr.containsHTML(">Skipped countdown<")) {
+                logger.warning("Possible Plugin Error: Please report to JDownloader Development Team!");
+                throw new PluginException(LinkStatus.ERROR_FATAL, "Fatal countdown error (countdown skipped)");
+            }
+            // MUST BE LAST IF STATEMENT due to PASSWORDTEXT, as it could be displayed with wrong captcha && skipped countdown.
+            if (cbr.containsHTML("Wrong password|" + PASSWORDTEXT)) {
                 // handle password has failed in the past, additional try catching / resetting values
                 logger.warning("Wrong password, the entered password \"" + passCode + "\" is wrong, retrying...");
                 passCode = null;
                 theLink.setProperty("pass", Property.NULL);
                 throw new PluginException(LinkStatus.ERROR_RETRY, "Wrong password supplied");
-            } else if (cbr.containsHTML("Wrong captcha")) {
-                logger.warning("Wrong Captcha response!");
-                throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-            } else if (cbr.containsHTML(">Skipped countdown<")) {
-                logger.warning("Possible Plugin Error: Please report to JDownloader Development Team!");
-                throw new PluginException(LinkStatus.ERROR_FATAL, "Fatal countdown error (countdown skipped)");
             }
         }
         // monitor this
@@ -629,7 +632,7 @@ public class FourSaveFileCom extends PluginForHost {
         }
         if (cbr.containsHTML("You're using all download slots for IP")) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, 10 * 60 * 1001l); }
         if (cbr.containsHTML("Error happened when generating Download Link")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error!", 10 * 60 * 1000l);
-        /** Error handling for only-premium links */
+        /** Error handling for account based restrictions */
         // non account && free account (you would hope..)
         final String an = "( can download files up to |This file reached max downloads limit|>The file you requested reached max downloads limit for Free Users)";
         // these errors imply an account been used already. So we assume (Free Account), which is the case for most sites.
@@ -982,7 +985,7 @@ public class FourSaveFileCom extends PluginForHost {
     }
 
     /**
-     * Rules to preventing new downloads from starting
+     * Rules to prevent new downloads from commencing
      * 
      * */
     public boolean canHandle(DownloadLink downloadLink, Account account) {

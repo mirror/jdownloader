@@ -84,21 +84,25 @@ public class OteUploadCom extends PluginForHost {
     private final String         PASSWORDTEXT                 = "<br><b>Passwor(d|t):</b> <input";
     private final String         MAINTENANCE                  = ">This server is in maintenance mode";
     private final String         dllinkRegex                  = "https?://(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|([\\w\\-]+\\.)?" + DOMAINS + ")(:\\d{1,5})?/(files(/(dl|download))?|d|cgi-bin/dl\\.cgi)/(\\d+/)?([a-z0-9]+/){1,4}[^/<>\r\n\t]+";
-    private final boolean        useVidEmbed                  = false;
-    private final boolean        useAltEmbed                  = false;
     private final boolean        supportsHTTPS                = true;
     private final boolean        enforcesHTTPS                = false;
-    private final boolean        useRUA                       = false;
-    private final boolean        useAltExpire                 = true;
+    private final boolean        useRUA                       = true;
     private final boolean        useAltLinkCheck              = false;
-    private final boolean        skipableRecaptcha            = true;
+    private final boolean        useVidEmbed                  = false;
+    private final boolean        useAltEmbed                  = false;
+    private final boolean        useAltExpire                 = true;
+    private final long           useLoginIndividual           = 6 * 3480000;
+    private final boolean        waitTimeSkipableReCaptcha    = true;
+    private final boolean        waitTimeSkipableSolveMedia   = false;
+    private final boolean        waitTimeSkipableKeyCaptcha   = false;
+    private final boolean        captchaSkipableSolveMedia    = false;
 
     // Connection Management
     // note: CAN NOT be negative or zero! (ie. -1 or 0) Otherwise math sections fail. .:. use [1-20]
     private static AtomicInteger totalMaxSimultanFreeDownload = new AtomicInteger(10);
 
     // DEV NOTES
-    // XfileShare Version 3.0.7.8
+    // XfileShare Version 3.0.8.1
     // last XfileSharingProBasic compare :: 2.6.2.1
     // protocol: http && https
     // captchatype: 4dignum
@@ -306,10 +310,10 @@ public class OteUploadCom extends PluginForHost {
                     fileInfo[0] = cbr.getRegex("id=\"fnamef\">(.*?)</div>").getMatch(0);
                     if (inValidate(fileInfo[0])) {
                         // can cause new line finds, so check if it matches.
-                        // fileInfo[0] = cbr.getRegex("Download File:? ?(<[^>]+> ?)+?([^<>\"\\']+)").getMatch(1);
+                        // fileInfo[0] = cbr.getRegex("Download File:? ?(<[^>]+> ?)+?([^<>\"']+)").getMatch(1);
                         // traits from download1 page below.
                         if (inValidate(fileInfo[0])) {
-                            fileInfo[0] = br.getRegex("Filename:? ?(<[^>]+> ?)+?([^<>\"\\']+)").getMatch(1);
+                            fileInfo[0] = br.getRegex("Filename:? ?(<[^>]+> ?)+?([^<>\"']+)").getMatch(1);
                             // next two are details from sharing box
                             if (inValidate(fileInfo[0])) {
                                 fileInfo[0] = br.getRegex("<textarea[^\r\n]+>([^\r\n]+) - [\\d\\.]+ (KB|MB|GB)</a></textarea>").getMatch(0);
@@ -333,7 +337,7 @@ public class OteUploadCom extends PluginForHost {
         if (inValidate(fileInfo[1])) {
             fileInfo[1] = br.getRegex("\\(([0-9]+ bytes)\\)").getMatch(0);
             if (inValidate(fileInfo[1])) {
-                fileInfo[1] = cbr.getRegex("</font>[ ]+\\(([^<>\"\\'/]+)\\)(.*?)</font>").getMatch(0);
+                fileInfo[1] = cbr.getRegex("</font>[ ]+\\(([^<>\"'/]+)\\)(.*?)</font>").getMatch(0);
                 if (inValidate(fileInfo[1])) {
                     fileInfo[1] = cbr.getRegex("(\\d+(\\.\\d+)? ?(KB|MB|GB))").getMatch(0);
                     if (inValidate(fileInfo[1])) {
@@ -449,6 +453,8 @@ public class OteUploadCom extends PluginForHost {
             int repeat = 2;
             for (int i = 0; i <= repeat; i++) {
                 dlForm = cleanForm(dlForm);
+                // custom form inputs
+
                 final long timeBefore = System.currentTimeMillis();
                 // md5 can be on the subsequent pages
                 if (inValidate(downloadLink.getMD5Hash())) {
@@ -591,32 +597,41 @@ public class OteUploadCom extends PluginForHost {
     }
 
     private void waitTime(final long timeBefore, final DownloadLink downloadLink) throws PluginException {
-        int passedTime = (int) ((System.currentTimeMillis() - timeBefore) / 1000) - 1;
         /** Ticket Time */
         String ttt = cbr.getRegex("id=\"countdown_str\">[^<>\"]+<span id=\"[^<>\"]+\"( class=\"[^<>\"]+\")?>([\n ]+)?(\\d+)([\n ]+)?</span>").getMatch(2);
         if (inValidate(ttt)) ttt = cbr.getRegex("id=\"countdown_str\"[^>]+>Wait[^>]+>(\\d+)\\s?+</span>").getMatch(0);
         if (!inValidate(ttt)) {
-            int tt = Integer.parseInt(ttt);
-            tt -= passedTime;
-            logger.info("Waittime detected, waiting " + ttt + " - " + passedTime + " seconds from now on...");
+            // remove one second from past, to prevent returning too quickly.
+            final long passedTime = ((System.currentTimeMillis() - timeBefore) / 1000) - 1;
+            final long tt = Long.parseLong(ttt) - passedTime;
+            logger.info("WaitTime detected: " + ttt + " second(s). Elapsed Time: " + (passedTime > 0 ? passedTime : 0) + " second(s). Remaining Time: " + tt + " second(s)");
             if (tt > 0) sleep(tt * 1000l, downloadLink);
         }
     }
 
     private void checkErrors(final DownloadLink theLink, final Account account, final boolean checkAll) throws NumberFormatException, PluginException {
         if (checkAll) {
+            if (cbr.containsHTML(">Expired download session<")) {
+                // This shouldn't ever happen....
+                logger.warning("Expired download session, lets retry!");
+                throw new PluginException(LinkStatus.ERROR_RETRY);
+            }
+            if (cbr.containsHTML("Wrong captcha")) {
+                logger.warning("Wrong Captcha response!");
+                throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+            }
+            if (cbr.containsHTML(">Skipped countdown<")) {
+                logger.warning("Possible Plugin Error: Please report to JDownloader Development Team!");
+                throw new PluginException(LinkStatus.ERROR_FATAL, "Fatal countdown error (countdown skipped)");
+            }
+            // MUST BE LAST IF STATEMENT due to PASSWORDTEXT, as it could be displayed with wrong captcha && skipped countdown.
             if (cbr.containsHTML("Wrong password|" + PASSWORDTEXT)) {
                 // handle password has failed in the past, additional try catching / resetting values
                 logger.warning("Wrong password, the entered password \"" + passCode + "\" is wrong, retrying...");
                 passCode = null;
                 theLink.setProperty("pass", Property.NULL);
-                throw new PluginException(LinkStatus.ERROR_RETRY, "Wrong password entered");
+                throw new PluginException(LinkStatus.ERROR_RETRY, "Wrong password supplied");
             }
-            if (cbr.containsHTML("Wrong captcha")) {
-                logger.warning("Wrong captcha or wrong password!");
-                throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-            }
-            if (cbr.containsHTML("\">Skipped countdown<")) throw new PluginException(LinkStatus.ERROR_FATAL, "Fatal countdown error (countdown skipped)");
         }
         // monitor this
         if (cbr.containsHTML("(class=\"err\">You have reached the download(\\-| )limit[^<]+for last[^<]+)")) {
@@ -628,6 +643,7 @@ public class OteUploadCom extends PluginForHost {
             if (account != null) {
                 logger.warning("Your account ( " + account.getUser() + " @ " + acctype + " ) has been temporarily disabled for going over the download session limit. JDownloader parses HTML for error messages, if you believe this is not a valid response please confirm issue within your browser. If you can download within your browser please contact JDownloader Development Team, if you can not download in your browser please take the issue up with " + this.getHost());
                 account.setTempDisabled(true);
+                throw new PluginException(LinkStatus.ERROR_RETRY);
             } else {
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "You've reached the download session limit!", 60 * 60 * 1000l);
             }
@@ -663,28 +679,44 @@ public class OteUploadCom extends PluginForHost {
         }
         if (cbr.containsHTML("You're using all download slots for IP")) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, 10 * 60 * 1001l); }
         if (cbr.containsHTML("Error happened when generating Download Link")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error!", 10 * 60 * 1000l);
-        /** Error handling for only-premium links */
-        if (cbr.containsHTML("( can download files up to |Upgrade your account to download bigger files|>Upgrade your account to download larger files|>The file you requested reached max downloads limit for Free Users|Please Buy Premium To download this file<|This file reached max downloads limit|>This file is available for Premium Users only\\.<|>The file that you're trying to download is larger than|THIS FILE IS ONLY FOR PREMIUM USERS!)")) {
+        /** Error handling for account based restrictions */
+        // non account && free account (you would hope..)
+        final String an = "( can download files up to |This file reached max downloads limit|>The file you requested reached max downloads limit for Free Users|>The file that you're trying to download is larger than)";
+        // these errors imply an account been used already. So we assume (Free Account), which is the case for most sites.
+        final String fa = "(Upgrade your account to download (bigger|larger) files)";
+        // these errors imply (Premium Required) from the outset.
+        final String pr = "(Please Buy Premium To download this file<|>This file is available for Premium Users only\\.<|THIS FILE IS ONLY FOR PREMIUM USERS!)";
+        // let the fun begin!
+        if (cbr.containsHTML(an + "|" + fa + "|" + pr)) {
             String msg = null;
+            String fileSizeLimit = cbr.getRegex("You can download files up to(.*?)only").getMatch(0);
+            if (!inValidate(fileSizeLimit)) fileSizeLimit = " :: You can download files up to " + fileSizeLimit.trim();
             if (account != null) {
                 msg = account.getUser() + " @ " + acctype;
+                if (account.getBooleanProperty("free", false) && cbr.containsHTML(an + "|" + fa + "|" + pr)) {
+                    // free
+                    msg += " :: Only downloadable via premium account." + (!inValidate(fileSizeLimit) ? fileSizeLimit : "");
+                    theLink.setProperty("requiresPremiumAccount", true);
+                } else {
+                    // premium: different account required??
+                    msg += " :: Not downloadable via your account type.";
+                }
             } else {
                 msg = "Guest @ " + acctype;
-            }
-            String filesizelimit = cbr.getRegex("You can download files up to(.*?)only").getMatch(0);
-            if (filesizelimit != null) {
-                filesizelimit = filesizelimit.trim();
-                msg += " :: You can download files up to " + filesizelimit + " only.";
-            } else {
-                if (account != null && account.getBooleanProperty("free", false)) {
-                    msg += " :: Only downloadable via premium account.";
-                } else if (account != null && !account.getBooleanProperty("free", false)) {
-                    msg += " :: Not downloadable via your account type.";
-                } else {
+                if (cbr.containsHTML(pr)) {
+                    msg += " :: Only downloadable via premium account." + (!inValidate(fileSizeLimit) ? fileSizeLimit : "");
+                    theLink.setProperty("requiresPremiumAccount", true);
+                } else if (cbr.containsHTML(an)) {
                     msg += " :: Only downloadable via premium or registered.";
+                    theLink.setProperty("requiresAnyAccount", true);
                 }
             }
             logger.warning(msg);
+            try {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+            } catch (final Throwable e) {
+                if (e instanceof PluginException) throw (PluginException) e;
+            }
             throw new PluginException(LinkStatus.ERROR_FATAL, msg);
         }
         if (cbr.containsHTML(MAINTENANCE)) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, MAINTENANCEUSERTEXT, 2 * 60 * 60 * 1000l);
@@ -711,10 +743,29 @@ public class OteUploadCom extends PluginForHost {
         }
         if (!oteAPI.get()) {
             try {
-                login(account, true);
+                // logic to manipulate full login.
+                if (useLoginIndividual >= 1800000 && account.getStringProperty("lastlogin", null) != null && (System.currentTimeMillis() - useLoginIndividual <= Long.parseLong(account.getStringProperty("lastlogin")))) {
+                    login(account, false);
+                } else {
+                    login(account, true);
+                }
             } catch (final PluginException e) {
                 account.setValid(false);
                 throw e;
+            }
+            // required for when we don't login fully.
+            final String myAccount = "/?op=my_account";
+            if (br.getURL() == null) {
+                br.setFollowRedirects(true);
+                getPage(COOKIE_HOST.replaceFirst("https?://", getProtocol()) + myAccount);
+            } else if (!br.getURL().contains(myAccount)) {
+                getPage(myAccount);
+            }
+            // what type of account?
+            if (!cbr.containsHTML("(Premium(\\-| )Account expire|>Renew premium<)")) {
+                account.setProperty("free", true);
+            } else {
+                account.setProperty("free", false);
             }
             final String space[] = br.getRegex(">Used space:</td>.*?<td.*?b>([0-9\\.]+) ?(KB|MB|GB|TB)?</b>").getRow(0);
             if ((space != null && space.length != 0) && (!inValidate(space[0]) && !inValidate(space[1]))) {
@@ -835,14 +886,6 @@ public class OteUploadCom extends PluginForHost {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
                 }
-                if (!br.getURL().contains("/?op=my_account")) {
-                    getPage("/?op=my_account");
-                }
-                if (!cbr.containsHTML("(Premium(\\-| )Account expire|>Renew premium<)")) {
-                    account.setProperty("free", true);
-                } else {
-                    account.setProperty("free", false);
-                }
                 /** Save cookies */
                 final HashMap<String, String> cookies = new HashMap<String, String>();
                 final Cookies add = this.br.getCookies(COOKIE_HOST);
@@ -852,8 +895,10 @@ public class OteUploadCom extends PluginForHost {
                 account.setProperty("name", Encoding.urlEncode(account.getUser()));
                 account.setProperty("pass", Encoding.urlEncode(account.getPass()));
                 account.setProperty("cookies", cookies);
+                account.setProperty("lastlogin", System.currentTimeMillis());
             } catch (final PluginException e) {
                 account.setProperty("cookies", Property.NULL);
+                account.setProperty("lastlogin", Property.NULL);
                 throw e;
             }
         }
@@ -862,7 +907,6 @@ public class OteUploadCom extends PluginForHost {
     @Override
     public void handlePremium(final DownloadLink downloadLink, final Account account) throws Exception {
         setConstants(account);
-        passCode = downloadLink.getStringProperty("pass");
         if (oteAPI.get() && !account.getBooleanProperty("free")) {
             try {
                 requestFileInformationAPI(downloadLink);
@@ -1079,6 +1123,22 @@ public class OteUploadCom extends PluginForHost {
         public String string = null;
     }
 
+    /**
+     * Rules to prevent new downloads from commencing
+     * 
+     * */
+    public boolean canHandle(DownloadLink downloadLink, Account account) {
+        // Prevent another download method of the same account type from starting, when downloadLink marked as requiring premium account to
+        // download.
+        if (downloadLink.getBooleanProperty("requiresPremiumAccount", false) && (account == null || account.getBooleanProperty("free", false)))
+            return false;
+        // Prevent another non account download method from starting, when account been determined as required.
+        else if (downloadLink.getBooleanProperty("requiresAnyAccount", false) && account == null)
+            return false;
+        else
+            return true;
+    }
+
     @SuppressWarnings("unused")
     public void setConfigElements() {
         if (supportsHTTPS && enforcesHTTPS) {
@@ -1161,6 +1221,9 @@ public class OteUploadCom extends PluginForHost {
     @Override
     public void resetDownloadlink(final DownloadLink downloadLink) {
         downloadLink.setProperty("retry", Property.NULL);
+        downloadLink.setProperty("captchaTries", Property.NULL);
+        downloadLink.setProperty("requiresAnyAccount", Property.NULL);
+        downloadLink.setProperty("requiresPremiumAccount", Property.NULL);
     }
 
     /**
@@ -1348,7 +1411,7 @@ public class OteUploadCom extends PluginForHost {
             logger.info("Password Form == null");
             return null;
         }
-        passCode = downloadLink.getStringProperty("pass");
+        passCode = downloadLink.getStringProperty("pass", null);
         if (inValidate(passCode)) passCode = Plugin.getUserInput("Password?", downloadLink);
         if (inValidate(passCode)) {
             logger.info("User has entered blank password, exiting handlePassword");
@@ -1367,6 +1430,7 @@ public class OteUploadCom extends PluginForHost {
      * @author raztoki
      * */
     private Form captchaForm(DownloadLink downloadLink, Form form) throws Exception {
+        final int captchaTries = downloadLink.getIntegerProperty("captchaTries", 0);
         if (form.containsHTML(";background:#ccc;text-align")) {
             logger.info("Detected captcha method \"Plaintext Captcha\"");
             /** Captcha method by ManiacMansion */
@@ -1430,7 +1494,7 @@ public class OteUploadCom extends PluginForHost {
             form.put("recaptcha_challenge_field", rc.getChallenge());
             form.put("recaptcha_response_field", Encoding.urlEncode(c));
             /** wait time is often skippable for reCaptcha handling */
-            skipWaitTime = skipableRecaptcha;
+            skipWaitTime = waitTimeSkipableReCaptcha;
         } else if (form.containsHTML("solvemedia\\.com/papi/")) {
             logger.info("Detected captcha method \"Solve Media\"");
             final Browser captcha = br.cloneBrowser();
@@ -1438,10 +1502,15 @@ public class OteUploadCom extends PluginForHost {
             final PluginForDecrypt solveplug = JDUtilities.getPluginForDecrypt("linkcrypt.ws");
             final jd.plugins.decrypter.LnkCrptWs.SolveMedia sm = ((jd.plugins.decrypter.LnkCrptWs) solveplug).getSolveMedia(captcha);
             final File cf = sm.downloadCaptcha(getLocalCaptchaFile());
-            final String code = getCaptchaCode(cf, downloadLink);
-            final String chid = sm.getChallenge(code);
+            String code = "";
+            String chid = sm.getChallenge();
+            if (!captchaSkipableSolveMedia || captchaTries > 0) {
+                code = getCaptchaCode(cf, downloadLink);
+                chid = sm.getChallenge(code);
+            }
             form.put("adcopy_challenge", chid);
-            form.put("adcopy_response", "manual_challenge");
+            form.put("adcopy_response", code);
+            skipWaitTime = waitTimeSkipableSolveMedia;
         } else if (form.containsHTML("id=\"capcode\" name= \"capcode\"")) {
             logger.info("Detected captcha method \"Key Captcha\"");
             final Browser captcha = br.cloneBrowser();
@@ -1451,7 +1520,9 @@ public class OteUploadCom extends PluginForHost {
             final String result = kc.showDialog(downloadLink.getDownloadURL());
             if (result != null && "CANCEL".equals(result)) { throw new PluginException(LinkStatus.ERROR_FATAL); }
             form.put("capcode", result);
+            skipWaitTime = waitTimeSkipableKeyCaptcha;
         }
+        downloadLink.setProperty("captchaTries", (captchaTries + 1));
         return form;
     }
 
