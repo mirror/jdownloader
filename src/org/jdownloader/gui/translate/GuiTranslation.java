@@ -3088,4 +3088,13 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Pending Downloads" })
     String downloadview_todo();
 
+    @Default(lngs = { "en" }, values = { "a dedicated plugin (no direct http)" })
+    String ConditionDialog_layoutDialogContent_directhttp();
+
+    @Default(lngs = { "en" }, values = { "Link has no dedicated Plugin(direct http)" })
+    String FilterRule_toString_directhttp();
+
+    @Default(lngs = { "en" }, values = { "Link has a dedicated Plugin" })
+    String FilterRule_toString_directhttp_not();
+
 }

@@ -45,6 +45,8 @@ import org.jdownloader.settings.GeneralSettings;
 
 public class LinkCrawler {
 
+    private static final String            DIRECT_HTTP                 = "DirectHTTP";
+    private static final String            HTTP_LINKS                  = "http links";
     private LazyHostPlugin                 directHTTP                  = null;
     private LazyHostPlugin                 ftp                         = null;
     private java.util.List<CrawledLink>    crawledLinks                = new ArrayList<CrawledLink>();
@@ -169,15 +171,20 @@ public class LinkCrawler {
         }
         pHosts = new ArrayList<LazyHostPlugin>(HostPluginController.getInstance().list());
         for (LazyHostPlugin pHost : pHosts) {
-            if (directHTTP == null && "http links".equals(pHost.getDisplayName())) {
+            if (directHTTP == null && HTTP_LINKS.equals(pHost.getDisplayName())) {
                 /* for direct access to the directhttp plugin */
+                // we have at least 2 directHTTP entries in pHost. each one listens to a different regex
+                // the one we found here listens to "https?viajd://[\\w\\.:\\-@]*/.*\\.(jdeatme|3gp|7zip|7z|abr...
+                // the other listens to directhttp://.+
                 directHTTP = pHost;
             }
+
             if (ftp == null && "ftp".equals(pHost.getDisplayName())) {
                 /* for generic ftp sites */
                 ftp = pHost;
             }
         }
+
         if (ftp != null) {
             /* generic ftp handling is done at the end */
             /* remove from list, then we don't have to compare each single plugin each round */
@@ -212,6 +219,27 @@ public class LinkCrawler {
 
     public void crawl(String text) {
         crawl(text, null, false);
+    }
+
+    private HashSet<String> crawlerPluginBlacklist;
+    private HashSet<String> hostPluginBlacklist;
+
+    public void setCrawlerPluginBlacklist(String[] list) {
+        this.crawlerPluginBlacklist = new HashSet<String>();
+        if (list != null) {
+            for (String s : list) {
+                crawlerPluginBlacklist.add(s);
+            }
+        }
+    }
+
+    public void setHostPluginBlacklist(String[] list) {
+        this.hostPluginBlacklist = new HashSet<String>();
+        if (list != null) {
+            for (String s : list) {
+                hostPluginBlacklist.add(s);
+            }
+        }
     }
 
     public void crawl(final String text, final String url, final boolean allowDeep) {
@@ -530,6 +558,7 @@ public class LinkCrawler {
                          */
                         for (final LazyCrawlerPlugin pDecrypt : CrawlerPluginController.getInstance().list()) {
 
+                            if (crawlerPluginBlacklist != null && crawlerPluginBlacklist.contains(pDecrypt.getDisplayName())) continue;
                             if (pDecrypt.canHandle(url)) {
                                 try {
                                     final java.util.List<CrawledLink> allPossibleCryptedLinks = getCrawlableLinks(pDecrypt.getPattern(), possibleCryptedLink, null);
@@ -585,7 +614,12 @@ public class LinkCrawler {
                     }
                     /* now we will walk through all available hoster plugins */
                     for (final LazyHostPlugin pHost : pHosts) {
+                        if (hostPluginBlacklist != null && hostPluginBlacklist.contains(pHost.getDisplayName())) continue;
+                        if (!isDirectHttpEnabled() && (pHost.getDisplayName().equals(DIRECT_HTTP) || pHost.getDisplayName().equals(HTTP_LINKS))) {
+                            continue;
+                        }
                         if (pHost.canHandle(url)) {
+
                             if (insideCrawlerPlugin()) {
                                 if (generation != this.getCrawlerGeneration(false)) {
                                     /* LinkCrawler got aborted! */
@@ -623,7 +657,8 @@ public class LinkCrawler {
                         continue mainloopretry;
                     }
                     /* now we will check for normal http links */
-                    if (directHTTP != null && isDirectHttpEnabled()) {
+
+                    if (directHTTP != null && isDirectHttpEnabled() && !(hostPluginBlacklist != null && hostPluginBlacklist.contains(directHTTP.getDisplayName()))) {
                         url = url.replaceFirst("http://", "httpviajd://");
                         url = url.replaceFirst("https://", "httpsviajd://");
                         /* create new CrawledLink that holds the modified CrawledLink */

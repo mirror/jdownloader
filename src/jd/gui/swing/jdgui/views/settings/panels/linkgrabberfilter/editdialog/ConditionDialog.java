@@ -734,7 +734,7 @@ public abstract class ConditionDialog<T> extends AbstractDialog<T> {
 
         // plugin
         cobPlugin = new JComboBox(new String[] { _GUI._.ConditionDialog_layoutDialogContent_online_has_(), _GUI._.ConditionDialog_layoutDialogContent_online_hasnot_() });
-        cobPluginOptions = new JComboBox(new String[] { _GUI._.ConditionDialog_layoutDialogContent_premium(), _GUI._.ConditionDialog_layoutDialogContent_captcha() });
+        cobPluginOptions = new JComboBox(new String[] { _GUI._.ConditionDialog_layoutDialogContent_premium(), _GUI._.ConditionDialog_layoutDialogContent_captcha(), _GUI._.ConditionDialog_layoutDialogContent_directhttp() });
         cbPlugin = new ExtCheckBox(cobPlugin, cobPluginOptions);
 
         panel.add(cbPlugin);

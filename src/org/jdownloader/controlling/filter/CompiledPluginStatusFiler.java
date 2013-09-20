@@ -22,6 +22,8 @@ public class CompiledPluginStatusFiler extends PluginStatusFilter {
                 return false;
             case AUTOCAPTCHA:
                 return link.hasAutoCaptcha() || !link.hasCaptcha(null);
+            case NO_DIRECT_HTTP:
+                return !link.isDirectHTTP();
             }
             return false;
         case ISNOT:
@@ -31,6 +33,8 @@ public class CompiledPluginStatusFiler extends PluginStatusFilter {
                 return false;
             case AUTOCAPTCHA:
                 return !link.hasAutoCaptcha() && link.hasCaptcha(null);
+            case NO_DIRECT_HTTP:
+                return link.isDirectHTTP();
             }
         }
         return false;

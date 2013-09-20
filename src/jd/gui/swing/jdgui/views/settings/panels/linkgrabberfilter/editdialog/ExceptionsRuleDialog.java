@@ -37,6 +37,7 @@ public class ExceptionsRuleDialog extends ConditionDialog<LinkgrabberFilterRule>
 
             LinkFilterController lfc = LinkFilterController.createEmptyTestInstance();
             LinkgrabberFilterRule rule = getCurrentCopy();
+            rule.setEnabled(true);
             lfc.add(rule);
 
             java.util.List<CrawledLink> ret = Dialog.getInstance().showDialog(d = new TestWaitDialog(text, _GUI._.FilterRuleDialog_runTest_title_(rule.toString()), lfc) {

@@ -17,6 +17,8 @@ public class LinkCollectorCrawler extends LinkCrawler implements LinkCollectorLi
     public LinkCollectorCrawler() {
         super(true, true);
         setDirectHttpEnabled(CFG_GENERAL.CFG.isDirectHTTPCrawlerEnabled());
+        setHostPluginBlacklist(CFG_GENERAL.CFG.getCrawlerHostPluginBlacklist());
+        setCrawlerPluginBlacklist(CFG_GENERAL.CFG.getCrawlerCrawlerPluginBlacklist());
         eventSender = new LinkCollectorCrawlerEventSender();
     }
 

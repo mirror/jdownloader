@@ -44,6 +44,7 @@ public class NewAction extends AbstractAddAction {
 
     public void actionPerformed(ActionEvent e) {
         final LinkgrabberFilterRule rule = new LinkgrabberFilterRule();
+        rule.setEnabled(true);
         add(rule, getTable());
     }
 

@@ -499,4 +499,7 @@ public interface JdownloaderTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "JDownloader could not connect to the My JDownloader service. Please update your JDownloader!" })
     String MyJDownloaderController_onError_outdated();
 
+    @Default(lngs = { "en" }, values = { "Direct HTTP" })
+    String LinkFilterSettings_DefaultFilterList_directhttp();
+
 }

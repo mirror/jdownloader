@@ -135,7 +135,7 @@ public class LinkgrabberFilter extends JPanel implements SettingsComponent {
         add(tb, "spanx, height 24!");
 
         MigPanel buttonbar = new MigPanel("ins 0, wrap 5", "[][][grow,fill][][]", "[]");
-
+        buttonbar.setOpaque(false);
         add(buttonbar, "spanx, height 26!");
         buttonbar.add(btadd, "height 26!,sg 2");
         buttonbar.add(btRemove, "height 26!,sg 2");

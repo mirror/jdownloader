@@ -48,7 +48,6 @@ public class DownloadsPanel extends SwitchPanel implements DownloadControllerLis
     private ScheduledFuture<?>                        timer             = null;
     private BottomBar                                 bottomBar;
     private NullsafeAtomicReference<HeaderScrollPane> overViewScrollBar = new NullsafeAtomicReference<HeaderScrollPane>(null);
-    private MigPanel                                  loaderPanel;
 
     public DownloadsPanel() {
         super(new MigLayout("ins 0, wrap 2", "[grow,fill]2[fill]", "[grow, fill]2[]2[]"));

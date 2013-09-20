@@ -427,4 +427,16 @@ public interface GeneralSettings extends ConfigInterface {
 
     void setDirectHTTPCrawlerEnabled(boolean b);
 
+    @AboutConfig
+    @DescriptionForConfigEntry("Set a list of hostplugin names to ignore")
+    String[] getCrawlerHostPluginBlacklist();
+
+    void setCrawlerHostPluginBlacklist(String[] blacklist);
+
+    @AboutConfig
+    @DescriptionForConfigEntry("Set a list of crawlerplugin names to ignore")
+    String[] getCrawlerCrawlerPluginBlacklist();
+
+    void setCrawlerCrawlerPluginBlacklist(String[] blacklist);
+
 }

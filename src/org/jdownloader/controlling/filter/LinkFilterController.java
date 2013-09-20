@@ -52,7 +52,8 @@ public class LinkFilterController implements LinkCrawlerFilter {
     private boolean                                      testInstance = false;
 
     /**
-     * Create a new instance of LinkFilterController. This is a singleton class. Access the only existing instance by using {@link #getInstance()}.
+     * Create a new instance of LinkFilterController. This is a singleton class. Access the only existing instance by using
+     * {@link #getInstance()}.
      */
     public LinkFilterController(boolean testInstance) {
         eventSender = new ChangeEventSender();
@@ -65,6 +66,7 @@ public class LinkFilterController implements LinkCrawlerFilter {
             ArrayList<LinkgrabberFilterRule> newList = new ArrayList<LinkgrabberFilterRule>();
 
             boolean offlineRule = false;
+            boolean directHttpView = false;
             for (LinkgrabberFilterRule rule : filter) {
 
                 if (OfflineView.ID.equals(rule.getId())) {
@@ -75,7 +77,18 @@ public class LinkFilterController implements LinkCrawlerFilter {
                     continue;
 
                 }
+                if (DirectHTTPView.ID.equals(rule.getId())) {
+                    DirectHTTPView r;
+                    newList.add(r = new DirectHTTPView());
+                    r.setEnabled(rule.isEnabled());
+                    directHttpView = true;
+                    continue;
+
+                }
                 newList.add(rule);
+            }
+            if (!directHttpView) {
+                newList.add(new DirectHTTPView());
             }
             if (!offlineRule) {
                 newList.add(new OfflineView());
