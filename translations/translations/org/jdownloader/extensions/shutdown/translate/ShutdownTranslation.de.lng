@@ -1,26 +1,26 @@
-action_tooltip=Herunterfahren des Systems aktivieren, wenn alle Downloads fertig sind
+action_tooltip=Herunterfahren des Systems,  wenn alle Downloads fertig sind, aktivieren
 addons_jdshutdown_statusmessage_disabled=Das System wird nach dem Download NICHT heruntergefahren.
-addons_jdshutdown_statusmessage_enabled=Das System wird nach dem Download heruntergefahren.
+addons_jdshutdown_statusmessage_enabled=Das System wird nach der Fertigstellung der Downloads heruntergefahren.
 config_active_by_default=Herunterfahren aktiviert lassen
 config_toolbarbutton=Toolbar Schaltfläche sichtbar
 gui_config_jdshutdown_close=JDownloader beenden
-gui_config_jdshutdown_forceshutdown=Herunterfahren erzwingen (Nur einige OS)
-gui_config_jdshutdown_hibernate=Ruhezustand/Hibernate (Nur einige OS)
+gui_config_jdshutdown_forceshutdown=Herunterfahren erzwingen (Nicht für alle Betriebssysteme)
+gui_config_jdshutdown_hibernate=Ruhezustand/Hibernate (Nicht für alle Betriebssysteme)
 gui_config_jdshutdown_mode=Modus:
 gui_config_jdshutdown_shutdown=Herunterfahren
 gui_config_jdshutdown_standby=Standby (Nur einige OS)
 install_force=Installiere erzwungenes Herunterfahren
-install_msg=Möchtest du dein System auf das "Herunterfahren-Erzwingen" Feature vorbereiten?
+install_msg=Möchtest du dein System auf die "Herunterfahren erzwingen"-Funktion vorbereiten?
 install_title=Installiere erzwungenes Herunterfahren
 interaction_shutdown_dialog_msg_closejd=<h2><font color="red">JDownloader wird beendet!</font></h2>
 interaction_shutdown_dialog_msg_hibernate=<h2><font color="red">System wird in den Ruhezustand versetzt!</font></h2>
 interaction_shutdown_dialog_msg_shutdown=<h2><font color="red">System wird heruntergefahren!</font></h2>
 interaction_shutdown_dialog_msg_standby=<h2><font color="red">System wird in den Energiesparmodus versetzt!</font></h2>
 interaction_shutdown_dialog_title_closejd=JDownloader beenden?
-interaction_shutdown_dialog_title_hibernate=Energiesparmodus?
+interaction_shutdown_dialog_title_hibernate=Ruhezustand?
 interaction_shutdown_dialog_title_shutdown=System herunterfahren?
 interaction_shutdown_dialog_title_standby=Ruhezustand?
-jd_plugins_optional_jdshutdown=Herunterfahren
+jd_plugins_optional_jdshutdown=JDownloader herunterfahren
 jd_plugins_optional_jdshutdown_description=Automatisch herunterfahren, energiesparen, Ruhezustand deines PCs oder JDownloader schließen, wenn die Downloads abgeschlossen sind.
 lit_shutdownn=Herunterfahren
 show_admin=Es sind administrative Rechte erforderlich, um Ruhezustand oder Energiesparmodus konfigurieren zu können
