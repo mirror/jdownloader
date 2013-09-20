@@ -71,6 +71,7 @@ public class TumblrComDecrypter extends PluginForDecrypt {
             String fpName = br.getRegex("<title>([^/\"]*?)</title>").getMatch(0);
             if (fpName == null) fpName = "Tumblr post " + new Regex(parameter, "(\\d+)$").getMatch(0);
             fpName = Encoding.htmlDecode(fpName.trim());
+            fpName = fpName.replace("\n", "");
 
             String externID = br.getRegex("(http://(www\\.)?gasxxx\\.com/media/player/config_embed\\.php\\?vkey=\\d+)\"").getMatch(0);
             if (externID != null) {

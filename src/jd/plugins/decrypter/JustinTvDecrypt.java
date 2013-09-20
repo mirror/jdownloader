@@ -43,6 +43,8 @@ public class JustinTvDecrypt extends PluginForDecrypt {
         super(wrapper);
     }
 
+    private static final String FASTLINKCHECK = "FASTLINKCHECK";
+
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final SubConfiguration cfg = SubConfiguration.getConfig("justin.tv");
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
@@ -127,7 +129,7 @@ public class JustinTvDecrypt extends PluginForDecrypt {
                 JDUtilities.getPluginForHost("justin.tv");
                 final String formattedFilename = ((jd.plugins.hoster.JustinTv) hostPlugin).getFormattedFilename(dlink);
                 dlink.setName(formattedFilename);
-                if (cfg.getBooleanProperty("FASTLINKCHECK", false)) dlink.setAvailable(true);
+                if (cfg.getBooleanProperty(FASTLINKCHECK, false)) dlink.setAvailable(true);
                 decryptedLinks.add(dlink);
                 counter++;
             }
