@@ -270,8 +270,6 @@ public class NiraFileCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         fileInfo[0] = fileInfo[0].replaceAll("(</?b>|\\.html)", "");
-        // think this is a result of db been messed up ?? old links seem to be displayed like this??
-        if ("places.aqlite".equalsIgnoreCase(fileInfo[0])) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         downloadLink.setName(fileInfo[0].trim());
         if (getAvailableStatus(downloadLink).toString().equals("UNCHECKED")) downloadLink.setAvailable(true);
         if (!inValidate(fileInfo[1])) downloadLink.setDownloadSize(SizeFormatter.getSize(fileInfo[1]));
