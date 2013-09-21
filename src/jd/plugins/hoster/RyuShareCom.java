@@ -583,7 +583,7 @@ public class RyuShareCom extends PluginForHost {
                 passCode = null;
                 theLink.setProperty("pass", Property.NULL);
                 throw new PluginException(LinkStatus.ERROR_RETRY, "Wrong password supplied");
-            }	
+            }
         }
         // monitor this
         // premium = <font class="err">You have reached the download-limit: 88888 Mb for last 1 days</font> (even with accounts with
@@ -802,6 +802,7 @@ public class RyuShareCom extends PluginForHost {
                 boolean loginFailed = true;
                 String loginPage = COOKIE_HOST.replaceFirst("https?://", getProtocol()) + "/login.html";
                 for (int i = 1; i <= 2; i++) {
+                    if (!loginFailed) break;
                     getPage(loginPage);
                     Form loginform = br.getFormbyProperty("name", "FL");
                     if (loginform == null) {
