@@ -1,5 +1,5 @@
 //jDownloader - Downloadmanager
-//Copyright (C) 2010  JD-Team support@jdownloader.org
+//Copyright (C) 2013  JD-Team support@jdownloader.org
 //
 //This program is free software: you can redistribute it and/or modify
 //it under the terms of the GNU General Public License as published by
@@ -37,7 +37,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "nowvideo.eu", "nowvideo.co" }, urls = { "http://(www\\.)?(nowvideo\\.(eu|co|ch)/(?!share\\.php)(video/|player\\.php\\?v=)|embed\\.nowvideo\\.(eu|co|ch)/embed\\.php\\?v=)[a-z0-9]+", "NEVERUSETHISSUPERDUBERREGEXATALL2013" }, flags = { 2, 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "nowvideo.eu", "nowvideo.co" }, urls = { "http://(www\\.)?(nowvideo\\.(sx|eu|co|ch)/(?!share\\.php)(video/|player\\.php\\?v=)|embed\\.nowvideo\\.(sx|eu|co|ch)/embed\\.php\\?v=)[a-z0-9]+", "NEVERUSETHISSUPERDUBERREGEXATALL2013" }, flags = { 2, 0 })
 public class NowVideoEu extends PluginForHost {
 
     public NowVideoEu(PluginWrapper wrapper) {
@@ -65,8 +65,8 @@ public class NowVideoEu extends PluginForHost {
 
     public Boolean rewriteHost(DownloadLink link) {
         if ("nowvideo.eu".equals(getHost())) {
-            if (link != null && ("nowvideo.ch".equals(link.getHost()) || "nowvideo.co".equals(link.getHost()))) {
-                link.setHost("nowvideo.eu");
+            if (link != null && ("nowvideo.ch".equals(link.getHost()) || "nowvideo.co".equals(link.getHost()) || "nowvideo.eu".equals(link.getHost()))) {
+                link.setHost("nowvideo.sx");
                 return true;
             }
             return false;
@@ -76,8 +76,8 @@ public class NowVideoEu extends PluginForHost {
 
     public Boolean rewriteHost(Account acc) {
         if ("nowvideo.eu".equals(getHost())) {
-            if (acc != null && ("nowvideo.ch".equals(acc.getHoster()) || "nowvideo.co".equals(acc.getHoster()))) {
-                acc.setHoster("nowvideo.eu");
+            if (acc != null && ("nowvideo.ch".equals(acc.getHoster()) || "nowvideo.co".equals(acc.getHoster()) || "nowvideo.eu".equals(acc.getHoster()))) {
+                acc.setHoster("nowvideo.sx");
                 return true;
             }
             return false;
@@ -121,7 +121,7 @@ public class NowVideoEu extends PluginForHost {
     }
 
     private String validateHost() {
-        final String[] ccTLDs = { "eu", "co", "ch" };
+        final String[] ccTLDs = { "sx", "eu", "co", "ch" };
 
         for (int i = 0; i < ccTLDs.length; i++) {
             String CCtld = ccTLDs[i];
@@ -140,8 +140,8 @@ public class NowVideoEu extends PluginForHost {
     }
 
     private static Object          LOCK               = new Object();
-    private static StringContainer MAINPAGE           = new StringContainer("http://www.nowvideo.eu");
-    private static StringContainer ccTLD              = new StringContainer("eu");
+    private static StringContainer MAINPAGE           = new StringContainer("http://www.nowvideo.sx");
+    private static StringContainer ccTLD              = new StringContainer("sx");
     private static final String    ISBEINGCONVERTED   = ">The file is being converted.";
     private static AtomicBoolean   AVAILABLE_PRECHECK = new AtomicBoolean(false);
 
@@ -261,7 +261,7 @@ public class NowVideoEu extends PluginForHost {
         login(account, false);
         br.setFollowRedirects(false);
         br.getPage(link.getDownloadURL());
-        final String dllink = br.getRegex("\"(http://[a-z0-9]+\\.nowvideo\\.co/dl/[^<>\"]*?)\"").getMatch(0);
+        final String dllink = br.getRegex("\"(http://[a-z0-9]+\\.nowvideo\\.(sx|eu|co|ch)/dl/[^<>\"]*?)\"").getMatch(0);
         if (dllink == null) {
             // Try free mode as we cannot differ between accounttypes (yet)
             doFree(link);
