@@ -37,7 +37,7 @@ import jd.plugins.PluginForDecrypt;
 // Please do not mess with the following Regex!
 // Do not use lazy regex. Make regex to support the features you need. Lazy regex will pick up false positives in other areas of the plugin.
 // "old style" , "new style", "redirect url shorting service" 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "promodj.com" }, urls = { "https?://((www\\.)?((([\\w\\-\\.]+\\.(djkolya\\.net|pdj\\.ru|promodeejay\\.(net|ru)|promodj\\.(ru|com)))|(djkolya\\.net|pdj\\.ru|promodeejay\\.(net|ru)|promodj\\.(ru|com))(/[\\w\\-\\.]+)?)/(?!top100|podsafe)(foto/(all|\\d+)/?(#(foto|full|list|biglist|middlelist)\\d+)?(\\d+(\\.html)?(#(foto|full|list|biglist|middlelist)\\d+)?)?|(acapellas|groups|mixes|prelisten|podcasts|promos|radioshows|realtones|remixes|samples|tracks|videos)/\\d+|prelisten_m3u/\\d+/[\\w]+\\.m3u|(download|source)/\\d+/[^\r\n\"'<>]+))|pdj\\.cc/\\w+)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "promodj.com" }, urls = { "https?://((www\\.)?(((([\\w\\-\\.]+\\.(djkolya\\.net|pdj\\.ru|promodeejay\\.(net|ru)|promodj\\.(ru|com)))|(djkolya\\.net|pdj\\.ru|promodeejay\\.(net|ru)|promodj\\.(ru|com))(/[\\w\\-\\.]+)?)/(?!top100|podsafe)(foto/(all|\\d+)/?(#(foto|full|list|biglist|middlelist)\\d+)?(\\d+(\\.html)?(#(foto|full|list|biglist|middlelist)\\d+)?)?|(acapellas|groups|mixes|prelisten|podcasts|promos|radioshows|realtones|remixes|samples|tracks|videos)/\\d+|prelisten_m3u/\\d+/[\\w]+\\.m3u|(download|source)/\\d+/[^\r\n\"'<>]+))|pdj\\.cc/\\w+))" }, flags = { 0 })
 public class ProDjCm extends PluginForDecrypt {
 
     // DEV NOTES
