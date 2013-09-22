@@ -1,5 +1,5 @@
 //    jDownloader - Downloadmanager
-//    Copyright (C) 2012  JD-Team support@jdownloader.org
+//    Copyright (C) 2013  JD-Team support@jdownloader.org
 //
 //    This program is free software: you can redistribute it and/or modify
 //    it under the terms of the GNU General Public License as published by
@@ -37,6 +37,7 @@ import javax.swing.SwingUtilities;
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
+import jd.config.Property;
 import jd.config.SubConfiguration;
 import jd.controlling.AccountController;
 import jd.http.Browser;
@@ -118,7 +119,7 @@ public class RapidGatorNet extends PluginForHost {
     private String handleJavaScriptRedirect() {
         /* check for js redirect */
         int c = br.getRegex("\n").count();
-        boolean isJsRedirect = br.getRegex("<html><head><meta http\\-equiv=\"Content\\-Type\" content=\"[\\w\\-/;=]{20,50}\"></head>").matches();
+        boolean isJsRedirect = br.getRegex("<html><head><meta http-equiv=\"Content-Type\" content=\"[\\w\\-/;=]{20,50}\"></head>").matches();
         String[] jsRedirectScripts = br.getRegex("<script language=\"JavaScript\">(.*?)</script>").getColumn(0);
         if (jsRedirectScripts != null && jsRedirectScripts.length == 1) {
             if (c == 0 && isJsRedirect) {
@@ -173,7 +174,7 @@ public class RapidGatorNet extends PluginForHost {
             if (filenameFromURL != null) link.setName(filenameFromURL);
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final String freedlsizelimit = br.getRegex("\\'You can download files up to ([\\d\\.]+ ?(MB|GB)) in free mode<").getMatch(0);
+        final String freedlsizelimit = br.getRegex("'You can download files up to ([\\d\\.]+ ?(MB|GB)) in free mode<").getMatch(0);
         if (freedlsizelimit != null) link.getLinkStatus().setStatusText(JDL.L("plugins.hoster.rapidgatornet.only4premium", "This file is restricted to Premium users only"));
         String filename = br.getRegex("Downloading:[\t\n\r ]+</strong>([^<>\"]+)</p>").getMatch(0);
         if (filename == null) filename = br.getRegex("<title>Download file ([^<>\"]+)</title>").getMatch(0);
@@ -260,9 +261,8 @@ public class RapidGatorNet extends PluginForHost {
 
     private void doFree(final DownloadLink downloadLink) throws Exception {
         // experimental code - raz
-        // so called 15mins between your last download, ends up with your IP
-        // blocked for the day.. Trail and error until we find the sweet
-        // spot.
+        // so called 15mins between your last download, ends up with your IP blocked for the day..
+        // Trail and error until we find the sweet spot.
         checkShowFreeDialog();
         final boolean useExperimentalHandling = getPluginConfig().getBooleanProperty(EXPERIMENTALHANDLING, false);
         String currentIP = getIP();
@@ -280,7 +280,7 @@ public class RapidGatorNet extends PluginForHost {
             // end of experiment
             if (br.containsHTML("You have reached your daily downloads limit. Please try")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "You have reached your daily downloads limit", 60 * 60 * 1000l);
             if (br.containsHTML("(You can`t download not more than 1 file at a time in free mode\\.<|>Wish to remove the restrictions\\?)")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "You can't download more than one file within a certain time period in free mode", 60 * 60 * 1000l);
-            final String freedlsizelimit = br.getRegex("\\'You can download files up to ([\\d\\.]+ ?(MB|GB)) in free mode<").getMatch(0);
+            final String freedlsizelimit = br.getRegex("'You can download files up to ([\\d\\.]+ ?(MB|GB)) in free mode<").getMatch(0);
             if (freedlsizelimit != null) throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.rapidgatornet.only4premium", "No free download link for this file"));
             final String reconnectWait = br.getRegex("Delay between downloads must be not less than (\\d+) min\\.<br>Don`t want to wait\\? <a style=\"").getMatch(0);
             if (reconnectWait != null) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, (Integer.parseInt(reconnectWait) + 1) * 60 * 1000l);
@@ -375,8 +375,8 @@ public class RapidGatorNet extends PluginForHost {
                     captcha.put("adcopy_response", code);
 
                 } else if (br.containsHTML("//api\\.adscapchta\\.com/")) {
-                    String captchaAdress = captcha.getRegex("<iframe src=\'(http://api\\.adscaptcha\\.com/NoScript\\.aspx\\?CaptchaId=\\d+\\&PublicKey=[^\'<>]+)").getMatch(0);
-                    String captchaType = new Regex(captchaAdress, "CaptchaId=(\\d+)\\&").getMatch(0);
+                    String captchaAdress = captcha.getRegex("<iframe src=\'(http://api\\.adscaptcha\\.com/NoScript\\.aspx\\?CaptchaId=\\d+&PublicKey=[^\'<>]+)").getMatch(0);
+                    String captchaType = new Regex(captchaAdress, "CaptchaId=(\\d+)&").getMatch(0);
                     if (captchaAdress == null || captchaType == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
 
                     if (!"3017".equals(captchaType)) {
@@ -410,13 +410,13 @@ public class RapidGatorNet extends PluginForHost {
                 }
             }
 
-            String dllink = br.getRegex("\\'(http://[A-Za-z0-9\\-_]+\\.rapidgator\\.net//\\?r=download/index\\&session_id=[A-Za-z0-9]+)\\'").getMatch(0);
-            if (dllink == null) dllink = br.getRegex("\\'(http://[A-Za-z0-9\\-_]+\\.rapidgator\\.net//\\?r=download/index\\&session_id=[A-Za-z0-9]+)\\'").getMatch(0);
+            String dllink = br.getRegex("'(http://[A-Za-z0-9\\-_]+\\.rapidgator\\.net//\\?r=download/index&session_id=[A-Za-z0-9]+)'").getMatch(0);
+            if (dllink == null) dllink = br.getRegex("'(http://[A-Za-z0-9\\-_]+\\.rapidgator\\.net//\\?r=download/index&session_id=[A-Za-z0-9]+)'").getMatch(0);
             // Old regex
-            if (dllink == null) dllink = br.getRegex("location\\.href = \\'(http://.*?)\\'").getMatch(0);
+            if (dllink == null) dllink = br.getRegex("location\\.href = '(http://.*?)'").getMatch(0);
             if (dllink == null) {
                 logger.info(br.toString());
-                if (br.getRegex("location\\.href = \\'/\\?r=download/index\\&session_id=[A-Za-z0-9]+\\'").matches()) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                if (br.getRegex("location\\.href = '/\\?r=download/index&session_id=[A-Za-z0-9]+'").matches()) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
@@ -459,7 +459,7 @@ public class RapidGatorNet extends PluginForHost {
             return ai;
         }
         ai.setUnlimitedTraffic();
-        if (account.getBooleanProperty("nopremium")) {
+        if (account.getBooleanProperty("free")) {
             ai.setStatus("Registered (free) User");
             try {
                 maxPrem.set(1);
@@ -470,7 +470,7 @@ public class RapidGatorNet extends PluginForHost {
                 // not available in old Stable 0.9.581
             }
         } else {
-            final String expire = br.getRegex("Premium till (\\d{4}\\-\\d{2}\\-\\d{2})").getMatch(0);
+            final String expire = br.getRegex("Premium till (\\d{4}-\\d{2}-\\d{2})").getMatch(0);
             if (expire == null) {
                 account.setValid(false);
                 return ai;
@@ -541,10 +541,10 @@ public class RapidGatorNet extends PluginForHost {
                     logger.info("disabled because of" + br.toString());
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
-                if (br.containsHTML("Account:\\&nbsp;<a href=\"/article/premium\">Free</a>")) {
-                    account.setProperty("nopremium", true);
+                if (br.containsHTML("Account:&nbsp;<a href=\"/article/premium\">Free</a>")) {
+                    account.setProperty("free", true);
                 } else {
-                    account.setProperty("nopremium", false);
+                    account.setProperty("free", false);
                 }
                 // Save cookies
                 final HashMap<String, String> cookies = new HashMap<String, String>();
@@ -556,7 +556,7 @@ public class RapidGatorNet extends PluginForHost {
                 account.setProperty("pass", Encoding.urlEncode(account.getPass()));
                 account.setProperty("cookies", cookies);
             } catch (final PluginException e) {
-                account.setProperty("cookies", null);
+                account.setProperty("cookies", Property.NULL);
                 throw e;
             }
         }
@@ -565,11 +565,27 @@ public class RapidGatorNet extends PluginForHost {
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         requestFileInformation(link);
+        logger.info("Performing cached login sequence!!");
         login(account, false);
-        prepareBrowser(br);
-        br.setFollowRedirects(false);
-        br.getPage(link.getDownloadURL());
-        if (account.getBooleanProperty("nopremium")) {
+        int repeat = 2;
+        for (int i = 0; i <= repeat; i++) {
+            br.setFollowRedirects(false);
+            br.getPage(link.getDownloadURL());
+            if (br.getCookie(MAINPAGE, "user__") == null && i + 1 != repeat) {
+                // lets login fully again, as hoster as removed premium cookie for some unknown reason...
+                logger.info("Performing full login sequence!!");
+                br = new Browser();
+                login(account, true);
+                continue;
+            } else if (br.getCookie(MAINPAGE, "user__") == null && i + 1 == repeat) {
+                // failure
+                logger.warning("handlePremium Failed! Please report to JDownloader Development Team.");
+                account.setProperty("cookies", Property.NULL);
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            } else
+                break;
+        }
+        if (account.getBooleanProperty("free")) {
             doFree(link);
         } else {
             String dllink = br.getRedirectLocation();
@@ -580,20 +596,29 @@ public class RapidGatorNet extends PluginForHost {
                     logger.info("JSRedirect in premium");
                     br.getPage(link.getDownloadURL() + "?" + reDirHash);
                 }
-                dllink = br.getRegex("var premium_download_link = \\'(http://[^<>\"\\']+)\\';").getMatch(0);
-                if (dllink == null) dllink = br.getRegex("\\'(http://pr_srv\\.rapidgator\\.net//\\?r=download/index\\&session_id=[A-Za-z0-9]+)\\'").getMatch(0);
-                if (dllink == null) dllink = br.getRegex("\\'(http://pr\\d+\\.rapidgator\\.net//\\?r=download/index\\&session_id=[A-Za-z0-9]+)\\'").getMatch(0);
+                dllink = br.getRegex("var premium_download_link = '(http://[^<>\"']+)';").getMatch(0);
                 if (dllink == null) {
-                    if (br.containsHTML("You have reached quota|You have reached daily quota of downloaded information for premium accounts")) {
-                        logger.info("You have reached daily quota of downloaded information for premium accounts");
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+                    dllink = br.getRegex("'(http://pr_srv\\.rapidgator\\.net//\\?r=download/index&session_id=[A-Za-z0-9]+)'").getMatch(0);
+                    if (dllink == null) {
+                        dllink = br.getRegex("'(http://pr\\d+\\.rapidgator\\.net//\\?r=download/index&session_id=[A-Za-z0-9]+)'").getMatch(0);
+                        if (dllink == null) {
+                            if (br.containsHTML("You have reached quota|You have reached daily quota of downloaded information for premium accounts")) {
+                                logger.info("You've reached daily download quota for " + account.getUser() + " account");
+                                AccountInfo ac = new AccountInfo();
+                                ac.setTrafficLeft(0);
+                                account.setAccountInfo(ac);
+                                throw new PluginException(LinkStatus.ERROR_RETRY);
+                            }
+                            if (br.getCookie(MAINPAGE, "user__") == null) {
+                                logger.info("Account seems to be invalid!");
+                                // throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                                account.setProperty("cookies", Property.NULL);
+                                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                            }
+                            logger.warning("Could not find 'dllink'. Please report to JDownloader Development Team");
+                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                        }
                     }
-                    logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
-                    if (br.getCookie(MAINPAGE, "user__") == null || "deleted".equalsIgnoreCase(br.getCookie(MAINPAGE, "user__"))) {
-                        logger.info("Account seems to be invalid!");
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    }
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
             }
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, Encoding.htmlDecode(dllink), true, 0);

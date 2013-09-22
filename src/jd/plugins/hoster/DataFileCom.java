@@ -62,9 +62,9 @@ public class DataFileCom extends PluginForHost {
         return "http://www.datafile.com/terms.html";
     }
 
-    private static final String  PREMIUMONLY           = "(\"Sorry\\. Only premium users can download this file\"|>This file can be downloaded only users with<br />Premium account!<)";
-    private static final boolean SKIPRECONNECTWAITTIME = true;
-    private static final boolean SKIPWAITTIME          = true;
+    private final String  PREMIUMONLY           = "(\"Sorry\\. Only premium users can download this file\"|>This file can be downloaded only users with<br />Premium account!<)";
+    private final boolean SKIPRECONNECTWAITTIME = true;
+    private final boolean SKIPWAITTIME          = true;
 
     /**
      * They have a linkchecker but it doesn't show filenames if they're not included in the URL: http://www.datafile.com/linkchecker.html
@@ -246,8 +246,7 @@ public class DataFileCom extends PluginForHost {
         final String space = br.getRegex(">Storage: <span class=\"lime\">([^<>\"]*?)</span>").getMatch(0);
         if (space != null) ai.setUsedSpace(space.trim());
         ai.setUnlimitedTraffic();
-        String expire = br.getRegex(">Premium Expires:</td>[\t\n\r ]+<td class=\"el\" >([\t\n\r ]+)?([^<>\"/\\&]*?) \\&nbsp;").getMatch(1);
-        if (expire == null) expire = br.getRegex("([a-zA-Z]{3} \\d{1,2}, \\d{4} \\d{1,2}:\\d{1,2})").getMatch(0);
+        String expire = br.getRegex("([a-zA-Z]{3} \\d{1,2}, \\d{4} \\d{1,2}:\\d{1,2})").getMatch(0);
         if (expire == null) {
             logger.info("JD could not detect account expire time, your account has been determined as a free account");
             account.setProperty("free", true);
@@ -268,10 +267,22 @@ public class DataFileCom extends PluginForHost {
         if (account.getBooleanProperty("free")) {
             br.getPage(downloadLink.getDownloadURL());
             // if the cached cookie expired, relogin.
-            if (br.getCookie(MAINPAGE, "auth_hash") == null) {
+            if (br.getCookie(MAINPAGE, "hash") == null || br.getCookie(MAINPAGE, "user") == null) {
                 synchronized (LOCK) {
                     account.setProperty("cookies", Property.NULL);
                     // if you retry, it can use another account...
+                    throw new PluginException(LinkStatus.ERROR_RETRY);
+                }
+            }
+            String redirect = br.getRedirectLocation();
+            if (redirect != null && redirect.contains("error.html?code=")) {
+                String errorCode = new Regex(redirect, "error\\.html\\?code=(\\d+)").getMatch(0);
+                if ("7".endsWith(errorCode)) {
+                    // reached daily download quota
+                    logger.info("You've reached daily download quota for " + account.getUser() + " account");
+                    AccountInfo ac = new AccountInfo();
+                    ac.setTrafficLeft(0);
+                    account.setAccountInfo(ac);
                     throw new PluginException(LinkStatus.ERROR_RETRY);
                 }
             }
