@@ -120,6 +120,7 @@ settings_sidebar_tooltip_enable_extension=Povoliť/zakázať toto rozšírenie
 system_download_doCRC2=[%s1] CRC prebieha
 system_download_doCRC2_failed=[%s1] CRC ZLYHALO
 system_download_doCRC2_success=[%s1] CRC OK
+system_download_errors_couldnotdelete=Nemožno odstrániť existujúcu časť súboru
 system_download_errors_couldnotoverwrite=Nemôžem prepísať aktuálny súbor
 system_download_errors_couldnotrename=Nemôžem premenovať tento diel
 system_download_errors_invalidoutputfile=Nesprávny výstupný súbor
