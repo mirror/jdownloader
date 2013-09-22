@@ -397,7 +397,7 @@ public class VidXTo extends PluginForHost {
             }
         }
         if (inValidate(dllink)) {
-            Form dlForm = getFormByKey(cbr, "op", "download2");
+            Form dlForm = getFormByKey(cbr, "op", "download1");
             if (dlForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             // how many forms deep do you want to try.
             int repeat = 2;
