@@ -23,6 +23,7 @@ GetIPAction_actionPerformed_d_msg=Hľadám IP routera
 GetIPAction_actionPerformed_d_title=Hľadať IP routera
 GetIPAction_getString_progress=Skenujem sieť...
 GetIPAction_getTooltipText_tt_2=Současná IP routeru: %s1. Klikněte sem pro skenování Vaší sítě a ověření této IP adresy.
+LiveHeaderDetectionWizard_runOnlineScan_collect=Skenovanie informácií o pripojení
 LiveHeaderDetectionWizard_runOnlineScan_notavailable_mm=Táto služba nie je v súčasnej dobe k dispozícii.\nSkúste to znova neskôr!
 LiveHeaderDetectionWizard_runOnlineScan_notavailable_t=Služba nie je dostupná
 LiveHeaderDetectionWizard_runOnlineScan_warning_badhost=IP adresa routera '%s1' je neplatná!
