@@ -105,7 +105,7 @@ public class VidXTo extends PluginForHost {
     // last XfileSharingProBasic compare :: 2.6.2.1
     // captchatype: null
     // other: no redirects
-    // mods:
+    // mods: wait on download1
 
     private void setConstants(final Account account) {
         if (account != null && account.getBooleanProperty("free")) {
@@ -391,13 +391,14 @@ public class VidXTo extends PluginForHost {
                 download1 = cleanForm(download1);
                 // end of backward compatibility
                 download1.remove("method_premium");
+                waitTime(System.currentTimeMillis(), downloadLink);
                 sendForm(download1);
                 checkErrors(downloadLink, account, false);
                 getDllink();
             }
         }
         if (inValidate(dllink)) {
-            Form dlForm = getFormByKey(cbr, "op", "download1");
+            Form dlForm = getFormByKey(cbr, "op", "download2");
             if (dlForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             // how many forms deep do you want to try.
             int repeat = 2;
