@@ -98,6 +98,8 @@ public abstract class PluginForHost extends Plugin {
      */
     protected transient ResponseList<?> lastChallengeResponse = null;
 
+    private boolean                     hasCaptchas           = false;
+
     public void setLastChallengeResponse(ResponseList<?> lastChallengeResponse) {
         this.lastChallengeResponse = lastChallengeResponse;
     }
@@ -232,6 +234,7 @@ public abstract class PluginForHost extends Plugin {
         final LinkStatus linkStatus = link.getLinkStatus();
         final String status = linkStatus.getStatusText();
         int latest = linkStatus.getLatestStatus();
+        this.hasCaptchas = true;
         try {
             linkStatus.setStatusText(_JDT._.gui_downloadview_statustext_jac());
             try {
@@ -943,7 +946,7 @@ public abstract class PluginForHost extends Plugin {
         /* you must distinguish between different acc types! */
         /* acc=null is no account */
         /* best save the information in accountinformation! */
-        return false;
+        return hasCaptchas;
     }
 
     /* do we have anticaptcha available for this host */
