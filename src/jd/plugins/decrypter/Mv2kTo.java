@@ -86,6 +86,10 @@ public class Mv2kTo extends PluginForDecrypt {
                         } else if (finallink.matches("http://flashx\\.tv/player/embed_player\\.php\\?vid=\\d+")) {
                             br2.setFollowRedirects(true);
                             br2.getPage(finallink);
+                            if (br2.containsHTML(">Video not found or deleted<")) {
+                                logger.info("Video not found or deleted");
+                                return decryptedLinks;
+                            }
                             finallink = br2.getRegex("\"(http://flashx\\.tv/video/[A-Z0-9]+/)").getMatch(0);
                         }
                         if (finallink != null) {
