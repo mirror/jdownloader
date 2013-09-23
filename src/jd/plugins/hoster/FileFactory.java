@@ -651,7 +651,7 @@ public class FileFactory extends PluginForHost {
                 }
             }
         }
-        if (br.containsHTML("This file has been deleted\\.|have been deleted")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("This file has been deleted\\.|have been deleted") || br.getURL().contains("error.php?code=254")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (br.containsHTML(NOT_AVAILABLE) && !br.containsHTML(NO_SLOT)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (br.containsHTML(SERVER_DOWN)) {

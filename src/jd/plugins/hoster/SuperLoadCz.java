@@ -210,7 +210,12 @@ public class SuperLoadCz extends PluginForHost {
             if (br.containsHTML("\"error\":\"invalidLink\"")) {
                 logger.info("Superload.cz says 'invalid link', disabling real host for 1 hour.");
                 tempUnavailableHoster(account, downloadLink, 60 * 60 * 1000l);
-            } else if (br.containsHTML("\"error\":\"fileNotFound\"")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+            } else if (br.containsHTML("\"error\":\"fileNotFound\"")) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            } else if (br.containsHTML("\"error\":\"unsupportedServer\"")) {
+                logger.info("Superload.cz says 'unsupported server', disabling real host for 1 hour.");
+                tempUnavailableHoster(account, downloadLink, 60 * 60 * 1000l);
+            }
             dllink = getJson("link");
             if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             dllink = dllink.replaceAll("\\\\", "");

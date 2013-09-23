@@ -1,5 +1,5 @@
 //    jDownloader - Downloadmanager
-//    Copyright (C) 2008  JD-Team support@jdownloader.org
+//    Copyright (C) 2013  JD-Team support@jdownloader.org
 //
 //    This program is free software: you can redistribute it and/or modify
 //    it under the terms of the GNU General Public License as published by
@@ -19,6 +19,7 @@ package jd.plugins.hoster;
 import java.io.IOException;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
@@ -27,8 +28,9 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.utils.JDUtilities;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "romhustler.net" }, urls = { "http://(www\\.)?romhustler\\.net/rom/[^<>\"/]+/[^<>\"/]+(/[^<>\"/]+)?" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "romhustler.net" }, urls = { "http://(www\\.)?romhustler\\.net/download/\\d+/[A-Za-z0-9/\\+=%]+" }, flags = { 0 })
 public class RomHustlerNet extends PluginForHost {
 
     public RomHustlerNet(PluginWrapper wrapper) {
@@ -43,12 +45,42 @@ public class RomHustlerNet extends PluginForHost {
         return 1;
     }
 
-    public void handleFree(DownloadLink downloadLink) throws Exception {
-        requestFileInformation(downloadLink);
-        final String dlink = br.getRegex("\"(/download/\\d+)\"").getMatch(0);
-        if (dlink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        br.getPage(dlink);
+    private static StringContainer agent = new StringContainer();
 
+    public static class StringContainer {
+        public String string = null;
+    }
+
+    public Browser prepBrowser(Browser prepBr) {
+        if (agent.string == null) {
+            /* we first have to load the plugin, before we can reference it */
+            JDUtilities.getPluginForHost("mediafire.com");
+            agent.string = jd.plugins.hoster.MediafireCom.stringUserAgent();
+        }
+        prepBr.getHeaders().put("User-Agent", agent.string);
+        prepBr.getHeaders().put("Accept-Language", "en-gb, en;q=0.9");
+        prepBr.getHeaders().put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
+        prepBr.setCustomCharset("utf-8");
+        prepBr.setFollowRedirects(true);
+        return prepBr;
+    }
+
+    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws PluginException, IOException {
+        this.setBrowserExclusive();
+        prepBrowser(br);
+        if (downloadLink.getBooleanProperty("offline", false)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        final String decrypterLink = downloadLink.getStringProperty("decrypterLink", null);
+        br.getPage(decrypterLink);
+        String jslink = br.getRegex("\"(/js/cache[a-z0-9\\-]+\\.js)\"").getMatch(0);
+        if (jslink != null) br.cloneBrowser().getPage("http://romhustler.net" + jslink);
+        br.getPage(downloadLink.getDownloadURL());
+        if (br.containsHTML(">404 \\- Page got lost")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        // don't worry about filename... set within decrypter should be good until download starts.
+        return AvailableStatus.TRUE;
+    }
+
+    public void handleFree(final DownloadLink downloadLink) throws Exception {
+        requestFileInformation(downloadLink);
         boolean skipWaittime = true;
         if (!skipWaittime) {
             int wait = 8;
@@ -57,13 +89,20 @@ public class RomHustlerNet extends PluginForHost {
             sleep(wait * 1001l, downloadLink);
         }
 
-        br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-        br.getPage("http://romhustler.net/link/" + new Regex(dlink, "(\\d+)$").getMatch(0) + "?_=" + System.currentTimeMillis());
-        String finallink = br.toString().trim();
-        if (finallink == null || !finallink.startsWith("http://") || finallink.length() > 500) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        String fuid = new Regex(downloadLink.getDownloadURL(), "/(\\d+)/").getMatch(0);
+        if (fuid == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        String ddlink = null;
+        if (true) {
+            Browser br2 = br.cloneBrowser();
+            br2.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+            br2.getHeaders().put("Content-Type", "application/x-www-form-urlencoded");
+            br2.getPage("/link/" + fuid + "?_=" + System.currentTimeMillis());
+            ddlink = br2.getRegex("(https?://romhustler\\.net/file/" + fuid + "/[A-Za-z0-9/\\+=%]+)").getMatch(0);
+        }
 
-        br.getHeaders().put("X-Requested-With", null);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, finallink, true, -4);
+        if (ddlink == null || !ddlink.startsWith("http") || ddlink.length() > 500) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, ddlink, true, -4);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -75,17 +114,6 @@ public class RomHustlerNet extends PluginForHost {
             downloadLink.setFinalFileName(filename);
         }
         dl.startDownload();
-    }
-
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws PluginException, IOException {
-        this.setBrowserExclusive();
-        br.setFollowRedirects(true);
-        br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML(">404 \\- Page got lost")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        final String name = br.getRegex("<title>Download ([^<>\"]*?) Rom / Iso").getMatch(0);
-        if (name == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        downloadLink.setName(Encoding.htmlDecode(name.trim()));
-        return AvailableStatus.TRUE;
     }
 
     public void reset() {
