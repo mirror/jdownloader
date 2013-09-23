@@ -106,6 +106,17 @@ public class FilesFlashCom extends PluginForHost {
         return -1;
     }
 
+    /* NO OVERRIDE!! */
+    public boolean hasCaptcha(DownloadLink link, Account acc) {
+
+        if (acc == null) {
+            /* no account, yes we can expect captcha */
+            return true;
+        }
+
+        return false;
+    }
+
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
