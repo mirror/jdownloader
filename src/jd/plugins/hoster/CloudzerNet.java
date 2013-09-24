@@ -74,7 +74,7 @@ public class CloudzerNet extends PluginForHost {
     private String                 LASTIP               = "LASTIP";
     private static StringContainer lastIP               = new StringContainer();
     private static final long      RECONNECTWAIT        = 10802000;
-    private static final String    EXPERIMENTALHANDLING = "EXPERIMENTALHANDLING";
+    private static final String    EXPERIMENTALHANDLING = "EXPERIMENTALHANDLING_2";
 
     private static void showFreeDialog(final String domain) {
         try {
@@ -391,7 +391,7 @@ public class CloudzerNet extends PluginForHost {
              * Reconnect handling to prevent having to enter a captcha just to see that a limit has been reached
              */
             logger.info("New Download: currentIP = " + currentIP);
-            if (hasDled.get() && ipChanged(currentIP, downloadLink) == false && this.getPluginConfig().getBooleanProperty(EXPERIMENTALHANDLING, false)) {
+            if (hasDled.get() && ipChanged(currentIP, downloadLink) == false && this.getPluginConfig().getBooleanProperty(EXPERIMENTALHANDLING, true)) {
                 long result = System.currentTimeMillis() - timeBefore.get();
                 if (result < RECONNECTWAIT && result > 0) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, RECONNECTWAIT - result);
             }
@@ -418,7 +418,7 @@ public class CloudzerNet extends PluginForHost {
             String wait = br.getRegex("Aktuelle Wartezeit: <span>(\\d+)</span> Sekunden</span>").getMatch(0);
             if (rcID == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             if (wait == null) {
-                wait = "30";
+                wait = "1";
             }
             br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
             br.postPage("http://cloudzer.net/io/ticket/slot/" + getID(downloadLink), "");
@@ -500,6 +500,13 @@ public class CloudzerNet extends PluginForHost {
             if (account != null) account.setProperty("LASTDOWNLOAD", System.currentTimeMillis());
             dl.startDownload();
             hasDled.set(true);
+        } catch (PluginException e) {
+            if (e.getLinkStatus() == LinkStatus.ERROR_IP_BLOCKED) {
+                hasDled.set(true);
+            } else {
+                hasDled.set(false);
+            }
+            throw e;
         } catch (Exception e) {
             hasDled.set(false);
             throw e;
