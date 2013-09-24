@@ -26,7 +26,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "electropeople.org" }, urls = { "http://(www\\.)?electropeople\\.org/\\d+\\-[^/<>\"]+\\.html" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "electropeople.org" }, urls = { "http://(www\\.)?electropeople\\.org/(\\d+\\-[^/<>\"]+|\\d{4}/\\d{2}/\\d{2}/[a-z0-9\\-]+)\\.html" }, flags = { 0 })
 public class ElectroPplOrg extends PluginForDecrypt {
 
     public ElectroPplOrg(PluginWrapper wrapper) {

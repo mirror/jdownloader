@@ -66,7 +66,6 @@ public class DocsGoogleCom extends PluginForDecrypt {
         }
 
         String fpName = br.getRegex("\"title\":\"([^\"]+)\",\"urlPrefix\"").getMatch(0);
-        if (fpName == null) fpName = br.getRegex("").getMatch(0);
 
         String[] results = br.getRegex("(\\{\"description\":[^\\}]+),").getColumn(0);
         // if (results == null || results.length == 0) {

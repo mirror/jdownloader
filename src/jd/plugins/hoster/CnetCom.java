@@ -47,8 +47,11 @@ public class CnetCom extends PluginForHost {
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
         if (br.containsHTML("(>Whoops\\! You broke the Internet\\!<|>No, really,  it looks like you clicked on a borked link)") || br.getURL().contains("/most-popular/")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        // External mirrors are of course not supported
+        if (br.containsHTML(">Visit Site<")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("<meta property=\"og:title\" content=\"([^<>\"]*?)\"").getMatch(0);
         if (filename == null) filename = br.getRegex("<title>([^<>\"]*?) \\- CNET Download\\.com</title>").getMatch(0);
+        if (filename == null) filename = br.getRegex("\\&fileName=([^<>\"]*?)(\\'|\")").getMatch(0);
         String filesize = br.getRegex(">File size:</span>([^<>\"]*?)</li>").getMatch(0);
         if (filesize == null) filesize = br.getRegex(">File Size:</span> <span>([^<>\"]*?)</span>").getMatch(0);
         if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -61,14 +64,17 @@ public class CnetCom extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        if (br.containsHTML("class=\"dlNowCTA\">Visit Site</span>")) throw new PluginException(LinkStatus.ERROR_FATAL, "Not downloadable (external download, see browser)");
-        String continueLink = br.getRegex("class=\"downloadNow\"> <a href=\"(http[^<>\"]*?)\"").getMatch(0);
-        if (continueLink == null) continueLink = br.getRegex("\"(http://(www\\.)?dw\\.com\\.com/redir\\?[^<>\"]*?)\"").getMatch(0);
-        if (continueLink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        br.getPage(continueLink);
-        String dllink = br.getRegex("src:\\'(http[^<>\"]*?)\\'").getMatch(0);
-        if (dllink == null) dllink = br.getRegex("\\'(http://software\\-files\\-[a-z0-9]+\\.cnet\\.com/s/software/[^<>\"]*?)\\'").getMatch(0);
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        // Maybe we're already on the download page
+        String dllink = br.getRegex("\\'(http://software\\-files\\-[a-z0-9]+\\.cnet\\.com/s/software/[^<>\"]*?)\\'").getMatch(0);
+        if (dllink == null) {
+            String continueLink = br.getRegex("class=\"downloadNow\"> <a href=\"(http[^<>\"]*?)\"").getMatch(0);
+            if (continueLink == null) continueLink = br.getRegex("\"(http://(www\\.)?dw\\.com\\.com/redir\\?[^<>\"]*?)\"").getMatch(0);
+            if (continueLink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            br.getPage(continueLink);
+            dllink = br.getRegex("src:\\'(http[^<>\"]*?)\\'").getMatch(0);
+            if (dllink == null) dllink = br.getRegex("\\'(http://software\\-files\\-[a-z0-9]+\\.cnet\\.com/s/software/[^<>\"]*?)\\'").getMatch(0);
+            if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();

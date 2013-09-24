@@ -93,7 +93,7 @@ public class BoxNet extends PluginForHost {
             // Last compare link: https://app.box.com/s/ubpk2k11ttpcq40vbrww
             String fileID = parameter.getStringProperty("fileid", null);
             if (fileID == null) {
-                br.getPage(parameter.getBrowserUrl());
+                br.getPage(parameter.getDownloadURL());
                 if (br.containsHTML("(this shared file or folder link has been removed|<title>Box \\- Free Online File Storage, Internet File Sharing, RSS Sharing, Access Documents \\&amp; Files Anywhere, Backup Data, Share Files</title>)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 if (br.getURL().equals("https://www.box.com/freeshare")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 fileID = br.getRegex("var file_id = \\'(\\d+)\\'").getMatch(0);

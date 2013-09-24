@@ -28,7 +28,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "8tracks.com" }, urls = { "http://(www\\.)?8tracks\\.com/(?!assets_js/|explore|auth|settings|mixes)[\\w\\-]+/[\\w\\-]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "8tracks.com" }, urls = { "http://(www\\.)?8tracks\\.com/(?!assets_js/|explore|auth|settings|mixes)[\\w\\-]+/(?!homepage)[\\w\\-]+" }, flags = { 0 })
 public class EightTracksCom extends PluginForDecrypt {
 
     private static final String MAINPAGE = "http://8tracks.com/";

@@ -223,7 +223,7 @@ public class MixtureCloudCom extends PluginForHost {
     }
 
     private void checkErrors() throws Exception {
-        if (br.containsHTML("(There is no file here<|404: page not found \\!<)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML(">Not found|Sorry, but the page you were trying to view")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (br.containsHTML("In response to a complaint received under the US Digital Millennium Copyright Act, you can't access to this file")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (br.containsHTML("Sie haben in den letzten 30 Minuten eine Datei")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 30 * 60 * 1001l);
     }

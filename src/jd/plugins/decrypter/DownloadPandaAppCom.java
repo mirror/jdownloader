@@ -41,7 +41,7 @@ public class DownloadPandaAppCom extends PluginForDecrypt {
         br.setFollowRedirects(true);
         br.getPage(parameter);
         br.setFollowRedirects(false);
-        if (br.getURL().equals("http://www.pandaapp.com/error/")) {
+        if (br.getURL().equals("http://www.pandaapp.com/error/") || br.containsHTML("Sorry,this software does not exist or has been deleted")) {
             logger.info("Link offline: " + parameter);
             return decryptedLinks;
         }

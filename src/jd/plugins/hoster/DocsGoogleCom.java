@@ -18,6 +18,7 @@ package jd.plugins.hoster;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
+import jd.http.Browser.BrowserException;
 import jd.nutils.encoding.HTMLEntities;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
@@ -94,8 +95,12 @@ public class DocsGoogleCom extends PluginForHost {
     public AvailableStatus requestFileInformation(DownloadLink link) throws Exception {
         this.setBrowserExclusive();
         prepBrowser(br);
-        br.getPage("https://docs.google.com/leaf?id=" + getID(link));
-        if (br.containsHTML("<p class=\"error\\-caption\">Sorry, we are unable to retrieve this document\\.</p>")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+        try {
+            br.getPage("https://docs.google.com/leaf?id=" + getID(link));
+        } catch (final BrowserException e) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        if (br.containsHTML("<p class=\"error\\-caption\">Sorry, we are unable to retrieve this document\\.</p>")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("\"filename\":\"([^\"]+)\",").getMatch(0);
         String size = br.getRegex("\"sizeInBytes\":(\\d+),").getMatch(0);
         if (filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
