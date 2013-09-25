@@ -225,6 +225,11 @@ public class DownloadsAPIImpl implements DownloadsAPI {
                 infomap.put("url", dl.getBrowserUrl());
             }
             if (queryParams.fieldRequested("enabled")) infomap.put("enabled", dl.isEnabled());
+            if (queryParams.fieldRequested("extractionStatus")) {
+                if (dl.getExtractionStatus() != null) {
+                    infomap.put("extractionStatus", dl.getExtractionStatus().toString());
+                }
+            }
 
             infomap.put("packageUUID", dl.getParentNode().getUniqueID().getID());
 
