@@ -55,6 +55,7 @@ import javax.swing.JLayeredPane;
 import javax.swing.JPanel;
 import javax.swing.JProgressBar;
 import javax.swing.JSlider;
+import javax.swing.SwingUtilities;
 import javax.swing.Timer;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
@@ -151,9 +152,17 @@ public class LnkCrptWs extends PluginForDecrypt {
             if (challenge == null || publicKey == null) throw new Exception("AdsCaptcha: challenge and/or publickey equal null!");
 
             if (!isStableEnviroment()) {
-                SliderCaptchaDialog sc = new SliderCaptchaDialog(0, "AdsCaptcha - " + br.getHost(), imageUrls());
-                sc.displayDialog();
-                result = sc.getReturnValue();
+                final URL[] images = imageUrls();
+                SwingUtilities.invokeAndWait(new Runnable() {
+
+                    @Override
+                    public void run() {
+                        SliderCaptchaDialog sc = new SliderCaptchaDialog(0, "AdsCaptcha - " + br.getHost(), images);
+                        sc.displayDialog();
+                        result = sc.getReturnValue();
+                    }
+                });
+
             } else {
                 throw new Exception("AdsCaptcha: currently not available in JD1!");
             }

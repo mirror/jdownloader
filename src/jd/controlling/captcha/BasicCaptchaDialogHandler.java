@@ -39,6 +39,7 @@ public class BasicCaptchaDialogHandler extends ChallengeDialogHandler<BasicCaptc
 
         CaptchaDialog d = new CaptchaDialog(flag, dialogType, getHost(), images, captchaChallenge.getExplain()) {
             public void dispose() {
+
                 super.dispose();
                 synchronized (BasicCaptchaDialogHandler.this) {
 
@@ -54,9 +55,19 @@ public class BasicCaptchaDialogHandler extends ChallengeDialogHandler<BasicCaptc
             d.setCountdownPausable(false);
         }
         dialog = d;
-        if (suggest != null) dialog.suggest(suggest);
+        if (suggest != null) {
+            new EDTRunner() {
+
+                @Override
+                protected void runInEDT() {
+                    dialog.suggest(suggest);
+                }
+            }.waitForEDT();
+
+        }
         // don't put this in the edt
         showDialog(dialog);
+        System.out.println(1);
         new EDTHelper<Object>() {
 
             @Override
@@ -105,14 +116,14 @@ public class BasicCaptchaDialogHandler extends ChallengeDialogHandler<BasicCaptc
             }
         }.waitForEDT();
         try {
-            while (dialog.getDialog().isVisible()) {
+            while (dialog.getDialog().isDisplayable()) {
                 synchronized (this) {
 
                     this.wait(1000);
 
                 }
             }
-
+            System.out.println(1);
         } catch (InterruptedException e) {
             throw new DialogClosedException(Dialog.RETURN_INTERRUPT);
         } finally {

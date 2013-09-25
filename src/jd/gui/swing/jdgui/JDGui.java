@@ -757,9 +757,8 @@ public class JDGui implements UpdaterListener, OwnerFinder {
                     throw e;
                 } catch (Exception e) {
                     logger.log(e);
-                } finally {
-                    dialog.resetDummyInit();
                 }
+                dialog.resetDummyInit();
                 return Dialog.getInstance().getDefaultHandler().showDialog(dialog);
                 // }
 

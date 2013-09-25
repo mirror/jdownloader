@@ -116,9 +116,8 @@ public abstract class ChallengeDialogHandler<T extends ImageCaptchaChallenge<?>>
                     throw e;
                 } catch (Exception e) {
                     logger.log(e);
-                } finally {
-                    dialog.resetDummyInit();
                 }
+                dialog.resetDummyInit();
 
                 new EDTRunner() {
 
