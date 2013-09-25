@@ -14,6 +14,7 @@ import jd.plugins.FilePackage;
 
 import org.appwork.exceptions.WTFException;
 import org.appwork.scheduler.DelayedRunnable;
+import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.swing.EDTRunner;
 import org.jdownloader.controlling.contextmenu.ActionData;
 import org.jdownloader.controlling.contextmenu.ContextMenuManager;
@@ -81,7 +82,8 @@ public class MainMenuManager extends ContextMenuManager<FilePackage, DownloadLin
     }
 
     /**
-     * Create a new instance of DownloadListContextMenuManager. This is a singleton class. Access the only existing instance by using {@link #getInstance()}.
+     * Create a new instance of DownloadListContextMenuManager. This is a singleton class. Access the only existing instance by using
+     * {@link #getInstance()}.
      */
 
     private MainMenuManager() {
@@ -120,7 +122,9 @@ public class MainMenuManager extends ContextMenuManager<FilePackage, DownloadLin
         mr.setSource(VERSION);
 
         mr.add(createFileMenu());
-        mr.add(createSettingsMenu());
+        if (!CrossSystem.isMac()) {
+            mr.add(createSettingsMenu());
+        }
         mr.add(createAddonsMenu());
         // mr.add(createAddonsMenu());
         mr.add(createAboutMenu());
