@@ -10,6 +10,7 @@ import jd.controlling.downloadcontroller.DownloadController;
 import jd.controlling.linkcollector.LinkCollectingJob;
 import jd.controlling.linkcollector.LinkCollector;
 import jd.controlling.linkcrawler.CrawledLink;
+import jd.controlling.linkcrawler.CrawledLink.LinkState;
 import jd.controlling.linkcrawler.CrawledPackage;
 import jd.controlling.linkcrawler.CrawledPackageView;
 import jd.controlling.packagecontroller.AbstractPackageChildrenNodeFilter;
@@ -66,7 +67,29 @@ public class LinkCollectorAPIImpl implements LinkCollectorAPI {
                     infomap.put("hosts", hosts);
                 }
                 if (queryParams._getQueryParam("availability", Boolean.class, false)) {
-                    infomap.put("availability", pkg.getChildren().get(0).getLinkState());
+                    // Does not make much sense?
+                    String availabilityString = "";
+                    int onlineCount = 0;
+                    for (CrawledLink cl : pkg.getChildren()) {
+                        if (LinkState.ONLINE.equals(cl.getLinkState())) {
+                            onlineCount++;
+                        }
+                    }
+                    if (onlineCount == pkg.getChildren().size()) {
+                        availabilityString = "ONLINE";
+                    } else {
+                        availabilityString = "UNKNOWN";
+                    }
+                    infomap.put("availability", availabilityString);
+                }
+                if (queryParams._getQueryParam("availabilityCount", Boolean.class, false)) {
+                    int onlineCount = 0;
+                    for (CrawledLink cl : pkg.getChildren()) {
+                        if (LinkState.ONLINE.equals(cl.getLinkState())) {
+                            onlineCount++;
+                        }
+                        infomap.put("availabilityCount", onlineCount);
+                    }
                 }
                 if (queryParams.fieldRequested("enabled")) {
                     boolean enabled = false;
