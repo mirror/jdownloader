@@ -31,6 +31,7 @@ import jd.controlling.linkcollector.LinkCollectingJob;
 import jd.controlling.linkcollector.LinkCollector;
 import jd.gui.swing.dialog.AboutDialog;
 import jd.gui.swing.jdgui.JDGui;
+import jd.gui.swing.jdgui.views.settings.ConfigurationView;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
@@ -286,6 +287,8 @@ public class MacOSApplicationAdapter implements QuitHandler, AboutHandler, Prefe
     public void handlePreferences(PreferencesEvent e) {
 
         appReOpened(null);
+        JsonConfig.create(GraphicalUserInterfaceSettings.class).setConfigViewVisible(true);
+        JDGui.getInstance().setContent(ConfigurationView.getInstance(), true);
     }
 
     public void handleAbout(AboutEvent e) {
