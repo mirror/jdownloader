@@ -413,7 +413,7 @@ public abstract class AbstractNotifyWindow<T extends JComponent> extends ExtJWin
         }
         fader.fadeOut(getFadeSpeed());
         if (endLocation != null) fader.moveTo(endLocation.x, endLocation.y, getFadeSpeed());
-        controller.remove(this);
+        if (controller != null) controller.remove(this);
         // dispose();
 
     }

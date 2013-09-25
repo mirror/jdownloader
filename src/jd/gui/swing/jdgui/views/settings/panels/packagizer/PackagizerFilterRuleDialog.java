@@ -31,11 +31,6 @@ import jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter.editdialog.Fil
 import jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter.test.TestWaitDialog;
 import jd.gui.swing.jdgui.views.settings.panels.packagizer.test.PackagizerSingleTestTableModel;
 
-import org.appwork.app.gui.copycutpaste.CopyAction;
-import org.appwork.app.gui.copycutpaste.CutAction;
-import org.appwork.app.gui.copycutpaste.DeleteAction;
-import org.appwork.app.gui.copycutpaste.PasteAction;
-import org.appwork.app.gui.copycutpaste.SelectAction;
 import org.appwork.swing.MigPanel;
 import org.appwork.swing.components.ExtCheckBox;
 import org.appwork.swing.components.ExtSpinner;
@@ -413,7 +408,7 @@ public class PackagizerFilterRuleDialog extends ConditionDialog<PackagizerRule> 
             }
 
             @Override
-            public JPopupMenu getPopupMenu(ExtTextField txt, CutAction cutAction, CopyAction copyAction, PasteAction pasteAction, DeleteAction deleteAction, SelectAction selectAction) {
+            public JPopupMenu getPopupMenu(ExtTextField txt, AbstractAction cutAction, AbstractAction copyAction, AbstractAction pasteAction, AbstractAction deleteAction, AbstractAction selectAction) {
                 JPopupMenu menu = new JPopupMenu();
                 JMenu sub = createVariablesMenu(txt);
 
@@ -468,7 +463,7 @@ public class PackagizerFilterRuleDialog extends ConditionDialog<PackagizerRule> 
             private static final long serialVersionUID = 1L;
 
             @Override
-            public JPopupMenu getPopupMenu(CutAction cutAction, CopyAction copyAction, PasteAction pasteAction, DeleteAction deleteAction, SelectAction selectAction) {
+            public JPopupMenu getPopupMenu(AbstractAction cutAction, AbstractAction copyAction, AbstractAction pasteAction, AbstractAction deleteAction, AbstractAction selectAction) {
                 JPopupMenu menu = new JPopupMenu();
                 menu.add(createVariablesMenu(txtPackagename));
                 menu.add(new JSeparator());
@@ -489,7 +484,7 @@ public class PackagizerFilterRuleDialog extends ConditionDialog<PackagizerRule> 
             private static final long serialVersionUID = 1L;
 
             @Override
-            public JPopupMenu getPopupMenu(CutAction cutAction, CopyAction copyAction, PasteAction pasteAction, DeleteAction deleteAction, SelectAction selectAction) {
+            public JPopupMenu getPopupMenu(AbstractAction cutAction, AbstractAction copyAction, AbstractAction pasteAction, AbstractAction deleteAction, AbstractAction selectAction) {
                 JPopupMenu menu = new JPopupMenu();
                 menu.add(createVariablesMenu(txtNewFilename));
                 menu.add(new JSeparator());
@@ -587,7 +582,7 @@ public class PackagizerFilterRuleDialog extends ConditionDialog<PackagizerRule> 
             }
 
             @Override
-            public JPopupMenu getPopupMenu(ExtTextField txt, CutAction cutAction, CopyAction copyAction, PasteAction pasteAction, DeleteAction deleteAction, SelectAction selectAction) {
+            public JPopupMenu getPopupMenu(ExtTextField txt, AbstractAction cutAction, AbstractAction copyAction, AbstractAction pasteAction, AbstractAction deleteAction, AbstractAction selectAction) {
                 JPopupMenu menu = new JPopupMenu();
                 JMenu sub = createVariablesMenu(txt);
 
@@ -617,7 +612,7 @@ public class PackagizerFilterRuleDialog extends ConditionDialog<PackagizerRule> 
             private static final long serialVersionUID = 1L;
 
             @Override
-            public JPopupMenu getPopupMenu(CutAction cutAction, CopyAction copyAction, PasteAction pasteAction, DeleteAction deleteAction, SelectAction selectAction) {
+            public JPopupMenu getPopupMenu(AbstractAction cutAction, AbstractAction copyAction, AbstractAction pasteAction, AbstractAction deleteAction, AbstractAction selectAction) {
                 JPopupMenu menu = new JPopupMenu();
                 menu.add(createVariablesMenu(txtRename));
                 menu.add(new JSeparator());

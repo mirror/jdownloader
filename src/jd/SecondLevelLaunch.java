@@ -60,7 +60,6 @@ import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.utils.JDUtilities;
 
-import org.appwork.app.gui.copycutpaste.CopyPasteSupport;
 import org.appwork.controlling.SingleReachableState;
 import org.appwork.shutdown.ShutdownController;
 import org.appwork.shutdown.ShutdownEvent;
@@ -538,9 +537,9 @@ public class SecondLevelLaunch {
                     @Override
                     public void run() {
                         try {
-                            //DO NOT REMOVE THIS LINE
-                            do not remove me, ask jiaz!
-                            
+                            // DO NOT REMOVE THIS LINE
+                             do not remove me, ask jiaz!
+
                             boolean jared = Application.isJared(SecondLevelLaunch.class);
                             ToolTipController.getInstance().setDelay(JsonConfig.create(GraphicalUserInterfaceSettings.class).getTooltipDelay());
                             Thread.currentThread().setName("ExecuteWhenGuiReachedThread: Init Host Plugins");
@@ -699,7 +698,7 @@ public class SecondLevelLaunch {
                     JDGui.init();
                     // init Archivecontroller.init has to be done AFTER downloadcontroller and linkcollector
                     ArchiveController.getInstance();
-                    Toolkit.getDefaultToolkit().addAWTEventListener(new CopyPasteSupport(), AWTEvent.MOUSE_EVENT_MASK);
+                    Toolkit.getDefaultToolkit().addAWTEventListener(new CustomCopyPasteSupport(), AWTEvent.MOUSE_EVENT_MASK);
 
                     SecondLevelLaunch.LOG.info("GUIDONE->" + (System.currentTimeMillis() - SecondLevelLaunch.startup));
                 } catch (Throwable e) {

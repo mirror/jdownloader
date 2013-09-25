@@ -2,6 +2,7 @@ package jd.gui.swing.jdgui.views.settings.components;
 
 import java.io.File;
 
+import javax.swing.AbstractAction;
 import javax.swing.JPopupMenu;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
@@ -11,11 +12,6 @@ import javax.swing.event.PopupMenuListener;
 import jd.controlling.downloadcontroller.DownloadWatchDog;
 import jd.gui.swing.jdgui.views.settings.panels.packagizer.VariableAction;
 
-import org.appwork.app.gui.copycutpaste.CopyAction;
-import org.appwork.app.gui.copycutpaste.CutAction;
-import org.appwork.app.gui.copycutpaste.DeleteAction;
-import org.appwork.app.gui.copycutpaste.PasteAction;
-import org.appwork.app.gui.copycutpaste.SelectAction;
 import org.appwork.swing.components.ExtTextField;
 import org.appwork.swing.components.pathchooser.PathChooser;
 import org.appwork.uio.UIOManager;
@@ -75,7 +71,7 @@ public class FolderChooser extends PathChooser implements SettingsComponent {
     }
 
     @Override
-    public JPopupMenu getPopupMenu(ExtTextField txt, CutAction cutAction, CopyAction copyAction, PasteAction pasteAction, DeleteAction deleteAction, SelectAction selectAction) {
+    public JPopupMenu getPopupMenu(ExtTextField txt, AbstractAction cutAction, AbstractAction copyAction, AbstractAction pasteAction, AbstractAction deleteAction, AbstractAction selectAction) {
         JPopupMenu menu = new JPopupMenu();
         menu.add(new VariableAction(txt, _GUI._.PackagizerFilterRuleDialog_createVariablesMenu_date(), "<jd:" + PackagizerController.SIMPLEDATE + ":dd.MM.yyyy>"));
         menu.add(new VariableAction(txt, _GUI._.PackagizerFilterRuleDialog_createVariablesMenu_packagename(), "<jd:" + PackagizerController.PACKAGENAME + ">"));

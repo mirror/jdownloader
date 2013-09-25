@@ -15,6 +15,7 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.logging.Level;
 
+import javax.swing.AbstractAction;
 import javax.swing.BorderFactory;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
@@ -38,11 +39,6 @@ import jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter.editdialog.Onl
 import jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter.editdialog.PluginStatusFilter.PluginStatus;
 import jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter.editdialog.PluginStatusFilter.PluginStatusMatchtype;
 
-import org.appwork.app.gui.copycutpaste.CopyAction;
-import org.appwork.app.gui.copycutpaste.CutAction;
-import org.appwork.app.gui.copycutpaste.DeleteAction;
-import org.appwork.app.gui.copycutpaste.PasteAction;
-import org.appwork.app.gui.copycutpaste.SelectAction;
 import org.appwork.swing.AutoScroller;
 import org.appwork.swing.MigPanel;
 import org.appwork.swing.components.ExtButton;
@@ -403,7 +399,7 @@ public abstract class ConditionDialog<T> extends AbstractDialog<T> {
         txtFilename = new ExtTextField() {
 
             @Override
-            public JPopupMenu getPopupMenu(CutAction cutAction, CopyAction copyAction, PasteAction pasteAction, DeleteAction deleteAction, SelectAction selectAction) {
+            public JPopupMenu getPopupMenu(AbstractAction cutAction, AbstractAction copyAction, AbstractAction pasteAction, AbstractAction deleteAction, AbstractAction selectAction) {
                 JPopupMenu menu = new JPopupMenu();
                 menu.add(new TestAction(getFilenameFilter(), _GUI._.ConditionDialog_getPopupMenu_filename_()));
                 menu.add(new JSeparator());
@@ -573,7 +569,7 @@ public abstract class ConditionDialog<T> extends AbstractDialog<T> {
         txtCustumMime = new ExtTextField() {
 
             @Override
-            public JPopupMenu getPopupMenu(CutAction cutAction, CopyAction copyAction, PasteAction pasteAction, DeleteAction deleteAction, SelectAction selectAction) {
+            public JPopupMenu getPopupMenu(AbstractAction cutAction, AbstractAction copyAction, AbstractAction pasteAction, AbstractAction deleteAction, AbstractAction selectAction) {
                 JPopupMenu menu = new JPopupMenu();
                 menu.add(new TestAction(getFiletypeFilter(), _GUI._.ConditionDialog_getPopupMenu_filename_()));
                 menu.add(new JSeparator());
@@ -627,7 +623,7 @@ public abstract class ConditionDialog<T> extends AbstractDialog<T> {
         txtHoster = new ExtTextField() {
 
             @Override
-            public JPopupMenu getPopupMenu(CutAction cutAction, CopyAction copyAction, PasteAction pasteAction, DeleteAction deleteAction, SelectAction selectAction) {
+            public JPopupMenu getPopupMenu(AbstractAction cutAction, AbstractAction copyAction, AbstractAction pasteAction, AbstractAction deleteAction, AbstractAction selectAction) {
                 JPopupMenu menu = new JPopupMenu();
                 menu.add(new TestAction(getHosterFilter(), _GUI._.ConditionDialog_getPopupMenu_hosterurl_()));
                 menu.add(new JSeparator());
@@ -666,7 +662,7 @@ public abstract class ConditionDialog<T> extends AbstractDialog<T> {
         txtSource = new ExtTextField() {
 
             @Override
-            public JPopupMenu getPopupMenu(CutAction cutAction, CopyAction copyAction, PasteAction pasteAction, DeleteAction deleteAction, SelectAction selectAction) {
+            public JPopupMenu getPopupMenu(AbstractAction cutAction, AbstractAction copyAction, AbstractAction pasteAction, AbstractAction deleteAction, AbstractAction selectAction) {
                 JPopupMenu menu = new JPopupMenu();
                 menu.add(new TestAction(getSourceFilter(), _GUI._.ConditionDialog_getPopupMenu_sourceurl_()));
                 menu.add(new JSeparator());

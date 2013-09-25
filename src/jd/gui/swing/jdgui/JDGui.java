@@ -252,6 +252,7 @@ public class JDGui implements UpdaterListener, OwnerFinder {
             logger.log(e1);
         }
         BubbleNotify.getInstance();
+
     }
 
     public void disposeView(View view) {
