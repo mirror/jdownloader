@@ -41,7 +41,7 @@ import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fernsehkritik.tv" }, urls = { "http://(couch\\.)?fernsehkritik\\.tv/(jdownloaderfolge\\d+(\\-\\d)?\\.flv|inline\\-video/postecke\\.php\\?iframe=true\\&width=\\d+\\&height=\\d+\\&ep=\\d+|dl/fernsehkritik\\d+\\.[a-z0-9]{1,4}|folge-\\d+.*|userbereich/archive#stream:\\d+)" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fernsehkritik.tv" }, urls = { "http://(couch\\.)?fernsehkritik\\.tv/(jdownloaderfolge\\d+(\\-\\d)?\\.flv|inline\\-video/postecke\\.php\\?(iframe=true\\&width=\\d+\\&height=\\d+\\&ep=|ep=)\\d+|dl/fernsehkritik\\d+\\.[a-z0-9]{1,4}|folge-\\d+.*|userbereich/archive#stream:\\d+)" }, flags = { 2 })
 public class FernsehkritikTv extends PluginForHost {
 
     // Refactored on the 02.07.2011, Rev. 14521,
@@ -62,7 +62,7 @@ public class FernsehkritikTv extends PluginForHost {
         return -1;
     }
 
-    private static final String POSTECKE    = "http://fernsehkritik\\.tv/inline\\-video/postecke\\.php\\?iframe=true\\&width=\\d+\\&height=\\d+\\&ep=\\d+";
+    private static final String POSTECKE    = "http://fernsehkritik\\.tv/inline\\-video/postecke\\.php\\?(iframe=true\\&width=\\d+\\&height=\\d+\\&ep=|ep=)\\d+";
     private static final String COUCH       = "http://couch\\.fernsehkritik\\.tv.*";
     private static final String COUCHSTREAM = "http://couch\\.fernsehkritik\\.tv/userbereich/archive#stream:.*";
     private static final String COUCHHOST   = "http://couch.fernsehkritik.tv";

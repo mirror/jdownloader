@@ -132,7 +132,8 @@ public class EroProfileCom extends PluginForHost {
     }
 
     public void doFree(DownloadLink downloadLink) throws Exception {
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 0);
+        // Resume & chunks works but server will only send 99% of the data if used
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, false, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

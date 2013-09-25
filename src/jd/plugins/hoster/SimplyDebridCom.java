@@ -127,7 +127,11 @@ public class SimplyDebridCom extends PluginForHost {
 
     /** no override to keep plugin compatible to old stable */
     public void handleMultiHost(DownloadLink link, Account account) throws Exception {
-        String url = Encoding.urlEncode(link.getDownloadURL());
+        String url = link.getDownloadURL();
+        if (url.contains("clz.to/")) {
+            url = "http://cloudzer.net/file/" + new Regex(url, "([A-Za-z0-9]+)/?$").getMatch(0);
+        }
+        url = Encoding.urlEncode(url);
         String page = "";
         showMessage(link, "Phase 1/3: Get a valid session");
         if (!createSession(account)) {
@@ -151,6 +155,10 @@ public class SimplyDebridCom extends PluginForHost {
         } catch (Throwable e) {
             showMessage(link, "Server überlastet!");
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 1 * 60 * 1000l);
+        }
+        if (br.containsHTML("Invalid link")) {
+            logger.info("'Invalid link' error, disabling current host...");
+            tempUnavailableHoster(account, link, 2 * 60 * 60 * 1000l);
         }
         if (br.containsHTML("No htmlCode read")) {
             logger.info("Unknown API error, disabling current host...");

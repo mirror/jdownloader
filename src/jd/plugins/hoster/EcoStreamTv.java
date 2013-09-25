@@ -19,9 +19,6 @@ package jd.plugins.hoster;
 import java.io.IOException;
 
 import jd.PluginWrapper;
-import jd.http.Browser;
-import jd.http.URLConnectionAdapter;
-import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -30,10 +27,8 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ecostream.tv" }, urls = { "http://(www\\.)?ecostream\\.tv/(stream|embed)/[a-z0-9]+\\.html" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ecostream.tv" }, urls = { "http://(www\\.)?ecostream\\.tv/(stream|embed)/[a-z0-9]{32}\\.html" }, flags = { 0 })
 public class EcoStreamTv extends PluginForHost {
-
-    private String DLLINK = null;
 
     public EcoStreamTv(PluginWrapper wrapper) {
         super(wrapper);
@@ -45,7 +40,7 @@ public class EcoStreamTv extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "http://www.ecostream.tv/support.html";
+        return "http://www.ecostream.tv/terms.html";
     }
 
     @Override
@@ -54,58 +49,33 @@ public class EcoStreamTv extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.postPage(downloadLink.getDownloadURL() + "?ss=1", "ss=1&sss=1");
-        // No way to directly find out of it's online or not so let's just try
-        final Regex importantVars = br.getRegex("\\(\"lc\\(\\'([^<>\"]*?)\\',\\'([^<>\"]*?)\\',\\'([^<>\"]*?)\\',\\'([^<>\"]*?)\\'\\)");
-        String var1 = importantVars.getMatch(0);
-        String var2 = importantVars.getMatch(1);
-        String var3 = importantVars.getMatch(2);
-        String var4 = importantVars.getMatch(3);
-        if (var1 == null || var2 == null || var3 == null || var4 == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-        // They often change this link
-        // http://www.ecostream.tv/lo/mq.php?s=2f855d145c27cc07e3ec2da14d9f9f8c&k=6f4922f45568161a8cdf4ad2299f6d23&t=generic&key=1ff02ddd880a24745d5e2c9847346543
-        final Browser br2 = br.cloneBrowser();
-        br2.getPage("http://www.ecostream.tv/assets/js/common.js");
-        String postLink = br2.getRegex("url: \\'(http://(www\\.)?ecostream\\.tv/[^<>\"]*?)\\' ").getMatch(0);
-        if (postLink == null) postLink = "http://www.ecostream.tv/lo/mq.php?s=";
-        br.postPage(postLink + var1 + "&k=" + var2 + "&t=" + var3 + "&key=" + var4, "");
-        DLLINK = br.getRegex("flashvars=\"file=((http:/)?/[^\"\\']+)\\&image=").getMatch(0);
-        if (DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        DLLINK = Encoding.htmlDecode(DLLINK);
-        if (!DLLINK.startsWith("http://")) DLLINK = "http://www.ecostream.tv" + DLLINK;
-        // In case the link redirects to the finallink
-        br2.setFollowRedirects(true);
-        URLConnectionAdapter con = null;
-        try {
-            con = br2.openGetConnection(DLLINK);
-            if (!con.getContentType().contains("html")) {
-                downloadLink.setDownloadSize(con.getLongContentLength());
-                downloadLink.setFinalFileName(getFileNameFromHeader(con));
-            } else {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            return AvailableStatus.TRUE;
-        } finally {
-            try {
-                con.disconnect();
-            } catch (Throwable e) {
-            }
-        }
+        br.getPage(downloadLink.getDownloadURL());
+        if (br.containsHTML(">File not found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        downloadLink.setFinalFileName(getfid(downloadLink) + ".mp4");
+        return AvailableStatus.TRUE;
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception {
+    public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 0);
+        br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+        br.postPage("http://www.ecostream.tv/xhr/video/get", "id=" + getfid(downloadLink));
+        String finallink = br.getRegex("\"url\":\"(/[^<>\"]*?)\"").getMatch(0);
+        if (finallink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        finallink = "http://www.ecostream.tv" + finallink;
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, finallink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
+    }
+
+    private String getfid(final DownloadLink downloadLink) {
+        return new Regex(downloadLink.getDownloadURL(), "ecostream\\.tv/stream/([a-z0-9]{32})\\.html").getMatch(0);
     }
 
     @Override
