@@ -12,8 +12,6 @@ import org.appwork.swing.exttable.ExtColumn;
 import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.linkgrabber.LinkGrabberPanel;
 import org.jdownloader.gui.views.linkgrabber.LinkGrabberTable;
-import org.jdownloader.gui.views.linkgrabber.actions.AddContainerAction;
-import org.jdownloader.gui.views.linkgrabber.actions.AddLinksAction;
 
 public class ContextMenuFactory {
 
@@ -32,12 +30,6 @@ public class ContextMenuFactory {
         SelectionInfo<CrawledPackage, CrawledLink> si = new SelectionInfo<CrawledPackage, CrawledLink>(context, selection, event, null, null, table);
         si.setContextColumn(column);
 
-        if (selection == null || selection.size() == 0) {
-            JPopupMenu p = new JPopupMenu();
-            p.add(new AddLinksAction());
-            p.add(new AddContainerAction());
-            return p;
-        }
         return manager.build(si);
 
     }

@@ -29,7 +29,7 @@ public abstract class AbstractExtractionAction<PackageType extends AbstractPacka
     }
 
     public void setSelection(SelectionInfo<PackageType, ChildrenType> selection) {
-        this.selection = selection;
+        super.setSelection(selection);
         setEnabled(false);
     }
 

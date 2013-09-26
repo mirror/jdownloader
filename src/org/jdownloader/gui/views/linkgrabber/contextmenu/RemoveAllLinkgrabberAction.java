@@ -21,6 +21,7 @@ public class RemoveAllLinkgrabberAction extends SelectionAppAction<CrawledPackag
         super(selection);
         setName(_GUI._.RemoveAllLinkgrabberAction_RemoveAllLinkgrabberAction_object_());
         setIconKey("clear");
+        setItemVisibleForEmptySelection(true);
     }
 
     public void actionPerformed(ActionEvent e) {

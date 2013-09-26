@@ -109,8 +109,12 @@ public class MenuBuilder {
 
     protected void addContainer(final JComponent root, final MenuItemData inst) throws InstantiationException, IllegalAccessException, InvocationTargetException, ClassNotFoundException, NoSuchMethodException, ExtensionNotLoadedException {
         final JMenu submenu = (JMenu) inst.addTo(root, selection);
-
+        if (submenu == null) return;
         createLayer(submenu, (MenuContainer) inst);
+
+        if (submenu.getMenuComponentCount() == 0) {
+            root.remove(submenu);
+        }
     }
 
     protected void addAction(final JComponent root, final MenuItemData inst) throws InstantiationException, IllegalAccessException, InvocationTargetException, ClassNotFoundException, NoSuchMethodException, ExtensionNotLoadedException {

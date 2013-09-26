@@ -33,7 +33,7 @@ public abstract class SetDownloadFolderAction<PackageType extends AbstractPackag
     @Override
     public void setSelection(SelectionInfo<PackageType, ChildrenType> selection) {
         super.setSelection(selection);
-        if (getSelection() != null) path = LinkTreeUtils.getRawDownloadDirectory(getSelection().getContextPackage());
+        if (hasSelection()) path = LinkTreeUtils.getRawDownloadDirectory(getSelection().getContextPackage());
     }
 
     @Override
@@ -42,7 +42,8 @@ public abstract class SetDownloadFolderAction<PackageType extends AbstractPackag
     }
 
     /**
-     * checks if the given file is valid as a downloadfolder, this means it must be an existing folder or at least its parent folder must exist
+     * checks if the given file is valid as a downloadfolder, this means it must be an existing folder or at least its parent folder must
+     * exist
      * 
      * @param file
      * @return

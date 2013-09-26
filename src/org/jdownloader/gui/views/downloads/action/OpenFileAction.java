@@ -31,7 +31,7 @@ public class OpenFileAction extends SelectionAppAction<FilePackage, DownloadLink
     @Override
     public void setSelection(SelectionInfo<FilePackage, DownloadLink> selection) {
         super.setSelection(selection);
-        if (getSelection() != null) {
+        if (hasSelection()) {
             if (getSelection().isLinkContext()) {
                 this.file = getSelection() == null ? null : new File(getSelection().getContextLink().getFileOutput());
 

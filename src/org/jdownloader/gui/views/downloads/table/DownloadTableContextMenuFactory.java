@@ -11,8 +11,6 @@ import jd.plugins.FilePackage;
 import org.appwork.swing.exttable.ExtColumn;
 import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.downloads.contextmenumanager.DownloadListContextMenuManager;
-import org.jdownloader.gui.views.linkgrabber.actions.AddContainerAction;
-import org.jdownloader.gui.views.linkgrabber.actions.AddLinksAction;
 
 public class DownloadTableContextMenuFactory {
     private static final DownloadTableContextMenuFactory INSTANCE = new DownloadTableContextMenuFactory();
@@ -38,7 +36,6 @@ public class DownloadTableContextMenuFactory {
     }
 
     public JPopupMenu create(DownloadsTable downloadsTable, JPopupMenu popup, AbstractNode contextObject, java.util.List<AbstractNode> selection, ExtColumn<AbstractNode> column, MouseEvent ev) {
-        if (selection == null && contextObject == null) return emtpy(popup);
 
         SelectionInfo<FilePackage, DownloadLink> si = new SelectionInfo<FilePackage, DownloadLink>(contextObject, selection, ev, null, null, downloadsTable);
         si.setContextColumn(column);
@@ -117,13 +114,6 @@ public class DownloadTableContextMenuFactory {
         // return popup;
     }
 
-    private JPopupMenu emtpy(JPopupMenu p) {
-
-        p.add(new AddLinksAction());
-        p.add(new AddContainerAction());
-
-        return p;
-    }
     // public static java.util.List<Component> fillPropertiesMenu(SelectionInfo<FilePackage, DownloadLink> si, ExtColumn<AbstractNode>
     // column) {
     //

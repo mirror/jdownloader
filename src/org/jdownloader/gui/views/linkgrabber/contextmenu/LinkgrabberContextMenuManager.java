@@ -20,12 +20,15 @@ import org.jdownloader.gui.views.components.packagetable.context.RenameAction;
 import org.jdownloader.gui.views.components.packagetable.context.SetCommentAction;
 import org.jdownloader.gui.views.components.packagetable.context.SetDownloadPassword;
 import org.jdownloader.gui.views.components.packagetable.context.URLEditorAction;
+import org.jdownloader.gui.views.downloads.action.AddContainerContextMenuAction;
+import org.jdownloader.gui.views.downloads.action.AddLinksContextMenuAction;
 import org.jdownloader.gui.views.downloads.action.MenuManagerAction;
 import org.jdownloader.gui.views.downloads.context.submenu.PriorityMenuContainer;
 import org.jdownloader.gui.views.linkgrabber.LinkGrabberPanel;
 import org.jdownloader.gui.views.linkgrabber.LinkGrabberTable;
 import org.jdownloader.gui.views.linkgrabber.actions.AddContainerAction;
 import org.jdownloader.gui.views.linkgrabber.actions.AddLinksAction;
+import org.jdownloader.gui.views.linkgrabber.actions.ConfirmAllContextmenuAction;
 import org.jdownloader.gui.views.linkgrabber.actions.ConfirmAutoAction;
 
 public class LinkgrabberContextMenuManager extends ContextMenuManager<CrawledPackage, CrawledLink> {
@@ -64,7 +67,12 @@ public class LinkgrabberContextMenuManager extends ContextMenuManager<CrawledPac
     public MenuContainerRoot createDefaultStructure() {
         MenuContainerRoot mr = new MenuContainerRoot();
         mr.setSource(VERSION);
+
+        mr.add(AddLinksContextMenuAction.class);
+        mr.add(AddContainerContextMenuAction.class);
+        mr.add(new SeperatorData());
         mr.add(new MenuItemData(new ActionData(ConfirmAutoAction.class)));
+        mr.add(new MenuItemData(new ActionData(ConfirmAllContextmenuAction.class)));
         mr.add(new SeperatorData());
         mr.add(new MenuItemData(new ActionData(AddLinksAction.class), false));
         mr.add(new MenuItemData(new ActionData(AddContainerAction.class), false));

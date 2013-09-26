@@ -14,6 +14,7 @@ import jd.gui.swing.jdgui.components.toolbar.actions.ShowSettingsAction;
 import jd.gui.swing.jdgui.components.toolbar.actions.SilentModeToggleAction;
 import jd.gui.swing.jdgui.components.toolbar.actions.StartDownloadsAction;
 import jd.gui.swing.jdgui.components.toolbar.actions.StopDownloadsAction;
+import jd.gui.swing.jdgui.components.toolbar.actions.StopDownloadsButFinishRunningOnesAction;
 import jd.gui.swing.jdgui.components.toolbar.actions.UpdateAction;
 import jd.gui.swing.jdgui.interfaces.View;
 import jd.gui.swing.jdgui.menu.actions.KnowledgeAction;
@@ -100,7 +101,8 @@ public class MainToolbarManager extends ContextMenuManager<FilePackage, Download
     }
 
     /**
-     * Create a new instance of DownloadListContextMenuManager. This is a singleton class. Access the only existing instance by using {@link #getInstance()}.
+     * Create a new instance of DownloadListContextMenuManager. This is a singleton class. Access the only existing instance by using
+     * {@link #getInstance()}.
      */
 
     private MainToolbarManager() {
@@ -140,7 +142,7 @@ public class MainToolbarManager extends ContextMenuManager<FilePackage, Download
 
         mr.add(PauseDownloadsAction.class);
         mr.add(StopDownloadsAction.class);
-
+        mr.add(optional(new MenuItemData(new ActionData(StopDownloadsButFinishRunningOnesAction.class))));
         mr.add(new SeperatorData());
         mr.add(new MenuItemData(new ActionData(MoveToTopAction.class)));
         mr.add(new MenuItemData(new ActionData(MoveUpAction.class)));
@@ -200,6 +202,11 @@ public class MainToolbarManager extends ContextMenuManager<FilePackage, Download
 
         ocr.add(CaptchaDialogsToogleAction.class);
         return mr;
+    }
+
+    private MenuItemData optional(MenuItemData menuItemData) {
+        menuItemData.setVisible(false);
+        return menuItemData;
     }
 
     private MenuItemData createDeleteMenu() {

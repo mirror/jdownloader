@@ -3097,4 +3097,13 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Link has a dedicated Plugin" })
     String FilterRule_toString_directhttp_not();
 
+    @Default(lngs = { "en" }, values = { "Start all Downloads" })
+    String ConfirmAllContextmenuAction_context_add_and_start();
+
+    @Default(lngs = { "en" }, values = { "Add all to Download List" })
+    String ConfirmAllContextmenuAction_context_add();
+
+    @Default(lngs = { "en" }, values = { "Stop Downloads, but finish running ones" })
+    String StopDownloadsAction_createTooltip();
+
 }

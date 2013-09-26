@@ -15,10 +15,10 @@ import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.images.NewTheme;
 
-public class StopDownloadsAction extends ToolBarAction implements DownloadWatchdogListener {
+public class StopDownloadsButFinishRunningOnesAction extends ToolBarAction implements DownloadWatchdogListener {
 
-    public StopDownloadsAction(SelectionInfo<?, ?> selection) {
-        setIconKey("media-playback-stop");
+    public StopDownloadsButFinishRunningOnesAction(SelectionInfo<?, ?> selection) {
+        setIconKey("stop_conditional");
         setEnabled(false);
         DownloadWatchDog.getInstance().getEventSender().addListener(this, true);
         DownloadWatchDog.getInstance().notifyCurrentState(this);
@@ -26,11 +26,13 @@ public class StopDownloadsAction extends ToolBarAction implements DownloadWatchd
     }
 
     public void actionPerformed(ActionEvent e) {
+        Dialog.getInstance().showErrorDialog("Action is not implemented yet! Ask jiaz for ticket http://svn.jdownloader.org/issues/9739");
         if (DownloadWatchDog.getInstance().getStateMachine().hasPassed(DownloadWatchDog.STOPPING_STATE)) return;
         int count = DownloadWatchDog.getInstance().getNonResumableRunningCount();
         if (count > 0) {
             if (!UIOManager.I().showConfirmDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI._.lit_are_you_sure(), _GUI._.StopDownloadsAction_run_msg_(SizeFormatter.formatBytes(DownloadWatchDog.getInstance().getNonResumableBytes()), count), NewTheme.I().getIcon("stop", 32), _GUI._.lit_yes(), _GUI._.lit_no())) { return; }
         }
+        // TODO: http://svn.jdownloader.org/issues/9739
         DownloadWatchDog.getInstance().stopDownloads();
     }
 
@@ -53,7 +55,7 @@ public class StopDownloadsAction extends ToolBarAction implements DownloadWatchd
 
     @Override
     public String createTooltip() {
-        return _GUI._.StopDownloadsAction_createTooltip();
+        return _GUI._.action_stop_downloads_tooltip();
     }
 
     @Override

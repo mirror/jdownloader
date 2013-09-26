@@ -180,7 +180,7 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
         });
 
         autoConfirm = new AutoConfirmButton();
-        autoConfirm.setVisible(false);
+
         setFilteredAvailable(LinkCollector.getInstance().getfilteredStuffSize());
         addLinks = new ExtButton(new AddLinksAction());
         confirmAll = new ExtButton(new ConfirmAllAction() {
@@ -262,7 +262,7 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
         });
         showHideSidebar.setSelected(org.jdownloader.settings.staticreferences.CFG_GUI.CFG.isLinkgrabberSidebarVisible());
         leftBar = new MigPanel("ins 0", "[]1[]3[]1[]3[grow,fill]0[]", "[]");
-        rightBar = new MigPanel("ins 0", "[]0[]1[]0[]0", "[]");
+        rightBar = new MigPanel("ins 0,debug", "[]0[]1[]0[]0", "[]");
 
         leftBar.add(addLinks, "height 24!,aligny top");
 
@@ -410,14 +410,24 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
 
     private void layoutComponents() {
         rightBar.removeAll();
-        rightBar.add(autoConfirm, "height 24!,width 24!,hidemode 3,gapright 3");
 
+        boolean showSidebarToggle = org.jdownloader.settings.staticreferences.CFG_GUI.LINKGRABBER_SIDEBAR_TOGGLE_BUTTON_ENABLED.getValue() && org.jdownloader.settings.staticreferences.CFG_GUI.LINKGRABBER_SIDEBAR_ENABLED.getValue();
+        if (showSidebarToggle) {
+
+            rightBar.setLayout(new MigLayout("ins 0", "[]0[]1[]0[]0[]0", "[]"));
+        } else {
+            rightBar.setLayout(new MigLayout("ins 0", "[]0[]1[]0[]0", "[]"));
+        }
+
+        rightBar.add(autoConfirm, "height 24!,width 24!,hidemode 3,gapright 3");
+        autoConfirm.setVisible(false);
         rightBar.add(confirmAll, "height 24!,pushx,growx");
         rightBar.add(popupConfirm, "height 24!,width 12!");
-        rightBar.add(bottomBar, "height 24!,width 24!");
-        if (org.jdownloader.settings.staticreferences.CFG_GUI.LINKGRABBER_SIDEBAR_TOGGLE_BUTTON_ENABLED.getValue() && org.jdownloader.settings.staticreferences.CFG_GUI.LINKGRABBER_SIDEBAR_ENABLED.getValue()) {
+        rightBar.add(bottomBar, "height 24!,width 24!,gapleft 1");
+        if (showSidebarToggle) {
             //
-            rightBar.add(showHideSidebar, "height 24!,width 24!,gapleft 4");
+            rightBar.add(showHideSidebar, "height 24!,width 24!,gapleft 2");
+
         }
 
         if (org.jdownloader.settings.staticreferences.CFG_GUI.CFG.isLinkgrabberSidebarEnabled() && org.jdownloader.settings.staticreferences.CFG_GUI.LINKGRABBER_SIDEBAR_VISIBLE.getValue()) {
@@ -449,7 +459,7 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
         }
 
         add(leftBar);
-        add(rightBar, "");
+        add(rightBar, "growx");
     }
 
     private void createSidebar() {

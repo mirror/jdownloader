@@ -42,10 +42,11 @@ import org.jdownloader.extensions.extraction.gui.DummyArchiveDialog;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo;
+import org.jdownloader.gui.views.linkgrabber.LinkGrabberTableModel;
 import org.jdownloader.gui.views.linkgrabber.addlinksdialog.LinkgrabberSettings;
 import org.jdownloader.images.NewTheme;
 
-public class ConfirmAutoAction extends SelectionAppAction<CrawledPackage, CrawledLink> {
+public class ConfirmAllContextmenuAction extends SelectionAppAction<CrawledPackage, CrawledLink> {
 
     /**
      * 
@@ -69,7 +70,7 @@ public class ConfirmAutoAction extends SelectionAppAction<CrawledPackage, Crawle
     }
 
     @Customizer(name = "Autostart Downloads afterwards")
-    public ConfirmAutoAction setAutoStart(AutoStartOptions autoStart) {
+    public ConfirmAllContextmenuAction setAutoStart(AutoStartOptions autoStart) {
         if (autoStart == null) autoStart = AutoStartOptions.AUTO;
         this.autoStart = autoStart;
 
@@ -79,13 +80,13 @@ public class ConfirmAutoAction extends SelectionAppAction<CrawledPackage, Crawle
 
     private void updateLabelAndIcon() {
         if (doAutostart()) {
-            setName(_GUI._.ConfirmAction_ConfirmAction_context_add_and_start());
+            setName(_GUI._.ConfirmAllContextmenuAction_context_add_and_start());
             Image add = NewTheme.I().getImage("media-playback-start", 20);
             Image play = NewTheme.I().getImage("add", 14);
             setSmallIcon(new ImageIcon(ImageProvider.merge(add, play, -2, 0, 8, 10)));
             setIconKey(null);
         } else {
-            setName(_GUI._.ConfirmAction_ConfirmAction_context_add());
+            setName(_GUI._.ConfirmAllContextmenuAction_context_add());
             setIconKey(IconKey.ICON_GO_NEXT);
         }
     }
@@ -106,17 +107,29 @@ public class ConfirmAutoAction extends SelectionAppAction<CrawledPackage, Crawle
         this.clearListAfterConfirm = clearListAfterConfirm;
     }
 
-    public ConfirmAutoAction(SelectionInfo<CrawledPackage, CrawledLink> selectionInfo) {
-        super(selectionInfo);
-        setAutoStart(AutoStartOptions.AUTO);
+    public void setSelection(SelectionInfo<CrawledPackage, CrawledLink> selection) {
+        SelectionInfo<CrawledPackage, CrawledLink> sel = new SelectionInfo<CrawledPackage, CrawledLink>(null, LinkGrabberTableModel.getInstance().getAllChildrenNodes(), null, null, null, LinkGrabberTableModel.getInstance().getTable());
+        super.setSelection(sel);
+        if (!isItemVisibleForEmptySelection() && !(selection == null || selection.isEmpty())) {
+            setVisible(false);
+            setEnabled(false);
+        } else if (!isItemVisibleForSelections() && !(selection == null || selection.isEmpty())) {
+            setVisible(false);
+            setEnabled(false);
+        } else {
+            setVisible(true);
+            setEnabled(true);
+        }
+        updateLabelAndIcon();
 
     }
 
-    public void setSelection(SelectionInfo<CrawledPackage, CrawledLink> selection) {
-        super.setSelection(selection);
+    public ConfirmAllContextmenuAction(SelectionInfo<CrawledPackage, CrawledLink> selectionInfo) {
+        super(null);
 
-        updateLabelAndIcon();
-
+        setAutoStart(AutoStartOptions.AUTO);
+        setItemVisibleForSelections(false);
+        setItemVisibleForEmptySelection(true);
     }
 
     public void actionPerformed(ActionEvent e) {

@@ -15,11 +15,11 @@ public class LGMenuManagerAction extends SelectionAppAction<CrawledPackage, Craw
         super(si);
         setName(_GUI._.MenuManagerAction_MenuManagerAction());
         setIconKey("menu");
+        setItemVisibleForEmptySelection(true);
     }
 
     @Override
     public void actionPerformed(ActionEvent e) {
         LinkgrabberContextMenuManager.getInstance().openGui();
-
     }
 }

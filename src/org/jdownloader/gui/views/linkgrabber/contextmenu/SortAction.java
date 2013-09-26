@@ -35,6 +35,7 @@ public class SortAction<PackageType extends AbstractPackageNode<ChildrenType, Pa
             setIconKey("sort");
             setName(_GUI._.SortAction_SortAction_object_empty());
         }
+        setItemVisibleForEmptySelection(true);
     }
 
     public SortAction(SelectionInfo<PackageType, ChildrenType> si) {

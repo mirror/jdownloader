@@ -19,6 +19,8 @@ import org.jdownloader.gui.views.components.packagetable.context.PriorityLowerAc
 import org.jdownloader.gui.views.components.packagetable.context.RenameAction;
 import org.jdownloader.gui.views.components.packagetable.context.SetDownloadPassword;
 import org.jdownloader.gui.views.components.packagetable.context.URLEditorAction;
+import org.jdownloader.gui.views.downloads.action.AddContainerContextMenuAction;
+import org.jdownloader.gui.views.downloads.action.AddLinksContextMenuAction;
 import org.jdownloader.gui.views.downloads.action.CreateDLCAction;
 import org.jdownloader.gui.views.downloads.action.DeleteDisabledSelectedLinks;
 import org.jdownloader.gui.views.downloads.action.DeleteQuickAction;
@@ -71,6 +73,10 @@ public class DownloadListContextMenuManager extends ContextMenuManager<FilePacka
     public MenuContainerRoot createDefaultStructure() {
         MenuContainerRoot mr = new MenuContainerRoot();
         mr.setSource(VERSION);
+
+        mr.add(AddLinksContextMenuAction.class);
+        mr.add(AddContainerContextMenuAction.class);
+        mr.add(new SeperatorData());
         // mr.add()
         mr.add(createSettingsMenu());
 

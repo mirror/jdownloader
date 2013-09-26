@@ -30,7 +30,7 @@ public class OpenDirectoryAction extends SelectionAppAction<FilePackage, Downloa
     @Override
     public void setSelection(SelectionInfo<FilePackage, DownloadLink> selection) {
         super.setSelection(selection);
-        if (getSelection() != null) {
+        if (hasSelection()) {
             this.directory = new File(getSelection().getContextPackage().getDownloadDirectory());
             if (getSelection().isLinkContext()) {
 
