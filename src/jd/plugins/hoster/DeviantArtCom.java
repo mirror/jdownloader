@@ -67,6 +67,8 @@ public class DeviantArtCom extends PluginForHost {
         link.setUrlDownload(link.getDownloadURL().replace("DEVART://", ""));
     }
 
+    private static final String GENERALFILENAMEREGEX = "<title>([^<>\"]*?) on deviantART</title>";
+
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
@@ -84,7 +86,7 @@ public class DeviantArtCom extends PluginForHost {
         if (br.containsHTML("/error\\-title\\-oops\\.png\\)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         // Motionbooks are not supported (yet)
         if (br.containsHTML(",target: \\'motionbooks/")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("<title>([^<>\"]*?) on deviantART</title>").getMatch(0);
+        String filename = br.getRegex(GENERALFILENAMEREGEX).getMatch(0);
         if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         filename = Encoding.htmlDecode(filename.trim());
         String ext = null;
@@ -109,9 +111,10 @@ public class DeviantArtCom extends PluginForHost {
                 return AvailableStatus.TRUE;
             }
             // Try to get server filename
-            filename = br.getRegex("name=\"og:image\" content=\"http://[a-z0-9\\-\\.]+\\.deviantart\\.(net|com)/fs\\d+/i/\\d+/\\d+/\\d+/\\d+/([^<>\"]*?)\"").getMatch(1);
+            // <meta name="og:image" content="http://fc05.deviantart.net/fs71/f/2012/303/a/2/a235ad80018c6de3c32d510cc7dcee98-d5jeim8.png">
+            filename = br.getRegex("name=\"og:image\" content=\"http://[a-z0-9\\-\\.]+\\.deviantart\\.(net|com)/[a-z0-9]+/[a-z]/\\d+/\\d+/[a-z0-9]+/[a-z0-9]+/([^<>\"]*?)\"").getMatch(1);
             // No luck, grab the other one again
-            if (filename == null) filename = br.getRegex("<title>([^<>\"]*?) on deviantART</title>").getMatch(0);
+            if (filename == null) filename = br.getRegex(GENERALFILENAMEREGEX).getMatch(0);
 
             ext = br.getRegex("<strong>Download Image</strong><br><small>([A-Za-z0-9]{1,5}),").getMatch(0);
             if (ext == null) ext = new Regex(filename, "\\.([A-Za-z0-9]{1,5})$").getMatch(0);
@@ -148,7 +151,7 @@ public class DeviantArtCom extends PluginForHost {
             }
         }
         if (!filename.endsWith(ext)) filename += "." + ext.trim();
-        link.setFinalFileName(filename);
+        link.setFinalFileName(Encoding.htmlDecode(filename.trim()));
         return AvailableStatus.TRUE;
     }
 

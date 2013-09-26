@@ -71,7 +71,7 @@ public class ShareSixCom extends PluginForHost {
     // free account: chunk * maxdl
     // premium account: chunk * maxdl
     // protocol: no https
-    // captchatype: null 4dignum solvemedia recaptcha
+    // captchatype: null
     // other:
 
     @Override

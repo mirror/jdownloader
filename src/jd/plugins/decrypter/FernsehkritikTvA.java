@@ -23,6 +23,7 @@ import jd.PluginWrapper;
 import jd.config.SubConfiguration;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
+import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.CryptedLink;
@@ -34,12 +35,13 @@ import jd.plugins.PluginForDecrypt;
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fernsehkritik.tv" }, urls = { "http://(www\\.)?fernsehkritik\\.tv/folge\\-\\d+" }, flags = { 0 })
 public class FernsehkritikTvA extends PluginForDecrypt {
 
-    private static final String DL_AS_MOV = "DL_AS_MOV";
-    private static final String DL_AS_MP4 = "DL_AS_MP4";
-    private static final String DL_AS_FLV = "DL_AS_FLV";
-    private boolean             MOV       = true;
-    private boolean             MP4       = true;
-    private boolean             FLV       = true;
+    private static final String DL_AS_MOV     = "DL_AS_MOV";
+    private static final String DL_AS_MP4     = "DL_AS_MP4";
+    private static final String DL_AS_FLV     = "DL_AS_FLV";
+    private boolean             MOV           = true;
+    private boolean             MP4           = true;
+    private boolean             FLV           = true;
+    private static final String GRAB_POSTECKE = "GRAB_POSTECKE";
 
     public FernsehkritikTvA(final PluginWrapper wrapper) {
         super(wrapper);
@@ -47,15 +49,33 @@ public class FernsehkritikTvA extends PluginForDecrypt {
 
     @Override
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, final ProgressController progress) throws Exception {
+        final SubConfiguration cfg = SubConfiguration.getConfig("fernsehkritik.tv");
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         FilePackage fp;
         final String parameter = param.toString();
+        final String episode = new Regex(parameter, "folge\\-(\\d+)").getMatch(0);
         setBrowserExclusive();
         br.setFollowRedirects(true);
         br.setCustomCharset("utf-8");
         br.getPage(parameter);
-        final String episode = new Regex(parameter, "folge-(\\d+)").getMatch(0);
-        if (episode == null) { return null; }
+
+        if (cfg.getBooleanProperty(GRAB_POSTECKE, false)) {
+            String date = br.getRegex("var flattr_tle = \\'Fernsehkritik\\-TV Folge \\d+ vom(.*?)\\'").getMatch(0);
+            String posteckeepisode = br.getRegex(">Zuschauerreaktionen: Postecke (\\d+)</a>").getMatch(0);
+            // Only use episode number of fktv episode if postecke episodenumber is not available
+            if (posteckeepisode == null) posteckeepisode = new Regex(parameter, "(\\d+)$").getMatch(0);
+            final String posteckelink = br.getRegex("\"(http://(www\\.)?fernsehkritik\\.tv/inline\\-video/postecke\\.php\\?[^<>\"]*?)\"").getMatch(0);
+            if (posteckelink != null && date != null) {
+                date = Encoding.htmlDecode(date.trim());
+                final DownloadLink posteckedl = createDownloadlink(posteckelink);
+                posteckedl.setFinalFileName("Fernsehkritik-TV Postecke " + posteckeepisode + " zur Episode " + episode + " vom " + date + ".flv");
+                posteckedl.setProperty("posteckeepisode", posteckeepisode);
+                posteckedl.setProperty("posteckedate", date);
+                posteckedl.setAvailable(true);
+                decryptedLinks.add(posteckedl);
+            }
+        }
+
         if (Integer.valueOf(episode) < 69) {
             final String[] finallinks = br.getRegex("\n\\s+<a href=\"(.*?)\">.*?").getColumn(0);
             final String title = br.getRegex("<a id=\"eptitle\".*?>(.*?)<").getMatch(0);
@@ -89,7 +109,6 @@ public class FernsehkritikTvA extends PluginForDecrypt {
                 }
             }
             if (account != null) {
-                SubConfiguration cfg = SubConfiguration.getConfig("fernsehkritik.tv");
                 MOV = cfg.getBooleanProperty(DL_AS_MOV, true);
                 MP4 = cfg.getBooleanProperty(DL_AS_MP4, true);
                 FLV = cfg.getBooleanProperty(DL_AS_FLV, true);

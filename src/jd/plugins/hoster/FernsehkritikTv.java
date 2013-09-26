@@ -62,16 +62,17 @@ public class FernsehkritikTv extends PluginForHost {
         return -1;
     }
 
-    private static final String POSTECKE    = "http://fernsehkritik\\.tv/inline\\-video/postecke\\.php\\?(iframe=true\\&width=\\d+\\&height=\\d+\\&ep=|ep=)\\d+";
-    private static final String COUCH       = "http://couch\\.fernsehkritik\\.tv.*";
-    private static final String COUCHSTREAM = "http://couch\\.fernsehkritik\\.tv/userbereich/archive#stream:.*";
-    private static final String COUCHHOST   = "http://couch.fernsehkritik.tv";
-    private static Object       LOCK        = new Object();
-    private static final String LOGIN_ERROR = "Login fehlerhaft";
-    private String              DLLINK      = null;
-    private static final String DL_AS_MOV   = "DL_AS_MOV";
-    private static final String DL_AS_MP4   = "DL_AS_MP4";
-    private static final String DL_AS_FLV   = "DL_AS_FLV";
+    private static final String POSTECKE      = "http://fernsehkritik\\.tv/inline\\-video/postecke\\.php\\?(iframe=true\\&width=\\d+\\&height=\\d+\\&ep=|ep=)\\d+";
+    private static final String COUCH         = "http://couch\\.fernsehkritik\\.tv.*";
+    private static final String COUCHSTREAM   = "http://couch\\.fernsehkritik\\.tv/userbereich/archive#stream:.*";
+    private static final String COUCHHOST     = "http://couch.fernsehkritik.tv";
+    private static Object       LOCK          = new Object();
+    private static final String LOGIN_ERROR   = "Login fehlerhaft";
+    private String              DLLINK        = null;
+    private static final String DL_AS_MOV     = "DL_AS_MOV";
+    private static final String DL_AS_MP4     = "DL_AS_MP4";
+    private static final String DL_AS_FLV     = "DL_AS_FLV";
+    private static final String GRAB_POSTECKE = "GRAB_POSTECKE";
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
@@ -83,8 +84,17 @@ public class FernsehkritikTv extends PluginForHost {
         if (downloadLink.getDownloadURL().matches(POSTECKE)) {
             final String episodenumber = new Regex(downloadLink.getDownloadURL(), "(\\d+)$").getMatch(0);
             br.getPage("http://fernsehkritik.tv/folge-" + episodenumber + "/Start/");
-            final String date = br.getRegex("var flattr_tle = \\'Fernsehkritik\\-TV Folge \\d+ vom(.*?)\\'").getMatch(0);
+            String date = downloadLink.getStringProperty("posteckedate", null);
+            if (date == null) date = br.getRegex("var flattr_tle = \\'Fernsehkritik\\-TV Folge \\d+ vom(.*?)\\'").getMatch(0);
+            final String fktvepisode = new Regex(downloadLink.getDownloadURL(), "(\\d+)$").getMatch(0);
+            String posteckeepisode = downloadLink.getStringProperty("posteckeepisode");
+            if (posteckeepisode == null) {
+                posteckeepisode = br.getRegex(">Zuschauerreaktionen: Postecke (\\d+)</a>").getMatch(0);
+                // Only use episode number of fktv episode if postecke episodenumber is not available
+                if (posteckeepisode == null) posteckeepisode = fktvepisode;
+            }
             if (date == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            date = Encoding.htmlDecode(date.trim());
             br.getPage(downloadLink.getDownloadURL());
             DLLINK = br.getRegex("playlist = \\[ \\{ url: \\'(http://[^<>\"]*?)\\'").getMatch(0);
             if (DLLINK == null) DLLINK = br.getRegex("\\'(http://dl\\d+\\.fernsehkritik\\.tv/postecke/postecke\\d+\\.flv)\\'").getMatch(0);
@@ -94,7 +104,7 @@ public class FernsehkritikTv extends PluginForHost {
                 con = br.openGetConnection(DLLINK);
                 if (!con.getContentType().contains("html")) {
                     downloadLink.setDownloadSize(con.getLongContentLength());
-                    downloadLink.setFinalFileName("Fernsehkritik-TV Postecke " + episodenumber + " vom " + date + ".flv");
+                    downloadLink.setFinalFileName("Fernsehkritik-TV Postecke " + posteckeepisode + " zur Episode " + fktvepisode + " vom " + date + ".flv");
                 } else {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
@@ -309,10 +319,18 @@ public class FernsehkritikTv extends PluginForHost {
     public void resetPluginGlobals() {
     }
 
+    @Override
+    public String getDescription() {
+        return "JDownloader's Fernsehkritik Plugin helps downloading videoclips from fernsehkritik.tv. Fernsehkritik provides different video formats and other settings to chose from.";
+    }
+
     private void setConfigElements() {
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "Settings for downloads in general:"));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), GRAB_POSTECKE, JDL.L("plugins.hoster.fernsehkritik.grabpostecke", "Grab Postecke if available?")).setDefaultValue(false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "Settings for downloads via account:"));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), DL_AS_MOV, JDL.L("plugins.hoster.fernsehkritik.mov", "Load Free Streams as Premium .mov")).setDefaultValue(true));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), DL_AS_MP4, JDL.L("plugins.hoster.fernsehkritik.mp4", "Load Free Streams as Premium .mp4")).setDefaultValue(true));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), DL_AS_FLV, JDL.L("plugins.hoster.fernsehkritik.flv", "Load Free Streams as Premium .flv")).setDefaultValue(true));
-
     }
 }

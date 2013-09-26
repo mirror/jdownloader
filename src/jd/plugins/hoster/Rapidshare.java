@@ -562,7 +562,13 @@ public class Rapidshare extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, Long.parseLong(ipwait) * 1000l);
             }
             if (error.startsWith("Download permission denied by")) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                // Errorhandling before: File not found
+                try {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+                } catch (final Throwable e) {
+                    if (e instanceof PluginException) throw (PluginException) e;
+                }
+                throw new PluginException(LinkStatus.ERROR_FATAL, "This file can only be downloaded by its uploader");
             } else if (error.startsWith("This server's filesystem is in maintenance")) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "This server's filesystem is in maintenance.", 2 * 60 * 60 * 1000l);
             } else if ("RapidPro expired.".equals(error)) {
@@ -767,8 +773,8 @@ public class Rapidshare extends PluginForHost {
                 this.dl = jd.plugins.BrowserAdapter.openDownload(this.br, downloadLink, directurl, true, 0);
                 final URLConnectionAdapter urlConnection = this.dl.getConnection();
                 /*
-                 * Download starten prüft ob ein content disposition header geschickt wurde. Falls nicht, ist es eintweder eine Bilddatei oder eine Fehlerseite.
-                 * BIldfiles haben keinen Cache-Control Header
+                 * Download starten prüft ob ein content disposition header geschickt wurde. Falls nicht, ist es eintweder eine Bilddatei
+                 * oder eine Fehlerseite. BIldfiles haben keinen Cache-Control Header
                  */
                 if (!urlConnection.isContentDisposition() && urlConnection.getHeaderField("Cache-Control") != null) {
                     // Lädt die zuletzt aufgebaute vernindung

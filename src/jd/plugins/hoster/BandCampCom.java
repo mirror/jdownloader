@@ -17,8 +17,15 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.text.DecimalFormat;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 
 import jd.PluginWrapper;
+import jd.config.ConfigContainer;
+import jd.config.ConfigEntry;
+import jd.config.SubConfiguration;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
@@ -30,8 +37,9 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
+import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "bandcamp.com" }, urls = { "http://(www\\.)?[a-z0-9\\-]+\\.bandcamp\\.com/track/[a-z0-9\\-_]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "bandcamp.com" }, urls = { "http://(www\\.)?[a-z0-9\\-]+\\.bandcamp\\.com/track/[a-z0-9\\-_]+" }, flags = { 2 })
 public class BandCampCom extends PluginForHost {
 
     private String DLLINK    = null;
@@ -39,7 +47,13 @@ public class BandCampCom extends PluginForHost {
 
     public BandCampCom(PluginWrapper wrapper) {
         super(wrapper);
+        this.setConfigElements();
     }
+
+    private static final String FASTLINKCHECK   = "FASTLINKCHECK";
+    private static final String CUSTOM_DATE     = "CUSTOM_DATE";
+    private static final String CUSTOM_FILENAME = "CUSTOM_FILENAME";
+    private static final String GRABTHUMB       = "GRABTHUMB";
 
     @Override
     public String getAGBLink() {
@@ -63,7 +77,7 @@ public class BandCampCom extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException, ParseException {
         this.setBrowserExclusive();
         if (userAgent == null) {
             /* we first have to load the plugin, before we can reference it */
@@ -93,19 +107,35 @@ public class BandCampCom extends PluginForHost {
         }
         br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML("(>Sorry, that something isn\\'t here|>start at the beginning</a> and you\\'ll certainly find what)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        Regex filenameRegex = br.getRegex("<title>(.*?) \\| (.*?)</title>");
-        String artist = filenameRegex.getMatch(1);
-        String filename = filenameRegex.getMatch(0);
-        final String trackNum = br.getRegex("\"track_num\":(\\d+)").getMatch(0);
         DLLINK = br.getRegex("\"file\":.*?\"(http:.*?)\"").getMatch(0);
         logger.info("DLLINK = " + DLLINK);
-        if (filename == null || artist == null || DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         DLLINK = Encoding.htmlDecode(DLLINK).replace("\\", "");
-        if (trackNum != null) {
-            downloadLink.setFinalFileName(trackNum + "." + Encoding.htmlDecode(artist.trim()) + " - " + Encoding.htmlDecode(filename.trim()) + ".mp3");
-        } else {
-            downloadLink.setFinalFileName(Encoding.htmlDecode(artist.trim()) + " - " + Encoding.htmlDecode(filename.trim()) + ".mp3");
+        if (!downloadLink.getBooleanProperty("fromdecrypter", false)) {
+            String tracknumber = br.getRegex("\"track_number\":(\\d+)").getMatch(0);
+            if (tracknumber == null) tracknumber = "1";
+            final int trackNum = Integer.parseInt(tracknumber);
+            DecimalFormat df = new DecimalFormat("0");
+            if (trackNum > 999)
+                df = new DecimalFormat("0000");
+            else if (trackNum > 99)
+                df = new DecimalFormat("000");
+            else if (trackNum > 9) df = new DecimalFormat("00");
+            final String filename = br.getRegex("\"title\":\"([^<>\"]*?)\"").getMatch(0);
+            final String date = br.getRegex("<meta itemprop=\"datePublished\" content=\"(\\d+)\"/>").getMatch(0);
+            final Regex inforegex = br.getRegex("<title>(.*?) \\| (.*?)</title>");
+            final String artist = inforegex.getMatch(1);
+            final String albumname = inforegex.getMatch(0);
+            downloadLink.setProperty("fromdecrypter", true);
+            downloadLink.setProperty("directdate", Encoding.htmlDecode(date.trim()));
+            downloadLink.setProperty("directartist", Encoding.htmlDecode(artist.trim()));
+            downloadLink.setProperty("directalbum", Encoding.htmlDecode(albumname.trim()));
+            downloadLink.setProperty("directname", Encoding.htmlDecode(filename.trim()));
+            downloadLink.setProperty("type", "mp3");
+            downloadLink.setProperty("directtracknumber", df.format(trackNum));
         }
+        final String filename = getFormattedFilename(downloadLink);
+        downloadLink.setFinalFileName(filename);
         // In case the link redirects to the finallink
         br2.setFollowRedirects(true);
         try {
@@ -121,6 +151,96 @@ public class BandCampCom extends PluginForHost {
             } catch (Throwable e) {
             }
         }
+    }
+
+    public String getFormattedFilename(final DownloadLink downloadLink) throws ParseException {
+        final String songTitle = downloadLink.getStringProperty("directname", null);
+        final String tracknumber = downloadLink.getStringProperty("directtracknumber", null);
+        final String artist = downloadLink.getStringProperty("directartist", null);
+        final String album = downloadLink.getStringProperty("directalbum", null);
+        final String date = downloadLink.getStringProperty("directdate", null);
+        final SubConfiguration cfg = SubConfiguration.getConfig("bandcamp.com");
+        String formattedFilename = cfg.getStringProperty(CUSTOM_FILENAME, defaultCustomFilename);
+        if (formattedFilename == null || formattedFilename.equals("")) formattedFilename = defaultCustomFilename;
+        if (!formattedFilename.contains("*songtitle*") || !formattedFilename.contains("*ext*")) formattedFilename = defaultCustomFilename;
+        String ext = downloadLink.getStringProperty("type", null);
+        if (ext != null)
+            ext = "." + ext;
+        else
+            ext = ".mp3";
+
+        String formattedDate = null;
+        if (date != null && formattedFilename.contains("*date*")) {
+            final String userDefinedDateFormat = cfg.getStringProperty(CUSTOM_DATE, "dd.MM.yyyy_HH-mm-ss");
+            SimpleDateFormat formatter = new SimpleDateFormat("yyyyMMdd");
+            Date dateStr = formatter.parse(date);
+
+            formattedDate = formatter.format(dateStr);
+            Date theDate = formatter.parse(formattedDate);
+
+            if (userDefinedDateFormat != null) {
+                try {
+                    formatter = new SimpleDateFormat(userDefinedDateFormat);
+                    formattedDate = formatter.format(theDate);
+                } catch (Exception e) {
+                    // prevent user error killing plugin.
+                    formattedDate = "";
+                }
+            }
+            if (formattedDate != null)
+                formattedFilename = formattedFilename.replace("*date*", formattedDate);
+            else
+                formattedFilename = formattedFilename.replace("*date*", "");
+        }
+        if (formattedFilename.contains("*tracknumber*") && tracknumber != null) {
+            formattedFilename = formattedFilename.replace("*tracknumber*", tracknumber);
+        } else {
+            formattedFilename = formattedFilename.replace("*tracknumber*", "");
+        }
+        if (formattedFilename.contains("*artist*") && artist != null) {
+            formattedFilename = formattedFilename.replace("*artist*", artist);
+        } else {
+            formattedFilename = formattedFilename.replace("*artist*", "");
+        }
+        if (formattedFilename.contains("*album*") && album != null) {
+            formattedFilename = formattedFilename.replace("*album*", album);
+        } else {
+            formattedFilename = formattedFilename.replace("*album*", "");
+        }
+        formattedFilename = formattedFilename.replace("*ext*", ext);
+        // Insert filename at the end to prevent errors with tags
+        formattedFilename = formattedFilename.replace("*songtitle*", songTitle);
+
+        return formattedFilename;
+    }
+
+    @Override
+    public String getDescription() {
+        return "JDownloader's bandcamp.com plugin helps downloading videoclips. JDownloader provides settings for the filenames.";
+    }
+
+    private final static String defaultCustomFilename = "*tracknumber*.*artist* - *songtitle**ext*";
+
+    private void setConfigElements() {
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), FASTLINKCHECK, JDL.L("plugins.hoster.bandcampcom.fastlinkcheck", "Activate fast linkcheck (filesize won't be shown in linkgrabber)?")).setDefaultValue(false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), GRABTHUMB, JDL.L("plugins.hoster.bandcampcom.grab500thumb", "Grab thumbnail (.jpg)?")).setDefaultValue(false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "Customize the filename properties:"));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), CUSTOM_DATE, JDL.L("plugins.hoster.bandcampcom.customdate", "Define how the date should look.")).setDefaultValue("dd.MM.yyyy_HH-mm-ss"));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "Customize the filename properties:"));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "Customize the filename! Example: '*channelname*_*date*_*songtitle**ext*'"));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), CUSTOM_FILENAME, JDL.L("plugins.hoster.bandcampcom.customfilename", "Define how the filenames should look:")).setDefaultValue(defaultCustomFilename));
+        final StringBuilder sb = new StringBuilder();
+        sb.append("Explanation of the available tags:\r\n");
+        sb.append("*artist* = artist of the album\r\n");
+        sb.append("*album* = artist of the album\r\n");
+        sb.append("*tracknumber* = number of the track\r\n");
+        sb.append("*songtitle* = name of the song without extension\r\n");
+        sb.append("*ext* = the extension of the file, in this case usually '.mp3'\r\n");
+        sb.append("*date* = date when the album was released - appears in the user-defined format above");
     }
 
     @Override
