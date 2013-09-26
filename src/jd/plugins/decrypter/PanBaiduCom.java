@@ -49,8 +49,11 @@ public class PanBaiduCom extends PluginForDecrypt {
         String parameter = param.toString();
         br.setFollowRedirects(true);
         br.getPage(parameter);
-        if (br.getURL().contains("pan.baidu.com/share/error?") || br.containsHTML("啊哦，你来晚了，分享的文件已经被删除了，下次要早点哟")) {
+        if (br.getURL().contains("pan.baidu.com/share/error?") || br.containsHTML("啊哦，你来晚了，分享的文件已经被删除了，下次要早点哟|啊哦，你来晚了，分享的文件已经被取消了，下次要早点哟。")) {
             logger.info("Link offline: " + parameter);
+            DownloadLink dl = createDownloadlink("directhttp://" + parameter);
+            dl.setProperty("OFFLINE", true);
+            decryptedLinks.add(dl);
             return decryptedLinks;
         }
         if (parameter.contains("netdisk")) parameter = br.getURL();// old linkformat
@@ -60,10 +63,22 @@ public class PanBaiduCom extends PluginForDecrypt {
         String dir = null;
 
         /* create HashMap with json key/value pair */
-        String json = new Regex(correctedBR, "\"\\[(\\{.*?)\\}\\]\"").getMatch(0);
+        String json = new Regex(correctedBR, "\"\\[(\\{.*?\\})\\]\"").getMatch(0);
         if (json == null) json = new Regex(correctedBR, "\"(\\{.*?\\})\"").getMatch(0);
-        HashMap<String, String> ret = new HashMap<String, String>();
+        // cleanup, poor mans method to remove entries that breaks the important 'dlink'
+        if (json != null) {
+            String cleaned = json;
+            String thumbs = new Regex(cleaned, "(,\"thumbs\":\\{[^\\}]+\\})").getMatch(0);
+            if (thumbs != null) cleaned = cleaned.replace(thumbs, "");
+            String resolution = new Regex(cleaned, "(,\"resolution\":\"[^\"]+\")").getMatch(0);
+            if (resolution != null) cleaned = cleaned.replace(resolution, "");
+            json = cleaned;
+        } else {
+            logger.warning("Problemo! Please report to JDownloader Development Team");
+            return null;
+        }
 
+        HashMap<String, String> ret = new HashMap<String, String>();
         for (String[] values : new Regex((json == null ? "" : json), "\\{([^\\}]+)").getMatches()) {
 
             for (String[] value : new Regex(values[0] + ",", "\"(.*?)\":\"?(.*?)\"?,").getMatches()) {

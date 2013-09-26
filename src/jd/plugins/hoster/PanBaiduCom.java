@@ -44,8 +44,8 @@ public class PanBaiduCom extends PluginForHost {
         return "http://pan.baidu.com/";
     }
 
-    private String              DLLINK          = null;
-    private static final String PWPROTECTEDLINK = "http://(www\\.)?pan\\.baidu\\.com/share/init\\?shareid=\\d+\\&uk=\\d+";
+    private String       DLLINK          = null;
+    private final String PWPROTECTEDLINK = "http://(www\\.)?pan\\.baidu\\.com/share/init\\?shareid=\\d+\\&uk=\\d+";
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
@@ -55,7 +55,7 @@ public class PanBaiduCom extends PluginForHost {
             if (br.containsHTML("alt=\"小刀刀刀刀仔\"")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             downloadLink.setName(new Regex(downloadLink.getDownloadURL(), "(\\d+)$").getMatch(0));
         } else {
-            DLLINK = downloadLink.getStringProperty("dlink");
+            DLLINK = downloadLink.getStringProperty("dlink", null);
             if (DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             DLLINK = DLLINK.replace("\\", "");
             Browser br2 = br.cloneBrowser();
@@ -68,7 +68,7 @@ public class PanBaiduCom extends PluginForHost {
                 } else {
                     DLLINK = refreshFinalLink(downloadLink);
                     if (DLLINK == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                    DLLINK = DLLINK.replace("\\", "");
+                    DLLINK = DLLINK.replace("\\\\/", "/");
                     try {
                         br2.openGetConnection(DLLINK);
                         if (!con.getContentType().contains("html")) {
@@ -96,17 +96,18 @@ public class PanBaiduCom extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        String passCode = downloadLink.getStringProperty("pass");
+        String passCode = downloadLink.getStringProperty("pass", null);
         if (downloadLink.getDownloadURL().matches(PWPROTECTEDLINK)) {
             final String linkData = new Regex(downloadLink.getDownloadURL(), "(shareid=\\d+\\&uk=\\d+)").getMatch(0);
             if (passCode == null) passCode = Plugin.getUserInput("Password?", downloadLink);
-            br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-            br.postPage("http://pan.baidu.com/share/verify?" + linkData + "&t=" + System.currentTimeMillis(), "vcode=&pwd=" + Encoding.urlEncode(passCode));
-            if (br.containsHTML("\\{\"errno\":\\-12,")) throw new PluginException(LinkStatus.ERROR_RETRY, "Wrong password entered");
+            Browser br2 = br.cloneBrowser();
+            br2.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+            br2.postPage("http://pan.baidu.com/share/verify?" + linkData + "&t=" + System.currentTimeMillis(), "vcode=&pwd=" + Encoding.urlEncode(passCode));
+            if (br2.containsHTML("\\{\"errno\":\\-12,")) throw new PluginException(LinkStatus.ERROR_RETRY, "Wrong password entered");
             br.getPage("http://pan.baidu.com/share/link?" + linkData);
-            DLLINK = br.getRegex("class=\"new\\-dbtn\" href=\"(http://[^<>\"]*?)\"").getMatch(0);
+            DLLINK = br.getRegex("dlink\\\\\":\\\\\"(http[^\"]+)\\\\\"").getMatch(0);
             if (DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            DLLINK = Encoding.htmlDecode(DLLINK);
+            DLLINK = Encoding.htmlDecode(DLLINK.replace("\\\\/", "/"));
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
