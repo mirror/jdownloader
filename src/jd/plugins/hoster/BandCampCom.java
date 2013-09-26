@@ -50,10 +50,11 @@ public class BandCampCom extends PluginForHost {
         this.setConfigElements();
     }
 
-    private static final String FASTLINKCHECK   = "FASTLINKCHECK";
-    private static final String CUSTOM_DATE     = "CUSTOM_DATE";
-    private static final String CUSTOM_FILENAME = "CUSTOM_FILENAME";
-    private static final String GRABTHUMB       = "GRABTHUMB";
+    private static final String FASTLINKCHECK      = "FASTLINKCHECK";
+    private static final String CUSTOM_DATE        = "CUSTOM_DATE";
+    private static final String CUSTOM_FILENAME    = "CUSTOM_FILENAME";
+    private static final String GRABTHUMB          = "GRABTHUMB";
+    private static final String CUSTOM_PACKAGENAME = "CUSTOM_PACKAGENAME";
 
     @Override
     public String getAGBLink() {
@@ -219,19 +220,20 @@ public class BandCampCom extends PluginForHost {
         return "JDownloader's bandcamp.com plugin helps downloading videoclips. JDownloader provides settings for the filenames.";
     }
 
-    private final static String defaultCustomFilename = "*tracknumber*.*artist* - *songtitle**ext*";
+    private final static String defaultCustomFilename    = "*tracknumber*.*artist* - *songtitle**ext*";
+    private final static String defaultCustomPackagename = "*artist* - *album*";
 
     private void setConfigElements() {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), FASTLINKCHECK, JDL.L("plugins.hoster.bandcampcom.fastlinkcheck", "Activate fast linkcheck (filesize won't be shown in linkgrabber)?")).setDefaultValue(false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), GRABTHUMB, JDL.L("plugins.hoster.bandcampcom.grab500thumb", "Grab thumbnail (.jpg)?")).setDefaultValue(false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), GRABTHUMB, JDL.L("plugins.hoster.bandcampcom.grabthumb", "Grab thumbnail (.jpg)?")).setDefaultValue(false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "Customize the filename properties:"));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), CUSTOM_DATE, JDL.L("plugins.hoster.bandcampcom.customdate", "Define how the date should look.")).setDefaultValue("dd.MM.yyyy_HH-mm-ss"));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "Customize the filename properties:"));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "Customize the filename! Example: '*channelname*_*date*_*songtitle**ext*'"));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "Customize the filename! Example: '*artist*_*date*_*songtitle**ext*'"));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), CUSTOM_FILENAME, JDL.L("plugins.hoster.bandcampcom.customfilename", "Define how the filenames should look:")).setDefaultValue(defaultCustomFilename));
         final StringBuilder sb = new StringBuilder();
         sb.append("Explanation of the available tags:\r\n");
@@ -241,6 +243,16 @@ public class BandCampCom extends PluginForHost {
         sb.append("*songtitle* = name of the song without extension\r\n");
         sb.append("*ext* = the extension of the file, in this case usually '.mp3'\r\n");
         sb.append("*date* = date when the album was released - appears in the user-defined format above");
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, sb.toString()));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "Customize the packagename for playlists and '[a-z0-9\\-]+.bandcamp.com/album/' links! Example: '*artist* - *album*':"));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), CUSTOM_PACKAGENAME, JDL.L("plugins.hoster.bandcampcom.custompackagename", "Define how the packagenames should look:")).setDefaultValue(defaultCustomPackagename));
+        final StringBuilder sbpack = new StringBuilder();
+        sbpack.append("Explanation of the available tags:\r\n");
+        sbpack.append("*artist* = artist of the album\r\n");
+        sbpack.append("*album* = artist of the album\r\n");
+        sbpack.append("*date* = date when the album was released - appears in the user-defined format above");
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, sbpack.toString()));
     }
 
     @Override

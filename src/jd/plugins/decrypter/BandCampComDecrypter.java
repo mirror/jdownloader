@@ -17,7 +17,10 @@
 package jd.plugins.decrypter;
 
 import java.text.DecimalFormat;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
@@ -39,13 +42,17 @@ public class BandCampComDecrypter extends PluginForDecrypt {
         super(wrapper);
     }
 
-    private static final String FASTLINKCHECK = "FASTLINKCHECK";
-    private static final String GRABTHUMB     = "GRABTHUMB";
+    private static final String FASTLINKCHECK      = "FASTLINKCHECK";
+    private static final String GRABTHUMB          = "GRABTHUMB";
+    private static final String CUSTOM_PACKAGENAME = "CUSTOM_PACKAGENAME";
+    private static final String CUSTOM_DATE        = "CUSTOM_DATE";
+
+    private SubConfiguration    CFG                = null;
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
-        final SubConfiguration cfg = SubConfiguration.getConfig("bandcamp.com");
+        CFG = SubConfiguration.getConfig("bandcamp.com");
         br.getPage(parameter);
         if (br.containsHTML(">Sorry, that something isn\\'t here\\.<")) {
             logger.info("Link offline: " + parameter);
@@ -55,14 +62,14 @@ public class BandCampComDecrypter extends PluginForDecrypt {
         final Regex inforegex = br.getRegex("<title>(.*?) \\| (.*?)</title>");
         final String[][] links = br.getRegex("\"(/track/[a-z0-9\\-]+)\" itemprop=\"url\"><span itemprop=\"name\">([^<>\"]*?)</span>").getMatches();
         String artist = inforegex.getMatch(1);
-        String albumname = inforegex.getMatch(0);
+        String album = inforegex.getMatch(0);
         final String date = br.getRegex("<meta itemprop=\"datePublished\" content=\"(\\d+)\"/>").getMatch(0);
-        if (links == null || links.length == 0 || artist == null || albumname == null || date == null) {
+        if (links == null || links.length == 0 || artist == null || album == null || date == null) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
         artist = Encoding.htmlDecode(artist.trim());
-        albumname = Encoding.htmlDecode(albumname.trim());
+        album = Encoding.htmlDecode(album.trim());
         DecimalFormat df = new DecimalFormat("0");
         if (links.length > 999)
             df = new DecimalFormat("0000");
@@ -79,18 +86,18 @@ public class BandCampComDecrypter extends PluginForDecrypt {
             dl.setProperty("fromdecrypter", true);
             dl.setProperty("directdate", date);
             dl.setProperty("directartist", artist);
-            dl.setProperty("directalbum", albumname);
+            dl.setProperty("directalbum", album);
             dl.setProperty("directname", fname);
             dl.setProperty("type", "mp3");
             dl.setProperty("directtracknumber", df.format(trackcounter));
             final String formattedFilename = ((jd.plugins.hoster.BandCampCom) hostPlugin).getFormattedFilename(dl);
             dl.setName(formattedFilename);
-            if (cfg.getBooleanProperty(FASTLINKCHECK, false)) dl.setAvailable(true);
+            if (CFG.getBooleanProperty(FASTLINKCHECK, false)) dl.setAvailable(true);
             decryptedLinks.add(dl);
             trackcounter++;
         }
 
-        final boolean decryptThumb = cfg.getBooleanProperty(GRABTHUMB, false);
+        final boolean decryptThumb = CFG.getBooleanProperty(GRABTHUMB, false);
         final String thumbnail = br.getRegex("artFullsizeUrl: \"(https?://[^<>\"]*?)\"").getMatch(0);
         if (decryptThumb && thumbnail != null) {
             final DownloadLink thumb = createDownloadlink("directhttp://" + thumbnail);
@@ -98,10 +105,50 @@ public class BandCampComDecrypter extends PluginForDecrypt {
         }
 
         final FilePackage fp = FilePackage.getInstance();
-        fp.setName(artist + " - " + albumname);
+        final String formattedpackagename = getFormattedPackagename(artist, album, date);
+        fp.setName(formattedpackagename);
         fp.addLinks(decryptedLinks);
 
         return decryptedLinks;
+    }
+
+    private final static String defaultCustomPackagename = "*artist* - *album*";
+
+    public String getFormattedPackagename(final String artist, final String album, final String date) throws ParseException {
+        String formattedpackagename = CFG.getStringProperty(CUSTOM_PACKAGENAME, defaultCustomPackagename);
+        if (formattedpackagename == null || formattedpackagename.equals("")) formattedpackagename = defaultCustomPackagename;
+        if (!formattedpackagename.contains("*artist*") && !formattedpackagename.contains("*album*")) formattedpackagename = defaultCustomPackagename;
+
+        String formattedDate = null;
+        if (date != null && formattedpackagename.contains("*date*")) {
+            final String userDefinedDateFormat = CFG.getStringProperty(CUSTOM_DATE);
+            SimpleDateFormat formatter = new SimpleDateFormat("yyyyMMdd");
+            Date dateStr = formatter.parse(date);
+
+            formattedDate = formatter.format(dateStr);
+            Date theDate = formatter.parse(formattedDate);
+
+            if (userDefinedDateFormat != null) {
+                try {
+                    formatter = new SimpleDateFormat(userDefinedDateFormat);
+                    formattedDate = formatter.format(theDate);
+                } catch (Exception e) {
+                    // prevent user error killing plugin.
+                    formattedDate = "";
+                }
+            }
+            if (formattedDate != null)
+                formattedpackagename = formattedpackagename.replace("*date*", formattedDate);
+            else
+                formattedpackagename = formattedpackagename.replace("*date*", "");
+        }
+        if (formattedpackagename.contains("*artist*")) {
+            formattedpackagename = formattedpackagename.replace("*artist*", artist);
+        }
+        // Insert albumname at the end to prevent errors with tags
+        formattedpackagename = formattedpackagename.replace("*album*", album);
+
+        return formattedpackagename;
     }
 
     /* NO OVERRIDE!! */
