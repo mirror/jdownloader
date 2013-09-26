@@ -192,7 +192,7 @@ public class DownloadFolderChooserDialog extends ExtFileChooserDialog {
 
         File[] dest = Dialog.getInstance().showDialog(d);
         if (dest.length == 0) return null;
-        dest[0] = FolderChooser.checkPath(dest[0]);
+        dest[0] = FolderChooser.checkPath(dest[0], null);
         if (dest[0] == null) return null;
         DownloadPath.saveList(dest[0].getAbsolutePath());
         return dest[0];

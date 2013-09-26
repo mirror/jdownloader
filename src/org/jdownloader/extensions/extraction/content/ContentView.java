@@ -58,8 +58,9 @@ public class ContentView extends PackedFile {
             PackedFile ret = n.getChildren().get(s);
             if (ret == null) {
                 ret = new PackedFile(true, cPath.toString(), -1);
-                totalFolderCount++;
-                n.getChildren().put(s, ret);
+                add(ret);
+                // totalFolderCount++;
+                // n.getChildren().put(s, ret);
             }
             n = ret;
         }

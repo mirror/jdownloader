@@ -1,7 +1,7 @@
 package org.jdownloader.gui.settings;
 
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
+import java.awt.event.ItemEvent;
+import java.awt.event.ItemListener;
 
 import javax.swing.JLabel;
 
@@ -40,12 +40,15 @@ public class Pair<T extends SettingsComponent> {
 
     public void setConditionPair(final Pair<Checkbox> toggleCustomizedPath) {
         this.conditionPair = toggleCustomizedPath;
-        conditionPair.getComponent().addActionListener(new ActionListener() {
+        // do not use actionlistener. actionevents only get fired when the user performs an action
+        conditionPair.getComponent().addItemListener(new ItemListener() {
 
-            public void actionPerformed(ActionEvent e) {
+            @Override
+            public void itemStateChanged(ItemEvent e) {
                 setEnabled(conditionPair.getComponent().isSelected());
             }
         });
+        setEnabled(conditionPair.getComponent().isSelected());
     }
 
     public void update() {

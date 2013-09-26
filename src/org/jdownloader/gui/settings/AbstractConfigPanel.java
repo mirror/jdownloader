@@ -83,9 +83,15 @@ public abstract class AbstractConfigPanel extends SwitchPanel {
     public abstract String getTitle();
 
     public <T extends SettingsComponent> Pair<T> addPair(String name, BooleanKeyHandler enabled, T comp) {
+        String lblConstraints = (enabled == null ? "" : "split 3,") + "gapleft 37,aligny " + (comp.isMultiline() ? "top" : "center");
 
+        return addPair(name, lblConstraints, enabled, comp);
+
+    }
+
+    public <T extends SettingsComponent> Pair<T> addPair(String name, String lblConstraints, BooleanKeyHandler enabled, T comp) {
         JLabel lbl;
-        add(lbl = createLabel(name), (enabled == null ? "" : "split 3,") + "gapleft 37,aligny " + (comp.isMultiline() ? "top" : "center"));
+        add(lbl = createLabel(name), lblConstraints);
         if (enabled != null) {
             ExtCheckBox cb = new ExtCheckBox(enabled, lbl, (JComponent) comp);
             SwingUtils.setOpaque(cb, false);
@@ -101,7 +107,6 @@ public abstract class AbstractConfigPanel extends SwitchPanel {
         Pair<T> p = new Pair<T>(lbl, comp);
         pairs.add(p);
         return p;
-
     }
 
     @Override

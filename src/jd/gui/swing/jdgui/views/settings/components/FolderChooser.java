@@ -32,6 +32,8 @@ public class FolderChooser extends PathChooser implements SettingsComponent {
     private StateUpdateEventSender<FolderChooser> eventSender;
     private boolean                               setting;
 
+    private String                                originalPath;
+
     public FolderChooser() {
         super("FolderChooser", true);
 
@@ -87,10 +89,16 @@ public class FolderChooser extends PathChooser implements SettingsComponent {
         eventSender.addListener(listener);
     }
 
+    public void setPath(final String downloadDestination) {
+        originalPath = downloadDestination;
+        super.setPath(downloadDestination);
+    }
+
     public void setText(String t) {
         setting = true;
         try {
-            super.setPath(t);
+
+            setPath(t);
         } finally {
             setting = false;
         }
@@ -116,13 +124,14 @@ public class FolderChooser extends PathChooser implements SettingsComponent {
 
     public String getText() {
         File file = getFile();
-        file = checkPath(file);
+        if (file == null) return null;
+        file = checkPath(file, originalPath == null ? null : new File(originalPath));
         if (file == null) return null;
         DownloadPath.saveList(file.getAbsolutePath());
         return file.getAbsolutePath();
     }
 
-    public static File checkPath(File file) {
+    public static File checkPath(File file, File presetPath) {
         String path = file.getAbsolutePath();
         File checkPath = file;
         int index = path.indexOf("<jd:");
@@ -135,7 +144,14 @@ public class FolderChooser extends PathChooser implements SettingsComponent {
             UIOManager.I().showErrorMessage(_GUI._.DownloadFolderChooserDialog_handleNonExistingFolders_couldnotcreatefolder(forbidden.getAbsolutePath()));
             return null;
         }
-        if (DownloadFolderChooserDialog.handleNonExistingFolders(checkPath) == false) return null;
+
+        if (!checkPath.exists()) {
+            if (presetPath != null && presetPath.equals(checkPath)) {
+                //
+                return file;
+            }
+            if (DownloadFolderChooserDialog.handleNonExistingFolders(checkPath) == false) return presetPath;
+        }
         return file;
     }
 }

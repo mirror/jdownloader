@@ -48,11 +48,23 @@ public interface ExtractionConfig extends ExtensionConfigInterface {
      * @return
      */
 
-    @org.appwork.storage.config.annotations.DescriptionForConfigEntry("Only use subfolders if the archive contains more than *** files")
+    @org.appwork.storage.config.annotations.DescriptionForConfigEntry("Only use subfolders if the archive ROOT contains at least *** files")
     @AboutConfig
-    @DefaultIntValue(1)
+    @DefaultIntValue(0)
     @SpinnerValidator(min = 0, max = 30)
-    int getSubPathFilesTreshhold();
+    int getSubPathMinFilesTreshhold();
+
+    @org.appwork.storage.config.annotations.DescriptionForConfigEntry("Only use subfolders if the archive ROOT contains at least *** folders")
+    @AboutConfig
+    @DefaultIntValue(0)
+    @SpinnerValidator(min = 0, max = 30)
+    int getSubPathMinFoldersTreshhold();
+
+    @org.appwork.storage.config.annotations.DescriptionForConfigEntry("Only use subfolders if the archive ROOT contains at least *** folders or folders")
+    @AboutConfig
+    @DefaultIntValue(2)
+    @SpinnerValidator(min = 0, max = 30)
+    int getSubPathMinFilesOrFoldersTreshhold();
 
     @DefaultBooleanValue(true)
     @AboutConfig
@@ -95,10 +107,6 @@ public interface ExtractionConfig extends ExtensionConfigInterface {
     boolean isSubpathEnabled();
 
     @AboutConfig
-    @DefaultBooleanValue(false)
-    boolean isSubpathEnabledIfAllFilesAreInAFolder();
-
-    @AboutConfig
     @DefaultBooleanValue(true)
     @DescriptionForConfigEntry("Use original filedate if possible")
     boolean isUseOriginalFileDate();
@@ -125,9 +133,11 @@ public interface ExtractionConfig extends ExtensionConfigInterface {
 
     void setSubpathEnabled(boolean enabled);
 
-    void setSubpathEnabledIfAllFilesAreInAFolder(boolean enabled);
+    void setSubPathMinFilesTreshhold(int treshold);
 
-    void setSubPathFilesTreshhold(int treshold);
+    void setSubPathMinFoldersTreshhold(int treshold);
+
+    void setSubPathMinFilesOrFoldersTreshhold(int treshold);
 
     @AboutConfig
     @DescriptionForConfigEntry("max bytes the extractor may test for finding correct password when no signature is found")

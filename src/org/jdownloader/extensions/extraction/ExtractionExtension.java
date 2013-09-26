@@ -498,11 +498,11 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
                     ed.setMore(log);
                     try {
                         Dialog.getInstance().showDialog(ed);
+                        LogAction la = new LogAction();
+                        la.actionPerformed(null);
                     } catch (Exception e) {
 
                     }
-                    LogAction la = new LogAction();
-                    la.actionPerformed(null);
 
                 }
             }
@@ -763,8 +763,21 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
      */
     protected File appendSubFolder(Archive archive, File ret) {
         if (getSettings().isSubpathEnabled()) {
-            if (getSettings().getSubPathFilesTreshhold() > archive.getContentView().getFileCount() + archive.getContentView().getDirectoryCount()) return ret;
-            if (getSettings().isSubpathEnabledIfAllFilesAreInAFolder() && archive.getContentView().getFileCount() == 0) return ret;
+
+            if (archive.getContentView().getFileCount() < getSettings().getSubPathMinFilesTreshhold()) {
+                logger.info("No Subfolder because Root contains only " + archive.getContentView().getFileCount() + " files");
+                return ret;
+            }
+            if (archive.getContentView().getDirectoryCount() < getSettings().getSubPathMinFoldersTreshhold()) {
+                logger.info("No Subfolder because Root contains only " + archive.getContentView().getDirectoryCount() + " folders");
+                return ret;
+            }
+            if (archive.getContentView().getDirectoryCount() + archive.getContentView().getFileCount() < getSettings().getSubPathMinFilesOrFoldersTreshhold()) {
+                logger.info("No Subfolder because Root contains only " + (archive.getContentView().getDirectoryCount() + archive.getContentView().getFileCount()) + " files and folders");
+
+                return ret;
+            }
+
             String sub = getSettings().getSubPath();
             if (!StringUtils.isEmpty(sub)) {
                 sub = archive.getFactory().createExtractSubPath(sub, archive);

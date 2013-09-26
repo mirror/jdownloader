@@ -43,7 +43,7 @@ public class ExtractionConfigPanel extends ExtensionConfigPanel<ExtractionExtens
     private Pair<FolderChooser>       customPath;
     private Pair<Checkbox>            toggleUseSubpath;
     private Pair<Spinner>             subPathMinFiles;
-    private Pair<Checkbox>            toggleUseSubpathOnlyIfNotFoldered;
+
     private Pair<? extends TextInput> subPath;
     private Pair<Checkbox>            toggleDeleteArchives;
     private Pair<Checkbox>            toggleOverwriteExisting;
@@ -53,6 +53,8 @@ public class ExtractionConfigPanel extends ExtensionConfigPanel<ExtractionExtens
     private Pair<TextArea>            passwordlist;
     private Pair<Checkbox>            toggleDeleteArchiveDownloadLinks;
     private Pair<Checkbox>            toggleDefaultEnabled;
+    private Pair<Spinner>             subPathMinFolders;
+    private Pair<Spinner>             subPathMinFilesOrFolders;
 
     public ExtractionConfigPanel(ExtractionExtension plg) {
         super(plg);
@@ -63,12 +65,24 @@ public class ExtractionConfigPanel extends ExtensionConfigPanel<ExtractionExtens
         customPath.setConditionPair(toggleCustomizedPath);
         toggleUseSubpath = this.addPair(T._.settings_use_subpath(), null, new Checkbox());
         Spinner spinner = new Spinner(0, Integer.MAX_VALUE);
-        spinner.setFormat("# " + T._.files());
-        subPathMinFiles = this.addPair(T._.settings_subpath_minnum2(), null, spinner);
+        spinner.setFormat("# " + T._.files2());
+        // ((DefaultEditor) spinner.getEditor()).getTextField().setHorizontalAlignment(JTextField.LEFT);
+        String lblConstraints = "gapleft 37,aligny center,alignx right";
+
+        subPathMinFiles = this.addPair(T._.settings_subpath_minnum3(), lblConstraints, null, spinner);
         subPathMinFiles.setConditionPair(toggleUseSubpath);
-        toggleUseSubpathOnlyIfNotFoldered = this.addPair(T._.settings_subpath_no_folder2(), null, new Checkbox());
-        toggleUseSubpathOnlyIfNotFoldered.setToolTipText(T._.settings_subpath_no_folder_tt());
-        toggleUseSubpathOnlyIfNotFoldered.setConditionPair(toggleUseSubpath);
+        Spinner spinner2 = new Spinner(0, Integer.MAX_VALUE);
+        spinner2.setFormat("# " + T._.folders());
+
+        subPathMinFolders = this.addPair(T._.and(), lblConstraints, null, spinner2);
+        subPathMinFolders.setConditionPair(toggleUseSubpath);
+
+        Spinner spinner3 = new Spinner(0, Integer.MAX_VALUE);
+        spinner3.setFormat("# " + T._.files_and_folders());
+
+        subPathMinFilesOrFolders = this.addPair(T._.and(), lblConstraints, null, spinner3);
+        subPathMinFilesOrFolders.setConditionPair(toggleUseSubpath);
+
         subPath = this.addPair(T._.settings_subpath(), null, new TextInput() {
 
             @Override
@@ -229,9 +243,10 @@ public class ExtractionConfigPanel extends ExtensionConfigPanel<ExtractionExtens
                         toggleOverwriteExisting.getComponent().setSelected(s.isOverwriteExistingFilesEnabled());
                         toggleUseSubpath.getComponent().setSelected(s.isSubpathEnabled());
                         subPath.getComponent().setText(s.getSubPath());
-                        subPathMinFiles.getComponent().setValue(s.getSubPathFilesTreshhold());
-                        toggleUseSubpathOnlyIfNotFoldered.getComponent().setSelected(s.isSubpathEnabledIfAllFilesAreInAFolder());
+                        subPathMinFiles.getComponent().setValue(s.getSubPathMinFilesTreshhold());
 
+                        subPathMinFolders.getComponent().setValue(s.getSubPathMinFoldersTreshhold());
+                        subPathMinFilesOrFolders.getComponent().setValue(s.getSubPathMinFilesOrFoldersTreshhold());
                         StringBuilder sb = new StringBuilder();
                         if (blackListPatterns != null) {
                             for (String line : blackListPatterns) {
@@ -279,11 +294,20 @@ public class ExtractionConfigPanel extends ExtensionConfigPanel<ExtractionExtens
         s.setSubpathEnabled(toggleUseSubpath.getComponent().isSelected());
         s.setSubPath(subPath.getComponent().getText());
         try {
-            s.setSubPathFilesTreshhold((Integer) subPathMinFiles.getComponent().getValue());
+            s.setSubPathMinFilesTreshhold((Integer) subPathMinFiles.getComponent().getValue());
         } catch (final Throwable e) {
             Log.exception(e);
         }
-        s.setSubpathEnabledIfAllFilesAreInAFolder(toggleUseSubpathOnlyIfNotFoldered.getComponent().isSelected());
+        try {
+            s.setSubPathMinFoldersTreshhold((Integer) subPathMinFolders.getComponent().getValue());
+        } catch (final Throwable e) {
+            Log.exception(e);
+        }
+        try {
+            s.setSubPathMinFilesOrFoldersTreshhold((Integer) subPathMinFilesOrFolders.getComponent().getValue());
+        } catch (final Throwable e) {
+            Log.exception(e);
+        }
         {
             String[] list = Regex.getLines(passwordlist.getComponent().getText());
             java.util.List<String> passwords = new ArrayList<String>(list.length);

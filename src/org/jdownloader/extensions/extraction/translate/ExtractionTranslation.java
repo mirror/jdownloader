@@ -59,8 +59,8 @@ public interface ExtractionTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Subfolder pattern" })
     String settings_subpath();
 
-    @Default(lngs = { "en" }, values = { "... only if archive root contains >" })
-    String settings_subpath_minnum2();
+    @Default(lngs = { "en" }, values = { "   ... only if the archive root contains at least" })
+    String settings_subpath_minnum3();
 
     @Default(lngs = { "en" }, values = { "Create Subfolder" })
     String settings_use_subpath();
@@ -101,8 +101,8 @@ public interface ExtractionTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Miscellaneous" })
     String settings_various();
 
-    @Default(lngs = { "en" }, values = { "files" })
-    String files();
+    @Default(lngs = { "en" }, values = { "file(s)" })
+    String files2();
 
     @Default(lngs = { "en" }, values = { "Don't unpack files matching the following conditions (One per line)" })
     String settings_blacklist();
@@ -313,5 +313,14 @@ public interface ExtractionTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Extract Log for %s1" })
     String showextractlog(String name);
+
+    @Default(lngs = { "en" }, values = { "folder(s)" })
+    String folders();
+
+    @Default(lngs = { "en" }, values = { "file(s) or folder(s)" })
+    String files_and_folders();
+
+    @Default(lngs = { "en" }, values = { "and at least" })
+    String and();
 
 }
