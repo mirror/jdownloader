@@ -46,7 +46,7 @@ import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sharesix.com", "sharesix.net" }, urls = { "https?://(www\\.)?sharesix\\.com/[a-z0-9]{12}", "https?://(www\\.)?sharesix\\.net/[a-z0-9]{12}" }, flags = { 0, 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sharesix.com" }, urls = { "https?://(www\\.)?sharesix\\.com/[a-z0-9]{12}" }, flags = { 0 })
 public class ShareSixCom extends PluginForHost {
 
     private String               correctedBR                  = "";
@@ -65,10 +65,6 @@ public class ShareSixCom extends PluginForHost {
     private static AtomicInteger test                         = new AtomicInteger(0);
 
     // DEV NOTES
-    /**
-     * Script notes: Streaming versions of this script sometimes redirect you to their directlinks when accessing this link + the link ID:
-     * http://somehoster.in/vidembed-
-     * */
     // XfileSharingProBasic Version 2.5.9.5
     // mods:
     // non account: 2 * 2

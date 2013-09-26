@@ -61,9 +61,6 @@ public class UploadedHdCom extends PluginForHost {
     // captchatype: null
     // mods: everything
 
-    private static final String LIMITREACHEDURL = "You+must+wait+10+minutes+between+downloads";
-    private static final String PREMIUMONLYURL  = "You+must+register+for+a+premium+account+to+download+files+of+this+size";
-
     private void setConstants(final Account account) {
         if (account != null && account.getBooleanProperty("free")) {
             // free account
@@ -102,8 +99,10 @@ public class UploadedHdCom extends PluginForHost {
         return false;
     }
 
-    private final String preDlPass   = "<input type=\"password\"[^>]+name=\"filePassword\"";
-    private final String premiumFile = ">You must register for a premium account to download files of this size";
+    private final String preDlPass     = "<input type=\"password\"[^>]+name=\"filePassword\"";
+    private final String premiumFile   = ">You must register for a premium account to download files of this size";
+    private final String premiumSize   = "You+must+register+for+a+premium+account+to+download+files+of+this+size";
+    private final String waitBetweenDl = "You+must+wait+10+minutes+between+downloads";
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
@@ -182,11 +181,11 @@ public class UploadedHdCom extends PluginForHost {
                 }
             }
         }
-        if (br.getURL().contains(LIMITREACHEDURL)) {
+        if (br.getURL().contains(waitBetweenDl)) {
             downloadLink.getLinkStatus().setStatusText("Cannot check links when a downloadlimit is reached");
             return AvailableStatus.UNCHECKABLE;
         }
-        if (br.getURL().contains(PREMIUMONLYURL)) {
+        if (br.getURL().contains(premiumSize)) {
             downloadLink.getLinkStatus().setStatusText("");
             return AvailableStatus.TRUE;
         }
@@ -231,7 +230,7 @@ public class UploadedHdCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_FATAL, "This file can only be downloaded by registered/premium users");
             }
             // Happens when the user is logged in but isn't allowed to download a specified link
-            if (br.getURL().contains(PREMIUMONLYURL)) {
+            if (br.getURL().contains(premiumSize)) {
                 try {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
                 } catch (final Throwable e) {
@@ -239,7 +238,7 @@ public class UploadedHdCom extends PluginForHost {
                 }
                 throw new PluginException(LinkStatus.ERROR_FATAL, "This file can only be downloaded by registered/premium users");
             }
-            if (br.getURL().contains(LIMITREACHEDURL)) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+            if (br.getURL().contains(waitBetweenDl)) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
             boolean captcha = false;
             int wait = 60;
             final String waittime = br.getRegex("\\$\\('\\.download-timer-seconds'\\)\\.html\\((\\d+)\\);").getMatch(0);
