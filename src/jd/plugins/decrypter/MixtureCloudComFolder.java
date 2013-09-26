@@ -35,6 +35,8 @@ public class MixtureCloudComFolder extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
+        // required for http to https
+        br.setFollowRedirects(true);
         br.getPage(parameter);
         if (br.containsHTML("404: page not found|There is no album here<")) {
             logger.info("Link offline: " + parameter);
