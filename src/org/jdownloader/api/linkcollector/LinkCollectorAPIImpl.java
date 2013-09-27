@@ -33,18 +33,18 @@ public class LinkCollectorAPIImpl implements LinkCollectorAPI {
         int maxResults = queryParams.getMaxResults();
 
         // filter out packages, if specific packageUUIDs given, else return all packages
-        ArrayList<CrawledPackage> packages = lc.getPackagesCopy();
+        List<CrawledPackage> packages = lc.getPackagesCopy();
         if (!queryParams._getQueryParam("packageUUIDs", ArrayList.class, new ArrayList<Long>()).isEmpty()) {
             List<Long> requestedIds = queryParams._getQueryParam("packageUUIDs", ArrayList.class, new ArrayList<Long>());
-            List<CrawledPackage> toRemove = new ArrayList<CrawledPackage>();
+            List<CrawledPackage> toKeep = new ArrayList<CrawledPackage>();
             for (CrawledPackage pkg : packages) {
                 for (Long uuid : requestedIds) {
                     if (uuid.equals(pkg.getUniqueID().getID())) {
-                        toRemove.add(pkg);
+                        toKeep.add(pkg);
                     }
                 }
             }
-            packages.removeAll(toRemove);
+            packages = toKeep;
         }
 
         if (startWith > lc.getPackages().size() - 1) return result;
