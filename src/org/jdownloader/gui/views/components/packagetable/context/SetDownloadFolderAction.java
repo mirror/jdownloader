@@ -33,7 +33,12 @@ public abstract class SetDownloadFolderAction<PackageType extends AbstractPackag
     @Override
     public void setSelection(SelectionInfo<PackageType, ChildrenType> selection) {
         super.setSelection(selection);
-        if (hasSelection()) path = LinkTreeUtils.getRawDownloadDirectory(getSelection().getContextPackage());
+        if (hasSelection()) {
+            path = LinkTreeUtils.getRawDownloadDirectory(getSelection().getContextPackage());
+            if (path.getName().equals(getSelection().getContextPackage().getName())) {
+                path = new File(path.getParentFile(), DownloadFolderChooserDialog.PACKAGETAG);
+            }
+        }
     }
 
     @Override

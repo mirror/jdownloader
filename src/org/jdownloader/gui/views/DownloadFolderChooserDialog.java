@@ -39,7 +39,7 @@ public class DownloadFolderChooserDialog extends ExtFileChooserDialog {
     private File                  path;
     private boolean               packageSubFolderSelectionVisible;
     private boolean               subfolder  = false;
-    private final String          PACKAGETAG = "<jd:" + PackagizerController.PACKAGENAME + ">";
+    public static final String    PACKAGETAG = "<jd:" + PackagizerController.PACKAGENAME + ">";
 
     /**
      * @param flag
@@ -159,7 +159,8 @@ public class DownloadFolderChooserDialog extends ExtFileChooserDialog {
     }
 
     /**
-     * checks if the given file is valid as a downloadfolder, this means it must be an existing folder or at least its parent folder must exist
+     * checks if the given file is valid as a downloadfolder, this means it must be an existing folder or at least its parent folder must
+     * exist
      * 
      * @param file
      * @return
