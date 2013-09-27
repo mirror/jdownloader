@@ -59,6 +59,7 @@ import javax.swing.WindowConstants;
 
 import jd.SecondLevelLaunch;
 import jd.config.ConfigContainer;
+import jd.controlling.downloadcontroller.DownloadWatchDog;
 import jd.gui.UIConstants;
 import jd.gui.swing.jdgui.components.StatusBarImpl;
 import jd.gui.swing.jdgui.components.toolbar.MainToolBar;
@@ -85,6 +86,7 @@ import org.appwork.utils.Files;
 import org.appwork.utils.Hash;
 import org.appwork.utils.IO;
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.swing.EDTHelper;
@@ -120,6 +122,7 @@ import org.jdownloader.logging.LogController;
 import org.jdownloader.settings.FrameStatus;
 import org.jdownloader.settings.FrameStatus.ExtendedState;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings;
+import org.jdownloader.settings.GraphicalUserInterfaceSettings.ShowSpeedInWindowTitleTrigger;
 import org.jdownloader.settings.SilentModeSettings.DialogDuringSilentModeAction;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
 import org.jdownloader.settings.staticreferences.CFG_SILENTMODE;
@@ -203,6 +206,8 @@ public class JDGui implements UpdaterListener, OwnerFinder {
 
     protected long                  lastUserInput;
 
+    private Timer                   speedInTitleUpdater;
+
     private JDGui() {
         logger = LogController.getInstance().getLogger("Gui");
         initFrame("JDownloader");
@@ -213,8 +218,6 @@ public class JDGui implements UpdaterListener, OwnerFinder {
         this.mainFrame.setName("MAINFRAME");
         UpdateController.getInstance().getEventSender().addListener(this, true);
         initDialogLocators();
-
-        this.setWindowTitle("JDownloader");
 
         AbstractDialog.setGlobalOwnerFinder(this);
         this.initDefaults();
@@ -252,8 +255,45 @@ public class JDGui implements UpdaterListener, OwnerFinder {
             logger.log(e1);
         }
         BubbleNotify.getInstance();
+        setSpeedInTitleUpdaterEnabled(CFG_GUI.SPEED_IN_WINDOW_TITLE.getValue() != ShowSpeedInWindowTitleTrigger.NEVER);
+        CFG_GUI.SPEED_IN_WINDOW_TITLE.getStorageHandler().getEventSender().addListener(new GenericConfigEventListener<Object>() {
+
+            @Override
+            public void onConfigValueModified(KeyHandler<Object> keyHandler, Object newValue) {
+                setSpeedInTitleUpdaterEnabled(CFG_GUI.SPEED_IN_WINDOW_TITLE.getValue() != ShowSpeedInWindowTitleTrigger.NEVER);
+            }
+
+            @Override
+            public void onConfigValidatorError(KeyHandler<Object> keyHandler, Object invalidValue, ValidationException validateException) {
+            }
+        });
 
     }
+
+    private void setSpeedInTitleUpdaterEnabled(final boolean enabled) {
+        new EDTRunner() {
+
+            @Override
+            protected void runInEDT() {
+                if (speedInTitleUpdater != null) {
+                    speedInTitleUpdater.stop();
+                    speedInTitleUpdater = null;
+                }
+                if (enabled) {
+                    speedInTitleUpdater = new Timer(1000, new ActionListener() {
+
+                        @Override
+                        public void actionPerformed(ActionEvent e) {
+                            updateTitle();
+                        }
+                    });
+                    speedInTitleUpdater.setRepeats(true);
+                    speedInTitleUpdater.start();
+                }
+            }
+
+        };
+    };
 
     public void disposeView(View view) {
         if (view == null) return;
@@ -1448,16 +1488,6 @@ public class JDGui implements UpdaterListener, OwnerFinder {
         });
     }
 
-    public void setWindowTitle(final String msg) {
-        new EDTHelper<Object>() {
-            @Override
-            public Object edtRun() {
-                JDGui.this.mainFrame.setTitle(msg);
-                return null;
-            }
-        }.start();
-    }
-
     /**
      * Sets the window to tray or restores it. This method contains a lot of workarounds for individual system problems... Take care to
      * avoid sideeffects when changing anything
@@ -1579,15 +1609,39 @@ public class JDGui implements UpdaterListener, OwnerFinder {
     }
 
     protected void updateTitle() {
+        String title = "JDownloader";
+
         try {
+            switch (CFG_GUI.CFG.getSpeedInWindowTitle()) {
+
+            case ALWAYS:
+
+                int speed = DownloadWatchDog.getInstance().getDownloadSpeedManager().getSpeed();
+                if (DownloadWatchDog.getInstance().isRunning()) {
+                    title = _GUI._.JDGui_updateTitle_speed_(title, SizeFormatter.formatBytes(Math.max(0, speed)));
+                }
+                break;
+
+            case WHEN_WINDOW_IS_MINIMIZED:
+                if (WindowManager.getInstance().getExtendedState(getMainFrame()) == WindowExtendedState.ICONIFIED) {
+                    speed = DownloadWatchDog.getInstance().getDownloadSpeedManager().getSpeed();
+                    if (DownloadWatchDog.getInstance().isRunning()) {
+                        title = _GUI._.JDGui_updateTitle_speed_(title, SizeFormatter.formatBytes(Math.max(0, speed)));
+                    }
+                }
+                break;
+
+            default:
+                break;
+            }
+
             if (UpdateController.getInstance().hasPendingUpdates()) {
-                getMainFrame().setTitle(_GUI._.JDGui_updateTitle_updates_available("JDownloader"));
-            } else {
-                getMainFrame().setTitle("JDownloader");
+                title = _GUI._.JDGui_updateTitle_updates_available(title);
             }
         } catch (Exception e) {
-            getMainFrame().setTitle("JDownloader");
+
         }
+        getMainFrame().setTitle(title);
     }
 
     public static void init() {

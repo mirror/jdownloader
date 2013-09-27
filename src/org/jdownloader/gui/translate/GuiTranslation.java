@@ -3106,4 +3106,7 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Stop Downloads, but finish running ones" })
     String StopDownloadsAction_createTooltip();
 
+    @Default(lngs = { "en" }, values = { "%s1 - %s2/s" })
+    String JDGui_updateTitle_speed_(String title, String speed);
+
 }

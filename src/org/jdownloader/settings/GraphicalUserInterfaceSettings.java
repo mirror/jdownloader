@@ -571,4 +571,17 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
     boolean isUpdateButtonFlashingEnabled();
 
     void setUpdateButtonFlashingEnabled(boolean b);
+
+    public static enum ShowSpeedInWindowTitleTrigger {
+        NEVER,
+        WHEN_WINDOW_IS_MINIMIZED,
+        ALWAYS
+    }
+
+    @AboutConfig
+    @DefaultEnumValue("WHEN_WINDOW_IS_MINIMIZED")
+    ShowSpeedInWindowTitleTrigger getSpeedInWindowTitle();
+
+    void setSpeedInWindowTitle(ShowSpeedInWindowTitleTrigger b);
+
 }
