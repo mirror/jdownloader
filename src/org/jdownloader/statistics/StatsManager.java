@@ -109,7 +109,8 @@ public class StatsManager implements GenericConfigEventListener<Object> {
     }
 
     public boolean isEnabled() {
-        return config.isEnabled();
+        return false;
+        // return config.isEnabled();
     }
 
     public void onFileDownloaded(File outputCompleteFile, final DownloadLink downloadLink, final long speedBytePS, final long startDelay, final int chunks) {

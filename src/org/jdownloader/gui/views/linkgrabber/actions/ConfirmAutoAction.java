@@ -94,6 +94,18 @@ public class ConfirmAutoAction extends SelectionAppAction<CrawledPackage, Crawle
         return autoStart == AutoStartOptions.ENABLED || (autoStart == AutoStartOptions.AUTO && org.jdownloader.settings.staticreferences.CFG_LINKFILTER.LINKGRABBER_AUTO_START_ENABLED.getValue());
     }
 
+    protected void switchToDownloadTab() {
+        if (JsonConfig.create(LinkgrabberSettings.class).isAutoSwitchToDownloadTableOnConfirmDefaultEnabled()) {
+            new EDTRunner() {
+
+                @Override
+                protected void runInEDT() {
+                    JDGui.getInstance().requestPanel(JDGui.Panels.DOWNLOADLIST);
+                }
+            };
+        }
+    }
+
     private boolean clearListAfterConfirm = false;
 
     @Customizer(name = "Clear Linkgrabber after adding links")
@@ -205,15 +217,7 @@ public class ConfirmAutoAction extends SelectionAppAction<CrawledPackage, Crawle
                 if (doAutostart()) {
                     DownloadWatchDog.getInstance().startDownloads();
                 }
-                if (JsonConfig.create(LinkgrabberSettings.class).isAutoSwitchToDownloadTableOnConfirmDefaultEnabled()) {
-                    new EDTRunner() {
-
-                        @Override
-                        protected void runInEDT() {
-                            JDGui.getInstance().requestPanel(JDGui.Panels.DOWNLOADLIST);
-                        }
-                    };
-                }
+                switchToDownloadTab();
 
                 if (isClearListAfterConfirm()) {
                     new ClearLinkgrabberAction().actionPerformed(null);

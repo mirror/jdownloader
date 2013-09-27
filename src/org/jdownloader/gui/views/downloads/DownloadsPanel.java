@@ -182,14 +182,14 @@ public class DownloadsPanel extends SwitchPanel implements DownloadControllerLis
         if (ret != null) {
             return ret;
         } else {
-            final DownloadOverview loverView = new DownloadOverview(table) {
+            final DownloadOverview overView = new DownloadOverview(table) {
                 @Override
                 public void removeListeners() {
                     super.removeListeners();
                     overViewScrollBar.set(null);
                 }
             };
-            ret = new OverviewHeaderScrollPane(loverView);
+            ret = new OverviewHeaderScrollPane(overView);
             final HeaderScrollPane finalRet = ret;
             LAFOptions.getInstance().applyPanelBackground(ret);
             ret.setColumnHeaderView(new OverViewHeader() {
@@ -197,7 +197,7 @@ public class DownloadsPanel extends SwitchPanel implements DownloadControllerLis
                 @Override
                 protected void onCloseAction() {
                     CFG_GUI.DOWNLOAD_PANEL_OVERVIEW_VISIBLE.setValue(false);
-                    loverView.removeListeners();
+                    overView.removeListeners();
                 }
 
             });

@@ -75,7 +75,7 @@ public class SelectionInfo<PackageType extends AbstractPackageNode<ChildrenType,
     public SelectionInfo(AbstractNode contextObject, List<? extends AbstractNode> selection, MouseEvent event, KeyEvent kEvent, ActionEvent actionEvent, PackageControllerTable<PackageType, ChildrenType> table) {
 
         this.contextObject = contextObject;
-        if (selection == null) {
+        if (selection == null || selection.size() == 0) {
             if (contextObject == null) {
                 rawSelection = new ArrayList<AbstractNode>();
             } else {

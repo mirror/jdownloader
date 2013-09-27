@@ -5,8 +5,10 @@ import java.awt.Component;
 import java.awt.Image;
 import java.awt.LayoutManager;
 import java.awt.event.ActionEvent;
+import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
+import java.util.List;
 
 import javax.swing.DropMode;
 import javax.swing.ImageIcon;
@@ -42,6 +44,7 @@ import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.components.packagetable.PackageControllerTable;
 import org.jdownloader.gui.views.downloads.table.HorizontalScrollbarAction;
+import org.jdownloader.gui.views.linkgrabber.actions.ConfirmAutoAction;
 import org.jdownloader.gui.views.linkgrabber.contextmenu.ContextMenuFactory;
 import org.jdownloader.gui.views.linkgrabber.contextmenu.RemoveSelectionLinkgrabberAction;
 import org.jdownloader.images.NewTheme;
@@ -121,6 +124,48 @@ public class LinkGrabberTable extends PackageControllerTable<CrawledPackage, Cra
                 removeLoaderPanel(loaderPanel, orgLayout, rendererPane);
             }
         });
+    }
+
+    @Override
+    protected void processMouseEvent(final MouseEvent e) {
+        if (e.getID() == MouseEvent.MOUSE_RELEASED) {
+            if (e.getButton() == MouseEvent.BUTTON2) {
+                if ((e.getModifiers() & InputEvent.CTRL_MASK) == 0) {
+                    if ((e.getModifiers() & InputEvent.SHIFT_MASK) == 0) {
+                        // middle click
+                        final int row = rowAtPoint(e.getPoint());
+                        final AbstractNode obj = this.getModel().getObjectbyRow(row);
+                        final ExtColumn<AbstractNode> col = this.getExtColumnAtPoint(e.getPoint());
+                        //
+                        if (LinkGrabberTable.this.isRowSelected(row)) {
+                            // clicked on a selected row. let's confirm them all
+                            List<AbstractNode> selection = getModel().getSelectedObjects();
+
+                            new ConfirmAutoAction(new SelectionInfo<CrawledPackage, CrawledLink>(obj, selection, e, null, null, this)) {
+
+                                protected void switchToDownloadTab() {
+
+                                }
+
+                            }.actionPerformed(null);
+                        } else {
+                            // clicked on a not-selected row. only add the context item
+                            List<AbstractNode> selection = getModel().getSelectedObjects();
+
+                            new ConfirmAutoAction(new SelectionInfo<CrawledPackage, CrawledLink>(obj, null, e, null, null, this)) {
+
+                                protected void switchToDownloadTab() {
+
+                                }
+
+                            }.actionPerformed(null);
+                        }
+
+                    }
+                }
+            }
+        }
+        super.processMouseEvent(e);
     }
 
     protected void fireColumnModelUpdate() {

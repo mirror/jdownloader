@@ -42,6 +42,8 @@ public class OverViewHeader extends MigPanel {
         add(lbl, "height 17!");
 
         options = new ExtButton(new AppAction() {
+            private JPopupMenu pu;
+
             {
                 //
 
@@ -51,7 +53,8 @@ public class OverViewHeader extends MigPanel {
 
             @Override
             public void actionPerformed(ActionEvent e) {
-                JPopupMenu pu = new JPopupMenu();
+
+                pu = new JPopupMenu();
                 CheckboxMenuItem total = new CheckboxMenuItem(_GUI._.OverViewHeader_actionPerformed_total_(), CFG_GUI.OVERVIEW_PANEL_TOTAL_INFO_VISIBLE);
                 CheckboxMenuItem filtered = new CheckboxMenuItem(_GUI._.OverViewHeader_actionPerformed_visible_only_(), CFG_GUI.OVERVIEW_PANEL_VISIBLE_ONLY_INFO_VISIBLE);
                 CheckboxMenuItem selected = new CheckboxMenuItem(_GUI._.OverViewHeader_actionPerformed_selected_(), CFG_GUI.OVERVIEW_PANEL_SELECTED_INFO_VISIBLE);
@@ -72,6 +75,7 @@ public class OverViewHeader extends MigPanel {
                 // pu.setPreferredSize(new Dimension(optionsgetWidth() + insets[1] + insets[3], (int) pref.getHeight()));
 
                 pu.show(options, -insets[1], -pu.getPreferredSize().height + insets[2]);
+
             }
         });
         options.setRolloverEffectEnabled(true);

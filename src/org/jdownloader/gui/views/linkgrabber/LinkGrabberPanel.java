@@ -606,6 +606,7 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
     }
 
     public void onLinkCollectorContentRemoved(LinkCollectorEvent event) {
+        tableModel.recreateModel(!QueuePriority.HIGH.equals(event.getPrio()));
     }
 
     public void onLinkCollectorContentAdded(LinkCollectorEvent event) {
