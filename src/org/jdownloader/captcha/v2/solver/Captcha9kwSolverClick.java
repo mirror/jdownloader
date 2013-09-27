@@ -53,6 +53,7 @@ public class Captcha9kwSolverClick extends ChallengeSolver<ClickedPoint> impleme
 
     @Override
     public boolean canHandle(Challenge<?> c) {
+        // do not use && config.isEnabled() here. config.ismouse() is the enable config for the mouse solver
         return CFG_CAPTCHA.CAPTCHA_EXCHANGE_SERVICES_ENABLED.isEnabled() && config.isEnabled() && config.ismouse() && super.canHandle(c);
     }
 
