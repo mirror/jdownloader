@@ -408,7 +408,7 @@ public class BillionUploadsCom extends PluginForHost {
             for (int i = 0; i <= repeat; i++) {
                 dlForm = cleanForm(dlForm);
                 // custom form inputs
-                dlForm.put("geekref", "yeahman");
+
                 final long timeBefore = System.currentTimeMillis();
                 // md5 can be on the subsequent pages
                 if (inValidate(downloadLink.getMD5Hash())) {
@@ -510,6 +510,14 @@ public class BillionUploadsCom extends PluginForHost {
         ArrayList<String> regexStuff = new ArrayList<String>();
 
         // remove custom rules first!!! As html can change because of generic cleanup rules.
+        String[] mehh = new Regex(toClean, "decodeURIComponent\\(\"(.*?)\"\\);").getColumn(0);
+        if (mehh != null && mehh.length != 0) {
+            for (String meh : mehh) {
+                if (new Regex(meh, "(%[A-F0-9]{2}){1,}").matches()) {
+                    toClean = toClean.replace(meh, Encoding.urlDecode(meh, false));
+                }
+            }
+        }
 
         // generic cleanup
         // this checks for fake or empty forms from original source and corrects
