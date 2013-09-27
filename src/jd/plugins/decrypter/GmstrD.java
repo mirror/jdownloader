@@ -34,7 +34,6 @@ public class GmstrD extends PluginForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-
         br.getPage(param.getCryptedUrl());
         String getVideoUrl = br.getRegex("'file': '(.*?)'").getMatch(0);
         br.setFollowRedirects(false);

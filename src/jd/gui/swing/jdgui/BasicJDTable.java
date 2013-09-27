@@ -26,7 +26,7 @@ import org.jdownloader.updatev2.gui.LAFOptions;
 public class BasicJDTable<T> extends ExtTable<T> implements GenericConfigEventListener<Integer> {
 
     private static final long serialVersionUID = -9181860215412270250L;
-    protected int             mouseOverRow;
+    protected int             mouseOverRow     = -1;
 
     public BasicJDTable(ExtTableModel<T> tableModel) {
         super(tableModel);
@@ -90,24 +90,7 @@ public class BasicJDTable<T> extends ExtTable<T> implements GenericConfigEventLi
             // });
             //
 
-            Color f = (LAFOptions.getInstance().getColorForTableMouseOverRowForeground());
-            Color b = (LAFOptions.getInstance().getColorForTableMouseOverRowBackground());
-            this.getModel().addExtComponentRowHighlighter(new ExtComponentRowHighlighter<T>(f, b, null) {
-                public int getPriority() {
-                    return Integer.MAX_VALUE - 1;
-                }
-
-                @Override
-                protected Color getBackground(Color current) {
-                    return super.getBackground(current);
-                }
-
-                @Override
-                public boolean accept(ExtColumn<T> column, T value, boolean selected, boolean focus, int row) {
-                    return mouseOverRow == row;
-                }
-
-            });
+            initMouseOverRowHighlighter();
         }
         initRowHeight();
         // this.addRowHighlighter(new AlternateHighlighter(null, ColorUtils.getAlphaInstance(new JLabel().getForeground(), 6)));
@@ -118,6 +101,27 @@ public class BasicJDTable<T> extends ExtTable<T> implements GenericConfigEventLi
             this.getModel().addExtComponentRowHighlighter(new AlternateHighlighter<T>((LAFOptions.getInstance().getColorForTableAlternateRowForeground()), (LAFOptions.getInstance().getColorForTableAlternateRowBackground()), null));
         }
 
+    }
+
+    protected void initMouseOverRowHighlighter() {
+        Color f = (LAFOptions.getInstance().getColorForTableMouseOverRowForeground());
+        Color b = (LAFOptions.getInstance().getColorForTableMouseOverRowBackground());
+        this.getModel().addExtComponentRowHighlighter(new ExtComponentRowHighlighter<T>(f, b, null) {
+            public int getPriority() {
+                return Integer.MAX_VALUE - 1;
+            }
+
+            @Override
+            protected Color getBackground(Color current) {
+                return super.getBackground(current);
+            }
+
+            @Override
+            public boolean accept(ExtColumn<T> column, T value, boolean selected, boolean focus, int row) {
+                return mouseOverRow == row;
+            }
+
+        });
     }
 
     protected JPopupMenu columnControlMenu(final ExtColumn<T> extColumn) {

@@ -17,20 +17,71 @@
 package jd.gui.swing.jdgui.components.premiumbar;
 
 import java.awt.Cursor;
+import java.awt.Point;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 
-import javax.swing.JLabel;
-
+import org.appwork.swing.MigPanel;
+import org.appwork.swing.components.ExtButton;
+import org.appwork.swing.components.tooltips.ExtTooltip;
+import org.appwork.swing.components.tooltips.ToolTipController;
 import org.jdownloader.DomainInfo;
 
-public class TinyProgressBar extends JLabel {
+public class TinyProgressBar extends MigPanel {
 
     private static final long serialVersionUID = 8385631080915257786L;
 
     private DomainInfo        domainInfo       = null;
 
-    public TinyProgressBar() {
+    private ExtButton         bt;
+
+    private PremiumStatus     owner;
+
+    public TinyProgressBar(PremiumStatus owner, DomainInfo domainInfo2) {
+        super("ins 0", "[]", "[]");
+        this.owner = owner;
         setOpaque(false);
         setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        bt = new ExtButton() {
+
+            @Override
+            public boolean isTooltipWithoutFocusEnabled() {
+                return true;
+            }
+
+            @Override
+            public ExtTooltip createExtTooltip(Point mousePosition) {
+
+                return new AccountTooltip(TinyProgressBar.this.owner, domainInfo);
+
+            }
+
+        };
+        bt.addMouseListener(new MouseAdapter() {
+
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                ToolTipController.getInstance().show(bt);
+            }
+
+        });
+        bt.addActionListener(new ActionListener() {
+
+            @Override
+            public void actionPerformed(ActionEvent e) {
+
+            }
+        });
+        bt.setBorderPainted(false);
+        add(bt, "width 20!,height 20!");
+        setDomainInfo(domainInfo2);
+    }
+
+    public void setEnabled(boolean enabled) {
+        super.setEnabled(enabled);
+        bt.setEnabled(enabled);
     }
 
     /**
@@ -39,9 +90,9 @@ public class TinyProgressBar extends JLabel {
      */
     public void setDomainInfo(DomainInfo domainInfo) {
         this.domainInfo = domainInfo;
-        this.setIcon(domainInfo.getFavIcon());
+        bt.setIcon(domainInfo.getFavIcon());
         this.setVisible(true);
-        this.setToolTipText(domainInfo.getTld());
+
     }
 
     /**

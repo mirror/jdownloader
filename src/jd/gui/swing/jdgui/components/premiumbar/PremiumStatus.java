@@ -19,6 +19,7 @@ package jd.gui.swing.jdgui.components.premiumbar;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.ScheduledExecutorService;
@@ -44,46 +45,35 @@ import org.appwork.storage.config.events.GenericConfigEventListener;
 import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.utils.logging.Log;
 import org.appwork.utils.swing.EDTHelper;
-import org.appwork.utils.swing.EDTRunner;
 import org.jdownloader.DomainInfo;
 import org.jdownloader.settings.GeneralSettings;
 
 public class PremiumStatus extends JPanel implements MouseListener {
 
-    private static final long       serialVersionUID = 7290466989514173719L;
-    private static final int        BARCOUNT         = 15;
-    private final TinyProgressBar[] bars;
-    private DelayedRunnable         redrawTimer;
-    private static PremiumStatus    INSTANCE         = new PremiumStatus();
+    private static final long    serialVersionUID = 7290466989514173719L;
+
+    private DelayedRunnable      redrawTimer;
+    private static PremiumStatus INSTANCE         = new PremiumStatus();
 
     public static PremiumStatus getInstance() {
         return INSTANCE;
     }
 
     private PremiumStatus() {
-        super(new MigLayout("ins 0 3 0 0", "", "[20!]"));
-
-        bars = new TinyProgressBar[Math.max(1, JsonConfig.create(GeneralSettings.class).getMaxPremiumIcons())];
-        for (int i = 0; i < bars.length; i++) {
-            bars[i] = new TinyProgressBar();
-            bars[i].setOpaque(false);
-            bars[i].addMouseListener(this);
-            bars[i].setVisible(false);
-            add(bars[i], "hidemode 3");
-        }
+        super(new MigLayout("ins 0 2 0", "0[]0[]0[]0[]0", "0[]0"));
 
         this.setOpaque(false);
-        updateGUI(org.jdownloader.settings.staticreferences.CFG_GENERAL.USE_AVAILABLE_ACCOUNTS.getValue());
+
+        redraw();
         org.jdownloader.settings.staticreferences.CFG_GENERAL.USE_AVAILABLE_ACCOUNTS.getEventSender().addListener(new GenericConfigEventListener<Boolean>() {
 
             public void onConfigValueModified(KeyHandler<Boolean> keyHandler, Boolean newValue) {
-                updateGUI(newValue);
+                redraw();
             }
 
             public void onConfigValidatorError(KeyHandler<Boolean> keyHandler, Boolean invalidValue, ValidationException validateException) {
             }
         });
-
         SecondLevelLaunch.ACCOUNTLIST_LOADED.executeWhenReached(new Runnable() {
 
             public void run() {
@@ -106,7 +96,7 @@ public class PremiumStatus extends JPanel implements MouseListener {
                             }
 
                         }, 1, 5, TimeUnit.MINUTES);
-                        redrawTimer = new DelayedRunnable(scheduler, 5000, 20000) {
+                        redrawTimer = new DelayedRunnable(scheduler, 1000, 5000) {
 
                             @Override
                             public String getID() {
@@ -123,6 +113,7 @@ public class PremiumStatus extends JPanel implements MouseListener {
                         AccountController.getInstance().getBroadcaster().addListener(new AccountControllerListener() {
 
                             public void onAccountControllerEvent(AccountControllerEvent event) {
+                                System.out.println(event);
                                 if (org.jdownloader.settings.staticreferences.CFG_GENERAL.USE_AVAILABLE_ACCOUNTS.isEnabled()) redrawTimer.run();
                             }
                         });
@@ -132,19 +123,19 @@ public class PremiumStatus extends JPanel implements MouseListener {
         });
     }
 
-    private void updateGUI(final boolean enabled) {
-
-        new EDTRunner() {
-
-            @Override
-            protected void runInEDT() {
-                if (bars == null) return;
-                for (int i = 0; i < bars.length; i++) {
-                    bars[i].setEnabled(enabled);
-                }
-            }
-        };
-    }
+    // private void updateGUI(final boolean enabled) {
+    //
+    // new EDTRunner() {
+    //
+    // @Override
+    // protected void runInEDT() {
+    // if (bars == null) return;
+    // for (int i = 0; i < bars.length; i++) {
+    // bars[i].setEnabled(enabled);
+    // }
+    // }
+    // };
+    // }
 
     private void refreshAccountStats() {
         for (Account acc : AccountController.getInstance().list()) {
@@ -157,13 +148,14 @@ public class PremiumStatus extends JPanel implements MouseListener {
         }
     }
 
-    private void redraw() {
+    void redraw() {
         List<Account> accs = AccountController.getInstance().list();
         HashMap<String, DomainInfo> domainInfos = new HashMap<String, DomainInfo>();
+        final HashSet<DomainInfo> enabled = new HashSet<DomainInfo>();
         final LinkedList<DomainInfo> domains = new LinkedList<DomainInfo>();
         for (Account acc : accs) {
             AccountInfo ai = acc.getAccountInfo();
-            if (!acc.isEnabled() || !acc.isValid() || (ai != null && ai.isExpired())) continue;
+            // if (!acc.isEnabled() || !acc.isValid() || (ai != null && ai.isExpired())) continue;
             DomainInfo domainInfo = domainInfos.get(acc.getHoster());
             if (domainInfo == null) {
                 PluginForHost plugin = JDUtilities.getPluginForHost(acc.getHoster());
@@ -171,7 +163,13 @@ public class PremiumStatus extends JPanel implements MouseListener {
                     domainInfo = plugin.getDomainInfo(null);
                     domainInfos.put(acc.getHoster(), domainInfo);
                     domains.add(domainInfo);
+
                 }
+
+            }
+            if (acc.isEnabled() && acc.isValid() && !(ai != null && ai.isExpired())) {
+
+                enabled.add(domainInfo);
             }
             /* prefetch outside EDT */
             domainInfo.getFavIcon();
@@ -182,13 +180,24 @@ public class PremiumStatus extends JPanel implements MouseListener {
             @Override
             public Object edtRun() {
                 try {
-                    for (int i = 0; i < bars.length; i++) {
-                        if (domains.size() > 0) {
-                            bars[i].setDomainInfo(domains.removeFirst());
-                        } else {
-                            bars[i].setVisible(false);
-                        }
+                    removeAll();
+
+                    int max = Math.min(domains.size(), JsonConfig.create(GeneralSettings.class).getMaxPremiumIcons());
+                    StringBuilder sb = new StringBuilder();
+                    sb.append("2");
+                    for (int i = 0; i < max; i++) {
+                        sb.append("[22!]0");
                     }
+                    setLayout(new MigLayout("ins 0 2 0 0", sb.toString(), "[22!]"));
+                    for (int i = 0; i < max; i++) {
+                        DomainInfo di;
+                        TinyProgressBar bar = new TinyProgressBar(PremiumStatus.this, di = domains.removeFirst());
+                        add(bar, "gapleft 0,gapright 0");
+                        bar.setEnabled(enabled.contains(di) && org.jdownloader.settings.staticreferences.CFG_GENERAL.USE_AVAILABLE_ACCOUNTS.getValue());
+
+                    }
+                    revalidate();
+                    repaint();
                 } catch (final Throwable e) {
                     Log.exception(e);
                 }
