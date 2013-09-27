@@ -215,7 +215,7 @@ public class FreeWayMe extends PluginForHost {
             /* end workaround for wrong encoding while redirect */
         }
 
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, false, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 1);
 
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
