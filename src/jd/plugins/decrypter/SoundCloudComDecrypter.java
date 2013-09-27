@@ -272,7 +272,7 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
 
     private final static String defaultCustomPackagename = "*channelname* - *playlistname*";
 
-    public String getFormattedPackagename(final String channelname, final String playlistname, String date) throws ParseException {
+    private String getFormattedPackagename(final String channelname, final String playlistname, String date) throws ParseException {
         String formattedpackagename = CFG.getStringProperty(CUSTOM_PACKAGENAME, defaultCustomPackagename);
         if (formattedpackagename == null || formattedpackagename.equals("")) formattedpackagename = defaultCustomPackagename;
         if (!formattedpackagename.contains("*channelname*") && !formattedpackagename.contains("*playlistname*")) formattedpackagename = defaultCustomPackagename;

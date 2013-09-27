@@ -19,6 +19,7 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Random;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -38,7 +39,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "xhamster.com" }, urls = { "http://(www\\.)?xhamster\\.com/(xembed\\.php\\?video=\\d+|movies/[0-9]+/.*?\\.html)" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "xhamster.com" }, urls = { "http://(www\\.)?(m\\.xhamster\\.com/preview/\\d+|xhamster\\.com/(xembed\\.php\\?video=\\d+|movies/[0-9]+/.*?\\.html))" }, flags = { 0 })
 public class XHamsterCom extends PluginForHost {
 
     public XHamsterCom(PluginWrapper wrapper) {
@@ -50,6 +51,14 @@ public class XHamsterCom extends PluginForHost {
     @Override
     public String getAGBLink() {
         return "http://xhamster.com/terms.php";
+    }
+
+    private static final String MOBILELINK = "http://(www\\.)?m\\.xhamster\\.com/preview/\\d+";
+
+    public void correctDownloadLink(final DownloadLink link) {
+        if (link.getDownloadURL().matches(MOBILELINK)) {
+            link.setUrlDownload("http://xhamster.com/movies/" + new Regex(link.getDownloadURL(), "(\\d+)$").getMatch(0) + "/" + System.currentTimeMillis() + new Random().nextInt(10000) + ".html");
+        }
     }
 
     /**

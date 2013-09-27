@@ -20,6 +20,7 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.CryptedLink;
@@ -106,25 +107,60 @@ public class XxxBunkerCom extends PluginForDecrypt {
             decryptedLinks.add(dl);
             return decryptedLinks;
         }
+        final Browser br2 = br.cloneBrowser();
         externID = br.getRegex("file%3D(http[^<>\"]*?)%26amp%").getMatch(0);
         if (externID != null) {
             externID = Encoding.deepHtmlDecode(externID);
-            br.getPage(externID);
-            externID = br.getRedirectLocation();
+            br2.getPage(externID);
+            externID = br2.getRedirectLocation();
             if (externID == null) {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
             }
-            final DownloadLink dl = createDownloadlink("directhttp://" + externID);
-            dl.setFinalFileName(Encoding.htmlDecode(filename.trim()) + ".mp4");
-            decryptedLinks.add(dl);
-            return decryptedLinks;
+            if (checkDirectLink(externID)) {
+                final DownloadLink dl = createDownloadlink(externID + ".jdeatme");
+                dl.setFinalFileName(Encoding.htmlDecode(filename.trim()) + ".mp4");
+                decryptedLinks.add(dl);
+                return decryptedLinks;
+            } else {
+                externID = br.getRegex("player\\.swf\\?config=(http%3A%2F%2Fxxxbunker\\.com%2FplayerConfig\\.php%3F[^<>\"]*?)\"").getMatch(0);
+                if (externID != null) {
+                    br2.getPage(Encoding.htmlDecode(externID));
+                    externID = br2.getRegex("<file>(http[^<>\"]*?)</file>").getMatch(0);
+                    if (externID == null) {
+                        logger.warning("Decrypter broken for link: " + parameter);
+                        return null;
+                    }
+                    br2.getPage(externID);
+                    externID = br2.getRedirectLocation();
+                    if (externID == null) {
+                        logger.warning("Decrypter broken for link: " + parameter);
+                        return null;
+                    }
+                    final DownloadLink dl = createDownloadlink(externID + ".jdeatme");
+                    dl.setFinalFileName(Encoding.htmlDecode(filename.trim()) + ".flv");
+                    decryptedLinks.add(dl);
+                    return decryptedLinks;
+                }
+            }
         }
         if (externID == null) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
         return decryptedLinks;
+    }
+
+    private boolean checkDirectLink(final String directlink) {
+        try {
+            final Browser br2 = br.cloneBrowser();
+            URLConnectionAdapter con = br2.openGetConnection(directlink);
+            if (con.getContentType().contains("html") || con.getLongContentLength() == -1) { return false; }
+            con.disconnect();
+        } catch (Exception e) {
+            return false;
+        }
+        return true;
     }
 
     /* NO OVERRIDE!! */

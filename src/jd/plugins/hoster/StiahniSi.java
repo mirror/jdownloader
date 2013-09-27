@@ -56,7 +56,7 @@ public class StiahniSi extends PluginForHost {
         link.setUrlDownload("http://www.stiahni.si/download.php?id=" + new Regex(link.getDownloadURL(), "(\\d+)$").getMatch(0));
     }
 
-    private static final boolean SKIPWAIT = true;
+    private static final boolean SKIPWAIT = false;
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {

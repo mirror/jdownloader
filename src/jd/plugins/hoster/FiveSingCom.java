@@ -20,6 +20,7 @@ import java.io.IOException;
 
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -29,7 +30,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "5sing.com" }, urls = { "http://(www\\.)?fc\\.5sing\\.com/\\d+\\.html" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "5sing.com" }, urls = { "http://(www\\.)?[a-z0-9]+\\.5sing\\.com/(\\d+\\.html|down/\\d+)" }, flags = { 0 })
 public class FiveSingCom extends PluginForHost {
 
     public FiveSingCom(PluginWrapper wrapper) {
@@ -39,6 +40,14 @@ public class FiveSingCom extends PluginForHost {
     @Override
     public String getAGBLink() {
         return "http://5sing.com/";
+    }
+
+    private static final String CRIPPLEDLINK = "http://(www\\.)?[a-z0-9]+\\.5sing\\.com/down/\\d+";
+
+    public void correctDownloadLink(final DownloadLink link) {
+        if (link.getDownloadURL().matches(CRIPPLEDLINK)) {
+            link.setUrlDownload("http://fc.5sing.com/" + new Regex(link.getDownloadURL(), "(\\d+)$").getMatch(0) + ".html");
+        }
     }
 
     @Override

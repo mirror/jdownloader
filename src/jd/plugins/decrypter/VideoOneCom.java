@@ -189,7 +189,7 @@ public class VideoOneCom extends PluginForDecrypt {
             decryptedLinks.add(createDownloadlink("http://www.yobt.tv/content/" + externID + "/" + System.currentTimeMillis() + ".html"));
             return decryptedLinks;
         }
-        externID = br.getRegex("src=\"http://(www\\.)?embed\\.porntube\\.com/(\\d+)\"").getMatch(1);
+        externID = br.getRegex("src=\"http://(www\\.)?embed\\.porntube\\.com/(\\d+)/?\"").getMatch(1);
         if (externID != null) {
             decryptedLinks.add(createDownloadlink("http://porntube.com/videos/x_" + externID));
             return decryptedLinks;
