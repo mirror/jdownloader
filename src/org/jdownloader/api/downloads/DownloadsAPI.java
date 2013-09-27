@@ -27,6 +27,8 @@ public interface DownloadsAPI extends RemoteAPIInterface {
      * Query Packages currently in downloads
      * 
      * Example: http://localhost:3128/downloads/queryPackages?{"saveTo":true,"childCount":true,"hosts":true,"startAt":0,"maxResults":10}
+     * Optionally you can query only certian packages:
+     * http://localhost:3128/downloads/queryPackages?{"packageUUIDs":[1358496436106,1358496436107]}
      * 
      * Default fields returned: name, uuid
      * 

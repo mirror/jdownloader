@@ -42,7 +42,22 @@ public class DownloadsAPIImpl implements DownloadsAPI {
     public List<FilePackageAPIStorable> queryPackages(APIQuery queryParams) {
         DownloadController dlc = DownloadController.getInstance();
         DownloadWatchDog dwd = DownloadWatchDog.getInstance();
+
+        // filter out packages, if specific packageUUIDs given, else return all packages
         ArrayList<FilePackage> packages = dlc.getPackagesCopy();
+        if (!queryParams._getQueryParam("packageUUIDs", ArrayList.class, new ArrayList<Long>()).isEmpty()) {
+            List<Long> requestedIds = queryParams._getQueryParam("packageUUIDs", ArrayList.class, new ArrayList<Long>());
+            List<FilePackage> toRemove = new ArrayList<FilePackage>();
+            for (FilePackage pkg : packages) {
+                for (Long uuid : requestedIds) {
+                    if (uuid.equals(pkg.getUniqueID().getID())) {
+                        toRemove.add(pkg);
+                    }
+                }
+            }
+            packages.removeAll(toRemove);
+        }
+
         List<FilePackageAPIStorable> ret = new ArrayList<FilePackageAPIStorable>(dlc.size());
         int startWith = queryParams.getStartAt();
         int maxResults = queryParams.getMaxResults();
