@@ -89,11 +89,13 @@ public class AnySendCom extends PluginForHost {
         br.setCookie("http://www.anysend.com/", "PAPVisitorId", visitorid);
         continuelink += visitorid;
         br.getPage(continuelink);
-        final String filename = br.getRegex("class=\"filename\">([^<>\"]*?)</h1>").getMatch(0);
-        final String filesize = br.getRegex("id=\"files-size\">([^<>\"]*?)</td>").getMatch(0);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        String filename = br.getRegex("class=\"filename\">([^<>\"]+)</h1>").getMatch(0);
+        if (filename == null) filename = br.getRegex(">File Name: (.*?)<").getMatch(0);
+        String filesize = br.getRegex("id=\"files-size\">([^<>\"]+)</td>").getMatch(0);
+        if (filesize == null) filesize = br.getRegex(">File Size: (\\d+(\\.\\d+)? (KB|MB|GB))<").getMatch(0);
+        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         link.setName(Encoding.htmlDecode(filename.trim()));
-        link.setDownloadSize(SizeFormatter.getSize(filesize.trim()));
+        if (filesize != null) link.setDownloadSize(SizeFormatter.getSize(filesize.trim()));
         return AvailableStatus.TRUE;
     }
 
