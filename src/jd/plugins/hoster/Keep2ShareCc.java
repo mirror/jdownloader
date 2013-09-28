@@ -86,14 +86,14 @@ public class Keep2ShareCc extends PluginForHost {
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
         if (br.containsHTML("Sorry, an error occurred while processing your request|File not found or deleted")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename, filesize = null;
+        String filename = null, filesize = null;
+        // This might not be needed anymore but keeping it doesn't hurt either
         if (br.containsHTML(DOWNLOADPOSSIBLE)) {
             filename = br.getRegex(">Downloading file:</span><br>[\t\n\r ]+<span class=\"c2\">.*?alt=\"\" style=\"\">([^<>\"]*?)</span>").getMatch(0);
             filesize = br.getRegex("File size ([^<>\"]*?)</div>").getMatch(0);
-        } else {
-            filename = br.getRegex("File: <span>([^<>\"]*?)</span>").getMatch(0);
-            filesize = br.getRegex(">Size: ([^<>\"]*?)</div>").getMatch(0);
         }
+        if (filename == null) filename = br.getRegex("File: <span>([^<>\"]*?)</span>").getMatch(0);
+        if (filesize == null) filesize = br.getRegex(">Size: ([^<>\"]*?)</div>").getMatch(0);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         link.setName(Encoding.htmlDecode(filename.trim()));
         link.setDownloadSize(SizeFormatter.getSize(filesize));

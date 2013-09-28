@@ -98,9 +98,18 @@ public class BandCampComDecrypter extends PluginForDecrypt {
         }
 
         final boolean decryptThumb = CFG.getBooleanProperty(GRABTHUMB, false);
-        final String thumbnail = br.getRegex("artFullsizeUrl: \"(https?://[^<>\"]*?)\"").getMatch(0);
+        final String thumbnail = br.getRegex("<a class=\"popupImage\" href=\"(http://[^<>\"]*?\\.jpg)\"").getMatch(0);
         if (decryptThumb && thumbnail != null) {
             final DownloadLink thumb = createDownloadlink("directhttp://" + thumbnail);
+            thumb.setProperty("fromdecrypter", true);
+            thumb.setProperty("directdate", date);
+            thumb.setProperty("directartist", artist);
+            thumb.setProperty("directalbum", album);
+            thumb.setProperty("directname", "thumbnail");
+            thumb.setProperty("type", "jpg");
+            thumb.setProperty("directtracknumber", df.format(0));
+            final String formattedFilename = ((jd.plugins.hoster.BandCampCom) hostPlugin).getFormattedFilename(thumb);
+            thumb.setFinalFileName(formattedFilename);
             decryptedLinks.add(thumb);
         }
 

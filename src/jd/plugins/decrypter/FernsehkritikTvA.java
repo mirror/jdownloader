@@ -156,19 +156,25 @@ public class FernsehkritikTvA extends PluginForDecrypt {
                     decryptedLinks.add(dlLink);
                 }
                 if (!MOV && !MP4 && !FLV) {
-                    ArrayList<DownloadLink> dllinks = getParts(parameter, FilePackage.getInstance(), EPISODENUMBER);
+                    ArrayList<DownloadLink> dllinks = getParts(parameter, EPISODENUMBER);
                     decryptedLinks.addAll(dllinks);
                 }
             } else {
-                ArrayList<DownloadLink> dllinks = getParts(parameter, FilePackage.getInstance(), EPISODENUMBER);
+                ArrayList<DownloadLink> dllinks = getParts(parameter, EPISODENUMBER);
                 decryptedLinks.addAll(dllinks);
             }
         }
         if (decryptedLinks == null || decryptedLinks.size() == 0) { return null; }
+
+        fp = FilePackage.getInstance();
+        final String formattedpackagename = getFormattedPackagename(EPISODENUMBER, DATE);
+        fp.setName(formattedpackagename);
+        fp.addLinks(decryptedLinks);
+
         return decryptedLinks;
     }
 
-    private ArrayList<DownloadLink> getParts(String parameter, FilePackage fp, String episode) throws Exception {
+    private ArrayList<DownloadLink> getParts(String parameter, String episode) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         br.getPage(parameter + "/Start/");
         final String[] jumps = br.getRegex("url: base \\+ \\'\\d+\\-(\\d+)\\.flv\\'").getColumn(0);
@@ -180,9 +186,7 @@ public class FernsehkritikTvA extends PluginForDecrypt {
         parts.add("1");
         for (String jump : jumps)
             if (!parts.contains(jump)) parts.add(jump);
-        fp = FilePackage.getInstance();
         final String formattedpackagename = getFormattedPackagename(EPISODENUMBER, DATE);
-        fp.setName(formattedpackagename);
         for (final String part : parts) {
             String directlink = "http://fernsehkritik.tv/js/directme.php?file=";
             if (part.equals("1")) {
@@ -198,7 +202,6 @@ public class FernsehkritikTvA extends PluginForDecrypt {
             dlLink.setProperty("originallink", directlink);
             final String formattedFilename = ((jd.plugins.hoster.FernsehkritikTv) HOSTPLUGIN).getFKTVFormattedFilename(dlLink);
             dlLink.setFinalFileName(formattedFilename);
-            fp.add(dlLink);
             if (FASTCHECKENABLED) dlLink.setAvailable(true);
             decryptedLinks.add(dlLink);
         }

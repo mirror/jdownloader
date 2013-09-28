@@ -205,7 +205,8 @@ public class VKontakteRu extends PluginForDecrypt {
                 /** Replace section end */
 
                 /** Errorhandling start */
-                if (br.containsHTML("Unknown error|Неизвестная ошибка")) { throw new DecrypterException(EXCEPTION_LINKOFFLINE); }
+                // English | Rus | Polish
+                if (br.containsHTML("Unknown error|Неизвестная ошибка|Nieznany b\\&#322;\\&#261;d")) { throw new DecrypterException(EXCEPTION_LINKOFFLINE); }
                 if (br.containsHTML("Access denied")) { throw new DecrypterException(EXCEPTION_LINKOFFLINE); }
                 /** Errorhandling end */
 
