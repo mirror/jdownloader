@@ -1430,18 +1430,13 @@ public class TbCm extends PluginForDecrypt {
             sb.append(s.charAt(2));
             sb.append(s.substring(60));
         } else if (s.length() == 86) {
-            sb.append(s.substring(5, 34));
-            sb.append(s.charAt(0));
-            sb.append(s.substring(35, 38));
-            sb.append(s.charAt(3));
-            sb.append(s.substring(39, 45));
-            sb.append(s.charAt(38));
-            sb.append(s.substring(46, 53));
-            sb.append(s.charAt(73));
-            sb.append(s.substring(54, 73));
-            sb.append(s.charAt(85));
-            sb.append(s.substring(74, 85));
-            sb.append(s.charAt(53));
+            sb.append(new StringBuilder(s.substring(73, 81)).reverse());
+            sb.append(s.charAt(16));
+            sb.append(new StringBuilder(s.substring(40, 72)).reverse());
+            sb.append(s.charAt(72));
+            sb.append(new StringBuilder(s.substring(17, 39)).reverse());
+            sb.append(s.charAt(82));
+            sb.append(new StringBuilder(s.substring(0, 16)).reverse());
         } else if (s.length() == 85) {
             sb.append(s.substring(3, 11));
             sb.append(s.charAt(0));
@@ -1449,18 +1444,18 @@ public class TbCm extends PluginForDecrypt {
             sb.append(s.charAt(84));
             sb.append(s.substring(56, 84));
         } else if (s.length() == 84) {
-            sb.append(new StringBuilder(s.substring(37, 82)).reverse());
-            sb.append(s.charAt(0));
-            sb.append(new StringBuilder(s.substring(3, 36)).reverse());
+            sb.append(new StringBuilder(s.substring(71, 79)).reverse());
+            sb.append(s.charAt(14));
+            sb.append(new StringBuilder(s.substring(38, 70)).reverse());
+            sb.append(s.charAt(70));
+            sb.append(new StringBuilder(s.substring(15, 37)).reverse());
+            sb.append(s.charAt(80));
+            sb.append(new StringBuilder(s.substring(0, 13)).reverse());
         } else if (s.length() == 83) {
-            sb.append(new StringBuilder(s.substring(65, 82)).reverse());
-            sb.append(s.charAt(82));
-            sb.append(new StringBuilder(s.substring(53, 64)).reverse());
-            sb.append(s.charAt(45));
-            sb.append(new StringBuilder(s.substring(46, 52)).reverse());
-            sb.append(s.charAt(1));
-            sb.append(new StringBuilder(s.substring(2, 45)).reverse());
+            sb.append(new StringBuilder(s.substring(64, 81)).reverse());
             sb.append(s.charAt(0));
+            sb.append(new StringBuilder(s.substring(1, 63)).reverse());
+            sb.append(s.charAt(63));
         } else if (s.length() == 82) {
             sb.append(new StringBuilder(s.substring(74, 81)).reverse());
             sb.append(s.charAt(81));
