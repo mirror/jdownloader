@@ -73,6 +73,7 @@ public class StiahniSi extends PluginForHost {
         final String ext = br.getRegex("tiahni\\.si/showicon\\.php\\?id=([a-z0-9]+)\\&").getMatch(0);
         if (ext != null && !filename.endsWith("." + ext)) filename += "." + ext;
         link.setName(filename);
+        if (br.containsHTML("has been deleted")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         link.setDownloadSize(SizeFormatter.getSize(filesize));
         return AvailableStatus.TRUE;
     }
@@ -88,7 +89,7 @@ public class StiahniSi extends PluginForHost {
             sleep(wait * 1001l, downloadLink);
         }
         br.setFollowRedirects(false);
-        br.getPage("http://www.stiahni.si/fetch2.php?id=" + new Regex(downloadLink.getDownloadURL(), "(\\d+)$").getMatch(0));
+        br.getPage("http://www.stiahni.si/fetch.php?id=" + new Regex(downloadLink.getDownloadURL(), "(\\d+)$").getMatch(0));
         String dllink = br.getRedirectLocation();
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
