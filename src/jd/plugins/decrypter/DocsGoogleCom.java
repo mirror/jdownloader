@@ -30,7 +30,8 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision: 20105 $", interfaceVersion = 2, names = { "docs.google.com" }, urls = { "https?://(www\\.)?docs\\.google\\.com/folder/d/[a-zA-Z0-9\\-_]+" }, flags = { 0 })
+//https://drive.google.com/folderview?pli=1&id=0B31tQTKtmK92bkJiZXo0MmtsNDA&tid=0B31tQTKtmK92MFlvTk5jc2IyUjA
+@DecrypterPlugin(revision = "$Revision: 20105 $", interfaceVersion = 2, names = { "docs.google.com" }, urls = { "https?://(www\\.)?(docs\\.google\\.com/folder/d/[a-zA-Z0-9\\-_]+|(docs|drive)\\.google\\.com/folderview\\?pli=1\\&id=[A-Za-z0-9]+(\\&tid=[A-Za-z0-9]+)?)" }, flags = { 0 })
 public class DocsGoogleCom extends PluginForDecrypt {
 
     /**
@@ -50,6 +51,9 @@ public class DocsGoogleCom extends PluginForDecrypt {
     // language determined by the accept-language
     // user-agent required to use new ones otherwise blocks with javascript notice.
 
+    private static final String FOLDER_NORMAL = "https?://(www\\.)?docs\\.google\\.com/folder/d/[a-zA-Z0-9\\-_]+";
+    private static final String FOLDER_SECOND = "https?://(www\\.)?(docs|drive)\\.google\\.com/folderview\\?pli=1\\&id=[A-Za-z0-9]+(\\&tid=[A-Za-z0-9]+)?";
+
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
@@ -57,8 +61,11 @@ public class DocsGoogleCom extends PluginForDecrypt {
         PluginForHost plugin = JDUtilities.getPluginForHost("docs.google.com");
         ((jd.plugins.hoster.DocsGoogleCom) plugin).prepBrowser(br);
 
-        br.getPage(parameter + "/edit?pli=1");
-        // Browser br2 = br.cloneBrowser();
+        if (parameter.matches(FOLDER_NORMAL)) {
+            br.getPage(parameter + "/edit?pli=1");
+        } else {
+            br.getPage(parameter);
+        }
 
         if (br.containsHTML("<p class=\"errorMessage\" style=\"padding\\-top: 50px\">Sorry, the file you have requested does not exist\\.</p>")) {
             logger.info("Link is offline or Invalid URL been provided " + parameter);
@@ -87,6 +94,27 @@ public class DocsGoogleCom extends PluginForDecrypt {
             }
         }
         if (decryptedLinks.size() == 0) {
+            // New way
+            final String content = br.getRegex("\\{folderModel: \\[(.*?\\])[\t\n\r ]+\\]").getMatch(0);
+            if (content != null) {
+                final String[] filelinks = new Regex(content, "\"(https?://docs\\.google\\.com/file/d/[A-Za-z0-9]+/?)").getColumn(0);
+                if (filelinks != null && filelinks.length != 0) {
+                    for (final String filelink : filelinks) {
+                        decryptedLinks.add(createDownloadlink(filelink));
+                    }
+                }
+
+                final String[] folderlinks = new Regex(content, "\"(https?://(docs|drive)\\.google\\.com/folderview\\?pli[^<>\"]*?)\"").getColumn(0);
+                if (folderlinks != null && folderlinks.length != 0) {
+                    for (String folderlink : folderlinks) {
+                        folderlink = unescape(folderlink);
+                        // return folder links back into the plugin again.
+                        decryptedLinks.add(createDownloadlink(folderlink));
+                    }
+                }
+            }
+        }
+        if (decryptedLinks.size() == 0) {
             logger.info("Found nothing to download: " + parameter);
             return decryptedLinks;
         }
@@ -110,6 +138,14 @@ public class DocsGoogleCom extends PluginForDecrypt {
                 ret.add(dl);
             }
         }
+    }
+
+    private static synchronized String unescape(final String s) {
+        /* we have to make sure the youtube plugin is loaded */
+        final PluginForHost plugin = JDUtilities.getPluginForHost("youtube.com");
+        if (plugin == null) throw new IllegalStateException("youtube plugin not found!");
+
+        return jd.plugins.hoster.Youtube.unescape(s);
     }
 
     /* NO OVERRIDE!! */

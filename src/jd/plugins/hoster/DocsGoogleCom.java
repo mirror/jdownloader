@@ -101,7 +101,8 @@ public class DocsGoogleCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         if (br.containsHTML("<p class=\"error\\-caption\">Sorry, we are unable to retrieve this document\\.</p>")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("\"filename\":\"([^\"]+)\",").getMatch(0);
+        String filename = br.getRegex("'title': '([^<>\"]*?)'").getMatch(0);
+        if (filename == null) filename = br.getRegex("\"filename\":\"([^\"]+)\",").getMatch(0);
         String size = br.getRegex("\"sizeInBytes\":(\\d+),").getMatch(0);
         if (filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
 
