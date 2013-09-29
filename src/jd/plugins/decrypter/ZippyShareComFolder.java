@@ -20,6 +20,7 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
@@ -40,10 +41,21 @@ public class ZippyShareComFolder extends PluginForDecrypt {
             logger.info("Link offline: " + parameter);
             return decryptedLinks;
         }
-        final String[] links = br.getRegex("\"(http://www\\d+\\.zippyshare\\.com/v/\\d+/file\\.html)\"").getColumn(0);
+        String[] links = br.getRegex("\"(http://www\\d+\\.zippyshare\\.com/v/\\d+/file\\.html)\"").getColumn(0);
         if (links == null || links.length == 0) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
+        }
+        // Over 50 links? Maybe there is more...
+        if (links.length == 50) {
+            final String dir = new Regex(parameter, "zippyshare\\.com/[a-z0-9\\-_]+/([a-z0-9\\-_]+)/").getMatch(0);
+            br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+            br.postPage("http://www.zippyshare.com/fragments/publicDir/filetable.jsp", "page=0&user=Boost&dir=" + dir + "&sort=nameasc&pageSize=250&search=&viewType=default");
+            links = br.getRegex("\"(http://www\\d+\\.zippyshare\\.com/v/\\d+/file\\.html)\"").getColumn(0);
+            if (links == null || links.length == 0) {
+                logger.warning("Decrypter broken for link: " + parameter);
+                return null;
+            }
         }
         for (String singleLink : links)
             decryptedLinks.add(createDownloadlink(singleLink));

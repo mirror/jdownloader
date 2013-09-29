@@ -485,9 +485,9 @@ public class TbCm extends PluginForDecrypt {
                     Thread.sleep(1000);
                 }
                 br.getPage(page);
-                String[] videos = br.getRegex("href=\"(/watch\\?v=[A-Za-z0-9\\-_]+)&amp;list=" + luid).getColumn(0);
+                String[] videos = br.getRegex("href=\"(/watch\\?v=[A-Za-z0-9\\-_]+)\\&amp;list=[A-Z0-9]+").getColumn(0);
                 // the (g/c/|grid/user/) doesn't return the same luid within url so will fail.
-                if (videos == null || videos.length == 0 && new Regex(parameter, userGridGCRegex).matches()) videos = br.getRegex("href=\"(/watch\\?v=[A-Za-z0-9\\-_]+)&amp;list=[A-Z0-9]+").getColumn(0);
+                if (videos == null || videos.length == 0 && new Regex(parameter, userGridGCRegex).matches()) videos = br.getRegex("href=\"(/watch\\?v=[A-Za-z0-9\\-_]+)\\&amp;list=[A-Z0-9]+").getColumn(0);
                 for (String video : videos) {
                     video = Encoding.htmlDecode(video);
                     if (!dupeList.add(getVideoID(video))) continue;

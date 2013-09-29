@@ -226,6 +226,7 @@ public class FreeWayMe extends PluginForHost {
 
         if (dl.getConnection().getContentType().contains("html")) {
             if (dl.getConnection().getResponseCode() == 416) {
+                logger.info("Resume impossible, disabling it for the next try");
                 link.setChunksProgress(null);
                 link.setProperty(FreeWayMe.NORESUME, Boolean.valueOf(true));
                 throw new PluginException(LinkStatus.ERROR_RETRY);
