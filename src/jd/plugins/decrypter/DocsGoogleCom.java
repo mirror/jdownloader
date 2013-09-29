@@ -30,7 +30,6 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
-//https://drive.google.com/folderview?pli=1&id=0B31tQTKtmK92bkJiZXo0MmtsNDA&tid=0B31tQTKtmK92MFlvTk5jc2IyUjA
 @DecrypterPlugin(revision = "$Revision: 20105 $", interfaceVersion = 2, names = { "docs.google.com" }, urls = { "https?://(www\\.)?(docs\\.google\\.com/folder/d/[a-zA-Z0-9\\-_]+|(docs|drive)\\.google\\.com/folderview\\?pli=1\\&id=[A-Za-z0-9]+(\\&tid=[A-Za-z0-9]+)?)" }, flags = { 0 })
 public class DocsGoogleCom extends PluginForDecrypt {
 

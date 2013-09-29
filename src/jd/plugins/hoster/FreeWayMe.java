@@ -71,6 +71,7 @@ public class FreeWayMe extends PluginForHost {
     private static AtomicInteger                           maxPrem            = new AtomicInteger(1);
     // we can switch to BETAENCODING next days if there are no problems, otherwise we have to switch back
     private final String                                   USEBETAENCODING    = "USEBETAENCODING";
+    private static final String                            NORESUME           = "NORESUME";
 
     public FreeWayMe(PluginWrapper wrapper) {
         super(wrapper);
@@ -215,9 +216,20 @@ public class FreeWayMe extends PluginForHost {
             /* end workaround for wrong encoding while redirect */
         }
 
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 1);
+        boolean resume = true;
+        if (link.getBooleanProperty(FreeWayMe.NORESUME, false)) {
+            resume = false;
+            link.setProperty(FreeWayMe.NORESUME, Boolean.valueOf(false));
+        }
+
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resume, 1);
 
         if (dl.getConnection().getContentType().contains("html")) {
+            if (dl.getConnection().getResponseCode() == 416) {
+                link.setChunksProgress(null);
+                link.setProperty(FreeWayMe.NORESUME, Boolean.valueOf(true));
+                throw new PluginException(LinkStatus.ERROR_RETRY);
+            }
             br.followConnection();
             String error = "";
             try {
