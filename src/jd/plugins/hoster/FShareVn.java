@@ -144,7 +144,11 @@ public class FShareVn extends PluginForHost {
         final String fid = br.getRegex("name=\"file_id\" value=\"(\\d+)\"").getMatch(0);
         if (fid == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         br.postPage(downloadLink.getDownloadURL(), "special=&action=download_file&file_id=" + fid);
-        if (br.containsHTML(IPBLOCKED)) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 2 * 60 * 60 * 1000l);
+        if (br.containsHTML(IPBLOCKED)) {
+            final String nextDl = br.getRegex("Lượt tải xuống kế tiếp là: ([^<>]+)<").getMatch(0);
+            logger.info("Next download: " + nextDl);
+            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 2 * 60 * 60 * 1000l);
+        }
         if (br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)")) {
             PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
             jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
@@ -161,7 +165,7 @@ public class FShareVn extends PluginForHost {
             if (downloadURL == null) {
                 // downloadURL =
                 // br.getRegex("\\'(http://download\\d+\\.fshare\\.vn/download/[A-Za-z0-9]+/.*?)\\'").getMatch(0);
-                downloadURL = br.getRegex("<form action=\"(http://download\\d+\\.fshare\\.vn/download/[A-Za-z0-9]+/.*?)\"").getMatch(0);
+                downloadURL = br.getRegex("<form action=\"(http://download\\d+\\.fshare\\.vn/download/[^<>]+/.*?)\"").getMatch(0);
             }
         }
         logger.info("downloadURL = " + downloadURL);
