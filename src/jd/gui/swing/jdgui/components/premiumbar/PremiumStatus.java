@@ -113,7 +113,7 @@ public class PremiumStatus extends JPanel implements MouseListener {
                         AccountController.getInstance().getBroadcaster().addListener(new AccountControllerListener() {
 
                             public void onAccountControllerEvent(AccountControllerEvent event) {
-                                System.out.println(event);
+
                                 if (org.jdownloader.settings.staticreferences.CFG_GENERAL.USE_AVAILABLE_ACCOUNTS.isEnabled()) redrawTimer.run();
                             }
                         });

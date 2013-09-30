@@ -1,6 +1,11 @@
 package jd.gui.swing.jdgui.menu;
 
+import java.awt.event.FocusEvent;
+import java.awt.event.FocusListener;
+
 import javax.swing.JLabel;
+import javax.swing.JSpinner.DefaultEditor;
+import javax.swing.SwingUtilities;
 
 import jd.controlling.downloadcontroller.DownloadWatchDog;
 import jd.controlling.downloadcontroller.event.DownloadWatchdogListener;
@@ -74,7 +79,30 @@ public class SpeedlimitEditor extends MenuEditor implements DownloadWatchdogList
                 }
             }
         };
+        try {
+            ((DefaultEditor) spinner.getEditor()).getTextField().addFocusListener(new FocusListener() {
 
+                @Override
+                public void focusLost(FocusEvent e) {
+                }
+
+                @Override
+                public void focusGained(FocusEvent e) {
+                    // requires invoke later!
+                    SwingUtilities.invokeLater(new Runnable() {
+
+                        @Override
+                        public void run() {
+                            ((DefaultEditor) spinner.getEditor()).getTextField().selectAll();
+                        }
+                    });
+
+                }
+            });
+        } catch (Exception e) {
+            e.printStackTrace();
+            // too much fancy Casting.
+        }
         add(lbl);
         add(checkbox = new ExtCheckBox(org.jdownloader.settings.staticreferences.CFG_GENERAL.DOWNLOAD_SPEED_LIMIT_ENABLED, lbl, spinner), "width 20!");
         DownloadWatchDog.getInstance().getEventSender().addListener(this, true);
