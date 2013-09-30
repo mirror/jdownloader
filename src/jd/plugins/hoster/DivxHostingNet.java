@@ -47,6 +47,7 @@ public class DivxHostingNet extends PluginForHost {
         br.getPage(link.getDownloadURL());
         if (br.getURL().equals("http://www.divxhosting.net/404.html") || br.containsHTML(">404 Error")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex(">Watch ([^<>\"]*?) Videos</a>").getMatch(0);
+        if (filename == null) filename = br.getRegex("<title>([^<>]+) - DivX Hosting</title>").getMatch(0);
         if (filename == null) filename = new Regex(link.getDownloadURL(), "/watch\\-([a-z0-9]+)\\.html").getMatch(0);
         link.setName(Encoding.htmlDecode(filename.trim()));
         return AvailableStatus.TRUE;
