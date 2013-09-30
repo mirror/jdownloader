@@ -39,8 +39,8 @@ public class MinUsComDecrypter extends PluginForDecrypt {
         super(wrapper);
     }
 
-    private static final String INVALIDLINKS  = "https?://([a-zA-Z0-9]+\\.)?(minus\\.com|min\\.us)/(directory|explore|httpsmobile|pref|recent|search|smedia|uploads|mobile)";
-    private static final String INVALIDLINKS2 = "https?://(www\\.)?blog\\.(minus\\.com|min\\.us)/.+";
+    private final String INVALIDLINKS  = "https?://([a-zA-Z0-9]+\\.)?(minus\\.com|min\\.us)/(directory|explore|httpsmobile|pref|recent|search|smedia|uploads|mobile)";
+    private final String INVALIDLINKS2 = "https?://(www\\.)?blog\\.(minus\\.com|min\\.us)/.+";
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
@@ -52,6 +52,9 @@ public class MinUsComDecrypter extends PluginForDecrypt {
             // /uploads is not supported
             return decryptedLinks;
         }
+        // some link types end up been caught, like directlinks or alternative links, lets correct these to be all the same.
+        String[] fuid = new Regex(parameter, "(minus\\.com|min\\.us)/[a-z]([A-Za-z0-9]{13})").getRow(0);
+        if (fuid != null && fuid.length == 2) parameter = "http://" + fuid[0] + "/l" + fuid[1];
 
         br.setFollowRedirects(false);
         br.getPage(parameter);

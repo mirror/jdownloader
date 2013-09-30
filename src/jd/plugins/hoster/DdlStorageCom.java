@@ -67,6 +67,7 @@ import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
+import org.appwork.utils.Hash;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.os.CrossSystem;
@@ -101,7 +102,7 @@ public class DdlStorageCom extends PluginForHost {
     private static final AtomicInteger totalMaxSimultanFreeDownload = new AtomicInteger(20);
 
     // DEV NOTES
-    // XfileShare Version 3.0.8.1
+    // XfileShare Version 3.0.8.2
     // last XfileSharingProBasic compare :: 2.6.2.1
     // captchatype: recaptcha
     // mods: country blocked stuff, this is done at the firewall based && and when users do bad things to httpd based on logs.
@@ -268,7 +269,7 @@ public class DdlStorageCom extends PluginForHost {
             }
         }
         if (inValidate(fileInfo[0])) {
-            if (cbr.containsHTML("You have reached the download(\\-| )limit")) {
+            if (cbr.containsHTML("You have reached the download(-| )limit")) {
                 logger.warning("Waittime detected, please reconnect to make the linkchecker work!");
                 return AvailableStatus.UNCHECKABLE;
             }
@@ -376,7 +377,7 @@ public class DdlStorageCom extends PluginForHost {
         // Second, check for streaming links on the first page
         if (inValidate(dllink)) getDllink();
         // Third, do they provide video hosting?
-        if (inValidate(dllink) && (useVidEmbed || (useAltEmbed && downloadLink.getName().matches(".+\\.(asf|avi|flv|m4u|m4v|mov|mkv|mpeg4?|mpg|ogm|vob|wmv|webm)$")))) {
+        if (inValidate(dllink) && (useVidEmbed || (useAltEmbed && downloadLink.getName().matches(".+\\.(asf|avi|flv|m4u|m4v|mov|mkv|mp4|mpeg4?|mpg|ogm|vob|wmv|webm)$")))) {
             final Browser obr = br.cloneBrowser();
             final Browser obrc = cbr.cloneBrowser();
             if (useVidEmbed) {
@@ -600,7 +601,7 @@ public class DdlStorageCom extends PluginForHost {
             }
         }
         // monitor this
-        if (cbr.containsHTML("(class=\"err\"[^>]+><b>You have reached the download(\\-| )limit[^<]+for last[^<]+)")) {
+        if (cbr.containsHTML("(class=(\"err\"|'err')[^>]+><b>You have reached the download(-| )limit[^<]+for last[^<]+)")) {
             /*
              * Indication of when you've reached the max download limit for that given session! Usually shows how long the session was
              * recorded from x time (hours|days) which can trigger false positive below wait handling. As its only indication of what's
@@ -696,16 +697,27 @@ public class DdlStorageCom extends PluginForHost {
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
-        try {
-            // logic to manipulate full login.
-            if (useLoginIndividual >= 1800000 && account.getStringProperty("lastlogin", null) != null && (System.currentTimeMillis() - useLoginIndividual <= Long.parseLong(account.getStringProperty("lastlogin")))) {
-                login(account, false);
-            } else {
-                login(account, true);
+        if (useAPI.get()) {
+            try {
+                fetchAccountInfoAPI(account, ai);
+            } catch (final PluginException e) {
+                account.setValid(false);
+                throw e;
             }
-        } catch (final PluginException e) {
-            account.setValid(false);
-            throw e;
+        }
+        // when disabled from the above method.
+        if (!useAPI.get()) {
+            try {
+                // logic to manipulate full login.
+                if (useLoginIndividual >= 1800000 && account.getStringProperty("lastlogin", null) != null && (System.currentTimeMillis() - useLoginIndividual <= Long.parseLong(account.getStringProperty("lastlogin")))) {
+                    login(account, false);
+                } else {
+                    login(account, true);
+                }
+            } catch (final PluginException e) {
+                account.setValid(false);
+                throw e;
+            }
         }
         // required for when we don't login fully.
         final String myAccount = "/?op=my_account";
@@ -716,7 +728,7 @@ public class DdlStorageCom extends PluginForHost {
             getPage(myAccount);
         }
         // what type of account?
-        if (!cbr.containsHTML("(Premium(\\-| )Account expire|>Renew premium<)")) {
+        if (!cbr.containsHTML("(Premium(-| )Account expire|>Renew premium<)")) {
             account.setProperty("free", true);
         } else {
             account.setProperty("free", false);
@@ -762,7 +774,7 @@ public class DdlStorageCom extends PluginForHost {
             if (inValidate(expireDay) || useAltExpire) {
                 // A more accurate expire time, down to the second. Usually shown on 'extend premium account' page.
                 getPage("/?op=payments");
-                String expireSecond = cbr.getRegex("Premium(\\-| )Account expires?:([^\n\r]+)").getMatch(1);
+                String expireSecond = cbr.getRegex("Premium(-| )Account expires?:([^\n\r]+)").getMatch(1);
                 if (!inValidate(expireSecond)) {
                     String tmpYears = new Regex(expireSecond, "(\\d+)\\s+years?").getMatch(0);
                     String tmpdays = new Regex(expireSecond, "(\\d+)\\s+days?").getMatch(0);
@@ -862,27 +874,14 @@ public class DdlStorageCom extends PluginForHost {
     @Override
     public void handlePremium(final DownloadLink downloadLink, final Account account) throws Exception {
         setConstants(account);
-        requestFileInformation(downloadLink);
-        login(account, false);
-        if (account.getBooleanProperty("free")) {
-            getPage(downloadLink.getDownloadURL());
-            // if the cached cookie expired, relogin.
-            if ((br.getCookie(COOKIE_HOST, "login")) == null || br.getCookie(COOKIE_HOST, "xfss") == null) {
-                synchronized (LOCK) {
-                    account.setProperty("cookies", Property.NULL);
-                    // if you retry, it can use another account...
-                    throw new PluginException(LinkStatus.ERROR_RETRY);
-                }
-            }
-            doFree(downloadLink, account);
+        if (useAPI.get()) {
+            // api filecheck
+
         } else {
-            br.setFollowRedirects(false);
-            logger.info(account.getUser() + " @ " + acctype + " -> Premium Download");
-            dllink = checkDirectLink(downloadLink);
-            if (inValidate(dllink)) {
+            requestFileInformation(downloadLink);
+            login(account, false);
+            if (account.getBooleanProperty("free")) {
                 getPage(downloadLink.getDownloadURL());
-                // required because we can't have redirects enabled for getDllink detection
-                if (br.getRedirectLocation() != null && !br.getRedirectLocation().matches(dllinkRegex)) getPage(br.getRedirectLocation());
                 // if the cached cookie expired, relogin.
                 if ((br.getCookie(COOKIE_HOST, "login")) == null || br.getCookie(COOKIE_HOST, "xfss") == null) {
                     synchronized (LOCK) {
@@ -891,87 +890,150 @@ public class DdlStorageCom extends PluginForHost {
                         throw new PluginException(LinkStatus.ERROR_RETRY);
                     }
                 }
-                if (cbr.containsHTML("<li>The Premium account in your possession does not allow the download")) {
-                    // current premium account (storage account) can only download their own files.
-                    logger.warning("This account can not download external files");
-                    try {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
-                    } catch (final Throwable e) {
-                        if (e instanceof PluginException) throw (PluginException) e;
-                    }
-                    throw new PluginException(LinkStatus.ERROR_FATAL, "This account can not download external files");
-                }
-                getDllink();
+                doFree(downloadLink, account);
+            } else {
+                br.setFollowRedirects(false);
+                logger.info(account.getUser() + " @ " + acctype + " -> Premium Download");
+                dllink = checkDirectLink(downloadLink);
                 if (inValidate(dllink)) {
-                    checkErrors(downloadLink, account, true);
-                    Form dlform = cbr.getFormbyProperty("name", "F1");
-                    if (dlform == null)
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                    else if (cbr.containsHTML(PASSWORDTEXT)) dlform = handlePassword(dlform, downloadLink);
-                    sendForm(dlform);
-                    checkErrors(downloadLink, account, true);
+                    getPage(downloadLink.getDownloadURL());
+                    // required because we can't have redirects enabled for getDllink detection
+                    if (br.getRedirectLocation() != null && !br.getRedirectLocation().matches(dllinkRegex)) getPage(br.getRedirectLocation());
+                    // if the cached cookie expired, relogin.
+                    if ((br.getCookie(COOKIE_HOST, "login")) == null || br.getCookie(COOKIE_HOST, "xfss") == null) {
+                        synchronized (LOCK) {
+                            account.setProperty("cookies", Property.NULL);
+                            // if you retry, it can use another account...
+                            throw new PluginException(LinkStatus.ERROR_RETRY);
+                        }
+                    }
+                    if (cbr.containsHTML("<li>The Premium account in your possession does not allow the download")) {
+                        // current premium account (storage account) can only download their own files.
+                        logger.warning("This account can not download external files");
+                        try {
+                            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+                        } catch (final Throwable e) {
+                            if (e instanceof PluginException) throw (PluginException) e;
+                        }
+                        throw new PluginException(LinkStatus.ERROR_FATAL, "This account can not download external files");
+                    }
                     getDllink();
                     if (inValidate(dllink)) {
-                        logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                        checkErrors(downloadLink, account, true);
+                        Form dlform = cbr.getFormbyProperty("name", "F1");
+                        if (dlform == null)
+                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                        else if (cbr.containsHTML(PASSWORDTEXT)) dlform = handlePassword(dlform, downloadLink);
+                        sendForm(dlform);
+                        checkErrors(downloadLink, account, true);
+                        getDllink();
+                        if (inValidate(dllink)) {
+                            logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
+                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                        }
                     }
-                }
-            }
-            if (!inValidate(passCode)) downloadLink.setProperty("pass", passCode);
-            // Process usedHost within hostMap. We do it here so that we can probe if slots are already used before openDownload.
-            controlHost(account, downloadLink, true);
-            logger.info("Final downloadlink = " + dllink + " starting the download...");
-            // Try catch required otherwise plugin logic wont work as intended. Also prevents infinite loops when dns record is missing.
-            try {
-                dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumes, chunks);
-            } catch (UnknownHostException e) {
-                // dump the saved host from directlinkproperty
-                downloadLink.setProperty(directlinkproperty, Property.NULL);
-                // remove usedHost slot from hostMap
-                controlHost(account, downloadLink, false);
-                logger.warning("DNS issue has occured!");
-                e.printStackTrace();
-                // int value of plugin property, as core error in current JD2 prevents proper retry handling.
-                // TODO: remove when retry issues are resolved!
-                int retry = downloadLink.getIntegerProperty("retry", 0);
-                if (retry == 3) {
-                    downloadLink.setProperty("retry", Property.NULL);
-                    throw new PluginException(LinkStatus.ERROR_FATAL, "DNS issue cannot be resolved!");
-                } else {
-                    retry++;
-                    downloadLink.setProperty("retry", retry);
-                    throw new PluginException(LinkStatus.ERROR_RETRY, 15000);
-                }
-            }
-            if (dl.getConnection().getContentType().contains("html")) {
-                if (dl.getConnection().getResponseCode() == 503 && dl.getConnection().getHeaderFields("server").contains("nginx")) {
-                    controlSimHost(account);
-                    controlHost(account, downloadLink, false);
-                } else {
-                    logger.warning("The final dllink seems not to be a file!");
-                    br.followConnection();
-                    correctBR();
-                    checkServerErrors();
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-            } else {
-                // we can not 'rename' filename once the download started, could be problematic!
-                if (downloadLink.getDownloadCurrent() == 0) {
-                    fixFilename(downloadLink);
-                }
-                try {
-                    // add a download slot
-                    controlSlot(+1, account);
-                    // start the dl
-                    dl.startDownload();
-                } finally {
-                    // remove usedHost slot from hostMap
-                    controlHost(account, downloadLink, false);
-                    // remove download slot
-                    controlSlot(-1, account);
                 }
             }
         }
+
+        if (!inValidate(passCode)) downloadLink.setProperty("pass", passCode);
+        // Process usedHost within hostMap. We do it here so that we can probe if slots are already used before openDownload.
+        controlHost(account, downloadLink, true);
+        logger.info("Final downloadlink = " + dllink + " starting the download...");
+        // Try catch required otherwise plugin logic wont work as intended. Also prevents infinite loops when dns record is missing.
+        try {
+            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumes, chunks);
+        } catch (UnknownHostException e) {
+            // dump the saved host from directlinkproperty
+            downloadLink.setProperty(directlinkproperty, Property.NULL);
+            // remove usedHost slot from hostMap
+            controlHost(account, downloadLink, false);
+            logger.warning("DNS issue has occured!");
+            e.printStackTrace();
+            // int value of plugin property, as core error in current JD2 prevents proper retry handling.
+            // TODO: remove when retry issues are resolved!
+            int retry = downloadLink.getIntegerProperty("retry", 0);
+            if (retry == 3) {
+                downloadLink.setProperty("retry", Property.NULL);
+                throw new PluginException(LinkStatus.ERROR_FATAL, "DNS issue cannot be resolved!");
+            } else {
+                retry++;
+                downloadLink.setProperty("retry", retry);
+                throw new PluginException(LinkStatus.ERROR_RETRY, 15000);
+            }
+        }
+        if (dl.getConnection().getContentType().contains("html")) {
+            if (dl.getConnection().getResponseCode() == 503 && dl.getConnection().getHeaderFields("server").contains("nginx")) {
+                controlSimHost(account);
+                controlHost(account, downloadLink, false);
+            } else {
+                logger.warning("The final dllink seems not to be a file!");
+                br.followConnection();
+                correctBR();
+                checkServerErrors();
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+        } else {
+            // we can not 'rename' filename once the download started, could be problematic!
+            if (downloadLink.getDownloadCurrent() == 0) {
+                fixFilename(downloadLink);
+            }
+            try {
+                // add a download slot
+                controlSlot(+1, account);
+                // start the dl
+                dl.startDownload();
+            } finally {
+                // remove usedHost slot from hostMap
+                controlHost(account, downloadLink, false);
+                // remove download slot
+                controlSlot(-1, account);
+            }
+        }
+    }
+
+    private static AtomicBoolean useAPI  = new AtomicBoolean(false);
+    private final String         apiHost = "http://www.ddlstorage.com/cgi-bin/api_req.cgi";
+
+    private AccountInfo fetchAccountInfoAPI(Account account, AccountInfo ai) throws Exception {
+        prepBrowser(br);
+        final String postAccount = "client_id=" + getClientID() + "&user_login=" + Encoding.urlEncode(account.getUser()) + "&user_pass=" + Hash.getMD5(account.getPass());
+        br.postPage(apiHost, "req_type=user_info&" + postAccount + "&sign=" + Hash.getMD5(postAccount));
+        final String status = getResult(br, "status");
+        final String account_type = getResult(br, "account_type");
+        final String premium_expire = getResult(br, "premium_expire");
+        final String direct_downloads = getResult(br, "direct_downloads");
+        final String usr_disk_space = getResult(br, "usr_disk_space");
+        final String usr_bandwidth_available = getResult(br, "usr_bandwidth_available");
+        final String usr_bandwidth_used = getResult(br, "usr_bandwidth_used");
+        if ("BANNED".equalsIgnoreCase(status)) throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nYour account status = BANNED. Please contact " + COOKIE_HOST + " for more details.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+        if ("PENDING".equalsIgnoreCase(status)) throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nYour account status = PENDING. Please contact " + COOKIE_HOST + " for more details.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+
+        if (usr_bandwidth_available != null && usr_bandwidth_used != null) {
+            ai.setTrafficLeft(usr_bandwidth_available);
+            ai.setTrafficMax(Long.parseLong(usr_bandwidth_used) + Long.parseLong(usr_bandwidth_available));
+        } else if ("UNLIMITED".equalsIgnoreCase(usr_bandwidth_available)) {
+            ai.setUnlimitedTraffic();
+        }
+        if (usr_disk_space != null) ai.setUsedSpace(SizeFormatter.getSize(usr_disk_space));
+        if (premium_expire != null) {
+            // will get them to change it to ms left, vs date.
+            ai.setValidUntil(TimeFormatter.getMilliSeconds(premium_expire, "yyyy-MM-dd HH:mm:ss", Locale.ENGLISH));
+        }
+
+        return ai;
+    }
+
+    private String getClientID() {
+        return Encoding.Base64Decode("NTA3NjE=");
+    }
+
+    private String getKey() {
+        return Encoding.Base64Decode("SDJwNDdyUjJKRzV0QjVWNHRLdmdwSFlBbTNIRG9HM3Q=");
+    }
+
+    private String getResult(Browser ibr, String target) {
+        return ibr.getRegex("\"" + target + "\" : \"([^\"]+)").getMatch(0);
     }
 
     // ***************************************************************************************************** //
@@ -1149,7 +1211,7 @@ public class DdlStorageCom extends PluginForHost {
             Form cloudflare = br.getFormbyProperty("id", "ChallengeForm");
             if (cloudflare == null) cloudflare = br.getFormbyProperty("id", "challenge-form");
             if (cloudflare != null) {
-                String math = br.getRegex("\\$\\(\\'#jschl_answer\\'\\)\\.val\\(([^\\)]+)\\);").getMatch(0);
+                String math = br.getRegex("\\$\\('#jschl_answer'\\)\\.val\\(([^\\)]+)\\);").getMatch(0);
                 if (math == null) math = br.getRegex("a\\.value = ([\\d\\-\\.\\+\\*/]+);").getMatch(0);
                 if (math == null) {
                     String variableName = br.getRegex("(\\w+)\\s*=\\s*\\$\\(\'#jschl_answer\'\\);").getMatch(0);
@@ -1461,7 +1523,7 @@ public class DdlStorageCom extends PluginForHost {
         String decoded = null;
 
         try {
-            Regex params = new Regex(s, "\\'(.*?[^\\\\])\\',(\\d+),(\\d+),\\'(.*?)\\'");
+            Regex params = new Regex(s, "'(.*?[^\\\\])',(\\d+),(\\d+),'(.*?)'");
 
             String p = params.getMatch(0).replaceAll("\\\\", "");
             int a = Integer.parseInt(params.getMatch(1));

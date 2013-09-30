@@ -530,12 +530,6 @@ public class DepositFiles extends PluginForHost {
 
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
-        // removeable dead properties ** remove in a month
-        account.setProperty("premium", Property.NULL);
-        account.setProperty("dmVersion", Property.NULL);
-        account.setProperty("UA", Property.NULL);
-        // eo dead stuff
-
         setBrowserExclusive();
         setMainpage();
         AccountInfo ai = new AccountInfo();
@@ -832,11 +826,23 @@ public class DepositFiles extends PluginForHost {
     }
 
     @SuppressWarnings("unchecked")
-    private String getToken(Account account) {
+    private String getToken(Account account) throws Exception {
         String result = null;
-        HashMap<String, Object> accountData = (HashMap<String, Object>) account.getProperty("accountData");
+        HashMap<String, Object> accountData = (HashMap<String, Object>) account.getProperty("accountData", null);
+        if (accountData == null) {
+            try {
+                apiFetchAccountInfo(account);
+            } catch (Exception e) {
+            }
+            accountData = (HashMap<String, Object>) account.getProperty("accountData", null);
+        }
         if (accountData != null && accountData.containsKey("token")) {
             result = accountData.get("token").toString();
+        } else {
+            // try without api...
+            useAPI.set(false);
+            logger.warning("Possible issue with getToken! Please report to JDownloader Development Team.");
+            throw new PluginException(LinkStatus.ERROR_RETRY);
         }
         return result.replace("%2F", "/");
     }
@@ -867,13 +873,13 @@ public class DepositFiles extends PluginForHost {
             getPage("http://depositfiles.com/api/user/login?" + "login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&" + apiKeyVal());
             if (br.containsHTML("\"error\":\"CaptchaRequired\"")) {
                 for (int i = 0; i <= 2; i++) {
-                    DownloadLink dummy = new DownloadLink(null, null, null, null, true);
+                    DownloadLink dummyLink = new DownloadLink(null, "Account", this.getHost(), MAINPAGE.string, true);
                     PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
                     jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
                     rc.setId("6LdRTL8SAAAAAE9UOdWZ4d0Ky-aeA7XfSqyWDM2m");
                     rc.load();
                     File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-                    String c = getCaptchaCode(cf, dummy);
+                    String c = getCaptchaCode(cf, dummyLink);
                     if (c == null || c.equals("")) {
                         logger.warning(this.getHost() + "requires captcha query in order to login, you've entered nothing or blank captcha respsonse. Aborting login sequence");
                         account.setValid(false);
@@ -1007,6 +1013,7 @@ public class DepositFiles extends PluginForHost {
             }
         }
         if ("FilePasswordIsIncorrect".equalsIgnoreCase(getJson("error"))) throw new PluginException(LinkStatus.ERROR_FATAL, "File Password protected!");
+        if ("FileDoesNotExist".equalsIgnoreCase(getJson("error")) && "Error".equalsIgnoreCase(getJson("status"))) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (account.getBooleanProperty("free", false)) {
             String mode = getJson("mode");
             String delay = getJson("delay");
@@ -1164,9 +1171,19 @@ public class DepositFiles extends PluginForHost {
                                 message += "JDownloader 2 Installationsanleitung und Downloadlink: Klicke -OK- (per Browser oeffnen)\r\n ";
                             else
                                 message += "JDownloader 2 Installationsanleitung und Downloadlink:\r\n" + new URL("http://board.jdownloader.org/showthread.php?t=37365") + "\r\n";
+                        } else if ("es".equalsIgnoreCase(lng)) {
+                            title = domain + " :: Java 7+ && HTTPS Solicitudes Post.";
+                            message = "Debido a un bug en Java 7+, al utilizar esta versión de JDownloader, no se puede enviar correctamente las solicitudes Post en HTTPS\r\n";
+                            message += "Por ello, hemos añadido una solución alternativa para que pueda seguir utilizando esta versión de JDownloader...\r\n";
+                            message += "Tenga en cuenta que las peticiones Post de HTTPS se envían como HTTP. Utilice esto a su propia discreción.\r\n";
+                            message += "Si usted no desea enviar información o datos desencriptados, por favor utilice JDownloader 2!\r\n";
+                            if (xSystem)
+                                message += " Las instrucciones para descargar e instalar Jdownloader 2 se muestran a continuación: Hacer Click en -Aceptar- (El navegador de internet se abrirá)\r\n ";
+                            else
+                                message += " Las instrucciones para descargar e instalar Jdownloader 2 se muestran a continuación, enlace :\r\n" + new URL("http://board.jdownloader.org/showthread.php?t=37365") + "\r\n";
                         } else {
                             title = domain + " :: Java 7+ && HTTPS Post Requests.";
-                            message = "Due to a bug in Java 7+ when using this version of JDownloader, we can not succesfully send HTTPS Post Requests.\r\n";
+                            message = "Due to a bug in Java 7+ when using this version of JDownloader, we can not successfully send HTTPS Post Requests.\r\n";
                             message += "We have added a work around so you can continue to use this version of JDownloader...\r\n";
                             message += "Please be aware that HTTPS Post Requests are sent as HTTP. Use at your own discretion.\r\n";
                             message += "If you do not want to send unecrypted data, please upgrade to JDownloader 2!\r\n";
