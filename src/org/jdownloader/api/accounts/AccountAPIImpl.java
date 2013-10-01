@@ -64,6 +64,9 @@ public class AccountAPIImpl implements AccountAPI {
             if (queryParams.fieldRequested("enabled")) {
                 infoMap.put("enabled", acc.isEnabled());
             }
+            if (queryParams.fieldRequested("valid")) {
+                infoMap.put("valid", acc.isValid());
+            }
 
             accas.setInfoMap(infoMap);
             ret.add(accas);
