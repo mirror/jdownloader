@@ -55,9 +55,9 @@ public class UpstoRe extends PluginForHost {
         return "http://upstore.net/terms/";
     }
 
-    private static Object       LOCK         = new Object();
-    private final String        MAINPAGE     = "http://upstore.net";
-    private static final String INVALIDLINKS = "http://(www\\.)?(upsto\\.re|upstore\\.net)/(faq|privacy|terms|d/|aff|login|account|dmca|imprint|message|panel|premium|contacts)";
+    private static Object LOCK         = new Object();
+    private final String  MAINPAGE     = "http://upstore.net";
+    private final String  INVALIDLINKS = "http://(www\\.)?(upsto\\.re|upstore\\.net)/(faq|privacy|terms|d/|aff|login|account|dmca|imprint|message|panel|premium|contacts)";
 
     public void correctDownloadLink(DownloadLink link) {
         link.setUrlDownload(link.getDownloadURL().replace("upsto.re/", "upstore.net/"));
@@ -219,18 +219,32 @@ public class UpstoRe extends PluginForHost {
         return ai;
     }
 
+    private final String premDlLimit = "It is strange, but you have reached a download limit for today";
+
+    private AccountInfo trafficLeft(Account account) throws PluginException {
+        synchronized (LOCK) {
+            AccountInfo ai = account.getAccountInfo();
+            String maxLimit = br.getRegex(premDlLimit + " \\((\\d+ (MB|GB|TB))\\)").getMatch(0);
+            if (maxLimit != null) ai.setTrafficMax(SizeFormatter.getSize(maxLimit));
+            ai.setTrafficLeft(0);
+            account.setAccountInfo(ai);
+        }
+        throw new PluginException(LinkStatus.ERROR_PREMIUM, "Downloadlimit reached", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+    }
+
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         requestFileInformation(link);
         login(account, false);
         br.setFollowRedirects(false);
         br.getPage(link.getDownloadURL());
-        if (br.containsHTML(">It is strange, but you have reached a download limit for today")) throw new PluginException(LinkStatus.ERROR_PREMIUM, "Downloadlimit reached", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+        if (br.containsHTML(premDlLimit)) trafficLeft(account);
         // Directdownload enabled?
         String dllink = br.getRedirectLocation();
         // No directdownload? Let's "click" on download
         if (dllink == null) {
-            br.postPage("http://upstore.net/load/premium/", "js=1&hash= " + new Regex(link.getDownloadURL(), "([A-Za-z0-9]+)$").getMatch(0));
+            br.postPage("http://upstore.net/load/premium/", "js=1&hash=" + new Regex(link.getDownloadURL(), "([A-Za-z0-9]+)$").getMatch(0));
+            if (br.containsHTML(premDlLimit)) trafficLeft(account);
             dllink = br.getRegex("\"ok\":\"(http:[^<>\"]*?)\"").getMatch(0);
         }
         if (dllink == null) {

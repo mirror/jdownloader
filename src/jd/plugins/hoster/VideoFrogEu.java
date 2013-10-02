@@ -71,18 +71,18 @@ import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.os.CrossSystem;
 
-@HostPlugin(revision = "$Revision: 19496 $", interfaceVersion = 2, names = { "filewe.com" }, urls = { "https?://(www\\.)?filewe\\.com/((vid)?embed-)?[a-z0-9]{12}" }, flags = { 0 })
+@HostPlugin(revision = "$Revision: 19496 $", interfaceVersion = 2, names = { "videofrog.eu" }, urls = { "https?://(www\\.)?videofrog\\.eu/((vid)?embed-)?[a-z0-9]{12}" }, flags = { 0 })
 @SuppressWarnings("deprecation")
-public class FileWeCom extends PluginForHost {
+public class VideoFrogEu extends PluginForHost {
 
     // Site Setters
     // primary website url, take note of redirects
-    private final String               COOKIE_HOST                  = "http://filewe.com";
+    private final String               COOKIE_HOST                  = "http://videofrog.eu";
     // domain names used within download links.
-    private final String               DOMAINS                      = "(filewe\\.com)";
+    private final String               DOMAINS                      = "(videofrog\\.eu)";
     private final String               PASSWORDTEXT                 = "<br><b>Passwor(d|t):</b> <input";
     private final String               MAINTENANCE                  = ">This server is in maintenance mode";
-    private final String               dllinkRegex                  = "https?://(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|([\\w\\-]+\\.)?" + DOMAINS + ")(:\\d{1,5})?/(files(/(dl|download))?|d|cgi-bin/dl\\.cgi)/(\\d+/)?([a-z0-9]+/){1,4}[^/<>\r\n\t]+";
+    private final String               dllinkRegex                  = "https?://(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|([\\w\\-]+\\.)?" + DOMAINS + ")(:\\d{1,5})?/((files(/(dl|download))?|d|cgi-bin/dl\\.cgi)/(\\d+/)?([a-z0-9]+/){1,4}[^/<>\r\n\t]+|[a-z0-9]{58}/v(ideo)?\\.mp4)";
     private final boolean              supportsHTTPS                = false;
     private final boolean              enforcesHTTPS                = false;
     private final boolean              useRUA                       = false;
@@ -103,14 +103,14 @@ public class FileWeCom extends PluginForHost {
     // DEV NOTES
     // XfileShare Version 3.0.8.2
     // last XfileSharingProBasic compare :: 2.6.2.1
-    // captchatype: solvemedia
+    // captchatype: null
     // other: no redirects
     // mods:
 
     private void setConstants(final Account account) {
         if (account != null && account.getBooleanProperty("free")) {
             // free account
-            chunks = -2;
+            chunks = 0;
             resumes = true;
             acctype = "Free Account";
             directlinkproperty = "freelink2";
@@ -149,11 +149,11 @@ public class FileWeCom extends PluginForHost {
     public boolean hasCaptcha(final DownloadLink downloadLink, final jd.plugins.Account acc) {
         if (acc == null) {
             /* no account, yes we can expect captcha */
-            return true;
+            return false;
         }
         if (Boolean.TRUE.equals(acc.getBooleanProperty("free"))) {
             /* free accounts also have captchas */
-            return true;
+            return false;
         }
         return false;
     }
@@ -163,7 +163,7 @@ public class FileWeCom extends PluginForHost {
      * 
      * @category 'Experimental', Mods written July 2012 - 2013
      * */
-    public FileWeCom(PluginWrapper wrapper) {
+    public VideoFrogEu(PluginWrapper wrapper) {
         super(wrapper);
         setConfigElements();
         // this.enablePremium(COOKIE_HOST + "/premium.html");
@@ -312,7 +312,7 @@ public class FileWeCom extends PluginForHost {
                     if (inValidate(fileInfo[1])) {
                         try {
                             // only needed in rare circumstances
-                            // altAvailStat(downloadLink, fileInfo);
+                            altAvailStat(downloadLink, fileInfo);
                         } catch (Exception e) {
                         }
                     }

@@ -126,7 +126,10 @@ public class AnySendCom extends PluginForHost {
             XMLBR = br.cloneBrowser();
             prepXML(XMLBR);
             XMLBR.getPage("http://download.anysend.com/download/getcode.php?a=" + a + "&v=" + v + "&key=" + key + "&code=" + JDHash.getMD5(code + rc.getChallenge() + c).toUpperCase() + "&challenge=" + rc.getChallenge() + "&response=" + Encoding.urlEncode(c));
-            if (XMLBR.containsHTML("\"isRecaptchaError\":true,\"recaptchaMessage\":\"Incorrect response\"")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+            if ("true".equalsIgnoreCase(getResult(XMLBR, "isRecaptchaError")) && "Incorrect response".equalsIgnoreCase(getResult(XMLBR, "recaptchaMessage")))
+                throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+            else if ("true".equalsIgnoreCase(getResult(XMLBR, "isError")) && "Not authorized".equalsIgnoreCase(getResult(XMLBR, "error"))) 
+                throw new PluginException(LinkStatus.ERROR_RETRY);
             final String dlkey = XMLBR.getRegex("\"dlkey\":\"([A-Za-z0-9]+)\"").getMatch(0);
             if (dlkey == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             XMLBR.getPage("http://" + ip + "/anysend/info/" + key + "?callback=jQuery" + System.currentTimeMillis() + "_" + random + "&_=" + System.currentTimeMillis());
@@ -139,6 +142,13 @@ public class AnySendCom extends PluginForHost {
         }
         downloadLink.setProperty("directlink", dllink);
         dl.startDownload();
+    }
+
+    private String getResult(Browser ibr, String key) {
+        if (key == null) return null;
+        String result = ibr.getRegex("\"" + key + "\":\"([^\"]+)\"").getMatch(0);
+        if (result == null) result = ibr.getRegex("\"" + key + "\":(true|false)").getMatch(0);
+        return result;
     }
 
     private String checkDirectLink(final DownloadLink downloadLink, final String property) {

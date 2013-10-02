@@ -71,19 +71,19 @@ import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.os.CrossSystem;
 
-@HostPlugin(revision = "$Revision: 19496 $", interfaceVersion = 2, names = { "filewe.com" }, urls = { "https?://(www\\.)?filewe\\.com/((vid)?embed-)?[a-z0-9]{12}" }, flags = { 0 })
+@HostPlugin(revision = "$Revision: 19496 $", interfaceVersion = 2, names = { "maskfile.com" }, urls = { "https?://(www\\.)?maskfile\\.com/((vid)?embed-)?[a-z0-9]{12}" }, flags = { 0 })
 @SuppressWarnings("deprecation")
-public class FileWeCom extends PluginForHost {
+public class MaskFileCom extends PluginForHost {
 
     // Site Setters
     // primary website url, take note of redirects
-    private final String               COOKIE_HOST                  = "http://filewe.com";
+    private final String               COOKIE_HOST                  = "http://maskfile.com";
     // domain names used within download links.
-    private final String               DOMAINS                      = "(filewe\\.com)";
+    private final String               DOMAINS                      = "(maskfile\\.com)";
     private final String               PASSWORDTEXT                 = "<br><b>Passwor(d|t):</b> <input";
     private final String               MAINTENANCE                  = ">This server is in maintenance mode";
-    private final String               dllinkRegex                  = "https?://(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|([\\w\\-]+\\.)?" + DOMAINS + ")(:\\d{1,5})?/(files(/(dl|download))?|d|cgi-bin/dl\\.cgi)/(\\d+/)?([a-z0-9]+/){1,4}[^/<>\r\n\t]+";
-    private final boolean              supportsHTTPS                = false;
+    private final String               dllinkRegex                  = "https?://(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|([\\w\\-]+\\.)?" + DOMAINS + ")(:\\d{1,5})?/((files(/(dl|download))?|d|cgi-bin/dl\\.cgi)/(\\d+/)?([a-z0-9]+/){1,4}[^/<>\r\n\t]+|[a-z0-9]{58}/v(ideo)?\\.mp4)";
+    private final boolean              supportsHTTPS                = true;
     private final boolean              enforcesHTTPS                = false;
     private final boolean              useRUA                       = false;
     private final boolean              useAltLinkCheck              = false;
@@ -103,14 +103,14 @@ public class FileWeCom extends PluginForHost {
     // DEV NOTES
     // XfileShare Version 3.0.8.2
     // last XfileSharingProBasic compare :: 2.6.2.1
-    // captchatype: solvemedia
+    // captchatype: null
     // other: no redirects
     // mods:
 
     private void setConstants(final Account account) {
         if (account != null && account.getBooleanProperty("free")) {
             // free account
-            chunks = -2;
+            chunks = 1;
             resumes = true;
             acctype = "Free Account";
             directlinkproperty = "freelink2";
@@ -122,7 +122,7 @@ public class FileWeCom extends PluginForHost {
             directlinkproperty = "premlink";
         } else {
             // non account
-            chunks = -2; // tested
+            chunks = 1; // tested
             resumes = true;
             acctype = "Non Account";
             directlinkproperty = "freelink";
@@ -135,7 +135,7 @@ public class FileWeCom extends PluginForHost {
             return false;
         } else if (account != null && !account.getBooleanProperty("free")) {
             // prem account
-            return true;
+            return false;
         } else {
             // non account
             return false;
@@ -149,11 +149,11 @@ public class FileWeCom extends PluginForHost {
     public boolean hasCaptcha(final DownloadLink downloadLink, final jd.plugins.Account acc) {
         if (acc == null) {
             /* no account, yes we can expect captcha */
-            return true;
+            return false;
         }
         if (Boolean.TRUE.equals(acc.getBooleanProperty("free"))) {
             /* free accounts also have captchas */
-            return true;
+            return false;
         }
         return false;
     }
@@ -163,7 +163,7 @@ public class FileWeCom extends PluginForHost {
      * 
      * @category 'Experimental', Mods written July 2012 - 2013
      * */
-    public FileWeCom(PluginWrapper wrapper) {
+    public MaskFileCom(PluginWrapper wrapper) {
         super(wrapper);
         setConfigElements();
         // this.enablePremium(COOKIE_HOST + "/premium.html");

@@ -21,6 +21,8 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.Browser;
+import jd.nutils.encoding.HTMLEntities;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
@@ -47,6 +49,7 @@ public class CtDiskComFolder extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString().replace("https://", "http://").replaceAll(domains + "/", "400gb.com/");
         br.setCookiesExclusive(true);
+        Browser.setRequestIntervalLimitGlobal(this.getHost(), 1000);
         br.getPage(parameter);
         String id = new Regex(parameter, domains + "/u/(\\d+)").getMatch(1);
         if (br.containsHTML("(Due to the limitaion of local laws, this url has been disabled\\!<|该用户还未打开完全共享\\。|您目前无法访问他的资源列表\\。)")) {
@@ -55,8 +58,15 @@ public class CtDiskComFolder extends PluginForDecrypt {
         }
 
         // Set package name and prevent null from creating 100s of packages
+        // covers 'all shares'
         String fpName = br.getRegex("</a> / (.*?)</h2>").getMatch(0);
         if (fpName == null) fpName = br.getRegex(">当前位置：(.*?) /").getMatch(0);
+        // covers sub directories.
+        if (fpName != null) {
+            String folder = br.getRegex(fpName + " /([^\r\n]*?)</span>").getMatch(0);
+            if (folder != null) fpName = folder;
+        }
+        // prevents error in fpName handling from breaking plugin.
         if (fpName == null) fpName = "Untitled";
 
         parsePage(decryptedLinks, parameter, id);
@@ -70,7 +80,7 @@ public class CtDiskComFolder extends PluginForDecrypt {
     }
 
     private void parsePage(ArrayList<DownloadLink> ret, String parameter, String id) throws IOException {
-        String results[][] = br.getRegex("(<tr >.*?(https?://(www\\.)?" + domains + "/file/\\d+)[^>]+>(.*?)<.*?>(\\d+(\\.\\d+)? ?(KB|MB|GB))<.*?</tr>)").getMatches();
+        String results[][] = br.getRegex("(<tr ?>.*?(https?://(www\\.)?" + domains + "/file/\\d+)[^>]+>(.*?)<.*?>(\\d+(\\.\\d+)? ?(KB|MB|GB))?<.*?</tr>)").getMatches();
         if (results == null || results.length == 0) {
             logger.warning("Can not find 'results' : " + parameter);
             return;
@@ -78,14 +88,15 @@ public class CtDiskComFolder extends PluginForDecrypt {
         for (String[] args : results) {
             DownloadLink dl = createDownloadlink(args[1]);
             if (args[4] != null) {
-                dl.setName(args[4]);
+                dl.setName(HTMLEntities.unhtmlentities(args[4]));
                 if (args[5] != null) dl.setDownloadSize(SizeFormatter.getSize(args[5]));
                 dl.setAvailable(true);
             }
             ret.add(dl);
         }
         // export folders back into decrypter again.
-        String[] folders = new Regex(results, "<a href=\"(/u/" + id + "/\\d+)\">").getColumn(0);
+        // some reason we can no longer search 'results' or 'results.toString' as source.
+        String[] folders = new Regex(br, "<a href=\"(/u/" + id + "/\\d+)\">").getColumn(0);
         if (folders != null && folders.length != 0) {
             for (String folder : folders) {
                 ret.add(createDownloadlink(new Regex(parameter, "(https?://(www\\.)?" + domains + ")").getMatch(0) + folder));

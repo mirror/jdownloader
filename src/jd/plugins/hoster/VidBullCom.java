@@ -592,7 +592,12 @@ public class VidBullCom extends PluginForHost {
              */
             if (account != null) {
                 logger.warning("Your account ( " + account.getUser() + " @ " + acctype + " ) has been temporarily disabled for going over the download session limit. JDownloader parses HTML for error messages, if you believe this is not a valid response please confirm issue within your browser. If you can download within your browser please contact JDownloader Development Team, if you can not download in your browser please take the issue up with " + this.getHost());
-                account.setTempDisabled(true);
+                synchronized (LOCK) {
+                    AccountInfo ai = account.getAccountInfo();
+                    ai.setTrafficLeft(0);
+                    account.setAccountInfo(ai);
+                    account.setTempDisabled(true);
+                }
                 throw new PluginException(LinkStatus.ERROR_RETRY);
             } else {
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "You've reached the download session limit!", 60 * 60 * 1000l);

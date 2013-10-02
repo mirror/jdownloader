@@ -102,9 +102,9 @@ public class BillionUploadsCom extends PluginForHost {
     private static final AtomicInteger totalMaxSimultanFreeDownload = new AtomicInteger(20);
 
     // DEV NOTES
-    // XfileShare Version 3.0.8.1
+    // XfileShare Version 3.0.8.2
     // last XfileSharingProBasic compare :: 2.6.2.1
-    // captchatype: solvemedia
+    // captchatype: null
     // other: no redirects, uses cloudflare, maybe sister site fileom.com?
     // mods:
 
@@ -150,11 +150,11 @@ public class BillionUploadsCom extends PluginForHost {
     public boolean hasCaptcha(final DownloadLink downloadLink, final jd.plugins.Account acc) {
         if (acc == null) {
             /* no account, yes we can expect captcha */
-            return true;
+            return false;
         }
         if (Boolean.TRUE.equals(acc.getBooleanProperty("free"))) {
             /* free accounts also have captchas */
-            return true;
+            return false;
         }
         return false;
     }
@@ -263,7 +263,7 @@ public class BillionUploadsCom extends PluginForHost {
             }
         }
         if (inValidate(fileInfo[0])) {
-            if (cbr.containsHTML("You have reached the download(\\-| )limit")) {
+            if (cbr.containsHTML("You have reached the download(-| )limit")) {
                 logger.warning("Waittime detected, please reconnect to make the linkchecker work!");
                 return AvailableStatus.UNCHECKABLE;
             }
@@ -364,7 +364,7 @@ public class BillionUploadsCom extends PluginForHost {
         // Second, check for streaming links on the first page
         if (inValidate(dllink)) getDllink();
         // Third, do they provide video hosting?
-        if (inValidate(dllink) && (useVidEmbed || (useAltEmbed && downloadLink.getName().matches(".+\\.(asf|avi|flv|m4u|m4v|mov|mkv|mpeg4?|mpg|ogm|vob|wmv|webm)$")))) {
+        if (inValidate(dllink) && (useVidEmbed || (useAltEmbed && downloadLink.getName().matches(".+\\.(asf|avi|flv|m4u|m4v|mov|mkv|mp4|mpeg4?|mpg|ogm|vob|wmv|webm)$")))) {
             final Browser obr = br.cloneBrowser();
             final Browser obrc = cbr.cloneBrowser();
             if (useVidEmbed) {
@@ -618,7 +618,7 @@ public class BillionUploadsCom extends PluginForHost {
             }
         }
         // monitor this
-        if (cbr.containsHTML("(class=\"err\">You have reached the download(\\-| )limit[^<]+for last[^<]+)")) {
+        if (cbr.containsHTML("(class=\"err\">You have reached the download(-| )limit[^<]+for last[^<]+)")) {
             /*
              * Indication of when you've reached the max download limit for that given session! Usually shows how long the session was
              * recorded from x time (hours|days) which can trigger false positive below wait handling. As its only indication of what's
@@ -626,7 +626,12 @@ public class BillionUploadsCom extends PluginForHost {
              */
             if (account != null) {
                 logger.warning("Your account ( " + account.getUser() + " @ " + acctype + " ) has been temporarily disabled for going over the download session limit. JDownloader parses HTML for error messages, if you believe this is not a valid response please confirm issue within your browser. If you can download within your browser please contact JDownloader Development Team, if you can not download in your browser please take the issue up with " + this.getHost());
-                account.setTempDisabled(true);
+                synchronized (LOCK) {
+                    AccountInfo ai = account.getAccountInfo();
+                    ai.setTrafficLeft(0);
+                    account.setAccountInfo(ai);
+                    account.setTempDisabled(true);
+                }
                 throw new PluginException(LinkStatus.ERROR_RETRY);
             } else {
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "You've reached the download session limit!", 60 * 60 * 1000l);
@@ -734,7 +739,7 @@ public class BillionUploadsCom extends PluginForHost {
             getPage(myAccount);
         }
         // what type of account?
-        if (!cbr.containsHTML("(Premium(\\-| )Account expire|>Renew premium<)")) {
+        if (!cbr.containsHTML("(Premium(-| )Account expire|>Renew premium<)")) {
             account.setProperty("free", true);
         } else {
             account.setProperty("free", false);
@@ -773,7 +778,7 @@ public class BillionUploadsCom extends PluginForHost {
             if (inValidate(expireDay) || useAltExpire) {
                 // A more accurate expire time, down to the second. Usually shown on 'extend premium account' page.
                 getPage("/?op=payments");
-                String expireSecond = cbr.getRegex("Premium(\\-| )Account expires?:([^\n\r]+)").getMatch(1);
+                String expireSecond = cbr.getRegex("Premium(-| )Account expires?:([^\n\r]+)").getMatch(1);
                 if (!inValidate(expireSecond)) {
                     String tmpYears = new Regex(expireSecond, "(\\d+)\\s+years?").getMatch(0);
                     String tmpdays = new Regex(expireSecond, "(\\d+)\\s+days?").getMatch(0);
@@ -1143,7 +1148,7 @@ public class BillionUploadsCom extends PluginForHost {
             Form cloudflare = br.getFormbyProperty("id", "ChallengeForm");
             if (cloudflare == null) cloudflare = br.getFormbyProperty("id", "challenge-form");
             if (cloudflare != null) {
-                String math = br.getRegex("\\$\\(\\'#jschl_answer\\'\\)\\.val\\(([^\\)]+)\\);").getMatch(0);
+                String math = br.getRegex("\\$\\('#jschl_answer'\\)\\.val\\(([^\\)]+)\\);").getMatch(0);
                 if (math == null) math = br.getRegex("a\\.value = ([\\d\\-\\.\\+\\*/]+);").getMatch(0);
                 if (math == null) {
                     String variableName = br.getRegex("(\\w+)\\s*=\\s*\\$\\(\'#jschl_answer\'\\);").getMatch(0);
@@ -1453,7 +1458,7 @@ public class BillionUploadsCom extends PluginForHost {
         String decoded = null;
 
         try {
-            Regex params = new Regex(s, "\\'(.*?[^\\\\])\\',(\\d+),(\\d+),\\'(.*?)\\'");
+            Regex params = new Regex(s, "'(.*?[^\\\\])',(\\d+),(\\d+),'(.*?)'");
 
             String p = params.getMatch(0).replaceAll("\\\\", "");
             int a = Integer.parseInt(params.getMatch(1));
