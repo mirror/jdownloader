@@ -29,7 +29,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "5ilthy.com" }, urls = { "http://www\\.5ilthy\\.com/decryptedvideolink/\\d+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "5ilthy.com" }, urls = { "http://(www\\.)?5ilthy\\.com/videos/\\d+/[a-z0-9\\-]+\\.html" }, flags = { 0 })
 public class FiveIlthyCom extends PluginForHost {
 
     private String DLLINK = null;
@@ -49,23 +49,13 @@ public class FiveIlthyCom extends PluginForHost {
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception {
-        requestFileInformation(downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 0);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        dl.startDownload();
-    }
-
-    @Override
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.getPage(downloadLink.getStringProperty("original5ilthlink", null));
+        br.getPage(downloadLink.getDownloadURL());
         if (br.getURL().contains("?=index")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("<div class=\"hed videotitle\"><h1>(.*?)</h1></div>").getMatch(0);
+        String filename = br.getRegex("<div class=\"vtitle\"><h2>([^<>\"]*?)</h2>").getMatch(0);
+        if (filename == null) filename = br.getRegex("<title>([^<>\"]*?) at 5ilthy</title>").getMatch(0);
         DLLINK = br.getRegex("<param name=\"flashvars\" value=\"settings=(http://.*?)\"/>").getMatch(0);
         if (DLLINK == null) DLLINK = br.getRegex("settings=(http://(www\\.)?5ilthy\\.com/playerConfig\\.php\\?.*?)\"").getMatch(0);
         if (filename == null || DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -92,6 +82,17 @@ public class FiveIlthyCom extends PluginForHost {
             } catch (Throwable e) {
             }
         }
+    }
+
+    @Override
+    public void handleFree(DownloadLink downloadLink) throws Exception {
+        requestFileInformation(downloadLink);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 0);
+        if (dl.getConnection().getContentType().contains("html")) {
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dl.startDownload();
     }
 
     @Override

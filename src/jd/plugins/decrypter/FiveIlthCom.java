@@ -17,7 +17,6 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
-import java.util.Random;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -26,7 +25,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "5ilth.com" }, urls = { "http://(www\\.)?5ilth\\.com/hosted\\-id\\d+\\-.*?\\.html" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "5ilth.com" }, urls = { "http://(www\\.)?5ilth\\.com/(hosted|out\\-static|out)\\-id\\d+\\-.*?\\.html" }, flags = { 0 })
 public class FiveIlthCom extends PluginForDecrypt {
 
     public FiveIlthCom(PluginWrapper wrapper) {
@@ -81,10 +80,8 @@ public class FiveIlthCom extends PluginForDecrypt {
             return decryptedLinks;
 
         }
-        final DownloadLink dl = createDownloadlink("http://www.5ilthy.com/decryptedvideolink/" + new Random().nextInt(1000000));
-        dl.setProperty("original5ilthlink", parameter);
-        decryptedLinks.add(dl);
-        return decryptedLinks;
+        logger.warning("Decrypter broken for link: " + parameter);
+        return null;
     }
 
     /* NO OVERRIDE!! */

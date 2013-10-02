@@ -32,7 +32,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "judgeporn.com" }, urls = { "http://(www\\.)?judgeporn.com/videos/[a-z0-9\\-_]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "judgeporn.com" }, urls = { "http://(www\\.)?judgeporndecrypted\\.com/videos/[a-z0-9\\-_]+" }, flags = { 0 })
 public class JudgePornCom extends PluginForHost {
 
     private String DLLINK = null;
@@ -61,12 +61,16 @@ public class JudgePornCom extends PluginForHost {
         return "http://www.judgeporn.com/terms.php";
     }
 
+    public void correctDownloadLink(final DownloadLink link) {
+        link.setUrlDownload(link.getDownloadURL().replace("judgeporndecrypted.com/", "judgeporn.com/"));
+    }
+
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
-        if (br.getURL().equals("http://www.judgeporn.com/categories/") || br.containsHTML("<title>Free Hardcore Porn Videos and Porn Fucking Movies</title>")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.getURL().equals("http://www.judgeporn.com/categories/") || br.containsHTML("window\\.location = \"http://(www\\.)?judgeporn\\.com/categories/\"") || br.containsHTML("<title>Free Hardcore Porn Videos and Porn Fucking Movies</title>")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("<title>([^<>\"]*?) at Judge Porn</title>").getMatch(0);
         if (filename == null) filename = br.getRegex("<h1>([^<>\"]*?)</h1>").getMatch(0);
         if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
