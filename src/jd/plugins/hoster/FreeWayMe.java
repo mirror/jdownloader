@@ -71,17 +71,20 @@ public class FreeWayMe extends PluginForHost {
     private static AtomicInteger                           maxPrem            = new AtomicInteger(1);
     // we can switch to BETAENCODING next days if there are no problems, otherwise we have to switch back
     private final String                                   USEBETAENCODING    = "USEBETAENCODING";
+    private final String                                   ALLOWRESUME        = "ALLOWRESUME";
     private static final String                            NORESUME           = "NORESUME";
 
     public FreeWayMe(PluginWrapper wrapper) {
         super(wrapper);
         setStartIntervall(1 * 1000l);
-        // setConfigElements();
+        setConfigElements();
         this.enablePremium("https://www.free-way.me/premium");
     }
 
     public void setConfigElements() {
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), USEBETAENCODING, "Use beta encoding").setDefaultValue(false));
+        // getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), USEBETAENCODING,
+        // "Use beta encoding").setDefaultValue(false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOWRESUME, "Enable resume of stopped downloads (Warning: This can cause CRC errors)").setDefaultValue(true));
     }
 
     @Override
@@ -216,7 +219,7 @@ public class FreeWayMe extends PluginForHost {
             /* end workaround for wrong encoding while redirect */
         }
 
-        boolean resume = true;
+        boolean resume = this.getPluginConfig().getBooleanProperty(ALLOWRESUME, false);
         if (link.getBooleanProperty(FreeWayMe.NORESUME, false)) {
             resume = false;
             link.setProperty(FreeWayMe.NORESUME, Boolean.valueOf(false));
