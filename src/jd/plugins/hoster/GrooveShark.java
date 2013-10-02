@@ -245,7 +245,7 @@ public class GrooveShark extends PluginForHost {
         super(wrapper);
         setStartIntervall(2000l + (long) 1000 * (int) Math.round(Math.random() * 3 + Math.random() * 3));
         String timeZone = System.getProperty("user.timezone");
-        if (timeZone != null && timeZone.contains("Berlin")) {
+        if (timeZone != null && (timeZone.contains("Berlin") || timeZone.contains("Argentina"))) {
             setConfigElementsforGermanyUsers();
         }
         setConfigElements();
