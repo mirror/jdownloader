@@ -78,7 +78,7 @@ public class BillionUploadsCom extends PluginForHost {
 
     // Site Setters
     // primary website url, take note of redirects
-    private final String               COOKIE_HOST                  = "http://new.billionuploads.com";
+    private final String               COOKIE_HOST                  = "http://billionuploads.com";
     // domain names used within download links.
     private final String               DOMAINS                      = "(billionuploads\\.com)";
     private final String               PASSWORDTEXT                 = "<br><b>Passwor(d|t):</b> <input";
