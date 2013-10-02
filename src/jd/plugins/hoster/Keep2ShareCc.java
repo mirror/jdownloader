@@ -43,7 +43,7 @@ import jd.utils.JDUtilities;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "keep2share.cc" }, urls = { "http://(www\\.)?keep2share\\.cc/file/[a-z0-9]+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "keep2share.cc" }, urls = { "http://(www\\.)?(keep2share|k2s)\\.cc/file/[a-z0-9]+" }, flags = { 2 })
 public class Keep2ShareCc extends PluginForHost {
 
     public Keep2ShareCc(PluginWrapper wrapper) {
@@ -56,12 +56,20 @@ public class Keep2ShareCc extends PluginForHost {
         return "http://keep2share.cc/page/terms.html";
     }
 
-    private static final String    DOWNLOADPOSSIBLE = ">To download this file with slow speed, use";
+    private final String           DOWNLOADPOSSIBLE = ">To download this file with slow speed, use";
+    private final String           MAINPAGE         = "http://keep2share.cc";
+
+    private static Object          LOCK             = new Object();
 
     private static StringContainer agent            = new StringContainer();
 
     public static class StringContainer {
         public String string = null;
+    }
+
+    @Override
+    public void correctDownloadLink(final DownloadLink link) {
+        link.setUrlDownload(link.getDownloadURL().replace("k2s.cc", "keep2share.cc"));
     }
 
     private Browser prepBrowser(final Browser prepBr) {
@@ -213,9 +221,6 @@ public class Keep2ShareCc extends PluginForHost {
         }
         return dllink;
     }
-
-    private static final String MAINPAGE = "http://keep2share.cc";
-    private static Object       LOCK     = new Object();
 
     @SuppressWarnings("unchecked")
     private void login(final Account account, final boolean force) throws Exception {
