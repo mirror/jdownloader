@@ -106,8 +106,11 @@ public class WeTransferCom extends PluginForHost {
         CODE = new Regex(dlink, "wetransfer\\.com/downloads/([a-z0-9]+)/").getMatch(0);
         if (HASH == null || CODE == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
 
-        // https://www.wetransfer.com/api/v1/transfers/1a6a4d0a11578e1b4310620b51d15b7020130506085913/download?recipient_id=d9914e774e65816dbc6dfdddbd4494eb20130506085913&security_hash=6e5aae&password=&ie=false
-        br.getPage("https://www.wetransfer.com/api/v1/transfers/" + CODE + "/download?recipient_id=" + new Regex(dlink, "wetransfer\\.com/downloads/[a-z0-9]+/([a-z0-9]+)").getMatch(0) + "&security_hash=" + HASH + "&password=&ie=false");
+        // Allow redirects for change to https
+        br.setFollowRedirects(true);
+        final String mainpage = new Regex(dlink, "(http://(www\\.)?([a-z0-9\\-\\.]+\\.)?wetransfer\\.com/)").getMatch(0);
+        // final String recID = new Regex(dlink, "wetransfer\\.com/downloads/[a-z0-9]+/([a-z0-9]+)").getMatch(0);
+        br.getPage(mainpage + "/api/v1/transfers/" + CODE + "/download?recipient_id=&security_hash=" + HASH + "&password=&ie=false");
         DLLINK = br.getRegex("\"direct_link\":\"(http[^<>\"]*?)\"").getMatch(0);
         if (DLLINK == null) DLLINK = br.getRegex("\"action\":\"(http[^<>\"]*?)\"").getMatch(0);
         if (DLLINK != null) {

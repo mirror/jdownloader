@@ -122,7 +122,7 @@ public class DeviantArtCom extends PluginForHost {
             filename = findServerFilename(filename);
             if (ext == null || ext.length() > 5) {
                 final String dllink = getCrippledDllink();
-                ext = dllink.substring(dllink.lastIndexOf(".") + 1);
+                if (dllink != null) ext = dllink.substring(dllink.lastIndexOf(".") + 1);
             }
             if (ext == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -153,9 +153,12 @@ public class DeviantArtCom extends PluginForHost {
     private String getCrippledDllink() {
         String crippleddllink = null;
         try {
-            String linkWithExt = getDllink();
+            final String linkWithExt = getDllink();
             final String toRemove = new Regex(linkWithExt, "(\\?token=.+)").getMatch(0);
-            if (toRemove != null) crippleddllink = linkWithExt.replace(toRemove, "");
+            if (toRemove != null)
+                crippleddllink = linkWithExt.replace(toRemove, "");
+            else
+                crippleddllink = linkWithExt;
         } catch (final Exception e) {
         }
         return crippleddllink;

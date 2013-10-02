@@ -97,8 +97,8 @@ public class DevArtCm extends PluginForDecrypt {
     }
 
     private void parsePage(ArrayList<DownloadLink> ret, String parameter) throws Exception {
-        String grab = br.getRegex("<smoothie q=(.*?)(class=\"folderview-bottom\"></div>|div id=\"gallery_pager\")").getMatch(0);
-        String[] artlinks = new Regex(grab, "<a class=\"thumb([\\s\\w]+)?\" href=\"(https?://[\\w\\.\\-]*?deviantart\\.com/art/[\\w\\-]+)\"").getColumn(1);
+        final String grab = br.getRegex("<smoothie q=(.*?)(class=\"folderview-bottom\"></div>|div id=\"gallery_pager\")").getMatch(0);
+        String[] artlinks = new Regex(grab, "\"(https?://[\\w\\.\\-]*?deviantart\\.com/art/[\\w\\-]+)\"").getColumn(0);
         String nextPage = br.getRegex("href=\"(/(gallery|favourites)/(\\d+)?(\\?catpath=[^\"]+)?((\\?|&amp;|&)offset=\\d+))\">Next</a>").getMatch(0);
         if (artlinks == null || artlinks.length == 0) {
             logger.warning("Possible Plugin error, with finding /art/ links: " + parameter);

@@ -25,6 +25,7 @@ import java.nio.charset.CharsetEncoder;
 
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -57,11 +58,21 @@ public class VideoalbumyAzetSk extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
+        // Set nice name for offline case
+        link.setName(new Regex(link.getDownloadURL(), "videoalbumy\\.azet\\.sk/(.+)").getMatch(0));
+        br.setFollowRedirects(true);
         if (link.getDownloadURL().matches(INVALIDLINKS)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         br.getPage(link.getDownloadURL());
+        // Offline 1
+        if (br.getURL().contains("https://prihlasenie.azet.sk/")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        // Offline 2
+        if (br.containsHTML(">Zvolené video neexistuje<")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        // No access to the video
+        if (br.containsHTML(">Nemáte prístup pre zobrazenie videa")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("<title>VideoAlbumy \\- (.*?)</title>").getMatch(0);
         final String configPage = br.getRegex("flashvars=\"config=(http[^<>\"]*?)\\&autostart=true").getMatch(0);
         if (null == filename || filename.trim().length() == 0) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (configPage == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
 
         br.getPage(Encoding.htmlDecode(configPage));
         dlink = br.getRegex("<file>(http://[^<>\"]*?)</file>").getMatch(0);

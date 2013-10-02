@@ -161,6 +161,15 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
                     final AvailableStatus status = ((jd.plugins.hoster.SoundcloudCom) HOSTPLUGIN).checkStatus(dl, item);
                     dl.setAvailableStatus(status);
                     decryptedLinks.add(dl);
+                    if (decryptThumb) {
+                        try {
+                            // Handle thumbnail stuff
+                            final DownloadLink thumb = getThumbnail(dl, item);
+                            if (thumb != null) decryptedLinks.add(thumb);
+                        } catch (final ParseException e) {
+                            logger.info("Failed to get thumbnail, adding song link only");
+                        }
+                    }
                 }
             } else {
                 // Decrypt all tracks of a user

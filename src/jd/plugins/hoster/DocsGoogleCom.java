@@ -31,7 +31,6 @@ import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-//https://docs.google.com/uc?export=download&confirm=no_antivirus&id=0B7FWGH9otKODaGJyeGZ5TTJsZGc
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "docs.google.com" }, urls = { "https?://(www\\.)?(docs|drive)\\.google\\.com/((leaf|open|uc)\\?([^<>\"/]+)?id=[A-Za-z0-9\\-_]+|file/d/[A-Za-z0-9\\-_]+)" }, flags = { 0 })
 public class DocsGoogleCom extends PluginForHost {
 

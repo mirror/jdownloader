@@ -27,37 +27,55 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "chauthanh.info" }, urls = { "http://[\\w\\.]*?chauthanh\\.info/animeDownload/anime/.*?\\.html" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "chauthanh.info" }, urls = { "http://[\\w\\.]*?chauthanh\\.info/(animeDownload/anime/.*?|anime/view/[a-z0-9\\-]+)\\.html" }, flags = { 0 })
 public class ChThnhInfo extends PluginForDecrypt {
 
     public ChThnhInfo(PluginWrapper wrapper) {
         super(wrapper);
     }
 
+    private static final String ANIMEVIEW = "http://[\\w\\.]*?chauthanh\\.info/anime/view/[a-z0-9\\-]+\\.html";
+
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
+        br.setFollowRedirects(true);
         br.getPage(parameter);
-        if (br.containsHTML("The series information was not found on this server")) {
-            logger.info("Link offline: " + parameter);
-            return decryptedLinks;
-        }
-        if (br.containsHTML("Removed due to licensed\\.")) {
-            logger.info("Link offline (deleted): " + parameter);
-            return decryptedLinks;
-        }
-        if (br.containsHTML(">No files available for this series")) {
-            logger.info("Link offline ('No files available for this series'): " + parameter);
-            return decryptedLinks;
-        }
-        String fpName = br.getRegex("<title>Download anime(.*?)\\- Download Anime").getMatch(0);
-        if (fpName == null) fpName = br.getRegex("class=\"bold1\">Download anime(.*?)</span>").getMatch(0);
-        String[] links = br.getRegex("<tr><td><a href=\"(/.*?)\"").getColumn(0);
-        if (links == null || links.length == 0) links = br.getRegex("\"(/animeDownload/download/\\d+/.*?)\"").getColumn(0);
-        if (links == null || links.length == 0) return null;
-        for (String finallink : links) {
-            finallink = "http://chauthanh.info" + Encoding.htmlDecode(finallink);
-            decryptedLinks.add(createDownloadlink(finallink));
+        String fpName = null;
+        if (parameter.matches(ANIMEVIEW)) {
+            fpName = br.getRegex("<h2 itemprop=\"name\">([^<>\"]*?)</h2>").getMatch(0);
+            if (br.getURL().equals("http://chauthanh.info/404")) {
+                logger.info("Link offline: " + parameter);
+                return decryptedLinks;
+            }
+            final String[] links = br.getRegex("\\'\\.\\.(/download/[^<>\"]*?)\\'").getColumn(0);
+            if (links == null || links.length == 0) return null;
+            for (String finallink : links) {
+                finallink = "http://chauthanh.info/anime" + Encoding.htmlDecode(finallink);
+                decryptedLinks.add(createDownloadlink(finallink));
+            }
+        } else {
+            if (br.containsHTML("The series information was not found on this server")) {
+                logger.info("Link offline: " + parameter);
+                return decryptedLinks;
+            }
+            if (br.containsHTML("Removed due to licensed\\.")) {
+                logger.info("Link offline (deleted): " + parameter);
+                return decryptedLinks;
+            }
+            if (br.containsHTML(">No files available for this series")) {
+                logger.info("Link offline ('No files available for this series'): " + parameter);
+                return decryptedLinks;
+            }
+            fpName = br.getRegex("<title>Download anime(.*?)\\- Download Anime").getMatch(0);
+            if (fpName == null) fpName = br.getRegex("class=\"bold1\">Download anime(.*?)</span>").getMatch(0);
+            String[] links = br.getRegex("<tr><td><a href=\"(/.*?)\"").getColumn(0);
+            if (links == null || links.length == 0) links = br.getRegex("\"(/animeDownload/download/\\d+/.*?)\"").getColumn(0);
+            if (links == null || links.length == 0) return null;
+            for (String finallink : links) {
+                finallink = "http://chauthanh.info" + Encoding.htmlDecode(finallink);
+                decryptedLinks.add(createDownloadlink(finallink));
+            }
         }
         if (fpName != null) {
             FilePackage fp = FilePackage.getInstance();
