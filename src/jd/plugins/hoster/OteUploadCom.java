@@ -635,7 +635,7 @@ public class OteUploadCom extends PluginForHost {
         }
         // monitor this
         // <font style="color: rgb(128, 124, 124);">You have reached the download-limit: 81440 Mb for last 1 days</font>
-        if (cbr.containsHTML("(class=\"err\"|<font[^>]+)>You have reached the download(-| )limit[^<]+for last[^<]+)")) {
+        if (cbr.containsHTML("((class=\"err\"|<font[^>]+)>You have reached the download(-| )limit[^<]+for last[^<]+)")) {
             /*
              * Indication of when you've reached the max download limit for that given session! Usually shows how long the session was
              * recorded from x time (hours|days) which can trigger false positive below wait handling. As its only indication of what's
