@@ -37,15 +37,22 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "yunfile.com" }, urls = { "http://(www|(page\\d)\\.)?(yunfile|filemarkets|yfdisk)\\.com/file/[a-z0-9]+/[a-z0-9]+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "yunfile.com" }, urls = { "http://(www|(page\\d)\\.)?(yunfile|filemarkets|yfdisk)\\.com/file/(down/)?[a-z0-9]+/[a-z0-9]+" }, flags = { 2 })
 public class YunFileCom extends PluginForHost {
 
-    private static final String MAINPAGE = "http://yunfile.com/";
-    private static Object       LOCK     = new Object();
+    private static final String    MAINPAGE = "http://yunfile.com/";
+    private static Object          LOCK     = new Object();
+
+    private static StringContainer agent    = new StringContainer();
+
+    public static class StringContainer {
+        public String string = null;
+    }
 
     // Works like HowFileCom
     public YunFileCom(PluginWrapper wrapper) {
@@ -55,21 +62,29 @@ public class YunFileCom extends PluginForHost {
     }
 
     public void correctDownloadLink(DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replaceAll("(yunfile|filemarkets|yfdisk)\\.com/file/", "yunfile.com/file/"));
+        link.setUrlDownload(link.getDownloadURL().replaceAll("(yunfile|filemarkets|yfdisk)\\.com/file/(down/)?", "yunfile.com/file/").replaceFirst("\\.html$", "/"));
+        if (!link.getDownloadURL().endsWith("/")) link.setUrlDownload(link.getDownloadURL() + "/");
     }
 
-    public void prepBrowser(Browser br) {
+    private Browser prepBrowser(Browser prepBr) {
         // define custom browser headers and language settings.
-        br.getHeaders().put("Accept-Language", "en-gb, en;q=0.9");
-        br.setCookie("http://yunfile.com", "language", "en_us");
+        if (agent.string == null) {
+            /* we first have to load the plugin, before we can reference it */
+            JDUtilities.getPluginForHost("mediafire.com");
+            agent.string = jd.plugins.hoster.MediafireCom.stringUserAgent();
+        }
+        prepBr.getHeaders().put("User-Agent", agent.string);
+        prepBr.getHeaders().put("Accept-Language", "en-gb, en;q=0.9");
+        prepBr.setCookie("http://yunfile.com", "language", "en_us");
         // br.setCookie(this.getHost(), "language", "en_us");
-        br.setReadTimeout(3 * 60 * 1000);
-        br.setConnectTimeout(3 * 60 * 1000);
+        prepBr.setReadTimeout(3 * 60 * 1000);
+        prepBr.setConnectTimeout(3 * 60 * 1000);
+        return prepBr;
     }
 
     private void checkErrors() throws NumberFormatException, PluginException {
         if (br.containsHTML(">You reached your hourly traffic limit")) {
-            final String waitMins = br.getRegex("style=\" color: green; font\\-size: 28px; \">(\\d+)</span> minutes</span>").getMatch(0);
+            final String waitMins = br.getRegex("style=\" color: green; font-size: 28px; \">(\\d+)</span> minutes</span>").getMatch(0);
             if (waitMins != null) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(waitMins) * 60 * 1001l);
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1001l);
         }
@@ -93,6 +108,7 @@ public class YunFileCom extends PluginForHost {
     // Works like MountFileCom and HowFileCom
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
+        correctDownloadLink(link);
         this.setBrowserExclusive();
         prepBrowser(br);
         br.setFollowRedirects(true);
@@ -118,7 +134,7 @@ public class YunFileCom extends PluginForHost {
         checkErrors();
         String domain = new Regex(br.getURL(), "(http://.*?\\.?yunfile\\.com)").getMatch(0);
         String userid = new Regex(downloadLink.getDownloadURL(), "yunfile\\.com/file/(.*?)/").getMatch(0);
-        String fileid = new Regex(downloadLink.getDownloadURL(), "yunfile\\.com/file/.*?/(.+)").getMatch(0);
+        String fileid = new Regex(downloadLink.getDownloadURL(), "yunfile\\.com/file/.*?/([a-z0-9]+)").getMatch(0);
         if (userid == null || fileid == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         // Waittime is still skippable
         // int wait = 30;

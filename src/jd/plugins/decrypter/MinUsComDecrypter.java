@@ -53,8 +53,11 @@ public class MinUsComDecrypter extends PluginForDecrypt {
             return decryptedLinks;
         }
         // some link types end up been caught, like directlinks or alternative links, lets correct these to be all the same.
-        String[] fuid = new Regex(parameter, "(minus\\.com|min\\.us)/[a-z]([A-Za-z0-9]{13})").getRow(0);
-        if (fuid != null && fuid.length == 2) parameter = "http://" + fuid[0] + "/l" + fuid[1];
+        String[] fuid = new Regex(parameter, "(minus\\.com|min\\.us)/([A-Za-z0-9]{13,14})").getRow(0);
+        if (fuid != null && fuid.length == 2) {
+            fuid[1] = fuid[1].replaceFirst("[a-z]", "");
+            parameter = "http://" + fuid[0] + "/l" + fuid[1];
+        }
 
         br.setFollowRedirects(false);
         br.getPage(parameter);
@@ -106,7 +109,7 @@ public class MinUsComDecrypter extends PluginForDecrypt {
             }
         } else {
             // Only one link available, add it!
-            final String filesize = br.getRegex("<div class=\"item\\-actions\\-right\">[\t\n\r ]+<a title=\"([^<>\"]*?)\"").getMatch(0);
+            final String filesize = br.getRegex("<div class=\"item-actions-right\">[\t\n\r ]+<a title=\"([^<>\"]*?)\"").getMatch(0);
             final DownloadLink dl = createDownloadlink(parameter.replace("minus.com/", "minusdecrypted.com/"));
             if (filesize != null) dl.setDownloadSize(SizeFormatter.getSize(filesize));
             decryptedLinks.add(dl);
