@@ -62,7 +62,10 @@ public class Vid2CCom extends PluginForHost {
         if (DLLINK == null) {
             DLLINK = br.getRegex("file\\': ?\\'(http[^\\'\"]+)").getMatch(0);
         }
-        if (filename == null || DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (filename == null || DLLINK == null) {
+            if (!br.containsHTML("jwplayer\\.js\\'></script>")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         DLLINK = Encoding.htmlDecode(DLLINK);
         filename = filename.trim();
         downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + ".flv");

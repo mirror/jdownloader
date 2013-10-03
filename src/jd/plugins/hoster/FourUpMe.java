@@ -67,7 +67,7 @@ public class FourUpMe extends PluginForHost {
     // DEV NOTES
     // XfileSharingProBasic Version 2.6.0.9
     // mods: getdllink regex added additional domains to the lookup
-    // non account: 2 * tested with five
+    // non account: 4 * tested with five
     // free account: chunks * maxdls
     // premium account: chunks * maxdls
     // protocol: no https

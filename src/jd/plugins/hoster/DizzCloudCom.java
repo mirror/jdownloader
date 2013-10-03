@@ -85,7 +85,7 @@ public class DizzCloudCom extends PluginForHost {
     private void doFree(final DownloadLink downloadLink) throws Exception {
         String dllink = checkDirectLink(downloadLink, "directlink");
         if (dllink == null) {
-            if (br.containsHTML(">Only premium users can download this file|disabled the ability to free download a file larger than  \\d+ Mb\\.<")) {
+            if (br.containsHTML(">Only premium users can download this file|disabled the ability to free download a file larger than  \\d+ Mb\\.<|>File owner has disabled<")) {
                 try {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
                 } catch (final Throwable e) {

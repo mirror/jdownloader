@@ -18,9 +18,6 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
-import javax.script.ScriptEngine;
-import javax.script.ScriptEngineManager;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -31,49 +28,36 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.download.DownloadInterface;
 
 /*
  * vrt.be network
  * old content handling --> var vars12345 = Array();
  */
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "cobra.be" }, urls = { "http://(www\\.)?cobra\\.be/(permalink/\\d\\.\\d+|cm/(vrtnieuws|cobra)([^/]+)?/(mediatheek|videozone).+)" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "cobra.be" }, urls = { "http://cobradecrypted\\.be/\\d+" }, flags = { 0 })
 public class CobraBe extends PluginForHost {
 
     public CobraBe(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    private String DLLINK  = null;
-    private String JSARRAY = null;
+    private String DLLINK = null;
 
     @Override
     public String getAGBLink() {
         return "http://www.vrt.be/privacy-beleid";
     }
 
+    // JSARRAY removed after rev 20337
     @Override
-    public void correctDownloadLink(DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replaceAll("/cm/vrtnieuws/mediatheek/[^/]+/[^/]+/[^/]+/([0-9\\.]+)(.+)?", "/permalink/$1"));
-        link.setUrlDownload(link.getDownloadURL().replaceAll("/cm/vrtnieuws([^/]+)?/mediatheek(\\w+)?/([0-9\\.]+)(.+)?", "/permalink/$3"));
-    }
-
-    @Override
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.getPage(downloadLink.getDownloadURL());
+        br.getPage(downloadLink.getStringProperty("mainlink", null));
         // Link offline
-        if (br.containsHTML("(>Pagina \\- niet gevonden<|>De pagina die u zoekt kan niet gevonden worden)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML(">Pagina \\- niet gevonden<|>De pagina die u zoekt kan niet gevonden worden") || !br.containsHTML("class=\"media flashPlayer bigMediaItem\"")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
 
-        JSARRAY = br.getRegex("(var vars\\d+.*?\\[\'w\'\\]\\s?=\\s?\'\\d+\';)").getMatch(0);
-        if (JSARRAY == null) makeJsArray();
-
-        if (JSARRAY == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        JSARRAY = JSARRAY.replaceAll("vars\\d+", "vars12345");
-
-        DLLINK = getMediaUrl("src");
-        final String filename = getMediaUrl("title");
+        DLLINK = br.getRegex("data\\-video\\-src=\"(http://[^<>\"]*?)\"").getMatch(0);
+        final String filename = br.getRegex("data\\-video\\-title=\"([^<>\"]*?)\"").getMatch(0);
         if (DLLINK == null || filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
 
         String ext = DLLINK.substring(DLLINK.lastIndexOf("."));
@@ -88,9 +72,7 @@ public class CobraBe extends PluginForHost {
             if (!con.getContentType().contains("html")) {
                 downloadLink.setDownloadSize(con.getLongContentLength());
             } else {
-                DLLINK = getMediaUrl("rtmpServer");
-                DLLINK = DLLINK != null && getMediaUrl("rtmpPath") != null ? DLLINK + "@" + getMediaUrl("rtmpPath") : null;
-                if (DLLINK == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             return AvailableStatus.TRUE;
         } finally {
@@ -101,51 +83,15 @@ public class CobraBe extends PluginForHost {
         }
     }
 
-    private void makeJsArray() {
-        String sporza = br.getRegex("(data\\-video\\-id=.*?data\\-video\\-width\\s?=\\s?\"\\d+\")").getMatch(0);
-        if (sporza != null) {
-            sporza = sporza.replace("rtmp-server", "rtmpServer").replace("rtmp-path", "rtmpPath");
-            sporza = sporza.replaceAll("data\\-video-([^=]+)\\s?=\\s?\"([^\"]+)?\"", "vars12345['$1'] = '$2';");
-            if (sporza.contains("vars12345")) JSARRAY = "var vars12345 = Array();\n" + sporza;
-        }
-    }
-
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        if (DLLINK.startsWith("rtmp")) {
-            dl = new RTMPDownload(this, downloadLink, DLLINK);
-            setupRTMPConnection(dl);
-            ((RTMPDownload) dl).startDownload();
-        } else {
-            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, false, 1);
-            if (dl.getConnection().getContentType().contains("html")) {
-                br.followConnection();
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            dl.startDownload();
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 0);
+        if (dl.getConnection().getContentType().contains("html")) {
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-    }
-
-    private String getMediaUrl(String s) {
-        final ScriptEngineManager manager = new ScriptEngineManager();
-        final ScriptEngine engine = manager.getEngineByName("javascript");
-        JSARRAY += "\nvar out = vars12345['" + s + "'];";
-        try {
-            engine.eval(JSARRAY);
-            return String.valueOf(engine.get("out"));
-        } catch (final Throwable e) {
-        }
-        return null;
-    }
-
-    private void setupRTMPConnection(final DownloadInterface dl) {
-        final jd.network.rtmp.url.RtmpUrlConnection rtmp = ((RTMPDownload) dl).getRtmpConnection();
-        rtmp.setPlayPath(DLLINK.split("@")[1]);
-        rtmp.setUrl(DLLINK.split("@")[0]);
-        rtmp.setSwfVfy("http://www.cobra.be/html/flash/common/player.5.10.swf");
-        rtmp.setResume(true);
-        rtmp.setRealTime();
+        dl.startDownload();
     }
 
     @Override
