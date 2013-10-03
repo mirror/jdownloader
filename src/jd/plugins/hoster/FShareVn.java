@@ -19,9 +19,7 @@ package jd.plugins.hoster;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
@@ -147,14 +145,9 @@ public class FShareVn extends PluginForHost {
         if (fid == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         br.postPage(downloadLink.getDownloadURL(), "special=&action=download_file&file_id=" + fid);
         if (br.containsHTML(IPBLOCKED)) {
-            final String nextDl = br.getRegex("Lượt tải xuống kế tiếp là: ([^<>]+)<").getMatch(0);
-            SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy hh:mm");
-            Date nextDlms = sdf.parse(nextDl);
-            long lnextDl = nextDlms.getTime();
-            long timenow = System.currentTimeMillis();
-            long waitms = lnextDl - timenow + 1;
-            logger.info("Next download: " + nextDl + " , wait: " + (waitms / 1000 / 60 / 60) % 24 + ":" + (waitms / 1000 / 60) % 60 + ":" + (waitms / 1000) % 60);
-            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, waitms * 1l);
+            final String nextDl = br.getRegex("LÆ°á»£t táº£i xuá»‘ng káº¿ tiáº¿p lÃ : ([^<>]+)<").getMatch(0);
+            logger.info("Next download: " + nextDl);
+            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 2 * 60 * 60 * 1000l);
         }
         if (br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)")) {
             PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
