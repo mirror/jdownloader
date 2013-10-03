@@ -27,7 +27,6 @@ import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
@@ -37,13 +36,12 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "zbigz.com" }, urls = { "http://(www\\.)?zbigz\\.com/file/[a-z0-9]+/\\d+" }, flags = { 2 })
-public class ZbigzCom extends PluginForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "bytebx.com" }, urls = { "http://(www\\.)?bytebx\\.com/file/[a-z0-9]+/\\d+" }, flags = { 2 })
+public class ByteBxCom extends PluginForHost {
 
-    public ZbigzCom(PluginWrapper wrapper) {
+    public ByteBxCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://zbigz.com/page-premium-overview");
     }
@@ -102,7 +100,7 @@ public class ZbigzCom extends PluginForHost {
         throw new PluginException(LinkStatus.ERROR_FATAL, "This file can only be downloaded by registered/premium users");
     }
 
-    private static final String MAINPAGE = "http://zbigz.com";
+    private static final String MAINPAGE = "http://bytebx.com";
     private static Object       LOCK     = new Object();
 
     @SuppressWarnings("unchecked")
@@ -125,10 +123,9 @@ public class ZbigzCom extends PluginForHost {
                         return;
                     }
                 }
-                br.setFollowRedirects(false);
-                br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-                br.postPage("http://zbigz.com/login.php", "e-mail=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
-                if (!br.containsHTML("loginIn \\(true,\\[true,")) {
+                br.setFollowRedirects(true);
+                br.postPage("http://bytebx.com/login.php", "login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
+                if (br.getURL().equals("http://bytebx.com/login")) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     } else {
@@ -161,15 +158,15 @@ public class ZbigzCom extends PluginForHost {
             throw e;
         }
         ai.setUnlimitedTraffic();
-        final Regex info = br.getRegex("loginIn \\(true,\\[true,\\'([^<>\"]*?)\\',\\'([^<>\"]*?)\\'");
-        if (info.getMatches().length != 1) {
+        br.getPage("http://bytebx.com/profile");
+
+        final String expire = br.getRegex("<span>\\( till ([^<>\"]*?)\\)[\t\n\r ]+</span>").getMatch(0);
+        if (expire == null) {
             account.setValid(false);
             return ai;
         }
-        final String expire = info.getMatch(0);
         ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "dd MMM yyyy", Locale.ENGLISH));
-        final String traffic = info.getMatch(1);
-        ai.setTrafficLeft(SizeFormatter.getSize(traffic));
+        ai.setUnlimitedTraffic();
         account.setValid(true);
         ai.setStatus("Premium User");
         return ai;
@@ -179,7 +176,7 @@ public class ZbigzCom extends PluginForHost {
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         requestFileInformation(link);
         int chunks = -5;
-        if (link.getBooleanProperty(ZbigzCom.NOCHUNKS, false)) {
+        if (link.getBooleanProperty(ByteBxCom.NOCHUNKS, false)) {
             chunks = 1;
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, DLLINK, true, chunks);
@@ -194,8 +191,8 @@ public class ZbigzCom extends PluginForHost {
             } catch (final Throwable e) {
             }
             /* unknown error, we disable multiple chunks */
-            if (link.getBooleanProperty(ZbigzCom.NOCHUNKS, false) == false) {
-                link.setProperty(ZbigzCom.NOCHUNKS, Boolean.valueOf(true));
+            if (link.getBooleanProperty(ByteBxCom.NOCHUNKS, false) == false) {
+                link.setProperty(ByteBxCom.NOCHUNKS, Boolean.valueOf(true));
                 throw new PluginException(LinkStatus.ERROR_RETRY);
             }
         }
