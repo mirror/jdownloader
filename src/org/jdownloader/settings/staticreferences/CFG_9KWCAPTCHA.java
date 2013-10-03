@@ -40,6 +40,11 @@ public class CFG_9KWCAPTCHA {
     public static final BooleanKeyHandler                  FEEDBACK     = SH.getKeyHandler("feedback", BooleanKeyHandler.class);
     // 0
     /**
+     * Activate the Captcha Feedback
+     **/
+    public static final BooleanKeyHandler                  SELFSOLVE    = SH.getKeyHandler("Selfsolve", BooleanKeyHandler.class);
+    // 0
+    /**
      * More priority for captchas (Cost +1-10)
      **/
     public static final IntegerKeyHandler                  PRIO         = SH.getKeyHandler("prio", IntegerKeyHandler.class);
@@ -63,7 +68,7 @@ public class CFG_9KWCAPTCHA {
      * Captcha blacklist for hoster
      **/
     public static final StringKeyHandler                   BLACKLIST    = SH.getKeyHandler("blacklist", StringKeyHandler.class);
-    // false
+    // null
     /**
      * Confirm option for captchas (Cost +6)
      **/

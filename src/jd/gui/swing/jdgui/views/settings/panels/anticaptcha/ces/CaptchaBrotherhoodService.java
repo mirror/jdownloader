@@ -16,7 +16,6 @@ import org.jdownloader.actions.AppAction;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
-import org.jdownloader.settings.staticreferences.CFG_9KWCAPTCHA;
 import org.jdownloader.settings.staticreferences.CFG_CAPTCHABROTHERHOOD;
 
 public class CaptchaBrotherhoodService implements CESService {
@@ -50,7 +49,7 @@ public class CaptchaBrotherhoodService implements CESService {
 
                     @Override
                     public void actionPerformed(ActionEvent e) {
-                        CrossSystem.openURL("http://captchabrotherhood.com");
+                        CrossSystem.openURL("http://www.captchabrotherhood.com/");
 
                     }
                 }), "gapleft 37,spanx,pushx,growx");
@@ -60,9 +59,9 @@ public class CaptchaBrotherhoodService implements CESService {
                 this.addHeader(_GUI._.MyJDownloaderSettingsPanel_MyJDownloaderSettingsPanel_logins_(), NewTheme.I().getIcon(IconKey.ICON_LOGINS, 32));
                 // addPair(_GUI._.MyJDownloaderSettingsPanel_MyJDownloaderSettingsPanel_enabled(), null, checkBox);
                 this.addDescriptionPlain(_GUI._.captchabrotherhoodService_createPanel_logins_());
-                addPair(_GUI._.NinekwService_createPanel_enabled(), null, new Checkbox(CFG_9KWCAPTCHA.ENABLED, userName, passWord));
-                addPair(_GUI._.MyJDownloaderSettingsPanel_MyJDownloaderSettingsPanel_username_(), null, userName);
-                addPair(_GUI._.MyJDownloaderSettingsPanel_MyJDownloaderSettingsPanel_password_(), null, passWord);
+                addPair(_GUI._.captchabrotherhoodService_createPanel_enabled(), null, new Checkbox(CFG_CAPTCHABROTHERHOOD.ENABLED, userName, passWord));
+                addPair(_GUI._.captchabrotherhoodService_createPanel_username(), null, userName);
+                addPair(_GUI._.captchabrotherhoodService_createPanel_password(), null, passWord);
 
             }
 
@@ -78,7 +77,5 @@ public class CaptchaBrotherhoodService implements CESService {
         };
         return ret;
     }
-
-    // http://www.9kw.eu/hilfe.html#jdownloader-tab
 
 }

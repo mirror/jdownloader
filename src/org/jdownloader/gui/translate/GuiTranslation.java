@@ -3067,8 +3067,47 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Enable 9kw.eu Service" })
     String NinekwService_createPanel_enabled();
 
+    @Default(lngs = { "en" }, values = { "Blacklist" })
+    String NinekwService_createPanel_blacklist();
+
+    @Default(lngs = { "en" }, values = { "Whitelist" })
+    String NinekwService_createPanel_whitelist();
+
+    @Default(lngs = { "en" }, values = { "With Mouse" })
+    String NinekwService_createPanel_mouse();
+
+    @Default(lngs = { "en" }, values = { "Feedback" })
+    String NinekwService_createPanel_feedback();
+
+    @Default(lngs = { "en" }, values = { "Https" })
+    String NinekwService_createPanel_https();
+
+    @Default(lngs = { "en" }, values = { "Confirm (Cost +6)" })
+    String NinekwService_createPanel_confirm();
+
+    @Default(lngs = { "en" }, values = { "Mouse Confirm (Cost +6)" })
+    String NinekwService_createPanel_mouseconfirm();
+
+    @Default(lngs = { "en" }, values = { "Selfsolve" })
+    String NinekwService_createPanel_selfsolve();
+
+    @Default(lngs = { "en" }, values = { "Prio 1-10 (Cost +1-10)" })
+    String NinekwService_createPanel_prio();
+
+    @Default(lngs = { "en" }, values = { "Captcha per hour" })
+    String NinekwService_createPanel_hour();
+
     @Default(lngs = { "en" }, values = { "Enter your Captcha Brotherhood Logins below. If you do not have an account yet, click the Link above and register for an account. It's free!" })
     String captchabrotherhoodService_createPanel_logins_();
+
+    @Default(lngs = { "en" }, values = { "Enable Captcha Brotherhood Service" })
+    String captchabrotherhoodService_createPanel_enabled();
+
+    @Default(lngs = { "en" }, values = { "Username" })
+    String captchabrotherhoodService_createPanel_username();
+
+    @Default(lngs = { "en" }, values = { "Password" })
+    String captchabrotherhoodService_createPanel_password();
 
     @Default(lngs = { "en" }, values = { "Finding Links..." })
     String LinkCrawlerBubble_update_header();
