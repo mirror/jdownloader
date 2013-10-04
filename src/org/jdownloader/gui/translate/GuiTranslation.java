@@ -3100,9 +3100,6 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Enter your Captcha Brotherhood Logins below. If you do not have an account yet, click the Link above and register for an account. It's free!" })
     String captchabrotherhoodService_createPanel_logins_();
 
-    @Default(lngs = { "en" }, values = { "Enable Captcha Brotherhood Service" })
-    String captchabrotherhoodService_createPanel_enabled();
-
     @Default(lngs = { "en" }, values = { "Username" })
     String captchabrotherhoodService_createPanel_username();
 
@@ -3147,5 +3144,95 @@ public interface GuiTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "%s1 - %s2/s" })
     String JDGui_updateTitle_speed_(String title, String speed);
+
+    @Default(lngs = { "en" }, values = { "Overview" })
+    String AccountManager_AccountManager_accounts_();
+
+    @Default(lngs = { "en" }, values = { "Account Usage Rules" })
+    String AccountManager_AccountManager_hosterorder_();
+
+    @Default(lngs = { "en" }, values = { "Default Account Priority" })
+    String HosterOrderPanel_getTextForValue_default_();
+
+    @Default(lngs = { "en" }, values = { "%s1's Account Priority" })
+    String HosterOrderPanel_getTextForValue(String tld);
+
+    @Default(lngs = { "en" }, values = { "Account Group" })
+    String FileColumn_getStringValue_accountgroup_();
+
+    @Default(lngs = { "en" }, values = { "Hoster" })
+    String HosterRuleTableModel_initColumns_hoster_();
+
+    @Default(lngs = { "en" }, values = { "Use Hoster Rules if you have more than one Premium Account and want to specify in which order these accounts should be used." })
+    String HosterOrderPanel_HosterOrderPanel_description_();
+
+    @Default(lngs = { "en" }, values = { "Enabled Captchabrotherhood's Service" })
+    String captchabrotherhoodService_createPanel_enabled();
+
+    @Default(lngs = { "en" }, values = { "Add, remove or modify premium accounts" })
+    String AccountManager_AccountManager_accounts_tt();
+
+    @Default(lngs = { "en" }, values = { "Set up rules to control the account order, in case you have more than one account for an hoster" })
+    String AccountManager_AccountManager_hosterorder_tt();
+
+    @Default(lngs = { "en" }, values = { "Add a new Rule" })
+    String NewRuleAction_getTooltipText_tt_();
+
+    @Default(lngs = { "en" }, values = { "Please enter a Domain" })
+    String NewRuleAction_actionPerformed_choose_hoster_();
+
+    @Default(lngs = { "en" }, values = { "Weiter" })
+    String lit_continue();
+
+    @Default(lngs = { "en" }, values = { "Please choose a Hoster to create a rule for.\r\nIf the desired Hoster is missing, you probably do not have an account for this hoster.\r\nMake sure to add an Account first in the Account Overview." })
+    String NewRuleAction_actionPerformed_choose_hoster_message();
+
+    @Default(lngs = { "en" }, values = { "Edit" })
+    String HosterRuleTableModel_initColumns_edit_();
+
+    @Default(lngs = { "en" }, values = { "Remove %s1 rule(s)?" })
+    String accountUsageRule_remove_action_title(int size);
+
+    @Default(lngs = { "en" }, values = { "Do you really want to remove these rule(s)?\r\n%s1" })
+    String accountUsageRule_remove_action_msg(String string);
+
+    @Default(lngs = { "en" }, values = { "Account Usage Rule for %s1" })
+    String EditHosterRuleDialog_EditHosterRuleDialog_title_(String hoster);
+
+    @Default(lngs = { "en" }, values = { "Add Group" })
+    String AddGroupAction_AddGroupAction();
+
+    @Default(lngs = { "en" }, values = { "Distribution Rule" })
+    String GroupRuleColumn_GroupRuleColumn_distrubutionrule_();
+
+    @Default(lngs = { "en" }, values = { "Randomly use an account of this group" })
+    String Rules_random();
+
+    @Default(lngs = { "en" }, values = { "First comes first - Use the given order" })
+    String Rules_order();
+
+    @Default(lngs = { "en" }, values = { "There is nothing to delete here!" })
+    String GenericDeleteSelectedToolbarAction_actionPerformed_nothing_to_delete_();
+
+    @Default(lngs = { "en" }, values = { "Delete Links: " })
+    String GenericDeleteSelectedToolbarAction_updateName_object_all();
+
+    @Default(lngs = { "en" }, values = { "Below, all premium accounts and the 'free download' option for %s1 are listed. You can set up a custom order here. JDownloader will try to use the account(s) in the first group for downloading. If all Accounts in the first group fail, it will try the second group, and so on. If there are several accounts in one group, the group's 'Distribution Rule' will be used to select the next account." })
+    String EditHosterRuleDialog_layoutDialogContent_description_(String hoster);
+
+    @Default(lngs = { "en" }, values = { "Remove group" })
+    String DeleteGroupAction_DeleteGroupAction();
+
+    @Default(lngs = { "en" }, values = { "Single Hoster Accounts" })
+    String HosterRuleController_validateRule_single_hoster_account();
+
+    @Default(lngs = { "en" }, values = { "Multi Hoster Accounts" })
+    String HosterRuleController_validateRule_multi_hoster_account();
+
+    @Default(lngs = { "en" }, values = { "Download without any Account (Free Mode)" })
+    String HosterRuleController_validateRule_free();
+
+    @Default(lngs = { "en" }, values = { "Free Download (No Account)" })
+    String PackageColumn_getStringValue_freedownload_();
 
 }

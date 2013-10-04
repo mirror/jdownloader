@@ -538,7 +538,7 @@ public class SecondLevelLaunch {
                     public void run() {
                         try {
                             // DO NOT REMOVE THIS LINE
-                             do not remove me, ask jiaz!
+                            // do not remove me, ask jiaz!
 
                             boolean jared = Application.isJared(SecondLevelLaunch.class);
                             ToolTipController.getInstance().setDelay(JsonConfig.create(GraphicalUserInterfaceSettings.class).getTooltipDelay());

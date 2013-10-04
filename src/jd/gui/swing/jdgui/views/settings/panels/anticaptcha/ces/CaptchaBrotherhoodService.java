@@ -59,6 +59,7 @@ public class CaptchaBrotherhoodService implements CESService {
                 this.addHeader(_GUI._.MyJDownloaderSettingsPanel_MyJDownloaderSettingsPanel_logins_(), NewTheme.I().getIcon(IconKey.ICON_LOGINS, 32));
                 // addPair(_GUI._.MyJDownloaderSettingsPanel_MyJDownloaderSettingsPanel_enabled(), null, checkBox);
                 this.addDescriptionPlain(_GUI._.captchabrotherhoodService_createPanel_logins_());
+
                 addPair(_GUI._.captchabrotherhoodService_createPanel_enabled(), null, new Checkbox(CFG_CAPTCHABROTHERHOOD.ENABLED, userName, passWord));
                 addPair(_GUI._.captchabrotherhoodService_createPanel_username(), null, userName);
                 addPair(_GUI._.captchabrotherhoodService_createPanel_password(), null, passWord);

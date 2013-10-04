@@ -33,7 +33,7 @@ public abstract class DeleteAppAction extends SelectionAppAction<FilePackage, Do
      */
     private static final long serialVersionUID = 1117751339878672160L;
 
-    protected void deleteLinksRequest(final SelectionInfo<FilePackage, DownloadLink> si, final String msg) {
+    public void deleteLinksRequest(final SelectionInfo<FilePackage, DownloadLink> si, final String msg) {
         final DownloadLinkAggregator agg = new DownloadLinkAggregator();
         agg.setLocalFileUsageEnabled(true);
         agg.update(si.getChildren());

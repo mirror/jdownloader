@@ -21,6 +21,8 @@ import jd.controlling.AccountControllerEvent;
 import jd.controlling.AccountControllerListener;
 import jd.controlling.accountchecker.AccountChecker;
 import jd.controlling.accountchecker.AccountCheckerEventListener;
+import jd.gui.swing.jdgui.interfaces.SwitchPanelEvent;
+import jd.gui.swing.jdgui.interfaces.SwitchPanelListener;
 import jd.nutils.Formatter;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
@@ -49,7 +51,7 @@ public class PremiumAccountTableModel extends ExtTableModel<AccountEntry> implem
 
     private static final long                serialVersionUID       = 3120481189794897020L;
 
-    private AccountManagerSettings           accountManagerSettings = null;
+    private AccountListPanel                 accountManagerSettings = null;
 
     private DelayedRunnable                  delayedFill;
 
@@ -59,9 +61,9 @@ public class PremiumAccountTableModel extends ExtTableModel<AccountEntry> implem
 
     private ExtComponentColumn<AccountEntry> details;
 
-    public PremiumAccountTableModel(final AccountManagerSettings accountManagerSettings) {
+    public PremiumAccountTableModel(final AccountListPanel accountListPanel) {
         super("PremiumAccountTableModel2");
-        this.accountManagerSettings = accountManagerSettings;
+        this.accountManagerSettings = accountListPanel;
         ScheduledExecutorService scheduler = DelayedRunnable.getNewScheduledExecutorService();
         delayedFill = new DelayedRunnable(scheduler, 250l) {
 
@@ -96,7 +98,7 @@ public class PremiumAccountTableModel extends ExtTableModel<AccountEntry> implem
                 AccountController.getInstance().getBroadcaster().addListener(new AccountControllerListener() {
 
                     public void onAccountControllerEvent(AccountControllerEvent event) {
-                        if (accountManagerSettings.isShown()) {
+                        if (accountListPanel.isShown()) {
                             switch (event.getType()) {
                             case UPDATE:
                                 /* just repaint */
@@ -110,6 +112,15 @@ public class PremiumAccountTableModel extends ExtTableModel<AccountEntry> implem
                     }
                 });
                 AccountChecker.getInstance().getEventSender().addListener(PremiumAccountTableModel.this);
+                accountManagerSettings.getBroadcaster().addListener(new SwitchPanelListener() {
+
+                    @Override
+                    public void onPanelEvent(SwitchPanelEvent event) {
+                        if (event.getEventID() == SwitchPanelEvent.ON_SHOW) {
+                            _refill();
+                        }
+                    }
+                });
                 if (AccountChecker.getInstance().isRunning()) {
                     onCheckStarted();
                 }

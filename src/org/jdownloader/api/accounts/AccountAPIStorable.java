@@ -11,7 +11,7 @@ public class AccountAPIStorable implements Storable {
     private QueryResponseMap infoMap = null;
 
     public long getUUID() {
-        return acc.getID().getID();
+        return acc.getId().getID();
     }
 
     public String getHostname() {

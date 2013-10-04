@@ -63,6 +63,16 @@ public class AccountData implements Storable {
 
     private boolean             concurrentUsePossible = true;
 
+    private long                id;
+
+    public long getId() {
+        return id;
+    }
+
+    public void setId(long id) {
+        this.id = id;
+    }
+
     public boolean isConcurrentUsePossible() {
         return concurrentUsePossible;
     }
@@ -79,6 +89,7 @@ public class AccountData implements Storable {
         AccountData ret = new AccountData();
         // WARNING: only storable or primitives should be used here
         ret.properties = a.getProperties();
+        ret.id = a.getId().getID();
         if (a.getAccountInfo() != null) {
             ret.infoProperties = a.getAccountInfo().getProperties();
             if (ret.infoProperties == null) {
@@ -216,6 +227,7 @@ public class AccountData implements Storable {
             if (trafficUnlimited) ai.setUnlimitedTraffic();
             ai.setSpecialTraffic(specialtraffic);
         }
+        ret.setId(getId());
         ret.setConcurrentUsePossible(concurrentUsePossible);
         ret.setEnabled(enabled);
         ret.setHoster(hoster);

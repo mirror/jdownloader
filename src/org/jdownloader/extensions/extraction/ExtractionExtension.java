@@ -493,7 +493,10 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
                     getLogger().log(new Exception("Extraction Crashlog found!"));
                     String log;
                     getLogger().info(log = IO.readFileToString(f));
+
                     f.renameTo(new File(f.getParentFile().getParentFile(), "crashed_" + f.getName()));
+                    f.delete();
+                    f.deleteOnExit();
                     ExceptionDialog ed = new ExceptionDialog(0, T._.crash_title(), T._.crash_message(), null, null, null);
                     ed.setMore(log);
                     try {

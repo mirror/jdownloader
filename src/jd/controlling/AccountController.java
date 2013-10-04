@@ -677,4 +677,5 @@ public class AccountController implements AccountControllerListener {
     public static String createFullBuyPremiumUrl(String buyPremiumUrl, String id) {
         return "http://update3.jdownloader.org/jdserv/BuyPremiumInterface/redirect?" + Encoding.urlEncode(buyPremiumUrl) + "&" + Encoding.urlEncode(id);
     }
+
 }

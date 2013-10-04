@@ -10,6 +10,10 @@ public class UniqueAlltimeID {
         id = ID.incrementAndGet();
     }
 
+    public UniqueAlltimeID(long id2) {
+        this.id = id2;
+    }
+
     @Override
     public int hashCode() {
         return (int) (id ^ (id >>> 32));

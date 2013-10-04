@@ -21,6 +21,7 @@ import java.awt.LayoutManager;
 
 import javax.swing.JComponent;
 import javax.swing.JPanel;
+import javax.swing.JTabbedPane;
 
 import org.appwork.utils.event.Eventsender;
 
@@ -115,25 +116,41 @@ public abstract class SwitchPanel extends JPanel {
 
     protected void distributeView(JComponent switchPanel) {
         for (Component comp : switchPanel.getComponents()) {
-            if (!(comp instanceof JComponent)) continue;
-            if (comp == switchPanel) continue;
-            if (comp instanceof SwitchPanel) {
-                ((SwitchPanel) comp).setShown();
-            } else {
-                distributeView((JComponent) comp);
-            }
+            if (comp == switchPanel) return;
+            dispatchViewEvent(comp);
+        }
+    }
+
+    protected void dispatchViewEvent(Component comp) {
+        if (!(comp instanceof JComponent)) return;
+        if (comp instanceof SwitchPanel) {
+            ((SwitchPanel) comp).setShown();
+        } else if (comp instanceof JTabbedPane) {
+            Component selected = ((JTabbedPane) comp).getSelectedComponent();
+            dispatchViewEvent(selected);
+        } else {
+            distributeView((JComponent) comp);
         }
     }
 
     protected void distributeHide(JComponent switchPanel) {
         for (Component comp : switchPanel.getComponents()) {
-            if (!(comp instanceof JComponent)) continue;
             if (comp == switchPanel) continue;
-            if (comp instanceof SwitchPanel) {
-                ((SwitchPanel) comp).setHidden();
-            } else {
-                distributeHide((JComponent) comp);
-            }
+            dispatchHideEvent(comp);
+        }
+    }
+
+    protected void dispatchHideEvent(Component comp) {
+        if (!(comp instanceof JComponent)) return;
+
+        if (comp instanceof SwitchPanel) {
+            ((SwitchPanel) comp).setHidden();
+        } else if (comp instanceof JTabbedPane) {
+            Component selected = ((JTabbedPane) comp).getSelectedComponent();
+            dispatchHideEvent(selected);
+
+        } else {
+            distributeHide((JComponent) comp);
         }
     }
 

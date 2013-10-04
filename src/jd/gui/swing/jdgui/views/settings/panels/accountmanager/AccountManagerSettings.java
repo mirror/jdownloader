@@ -60,6 +60,7 @@ public class AccountManagerSettings extends AbstractConfigPanel {
             public void onConfigValidatorError(KeyHandler<Boolean> keyHandler, Boolean invalidValue, ValidationException validateException) {
             }
         }, false);
+
     }
 
     @Override
@@ -80,6 +81,6 @@ public class AccountManagerSettings extends AbstractConfigPanel {
 
     @Override
     public void updateContents() {
-        ((PremiumAccountTableModel) acm.getTable().getModel()).fill();
+
     }
 }

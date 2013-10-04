@@ -13,8 +13,8 @@ public class PremiumAccountTable extends BasicJDTable<AccountEntry> {
 
     private static final long serialVersionUID = -2166408567306279016L;
 
-    public PremiumAccountTable(AccountManagerSettings accountManagerSettings) {
-        super(new PremiumAccountTableModel(accountManagerSettings));
+    public PremiumAccountTable(AccountListPanel accountListPanel) {
+        super(new PremiumAccountTableModel(accountListPanel));
         this.setSearchEnabled(true);
     }
 

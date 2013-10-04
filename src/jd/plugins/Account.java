@@ -25,6 +25,8 @@ import org.jdownloader.controlling.UniqueAlltimeID;
 
 public class Account extends Property {
 
+    public static final String IS_MULTI_HOSTER_ACCOUNT        = "IS_MULTI_HOSTER_ACCOUNT";
+
     private static final long  serialVersionUID               = -7578649066389032068L;
 
     private String             user;
@@ -55,7 +57,7 @@ public class Account extends Property {
         return tmpDisabledTimeout;
     }
 
-    private transient UniqueAlltimeID   ID           = new UniqueAlltimeID();
+    private transient UniqueAlltimeID   id           = new UniqueAlltimeID();
 
     /* keep for comp. reasons */
     private String                      hoster       = null;
@@ -154,6 +156,13 @@ public class Account extends Property {
 
     public void setAccountInfo(final AccountInfo info) {
         accinfo = info;
+        if (info != null) {
+            Object supported = info.getProperty("multiHostSupport", Property.NULL);
+            // set multi to true of accountinfo contains the multihostsupport property at least once
+            if (Property.NULL != supported && supported != null) {
+                setMulti(true);
+            }
+        }
     }
 
     public String getUser() {
@@ -170,11 +179,17 @@ public class Account extends Property {
         /* nach dem deserialisieren sollen die transienten neu geholt werden */
         stream.defaultReadObject();
         tmpDisabledTimeout = -1;
-        ID = new UniqueAlltimeID();
+        id = new UniqueAlltimeID();
     }
 
-    public UniqueAlltimeID getID() {
-        return ID;
+    public UniqueAlltimeID getId() {
+        return id;
+    }
+
+    public void setId(long id) {
+        if (id > 0) {
+            this.id = new UniqueAlltimeID(id);
+        }
     }
 
     public boolean isTempDisabled() {
@@ -290,6 +305,14 @@ public class Account extends Property {
             if (account2.pass == null || !this.pass.equalsIgnoreCase(account2.pass)) { return false; }
         }
         return true;
+    }
+
+    private void setMulti(boolean b) {
+        this.setProperty(IS_MULTI_HOSTER_ACCOUNT, b);
+    }
+
+    public boolean isMulti() {
+        return getBooleanProperty(IS_MULTI_HOSTER_ACCOUNT);
     }
 
 }

@@ -152,7 +152,7 @@ public class AccountAPIImpl implements AccountAPI {
                 Iterator<Long> it = todoIDs.iterator();
                 while (it.hasNext()) {
                     long id = it.next();
-                    if (lacc.getID().getID() == id) {
+                    if (lacc.getId().getID() == id) {
                         accs.add(lacc);
                         it.remove();
                     }
@@ -201,7 +201,7 @@ public class AccountAPIImpl implements AccountAPI {
         if (accountId == null) return false;
 
         for (Account acc : AccountController.getInstance().list()) {
-            if (accountId.equals(acc.getID().getID())) {
+            if (accountId.equals(acc.getId().getID())) {
                 if (username != null && !username.isEmpty()) {
                     acc.setUser(username);
                 }
