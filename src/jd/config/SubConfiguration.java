@@ -37,6 +37,13 @@ public class SubConfiguration extends Property implements Serializable {
     public SubConfiguration() {
     }
 
+    public void reset() {
+        json.clear();
+        /* this avoids fresh conversions on next startup as we load the JSonStorage */
+        json.put("saveWorkaround", System.currentTimeMillis());
+        this.setProperties(((JsonKeyValueStorage) json).getInternalStorageMap());
+    }
+
     @SuppressWarnings("unchecked")
     private SubConfiguration(final String name) {
         valid = true;

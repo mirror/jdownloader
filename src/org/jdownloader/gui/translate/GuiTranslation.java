@@ -3235,4 +3235,10 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Free Download (No Account)" })
     String PackageColumn_getStringValue_freedownload_();
 
+    @Default(lngs = { "en" }, values = { "Reset the current plugin's settings to default." })
+    String PluginSettingsPanel_PluginSettingsPanel_reset();
+
+    @Default(lngs = { "en" }, values = { "The %s1 Plugin Settings have been resetted to default values!" })
+    String PluginSettingsPanel_actionPerformed_reset_done(String domain);
+
 }

@@ -2,6 +2,7 @@ package jd.gui.swing.jdgui.views.settings.panels.pluginsettings;
 
 import javax.swing.JSeparator;
 
+import jd.config.SubConfiguration;
 import jd.gui.swing.jdgui.interfaces.SwitchPanel;
 import jd.gui.swing.jdgui.views.settings.sidebar.AddonConfig;
 import jd.plugins.Plugin;
@@ -54,6 +55,7 @@ public class PluginConfigPanel extends SwitchPanel {
         // }
         // gui.addTopHeader(selectedItem.getHost(), icon);
 
+        final SubConfiguration config = proto == null ? null : proto.getPluginConfig();
         PluginConfigPanel ret = new PluginConfigPanel() {
             /**
              * 
@@ -92,4 +94,5 @@ public class PluginConfigPanel extends SwitchPanel {
 
         return ret;
     }
+
 }

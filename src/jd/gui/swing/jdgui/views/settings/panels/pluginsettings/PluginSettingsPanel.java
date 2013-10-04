@@ -16,20 +16,28 @@ import javax.swing.JPanel;
 
 import jd.gui.swing.jdgui.views.settings.components.SettingsComponent;
 import jd.gui.swing.jdgui.views.settings.components.StateUpdateListener;
+import jd.gui.swing.jdgui.views.settings.sidebar.AddonConfig;
+import jd.plugins.Plugin;
 import net.miginfocom.swing.MigLayout;
 
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.swing.MigPanel;
+import org.appwork.swing.components.ExtButton;
 import org.appwork.swing.components.circlebar.CircledProgressBar;
 import org.appwork.swing.components.circlebar.ImagePainter;
 import org.appwork.swing.components.searchcombo.SearchComboBox;
+import org.appwork.utils.logging.Log;
 import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.SwingUtils;
+import org.appwork.utils.swing.dialog.Dialog;
 import org.jdownloader.DomainInfo;
+import org.jdownloader.actions.AppAction;
 import org.jdownloader.extensions.Header;
+import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.plugins.controller.LazyPlugin;
+import org.jdownloader.plugins.controller.UpdateRequiredClassNotFoundException;
 import org.jdownloader.plugins.controller.crawler.CrawlerPluginController;
 import org.jdownloader.plugins.controller.crawler.LazyCrawlerPlugin;
 import org.jdownloader.plugins.controller.host.HostPluginController;
@@ -49,6 +57,8 @@ public class PluginSettingsPanel extends JPanel implements SettingsComponent, Ac
     private Header                        header;
 
     private SearchComboBox<LazyPlugin<?>> searchCombobox;
+
+    private ExtButton                     resetButton;
 
     public void addStateUpdateListener(StateUpdateListener listener) {
         throw new IllegalStateException("Not implemented");
@@ -90,6 +100,33 @@ public class PluginSettingsPanel extends JPanel implements SettingsComponent, Ac
         // selector.setPreferredSize(new Dimension(200, 20000));
         // sp.setBorder(null);
 
+        resetButton = new ExtButton(new AppAction() {
+            {
+                setIconKey(IconKey.ICON_RESET);
+                setTooltipText(_GUI._.PluginSettingsPanel_PluginSettingsPanel_reset());
+            }
+
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                if (configPanel != null && configPanel.isShown()) {
+                    Plugin proto = null;
+                    try {
+                        if (currentItem != null) {
+                            proto = currentItem.getPrototype(null);
+                            proto.getPluginConfig().reset();
+
+                            AddonConfig.resetInstance(proto.getConfig(), "", false);
+                            // avoid that the panel saves it's data on hide;
+                            configPanel = null;
+                            show(currentItem);
+                            Dialog.getInstance().showMessageDialog(_GUI._.PluginSettingsPanel_actionPerformed_reset_done(currentItem.getDisplayName()));
+                        }
+                    } catch (UpdateRequiredClassNotFoundException e1) {
+                        Log.exception(e1);
+                    }
+                }
+            }
+        });
         this.card = new MigPanel("ins 3", "[grow,fill]", "[grow,fill]");
         header = new Header("", null);
 
@@ -128,8 +165,9 @@ public class PluginSettingsPanel extends JPanel implements SettingsComponent, Ac
                     @Override
                     protected void runInEDT() {
                         removeAll();
-                        add(SwingUtils.toBold(new JLabel(_GUI._.PluginSettingsPanel_runInEDT_choose_())), "split 2,shrinkx");
-                        add(searchCombobox, "pushx,growx");
+                        add(SwingUtils.toBold(new JLabel(_GUI._.PluginSettingsPanel_runInEDT_choose_())), "split 3,shrinkx");
+                        add(searchCombobox, "pushx,growx,height 22!");
+                        add(resetButton, "width 22!,height 22!");
                         add(header, "growx,pushx,gaptop 10");
                         add(card, "spanx,pushx,growx");
 
@@ -209,6 +247,8 @@ public class PluginSettingsPanel extends JPanel implements SettingsComponent, Ac
         }
     }
 
+    private LazyPlugin<?> currentItem = null;
+
     private void show(final LazyPlugin<?> selectedItem) {
         new EDTRunner() {
 
@@ -218,6 +258,7 @@ public class PluginSettingsPanel extends JPanel implements SettingsComponent, Ac
                 if (configPanel != null) {
                     configPanel.setHidden();
                 }
+                currentItem = selectedItem;
                 configPanel = PluginConfigPanel.create(selectedItem);
                 if (configPanel != null) {
                     configPanel.setShown();
