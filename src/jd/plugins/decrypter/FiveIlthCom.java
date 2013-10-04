@@ -37,9 +37,9 @@ public class FiveIlthCom extends PluginForDecrypt {
         br.setFollowRedirects(false);
         String parameter = param.toString();
         br.getPage(parameter);
-        String tempID = br.getRedirectLocation();
-        if (tempID != null) {
-            DownloadLink dl = createDownloadlink(tempID);
+        String externID = br.getRedirectLocation();
+        if (externID != null) {
+            DownloadLink dl = createDownloadlink(externID);
             decryptedLinks.add(dl);
             return decryptedLinks;
         }
@@ -49,32 +49,61 @@ public class FiveIlthCom extends PluginForDecrypt {
             return null;
         }
         filename = filename.trim();
-        tempID = br.getRegex("\\&file=(http://static\\.mofos\\.com/.*?)\\&enablejs").getMatch(0);
-        if (tempID != null) {
-            DownloadLink dl = createDownloadlink("directhttp://" + tempID);
+        externID = br.getRegex("\\&file=(http://static\\.mofos\\.com/.*?)\\&enablejs").getMatch(0);
+        if (externID != null) {
+            final DownloadLink dl = createDownloadlink("directhttp://" + externID);
             dl.setFinalFileName(filename + ".flv");
             decryptedLinks.add(dl);
             return decryptedLinks;
 
         }
-        tempID = br.getRegex("flashvars=\"\\&file=(.*?)\\&link").getMatch(0);
-        if (tempID != null) {
-            DownloadLink dl = createDownloadlink("directhttp://http://flash.serious-cash.com/" + tempID + ".flv");
+        externID = br.getRegex("flashvars=\"\\&file=(.*?)\\&link").getMatch(0);
+        if (externID != null) {
+            final DownloadLink dl = createDownloadlink("directhttp://http://flash.serious-cash.com/" + externID + ".flv");
             decryptedLinks.add(dl);
             dl.setFinalFileName(filename + ".flv");
             return decryptedLinks;
         }
-        tempID = br.getRegex("file=(http://(www\\.)?hostave\\d+\\.net/.*?)\\&screenfile").getMatch(0);
-        if (tempID != null) {
-            DownloadLink dl = createDownloadlink("directhttp://" + tempID);
+        externID = br.getRegex("file=(http://(www\\.)?hostave\\d+\\.net/.*?)\\&screenfile").getMatch(0);
+        if (externID != null) {
+            final DownloadLink dl = createDownloadlink("directhttp://" + externID);
             dl.setFinalFileName(filename + ".flv");
             decryptedLinks.add(dl);
             return decryptedLinks;
 
         }
-        tempID = br.getRegex("flashvars=\"videopath=height=\\d+\\&width=\\d+\\&file=(http://.*?)\\&beginimage").getMatch(0);
-        if (tempID != null) {
-            DownloadLink dl = createDownloadlink("directhttp://" + tempID);
+        externID = br.getRegex("flashvars=\"videopath=height=\\d+\\&width=\\d+\\&file=(http://.*?)\\&beginimage").getMatch(0);
+        if (externID != null) {
+            final DownloadLink dl = createDownloadlink("directhttp://" + externID);
+            dl.setFinalFileName(filename + ".flv");
+            decryptedLinks.add(dl);
+            return decryptedLinks;
+
+        }
+        externID = br.getRegex("(http://(www\\.)?5ilthy\\.com/playerConfig\\.php\\?[a-z0-9]+\\.(flv|mp4))").getMatch(0);
+        if (externID != null) {
+            final DownloadLink dl = createDownloadlink(externID);
+            dl.setProperty("5ilthydirectfilename", filename);
+            decryptedLinks.add(dl);
+            return decryptedLinks;
+
+        }
+        externID = br.getRegex("http://(www\\.)?5ilthy\\.com/playerConfig\\.php\\?(http://[^<>\"]*?\\.(flv|mp4))").getMatch(1);
+        if (externID != null) {
+            final DownloadLink dl = createDownloadlink("directhttp://" + externID);
+            if (externID.endsWith(".flv"))
+                dl.setFinalFileName(filename + ".flv");
+            else
+                dl.setFinalFileName(filename + ".mp4");
+            decryptedLinks.add(dl);
+            return decryptedLinks;
+
+        }
+        externID = br.getRegex("(http://(www\\.)?filthyrx\\.com/playerConfig\\.php[^<>\"]*?)\"").getMatch(0);
+        if (externID != null) {
+            br.getPage(externID);
+            externID = br.getRegex("flvMask:(http://[^<>\"]*?);").getMatch(0);
+            final DownloadLink dl = createDownloadlink("directhttp://" + externID);
             dl.setFinalFileName(filename + ".flv");
             decryptedLinks.add(dl);
             return decryptedLinks;

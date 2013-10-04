@@ -54,6 +54,11 @@ public class MotherLessCom extends PluginForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        try {
+            br.setLoadLimit(4194304);
+        } catch (final Throwable e) {
+            // Not available in old 0.9.581 Stable
+        }
         br.setFollowRedirects(true);
         JDUtilities.getPluginForHost("motherless.com");
         br.getHeaders().put("User-Agent", jd.plugins.hoster.MotherLessCom.ua);

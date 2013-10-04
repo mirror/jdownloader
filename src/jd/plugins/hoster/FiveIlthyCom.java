@@ -22,6 +22,7 @@ import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -29,7 +30,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "5ilthy.com" }, urls = { "http://(www\\.)?5ilthy\\.com/videos/\\d+/[a-z0-9\\-]+\\.html" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "5ilthy.com" }, urls = { "http://(www\\.)?5ilthy\\.com/(videos/\\d+/[a-z0-9\\-]+\\.html|playerConfig\\.php\\?[a-z0-9]+\\.(flv|mp4))" }, flags = { 0 })
 public class FiveIlthyCom extends PluginForHost {
 
     private String DLLINK = null;
@@ -48,23 +49,34 @@ public class FiveIlthyCom extends PluginForHost {
         return -1;
     }
 
+    private static final String EMBEDLINK = "http://(www\\.)?5ilthy\\.com/(videos/\\d+/[a-z0-9\\-]+\\.html|playerConfig\\.php\\?[a-z0-9]+\\.(flv|mp4))";
+
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        if (br.getURL().contains("?=index")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("<div class=\"vtitle\"><h2>([^<>\"]*?)</h2>").getMatch(0);
-        if (filename == null) filename = br.getRegex("<title>([^<>\"]*?) at 5ilthy</title>").getMatch(0);
-        DLLINK = br.getRegex("<param name=\"flashvars\" value=\"settings=(http://.*?)\"/>").getMatch(0);
-        if (DLLINK == null) DLLINK = br.getRegex("settings=(http://(www\\.)?5ilthy\\.com/playerConfig\\.php\\?.*?)\"").getMatch(0);
-        if (filename == null || DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        br.getPage(Encoding.htmlDecode(DLLINK));
-        DLLINK = br.getRegex("defaultVideo:(http://.*?);").getMatch(0);
-        if (DLLINK == null) DLLINK = br.getRegex("flvMask:(http://.*?);").getMatch(0);
+        String filename = null;
+        if (downloadLink.getDownloadURL().matches(EMBEDLINK)) {
+            filename = downloadLink.getStringProperty("5ilthydirectfilename", null);
+            if (filename == null) filename = new Regex(downloadLink.getDownloadURL(), "([a-z0-9]+)\\.(flv|mp4)$").getMatch(0);
+            DLLINK = br.getRegex("flvMask:(http://[^<>\"]*?);").getMatch(0);
+        } else {
+            if (br.getURL().contains("?=index")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            filename = br.getRegex("<div class=\"vtitle\"><h2>([^<>\"]*?)</h2>").getMatch(0);
+            if (filename == null) filename = br.getRegex("<title>([^<>\"]*?) at 5ilthy</title>").getMatch(0);
+            DLLINK = br.getRegex("<param name=\"flashvars\" value=\"settings=(http://.*?)\"/>").getMatch(0);
+            if (DLLINK == null) DLLINK = br.getRegex("settings=(http://(www\\.)?5ilthy\\.com/playerConfig\\.php\\?.*?)\"").getMatch(0);
+            if (filename == null || DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            br.getPage(Encoding.htmlDecode(DLLINK));
+            DLLINK = br.getRegex("defaultVideo:(http://.*?);").getMatch(0);
+            if (DLLINK == null) DLLINK = br.getRegex("flvMask:(http://.*?);").getMatch(0);
+        }
         if (DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         filename = filename.trim();
-        downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + DLLINK.subSequence(DLLINK.length() - 4, DLLINK.length()));
+        String ext = DLLINK.substring(DLLINK.lastIndexOf("."));
+        if (ext == null || ext.length() > 5) ext = ".flv";
+        downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + ext);
         Browser br2 = br.cloneBrowser();
         // In case the link redirects to the finallink
         br2.setFollowRedirects(true);
