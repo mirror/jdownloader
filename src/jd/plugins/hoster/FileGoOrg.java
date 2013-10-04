@@ -53,7 +53,9 @@ public class FileGoOrg extends PluginForHost {
     private static final String NORESUME    = "NORESUME";
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink parameter) throws Exception {
+    public AvailableStatus requestFileInformation(final DownloadLink parameter) throws Exception {
+        // Offline links should also have nice filenames
+        parameter.setName(new Regex(parameter.getDownloadURL(), "([A-Z0-9]+)$").getMatch(0));
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         // Not needed but using the latest FF is probably no bad idea

@@ -80,7 +80,20 @@ public class VideoOneCom extends PluginForDecrypt {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
             }
-            externID += embedID;
+            if (externID.contains("redtube.com/")) {
+                externID += "?" + embedID;
+            } else {
+                externID += embedID;
+            }
+            if (externID.matches("http://media\\.8\\-d\\.com/getcode\\.php\\?id=\\d+\\&code=\\d+")) {
+                br.getPage(externID);
+                externID = br.getRegex("<url>(http://[^<>\"]*?)</url>").getMatch(0);
+                if (externID == null) {
+                    logger.warning("Decrypter broken for link: " + parameter);
+                    return null;
+                }
+                externID = "directhttp://" + externID;
+            }
             decryptedLinks.add(createDownloadlink(externID));
             return decryptedLinks;
         }
@@ -195,6 +208,11 @@ public class VideoOneCom extends PluginForDecrypt {
             return decryptedLinks;
         }
         externID = br.getRegex("\"(http://(www\\.)?nuvid\\.com/embed/\\d+)\"").getMatch(0);
+        if (externID != null) {
+            decryptedLinks.add(createDownloadlink(externID));
+            return decryptedLinks;
+        }
+        externID = br.getRegex("(http://(www\\.)?pornsharing\\.com/videoplayer/vplaylist\\.php\\?id=[^<>\"]*?)\"").getMatch(0);
         if (externID != null) {
             decryptedLinks.add(createDownloadlink(externID));
             return decryptedLinks;

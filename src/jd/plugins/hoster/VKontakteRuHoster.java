@@ -144,63 +144,68 @@ public class VKontakteRuHoster extends PluginForHost {
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
                 }
-                if (!linkOk(link, link.getFinalFileName())) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                if (!linkOk(link, link.getStringProperty("directfilename", null))) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             } else {
-                final String[] qs = { "w_", "z_", "y_", "x_", "m_" };
-                // For photos which are actually offline but their directlinks still exist
-                String directLinks = link.getStringProperty("directlinks", null);
-                if (directLinks != null) {
-                    directLinks = Encoding.htmlDecode(directLinks).replace("\\", "");
-                    /**
-                     * Try to get best quality and test links till a working link is found as it can happen that the found link is offline
-                     * but others are online
-                     */
-                    final String base = new Regex(directLinks, "base(\\')?:(\"|\\')(http://[^<>\"]*?)(\"|\\')").getMatch(2);
-                    for (String q : qs) {
-                        /* large image */
-                        if (FINALLINK == null || (FINALLINK != null && !linkOk(link, null))) {
-                            if (base == null) {
-                                FINALLINK = new Regex(directLinks, q + "(\\')?:\\[(\"|\\')([^<>\"]*?)(\"|\\')").getMatch(2);
-                                if (FINALLINK != null) FINALLINK += ".jpg";
-                            } else {
-                                final String linkPart = new Regex(directLinks, q + "(\\')?:\\[(\"|\\')([^<>\"]*?)(\"|\\')").getMatch(2);
-                                if (linkPart != null) {
-                                    FINALLINK = base + linkPart + ".jpg";
+                FINALLINK = link.getStringProperty("picturedirectlink", null);
+                if (FINALLINK == null) {
+                    final String[] qs = { "w_", "z_", "y_", "x_", "m_" };
+                    // For photos which are actually offline but their directlinks still exist
+                    String directLinks = link.getStringProperty("directlinks", null);
+                    if (directLinks != null) {
+                        directLinks = Encoding.htmlDecode(directLinks).replace("\\", "");
+                        /**
+                         * Try to get best quality and test links till a working link is found as it can happen that the found link is
+                         * offline but others are online
+                         */
+                        final String base = new Regex(directLinks, "base(\\')?:(\"|\\')(http://[^<>\"]*?)(\"|\\')").getMatch(2);
+                        for (String q : qs) {
+                            /* large image */
+                            if (FINALLINK == null || (FINALLINK != null && !linkOk(link, null))) {
+                                if (base == null) {
+                                    FINALLINK = new Regex(directLinks, q + "(\\')?:\\[(\"|\\')([^<>\"]*?)(\"|\\')").getMatch(2);
+                                    if (FINALLINK != null) FINALLINK += ".jpg";
+                                } else {
+                                    final String linkPart = new Regex(directLinks, q + "(\\')?:\\[(\"|\\')([^<>\"]*?)(\"|\\')").getMatch(2);
+                                    if (linkPart != null) {
+                                        FINALLINK = base + linkPart + ".jpg";
+                                    }
                                 }
+                            } else {
+                                break;
                             }
-                        } else {
-                            break;
                         }
                     }
-                }
-                if (FINALLINK == null) {
-                    final String photoID = new Regex(link.getDownloadURL(), "vkontaktedecrypted\\.ru/picturelink/((\\-)?\\d+_\\d+)").getMatch(0);
-                    String albumID = link.getStringProperty("albumid");
-                    if (albumID == null) {
-                        getPageSafe(aa, link, "http://vk.com/photo" + photoID);
-                        if (br.containsHTML("Unknown error|Unbekannter Fehler")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                        if (br.containsHTML("Access denied")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                        albumID = br.getRegex("class=\"active_link\">[\t\n\r ]+<a href=\"/(.*?)\"").getMatch(0);
-                        if (albumID == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                    }
-                    br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-                    br.getHeaders().put("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8");
-                    postPageSafe(aa, link, "http://vk.com/al_photos.php", "act=show&al=1&module=photos&list=" + albumID + "&photo=" + photoID);
-                    if (br.containsHTML(">Unfortunately, this photo has been deleted")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                    final String correctedBR = br.toString().replace("\\", "");
-                    /**
-                     * Try to get best quality and test links till a working link is found as it can happen that the found link is offline
-                     * but others are online
-                     */
-                    for (String q : qs) {
-                        /* large image */
-                        if (FINALLINK == null || (FINALLINK != null && !linkOk(link, null))) {
-                            String base = new Regex(correctedBR, "\"id\":\"" + photoID + "\",\"base\":\"(http://.*?)\"").getMatch(0);
-                            if (base == null) base = "";
-                            String section = new Regex(correctedBR, "(\\{\"id\":\"" + photoID + "\",\"base\":\"" + base + ".*?)((,\\{)|$)").getMatch(0);
-                            if (base != null) FINALLINK = new Regex(section, "\"id\":\"" + photoID + "\",\"base\":\"" + base + "\".*?\"" + q + "src\":\"(" + base + ".*?)\"").getMatch(0);
-                        } else {
-                            break;
+                    if (FINALLINK == null) {
+                        final String photoID = new Regex(link.getDownloadURL(), "vkontaktedecrypted\\.ru/picturelink/((\\-)?\\d+_\\d+)").getMatch(0);
+                        String albumID = link.getStringProperty("albumid");
+                        if (albumID == null) {
+                            getPageSafe(aa, link, "http://vk.com/photo" + photoID);
+                            if (br.containsHTML("Unknown error|Unbekannter Fehler")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                            if (br.containsHTML("Access denied")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                            albumID = br.getRegex("class=\"active_link\">[\t\n\r ]+<a href=\"/(.*?)\"").getMatch(0);
+                            if (albumID == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                        }
+                        br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+                        br.getHeaders().put("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8");
+                        postPageSafe(aa, link, "http://vk.com/al_photos.php", "act=show&al=1&module=photos&list=" + albumID + "&photo=" + photoID);
+                        if (br.containsHTML(">Unfortunately, this photo has been deleted")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                        final String correctedBR = br.toString().replace("\\", "");
+                        /**
+                         * Try to get best quality and test links till a working link is found as it can happen that the found link is
+                         * offline but others are online
+                         */
+                        for (String q : qs) {
+                            /* large image */
+                            if (FINALLINK == null || (FINALLINK != null && !linkOk(link, null))) {
+                                String base = new Regex(correctedBR, "\"id\":\"" + photoID + "\",\"base\":\"(http://.*?)\"").getMatch(0);
+                                if (base == null) base = "";
+                                final String section = new Regex(correctedBR, "(\\{\"id\":\"" + photoID + "\",\"base\":\"" + base + ".*?)((,\\{)|$)").getMatch(0);
+                                if (base != null) {
+                                    FINALLINK = new Regex(section, "\"id\":\"" + photoID + "\",\"base\":\"" + base + "\".*?\"" + q + "src\":\"(" + base + ".*?)\"").getMatch(0);
+                                }
+                            } else {
+                                break;
+                            }
                         }
                     }
                 }
@@ -208,6 +213,7 @@ public class VKontakteRuHoster extends PluginForHost {
                     logger.warning("Finallink is null!");
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
+                link.setProperty("picturedirectlink", FINALLINK);
             }
         }
         return AvailableStatus.TRUE;
@@ -441,8 +447,8 @@ public class VKontakteRuHoster extends PluginForHost {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "Linkcheck settings:"));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), FASTLINKCHECK, JDL.L("plugins.hoster.vkontakteruhoster.fastLinkcheck", "Fast linkcheck for video links (filesize won't be shown in linkgrabber)?")).setDefaultValue(false));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), FASTPICTURELINKCHECK, JDL.L("plugins.hoster.vkontakteruhoster.fastPictureLinkcheck", "Fast LinkCheck for picture links (filesize won't be shown in linkgrabber)?")).setDefaultValue(false));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), FASTAUDIOLINKCHECK, JDL.L("plugins.hoster.vkontakteruhoster.fastAudioLinkcheck", "Fast LinkCheck for audio links (filesize won't be shown in linkgrabber)?")).setDefaultValue(false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), FASTPICTURELINKCHECK, JDL.L("plugins.hoster.vkontakteruhoster.fastPictureLinkcheck", "Fast linkcheck for picture links (filesize won't be shown in linkgrabber)?")).setDefaultValue(false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), FASTAUDIOLINKCHECK, JDL.L("plugins.hoster.vkontakteruhoster.fastAudioLinkcheck", "Fast linkcheck for audio links (filesize won't be shown in linkgrabber)?")).setDefaultValue(false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "Video settings: "));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));

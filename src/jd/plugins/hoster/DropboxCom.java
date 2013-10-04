@@ -49,6 +49,7 @@ public class DropboxCom extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         if (link.getBooleanProperty("decrypted")) {
+            if (link.getBooleanProperty("offline", false)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             br.setCookie("http://dropbox.com", "locale", "en");
             URLConnectionAdapter con = null;
             try {
@@ -66,7 +67,7 @@ public class DropboxCom extends PluginForHost {
                 }
             }
 
-            if (br.containsHTML("(>Error \\(404\\)<|>Dropbox \\- 404<|>We can\\'t find the page you\\'re looking for)")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+            if (br.containsHTML("(>Error \\(404\\)<|>Dropbox \\- 404<|>We can\\'t find the page you\\'re looking for|>The file you're looking for has been)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             String filename = br.getRegex("content=\"([^<>/]*?)\" property=\"og:title\"").getMatch(0);
             if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             final String filesize = br.getRegex("class=\"meta\">\\d+ (days|months) ago\\&nbsp;\\&middot;\\&nbsp; ([^<>\"]*?)</div><a").getMatch(1);

@@ -53,7 +53,8 @@ public class IFileIt extends PluginForHost {
     private final String         useragent                = "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:12.0) Gecko/20100101 Firefox/12.0";
     /* must be static so all plugins share same lock */
     private static Object        LOCK                     = new Object();
-    private int                  MAXFREECHUNKS            = 1;
+    private final int            MAXFREECHUNKS            = 1;
+    private final int            MAXPREMIUMCHUNKS         = -5;
     private static final String  ONLY4REGISTERED          = "\"message\":\"signup\"";
     private static final String  ONLY4REGISTEREDUSERTEXT  = JDL.LF("plugins.hoster.ifileit.only4registered", "Wait or register to download the files");
     private static final String  NOCHUNKS                 = "NOCHUNKS";
@@ -382,17 +383,38 @@ public class IFileIt extends PluginForHost {
             final String apikey = getUrlEncodedAPIkey(account, this, br);
             final String fid = getFid(link);
             if (apikey == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            br.postPage("http://api.filecloud.io/api-fetch_download_url.api", "akey=" + apikey + "&ukey=" + fid);
+            try {
+                br.postPage("http://api.filecloud.io/api-fetch_download_url.api", "akey=" + apikey + "&ukey=" + fid);
+            } catch (final BrowserException e) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 5 * 60 * 1000l);
+            }
+            if (br.containsHTML("\"message\":\"no such file\"")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             String finallink = getJson("download_url", br);
             if (finallink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             finallink = finallink.replace("\\", "");
-            dl = jd.plugins.BrowserAdapter.openDownload(br, link, finallink, true, -4);
+
+            int maxchunks = MAXPREMIUMCHUNKS;
+            if (link.getBooleanProperty(NOCHUNKS, false)) {
+                maxchunks = 1;
+            }
+
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, finallink, true, maxchunks);
             if (dl.getConnection().getContentType().contains("html")) {
                 if (dl.getConnection().getResponseCode() == 503) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Too many connections", 10 * 60 * 1000l); }
                 br.followConnection();
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            dl.startDownload();
+            if (!this.dl.startDownload()) {
+                try {
+                    if (dl.externalDownloadStop()) return;
+                } catch (final Throwable e) {
+                }
+                /* unknown error, we disable multiple chunks */
+                if (link.getBooleanProperty(IFileIt.NOCHUNKS, false) == false) {
+                    link.setProperty(IFileIt.NOCHUNKS, Boolean.valueOf(true));
+                    throw new PluginException(LinkStatus.ERROR_RETRY);
+                }
+            }
         } else {
             br.setFollowRedirects(true);
             loginOldWay(account, false);

@@ -34,7 +34,7 @@ import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "dropbox.com" }, urls = { "https?://(www\\.)?dropbox\\.com/sh/.+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "dropbox.com" }, urls = { "https?://(www\\.)?dropbox\\.com/(sh/.+|l/[A-Za-z0-9]+)" }, flags = { 0 })
 public class DropBoxCom extends PluginForDecrypt {
 
     private boolean pluginloaded;
@@ -43,9 +43,13 @@ public class DropBoxCom extends PluginForDecrypt {
         super(wrapper);
     }
 
+    private final String NORMALLINK   = "https?://(www\\.)?dropbox\\.com/sh/.+";
+    private final String REDIRECTLINK = "https?://(www\\.)?dropbox\\.com/l/[A-Za-z0-9]+";
+
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString().replace("?dl=1", "");
+        br.setFollowRedirects(false);
         br.setCookie("http://dropbox.com", "locale", "en");
         URLConnectionAdapter con = null;
         try {
@@ -61,6 +65,9 @@ public class DropBoxCom extends PluginForDecrypt {
                 decryptedLinks.add(dl);
                 return decryptedLinks;
             }
+            if (con.getResponseCode() == 302 && parameter.matches(REDIRECTLINK)) {
+                parameter = br.getRedirectLocation();
+            }
             br.followConnection();
         } finally {
             try {
@@ -70,7 +77,7 @@ public class DropBoxCom extends PluginForDecrypt {
         }
         br.getPage(parameter);
         // Handling for single links
-        if (br.containsHTML(new Regex(parameter, ".*?(dropbox\\.com/sh/[a-z0-9]+).+").getMatch(0) + "[^<>\"]+" + "dl=1\"")) {
+        if (br.containsHTML(new Regex(parameter, ".*?(\\.com/sh/[a-z0-9]+).+").getMatch(0) + "[^<>\"]+" + "dl=1\"")) {
             final DownloadLink dl = createDownloadlink(parameter.replace("dropbox.com/", "dropboxdecrypted.com/"));
             dl.setProperty("decrypted", true);
             decryptedLinks.add(dl);
@@ -119,6 +126,10 @@ public class DropBoxCom extends PluginForDecrypt {
         }
         if (decryptedLinks.size() == 0) {
             logger.info("Found nothing to download: " + parameter);
+            final DownloadLink dl = createDownloadlink(parameter.replace("dropbox.com/", "dropboxdecrypted.com/"));
+            dl.setProperty("decrypted", true);
+            dl.setProperty("offline", true);
+            decryptedLinks.add(dl);
             return decryptedLinks;
         }
         if (fpName != null) {

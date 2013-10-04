@@ -21,6 +21,8 @@ import java.util.HashMap;
 import java.util.Map;
 
 import jd.PluginWrapper;
+import jd.config.ConfigContainer;
+import jd.config.ConfigEntry;
 import jd.config.Property;
 import jd.controlling.AccountController;
 import jd.http.Browser;
@@ -38,22 +40,29 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "deviantart.com" }, urls = { "https?://[\\w\\.\\-]*?deviantart\\.com/art/[\\w\\-]+" }, flags = { 2 })
 public class DeviantArtCom extends PluginForHost {
 
-    private String        DLLINK              = null;
-    private final String  COOKIE_HOST         = "http://www.deviantart.com";
-    private final String  MATURECONTENTFILTER = ">Mature Content Filter<";
-    private static Object LOCK                = new Object();
+    private String              DLLINK               = null;
+    private final String        COOKIE_HOST          = "http://www.deviantart.com";
+    private final String        MATURECONTENTFILTER  = ">Mature Content Filter<";
+    private static Object       LOCK                 = new Object();
+    private static final String FASTLINKCHECK        = "FASTLINKCHECK";
+
+    private static final String GENERALFILENAMEREGEX = "<title>([^<>\"]*?) on deviantART</title>";
+    private static final String TYPE_HTML            = "class=\"text\">HTML download</span>";
+    private boolean             HTMLALLOWED          = false;
 
     /**
      * @author raztoki
      */
     public DeviantArtCom(PluginWrapper wrapper) {
         super(wrapper);
+        this.setConfigElements();
         this.enablePremium(COOKIE_HOST.replace("http://", "https://") + "/join/");
     }
 
@@ -66,10 +75,6 @@ public class DeviantArtCom extends PluginForHost {
     public void correctDownloadLink(final DownloadLink link) throws Exception {
         link.setUrlDownload(link.getDownloadURL().replace("DEVART://", ""));
     }
-
-    private static final String GENERALFILENAMEREGEX = "<title>([^<>\"]*?) on deviantART</title>";
-    private static final String TYPE_HTML            = "class=\"text\">HTML download</span>";
-    private boolean             HTMLALLOWED          = false;
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
@@ -145,6 +150,7 @@ public class DeviantArtCom extends PluginForHost {
                 }
             }
         }
+        ext = ext.toLowerCase();
         if (!filename.endsWith(ext)) filename += "." + ext.trim();
         link.setFinalFileName(Encoding.htmlDecode(filename.trim()));
         return AvailableStatus.TRUE;
@@ -306,6 +312,15 @@ public class DeviantArtCom extends PluginForHost {
                 throw e;
             }
         }
+    }
+
+    @Override
+    public String getDescription() {
+        return "JDownloader's Deviantart Plugin helps downloading data from deviantart.com.";
+    }
+
+    public void setConfigElements() {
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), FASTLINKCHECK, JDL.L("plugins.hoster.deviantartcom.fastLinkcheck", "Enable fast linkcheck (filesize and correct filename won't be shown in linkgrabber)?")).setDefaultValue(false));
     }
 
     @Override

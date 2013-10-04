@@ -19,6 +19,7 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 
 import jd.PluginWrapper;
+import jd.config.SubConfiguration;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.HTMLEntities;
 import jd.parser.Regex;
@@ -51,6 +52,8 @@ public class DevArtCm extends PluginForDecrypt {
     //
     // I've created the plugin this way to allow users to grab as little or as much, content as they wish. Hopefully this wont create any
     // issues.
+
+    private static final String FASTLINKCHECK = "FASTLINKCHECK";
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
@@ -97,6 +100,7 @@ public class DevArtCm extends PluginForDecrypt {
     }
 
     private void parsePage(ArrayList<DownloadLink> ret, String parameter) throws Exception {
+        final boolean fastcheck = SubConfiguration.getConfig("deviantart.com").getBooleanProperty(FASTLINKCHECK, false);
         final String grab = br.getRegex("<smoothie q=(.*?)(class=\"folderview-bottom\"></div>|div id=\"gallery_pager\")").getMatch(0);
         String[] artlinks = new Regex(grab, "\"(https?://[\\w\\.\\-]*?deviantart\\.com/art/[\\w\\-]+)\"").getColumn(0);
         String nextPage = br.getRegex("href=\"(/(gallery|favourites)/(\\d+)?(\\?catpath=[^\"]+)?((\\?|&amp;|&)offset=\\d+))\">Next</a>").getMatch(0);
@@ -106,10 +110,12 @@ public class DevArtCm extends PluginForDecrypt {
         }
         if (artlinks != null && artlinks.length != 0) {
             for (final String al : artlinks) {
-                ret.add(createDownloadlink(al));
+                final DownloadLink fina = createDownloadlink(al);
+                if (fastcheck) fina.setAvailable(true);
+                ret.add(fina);
             }
         }
-        if (nextPage != null && !parameter.contains("?offset=")) {
+        if (nextPage != null && !parameter.contains("offset=")) {
             br.getPage(HTMLEntities.unhtmlentities(nextPage));
             parsePage(ret, parameter);
         }

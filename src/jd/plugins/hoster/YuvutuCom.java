@@ -30,7 +30,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "yuvutu.com" }, urls = { "http://[\\w\\.]*?yuvutu\\.com/modules\\.php\\?name=Video\\&op=view\\&video_id=\\d+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "yuvutu.com" }, urls = { "http://(www\\.)?yuvutu.com/video/\\d+/" }, flags = { 0 })
 public class YuvutuCom extends PluginForHost {
 
     public String dllink = null;
@@ -50,17 +50,6 @@ public class YuvutuCom extends PluginForHost {
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception {
-        requestFileInformation(downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        dl.startDownload();
-    }
-
-    @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setCookie("http://www.yuvutu.com/", "lang", "english");
@@ -77,14 +66,12 @@ public class YuvutuCom extends PluginForHost {
         if (br.containsHTML(">The video you requested does not exist<")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         // Invalid link
         if (!br.containsHTML("player\\.swf")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("class=\"userName\">.*?img src.*?href.*?</a>:(.*?)</td").getMatch(0);
-        if (filename == null) filename = br.getRegex("<span class=\"authorName\">.*?<a href=\".*?\">.*?</a>.*?</span>(.*?)</td>.*?<td class=\"videoTitle\"").getMatch(0);
-        dllink = br.getRegex("value=\"file=(http[^<>\\&\"]*?)\\&").getMatch(0);
-        if (dllink == null) dllink = br.getRegex("(http://vs\\d+\\.yuvutu\\.com/dl/.*?/streams/.*?\\.(flv|mp4))").getMatch(0);
+        String filename = br.getRegex("<span itemprop=\"name\">([^<>\"]*?)</span>").getMatch(0);
+        dllink = br.getRegex("value=\"file=(http[^<>\"]*?)\\&amp;width").getMatch(0);
         if (filename == null || dllink == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         filename = Encoding.htmlDecode(filename.trim());
         String ext = new Regex(dllink, ".+(\\..{2,5})$").getMatch(0);
-        if (ext == null) ext = ".flv";
+        if (ext == null) ext = ".mp4";
         downloadLink.setFinalFileName(filename + ext);
         Browser br2 = br.cloneBrowser();
         // In case the link redirects to the finallink
@@ -103,6 +90,17 @@ public class YuvutuCom extends PluginForHost {
             }
         }
         return AvailableStatus.TRUE;
+    }
+
+    @Override
+    public void handleFree(DownloadLink downloadLink) throws Exception {
+        requestFileInformation(downloadLink);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
+        if (dl.getConnection().getContentType().contains("html")) {
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dl.startDownload();
     }
 
     @Override
