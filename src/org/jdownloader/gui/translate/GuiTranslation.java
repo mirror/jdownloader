@@ -3181,9 +3181,6 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Please enter a Domain" })
     String NewRuleAction_actionPerformed_choose_hoster_();
 
-    @Default(lngs = { "en" }, values = { "Weiter" })
-    String lit_continue();
-
     @Default(lngs = { "en" }, values = { "Please choose a Hoster to create a rule for.\r\nIf the desired Hoster is missing, you probably do not have an account for this hoster.\r\nMake sure to add an Account first in the Account Overview." })
     String NewRuleAction_actionPerformed_choose_hoster_message();
 

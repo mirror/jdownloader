@@ -18,6 +18,7 @@ import jd.controlling.AccountController;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 
+import org.appwork.utils.locale._AWU;
 import org.appwork.utils.swing.dialog.ComboBoxDialog;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
@@ -46,7 +47,7 @@ public class NewRuleAction extends AbstractAddAction {
         for (AccountUsageRule aur : HosterRuleController.getInstance().list()) {
             list.remove(DomainInfo.getInstance(aur.getHoster()));
         }
-        ComboBoxDialog d = new ComboBoxDialog(0, _GUI._.NewRuleAction_actionPerformed_choose_hoster_(), _GUI._.NewRuleAction_actionPerformed_choose_hoster_message(), list.toArray(new DomainInfo[] {}), 0, null, _GUI._.lit_continue(), null, null) {
+        ComboBoxDialog d = new ComboBoxDialog(0, _GUI._.NewRuleAction_actionPerformed_choose_hoster_(), _GUI._.NewRuleAction_actionPerformed_choose_hoster_message(), list.toArray(new DomainInfo[] {}), 0, null, _AWU.T.lit_continue(), null, null) {
             protected ListCellRenderer getRenderer(final ListCellRenderer orgRenderer) {
                 // TODO Auto-generated method stub
                 return new ListCellRenderer() {
