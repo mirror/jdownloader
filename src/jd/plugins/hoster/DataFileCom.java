@@ -62,7 +62,7 @@ public class DataFileCom extends PluginForHost {
         return "http://www.datafile.com/terms.html";
     }
 
-    private final String  PREMIUMONLY           = "(\"Sorry\\. Only premium users can download this file\"|>This file can be downloaded only users with<br />Premium account!<)";
+    private final String  PREMIUMONLY           = "(\"Sorry\\. Only premium users can download this file\"|>This file can be downloaded only by users with<br />Premium account!<)";
     private final boolean SKIPRECONNECTWAITTIME = true;
     private final boolean SKIPWAITTIME          = true;
 
