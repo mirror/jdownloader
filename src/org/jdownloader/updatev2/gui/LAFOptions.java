@@ -213,4 +213,8 @@ public class LAFOptions {
     public Color getColorForPanelHeaderForeGround() {
         return createColor(cfg.getColorForPanelHeaderForeground());
     }
+
+    public Color getColorForTooltipBackground() {
+        return createColor(cfg.getColorForTooltipBackground());
+    }
 }

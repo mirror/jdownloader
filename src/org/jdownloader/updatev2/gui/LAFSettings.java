@@ -176,6 +176,13 @@ public interface LAFSettings extends ConfigInterface {
     @DefaultStringValue(ALICE_BLUE_APPROX)
     public String getColorForTooltipForeground();
 
+    @DescriptionForConfigEntry("Customized Color in aRGB Format (Pure red: #ffFF0000)")
+    @AboutConfig
+    @RequiresRestart("A JDownloader Restart is Required")
+    @HexColorString
+    @DefaultStringValue("ff3B3B3B")
+    public String getColorForTooltipBackground();
+
     public void setColorForErrorForeground(String errorForeground);
 
     void setColorForPanelBackground(String colorHex);
@@ -239,4 +246,5 @@ public interface LAFSettings extends ConfigInterface {
     public String getColorForPanelHeaderForeground();
 
     void setColorForPanelHeaderForeground(String colorHex);
+
 }

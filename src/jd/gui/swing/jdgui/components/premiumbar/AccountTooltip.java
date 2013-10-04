@@ -4,6 +4,7 @@ import java.awt.Color;
 import java.util.LinkedList;
 import java.util.List;
 
+import javax.swing.JScrollPane;
 import javax.swing.event.TableModelEvent;
 import javax.swing.event.TableModelListener;
 
@@ -55,10 +56,19 @@ public class AccountTooltip extends PanelToolTip {
                 table.getTableHeader().repaint();
             }
         });
-        table.getTableHeader().setOpaque(false);
+        table.getTableHeader().setOpaque(true);
+        JScrollPane sp;
+
         panel.add(table.getTableHeader());
         panel.add(table);
+        // panel.add(sp = new JScrollPane(table));
+        // sp.setBackground(null);
+        // table.setBackground(LAFOptions.getInstance().getColorForTooltipBackground());
+        // table.setOpaque(true);
+        // table.getTableHeader().setBackground(LAFOptions.getInstance().getColorForTooltipBackground());
+
         // panel.setPreferredSize(new Dimension(500, 100));
+        // panel.setPreferredSize(new Dimension(panel.getPreferredSize().width, 400));
     }
 
     public void update() {
