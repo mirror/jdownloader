@@ -25,18 +25,20 @@ import org.jdownloader.controlling.UniqueAlltimeID;
 
 public class Account extends Property {
 
-    public static final String IS_MULTI_HOSTER_ACCOUNT        = "IS_MULTI_HOSTER_ACCOUNT";
+    private static final String LATEST_VALID_TIMESTAMP         = "LATEST_VALID_TIMESTAMP";
 
-    private static final long  serialVersionUID               = -7578649066389032068L;
+    public static final String  IS_MULTI_HOSTER_ACCOUNT        = "IS_MULTI_HOSTER_ACCOUNT";
 
-    private String             user;
-    private String             pass;
+    private static final long   serialVersionUID               = -7578649066389032068L;
 
-    private boolean            enabled                        = true;
-    private boolean            concurrentUsePossible          = true;
+    private String              user;
+    private String              pass;
 
-    public static final String PROPERTY_TEMP_DISABLED_TIMEOUT = "PROPERTY_TEMP_DISABLED_TIMEOUT";
-    public static final String PROPERTY_REFRESH_TIMEOUT       = "PROPERTY_REFRESH_TIMEOUT";
+    private boolean             enabled                        = true;
+    private boolean             concurrentUsePossible          = true;
+
+    public static final String  PROPERTY_TEMP_DISABLED_TIMEOUT = "PROPERTY_TEMP_DISABLED_TIMEOUT";
+    public static final String  PROPERTY_REFRESH_TIMEOUT       = "PROPERTY_REFRESH_TIMEOUT";
 
     public boolean isConcurrentUsePossible() {
         return concurrentUsePossible;
@@ -127,8 +129,14 @@ public class Account extends Property {
         return valid;
     }
 
+    public long getLastValidTimestamp() {
+        return getLongProperty(LATEST_VALID_TIMESTAMP, -1);
+    }
+
     public void setValid(final boolean b) {
         valid = b;
+
+        if (valid) setProperty(LATEST_VALID_TIMESTAMP, System.currentTimeMillis());
         if (valid == false) {
             this.setEnabled(false);
         }
@@ -210,6 +218,7 @@ public class Account extends Property {
             if (enabled && (!isValid() || ai != null && ai.isExpired())) {
                 setUpdateTime(0);
             }
+
             notifyUpdate(enabled);
         }
     }

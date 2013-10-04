@@ -18,6 +18,8 @@ package jd.gui.swing.jdgui.components.premiumbar;
 
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -150,6 +152,24 @@ public class PremiumStatus extends JPanel implements MouseListener {
 
     void redraw() {
         List<Account> accs = AccountController.getInstance().list();
+        Collections.sort(accs, new Comparator<Account>() {
+
+            @Override
+            public int compare(Account o1, Account o2) {
+                int ret = new Boolean(o2.isEnabled()).compareTo(new Boolean(o1.isEnabled()));
+                if (ret == 0) {
+                    if (o2.isEnabled()) {
+                        // sort on name
+                        ret = o1.getHoster().compareTo(o2.getHoster());
+                    } else {
+
+                        // last enabled one should be the first
+                        ret = new Long(o2.getLastValidTimestamp()).compareTo(o1.getLastValidTimestamp());
+                    }
+                }
+                return ret;
+            }
+        });
         HashMap<String, DomainInfo> domainInfos = new HashMap<String, DomainInfo>();
         final HashSet<DomainInfo> enabled = new HashSet<DomainInfo>();
         final LinkedList<DomainInfo> domains = new LinkedList<DomainInfo>();
