@@ -140,14 +140,7 @@ public class Keep2ShareCc extends PluginForHost {
                 // can be here also, raztoki 20130521!
                 dllink = getDllink();
                 if (dllink == null) {
-                    final Regex reconWaittime = br.getRegex("Please wait (\\d{2}):(\\d{2}):(\\d{2}) to download this file");
-                    if (reconWaittime.getMatches().length == 1) {
-                        int hours = 0, minutes = 0, seconds = 0;
-                        hours = Integer.parseInt(reconWaittime.getMatch(0));
-                        minutes = Integer.parseInt(reconWaittime.getMatch(1));
-                        seconds = Integer.parseInt(reconWaittime.getMatch(2));
-                        throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, (hours * 60 * 60 * 1000) + (minutes * 60 * 1000) + (seconds * 1001));
-                    }
+                    handleFreeErrors();
                     if (br.containsHTML("Free account does not allow to download more than one file at the same time")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 5 * 60 * 1000l);
                     if (br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)")) {
                         logger.info("Detected captcha method \"Re Captcha\" for this host");
@@ -175,6 +168,7 @@ public class Keep2ShareCc extends PluginForHost {
                     sleep(wait * 1001l, downloadLink);
                     br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
                     br.postPage(br.getURL(), "free=1&uniqueId=" + uniqueID);
+                    handleFreeErrors();
                     br.getHeaders().put("X-Requested-With", null);
                     dllink = getDllink();
                     if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -194,6 +188,23 @@ public class Keep2ShareCc extends PluginForHost {
         }
         downloadLink.setProperty("directlink", dllink);
         dl.startDownload();
+    }
+
+    private void handleFreeErrors() throws PluginException {
+        if (br.containsHTML("\">Downloading is not possible<")) {
+            int hours = 0, minutes = 0, seconds = 0;
+            final Regex waitregex = br.getRegex("Please wait (\\d{2}):(\\d{2}):(\\d{2}) to download this file");
+            final String hrs = waitregex.getMatch(0);
+            if (hrs != null) hours = Integer.parseInt(hrs);
+            final String mins = waitregex.getMatch(1);
+            if (mins != null) minutes = Integer.parseInt(mins);
+            final String secs = waitregex.getMatch(2);
+            if (secs != null) seconds = Integer.parseInt(secs);
+            final long totalwait = (hours * 60 * 60 * 1000) + (minutes * 60 * 1000l) + (seconds * 1000l);
+            if (totalwait > 0) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, totalwait + 10000l);
+            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED);
+
+        }
     }
 
     private String getDllink() throws PluginException {

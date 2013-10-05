@@ -46,7 +46,7 @@ import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sharevid.co" }, urls = { "https?://(www\\.)?sharevid\\.co/(vidembed\\-)?[a-z0-9]{12}" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sharevid.co" }, urls = { "https?://(www\\.)?sharevid\\.co/((vid)?embed\\-)?[a-z0-9]{12}" }, flags = { 0 })
 public class ShareVidCo extends PluginForHost {
 
     private String               correctedBR                  = "";
@@ -82,6 +82,7 @@ public class ShareVidCo extends PluginForHost {
         }
         // strip video hosting url's to reduce possible duped links.
         link.setUrlDownload(link.getDownloadURL().replace("/vidembed-", "/"));
+        link.setUrlDownload(link.getDownloadURL().replace("/embed-", "/"));
         // output the hostmask as we wish based on COOKIE_HOST url!
         String desiredHost = new Regex(COOKIE_HOST, "https?://([^/]+)").getMatch(0);
         String importedHost = new Regex(link.getDownloadURL(), "https?://([^/]+)").getMatch(0);
