@@ -39,9 +39,12 @@ public class TinyProgressBar extends MigPanel {
 
     private PremiumStatus     owner;
 
-    public TinyProgressBar(PremiumStatus owner, DomainInfo domainInfo2) {
+    private AccountCollection accountCollection;
+
+    public TinyProgressBar(PremiumStatus owner, final AccountCollection accountCollection) {
         super("ins 0", "[]", "[]");
         this.owner = owner;
+        this.accountCollection = accountCollection;
         setOpaque(false);
         setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
         bt = new ExtButton() {
@@ -54,7 +57,7 @@ public class TinyProgressBar extends MigPanel {
             @Override
             public ExtTooltip createExtTooltip(Point mousePosition) {
 
-                return new AccountTooltip(TinyProgressBar.this.owner, domainInfo);
+                return new AccountTooltip(TinyProgressBar.this.owner, accountCollection);
 
             }
 
@@ -76,7 +79,8 @@ public class TinyProgressBar extends MigPanel {
         });
         bt.setBorderPainted(false);
         add(bt, "width 20!,height 20!");
-        setDomainInfo(domainInfo2);
+        setDomainInfo(accountCollection.getDomainInfo());
+        setEnabled(accountCollection.isEnabled());
     }
 
     public void setEnabled(boolean enabled) {

@@ -584,4 +584,17 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
 
     void setSpeedInWindowTitle(ShowSpeedInWindowTitleTrigger b);
 
+    public static enum PremiumStatusBarDisplay {
+        GROUP_BY_ACCOUNT_TYPE,
+        GROUP_BY_SUPPORTED_HOSTS,
+        DONT_GROUP
+
+    }
+
+    @AboutConfig
+    @DefaultEnumValue("GROUP_BY_ACCOUNT_TYPE")
+    PremiumStatusBarDisplay getPremiumStatusBarDisplay();
+
+    void setPremiumStatusBarDisplay(PremiumStatusBarDisplay type);
+
 }

@@ -3238,4 +3238,10 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "The %s1 Plugin Settings have been resetted to default values!" })
     String PluginSettingsPanel_actionPerformed_reset_done(String domain);
 
+    @Default(lngs = { "en" }, values = { "%s1 (Multi Hoster)" })
+    String AccountTooltip_AccountTooltip_multi(String tld);
+
+    @Default(lngs = { "en" }, values = { "With these account(s), you can download from:" })
+    String AccountTooltip_AccountTooltip_supported_hosters();
+
 }

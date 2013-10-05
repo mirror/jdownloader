@@ -18,10 +18,10 @@ package jd.gui.swing.jdgui.components.premiumbar;
 
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.ScheduledExecutorService;
@@ -30,6 +30,7 @@ import java.util.concurrent.TimeUnit;
 import javax.swing.JPanel;
 
 import jd.SecondLevelLaunch;
+import jd.config.Property;
 import jd.controlling.AccountController;
 import jd.controlling.AccountControllerEvent;
 import jd.controlling.AccountControllerListener;
@@ -41,14 +42,15 @@ import jd.utils.JDUtilities;
 import net.miginfocom.swing.MigLayout;
 
 import org.appwork.scheduler.DelayedRunnable;
-import org.appwork.storage.config.JsonConfig;
 import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.events.GenericConfigEventListener;
 import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.utils.logging.Log;
 import org.appwork.utils.swing.EDTHelper;
 import org.jdownloader.DomainInfo;
-import org.jdownloader.settings.GeneralSettings;
+import org.jdownloader.plugins.controller.host.HostPluginController;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin;
+import org.jdownloader.settings.staticreferences.CFG_GUI;
 
 public class PremiumStatus extends JPanel implements MouseListener {
 
@@ -67,6 +69,17 @@ public class PremiumStatus extends JPanel implements MouseListener {
         this.setOpaque(false);
 
         redraw();
+        CFG_GUI.PREMIUM_STATUS_BAR_DISPLAY.getEventSender().addListener(new GenericConfigEventListener<Enum>() {
+
+            @Override
+            public void onConfigValidatorError(KeyHandler<Enum> keyHandler, Enum invalidValue, ValidationException validateException) {
+            }
+
+            @Override
+            public void onConfigValueModified(KeyHandler<Enum> keyHandler, Enum newValue) {
+                redraw();
+            }
+        });
         org.jdownloader.settings.staticreferences.CFG_GENERAL.USE_AVAILABLE_ACCOUNTS.getEventSender().addListener(new GenericConfigEventListener<Boolean>() {
 
             public void onConfigValueModified(KeyHandler<Boolean> keyHandler, Boolean newValue) {
@@ -170,31 +183,101 @@ public class PremiumStatus extends JPanel implements MouseListener {
                 return ret;
             }
         });
-        HashMap<String, DomainInfo> domainInfos = new HashMap<String, DomainInfo>();
-        final HashSet<DomainInfo> enabled = new HashSet<DomainInfo>();
-        final LinkedList<DomainInfo> domains = new LinkedList<DomainInfo>();
+
+        // final HashSet<DomainInfo> enabled = new HashSet<DomainInfo>();
+        final HashMap<DomainInfo, AccountCollection> map = new HashMap<DomainInfo, AccountCollection>();
+        final LinkedList<AccountCollection> domains = new LinkedList<AccountCollection>();
+        HashMap<String, LazyHostPlugin> plugins = new HashMap<String, LazyHostPlugin>();
         for (Account acc : accs) {
             AccountInfo ai = acc.getAccountInfo();
-            // if (!acc.isEnabled() || !acc.isValid() || (ai != null && ai.isExpired())) continue;
-            DomainInfo domainInfo = domainInfos.get(acc.getHoster());
-            if (domainInfo == null) {
-                PluginForHost plugin = JDUtilities.getPluginForHost(acc.getHoster());
-                if (plugin != null) {
-                    domainInfo = plugin.getDomainInfo(null);
-                    domainInfos.put(acc.getHoster(), domainInfo);
-                    domains.add(domainInfo);
+            if (!acc.isValid() || (ai != null && ai.isExpired())) continue;
 
+            PluginForHost plugin = JDUtilities.getPluginForHost(acc.getHoster());
+            DomainInfo domainInfo;
+            if (plugin != null) {
+                domainInfo = plugin.getDomainInfo(null);
+                domainInfo.getFavIcon();
+
+                AccountCollection ac;
+                switch (CFG_GUI.CFG.getPremiumStatusBarDisplay()) {
+                case DONT_GROUP:
+                    ac = new AccountCollection(domainInfo);
+                    ac.add(acc);
+                    domains.add(ac);
+                    break;
+                case GROUP_BY_ACCOUNT_TYPE:
+                    ac = map.get(domainInfo);
+                    if (ac == null) {
+                        ac = new AccountCollection(domainInfo);
+                        map.put(domainInfo, ac);
+                        domains.add(ac);
+                    }
+                    ac.add(acc);
+                    break;
+
+                case GROUP_BY_SUPPORTED_HOSTS:
+
+                    ai = acc.getAccountInfo();
+                    if (ai == null) continue;
+                    Object supported = null;
+                    synchronized (ai) {
+                        /*
+                         * synchronized on accountinfo because properties are not threadsafe
+                         */
+                        supported = ai.getProperty("multiHostSupport", Property.NULL);
+                    }
+                    if (Property.NULL == supported || supported == null) {
+                        // dedicated account
+                        ac = map.get(domainInfo);
+                        if (ac == null) {
+                            ac = new AccountCollection(domainInfo);
+                            map.put(domainInfo, ac);
+                            domains.add(ac);
+                        }
+                        ac.add(acc);
+                    } else {
+                        synchronized (supported) {
+                            /*
+                             * synchronized on list because plugins can change the list in runtime
+                             */
+
+                            if (supported instanceof ArrayList) {
+                                for (String sup : (java.util.List<String>) supported) {
+
+                                    LazyHostPlugin plg = HostPluginController.getInstance().get((String) sup);
+
+                                    if (plg != null) {
+                                        LazyHostPlugin cached = plugins.get(plg.getClassname());
+                                        if (cached != null) plg = cached;
+                                        plugins.put(plg.getClassname(), plg);
+                                        sup = plg.getHost();
+                                    } else {
+                                        //
+                                        System.out.println(plg);
+                                        continue;
+                                    }
+
+                                    ac = map.get(DomainInfo.getInstance(sup));
+                                    if (ac == null) {
+                                        ac = new AccountCollection(DomainInfo.getInstance(sup));
+                                        map.put(DomainInfo.getInstance(sup), ac);
+                                        domains.add(ac);
+                                    }
+                                    ac.add(acc);
+                                }
+                            }
+                        }
+                    }
+
+                    break;
                 }
 
             }
-            if (acc.isEnabled() && acc.isValid() && !(ai != null && ai.isExpired())) {
 
-                enabled.add(domainInfo);
-            }
             /* prefetch outside EDT */
-            domainInfo.getFavIcon();
+
         }
-        domainInfos = null;
+
         accs = null;
         new EDTHelper<Object>() {
             @Override
@@ -202,7 +285,8 @@ public class PremiumStatus extends JPanel implements MouseListener {
                 try {
                     removeAll();
 
-                    int max = Math.min(domains.size(), JsonConfig.create(GeneralSettings.class).getMaxPremiumIcons());
+                    int max = domains.size();
+                    // Math.min(, JsonConfig.create(GeneralSettings.class).getMaxPremiumIcons());
                     StringBuilder sb = new StringBuilder();
                     sb.append("2");
                     for (int i = 0; i < max; i++) {
@@ -210,10 +294,10 @@ public class PremiumStatus extends JPanel implements MouseListener {
                     }
                     setLayout(new MigLayout("ins 0 2 0 0", sb.toString(), "[22!]"));
                     for (int i = 0; i < max; i++) {
-                        DomainInfo di;
+                        AccountCollection di;
                         TinyProgressBar bar = new TinyProgressBar(PremiumStatus.this, di = domains.removeFirst());
                         add(bar, "gapleft 0,gapright 0");
-                        bar.setEnabled(enabled.contains(di) && org.jdownloader.settings.staticreferences.CFG_GENERAL.USE_AVAILABLE_ACCOUNTS.getValue());
+                        bar.setEnabled(bar.isEnabled() && org.jdownloader.settings.staticreferences.CFG_GENERAL.USE_AVAILABLE_ACCOUNTS.getValue());
 
                     }
                     revalidate();

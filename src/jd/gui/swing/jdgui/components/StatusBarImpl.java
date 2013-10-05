@@ -28,6 +28,8 @@ import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
+import javax.swing.JScrollPane;
+import javax.swing.ScrollPaneConstants;
 import javax.swing.SwingConstants;
 
 import jd.SecondLevelLaunch;
@@ -249,7 +251,11 @@ public class StatusBarImpl extends JPanel implements DownloadWatchdogListener {
         setLayout(new MigLayout("ins 0", sb.toString(), "[fill,22!]"));
 
         super.removeAll();
-        super.add(PremiumStatus.getInstance());
+        JScrollPane p = new JScrollPane(PremiumStatus.getInstance());
+        p.setBorder(null);
+        p.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
+        p.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_NEVER);
+        super.add(p);
         super.add(statusLabel, "height 22!,gapright 10!");
 
         super.add(reconnectIndicator, "");
