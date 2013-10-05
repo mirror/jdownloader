@@ -1,6 +1,7 @@
 package jd.gui.swing.jdgui.components.premiumbar;
 
 import java.awt.Color;
+import java.awt.Component;
 import java.awt.Point;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -11,7 +12,12 @@ import java.util.List;
 
 import javax.swing.JComponent;
 import javax.swing.JLabel;
+import javax.swing.JList;
 import javax.swing.JScrollPane;
+import javax.swing.ListCellRenderer;
+import javax.swing.ListSelectionModel;
+import javax.swing.event.ListSelectionEvent;
+import javax.swing.event.ListSelectionListener;
 import javax.swing.event.TableModelEvent;
 import javax.swing.event.TableModelListener;
 
@@ -21,9 +27,11 @@ import jd.gui.swing.jdgui.views.settings.panels.accountmanager.AccountEntry;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 
+import org.appwork.swing.MigPanel;
 import org.appwork.swing.components.tooltips.PanelToolTip;
 import org.appwork.swing.components.tooltips.TooltipPanel;
 import org.appwork.utils.swing.SwingUtils;
+import org.appwork.utils.swing.locator.AbstractLocator;
 import org.jdownloader.DomainInfo;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.plugins.controller.host.HostPluginController;
@@ -39,7 +47,8 @@ public class AccountTooltip extends PanelToolTip {
     public Point getDesiredLocation(JComponent activeComponent, Point ttPosition) {
         ttPosition.y = activeComponent.getLocationOnScreen().y - getPreferredSize().height;
         ttPosition.x = activeComponent.getLocationOnScreen().x;
-        return ttPosition;
+
+        return AbstractLocator.correct(ttPosition, getPreferredSize());
     }
 
     public AccountTooltip(PremiumStatus owner, AccountCollection accountCollection) {
@@ -81,16 +90,43 @@ public class AccountTooltip extends PanelToolTip {
         panel.add(table);
 
         if (accountCollection.isMulti()) {
+            MigPanel domainPanel = new MigPanel("ins 0,wrap 3", "[grow,fill][grow,fill][grow,fill]", "[]");
+            domainPanel.setOpaque(false);
             label = new JLabel(_GUI._.AccountTooltip_AccountTooltip_supported_hosters());
             SwingUtils.toBold(label);
             label.setForeground(LAFOptions.getInstance().getColorForTooltipForeground());
             panel.add(label);
-            for (DomainInfo info : getDomainInfos(accountCollection)) {
-                label = new JLabel(info.getTld(), info.getFavIcon(), JLabel.LEFT);
 
-                label.setForeground(LAFOptions.getInstance().getColorForTooltipForeground());
-                panel.add(label);
-            }
+            final JList list = new JList(getDomainInfos(accountCollection).toArray(new DomainInfo[] {}));
+            list.setLayoutOrientation(JList.HORIZONTAL_WRAP);
+            final ListCellRenderer org = list.getCellRenderer();
+            list.setCellRenderer(new ListCellRenderer() {
+
+                public Component getListCellRendererComponent(JList list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
+                    DomainInfo di = (DomainInfo) value;
+
+                    JLabel ret = (JLabel) org.getListCellRendererComponent(list, "", index, isSelected, cellHasFocus);
+                    ret.setForeground(LAFOptions.getInstance().getColorForTooltipForeground());
+                    ret.setText(di.getTld());
+                    ret.setIcon(di.getFavIcon());
+                    ret.setOpaque(false);
+                    ret.setBackground(null);
+                    return ret;
+                }
+            });
+            // list.setFixedCellHeight(22);
+            // list.setFixedCellWidth(22);
+            list.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+            list.setOpaque(false);
+            list.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
+
+                public void valueChanged(ListSelectionEvent e) {
+
+                }
+            });
+
+            panel.add(list);
+
         }
         // panel.add(sp = new JScrollPane(table));
         // sp.setBackground(null);
