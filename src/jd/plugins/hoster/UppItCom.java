@@ -58,7 +58,7 @@ public class UppItCom extends PluginForHost {
     // DEV NOTES
     // XfileSharingProBasic Version 2.5.5.9-raz
     // mods:
-    // non account: 3 * 1
+    // non account: 2 * 1
     // free account:
     // premium account:
     // protocol: no https
@@ -150,7 +150,7 @@ public class UppItCom extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        doFree(downloadLink, true, -3, "freelink");
+        doFree(downloadLink, true, -2, "freelink");
     }
 
     public void doFree(DownloadLink downloadLink, boolean resumable, int maxchunks, String directlinkproperty) throws Exception, PluginException {

@@ -56,11 +56,11 @@ public class JustinTvDecrypt extends PluginForDecrypt {
         String parameter = param.toString().replaceAll("://([a-z]{2}\\.)?(twitchtv\\.com|twitch\\.tv)", "://www.twitch.tv");
         br.setFollowRedirects(true);
         br.getPage(parameter);
-        if (br.containsHTML(">Sorry, we couldn\\'t find that stream\\.|<h1>This channel is closed</h1>")) {
-            // final Regex info = new Regex(parameter,
-            // "(twitchtv\\.com|twitch\\.tv))/[^<>/\"]+/((b|c)/\\d+|videos(\\?page=\\d+)?)");
+        if (br.containsHTML(">Sorry, we couldn\\'t find that stream\\.|<h1>This channel is closed</h1>|>I\\'m sorry, that page is in another castle")) {
             final DownloadLink dlink = createDownloadlink("http://media" + new Random().nextInt(1000) + ".twitchdecrypted.tv/archives/" + new Regex(parameter, "(\\d+)$").getMatch(0) + ".flv");
             dlink.setAvailable(false);
+            dlink.setProperty("offline", true);
+            dlink.setName(parameter);
             decryptedLinks.add(dlink);
             return decryptedLinks;
         }

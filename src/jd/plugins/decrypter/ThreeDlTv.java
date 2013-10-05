@@ -38,6 +38,12 @@ public class ThreeDlTv extends PluginForDecrypt {
         super(wrapper);
     }
 
+    /* NOTE: no override to keep compatible to old stable */
+    // If we do more at a time they will block our IP for 10 minutes
+    public int getMaxConcurrentProcessingInstances() {
+        return 1;
+    }
+
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         ArrayList<String> passwords = new ArrayList<String>();
@@ -77,7 +83,7 @@ public class ThreeDlTv extends PluginForDecrypt {
                 logger.info("Link offline: " + parameter);
                 return decryptedLinks;
             }
-            for (int i = 0; i <= 3; i++) {
+            for (int i = 1; i <= 5; i++) {
                 final String captchaLink = br.getRegex("\"((https?://(\\w+\\.)?3dl\\.tv)?/index\\.php\\?action=captcha\\&token=[^\"\\']+)").getMatch(0);
                 if (captchaLink == null) {
                     logger.warning("Decrypter broken for link: " + parameter);
@@ -85,7 +91,10 @@ public class ThreeDlTv extends PluginForDecrypt {
                 }
                 final String code = getCaptchaCode(captchaLink, param);
                 br.postPage(parameter, "answer=" + code);
-                if (br.containsHTML(">Die von dir eingegebene Anwort ist nicht g")) continue;
+                if (br.containsHTML(">Die von dir eingegebene Anwort ist nicht g")) {
+                    this.sleep(3 * 1000l, param);
+                    continue;
+                }
                 break;
             }
             if (br.containsHTML(">Die von dir eingegebene Anwort ist nicht g")) throw new DecrypterException(DecrypterException.CAPTCHA);

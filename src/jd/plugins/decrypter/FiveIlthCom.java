@@ -37,6 +37,10 @@ public class FiveIlthCom extends PluginForDecrypt {
         br.setFollowRedirects(false);
         String parameter = param.toString();
         br.getPage(parameter);
+        if (br.containsHTML("No htmlCode read")) {
+            logger.info("Link offline: " + parameter);
+            return decryptedLinks;
+        }
         String externID = br.getRedirectLocation();
         if (externID != null) {
             DownloadLink dl = createDownloadlink(externID);
@@ -99,10 +103,34 @@ public class FiveIlthCom extends PluginForDecrypt {
             return decryptedLinks;
 
         }
+        externID = br.getRegex("(http://(www\\.)?5ilthy\\.com/playerConfig\\.php\\?[^<>\"/]*?\\.(flv|mp4))").getMatch(0);
+        if (externID != null) {
+            br.getPage(externID);
+            externID = br.getRegex("flvMask:(http://[^<>\"]*?);").getMatch(0);
+            if (externID == null) {
+                logger.warning("Decrypter broken for link: " + parameter);
+                return null;
+            }
+            final DownloadLink dl = createDownloadlink("directhttp://" + externID);
+            if (externID.endsWith(".flv"))
+                dl.setFinalFileName(filename + ".flv");
+            else
+                dl.setFinalFileName(filename + ".mp4");
+            decryptedLinks.add(dl);
+            return decryptedLinks;
+
+        }
         externID = br.getRegex("(http://(www\\.)?filthyrx\\.com/playerConfig\\.php[^<>\"]*?)\"").getMatch(0);
         if (externID != null) {
             br.getPage(externID);
             externID = br.getRegex("flvMask:(http://[^<>\"]*?);").getMatch(0);
+            if (externID == null) {
+                logger.warning("Decrypter broken for link: " + parameter);
+                return null;
+            }
+            // Maybe we have multiple links - then always use the last one
+            final String[] firectlinks = externID.split("http://");
+            externID = "http://" + firectlinks[firectlinks.length - 1];
             final DownloadLink dl = createDownloadlink("directhttp://" + externID);
             dl.setFinalFileName(filename + ".flv");
             decryptedLinks.add(dl);

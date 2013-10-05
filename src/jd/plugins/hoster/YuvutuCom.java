@@ -30,7 +30,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "yuvutu.com" }, urls = { "http://(www\\.)?yuvutu.com/video/\\d+/" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "yuvutu.com" }, urls = { "http://(www\\.)?yuvutu.com/(video/\\d+/|modules\\.php\\?name=Video\\&op=view\\&video_id=\\d+)" }, flags = { 0 })
 public class YuvutuCom extends PluginForHost {
 
     public String dllink = null;
@@ -47,6 +47,10 @@ public class YuvutuCom extends PluginForHost {
     @Override
     public int getMaxSimultanFreeDownloadNum() {
         return -1;
+    }
+
+    public void correctDownloadLink(final DownloadLink link) {
+        link.setUrlDownload("http://www.yuvutu.com/modules.php?name=Video&op=view&video_id=" + new Regex(link.getDownloadURL(), "(\\d+)/?$").getMatch(0));
     }
 
     @Override
