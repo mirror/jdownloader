@@ -43,7 +43,7 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "tele5.de" }, urls = { "http://(www\\.)?tele5\\.de/[\\w/\\-]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "tele5.de" }, urls = { "http://(www\\.)?tele5\\.de/(videos/)?[\\w/\\-]+/(video/)?[\\w/\\-]+\\.html" }, flags = { 0 })
 public class TeleFiveDeDecrypter extends PluginForDecrypt {
     // we cannot do core updates right now, and should keep this calss internal until we can do core updates
     public class SWFDecompressor {
@@ -140,8 +140,13 @@ public class TeleFiveDeDecrypter extends PluginForDecrypt {
         /* parse flash url */
         br.setFollowRedirects(true);
         br.getPage(parameter);
-        for (String flashUrl : br.getRegex("rel=\"media:video\"\\s*resource=\"(http[^\"]+)\"").getColumn(0)) {
-            // String flashUrl = br.getRegex("rel=\"media:video\"\\s*resource=\"(http[^\"]+)\"").getMatch(0);
+
+        /* embed or singleVideo */
+        boolean singleVideo = parameter.matches("http://(www\\.)?tele5\\.de/videos/[\\w/\\-]+/video/[\\w/\\-]+\\.html");
+        String regex = "<div id=\"[^\"]+\" class=\"[^\"]+\".*?rel=\"media:video\"\\s*resource=\"(http[^\"]+)\"";
+        if (singleVideo) regex = "<div class=\"video\">.*?rel=\"media:video\"\\s*resource=\"(http[^\"]+)\"";
+
+        for (String flashUrl : br.getRegex(regex).getColumn(0)) {
             String streamerType = br.getRegex("value=\"streamerType=(http|rtmp)").getMatch(0);
             if (streamerType == null) streamerType = "http";
             if (flashUrl == null) {
@@ -187,7 +192,6 @@ public class TeleFiveDeDecrypter extends PluginForDecrypt {
             // /xml/result/item --> name, ext etc.
             // /xml/result/item/item --> streaminfo entryId bitraten auflösung usw.
             final Node root = doc.getChildNodes().item(0);
-            System.out.println(root.getNodeName());
             NodeList nl = root.getFirstChild().getChildNodes();
 
             HashMap<String, HashMap<String, String>> KalturaMediaEntry = new HashMap<String, HashMap<String, String>>();

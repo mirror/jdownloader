@@ -27,7 +27,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.download.DownloadInterface;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "tele5.de" }, urls = { "decrypted://(www\\.)?tele5\\.de/[\\w/\\-]+\\&quality=\\d+\\&vId=[_0-9a-z]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "tele5.de" }, urls = { "decrypted://(www\\.)?tele5\\.de/(videos/)?[\\w/\\-]+/(video/)?[\\w/\\-]+\\.html\\&quality=\\d+\\&vId=[_0-9a-z]+" }, flags = { 0 })
 public class TeleFiveDe extends PluginForHost {
 
     private String  DLLINK       = null;
