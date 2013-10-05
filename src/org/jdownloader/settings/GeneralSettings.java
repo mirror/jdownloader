@@ -387,12 +387,6 @@ public interface GeneralSettings extends ConfigInterface {
 
     void setDeleteContainerFilesAfterAddingThemAction(DeleteContainerAction action);
 
-    @DefaultIntValue(15)
-    @AboutConfig
-    int getMaxPremiumIcons();
-
-    void setMaxPremiumIcons(int icons);
-
     public static enum CreateFolderTrigger {
         @EnumLabel("When the actual Download starts")
         ON_DOWNLOAD_START,
