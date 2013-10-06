@@ -3244,4 +3244,7 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "With these account(s), you can download from:" })
     String AccountTooltip_AccountTooltip_supported_hosters();
 
+    @Default(lngs = { "en" }, values = { "Are you sure that you want to reset all plugin settings for the %s1 plugin?" })
+    String PluginSettingsPanel_are_you_sure(String displayName);
+
 }

@@ -30,6 +30,8 @@ import org.appwork.utils.logging.Log;
 import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.SwingUtils;
 import org.appwork.utils.swing.dialog.Dialog;
+import org.appwork.utils.swing.dialog.DialogCanceledException;
+import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.jdownloader.DomainInfo;
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.extensions.Header;
@@ -112,6 +114,7 @@ public class PluginSettingsPanel extends JPanel implements SettingsComponent, Ac
                     Plugin proto = null;
                     try {
                         if (currentItem != null) {
+                            Dialog.getInstance().showConfirmDialog(0, _GUI._.lit_are_you_sure(), _GUI._.PluginSettingsPanel_are_you_sure(currentItem.getDisplayName()));
                             proto = currentItem.getPrototype(null);
                             proto.getPluginConfig().reset();
 
@@ -123,6 +126,10 @@ public class PluginSettingsPanel extends JPanel implements SettingsComponent, Ac
                         }
                     } catch (UpdateRequiredClassNotFoundException e1) {
                         Log.exception(e1);
+                    } catch (DialogClosedException e1) {
+                        e1.printStackTrace();
+                    } catch (DialogCanceledException e1) {
+                        e1.printStackTrace();
                     }
                 }
             }
