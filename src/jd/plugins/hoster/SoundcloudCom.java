@@ -213,6 +213,7 @@ public class SoundcloudCom extends PluginForHost {
     private static final String MAINPAGE = "http://soundcloud.com";
     private static Object       LOCK     = new Object();
 
+    // TODO: Implement OAuth login stuff to access private links
     @SuppressWarnings("unchecked")
     public void login(final Browser br, final Account account, final boolean force) throws Exception {
         synchronized (LOCK) {

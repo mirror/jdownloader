@@ -49,7 +49,7 @@ import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.os.CrossSystem;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "datafile.com" }, urls = { "https?://(www\\.)?datafile.com/d/[A-Za-z0-9]+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "datafile.com" }, urls = { "https?://(www\\.)?datafile\\.com/d/[A-Za-z0-9]+" }, flags = { 2 })
 public class DataFileCom extends PluginForHost {
 
     public DataFileCom(PluginWrapper wrapper) {
@@ -65,24 +65,43 @@ public class DataFileCom extends PluginForHost {
     private final String  PREMIUMONLY           = "(\"Sorry\\. Only premium users can download this file\"|>This file can be downloaded only by users with<br />Premium account!<)";
     private final boolean SKIPRECONNECTWAITTIME = true;
     private final boolean SKIPWAITTIME          = true;
+    private final String  DAILYLIMIT            = ">You exceeded your free daily download limit";
 
     /**
      * They have a linkchecker but it doesn't show filenames if they're not included in the URL: http://www.datafile.com/linkchecker.html
      */
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+        // Offline links should also have nice filenames
+        link.setName(new Regex(link.getDownloadURL(), "datafile\\.com/d/([A-Za-z0-9]+)").getMatch(0));
         this.setBrowserExclusive();
         prepBrowser(br);
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
         br.setFollowRedirects(false);
+        String filesize = null;
+        // Limit reached -> Let's use their linkchecker to at least find the filesize and onlinestatus
+        if (br.containsHTML(DAILYLIMIT) || br.getURL().contains("error.html?code=7")) {
+            final Browser br2 = br.cloneBrowser();
+            br2.postPage("http://www.datafile.com/linkchecker.html", "btn=&links=" + Encoding.urlEncode(link.getDownloadURL()));
+            filesize = br2.getRegex("title=\"File size\">([^<>\"]*?)</td>").getMatch(0);
+            if (filesize != null) {
+                link.setDownloadSize(SizeFormatter.getSize(filesize));
+                return AvailableStatus.TRUE;
+            } else if (!br2.containsHTML(">Link<") && !br2.containsHTML(">Status<") && !br2.containsHTML(">File size<")) {
+                // Maybe no table --> Link offline
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            // No results -> Unckeckable because if the limit
+            return AvailableStatus.UNCHECKABLE;
+        }
         // Invalid link
         if (br.containsHTML("<div class=\"error\\-msg\">")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         // Deleted file
         if (br.containsHTML(">Sorry but this file has been deleted")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (br.containsHTML("ErrorCode 7: Download file count limit")) return AvailableStatus.UNCHECKABLE;
         final String filename = br.getRegex("class=\"file\\-name\">([^<>\"]*?)</div>").getMatch(0);
-        final String filesize = br.getRegex(">Filesize:<span class=\"lime\">([^<>\"]*?)</span>").getMatch(0);
+        filesize = br.getRegex(">Filesize:<span class=\"lime\">([^<>\"]*?)</span>").getMatch(0);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         link.setFinalFileName(Encoding.htmlDecode(filename.trim()));
         link.setDownloadSize(SizeFormatter.getSize(filesize));
@@ -97,7 +116,8 @@ public class DataFileCom extends PluginForHost {
     }
 
     private void doFree(final DownloadLink downloadLink) throws Exception {
-        if (br.containsHTML("ErrorCode 7: Download file count limit")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Download file count limit", 10 * 60 * 1000l); }
+        if (br.containsHTML(DAILYLIMIT) || br.getURL().contains("error.html?code=7")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 2 * 60 * 60 * 1000l);
+        if (br.containsHTML("ErrorCode 7: Download file count limit")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Download file count limit", 10 * 60 * 1000l);
         if (br.containsHTML(PREMIUMONLY)) {
             // not possible to download under handleFree!
             throw new PluginException(LinkStatus.ERROR_FATAL, "This file can only be downloaded by premium users");
@@ -116,7 +136,7 @@ public class DataFileCom extends PluginForHost {
             if (tempSeconds != null) tmpsecs = Integer.parseInt(tempSeconds);
             final long wait = (tmphrs * 60 * 60 * 1000) + (tmpmin * 60 * 1000) + (tmpsecs * 1001);
             if (wait == 0) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            if (!SKIPRECONNECTWAITTIME && wait > 3601800) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, wait); }
+            if (!SKIPRECONNECTWAITTIME && wait > 3601800) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, wait);
             long timeBefore = System.currentTimeMillis();
             final String rcID = br.getRegex("api/challenge\\?k=([^<>\"]*?)\"").getMatch(0);
             if (rcID == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
