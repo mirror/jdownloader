@@ -14,7 +14,6 @@ import java.util.logging.Logger;
 
 import org.appwork.utils.logging2.LogSource;
 import org.fourthline.cling.DefaultUpnpServiceConfiguration;
-import org.fourthline.cling.UpnpServiceConfiguration;
 import org.fourthline.cling.binding.xml.DeviceDescriptorBinder;
 import org.fourthline.cling.binding.xml.ServiceDescriptorBinder;
 import org.fourthline.cling.binding.xml.UDA10DeviceDescriptorBinderImpl;
@@ -48,7 +47,7 @@ import org.seamless.util.Exceptions;
 
 import com.sun.net.httpserver.HttpServer;
 
-public class Configuration implements UpnpServiceConfiguration {
+public class Configuration extends DefaultUpnpServiceConfiguration {
 
     private static Logger                 log    = Logger.getLogger(DefaultUpnpServiceConfiguration.class.getName());
 
@@ -76,7 +75,7 @@ public class Configuration implements UpnpServiceConfiguration {
                     // configuration.
                     LOGGER.info("HTTPServer: " + bindAddress + ":" + configuration.getListenPort());
                     server = HttpServer.create(socketAddress, configuration.getTcpConnectionBacklog());
-                    server.createContext("/", new ServerRequestHttpHandler(router, LOGGER));
+                    server.createContext("/", new CustomRequestHttpHandler(router));
 
                     LOGGER.info("Created server (for receiving TCP streams) on: " + server.getAddress());
                 } catch (BindException ex) {
@@ -120,7 +119,7 @@ public class Configuration implements UpnpServiceConfiguration {
     }
 
     public StreamClient createStreamClient() {
-        return new StreamClientImpl(new StreamClientConfigurationImpl());
+        return new StreamClientImpl(new StreamClientConfigurationImpl(getSyncProtocolExecutorService()));
     }
 
     public MulticastReceiver createMulticastReceiver(NetworkAddressFactory networkAddressFactory) {
@@ -276,4 +275,5 @@ public class Configuration implements UpnpServiceConfiguration {
             return t;
         }
     }
+
 }

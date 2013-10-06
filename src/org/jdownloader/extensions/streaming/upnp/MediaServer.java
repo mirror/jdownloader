@@ -12,7 +12,6 @@ import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.net.InetAddress;
-import java.net.URI;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -39,7 +38,7 @@ import org.fourthline.cling.model.ValidationException;
 import org.fourthline.cling.model.message.IncomingDatagramMessage;
 import org.fourthline.cling.model.message.UpnpRequest;
 import org.fourthline.cling.model.message.UpnpResponse;
-import org.fourthline.cling.model.message.control.IncomingActionRequestMessage;
+import org.fourthline.cling.model.message.discovery.OutgoingSearchResponse;
 import org.fourthline.cling.model.message.discovery.OutgoingSearchResponseRootDevice;
 import org.fourthline.cling.model.message.header.UDAServiceTypeHeader;
 import org.fourthline.cling.model.meta.Action;
@@ -52,8 +51,8 @@ import org.fourthline.cling.model.meta.LocalService;
 import org.fourthline.cling.model.meta.ManufacturerDetails;
 import org.fourthline.cling.model.meta.ModelDetails;
 import org.fourthline.cling.model.meta.Service;
-import org.fourthline.cling.model.profile.ControlPointInfo;
 import org.fourthline.cling.model.profile.HeaderDeviceDetailsProvider;
+import org.fourthline.cling.model.profile.RemoteClientInfo;
 import org.fourthline.cling.model.types.DLNACaps;
 import org.fourthline.cling.model.types.DLNADoc;
 import org.fourthline.cling.model.types.DeviceType;
@@ -67,13 +66,13 @@ import org.fourthline.cling.protocol.ProtocolFactory;
 import org.fourthline.cling.protocol.ProtocolFactoryImpl;
 import org.fourthline.cling.protocol.ReceivingAsync;
 import org.fourthline.cling.protocol.async.ReceivingSearch;
-import org.fourthline.cling.protocol.sync.ReceivingAction;
 import org.fourthline.cling.registry.RegistryListener;
 import org.fourthline.cling.support.connectionmanager.ConnectionManagerService;
 import org.fourthline.cling.support.model.Protocol;
 import org.fourthline.cling.support.model.ProtocolInfo;
 import org.fourthline.cling.support.model.ProtocolInfos;
 import org.fourthline.cling.transport.Router;
+import org.fourthline.cling.transport.RouterException;
 import org.jdownloader.extensions.ExtensionController;
 import org.jdownloader.extensions.extraction.ExtractionExtension;
 import org.jdownloader.extensions.streaming.StreamingExtension;
@@ -139,11 +138,16 @@ public class MediaServer implements Runnable {
                                      */
                                     return new ReceivingSearch(getUpnpService(), incomingRequest) {
                                         @Override
-                                        protected void sendSearchResponseRootDevices(NetworkAddress activeStreamServer) {
+                                        protected void sendSearchResponseRootDevices(NetworkAddress activeStreamServer) throws RouterException {
                                             logger.fine("Responding to root device search with advertisement messages for all local root devices");
+
                                             for (LocalDevice device : getUpnpService().getRegistry().getLocalDevices()) {
 
-                                                getUpnpService().getRouter().send(new OutgoingSearchResponseRootDevice(getInputMessage(), getDescriptorLocation(activeStreamServer, device), device));
+                                                if (isAdvertisementDisabled(device)) continue;
+
+                                                OutgoingSearchResponse message = new OutgoingSearchResponseRootDevice(getInputMessage(), getDescriptorLocation(activeStreamServer, device), device);
+                                                prepareOutgoingSearchResponse(message);
+                                                getUpnpService().getRouter().send(message);
                                             }
                                         }
                                     };
@@ -229,14 +233,14 @@ public class MediaServer implements Runnable {
         headerDetails.put(new HeaderDeviceDetailsProvider.Key("User-Agent", "Xbox.*"), wmpDetails);
         headerDetails.put(new HeaderDeviceDetailsProvider.Key("X-AV-Client-Info", ".*PLAYSTATION 3.*"), ownDetails);
         HeaderDeviceDetailsProvider provider = new HeaderDeviceDetailsProvider(ownDetails, headerDetails) {
-            public DeviceDetails provide(ControlPointInfo info) {
+            public DeviceDetails provide(RemoteClientInfo info) {
                 DeviceDetails ret = super.provide(info);
                 return ret;
             }
         };
         final ArrayList<Icon> lst = new ArrayList<Icon>();
         try {
-            lst.add(new Icon("image/png", 256, 256, 24, new URI("icon/256.png"), createIcon("png", 256)) {
+            lst.add(new Icon("image/png", 256, 256, 24, "icon/256.png", createIcon("png", 256)) {
 
                 @Override
                 public Device getDevice() {
@@ -248,32 +252,7 @@ public class MediaServer implements Runnable {
             e.printStackTrace();
         }
         try {
-            lst.add(new Icon("image/jpeg", 256, 256, 24, new URI("icon/256.jpg"), createIcon("jpeg", 256)) {
-
-                @Override
-                public Device getDevice() {
-                    return device;
-                }
-
-            });
-        } catch (Throwable e) {
-            e.printStackTrace();
-        }
-
-        try {
-            lst.add(new Icon("image/png", 120, 120, 24, new URI("icon/120.png"), createIcon("png", 120)) {
-
-                @Override
-                public Device getDevice() {
-                    return device;
-                }
-
-            });
-        } catch (Throwable e) {
-            e.printStackTrace();
-        }
-        try {
-            lst.add(new Icon("image/jpeg", 120, 120, 24, new URI("icon/120.jpg"), createIcon("jpeg", 120)) {
+            lst.add(new Icon("image/jpeg", 256, 256, 24, "icon/256.jpg", createIcon("jpeg", 256)) {
 
                 @Override
                 public Device getDevice() {
@@ -286,7 +265,7 @@ public class MediaServer implements Runnable {
         }
 
         try {
-            lst.add(new Icon("image/png", 48, 48, 24, new URI("icon/48.png"), createIcon("png", 48)) {
+            lst.add(new Icon("image/png", 120, 120, 24, "icon/120.png", createIcon("png", 120)) {
 
                 @Override
                 public Device getDevice() {
@@ -298,7 +277,7 @@ public class MediaServer implements Runnable {
             e.printStackTrace();
         }
         try {
-            lst.add(new Icon("image/jpeg", 48, 48, 24, new URI("icon/48.jpg"), createIcon("jpeg", 48)) {
+            lst.add(new Icon("image/jpeg", 120, 120, 24, "icon/120.jpg", createIcon("jpeg", 120)) {
 
                 @Override
                 public Device getDevice() {
@@ -311,7 +290,7 @@ public class MediaServer implements Runnable {
         }
 
         try {
-            lst.add(new Icon("image/png", 32, 32, 24, new URI("icon/32.png"), createIcon("png", 32)) {
+            lst.add(new Icon("image/png", 48, 48, 24, "icon/48.png", createIcon("png", 48)) {
 
                 @Override
                 public Device getDevice() {
@@ -323,7 +302,32 @@ public class MediaServer implements Runnable {
             e.printStackTrace();
         }
         try {
-            lst.add(new Icon("image/jpeg", 32, 32, 24, new URI("icon/32.jpg"), createIcon("jpeg", 32)) {
+            lst.add(new Icon("image/jpeg", 48, 48, 24, "icon/48.jpg", createIcon("jpeg", 48)) {
+
+                @Override
+                public Device getDevice() {
+                    return device;
+                }
+
+            });
+        } catch (Throwable e) {
+            e.printStackTrace();
+        }
+
+        try {
+            lst.add(new Icon("image/png", 32, 32, 24, "icon/32.png", createIcon("png", 32)) {
+
+                @Override
+                public Device getDevice() {
+                    return device;
+                }
+
+            });
+        } catch (Throwable e) {
+            e.printStackTrace();
+        }
+        try {
+            lst.add(new Icon("image/jpeg", 32, 32, 24, "icon/32.jpg", createIcon("jpeg", 32)) {
 
                 @Override
                 public Device getDevice() {
@@ -338,7 +342,7 @@ public class MediaServer implements Runnable {
         final Icon[] icons = lst.toArray(new Icon[] {});
         device = new LocalDevice(identity, type, provider, null, new LocalService[] { createContentDirectory(), createConnectionManager(), createMediaReceiverRegistrar() }) {
             public Icon[] getIcons() {
-                IncomingActionRequestMessage rm = ReceivingAction.getRequestMessage();
+                // IncomingActionRequestMessage rm = ReceivingAction.getRequestMessage();
                 return icons;
             }
 
@@ -492,7 +496,8 @@ public class MediaServer implements Runnable {
     }
 
     public String getHost() {
-        return getRouter().getNetworkAddressFactory().getBindAddresses()[0].getHostAddress();
+        throw new WTFException("Not implemented for cling 2.0 yet");
+        // return ((RouterImpl) getRouter()).getNetworkAddressFactory().getBindAddresses()[0].getHostAddress();
     }
 
 }

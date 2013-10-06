@@ -253,17 +253,19 @@ public class DeviceManager implements RegistryListener {
 
     public RendererInfo findDeviceByUpnpHeaders(UpnpHeaders headers) {
         // TODO: some cache to get faster access
-        for (AbstractDeviceHandler dp : deviceProfiles) {
-            List<String> ua = headers.get(HTTPConstants.HEADER_REQUEST_USER_AGENT);
-            try {
-                if (dp.matchesUpnpUserAgent(ua.get(0))) {
-                    if (dp.matchesUpnpHeader(headers)) {//
-                        return new RendererInfo(dp, null, null);
+        if (headers != null) {
+            for (AbstractDeviceHandler dp : deviceProfiles) {
+                List<String> ua = headers.get(HTTPConstants.HEADER_REQUEST_USER_AGENT);
+                try {
+                    if (dp.matchesUpnpUserAgent(ua.get(0))) {
+                        if (dp.matchesUpnpHeader(headers)) {//
+                            return new RendererInfo(dp, null, null);
 
+                        }
                     }
+                } catch (Exception e) {
+                    logger.log(e);
                 }
-            } catch (Exception e) {
-                logger.log(e);
             }
         }
         return defaultDevice;

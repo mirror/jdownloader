@@ -121,6 +121,7 @@ public class PluginSettingsPanel extends JPanel implements SettingsComponent, Ac
                             AddonConfig.resetInstance(proto.getConfig(), "", false);
                             // avoid that the panel saves it's data on hide;
                             configPanel = null;
+
                             show(currentItem);
                             Dialog.getInstance().showMessageDialog(_GUI._.PluginSettingsPanel_actionPerformed_reset_done(currentItem.getDisplayName()));
                         }

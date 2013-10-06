@@ -52,8 +52,8 @@ public class UpnpContentDirectory extends AbstractContentDirectoryService implem
             // Special IDS:
             // xbmc: video/folder.jpg
             System.out.println("Browse: " + objectID + " " + browseFlag);
-            UpnpHeaders headers = org.fourthline.cling.protocol.sync.ReceivingAction.getRequestMessage().getHeaders();
-
+            // UpnpHeaders headers = org.fourthline.cling.protocol.sync.ReceivingAction.getRequestMessage().getHeaders();
+            UpnpHeaders headers = null;
             RendererInfo callerDevice = extension.getMediaServer().getDeviceManager().findDeviceByUpnpHeaders(headers);
             if (browseFlag == BrowseFlag.METADATA) {
 
@@ -76,7 +76,8 @@ public class UpnpContentDirectory extends AbstractContentDirectoryService implem
     public BrowseResult search(String containerId, String searchCriteriaString, String filterString, long firstResult, long maxResults, SortCriterion[] orderBy) throws ContentDirectoryException {
         try {
             logger.info(String.format("ContentDirectory receive search request with ContainerID:%s, SearchCriteria:%s, Filter:%s, FirstResult:%s, MaxResults:%s, SortCriterion:%s.", containerId, searchCriteriaString, filterString, firstResult, maxResults, orderBy));
-            UpnpHeaders headers = org.fourthline.cling.protocol.sync.ReceivingAction.getRequestMessage().getHeaders();
+            UpnpHeaders headers = null;
+            // org.fourthline.cling.protocol.sync.ReceivingAction.getRequestMessage().getHeaders();
 
             RendererInfo callerDevice = extension.getMediaServer().getDeviceManager().findDeviceByUpnpHeaders(headers);
 

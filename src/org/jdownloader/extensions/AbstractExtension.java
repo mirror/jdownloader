@@ -17,6 +17,7 @@
 package org.jdownloader.extensions;
 
 import java.lang.reflect.Type;
+import java.net.URL;
 
 import javax.swing.Icon;
 
@@ -124,7 +125,8 @@ public abstract class AbstractExtension<ConfigType extends ExtensionConfigInterf
     }
 
     /**
-     * Returns the internal storage. Most of the configvalues are for internal use only. This config only contains values which are valid for all extensions
+     * Returns the internal storage. Most of the configvalues are for internal use only. This config only contains values which are valid
+     * for all extensions
      * 
      * @return
      */
@@ -176,7 +178,8 @@ public abstract class AbstractExtension<ConfigType extends ExtensionConfigInterf
      * 
      * @param translationInterface
      * @param contentType
-     *            name of this plugin. Until JD 2.* we should use null here to use the old defaultname. we used to sue this localized name as config key.
+     *            name of this plugin. Until JD 2.* we should use null here to use the old defaultname. we used to sue this localized name
+     *            as config key.
      * @throws
      * @throws StartException
      */
@@ -287,7 +290,9 @@ public abstract class AbstractExtension<ConfigType extends ExtensionConfigInterf
     public static int readVersion(Class<? extends AbstractExtension> class1) {
 
         try {
-            return Integer.parseInt(IO.readURLToString(class1.getResource("version.dat")).trim());
+            URL url = class1.getResource("version.dat");
+            if (url == null) return -1;
+            return Integer.parseInt(IO.readURLToString(url).trim());
         } catch (Throwable e) {
             return -1;
         }
