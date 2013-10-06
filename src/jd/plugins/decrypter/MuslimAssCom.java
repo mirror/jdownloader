@@ -29,12 +29,14 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "muslimass.com" }, urls = { "http://(www\\.)?muslimass\\.com/(?!category|feed|wp\\-(content|includes)|about|login)[a-z0-9\\-]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "muslimass.com" }, urls = { "http://(www\\.)?muslimass\\.com/[a-z0-9\\-]+" }, flags = { 0 })
 public class MuslimAssCom extends PluginForDecrypt {
 
     public MuslimAssCom(PluginWrapper wrapper) {
         super(wrapper);
     }
+
+    private final String INVALIDLINK = "http://(www\\.)?muslimass\\.com/(category|feed|wp\\-(content|includes)|about|login|webmaster)";
 
     // This is a site which shows embedded videos of other sites so we may have
     // to add regexes/handlings here
@@ -42,6 +44,10 @@ public class MuslimAssCom extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
         br.setFollowRedirects(true);
+        if (parameter.matches(INVALIDLINK)) {
+            logger.info("Invalid link: " + parameter);
+            return decryptedLinks;
+        }
         br.getPage(parameter);
         if (br.containsHTML(">Error 404 \\- Not Found<|>Nothing found for")) {
             logger.info("Link offline: " + parameter);
@@ -76,8 +82,13 @@ public class MuslimAssCom extends PluginForDecrypt {
             decryptedLinks.add(createDownloadlink("http://www.hardsextube.com/video/" + externID + "/"));
             return decryptedLinks;
         }
+        externID = br.getRegex("hardsextube\\.com/embed/(\\d+)/\"").getMatch(0);
+        if (externID != null) {
+            decryptedLinks.add(createDownloadlink("http://www.hardsextube.com/video/" + externID + "/"));
+            return decryptedLinks;
+        }
         // For direct hosterlinks - make sure only to grab the links of the related post
-        final String pagePiece = br.getRegex("<div class=\"entry\">(.*?)<h2>Related videos</h2>").getMatch(0);
+        final String pagePiece = br.getRegex("<div class=\"entry\">(.*?)<p>\\&nbsp;</p>").getMatch(0);
         if (pagePiece != null) {
             String fpName = br.getRegex("<title>([^<>\"]*?) \\| muslimass\\.com</title>").getMatch(0);
             if (fpName == null) fpName = new Regex(parameter, "muslimass\\.com/(.+)").getMatch(0);

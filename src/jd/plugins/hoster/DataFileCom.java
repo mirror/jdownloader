@@ -86,6 +86,7 @@ public class DataFileCom extends PluginForHost {
             br2.postPage("http://www.datafile.com/linkchecker.html", "btn=&links=" + Encoding.urlEncode(link.getDownloadURL()));
             filesize = br2.getRegex("title=\"File size\">([^<>\"]*?)</td>").getMatch(0);
             if (filesize != null) {
+                link.getLinkStatus().setStatusText("Cannot show filename when the daily limit is reached");
                 link.setDownloadSize(SizeFormatter.getSize(filesize));
                 return AvailableStatus.TRUE;
             } else if (!br2.containsHTML(">Link<") && !br2.containsHTML(">Status<") && !br2.containsHTML(">File size<")) {
@@ -93,6 +94,7 @@ public class DataFileCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             // No results -> Unckeckable because if the limit
+            link.getLinkStatus().setStatusText("Cannot check available status when the daily limit is reached");
             return AvailableStatus.UNCHECKABLE;
         }
         // Invalid link

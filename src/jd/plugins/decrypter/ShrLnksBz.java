@@ -172,7 +172,7 @@ public class ShrLnksBz extends PluginForDecrypt {
                 temp.getDownload(file, "http://share-links.biz" + Captchamap);
                 String nexturl = null;
                 if (Integer.parseInt(JDUtilities.getRevision().replace(".", "")) < 10000 || !auto) {
-                    final Point p = UserIO.getInstance().requestClickPositionDialog(file, "Share-links.biz", JDL.L("plugins.decrypt.shrlnksbz.desc", "Read the combination in the background and click the corresponding combination in the overview!"));
+                    final Point p = UserIO.getInstance().requestClickPositionDialog(file, "share-links.biz", JDL.L("plugins.decrypt.shrlnksbz.desc", "Read the combination in the background and click the corresponding combination in the overview!"));
                     if (p == null) { throw new DecrypterException(DecrypterException.CAPTCHA); }
                     nexturl = getNextUrl(p.x, p.y);
                 } else {
@@ -180,7 +180,7 @@ public class ShrLnksBz extends PluginForDecrypt {
                         final String[] code = this.getCaptchaCode(file, param).split(":");
                         nexturl = getNextUrl(Integer.parseInt(code[0]), Integer.parseInt(code[1]));
                     } catch (final Exception e) {
-                        final Point p = UserIO.getInstance().requestClickPositionDialog(file, "Share-links.biz", JDL.L("plugins.decrypt.shrlnksbz.desc", "Read the combination in the background and click the corresponding combination in the overview!"));
+                        final Point p = UserIO.getInstance().requestClickPositionDialog(file, "share-links.biz", JDL.L("plugins.decrypt.shrlnksbz.desc", "Read the combination in the background and click the corresponding combination in the overview!"));
                         if (p == null) { throw new DecrypterException(DecrypterException.CAPTCHA); }
                         nexturl = getNextUrl(p.x, p.y);
                     }

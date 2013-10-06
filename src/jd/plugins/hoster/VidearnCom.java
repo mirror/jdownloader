@@ -19,6 +19,7 @@ package jd.plugins.hoster;
 import java.io.IOException;
 
 import jd.PluginWrapper;
+import jd.nutils.encoding.Encoding;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -47,6 +48,24 @@ public class VidearnCom extends PluginForHost {
     @Override
     public int getMaxSimultanFreeDownloadNum() {
         return -1;
+    }
+
+    @Override
+    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
+        setBrowserExclusive();
+        final String dllink = downloadLink.getDownloadURL();
+        br.getPage(dllink);
+        if (!br.containsHTML("\\w+")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+        String filename = br.getRegex("<h3 class=\"page\\-title\"><strong>(.*?)</strong></h3>").getMatch(0);
+        if (filename == null) {
+            filename = br.getRegex("<title>Video \\- (.*?)</title>").getMatch(0);
+            if (filename == null) {
+                filename = dllink.substring(dllink.lastIndexOf("/"));
+            }
+        }
+        if (filename == null) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+        downloadLink.setName(Encoding.htmlDecode(filename.trim()) + ".flv");
+        return AvailableStatus.TRUE;
     }
 
     @Override
@@ -95,24 +114,6 @@ public class VidearnCom extends PluginForHost {
         int rev = Integer.parseInt(prev);
         if (rev < 14000) return true;
         return false;
-    }
-
-    @Override
-    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
-        setBrowserExclusive();
-        final String dllink = downloadLink.getDownloadURL();
-        br.getPage(dllink);
-        if (!br.containsHTML("\\w+")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
-        String filename = br.getRegex("<h3 class=\"page\\-title\"><strong>(.*?)</strong></h3>").getMatch(0);
-        if (filename == null) {
-            filename = br.getRegex("<title>Video \\- (.*?)</title>").getMatch(0);
-            if (filename == null) {
-                filename = dllink.substring(dllink.lastIndexOf("/"));
-            }
-        }
-        if (filename == null) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
-        downloadLink.setName(filename.trim() + ".flv");
-        return AvailableStatus.TRUE;
     }
 
     @Override

@@ -211,15 +211,13 @@ public class DeviantArtCom extends PluginForHost {
 
     @Override
     public void handlePremium(final DownloadLink downloadLink, final Account account) throws Exception {
-        login(account, br, false);
-        br.setFollowRedirects(true);
-        br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML(TYPE_HTML)) {
-            HTMLALLOWED = true;
+        // This will also log in
+        requestFileInformation(downloadLink);
+        if (DLLINK == null) {
+            getDllink();
         }
-        final String dllink = getDllink();
         // Disable chunks as we only download pictures
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 1);
         if (dl.getConnection().getContentType().contains("html") && !HTMLALLOWED) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

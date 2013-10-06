@@ -20,6 +20,7 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.Random;
 
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
@@ -46,7 +47,7 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
     }
 
     private static final String CLIENTID           = "b45b1aa10f1ac2941910a7f0d10f8e28";
-    private static final String INVALIDLINKS       = "https?://(www\\.)?soundcloud\\.com/(you/|tour|signup|logout|login|premium|messages|settings|imprint|community\\-guidelines|videos|terms\\-of\\-use|sounds|jobs|press|mobile|#?search|upload|people|dashboard|#).*?";
+    private static final String INVALIDLINKS       = "https?://(www\\.)?soundcloud\\.com/(you/|tour|signup|logout|login|premium|messages|settings|imprint|community\\-guidelines|videos|terms\\-of\\-use|sounds|jobs|press|mobile|#?search|upload|people|dashboard|#/).*?";
     private static final String PLAYLISTAPILINK    = "https?://(www\\.|m\\.)?api\\.soundcloud\\.com/playlists/\\d+\\?secret_token=[A-Za-z0-9\\-_]+";
 
     private static final String GRAB500THUMB       = "GRAB500THUMB";
@@ -98,7 +99,11 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
         } else if (parameter.matches("https?://api\\.soundcloud\\.com/tracks/\\d+")) {
             br.getPage("https://api.soundcloud.com/tracks/" + new Regex(parameter, "(\\d+)$").getMatch(0) + "?client_id=" + SoundCloudComDecrypter.CLIENTID + "&format=json");
             if (br.containsHTML("\"error_message\":\"404 \\- Not Found\"")) {
-                logger.info("Link offline: " + parameter);
+                final DownloadLink dl = createDownloadlink("https://soundclouddecrypted.com/offlinedecrypted/" + System.currentTimeMillis() + new Random().nextInt(100000));
+                dl.setAvailable(false);
+                dl.setProperty("offline", true);
+                dl.setName(parameter);
+                decryptedLinks.add(dl);
                 return decryptedLinks;
             }
             String newparameter = br.getRegex("\"permalink_url\":\"(http://soundcloud\\.com/[a-z0-9\\-_]+/[a-z0-9\\-_]+(/[a-z0-9\\-_]+)?)\"").getMatch(0);
@@ -131,7 +136,11 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
             final String clientID = jd.plugins.hoster.SoundcloudCom.CLIENTID;
             br.getPage("https://api.sndcdn.com/resolve?url=" + Encoding.urlEncode(parameter) + "&_status_code_map%5B302%5D=200&_status_format=json&client_id=" + clientID);
             if (br.containsHTML("\"404 \\- Not Found\"")) {
-                logger.info("Link offline: " + parameter);
+                final DownloadLink dl = createDownloadlink("https://soundclouddecrypted.com/offlinedecrypted/" + System.currentTimeMillis() + new Random().nextInt(100000));
+                dl.setAvailable(false);
+                dl.setProperty("offline", true);
+                dl.setName(parameter);
+                decryptedLinks.add(dl);
                 return decryptedLinks;
             }
             if (br.containsHTML("<duration type=\"integer\">0</duration>")) {
@@ -179,14 +188,22 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
                 String userID = br.getRegex("<uri>https://api\\.soundcloud\\.com/users/(\\d+)").getMatch(0);
                 if (userID == null) userID = br.getRegex("id type=\"integer\">(\\d+)").getMatch(0);
                 if (userID == null) {
-                    logger.info("Link probably offline: " + parameter);
+                    final DownloadLink dl = createDownloadlink("https://soundclouddecrypted.com/offlinedecrypted/" + System.currentTimeMillis() + new Random().nextInt(100000));
+                    dl.setAvailable(false);
+                    dl.setProperty("offline", true);
+                    dl.setName(parameter);
+                    decryptedLinks.add(dl);
                     return decryptedLinks;
                 }
                 br.getPage("https://api.sndcdn.com/e1/users/" + userID + "/sounds?limit=10000&offset=0&linked_partitioning=1&client_id=" + clientID);
                 final String[] items = br.getRegex("<stream\\-item>(.*?)</stream\\-item>").getColumn(0);
                 if (items == null || items.length == 0) {
                     if (br.containsHTML("<stream\\-items type=\"array\"/>")) {
-                        logger.info("Link offline: " + parameter);
+                        final DownloadLink dl = createDownloadlink("https://soundclouddecrypted.com/offlinedecrypted/" + System.currentTimeMillis() + new Random().nextInt(100000));
+                        dl.setAvailable(false);
+                        dl.setProperty("offline", true);
+                        dl.setName(parameter);
+                        decryptedLinks.add(dl);
                         return decryptedLinks;
                     }
                     logger.warning("Decrypter broken for link: " + parameter);
@@ -198,7 +215,12 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
                         logger.warning("Decrypter broken for link: " + parameter);
                         return null;
                     }
-                    final DownloadLink dl = createDownloadlink(parameter.replace("soundcloud", "soundclouddecrypted") + "/" + url);
+                    DownloadLink dl = null;
+                    if (parameter.endsWith("/")) {
+                        dl = createDownloadlink(parameter.replace("soundcloud.com/", "soundclouddecrypted.com/") + url);
+                    } else {
+                        dl = createDownloadlink(parameter.replace("soundcloud.com/", "soundclouddecrypted.com/") + "/" + url);
+                    }
                     final AvailableStatus status = ((jd.plugins.hoster.SoundcloudCom) HOSTPLUGIN).checkStatus(dl, item);
                     dl.setAvailableStatus(status);
                     if (decryptThumb) {
@@ -228,9 +250,10 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
                 try {
                     br.getPage(parameter);
                     if (br.containsHTML("\"404 \\- Not Found\"")) {
-                        final DownloadLink dl = createDownloadlink(parameter.replace("soundcloud", "soundclouddecrypted"));
+                        final DownloadLink dl = createDownloadlink("https://soundclouddecrypted.com/offlinedecrypted/" + System.currentTimeMillis() + new Random().nextInt(100000));
                         dl.setAvailable(false);
                         dl.setProperty("offline", true);
+                        dl.setName(parameter);
                         decryptedLinks.add(dl);
                         return decryptedLinks;
                     }
