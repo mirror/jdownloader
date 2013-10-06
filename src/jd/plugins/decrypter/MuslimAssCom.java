@@ -88,20 +88,22 @@ public class MuslimAssCom extends PluginForDecrypt {
             return decryptedLinks;
         }
         // For direct hosterlinks - make sure only to grab the links of the related post
-        final String pagePiece = br.getRegex("<div class=\"entry\">(.*?)<p>\\&nbsp;</p>").getMatch(0);
+        final String pagePiece = br.getRegex("<div class=\"entry\">(.*?)(<p>\\&nbsp;</p>|<\\!\\-\\- AddThis Button BEGIN \\-\\->)").getMatch(0);
         if (pagePiece != null) {
             String fpName = br.getRegex("<title>([^<>\"]*?) \\| muslimass\\.com</title>").getMatch(0);
             if (fpName == null) fpName = new Regex(parameter, "muslimass\\.com/(.+)").getMatch(0);
             final String[] allLinks = HTMLParser.getHttpLinks(pagePiece, "");
-            if (allLinks != null && allLinks.length != 0) {
-                for (final String aLink : allLinks) {
-                    if (!aLink.matches("http://(www\\.)?muslimass\\.com/.+")) decryptedLinks.add(createDownloadlink(aLink));
-                }
-                final FilePackage fp = FilePackage.getInstance();
-                fp.setName(Encoding.htmlDecode(fpName.trim()));
-                fp.addLinks(decryptedLinks);
+            if (allLinks == null || allLinks.length == 0) {
+                logger.info("Link offline: " + parameter);
                 return decryptedLinks;
             }
+            for (final String aLink : allLinks) {
+                if (!aLink.matches("http://(www\\.)?muslimass\\.com/.+")) decryptedLinks.add(createDownloadlink(aLink));
+            }
+            final FilePackage fp = FilePackage.getInstance();
+            fp.setName(Encoding.htmlDecode(fpName.trim()));
+            fp.addLinks(decryptedLinks);
+            return decryptedLinks;
         }
         logger.warning("muslimass decrypter broken for link: " + parameter);
         return null;

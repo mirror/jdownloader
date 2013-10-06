@@ -163,7 +163,7 @@ public class SoundcloudCom extends PluginForHost {
         String date = new Regex(source, "<created\\-at type=\"datetime\">([^<>\"]*?)</created-at>").getMatch(0);
         String username = getXML("username", source);
         String type = getXML("original-format", source);
-        if (type == null) type = "mp3";
+        if (type == null || type.equals("raw")) type = "mp3";
         username = Encoding.htmlDecode(username.trim());
         url = getXML("download-url", source);
         if (url != null) {
