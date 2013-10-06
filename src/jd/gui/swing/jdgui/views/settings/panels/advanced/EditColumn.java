@@ -17,6 +17,7 @@ import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.appwork.utils.swing.renderer.RendererMigPanel;
+import org.jdownloader.gui.IconKey;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.settings.advanced.AdvancedConfigEntry;
 
@@ -75,8 +76,8 @@ public class EditColumn extends ExtComponentColumn<AdvancedConfigEntry> {
     class ResetAction extends AbstractAction {
         private static final long   serialVersionUID = 1L;
         private AdvancedConfigEntry value;
-        private ImageIcon           reset_no         = NewTheme.I().getIcon("stop", 16);
-        private ImageIcon           reset_yes        = new ImageIcon(GrayFilter.createDisabledImage(NewTheme.I().getIcon("stop", 16).getImage()));
+        private ImageIcon           reset_no         = NewTheme.I().getIcon(IconKey.ICON_RESET, 16);
+        private ImageIcon           reset_yes        = new ImageIcon(GrayFilter.createDisabledImage(NewTheme.I().getIcon(IconKey.ICON_RESET, 16).getImage()));
         private boolean             resetable        = false;
 
         public ResetAction() {
