@@ -58,14 +58,15 @@ public class RDMdthk extends PluginForDecrypt {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
         boolean offline = false;
+        br.setFollowRedirects(true);
         try {
             br.getPage(parameter);
         } catch (final BrowserException e) {
             offline = true;
         }
         // Add offline link so user can see it
-        if (!br.containsHTML("var \\$jPlayer =") || offline) {
-            final DownloadLink dl = createDownloadlink(parameter.replace("http://", "decrypted://") + "&quality=offline");
+        if (!br.containsHTML("var \\$jPlayer =") && !parameter.contains("/dossiers/") || offline) {
+            final DownloadLink dl = createDownloadlink(parameter.replace("http://", "decrypted://") + "&quality=offline&network=default");
             dl.setAvailable(false);
             dl.setProperty("offline", true);
             decryptedLinks.add(dl);
@@ -76,6 +77,7 @@ public class RDMdthk extends PluginForDecrypt {
         boolean includeAudio = cfg.getBooleanProperty(AUDIO, true);
         BEST = cfg.getBooleanProperty(Q_BEST, false);
 
+        final String title = br.getRegex("<meta name=\"dcterms\\.title\" content=\"([^\"]+)\"").getMatch(0);
         final String fsk = br.getRegex("(Diese Sendung ist für Jugendliche unter \\d+ Jahren nicht geeignet\\. Der Clip ist deshalb nur von \\d+ bis \\d+ Uhr verfügbar\\.)").getMatch(0);
         final String realBaseUrl = new Regex(br.getBaseURL(), "(^.*\\.de)").getMatch(0);
 
@@ -108,7 +110,7 @@ public class RDMdthk extends PluginForDecrypt {
                 progress.increase(1);
                 if ("audio".equalsIgnoreCase(s[0]) && !includeAudio) continue;
                 if (b && !s[1].contains(ID)) continue;
-                decryptedLinks.addAll(getDownloadLinks(cfg, realBaseUrl + s[1], ID));
+                decryptedLinks.addAll(getDownloadLinks(cfg, realBaseUrl + s[1], ID, title));
                 try {
                     if (this.isAbort()) return decryptedLinks;
                 } catch (Throwable e) {
@@ -120,7 +122,7 @@ public class RDMdthk extends PluginForDecrypt {
             br.getPage(pages[i]);
         }
         // Single link
-        if (decryptedLinks == null || decryptedLinks.size() == 0) decryptedLinks.addAll(getDownloadLinks(cfg, parameter, ID));
+        if (decryptedLinks == null || decryptedLinks.size() == 0) decryptedLinks.addAll(getDownloadLinks(cfg, parameter, ID, title));
 
         if (decryptedLinks == null || decryptedLinks.size() == 0) {
             if (notForStable > 0) {
@@ -153,7 +155,8 @@ public class RDMdthk extends PluginForDecrypt {
         ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
 
         try {
-            String title = getTitle(br);
+            String title = s[2];
+            if (title == null) title = getTitle(br);
             if (s[1] != null) {
                 Browser br = new Browser();
                 setBrowserExclusive();
@@ -170,9 +173,9 @@ public class RDMdthk extends PluginForDecrypt {
                 final HashMap<String, DownloadLink> bestMap = new HashMap<String, DownloadLink>();
                 String lastQualityFMT = null;
                 for (String quality[] : br.getRegex("mediaCollection\\.addMediaStream\\((\\d+), (\\d+), \"([^\"]+|)\", \"([^\"]+)\", \"([^\"]+)\"\\);").getMatches()) {
-                    // rtmp --> hds
+                    // rtmp --> hds or rtmp
                     url = quality[3];
-                    if ("akamai".equals(quality[4])) {
+                    if ("akamai".equals(quality[4]) || "limelight".equals(quality[4])) {
                         if (url.endsWith("manifest.f4m")) continue;
                     }
                     if ("default".equals(quality[4])) {
@@ -227,8 +230,8 @@ public class RDMdthk extends PluginForDecrypt {
                     }
 
                     lastQualityFMT = fmt.toUpperCase(Locale.ENGLISH);
-                    final String name = title + "@" + fmt.toUpperCase(Locale.ENGLISH) + extension;
-                    final DownloadLink link = createDownloadlink(s[0].replace("http://", "decrypted://") + "&quality=" + fmt);
+                    final String name = title + "@" + fmt.toUpperCase(Locale.ENGLISH) + "-" + quality[4] + extension;
+                    final DownloadLink link = createDownloadlink(s[0].replace("http://", "decrypted://") + "&quality=" + fmt + "&network=" + quality[4]);
                     if (t == 1 ? false : true) link.setAvailable(true);
                     link.setFinalFileName(name);
                     link.setBrowserUrl(s[0]);
@@ -269,7 +272,7 @@ public class RDMdthk extends PluginForDecrypt {
                         String subtitleLink = br.getRegex("mediaCollection\\.setSubtitleUrl\\(\"(/static/avportal/untertitel_mediathek/\\d+\\.xml)\"").getMatch(0);
                         if (subtitleLink != null) {
                             final String finallink = "http://www.ardmediathek.de" + subtitleLink + "@";
-                            final DownloadLink dl = createDownloadlink(s[0].replace("http://", "decrypted://") + "&quality=subtitle");
+                            final DownloadLink dl = createDownloadlink(s[0].replace("http://", "decrypted://") + "&quality=subtitle&network=default");
                             dl.setAvailable(true);
                             dl.setFinalFileName(filename);
                             dl.setProperty("directURL", finallink);
@@ -309,9 +312,11 @@ public class RDMdthk extends PluginForDecrypt {
         if (titleUT == null) titleUT = br.getRegex("<h3 class=\"mt\\-title\"><a>([^<>\"]*?)</a></h3>").getMatch(0);
         if (title == null) title = br.getRegex("<title>ard\\.online \\- Mediathek: ([^<]+)</title>").getMatch(0);
         if (title == null) title = br.getRegex("<h2>(.*?)</h2>").getMatch(0);
+        if (title == null) title = br.getRegex("class=\"mt\\-icon mt\\-icon_video\"></span><img src=\"[^\"]+\" alt=\"([^\"]+)\"").getMatch(0);
         if (title == null) title = br.getRegex("class=\"mt\\-icon mt\\-icon\\-toggle_arrows\"></span>([^<>\"]*?)</a>").getMatch(0);
         if (title != null) title = Encoding.htmlDecode(title + (titleUT != null ? "__" + titleUT.replaceAll(":$", "") : "").trim());
         if (title == null) title = "UnknownTitle_" + System.currentTimeMillis();
+        title = title.replaceAll("\\n|\\t|,", "").trim();
         return title;
     }
 
