@@ -1,18 +1,31 @@
-package org.jdownloader.captcha.v2.solver;
+package org.jdownloader.captcha.v2.solver.solver9kw;
 
 import java.io.IOException;
+import java.util.LinkedList;
 import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
+import javax.swing.Icon;
+
+import jd.SecondLevelLaunch;
 import jd.controlling.captcha.CaptchaSettings;
+import jd.gui.swing.jdgui.components.premiumbar.ServiceCollection;
+import jd.gui.swing.jdgui.components.premiumbar.ServicePanel;
+import jd.gui.swing.jdgui.components.premiumbar.ServicePanelExtender;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 
 import org.appwork.storage.config.JsonConfig;
+import org.appwork.storage.config.ValidationException;
+import org.appwork.storage.config.events.GenericConfigEventListener;
+import org.appwork.storage.config.handler.KeyHandler;
+import org.appwork.swing.components.tooltips.ExtTooltip;
 import org.appwork.utils.IO;
+import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
+import org.jdownloader.DomainInfo;
 import org.jdownloader.captcha.v2.AbstractResponse;
 import org.jdownloader.captcha.v2.Challenge;
 import org.jdownloader.captcha.v2.ChallengeResponseValidation;
@@ -23,9 +36,10 @@ import org.jdownloader.captcha.v2.solver.jac.SolverException;
 import org.jdownloader.captcha.v2.solverjob.SolverJob;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.settings.advanced.AdvancedConfigManager;
+import org.jdownloader.settings.staticreferences.CFG_9KWCAPTCHA;
 import org.jdownloader.settings.staticreferences.CFG_CAPTCHA;
 
-public class Captcha9kwSolver extends ChallengeSolver<String> implements ChallengeResponseValidation {
+public class Captcha9kwSolver extends ChallengeSolver<String> implements ChallengeResponseValidation, ServicePanelExtender {
     private Captcha9kwSettings            config;
     private static final Captcha9kwSolver INSTANCE   = new Captcha9kwSolver();
     private ThreadPoolExecutor            threadPool = new ThreadPoolExecutor(0, 1, 30000, TimeUnit.MILLISECONDS, new LinkedBlockingDeque<Runnable>(), Executors.defaultThreadFactory());
@@ -44,6 +58,47 @@ public class Captcha9kwSolver extends ChallengeSolver<String> implements Challen
         config = JsonConfig.create(Captcha9kwSettings.class);
         AdvancedConfigManager.getInstance().register(config);
         threadPool.allowCoreThreadTimeOut(true);
+        SecondLevelLaunch.GUI_COMPLETE.executeWhenReached(new Runnable() {
+
+            public void run() {
+                ServicePanel.getInstance().addExtender(Captcha9kwSolver.this);
+                CFG_9KWCAPTCHA.API_KEY.getEventSender().addListener(new GenericConfigEventListener<String>() {
+
+                    @Override
+                    public void onConfigValueModified(KeyHandler<String> keyHandler, String newValue) {
+                        ServicePanel.getInstance().requestUpdate(true);
+                    }
+
+                    @Override
+                    public void onConfigValidatorError(KeyHandler<String> keyHandler, String invalidValue, ValidationException validateException) {
+                    }
+                });
+
+                CFG_9KWCAPTCHA.ENABLED.getEventSender().addListener(new GenericConfigEventListener<Boolean>() {
+
+                    @Override
+                    public void onConfigValidatorError(KeyHandler<Boolean> keyHandler, Boolean invalidValue, ValidationException validateException) {
+                    }
+
+                    @Override
+                    public void onConfigValueModified(KeyHandler<Boolean> keyHandler, Boolean newValue) {
+                        ServicePanel.getInstance().requestUpdate(true);
+                    }
+                });
+                CFG_9KWCAPTCHA.MOUSE.getEventSender().addListener(new GenericConfigEventListener<Boolean>() {
+
+                    @Override
+                    public void onConfigValidatorError(KeyHandler<Boolean> keyHandler, Boolean invalidValue, ValidationException validateException) {
+                    }
+
+                    @Override
+                    public void onConfigValueModified(KeyHandler<Boolean> keyHandler, Boolean newValue) {
+                        ServicePanel.getInstance().requestUpdate(true);
+                    }
+                });
+            }
+
+        });
 
     }
 
@@ -197,5 +252,61 @@ public class Captcha9kwSolver extends ChallengeSolver<String> implements Challen
     @Override
     public String getName() {
         return "9kw.eu";
+    }
+
+    @Override
+    public void extendServicePabel(LinkedList<ServiceCollection<?>> services) {
+        if (StringUtils.isNotEmpty(config.getApiKey())) {
+            services.add(new ServiceCollection<Captcha9kwSolver>() {
+
+                @Override
+                public Icon getIcon() {
+                    return DomainInfo.getInstance("9kw.eu").getFavIcon();
+                }
+
+                @Override
+                public boolean isEnabled() {
+                    return config.isEnabled() || config.ismouse();
+                }
+
+                @Override
+                protected long getLastActiveTimestamp() {
+                    return System.currentTimeMillis();
+                }
+
+                @Override
+                protected String getName() {
+                    return "9kw.eu";
+                }
+
+                @Override
+                public ExtTooltip createTooltip(ServicePanel owner) {
+                    return new ServicePanel9kwTooltip(owner, Captcha9kwSolver.this);
+                }
+
+            });
+        }
+    }
+
+    public NineKWAccount loadAccount() throws IOException {
+        Browser br = new Browser();
+        NineKWAccount ret = new NineKWAccount();
+        String credits;
+
+        credits = br.getPage(getAPIROOT() + "index.cgi?action=usercaptchaguthaben&apikey=" + Encoding.urlEncode(config.getApiKey()));
+
+        try {
+
+            ret.setCreditBalance(Integer.parseInt(credits.trim()));
+            String userhistory1 = br.getPage(getAPIROOT() + "index.cgi?action=userhistory&apikey=" + Encoding.urlEncode(config.getApiKey()));
+            String userhistory2 = br.getPage(getAPIROOT() + "index.cgi?action=userhistory2&apikey=" + Encoding.urlEncode(config.getApiKey()));
+            ret.setAnswered(Integer.parseInt(Regex.getLines(userhistory2)[0]));
+            ret.setSolved(Integer.parseInt(Regex.getLines(userhistory1)[0]));
+        } catch (NumberFormatException e) {
+            ret.setError(credits);
+        }
+
+        return ret;
+
     }
 }

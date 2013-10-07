@@ -3247,4 +3247,19 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Are you sure that you want to reset all plugin settings for the %s1 plugin?" })
     String PluginSettingsPanel_are_you_sure(String displayName);
 
+    @Default(lngs = { "en" }, values = { "Credit Balance:" })
+    String ServicePanel9kwTooltip_runInEDT_credits_();
+
+    @Default(lngs = { "en" }, values = { "Error while loading 9kw.eu Account Information" })
+    String ServicePanel9kwTooltip_runInEDT_error();
+
+    @Default(lngs = { "en" }, values = { "Solved Captchas:" })
+    String ServicePanel9kwTooltip_runInEDT_solved();
+
+    @Default(lngs = { "en" }, values = { "Answered Captchas:" })
+    String ServicePanel9kwTooltip_runInEDT_answered();
+
+    @Default(lngs = { "en" }, values = { "Account Error: %s1" })
+    String ServicePanel9kwTooltip_runInEDT_error2(String error);
+
 }

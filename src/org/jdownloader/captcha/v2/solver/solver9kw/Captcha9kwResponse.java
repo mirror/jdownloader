@@ -1,4 +1,4 @@
-package org.jdownloader.captcha.v2.solver;
+package org.jdownloader.captcha.v2.solver.solver9kw;
 
 import org.jdownloader.captcha.v2.Challenge;
 import org.jdownloader.captcha.v2.challenge.stringcaptcha.CaptchaResponse;

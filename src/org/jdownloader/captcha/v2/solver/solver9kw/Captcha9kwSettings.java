@@ -1,4 +1,4 @@
-package org.jdownloader.captcha.v2.solver;
+package org.jdownloader.captcha.v2.solver.solver9kw;
 
 import org.appwork.storage.config.ConfigInterface;
 import org.appwork.storage.config.annotations.AboutConfig;

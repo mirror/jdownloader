@@ -44,7 +44,7 @@ import jd.controlling.linkcrawler.LinkCrawler;
 import jd.controlling.linkcrawler.LinkCrawlerEvent;
 import jd.controlling.linkcrawler.LinkCrawlerListener;
 import jd.controlling.reconnect.Reconnecter;
-import jd.gui.swing.jdgui.components.premiumbar.PremiumStatus;
+import jd.gui.swing.jdgui.components.premiumbar.ServicePanel;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import net.miginfocom.swing.MigLayout;
@@ -251,7 +251,7 @@ public class StatusBarImpl extends JPanel implements DownloadWatchdogListener {
         setLayout(new MigLayout("ins 0", sb.toString(), "[fill,22!]"));
 
         super.removeAll();
-        JScrollPane p = new JScrollPane(PremiumStatus.getInstance());
+        JScrollPane p = new JScrollPane(ServicePanel.getInstance());
         p.setBorder(null);
         p.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
         p.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_NEVER);

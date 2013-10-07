@@ -27,24 +27,21 @@ import org.appwork.swing.MigPanel;
 import org.appwork.swing.components.ExtButton;
 import org.appwork.swing.components.tooltips.ExtTooltip;
 import org.appwork.swing.components.tooltips.ToolTipController;
-import org.jdownloader.DomainInfo;
 
 public class TinyProgressBar extends MigPanel {
 
-    private static final long serialVersionUID = 8385631080915257786L;
+    private static final long    serialVersionUID = 8385631080915257786L;
 
-    private DomainInfo        domainInfo       = null;
+    private ExtButton            bt;
 
-    private ExtButton         bt;
+    private ServicePanel         owner;
 
-    private PremiumStatus     owner;
+    private ServiceCollection<?> serviceCollection;
 
-    private AccountCollection accountCollection;
-
-    public TinyProgressBar(PremiumStatus owner, final AccountCollection accountCollection) {
+    public TinyProgressBar(ServicePanel owner, final ServiceCollection<?> serviceCollection) {
         super("ins 0", "[]", "[]");
         this.owner = owner;
-        this.accountCollection = accountCollection;
+        this.serviceCollection = serviceCollection;
         setOpaque(false);
         setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
         bt = new ExtButton() {
@@ -56,12 +53,12 @@ public class TinyProgressBar extends MigPanel {
 
             @Override
             public ExtTooltip createExtTooltip(Point mousePosition) {
-
-                return new AccountTooltip(TinyProgressBar.this.owner, accountCollection);
+                return serviceCollection.createTooltip(TinyProgressBar.this.owner);
 
             }
 
         };
+        bt.setTooltipsEnabled(true);
         bt.addMouseListener(new MouseAdapter() {
 
             @Override
@@ -79,31 +76,15 @@ public class TinyProgressBar extends MigPanel {
         });
         bt.setBorderPainted(false);
         add(bt, "width 20!,height 20!");
-        setDomainInfo(accountCollection.getDomainInfo());
-        setEnabled(accountCollection.isEnabled());
+
+        bt.setIcon(serviceCollection.getIcon());
+        this.setVisible(true);
+        setEnabled(serviceCollection.isEnabled());
     }
 
     public void setEnabled(boolean enabled) {
         super.setEnabled(enabled);
         bt.setEnabled(enabled);
-    }
-
-    /**
-     * @param domainInfo
-     *            the domainInfo to set
-     */
-    public void setDomainInfo(DomainInfo domainInfo) {
-        this.domainInfo = domainInfo;
-        bt.setIcon(domainInfo.getFavIcon());
-        this.setVisible(true);
-
-    }
-
-    /**
-     * @return the domainInfo
-     */
-    public DomainInfo getDomainInfo() {
-        return domainInfo;
     }
 
 }

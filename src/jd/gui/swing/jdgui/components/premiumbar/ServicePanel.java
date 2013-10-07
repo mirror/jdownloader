@@ -20,7 +20,6 @@ import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -52,22 +51,76 @@ import org.jdownloader.plugins.controller.host.HostPluginController;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
 
-public class PremiumStatus extends JPanel implements MouseListener {
+public class ServicePanel extends JPanel implements MouseListener {
 
-    private static final long    serialVersionUID = 7290466989514173719L;
+    private static final long               serialVersionUID = 7290466989514173719L;
 
-    private DelayedRunnable      redrawTimer;
-    private static PremiumStatus INSTANCE         = new PremiumStatus();
+    private DelayedRunnable                 redrawTimer;
 
-    public static PremiumStatus getInstance() {
+    private ArrayList<ServicePanelExtender> extender;
+    private static ServicePanel             INSTANCE         = new ServicePanel();
+
+    public static ServicePanel getInstance() {
         return INSTANCE;
     }
 
-    private PremiumStatus() {
+    public void addExtender(ServicePanelExtender ex) {
+        synchronized (extender) {
+            extender.remove(ex);
+            extender.add(ex);
+
+        }
+        redrawTimer.delayedrun();
+    }
+
+    public void requestUpdate(boolean immediately) {
+        if (immediately) {
+            redrawTimer.delayedrun();
+        } else {
+            redraw();
+        }
+    }
+
+    public void removeExtender(ServicePanelExtender ex) {
+        synchronized (extender) {
+            extender.remove(ex);
+        }
+        redrawTimer.delayedrun();
+    }
+
+    private ServicePanel() {
         super(new MigLayout("ins 0 2 0", "0[]0[]0[]0[]0", "0[]0"));
 
+        extender = new ArrayList<ServicePanelExtender>();
         this.setOpaque(false);
+        ScheduledExecutorService scheduler = DelayedRunnable.getNewScheduledExecutorService();
+        scheduler.scheduleWithFixedDelay(new Runnable() {
 
+            public void run() {
+                /*
+                 * this scheduleritem checks all enabled accounts every 5 mins
+                 */
+                try {
+                    refreshAccountStats();
+                } catch (Throwable e) {
+                    Log.exception(e);
+                }
+            }
+
+        }, 1, 5, TimeUnit.MINUTES);
+        redrawTimer = new DelayedRunnable(scheduler, 1000, 5000) {
+
+            @Override
+            public String getID() {
+                return "PremiumStatusRedraw";
+            }
+
+            @Override
+            public void delayedrun() {
+                redraw();
+            }
+
+        };
         redraw();
         CFG_GUI.PREMIUM_STATUS_BAR_DISPLAY.getEventSender().addListener(new GenericConfigEventListener<Enum>() {
 
@@ -96,34 +149,7 @@ public class PremiumStatus extends JPanel implements MouseListener {
 
                     @Override
                     public void run() {
-                        ScheduledExecutorService scheduler = DelayedRunnable.getNewScheduledExecutorService();
-                        scheduler.scheduleWithFixedDelay(new Runnable() {
 
-                            public void run() {
-                                /*
-                                 * this scheduleritem checks all enabled accounts every 5 mins
-                                 */
-                                try {
-                                    refreshAccountStats();
-                                } catch (Throwable e) {
-                                    Log.exception(e);
-                                }
-                            }
-
-                        }, 1, 5, TimeUnit.MINUTES);
-                        redrawTimer = new DelayedRunnable(scheduler, 1000, 5000) {
-
-                            @Override
-                            public String getID() {
-                                return "PremiumStatusRedraw";
-                            }
-
-                            @Override
-                            public void delayedrun() {
-                                redraw();
-                            }
-
-                        };
                         redrawTimer.run();
                         AccountController.getInstance().getBroadcaster().addListener(new AccountControllerListener() {
 
@@ -165,28 +191,10 @@ public class PremiumStatus extends JPanel implements MouseListener {
 
     void redraw() {
         List<Account> accs = AccountController.getInstance().list();
-        Collections.sort(accs, new Comparator<Account>() {
-
-            @Override
-            public int compare(Account o1, Account o2) {
-                int ret = new Boolean(o2.isEnabled()).compareTo(new Boolean(o1.isEnabled()));
-                if (ret == 0) {
-                    if (o2.isEnabled()) {
-                        // sort on name
-                        ret = o1.getHoster().compareTo(o2.getHoster());
-                    } else {
-
-                        // last enabled one should be the first
-                        ret = new Long(o2.getLastValidTimestamp()).compareTo(o1.getLastValidTimestamp());
-                    }
-                }
-                return ret;
-            }
-        });
 
         // final HashSet<DomainInfo> enabled = new HashSet<DomainInfo>();
-        final HashMap<DomainInfo, AccountCollection> map = new HashMap<DomainInfo, AccountCollection>();
-        final LinkedList<AccountCollection> domains = new LinkedList<AccountCollection>();
+        final HashMap<String, AccountServiceCollection> map = new HashMap<String, AccountServiceCollection>();
+        final LinkedList<ServiceCollection<?>> services = new LinkedList<ServiceCollection<?>>();
         HashMap<String, LazyHostPlugin> plugins = new HashMap<String, LazyHostPlugin>();
         for (Account acc : accs) {
             AccountInfo ai = acc.getAccountInfo();
@@ -198,19 +206,19 @@ public class PremiumStatus extends JPanel implements MouseListener {
                 domainInfo = plugin.getDomainInfo(null);
                 domainInfo.getFavIcon();
 
-                AccountCollection ac;
+                AccountServiceCollection ac;
                 switch (CFG_GUI.CFG.getPremiumStatusBarDisplay()) {
                 case DONT_GROUP:
-                    ac = new AccountCollection(domainInfo);
+                    ac = new AccountServiceCollection(domainInfo);
                     ac.add(acc);
-                    domains.add(ac);
+                    services.add(ac);
                     break;
                 case GROUP_BY_ACCOUNT_TYPE:
-                    ac = map.get(domainInfo);
+                    ac = map.get(domainInfo.getTld());
                     if (ac == null) {
-                        ac = new AccountCollection(domainInfo);
-                        map.put(domainInfo, ac);
-                        domains.add(ac);
+                        ac = new AccountServiceCollection(domainInfo);
+                        map.put(domainInfo.getTld(), ac);
+                        services.add(ac);
                     }
                     ac.add(acc);
                     break;
@@ -228,11 +236,11 @@ public class PremiumStatus extends JPanel implements MouseListener {
                     }
                     if (Property.NULL == supported || supported == null) {
                         // dedicated account
-                        ac = map.get(domainInfo);
+                        ac = map.get(domainInfo.getTld());
                         if (ac == null) {
-                            ac = new AccountCollection(domainInfo);
-                            map.put(domainInfo, ac);
-                            domains.add(ac);
+                            ac = new AccountServiceCollection(domainInfo);
+                            map.put(domainInfo.getTld(), ac);
+                            services.add(ac);
                         }
                         ac.add(acc);
                     } else {
@@ -257,11 +265,11 @@ public class PremiumStatus extends JPanel implements MouseListener {
                                         continue;
                                     }
 
-                                    ac = map.get(DomainInfo.getInstance(sup));
+                                    ac = map.get(sup);
                                     if (ac == null) {
-                                        ac = new AccountCollection(DomainInfo.getInstance(sup));
-                                        map.put(DomainInfo.getInstance(sup), ac);
-                                        domains.add(ac);
+                                        ac = new AccountServiceCollection(DomainInfo.getInstance(sup));
+                                        map.put(sup, ac);
+                                        services.add(ac);
                                     }
                                     ac.add(acc);
                                 }
@@ -277,6 +285,14 @@ public class PremiumStatus extends JPanel implements MouseListener {
             /* prefetch outside EDT */
 
         }
+        synchronized (extender) {
+            for (ServicePanelExtender bla : extender) {
+                bla.extendServicePabel(services);
+            }
+
+        }
+
+        Collections.sort(services);
 
         accs = null;
         new EDTHelper<Object>() {
@@ -285,7 +301,7 @@ public class PremiumStatus extends JPanel implements MouseListener {
                 try {
                     removeAll();
 
-                    int max = domains.size();
+                    int max = services.size();
                     // Math.min(, JsonConfig.create(GeneralSettings.class).getMaxPremiumIcons());
                     StringBuilder sb = new StringBuilder();
                     sb.append("2");
@@ -294,10 +310,8 @@ public class PremiumStatus extends JPanel implements MouseListener {
                     }
                     setLayout(new MigLayout("ins 0 2 0 0", sb.toString(), "[22!]"));
                     for (int i = 0; i < max; i++) {
-                        AccountCollection di;
-                        TinyProgressBar bar = new TinyProgressBar(PremiumStatus.this, di = domains.removeFirst());
-                        add(bar, "gapleft 0,gapright 0");
-                        bar.setEnabled(bar.isEnabled() && org.jdownloader.settings.staticreferences.CFG_GENERAL.USE_AVAILABLE_ACCOUNTS.getValue());
+
+                        add(services.removeFirst().createIconComponent(ServicePanel.this), "gapleft 0,gapright 0");
 
                     }
                     revalidate();

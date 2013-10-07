@@ -6,7 +6,7 @@ import org.appwork.storage.config.handler.BooleanKeyHandler;
 import org.appwork.storage.config.handler.IntegerKeyHandler;
 import org.appwork.storage.config.handler.StorageHandler;
 import org.appwork.storage.config.handler.StringKeyHandler;
-import org.jdownloader.captcha.v2.solver.Captcha9kwSettings;
+import org.jdownloader.captcha.v2.solver.solver9kw.Captcha9kwSettings;
 
 public class CFG_9KWCAPTCHA {
     public static void main(String[] args) {

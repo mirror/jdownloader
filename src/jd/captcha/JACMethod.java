@@ -26,7 +26,7 @@ import jd.utils.JDUtilities;
 
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.os.CrossSystem;
-import org.jdownloader.captcha.v2.solver.Captcha9kwSettings;
+import org.jdownloader.captcha.v2.solver.solver9kw.Captcha9kwSettings;
 import org.jdownloader.logging.LogController;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;

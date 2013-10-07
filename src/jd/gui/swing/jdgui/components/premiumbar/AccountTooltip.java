@@ -42,7 +42,7 @@ public class AccountTooltip extends PanelToolTip {
     private Color                 color;
     private AccountListTable      table;
     private AccountListTableModel model;
-    private PremiumStatus         owner;
+    private ServicePanel         owner;
 
     public Point getDesiredLocation(JComponent activeComponent, Point ttPosition) {
         ttPosition.y = activeComponent.getLocationOnScreen().y - getPreferredSize().height;
@@ -51,7 +51,7 @@ public class AccountTooltip extends PanelToolTip {
         return AbstractLocator.correct(ttPosition, getPreferredSize());
     }
 
-    public AccountTooltip(PremiumStatus owner, AccountCollection accountCollection) {
+    public AccountTooltip(ServicePanel owner, AccountServiceCollection accountCollection) {
 
         super(new TooltipPanel("ins 0,wrap 1", "[grow,fill]", "[][grow,fill]"));
         this.owner = owner;
@@ -138,7 +138,7 @@ public class AccountTooltip extends PanelToolTip {
         // panel.setPreferredSize(new Dimension(panel.getPreferredSize().width, 400));
     }
 
-    private List<DomainInfo> getDomainInfos(AccountCollection accountCollection) {
+    private List<DomainInfo> getDomainInfos(AccountServiceCollection accountCollection) {
         ArrayList<DomainInfo> ret = new ArrayList<DomainInfo>();
         HashSet<DomainInfo> domains = new HashSet<DomainInfo>();
         HashSet<String> plugins = new HashSet<String>();
