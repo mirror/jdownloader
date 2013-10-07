@@ -33,7 +33,7 @@ public class RevisionThreeCom extends PluginForDecrypt {
         super(wrapper);
     }
 
-    private static final String INVALIDLINKS  = "http://(www\\.)?revision3\\.com/(blog|api|content|category|search|shows|login|forum|episodes|host|network)/.*?";
+    private static final String INVALIDLINKS  = "http://(www\\.)?revision3\\.com/(blog|api|content|category|search|shows|login|forum|episodes|host|network|hub)/.*?";
     private static final String INVALIDLINKS2 = "http://(www\\.)?revision3\\.com/[a-z0-9]+/(feed|about|subscribe).*?";
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {

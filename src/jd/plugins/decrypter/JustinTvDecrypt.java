@@ -36,7 +36,7 @@ import jd.utils.JDUtilities;
 
 import org.appwork.utils.logging2.LogSource;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "justin.tv" }, urls = { "http://(((www\\.)?(justin\\.tv)|(www\\.|[a-z]{2}\\.)?(twitchtv\\.com|twitch\\.tv))/[^<>/\"]+/((b|c)/\\d+|videos(\\?page=\\d+)?)|(www\\.)?(justin|twitch)\\.tv/archive/archive_popout\\?id=\\d+)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "justin.tv" }, urls = { "http://(((www\\.)?(justin\\.tv)|(www\\.|[a-z]{2}\\.)?(twitchtv\\.com|twitch\\.tv))/(?!directory)[^<>/\"]+/((b|c)/\\d+|videos(\\?page=\\d+)?)|(www\\.)?(justin|twitch)\\.tv/archive/archive_popout\\?id=\\d+)" }, flags = { 0 })
 public class JustinTvDecrypt extends PluginForDecrypt {
 
     public JustinTvDecrypt(PluginWrapper wrapper) {

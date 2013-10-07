@@ -62,7 +62,7 @@ public class BreakCom extends PluginForHost {
         String token = br.getRegex("\"AuthToken\": \"([^<>\"]*?)\"").getMatch(0);
         dlink = br.getRegex("\"videoUri\": \"(http://[^<>\"]*?)\"").getMatch(0);
         if (filename == null || dlink == null || token == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        dlink += "?" + token;
+        dlink = dlink.replace(".wmv", ".flv") + "?" + token;
         filename = filename.trim();
         link.setFinalFileName(filename + ".flv");
         br.setFollowRedirects(true);

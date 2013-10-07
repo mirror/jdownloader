@@ -25,11 +25,8 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision: 15419 $", interfaceVersion = 2, names = { "imgur.com" }, urls = { "https?://imgurdecrypted\\.com/download/[A-Za-z0-9]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "imgur.com" }, urls = { "https?://imgurdecrypted\\.com/download/[A-Za-z0-9]+" }, flags = { 0 })
 public class ImgUrCom extends PluginForHost {
-
-    // DEV NOTES
-    // other: they do have an API http://api.imgur.com/.
 
     public ImgUrCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -67,6 +64,7 @@ public class ImgUrCom extends PluginForHost {
             }
         } else {
             br.getPage("http://api.imgur.com/2/image/" + link.getStringProperty("imgUID", null));
+            if (br.getRequest().getHttpConnection().getResponseCode() == 404) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             if (br.containsHTML("<message>Image not found</message>")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             final String filesize = br.getRegex("<size>(\\d+)</size>").getMatch(0);
             final String filename = br.getRegex("<original>https?://i\\.imgur\\.com/([^<>\"]*?)</original>").getMatch(0);

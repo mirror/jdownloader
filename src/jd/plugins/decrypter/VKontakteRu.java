@@ -120,32 +120,18 @@ public class VKontakteRu extends PluginForDecrypt {
         }
         /** Check/fix links before browser access END */
         synchronized (LOCK) {
+            boolean loggedIN = getUserLogin(false);
             try {
                 if (!loginrequired) {
-                    br.getPage(parameter);
+                    getPageSafe(parameter);
                 } else {
                     /** Login process */
-                    if (!getUserLogin(false)) {
+                    if (!loggedIN) {
                         logger.info("Existing account is invalid or no account available, cannot decrypt link: " + parameter);
                         return decryptedLinks;
                     }
                     br.setFollowRedirects(true);
-                    br.getPage(parameter);
-                    /**
-                     * Retry if login failed Those are 2 different errormessages but refreshing the cookies works fine for both
-                     * */
-                    String cookie = br.getCookie("http://vk.com", "remixsid");
-                    if (br.containsHTML(">Security Check<") || "deleted".equals(cookie) || cookie == null || cookie.equals("")) {
-                        this.getPluginConfig().setProperty("logincounter", "-1");
-                        this.getPluginConfig().save();
-                        br.clearCookies(DOMAIN);
-                        br.clearCookies("login.vk.com");
-                        if (!getUserLogin(true)) {
-                            logger.info("Logindata invalid/refreshing cookies failed, stopping...");
-                            return null;
-                        }
-                        logger.info("Cookies refreshed successfully, continuing to decrypt...");
-                    }
+                    getPageSafe(parameter);
                     /** Login process end */
                 }
 
@@ -1117,17 +1103,24 @@ public class VKontakteRu extends PluginForDecrypt {
     // Handle all kinds of stuff that disturbs the downloadflow
     private void getPageSafe(final String parameter) throws Exception {
         // If our current url is already the one we want to access here, don't access it!
-        if (!br.getURL().equals(parameter)) {
-            if (br.getURL().contains("login.php?act=security_check")) {
-                br.getPage(parameter);
-                final boolean hasPassed = handleSecurityCheck(parameter);
-                if (!hasPassed) {
-                    logger.warning("Security check failed for link: " + parameter);
-                    throw new DecrypterException(EXCEPTION_ACCPROBLEM);
+        for (int i = 1; i <= 3; i++) {
+            if (br.getURL() == null || !br.getURL().equals(parameter) || br.getRedirectLocation() != null) {
+                if (br.getURL() != null && br.getURL().contains("login.php?act=security_check")) {
+                    br.getPage(parameter);
+                    final boolean hasPassed = handleSecurityCheck(parameter);
+                    if (!hasPassed) {
+                        logger.warning("Security check failed for link: " + parameter);
+                        throw new DecrypterException(EXCEPTION_ACCPROBLEM);
+                    }
+                    br.getPage(parameter);
+                } else if (br.getRedirectLocation() != null && br.getRedirectLocation().contains("login.vk.com/?role=fast")) {
+                    if (!getUserLogin(true)) throw new DecrypterException(EXCEPTION_ACCPROBLEM);
+                    br.getPage(parameter);
+                } else {
+                    br.getPage(parameter);
                 }
-                br.getPage(parameter);
             } else {
-                br.getPage(parameter);
+                break;
             }
         }
     }
