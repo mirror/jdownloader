@@ -57,7 +57,7 @@ public class YourUploadCom extends PluginForHost {
         correctDownloadLink(link);
         br.getPage(link.getDownloadURL());
         if (link.getDownloadURL().matches(".+(/embed_ext/|embed\\.yourupload\\.com/).+")) {
-            if (br.containsHTML("<h1>Error</h1>")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            if (br.containsHTML("<h1>Error</h1>") || br.containsHTML("Embed\\+entry\\+doesnt\\+exist")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             String filename = br.getRegex("<title>(.*?)</title>").getMatch(0);
             if (filename == null) filename = br.getRegex("<meta name=\"description\" content=\"(.*?)\" />").getMatch(0);
             dllink = br.getRegex("'file':\\s+'(https?://.*?)'").getMatch(0);
@@ -86,7 +86,7 @@ public class YourUploadCom extends PluginForHost {
                 }
             }
         }
-        if (br.containsHTML("(>System Error<|>could not find file|>File not found<)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML(">System Error<|>could not find file|>File not found<|Array doesn\\'t have key named|File not found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex(">Name</b>[\r\n\t ]+</td>[\r\n\t ]+<td>([^<>\"]+)</td>").getMatch(0);
         final String filesize = br.getRegex(">Size</b>[\r\n\t ]+</td>[\r\n\t ]+<td>([^<>\"]+)</td>").getMatch(0);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

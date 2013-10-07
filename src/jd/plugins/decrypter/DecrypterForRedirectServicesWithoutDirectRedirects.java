@@ -503,6 +503,10 @@ public class DecrypterForRedirectServicesWithoutDirectRedirects extends PluginFo
             if (nextUrl == null) return null;
             nextUrl = !nextUrl.startsWith("http") ? "http://www.icefilms.info" + nextUrl : nextUrl;
             br.getPage(nextUrl);
+            if (br.containsHTML(">no sources<")) {
+                logger.info("Link offline: " + parameter);
+                return decryptedLinks;
+            }
             final String id = br.getRegex("onclick=\'go\\((\\d+)").getMatch(0);
             final String sec = br.getRegex("f\\.lastChild\\.value=\"(\\w+)\"").getMatch(0);
             final String t = br.getRegex("&t=(\\d+)\"").getMatch(0);

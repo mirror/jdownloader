@@ -17,7 +17,6 @@
 package jd.plugins.hoster;
 
 import java.util.HashMap;
-import java.util.Locale;
 import java.util.Map;
 
 import jd.PluginWrapper;
@@ -27,7 +26,6 @@ import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
@@ -37,56 +35,48 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "newgamex.com" }, urls = { "http://(www\\.)?download\\.newgamex\\.com/.+" }, flags = { 2 })
+public class NewGamexCom extends PluginForHost {
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "zbigz.com" }, urls = { "http://(www\\.)?zbigz\\.com/file/[a-z0-9]+/\\d+" }, flags = { 2 })
-public class ZbigzCom extends PluginForHost {
-
-    public ZbigzCom(PluginWrapper wrapper) {
+    public NewGamexCom(PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium("http://zbigz.com/page-premium-overview");
+        this.enablePremium("http://www.newgamex.com/");
     }
 
     @Override
     public String getAGBLink() {
-        return "http://zbigz.com/page-therms-of-use";
+        return "http://www.newgamex.com/";
     }
 
-    private String              DLLINK   = null;
-    private static final String NOCHUNKS = "NOCHUNKS";
+    private String DLLINK = null;
 
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         this.setBrowserExclusive();
-        br.setFollowRedirects(false);
         final Account aa = AccountController.getInstance().getValidAccount(this);
         if (aa != null) {
             login(aa, false);
-            br.getPage(downloadLink.getDownloadURL());
-            if (br.containsHTML("Page not found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            DLLINK = br.getRedirectLocation();
-            if (DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-
+            br.getPage(link.getDownloadURL());
+            DLLINK = br.getRegex("http\\-equiv=\"refresh\" content=\"5;URL=\\'(http://[^<>\"]*?)\\'\"").getMatch(0);
+            if (DLLINK == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             URLConnectionAdapter con = null;
             try {
                 con = br.openGetConnection(DLLINK);
                 if (!con.getContentType().contains("html")) {
-                    downloadLink.setFinalFileName(Encoding.htmlDecode(getFileNameFromHeader(con)).trim());
-                    downloadLink.setDownloadSize(con.getLongContentLength());
+                    link.setDownloadSize(con.getLongContentLength());
+                    link.setFinalFileName(Encoding.htmlDecode(getFileNameFromHeader(con)));
                 } else {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
+                return AvailableStatus.TRUE;
             } finally {
                 try {
                     con.disconnect();
                 } catch (Throwable e) {
                 }
             }
-
-            return AvailableStatus.TRUE;
         } else {
-            downloadLink.getLinkStatus().setStatusText("Status can only be checked with account enabled");
+            link.getLinkStatus().setStatusText("Status can only be checked on downloadstart");
             return AvailableStatus.UNCHECKABLE;
         }
     }
@@ -102,7 +92,7 @@ public class ZbigzCom extends PluginForHost {
         throw new PluginException(LinkStatus.ERROR_FATAL, "This file can only be downloaded by registered/premium users");
     }
 
-    private static final String MAINPAGE = "http://zbigz.com";
+    private static final String MAINPAGE = "http://newgamex.com";
     private static Object       LOCK     = new Object();
 
     @SuppressWarnings("unchecked")
@@ -126,9 +116,9 @@ public class ZbigzCom extends PluginForHost {
                     }
                 }
                 br.setFollowRedirects(false);
-                br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-                br.postPage("http://zbigz.com/login.php", "e-mail=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
-                if (!br.containsHTML("loginIn \\(true,\\[true,")) {
+                br.getHeaders().put("Accept-Language", "de,en-us;q=0.7,en;q=0.3");
+                br.postPage("http://download.newgamex.com/index.php", "form=giris&kullanici=" + Encoding.urlEncode(account.getUser()) + "&sifre=" + Encoding.urlEncode(account.getPass()));
+                if (!br.containsHTML("name=\"currency_code\" value=\"USD\"")) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     } else {
@@ -161,44 +151,22 @@ public class ZbigzCom extends PluginForHost {
             throw e;
         }
         ai.setUnlimitedTraffic();
-        final Regex info = br.getRegex("loginIn \\(true,\\[true,\\'([^<>\"]*?)\\',\\'([^<>\"]*?)\\'");
-        if (info.getMatches().length != 1) {
-            account.setValid(false);
-            return ai;
-        }
-        final String expire = info.getMatch(0);
-        ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "dd MMM yyyy", Locale.ENGLISH));
-        final String traffic = info.getMatch(1);
-        ai.setTrafficLeft(SizeFormatter.getSize(traffic));
-        account.setValid(true);
         ai.setStatus("Premium User");
         return ai;
     }
 
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
+        // Login happens in here
         requestFileInformation(link);
-        int chunks = -5;
-        if (link.getBooleanProperty(ZbigzCom.NOCHUNKS, false)) {
-            chunks = 1;
-        }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, DLLINK, true, chunks);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, DLLINK, false, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             logger.warning("The final dllink seems not to be a file!");
             br.followConnection();
+            if (br.containsHTML("File not found\\!")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        if (!this.dl.startDownload()) {
-            try {
-                if (dl.externalDownloadStop()) return;
-            } catch (final Throwable e) {
-            }
-            /* unknown error, we disable multiple chunks */
-            if (link.getBooleanProperty(ZbigzCom.NOCHUNKS, false) == false) {
-                link.setProperty(ZbigzCom.NOCHUNKS, Boolean.valueOf(true));
-                throw new PluginException(LinkStatus.ERROR_RETRY);
-            }
-        }
+        dl.startDownload();
     }
 
     @Override

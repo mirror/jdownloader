@@ -55,18 +55,6 @@ public class VideoWeedCom extends PluginForHost {
     }
 
     @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception {
-        requestFileInformation(downloadLink);
-        if (br.containsHTML("error_msg=The video is being transfered")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Not downloadable at the moment, try again later...", 60 * 60 * 1000l);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        dl.startDownload();
-    }
-
-    @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setConnectTimeout(180 * 1000);
@@ -86,9 +74,8 @@ public class VideoWeedCom extends PluginForHost {
             }
         }
         String key = br.getRegex("flashvars\\.filekey=\"(.*?)\"").getMatch(0);
-        if (key == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (key == null || filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         br.getPage("http://www.videoweed.es/api/player.api.php?user=undefined&codes=1&file=" + new Regex(downloadLink.getDownloadURL(), "videoweed\\.es/file/(.+)").getMatch(0) + "&pass=undefined&key=" + Encoding.urlEncode(key));
-        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         filename = filename.trim();
         final String ext = ".flv";
         if (filename.contains(".")) {
@@ -99,6 +86,10 @@ public class VideoWeedCom extends PluginForHost {
         }
         downloadLink.setFinalFileName(filename);
         if (br.containsHTML("error_msg=The video is being transfered")) {
+            downloadLink.getLinkStatus().setStatusText("Not downloadable at the moment, try again later...");
+            return AvailableStatus.TRUE;
+        }
+        if (br.containsHTML("error_msg=The video has failed to convert")) {
             downloadLink.getLinkStatus().setStatusText("Not downloadable at the moment, try again later...");
             return AvailableStatus.TRUE;
         }
@@ -121,6 +112,19 @@ public class VideoWeedCom extends PluginForHost {
             } catch (Throwable e) {
             }
         }
+    }
+
+    @Override
+    public void handleFree(final DownloadLink downloadLink) throws Exception {
+        requestFileInformation(downloadLink);
+        if (br.containsHTML("error_msg=The video is being transfered")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Not downloadable at the moment, try again later...", 60 * 60 * 1000l);
+        if (br.containsHTML("error_msg=The video has failed to convert")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Not downloadable at the moment, try again later...", 60 * 60 * 1000l);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
+        if (dl.getConnection().getContentType().contains("html")) {
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dl.startDownload();
     }
 
     @Override

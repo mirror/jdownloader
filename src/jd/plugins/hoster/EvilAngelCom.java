@@ -112,7 +112,7 @@ public class EvilAngelCom extends PluginForHost {
             }
 
         } else {
-            link.getLinkStatus().setStatusText("Links can only be chacked and downloaded via account!");
+            link.getLinkStatus().setStatusText("Links can only be checked and downloaded via account!");
             return AvailableStatus.UNCHECKABLE;
         }
     }

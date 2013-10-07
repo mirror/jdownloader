@@ -84,7 +84,7 @@ public class ByteBxCom extends PluginForHost {
 
             return AvailableStatus.TRUE;
         } else {
-            downloadLink.getLinkStatus().setStatusText("Status can only be chacked with account enabled");
+            downloadLink.getLinkStatus().setStatusText("Status can only be checked with account enabled");
             return AvailableStatus.UNCHECKABLE;
         }
     }

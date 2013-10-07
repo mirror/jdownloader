@@ -59,6 +59,7 @@ public class VideoFunMe extends PluginForHost {
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws Exception {
         this.setBrowserExclusive();
         br.getPage(downloadLink.getDownloadURL());
+        if (br.containsHTML(">Error 404")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         dllink = br.getRegex("url: \"(http[^\"]+videofun\\.me%2Fvideos[^\"]+)").getMatch(0);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dllink = Encoding.urlDecode(dllink, false);
