@@ -41,6 +41,7 @@ import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
+// http://tvthek,orf.at/live/... --> HDS
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "orfmediathek.at" }, urls = { "http://(www\\.)?tvthek\\.orf\\.at/programs/[\\w\\-]+" }, flags = { 0 })
 public class ORFMediathekDecrypter extends PluginForDecrypt {
 
@@ -64,7 +65,7 @@ public class ORFMediathekDecrypter extends PluginForDecrypt {
         br.getPage(parameter);
         // Check...if offline, add to llinkgrabber so user can see it
         if (br.containsHTML("Keine aktuellen Sendungen vorhanden")) {
-            final DownloadLink link = createDownloadlink(parameter.replace("http://", "decrypted://") + "&quality=high");
+            final DownloadLink link = createDownloadlink(parameter.replace("http://", "decrypted://") + "&quality=default&hash=default");
             link.setAvailable(false);
             link.setProperty("offline", true);
             link.setName(new Regex(parameter, "tvthek\\.orf\\.at/programs/(.+)").getMatch(0));
@@ -124,7 +125,9 @@ public class ORFMediathekDecrypter extends PluginForDecrypt {
                         if ("VideoUrl".equalsIgnoreCase(key)) key = quality;
                         MediaEntry.put(key, g.getTextContent());
                     }
-                    MediaEntrys.put(MediaEntry.get("Title"), MediaEntry);
+                    String title = MediaEntry.get("Title");
+                    if (isEmpty(title)) continue;
+                    MediaEntrys.put(title, MediaEntry);
                 }
 
                 String fpName = getTitle(br);
@@ -139,13 +142,14 @@ public class ORFMediathekDecrypter extends PluginForDecrypt {
                 for (Entry<String, HashMap<String, String>> next : MediaEntrys.entrySet()) {
                     MediaEntry = new HashMap<String, String>(next.getValue());
                     String fileName = next.getKey();
+                    fileName = fileName.replaceAll("\"", "");
+                    fileName = fileName.replaceAll(":\\s|\\s\\|\\s", " - ").trim();
 
                     for (Entry<String, String> stream : MediaEntry.entrySet()) {
                         String url = stream.getValue();
                         String fmt = stream.getKey();
-                        if (!isEmpty(fmt)) fmt = fmt.toUpperCase(Locale.ENGLISH).trim();
                         if (!isEmpty(fmt)) {
-                            fmt = humanReadableQualityIdentifier(fmt);
+                            fmt = humanReadableQualityIdentifier(fmt.toUpperCase(Locale.ENGLISH).trim());
                             /* best selection is done at the end */
                             if ("LOW".equals(fmt)) {
                                 if ((cfg.getBooleanProperty(Q_LOW, true) || BEST) == false) {
@@ -166,14 +170,16 @@ public class ORFMediathekDecrypter extends PluginForDecrypt {
                                     fmt = "HIGH";
                                 }
                             } else {
-                                if (unknownQuality(fmt)) {
-                                    logger.info("ORFMediathek Decrypter: unknown quality --> " + fmt);
+                                if (unknownQualityIdentifier(fmt)) {
+                                    logger.info("ORFMediathek Decrypter: unknown quality identifier --> " + fmt);
                                     logger.info("Link: " + data);
                                 }
                                 continue;
                             }
                         }
                         lastQualityFMT = fmt;
+                        String ext = url.substring(url.lastIndexOf("."));
+                        if (ext.length() == 4) extension = ext;
                         final String name = fileName + "@" + fmt + extension;
                         final DownloadLink link = createDownloadlink(data.replace("http://", "decrypted://") + "&quality=" + fmt + "&hash=" + JDHash.getMD5(name));
                         link.setAvailable(true);
@@ -266,7 +272,7 @@ public class ORFMediathekDecrypter extends PluginForDecrypt {
         return s;
     }
 
-    private boolean unknownQuality(String s) {
+    private boolean unknownQualityIdentifier(String s) {
         if (s.matches("(DESCRIPTION|SMIL|SUBTITLEURL|DURATION|TRANSCRIPTURL|TITLE)")) return false;
         return true;
     }
