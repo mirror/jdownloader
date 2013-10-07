@@ -6,6 +6,8 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 
+import jd.controlling.downloadcontroller.DownloadWatchDog;
+
 import org.appwork.utils.Application;
 import org.appwork.utils.IO;
 import org.appwork.utils.logging2.LogSource;
@@ -55,7 +57,7 @@ public class FileCreationManager {
         }
 
         for (int i = backlog.size() - 1; i >= 0; i--) {
-            if (backlog.get(i).mkdir()) {
+            if (mkdirInternal(backlog.get(i))) {
                 getEventSender().fireEvent(new FileCreationEvent(this, FileCreationEvent.Type.NEW_FOLDER, backlog.get(i)));
             } else {
                 return false;
@@ -63,6 +65,11 @@ public class FileCreationManager {
         }
 
         return true;
+    }
+
+    private boolean mkdirInternal(File file) {
+        if (DownloadWatchDog.getInstance().validateDestination(file) != null) return false;
+        return file.mkdir();
     }
 
     public boolean delete(File file) {

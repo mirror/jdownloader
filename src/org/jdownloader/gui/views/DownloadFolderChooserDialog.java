@@ -15,22 +15,18 @@ import net.miginfocom.swing.MigLayout;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.swing.MigPanel;
 import org.appwork.swing.components.ExtTextField;
-import org.appwork.uio.UIOManager;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
-import org.appwork.utils.swing.dialog.DialogNoAnswerException;
 import org.appwork.utils.swing.dialog.ExtFileChooserDialog;
 import org.appwork.utils.swing.dialog.FileChooserSelectionMode;
 import org.appwork.utils.swing.dialog.dimensor.RememberLastDialogDimension;
 import org.jdownloader.actions.AppAction;
-import org.jdownloader.controlling.FileCreationManager;
 import org.jdownloader.controlling.packagizer.PackagizerController;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.linkgrabber.addlinksdialog.DownloadPath;
-import org.jdownloader.logging.LogController;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings;
 
 public class DownloadFolderChooserDialog extends ExtFileChooserDialog {
@@ -197,22 +193,6 @@ public class DownloadFolderChooserDialog extends ExtFileChooserDialog {
         if (dest[0] == null) return null;
         DownloadPath.saveList(dest[0].getAbsolutePath());
         return dest[0];
-    }
-
-    public static boolean handleNonExistingFolders(File file) {
-        try {
-            if (file.exists()) return true;
-            Dialog.getInstance().showConfirmDialog(0, _GUI._.DownloadFolderChooserDialog_handleNonExistingFolders_title_(), _GUI._.DownloadFolderChooserDialog_handleNonExistingFolders_msg_(file.getAbsolutePath()));
-            if (!FileCreationManager.getInstance().mkdir(file)) {
-                UIOManager.I().showErrorMessage(_GUI._.DownloadFolderChooserDialog_handleNonExistingFolders_couldnotcreatefolder(file.getAbsolutePath()));
-                return false;
-            } else {
-                return true;
-            }
-        } catch (DialogNoAnswerException e) {
-            LogController.GL.log(e);
-            return false;
-        }
     }
 
     private void setPackageSubFolderSelectionVisible(boolean packager) {
