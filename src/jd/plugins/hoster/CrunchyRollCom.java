@@ -487,7 +487,11 @@ public class CrunchyRollCom extends PluginForHost {
             if (plugin == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Cannot decrypt video link"); }
 
             // Set the RTMP details (exception on error)
-            ((jd.plugins.decrypter.CrhyRllCom) plugin).setRTMP(downloadLink, this.br);
+            try {
+                ((jd.plugins.decrypter.CrhyRllCom) plugin).setRTMP(downloadLink, this.br);
+            } catch (final PluginException e) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
         } else if (downloadLink.getDownloadURL().contains(CrunchyRollCom.RCP_API_SUBTITLE)) {
             // Validate the URL and set filename
             final String subId = new Regex(downloadLink.getDownloadURL(), "subtitle_script_id=([0-9]+)").getMatch(0);

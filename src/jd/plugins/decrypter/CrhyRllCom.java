@@ -199,6 +199,7 @@ public class CrhyRllCom extends PluginForDecrypt {
                 final String subUrl = Encoding.htmlDecode(subtitle[1]);
                 final String subTitle = subtitle[2];
                 String subName = new Regex(subTitle, "\\[[0-9\\s]+\\]\\s*(.+)").getMatch(0);
+                if (subName == null) subName = subTitle;
 
                 subName = subName.replace(' ', SEPARATOR).toLowerCase();
                 subName = subName.replaceAll("[\\[\\]\\(\\)]+", "");
@@ -320,7 +321,7 @@ public class CrhyRllCom extends PluginForDecrypt {
         androidBr.getPage(downloadLink.getDownloadURL());
 
         // Check if we can actually get the video
-        if (androidBr.containsHTML("Video not found")) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Permission denied!"); }
+        if (androidBr.containsHTML("Video not found")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "Permission denied!"); }
         if (androidBr.containsHTML("Media not found")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "File does not exist!"); }
         if (!androidBr.containsHTML("\"exception_error_code\":null")) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unknown XML error!"); }
 
