@@ -403,6 +403,7 @@ public class TranslatorExtension extends AbstractExtension<TranslatorConfig, Tra
             }
             load(tmp, locale, TrayiconTranslation.class);
             load(tmp, locale, JdownloaderTranslation.class);
+            load(tmp, locale, LanguageFileSetup.class);
             load(tmp, locale, LiveheaderTranslation.class);
             load(tmp, locale, UpdaterTranslation.class);
             load(tmp, locale, UpnpTranslation.class);
