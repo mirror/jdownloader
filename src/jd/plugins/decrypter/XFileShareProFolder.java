@@ -110,7 +110,7 @@ public class XFileShareProFolder extends PluginForDecrypt {
 
     private boolean parseNextPage(HashSet<String> dupe, ArrayList<DownloadLink> ret) throws IOException, PluginException {
         // not sure if this is the same for normal folders, but the following picks up users/username/*
-        String nextPage = br.getRegex("<div class=\"paging\">[^\r\n]+<a href='(\\?&amp;page=\\d+)'>Next").getMatch(0);
+        String nextPage = br.getRegex("<div class=\"paging\">[^\r\n]+<a href='([^']+&amp;page=\\d+)'>Next").getMatch(0);
         if (nextPage != null) {
             nextPage = HTMLEntities.unhtmlentities(nextPage);
             if (dupe.add(nextPage)) {

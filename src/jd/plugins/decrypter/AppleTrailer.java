@@ -189,9 +189,21 @@ public class AppleTrailer extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    private void processNormal() throws IOException, PluginException {
+    private Browser prepAjax(Browser prepBr) {
+        prepBr.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+        prepBr.getHeaders().put("X-Prototype-Version", "1.7");
+        prepBr.getHeaders().put("Accept-Charset", null);
+        return prepBr;
+    }
 
-        if (!br2.getURL().endsWith("includes/playlists/web.inc")) br2.getPage("includes/playlists/web.inc");
+    private void processNormal() throws IOException, PluginException {
+        boolean isNew = false;
+        if (!br2.getURL().endsWith("includes/playlists/web.inc")) {
+            prepAjax(br2);
+            br2.getHeaders().put("Accept", "text/xml");
+            br2.getPage("includes/playlists/web.inc");
+        }
+
         if (br2.getHttpConnection().getResponseCode() == 404) {
             tryposter = true;
             return;
@@ -203,17 +215,28 @@ public class AppleTrailer extends PluginForDecrypt {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         String[] hits = br2.getRegex("(<li class=('|\")trailer ([a-z]+)?('|\")>.*?</li><)").getColumn(0);
-
         if (hits == null || hits.length == 0) {
-            logger.warning("Plugin defect, could not find 'hits' : " + parameter);
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            String test = br2.getRegex("<a href='(includes/large\\.html#videos[^']+)'").getMatch(0);
+            if (test != null) {
+                // 20131007
+                isNew = true;
+                br2 = br1.cloneBrowser();
+                prepAjax(br2);
+                br2.getHeaders().put("Accept", "text/xml");
+                br2.getPage(test);
+                hits = br2.getRegex("(<li class=('|\")trailer ([a-z0-9]+)?('|\")>.*?</li><)").getColumn(0);
+            }
+            if (hits == null || hits.length == 0) {
+                logger.warning("Plugin defect, could not find 'hits' : " + parameter);
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
         }
         if (hits.length == 1) {
             hits = new String[] { br2.toString() };
         }
 
         for (String hit : hits) {
-            String hitname = new Regex(hit, "<h3>(.*?)</h3>").getMatch(0);
+            String hitname = new Regex(hit, "<h3[^>]*>(.*?)</h3>").getMatch(0);
             if (hitname == null) {
                 logger.warning("Plugin defect, could not find 'hitname' : " + parameter);
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -245,23 +268,14 @@ public class AppleTrailer extends PluginForDecrypt {
                 }
             } else {
                 // new stuff, no need todo this if the provide the download links, this gets it out of js for playing in quicktime
-                String[] vids = new Regex(hit, "<li class=\"hd\">(.*?)</li>").getColumn(0);
-                if (vids == null || vids.length == 0) {
-                    logger.warning("Plugin defect, could not find 'vids' : " + parameter);
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-                for (String vid : vids) {
-                    String[][] matches = new Regex(vid, "href=\"([^\"]+)#[^>]+>(.*?)</a>").getMatches();
-                    if (matches == null || matches.length == 0) {
-                        logger.warning("Plugin defect, could not find 'matches' : " + parameter);
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                    }
-                    for (String[] match : matches) {
-                        String url = match[0];
-                        String video_name = filename + " (" + match[1].replaceFirst("<span>", "_").replaceFirst("</span>", "") + ")";
-                        br2 = br1.cloneBrowser();
-                        url = url.replace("includes/", "includes/" + hitname.toLowerCase().replace(" ", "").replaceAll("[^a-zA-Z0-9]", "") + "/");
+                if (isNew) {
+                    // 20131007
+                    String url = new Regex(hit, "href=\"([^\"]+)#[^>]+>").getMatch(0);
+                    if (url != null) {
                         if (dupe.add(url) == false) continue;
+                        br2 = br1.cloneBrowser();
+                        prepAjax(br2);
+                        br2.getHeaders().put("Accept", "text/xml");
                         br2.getPage(url);
                         url = br2.getRegex("href=\"([^\\?\"]+).*?\">Click to Play</a>").getMatch(0);
                         if (url == null) {
@@ -270,13 +284,49 @@ public class AppleTrailer extends PluginForDecrypt {
                             continue;
                         }
                         if (dupe.add(url) == false) continue;
-                        url = url.replace("apple.com/", "appledecrypted.com/");
                         String extension = url.substring(url.lastIndexOf("."));
+                        url = url.replace("apple.com/", "appledecrypted.com/");
+                        String pSize = new Regex(url, "(\\d+)p?\\.mov").getMatch(0);
                         DownloadLink dlLink = createDownloadlink(url);
-                        dlLink.setFinalFileName(video_name + extension);
+                        dlLink.setFinalFileName(filename + " (" + pSize + "_SD)" + extension);
                         dlLink.setAvailable(true);
                         dlLink.setProperty("Referer", br1.getURL());
                         decryptedLinks.add(dlLink);
+                    }
+                } else {
+                    String[] vids = new Regex(hit, "<li class=\"hd\">(.*?)</li>").getColumn(0);
+                    if (vids == null || vids.length == 0) {
+                        logger.warning("Plugin defect, could not find 'vids' : " + parameter);
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
+                    for (String vid : vids) {
+                        String[][] matches = new Regex(vid, "href=\"([^\"]+)#[^>]+>(.*?)</a>").getMatches();
+                        if (matches == null || matches.length == 0) {
+                            logger.warning("Plugin defect, could not find 'matches' : " + parameter);
+                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                        }
+                        for (String[] match : matches) {
+                            String url = match[0];
+                            String video_name = filename + " (" + match[1].replaceFirst("<span>", "_").replaceFirst("</span>", "") + ")";
+                            br2 = br1.cloneBrowser();
+                            url = url.replace("includes/", "includes/" + hitname.toLowerCase().replace(" ", "").replaceAll("[^a-zA-Z0-9]", "") + "/");
+                            if (dupe.add(url) == false) continue;
+                            br2.getPage(url);
+                            url = br2.getRegex("href=\"([^\\?\"]+).*?\">Click to Play</a>").getMatch(0);
+                            if (url == null) {
+                                logger.warning("Plugin defect, could not find 'url' on page : " + br2.getURL() + " from parameter : " + parameter);
+                                // throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                                continue;
+                            }
+                            if (dupe.add(url) == false) continue;
+                            url = url.replace("apple.com/", "appledecrypted.com/");
+                            String extension = url.substring(url.lastIndexOf("."));
+                            DownloadLink dlLink = createDownloadlink(url);
+                            dlLink.setFinalFileName(video_name + extension);
+                            dlLink.setAvailable(true);
+                            dlLink.setProperty("Referer", br1.getURL());
+                            decryptedLinks.add(dlLink);
+                        }
                     }
                 }
             }
