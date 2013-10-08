@@ -44,8 +44,8 @@ public class PanBaiduCom extends PluginForHost {
         return "http://pan.baidu.com/";
     }
 
-    private String       DLLINK          = null;
-    private final String PWPROTECTEDLINK = "http://(www\\.)?pan\\.baidu\\.com/share/init\\?shareid=\\d+\\&uk=\\d+";
+    private String             DLLINK          = null;
+    public final static String PWPROTECTEDLINK = "http://(www\\.)?pan\\.baidu\\.com/share/init\\?shareid=\\d+\\&uk=\\d+";
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {

@@ -35,7 +35,7 @@ import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pan.baidu.com" }, urls = { "http://(www\\.)?pan\\.baidu\\.com/(share/link(\\?(shareid|uk)=\\d+\\&(shareid|uk)=\\d+(#dir/path=.+)?)|netdisk/(singlepublic\\?fid=|extractpublic\\?username=)[\\w\\%]+)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pan.baidu.com" }, urls = { "http://(www\\.)?pan\\.baidu\\.com/(share/link(\\?(shareid|uk)=\\d+\\&(shareid|uk)=\\d+(#dir/path=.+)?)|netdisk/(singlepublic\\?fid=|extractpublic\\?username=)[\\w\\%]+|s/\\w+)" }, flags = { 0 })
 public class PanBaiduCom extends PluginForDecrypt {
 
     public PanBaiduCom(PluginWrapper wrapper) {
@@ -54,6 +54,11 @@ public class PanBaiduCom extends PluginForDecrypt {
             DownloadLink dl = createDownloadlink("directhttp://" + parameter);
             dl.setProperty("OFFLINE", true);
             decryptedLinks.add(dl);
+            return decryptedLinks;
+        }
+        JDUtilities.getPluginForHost("pan.baidu.com");
+        if (br.getURL().matches(jd.plugins.hoster.PanBaiduCom.PWPROTECTEDLINK)) {
+            decryptedLinks.add(createDownloadlink(br.getURL()));
             return decryptedLinks;
         }
         if (parameter.contains("netdisk")) parameter = br.getURL();// old linkformat
@@ -145,7 +150,11 @@ public class PanBaiduCom extends PluginForDecrypt {
     }
 
     private String getFolder(final String parameter, String dir) {
-        return "http://pan.baidu.com/share/list?channel=chunlei&clienttype=0&web=1&num=100&t=" + System.currentTimeMillis() + "&page=1&dir=" + dir + "&t=0." + +System.currentTimeMillis() + "&uk=" + new Regex(parameter, "uk=(\\d+)").getMatch(0) + "&shareid=" + new Regex(parameter, "shareid=(\\d+)").getMatch(0) + "&_=" + System.currentTimeMillis();
+        String shareid = new Regex(parameter, "shareid=(\\d+)").getMatch(0);
+        if (shareid == null) shareid = new Regex(parameter, "/s/(.*)").getMatch(0);
+        String uk = new Regex(parameter, "uk=(\\d+)").getMatch(0);
+        if (uk == null) uk = br.getRegex("uk=(\\d+)").getMatch(0);
+        return "http://pan.baidu.com/share/list?channel=chunlei&clienttype=0&web=1&num=100&t=" + System.currentTimeMillis() + "&page=1&dir=" + dir + "&t=0." + +System.currentTimeMillis() + "&uk=" + (uk != null ? uk : "") + "&shareid=" + (shareid != null ? shareid : "") + "&_=" + System.currentTimeMillis();
     }
 
     private static synchronized String unescape(final String s) {
