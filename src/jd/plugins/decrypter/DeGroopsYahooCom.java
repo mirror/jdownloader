@@ -31,7 +31,6 @@ import jd.http.Cookies;
 import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.CryptedLink;
-import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
@@ -62,8 +61,8 @@ public class DeGroopsYahooCom extends PluginForDecrypt {
         br.getPage("https://login.yahoo.com/config/login?");
         synchronized (LOCK) {
             if (!getUserLogin()) {
-                logger.info("Login wrong or not available!");
-                return null;
+                logger.info("Login wrong or not available -> Cannot decrypt such links without account!");
+                return decryptedLinks;
             }
             br.setFollowRedirects(true);
             br.getPage(parameter);
@@ -166,8 +165,11 @@ public class DeGroopsYahooCom extends PluginForDecrypt {
             if (username != null && password != null) {
                 // Load cookies
                 final Object ret = this.getPluginConfig().getProperty("cookies", null);
-                boolean acmatch = username.matches(this.getPluginConfig().getStringProperty("user"));
-                if (acmatch) acmatch = password.matches(this.getPluginConfig().getStringProperty("pass"));
+                boolean acmatch = aa != null;
+                if (acmatch) {
+                    acmatch = username.matches(this.getPluginConfig().getStringProperty("user"));
+                    if (acmatch) acmatch = password.matches(this.getPluginConfig().getStringProperty("pass"));
+                }
                 if (acmatch && ret != null && ret instanceof HashMap<?, ?>) {
                     final HashMap<String, String> cookies = (HashMap<String, String>) ret;
                     if (cookies.containsKey("SSL")) {
@@ -227,7 +229,7 @@ public class DeGroopsYahooCom extends PluginForDecrypt {
 
             }
         }
-        throw new DecrypterException("Login or/and password for " + DOMAIN + " is wrong!");
+        return false;
     }
 
     /* NO OVERRIDE!! */

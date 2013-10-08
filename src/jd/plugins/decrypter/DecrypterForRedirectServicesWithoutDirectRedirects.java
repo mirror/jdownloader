@@ -316,24 +316,16 @@ public class DecrypterForRedirectServicesWithoutDirectRedirects extends PluginFo
             }
             dh = true;
         } else if (parameter.contains("mixconnect.com/")) {
-            br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
             final String fid = new Regex(parameter, "mixconnect\\.com/listen/.*?\\-mid(\\d+)").getMatch(0);
-            br.getPage("http://www.mixconnect.com/downloadcheck.php?id=" + fid);
-            if (br.containsHTML("Unable to resolve the request")) {
+            br.getPage("http://mixconnect.com/download/mixtape/id/" + fid);
+            finallink = br.getRedirectLocation();
+            if (finallink == null) {
+                br.getPage(parameter);
+                finallink = br.getRegex("mp3:\"(http://mixconnect\\.com/[^<>\"]*?)\"").getMatch(0);
+            }
+            if (br.containsHTML("The requested page does not exist")) {
                 logger.info("Link offline: " + parameter);
                 return decryptedLinks;
-            }
-            final String dlHash = br.getRegex("dlhash\":\"([a-z0-9]+)\"").getMatch(0);
-            if (dlHash == null) {
-                br.getPage(parameter);
-                finallink = br.getRegex("mp3:\"http://mixconnect\\.com(http://[^<>\"]*?)\"").getMatch(0);
-                dh = true;
-            } else {
-                br.postPage("http://www.mixconnect.com/createdownload.php?id=" + fid, "dlhash=" + dlHash);
-                finallink = br.toString();
-                if (!finallink.startsWith("data/") || finallink.length() > 500) { return null; }
-                if (finallink.equals("data/zip/.zip")) finallink = null;
-                dh = true;
             }
         } else if (parameter.contains("twiturm.com/")) {
             finallink = br.getRegex("<div id=\"player\">[\r\t\n ]+<a href=\"(http://.*?)\">").getMatch(0);

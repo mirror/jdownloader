@@ -43,7 +43,7 @@ public class FiveIlthCom extends PluginForDecrypt {
         }
         String externID = br.getRedirectLocation();
         if (externID != null) {
-            DownloadLink dl = createDownloadlink(externID);
+            final DownloadLink dl = createDownloadlink(externID);
             decryptedLinks.add(dl);
             return decryptedLinks;
         }
@@ -84,6 +84,13 @@ public class FiveIlthCom extends PluginForDecrypt {
             return decryptedLinks;
 
         }
+        externID = br.getRegex("(http://(www\\.)?gfssex\\.com/playerConfig\\.php[^<>\"]*?)\"").getMatch(0);
+        if (externID != null) {
+            final DownloadLink dl = createDownloadlink(externID);
+            decryptedLinks.add(dl);
+            return decryptedLinks;
+        }
+        // Complicated stuff below
         externID = br.getRegex("(http://(www\\.)?5ilthy\\.com/playerConfig\\.php\\?[a-z0-9]+\\.(flv|mp4))").getMatch(0);
         if (externID != null) {
             final DownloadLink dl = createDownloadlink(externID);

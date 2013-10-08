@@ -60,7 +60,7 @@ public class GfsSexCom extends PluginForHost {
         }
         String filename = br.getRegex("</span>Currently Watching: (.*?)<span class=").getMatch(0);
         if (filename == null) filename = br.getRegex("<title>(.*?) at GFs Sex</title>").getMatch(0);
-        DLLINK = br.getRegex("settings=(http://(www\\.)?gfssex\\.com/.*?)(\\||%7C)").getMatch(0);
+        DLLINK = br.getRegex("settings=(http%3A%2F%2F(www\\.)?gfssex\\.com%2FplayerEmbed[^<>\"]*?)(\\||%7C)").getMatch(0);
         if (filename == null || DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         br.getPage(Encoding.htmlDecode(DLLINK));
         DLLINK = br.getRegex("(flvMask|defaultVideo):(http://media\\.gfssex\\.com/videos/)?(http://.*?);").getMatch(2);

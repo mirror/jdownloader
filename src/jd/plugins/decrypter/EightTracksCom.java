@@ -28,12 +28,13 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "8tracks.com" }, urls = { "http://(www\\.)?8tracks\\.com/(?!assets_js/|explore|auth|settings|mixes)[\\w\\-]+/(?!homepage)[\\w\\-]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "8tracks.com" }, urls = { "http://(www\\.)?8tracks\\.com/[\\w\\-]+/[\\w\\-]+" }, flags = { 0 })
 public class EightTracksCom extends PluginForDecrypt {
 
-    private static final String MAINPAGE = "http://8tracks.com/";
-    private boolean             ATEND    = false;
+    private static final String MAINPAGE          = "http://8tracks.com/";
+    private boolean             ATEND             = false;
     private String              clipData;
+    private static final String UNSAUPPORTEDLINKS = "http://(www\\.)?8tracks\\.com/((assets_js/|explore|auth|settings|mixes|developers|users)/.+|[\\w\\-]+/homepage.+)";
 
     public EightTracksCom(final PluginWrapper wrapper) {
         super(wrapper);
@@ -56,6 +57,11 @@ public class EightTracksCom extends PluginForDecrypt {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>(0);
         final String parameter = param.toString();
         setBrowserExclusive();
+
+        if (parameter.matches(UNSAUPPORTEDLINKS)) {
+            logger.info("Invalid link: " + parameter);
+            return decryptedLinks;
+        }
 
         br.setFollowRedirects(true);
         br.setReadTimeout(90 * 1000);

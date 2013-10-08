@@ -108,6 +108,10 @@ public class CrhyRllCom extends PluginForDecrypt {
                 logger.info("Link offline: " + cryptedLink.getCryptedUrl());
                 return decryptedLinks;
             }
+            if (br.containsHTML("\"Note: This video requires a")) {
+                logger.info("Video only available for premium users (in the current region): " + cryptedLink.getCryptedUrl());
+                return decryptedLinks;
+            }
 
             // Determine if the video exists
             if (this.br.containsHTML("(<title>Crunchyroll \\- Page Not Found</title>|<p>But we were unable to find the page you were looking for\\. Sorry\\.</p>)")) {

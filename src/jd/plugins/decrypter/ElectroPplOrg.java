@@ -38,6 +38,10 @@ public class ElectroPplOrg extends PluginForDecrypt {
         String parameter = param.toString();
         br.setFollowRedirects(false);
         br.getPage(parameter);
+        if (br.containsHTML("К сожалению, данная страница для Вас не доступна, возможно")) {
+            logger.info("Link offline: " + parameter);
+            return decryptedLinks;
+        }
         String fpName = br.getRegex("width=1 height=1 border=0></td><td bgcolor=\"#FFFFFF\" style=\"padding: 3px;\">(.*?)</td>").getMatch(0);
         if (fpName == null) fpName = br.getRegex("<title>(.*?) \\&raquo; ELECTROPEOPLE\\.ORG \\- Скачать MP3 бесплатно\\!</title>").getMatch(0);
         final String[] links = br.getRegex("\"(http://(www\\.)?electropeople\\.org/engine/go\\.php\\?url=.*?)\"").getColumn(0);

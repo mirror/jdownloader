@@ -29,18 +29,22 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "cybersansar.com" }, urls = { "http://(www\\.)?cybersansar\\.com/(thumbnail_view\\.php\\?gal_id=\\d+|wallpaper_download\\.php\\?wid=\\d+)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "cybersansar.com" }, urls = { "http://(www\\.)?cybersansar\\.com/(thumbnail_view\\.php\\?gal_id=\\d+|wallpaper_download\\.php\\?wid=\\d+|video_download\\.php\\?vid=\\d+)" }, flags = { 0 })
 public class CyberSansarCom extends PluginForDecrypt {
 
     public CyberSansarCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
+    private static final String VIDEOLINK     = "http://(www\\.)?cybersansar\\.com/video_download\\.php\\?vid=\\d+";
+    private static final String THUMBNAILLINK = "http://(www\\.)?cybersansar\\.com/thumbnail_view\\.php\\?gal_id=\\d+";
+    private static final String WALLPAPERLINK = "http://(www\\.)?cybersansar\\.com/wallpaper_download\\.php\\?wid=\\d+";
+
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
         br.getPage(parameter);
-        if (parameter.matches("http://(www\\.)?cybersansar\\.com/wallpaper_download\\.php\\?wid=\\d+")) {
+        if (parameter.matches(WALLPAPERLINK)) {
             final String wallpaper1 = br.getRegex("\"(graphics/wallpaper/model/[^<>\"]*?\\.jpg)\"").getMatch(0);
             final String wallpaper2 = br.getRegex("\"(product_thumb\\.php\\?img=[^<>\"]*?\\.jpg\\&amp;w=\\d+\\&amp;h=\\d+)\"").getMatch(0);
             final String wallpaper_finalfilename = new Regex(wallpaper2, "(\\d+\\.jpg)").getMatch(0);
@@ -51,6 +55,19 @@ public class CyberSansarCom extends PluginForDecrypt {
             FilePackage fp = FilePackage.getInstance();
             fp.setName(Encoding.htmlDecode("Wallpapers_" + new Regex(parameter, "(\\d+)$").getMatch(0)));
             fp.addLinks(decryptedLinks);
+        } else if (parameter.matches(VIDEOLINK)) {
+            String externID = br.getRegex("(youtube\\.com/embed/[^<>\"/]*?)\"").getMatch(0);
+            if (externID != null) {
+                decryptedLinks.add(createDownloadlink("http://" + externID));
+                return decryptedLinks;
+            }
+            externID = br.getRegex("\"(videos/[^<>\"/]*?)\">Download Now</a>").getMatch(0);
+            if (externID != null) {
+                decryptedLinks.add(createDownloadlink("http://www.cybersansar.com" + externID));
+                return decryptedLinks;
+            }
+            logger.warning("Decrypter broken for link: " + parameter);
+            return null;
         } else {
             final Regex fpName = br.getRegex(">Gallery </span><span class=\"model\\-title\\-grey\">(\\d+)</span> <span class=\"model\\-title\\-grey\\-small\">of</span> <span class=\"model\\-title\\-grey\">([^<>\"]*?)</span>");
             final String model_name = fpName.getMatch(1);

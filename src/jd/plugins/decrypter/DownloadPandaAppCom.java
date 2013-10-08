@@ -20,6 +20,7 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
@@ -58,17 +59,22 @@ public class DownloadPandaAppCom extends PluginForDecrypt {
         }
         final String controller = br.getRegex("\\&controller=([^<>\"/]*?)\\&").getMatch(0);
         if (controller != null) {
-            br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-            br.getPage("http://download.pandaapp.com/?app=soft&controller=" + controller + "&action=FastDownAjaxRedirect&f_id=" + new Regex(parameter, "id(\\d+)\\.html$").getMatch(0));
-            String finallink = br.getRegex("\"url\":\"(http:[^<>\"]*?)\"").getMatch(0);
+            final Browser br2 = br.cloneBrowser();
+            br2.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+            br2.getPage("http://download.pandaapp.com/?app=soft&controller=" + controller + "&action=FastDownAjaxRedirect&f_id=" + new Regex(parameter, "id(\\d+)\\.html$").getMatch(0));
+            String finallink = br2.getRegex("\"url\":\"(http:[^<>\"]*?)\"").getMatch(0);
             if (finallink != null) {
                 finallink = Encoding.htmlDecode(finallink.trim().replace("\\", ""));
-                br.getPage(finallink);
-                finallink = br.getRedirectLocation();
+                br2.getPage(finallink);
+                finallink = br2.getRedirectLocation();
                 if (finallink != null) decryptedLinks.add(createDownloadlink("directhttp://" + finallink));
             }
         }
         if (decryptedLinks.size() == 0) {
+            if (br.containsHTML(">The VIP members can freely use Fast Download")) {
+                logger.info("This link is not downloadable for free users: " + parameter);
+                return decryptedLinks;
+            }
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
