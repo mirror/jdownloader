@@ -90,6 +90,7 @@ settings_subpath_no_folder2=... samo ako nema korijenskih foldera >
 settings_subpath_no_folder_tt=Ne koristi podfoldere ako su svi dokumenti u arhivi pakovani u foldere
 settings_use_subpath=Kreiraj podfolder
 settings_various=Razno
+showextractlog=Log ekstrakcije za %s1
 subfolder=Podfolder Download putanje
 tooltip_NameColumn=Ime Arhive
 tooltip_empty=Nema Posla Ekstrakcije

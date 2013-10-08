@@ -4,6 +4,7 @@ DownloadLink_setSkipped_statusmessage=Preskočeno
 DownloadLink_setSkipped_statusmessage_account=Preskočeno - Nedostaje nalog
 DownloadLink_setSkipped_statusmessage_captcha=Preskočeno - Potreban je captcha
 DownloadLink_setSkipped_statusmessage_disk_full=Preskočeno - Pun disk
+DownloadLink_setSkipped_statusmessage_file_exists=Preskočeno - Dokument već postoji
 DownloadWatchDog_onShutdownRequest_=U toku su Download-i!
 DownloadWatchDog_onShutdownRequest_msg=Želite li da zaustavite aktivne download-e da zatvorite JDownloader?
 DownloadWatchDog_onShutdownRequest_nonresumable=Nema pokrenutih download-a koji se mogu nastaviti!

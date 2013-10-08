@@ -13,6 +13,7 @@ plugins_optional_JDLightTray_hideifframevisible=Sakrij Tray ako je Prozor vidlji
 plugins_optional_JDLightTray_passwordRequired=Unesite šifru za otvaranje iz Tray-a
 plugins_optional_JDLightTray_startMinimized=Startaj minimizirano
 plugins_optional_JDLightTray_tooltip=Prikaži Tooltip
+plugins_optional_trayIcon_dl_running=Pokrenuto:
 plugins_optional_trayIcon_dl_total=Ukupno:
 plugins_optional_trayIcon_downloads=Downloadi:
 plugins_optional_trayIcon_speed=Brzina:
