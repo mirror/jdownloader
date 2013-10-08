@@ -102,7 +102,7 @@ public class DdlStorageCom extends PluginForHost {
     private static final AtomicInteger totalMaxSimultanFreeDownload = new AtomicInteger(20);
 
     // DEV NOTES
-    // XfileShare Version 3.0.8.2
+    // XfileShare Version 3.0.8.3
     // last XfileSharingProBasic compare :: 2.6.2.1
     // captchatype: recaptcha
     // mods: country blocked stuff, this is done at the firewall based && and when users do bad things to httpd based on logs.
@@ -924,7 +924,7 @@ public class DdlStorageCom extends PluginForHost {
                     }
                     getDllink();
                     if (inValidate(dllink)) {
-                        checkErrors(downloadLink, account, true);
+                        checkErrors(downloadLink, account, false);
                         Form dlform = cbr.getFormbyProperty("name", "F1");
                         if (dlform == null)
                             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

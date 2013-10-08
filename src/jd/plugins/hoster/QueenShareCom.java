@@ -101,7 +101,7 @@ public class QueenShareCom extends PluginForHost {
     private static final AtomicInteger totalMaxSimultanFreeDownload = new AtomicInteger(20);
 
     // DEV NOTES
-    // XfileShare Version 3.0.8.2
+    // XfileShare Version 3.0.8.3
     // last XfileSharingProBasic compare :: 2.6.2.1
     // captchatype: null, see
     // http://www.queenshare.com/n70-hot-summer-with-queensharecom-your-profit-is-double-every-day-and-min-payout-is-10.html
@@ -880,7 +880,7 @@ public class QueenShareCom extends PluginForHost {
                 }
                 getDllink();
                 if (inValidate(dllink)) {
-                    checkErrors(downloadLink, account, true);
+                    checkErrors(downloadLink, account, false);
                     Form dlform = cbr.getFormbyProperty("name", "F1");
                     if (dlform == null)
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
