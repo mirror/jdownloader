@@ -266,8 +266,9 @@ public class Keep2ShareCc extends PluginForHost {
                     postData += "&LoginForm%5BverifyCode%5D=" + Encoding.urlEncode(code);
                 }
                 br.postPage("/login.html", postData);
+                if (br.containsHTML(">We have a suspicion that your account was stolen, this is why we")) throw new PluginException(LinkStatus.ERROR_PREMIUM, "Account temporarily blocked", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                if (br.containsHTML(">Please fill in the form with your login credentials")) throw new PluginException(LinkStatus.ERROR_PREMIUM, "Account invalid", PluginException.VALUE_ID_PREMIUM_DISABLE);
                 br.getHeaders().put("X-Requested-With", null);
-                if (br.containsHTML(">Please fill in the form with your login credentials")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 // Save cookies
                 final HashMap<String, String> cookies = new HashMap<String, String>();
                 final Cookies add = this.br.getCookies(MAINPAGE);
@@ -291,7 +292,7 @@ public class Keep2ShareCc extends PluginForHost {
             login(account, true);
         } catch (PluginException e) {
             account.setValid(false);
-            return ai;
+            throw e;
         }
         String url = br.getRegex("url\":\"(.*?)\"").getMatch(0);
         if (url != null) {
@@ -317,10 +318,10 @@ public class Keep2ShareCc extends PluginForHost {
             }
             String expire = br.getRegex("class=\"premium\">Premium:[\t\n\r ]+(\\d{4}\\.\\d{2}\\.\\d{2})").getMatch(0);
             if (expire == null) expire = br.getRegex("Premium expires:\\s*?<b>(\\d{4}\\.\\d{2}\\.\\d{2})").getMatch(0);
-            if (expire == null) {
-                if (br.containsHTML(">Premium:[\t\n\r ]+LifeTime")) {
-                    ai.setStatus("Premium Lifetime User");
-                }
+            if (expire == null && br.containsHTML(">Premium:[\t\n\r ]+LifeTime")) {
+                ai.setStatus("Premium Lifetime User");
+            } else if (expire == null) {
+                ai.setStatus("Premium User");
             } else {
                 // Expired but actually we still got one day ('today')
                 if (br.containsHTML("\\(1 day\\)"))

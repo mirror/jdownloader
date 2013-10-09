@@ -19,6 +19,7 @@ package jd.plugins.hoster;
 import java.io.IOException;
 
 import jd.PluginWrapper;
+import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -53,14 +54,15 @@ public class LiveDriveCom extends PluginForHost {
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.getPage(link.getDownloadURL());
-        final String filename = br.getRegex("<div id=\"Preview\">[\t\n\r ]+<img src=\"/Content/Images/filetypes/180x230/[^<>\"/]*?\" alt=\"([^<>\"]*?)\"").getMatch(0);
+        String filename = br.getRegex("<div id=\"Preview\">[\t\n\r ]+<img src=\"/Content/Images/filetypes/180x230/[^<>\"/]*?\" alt=\"([^<>\"]*?)\"").getMatch(0);
+        if (filename == null) filename = br.getRegex("id=\"PageTitle\" class=\"Hidden\">([^<>\"]*?)</div>").getMatch(0);
         if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        link.setName(filename);
+        link.setName(Encoding.htmlDecode(filename.trim()));
         return AvailableStatus.TRUE;
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
+    public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
         String liveDriveUrlUserPart = new Regex(downloadLink.getDownloadURL(), "(.*?)\\.livedrive\\.com").getMatch(0);
         liveDriveUrlUserPart = liveDriveUrlUserPart.replaceAll("(http://|www\\.)", "");
