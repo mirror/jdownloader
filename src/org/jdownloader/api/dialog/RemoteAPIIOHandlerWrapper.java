@@ -73,7 +73,9 @@ public class RemoteAPIIOHandlerWrapper implements UserIOHandlerInterface {
                 try {
                     if (dialog.evaluateDontShowAgainFlag()) {
 
-                    return impl; }
+                    return impl;
+                    //
+                    }
 
                 } catch (Exception e) {
                     // Dialogs are not initialized.... nullpointers are very likly
@@ -81,13 +83,6 @@ public class RemoteAPIIOHandlerWrapper implements UserIOHandlerInterface {
                     // in this case, we should continue normal
                     logger.log(e);
                 }
-
-                handle = remoteHandler.enqueue(class1, impl);
-
-                if (!Application.isJared(RemoteAPIIOHandlerWrapper.class)) {
-                    ((AbstractDialog<?>) impl).setTitle(((AbstractDialog<?>) impl).getTitle() + " DialogID: " + handle.getId());
-                }
-
                 boolean silentModeActive = JDGui.getInstance().isSilentModeActive();
 
                 if (silentModeActive) {
@@ -96,6 +91,14 @@ public class RemoteAPIIOHandlerWrapper implements UserIOHandlerInterface {
                         // Cancel dialog
                         throw new DialogClosedException(Dialog.RETURN_CLOSED);
                     }
+                }
+                handle = remoteHandler.enqueue(class1, impl);
+                //
+                // if (!Application.isJared(RemoteAPIIOHandlerWrapper.class)) {
+                // ((AbstractDialog<?>) impl).setTitle(((AbstractDialog<?>) impl).getTitle() + " DialogID: " + handle.getId());
+                // }
+
+                if (silentModeActive) {
 
                     // if this is the edt, we should not block it.. NEVER
                     if (!SwingUtilities.isEventDispatchThread()) {
@@ -191,6 +194,8 @@ public class RemoteAPIIOHandlerWrapper implements UserIOHandlerInterface {
                 System.out.println(1);
                 // throw new DialogClosedException(Dialog.RETURN_INTERRUPT, e);
                 // throw new DialogClosedException(Dialog.RETURN_INTERRUPT);
+            } catch (DialogClosedException e) {
+                dialog.fillReturnMask(e);
             } catch (Exception e) {
                 logger.log(e);
 
@@ -207,7 +212,7 @@ public class RemoteAPIIOHandlerWrapper implements UserIOHandlerInterface {
                 }
             }
 
-            // }
+            if (handle == null) return impl;
             return (T) (handle.getAnswer() != null ? handle.getAnswer() : impl);
         } else {
             throw new WTFException("Dialog Type not supported");
