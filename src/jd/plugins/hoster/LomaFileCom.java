@@ -101,25 +101,33 @@ public class LomaFileCom extends PluginForHost {
     private static final AtomicInteger totalMaxSimultanFreeDownload = new AtomicInteger(20);
 
     // DEV NOTES
-    // XfileShare Version 3.0.8.3
+    // XfileShare Version 3.0.8.2-mod
     // last XfileSharingProBasic compare :: 2.6.2.1
     // captchatype: 4dignum
     // other: no redirects
-    // mods:
+    // mods: experimental fetchAccountInfo && setConstants. TODO: merge into template after trail.
 
     private void setConstants(final Account account) {
         if (account != null && account.getBooleanProperty("free")) {
             // free account
             chunks = -2;
             resumes = true;
-            acctype = "Free Account";
+            acctype = "Free/Expired Account";
             directlinkproperty = "freelink2";
         } else if (account != null && !account.getBooleanProperty("free")) {
-            // prem account
-            chunks = -10;
-            resumes = true;
-            acctype = "Premium Account";
-            directlinkproperty = "premlink";
+            if (account.getBooleanProperty("lifetime", false)) {
+                // lifetime account
+                chunks = -10;
+                resumes = true;
+                acctype = "Lifetime Account";
+                directlinkproperty = "premlink";
+            } else {
+                // premium account
+                chunks = -10;
+                resumes = true;
+                acctype = "Premium Account";
+                directlinkproperty = "premlink";
+            }
         } else {
             // non account
             chunks = -2;
@@ -704,12 +712,6 @@ public class LomaFileCom extends PluginForHost {
         } else if (!br.getURL().contains(myAccount)) {
             getPage(myAccount);
         }
-        // what type of account?
-        if (!cbr.containsHTML("(Premium(-| )Account expire|>Renew premium<)")) {
-            account.setProperty("free", true);
-        } else {
-            account.setProperty("free", false);
-        }
         final String space[] = cbr.getRegex(">Used space:</td>.*?<td.*?b>([0-9\\.]+) of \\d+ ?(KB|MB|GB|TB)?</b>").getRow(0);
         if ((space != null && space.length != 0) && (!inValidate(space[0]) && !inValidate(space[1]))) {
             // free users it's provided by default
@@ -731,47 +733,56 @@ public class LomaFileCom extends PluginForHost {
         } else {
             ai.setUnlimitedTraffic();
         }
-        if (account.getBooleanProperty("free")) {
-            ai.setStatus("Registered (free) User");
-            account.setProperty("totalMaxSim", 20);
+        long expire = 0, expireD = 0, expireS = 0;
+        final String expireDay = cbr.getRegex("(\\d{1,2} (January|February|March|April|May|June|July|August|September|October|November|December) \\d{4})").getMatch(0);
+        if (!inValidate(expireDay)) {
+            expireD = TimeFormatter.getMilliSeconds(expireDay, "dd MMMM yyyy", Locale.ENGLISH);
+        }
+        if (inValidate(expireDay) || useAltExpire) {
+            // A more accurate expire time, down to the second. Usually shown on 'extend premium account' page.
+            getPage("/?op=payments");
+            String expireSecond = cbr.getRegex("Premium(-| )Account expires?:([^\n\r]+)").getMatch(1);
+            if (!inValidate(expireSecond)) {
+                String tmpYears = new Regex(expireSecond, "(\\d+)\\s+years?").getMatch(0);
+                String tmpdays = new Regex(expireSecond, "(\\d+)\\s+days?").getMatch(0);
+                String tmphrs = new Regex(expireSecond, "(\\d+)\\s+hours?").getMatch(0);
+                String tmpmin = new Regex(expireSecond, "(\\d+)\\s+minutes?").getMatch(0);
+                String tmpsec = new Regex(expireSecond, "(\\d+)\\s+seconds?").getMatch(0);
+                long years = 0, days = 0, hours = 0, minutes = 0, seconds = 0;
+                if (!inValidate(tmpYears)) years = Integer.parseInt(tmpYears);
+                if (!inValidate(tmpdays)) days = Integer.parseInt(tmpdays);
+                if (!inValidate(tmphrs)) hours = Integer.parseInt(tmphrs);
+                if (!inValidate(tmpmin)) minutes = Integer.parseInt(tmpmin);
+                if (!inValidate(tmpsec)) seconds = Integer.parseInt(tmpsec);
+                expireS = ((years * 86400000 * 365) + (days * 86400000) + (hours * 3600000) + (minutes * 60000) + (seconds * 1000)) + System.currentTimeMillis();
+            }
+        }
+        if (expireS >= expireD) {
+            expire = expireS;
         } else {
-            long expire = 0, expireD = 0, expireS = 0;
-            final String expireDay = cbr.getRegex("(\\d{1,2} (January|February|March|April|May|June|July|August|September|October|November|December) \\d{4})").getMatch(0);
-            if (!inValidate(expireDay)) {
-                expireD = TimeFormatter.getMilliSeconds(expireDay, "dd MMMM yyyy", Locale.ENGLISH);
-            }
-            if (inValidate(expireDay) || useAltExpire) {
-                // A more accurate expire time, down to the second. Usually shown on 'extend premium account' page.
-                getPage("/?op=payments");
-                String expireSecond = cbr.getRegex("Premium(-| )Account expires?:([^\n\r]+)").getMatch(1);
-                if (!inValidate(expireSecond)) {
-                    String tmpYears = new Regex(expireSecond, "(\\d+)\\s+years?").getMatch(0);
-                    String tmpdays = new Regex(expireSecond, "(\\d+)\\s+days?").getMatch(0);
-                    String tmphrs = new Regex(expireSecond, "(\\d+)\\s+hours?").getMatch(0);
-                    String tmpmin = new Regex(expireSecond, "(\\d+)\\s+minutes?").getMatch(0);
-                    String tmpsec = new Regex(expireSecond, "(\\d+)\\s+seconds?").getMatch(0);
-                    long years = 0, days = 0, hours = 0, minutes = 0, seconds = 0;
-                    if (!inValidate(tmpYears)) years = Integer.parseInt(tmpYears);
-                    if (!inValidate(tmpdays)) days = Integer.parseInt(tmpdays);
-                    if (!inValidate(tmphrs)) hours = Integer.parseInt(tmphrs);
-                    if (!inValidate(tmpmin)) minutes = Integer.parseInt(tmpmin);
-                    if (!inValidate(tmpsec)) seconds = Integer.parseInt(tmpsec);
-                    expireS = ((years * 86400000 * 365) + (days * 86400000) + (hours * 3600000) + (minutes * 60000) + (seconds * 1000)) + System.currentTimeMillis();
-                }
-                if (expireD == 0 && expireS == 0) {
-                    ai.setExpired(true);
-                    account.setValid(false);
-                    return ai;
-                }
-            }
-            if (expireS != 0) {
-                expire = expireS;
-            } else {
-                expire = expireD;
-            }
+            expire = expireD;
+        }
+        // lifetime account
+        final boolean lifetime = false; /* cbr.containsHTML("EDITME-LIFETIME-notlikely"); */
+        // (what account? || fixes issue when hoster leaves in expire value, after the account has expired!) && isn't lifetime account
+        if ((!cbr.containsHTML("(Premium(-| )Account expire|>Renew premium<)") || (expire - System.currentTimeMillis()) < 1) && !lifetime) {
+            account.setProperty("free", true);
+            account.setProperty("lifetime", false);
             account.setProperty("totalMaxSim", 20);
-            ai.setValidUntil(expire);
-            ai.setStatus("Premium User");
+            ai.setStatus("Free/Expired Account");
+        } else {
+            if (lifetime) {
+                account.setProperty("free", false);
+                account.setProperty("lifetime", true);
+                account.setProperty("totalMaxSim", 20);
+                ai.setStatus("Lifetime Account");
+            } else {
+                account.setProperty("free", false);
+                account.setProperty("lifetime", false);
+                account.setProperty("totalMaxSim", 20);
+                ai.setValidUntil(expire);
+                ai.setStatus("Premium Account");
+            }
         }
         return ai;
     }
@@ -874,7 +885,7 @@ public class LomaFileCom extends PluginForHost {
                 }
                 getDllink();
                 if (inValidate(dllink)) {
-                    checkErrors(downloadLink, account, false);
+                    checkErrors(downloadLink, account, true);
                     Form dlform = cbr.getFormbyProperty("name", "F1");
                     if (dlform == null)
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

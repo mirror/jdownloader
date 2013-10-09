@@ -202,8 +202,12 @@ public class NowDownloadEu extends PluginForHost {
                 workAroundTimeOut(br);
                 br.setCookiesExclusive(true);
                 br.getPage("http://www.nowdownload." + domain);
+                String redirect = br.getRedirectLocation();
                 br = null;
-                return domain;
+                if (redirect != null)
+                    return new Regex(redirect, "nowdownload\\.(eu|co|ch)").getMatch(0);
+                else
+                    return domain;
             } catch (Exception e) {
                 logger.warning("NowDownload." + domain + " seems to be offline...");
             }

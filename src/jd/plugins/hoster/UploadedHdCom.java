@@ -70,7 +70,7 @@ public class UploadedHdCom extends PluginForHost {
             directlinkproperty = "freelink2";
         } else if (account != null && !account.getBooleanProperty("free")) {
             // prem account
-            chunks = 1; // chunk issues
+            chunks = 0; // chunk issues
             resumes = true;
             acctype = "Premium Account";
             directlinkproperty = "premlink";
@@ -189,7 +189,7 @@ public class UploadedHdCom extends PluginForHost {
             downloadLink.getLinkStatus().setStatusText("");
             return AvailableStatus.TRUE;
         }
-        if (br.getURL().matches(".+/(error|index)\\.(php|html).*?") || br.containsHTML(">File has been removed\\.<")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.getURL().matches(".+/(error|index)\\.(php|html).*?") || br.containsHTML(">File has been removed\\.<") || br.getRequest().getHttpConnection().getResponseCode() == 404) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         final Regex fInfo = br.getRegex("<th class=\"descr\">[\t\n\r ]+<strong>([^<>\"]*?) \\((\\d+(\\.\\d+)? (KB|MB|GB))\\)<br/>");
         String filename = fInfo.getMatch(0);
         String filesize = fInfo.getMatch(1);
@@ -198,7 +198,7 @@ public class UploadedHdCom extends PluginForHost {
         if (filesize == null) filesize = br.getRegex("Tamaño De Archivo:[\t\n\r ]+</td>[\t\n\r ]+<td>([^<>\"]*?)</td>").getMatch(0);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         downloadLink.setName(Encoding.htmlDecode(filename.trim()));
-        downloadLink.setDownloadSize(SizeFormatter.getSize(filesize));
+        downloadLink.setDownloadSize(SizeFormatter.getSize(filesize.trim()));
         return AvailableStatus.TRUE;
     }
 
@@ -330,7 +330,7 @@ public class UploadedHdCom extends PluginForHost {
             return ai;
         }
         br.getPage("/upgrade.php");
-        ai.setUnlimitedTraffic();
+        ai.setUnlimitedTraffic(); // jdownloader
         final String expire = br.getRegex("(\\d{2}/\\d{2}/\\d{4} \\d{2}:\\d{2}:\\d{2})").getMatch(0);
         if (expire != null) {
             // far as I'm aware all premium accounts have a expire date.. else we should also confirm via html

@@ -130,8 +130,12 @@ public class NowVideoEu extends PluginForHost {
                 workAroundTimeOut(br);
                 br.setCookiesExclusive(true);
                 br.getPage("http://www.nowvideo." + CCtld);
+                String redirect = br.getRedirectLocation();
                 br = null;
-                return CCtld;
+                if (redirect != null)
+                    return new Regex(redirect, "nowvideo\\.(sx|eu|co|ch)").getMatch(0);
+                else
+                    return CCtld;
             } catch (Exception e) {
                 logger.warning("nowvideo." + CCtld + " seems to be offline...");
             }
