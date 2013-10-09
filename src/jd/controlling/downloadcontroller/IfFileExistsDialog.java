@@ -1,5 +1,6 @@
 package jd.controlling.downloadcontroller;
 
+import java.awt.Dialog.ModalityType;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
@@ -49,6 +50,11 @@ public class IfFileExistsDialog extends AbstractDialog<IfFileExistsAction> imple
         this.path = downloadLink.getFileOutput();
         this.downloadLink = downloadLink;
         setTimeout(60000);
+    }
+
+    @Override
+    public ModalityType getModalityType() {
+        return ModalityType.MODELESS;
     }
 
     @Override
@@ -141,6 +147,7 @@ public class IfFileExistsDialog extends AbstractDialog<IfFileExistsAction> imple
     }
 
     public IfFileExistsDialogInterface show() {
+
         return UIOManager.I().show(IfFileExistsDialogInterface.class, this);
     }
 

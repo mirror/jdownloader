@@ -75,7 +75,7 @@ public abstract class ChallengeDialogHandler<T extends ImageCaptchaChallenge<?>>
                             long countdown = -1;
 
                             if (dialog.isCountdownFlagEnabled()) {
-                                long countdownDif = dialog.getCountdown() * 1000;
+                                long countdownDif = dialog.getCountdown();
                                 countdown = System.currentTimeMillis() + countdownDif;
                             }
                             if (countdown < 0 && CFG_SILENTMODE.ON_DIALOG_DURING_SILENT_MODE_ACTION.getValue() == DialogDuringSilentModeAction.WAIT_IN_BACKGROUND_UNTIL_WINDOW_GETS_FOCUS_OR_TIMEOUT) {

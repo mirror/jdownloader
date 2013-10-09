@@ -142,7 +142,7 @@ public class DialogApiImpl implements EventPublisher, DialogApiInterface {
             }
             if (handle.getImpl() instanceof AbstractDialog) {
                 if (((AbstractDialog) handle.getImpl()).isCountdownFlagEnabled()) {
-                    ret.put("timeout", ((AbstractDialog) handle.getImpl()).getCountdown() * 1000l);
+                    ret.put("timeout", ((AbstractDialog) handle.getImpl()).getCountdown());
                 }
             }
         }
