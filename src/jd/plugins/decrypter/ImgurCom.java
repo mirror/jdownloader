@@ -45,17 +45,14 @@ public class ImgurCom extends PluginForDecrypt {
                 logger.info("Link offline: " + parameter);
                 return decryptedLinks;
             }
-            if (br.containsHTML("<album><title/><description/><cover>")) {
-                logger.info("Empty album: " + parameter);
-                return decryptedLinks;
-            }
             final String fpName = br.getRegex("<title>([^<>\"]*?)</title>").getMatch(0);
             // using links (i.imgur.com/imgUID(s)?.extension) seems to be problematic, it can contain 's' (imgUID + s +
             // .extension), but not always! imgUid.endswith("s") is also a valid uid, so you can't strip them!
             String[] items = br.getRegex("<item>(.*?)</item>").getColumn(0);
+            // We assume that the API is always working fine
             if (items == null || items.length == 0 || fpName == null) {
-                logger.warning("Decrypter broken for link: " + parameter);
-                return null;
+                logger.info("Empty album: " + parameter);
+                return decryptedLinks;
             }
             for (final String item : items) {
                 final String filesize = new Regex(item, "<size>(\\d+)</size>").getMatch(0);

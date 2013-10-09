@@ -25,6 +25,7 @@ import jd.http.Browser;
 import jd.http.RandomUserAgent;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
@@ -250,8 +251,9 @@ public class CrockoCom extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
         correctDownloadLink(downloadLink);
+        downloadLink.setName(new Regex(downloadLink.getDownloadURL(), "([A-Za-z0-9]+)/?$").getMatch(0));
         this.setBrowserExclusive();
         br.getHeaders().put("User-Agent", RandomUserAgent.generate());
         URLConnectionAdapter con = null;

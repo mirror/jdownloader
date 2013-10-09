@@ -28,7 +28,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "livedrive.com" }, urls = { "http://[a-z0-9]+\\.livedrive\\.com/(I|i)tem/\\d+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "livedrive.com" }, urls = { "https?://[a-z0-9]+\\.livedrive\\.com/(I|i)tem/\\d+" }, flags = { 0 })
 public class LiveDriveComFolder extends PluginForDecrypt {
 
     public LiveDriveComFolder(PluginWrapper wrapper) {
@@ -37,7 +37,8 @@ public class LiveDriveComFolder extends PluginForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final String parameter = param.toString();
+        // Prefer http for Stable compatibility
+        final String parameter = param.toString().replace("https://", "http://");
         // Single link or folder
         if (parameter.matches("http://[a-z0-9]+\\.livedrive\\.com/item/[a-z0-9]{32}")) {
             decryptedLinks.add(createDownloadlink(parameter.replace("livedrive.com/", "livedrivedecrypter.com/")));
@@ -49,16 +50,15 @@ public class LiveDriveComFolder extends PluginForDecrypt {
                 logger.info("Link offline: " + parameter);
                 return decryptedLinks;
             }
+            final Browser br2 = br.cloneBrowser();
+            br2.getHeaders().put("X-Requested-With", "XMLHttpRequest");
             final String[][] folders = br.getRegex("<div class=\"file\\-item\\-container\" name=\"([^<>\"]*?)\" data=\"([a-z0-9]{32})\"").getMatches();
             for (final String[] folderinfo : folders) {
-                Browser br2 = br.cloneBrowser();
-                br2.getHeaders().put("X-Requested-With", "XMLHttpRequest");
                 br2.getPage("http://" + liveDriveUrlUserPart + ".livedrive.com/Files/FileList?fileId=" + folderinfo[1] + "&pageNo=1&viewMode=1&_=" + System.currentTimeMillis());
                 // Regex those information
                 String[][] fileInformation = br2.getRegex("name=\"([^<>\"]*?)\" data=\"([a-z0-9]{32})\"").getMatches();
                 if (fileInformation == null || fileInformation.length == 0) {
-                    logger.warning("fileInformation not found for link: " + parameter);
-                    return null;
+                    continue;
                 }
                 final FilePackage thisFoldername = FilePackage.getInstance();
                 thisFoldername.setName(folderinfo[0]);
@@ -71,6 +71,10 @@ public class LiveDriveComFolder extends PluginForDecrypt {
                     theFinalLink._setFilePackage(thisFoldername);
                     decryptedLinks.add(theFinalLink);
                 }
+            }
+            if (decryptedLinks == null || decryptedLinks.size() == 0) {
+                logger.warning("Decrypter broken for link: " + parameter);
+                return null;
             }
         }
         return decryptedLinks;
