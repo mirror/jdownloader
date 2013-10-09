@@ -161,7 +161,11 @@ public class HulkShareCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         filename = Encoding.htmlDecode(filename.trim().replaceAll("(</b>|<b>|\\.html)", ""));
-        final String ext = filename.substring(filename.lastIndexOf("."));
+        String ext = null;
+        try {
+            ext = filename.substring(filename.lastIndexOf("."));
+        } catch (StringIndexOutOfBoundsException e) {
+        }
         if (br.containsHTML("hulkshare\\.com/socialplayer/hsfbPlayer") && (ext == null || ext.length() > 5) && !filename.endsWith(".mp3")) filename += ".mp3";
         link.setFinalFileName(filename.trim());
         if (filesize != null) link.setDownloadSize(SizeFormatter.getSize(filesize));

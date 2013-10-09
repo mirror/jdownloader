@@ -26,13 +26,20 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.utils.JDUtilities;
 
-@HostPlugin(revision = "$Revision: 21813 $", interfaceVersion = 2, names = { "videofun.me" }, urls = { "http://(www\\.)?videofun\\.me/embed/[a-f0-9]{32}" }, flags = { 0 })
+@HostPlugin(revision = "$Revision: 21813 $", interfaceVersion = 2, names = { "videofun.me" }, urls = { "http://(www\\.)?videofun\\.me/(embed/[a-f0-9]{32}|embed\\?.+)" }, flags = { 0 })
 public class VideoFunMe extends PluginForHost {
 
     // raztoki embed video player template.
 
-    private String dllink = null;
+    private String                 dllink = null;
+
+    private static StringContainer agent  = new StringContainer();
+
+    public static class StringContainer {
+        public String string = null;
+    }
 
     public VideoFunMe(PluginWrapper wrapper) {
         super(wrapper);
@@ -48,6 +55,16 @@ public class VideoFunMe extends PluginForHost {
         return -1;
     }
 
+    private Browser prepBrowser(Browser prepBr) {
+        if (agent.string == null) {
+            /* we first have to load the plugin, before we can reference it */
+            JDUtilities.getPluginForHost("mediafire.com");
+            agent.string = jd.plugins.hoster.MediafireCom.stringUserAgent();
+        }
+        prepBr.getHeaders().put("User-Agent", agent.string);
+        return prepBr;
+    }
+
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
@@ -58,6 +75,7 @@ public class VideoFunMe extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws Exception {
         this.setBrowserExclusive();
+        prepBrowser(br);
         br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML(">Error 404")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         dllink = br.getRegex("url: \"(http[^\"]+videofun\\.me%2Fvideos[^\"]+)").getMatch(0);

@@ -34,12 +34,13 @@ public class HulkShareComFolder extends PluginForDecrypt {
         super(wrapper);
     }
 
-    private static final String HULKSHAREDOWNLOADLINK = "http://(www\\.)?(hulkshare\\.com|hu\\/lk)/[a-z0-9]{12}";
+    private static final String HULKSHAREDOWNLOADLINK = "http://(www\\.)?(hulkshare\\.com|hu\\/lk)/([a-z0-9]{12})";
     private static final String SECONDSINGLELINK      = "http://(www\\.)?(hulkshare\\.com|hu\\.lk)/[a-z0-9]+/[^<>\"/]+";
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString().replaceFirst("hu\\.lk/", "hulkshare\\.com/");
+        final String fuid = getUID(parameter);
         if (parameter.matches("https?://(www\\.)?(hulkshare\\.com|hu\\/lk)/(dl/|static|browse|images|terms|contact|audible|search|people|upload|featured|mobile|group|explore).*?")) {
             logger.info("Invalid link: " + parameter);
             return decryptedLinks;
@@ -121,13 +122,20 @@ public class HulkShareComFolder extends PluginForDecrypt {
                 // do not return null; as this could be a false positive
                 break;
             }
-            for (String singleLink : links)
+            for (String singleLink : links) {
+                if (getUID(singleLink).equals(fuid)) continue;
                 decryptedLinks.add(createDownloadlink(singleLink.replace("hulkshare.com/", "hulksharedecrypted.com/")));
+            }
         }
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(new Regex(parameter, "hulkshare\\.com/(.+)").getMatch(0));
         fp.addLinks(decryptedLinks);
         return decryptedLinks;
+    }
+
+    private String getUID(String s) {
+        if (s == null) return null;
+        return new Regex(s, HULKSHAREDOWNLOADLINK).getMatch(2);
     }
 
     /* NO OVERRIDE!! */
