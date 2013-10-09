@@ -1,6 +1,7 @@
 package jd.gui.swing.jdgui.components.toolbar.actions;
 
 import java.awt.event.ActionEvent;
+import java.awt.event.KeyEvent;
 import java.util.ArrayList;
 
 import jd.controlling.TaskQueue;
@@ -35,7 +36,8 @@ import org.jdownloader.translate._JDT;
 public class StartDownloadsAction extends ToolBarAction implements DownloadWatchdogListener, GUIListener, GenericConfigEventListener<Enum> {
 
     /**
-     * Create a new instance of StartDownloadsAction. This is a singleton class. Access the only existing instance by using {@link #getInstance()}.
+     * Create a new instance of StartDownloadsAction. This is a singleton class. Access the only existing instance by using
+     * {@link #getInstance()}.
      */
     public StartDownloadsAction() {
 
@@ -47,6 +49,7 @@ public class StartDownloadsAction extends ToolBarAction implements DownloadWatch
         GUIEventSender.getInstance().addListener(this, true);
         onGuiMainTabSwitch(null, MainTabbedPane.getInstance().getSelectedView());
         setHideIfDownloadsAreRunning(false);
+        setAccelerator(KeyEvent.VK_S);
     }
 
     public void actionPerformed(final ActionEvent e) {

@@ -24,6 +24,10 @@ public class ExtMenuButton extends ExtButton {
 
     private LogSource logger;
 
+    /*
+     * JMenuBar uses Boxlayout. BoxLayout always tries to strech the components to their Maximum Width. Fixes
+     * http://svn.jdownloader.org/issues/8509
+     */
     public ExtMenuButton(AppAction action) {
         super(action);
         logger = LogController.getInstance().getLogger(ExtMenuButton.class.getName());

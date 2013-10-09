@@ -2,8 +2,6 @@ package org.jdownloader.gui.views.components.packagetable.context;
 
 import java.awt.event.ActionEvent;
 
-import javax.swing.KeyStroke;
-
 import jd.controlling.packagecontroller.AbstractNode;
 import jd.controlling.packagecontroller.AbstractPackageChildrenNode;
 import jd.controlling.packagecontroller.AbstractPackageNode;
@@ -30,7 +28,7 @@ public class RenameAction<PackageType extends AbstractPackageNode<ChildrenType, 
         setName(_GUI._.RenameAction_RenameAction());
         setTooltipText(_GUI._.RenameAction_RenameAction_tt());
         setIconKey("edit");
-        setAccelerator(KeyStroke.getKeyStroke("F2"));
+        // setAccelerator(KeyStroke.getKeyStroke("F2"));
 
     }
 

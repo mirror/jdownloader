@@ -111,17 +111,10 @@ public class JDMenuBar extends JMenuBar implements MouseListener {
                     // to a JButton or a jToggleBUtton
                     AppAction action = inst.createAction(selection);
 
-                    if (StringUtils.isNotEmpty(inst.getShortcut())) {
+                    if (StringUtils.isNotEmpty(inst.getShortcut()) && KeyStroke.getKeyStroke(inst.getShortcut()) != null) {
                         action.setAccelerator(KeyStroke.getKeyStroke(inst.getShortcut()));
                     }
 
-                    /*
-                     * JMenuBar uses Boxlayout. BoxLayout always tries to strech the components to their Maximum Width. Fixes
-                     * http://svn.jdownloader.org/issues/8509
-                     */
-                    if (StringUtils.isNotEmpty(inst._getShortcut())) {
-                        action.setAccelerator(KeyStroke.getKeyStroke(inst._getShortcut()));
-                    }
                     AbstractButton ret;
                     if (action.isToggle()) {
                         ret = new MenuJToggleButton(action);

@@ -414,17 +414,17 @@ public class MenuItemData implements Storable {
         this.shortcut = shortcut;
     }
 
-    public String _getShortcut() {
-        if (StringUtils.isNotEmpty(shortcut)) { return shortcut; }
-        if (getActionData() != null) {
-            try {
-                return createAction(null).getShortCutString();
-            } catch (Exception e) {
-
-            }
-        }
-        return null;
-    }
+    // public String _getShortcut() {
+    // if (StringUtils.isNotEmpty(shortcut)) { return shortcut; }
+    // if (getActionData() != null) {
+    // try {
+    // return createAction(null).getShortCutString();
+    // } catch (Exception e) {
+    //
+    // }
+    // }
+    // return null;
+    // }
 
     public boolean isVisible() {
         return visible;

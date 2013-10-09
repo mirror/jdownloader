@@ -173,4 +173,8 @@ public class LinkgrabberContextMenuManager extends ContextMenuManager<CrawledPac
         return _GUI._.LinkgrabberContextMenuManager_getName();
     }
 
+    @Override
+    protected void updateGui() {
+    }
+
 }

@@ -1,6 +1,6 @@
 package org.jdownloader.actions;
 
-import java.awt.event.InputEvent;
+import java.awt.Toolkit;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 
@@ -48,7 +48,7 @@ public abstract class AppAction extends BasicAction {
      * @param vkQ
      */
     public void setAccelerator(int vkQ) {
-        setAccelerator(vkQ, InputEvent.CTRL_DOWN_MASK);
+        setAccelerator(vkQ, Toolkit.getDefaultToolkit().getMenuShortcutKeyMask());
     }
 
     public synchronized AppActionEventSender getEventSender() {

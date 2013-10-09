@@ -25,12 +25,10 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
 import org.appwork.exceptions.WTFException;
-import org.appwork.scheduler.DelayedRunnable;
 import org.appwork.utils.Application;
 import org.jdownloader.controlling.contextmenu.ActionData;
 import org.jdownloader.controlling.contextmenu.ContextMenuManager;
 import org.jdownloader.controlling.contextmenu.MenuContainerRoot;
-import org.jdownloader.controlling.contextmenu.MenuExtenderHandler;
 import org.jdownloader.controlling.contextmenu.MenuItemData;
 import org.jdownloader.controlling.contextmenu.SeperatorData;
 import org.jdownloader.gui.event.GUIEventSender;
@@ -74,25 +72,11 @@ public class MainToolbarManager extends ContextMenuManager<FilePackage, Download
         return MainToolbarManager.INSTANCE;
     }
 
-    private DelayedRunnable updateDelayer;
-
     @Override
     public void setMenuData(MenuContainerRoot root) {
         super.setMenuData(root);
         // no delayer here.
-        MainToolBar.getInstance().updateToolbar();
-    }
 
-    @Override
-    public synchronized void registerExtender(MenuExtenderHandler handler) {
-        super.registerExtender(handler);
-        updateDelayer.resetAndStart();
-    }
-
-    @Override
-    public void unregisterExtender(MenuExtenderHandler handler) {
-        super.unregisterExtender(handler);
-        updateDelayer.resetAndStart();
     }
 
     @Override
@@ -107,18 +91,7 @@ public class MainToolbarManager extends ContextMenuManager<FilePackage, Download
 
     private MainToolbarManager() {
         super();
-        updateDelayer = new DelayedRunnable(1000l, 2000) {
-            @Override
-            public String getID() {
-                return "MainToolbarManager";
-            }
 
-            @Override
-            public void delayedrun() {
-                MainToolBar.getInstance().updateToolbar();
-            }
-
-        };
         GUIEventSender.getInstance().addListener(this, true);
 
     }
@@ -237,6 +210,11 @@ public class MainToolbarManager extends ContextMenuManager<FilePackage, Download
     public void onGuiMainTabSwitch(View oldView, View newView) {
 
         // MainToolBar.getInstance().updateToolbar();
+    }
+
+    @Override
+    protected void updateGui() {
+        MainToolBar.getInstance().updateToolbar();
     }
 
 }

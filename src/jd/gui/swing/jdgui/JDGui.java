@@ -208,6 +208,8 @@ public class JDGui implements UpdaterListener, OwnerFinder {
 
     private Timer                   speedInTitleUpdater;
 
+    private boolean                 busy;
+
     private JDGui() {
         logger = LogController.getInstance().getLogger("Gui");
         initFrame("JDownloader");
@@ -1049,6 +1051,9 @@ public class JDGui implements UpdaterListener, OwnerFinder {
     }
 
     protected void internalSetWaiting(final boolean b) {
+
+        if (busy == b) return;
+        busy = b;
         new EDTHelper<Object>() {
             @Override
             public Object edtRun() {

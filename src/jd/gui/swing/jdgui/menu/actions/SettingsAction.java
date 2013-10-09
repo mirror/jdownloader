@@ -17,6 +17,7 @@
 package jd.gui.swing.jdgui.menu.actions;
 
 import java.awt.event.ActionEvent;
+import java.awt.event.KeyEvent;
 
 import jd.gui.swing.jdgui.JDGui;
 import jd.gui.swing.jdgui.views.settings.ConfigurationView;
@@ -35,6 +36,7 @@ public class SettingsAction extends AppAction implements CachableInterface {
         setIconKey("settings");
         setTooltipText(_GUI._.action_settings_menu_tooltip());
         setName(_GUI._.action_settings_menu());
+        setAccelerator(KeyEvent.VK_P);
 
     }
 

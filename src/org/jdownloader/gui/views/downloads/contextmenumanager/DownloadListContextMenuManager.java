@@ -43,6 +43,8 @@ import org.jdownloader.gui.views.downloads.context.submenu.DeleteMenuContainer;
 import org.jdownloader.gui.views.downloads.context.submenu.MoreMenuContainer;
 import org.jdownloader.gui.views.downloads.context.submenu.PriorityMenuContainer;
 import org.jdownloader.gui.views.downloads.context.submenu.SettingsMenuContainer;
+import org.jdownloader.gui.views.downloads.table.DownloadsTable;
+import org.jdownloader.gui.views.downloads.table.DownloadsTableModel;
 import org.jdownloader.gui.views.linkgrabber.contextmenu.SortAction;
 
 public class DownloadListContextMenuManager extends ContextMenuManager<FilePackage, DownloadLink> {
@@ -66,6 +68,10 @@ public class DownloadListContextMenuManager extends ContextMenuManager<FilePacka
     private DownloadListContextMenuManager() {
         super();
 
+    }
+
+    public boolean isAcceleratorsEnabled() {
+        return true;
     }
 
     private static final int VERSION = 0;
@@ -163,6 +169,11 @@ public class DownloadListContextMenuManager extends ContextMenuManager<FilePacka
     @Override
     public String getName() {
         return _GUI._.DownloadListContextMenuManager_getName();
+    }
+
+    @Override
+    protected void updateGui() {
+        ((DownloadsTable) DownloadsTableModel.getInstance().getTable()).updateContextShortcuts(this);
     }
 
 }

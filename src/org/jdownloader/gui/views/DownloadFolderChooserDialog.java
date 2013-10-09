@@ -83,7 +83,7 @@ public class DownloadFolderChooserDialog extends ExtFileChooserDialog {
             File f = fc.getSelectedFile();
             if (f == null) {
                 String path = getText();
-                if (!StringUtils.isEmpty(path)) {
+                if (!StringUtils.isEmpty(path) && isAllowedPath(path)) {
                     // if (path.start)
 
                     f = new File(path);

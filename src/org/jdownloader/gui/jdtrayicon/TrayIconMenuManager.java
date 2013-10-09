@@ -99,4 +99,8 @@ public class TrayIconMenuManager extends ContextMenuManager<FilePackage, Downloa
         return _TRAY._.TrayMenuManager_getName();
     }
 
+    @Override
+    protected void updateGui() {
+    }
+
 }

@@ -183,6 +183,8 @@ public interface LAFSettings extends ConfigInterface {
     @DefaultStringValue("ff3B3B3B")
     public String getColorForTooltipBackground();
 
+    public void setColorForTooltipBackground(String background);
+
     public void setColorForErrorForeground(String errorForeground);
 
     void setColorForPanelBackground(String colorHex);

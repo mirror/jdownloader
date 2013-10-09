@@ -58,7 +58,10 @@ public class FreeAccountReference extends AccountReference {
 
     public static boolean isFreeAccount(AccountReference ar) {
         if (ar == null) return false;
-        return ar.getID() == FREE_ID;
+        if (ar instanceof FreeAccountReference) return true;
+        if (ar.getAccount() != null && ar.getID() == FREE_ID) return true;
+        return false;
+
     }
 
 }

@@ -8,12 +8,19 @@ import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
 import java.util.EventObject;
+import java.util.HashMap;
+import java.util.Map.Entry;
 
+import javax.swing.Action;
+import javax.swing.ActionMap;
 import javax.swing.DropMode;
+import javax.swing.InputMap;
+import javax.swing.JComponent;
 import javax.swing.JPopupMenu;
 import javax.swing.JScrollPane;
 import javax.swing.JSeparator;
 import javax.swing.JTable;
+import javax.swing.KeyStroke;
 import javax.swing.Timer;
 import javax.swing.TransferHandler;
 
@@ -25,19 +32,27 @@ import net.miginfocom.swing.MigLayout;
 import org.appwork.swing.exttable.DropHighlighter;
 import org.appwork.swing.exttable.ExtCheckBoxMenuItem;
 import org.appwork.swing.exttable.ExtColumn;
+import org.appwork.utils.StringUtils;
 import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.dialog.Dialog;
+import org.jdownloader.actions.AppAction;
+import org.jdownloader.actions.SelectionAppAction;
+import org.jdownloader.controlling.contextmenu.MenuContainer;
+import org.jdownloader.controlling.contextmenu.MenuItemData;
+import org.jdownloader.controlling.contextmenu.SeperatorData;
 import org.jdownloader.gui.helpdialogs.HelpDialog;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.components.packagetable.PackageControllerTable;
 import org.jdownloader.gui.views.downloads.action.DeleteSelectionAction;
+import org.jdownloader.gui.views.downloads.contextmenumanager.DownloadListContextMenuManager;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
 
 public class DownloadsTable extends PackageControllerTable<FilePackage, DownloadLink> {
 
-    private static final long serialVersionUID = 8843600834248098174L;
+    private static final long          serialVersionUID = 8843600834248098174L;
+    private HashMap<KeyStroke, Action> shortCutActions;
 
     public DownloadsTable(final DownloadsTableModel tableModel) {
         super(tableModel);
@@ -213,8 +228,86 @@ public class DownloadsTable extends PackageControllerTable<FilePackage, Download
     }
 
     @Override
+    protected boolean processKeyBinding(KeyStroke stroke, KeyEvent evt, int condition, boolean pressed) {
+        try {
+            final InputMap map = getInputMap(condition);
+            final ActionMap am = getActionMap();
+
+            if (map != null && am != null && isEnabled()) {
+                final Object binding = map.get(stroke);
+                final Action action = (binding == null) ? null : am.get(binding);
+                if (action != null && action instanceof SelectionAppAction) {
+
+                    SelectionInfo<FilePackage, DownloadLink> si = new SelectionInfo<FilePackage, DownloadLink>(getModel().getObjectbyRow(getSelectionModel().getLeadSelectionIndex()), getModel().getSelectedObjects(), null, evt, null, this);
+                    ((SelectionAppAction) action).setSelection(si);
+
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return super.processKeyBinding(stroke, evt, condition, pressed);
+    }
+
+    @Override
     public ExtColumn<AbstractNode> getExpandCollapseColumn() {
         return DownloadsTableModel.getInstance().expandCollapse;
     }
 
+    public void updateContextShortcuts(DownloadListContextMenuManager manager) {
+
+        final InputMap input = getInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT);
+        final ActionMap actions = getActionMap();
+
+        if (shortCutActions != null) {
+            for (Entry<KeyStroke, Action> ks : shortCutActions.entrySet()) {
+                Object binding = input.get(ks.getKey());
+                input.remove(ks.getKey());
+                actions.remove(binding);
+
+            }
+        }
+
+        shortCutActions = new HashMap<KeyStroke, Action>();
+        fillActions(manager.getMenuData());
+
+    }
+
+    private void fillActions(MenuContainer menuData) {
+        final InputMap input = getInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT);
+        final ActionMap actions = getActionMap();
+
+        for (MenuItemData mi : menuData.getItems()) {
+            if (mi instanceof MenuContainer) {
+                fillActions((MenuContainer) mi);
+            } else if (mi instanceof SeperatorData) {
+                continue;
+            } else {
+                AppAction action;
+                try {
+                    action = mi.createAction(null);
+                    KeyStroke keystroke;
+                    if (StringUtils.isNotEmpty(mi.getShortcut())) {
+                        keystroke = KeyStroke.getKeyStroke(mi.getShortcut());
+                        if (keystroke != null) {
+                            action.setAccelerator(keystroke);
+                        }
+                    }
+
+                    if (action != null && (keystroke = (KeyStroke) action.getValue(Action.ACCELERATOR_KEY)) != null) {
+                        String key = "CONTEXT_ACTION_" + action.hashCode();
+                        input.put(keystroke, key);
+
+                        actions.put(key, action);
+                        shortCutActions.put(keystroke, action);
+
+                    }
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+
+            }
+        }
+    }
 }

@@ -1,6 +1,7 @@
 package jd.gui.swing.jdgui.components.toolbar.actions;
 
 import java.awt.event.ActionEvent;
+import java.awt.event.KeyEvent;
 
 import jd.controlling.downloadcontroller.DownloadWatchDog;
 import jd.controlling.downloadcontroller.event.DownloadWatchdogListener;
@@ -23,6 +24,7 @@ public class StopDownloadsAction extends ToolBarAction implements DownloadWatchd
         DownloadWatchDog.getInstance().getEventSender().addListener(this, true);
         DownloadWatchDog.getInstance().notifyCurrentState(this);
         setHideIfDownloadsAreStopped(false);
+        setAccelerator(KeyEvent.VK_S);
     }
 
     public void actionPerformed(ActionEvent e) {
@@ -53,7 +55,7 @@ public class StopDownloadsAction extends ToolBarAction implements DownloadWatchd
 
     @Override
     public String createTooltip() {
-        return _GUI._.StopDownloadsAction_createTooltip();
+        return _GUI._.action_stop_downloads_tooltip();
     }
 
     @Override

@@ -126,9 +126,12 @@ public class HosterRuleController implements AccountControllerListener {
     protected void validateRule(AccountUsageRule hr) {
         HashSet<Account> accountsInRule = new HashSet<Account>();
         AccountGroup onlyRealAccounts = null;
+        AccountGroup freeAccountGroup = null;
         AccountGroup onlyMultiAccounts = null;
         AccountReference free = null;
-        for (AccountGroup ag : hr.getAccounts()) {
+
+        for (Iterator<AccountGroup> it1 = hr.getAccounts().iterator(); it1.hasNext();) {
+            AccountGroup ag = it1.next();
             boolean onlyReal = ag.getChildren().size() > 0;
             boolean onlyMulti = ag.getChildren().size() > 0;
 
@@ -137,19 +140,26 @@ public class HosterRuleController implements AccountControllerListener {
 
                 if (FreeAccountReference.isFreeAccount(ar)) {
                     free = ar;
+                    onlyMulti = false;
+                    onlyReal = false;
+                    freeAccountGroup = ag;
                     continue;
                 }
                 if (ar.getAccount() == null) {
                     logger.info("Removed " + ar + " from " + ag);
                     it.remove();
                 } else {
-                    if (ar.getAccount().isMulti()) {
+                    if (!ar.getAccount().isMulti()) {
                         onlyMulti = false;
                     } else {
                         onlyReal = false;
                     }
                     accountsInRule.add(ar.getAccount());
                 }
+            }
+            // remove empty groups
+            if (ag.getChildren().size() == 0) {
+                it1.remove();
             }
             if (onlyReal) {
                 onlyRealAccounts = ag;
@@ -203,6 +213,7 @@ public class HosterRuleController implements AccountControllerListener {
             if (onlyRealAccounts != null) {
                 onlyRealAccounts.getChildren().addAll(refList);
             } else {
+
                 hr.getAccounts().add(0, new AccountGroup(refList, _GUI._.HosterRuleController_validateRule_single_hoster_account()));
             }
 
@@ -215,7 +226,10 @@ public class HosterRuleController implements AccountControllerListener {
             if (onlyMultiAccounts != null) {
                 onlyMultiAccounts.getChildren().addAll(refList);
             } else {
-                hr.getAccounts().add(new AccountGroup(refList, _GUI._.HosterRuleController_validateRule_multi_hoster_account()));
+
+                int index = freeAccountGroup == null ? hr.getAccounts().size() : hr.getAccounts().indexOf(freeAccountGroup);
+                if (index < 0) index = hr.getAccounts().size();
+                hr.getAccounts().add(index, new AccountGroup(refList, _GUI._.HosterRuleController_validateRule_multi_hoster_account()));
             }
 
         }

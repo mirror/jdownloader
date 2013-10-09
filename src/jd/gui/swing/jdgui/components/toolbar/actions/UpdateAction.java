@@ -3,6 +3,7 @@ package jd.gui.swing.jdgui.components.toolbar.actions;
 import java.awt.Point;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.KeyEvent;
 
 import javax.swing.AbstractButton;
 import javax.swing.Timer;
@@ -28,6 +29,7 @@ public class UpdateAction extends ToolBarAction {
     public UpdateAction(SelectionInfo<?, ?> selection) {
         setIconKey("update");
         setEnabled(true);
+        setAccelerator(KeyEvent.VK_U);
 
     }
 

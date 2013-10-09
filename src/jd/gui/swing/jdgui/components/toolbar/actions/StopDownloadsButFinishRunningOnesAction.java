@@ -23,6 +23,7 @@ public class StopDownloadsButFinishRunningOnesAction extends ToolBarAction imple
         DownloadWatchDog.getInstance().getEventSender().addListener(this, true);
         DownloadWatchDog.getInstance().notifyCurrentState(this);
         setHideIfDownloadsAreStopped(false);
+
     }
 
     public void actionPerformed(ActionEvent e) {
@@ -55,7 +56,7 @@ public class StopDownloadsButFinishRunningOnesAction extends ToolBarAction imple
 
     @Override
     public String createTooltip() {
-        return _GUI._.action_stop_downloads_tooltip();
+        return _GUI._.StopDownloadsAction_createTooltip();
     }
 
     @Override

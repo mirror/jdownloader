@@ -14,6 +14,7 @@ import javax.swing.JPopupMenu;
 import jd.controlling.packagecontroller.AbstractPackageChildrenNode;
 import jd.controlling.packagecontroller.AbstractPackageNode;
 
+import org.appwork.scheduler.DelayedRunnable;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.storage.config.JsonConfig;
@@ -32,10 +33,26 @@ import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.logging.LogController;
 
 public abstract class ContextMenuManager<PackageType extends AbstractPackageNode<ChildrenType, PackageType>, ChildrenType extends AbstractPackageChildrenNode<PackageType>> {
+    private DelayedRunnable updateDelayer;
+
     public ContextMenuManager() {
         config = JsonConfig.create(Application.getResource("cfg/menus/" + getClass().getName()), ContextMenuConfigInterface.class);
         logger = LogController.getInstance().getLogger(getClass().getName());
+        updateDelayer = new DelayedRunnable(1000l, 2000) {
+            @Override
+            public String getID() {
+                return "MenuManager-" + ContextMenuManager.this.getClass();
+            }
+
+            @Override
+            public void delayedrun() {
+                updateGui();
+            }
+
+        };
     }
+
+    protected abstract void updateGui();
 
     public JPopupMenu build(SelectionInfo<PackageType, ChildrenType> si) {
         long t = System.currentTimeMillis();
@@ -274,6 +291,7 @@ public abstract class ContextMenuManager<PackageType extends AbstractPackageNode
             config.setMenu(root);
             config.setUnusedItems(getUnused(root));
         }
+        updateGui();
 
     }
 
@@ -316,6 +334,7 @@ public abstract class ContextMenuManager<PackageType extends AbstractPackageNode
             menuData = null;
 
         }
+        updateDelayer.resetAndStart();
 
     }
 
@@ -326,6 +345,7 @@ public abstract class ContextMenuManager<PackageType extends AbstractPackageNode
             menuData = null;
 
         }
+        updateDelayer.resetAndStart();
     }
 
     public ArrayList<MenuExtenderHandler> listExtender() {

@@ -13,13 +13,11 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
 import org.appwork.exceptions.WTFException;
-import org.appwork.scheduler.DelayedRunnable;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.swing.EDTRunner;
 import org.jdownloader.controlling.contextmenu.ActionData;
 import org.jdownloader.controlling.contextmenu.ContextMenuManager;
 import org.jdownloader.controlling.contextmenu.MenuContainerRoot;
-import org.jdownloader.controlling.contextmenu.MenuExtenderHandler;
 import org.jdownloader.controlling.contextmenu.MenuItemData;
 import org.jdownloader.controlling.contextmenu.SeperatorData;
 import org.jdownloader.gui.mainmenu.action.AddLinksMenuAction;
@@ -54,28 +52,6 @@ public class MainMenuManager extends ContextMenuManager<FilePackage, DownloadLin
         return MainMenuManager.INSTANCE;
     }
 
-    private DelayedRunnable updateDelayer;
-
-    @Override
-    public void setMenuData(MenuContainerRoot root) {
-        super.setMenuData(root);
-
-        // no delayer here.
-        JDMenuBar.getInstance().updateLayout();
-    }
-
-    @Override
-    public synchronized void registerExtender(MenuExtenderHandler handler) {
-        super.registerExtender(handler);
-        updateDelayer.resetAndStart();
-    }
-
-    @Override
-    public void unregisterExtender(MenuExtenderHandler handler) {
-        super.unregisterExtender(handler);
-        updateDelayer.resetAndStart();
-    }
-
     @Override
     public String getFileExtension() {
         return ".jdmenu";
@@ -88,25 +64,6 @@ public class MainMenuManager extends ContextMenuManager<FilePackage, DownloadLin
 
     private MainMenuManager() {
         super();
-        updateDelayer = new DelayedRunnable(1000l, 2000) {
-            @Override
-            public String getID() {
-                return "MainMenuManager";
-            }
-
-            @Override
-            public void delayedrun() {
-                new EDTRunner() {
-
-                    @Override
-                    protected void runInEDT() {
-                        JDMenuBar.getInstance().updateLayout();
-                    }
-                };
-
-            }
-
-        };
 
     }
 
@@ -212,6 +169,18 @@ public class MainMenuManager extends ContextMenuManager<FilePackage, DownloadLin
     @Override
     public String getName() {
         return _GUI._.MainMenuManager_getName();
+    }
+
+    @Override
+    protected void updateGui() {
+        new EDTRunner() {
+
+            @Override
+            protected void runInEDT() {
+                JDMenuBar.getInstance().updateLayout();
+            }
+        };
+
     }
 
 }

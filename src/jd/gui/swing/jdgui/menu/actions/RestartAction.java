@@ -17,6 +17,7 @@
 package jd.gui.swing.jdgui.menu.actions;
 
 import java.awt.event.ActionEvent;
+import java.awt.event.KeyEvent;
 
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.actions.CachableInterface;
@@ -32,6 +33,7 @@ public class RestartAction extends AppAction implements CachableInterface {
         setTooltipText(_GUI._.action_restart_tooltip());
         setName(_GUI._.action_restart());
         setIconKey("restart");
+        setAccelerator(KeyEvent.VK_R);
     }
 
     @Override

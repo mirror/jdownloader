@@ -285,8 +285,8 @@ public class MainToolBar extends JToolBar implements MouseListener, DownloadWatc
 
                     action = menudata.createAction(null);
 
-                    if (StringUtils.isNotEmpty(menudata._getShortcut())) {
-                        action.setAccelerator(KeyStroke.getKeyStroke(menudata._getShortcut()));
+                    if (StringUtils.isNotEmpty(menudata.getShortcut()) && KeyStroke.getKeyStroke(menudata.getShortcut()) != null) {
+                        action.setAccelerator(KeyStroke.getKeyStroke(menudata.getShortcut()));
                     }
                     bt = null;
                     if (action instanceof ToolBarAction) {
