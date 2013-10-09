@@ -4,21 +4,30 @@ import java.awt.Color;
 import java.awt.Component;
 import java.awt.Image;
 import java.awt.LayoutManager;
+import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
 import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map.Entry;
 
+import javax.swing.Action;
+import javax.swing.ActionMap;
 import javax.swing.DropMode;
 import javax.swing.ImageIcon;
+import javax.swing.InputMap;
+import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JPopupMenu;
 import javax.swing.JProgressBar;
 import javax.swing.JScrollPane;
 import javax.swing.JSeparator;
 import javax.swing.JTable;
+import javax.swing.KeyStroke;
 import javax.swing.SwingConstants;
+import javax.swing.SwingUtilities;
 import javax.swing.TransferHandler;
 
 import jd.controlling.linkcollector.LinkCollector;
@@ -36,16 +45,23 @@ import org.appwork.swing.exttable.ExtCheckBoxMenuItem;
 import org.appwork.swing.exttable.ExtColumn;
 import org.appwork.swing.exttable.ExtDefaultRowSorter;
 import org.appwork.uio.UIOManager;
+import org.appwork.utils.StringUtils;
 import org.appwork.utils.ImageProvider.ImageProvider;
 import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.SwingUtils;
 import org.appwork.utils.swing.dialog.Dialog;
+import org.jdownloader.actions.AppAction;
+import org.jdownloader.actions.SelectionAppAction;
+import org.jdownloader.controlling.contextmenu.MenuContainer;
+import org.jdownloader.controlling.contextmenu.MenuItemData;
+import org.jdownloader.controlling.contextmenu.SeperatorData;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.components.packagetable.PackageControllerTable;
 import org.jdownloader.gui.views.downloads.table.HorizontalScrollbarAction;
 import org.jdownloader.gui.views.linkgrabber.actions.ConfirmAutoAction;
 import org.jdownloader.gui.views.linkgrabber.contextmenu.ContextMenuFactory;
+import org.jdownloader.gui.views.linkgrabber.contextmenu.LinkgrabberContextMenuManager;
 import org.jdownloader.gui.views.linkgrabber.contextmenu.RemoveSelectionLinkgrabberAction;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
@@ -53,8 +69,9 @@ import org.jdownloader.translate._JDT;
 
 public class LinkGrabberTable extends PackageControllerTable<CrawledPackage, CrawledLink> {
 
-    private static final long  serialVersionUID = 8843600834248098174L;
-    private ContextMenuFactory contextMenuFactory;
+    private static final long          serialVersionUID = 8843600834248098174L;
+    private ContextMenuFactory         contextMenuFactory;
+    private HashMap<KeyStroke, Action> shortCutActions;
 
     public LinkGrabberTable(LinkGrabberPanel linkGrabberPanel, final LinkGrabberTableModel tableModel) {
         super(tableModel);
@@ -310,5 +327,102 @@ public class LinkGrabberTable extends PackageControllerTable<CrawledPackage, Cra
     @Override
     public ExtColumn<AbstractNode> getExpandCollapseColumn() {
         return LinkGrabberTableModel.getInstance().expandCollapse;
+    }
+
+    @SuppressWarnings("unchecked")
+    @Override
+    protected boolean processKeyBinding(KeyStroke stroke, KeyEvent evt, int condition, boolean pressed) {
+        try {
+            final InputMap map = getInputMap(condition);
+            final ActionMap am = getActionMap();
+
+            if (map != null && am != null && isEnabled()) {
+                final Object binding = map.get(stroke);
+                final Action action = (binding == null) ? null : am.get(binding);
+                if (action != null && action instanceof SelectionAppAction) {
+
+                    SelectionInfo<CrawledPackage, CrawledLink> si = new SelectionInfo<CrawledPackage, CrawledLink>(getModel().getObjectbyRow(getSelectionModel().getLeadSelectionIndex()), getModel().getSelectedObjects(), null, evt, null, this);
+                    ((SelectionAppAction) action).setSelection(si);
+                    if (!action.isEnabled()) {
+
+                        Toolkit.getDefaultToolkit().beep();
+                    } else {
+
+                        return SwingUtilities.notifyAction(action, stroke, evt, this, evt.getModifiers());
+
+                    }
+
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return super.processKeyBinding(stroke, evt, condition, pressed);
+    }
+
+    public void updateContextShortcuts(LinkgrabberContextMenuManager manager) {
+
+        final InputMap input = getInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT);
+        final InputMap input2 = getInputMap(JComponent.WHEN_FOCUSED);
+        final InputMap input3 = getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW);
+        final ActionMap actions = getActionMap();
+
+        if (shortCutActions != null) {
+            for (Entry<KeyStroke, Action> ks : shortCutActions.entrySet()) {
+                Object binding = input.get(ks.getKey());
+                input.remove(ks.getKey());
+                input2.remove(ks.getKey());
+                input3.remove(ks.getKey());
+                actions.remove(binding);
+
+            }
+        }
+
+        shortCutActions = new HashMap<KeyStroke, Action>();
+        fillActions(manager.getMenuData());
+
+    }
+
+    private void fillActions(MenuContainer menuData) {
+        final InputMap input = getInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT);
+        final InputMap input2 = getInputMap(JComponent.WHEN_FOCUSED);
+        final InputMap input3 = getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW);
+
+        final ActionMap actions = getActionMap();
+
+        for (MenuItemData mi : menuData.getItems()) {
+            if (mi instanceof MenuContainer) {
+                fillActions((MenuContainer) mi);
+            } else if (mi instanceof SeperatorData) {
+                continue;
+            } else {
+                AppAction action;
+                try {
+                    action = mi.createAction(null);
+                    KeyStroke keystroke;
+                    if (StringUtils.isNotEmpty(mi.getShortcut())) {
+                        keystroke = KeyStroke.getKeyStroke(mi.getShortcut());
+                        if (keystroke != null) {
+                            action.setAccelerator(keystroke);
+                        }
+                    }
+
+                    if (action != null && (keystroke = (KeyStroke) action.getValue(Action.ACCELERATOR_KEY)) != null) {
+                        String key = "CONTEXT_ACTION_" + keystroke;
+                        System.out.println(keystroke + " -> " + action);
+                        input.put(keystroke, key);
+                        input2.put(keystroke, key);
+                        input3.put(keystroke, key);
+                        actions.put(key, action);
+                        shortCutActions.put(keystroke, action);
+
+                    }
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+
+            }
+        }
     }
 }

@@ -2,7 +2,8 @@ package org.jdownloader.gui.views.components.packagetable.context;
 
 import java.awt.event.ActionEvent;
 
-import jd.controlling.packagecontroller.AbstractNode;
+import javax.swing.KeyStroke;
+
 import jd.controlling.packagecontroller.AbstractPackageChildrenNode;
 import jd.controlling.packagecontroller.AbstractPackageNode;
 import jd.gui.swing.jdgui.MainTabbedPane;
@@ -28,7 +29,7 @@ public class RenameAction<PackageType extends AbstractPackageNode<ChildrenType, 
         setName(_GUI._.RenameAction_RenameAction());
         setTooltipText(_GUI._.RenameAction_RenameAction_tt());
         setIconKey("edit");
-        // setAccelerator(KeyStroke.getKeyStroke("F2"));
+        setAccelerator(KeyStroke.getKeyStroke("F2"));
 
     }
 
@@ -36,26 +37,21 @@ public class RenameAction<PackageType extends AbstractPackageNode<ChildrenType, 
     public void actionPerformed(ActionEvent e) {
         try {
             // LinkgrabberContextMenuManager.getInstance().getPanel().getTable().get
-            if (getSelection() != null) {
-                FileColumn col = getSelection().getContextColumn().getModel().getColumnByClass(FileColumn.class);
-                if (col != null) {
-                    col.startEditing(getSelection().getRawContext());
-                }
-            } else {
-                View view = MainTabbedPane.getInstance().getSelectedView();
 
-                if (view instanceof DownloadsView) {
-                    DownloadsTable table = ((DownloadsPanel) ((DownloadsView) view).getContent()).getTable();
-                    FileColumn col = table.getModel().getColumnByClass(FileColumn.class);
-                    AbstractNode obj = table.getModel().getObjectbyRow(table.getSelectionModel().getLeadSelectionIndex());
-                    col.startEditing(obj);
-                } else if (view instanceof LinkGrabberView) {
-                    LinkGrabberTable table = ((LinkGrabberPanel) ((LinkGrabberView) view).getContent()).getTable();
-                    FileColumn col = table.getModel().getColumnByClass(FileColumn.class);
-                    AbstractNode obj = table.getModel().getObjectbyRow(table.getSelectionModel().getLeadSelectionIndex());
-                    col.startEditing(obj);
-                }
+            View view = MainTabbedPane.getInstance().getSelectedView();
+
+            if (view instanceof DownloadsView) {
+                DownloadsTable table = ((DownloadsPanel) ((DownloadsView) view).getContent()).getTable();
+                FileColumn col = table.getModel().getColumnByClass(FileColumn.class);
+
+                col.startEditing(hasSelection() && getSelection().getRawContext() != null ? getSelection().getRawContext() : table.getModel().getObjectbyRow(table.getSelectionModel().getLeadSelectionIndex()));
+            } else if (view instanceof LinkGrabberView) {
+                LinkGrabberTable table = ((LinkGrabberPanel) ((LinkGrabberView) view).getContent()).getTable();
+                FileColumn col = table.getModel().getColumnByClass(FileColumn.class);
+                col.startEditing(hasSelection() && getSelection().getRawContext() != null ? getSelection().getRawContext() : table.getModel().getObjectbyRow(table.getSelectionModel().getLeadSelectionIndex()));
+
             }
+
         } catch (Exception ee) {
             // many casts here.... let's catch everything - just to be sure
 

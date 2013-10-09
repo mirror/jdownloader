@@ -7,6 +7,7 @@ import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.Rectangle;
 import java.awt.event.ActionEvent;
+import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
 import java.util.ArrayList;
@@ -37,17 +38,25 @@ import org.jdownloader.updatev2.gui.LAFOptions;
 
 public abstract class PackageControllerTable<ParentType extends AbstractPackageNode<ChildrenType, ParentType>, ChildrenType extends AbstractPackageChildrenNode<ParentType>> extends BasicJDTable<AbstractNode> {
 
+    private static final KeyStroke                                KEY_STROKE_ALT_END  = KeyStroke.getKeyStroke(KeyEvent.VK_END, InputEvent.ALT_MASK);
+    private static final KeyStroke                                KEY_STROKE_ALT_HOME = KeyStroke.getKeyStroke(KeyEvent.VK_HOME, InputEvent.ALT_MASK);
+    private static final KeyStroke                                KEY_STROKE_ALT_DOWN = KeyStroke.getKeyStroke(KeyEvent.VK_DOWN, InputEvent.ALT_MASK);
+    private static final KeyStroke                                KEY_STROKE_ALT_UP   = KeyStroke.getKeyStroke(KeyEvent.VK_UP, InputEvent.ALT_MASK);
+    private static final KeyStroke                                KEY_STROKE_RIGHT    = KeyStroke.getKeyStroke(KeyEvent.VK_RIGHT, 0);
+    private static final KeyStroke                                KEY_STROKE_KP_RIGHT = KeyStroke.getKeyStroke(KeyEvent.VK_KP_RIGHT, 0);
+    private static final KeyStroke                                KEY_STROKE_LEFT     = KeyStroke.getKeyStroke(KeyEvent.VK_LEFT, 0);
+    private static final KeyStroke                                KEY_STROKE_KP_LEFT  = KeyStroke.getKeyStroke(KeyEvent.VK_KP_LEFT, 0);
     /**
      * 
      */
-    private static final long                                     serialVersionUID = 3880570615872972276L;
-    private PackageControllerTableModel<ParentType, ChildrenType> tableModel       = null;
+    private static final long                                     serialVersionUID    = 3880570615872972276L;
+    private PackageControllerTableModel<ParentType, ChildrenType> tableModel          = null;
     private Color                                                 sortNotifyColor;
     private Color                                                 filterNotifyColor;
-    private AppAction                                             moveTopAction    = null;
-    private AppAction                                             moveUpAction     = null;
-    private AppAction                                             moveDownAction   = null;
-    private AppAction                                             moveBottomAction = null;
+    private AppAction                                             moveTopAction       = null;
+    private AppAction                                             moveUpAction        = null;
+    private AppAction                                             moveDownAction      = null;
+    private AppAction                                             moveBottomAction    = null;
 
     public PackageControllerTable(PackageControllerTableModel<ParentType, ChildrenType> pctm) {
         super(pctm);
@@ -427,50 +436,39 @@ public abstract class PackageControllerTable<ParentType extends AbstractPackageN
     @Override
     protected boolean processKeyBinding(KeyStroke stroke, KeyEvent evt, int condition, boolean pressed) {
         if (!pressed) { return super.processKeyBinding(stroke, evt, condition, pressed); }
-        switch (evt.getKeyCode()) {
-        case KeyEvent.VK_KP_LEFT:
-        case KeyEvent.VK_LEFT: {
+
+        if (stroke.equals(KEY_STROKE_KP_LEFT) || stroke.equals(KEY_STROKE_LEFT)) {
             AbstractNode element = this.getModel().getElementAt(this.getSelectedRow());
             if (element != null && element instanceof AbstractPackageNode) {
                 tableModel.setFilePackageExpand((AbstractPackageNode<?, ?>) element, false);
                 return true;
             }
         }
-            break;
-        case KeyEvent.VK_KP_RIGHT:
-        case KeyEvent.VK_RIGHT: {
+        if (stroke.equals(KEY_STROKE_KP_RIGHT) || stroke.equals(KEY_STROKE_RIGHT)) {
             AbstractNode element = this.getModel().getElementAt(this.getSelectedRow());
             if (element != null && element instanceof AbstractPackageNode) {
                 tableModel.setFilePackageExpand((AbstractPackageNode<?, ?>) element, true);
                 return true;
             }
         }
-            break;
-        case KeyEvent.VK_UP:
-            if (evt.isAltDown()) {
-                this.moveUpAction.actionPerformed(null);
-                return true;
-            }
-            break;
-        case KeyEvent.VK_DOWN:
-            if (evt.isAltDown()) {
-                this.moveDownAction.actionPerformed(null);
-                return true;
-            }
-            break;
-        case KeyEvent.VK_HOME:
-            if (evt.isAltDown()) {
-                moveTopAction.actionPerformed(null);
-                return true;
-            }
-            break;
-        case KeyEvent.VK_END:
-            if (evt.isAltDown()) {
-                moveBottomAction.actionPerformed(null);
-                return true;
-            }
-            break;
+        if (stroke.equals(KEY_STROKE_ALT_UP)) {
+            this.moveUpAction.actionPerformed(null);
+            return true;
         }
+        if (stroke.equals(KEY_STROKE_ALT_DOWN)) {
+            this.moveDownAction.actionPerformed(null);
+            return true;
+        }
+
+        if (stroke.equals(KEY_STROKE_ALT_HOME)) {
+            moveTopAction.actionPerformed(null);
+            return true;
+        }
+        if (stroke.equals(KEY_STROKE_ALT_END)) {
+            moveBottomAction.actionPerformed(null);
+            return true;
+        }
+
         return super.processKeyBinding(stroke, evt, condition, pressed);
     }
 

@@ -3,6 +3,7 @@ package org.jdownloader.gui.views.downloads.table;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.LayoutManager;
+import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
@@ -21,6 +22,7 @@ import javax.swing.JScrollPane;
 import javax.swing.JSeparator;
 import javax.swing.JTable;
 import javax.swing.KeyStroke;
+import javax.swing.SwingUtilities;
 import javax.swing.Timer;
 import javax.swing.TransferHandler;
 
@@ -227,6 +229,7 @@ public class DownloadsTable extends PackageControllerTable<FilePackage, Download
         return true;
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     protected boolean processKeyBinding(KeyStroke stroke, KeyEvent evt, int condition, boolean pressed) {
         try {
@@ -240,6 +243,14 @@ public class DownloadsTable extends PackageControllerTable<FilePackage, Download
 
                     SelectionInfo<FilePackage, DownloadLink> si = new SelectionInfo<FilePackage, DownloadLink>(getModel().getObjectbyRow(getSelectionModel().getLeadSelectionIndex()), getModel().getSelectedObjects(), null, evt, null, this);
                     ((SelectionAppAction) action).setSelection(si);
+                    if (!action.isEnabled()) {
+
+                        Toolkit.getDefaultToolkit().beep();
+                    } else {
+
+                        return SwingUtilities.notifyAction(action, stroke, evt, this, evt.getModifiers());
+
+                    }
 
                 }
             }
@@ -258,12 +269,16 @@ public class DownloadsTable extends PackageControllerTable<FilePackage, Download
     public void updateContextShortcuts(DownloadListContextMenuManager manager) {
 
         final InputMap input = getInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT);
+        final InputMap input2 = getInputMap(JComponent.WHEN_FOCUSED);
+        final InputMap input3 = getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW);
         final ActionMap actions = getActionMap();
 
         if (shortCutActions != null) {
             for (Entry<KeyStroke, Action> ks : shortCutActions.entrySet()) {
                 Object binding = input.get(ks.getKey());
                 input.remove(ks.getKey());
+                input2.remove(ks.getKey());
+                input3.remove(ks.getKey());
                 actions.remove(binding);
 
             }
@@ -276,6 +291,9 @@ public class DownloadsTable extends PackageControllerTable<FilePackage, Download
 
     private void fillActions(MenuContainer menuData) {
         final InputMap input = getInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT);
+        final InputMap input2 = getInputMap(JComponent.WHEN_FOCUSED);
+        final InputMap input3 = getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW);
+
         final ActionMap actions = getActionMap();
 
         for (MenuItemData mi : menuData.getItems()) {
@@ -296,9 +314,11 @@ public class DownloadsTable extends PackageControllerTable<FilePackage, Download
                     }
 
                     if (action != null && (keystroke = (KeyStroke) action.getValue(Action.ACCELERATOR_KEY)) != null) {
-                        String key = "CONTEXT_ACTION_" + action.hashCode();
+                        String key = "CONTEXT_ACTION_" + keystroke;
+                        System.out.println(keystroke + " -> " + action);
                         input.put(keystroke, key);
-
+                        input2.put(keystroke, key);
+                        input3.put(keystroke, key);
                         actions.put(key, action);
                         shortCutActions.put(keystroke, action);
 

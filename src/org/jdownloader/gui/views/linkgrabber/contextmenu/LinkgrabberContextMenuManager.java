@@ -26,6 +26,7 @@ import org.jdownloader.gui.views.downloads.action.MenuManagerAction;
 import org.jdownloader.gui.views.downloads.context.submenu.PriorityMenuContainer;
 import org.jdownloader.gui.views.linkgrabber.LinkGrabberPanel;
 import org.jdownloader.gui.views.linkgrabber.LinkGrabberTable;
+import org.jdownloader.gui.views.linkgrabber.LinkGrabberTableModel;
 import org.jdownloader.gui.views.linkgrabber.actions.AddContainerAction;
 import org.jdownloader.gui.views.linkgrabber.actions.AddLinksAction;
 import org.jdownloader.gui.views.linkgrabber.actions.ConfirmAllContextmenuAction;
@@ -168,6 +169,10 @@ public class LinkgrabberContextMenuManager extends ContextMenuManager<CrawledPac
         return panel;
     }
 
+    public boolean isAcceleratorsEnabled() {
+        return true;
+    }
+
     @Override
     public String getName() {
         return _GUI._.LinkgrabberContextMenuManager_getName();
@@ -175,6 +180,8 @@ public class LinkgrabberContextMenuManager extends ContextMenuManager<CrawledPac
 
     @Override
     protected void updateGui() {
+        ((LinkGrabberTable) LinkGrabberTableModel.getInstance().getTable()).updateContextShortcuts(this);
+
     }
 
 }

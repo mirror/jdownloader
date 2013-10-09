@@ -220,6 +220,7 @@ public class FileColumn extends ExtTextColumn<AbstractNode> implements GenericCo
 
     @Override
     public void focusGained(final FocusEvent e) {
+
         String txt = editorField.getText();
         int point = txt.lastIndexOf(".");
         /* select filename only, try to keep the extension/filetype */
