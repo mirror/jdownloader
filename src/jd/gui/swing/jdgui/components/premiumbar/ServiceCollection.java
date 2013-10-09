@@ -26,9 +26,8 @@ public abstract class ServiceCollection<T> extends ArrayList<T> implements Compa
                 // sort on name
                 ret = getName().compareTo(o.getName());
             } else {
-
                 // last enabled one should be the first
-                ret = new Long(getLastActiveTimestamp()).compareTo(o.getLastActiveTimestamp());
+                ret = new Long(o.getLastActiveTimestamp()).compareTo(getLastActiveTimestamp());
             }
         }
         return ret;
