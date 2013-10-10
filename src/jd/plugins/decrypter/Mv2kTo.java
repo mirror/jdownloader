@@ -40,8 +40,10 @@ public class Mv2kTo extends PluginForDecrypt {
     private static final String INVALIDLINKS2 = "http://(www\\.)?movie4k\\.to/tvshows\\-episode[a-z0-9\\-]+\\.html";
 
     /**
-     * Description of the regexes array: 1= nowvideo.co,streamcloud.com 2=flashx.tv,vidbux.com,xvidstage.com,vidstream.in
-     * ,flashstream.in,hostingbulk.com ,vreer.com,uploadc.com,allmyvideos .net,putlocker .com,vureel.com,watchfreeinhd.com and many others
+     * Description of the regexes array: 1= nowvideo.co,streamcloud.com
+     * 2=flashx.tv,vidbux.com,xvidstage.com,vidstream.in
+     * ,flashstream.in,hostingbulk.com ,vreer.com,uploadc.com,allmyvideos
+     * .net,putlocker .com,vureel.com,watchfreeinhd.com and many others
      * 3=zalaa.com,sockshare.com 4=stream2k.com 5=flashx.tv, yesload.net
      */
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
@@ -54,7 +56,11 @@ public class Mv2kTo extends PluginForDecrypt {
             return decryptedLinks;
         }
         br.getPage(parameter);
-        if (br.getURL().endsWith("/error404.php") || br.containsHTML(">404 Not Found<")) {
+        final String continuelink = br.getRegex("<SCRIPT>window\\.location=\\'([^<>\"]*?)\\';</SCRIPT>").getMatch(0);
+        if (continuelink != null) {
+            br.getPage("http://www.movie4k.to/" + continuelink);
+        }
+        if (br.getURL().endsWith("/error404.php") || br.getURL().equals("http://www.movie4k.to/") || br.containsHTML(">404 Not Found<")) {
             logger.info("Invalid URL, or the URL doesn't exist any longer: " + parameter);
             return decryptedLinks;
         }
