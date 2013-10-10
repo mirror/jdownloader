@@ -381,17 +381,17 @@ public class StatusBarImpl extends JPanel implements DownloadWatchdogListener {
 
     @Override
     public void onDownloadWatchdogDataUpdate() {
-        if (DownloadWatchDog.getInstance().getSkippedLinksCounter() > 0) {
+        if (DownloadWatchDog.getInstance().getSession().getSkipCounter() > 0) {
             if (!hasProcessIndicator(lazyGetDownloadWatchdogIndicator())) {
                 addProcessIndicator(lazyGetDownloadWatchdogIndicator());
             }
             new EDTRunner() {
                 @Override
                 protected void runInEDT() {
-                    if (downloadWatchdogIndicator != null) downloadWatchdogIndicator.setDescription(_GUI._.StatusBarImpl_skippedLinksMarker_desc(DownloadWatchDog.getInstance().getSkippedLinksCounter()));
+                    if (downloadWatchdogIndicator != null) downloadWatchdogIndicator.setDescription(_GUI._.StatusBarImpl_skippedLinksMarker_desc(DownloadWatchDog.getInstance().getSession().getSkipCounter()));
                 }
             };
-        } else if (DownloadWatchDog.getInstance().getSkippedLinksCounter() <= 0) {
+        } else if (DownloadWatchDog.getInstance().getSession().getSkipCounter() <= 0) {
             if (downloadWatchdogIndicator != null) {
                 removeProcessIndicator(lazyGetDownloadWatchdogIndicator());
             }

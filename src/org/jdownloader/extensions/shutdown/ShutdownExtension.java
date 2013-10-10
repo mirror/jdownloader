@@ -505,7 +505,7 @@ public class ShutdownExtension extends AbstractExtension<ShutdownConfig, Shutdow
         State state = sm.getState();
 
         if (event.getNewState() == DownloadWatchDog.STOPPED_STATE) {
-            if (DownloadWatchDog.getInstance().getSession().getDownloadsStarted().get() > 0) {
+            if (DownloadWatchDog.getInstance().getSession().getDownloadsStarted() > 0) {
                 ShutdownRequest request = ShutdownController.getInstance().collectVetos(new BasicShutdownRequest(true));
 
                 if (request.hasVetos()) {

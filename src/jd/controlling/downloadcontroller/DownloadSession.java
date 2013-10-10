@@ -59,12 +59,12 @@ public class DownloadSession {
 
     private final NullsafeAtomicReference<SessionState>        sessionState                  = new NullsafeAtomicReference<SessionState>(SessionState.NORMAL);
 
-    public AtomicBoolean getRefreshCandidates() {
-        return refreshCandidates;
+    public boolean isCandidatesRefreshRequired() {
+        return refreshCandidates.get();
     }
 
-    public AtomicBoolean getMirrorManagement() {
-        return mirrorManagement;
+    public boolean isMirrorManagementEnabled() {
+        return mirrorManagement.get();
     }
 
     public int getMaxConcurrentDownloadsPerHost() {
@@ -79,38 +79,39 @@ public class DownloadSession {
         }
     }
 
-    public AtomicBoolean getAvoidCaptchas() {
-        return avoidCaptchas;
+    public boolean isAvoidCaptchas() {
+        return avoidCaptchas.get();
     }
 
     private final HashMap<String, AccountCache>                       accountCache     = new HashMap<String, AccountCache>();
     private final HashMap<DownloadLink, DownloadLinkCandidateHistory> candidateHistory = new HashMap<DownloadLink, DownloadLinkCandidateHistory>();
     private final ProxyInfoHistory                                    proxyInfoHistory;                                                             ;
 
-    public AtomicBoolean getActivateForcedOnly() {
-        return activateForcedOnly;
+    public boolean isForcedOnlyModeEnabled() {
+        return activateForcedOnly.get();
     }
 
-    public AtomicInteger getSkipCounter() {
-        return skipCounter;
+    public int getSkipCounter() {
+        return skipCounter.get();
     }
 
-    public NullsafeAtomicReference<Integer> getSpeedLimitBeforePause() {
-        return speedLimitBeforePause;
+    public int getSpeedLimitBeforePause() {
+        Integer ret = speedLimitBeforePause.get();
+        return ret == null ? -1 : ret;
     }
 
-    public NullsafeAtomicReference<Boolean> getSpeedLimitedBeforePause() {
-        return speedLimitedBeforePause;
+    public boolean isSpeedWasLimitedBeforePauseEnabled() {
+        return speedLimitedBeforePause.get() == Boolean.TRUE;
     }
 
     private final NullsafeAtomicReference<Integer> speedLimitBeforePause   = new NullsafeAtomicReference<Integer>(null);
     private final NullsafeAtomicReference<Boolean> speedLimitedBeforePause = new NullsafeAtomicReference<Boolean>(null);
 
-    private CopyOnWriteArrayList<DownloadLink>     forcedLinks             = new CopyOnWriteArrayList<DownloadLink>();
-    private CopyOnWriteArrayList<DownloadLink>     activationRequests      = new CopyOnWriteArrayList<DownloadLink>();
+    private List<DownloadLink>                     forcedLinks             = new CopyOnWriteArrayList<DownloadLink>();
+    private List<DownloadLink>                     activationRequests      = new CopyOnWriteArrayList<DownloadLink>();
 
-    public void setActivationRequests(CopyOnWriteArrayList<DownloadLink> activationRequests) {
-        if (getRefreshCandidates().get() == false) {
+    public void setActivationRequests(List<DownloadLink> activationRequests) {
+        if (isCandidatesRefreshRequired() == false) {
             if (!activationRequests.equals(this.activationRequests)) {
                 refreshCandidates();
             }
@@ -123,7 +124,7 @@ public class DownloadSession {
     }
 
     public void setForcedLinks(CopyOnWriteArrayList<DownloadLink> forcedLinks) {
-        if (getRefreshCandidates().get() == false) {
+        if (isCandidatesRefreshRequired() == false) {
             if (!forcedLinks.equals(this.forcedLinks)) {
                 refreshCandidates();
             }
@@ -195,7 +196,7 @@ public class DownloadSession {
         return plugin;
     }
 
-    public CopyOnWriteArrayList<DownloadLink> getForcedLinks() {
+    public List<DownloadLink> getForcedLinks() {
         return forcedLinks;
     }
 
@@ -210,11 +211,11 @@ public class DownloadSession {
         }
     }
 
-    public boolean forcedLinksWaiting() {
+    public boolean isForcedLinksWaiting() {
         return forcedLinks.size() > 0;
     }
 
-    public boolean activationRequestsWaiting() {
+    public boolean isActivationRequestsWaiting() {
         if (activateForcedOnly.get()) {
             return forcedLinks.size() > 0;
         } else {
@@ -394,29 +395,57 @@ public class DownloadSession {
     /**
      * @return the downloadsStarted
      */
-    public AtomicInteger getDownloadsStarted() {
-        return downloadsStarted;
+    public int getDownloadsStarted() {
+        return downloadsStarted.get();
     }
 
     /**
      * @return the controllers
      */
-    public CopyOnWriteArrayList<SingleDownloadController> getControllers() {
+    public List<SingleDownloadController> getControllers() {
         return controllers;
     }
 
     /**
      * @return the activationLinks
      */
-    public CopyOnWriteArrayList<DownloadLink> getActivationRequests() {
+    public List<DownloadLink> getActivationRequests() {
         return activationRequests;
     }
 
     /**
      * @return the sessionState
      */
-    public NullsafeAtomicReference<SessionState> getSessionState() {
-        return sessionState;
+    public SessionState getSessionState() {
+        return sessionState.get();
+    }
+
+    public void setForcedOnlyModeEnabled(boolean b) {
+        activateForcedOnly.set(b);
+    }
+
+    public boolean setCandidatesRefreshRequired(boolean b) {
+        return refreshCandidates.getAndSet(b);
+    }
+
+    public void setSpeedLimitBeforePause(int downloadSpeedLimit) {
+        speedLimitBeforePause.set(downloadSpeedLimit);
+    }
+
+    public void setSpeedWasLimitedBeforePauseEnabled(boolean b) {
+        speedLimitedBeforePause.set(b);
+    }
+
+    public boolean compareAndSetSessionState(SessionState expect, SessionState update) {
+        return sessionState.compareAndSet(expect, update);
+    }
+
+    public void setSessionState(SessionState state) {
+        sessionState.set(state);
+    }
+
+    public void setSkipCounter(int i) {
+        skipCounter.set(i);
     }
 
 }

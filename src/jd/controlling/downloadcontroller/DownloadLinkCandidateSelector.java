@@ -81,8 +81,8 @@ public class DownloadLinkCandidateSelector {
 
     public DownloadLinkCandidateSelector(DownloadSession session) {
         this.session = session;
-        this.avoidCaptchas = session.getAvoidCaptchas().get();
-        this.mirrorManagement = session.getMirrorManagement().get();
+        this.avoidCaptchas = session.isAvoidCaptchas();
+        this.mirrorManagement = session.isMirrorManagementEnabled();
     }
 
     public int getMaxNumberOfDownloadLinkCandidatesResults(DownloadLinkCandidate candidate) {

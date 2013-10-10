@@ -165,15 +165,17 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
         }
     }
 
-    public static final State IDLE_STATE     = new State("IDLE");
-    public static final State RUNNING_STATE  = new State("RUNNING");
-    public static final State PAUSE_STATE    = new State("PAUSE");
-    public static final State STOPPING_STATE = new State("STOPPING");
-    public static final State STOPPED_STATE  = new State("STOPPED_STATE");
+    public static final State IDLE_STATE                = new State("IDLE");
+    public static final State RUNNING_STATE             = new State("RUNNING");
+    public static final State RUNNING_STATE_FORCED_ONLY = new State("FORCED_RUNNING");
+    public static final State PAUSE_STATE               = new State("PAUSE");
+    public static final State STOPPING_STATE            = new State("STOPPING");
+    public static final State STOPPED_STATE             = new State("STOPPED_STATE");
     static {
-        IDLE_STATE.addChildren(RUNNING_STATE);
+        IDLE_STATE.addChildren(RUNNING_STATE, RUNNING_STATE_FORCED_ONLY);
+        RUNNING_STATE_FORCED_ONLY.addChildren(STOPPING_STATE, PAUSE_STATE, RUNNING_STATE);
         RUNNING_STATE.addChildren(STOPPING_STATE, PAUSE_STATE);
-        PAUSE_STATE.addChildren(RUNNING_STATE, STOPPING_STATE);
+        PAUSE_STATE.addChildren(RUNNING_STATE, RUNNING_STATE_FORCED_ONLY, STOPPING_STATE);
         STOPPING_STATE.addChildren(STOPPED_STATE);
     }
 
@@ -343,7 +345,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                                 }
                             }
                         }
-                        currentSession.getSessionState().compareAndSet(DownloadSession.SessionState.RECONNECT_RUNNING, DownloadSession.SessionState.NORMAL);
+                        currentSession.compareAndSetSessionState(DownloadSession.SessionState.RECONNECT_RUNNING, DownloadSession.SessionState.NORMAL);
                     }
                 });
                 if (isAutoReconnectEnabled() && Reconnecter.getFailedCounter() > 5) {
@@ -534,7 +536,8 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
 
                 if (DownloadWatchDog.this.stateMachine.isStartState() || DownloadWatchDog.this.stateMachine.isFinal()) {
                     /*
-                     * no downloads are running, so we will force only the selected links to get started by setting stopmark to first forced link
+                     * no downloads are running, so we will force only the selected links to get started by setting stopmark to first forced
+                     * link
                      */
 
                     // DownloadWatchDog.this.setStopMark(linksForce.get(0));
@@ -542,7 +545,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
 
                         @Override
                         public void run() {
-                            getSession().getActivateForcedOnly().set(true);
+                            getSession().setForcedOnlyModeEnabled(true);
                             enqueueForcedDownloads(linksForce);
                         }
                     });
@@ -1061,10 +1064,10 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
             DownloadSession currentSession = selector.getSession();
             HashSet<DownloadLink> avoidReHandle = new HashSet<DownloadLink>();
             List<List<DownloadLink>> activationRequests = new ArrayList<List<DownloadLink>>(2);
-            if (currentSession.forcedLinksWaiting()) {
+            if (currentSession.isForcedLinksWaiting()) {
                 activationRequests.add(currentSession.getForcedLinks());
             }
-            if (selector.isForcedOnly() == false && currentSession.getActivateForcedOnly().get() == false) {
+            if (selector.isForcedOnly() == false && currentSession.isForcedOnlyModeEnabled() == false) {
                 activationRequests.add(currentSession.getActivationRequests());
             }
             for (List<DownloadLink> activationRequest : activationRequests) {
@@ -1133,19 +1136,19 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
             /* shutdown is requested, we do not start new downloads */
             return false;
         }
-        SessionState sessionState = session.getSessionState().get();
+        SessionState sessionState = session.getSessionState();
         if (sessionState == DownloadSession.SessionState.RECONNECT_RUNNING) {
             /* reconnect in progress */
             return false;
         }
-        boolean forcedLinksWaiting = getSession().forcedLinksWaiting();
-        if (forcedLinksWaiting == false && !DownloadWatchDog.this.stateMachine.isState(DownloadWatchDog.RUNNING_STATE)) {
+        boolean isForcedLinksWaiting = getSession().isForcedLinksWaiting();
+        if (isForcedLinksWaiting == false && !DownloadWatchDog.this.stateMachine.isState(DownloadWatchDog.RUNNING_STATE)) {
             /*
              * only allow new downloads in running state
              */
             return false;
         }
-        if (forcedLinksWaiting == false && isAutoReconnectEnabled() && CFG_RECONNECT.CFG.isDownloadControllerPrefersReconnectEnabled() && sessionState == DownloadSession.SessionState.RECONNECT_REQUESTED) {
+        if (isForcedLinksWaiting == false && isAutoReconnectEnabled() && CFG_RECONNECT.CFG.isDownloadControllerPrefersReconnectEnabled() && sessionState == DownloadSession.SessionState.RECONNECT_REQUESTED) {
             /*
              * auto reconnect is enabled and downloads are waiting for reconnect and user set to wait for reconnect
              */
@@ -1213,8 +1216,8 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                 }
                 if (value) {
                     /* set pause settings */
-                    currentSession.getSpeedLimitBeforePause().set(config.getDownloadSpeedLimit());
-                    currentSession.getSpeedLimitedBeforePause().set(config.isDownloadSpeedLimitEnabled());
+                    currentSession.setSpeedLimitBeforePause(config.getDownloadSpeedLimit());
+                    currentSession.setSpeedWasLimitedBeforePauseEnabled(config.isDownloadSpeedLimitEnabled());
                     config.setDownloadSpeedLimit(config.getPauseSpeed());
                     config.setDownloadSpeedLimitEnabled(true);
                     logger.info("Pause enabled: Reducing downloadspeed to " + config.getPauseSpeed() + " KiB/s");
@@ -1222,11 +1225,11 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                     stateMachine.setStatus(PAUSE_STATE);
                 } else {
                     /* revert pause settings if available */
-                    if (currentSession.getSpeedLimitBeforePause().get() != null) {
+                    if (currentSession.getSpeedLimitBeforePause() > 0) {
                         logger.info("Pause disabled: Switch back to old downloadspeed");
-                        config.setDownloadSpeedLimit(currentSession.getSpeedLimitBeforePause().get());
+                        config.setDownloadSpeedLimit(currentSession.getSpeedLimitBeforePause());
                     }
-                    if (currentSession.getSpeedLimitedBeforePause().get() != null) config.setDownloadSpeedLimitEnabled(currentSession.getSpeedLimitedBeforePause().get());
+                    config.setDownloadSpeedLimitEnabled(currentSession.isSpeedWasLimitedBeforePauseEnabled());
                     if (stateMachine.isState(DownloadWatchDog.PAUSE_STATE)) {
                         /* we revert pause to running state */
                         stateMachine.setStatus(RUNNING_STATE);
@@ -1519,12 +1522,13 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
         DownloadSession session = getSession();
         DownloadLinkCandidateSelector selector = new DownloadLinkCandidateSelector(session);
         /* avoid captchas or not ? */
-        selector.setAvoidCaptchas(getSession().getAvoidCaptchas().get() || CaptchaDuringSilentModeAction.SKIP_LINK == CFG_SILENTMODE.CFG.getOnCaptchaDuringSilentModeAction());
+        selector.setAvoidCaptchas(getSession().isAvoidCaptchas() || CaptchaDuringSilentModeAction.SKIP_LINK == CFG_SILENTMODE.CFG.getOnCaptchaDuringSilentModeAction());
         finalizeConditionalSkipReasons(session);
         int maxConcurrentNormal = Math.max(1, config.getMaxSimultaneDownloads());
         int maxConcurrentForced = maxConcurrentNormal + Math.max(0, config.getMaxForcedDownloads());
         int loopCounter = 0;
-        boolean invalidate = session.getRefreshCandidates().getAndSet(false);
+        boolean invalidate = session.setCandidatesRefreshRequired(false);
+
         boolean abort = false;
         try {
             if (invalidate) {
@@ -1535,11 +1539,11 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                     }
                 }
             }
-            if (session.forcedLinksWaiting()) {
+            if (session.isForcedLinksWaiting()) {
                 /* first process forcedLinks */
                 selector.setForcedOnly(true);
                 loopCounter = 0;
-                while (abort == false && session.forcedLinksWaiting() && (getActiveDownloads() < maxConcurrentForced) && loopCounter < session.getForcedLinks().size()) {
+                while (abort == false && session.isForcedLinksWaiting() && (getActiveDownloads() < maxConcurrentForced) && loopCounter < session.getForcedLinks().size()) {
                     try {
                         if (abort || (abort = (!this.newDLStartAllowed(session) || session.isStopMarkReached()))) {
                             break;
@@ -1627,6 +1631,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                 /* start watchdogthread */
                 startDownloadWatchDog();
                 /* set state to running */
+
                 stateMachine.setStatus(RUNNING_STATE);
                 /* throw start event */
                 logger.info("DownloadWatchDog: start");
@@ -2013,13 +2018,13 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                     }
                 }
                 if (reconnectRequested && isAutoReconnectEnabled()) {
-                    currentSession.getSessionState().compareAndSet(DownloadSession.SessionState.NORMAL, DownloadSession.SessionState.RECONNECT_REQUESTED);
-                    if (currentSession.getSessionState().get() == DownloadSession.SessionState.RECONNECT_REQUESTED && isReconnectPossible()) {
-                        currentSession.getSessionState().set(DownloadSession.SessionState.RECONNECT_RUNNING);
+                    currentSession.compareAndSetSessionState(DownloadSession.SessionState.NORMAL, DownloadSession.SessionState.RECONNECT_REQUESTED);
+                    if (currentSession.getSessionState() == DownloadSession.SessionState.RECONNECT_REQUESTED && isReconnectPossible()) {
+                        currentSession.setSessionState(DownloadSession.SessionState.RECONNECT_RUNNING);
                         invokeReconnect();
                     }
                 } else {
-                    currentSession.getSessionState().compareAndSet(DownloadSession.SessionState.RECONNECT_REQUESTED, DownloadSession.SessionState.NORMAL);
+                    currentSession.compareAndSetSessionState(DownloadSession.SessionState.RECONNECT_REQUESTED, DownloadSession.SessionState.NORMAL);
                 }
             }
         });
@@ -2035,7 +2040,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
 
                     @Override
                     public void execute(DownloadSession currentSession) {
-                        currentSession.getSessionState().set(DownloadSession.SessionState.RECONNECT_RUNNING);
+                        currentSession.setSessionState(DownloadSession.SessionState.RECONNECT_RUNNING);
                         if (currentSession.getControllers().size() > 0) {
                             for (SingleDownloadController con : getSession().getControllers()) {
                                 if (con.isAlive() && !con.isAborting()) {
@@ -2269,7 +2274,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                                     return true;
                                 }
                             });
-                            getSession().getSkipCounter().set(skippedLinksCounterTmp.get());
+                            getSession().setSkipCounter(skippedLinksCounterTmp.get());
                             lastStructureChange.set(currentStructure);
                             lastActivatorRequestRebuild.set(currentActivatorRequestRebuild);
                             getSession().setActivationRequests(new CopyOnWriteArrayList<DownloadLink>(sortActivationRequests(links)));
@@ -2289,7 +2294,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                             if (newDLStartAllowed(getSession())) DownloadWatchDog.this.activateDownloads();
                             if (getSession().getControllers().size() == 0 && getSession().isStopMarkReached()) {
                                 logger.info("Wait at least " + Math.max(0, (maxWaitTimeout - waitedForNewActivationRequests)) + " for new change in StopMark(reached)");
-                            } else if (getSession().getControllers().size() > 0 || lastActivatorRequestRebuild.get() != activatorRequestRebuild.get() || lastStructureChange.get() != DownloadController.getInstance().getPackageControllerChanges() || getSession().activationRequestsWaiting()) {
+                            } else if (getSession().getControllers().size() > 0 || lastActivatorRequestRebuild.get() != activatorRequestRebuild.get() || lastStructureChange.get() != DownloadController.getInstance().getPackageControllerChanges() || getSession().isActivationRequestsWaiting()) {
                                 waitedForNewActivationRequests = 0;
                             } else {
                                 logger.info("Wait at least " + Math.max(0, (maxWaitTimeout - waitedForNewActivationRequests)) + " for new ActivationRequests");
@@ -2304,10 +2309,10 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                                     long currentTimeStamp = System.currentTimeMillis();
                                     WATCHDOGWAITLOOP.wait(1250);
                                     waitedForNewActivationRequests += System.currentTimeMillis() - currentTimeStamp;
-                                    if ((getSession().activationRequestsWaiting() == false && DownloadWatchDog.this.getActiveDownloads() == 0)) {
+                                    if ((getSession().isActivationRequestsWaiting() == false && DownloadWatchDog.this.getActiveDownloads() == 0)) {
                                         /*
-                                         * it's important that this if statement gets checked after wait!, else we will loop through without waiting for new
-                                         * links/user interaction
+                                         * it's important that this if statement gets checked after wait!, else we will loop through without
+                                         * waiting for new links/user interaction
                                          */
                                         break;
                                     }
@@ -2376,10 +2381,6 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
         thread.setDaemon(true);
         currentWatchDogThread.set(thread);
         thread.start();
-    }
-
-    public int getSkippedLinksCounter() {
-        return getSession().getSkipCounter().get();
     }
 
     /**
@@ -2711,6 +2712,11 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
 
     public boolean isIdle() {
         return stateMachine.isState(IDLE_STATE, STOPPED_STATE);
+    }
+
+    public boolean isStopping() {
+        return stateMachine.isState(STOPPING_STATE);
+
     }
 
     @Override
