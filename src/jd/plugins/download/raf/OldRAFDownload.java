@@ -981,16 +981,15 @@ public class OldRAFDownload extends DownloadInterface {
     }
 
     private void createOutputChannel() throws FileNotFoundException, SkipReasonException {
-        String fileOutput = downloadLink.getFileOutput();
-        outputCompleteFile = new File(fileOutput);
-        outputPartFile = new File(fileOutput + ".part");
-        if (!outputPartFile.canWrite()) {
-            //
-            throw new SkipReasonException(SkipReason.INVALID_DESTINATION);
+        try {
+            String fileOutput = downloadLink.getFileOutput();
+            outputCompleteFile = new File(fileOutput);
+            outputPartFile = new File(fileOutput + ".part");
 
+            outputPartFileRaf = new RandomAccessFile(outputPartFile, "rw");
+        } catch (Exception e) {
+            throw new SkipReasonException(SkipReason.INVALID_DESTINATION, e);
         }
-
-        outputPartFileRaf = new RandomAccessFile(outputPartFile, "rw");
     }
 
     private void setupResume() throws FileNotFoundException {

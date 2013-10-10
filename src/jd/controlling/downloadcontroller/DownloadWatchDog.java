@@ -165,17 +165,17 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
         }
     }
 
-    public static final State IDLE_STATE                = new State("IDLE");
-    public static final State RUNNING_STATE             = new State("RUNNING");
-    public static final State RUNNING_STATE_FORCED_ONLY = new State("FORCED_RUNNING");
-    public static final State PAUSE_STATE               = new State("PAUSE");
-    public static final State STOPPING_STATE            = new State("STOPPING");
-    public static final State STOPPED_STATE             = new State("STOPPED_STATE");
+    public static final State IDLE_STATE     = new State("IDLE");
+    public static final State RUNNING_STATE  = new State("RUNNING");
+
+    public static final State PAUSE_STATE    = new State("PAUSE");
+    public static final State STOPPING_STATE = new State("STOPPING");
+    public static final State STOPPED_STATE  = new State("STOPPED_STATE");
     static {
-        IDLE_STATE.addChildren(RUNNING_STATE, RUNNING_STATE_FORCED_ONLY);
-        RUNNING_STATE_FORCED_ONLY.addChildren(STOPPING_STATE, PAUSE_STATE, RUNNING_STATE);
+        IDLE_STATE.addChildren(RUNNING_STATE);
+
         RUNNING_STATE.addChildren(STOPPING_STATE, PAUSE_STATE);
-        PAUSE_STATE.addChildren(RUNNING_STATE, RUNNING_STATE_FORCED_ONLY, STOPPING_STATE);
+        PAUSE_STATE.addChildren(RUNNING_STATE, STOPPING_STATE);
         STOPPING_STATE.addChildren(STOPPED_STATE);
     }
 

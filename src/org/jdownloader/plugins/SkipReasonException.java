@@ -12,6 +12,12 @@ public class SkipReasonException extends Exception {
     }
 
     public SkipReasonException(SkipReason reason) {
+        this(reason, null);
+
+    }
+
+    public SkipReasonException(SkipReason reason, Exception e) {
+        super(reason + "", e);
         this.reason = reason;
     }
 
