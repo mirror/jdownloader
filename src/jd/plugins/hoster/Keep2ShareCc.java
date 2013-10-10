@@ -48,7 +48,7 @@ public class Keep2ShareCc extends PluginForHost {
 
     public Keep2ShareCc(PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium("http://k2s.cc/premium.html");
+        this.enablePremium("http://keep2share.cc/premium.html");
     }
 
     @Override
