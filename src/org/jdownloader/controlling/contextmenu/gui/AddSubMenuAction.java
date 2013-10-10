@@ -12,9 +12,9 @@ import org.jdownloader.gui.translate._GUI;
 
 public class AddSubMenuAction extends AppAction {
 
-    private ManagerFrame managerFrame;
+    private MenuManagerDialog managerFrame;
 
-    public AddSubMenuAction(ManagerFrame managerFrame) {
+    public AddSubMenuAction(MenuManagerDialog managerFrame) {
         this.managerFrame = managerFrame;
         setTooltipText(_GUI._.ManagerFrame_layoutPanel_addSubmenu());
         setIconKey("menu");

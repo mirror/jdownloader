@@ -18,17 +18,18 @@ import org.appwork.scheduler.DelayedRunnable;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.storage.config.JsonConfig;
+import org.appwork.uio.UIOManager;
 import org.appwork.utils.Application;
 import org.appwork.utils.IO;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.swing.EDTRunner;
-import org.appwork.utils.swing.dialog.Dialog;
-import org.appwork.utils.swing.dialog.DialogCanceledException;
-import org.appwork.utils.swing.dialog.DialogClosedException;
+import org.appwork.utils.swing.WindowManager;
+import org.appwork.utils.swing.WindowManager.FrameState;
 import org.jdownloader.controlling.contextmenu.gui.ExtPopupMenu;
-import org.jdownloader.controlling.contextmenu.gui.ManagerFrame;
 import org.jdownloader.controlling.contextmenu.gui.MenuBuilder;
+import org.jdownloader.controlling.contextmenu.gui.MenuManagerDialog;
+import org.jdownloader.controlling.contextmenu.gui.MenuManagerDialogInterface;
 import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.logging.LogController;
 
@@ -64,23 +65,32 @@ public abstract class ContextMenuManager<PackageType extends AbstractPackageNode
         return root;
     }
 
-    protected ManagerFrame guiFrame;
+    private boolean             managerVisible = false;
+    protected MenuManagerDialog dialogFrame;
 
     public void openGui() {
-        new EDTRunner() {
+        new Thread("Manager") {
 
-            @Override
-            protected void runInEDT() {
-                try {
-                    Dialog.getInstance().showDialog(new ManagerFrame(ContextMenuManager.this));
-                } catch (DialogClosedException e) {
-                    e.printStackTrace();
-                } catch (DialogCanceledException e) {
-                    e.printStackTrace();
+            public void run() {
+                if (managerVisible) {
+                    new EDTRunner() {
+
+                        @Override
+                        protected void runInEDT() {
+                            WindowManager.getInstance().setZState(dialogFrame.getDialog(), FrameState.TO_FRONT_FOCUSED);
+
+                        }
+                    };
+                    return;
                 }
-
+                managerVisible = true;
+                try {
+                    UIOManager.I().show(MenuManagerDialogInterface.class, dialogFrame = new MenuManagerDialog(ContextMenuManager.this));
+                } finally {
+                    managerVisible = false;
+                }
             }
-        };
+        }.start();
 
     }
 
@@ -360,7 +370,7 @@ public abstract class ContextMenuManager<PackageType extends AbstractPackageNode
 
         for (MenuItemData mid : setupDefaultStructure().list()) {
             if (mid instanceof MenuContainerRoot) continue;
-
+            if (StringUtils.isEmpty(mid.getName())) continue;
             if (MenuContainer.class.isAssignableFrom(mid.getClass().getSuperclass())) {
                 specials.add(mid);
             } else if (mid instanceof MenuLink) {

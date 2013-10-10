@@ -31,6 +31,7 @@ import org.jdownloader.controlling.contextmenu.ContextMenuManager;
 import org.jdownloader.controlling.contextmenu.MenuContainerRoot;
 import org.jdownloader.controlling.contextmenu.MenuItemData;
 import org.jdownloader.controlling.contextmenu.SeperatorData;
+import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.event.GUIEventSender;
 import org.jdownloader.gui.event.GUIListener;
 import org.jdownloader.gui.mainmenu.ChunksEditorLink;
@@ -186,14 +187,19 @@ public class MainToolbarManager extends ContextMenuManager<FilePackage, Download
         DeleteMenuContainer delete = new DeleteMenuContainer();
         delete.setVisible(false);
         delete.add(ToolbarDeleteAction.class);
-        delete.add(new ActionData(GenericDeleteSelectedToolbarAction.class).putSetup(GenericDeleteSelectedToolbarAction.DELETE_DISABLED, true));
-        delete.add(new ActionData(GenericDeleteSelectedToolbarAction.class).putSetup(GenericDeleteSelectedToolbarAction.DELETE_FAILED, true));
-        delete.add(new ActionData(GenericDeleteSelectedToolbarAction.class).putSetup(GenericDeleteSelectedToolbarAction.DELETE_FINISHED, true));
-        delete.add(new ActionData(GenericDeleteSelectedToolbarAction.class).putSetup(GenericDeleteSelectedToolbarAction.DELETE_OFFLINE, true));
+        delete.add(setIconKey(new ActionData(GenericDeleteSelectedToolbarAction.class).putSetup(GenericDeleteSelectedToolbarAction.DELETE_DISABLED, true), IconKey.ICON_REMOVE_DISABLED));
+        delete.add(setIconKey(new ActionData(GenericDeleteSelectedToolbarAction.class).putSetup(GenericDeleteSelectedToolbarAction.DELETE_FAILED, true), IconKey.ICON_REMOVE_FAILED));
+        delete.add(setIconKey(new ActionData(GenericDeleteSelectedToolbarAction.class).putSetup(GenericDeleteSelectedToolbarAction.DELETE_FINISHED, true), IconKey.ICON_REMOVE_OK));
+        delete.add(setIconKey(new ActionData(GenericDeleteSelectedToolbarAction.class).putSetup(GenericDeleteSelectedToolbarAction.DELETE_OFFLINE, true), IconKey.ICON_REMOVE_OFFLINE));
         // delete.add(new MenuItemData(new ActionData(DeleteSelectedAndFailedLinksAction.class)));
         // delete.add(new MenuItemData(new ActionData(DeleteSelectedFinishedLinksAction.class)));
         // delete.add(new MenuItemData(new ActionData(DeleteSelectedOfflineLinksAction.class)));
         return delete;
+    }
+
+    private ActionData setIconKey(ActionData putSetup, String KEY) {
+        putSetup.setIconKey(KEY);
+        return putSetup;
     }
 
     public void show() {

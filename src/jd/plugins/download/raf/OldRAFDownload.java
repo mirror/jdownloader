@@ -375,8 +375,8 @@ public class OldRAFDownload extends DownloadInterface {
         if (doFilesizeCheck() && (totalLinkBytesLoaded <= 0 || totalLinkBytesLoaded != getFileSize() && getFileSize() > 0)) {
             if (totalLinkBytesLoaded > getFileSize()) {
                 /*
-                 * workaround for old bug deep in this downloadsystem. more data got loaded (maybe just counting bug) than filesize. but in most cases the file
-                 * is okay! WONTFIX because new downloadsystem is on its way
+                 * workaround for old bug deep in this downloadsystem. more data got loaded (maybe just counting bug) than filesize. but in
+                 * most cases the file is okay! WONTFIX because new downloadsystem is on its way
                  */
                 logger.severe("Filesize: " + getFileSize() + " Loaded: " + totalLinkBytesLoaded);
                 if (caughtPluginException == null) {
@@ -412,7 +412,8 @@ public class OldRAFDownload extends DownloadInterface {
     }
 
     /**
-     * Wartet bis alle Chunks fertig sind, aktuelisiert den downloadlink regelmaesig und fordert beim Controller eine aktualisierung des links an
+     * Wartet bis alle Chunks fertig sind, aktuelisiert den downloadlink regelmaesig und fordert beim Controller eine aktualisierung des
+     * links an
      */
     protected void onChunkFinished(RAFChunk chunk) {
         synchronized (chunks) {
@@ -700,7 +701,8 @@ public class OldRAFDownload extends DownloadInterface {
     }
 
     /**
-     * Setzt vor ! dem download dden requesttimeout. Sollte nicht zu niedrig sein weil sonst das automatische kopieren der Connections fehl schlaegt.,
+     * Setzt vor ! dem download dden requesttimeout. Sollte nicht zu niedrig sein weil sonst das automatische kopieren der Connections fehl
+     * schlaegt.,
      */
     public void setRequestTimeout(int requestTimeout) {
         this.requestTimeout = requestTimeout;
@@ -978,10 +980,16 @@ public class OldRAFDownload extends DownloadInterface {
         throw new WTFException("This should not happen!");
     }
 
-    private void createOutputChannel() throws FileNotFoundException {
+    private void createOutputChannel() throws FileNotFoundException, SkipReasonException {
         String fileOutput = downloadLink.getFileOutput();
         outputCompleteFile = new File(fileOutput);
         outputPartFile = new File(fileOutput + ".part");
+        if (!outputPartFile.canWrite()) {
+            //
+            throw new SkipReasonException(SkipReason.INVALID_DESTINATION);
+
+        }
+
         outputPartFileRaf = new RandomAccessFile(outputPartFile, "rw");
     }
 

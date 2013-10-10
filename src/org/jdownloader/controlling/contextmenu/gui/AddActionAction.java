@@ -24,7 +24,7 @@ import org.jdownloader.gui.translate._GUI;
 
 public class AddActionAction extends AppAction {
 
-    private ManagerFrame managerFrame;
+    private MenuManagerDialog managerFrame;
 
     {
         setName(_GUI._.ManagerFrame_layoutPanel_add());
@@ -32,7 +32,7 @@ public class AddActionAction extends AppAction {
         setIconKey("add");
     }
 
-    public AddActionAction(ManagerFrame managerFrame) {
+    public AddActionAction(MenuManagerDialog managerFrame) {
         this.managerFrame = managerFrame;
     }
 

@@ -35,26 +35,31 @@ import org.appwork.swing.exttable.DropHighlighter;
 import org.appwork.swing.exttable.ExtCheckBoxMenuItem;
 import org.appwork.swing.exttable.ExtColumn;
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.actions.SelectionAppAction;
 import org.jdownloader.controlling.contextmenu.MenuContainer;
 import org.jdownloader.controlling.contextmenu.MenuItemData;
+import org.jdownloader.controlling.contextmenu.MenuLink;
 import org.jdownloader.controlling.contextmenu.SeperatorData;
 import org.jdownloader.gui.helpdialogs.HelpDialog;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.components.packagetable.PackageControllerTable;
 import org.jdownloader.gui.views.downloads.action.DeleteSelectionAction;
+import org.jdownloader.gui.views.downloads.bottombar.BottomBarMenuManager;
 import org.jdownloader.gui.views.downloads.contextmenumanager.DownloadListContextMenuManager;
 import org.jdownloader.images.NewTheme;
+import org.jdownloader.logging.LogController;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
 
 public class DownloadsTable extends PackageControllerTable<FilePackage, DownloadLink> {
 
     private static final long          serialVersionUID = 8843600834248098174L;
     private HashMap<KeyStroke, Action> shortCutActions;
+    private LogSource                  logger;
 
     public DownloadsTable(final DownloadsTableModel tableModel) {
         super(tableModel);
@@ -62,6 +67,7 @@ public class DownloadsTable extends PackageControllerTable<FilePackage, Download
         this.setTransferHandler(new DownloadsTableTransferHandler(this));
         this.setDragEnabled(true);
         this.setDropMode(DropMode.ON_OR_INSERT_ROWS);
+        logger = LogController.getInstance().getLogger(DownloadsTable.class.getName());
         onSelectionChanged();
         setAutoResizeMode(JTable.AUTO_RESIZE_LAST_COLUMN);
 
@@ -266,7 +272,7 @@ public class DownloadsTable extends PackageControllerTable<FilePackage, Download
         return DownloadsTableModel.getInstance().expandCollapse;
     }
 
-    public void updateContextShortcuts(DownloadListContextMenuManager manager) {
+    public void updateContextShortcuts() {
 
         final InputMap input = getInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT);
         final InputMap input2 = getInputMap(JComponent.WHEN_FOCUSED);
@@ -285,7 +291,8 @@ public class DownloadsTable extends PackageControllerTable<FilePackage, Download
         }
 
         shortCutActions = new HashMap<KeyStroke, Action>();
-        fillActions(manager.getMenuData());
+        fillActions(DownloadListContextMenuManager.getInstance().getMenuData());
+        fillActions(BottomBarMenuManager.getInstance().getMenuData());
 
     }
 
@@ -301,9 +308,12 @@ public class DownloadsTable extends PackageControllerTable<FilePackage, Download
                 fillActions((MenuContainer) mi);
             } else if (mi instanceof SeperatorData) {
                 continue;
+            } else if (mi instanceof MenuLink) {
+                continue;
             } else {
                 AppAction action;
                 try {
+                    if (mi.getActionData() == null) continue;
                     action = mi.createAction(null);
                     KeyStroke keystroke;
                     if (StringUtils.isNotEmpty(mi.getShortcut())) {
@@ -315,7 +325,33 @@ public class DownloadsTable extends PackageControllerTable<FilePackage, Download
 
                     if (action != null && (keystroke = (KeyStroke) action.getValue(Action.ACCELERATOR_KEY)) != null) {
                         String key = "CONTEXT_ACTION_" + keystroke;
-                        System.out.println(keystroke + " -> " + action);
+                        try {
+                            Object old = input.get(keystroke);
+                            if (old != null && action.getClass() != actions.get(old).getClass()) {
+                                logger.warning("Duplicate Shortcuts: " + action + " overwrites " + actions.get(old) + "(" + old + ")" + " for keystroke " + keystroke);
+                            }
+                        } catch (Exception e) {
+                            logger.log(e);
+                        }
+                        try {
+                            Object old = input2.get(keystroke);
+                            if (old != null && action.getClass() != actions.get(old).getClass()) {
+                                logger.warning("Duplicate Shortcuts: " + action + " overwrites " + actions.get(old) + "(" + old + ")" + " for keystroke " + keystroke);
+                            }
+                        } catch (Exception e) {
+                            logger.log(e);
+                        }
+                        try {
+                            Object old = input3.get(keystroke);
+                            if (old != null && action.getClass() != actions.get(old).getClass()) {
+                                logger.warning("Duplicate Shortcuts: " + action + " overwrites " + actions.get(old) + "(" + old + ")" + " for keystroke " + keystroke);
+                            }
+                        } catch (Exception e) {
+                            logger.log(e);
+                        }
+
+                        logger.info(keystroke + " -> " + action);
+
                         input.put(keystroke, key);
                         input2.put(keystroke, key);
                         input3.put(keystroke, key);

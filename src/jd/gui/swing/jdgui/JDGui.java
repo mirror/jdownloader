@@ -1097,7 +1097,12 @@ public class JDGui implements UpdaterListener, OwnerFinder {
                 // don't block anthing if the frame is active anyway
                 if ((getMainFrame().hasFocus() || getMainFrame().isActive()) && getMainFrame().isVisible()) { return false; }
                 if (UpdateController.getInstance().getHandler() != null && GuiUtils.isActiveWindow(UpdateController.getInstance().getHandler().getGuiFrame())) return false;
-
+                for (Window w : Window.getWindows()) {
+                    if ((w.hasFocus() || w.isActive()) && w.isVisible()) {
+                        logger.info("No SilentMode. Active Window: " + w);
+                        return false;
+                    }
+                }
                 // don't block anything if the tray is active
                 if (tray.isEnabled() && tray.isActive()) return false;
 

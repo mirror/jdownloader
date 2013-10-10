@@ -8,10 +8,10 @@ import org.jdownloader.gui.translate._GUI;
 
 public class AddGenericItem extends AppAction {
 
-    private ManagerFrame managerFrame;
+    private MenuManagerDialog managerFrame;
     private MenuItemData item;
 
-    public AddGenericItem(ManagerFrame managerFrame, MenuItemData separatorData) {
+    public AddGenericItem(MenuManagerDialog managerFrame, MenuItemData separatorData) {
         setName(_GUI._.AddGenericItem_AddGenericItem_(separatorData.getName()));
         this.managerFrame = managerFrame;
         this.item = separatorData;

@@ -21,10 +21,10 @@ import org.jdownloader.controlling.contextmenu.Customizer;
 
 public class CustomPanel extends MigPanel {
 
-    private ManagerFrame managerFrame;
+    private MenuManagerDialog managerFrame;
     private LogSource    logger;
 
-    public CustomPanel(ManagerFrame managerFrame) {
+    public CustomPanel(MenuManagerDialog managerFrame) {
         super("ins 0", "[]", "[]");
         this.managerFrame = managerFrame;
         logger = managerFrame.getLogger();

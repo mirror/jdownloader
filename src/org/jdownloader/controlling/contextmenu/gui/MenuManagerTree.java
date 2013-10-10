@@ -52,13 +52,13 @@ public class MenuManagerTree extends JTree {
     // }
 
     private ManagerTreeModel model;
-    private ManagerFrame     managerFrame;
+    private MenuManagerDialog     managerFrame;
 
     public TreeUI getUI() {
         return (TreeUI) ui;
     }
 
-    public MenuManagerTree(ManagerFrame mf) {
+    public MenuManagerTree(MenuManagerDialog mf) {
         super(mf.getModel());
         this.model = mf.getModel();
         model.setTree(this);

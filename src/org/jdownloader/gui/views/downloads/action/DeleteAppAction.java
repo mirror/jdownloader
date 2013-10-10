@@ -35,6 +35,7 @@ public abstract class DeleteAppAction extends SelectionAppAction<FilePackage, Do
 
     public void deleteLinksRequest(final SelectionInfo<FilePackage, DownloadLink> si, final String msg) {
         final DownloadLinkAggregator agg = new DownloadLinkAggregator();
+        agg.setMirrorHandlingEnabled(false);
         agg.setLocalFileUsageEnabled(true);
         agg.update(si.getChildren());
         new EDTRunner() {

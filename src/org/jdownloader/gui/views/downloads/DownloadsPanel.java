@@ -27,6 +27,7 @@ import org.appwork.utils.swing.EDTRunner;
 import org.jdownloader.gui.components.OverviewHeaderScrollPane;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.components.HeaderScrollPane;
+import org.jdownloader.gui.views.downloads.bottombar.BottomBar;
 import org.jdownloader.gui.views.downloads.overviewpanel.DownloadOverview;
 import org.jdownloader.gui.views.downloads.overviewpanel.OverViewHeader;
 import org.jdownloader.gui.views.downloads.table.DownloadsTable;

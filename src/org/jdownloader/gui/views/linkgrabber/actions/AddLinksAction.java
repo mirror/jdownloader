@@ -1,7 +1,7 @@
 package org.jdownloader.gui.views.linkgrabber.actions;
 
+import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
-import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
 
 import jd.controlling.linkcollector.LinkCollectingJob;
@@ -27,7 +27,7 @@ public class AddLinksAction extends AppAction implements CachableInterface {
         setName(string);
         setIconKey("add");
         setTooltipText(_GUI._.AddLinksAction_AddLinksAction_tt());
-        setAccelerator(KeyEvent.VK_L, InputEvent.CTRL_DOWN_MASK);
+        setAccelerator(KeyEvent.VK_L, Toolkit.getDefaultToolkit().getMenuShortcutKeyMask());
 
     }
 

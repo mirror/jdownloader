@@ -1,5 +1,6 @@
 package org.jdownloader.controlling.contextmenu.gui;
 
+import java.awt.Dialog.ModalityType;
 import java.awt.Dimension;
 import java.awt.Point;
 import java.awt.event.ActionEvent;
@@ -41,7 +42,7 @@ import org.jdownloader.images.NewTheme;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.updatev2.gui.LAFOptions;
 
-public class ManagerFrame extends AbstractDialog<Object> implements TreeSelectionListener {
+public class MenuManagerDialog extends AbstractDialog<Object> implements TreeSelectionListener, MenuManagerDialogInterface {
 
     private InfoPanel                infoPanel;
     private ContextMenuManager<?, ?> manager;
@@ -49,14 +50,19 @@ public class ManagerFrame extends AbstractDialog<Object> implements TreeSelectio
     private MenuManagerTree          tree;
     private LogSource                logger;
 
-    public ManagerFrame(ContextMenuManager<?, ?> manager) {
+    public MenuManagerDialog(ContextMenuManager<?, ?> manager) {
         super(UIOManager.BUTTONS_HIDE_CANCEL | UIOManager.BUTTONS_HIDE_OK, _GUI._.ManagerFrame_ManagerFrame_title(manager.getName()), null, null, null);
 
         this.manager = manager;
         ext = manager.getFileExtension();
         setLocator(new RememberAbsoluteDialogLocator("dialogframe-" + manager.getClass().getName()));
         setDimensor(new RememberLastDialogDimension("dialogframe-" + manager.getClass().getName()));
-        logger = LogController.getInstance().getLogger(ManagerFrame.class.getName());
+        logger = LogController.getInstance().getLogger(MenuManagerDialog.class.getName());
+    }
+
+    @Override
+    public ModalityType getModalityType() {
+        return ModalityType.MODELESS;
     }
 
     protected MigPanel createBottomPanel() {
@@ -272,9 +278,26 @@ public class ManagerFrame extends AbstractDialog<Object> implements TreeSelectio
             }
 
         });
+        ExtButton apply = new ExtButton(new AppAction() {
+            {
+                setSmallIcon(NewTheme.I().getIcon(IconKey.ICON_TRUE, 20));
+                setName(_GUI._.lit_apply());
+            }
 
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                MenuContainerRoot data = (MenuContainerRoot) model.getRoot();
+                manager.setMenuData(data);
+
+                data = manager.getMenuData();
+                data.validateFull();
+                model.set(data);
+                if (tree.getRowCount() > 0) tree.setSelectionRow(0);
+            }
+        });
         bottom.add(save, "tag ok,height 24!");
         bottom.add(cancel, "tag cancel,height 24!");
+        bottom.add(apply, "tag apply,height 24!");
         bottom.setOpaque(false);
         return bottom;
 

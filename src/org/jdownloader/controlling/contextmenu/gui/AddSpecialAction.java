@@ -26,9 +26,9 @@ import org.jdownloader.images.NewTheme;
 public class AddSpecialAction extends AppAction {
 
     private ContextMenuManager manager;
-    private ManagerFrame       managerFrame;
+    private MenuManagerDialog  managerFrame;
 
-    public AddSpecialAction(ManagerFrame managerFrame) {
+    public AddSpecialAction(MenuManagerDialog managerFrame) {
         this.manager = managerFrame.getManager();
         this.managerFrame = managerFrame;
         setTooltipText(_GUI._.ManagerFrame_layoutPanel_addspecials());
@@ -53,11 +53,15 @@ public class AddSpecialAction extends AppAction {
                         if (value instanceof MenuLink) {
 
                             JLabel ret = (JLabel) orgRenderer.getListCellRendererComponent(list, _GUI._.AddSubMenuAction_getListCellRendererComponent(((MenuLink) value).getName()), index, isSelected, cellHasFocus);
-                            ret.setIcon(NewTheme.I().getIcon(((MenuLink) value).getIconKey(), 22));
+                            if (StringUtils.isEmpty(((MenuLink) value).getIconKey())) {
+                                ret.setIcon(null);
+                            } else {
+                                ret.setIcon(NewTheme.I().getIcon(((MenuLink) value).getIconKey(), 22));
+                            }
                             return ret;
                         } else if (value instanceof MenuContainer) {
 
-                            JLabel ret = (JLabel) orgRenderer.getListCellRendererComponent(list, _GUI._.AddSubMenuAction_getListCellRendererComponent(((MenuContainer) value).getName()), index, isSelected, cellHasFocus);
+                            JLabel ret = (JLabel) orgRenderer.getListCellRendererComponent(list, value.getClass().getName() + _GUI._.AddSubMenuAction_getListCellRendererComponent(((MenuContainer) value).getName()), index, isSelected, cellHasFocus);
                             if (StringUtils.isNotEmpty(((MenuContainer) value).getIconKey())) {
                                 ret.setIcon(NewTheme.I().getIcon(((MenuContainer) value).getIconKey(), 22));
                             } else {

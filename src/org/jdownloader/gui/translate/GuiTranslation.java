@@ -3262,4 +3262,34 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Account Error: %s1" })
     String ServicePanel9kwTooltip_runInEDT_error2(String error);
 
+    @Default(lngs = { "en" }, values = { "Delete" })
+    String DeleteMenuContainer_DeleteMenuContainer_delete_();
+
+    @Default(lngs = { "en" }, values = { "Download list Bottombar Menumanager" })
+    String BottomBarMenuManager_getName();
+
+    @Default(lngs = { "en" }, values = { "Add Links" })
+    String AddLinksContainer_AddLinksContainer();
+
+    @Default(lngs = { "en" }, values = { "Filter & Searchbar" })
+    String FilterMenuItem_FilterMenuItem();
+
+    @Default(lngs = { "en" }, values = { "Table Quickfilter" })
+    String QuickFilterMenuItem_QuickFilterMenuItem();
+
+    @Default(lngs = { "en" }, values = { "Download Tab Bottom Panel" })
+    String gui_config_menumanager_downloadBottom();
+
+    @Default(lngs = { "en" }, values = { "Linkgrabber Tab Bottom Panel" })
+    String gui_config_menumanager_linkgrabberBottom();
+
+    @Default(lngs = { "en" }, values = { "Apply" })
+    String lit_apply();
+
+    @Default(lngs = { "en" }, values = { "Customize this Bottom Panel" })
+    String BottomBarMenuManagerAction_BottomBarMenuManagerAction();
+
+    @Default(lngs = { "en" }, values = { "Horizontal expanding empty Box" })
+    String HorizontalBoxItem_HorizontalBoxItem();
+
 }

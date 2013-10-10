@@ -3,6 +3,7 @@ package org.jdownloader.gui.views.downloads.contextmenumanager;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
+import org.appwork.utils.swing.EDTRunner;
 import org.jdownloader.controlling.contextmenu.ActionData;
 import org.jdownloader.controlling.contextmenu.ContextMenuManager;
 import org.jdownloader.controlling.contextmenu.MenuContainerRoot;
@@ -173,7 +174,14 @@ public class DownloadListContextMenuManager extends ContextMenuManager<FilePacka
 
     @Override
     protected void updateGui() {
-        ((DownloadsTable) DownloadsTableModel.getInstance().getTable()).updateContextShortcuts(this);
+        new EDTRunner() {
+
+            @Override
+            protected void runInEDT() {
+                ((DownloadsTable) DownloadsTableModel.getInstance().getTable()).updateContextShortcuts();
+            }
+        };
+
     }
 
 }

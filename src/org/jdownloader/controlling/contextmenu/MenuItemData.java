@@ -29,6 +29,7 @@ import org.jdownloader.images.NewTheme;
 
 public class MenuItemData implements Storable {
 
+    public static final String      EMPTY_NAME = "<NO NAME>";
     private ArrayList<MenuItemData> items;
     private String                  name;
     private String                  iconKey;
@@ -300,16 +301,20 @@ public class MenuItemData implements Storable {
     }
 
     private AppAction customize(AppAction action) {
-
+        if (StringUtils.isNotEmpty(actionData.getIconKey())) {
+            action.setIconKey(actionData.getIconKey());
+        }
         if (StringUtils.isNotEmpty(getIconKey())) {
             action.setIconKey(getIconKey());
+            // actionData.setIconKey(getIconKey());
         }
         if (StringUtils.isNotEmpty(getName())) {
             action.setName(getName());
+            // actionData.setName(getName());
         }
-
-        actionData.setName(action.getName());
-        actionData.setIconKey(action.getIconKey());
+        if (MenuItemData.EMPTY_NAME.equals(action.getName())) {
+            action.setName("");
+        }
 
         return action;
     }
@@ -433,6 +438,10 @@ public class MenuItemData implements Storable {
     public void setVisible(boolean b) {
         visible = b;
 
+    }
+
+    public void clearCachedAction() {
+        action = null;
     }
 
 }

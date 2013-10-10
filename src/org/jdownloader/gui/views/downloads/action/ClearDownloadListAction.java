@@ -15,7 +15,6 @@ public class ClearDownloadListAction extends DeleteAppAction {
      * 
      */
     private static final long serialVersionUID = 6027982395476716687L;
-    private boolean           enabled          = true;
 
     public ClearDownloadListAction() {
         super(null);
@@ -30,13 +29,7 @@ public class ClearDownloadListAction extends DeleteAppAction {
 
     @Override
     public boolean isEnabled() {
-        return enabled;
-    }
-
-    @Override
-    public void setEnabled(boolean newValue) {
-        enabled = newValue;
-        super.setEnabled(newValue);
+        return true;
     }
 
 }

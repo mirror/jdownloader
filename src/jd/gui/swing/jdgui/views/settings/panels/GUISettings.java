@@ -56,6 +56,7 @@ import org.jdownloader.gui.settings.AbstractConfigPanel;
 import org.jdownloader.gui.toolbar.MainToolbarManager;
 import org.jdownloader.gui.translate.GuiTranslation;
 import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.gui.views.downloads.bottombar.BottomBarMenuManager;
 import org.jdownloader.gui.views.downloads.contextmenumanager.DownloadListContextMenuManager;
 import org.jdownloader.gui.views.linkgrabber.contextmenu.LinkgrabberContextMenuManager;
 import org.jdownloader.images.NewTheme;
@@ -86,6 +87,10 @@ public class GUISettings extends AbstractConfigPanel implements StateUpdateListe
     private ComboBox<NewLinksInLinkgrabberAction> linkgrabberfocus;
 
     private boolean                               setting;
+
+    private SettingsButton                        downloadBottomManager;
+
+    private SettingsButton                        linkgrabberBottomManager;
 
     public String getTitle() {
         return _GUI._.GUISettings_getTitle();
@@ -286,6 +291,46 @@ public class GUISettings extends AbstractConfigPanel implements StateUpdateListe
 
             }
         });
+
+        downloadBottomManager = new SettingsButton(new AppAction() {
+            {
+                setName(_GUI._.gui_config_menumanager_downloadBottom());
+
+            }
+
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                new EDTRunner() {
+
+                    @Override
+                    protected void runInEDT() {
+
+                        BottomBarMenuManager.getInstance().openGui();
+                    }
+                };
+
+            }
+        });
+
+        linkgrabberBottomManager = new SettingsButton(new AppAction() {
+            {
+                setName(_GUI._.gui_config_menumanager_linkgrabberBottom());
+                setEnabled(false);
+            }
+
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                new EDTRunner() {
+
+                    @Override
+                    protected void runInEDT() {
+
+                        BottomBarMenuManager.getInstance().openGui();
+                    }
+                };
+
+            }
+        });
         this.addHeader(getTitle(), NewTheme.I().getIcon("gui", 32));
         this.addDescription(_GUI._.GUISettings_GUISettings_description());
         // this.addHeader(getTitle(),
@@ -301,6 +346,8 @@ public class GUISettings extends AbstractConfigPanel implements StateUpdateListe
         this.addPair("", null, toolbarManager);
         this.addPair("", null, mainMenuManager);
         this.addPair("", null, trayMenuManager);
+        this.addPair("", null, downloadBottomManager);
+        this.addPair("", null, linkgrabberBottomManager);
         this.addHeader(_GUI._.GUISettings_GUISettings_object_frames(), NewTheme.I().getIcon(IconKey.ICON_DESKTOP, 32));
         this.addDescription(_GUI._.GUISettings_GUISettings_object_frames_description());
         // this.addHeader(_GUI._.GUISettings_GUISettings_object_accessability(), NewTheme.I().getIcon("barrierfreesettings", 32));

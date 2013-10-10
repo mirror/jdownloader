@@ -5,7 +5,7 @@ import org.jdownloader.gui.translate._GUI;
 
 public class DeleteMenuContainer extends MenuContainer {
     public DeleteMenuContainer() {
-        setName(_GUI._.ContextMenuFactory_createPopup_cleanup_only());
+        setName(_GUI._.DeleteMenuContainer_DeleteMenuContainer_delete_());
         setIconKey("delete");
 
     }

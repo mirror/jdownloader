@@ -45,24 +45,24 @@ import org.jdownloader.images.NewTheme;
 
 public class InfoPanel extends MigPanel implements ActionListener {
 
-    private JLabel       label;
+    private JLabel            label;
 
-    private MenuItemData item;
-    private ExtTextField name;
-    private ExtButton    iconChange;
+    private MenuItemData      item;
+    private ExtTextField      name;
+    private ExtButton         iconChange;
 
-    private JLabel       iconlabel;
+    private JLabel            iconlabel;
 
-    private ManagerFrame managerFrame;
+    private MenuManagerDialog managerFrame;
 
-    private JCheckBox    visibleBox;
+    private JCheckBox         visibleBox;
 
-    private ExtTextField shortcut;
+    private ExtTextField      shortcut;
 
-    protected KeyStroke  currentShortcut;
-    private CustomPanel  customPanel;
+    protected KeyStroke       currentShortcut;
+    private CustomPanel       customPanel;
 
-    public InfoPanel(ManagerFrame m) {
+    public InfoPanel(MenuManagerDialog m) {
         super("ins 5,wrap 2", "[grow,fill][]", "[22!][]");
         this.managerFrame = m;
         label = SwingUtils.toBold(new JLabel());
@@ -82,7 +82,7 @@ public class InfoPanel extends MigPanel implements ActionListener {
             @Override
             public void onChanged() {
                 item.setName(name.getText());
-
+                item.clearCachedAction();
                 updateHeaderLabel(item);
                 managerFrame.fireUpdate();
 
@@ -149,9 +149,58 @@ public class InfoPanel extends MigPanel implements ActionListener {
         });
         // icon=new JLabel(9)
         add(label(_GUI._.InfoPanel_InfoPanel_itemname_()));
-        add(name, "newline,spanx");
+        add(name, "newline");
+        add(new JButton(new AppAction() {
+            {
+                setIconKey("reset");
+            }
+
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                new EDTRunner() {
+
+                    @Override
+                    protected void runInEDT() {
+                        if (MenuItemData.EMPTY_NAME.equals(name.getText())) {
+                            item.setName("");
+                            item.clearCachedAction();
+                            updateInfo(item);
+                            managerFrame.fireUpdate();
+                        } else {
+                            item.setName(MenuItemData.EMPTY_NAME);
+                            item.clearCachedAction();
+                            updateInfo(item);
+                            managerFrame.fireUpdate();
+                        }
+
+                    }
+                };
+            }
+
+        }), "width 22!,height 22!");
         add(iconlabel = label(_GUI._.InfoPanel_InfoPanel_icon()), "height 22!");
-        add(iconChange, "newline,spanx");
+        add(iconChange, "newline");
+        add(new JButton(new AppAction() {
+            {
+                setIconKey("reset");
+            }
+
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                new EDTRunner() {
+
+                    @Override
+                    protected void runInEDT() {
+                        item.setIconKey(null);
+
+                        item.clearCachedAction();
+                        updateInfo(item);
+                        managerFrame.fireUpdate();
+                    }
+                };
+            }
+
+        }), "width 22!,height 22!");
         shortcut = new ExtTextField();
         shortcut.setHelpText(_GUI._.InfoPanel_InfoPanel_shortcuthelp());
         shortcut.setEditable(false);

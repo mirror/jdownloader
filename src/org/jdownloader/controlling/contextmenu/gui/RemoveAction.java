@@ -8,9 +8,9 @@ import org.jdownloader.images.NewTheme;
 
 public class RemoveAction extends AppAction {
 
-    private ManagerFrame managerFrame;
+    private MenuManagerDialog managerFrame;
 
-    public RemoveAction(ManagerFrame managerFrame) {
+    public RemoveAction(MenuManagerDialog managerFrame) {
         this.managerFrame = managerFrame;
         setTooltipText(_GUI._.literally_remove());
         setSmallIcon(NewTheme.I().getIcon("delete", 20));
