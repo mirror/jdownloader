@@ -104,6 +104,8 @@ public class FileFactory extends PluginForHost {
         prepBr.getHeaders().put("Accept-Language", "en-gb, en;q=0.8");
         prepBr.getHeaders().put("Cache-Control", null);
         prepBr.getHeaders().put("Pragma", null);
+        prepBr.setReadTimeout(3 * 60 * 1000);
+        prepBr.setConnectTimeout(3 * 60 * 1000);
         return prepBr;
     }
 
@@ -527,8 +529,8 @@ public class FileFactory extends PluginForHost {
 
     public void handleTrafficShare(final DownloadLink downloadLink) throws Exception {
         /*
-         * This is for filefactory.com/trafficshare/ sharing links or I guess what we call public premium links. This might replace dlUrl,
-         * Unknown until proven otherwise.
+         * This is for filefactory.com/trafficshare/ sharing links or I guess what we call public premium links. This might replace dlUrl, Unknown until proven
+         * otherwise.
          */
         logger.finer("Traffic sharing link - Free Premium Donwload");
         String finalLink = br.getRegex("<a href=\"(https?://\\w+\\.filefactory\\.com/[^\"]+)\"([^>]+)?>Download").getMatch(0);
