@@ -31,6 +31,7 @@ import org.jdownloader.gui.views.downloads.action.RemoveOptionsAction;
 import org.jdownloader.gui.views.downloads.table.DownloadsTable;
 import org.jdownloader.gui.views.linkgrabber.actions.AddLinksAction;
 import org.jdownloader.gui.views.linkgrabber.actions.AddOptionsAction;
+import org.jdownloader.plugins.FinalLinkState;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
 import org.jdownloader.updatev2.gui.LAFOptions;
@@ -151,11 +152,11 @@ public class BottomBar extends MigPanel {
                                                                                                 case RUNNING:
                                                                                                     return !v.isEnabled() || v.getDownloadLinkController() == null;
                                                                                                 case SUCCESSFUL:
-                                                                                                    return !(v.getLinkStatus().isFinished());
+                                                                                                    return !(FinalLinkState.CheckFinished(v.getFinalLinkState()));
                                                                                                 case FAILED:
-                                                                                                    return !(v.getLinkStatus().isFailed());
+                                                                                                    return !(FinalLinkState.CheckFailed(v.getFinalLinkState()));
                                                                                                 case TODO:
-                                                                                                    return !v.isEnabled() || v.getDownloadLinkController() != null || v.getLinkStatus().isFinished() || v.getLinkStatus().isFailed();
+                                                                                                    return v.getFinalLinkState() != null || v.getDownloadLinkController() != null;
                                                                                                 }
                                                                                                 return false;
                                                                                             }

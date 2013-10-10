@@ -17,7 +17,6 @@ import jd.controlling.packagecontroller.AbstractPackageChildrenNodeFilter;
 import jd.gui.swing.jdgui.components.speedmeter.SpeedMeterPanel;
 import jd.gui.swing.jdgui.components.toolbar.MainToolBar;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.FilePackage;
 
 import org.appwork.net.protocol.http.HTTPConstants;
@@ -34,6 +33,7 @@ import org.jdownloader.api.jdanywhere.api.storable.RunningObjectStorable;
 import org.jdownloader.api.polling.PollingAPIImpl;
 import org.jdownloader.api.polling.PollingResultAPIStorable;
 import org.jdownloader.api.toolbar.JDownloaderToolBarAPIImpl;
+import org.jdownloader.plugins.FinalLinkState;
 import org.jdownloader.settings.staticreferences.CFG_RECONNECT;
 
 public class DashboardApi implements IDashboardApi {
@@ -125,8 +125,7 @@ public class DashboardApi implements IDashboardApi {
 
             public boolean acceptNode(DownloadLink node) {
                 if (!node.isEnabled()) return false;
-                if (node.getLinkStatus().isFailed()) return false;
-                if (AvailableStatus.FALSE == node.getAvailableStatus()) return false;
+                if (FinalLinkState.CheckFailed(node.getFinalLinkState())) return false;
                 return true;
             }
         });

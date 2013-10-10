@@ -124,9 +124,7 @@ public class MegasharesCom extends PluginForHost {
                 }
             }
             link.setProperty("pass", null);
-            link.getLinkStatus().addStatus(LinkStatus.ERROR_FATAL);
-            link.getLinkStatus().setErrorMessage("Link password wrong");
-            return false;
+            throw new PluginException(LinkStatus.ERROR_FATAL, "Link password wrong");
         }
         return true;
     }

@@ -6,9 +6,9 @@ import javax.swing.ImageIcon;
 
 import jd.controlling.TaskQueue;
 import jd.controlling.downloadcontroller.DownloadWatchDog;
+import jd.controlling.downloadcontroller.SingleDownloadController;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
-import jd.plugins.LinkStatus;
 import jd.plugins.download.DownloadInterface;
 
 import org.appwork.uio.UIOManager;
@@ -87,13 +87,11 @@ public class SkipAction extends SelectionAppAction<FilePackage, DownloadLink> {
                     int count = 0;
                     if (DownloadWatchDog.getInstance().isRunning()) {
                         for (DownloadLink a : getSelection().getChildren()) {
-
                             DownloadLink link = (DownloadLink) a;
-                            if (link.getLinkStatus().hasStatus(LinkStatus.DOWNLOADINTERFACE_IN_PROGRESS)) {
-                                DownloadInterface dl = link.getDownloadInstance();
-                                if (dl != null && !dl.isResumable()) {
-                                    count++;
-                                }
+                            SingleDownloadController slc = link.getDownloadLinkController();
+                            DownloadInterface dl = null;
+                            if (slc != null && (dl = slc.getDownloadInstance()) != null && !dl.isResumable()) {
+                                count++;
                             }
                         }
                     }
@@ -108,7 +106,7 @@ public class SkipAction extends SelectionAppAction<FilePackage, DownloadLink> {
                             a.setSkipReason(SkipReason.MANUAL);
                         }
                     } else {
-                        a.setSkipReason(SkipReason.NONE);
+                        a.setSkipReason(null);
                     }
                 }
                 return null;

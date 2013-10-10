@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
 
 import jd.controlling.downloadcontroller.DownloadWatchDog;
+import jd.controlling.downloadcontroller.SingleDownloadController;
 import jd.controlling.packagecontroller.ChildrenView;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.download.DownloadInterface;
@@ -14,26 +15,30 @@ import jd.plugins.download.DownloadInterface;
 import org.appwork.storage.config.JsonConfig;
 import org.jdownloader.DomainInfo;
 import org.jdownloader.controlling.Priority;
+import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.gui.views.downloads.columns.AvailabilityColumn;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings;
 
 public class FilePackageView extends ChildrenView<DownloadLink> {
 
-    private FilePackage                  fp                  = null;
+    private FilePackage                  fp                       = null;
 
-    protected volatile long              lastUpdateTimestamp = -1;
+    protected volatile long              lastUpdateTimestamp      = -1;
 
-    protected boolean                    lastRunningState    = false;
-    protected long                       finishedDate        = -1;
-    protected long                       estimatedETA        = -1;
+    protected boolean                    lastRunningState         = false;
+    protected long                       finishedDate             = -1;
+    protected long                       estimatedETA             = -1;
 
-    private int                          offline             = 0;
-    private int                          online              = 0;
-    private AtomicLong                   updatesRequired     = new AtomicLong(0);
-    private long                         updatesDone         = -1;
+    private int                          offline                  = 0;
+    private int                          online                   = 0;
+    private AtomicLong                   updatesRequired          = new AtomicLong(0);
+    private long                         updatesDone              = -1;
+    private String                       availabilityColumnString = null;
+    private ChildrenAvailablility        availability             = ChildrenAvailablility.UNKNOWN;
 
-    private java.util.List<DownloadLink> items               = new ArrayList<DownloadLink>();
+    private java.util.List<DownloadLink> items                    = new ArrayList<DownloadLink>();
 
-    protected static final long          GUIUPDATETIMEOUT    = JsonConfig.create(GraphicalUserInterfaceSettings.class).getDownloadViewRefresh();
+    protected static final long          GUIUPDATETIMEOUT         = JsonConfig.create(GraphicalUserInterfaceSettings.class).getDownloadViewRefresh();
 
     public boolean isEnabled() {
         return enabledCount > 0;
@@ -111,7 +116,9 @@ public class FilePackageView extends ChildrenView<DownloadLink> {
 
             boolean allFinished = true;
             boolean readL = fp.getModifyLock().readLock();
+            int children = 0;
             try {
+                children = fp.getChildren().size();
                 for (DownloadLink link : fp.getChildren()) {
                     if (link.getPriorityEnum().ordinal() < priorityLowset.ordinal()) {
                         priorityLowset = link.getPriorityEnum();
@@ -150,7 +157,7 @@ public class FilePackageView extends ChildrenView<DownloadLink> {
                     }
 
                     /* ETA calculation */
-                    if (link.isEnabled() && !link.getLinkStatus().isFinished()) {
+                    if (link.isEnabled() && link.getFinalLinkState() == null) {
                         /* link must be enabled and not finished state */
                         boolean linkRunning = link.getDownloadLinkController() != null;
                         if (linkRunning || eta.contains(link.getName()) == false) {
@@ -163,7 +170,9 @@ public class FilePackageView extends ChildrenView<DownloadLink> {
                                 sizeKnown = true;
                             }
                             long linkTodo = Math.max(0, link.getDownloadSize() - link.getDownloadCurrent());
-                            DownloadInterface dli = link.getDownloadInstance();
+                            SingleDownloadController sdc = link.getDownloadLinkController();
+                            DownloadInterface dli = null;
+                            if (sdc != null) dli = sdc.getDownloadInstance();
                             long linkSpeed = link.getDownloadSpeed();
                             if (dli == null || (System.currentTimeMillis() - dli.getStartTimeStamp()) < 5000) {
                                 /* wait at least 5 secs when download is running, to avoid speed fluctuations in overall ETA */
@@ -191,7 +200,7 @@ public class FilePackageView extends ChildrenView<DownloadLink> {
                         }
                     }
 
-                    if (link.isEnabled() && !link.getLinkStatus().isFinished()) {
+                    if (link.isEnabled() && link.getFinalLinkState() == null) {
                         /* we still have an enabled link which is not finished */
                         allFinished = false;
                     } else if (allFinished && link.getFinishedDate() > newFinishedDate) {
@@ -237,7 +246,9 @@ public class FilePackageView extends ChildrenView<DownloadLink> {
             this.highestPriority = priorityHighest;
             offline = newOffline;
             online = newOnline;
+            updateAvailability(children, newOffline, newOnline);
             updatesDone = lupdatesRequired;
+            availabilityColumnString = _GUI._.AvailabilityColumn_getStringValue_object_(newOnline, children);
         }
     }
 
@@ -274,7 +285,9 @@ public class FilePackageView extends ChildrenView<DownloadLink> {
             HashSet<DomainInfo> newInfos = new HashSet<DomainInfo>();
             boolean allFinished = true;
             boolean readL = fp.getModifyLock().readLock();
+            int children = 0;
             try {
+                children = fp.getChildren().size();
                 for (DownloadLink link : fp.getChildren()) {
                     if (link.getPriorityEnum().ordinal() < priorityLowset.ordinal()) {
                         priorityLowset = link.getPriorityEnum();
@@ -282,7 +295,7 @@ public class FilePackageView extends ChildrenView<DownloadLink> {
                     if (link.getPriorityEnum().ordinal() > priorityHighest.ordinal()) {
                         priorityHighest = link.getPriorityEnum();
                     }
-                    newInfos.add(link.getDomainInfo(true));
+                    newInfos.add(link.getDomainInfo());
                     if (AvailableStatus.FALSE == link.getAvailableStatus()) {
                         // offline
                         newOffline++;
@@ -314,7 +327,7 @@ public class FilePackageView extends ChildrenView<DownloadLink> {
                     }
 
                     /* ETA calculation */
-                    if (link.isEnabled() && !link.getLinkStatus().isFinished()) {
+                    if (link.isEnabled() && link.getFinalLinkState() == null) {
                         /* link must be enabled and not finished state */
                         boolean linkRunning = link.getDownloadLinkController() != null;
                         if (linkRunning || eta.contains(link.getName()) == false) {
@@ -328,7 +341,9 @@ public class FilePackageView extends ChildrenView<DownloadLink> {
                                 sizeKnown = true;
                             }
                             long linkTodo = Math.max(0, link.getDownloadSize() - link.getDownloadCurrent());
-                            DownloadInterface dli = link.getDownloadInstance();
+                            SingleDownloadController sdc = link.getDownloadLinkController();
+                            DownloadInterface dli = null;
+                            if (sdc != null) dli = sdc.getDownloadInstance();
                             long linkSpeed = link.getDownloadSpeed();
                             if (dli == null || (System.currentTimeMillis() - dli.getStartTimeStamp()) < 5000) {
                                 /* wait at least 5 secs when download is running, to avoid speed fluctuations in overall ETA */
@@ -356,7 +371,7 @@ public class FilePackageView extends ChildrenView<DownloadLink> {
                         }
                     }
 
-                    if (link.isEnabled() && !link.getLinkStatus().isFinished()) {
+                    if (link.isEnabled() && link.getFinalLinkState() == null) {
                         /* we still have an enabled link which is not finished */
                         allFinished = false;
                     } else if (allFinished && link.getFinishedDate() > newFinishedDate) {
@@ -400,11 +415,13 @@ public class FilePackageView extends ChildrenView<DownloadLink> {
             }
             offline = newOffline;
             online = newOnline;
+            updateAvailability(children, newOffline, newOnline);
             this.lowestPriority = priorityLowset;
             this.highestPriority = priorityHighest;
             items = updatedItems;
             infos = newInfos.toArray(new DomainInfo[newInfos.size()]);
             updatesDone = lupdatesRequired;
+            availabilityColumnString = _GUI._.AvailabilityColumn_getStringValue_object_(newOnline, children);
         }
     }
 
@@ -439,6 +456,34 @@ public class FilePackageView extends ChildrenView<DownloadLink> {
             ret = fp.isEnabled() && (System.currentTimeMillis() - lastUpdateTimestamp > GUIUPDATETIMEOUT) && DownloadWatchDog.getInstance().hasRunningDownloads(fp);
         }
         return ret;
+    }
+
+    private final void updateAvailability(int size, int offline, int online) {
+        if (online == size) {
+            availability = ChildrenAvailablility.ONLINE;
+            return;
+        }
+        if (offline == size) {
+            availability = ChildrenAvailablility.OFFLINE;
+            return;
+        }
+        if ((offline == 0 && online == 0) || (online == 0 && offline > 0)) {
+            availability = ChildrenAvailablility.UNKNOWN;
+            return;
+        }
+        availability = ChildrenAvailablility.MIXED;
+        return;
+    }
+
+    @Override
+    public ChildrenAvailablility getAvailability() {
+        return availability;
+    }
+
+    @Override
+    public String getMessage(Object requestor) {
+        if (requestor instanceof AvailabilityColumn) return availabilityColumnString;
+        return null;
     }
 
 }

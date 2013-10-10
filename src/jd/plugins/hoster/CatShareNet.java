@@ -330,7 +330,7 @@ public class CatShareNet extends PluginForHost {
                 br.getPage("/");
                 if (!br.containsHTML("Konto:[\r\t\n ]+Premium \\(<b>\\d+ dni</b>\\)")) {
                     logger.warning("Couldn't determine premium status or account is Free not Premium!");
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "Premium Account is invalid: it's free or not recognized!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
                 /** Save cookies */
                 final HashMap<String, String> cookies = new HashMap<String, String>();
@@ -342,7 +342,6 @@ public class CatShareNet extends PluginForHost {
                 account.setProperty("pass", Encoding.urlEncode(account.getPass()));
                 account.setProperty("cookies", cookies);
             } catch (final PluginException e) {
-                if (e.getErrorMessage() == null) e.setErrorMessage("Premium Account is invalid: it's free or not recognized!");
                 account.setProperty("cookies", Property.NULL);
                 throw e;
             }

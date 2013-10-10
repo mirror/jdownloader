@@ -4,7 +4,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.HashMap;
-import java.util.LinkedList;
+import java.util.List;
 
 import jd.controlling.AccountController;
 import jd.http.Browser;
@@ -50,7 +50,7 @@ public class StreamingProvider {
                         /* this method should be called within our VLCStreamingThread */
                         ClassLoader oldClassLoader = null;
                         try {
-                            LinkedList<Account> accounts = AccountController.getInstance().getValidAccounts(remoteLink.getHost());
+                            List<Account> accounts = AccountController.getInstance().getValidAccounts(remoteLink.getHost());
                             oldClassLoader = Thread.currentThread().getContextClassLoader();
                             final DownloadLink mirror = new DownloadLink(remoteLink.getDefaultPlugin(), remoteLink.getName(), remoteLink.getHost(), remoteLink.getDownloadURL(), true);
                             mirror.setProperties(remoteLink.getProperties());
@@ -83,7 +83,9 @@ public class StreamingProvider {
                             } else {
                                 plugin.handleFree(mirror);
                             }
-                            final URLConnectionAdapter con = mirror.getDownloadInstance().getConnection();
+                            /* TODO: needs to be rewritten */
+                            final URLConnectionAdapter con = null;
+                            // getDownloadInstance().getConnection();
                             if (con.getResponseCode() == 200 || con.getResponseCode() == 206) {
                                 if (remoteLink.getVerifiedFileSize() < 0) {
                                     /* we don't have a verified filesize yet, let's check if we have it now! */

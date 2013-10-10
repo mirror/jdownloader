@@ -12,6 +12,7 @@ import jd.controlling.linkcollector.LinkCollectorEvent;
 import jd.controlling.linkcollector.LinkCollectorListener;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.reconnect.Reconnecter;
+import jd.controlling.reconnect.Reconnecter.ReconnectResult;
 import jd.controlling.reconnect.ReconnecterEvent;
 import jd.controlling.reconnect.ReconnecterListener;
 import jd.controlling.reconnect.ipcheck.IPController;
@@ -240,10 +241,6 @@ public class BubbleNotify implements UpdaterListener, ReconnecterListener, Chall
     }
 
     @Override
-    public void onReconnectSettingsUpdated(ReconnecterEvent event) {
-    }
-
-    @Override
     public void onUpdatesAvailable(boolean selfupdate, InstallLog installlog) {
         if (!CFG_BUBBLE.BUBBLE_NOTIFY_ON_UPDATE_AVAILABLE_ENABLED.isEnabled()) return;
         if (UpdateController.getInstance().hasPendingUpdates() && !updatesNotified) {
@@ -286,10 +283,15 @@ public class BubbleNotify implements UpdaterListener, ReconnecterListener, Chall
             @Override
             protected void runInEDT() {
                 BasicNotify no = null;
-                if (Boolean.FALSE.equals(event.getParameter())) {
-                    no = new BasicNotify(_GUI._.balloon_reconnect(), _GUI._.balloon_reconnect_end_msg_failed(IPController.getInstance().getIP()), NewTheme.I().getIcon("error", 32));
-                } else {
+                ReconnectResult result = event.getResult();
+                if (result == null) result = ReconnectResult.FAILED;
+                switch (result) {
+                case SUCCESSFUL:
                     no = new BasicNotify(_GUI._.balloon_reconnect(), _GUI._.balloon_reconnect_end_msg(IPController.getInstance().getIP()), NewTheme.I().getIcon("ok", 32));
+                    break;
+                case FAILED:
+                    no = new BasicNotify(_GUI._.balloon_reconnect(), _GUI._.balloon_reconnect_end_msg_failed(IPController.getInstance().getIP()), NewTheme.I().getIcon("error", 32));
+                    break;
                 }
                 show(no);
             }

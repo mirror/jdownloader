@@ -43,8 +43,6 @@ public class FastShareorg extends PluginForHost {
     }
 
     public void handleFree(DownloadLink downloadLink) throws Exception {
-        LinkStatus linkStatus = downloadLink.getLinkStatus();
-
         String url = downloadLink.getDownloadURL();
         requestFileInformation(downloadLink);
 
@@ -52,10 +50,7 @@ public class FastShareorg extends PluginForHost {
         Form form = br.getForm(0);
         if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         br.submitForm(form);
-        if ((url = new Regex(br, "Link: <a href=(.*?)><b>").getMatch(0)) == null) {
-            linkStatus.addStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
-            return;
-        }
+        if ((url = new Regex(br, "Link: <a href=(.*?)><b>").getMatch(0)) == null) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
         url = "http://www.fastshare.org" + url;
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, url, false, 1);
         if (dl.getConnection().getContentType().contains("html")) {

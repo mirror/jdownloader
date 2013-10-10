@@ -45,8 +45,9 @@ public class RemoveIncompleteArchives extends SelectionAppAction<CrawledPackage,
             @Override
             public void run() {
                 try {
-                    for (Archive a : new ValidateArchiveAction<CrawledPackage, CrawledLink>((ExtractionExtension) ExtensionController.getInstance().getExtension(ExtractionExtension.class)._getExtension(), getSelection()).getArchives()) {
-                        final DummyArchive da = a.createDummyArchive();
+                    ValidateArchiveAction<CrawledPackage, CrawledLink> va = new ValidateArchiveAction<CrawledPackage, CrawledLink>((ExtractionExtension) ExtensionController.getInstance().getExtension(ExtractionExtension.class)._getExtension(), getSelection());
+                    for (Archive a : va.getArchives()) {
+                        final DummyArchive da = va.createDummyArchive(a);
                         if (!da.isComplete()) {
                             try {
                                 Dialog.getInstance().showConfirmDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN | UIOManager.LOGIC_DONT_SHOW_AGAIN_IGNORES_CANCEL, _GUI._.literally_are_you_sure(), _GUI._.RemoveIncompleteArchives_run_(da.getName()), null, _GUI._.literally_yes(), _GUI._.literall_no());

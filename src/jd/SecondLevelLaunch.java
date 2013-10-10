@@ -57,7 +57,6 @@ import jd.gui.swing.jdgui.JDGui;
 import jd.http.Browser;
 import jd.http.ext.security.JSPermissionRestricter;
 import jd.plugins.DownloadLink;
-import jd.plugins.LinkStatus;
 import jd.utils.JDUtilities;
 
 import org.appwork.controlling.SingleReachableState;
@@ -92,12 +91,12 @@ import org.jdownloader.api.cnl2.ExternInterface;
 import org.jdownloader.api.myjdownloader.MyJDownloaderController;
 import org.jdownloader.captcha.v2.ChallengeResponseController;
 import org.jdownloader.captcha.v2.solver.CBSolver;
-import org.jdownloader.captcha.v2.solver.Captcha9kwSolver;
-import org.jdownloader.captcha.v2.solver.Captcha9kwSolverClick;
 import org.jdownloader.captcha.v2.solver.CaptchaResolutorCaptchaSolver;
 import org.jdownloader.captcha.v2.solver.gui.DialogBasicCaptchaSolver;
 import org.jdownloader.captcha.v2.solver.gui.DialogClickCaptchaSolver;
 import org.jdownloader.captcha.v2.solver.jac.JACSolver;
+import org.jdownloader.captcha.v2.solver.solver9kw.Captcha9kwSolver;
+import org.jdownloader.captcha.v2.solver.solver9kw.Captcha9kwSolverClick;
 import org.jdownloader.controlling.FileCreationManager;
 import org.jdownloader.dynamic.Dynamic;
 import org.jdownloader.extensions.ExtensionController;
@@ -124,15 +123,15 @@ public class SecondLevelLaunch {
         statics();
     }
 
-    private static LogSource           LOG;
+    private static LogSource                 LOG;
 
-    public static SingleReachableState INIT_COMPLETE         = new SingleReachableState("INIT_COMPLETE");
-    public static SingleReachableState GUI_COMPLETE          = new SingleReachableState("GUI_COMPLETE");
-    public static SingleReachableState HOST_PLUGINS_COMPLETE = new SingleReachableState("HOST_PLG_COMPLETE");
-    public static SingleReachableState ACCOUNTLIST_LOADED    = new SingleReachableState("ACCOUNTLIST_LOADED");
+    public final static SingleReachableState INIT_COMPLETE         = new SingleReachableState("INIT_COMPLETE");
+    public final static SingleReachableState GUI_COMPLETE          = new SingleReachableState("GUI_COMPLETE");
+    public final static SingleReachableState HOST_PLUGINS_COMPLETE = new SingleReachableState("HOST_PLG_COMPLETE");
+    public final static SingleReachableState ACCOUNTLIST_LOADED    = new SingleReachableState("ACCOUNTLIST_LOADED");
 
-    private static File                FILE;
-    public final static long           startup               = System.currentTimeMillis();
+    private static File                      FILE;
+    public final static long                 startup               = System.currentTimeMillis();
 
     // private static JSonWrapper webConfig;
 
@@ -466,8 +465,9 @@ public class SecondLevelLaunch {
                     /* set gloabel logger for browser */
                     Browser.setGlobalLogger(LogController.getInstance().getLogger("GlobalBrowser"));
                     /* init default global Timeouts */
-                    Browser.setGlobalReadTimeout(JsonConfig.create(InternetConnectionSettings.class).getHttpReadTimeout());
-                    Browser.setGlobalConnectTimeout(JsonConfig.create(InternetConnectionSettings.class).getHttpConnectTimeout());
+                    InternetConnectionSettings config = JsonConfig.create(InternetConnectionSettings.PATH, InternetConnectionSettings.class);
+                    Browser.setGlobalReadTimeout(config.getHttpReadTimeout());
+                    Browser.setGlobalConnectTimeout(config.getHttpConnectTimeout());
                     /* init global proxy stuff */
                     Browser.setGlobalProxy(ProxyController.getInstance().getDefaultProxy());
                     /* add global proxy change listener */
@@ -537,9 +537,6 @@ public class SecondLevelLaunch {
                     @Override
                     public void run() {
                         try {
-                            // DO NOT REMOVE THIS LINE
-                             do not remove me, ask jiaz!
-
                             boolean jared = Application.isJared(SecondLevelLaunch.class);
                             ToolTipController.getInstance().setDelay(JsonConfig.create(GraphicalUserInterfaceSettings.class).getTooltipDelay());
                             Thread.currentThread().setName("ExecuteWhenGuiReachedThread: Init Host Plugins");
@@ -617,7 +614,7 @@ public class SecondLevelLaunch {
 
                                             @Override
                                             public boolean acceptNode(DownloadLink node) {
-                                                return node.isEnabled() && node.getLinkStatus().hasStatus(LinkStatus.TODO);
+                                                return node.isEnabled() && node.getFinalLinkState() == null;
                                             }
 
                                             @Override

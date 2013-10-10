@@ -22,6 +22,7 @@ import org.jdownloader.gui.views.components.packagetable.PackageControllerTable;
 import org.jdownloader.gui.views.downloads.action.DeleteSelectedLinks;
 import org.jdownloader.gui.views.downloads.table.DownloadsTable;
 import org.jdownloader.gui.views.linkgrabber.LinkGrabberTable;
+import org.jdownloader.plugins.FinalLinkState;
 
 public class GenericDeleteSelectedToolbarAction extends SelectionBasedToolbarAction {
 
@@ -111,15 +112,15 @@ public class GenericDeleteSelectedToolbarAction extends SelectionBasedToolbarAct
                         nodesToDelete.add(dl);
                         continue;
                     }
-                    if (isDeleteFailed() && dl.getLinkStatus().isFailed()) {
+                    if (isDeleteFailed() && FinalLinkState.CheckFailed(dl.getFinalLinkState())) {
                         nodesToDelete.add(dl);
                         continue;
                     }
-                    if (isDeleteFinished() && dl.getLinkStatus().isFinished()) {
+                    if (isDeleteFinished() && FinalLinkState.CheckFinished(dl.getFinalLinkState())) {
                         nodesToDelete.add(dl);
                         continue;
                     }
-                    if (isDeleteOffline() && dl.isAvailabilityStatusChecked() && dl.getAvailableStatus() == AvailableStatus.FALSE) {
+                    if (isDeleteOffline() && dl.getFinalLinkState() == FinalLinkState.OFFLINE) {
                         nodesToDelete.add(dl);
                         continue;
                     }

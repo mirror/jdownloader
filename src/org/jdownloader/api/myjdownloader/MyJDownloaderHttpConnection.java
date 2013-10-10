@@ -38,6 +38,8 @@ import org.appwork.utils.net.httpserver.responses.HttpResponse;
 import org.jdownloader.api.RemoteAPIController;
 import org.jdownloader.api.myjdownloader.api.MyJDownloaderAPI;
 import org.jdownloader.myjdownloader.RequestLineParser;
+import org.jdownloader.myjdownloader.client.SessionInfo;
+import org.jdownloader.myjdownloader.client.exceptions.MyJDownloaderException;
 
 public class MyJDownloaderHttpConnection extends HttpConnection {
 
@@ -157,20 +159,24 @@ public class MyJDownloaderHttpConnection extends HttpConnection {
     @Override
     protected String preProcessRequestLine(String requestLine) throws IOException {
         RequestLineParser parser = RequestLineParser.parse(requestLine.getBytes("UTF-8"));
-        if (parser == null) throw new IOException("Invalid my.jdownloader.org request: " + requestLine);
+        if (parser == null || parser.getSessionToken() == null) throw new IOException("Invalid my.jdownloader.org request: " + requestLine);
         requestConnectToken = parser.getSessionToken();
-        if (StringUtils.equals(parser.getSessionToken(), api.getSessionToken())) {
-            // the request origin is the My JDownloader Server
-            payloadEncryptionToken = api.getServerEncryptionToken();
-        } else {
-            // The request origin is a remote client
-            try {
-                payloadEncryptionToken = api.getDeviceEncryptionTokenBySession(parser.getSessionToken());
-            } catch (NoSuchAlgorithmException e) {
-                throw new WTFException(e);
+        try {
+            SessionInfo session = api.getSessionInfo();
+            if (StringUtils.equals(parser.getSessionToken(), session.getSessionToken())) {
+                // the request origin is the My JDownloader Server
+                payloadEncryptionToken = session.getServerEncryptionToken();
+            } else {
+                // The request origin is a remote client
+                try {
+                    payloadEncryptionToken = api.getDeviceEncryptionTokenBySession(parser.getSessionToken());
+                } catch (NoSuchAlgorithmException e) {
+                    throw new WTFException(e);
+                }
             }
+        } catch (final MyJDownloaderException e) {
+            throw new IOException(e);
         }
-
         requestLine = requestLine.replaceFirst(" /t_[a-zA-z0-9]{40}_.+?/", " /");
         return requestLine;
     };

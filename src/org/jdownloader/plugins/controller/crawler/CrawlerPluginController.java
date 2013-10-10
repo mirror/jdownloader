@@ -6,6 +6,7 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.ListIterator;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import jd.nutils.Formatter;
 import jd.plugins.DecrypterPlugin;
@@ -28,25 +29,20 @@ import org.jdownloader.plugins.controller.host.HostPluginController;
 
 public class CrawlerPluginController extends PluginController<PluginForDecrypt> {
 
-    private static final Object                                  INTSANCELOCK      = new Object();
-    private static MinTimeWeakReference<CrawlerPluginController> INSTANCE          = null;
-    private static boolean                                       CACHE_INVALIDATED = false;
+    private static final Object                                           INSTANCELOCK      = new Object();
+    private static volatile MinTimeWeakReference<CrawlerPluginController> INSTANCE          = null;
+    private static final AtomicBoolean                                    CACHE_INVALIDATED = new AtomicBoolean(false);
 
     public static boolean isCacheInvalidated() {
-        return CACHE_INVALIDATED;
+        return CACHE_INVALIDATED.get();
     }
 
     public static void invalidateCache() {
-        CACHE_INVALIDATED = true;
-        synchronized (INTSANCELOCK) {
-            if (INSTANCE == null || (INSTANCE.get()) == null) return;
-            getInstance().init(isCacheInvalidated());
-
-        }
+        CACHE_INVALIDATED.set(true);
     }
 
     protected static void validateCache() {
-        CACHE_INVALIDATED = false;
+        CACHE_INVALIDATED.set(false);
         FileCreationManager.getInstance().delete(Application.getResource(HostPluginController.TMP_INVALIDPLUGINS));
     }
 
@@ -57,114 +53,115 @@ public class CrawlerPluginController extends PluginController<PluginForDecrypt> 
      */
     public static CrawlerPluginController getInstance() {
         CrawlerPluginController ret = null;
-        if (INSTANCE != null && (ret = INSTANCE.get()) != null) return ret;
-        synchronized (INTSANCELOCK) {
-            if (INSTANCE != null && (ret = INSTANCE.get()) != null) return ret;
+        MinTimeWeakReference<CrawlerPluginController> localInstance = INSTANCE;
+        if (localInstance != null && (ret = localInstance.get()) != null) return ret;
+        synchronized (INSTANCELOCK) {
+            localInstance = INSTANCE;
+            if (localInstance != null && (ret = localInstance.get()) != null) return ret;
             ret = new CrawlerPluginController();
-
-            ret.init(isCacheInvalidated());
-
             INSTANCE = new MinTimeWeakReference<CrawlerPluginController>(ret, 30 * 1000l, "CrawlerPlugin");
         }
         return ret;
     }
 
-    private List<LazyCrawlerPlugin> list;
+    private volatile List<LazyCrawlerPlugin> list;
 
     private String getCache() {
         return "tmp/crawler.ejson";
     }
 
     /**
-     * Create a new instance of HostPluginController. This is a singleton class. Access the only existing instance by using
-     * {@link #getInstance()}.
+     * Create a new instance of HostPluginController. This is a singleton class. Access the only existing instance by using {@link #getInstance()}.
      * 
      */
     private CrawlerPluginController() {
         list = null;
     }
 
-    public synchronized void init(boolean noCache) {
-        List<LazyCrawlerPlugin> plugins = new ArrayList<LazyCrawlerPlugin>();
-        final long t = System.currentTimeMillis();
-        LogSource logger = LogController.CL(false);
-        logger.info("CrawlerPluginController: init " + noCache);
-        logger.setAllowTimeoutFlush(false);
-        LogController.setRebirthLogger(logger);
-        ClassLoader oldClassLoader = null;
-        try {
-            oldClassLoader = Thread.currentThread().getContextClassLoader();
+    public synchronized List<LazyCrawlerPlugin> init(boolean noCache) {
+        synchronized (INSTANCELOCK) {
+            List<LazyCrawlerPlugin> plugins = new ArrayList<LazyCrawlerPlugin>();
+            final long t = System.currentTimeMillis();
+            LogSource logger = LogController.CL(false);
+            logger.info("CrawlerPluginController: init " + noCache);
+            logger.setAllowTimeoutFlush(false);
+            LogController.setRebirthLogger(logger);
+            ClassLoader oldClassLoader = null;
             try {
-                if (noCache) {
-                    /* try to load from cache, to speed up rescan */
-                    HashMap<String, ArrayList<LazyPlugin>> rescanCache = new HashMap<String, ArrayList<LazyPlugin>>();
-                    try {
-                        List<LazyCrawlerPlugin> cachedPlugins = null;
-                        if (this.list != null) {
-                            cachedPlugins = this.list;
-                        } else {
-                            cachedPlugins = loadFromCache();
-                        }
-                        if (cachedPlugins != null) {
-                            for (LazyCrawlerPlugin plugin : cachedPlugins) {
-                                if (plugin.getMainClassFilename() == null) continue;
-                                if (plugin.getMainClassLastModified() <= 0) continue;
-                                if (plugin.getMainClassSHA256() == null) continue;
-                                ArrayList<LazyPlugin> cache = rescanCache.get(plugin.getMainClassFilename());
-                                if (cache == null) {
-                                    cache = new ArrayList<LazyPlugin>();
-                                    rescanCache.put(plugin.getMainClassFilename(), cache);
-                                }
-                                cache.add(plugin);
+                oldClassLoader = Thread.currentThread().getContextClassLoader();
+                try {
+                    if (noCache) {
+                        /* try to load from cache, to speed up rescan */
+                        HashMap<String, ArrayList<LazyPlugin>> rescanCache = new HashMap<String, ArrayList<LazyPlugin>>();
+                        try {
+                            List<LazyCrawlerPlugin> cachedPlugins = null;
+                            if (this.list != null) {
+                                cachedPlugins = this.list;
+                            } else {
+                                cachedPlugins = loadFromCache();
                             }
+                            if (cachedPlugins != null) {
+                                for (LazyCrawlerPlugin plugin : cachedPlugins) {
+                                    if (plugin.getMainClassFilename() == null) continue;
+                                    if (plugin.getMainClassLastModified() <= 0) continue;
+                                    if (plugin.getMainClassSHA256() == null) continue;
+                                    ArrayList<LazyPlugin> cache = rescanCache.get(plugin.getMainClassFilename());
+                                    if (cache == null) {
+                                        cache = new ArrayList<LazyPlugin>();
+                                        rescanCache.put(plugin.getMainClassFilename(), cache);
+                                    }
+                                    cache.add(plugin);
+                                }
+                            }
+                        } catch (Throwable e) {
+                            logger.log(e);
                         }
-                    } catch (Throwable e) {
-                        logger.log(e);
-                    }
-                    try {
-                        /* do a fresh scan */
-                        plugins = update(logger, rescanCache);
-                    } catch (Throwable e) {
-                        logger.severe("@CrawlerPluginController: update failed!");
-                        logger.log(e);
-                    }
-                } else {
-                    /* try to load from cache */
-                    try {
-                        plugins = loadFromCache();
-                    } catch (Throwable e) {
-                        logger.severe("@CrawlerPluginController: cache failed!");
-                        logger.log(e);
-                    }
-                    if (plugins.size() == 0) {
                         try {
                             /* do a fresh scan */
-                            plugins = update(logger, null);
+                            plugins = update(logger, rescanCache);
                         } catch (Throwable e) {
                             logger.severe("@CrawlerPluginController: update failed!");
                             logger.log(e);
                         }
+                    } else {
+                        /* try to load from cache */
+                        try {
+                            plugins = loadFromCache();
+                        } catch (Throwable e) {
+                            logger.severe("@CrawlerPluginController: cache failed!");
+                            logger.log(e);
+                        }
+                        if (plugins.size() == 0) {
+                            try {
+                                /* do a fresh scan */
+                                plugins = update(logger, null);
+                            } catch (Throwable e) {
+                                logger.severe("@CrawlerPluginController: update failed!");
+                                logger.log(e);
+                            }
+                        }
                     }
+                } finally {
+                    logger.info("@CrawlerPluginController: init " + (System.currentTimeMillis() - t) + " :" + plugins.size());
+                }
+                if (plugins.size() == 0) {
+                    logger.severe("@CrawlerPluginController: WTF, no plugins!");
+                } else {
+                    logger.clear();
                 }
             } finally {
-                logger.info("@CrawlerPluginController: init " + (System.currentTimeMillis() - t) + " :" + plugins.size());
+                logger.close();
+                LogController.setRebirthLogger(null);
+                Thread.currentThread().setContextClassLoader(oldClassLoader);
             }
-            if (plugins.size() == 0) {
-                logger.severe("@CrawlerPluginController: WTF, no plugins!");
-            } else {
-                logger.clear();
+            for (LazyCrawlerPlugin plugin : plugins) {
+                plugin.setPluginClass(null);
+                plugin.setClassLoader(null);
             }
-        } finally {
-            logger.close();
-            LogController.setRebirthLogger(null);
-            Thread.currentThread().setContextClassLoader(oldClassLoader);
+            list = plugins;
+            System.gc();
+            return plugins;
         }
-        for (LazyCrawlerPlugin plugin : plugins) {
-            plugin.setPluginClass(null);
-            plugin.setClassLoader(null);
-        }
-        list = plugins;
-        System.gc();
     }
 
     private List<LazyCrawlerPlugin> loadFromCache() {
@@ -315,8 +312,7 @@ public class CrawlerPluginController extends PluginController<PluginForDecrypt> 
     }
 
     public List<LazyCrawlerPlugin> list() {
-        lazyInit();
-        return list;
+        return ensureLoaded();
     }
 
     /*
@@ -326,16 +322,16 @@ public class CrawlerPluginController extends PluginController<PluginForDecrypt> 
      */
     public static List<LazyCrawlerPlugin> list(boolean ensureLoaded) {
         CrawlerPluginController ret = null;
-        if (INSTANCE != null && (ret = INSTANCE.get()) != null) {
+        MinTimeWeakReference<CrawlerPluginController> localInstance = INSTANCE;
+        if (localInstance != null && (ret = localInstance.get()) != null) {
             /* Controller is initiated */
-            if (ensureLoaded) ret.lazyInit();
+            if (ensureLoaded) ret.list();
             return ret.list;
         } else {
             /* Controller is not initiated */
             if (ensureLoaded) {
                 /* init the controller */
-                ret = getInstance();
-                return ret.list();
+                return getInstance().list;
             } else {
                 /* return null */
                 return null;
@@ -343,17 +339,18 @@ public class CrawlerPluginController extends PluginController<PluginForDecrypt> 
         }
     }
 
-    private void lazyInit() {
-        if (list != null) return;
-        synchronized (this) {
-            if (list != null) return;
-            init(isCacheInvalidated());
+    public List<LazyCrawlerPlugin> ensureLoaded() {
+        List<LazyCrawlerPlugin> localList = list;
+        if (localList != null && isCacheInvalidated() == false) return localList;
+        synchronized (INSTANCELOCK) {
+            localList = list;
+            if (localList != null && isCacheInvalidated() == false) return localList;
+            return init(isCacheInvalidated());
         }
     }
 
     public LazyCrawlerPlugin get(String displayName) {
-        lazyInit();
-        List<LazyCrawlerPlugin> llist = list;
+        List<LazyCrawlerPlugin> llist = ensureLoaded();
         for (LazyCrawlerPlugin plugin : llist) {
             if (plugin.getDisplayName().equalsIgnoreCase(displayName)) return plugin;
         }

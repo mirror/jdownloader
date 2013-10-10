@@ -1,8 +1,5 @@
 package jd.controlling.downloadcontroller;
 
-import java.util.List;
-
-import jd.plugins.DownloadLink;
 
 public interface DownloadWatchDogJob {
 
@@ -12,5 +9,5 @@ public interface DownloadWatchDogJob {
      * @param downloadWatchDogLoopLinks
      * @return
      */
-    public void execute(List<DownloadLink> downloadWatchDogLoopLinks);
+    public void execute(DownloadSession currentSession);
 }

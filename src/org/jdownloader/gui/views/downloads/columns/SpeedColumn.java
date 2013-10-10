@@ -15,8 +15,10 @@ import jd.controlling.packagecontroller.AbstractNode;
 import jd.nutils.Formatter;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
-import jd.plugins.LinkStatus;
 import jd.plugins.PluginForHost;
+import jd.plugins.PluginProgress;
+import jd.plugins.download.DownloadInterface;
+import jd.plugins.download.DownloadPluginProgress;
 
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.storage.config.ValidationException;
@@ -34,7 +36,6 @@ import org.jdownloader.images.NewTheme;
 import org.jdownloader.premium.PremiumInfoDialog;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
-import org.jdownloader.translate._JDT;
 
 public class SpeedColumn extends ExtTextColumn<AbstractNode> {
 
@@ -99,12 +100,6 @@ public class SpeedColumn extends ExtTextColumn<AbstractNode> {
         return 130;
     }
 
-    // @Override
-    // public int getMaxWidth() {
-    //
-    // return 80;
-    // }
-
     @Override
     protected Icon getIcon(AbstractNode value) {
         if (isSpeedWarning(value)) { return NewTheme.I().getIcon("warning", 16); }
@@ -127,7 +122,8 @@ public class SpeedColumn extends ExtTextColumn<AbstractNode> {
                 /* we have an active limit that is smaller than our warn speed */
                 return false;
             }
-            if (dl.getLinkStatus().hasStatus(LinkStatus.DOWNLOADINTERFACE_IN_PROGRESS) && ((DownloadLink) value).getDownloadCurrent() > 100 * 1024) {
+            DownloadInterface dli = dlc.getDownloadInstance();
+            if (dli != null && ((DownloadLink) value).getDownloadCurrent() > 100 * 1024) {
                 if (((DownloadLink) value).getDownloadSpeed() < 50 * 1024) { return true; }
             }
         }
@@ -138,7 +134,7 @@ public class SpeedColumn extends ExtTextColumn<AbstractNode> {
         if (isSpeedWarning(obj)) {
 
             try {
-                Dialog.getInstance().showDialog(new PremiumInfoDialog((((DownloadLink) obj).getDomainInfo(true)), _GUI._.SpeedColumn_onSingleClick_object_(((DownloadLink) obj).getHost()), "SpeedColumn") {
+                Dialog.getInstance().showDialog(new PremiumInfoDialog((((DownloadLink) obj).getDomainInfo()), _GUI._.SpeedColumn_onSingleClick_object_(((DownloadLink) obj).getHost()), "SpeedColumn") {
                     protected String getDescription(DomainInfo info2) {
                         return _GUI._.SpeedColumn_getDescription_object_(info2.getTld());
                     }
@@ -156,13 +152,10 @@ public class SpeedColumn extends ExtTextColumn<AbstractNode> {
     @Override
     public String getStringValue(AbstractNode value) {
         if (value instanceof DownloadLink) {
-            if (((DownloadLink) value).getLinkStatus().hasStatus(LinkStatus.DOWNLOADINTERFACE_IN_PROGRESS)) {
-                long speed = 0;
-                if ((speed = ((DownloadLink) value).getDownloadSpeed()) > 0) {
-                    return Formatter.formatReadable(speed) + "/s";
-                } else {
-                    return _JDT._.gui_download_create_connection();
-                }
+            PluginProgress pluginProgress = ((DownloadLink) value).getPluginProgress();
+            if (pluginProgress instanceof DownloadPluginProgress) {
+                long speed = ((DownloadPluginProgress) pluginProgress).getSpeed();
+                if (speed > 0) { return Formatter.formatReadable(speed) + "/s"; }
             }
         } else if (value instanceof FilePackage) {
             long speed = DownloadWatchDog.getInstance().getDownloadSpeedbyFilePackage((FilePackage) value);

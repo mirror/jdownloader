@@ -21,8 +21,8 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.LinkedList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.logging.Logger;
@@ -61,9 +61,8 @@ public class AccountController implements AccountControllerListener {
 
     private static final long                                                    serialVersionUID = -7560087582989096645L;
 
-    private static HashMap<String, java.util.List<Account>>                      HOSTER_ACCOUNTS  = null;
-
-    private static HashMap<Account, Long>                                        blockedAccounts  = new HashMap<Account, Long>();
+    private final HashMap<String, List<Account>>                                 ACCOUNTS;
+    private final HashMap<String, List<Account>>                                 MULTIHOSTER_ACCOUNTS;
 
     private static AccountController                                             INSTANCE         = new AccountController();
 
@@ -99,11 +98,15 @@ public class AccountController implements AccountControllerListener {
                 return "save accounts...";
             }
         });
-        HOSTER_ACCOUNTS = loadAccounts();
-        final Collection<List<Account>> accsc = HOSTER_ACCOUNTS.values();
+        ACCOUNTS = loadAccounts();
+        MULTIHOSTER_ACCOUNTS = new HashMap<String, List<Account>>();
+        final Collection<List<Account>> accsc = ACCOUNTS.values();
         for (final java.util.List<Account> accs : accsc) {
             for (final Account acc : accs) {
                 acc.setAccountController(this);
+                if (acc.getPlugin() != null) {
+                    updateInternalMultiHosterMap(acc, acc.getAccountInfo());
+                }
             }
         }
         delayedSaver = new DelayedRunnable(5000, 30000) {
@@ -123,8 +126,8 @@ public class AccountController implements AccountControllerListener {
 
     protected void save() {
         HashMap<String, ArrayList<AccountData>> ret = new HashMap<String, ArrayList<AccountData>>();
-        synchronized (HOSTER_ACCOUNTS) {
-            for (Iterator<Entry<String, java.util.List<Account>>> it = HOSTER_ACCOUNTS.entrySet().iterator(); it.hasNext();) {
+        synchronized (ACCOUNTS) {
+            for (Iterator<Entry<String, java.util.List<Account>>> it = ACCOUNTS.entrySet().iterator(); it.hasNext();) {
                 Entry<String, java.util.List<Account>> next = it.next();
                 if (next.getValue().size() > 0) {
                     ArrayList<AccountData> list = new ArrayList<AccountData>();
@@ -136,6 +139,38 @@ public class AccountController implements AccountControllerListener {
             }
         }
         config.setAccounts(ret);
+    }
+
+    private void updateInternalMultiHosterMap(Account account, AccountInfo ai) {
+        synchronized (MULTIHOSTER_ACCOUNTS) {
+            Iterator<Entry<String, List<Account>>> it = MULTIHOSTER_ACCOUNTS.entrySet().iterator();
+            while (it.hasNext()) {
+                Entry<String, List<Account>> next = it.next();
+                List<Account> accs = next.getValue();
+                if (accs.remove(account) && accs.size() == 0) {
+                    it.remove();
+                }
+            }
+            boolean isMulti = false;
+            if (ai != null) {
+                Object supported = ai.getProperty("multiHostSupport", Property.NULL);
+                if (supported != null && supported instanceof List) {
+                    isMulti = true;
+                    for (Object support : (List<?>) supported) {
+                        if (support instanceof String) {
+                            String host = ((String) support).toLowerCase(Locale.ENGLISH);
+                            List<Account> accs = MULTIHOSTER_ACCOUNTS.get(host);
+                            if (accs == null) {
+                                accs = new ArrayList<Account>();
+                                MULTIHOSTER_ACCOUNTS.put(host, accs);
+                            }
+                            accs.add(account);
+                        }
+                    }
+                }
+            }
+            account.setProperty(Account.IS_MULTI_HOSTER_ACCOUNT, isMulti);
+        }
     }
 
     public AccountInfo updateAccountInfo(final Account account, final boolean forceupdate) {
@@ -330,6 +365,7 @@ public class AccountController implements AccountControllerListener {
             if (next.getValue().size() > 0) {
                 for (AccountData ad : next.getValue()) {
                     String host = next.getKey();
+                    host = host.toLowerCase(Locale.ENGLISH);
                     Account acc = ad.toAccount();
                     acc.setHoster(host);
                     PluginForHost plugin = pluginFinder.assignPlugin(acc, true, null);
@@ -404,50 +440,13 @@ public class AccountController implements AccountControllerListener {
         addAccount(account);
     }
 
-    public boolean isAccountBlocked(final Account account) {
-        synchronized (blockedAccounts) {
-            Long ret = blockedAccounts.get(account);
-            if (ret == null) return false;
-            if (System.currentTimeMillis() > ret) {
-                /*
-                 * timeout is over, lets remove the account as it is no longer blocked
-                 */
-                blockedAccounts.remove(account);
-                return false;
-            }
-            return true;
-        }
-    }
-
-    public void addAccountBlocked(final Account account, final long value) {
-        synchronized (blockedAccounts) {
-            long blockedTime = Math.max(0, value);
-            if (blockedTime == 0) {
-                LogController.CL().info("Invalid AccountBlock timeout! set 30 mins!");
-                blockedTime = 60 * 60 * 1000l;
-            }
-            blockedAccounts.put(account, System.currentTimeMillis() + blockedTime);
-        }
-    }
-
-    /* remove accountblock for given account or all if account is null */
-    public void removeAccountBlocked(final Account account) {
-        synchronized (blockedAccounts) {
-            if (account == null) {
-                blockedAccounts.clear();
-            } else {
-                blockedAccounts.remove(account);
-            }
-        }
-    }
-
     /* returns a list of all available accounts for given host */
     public ArrayList<Account> list(String host) {
         ArrayList<Account> ret = new ArrayList<Account>();
-        synchronized (HOSTER_ACCOUNTS) {
+        synchronized (ACCOUNTS) {
             if (StringUtils.isEmpty(host)) {
-                for (String hoster : HOSTER_ACCOUNTS.keySet()) {
-                    java.util.List<Account> ret2 = HOSTER_ACCOUNTS.get(hoster);
+                for (String hoster : ACCOUNTS.keySet()) {
+                    java.util.List<Account> ret2 = ACCOUNTS.get(hoster);
                     if (ret2 != null) {
                         for (Account acc : ret2) {
                             if (acc.getPlugin() == null) continue;
@@ -456,7 +455,7 @@ public class AccountController implements AccountControllerListener {
                     }
                 }
             } else {
-                java.util.List<Account> ret2 = HOSTER_ACCOUNTS.get(host);
+                java.util.List<Account> ret2 = ACCOUNTS.get(host);
                 if (ret2 != null) {
                     for (Account acc : ret2) {
                         if (acc.getPlugin() == null) continue;
@@ -474,58 +473,16 @@ public class AccountController implements AccountControllerListener {
     }
 
     /* do we have accounts for this host */
-    public boolean hasAccounts(final String host) {
+    public boolean hasAccounts(String host) {
+        if (StringUtils.isEmpty(host)) return false;
         java.util.List<Account> ret = null;
-        synchronized (HOSTER_ACCOUNTS) {
-            ret = HOSTER_ACCOUNTS.get(host);
+        host = host.toLowerCase(Locale.ENGLISH);
+        synchronized (ACCOUNTS) {
+            ret = ACCOUNTS.get(host);
             if (ret != null) {
                 for (Account acc : ret) {
                     if (acc.getPlugin() == null) continue;
-                    if (acc.isEnabled() && acc.isValid()) return true;
-                }
-            }
-        }
-        return false;
-    }
-
-    /* do we have multihost accounts for this host */
-    public boolean hasMultiHostAccounts(final String host) {
-        synchronized (HOSTER_ACCOUNTS) {
-            Iterator<Entry<String, java.util.List<Account>>> it = HOSTER_ACCOUNTS.entrySet().iterator();
-            while (it.hasNext()) {
-                Entry<String, java.util.List<Account>> next = it.next();
-                if (next.getKey().equalsIgnoreCase(host)) {
-                    /* we dont't want account from same host */
-                    continue;
-                }
-                for (Account acc : next.getValue()) {
-                    if (acc.getPlugin() == null) continue;
-                    if (!acc.isEnabled() || !acc.isValid()) {
-                        /*
-                         * we remove every invalid/disabled/tempdisabled/blocked account
-                         */
-                        continue;
-                    }
-                    AccountInfo ai = acc.getAccountInfo();
-                    if (ai == null) continue;
-                    Object supported = null;
-                    synchronized (ai) {
-                        /*
-                         * synchronized on accountinfo because properties are not threadsafe
-                         */
-                        supported = ai.getProperty("multiHostSupport", Property.NULL);
-                    }
-                    if (Property.NULL == supported || supported == null) continue;
-                    synchronized (supported) {
-                        /*
-                         * synchronized on list because plugins can change the list in runtime
-                         */
-                        if (supported instanceof List) {
-                            for (String sup : (java.util.List<String>) supported) {
-                                if (host.equalsIgnoreCase(sup)) { return true; }
-                            }
-                        }
-                    }
+                    if (acc.isValid()) return true;
                 }
             }
         }
@@ -543,11 +500,13 @@ public class AccountController implements AccountControllerListener {
             }
         }
 
-        synchronized (HOSTER_ACCOUNTS) {
-            java.util.List<Account> accs = HOSTER_ACCOUNTS.get(account.getHoster());
+        synchronized (ACCOUNTS) {
+            String host = account.getHoster();
+            host = host.toLowerCase(Locale.ENGLISH);
+            java.util.List<Account> accs = ACCOUNTS.get(host);
             if (accs == null) {
                 accs = new ArrayList<Account>();
-                HOSTER_ACCOUNTS.put(account.getHoster(), accs);
+                ACCOUNTS.put(host, accs);
             }
             for (final Account acc : accs) {
                 if (acc.equals(account)) return;
@@ -562,11 +521,12 @@ public class AccountController implements AccountControllerListener {
         if (account == null) { return false; }
         /* remove reference to AccountController */
         account.setAccountController(null);
-        removeAccountBlocked(account);
-        synchronized (HOSTER_ACCOUNTS) {
-            java.util.List<Account> accs = HOSTER_ACCOUNTS.get(account.getHoster());
+        synchronized (ACCOUNTS) {
+            String host = account.getHoster();
+            host = host.toLowerCase(Locale.ENGLISH);
+            java.util.List<Account> accs = ACCOUNTS.get(host);
             if (accs == null || !accs.remove(account)) return false;
-            if (accs.size() == 0) HOSTER_ACCOUNTS.remove(account.getHoster());
+            if (accs.size() == 0) ACCOUNTS.remove(host);
         }
         this.broadcaster.fireEvent(new AccountControllerEvent(this, AccountControllerEvent.Types.REMOVED, account));
         return true;
@@ -574,14 +534,20 @@ public class AccountController implements AccountControllerListener {
 
     public void onAccountControllerEvent(final AccountControllerEvent event) {
         Account acc = null;
+        delayedSaver.resetAndStart();
         switch (event.getType()) {
         case ADDED:
+            updateInternalMultiHosterMap(event.getParameter(), event.getParameter().getAccountInfo());
             org.jdownloader.settings.staticreferences.CFG_GENERAL.USE_AVAILABLE_ACCOUNTS.setValue(true);
-            saveDelayedRequest();
             break;
         case REMOVED:
-            saveDelayedRequest();
+        case EXPIRED:
+        case INVALID:
+            updateInternalMultiHosterMap(event.getParameter(), null);
             return;
+        case UPDATE:
+            updateInternalMultiHosterMap(event.getParameter(), event.getParameter().getAccountInfo());
+            break;
         }
         if (event.isRecheckRequired()) {
             /* event tells us to recheck the account */
@@ -590,31 +556,26 @@ public class AccountController implements AccountControllerListener {
         }
     }
 
-    /**
-     * 
-     */
-    public void saveDelayedRequest() {
-        delayedSaver.run();
-    }
-
     @Deprecated
     public Account getValidAccount(final PluginForHost pluginForHost) {
-        LinkedList<Account> ret = getValidAccounts(pluginForHost.getHost());
-        if (ret != null && ret.size() > 0) return ret.getFirst();
+        ArrayList<Account> ret = getValidAccounts(pluginForHost.getHost());
+        if (ret != null && ret.size() > 0) return ret.get(0);
         return null;
     }
 
-    public LinkedList<Account> getValidAccounts(final String host) {
-        LinkedList<Account> ret = null;
-        synchronized (HOSTER_ACCOUNTS) {
-            final java.util.List<Account> accounts = HOSTER_ACCOUNTS.get(host);
+    public ArrayList<Account> getValidAccounts(String host) {
+        if (StringUtils.isEmpty(host)) return null;
+        host = host.toLowerCase(Locale.ENGLISH);
+        ArrayList<Account> ret = null;
+        synchronized (ACCOUNTS) {
+            final java.util.List<Account> accounts = ACCOUNTS.get(host);
             if (accounts == null || accounts.size() == 0) return null;
-            ret = new LinkedList<Account>(accounts);
+            ret = new ArrayList<Account>(accounts);
         }
         Iterator<Account> it = ret.iterator();
         while (it.hasNext()) {
             Account next = it.next();
-            if (!next.isEnabled() || !next.isValid() || next.isTempDisabled() || isAccountBlocked(next)) {
+            if (!next.isEnabled() || !next.isValid() || next.isTempDisabled()) {
                 /* we remove every invalid/disabled/tempdisabled/blocked account */
                 it.remove();
             }
@@ -622,51 +583,22 @@ public class AccountController implements AccountControllerListener {
         return ret;
     }
 
-    public LinkedList<Account> getMultiHostAccounts(final String host) {
-        LinkedList<Account> ret = new LinkedList<Account>();
-        synchronized (HOSTER_ACCOUNTS) {
-            Iterator<Entry<String, java.util.List<Account>>> it = HOSTER_ACCOUNTS.entrySet().iterator();
-            while (it.hasNext()) {
-                Entry<String, java.util.List<Account>> next = it.next();
-                if (next.getKey().equalsIgnoreCase(host)) {
-                    /* we dont't want account from same host */
-                    continue;
-                }
-                for (Account acc : next.getValue()) {
-                    if (acc.getPlugin() == null) continue;
-                    if (!acc.isEnabled() || !acc.isValid() || acc.isTempDisabled()) {
-                        /*
-                         * we remove every invalid/disabled/tempdisabled/blocked account
-                         */
-                        continue;
-                    }
-                    AccountInfo ai = acc.getAccountInfo();
-                    if (ai == null) continue;
-                    Object supported = null;
-                    synchronized (ai) {
-                        /*
-                         * synchronized on accountinfo because properties are not threadsafe
-                         */
-                        supported = ai.getProperty("multiHostSupport", Property.NULL);
-                    }
-                    if (Property.NULL == supported || supported == null) continue;
-                    synchronized (supported) {
-                        /*
-                         * synchronized on list because plugins can change the list in runtime
-                         */
-                        if (supported instanceof ArrayList) {
-                            for (String sup : (java.util.List<String>) supported) {
-                                if (sup.equalsIgnoreCase(host)) {
-                                    ret.add(acc);
-                                    break;
-                                }
-                            }
-                        }
-                    }
-                }
-            }
+    public List<Account> getMultiHostAccounts(String host) {
+        if (StringUtils.isEmpty(host)) return null;
+        host = host.toLowerCase(Locale.ENGLISH);
+        synchronized (MULTIHOSTER_ACCOUNTS) {
+            List<Account> ret = MULTIHOSTER_ACCOUNTS.get(host);
+            if (ret == null) return ret;
+            return new ArrayList<Account>(ret);
         }
-        return ret;
+    }
+
+    public boolean hasMultiHostAccounts(String host) {
+        if (StringUtils.isEmpty(host)) return false;
+        host = host.toLowerCase(Locale.ENGLISH);
+        synchronized (MULTIHOSTER_ACCOUNTS) {
+            return MULTIHOSTER_ACCOUNTS.containsKey(host);
+        }
     }
 
     @Deprecated

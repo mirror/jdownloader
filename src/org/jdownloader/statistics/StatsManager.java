@@ -122,7 +122,7 @@ public class StatsManager implements GenericConfigEventListener<Object> {
             final boolean accountUsed = downloadLink.getDownloadLinkController().getAccount() != null;
             final long plgVersion = plg.getVersion();
             final String plgHost = plg.getHost();
-            final String linkHost = downloadLink.getDomainInfo(true).getTld();
+            final String linkHost = downloadLink.getDomainInfo().getTld();
 
             queue.add(new AsynchLogger() {
                 @Override

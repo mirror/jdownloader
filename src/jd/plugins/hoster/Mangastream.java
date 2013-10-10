@@ -76,7 +76,7 @@ public class Mangastream extends PluginForHost {
                 fos = new FileOutputStream(downloadLink.getFileOutput());
                 boolean success = ImageIO.write(buffer, "PNG", fos);
                 downloadLink.getLinkStatus().setStatusText(success ? "Finished" : "Error saving the file");
-                downloadLink.getLinkStatus().setStatus(success ? LinkStatus.FINISHED : LinkStatus.ERROR_LOCAL_IO);
+                downloadLink.getLinkStatus().setStatus(success ? LinkStatus.FINISHED : LinkStatus.ERROR_DOWNLOAD_FAILED);
                 return;
             } finally {
                 try {

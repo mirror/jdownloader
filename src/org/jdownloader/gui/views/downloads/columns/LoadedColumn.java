@@ -28,12 +28,6 @@ public class LoadedColumn extends ExtFileSizeColumn<AbstractNode> {
         return 90;
     }
 
-    // @Override
-    // public int getMaxWidth() {
-    //
-    // return 90;
-    // }
-
     @Override
     protected long getBytes(AbstractNode o2) {
         if (o2 instanceof DownloadLink) {

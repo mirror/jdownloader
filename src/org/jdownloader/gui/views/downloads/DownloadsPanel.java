@@ -57,16 +57,33 @@ public class DownloadsPanel extends SwitchPanel implements DownloadControllerLis
         tableScrollPane.setBorder(null);
         HorizontalScrollbarAction.setup(CFG_GUI.HORIZONTAL_SCROLLBARS_IN_DOWNLOAD_TABLE_ENABLED, table);
         bottomBar = new BottomBar(table);
-        DownloadController.DOWNLOADLIST_LOADED.executeWhenReached(new Runnable() {
+        DownloadController.DOWNLOADLIST_LOADED.executeWhen(new Runnable() {
 
             @Override
             public void run() {
-                removeAll();
-                layoutComponents();
+                new EDTRunner() {
+
+                    @Override
+                    protected void runInEDT() {
+                        removeAll();
+                        layoutComponents(true);
+                    }
+                };
+            }
+        }, new Runnable() {
+
+            @Override
+            public void run() {
+                new EDTRunner() {
+
+                    @Override
+                    protected void runInEDT() {
+                        removeAll();
+                        layoutComponents(false);
+                    }
+                };
             }
         });
-
-        layoutComponents();
 
         CFG_GUI.DOWNLOAD_PANEL_OVERVIEW_VISIBLE.getEventSender().addListener(new GenericConfigEventListener<Boolean>() {
 
@@ -82,7 +99,10 @@ public class DownloadsPanel extends SwitchPanel implements DownloadControllerLis
                     @Override
                     protected void runInEDT() {
                         removeAll();
-                        layoutComponents();
+                        if (CFG_GUI.DOWNLOAD_PANEL_OVERVIEW_VISIBLE.isEnabled()) {
+                            getOverView();
+                        }
+                        layoutComponents(DownloadController.DOWNLOADLIST_LOADED.isReached());
                     }
                 };
             }
@@ -152,14 +172,13 @@ public class DownloadsPanel extends SwitchPanel implements DownloadControllerLis
         return table;
     }
 
-    private void layoutComponents() {
+    private void layoutComponents(boolean downloadListLoaded) {
 
-        if (!DownloadController.DOWNLOADLIST_LOADED.isReached()) {
+        if (!downloadListLoaded) {
             MigPanel loader = createLoaderPanel();
             setLayout(new MigLayout("ins 0, wrap 1", "[grow,fill]", "[grow,fill]"));
             add(new JScrollPane(loader), "alignx center,aligny 20%");
         } else {
-
             if (CFG_GUI.DOWNLOAD_PANEL_OVERVIEW_VISIBLE.isEnabled()) {
                 setLayout(new MigLayout("ins 0, wrap 1", "[grow,fill]", "[grow,fill]2[]2[]"));
                 this.add(tableScrollPane, "");
@@ -286,8 +305,8 @@ public class DownloadsPanel extends SwitchPanel implements DownloadControllerLis
                     long contentChanges = DownloadController.getInstance().getContentChanges();
                     if (lastContentChanges != contentChanges && tableModel.isFilteredView()) {
                         /*
-                         * in case we have content changes(eg downloads started) and an active filteredView, we need to recreate the
-                         * tablemodel to reflect possible status changes in filtered view
+                         * in case we have content changes(eg downloads started) and an active filteredView, we need to recreate the tablemodel to reflect
+                         * possible status changes in filtered view
                          */
                         tableModel.recreateModel();
                     } else {

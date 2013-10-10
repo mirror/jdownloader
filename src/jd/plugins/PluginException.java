@@ -16,74 +16,50 @@
 
 package jd.plugins;
 
-import org.jdownloader.plugins.SkipReason;
-
 public class PluginException extends Exception {
 
     private static final long serialVersionUID              = -413339039711789194L;
 
-    public static final int   VALUE_ID_PREMIUM_TEMP_DISABLE = 0;
-    public static final int   VALUE_ID_PREMIUM_DISABLE      = 1;
+    public static int         VALUE_ID_PREMIUM_TEMP_DISABLE = 0;
+    public static int         VALUE_ID_PREMIUM_DISABLE      = 1;
     /* do not final it, as the compiler will replace Reference with value, no more Exceptions but broken ErrorHandling in stable */
     public static int         VALUE_ID_PREMIUM_ONLY         = 2;
 
-    private int               linkStatus                    = -1;
-    private String            errorMessage                  = null;
-    private long              value                         = -1;
-    private SkipReason        skipReason                    = null;
+    private final int         linkStatus;
+    private final String      errorMessage;
+    private final long        value;
 
     public PluginException(int linkStatus) {
-        this.linkStatus = linkStatus;
+        this(linkStatus, null, -1);
     }
 
     public PluginException(int linkStatus, String errorMessage, long value) {
-        this(linkStatus);
+        this.linkStatus = linkStatus;
         this.errorMessage = errorMessage;
         this.value = value;
     }
 
     public PluginException(int linkStatus, String errorMessage) {
-        this(linkStatus);
-        this.errorMessage = errorMessage;
+        this(linkStatus, errorMessage, -1);
     }
 
     public PluginException(int linkStatus, long value) {
-        this(linkStatus);
-        this.value = value;
-    }
-
-    public PluginException(SkipReason skipReason) {
-        this.skipReason = skipReason;
+        this(linkStatus, null, value);
     }
 
     public String getErrorMessage() {
         return errorMessage;
     }
 
-    public void setErrorMessage(String errorMessage) {
-        this.errorMessage = errorMessage;
-    }
-
     public long getValue() {
         return value;
     }
 
-    public SkipReason getSkipReason() {
-        return skipReason;
-    }
-
-    public void setValue(long value) {
-        this.value = value;
-    }
-
-    public void fillLinkStatus(LinkStatus linkStatus) {
-        if (getSkipReason() == null) {
-            linkStatus.addStatus(this.linkStatus);
-            if (value >= 0) linkStatus.setValue(value);
-            if (errorMessage != null) linkStatus.setErrorMessage(errorMessage);
-        }
-    }
-
+    /**
+     * JD2Only
+     * 
+     * @return
+     */
     public int getLinkStatus() {
         return linkStatus;
     }

@@ -53,7 +53,7 @@ public class ExtractAction<PackageType extends AbstractPackageNode<ChildrenType,
                 if (pathname.isDirectory()) return true;
 
                 for (IExtraction extractor : _getExtension().getExtractors()) {
-                    if (extractor.isArchivSupported(new FileArchiveFactory(pathname))) { return true; }
+                    if (extractor.isArchivSupported(new FileArchiveFactory(pathname), false)) { return true; }
                 }
 
                 return false;
@@ -87,7 +87,7 @@ public class ExtractAction<PackageType extends AbstractPackageNode<ChildrenType,
 
                     @Override
                     public void run() throws Exception {
-                        if (archive.isComplete()) {
+                        if (_getExtension().isComplete(archive)) {
                             controller = _getExtension().addToQueue(archive, true);
                             if (controller != null) {
                                 final ExtractionListener listener = new ExtractionListener() {

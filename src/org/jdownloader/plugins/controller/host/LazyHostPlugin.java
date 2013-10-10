@@ -35,7 +35,7 @@ public class LazyHostPlugin extends LazyPlugin<PluginForHost> {
         }
         ap.setHasAccountRewrite(isHasAccountRewrite());
         ap.setHasLinkRewrite(isHasLinkRewrite());
-        ap.setPattern(getPattern().pattern());
+        ap.setPattern(getPatternSource());
         ap.setVersion(getVersion());
         ap.setHasConfig(isHasConfig());
         ap.setInterfaceVersion(getInterfaceVersion());

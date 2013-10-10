@@ -50,21 +50,18 @@ public class HosterRuleController implements AccountControllerListener {
     private LogSource                             logger;
 
     /**
-     * Create a new instance of HosterRuleController. This is a singleton class. Access the only existing instance by using
-     * {@link #getInstance()}.
+     * Create a new instance of HosterRuleController. This is a singleton class. Access the only existing instance by using {@link #getInstance()}.
      */
     private HosterRuleController() {
         eventSender = new HosterRuleControllerEventSender();
         file = Application.getResource("cfg/accountUsageRules.json");
-        file.getParentFile().mkdirs();
+        if (!file.getParentFile().exists()) file.getParentFile().mkdirs();
         logger = LogController.getInstance().getLogger(HosterRuleController.class.getName());
-
         rules = new ArrayList<AccountUsageRule>();
         SecondLevelLaunch.ACCOUNTLIST_LOADED.executeWhenReached(new Runnable() {
 
             @Override
             public void run() {
-
                 load();
                 AccountController.getInstance().getBroadcaster().addListener(HosterRuleController.this);
             }
@@ -96,17 +93,24 @@ public class HosterRuleController implements AccountControllerListener {
             try {
                 ArrayList<AccountRuleStorable> loaded = JSonStorage.restoreFromString(IO.readFileToString(file), new TypeRef<ArrayList<AccountRuleStorable>>() {
                 }, null);
-                if (loaded != null) {
-                    synchronized (rules) {
-                        for (AccountRuleStorable ars : loaded) {
-                            AccountUsageRule add = ars.restore();
-                            add.setOwner(this);
-                            rules.add(add);
+                if (loaded != null && loaded.size() > 0) {
+                    ArrayList<Account> availableAccounts = AccountController.getInstance().list(null);
+                    List<AccountUsageRule> rules = new ArrayList<AccountUsageRule>();
+                    for (AccountRuleStorable ars : loaded) {
+                        try {
+                            AccountUsageRule rule = ars.restore(availableAccounts);
+                            rule.setOwner(this);
+                            rules.add(rule);
+                        } catch (Throwable e) {
+                            logger.log(e);
                         }
+                    }
+                    synchronized (this.rules) {
+                        this.rules.addAll(rules);
                     }
                 }
                 validateRules();
-            } catch (Exception e) {
+            } catch (Throwable e) {
                 logger.log(e);
             }
         }
@@ -114,13 +118,11 @@ public class HosterRuleController implements AccountControllerListener {
     }
 
     private void validateRules() {
-
         synchronized (rules) {
             for (AccountUsageRule hr : rules) {
                 validateRule(hr);
             }
         }
-
     }
 
     protected void validateRule(AccountUsageRule hr) {
@@ -166,7 +168,6 @@ public class HosterRuleController implements AccountControllerListener {
             }
             if (onlyMulti) {
                 onlyMultiAccounts = ag;
-
             }
         }
 
@@ -243,17 +244,18 @@ public class HosterRuleController implements AccountControllerListener {
     }
 
     protected void save() {
-
-        ArrayList<AccountRuleStorable> saveList = new ArrayList<AccountRuleStorable>();
-        synchronized (rules) {
-            for (AccountUsageRule hr : rules) {
-                saveList.add(new AccountRuleStorable(hr));
+        if (SecondLevelLaunch.ACCOUNTLIST_LOADED.isReached()) {
+            ArrayList<AccountRuleStorable> saveList = new ArrayList<AccountRuleStorable>();
+            synchronized (rules) {
+                for (AccountUsageRule hr : rules) {
+                    saveList.add(new AccountRuleStorable(hr));
+                }
             }
-        }
-        try {
-            IO.secureWrite(file, JSonStorage.serializeToJson(saveList).getBytes("UTF-8"));
-        } catch (Exception e) {
-            logger.log(e);
+            try {
+                IO.secureWrite(file, JSonStorage.serializeToJson(saveList).getBytes("UTF-8"));
+            } catch (Exception e) {
+                logger.log(e);
+            }
         }
     }
 
@@ -271,18 +273,20 @@ public class HosterRuleController implements AccountControllerListener {
     // }
 
     public List<AccountUsageRule> list() {
-        return Collections.unmodifiableList(rules);
+        synchronized (rules) {
+            return Collections.unmodifiableList(rules);
+        }
     }
 
     public void add(AccountUsageRule rule) {
+        validateRule(rule);
         synchronized (rules) {
             rule.setOwner(this);
-            validateRule(rule);
             rules.add(rule);
         }
         validateRules();
-        eventSender.fireEvent(new HosterRuleControllerEvent(this, HosterRuleControllerEvent.Type.ADDED, rule));
         delayedSaver.delayedrun();
+        eventSender.fireEvent(new HosterRuleControllerEvent(this, HosterRuleControllerEvent.Type.ADDED, rule));
     }
 
     public void fireUpdate() {
@@ -297,7 +301,6 @@ public class HosterRuleController implements AccountControllerListener {
             AccountUsageRule newRule = d.getRule();
             editing.setEnabled(newRule.isEnabled());
             editing.setAccounts(newRule.getAccounts());
-
             validateRules();
             fireUpdate();
         } catch (DialogClosedException e) {
@@ -308,14 +311,15 @@ public class HosterRuleController implements AccountControllerListener {
     }
 
     public void remove(AccountUsageRule rule) {
-
+        boolean removed = false;
         synchronized (rules) {
-
-            rules.remove(rule);
+            removed = rules.remove(rule);
         }
-        validateRules();
-        eventSender.fireEvent(new HosterRuleControllerEvent(this, HosterRuleControllerEvent.Type.REMOVED, rule));
-        delayedSaver.delayedrun();
+        if (removed) {
+            validateRules();
+            delayedSaver.delayedrun();
+            eventSender.fireEvent(new HosterRuleControllerEvent(this, HosterRuleControllerEvent.Type.REMOVED, rule));
+        }
     }
 
 }

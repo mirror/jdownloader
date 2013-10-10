@@ -46,20 +46,22 @@ import org.jdownloader.extensions.extraction.ArchiveFile;
 class RarOpener implements IArchiveOpenVolumeCallback, IArchiveOpenCallback, ICryptoGetTextPassword {
     private Map<String, RandomAccessFile> openedRandomAccessFileList = new HashMap<String, RandomAccessFile>();
     private String                        name;
-    private String                        password;
-    private Archive                       archive;
+    private final String                  password;
+    private final Archive                 archive;
     private HashMap<String, ArchiveFile>  map;
     private String                        firstName;
     private Logger                        logger;
     private ExtRandomAccessFileInStream   latestAccessedStream;
 
     RarOpener(Archive archive) {
-        this.password = "";
-        this.archive = archive;
-        init();
+        this(archive, null);
     }
 
     RarOpener(Archive archive, String password) {
+        if (password == null) {
+            /* password null will crash jvm */
+            password = "";
+        }
         this.password = password;
         this.archive = archive;
         init();
@@ -154,7 +156,6 @@ class RarOpener implements IArchiveOpenVolumeCallback, IArchiveOpenCallback, ICr
     }
 
     public String cryptoGetTextPassword() throws SevenZipException {
-
         return password;
     }
 

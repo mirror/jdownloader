@@ -10,17 +10,15 @@ import jd.controlling.downloadcontroller.DownloadWatchDog;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.FilePackage;
-import jd.plugins.LinkStatus;
 import jd.plugins.PluginProgress;
 
+import org.appwork.utils.event.queue.QueueAction;
 import org.jdownloader.extensions.extraction.Archive;
 import org.jdownloader.extensions.extraction.ArchiveFile;
 import org.jdownloader.extensions.extraction.ExtractionController;
 import org.jdownloader.extensions.extraction.ExtractionProgress;
 import org.jdownloader.extensions.extraction.ExtractionStatus;
-import org.jdownloader.extensions.extraction.translate.T;
-import org.jdownloader.images.NewTheme;
-import org.jdownloader.logging.LogController;
+import org.jdownloader.plugins.FinalLinkState;
 import org.jdownloader.settings.staticreferences.CFG_GENERAL;
 
 public class DownloadLinkArchiveFile implements ArchiveFile {
@@ -71,9 +69,7 @@ public class DownloadLinkArchiveFile implements ArchiveFile {
     }
 
     private boolean isLinkComplete(DownloadLink downloadLink) {
-        if (new File(downloadLink.getFileOutput()).exists()) { return true; }
-        if (!downloadLink.getLinkStatus().hasStatus(LinkStatus.FINISHED) && !downloadLink.getLinkStatus().hasStatus(LinkStatus.ERROR_ALREADYEXISTS)) return false;
-
+        if (FinalLinkState.CheckFinished(downloadLink.getFinalLinkState()) && new File(downloadLink.getFileOutput()).exists()) return true;
         return true;
     }
 
@@ -83,7 +79,7 @@ public class DownloadLinkArchiveFile implements ArchiveFile {
 
     public boolean isValid() {
         for (DownloadLink downloadLink : downloadLinks) {
-            if (!downloadLink.getLinkStatus().hasStatus(LinkStatus.ERROR_ALREADYEXISTS)) return true;
+            if (FinalLinkState.CheckFinished(downloadLink.getFinalLinkState())) return true;
         }
         return false;
     }
@@ -109,54 +105,18 @@ public class DownloadLinkArchiveFile implements ArchiveFile {
         return name;
     }
 
-    public void setStatus(ExtractionStatus error) {
+    public void setStatus(ExtractionStatus status) {
         for (DownloadLink downloadLink : downloadLinks) {
-
-            switch (error) {
-            case ERRROR_FILE_NOT_FOUND:
-                downloadLink.getLinkStatus().removeStatus(LinkStatus.FINISHED);
-                downloadLink.getLinkStatus().removeStatus(LinkStatus.ERROR_ALREADYEXISTS);
-                downloadLink.getLinkStatus().addStatus(LinkStatus.ERROR_DOWNLOAD_FAILED);
-                downloadLink.getLinkStatus().setErrorMessage(T._.plugins_optional_extraction_filenotfound());
-
-                break;
-            case ERROR_NOT_ENOUGH_SPACE:
-                downloadLink.getLinkStatus().setStatus(LinkStatus.ERROR_POST_PROCESS);
-                downloadLink.getLinkStatus().setErrorMessage(T._.plugins_optional_extraction_status_notenoughspace());
-                // link.setMessage(T._.plugins_optional_extraction_status_notenoughspace());
-                break;
-            case ERROR_CRC:
-                downloadLink.getLinkStatus().removeStatus(LinkStatus.FINISHED);
-                downloadLink.getLinkStatus().removeStatus(LinkStatus.ERROR_ALREADYEXISTS);
-                downloadLink.getLinkStatus().addStatus(LinkStatus.ERROR_DOWNLOAD_FAILED);
-                downloadLink.getLinkStatus().setValue(LinkStatus.VALUE_FAILED_HASH);
-                downloadLink.getLinkStatus().setErrorMessage(T._.plugins_optional_extraction_crcerrorin(downloadLink.getName()));
-                break;
-            case ERROR:
-
-                downloadLink.getLinkStatus().addStatus(LinkStatus.ERROR_POST_PROCESS);
-                break;
-            case IDLE:
-                break;
-            case RUNNING:
-                break;
-            case SUCCESSFUL:
-
-                downloadLink.getLinkStatus().addStatus(LinkStatus.FINISHED);
-                downloadLink.getLinkStatus().removeStatus(LinkStatus.ERROR_POST_PROCESS);
-                downloadLink.getLinkStatus().setStatusText(T._.plugins_optional_extraction_status_extractok());
-                downloadLink.getLinkStatus().setStatus(LinkStatus.FINISHED);
-
-                break;
-            }
-            downloadLink.setExtractionStatus(error);
+            downloadLink.setExtractionStatus(status);
+            PluginProgress progress = downloadLink.getPluginProgress();
+            if (progress != null && progress instanceof ExtractionProgress) ((ExtractionProgress) progress).setMessage(status.getExplanation());
         }
     }
 
     public void setMessage(String text) {
         for (DownloadLink downloadLink : downloadLinks) {
-            downloadLink.getLinkStatus().setStatusText(text);
-
+            PluginProgress progress = downloadLink.getPluginProgress();
+            if (progress != null && progress instanceof ExtractionProgress) ((ExtractionProgress) progress).setMessage(text);
         }
     }
 
@@ -171,7 +131,6 @@ public class DownloadLinkArchiveFile implements ArchiveFile {
                     progress.setCurrent(value);
                 } else {
                     progress = new ExtractionProgress(value, max, color);
-                    progress.setIcon(NewTheme.I().getIcon("unpack", 16));
                     progress.setProgressSource(this);
                     downloadLink.setPluginProgress(progress);
                 }
@@ -234,33 +193,38 @@ public class DownloadLinkArchiveFile implements ArchiveFile {
     }
 
     @Override
-    public void onCleanedUp(ExtractionController controller) {
-        for (DownloadLink downloadLink : downloadLinks) {
+    public void onCleanedUp(final ExtractionController controller) {
+        for (final DownloadLink downloadLink : downloadLinks) {
             switch (CFG_GENERAL.CFG.getCleanupAfterDownloadAction()) {
-            //
             case CLEANUP_IMMEDIATELY:
-                LogController.GL.info("Remove Link " + downloadLink.getName() + " because Finished and CleanupImmediately and Extrating finished!");
-                java.util.List<DownloadLink> remove = new ArrayList<DownloadLink>();
-                remove.add(downloadLink);
-                if (DownloadController.getInstance().askForRemoveVetos(remove)) {
-                    DownloadController.getInstance().removeChildren(remove);
-                }
+                DownloadController.getInstance().getQueue().add(new QueueAction<Void, RuntimeException>() {
 
+                    @Override
+                    protected Void run() throws RuntimeException {
+                        controller.getLogger().info("Remove Link " + downloadLink.getName() + " because Finished and CleanupImmediately and Extrating finished!");
+                        java.util.List<DownloadLink> remove = new ArrayList<DownloadLink>();
+                        remove.add(downloadLink);
+                        if (DownloadController.getInstance().askForRemoveVetos(remove)) {
+                            DownloadController.getInstance().removeChildren(remove);
+                        } else {
+                            controller.getLogger().info("Remove Link " + downloadLink.getName() + " failed because of removeVetos!");
+                        }
+                        return null;
+                    }
+                });
                 break;
-
             case CLEANUP_AFTER_PACKAGE_HAS_FINISHED:
-                LogController.GL.info("Remove Package " + downloadLink.getName() + " because Finished and CleanupImmediately and Extrating finished!");
+                controller.getLogger().info("Remove Package " + downloadLink.getName() + " because Finished and CleanupImmediately and Extrating finished!");
                 FilePackage fp = downloadLink.getFilePackage();
                 if (fp.getControlledBy() != null) {
-                    DownloadController.removePackageIfFinished(fp);
+                    DownloadController.removePackageIfFinished(controller.getLogger(), fp);
                 } else {
-                    LogController.GL.info("Cannot remove. Package has no controller");
+                    controller.getLogger().info("Cannot remove. Package has no controller");
                 }
                 break;
             case CLEANUP_ONCE_AT_STARTUP:
             case NEVER:
-                LogController.GL.info(CFG_GENERAL.CFG.getCleanupAfterDownloadAction() + "");
-
+                controller.getLogger().info(CFG_GENERAL.CFG.getCleanupAfterDownloadAction() + "");
             }
         }
     }

@@ -508,7 +508,7 @@ public class RapidGatorNet extends PluginForHost {
     }
 
     @SuppressWarnings("unchecked")
-    private void login(Account account, boolean force) throws Exception {
+    private HashMap<String, String> login(Account account, boolean force) throws Exception {
         synchronized (LOCK) {
             try {
                 // Load cookies
@@ -525,7 +525,7 @@ public class RapidGatorNet extends PluginForHost {
                             final String value = cookieEntry.getValue();
                             this.br.setCookie(MAINPAGE, key, value);
                         }
-                        return;
+                        return cookies;
                     }
                 }
 
@@ -582,6 +582,7 @@ public class RapidGatorNet extends PluginForHost {
                 account.setProperty("name", Encoding.urlEncode(account.getUser()));
                 account.setProperty("pass", Encoding.urlEncode(account.getPass()));
                 account.setProperty("cookies", cookies);
+                return cookies;
             } catch (final PluginException e) {
                 account.setProperty("cookies", Property.NULL);
                 throw e;
@@ -593,7 +594,7 @@ public class RapidGatorNet extends PluginForHost {
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         requestFileInformation(link);
         logger.info("Performing cached login sequence!!");
-        login(account, false);
+        HashMap<String, String> cookies = login(account, false);
         int repeat = 2;
         for (int i = 0; i <= repeat; i++) {
             br.setFollowRedirects(false);
@@ -602,12 +603,16 @@ public class RapidGatorNet extends PluginForHost {
                 // lets login fully again, as hoster as removed premium cookie for some unknown reason...
                 logger.info("Performing full login sequence!!");
                 br = new Browser();
-                login(account, true);
+                cookies = login(account, true);
                 continue;
             } else if (br.getCookie(MAINPAGE, "user__") == null && i + 1 == repeat) {
                 // failure
                 logger.warning("handlePremium Failed! Please report to JDownloader Development Team.");
-                account.setProperty("cookies", Property.NULL);
+                synchronized (LOCK) {
+                    if (cookies == account.getProperty("cookies", null)) {
+                        account.setProperty("cookies", Property.NULL);
+                    }
+                }
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             } else
                 break;

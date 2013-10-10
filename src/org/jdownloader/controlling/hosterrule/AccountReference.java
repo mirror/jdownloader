@@ -8,7 +8,6 @@ import jd.plugins.AccountInfo;
 public class AccountReference {
 
     public AccountReference() {
-
     }
 
     private boolean enabled = true;

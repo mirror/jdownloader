@@ -24,8 +24,6 @@ import org.appwork.utils.Application;
 import org.jdownloader.extensions.extraction.content.ContentView;
 import org.jdownloader.extensions.extraction.content.PackedFile;
 import org.jdownloader.extensions.extraction.multi.ArchiveType;
-import org.jdownloader.extensions.extraction.multi.CheckException;
-import org.jdownloader.logging.LogController;
 
 /**
  * Contains information about the archivefile.
@@ -104,10 +102,6 @@ public class Archive {
      */
     private java.util.List<File>        extractedFiles;
 
-    /**
-     * The extractor for the archive.
-     */
-    private IExtraction                 extractor;
     private ArchiveFactory              factory;
 
     private String                      name;
@@ -197,10 +191,6 @@ public class Archive {
         return extracted;
     }
 
-    public DummyArchive createDummyArchive() throws CheckException {
-        return extractor.checkComplete(this);
-    }
-
     public void setActive(boolean active) {
         this.active = active;
     }
@@ -234,15 +224,6 @@ public class Archive {
         return extractedFiles;
     }
 
-    public void setExtractor(IExtraction extractor) {
-        this.extractor = extractor;
-    }
-
-    public IExtraction getExtractor() {
-
-        return extractor;
-    }
-
     public boolean contains(ArchiveFile link) {
         return getArchiveFiles().contains(link);
     }
@@ -253,15 +234,6 @@ public class Archive {
 
     public void setName(String archiveName) {
         this.name = archiveName;
-    }
-
-    public boolean isComplete() {
-        try {
-            return createDummyArchive().isComplete();
-        } catch (CheckException e) {
-            LogController.CL().log(e);
-        }
-        return false;
     }
 
     public File getFolder() {

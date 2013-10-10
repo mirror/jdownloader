@@ -139,8 +139,9 @@ public class ConfirmAllContextmenuAction extends SelectionAppAction<CrawledPacka
             public void run() {
                 try {
                     // this validation step also copies the passwords from the CRawledlinks in the archive settings
-                    for (Archive a : new ValidateArchiveAction<CrawledPackage, CrawledLink>((ExtractionExtension) ExtensionController.getInstance().getExtension(ExtractionExtension.class)._getExtension(), getSelection()).getArchives()) {
-                        final DummyArchive da = a.createDummyArchive();
+                    ValidateArchiveAction<CrawledPackage, CrawledLink> va = new ValidateArchiveAction<CrawledPackage, CrawledLink>((ExtractionExtension) ExtensionController.getInstance().getExtension(ExtractionExtension.class)._getExtension(), getSelection());
+                    for (Archive a : va.getArchives()) {
+                        final DummyArchive da = va.getExtractionExtension().createDummyArchive(a);
                         if (!da.isComplete()) {
 
                             ConfirmDialog d = new ConfirmDialog(0, _GUI._.ConfirmAction_run_incomplete_archive_title_(a.getName()), _GUI._.ConfirmAction_run_incomplete_archive_msg(), NewTheme.I().getIcon("stop", 32), _GUI._.ConfirmAction_run_incomplete_archive_continue(), null) {

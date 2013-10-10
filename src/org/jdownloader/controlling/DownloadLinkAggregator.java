@@ -10,6 +10,7 @@ import jd.plugins.FilePackage;
 
 import org.jdownloader.extensions.extraction.ExtractionStatus;
 import org.jdownloader.gui.views.SelectionInfo;
+import org.jdownloader.plugins.FinalLinkState;
 
 public class DownloadLinkAggregator implements MirrorPackageSetup {
 
@@ -153,7 +154,7 @@ public class DownloadLinkAggregator implements MirrorPackageSetup {
                 }
                 bytesToDo += Math.max(0, link.getDownloadMax() - link.getDownloadSize());
                 total++;
-                if (link.getLinkStatus().isFinished() && (new File(link.getFileOutput()).exists() || link.getExtractionStatus() == ExtractionStatus.SUCCESSFUL)) {
+                if (FinalLinkState.CheckFinished(link.getFinalLinkState()) && (link.getExtractionStatus() == ExtractionStatus.SUCCESSFUL || new File(link.getFileOutput()).exists())) {
                     finished++;
                 }
                 if (link.isEnabled()) {

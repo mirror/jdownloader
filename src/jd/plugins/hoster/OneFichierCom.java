@@ -187,8 +187,10 @@ public class OneFichierCom extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
-    public boolean bypassMaxSimultanDownloadNum(DownloadLink link, Account acc) {
-        return acc == null && link.getProperty("HOTLINK", null) != null;
+    @Override
+    public int getMaxSimultanDownload(DownloadLink link, Account account) {
+        if (account == null && link.getProperty("HOTLINK", null) != null) { return Integer.MAX_VALUE; }
+        return super.getMaxSimultanDownload(link, account);
     }
 
     @Override

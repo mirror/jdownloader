@@ -1,10 +1,12 @@
 package org.jdownloader.extensions.extraction;
 
+import org.jdownloader.extensions.extraction.translate.T;
 import org.jdownloader.gui.translate._GUI;
 
 public enum ExtractionStatus {
     IDLE(null),
-    RUNNING(null),
+    RUNNING(T._.plugins_optional_extraction_status_openingarchive()),
+    ERROR_PW(T._.plugins_optional_extraction_status_extractfailedpass()),
     ERROR(_GUI._.TaskColumn_getStringValue_extraction_error()),
     SUCCESSFUL(_GUI._.TaskColumn_getStringValue_extraction_success()),
     ERROR_CRC(_GUI._.TaskColumn_getStringValue_extraction_error_crc()),

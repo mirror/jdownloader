@@ -19,11 +19,6 @@ public class RemainingColumn extends ExtFileSizeColumn<AbstractNode> {
         super(_GUI._.RemainingColumn_RemainingColumn());
     }
 
-    // @Override
-    // public int getMaxWidth() {
-    //
-    // return 85;
-    // }
     @Override
     protected boolean isDefaultResizable() {
         return false;

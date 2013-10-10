@@ -50,6 +50,7 @@ import org.appwork.utils.logging.Log;
 import org.jdownloader.extensions.neembuu.gui.HttpFilePanel;
 import org.jdownloader.extensions.neembuu.gui.VirtualFilesPanel;
 import org.jdownloader.extensions.neembuu.newconnectionprovider.JD_HTTP_Download_Manager;
+import org.jdownloader.plugins.FinalLinkState;
 
 /**
  * 
@@ -234,7 +235,6 @@ final class WatchAsYouDownloadSessionImpl implements WatchAsYouDownloadSession {
 
     // @Override
     public void waitForDownloadToFinish() throws PluginException {
-        jdds.getDownloadLink().getLinkStatus().addStatus(LinkStatus.DOWNLOADINTERFACE_IN_PROGRESS);
         jdds.getDownloadInterface().getManagedConnetionHandler().addThrottledConnection(new FakeThrottledConnection(jdds));
         jdds.getDownloadLink().setChunksProgress(new long[] { getTotalDownloaded() });
         UPDATE_LOOP: while (totalDownloaded < jdds.getDownloadLink().getDownloadSize() && jdds.getWatchAsYouDownloadSession().isMounted()) {
@@ -261,8 +261,7 @@ final class WatchAsYouDownloadSessionImpl implements WatchAsYouDownloadSession {
             }
         }
 
-        jdds.getDownloadLink().getLinkStatus().removeStatus(LinkStatus.FINISHED);
-        jdds.getDownloadLink().setDownloadInstance(null);
+        jdds.getDownloadLink().getDownloadLinkController().setDownloadInstance(null);
         // jdds.getDownloadLink().getLinkStatus().setStatusText(null);
         jdds.getDownloadLink().setChunksProgress(new long[] { getTotalDownloaded() });
 
@@ -291,7 +290,7 @@ final class WatchAsYouDownloadSessionImpl implements WatchAsYouDownloadSession {
             // pressed.
             // the split which is completed will also be mounted.
             // all splits must be mounted for user to be able watch the video.
-            jdds.getDownloadLink().getLinkStatus().addStatus(LinkStatus.FINISHED);
+            jdds.getDownloadLink().setFinalLinkState(FinalLinkState.FINISHED);
 
             final AtomicBoolean done = new AtomicBoolean(false);
             // the task of completing session done in another thread

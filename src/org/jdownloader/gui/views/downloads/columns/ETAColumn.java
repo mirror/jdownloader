@@ -11,13 +11,9 @@ import javax.swing.JSeparator;
 import javax.swing.SwingConstants;
 
 import jd.controlling.packagecontroller.AbstractNode;
-import jd.controlling.proxy.ProxyBlock;
-import jd.controlling.proxy.ProxyController;
 import jd.nutils.Formatter;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
-import jd.plugins.LinkStatus;
-import jd.plugins.PluginForHost;
 import jd.plugins.PluginProgress;
 
 import org.appwork.storage.config.JsonConfig;
@@ -25,29 +21,29 @@ import org.appwork.swing.exttable.ExtColumn;
 import org.appwork.swing.exttable.ExtDefaultRowSorter;
 import org.appwork.swing.exttable.columnmenu.LockColumnWidthAction;
 import org.appwork.swing.exttable.columns.ExtTextColumn;
-import org.appwork.utils.swing.dialog.Dialog;
-import org.appwork.utils.swing.dialog.DialogCanceledException;
-import org.appwork.utils.swing.dialog.DialogClosedException;
-import org.jdownloader.DomainInfo;
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
-import org.jdownloader.premium.PremiumInfoDialog;
+import org.jdownloader.plugins.ConditionalSkipReason;
+import org.jdownloader.plugins.TimeOutCondition;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings;
-import org.jdownloader.translate._JDT;
 
 public class ETAColumn extends ExtTextColumn<AbstractNode> {
+
+    private class ColumnHelper {
+        private ImageIcon icon   = null;
+        private long      eta    = -1;
+        private String    string = null;
+    }
 
     /**
      * 
      */
     private static final long serialVersionUID = 1L;
 
-    private ImageIcon         download;
     private ImageIcon         wait;
-    private ImageIcon         icon2Use;
-
     private ImageIcon         ipwait;
+    private ColumnHelper      columnHelper     = new ColumnHelper();
 
     @Override
     public int getDefaultWidth() {
@@ -72,16 +68,20 @@ public class ETAColumn extends ExtTextColumn<AbstractNode> {
     public ETAColumn() {
         super(_GUI._.ETAColumn_ETAColumn());
         rendererField.setHorizontalAlignment(SwingConstants.RIGHT);
-        this.download = NewTheme.I().getIcon("download", 16);
         this.wait = NewTheme.I().getIcon("wait", 16);
         this.ipwait = NewTheme.I().getIcon("auto-reconnect", 16);
 
         this.setRowSorter(new ExtDefaultRowSorter<AbstractNode>() {
+            private ColumnHelper helper1 = new ColumnHelper();
+            private ColumnHelper helper2 = new ColumnHelper();
+
             @Override
             public int compare(final AbstractNode o1, final AbstractNode o2) {
-
-                final long l1 = getLong(o1);
-                final long l2 = getLong(o2);
+                if (o1 == o2) return 0;
+                fillColumnHelper(o1, helper1);
+                fillColumnHelper(o2, helper2);
+                final long l1 = helper1.eta;
+                final long l2 = helper2.eta;
                 if (l1 == l2) { return 0; }
                 if (this.getSortOrderIdentifier() == ExtColumn.SORT_ASC) {
                     return l1 > l2 ? -1 : 1;
@@ -93,56 +93,64 @@ public class ETAColumn extends ExtTextColumn<AbstractNode> {
         });
     }
 
-    protected long getLong(AbstractNode value) {
+    private void fillColumnHelper(AbstractNode value, ColumnHelper columnHelper) {
         if (value instanceof DownloadLink) {
-            DownloadLink dlLink = ((DownloadLink) value);
-            if (dlLink.isEnabled()) {
-                if (dlLink.getLinkStatus().hasStatus(LinkStatus.DOWNLOADINTERFACE_IN_PROGRESS)) {
-                    long speed = dlLink.getDownloadSpeed();
-                    if (speed > 0) {
-                        if (dlLink.getDownloadSize() < 0) {
-                            return -1;
-                        } else {
-                            long remainingBytes = (dlLink.getDownloadSize() - dlLink.getDownloadCurrent());
-                            long eta = remainingBytes / speed;
-                            return eta;
-                        }
-                    } else {
-                        return 0;
-                    }
+            DownloadLink link = (DownloadLink) value;
+            PluginProgress progress = null;
+            if ((progress = link.getPluginProgress()) != null) {
+                columnHelper.icon = progress.getIcon();
+                columnHelper.string = progress.getMessage(this);
+                long eta = progress.getETA();
+                if (eta >= 0) {
+                    columnHelper.eta = eta;
                 } else {
-                    long ret = getWaitingTimeout(dlLink);
-                    if (ret > 0) return (ret / 1000);
+                    columnHelper.eta = -1;
+                }
+                return;
+            }
+            ConditionalSkipReason conditionalSkipReason = link.getConditionalSkipReason();
+            if (conditionalSkipReason != null && !conditionalSkipReason.isConditionReached()) {
+                if (conditionalSkipReason instanceof TimeOutCondition) {
+                    long time = ((TimeOutCondition) conditionalSkipReason).getTimeOutLeft();
+                    columnHelper.icon = conditionalSkipReason.getIcon(this, value);
+                    columnHelper.eta = time;
+                    columnHelper.string = conditionalSkipReason.getMessage(this, value);
+                    return;
+                } else {
+                    columnHelper.icon = conditionalSkipReason.getIcon(this, value);
+                    columnHelper.eta = -1;
+                    columnHelper.string = conditionalSkipReason.getMessage(this, value);
+                    return;
                 }
             }
-        } else if (value instanceof FilePackage) {
-            long eta = ((FilePackage) value).getView().getETA();
+            columnHelper.icon = null;
+            columnHelper.string = null;
+            columnHelper.eta = -1;
+        } else {
+            columnHelper.icon = null;
+            FilePackage fp = (FilePackage) value;
+            long eta = fp.getView().getETA();
             if (eta > 0) {
-                return eta;
+                columnHelper.eta = eta;
+                columnHelper.string = Formatter.formatSeconds(eta);
             } else if (eta == Integer.MIN_VALUE) {
-                /*
-                 * no size known, no eta,show infinite symbol
-                 */
-                return Long.MAX_VALUE;
+                columnHelper.eta = Long.MAX_VALUE;
+                columnHelper.string = "\u221E";
+            } else {
+                columnHelper.eta = 0;
+                columnHelper.string = null;
             }
         }
-        return -2;
+    }
+
+    @Override
+    protected void prepareColumn(AbstractNode value) {
+        fillColumnHelper(value, columnHelper);
     }
 
     @Override
     protected Icon getIcon(AbstractNode value) {
-        icon2Use = null;
-        if (value instanceof DownloadLink) {
-            DownloadLink dlLink = ((DownloadLink) value);
-            if (dlLink.isEnabled()) {
-                if (dlLink.getLinkStatus().hasStatus(LinkStatus.DOWNLOADINTERFACE_IN_PROGRESS)) {
-                    icon2Use = download;
-                } else {
-                    getWaitingTimeout(dlLink);
-                }
-            }
-        }
-        return icon2Use;
+        return columnHelper.icon;
     }
 
     public JPopupMenu createHeaderPopup() {
@@ -169,99 +177,11 @@ public class ETAColumn extends ExtTextColumn<AbstractNode> {
     }
 
     public boolean onSingleClick(final MouseEvent e, final AbstractNode value) {
-        if (value instanceof DownloadLink) {
-            if (JsonConfig.create(GraphicalUserInterfaceSettings.class).isPremiumAlertETAColumnEnabled()) {
-                DownloadLink dlLink = (DownloadLink) value;
-                if (!dlLink.isSkipped() && !dlLink.getLinkStatus().isFinished()) {
-                    PluginForHost plugin = dlLink.getDefaultPlugin();
-                    if (plugin == null || !plugin.isPremiumEnabled()) {
-                        /* no account support yet for this plugin */
-                        return false;
-                    }
-                    ProxyBlock timeout = null;
-                    if ((timeout = ProxyController.getInstance().getHostIPBlockTimeout(dlLink.getHost())) != null && timeout.getLink() == dlLink) {
-                        try {
-                            Dialog.getInstance().showDialog(new PremiumInfoDialog((((DownloadLink) value).getDomainInfo(true)), _GUI._.TaskColumn_onSingleClick_object_(((DownloadLink) value).getHost()), "TaskColumnReconnect") {
-                                protected String getDescription(DomainInfo info2) {
-                                    return _GUI._.TaskColumn_getDescription_object_(info2.getTld());
-                                }
-                            });
-                            return true;
-                        } catch (DialogClosedException e1) {
-                            e1.printStackTrace();
-                        } catch (DialogCanceledException e1) {
-                            e1.printStackTrace();
-                        }
-                    }
-                }
-            }
-        }
-        return false;
-    }
-
-    private long getWaitingTimeout(DownloadLink dlLink) {
-        if (dlLink.isEnabled()) {
-            PluginProgress progress = null;
-            if ((progress = dlLink.getPluginProgress()) != null) {
-                icon2Use = progress.getIcon();
-                long eta = progress.getETA();
-                if (eta >= 0) return eta;
-                return -1;
-            }
-            long time;
-            if (dlLink.getLinkStatus().hasStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE) && (time = dlLink.getLinkStatus().getRemainingWaittime()) > 0) {
-                icon2Use = wait;
-                return time;
-            }
-            if (!dlLink.isSkipped() && !dlLink.getLinkStatus().isFinished()) {
-                ProxyBlock timeout = null;
-                if ((timeout = ProxyController.getInstance().getHostIPBlockTimeout(dlLink.getHost())) != null && timeout.getLink() == dlLink) {
-                    icon2Use = ipwait;
-                    return timeout.getBlockedTimeout();
-                }
-                if ((timeout = ProxyController.getInstance().getHostBlockedTimeout(dlLink.getHost())) != null && timeout.getLink() == dlLink) {
-                    icon2Use = wait;
-                    return timeout.getBlockedTimeout();
-                }
-            }
-        }
-        return -1;
+        return TaskColumn.handleIPBlockCondition(e, value);
     }
 
     @Override
     public String getStringValue(AbstractNode value) {
-        if (value instanceof DownloadLink) {
-            DownloadLink dlLink = ((DownloadLink) value);
-            if (dlLink.isEnabled()) {
-                if (dlLink.getLinkStatus().hasStatus(LinkStatus.DOWNLOADINTERFACE_IN_PROGRESS)) {
-                    long speed = dlLink.getDownloadSpeed();
-                    if (speed > 0) {
-                        if (dlLink.getDownloadSize() < 0) {
-                            return _JDT._.gui_download_filesize_unknown() + " \u221E";
-                        } else {
-                            long remainingBytes = (dlLink.getDownloadSize() - dlLink.getDownloadCurrent());
-                            long eta = remainingBytes / speed;
-                            return Formatter.formatSeconds(eta);
-                        }
-                    } else {
-                        return _JDT._.gui_download_create_connection();
-                    }
-                } else {
-                    long ret = getWaitingTimeout(dlLink);
-                    if (ret > 0) return Formatter.formatSeconds(ret / 1000);
-                }
-            }
-        } else if (value instanceof FilePackage) {
-            long eta = ((FilePackage) value).getView().getETA();
-            if (eta > 0) {
-                return Formatter.formatSeconds(eta);
-            } else if (eta == Integer.MIN_VALUE) {
-                /*
-                 * no size known, no eta,show infinite symbol
-                 */
-                return "\u221E";
-            }
-        }
-        return null;
+        return columnHelper.string;
     }
 }

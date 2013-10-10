@@ -70,6 +70,7 @@ public class Account extends Property {
 
     private transient AccountController ac           = null;
     private transient PluginForHost     plugin       = null;
+    private transient boolean           isMulti      = false;
 
     public PluginForHost getPlugin() {
         return plugin;
@@ -164,13 +165,6 @@ public class Account extends Property {
 
     public void setAccountInfo(final AccountInfo info) {
         accinfo = info;
-        if (info != null) {
-            Object supported = info.getProperty("multiHostSupport", Property.NULL);
-            // set multi to true of accountinfo contains the multihostsupport property at least once
-            if (Property.NULL != supported && supported != null) {
-                setMulti(true);
-            }
-        }
     }
 
     public String getUser() {
@@ -187,6 +181,7 @@ public class Account extends Property {
         /* nach dem deserialisieren sollen die transienten neu geholt werden */
         stream.defaultReadObject();
         tmpDisabledTimeout = -1;
+        isMulti = false;
         id = new UniqueAlltimeID();
     }
 
@@ -316,12 +311,18 @@ public class Account extends Property {
         return true;
     }
 
-    private void setMulti(boolean b) {
-        this.setProperty(IS_MULTI_HOSTER_ACCOUNT, b);
+    public boolean isMulti() {
+        return isMulti;
     }
 
-    public boolean isMulti() {
-        return getBooleanProperty(IS_MULTI_HOSTER_ACCOUNT);
+    @Override
+    public void setProperty(String key, Object value) {
+        if (IS_MULTI_HOSTER_ACCOUNT.equalsIgnoreCase(key)) {
+            isMulti = value != null && Boolean.TRUE.equals(value);
+        } else {
+            super.setProperty(key, value);
+        }
+
     }
 
 }

@@ -14,7 +14,6 @@ import jd.controlling.downloadcontroller.DownloadController;
 import jd.controlling.packagecontroller.AbstractPackageChildrenNodeFilter;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
-import jd.plugins.LinkStatus;
 
 import org.appwork.exceptions.WTFException;
 import org.appwork.utils.StringUtils;
@@ -161,8 +160,7 @@ public class DownloadLinkArchiveFactory extends DownloadLinkArchiveFile implemen
         for (ArchiveFile af : archive.getArchiveFiles()) {
             if (af instanceof DownloadLinkArchiveFile) {
                 for (DownloadLink link : ((DownloadLinkArchiveFile) af).getDownloadLinks()) {
-                    link.getLinkStatus().removeStatus(LinkStatus.ERROR_POST_PROCESS);
-                    link.getLinkStatus().setErrorMessage(null);
+                    link.setExtractionStatus(null);
                 }
             }
         }

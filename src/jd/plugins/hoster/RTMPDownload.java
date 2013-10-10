@@ -7,7 +7,6 @@ import jd.network.rtmp.RtmpDump;
 import jd.network.rtmp.url.CustomUrlStreamHandlerFactory;
 import jd.network.rtmp.url.RtmpUrlConnection;
 import jd.plugins.DownloadLink;
-import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.download.RAFDownload;
@@ -35,7 +34,7 @@ public class RTMPDownload extends RAFDownload {
         // TODO Auto-generated constructor stub
         url = new URL(rtmpURL);
         rtmpConnection = (RtmpUrlConnection) url.openConnection();
-        downloadLink.setDownloadInstance(this);
+        downloadLink.getDownloadLinkController().setDownloadInstance(this);
     }
 
     public RtmpUrlConnection getRtmpConnection() {
@@ -44,8 +43,6 @@ public class RTMPDownload extends RAFDownload {
 
     public boolean startDownload() throws Exception {
         /* Workaround for retry count loop */
-        int retry = downloadLink.getLinkStatus().getRetryCount() + 1;
-        if (retry == plugin.getMaxRetries(downloadLink, null)) throw new PluginException(LinkStatus.ERROR_FATAL, "Stream temporary not downloadable with rtmpdump!");
         return rtmpDump().start(rtmpConnection);
     }
 

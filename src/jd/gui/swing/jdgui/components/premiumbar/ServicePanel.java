@@ -93,21 +93,8 @@ public class ServicePanel extends JPanel implements MouseListener {
 
         extender = new ArrayList<ServicePanelExtender>();
         this.setOpaque(false);
-        ScheduledExecutorService scheduler = DelayedRunnable.getNewScheduledExecutorService();
-        scheduler.scheduleWithFixedDelay(new Runnable() {
+        final ScheduledExecutorService scheduler = DelayedRunnable.getNewScheduledExecutorService();
 
-            public void run() {
-                /*
-                 * this scheduleritem checks all enabled accounts every 5 mins
-                 */
-                try {
-                    refreshAccountStats();
-                } catch (Throwable e) {
-                    Log.exception(e);
-                }
-            }
-
-        }, 1, 5, TimeUnit.MINUTES);
         redrawTimer = new DelayedRunnable(scheduler, 1000, 5000) {
 
             @Override
@@ -122,6 +109,7 @@ public class ServicePanel extends JPanel implements MouseListener {
 
         };
         redraw();
+
         CFG_GUI.PREMIUM_STATUS_BAR_DISPLAY.getEventSender().addListener(new GenericConfigEventListener<Enum>() {
 
             @Override
@@ -149,7 +137,20 @@ public class ServicePanel extends JPanel implements MouseListener {
 
                     @Override
                     public void run() {
+                        scheduler.scheduleWithFixedDelay(new Runnable() {
 
+                            public void run() {
+                                /*
+                                 * this scheduleritem checks all enabled accounts every 5 mins
+                                 */
+                                try {
+                                    refreshAccountStats();
+                                } catch (Throwable e) {
+                                    Log.exception(e);
+                                }
+                            }
+
+                        }, 1, 5, TimeUnit.MINUTES);
                         redrawTimer.run();
                         AccountController.getInstance().getBroadcaster().addListener(new AccountControllerListener() {
 
@@ -158,6 +159,7 @@ public class ServicePanel extends JPanel implements MouseListener {
                                 if (org.jdownloader.settings.staticreferences.CFG_GENERAL.USE_AVAILABLE_ACCOUNTS.isEnabled()) redrawTimer.run();
                             }
                         });
+                        redraw();
                     }
                 }.start();
             }

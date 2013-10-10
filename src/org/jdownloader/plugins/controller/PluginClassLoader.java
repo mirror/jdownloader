@@ -6,12 +6,14 @@ import java.net.URLClassLoader;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map.Entry;
+import java.util.WeakHashMap;
 
 import org.appwork.utils.Application;
 import org.appwork.utils.IO;
 
 public class PluginClassLoader extends URLClassLoader {
-    private static HashMap<String, Class<?>> helperClasses = new HashMap<String, Class<?>>();
+    private static HashMap<String, Class<?>>                   helperClasses           = new HashMap<String, Class<?>>();
+    private static WeakHashMap<PluginClassLoaderChild, String> sharedPluginClassLoader = new WeakHashMap<PluginClassLoader.PluginClassLoaderChild, String>();
 
     public static class PluginClassLoaderChild extends URLClassLoader {
 
@@ -243,6 +245,18 @@ public class PluginClassLoader extends URLClassLoader {
 
     public PluginClassLoaderChild getChild() {
         return new PluginClassLoaderChild(this);
+    }
+
+    public synchronized PluginClassLoaderChild getSharedChild(String id) {
+        if (id == null) return getChild();
+        Iterator<Entry<PluginClassLoaderChild, String>> it = sharedPluginClassLoader.entrySet().iterator();
+        while (it.hasNext()) {
+            Entry<PluginClassLoaderChild, String> next = it.next();
+            if (next.getValue().equals(id)) return next.getKey();
+        }
+        PluginClassLoaderChild ret = getChild();
+        sharedPluginClassLoader.put(ret, id);
+        return ret;
     }
 
     public static PluginClassLoaderChild getThreadPluginClassLoaderChild() {

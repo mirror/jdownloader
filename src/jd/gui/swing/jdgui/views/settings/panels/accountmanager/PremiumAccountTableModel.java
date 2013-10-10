@@ -183,7 +183,6 @@ public class PremiumAccountTableModel extends ExtTableModel<AccountEntry> implem
             @Override
             protected void setBooleanValue(boolean value, final AccountEntry object) {
                 object.getAccount().setEnabled(value);
-                AccountController.getInstance().saveDelayedRequest();
             }
         });
         this.addColumn(new ExtTextColumn<AccountEntry>(_GUI._.premiumaccounttablemodel_column_hoster()) {
@@ -268,7 +267,6 @@ public class PremiumAccountTableModel extends ExtTableModel<AccountEntry> implem
             @Override
             protected void setStringValue(String value, AccountEntry object) {
                 object.getAccount().setUser(value);
-                AccountController.getInstance().saveDelayedRequest();
             }
 
             @Override
@@ -307,7 +305,6 @@ public class PremiumAccountTableModel extends ExtTableModel<AccountEntry> implem
             @Override
             protected void setStringValue(String value, AccountEntry object) {
                 object.getAccount().setPass(value);
-                AccountController.getInstance().saveDelayedRequest();
             }
         });
 

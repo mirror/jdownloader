@@ -18,8 +18,6 @@ package jd.gui.swing.jdgui.views.settings.panels.accountmanager;
 
 import javax.swing.ImageIcon;
 
-import jd.SecondLevelLaunch;
-import jd.controlling.AccountController;
 import jd.gui.swing.jdgui.views.settings.components.Checkbox;
 
 import org.appwork.storage.config.ValidationException;
@@ -70,13 +68,6 @@ public class AccountManagerSettings extends AbstractConfigPanel {
 
     @Override
     public void save() {
-        SecondLevelLaunch.ACCOUNTLIST_LOADED.executeWhenReached(new Runnable() {
-
-            @Override
-            public void run() {
-                AccountController.getInstance().saveDelayedRequest();
-            }
-        });
     }
 
     @Override

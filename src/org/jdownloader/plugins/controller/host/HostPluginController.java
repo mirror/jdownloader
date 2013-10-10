@@ -9,7 +9,13 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.concurrent.atomic.AtomicBoolean;
 
+import jd.controlling.downloadcontroller.DownloadController;
+import jd.controlling.downloadcontroller.DownloadSession;
+import jd.controlling.downloadcontroller.DownloadWatchDog;
+import jd.controlling.downloadcontroller.DownloadWatchDogJob;
+import jd.controlling.packagecontroller.AbstractPackageChildrenNodeFilter;
 import jd.nutils.Formatter;
 import jd.plugins.Account;
 import jd.plugins.DownloadLink;
@@ -23,6 +29,7 @@ import org.appwork.utils.Application;
 import org.appwork.utils.logging2.LogSource;
 import org.jdownloader.controlling.FileCreationManager;
 import org.jdownloader.logging.LogController;
+import org.jdownloader.plugins.FinalLinkState;
 import org.jdownloader.plugins.controller.LazyPlugin;
 import org.jdownloader.plugins.controller.PluginClassLoader.PluginClassLoaderChild;
 import org.jdownloader.plugins.controller.PluginController;
@@ -43,21 +50,20 @@ public class HostPluginController extends PluginController<PluginForHost> {
         return HostPluginController.INSTANCE;
     }
 
-    private LinkedHashMap<String, LazyHostPlugin> list;
+    private volatile LinkedHashMap<String, LazyHostPlugin> list;
 
     private String getCache() {
         return "tmp/hosts.json";
     }
 
     /**
-     * Create a new instance of HostPluginController. This is a singleton class. Access the only existing instance by using
-     * {@link #getInstance()}.
+     * Create a new instance of HostPluginController. This is a singleton class. Access the only existing instance by using {@link #getInstance()}.
      */
     private HostPluginController() {
         this.list = null;
     }
 
-    public synchronized void init(boolean noCache) {
+    public synchronized LinkedHashMap<String, LazyHostPlugin> init(boolean noCache) {
         List<LazyHostPlugin> plugins = new ArrayList<LazyHostPlugin>();
         LogSource logger = LogController.CL(false);
         logger.info("HostPluginController: init " + noCache);
@@ -151,6 +157,48 @@ public class HostPluginController extends PluginController<PluginForHost> {
         }
         list = newList;
         System.gc();
+        DownloadWatchDog.getInstance().enqueueJob(new DownloadWatchDogJob() {
+            private PluginFinder finder = new PluginFinder();
+
+            @Override
+            public void execute(DownloadSession currentSession) {
+                DownloadController.getInstance().getChildrenByFilter(new AbstractPackageChildrenNodeFilter<DownloadLink>() {
+
+                    @Override
+                    public int returnMaxResults() {
+                        return 0;
+                    }
+
+                    private final void updatePluginInstance(DownloadLink link) {
+                        long beforeVersion = -1;
+                        if (link.getDefaultPlugin() != null) {
+                            beforeVersion = link.getDefaultPlugin().getLazyP().getVersion();
+                        }
+                        PluginForHost afterPlugin = finder.assignPlugin(link, true, null);
+                        if (link.getFinalLinkState() == FinalLinkState.PLUGIN_DEFECT && afterPlugin != null && beforeVersion != afterPlugin.getLazyP().getVersion()) {
+                            link.setFinalLinkState(null);
+                        }
+                    }
+
+                    @Override
+                    public boolean acceptNode(final DownloadLink node) {
+                        if (node.getDownloadLinkController() != null) {
+                            node.getDownloadLinkController().getJobsAfterDetach().add(new DownloadWatchDogJob() {
+
+                                @Override
+                                public void execute(DownloadSession currentSession) {
+                                    updatePluginInstance(node);
+                                }
+                            });
+                        } else {
+                            updatePluginInstance(node);
+                        }
+                        return false;
+                    }
+                });
+            }
+        });
+        return newList;
     }
 
     private List<LazyHostPlugin> loadFromCache() {
@@ -229,8 +277,7 @@ public class HostPluginController extends PluginController<PluginForHost> {
                         try {
                             String displayName = new String(names[i]);
                             /*
-                             * HostPlugins: multiple use of displayName is not possible because it is used to find the correct plugin for
-                             * each downloadLink
+                             * HostPlugins: multiple use of displayName is not possible because it is used to find the correct plugin for each downloadLink
                              */
                             AbstractHostPlugin existingPlugin = ret.get(displayName);
                             if (existingPlugin != null && existingPlugin.getInterfaceVersion() > a.interfaceVersion()) {
@@ -336,23 +383,18 @@ public class HostPluginController extends PluginController<PluginForHost> {
         return ret3;
     }
 
-    private boolean cacheInvalidated = false;
+    private AtomicBoolean cacheInvalidated = new AtomicBoolean(false);
 
     public boolean isCacheInvalidated() {
-        return cacheInvalidated;
+        return cacheInvalidated.get();
     }
 
     public void invalidateCache() {
-        this.cacheInvalidated = true;
-        if (list == null) return;
-        synchronized (this) {
-            if (list == null) return;
-            init(isCacheInvalidated());
-        }
+        cacheInvalidated.set(true);
     }
 
     protected void validateCache() {
-        cacheInvalidated = false;
+        cacheInvalidated.set(false);
         FileCreationManager.getInstance().delete(Application.getResource(TMP_INVALIDPLUGINS));
     }
 
@@ -361,22 +403,21 @@ public class HostPluginController extends PluginController<PluginForHost> {
     }
 
     public Collection<LazyHostPlugin> list() {
-        ensureLoaded();
-        return list.values();
+        return ensureLoaded().values();
     }
 
-    public void ensureLoaded() {
-        if (list != null) return;
+    public LinkedHashMap<String, LazyHostPlugin> ensureLoaded() {
+        LinkedHashMap<String, LazyHostPlugin> localList = list;
+        if (localList != null && isCacheInvalidated() == false) return localList;
         synchronized (this) {
-            if (list != null) return;
-            init(isCacheInvalidated());
+            localList = list;
+            if (localList != null && isCacheInvalidated() == false) return localList;
+            return init(isCacheInvalidated());
         }
     }
 
     public LazyHostPlugin get(String displayName) {
-        ensureLoaded();
-        LinkedHashMap<String, LazyHostPlugin> llist = list;
-        return llist.get(displayName.toLowerCase(Locale.ENGLISH));
+        return ensureLoaded().get(displayName.toLowerCase(Locale.ENGLISH));
     }
 
     public void invalidateCacheIfRequired() {

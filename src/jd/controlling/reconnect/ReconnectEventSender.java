@@ -13,10 +13,6 @@ public class ReconnectEventSender extends Eventsender<ReconnecterListener, Recon
         case BEFORE:
             listener.onBeforeReconnect(event);
             break;
-        case SETTINGS_CHANGED:
-            listener.onReconnectSettingsUpdated(event);
-            break;
-
         }
     }
 

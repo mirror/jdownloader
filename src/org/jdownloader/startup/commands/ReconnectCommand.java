@@ -1,6 +1,6 @@
 package org.jdownloader.startup.commands;
 
-import jd.controlling.reconnect.Reconnecter;
+import jd.controlling.downloadcontroller.DownloadWatchDog;
 
 public class ReconnectCommand extends AbstractStartupCommand {
 
@@ -10,7 +10,11 @@ public class ReconnectCommand extends AbstractStartupCommand {
 
     @Override
     public void run(String command, String... parameters) {
-        Reconnecter.getInstance().forceReconnect();
+        try {
+            DownloadWatchDog.getInstance().requestReconnect(false);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
     }
 
     @Override

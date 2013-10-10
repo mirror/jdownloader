@@ -11,6 +11,7 @@ import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.jdownloader.extensions.extraction.Archive;
 import org.jdownloader.extensions.extraction.DummyArchive;
 import org.jdownloader.extensions.extraction.contextmenu.downloadlist.AbstractExtractionAction;
+import org.jdownloader.extensions.extraction.contextmenu.downloadlist.ArchiveValidator;
 import org.jdownloader.extensions.extraction.gui.DummyArchiveDialog;
 import org.jdownloader.extensions.extraction.multi.CheckException;
 import org.jdownloader.extensions.extraction.translate.T;
@@ -43,7 +44,7 @@ public class ValidateArchivesAction<PackageType extends AbstractPackageNode<Chil
         if (!isEnabled()) return;
         for (Archive archive : archives) {
             try {
-                DummyArchive da = archive.createDummyArchive();
+                DummyArchive da = ArchiveValidator.EXTENSION.createDummyArchive(archive);
 
                 DummyArchiveDialog d = new DummyArchiveDialog(da);
 

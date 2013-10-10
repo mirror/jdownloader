@@ -10,6 +10,7 @@ import jd.plugins.FilePackage;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.downloads.table.DownloadsTableModel;
+import org.jdownloader.plugins.FinalLinkState;
 
 public class DeleteSelectedAndFailedLinksAction extends DeleteAppAction {
 
@@ -29,7 +30,7 @@ public class DeleteSelectedAndFailedLinksAction extends DeleteAppAction {
         if (!isEnabled()) return;
         List<DownloadLink> nodesToDelete = new ArrayList<DownloadLink>();
         for (DownloadLink dl : getSelection().getChildren()) {
-            if (dl.getLinkStatus().isFailed()) {
+            if (FinalLinkState.CheckFailed(dl.getFinalLinkState())) {
                 nodesToDelete.add(dl);
             }
         }
@@ -40,7 +41,7 @@ public class DeleteSelectedAndFailedLinksAction extends DeleteAppAction {
     public boolean isEnabled() {
         if (super.isEnabled()) {
             for (DownloadLink dl : getSelection().getChildren()) {
-                if (dl.getLinkStatus().isFailed()) return true;
+                if (FinalLinkState.CheckFailed(dl.getFinalLinkState())) return true;
             }
         }
         return false;

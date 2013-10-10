@@ -105,6 +105,13 @@ public interface GeneralSettings extends ConfigInterface {
     long getDownloadTempUnavailableRetryWaittime();
 
     @AboutConfig
+    @DefaultLongValue(60 * 60 * 1000l)
+    @DescriptionForConfigEntry("Waittime in ms if a Download Host Unavailable Failed")
+    long getDownloadHostUnavailableRetryWaittime();
+
+    public void setDownloadHostUnavailableRetryWaittime(long r);
+
+    @AboutConfig
     @DefaultLongValue(10 * 60 * 1000l)
     @DescriptionForConfigEntry("Waittime in ms if a Download had unknown IOException")
     long getDownloadUnknownIOExceptionWaittime();

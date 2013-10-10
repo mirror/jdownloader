@@ -1,7 +1,6 @@
 package jd.controlling.linkcrawler;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 
@@ -127,18 +126,6 @@ public class CrawledPackage implements AbstractPackageNode<CrawledLink, CrawledP
         dest.comment = comment;
         if (this.isDownloadFolderSet()) dest.setDownloadFolder(getRawDownloadFolder());
 
-    }
-
-    @Override
-    public void sort() {
-        ChildComparator<CrawledLink> lsorter = sorter;
-        if (lsorter == null) return;
-        try {
-            getModifyLock().writeLock();
-            Collections.sort(children, lsorter);
-        } finally {
-            getModifyLock().writeUnlock();
-        }
     }
 
     public List<CrawledLink> getChildren() {

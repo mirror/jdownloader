@@ -40,7 +40,6 @@ import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLinkProperty;
 import jd.plugins.FilePackage;
-import jd.plugins.LinkStatus;
 import jd.utils.JDUtilities;
 
 import org.appwork.controlling.SingleReachableState;
@@ -59,6 +58,7 @@ import org.appwork.utils.event.Eventsender;
 import org.appwork.utils.event.queue.Queue;
 import org.appwork.utils.event.queue.Queue.QueuePriority;
 import org.appwork.utils.event.queue.QueueAction;
+import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.zip.ZipIOReader;
 import org.appwork.utils.zip.ZipIOWriter;
@@ -66,6 +66,7 @@ import org.jdownloader.controlling.DownloadLinkAggregator;
 import org.jdownloader.controlling.DownloadLinkWalker;
 import org.jdownloader.controlling.FileCreationManager;
 import org.jdownloader.gui.views.components.packagetable.LinkTreeUtils;
+import org.jdownloader.plugins.FinalLinkState;
 import org.jdownloader.plugins.controller.host.PluginFinder;
 import org.jdownloader.settings.CleanAfterDownloadAction;
 import org.jdownloader.settings.GeneralSettings;
@@ -283,64 +284,6 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
 
     public void addListener(final DownloadControllerListener l, boolean weak) {
         broadcaster.addListener(l, weak);
-    }
-
-    /**
-     * return a list of all DownloadLinks from a given FilePackage with status
-     * 
-     * @param fp
-     * @param status
-     * @return
-     */
-    public java.util.List<DownloadLink> getDownloadLinksbyStatus(FilePackage fp, int status) {
-        final java.util.List<DownloadLink> ret = new ArrayList<DownloadLink>();
-        if (fp != null) {
-            boolean readL = fp.getModifyLock().readLock();
-            try {
-                for (DownloadLink dl : fp.getChildren()) {
-                    if (dl.getLinkStatus().hasStatus(status)) {
-                        ret.add(dl);
-                    }
-                }
-            } finally {
-                fp.getModifyLock().readUnlock(readL);
-            }
-        }
-        return ret;
-    }
-
-    /**
-     * fill given DownloadInformations with current details of this DownloadController
-     */
-    protected void getDownloadStatus(final DownloadInformations ds) {
-        ds.reset();
-        ds.addRunningDownloads(DownloadWatchDog.getInstance().getActiveDownloads());
-        LinkStatus linkStatus;
-        boolean isEnabled;
-        for (final FilePackage fp : getPackagesCopy()) {
-            boolean readL = fp.getModifyLock().readLock();
-            try {
-                ds.addPackages(1);
-                ds.addDownloadLinks(fp.size());
-                for (final DownloadLink l : fp.getChildren()) {
-                    linkStatus = l.getLinkStatus();
-                    isEnabled = l.isEnabled();
-                    if (!linkStatus.hasStatus(LinkStatus.ERROR_ALREADYEXISTS) && isEnabled) {
-                        ds.addTotalDownloadSize(l.getDownloadSize());
-                        ds.addCurrentDownloadSize(l.getDownloadCurrent());
-                    }
-                    if (linkStatus.hasStatus(LinkStatus.ERROR_ALREADYEXISTS)) {
-                        ds.addDuplicateDownloads(1);
-                    } else if (!isEnabled) {
-                        ds.addDisabledDownloads(1);
-                    } else if (linkStatus.hasStatus(LinkStatus.FINISHED)) {
-                        ds.addFinishedDownloads(1);
-                    }
-                }
-            } finally {
-                fp.getModifyLock().readUnlock(readL);
-            }
-        }
     }
 
     public ArrayList<FilePackage> getPackages() {
@@ -584,6 +527,16 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
         throw new Exception("Linklist incompatible");
     }
 
+    public void processFinalLinkState(DownloadLink localLink) {
+        FinalLinkState currentFinalLinkState = localLink.getFinalLinkState();
+        if (currentFinalLinkState != null) {
+            if (currentFinalLinkState == FinalLinkState.PLUGIN_DEFECT) {
+                localLink.setFinalLinkState(null);
+            }
+            return;
+        }
+    }
+
     public void preProcessFilePackages(LinkedList<FilePackage> fps, boolean allowCleanup) {
         if (fps == null || fps.size() == 0) return;
         final Iterator<FilePackage> iterator = fps.iterator();
@@ -599,7 +552,7 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
                 it = fp.getChildren().iterator();
                 while (it.hasNext()) {
                     localLink = it.next();
-                    if (cleanupStartup && localLink.getLinkStatus().isFinished()) {
+                    if (cleanupStartup && FinalLinkState.CheckFinished(localLink.getFinalLinkState())) {
                         logger.info("Remove " + localLink.getName() + " because Finished and CleanupOnStartup!");
                         removeList.add(localLink);
                         continue;
@@ -607,7 +560,7 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
                     /*
                      * reset not if already exist, offline or finished. plugin errors will be reset here because plugin can be fixed again
                      */
-                    localLink.getLinkStatus().resetStatus(LinkStatus.ERROR_ALREADYEXISTS, LinkStatus.ERROR_FILE_NOT_FOUND, LinkStatus.FINISHED, LinkStatus.ERROR_FATAL);
+                    processFinalLinkState(localLink);
                     pluginFinder.assignPlugin(localLink, true, logger);
                 }
                 if (removeList.size() > 0) {
@@ -768,7 +721,7 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
     }
 
     public void set(final DownloadLinkWalker filter) {
-        List<DownloadLink> linksToSet = DownloadController.getInstance().getChildrenByFilter(new AbstractPackageChildrenNodeFilter<DownloadLink>() {
+        DownloadController.getInstance().getChildrenByFilter(new AbstractPackageChildrenNodeFilter<DownloadLink>() {
 
             @Override
             public int returnMaxResults() {
@@ -777,29 +730,33 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
 
             @Override
             public boolean acceptNode(DownloadLink node) {
-                return filter.accept(node.getFilePackage()) && filter.accept(node);
+                if (filter.accept(node.getFilePackage()) && filter.accept(node)) filter.handle(node);
+                return false;
             }
         });
-        for (final DownloadLink link : linksToSet) {
-            filter.handle(link);
-        }
     }
 
     /**
      * @param fp
      */
-    public static void removePackageIfFinished(FilePackage fp) {
-        if (new DownloadLinkAggregator(fp).isFinished()) {
-            if (DownloadController.getInstance().askForRemoveVetos(fp)) {
-                DownloadController.getInstance().logger.info("Remove Package " + fp.getName() + " because Finished and CleanupPackageFinished!");
-                DownloadController.getInstance().removePackage(fp);
-            } else {
-                DownloadController.getInstance().logger.info("Package cannot be removed. got veto");
-            }
-        } else {
+    public static void removePackageIfFinished(final LogSource logger, final FilePackage fp) {
+        getInstance().getQueue().add(new QueueAction<Void, RuntimeException>() {
 
-            DownloadController.getInstance().logger.info("Package is not finised");
-        }
+            @Override
+            protected Void run() throws RuntimeException {
+                if (new DownloadLinkAggregator(fp).isFinished()) {
+                    if (DownloadController.getInstance().askForRemoveVetos(fp)) {
+                        logger.info("Remove Package " + fp.getName() + " because Finished and CleanupPackageFinished!");
+                        DownloadController.getInstance().removePackage(fp);
+                    } else {
+                        logger.info("Package cannot be removed. got veto");
+                    }
+                } else {
+                    logger.info("Package is not finised");
+                }
+                return null;
+            }
+        });
     }
 
     @Override

@@ -18,6 +18,7 @@ package jd.config;
 
 import java.io.Serializable;
 import java.util.HashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import jd.utils.JDUtilities;
 
@@ -28,11 +29,12 @@ import org.jdownloader.logging.LogController;
 
 public class SubConfiguration extends Property implements Serializable {
 
-    private static final long                          serialVersionUID = 7803718581558607222L;
-    protected String                                   name;
-    protected transient boolean                        valid            = false;
-    protected transient Storage                        json             = null;
-    protected static HashMap<String, SubConfiguration> SUB_CONFIGS      = new HashMap<String, SubConfiguration>();
+    private static final long                                   serialVersionUID = 7803718581558607222L;
+    protected String                                            name;
+    protected transient boolean                                 valid            = false;
+    protected transient Storage                                 json             = null;
+    protected static volatile HashMap<String, SubConfiguration> SUB_CONFIGS      = new HashMap<String, SubConfiguration>();
+    protected static final HashMap<String, AtomicInteger>       LOCKS            = new HashMap<String, AtomicInteger>();
 
     public SubConfiguration() {
     }
@@ -94,26 +96,61 @@ public class SubConfiguration extends Property implements Serializable {
         return name;
     }
 
-    public synchronized static SubConfiguration getConfig(final String name, boolean ImportOnly) {
-        if (SUB_CONFIGS.containsKey(name)) {
-            return SUB_CONFIGS.get(name);
-        } else {
-            final SubConfiguration cfg = new SubConfiguration(name);
-            SUB_CONFIGS.put(name, cfg);
-            if (ImportOnly) {
-                /* importOnly dont get saved */
-                /* used to convert old hsqldb to json */
-                /* never save any data */
-                JSonStorage.removeStorage(cfg.json);
-                cfg.json.close();
-            } else {
-                cfg.save();
+    private static synchronized Object requestLock(String name) {
+        AtomicInteger lock = LOCKS.get(name);
+        if (lock == null) {
+            lock = new AtomicInteger(0);
+            LOCKS.put(name, lock);
+        }
+        lock.incrementAndGet();
+        return lock;
+    }
+
+    private static synchronized void unLock(String name) {
+        AtomicInteger lock = LOCKS.get(name);
+        if (lock != null) {
+            if (lock.decrementAndGet() == 0) {
+                LOCKS.remove(name);
             }
-            return cfg;
         }
     }
 
-    public synchronized static SubConfiguration getConfig(final String name) {
+    public static SubConfiguration getConfig(final String name, boolean ImportOnly) {
+        SubConfiguration ret = SUB_CONFIGS.get(name);
+        if (ret != null) {
+            return ret;
+        } else {
+            Object lock = requestLock(name);
+            try {
+                synchronized (lock) {
+                    /* shared lock to allow parallel creation of new SubConfigurations */
+                    ret = SUB_CONFIGS.get(name);
+                    if (ret != null) return ret;
+                    final SubConfiguration cfg = new SubConfiguration(name);
+                    synchronized (LOCKS) {
+                        /* global lock to replace the SUB_CONFIGS */
+                        HashMap<String, SubConfiguration> newSUB_CONFIGS = new HashMap<String, SubConfiguration>(SUB_CONFIGS);
+                        newSUB_CONFIGS.put(name, cfg);
+                        SUB_CONFIGS = newSUB_CONFIGS;
+                    }
+                    if (ImportOnly) {
+                        /* importOnly dont get saved */
+                        /* used to convert old hsqldb to json */
+                        /* never save any data */
+                        JSonStorage.removeStorage(cfg.json);
+                        cfg.json.close();
+                    } else {
+                        cfg.save();
+                    }
+                    return cfg;
+                }
+            } finally {
+                unLock(name);
+            }
+        }
+    }
+
+    public static SubConfiguration getConfig(final String name) {
         return getConfig(name, false);
     }
 

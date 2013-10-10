@@ -22,7 +22,6 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 
 import jd.config.Property;
@@ -272,18 +271,6 @@ public class FilePackage extends Property implements Serializable, AbstractPacka
             }
         } else {
             this.controlledby.moveOrAddAt(this, Arrays.asList(links), -1);
-        }
-    }
-
-    @Override
-    public void sort() {
-        ChildComparator<DownloadLink> lsorter = sorter;
-        if (lsorter == null) return;
-        try {
-            getModifyLock().writeLock();
-            Collections.sort(downloadLinkList, lsorter);
-        } finally {
-            getModifyLock().writeUnlock();
         }
     }
 

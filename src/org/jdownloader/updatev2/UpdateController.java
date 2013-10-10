@@ -61,8 +61,7 @@ public class UpdateController implements UpdateCallbackInterface {
     private UpdateSettings settings;
 
     /**
-     * Create a new instance of UpdateController. This is a singleton class. Access the only existing instance by using
-     * {@link #getInstance()}.
+     * Create a new instance of UpdateController. This is a singleton class. Access the only existing instance by using {@link #getInstance()}.
      */
     private UpdateController() {
         confirmedThreads = new HashSet<Thread>();
@@ -374,6 +373,8 @@ public class UpdateController implements UpdateCallbackInterface {
                     public void run() {
                         HostPluginController.getInstance().invalidateCache();
                         CrawlerPluginController.invalidateCache();
+                        HostPluginController.getInstance().ensureLoaded();
+                        CrawlerPluginController.getInstance().ensureLoaded();
                     }
                 }.start();
                 logger.info("set gui finished");

@@ -20,7 +20,7 @@ import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.LinkedList;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
@@ -89,7 +89,7 @@ public class FileniumCom extends PluginForHost {
     public boolean checkLinks(DownloadLink[] urls) {
         if (urls == null || urls.length == 0) { return false; }
         try {
-            LinkedList<Account> accs = AccountController.getInstance().getValidAccounts(this.getHost());
+            List<Account> accs = AccountController.getInstance().getValidAccounts(this.getHost());
             if (accs == null || accs.size() == 0) {
                 logger.info("No account present, Please add a premium account.");
                 for (DownloadLink dl : urls) {
@@ -217,8 +217,7 @@ public class FileniumCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Connection limit reached!", 5 * 60 * 1000l);
             }
             /*
-             * download is not contentdisposition, so remove this host from
-             * premiumHosts list
+             * download is not contentdisposition, so remove this host from premiumHosts list
              */
             br.followConnection();
             if (br.containsHTML(">Error: Al recuperar enlace\\. No disponible temporalmente, disculpa las molestias<")) tempUnavailableHoster(account, link, 60 * 60 * 1000l);

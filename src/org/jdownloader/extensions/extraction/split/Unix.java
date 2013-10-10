@@ -41,7 +41,6 @@ public class Unix extends IExtraction {
     public Archive buildArchive(ArchiveFactory link) {
         String pattern = "^" + Regex.escape(link.getFilePath().replaceAll("(?i)\\.[a-z][a-z]$", "")) + "\\.[a-z][a-z]$";
         Archive a = SplitUtil.buildArchive(link, pattern, ".*\\.aa$");
-        a.setExtractor(this);
         a.setName(getArchiveName(link));
         return a;
     }
@@ -94,7 +93,7 @@ public class Unix extends IExtraction {
 
     }
 
-    public boolean isArchivSupported(ArchiveFactory factory) {
+    public boolean isArchivSupported(ArchiveFactory factory, boolean allowDeepInspection) {
         if (factory.getName().matches(".*\\.aa$")) return true;
         return false;
     }

@@ -14,8 +14,6 @@ import javax.swing.SwingUtilities;
 import javax.swing.Timer;
 
 import jd.controlling.packagecontroller.AbstractNode;
-import jd.controlling.proxy.ProxyBlock;
-import jd.controlling.proxy.ProxyController;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForHost;
@@ -30,6 +28,7 @@ import org.appwork.swing.components.tooltips.TooltipPanel;
 import org.appwork.swing.exttable.columns.ExtProgressColumn;
 import org.appwork.utils.swing.SwingUtils;
 import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.plugins.FinalLinkState;
 import org.jdownloader.updatev2.gui.LAFOptions;
 
 public class ProgressColumn extends ExtProgressColumn<AbstractNode> {
@@ -38,8 +37,6 @@ public class ProgressColumn extends ExtProgressColumn<AbstractNode> {
      * 
      */
     private static final long serialVersionUID = 1L;
-
-    private ProxyBlock        block            = null;
 
     public ProgressColumn() {
         super(_GUI._.ProgressColumn_ProgressColumn());
@@ -209,10 +206,8 @@ public class ProgressColumn extends ExtProgressColumn<AbstractNode> {
                 return 100;
             } else if ((progress = dLink.getPluginProgress()) != null && !(progress.getProgressSource() instanceof PluginForHost)) {
                 return (progress.getTotal());
-            } else if (dLink.getLinkStatus().isFinished()) {
+            } else if (FinalLinkState.CheckFinished(dLink.getFinalLinkState())) {
                 return 100;
-            } else if (block != null && dLink.getDownloadLinkController() == null && !dLink.isSkipped() && dLink.isEnabled()) {
-                return block.getBlockedUntil();
             } else if (dLink.getDownloadCurrent() > 0 || dLink.getDownloadSize() > 0) { return (dLink.getDownloadSize());
 
             }
@@ -222,13 +217,6 @@ public class ProgressColumn extends ExtProgressColumn<AbstractNode> {
 
     @Override
     protected void prepareGetter(AbstractNode value) {
-        if (value instanceof DownloadLink) {
-            DownloadLink dLink = (DownloadLink) value;
-            block = ProxyController.getInstance().getHostIPBlockTimeout(dLink.getHost());
-            if (block == null) block = ProxyController.getInstance().getHostBlockedTimeout(dLink.getHost());
-        } else {
-            block = null;
-        }
     }
 
     @Override
@@ -248,10 +236,8 @@ public class ProgressColumn extends ExtProgressColumn<AbstractNode> {
                 return -1;
             } else if ((progress = dLink.getPluginProgress()) != null && !(progress.getProgressSource() instanceof PluginForHost)) {
                 return (progress.getCurrent());
-            } else if (dLink.getLinkStatus().isFinished()) {
+            } else if (FinalLinkState.CheckFinished(dLink.getFinalLinkState())) {
                 return 100;
-            } else if (block != null && dLink.getDownloadLinkController() == null && !dLink.isSkipped() && dLink.isEnabled()) {
-                return block.getBlockedTimeout();
             } else if (dLink.getDownloadCurrent() > 0 || dLink.getDownloadSize() > 0) { return (dLink.getDownloadCurrent()); }
         }
         return 0;

@@ -7,6 +7,7 @@ import java.lang.reflect.Modifier;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.Locale;
 import java.util.Map.Entry;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -15,6 +16,8 @@ import jd.PluginWrapper;
 import jd.plugins.Plugin;
 
 import org.appwork.exceptions.WTFException;
+import org.appwork.storage.config.MinTimeWeakReference;
+import org.appwork.utils.Application;
 import org.jdownloader.plugins.controller.PluginClassLoader.PluginClassLoaderChild;
 
 public abstract class LazyPlugin<T extends Plugin> {
@@ -46,10 +49,11 @@ public abstract class LazyPlugin<T extends Plugin> {
 
     private static final Object[]                             EMPTY                   = new Object[] {};
     private long                                              version;
-    private Pattern                                           pattern;
+    private String                                            pattern;
+    private volatile MinTimeWeakReference<Pattern>            compiledPattern         = null;
     private String                                            className;
     private String                                            displayName;
-    protected WeakReference<Class<T>>                         pluginClass;
+    protected volatile WeakReference<Class<T>>                pluginClass;
     protected String                                          mainClassFilename       = null;
 
     public String getMainClassFilename() {
@@ -76,17 +80,21 @@ public abstract class LazyPlugin<T extends Plugin> {
         this.interfaceVersion = interfaceVersion;
     }
 
-    protected WeakReference<T>                    prototypeInstance;
+    protected volatile WeakReference<T>                    prototypeInstance;
     /* PluginClassLoaderChild used to load this Class */
-    private WeakReference<PluginClassLoaderChild> classLoader;
+    private volatile WeakReference<PluginClassLoaderChild> classLoader;
 
     public LazyPlugin(String patternString, String className, String displayName, long version, Class<T> class1, PluginClassLoaderChild classLoader) {
-        pattern = Pattern.compile(patternString, Pattern.CASE_INSENSITIVE);
+        pattern = patternString;
         if (class1 != null) {
             pluginClass = new WeakReference<Class<T>>(class1);
         }
         this.className = className;
-        this.displayName = displayName;
+        if (Application.getJavaVersion() >= Application.JAVA17) {
+            this.displayName = displayName.toLowerCase(Locale.ENGLISH).intern();
+        } else {
+            this.displayName = displayName;
+        }
         this.version = version;
         if (classLoader != null) {
             this.classLoader = new WeakReference<PluginClassLoaderChild>(classLoader);
@@ -296,8 +304,20 @@ public abstract class LazyPlugin<T extends Plugin> {
         return ret;
     }
 
-    public Pattern getPattern() {
+    public String getPatternSource() {
         return pattern;
+    }
+
+    public void setPatternSource(String pattern) {
+        this.pattern = pattern;
+    }
+
+    public Pattern getPattern() {
+        Pattern ret = null;
+        MinTimeWeakReference<Pattern> lCompiledPattern = compiledPattern;
+        if (lCompiledPattern != null && (ret = lCompiledPattern.get()) != null) return ret;
+        compiledPattern = new MinTimeWeakReference<Pattern>(ret = Pattern.compile(pattern, Pattern.CASE_INSENSITIVE), 60 * 1000l, displayName);
+        return ret;
     }
 
     /**
@@ -307,7 +327,7 @@ public abstract class LazyPlugin<T extends Plugin> {
         PluginClassLoaderChild ret = null;
         if (classLoader != null && (ret = classLoader.get()) != null) return ret;
         if (createNew == false) return null;
-        ret = PluginClassLoader.getInstance().getChild();
+        ret = PluginClassLoader.getInstance().getSharedChild(getClassname() + "_" + getVersion());
         setClassLoader(ret);
         return ret;
     }

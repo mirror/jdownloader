@@ -23,7 +23,6 @@ import jd.controlling.linkcrawler.LinkCrawlerHandler;
 import jd.controlling.linkcrawler.UnknownCrawledLinkHandler;
 import jd.controlling.packagecontroller.AbstractPackageChildrenNodeFilter;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.PluginForHost;
 
 import org.appwork.controlling.StateEvent;
@@ -39,6 +38,7 @@ import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.jdownloader.api.toolbar.LinkCheckResult.STATUS;
 import org.jdownloader.api.toolbar.specialurls.YouTubeSpecialUrlHandling;
 import org.jdownloader.gui.views.linkgrabber.actions.AddLinksProgress;
+import org.jdownloader.plugins.FinalLinkState;
 import org.jdownloader.settings.staticreferences.CFG_RECONNECT;
 import org.jdownloader.updatev2.UpdateController;
 
@@ -201,8 +201,7 @@ public class JDownloaderToolBarAPIImpl implements JDownloaderToolBarAPI, StateEv
 
             public boolean acceptNode(DownloadLink node) {
                 if (!node.isEnabled()) return false;
-                if (node.getLinkStatus().isFailed()) return false;
-                if (AvailableStatus.FALSE == node.getAvailableStatus()) return false;
+                if (FinalLinkState.CheckFailed(node.getFinalLinkState())) return false;
                 return true;
             }
         });

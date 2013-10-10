@@ -10,34 +10,38 @@ import javax.swing.JPopupMenu;
 import javax.swing.JSeparator;
 
 import jd.controlling.packagecontroller.AbstractNode;
-import jd.controlling.proxy.ProxyBlock;
-import jd.controlling.proxy.ProxyController;
-import jd.nutils.Formatter;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.FilePackage;
-import jd.plugins.LinkStatus;
+import jd.plugins.FilePackageView;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginProgress;
 
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.swing.exttable.columnmenu.LockColumnWidthAction;
 import org.appwork.swing.exttable.columns.ExtTextColumn;
-import org.appwork.utils.StringUtils;
 import org.appwork.utils.ImageProvider.ImageProvider;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.jdownloader.DomainInfo;
 import org.jdownloader.actions.AppAction;
-import org.jdownloader.extensions.extraction.ExtractionProgress;
+import org.jdownloader.extensions.extraction.ExtractionStatus;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
+import org.jdownloader.plugins.ConditionalSkipReason;
+import org.jdownloader.plugins.FinalLinkState;
+import org.jdownloader.plugins.SkipReason;
+import org.jdownloader.plugins.WaitWhileWaitingSkipReasonIsSet;
+import org.jdownloader.plugins.WaitingSkipReason.CAUSE;
 import org.jdownloader.premium.PremiumInfoDialog;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings;
-import org.jdownloader.translate._JDT;
 
 public class TaskColumn extends ExtTextColumn<AbstractNode> {
+
+    private class ColumnHelper {
+        private ImageIcon icon   = null;
+        private String    string = null;
+    }
 
     /**
      * 
@@ -56,6 +60,11 @@ public class TaskColumn extends ExtTextColumn<AbstractNode> {
 
     private ImageIcon         extracting;
 
+    private ColumnHelper      columnHelper     = new ColumnHelper();
+
+    private String            finishedText     = _GUI._.TaskColumn_getStringValue_finished_();
+    private String            runningText      = _GUI._.TaskColumn_getStringValue_running_();
+
     @Override
     public int getDefaultWidth() {
         return 180;
@@ -71,13 +80,10 @@ public class TaskColumn extends ExtTextColumn<AbstractNode> {
         this.trueIcon = NewTheme.I().getIcon("true", 16);
         this.falseIcon = NewTheme.I().getIcon("false", 16);
         this.infoIcon = NewTheme.I().getIcon("info", 16);
-
         this.iconWait = NewTheme.I().getIcon("wait", 16);
         this.extracting = NewTheme.I().getIcon("archive", 16);
         trueIconExtracted = new ImageIcon(ImageProvider.merge(trueIcon.getImage(), NewTheme.I().getImage("archive", 16), 0, 0, trueIcon.getIconWidth() + 4, (trueIcon.getIconHeight() - 16) / 2 + 2));
-
         trueIconExtractedFailed = new ImageIcon(ImageProvider.merge(trueIconExtracted.getImage(), NewTheme.I().getImage("error", 10), 0, 0, trueIcon.getIconWidth() + 12, trueIconExtracted.getIconHeight() - 10));
-
     }
 
     @Override
@@ -105,22 +111,27 @@ public class TaskColumn extends ExtTextColumn<AbstractNode> {
     }
 
     public boolean onSingleClick(final MouseEvent e, final AbstractNode value) {
+        return handleIPBlockCondition(e, value);
+    }
+
+    public static boolean handleIPBlockCondition(final MouseEvent e, final AbstractNode value) {
         if (value instanceof DownloadLink) {
             DownloadLink dl = (DownloadLink) value;
             if (JsonConfig.create(GraphicalUserInterfaceSettings.class).isPremiumAlertTaskColumnEnabled()) {
                 if (dl.getDownloadLinkController() == null && dl.isEnabled() && dl.getLivePlugin() == null) {
-                    if (!dl.isSkipped() && !dl.getLinkStatus().isFinished()) {
+                    ConditionalSkipReason conditionalSkipReason = dl.getConditionalSkipReason();
+                    if (conditionalSkipReason != null && !dl.isSkipped() && !FinalLinkState.CheckFinished(dl.getFinalLinkState())) {
                         PluginForHost plugin = dl.getDefaultPlugin();
                         if (plugin == null || !plugin.isPremiumEnabled()) {
                             /* no account support yet for this plugin */
                             return false;
                         }
                         /* enabled links that are not running */
-                        ProxyBlock timeout = null;
-                        if ((timeout = ProxyController.getInstance().getHostIPBlockTimeout(dl.getHost())) != null) {
-                            if (timeout.getLink() != value) {
+                        if (conditionalSkipReason instanceof WaitWhileWaitingSkipReasonIsSet) {
+                            WaitWhileWaitingSkipReasonIsSet waitCondition = (WaitWhileWaitingSkipReasonIsSet) conditionalSkipReason;
+                            if (waitCondition.getCause() == CAUSE.IP_BLOCKED && !waitCondition.getConditionalSkipReason().isConditionReached()) {
                                 try {
-                                    Dialog.getInstance().showDialog(new PremiumInfoDialog(((DownloadLink) value).getDomainInfo(true), _GUI._.TaskColumn_onSingleClick_object_(((DownloadLink) value).getHost()), "TaskColumnReconnect") {
+                                    Dialog.getInstance().showDialog(new PremiumInfoDialog(((DownloadLink) value).getDomainInfo(), _GUI._.TaskColumn_onSingleClick_object_(((DownloadLink) value).getHost()), "TaskColumnReconnect") {
                                         protected String getDescription(DomainInfo info2) {
                                             return _GUI._.TaskColumn_getDescription_object_(info2.getTld());
                                         }
@@ -133,7 +144,6 @@ public class TaskColumn extends ExtTextColumn<AbstractNode> {
                                 return true;
                             }
                         }
-
                     }
                 }
             }
@@ -142,100 +152,85 @@ public class TaskColumn extends ExtTextColumn<AbstractNode> {
     }
 
     @Override
-    protected Icon getIcon(AbstractNode value) {
+    protected void prepareColumn(AbstractNode value) {
         if (value instanceof DownloadLink) {
-            DownloadLink dl = (DownloadLink) value;
-            LinkStatus ls = dl.getLinkStatus();
-            PluginProgress prog = dl.getPluginProgress();
-            ImageIcon icon = null;
-            if (prog != null && prog.getPercent() > 0.0 && prog.getPercent() < 100.0 && !(prog instanceof ExtractionProgress)) {
-                return prog.getIcon();
-            } else if ((icon = ls.getStatusIcon()) != null) {
-                return icon;
-            } else if (ls.isFinished()) {
-                if (dl.getExtractionStatus() != null) {
-                    switch (dl.getExtractionStatus()) {
+            DownloadLink link = (DownloadLink) value;
+            PluginProgress prog = link.getPluginProgress();
+            if (prog != null) {
+                columnHelper.icon = prog.getIcon();
+                columnHelper.string = prog.getMessage(this);
+                return;
+            }
+            ConditionalSkipReason conditionalSkipReason = link.getConditionalSkipReason();
+            if (conditionalSkipReason != null && !conditionalSkipReason.isConditionReached()) {
+                columnHelper.icon = conditionalSkipReason.getIcon(this, null);
+                columnHelper.string = conditionalSkipReason.getMessage(this, null);
+                return;
+            }
+            SkipReason skipReason = link.getSkipReason();
+            if (skipReason != null) {
+                columnHelper.icon = infoIcon;
+                columnHelper.string = skipReason.getExplanation();
+                return;
+            }
+            FinalLinkState finalLinkState = link.getFinalLinkState();
+            if (finalLinkState != null) {
+                if (FinalLinkState.CheckFailed(finalLinkState)) {
+                    columnHelper.icon = falseIcon;
+                    columnHelper.string = finalLinkState.getExplanation();
+                    return;
+                }
+                ExtractionStatus extractionStatus = link.getExtractionStatus();
+                if (extractionStatus != null) {
+                    switch (extractionStatus) {
                     case ERROR:
+                    case ERROR_PW:
                     case ERROR_CRC:
                     case ERROR_NOT_ENOUGH_SPACE:
                     case ERRROR_FILE_NOT_FOUND:
-                        return trueIconExtractedFailed;
+                        columnHelper.icon = trueIconExtractedFailed;
+                        columnHelper.string = extractionStatus.getExplanation();
+                        return;
                     case SUCCESSFUL:
-                        return trueIconExtracted;
+                        columnHelper.icon = trueIconExtracted;
+                        columnHelper.string = extractionStatus.getExplanation();
+                        return;
                     case RUNNING:
-                        return extracting;
+                        columnHelper.icon = extracting;
+                        columnHelper.string = extractionStatus.getExplanation();
+                        return;
                     }
                 }
-                return trueIcon;
-            } else if (dl.isSkipped()) {
-                return infoIcon;
-            } else if (ls.isFailed() || dl.getAvailableStatus() == AvailableStatus.FALSE) { return falseIcon; }
-
-            if (dl.getDownloadLinkController() == null && dl.isEnabled() && dl.getLivePlugin() == null) {
-                if (!dl.getLinkStatus().isFinished()) {
-                    /* enabled links that are not running */
-                    ProxyBlock timeout = null;
-                    if ((timeout = ProxyController.getInstance().getHostIPBlockTimeout(dl.getHost())) != null) {
-                        // if (timeout.getLink() == value) {
-                        // return null;
-                        // } else {
-                        return iconWait;
-                        // }
-                    }
-
-                }
+                columnHelper.icon = trueIcon;
+                columnHelper.string = finalLinkState.getExplanation();
+                return;
             }
-        } else if (value instanceof FilePackage) {
-            if (((FilePackage) value).getView().isFinished()) { return trueIcon; }
+            columnHelper.icon = null;
+            columnHelper.string = "";
+        } else {
+            FilePackage fp = (FilePackage) value;
+            FilePackageView view = fp.getView();
+            if (view.isFinished()) {
+                columnHelper.icon = trueIcon;
+                columnHelper.string = finishedText;
+                return;
+            } else if (view.getETA() != -1) {
+                columnHelper.icon = null;
+                columnHelper.string = runningText;
+                return;
+            }
+            columnHelper.icon = null;
+            columnHelper.string = "";
         }
-        return null;
+    }
+
+    @Override
+    protected Icon getIcon(AbstractNode value) {
+        return columnHelper.icon;
     }
 
     @Override
     public String getStringValue(AbstractNode value) {
-        if (value instanceof DownloadLink) {
-            DownloadLink dl = (DownloadLink) value;
-            PluginProgress prog = dl.getPluginProgress();
-            if (prog != null && StringUtils.isNotEmpty(prog.getMessage())) {
-                //
-                return prog.getMessage();
-            }
-            if (((DownloadLink) value).isSkipped()) { return ((DownloadLink) value).getSkipReason().getExplanation(); }
-            if (dl.getDownloadLinkController() == null && dl.isEnabled() && dl.getLivePlugin() == null) {
-                if (!dl.getLinkStatus().isFinished()) {
-                    /* enabled links that are not running */
-                    ProxyBlock timeout = null;
-                    String message = null;
-                    if ((timeout = ProxyController.getInstance().getHostIPBlockTimeout(dl.getHost())) != null) {
-                        if (timeout.getLink() == value) {
-                            if ((message = dl.getLinkStatus().getMessage(true)) != null) return message;
-                            return _JDT._.gui_download_waittime_status2(Formatter.formatSeconds(timeout.getBlockedTimeout() / 1000));
-                        } else {
-                            return _JDT._.gui_downloadlink_hosterwaittime();
-                        }
-                    }
-                    if ((timeout = ProxyController.getInstance().getHostBlockedTimeout(dl.getHost())) != null) {
-                        if (timeout.getLink() == value) {
-                            if ((message = dl.getLinkStatus().getMessage(true)) != null) return message;
-                            return _JDT._.gui_download_waittime_status2(Formatter.formatSeconds(timeout.getBlockedTimeout() / 1000));
-                        } else {
-                            return _JDT._.gui_downloadlink_hostertempunavail();
-                        }
-                    }
-                }
-            }
-            if (dl.getLinkStatus().isFinished()) {
-                if (dl.getExtractionStatus() != null) {
-                    String desc = dl.getExtractionStatus().getExplanation();
-                    if (desc != null) return desc;
-                }
-            }
-            return dl.getLinkStatus().getMessage(false);
-
-        } else if (value instanceof FilePackage) {
-            if (((FilePackage) value).getView().isFinished()) { return _GUI._.TaskColumn_getStringValue_finished_(); }
-            if (((FilePackage) value).getView().getETA() != -1) { return _GUI._.TaskColumn_getStringValue_running_(); }
-        }
-        return "";
+        return columnHelper.string;
     }
 }

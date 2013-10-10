@@ -235,7 +235,6 @@ public class VeohCom extends PluginForHost {
                     downloadLink.getDownloadLinkController().getConnectionHandler().addConnectionHandler(dl.getManagedConnetionHandler());
                 } catch (final Throwable e) {
                 }
-                downloadLink.getLinkStatus().addStatus(LinkStatus.DOWNLOADINTERFACE_IN_PROGRESS);
                 /* we have to create folder structure */
                 tmpFile.getParentFile().mkdirs();
                 FILEOUT = new BufferedOutputStream(new FileOutputStream(tmpFile, true));
@@ -379,8 +378,7 @@ public class VeohCom extends PluginForHost {
                     FILEOUT.close();
                 } catch (final Throwable e) {
                 }
-                downloadLink.getLinkStatus().removeStatus(LinkStatus.DOWNLOADINTERFACE_IN_PROGRESS);
-                downloadLink.setDownloadInstance(null);
+                downloadLink.getDownloadLinkController().setDownloadInstance(null);
                 // System.out.println("SOLL: " + downloadLink.getDownloadSize()
                 // +
                 // " - IST: " + BYTESLOADED);
@@ -392,7 +390,7 @@ public class VeohCom extends PluginForHost {
             }
             downloadLink.getLinkStatus().setStatusText(null);
             if (!isExternalyAborted()) {
-                downloadLink.getLinkStatus().addStatus(LinkStatus.FINISHED);
+                downloadLink.getLinkStatus().setStatus(LinkStatus.FINISHED);
                 if (FAILCOUNTER > 0) {
                     downloadLink.getLinkStatus().setStatusText("File(s) not found: " + FAILCOUNTER);
                 }

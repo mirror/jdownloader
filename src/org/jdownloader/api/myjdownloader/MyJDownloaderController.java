@@ -205,7 +205,6 @@ public class MyJDownloaderController implements ShutdownVetoListener, GenericCon
             break;
         case UNKNOWN:
             break;
-
         default:
             Dialog.getInstance().showMessageDialog(0, "MyJDownloader", _JDT._.MyJDownloaderController_onError_unknown(error.toString()));
         }

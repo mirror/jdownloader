@@ -46,30 +46,28 @@ public class ExtractionListenerList implements ExtractionListener {
         final LogSource logger = controller.getLogger();
         switch (event.getType()) {
         case QUEUED:
-
             controller.getArchiv().setStatus(ExtractionStatus.IDLE);
             controller.getArchiv().getFirstArchiveFile().setMessage(T._.plugins_optional_extraction_status_queued());
             break;
         case EXTRACTION_FAILED:
             try {
                 logger.warning("Extraction failed");
+                controller.getArchiv().setStatus(ExtractionStatus.ERROR);
                 ArchiveFile af = null;
+                String errorMsg = T._.failed_no_details();
                 if (controller.getException() != null) {
+                    errorMsg = T._.failed(controller.getException().getMessage());
                     if (controller.getException() instanceof ExtractionException) {
                         af = ((ExtractionException) controller.getException()).getLatestAccessedArchiveFile();
                     }
                 }
                 for (ArchiveFile link : controller.getArchiv().getArchiveFiles()) {
                     if (link == null) continue;
-                    if (af == link) {
+                    if (af != null && af == link) {
                         link.setStatus(ExtractionStatus.ERROR_CRC);
-                        link.setMessage(T._.failed(controller.getException().getMessage()));
-                    } else if (controller.getException() != null) {
-                        link.setStatus(ExtractionStatus.ERROR);
-                        link.setMessage(T._.failed(controller.getException().getMessage()));
                     } else {
                         link.setStatus(ExtractionStatus.ERROR);
-                        link.setMessage(T._.failed_no_details());
+                        link.setMessage(errorMsg);
                     }
                 }
                 for (File f : controller.getArchiv().getExtractedFiles()) {
@@ -82,22 +80,15 @@ public class ExtractionListenerList implements ExtractionListener {
                     }
                 }
             } finally {
-                controller.getArchiv().setStatus(ExtractionStatus.ERROR);
                 controller.getArchiv().setActive(false);
                 ex.onFinished(controller);
             }
             break;
         case PASSWORD_NEEDED_TO_CONTINUE:
-            // ??
-            // //
-            // controller.getArchiv().getFirstArchiveFile().requestGuiUpdate();
-
             if (ex.getSettings().isAskForUnknownPasswordsEnabled() || controller.isAskForUnknownPassword()) {
                 String pass = UserIO.getInstance().requestInputDialog(0, T._.plugins_optional_extraction_askForPassword(controller.getArchiv().getFirstArchiveFile().getName()), "");
                 if (pass == null || pass.length() == 0) {
-
-                    controller.getArchiv().getFirstArchiveFile().setStatus(ExtractionStatus.ERROR);
-                    controller.getArchiv().getFirstArchiveFile().setMessage(T._.plugins_optional_extraction_status_extractfailedpass());
+                    controller.getArchiv().getFirstArchiveFile().setStatus(ExtractionStatus.ERROR_PW);
                     ex.onFinished(controller);
                     break;
                 }
@@ -109,20 +100,15 @@ public class ExtractionListenerList implements ExtractionListener {
                 controller.getArchiv().getFirstArchiveFile().setMessage(T._.plugins_optional_extraction_status_crackingpass_progress(((10000 * controller.getCrackProgress()) / controller.getPasswordListSize()) / 100.00));
             } catch (Throwable e) {
                 controller.getArchiv().getFirstArchiveFile().setMessage(T._.plugins_optional_extraction_status_crackingpass_progress(0.00d));
-
-            } // controller.getArchiv().getFirstArchiveFile().requestGuiUpdate();
+            }
             break;
         case START:
-            controller.getArchiv().getFirstArchiveFile().setMessage(T._.plugins_optional_extraction_status_openingarchive());
-            // controller.getArchiv().getFirstArchiveFile().requestGuiUpdate();
             controller.getArchiv().setStatus(ExtractionStatus.RUNNING);
             break;
         case OPEN_ARCHIVE_SUCCESS:
-
             break;
         case PASSWORD_FOUND:
             controller.getArchiv().getFirstArchiveFile().setMessage(T._.plugins_optional_extraction_status_passfound());
-            // controller.getArchiv().getFirstArchiveFile().requestGuiUpdate();
             controller.getArchiv().getFirstArchiveFile().setProgress(0, 0, null);
             break;
         case PASSWORT_CRACKING:
@@ -133,19 +119,14 @@ public class ExtractionListenerList implements ExtractionListener {
 
             }
             controller.getArchiv().getFirstArchiveFile().setProgress(controller.getCrackProgress(), controller.getPasswordListSize(), Color.GREEN.darker());
-
-            // controller.getArchiv().getFirstArchiveFile().requestGuiUpdate();
             break;
         case EXTRACTING:
-
             controller.getArchiv().getFirstArchiveFile().setMessage(T._.plugins_optional_extraction_status_extracting2());
-
             controller.getArchiv().getFirstArchiveFile().setProgress((long) (controller.getProgress() * 100), 10000, Color.YELLOW.darker());
-
-            // controller.getArchiv().getFirstArchiveFile().requestGuiUpdate();
             break;
         case EXTRACTION_FAILED_CRC:
             try {
+                controller.getArchiv().setStatus(ExtractionStatus.ERROR);
                 logger.warning("Extraction failed(CRC)");
                 if (controller.getArchiv().getCrcError().size() != 0) {
                     for (ArchiveFile link : controller.getArchiv().getCrcError()) {
@@ -168,13 +149,13 @@ public class ExtractionListenerList implements ExtractionListener {
                     }
                 }
             } finally {
-                controller.getArchiv().setStatus(ExtractionStatus.ERROR_CRC);
                 controller.getArchiv().setActive(false);
                 ex.onFinished(controller);
             }
             break;
         case FINISHED:
             try {
+                controller.getArchiv().setStatus(ExtractionStatus.SUCCESSFUL);
                 TaskQueue.getQueue().add(new QueueAction<Void, RuntimeException>() {
 
                     @Override
@@ -187,14 +168,9 @@ public class ExtractionListenerList implements ExtractionListener {
                                 logger.info(infoFiles.getName() + " removed");
                             }
                         }
-                        for (ArchiveFile link : controller.getArchiv().getArchiveFiles()) {
-                            if (link == null) continue;
-                            link.setStatus(ExtractionStatus.SUCCESSFUL);
-                        }
                         return null;
                     }
                 });
-                controller.getArchiv().setStatus(ExtractionStatus.SUCCESSFUL);
             } finally {
                 controller.getArchiv().setActive(false);
                 ex.onFinished(controller);
@@ -236,9 +212,7 @@ public class ExtractionListenerList implements ExtractionListener {
                         if (link == null) continue;
                         link.onCleanedUp(controller);
                     }
-
                     controller.removeArchiveFiles();
-
                 }
             }
             break;
@@ -246,14 +220,9 @@ public class ExtractionListenerList implements ExtractionListener {
             try {
                 logger.warning("FileNotFound");
                 if (controller.getArchiv().getCrcError().size() != 0) {
-                    controller.getArchiv().setStatus(ExtractionStatus.ERRROR_FILE_NOT_FOUND);
-                } else {
-                    for (ArchiveFile link : controller.getArchiv().getArchiveFiles()) {
-                        if (link == null) continue;
-                        link.setMessage(T._.plugins_optional_extraction_filenotfound());
-                    }
-
                     controller.getArchiv().setStatus(ExtractionStatus.ERROR_CRC);
+                } else {
+                    controller.getArchiv().setStatus(ExtractionStatus.ERRROR_FILE_NOT_FOUND);
                 }
                 for (File f : controller.getArchiv().getExtractedFiles()) {
                     if (f.exists()) {

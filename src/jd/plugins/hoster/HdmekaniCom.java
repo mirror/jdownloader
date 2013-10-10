@@ -59,10 +59,7 @@ public class HdmekaniCom extends PluginForHost {
         try {
             ((Ftp) JDUtilities.getNewPluginForHostInstance("ftp")).download(dllink, downloadLink, true);
         } catch (IOException e) {
-            if (e.getMessage() != null && e.getMessage().contains("530")) {
-                downloadLink.getLinkStatus().setErrorMessage("Login incorrect");
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-            }
+            if (e.getMessage() != null && e.getMessage().contains("530")) { throw new PluginException(LinkStatus.ERROR_PREMIUM, "Login incorrect", PluginException.VALUE_ID_PREMIUM_DISABLE); }
             throw e;
         }
     }

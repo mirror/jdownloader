@@ -390,8 +390,8 @@ public class DirectHTTP extends PluginForHost {
                  * hotfix for synthetica license issues, as some java versions have broken aes support
                  */
                 /*
-                 * NOTE: This Licensee Information may only be used by AppWork UG. If you like to create derived creation based on this
-                 * sourcecode, you have to remove this license key. Instead you may use the FREE Version of synthetica found on javasoft.de
+                 * NOTE: This Licensee Information may only be used by AppWork UG. If you like to create derived creation based on this sourcecode, you have to
+                 * remove this license key. Instead you may use the FREE Version of synthetica found on javasoft.de
                  */
                 String[] li = { "Licensee=AppWork UG", "LicenseRegistrationNumber=289416475", "Product=Synthetica", "LicenseType=Small Business License", "ExpireDate=--.--.----", "MaxVersion=2.999.999" };
                 javax.swing.UIManager.put("Synthetica.license.info", li);
@@ -499,7 +499,7 @@ public class DirectHTTP extends PluginForHost {
                     downloadLink.setProperty(DirectHTTP.NORESUME, Boolean.valueOf(true));
                     throw new PluginException(LinkStatus.ERROR_RETRY);
                 }
-            } else if (downloadLink.getLinkStatus().hasStatus(LinkStatus.ERROR_ALREADYEXISTS)) {
+            } else if (downloadLink.getLinkStatus().hasStatus(1 << 13)) {
                 return;
             } else {
                 /* unknown error, we disable multiple chunks */
@@ -534,6 +534,7 @@ public class DirectHTTP extends PluginForHost {
             // used to make offline links for decrypters. To prevent 'Checking online status' and/or prevent downloads of downloadLink.
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
+        // if (true) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, 60 * 1000l);
         this.setBrowserExclusive();
         /* disable gzip, because current downloadsystem cannot handle it correct */
         this.br.getHeaders().put("Accept-Encoding", "");
@@ -570,7 +571,7 @@ public class DirectHTTP extends PluginForHost {
                 }
                 urlConnection = this.prepareConnection(this.br, downloadLink);
                 String urlParams = null;
-                if ((urlConnection.getResponseCode() == 401 || urlConnection.getResponseCode() == 404 || urlConnection.getResponseCode() == 403) && (urlParams = downloadLink.getStringProperty(POSSIBLE_URLPARAM, null)) != null) {
+                if ((urlConnection.getResponseCode() == 401 || urlConnection.getResponseCode() == 400 || urlConnection.getResponseCode() == 404 || urlConnection.getResponseCode() == 403) && (urlParams = downloadLink.getStringProperty(POSSIBLE_URLPARAM, null)) != null) {
                     /* check if we need the URLPARAMS to download the file */
                     urlConnection.disconnect();
                     String newURL = downloadLink.getDownloadURL() + urlParams;
@@ -703,8 +704,7 @@ public class DirectHTTP extends PluginForHost {
         if (custom != null && custom.size() > 0) {
             for (final Object header : custom) {
                 /*
-                 * this is needed because we no longer serialize the stuff, we use json as storage and it does not differ between String[]
-                 * and ArrayList<String>
+                 * this is needed because we no longer serialize the stuff, we use json as storage and it does not differ between String[] and ArrayList<String>
                  */
                 if (header instanceof ArrayList) {
                     br.getHeaders().put((String) ((ArrayList<?>) header).get(0), (String) ((ArrayList<?>) header).get(1));

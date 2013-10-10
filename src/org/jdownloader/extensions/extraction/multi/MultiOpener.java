@@ -39,13 +39,17 @@ import net.sf.sevenzipjbinding.impl.RandomAccessFileInStream;
  */
 class MultiOpener implements IArchiveOpenVolumeCallback, ICryptoGetTextPassword {
     private Map<String, RandomAccessFile> openedRandomAccessFileList = new HashMap<String, RandomAccessFile>();
-    private String                        password;
+    private final String                  password;
 
     MultiOpener() {
-        this.password = "";
+        this(null);
     }
 
     MultiOpener(String password) {
+        if (password == null) {
+            /* password null will crash jvm */
+            password = "";
+        }
         this.password = password;
     }
 

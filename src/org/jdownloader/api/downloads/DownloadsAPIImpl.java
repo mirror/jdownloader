@@ -10,11 +10,11 @@ import jd.controlling.downloadcontroller.DownloadWatchDog;
 import jd.controlling.packagecontroller.AbstractPackageChildrenNodeFilter;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
-import jd.plugins.LinkStatus;
 
 import org.appwork.remoteapi.APIQuery;
 import org.appwork.remoteapi.QueryResponseMap;
 import org.jdownloader.controlling.DownloadLinkAggregator;
+import org.jdownloader.plugins.FinalLinkState;
 
 public class DownloadsAPIImpl implements DownloadsAPI {
 
@@ -225,13 +225,13 @@ public class DownloadsAPIImpl implements DownloadsAPI {
                 infomap.put("eta", -1);
             }
             if (queryParams._getQueryParam("finished", Boolean.class, false)) {
-                infomap.put("finished", (dl.getLinkStatus() != null && dl.getLinkStatus().getLatestStatus() == LinkStatus.FINISHED));
+                infomap.put("finished", (FinalLinkState.CheckFinished(dl.getFinalLinkState())));
             }
             if (queryParams._getQueryParam("linkStatus", Boolean.class, false)) {
-                infomap.put("linkStatus", new LinkStatusAPIStorable(dl.getLinkStatus()));
+                infomap.put("linkStatus", new LinkStatusAPIStorable(dl));
             }
             if (queryParams._getQueryParam("running", Boolean.class, false)) {
-                infomap.put("running", dwd.getRunningDownloadLinks().contains(dl.getDownloadLinkController()));
+                infomap.put("running", dl.getDownloadLinkController() != null);
             }
             if (queryParams._getQueryParam("skipped", Boolean.class, false)) {
                 infomap.put("skipped", dl.isSkipped());

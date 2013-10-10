@@ -12,11 +12,13 @@ import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
 import org.appwork.storage.config.MinTimeWeakReference;
+import org.appwork.utils.Application;
 import org.appwork.utils.images.IconIO;
 import org.appwork.utils.images.Interpolation;
 import org.jdownloader.images.NewTheme;
 
 public class DomainInfo implements FavIconRequestor, Comparable<DomainInfo> {
+
     private static final long CACHE_TIMEOUT = 30000;
     private static final int  WIDTH         = 16;
     private static final int  HEIGHT        = 16;
@@ -29,7 +31,7 @@ public class DomainInfo implements FavIconRequestor, Comparable<DomainInfo> {
         return tld;
     }
 
-    private String tld;
+    private final String tld;
 
     public String getTld() {
         return tld;
@@ -37,10 +39,6 @@ public class DomainInfo implements FavIconRequestor, Comparable<DomainInfo> {
 
     protected MinTimeWeakReference<ImageIcon> hosterIcon          = null;
     protected boolean                         hosterIconRequested = false;
-
-    public void setTld(String tld) {
-        this.tld = tld;
-    }
 
     /**
      * Returns a
@@ -108,9 +106,12 @@ public class DomainInfo implements FavIconRequestor, Comparable<DomainInfo> {
         synchronized (LOCK) {
             ret = CACHE.get(lcaseTld);
             if (ret != null) return ret;
+            if (Application.getJavaVersion() >= Application.JAVA17) {
+                lcaseTld = lcaseTld.intern();
+            }
             HashMap<String, DomainInfo> newCache = new HashMap<String, DomainInfo>(CACHE);
             if (ret == null) {
-                newCache.put(lcaseTld, ret = new DomainInfo(tld));
+                newCache.put(lcaseTld, ret = new DomainInfo(lcaseTld));
                 CACHE = newCache;
             }
             return ret;

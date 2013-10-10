@@ -5,6 +5,7 @@ import jd.plugins.LinkStatus;
 
 import org.appwork.remoteapi.QueryResponseMap;
 import org.appwork.storage.Storable;
+import org.jdownloader.plugins.FinalLinkState;
 
 public class DownloadLinkStorable implements Storable {
 
@@ -86,14 +87,15 @@ public class DownloadLinkStorable implements Storable {
 
     public LinkStatusJobStorable getLinkStatus() {
         if (link == null) return null;
-
-        LinkStatus ls = link.getLinkStatus();
         LinkStatusJobStorable lsj = new LinkStatusJobStorable();
-        lsj.setFinished(ls.isFinished());
+        lsj.setFinished(FinalLinkState.CheckFinished(link.getFinalLinkState()));
         lsj.setInProgress(link.getDownloadLinkController() != null);
         lsj.setLinkID(link.getUniqueID().toString());
-        lsj.setStatus(ls.getStatus());
-        lsj.setStatusText(ls.getMessage(false));
+        LinkStatus ls = link.getLinkStatus();
+        if (ls != null) {
+            lsj.setStatus(ls.getStatus());
+            // lsj.setStatusText(ls.getMessage(false));
+        }
         return lsj;
     }
 

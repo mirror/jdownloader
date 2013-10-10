@@ -64,6 +64,11 @@ public class FlvFixer {
             this.setETA(eta);
         }
 
+        @Override
+        public String getMessage(Object requestor) {
+            return null;
+        }
+
     }
 
     private static enum Tag {

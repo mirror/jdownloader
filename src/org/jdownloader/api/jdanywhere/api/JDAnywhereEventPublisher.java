@@ -23,7 +23,6 @@ import jd.plugins.DownloadLinkProperty;
 import jd.plugins.DownloadLinkProperty.Property;
 import jd.plugins.FilePackage;
 import jd.plugins.FilePackageProperty;
-import jd.plugins.LinkStatus;
 
 import org.appwork.controlling.StateEvent;
 import org.appwork.controlling.StateEventListener;
@@ -40,6 +39,7 @@ import org.jdownloader.captcha.v2.ChallengeResponseController;
 import org.jdownloader.captcha.v2.ChallengeSolver;
 import org.jdownloader.captcha.v2.challenge.stringcaptcha.ImageCaptchaChallenge;
 import org.jdownloader.captcha.v2.solverjob.SolverJob;
+import org.jdownloader.plugins.FinalLinkState;
 import org.jdownloader.settings.staticreferences.CFG_GENERAL;
 import org.jdownloader.settings.staticreferences.CFG_RECONNECT;
 
@@ -266,9 +266,8 @@ public class JDAnywhereEventPublisher implements EventPublisher, DownloadWatchdo
 
                         }
                     } else {
-                        LinkStatus linkStatus = dl.getLinkStatus();
-                        if (linkStatus.getLatestStatus() == 2 && dl.getDownloadLinkController() != null) { // && linkStatus.getStatus() !=
-                            // linkStatus.getLatestStatus()) {
+
+                        if (FinalLinkState.CheckFinished(dl.getFinalLinkState())) {
                             data.put("linkID", dl.getUniqueID().getID());
                             data.put("packageID", dl.getFilePackage().getUniqueID().toString());
                             data.put("action", "Finished");
@@ -284,7 +283,7 @@ public class JDAnywhereEventPublisher implements EventPublisher, DownloadWatchdo
                             if (lastMessage == null) {
                                 lastMessage = "";
                             }
-                            String newMessage = linkStatus.getMessage(false);
+                            String newMessage = null;
                             if (newMessage == null) {
                                 newMessage = "";
                             }

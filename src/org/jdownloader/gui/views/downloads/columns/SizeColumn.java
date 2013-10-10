@@ -59,6 +59,17 @@ public class SizeColumn extends ExtColumn<AbstractNode> {
             public int compare(final AbstractNode o1, final AbstractNode o2) {
                 final long s1 = getBytes(o1);
                 final long s2 = getBytes(o2);
+                if (s1 == s2) return compare2(o1, o2);
+                if (this.getSortOrderIdentifier() != ExtColumn.SORT_ASC) {
+                    return s1 > s2 ? -1 : 1;
+                } else {
+                    return s1 < s2 ? -1 : 1;
+                }
+            }
+
+            public int compare2(final AbstractNode o1, final AbstractNode o2) {
+                final int s1 = getNumberOfItems(o1);
+                final int s2 = getNumberOfItems(o2);
                 if (s1 == s2) return 0;
                 if (this.getSortOrderIdentifier() != ExtColumn.SORT_ASC) {
                     return s1 > s2 ? -1 : 1;
@@ -208,7 +219,6 @@ public class SizeColumn extends ExtColumn<AbstractNode> {
     }
 
     protected long getBytes(AbstractNode o2) {
-
         if (o2 instanceof CrawledPackage) {
             return ((CrawledPackage) o2).getView().getFileSize();
         } else if (o2 instanceof CrawledLink) {
@@ -219,6 +229,11 @@ public class SizeColumn extends ExtColumn<AbstractNode> {
             return ((FilePackage) o2).getView().getSize();
         } else
             return -1;
+    }
+
+    protected int getNumberOfItems(AbstractNode o) {
+        if (o instanceof AbstractPackageNode) { return ((AbstractPackageNode) o).getView().getItems().size(); }
+        return 1;
     }
 
     @Override

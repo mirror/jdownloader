@@ -241,8 +241,11 @@ public class FavIcons {
         Color fg = Color.BLACK;
         Color bg = Color.WHITE;
         LOGGER.info("Create Favicon: " + host);
-
-        bg = LAFOptions.getInstance().getColorForPanelHeaderBackground();
+        try {
+            bg = LAFOptions.getInstance().getColorForPanelHeaderBackground();
+        } catch (final Throwable e) {
+            e.printStackTrace();
+        }
 
         GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
         GraphicsDevice gd = ge.getDefaultScreenDevice();

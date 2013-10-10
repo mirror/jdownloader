@@ -78,7 +78,7 @@ public class MyJDownloaderWaitingConnectionThread extends Thread {
 
     }
 
-    protected AtomicBoolean                                           running           = new AtomicBoolean(false);
+    protected AtomicBoolean                                           running           = new AtomicBoolean(true);
     protected NullsafeAtomicReference<MyJDownloaderConnectionRequest> connectionRequest = new NullsafeAtomicReference<MyJDownloaderConnectionRequest>();
     private final LogSource                                           logger;
     protected Socket                                                  connectionSocket  = null;
@@ -89,7 +89,6 @@ public class MyJDownloaderWaitingConnectionThread extends Thread {
         this.setName("MyJDownloaderWaitingConnectionThread");
         logger = connectThread.getLogger();
         this.connectThread = connectThread;
-        running.set(true);
     }
 
     @Override
@@ -110,10 +109,11 @@ public class MyJDownloaderWaitingConnectionThread extends Thread {
                     DeviceConnectionStatus connectionStatus = null;
                     request.getConnectionHelper().backoff();
                     try {
-                        connectionSocket = new Socket();
-                        connectionSocket.setSoTimeout(120000);
-                        connectionSocket.setTcpNoDelay(true);
                         logger.info("Connect " + request.getAddr());
+                        connectionSocket = new Socket();
+                        connectionSocket.setReuseAddress(true);
+                        connectionSocket.setSoTimeout(180000);
+                        connectionSocket.setTcpNoDelay(true);
                         connectionSocket.connect(request.getAddr(), 30000);
                         connectionSocket.getOutputStream().write(("DEVICE" + request.getSessionToken()).getBytes("ISO-8859-1"));
                         connectionSocket.getOutputStream().flush();
@@ -122,12 +122,17 @@ public class MyJDownloaderWaitingConnectionThread extends Thread {
                     } catch (final Throwable throwable) {
                         e = throwable;
                     }
-                    MyJDownloaderConnectionResponse response = new MyJDownloaderConnectionResponse(this, request.getConnectionHelper(), connectionStatus, connectionSocket, e);
-                    if (connectThread.putResponse(response) == false) {
-                        logger.info("Could not putResponse to connectThread. Close responseSocket");
-                        try {
-                            connectionSocket.close();
-                        } catch (final Throwable ignore) {
+                    synchronized (connectionRequest) {
+                        MyJDownloaderConnectionResponse response = new MyJDownloaderConnectionResponse(this, request.getConnectionHelper(), connectionStatus, connectionSocket, e);
+                        if (running.get() == false || connectThread.putResponse(response) == false) {
+                            logger.info("Could not putResponse to connectThread. Close responseSocket");
+                            try {
+                                connectionSocket.close();
+                            } catch (final Throwable ignore) {
+                            }
+                        } else {
+                            /* clear reference to avoid WaitingThread closing a current in process connection */
+                            connectionSocket = null;
                         }
                     }
                 }
@@ -135,11 +140,7 @@ public class MyJDownloaderWaitingConnectionThread extends Thread {
         } catch (final Throwable e) {
             logger.log(e);
         } finally {
-            try {
-                connectionSocket.close();
-            } catch (final Throwable ignore) {
-            }
-            running.set(false);
+            interrupt();
         }
     }
 
@@ -162,11 +163,11 @@ public class MyJDownloaderWaitingConnectionThread extends Thread {
     public void interrupt() {
         synchronized (connectionRequest) {
             running.set(false);
+            try {
+                connectionSocket.close();
+            } catch (final Throwable e) {
+            }
             connectionRequest.notifyAll();
-        }
-        try {
-            connectionSocket.close();
-        } catch (final Throwable ignore) {
         }
         super.interrupt();
     }

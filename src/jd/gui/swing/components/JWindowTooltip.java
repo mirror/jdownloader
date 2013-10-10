@@ -8,21 +8,21 @@ import java.awt.Toolkit;
 import javax.swing.BorderFactory;
 import javax.swing.JPanel;
 import javax.swing.JWindow;
-import javax.swing.SwingUtilities;
 
 import net.miginfocom.swing.MigLayout;
 
+import org.appwork.utils.NullsafeAtomicReference;
 import org.appwork.utils.swing.EDTHelper;
 import org.appwork.utils.swing.WindowManager;
 import org.appwork.utils.swing.WindowManager.FrameState;
 
 public abstract class JWindowTooltip extends JWindow {
 
-    private static final long serialVersionUID = -7191050140766206744L;
+    private static final long                 serialVersionUID = -7191050140766206744L;
 
-    private TooltipUpdater    updater;
+    protected NullsafeAtomicReference<Thread> updater          = new NullsafeAtomicReference<Thread>(null);
 
-    private Point             point;
+    private Point                             point;
 
     public JWindowTooltip() {
         JPanel panel = new JPanel(new MigLayout("ins 0", "[fill, grow]", "[fill, grow]"));
@@ -32,7 +32,7 @@ public abstract class JWindowTooltip extends JWindow {
 
         addContent(panel);
 
-        WindowManager.getInstance().setVisible(this, false,FrameState.OS_DEFAULT);
+        WindowManager.getInstance().setVisible(this, false, FrameState.OS_DEFAULT);
         this.setAlwaysOnTop(true);
         this.add(panel);
         this.pack();
@@ -40,17 +40,20 @@ public abstract class JWindowTooltip extends JWindow {
 
     public void showTooltip(Point point) {
         this.point = point;
-        if (updater != null) updater.interrupt();
-        updater = new TooltipUpdater();
-        updater.start();
+        TooltipUpdater thread = new TooltipUpdater();
+        Thread oldThread = updater.getAndSet(thread);
+        if (oldThread != null) oldThread.interrupt();
+        thread.start();
     }
 
     public void hideTooltip() {
+        Thread thread = updater.getAndSet(null);
+        if (thread != null) thread.interrupt();
         new EDTHelper<Object>() {
 
             @Override
             public Object edtRun() {
-                if (isVisible()) WindowManager.getInstance().setVisible(JWindowTooltip.this, false,FrameState.OS_DEFAULT);
+                if (isVisible()) WindowManager.getInstance().setVisible(JWindowTooltip.this, false, FrameState.OS_DEFAULT);
                 return null;
             }
 
@@ -89,30 +92,23 @@ public abstract class JWindowTooltip extends JWindow {
     private class TooltipUpdater extends Thread implements Runnable {
 
         public void run() {
-            pack();
-            setLocation();
-            setVisible(true);
-            toFront();
-
-            while (isVisible()) {
-                SwingUtilities.invokeLater(new Runnable() {
-
-                    public void run() {
-                        updateContent();
-
-                        pack();
+            try {
+                pack();
+                setLocation();
+                setVisible(true);
+                toFront();
+                Thread thread = Thread.currentThread();
+                while (thread == updater.get()) {
+                    updateContent();
+                    try {
+                        Thread.sleep(1000);
+                    } catch (InterruptedException e) {
+                        return;
                     }
-
-                });
-
-                try {
-                    Thread.sleep(1000);
-                } catch (InterruptedException e) {
-                    interrupt();
                 }
+            } finally {
+                hideTooltip();
             }
-
-            hideTooltip();
         }
     }
 

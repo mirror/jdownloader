@@ -376,9 +376,9 @@ public class Rapidshare extends PluginForHost {
         link.setUrlDownload(this.getCorrectedURL(link.getDownloadURL()));
     }
 
-    private RAFDownload createHackedDownloadInterface(final Browser br, final DownloadLink downloadLink, final String url) throws IOException, PluginException, Exception {
+    private RAFDownload createHackedDownloadInterface(PluginForHost plugin, final Browser br, final DownloadLink downloadLink, final String url) throws IOException, PluginException, Exception {
         Request r = br.createRequest(url);
-        RAFDownload dl = this.createHackedDownloadInterface2(downloadLink, r);
+        RAFDownload dl = this.createHackedDownloadInterface2(plugin, downloadLink, r);
         try {
             dl.connect(br);
         } catch (final PluginException e) {
@@ -386,7 +386,7 @@ public class Rapidshare extends PluginForHost {
 
                 int maxRedirects = 10;
                 while (maxRedirects-- > 0) {
-                    dl = this.createHackedDownloadInterface2(downloadLink, r = br.createGetRequestRedirectedRequest(r));
+                    dl = this.createHackedDownloadInterface2(plugin, downloadLink, r = br.createGetRequestRedirectedRequest(r));
                     try {
                         dl.connect(br);
                         break;
@@ -398,15 +398,15 @@ public class Rapidshare extends PluginForHost {
 
             }
         }
-        if (downloadLink.getPlugin().getBrowser() == br) {
-            downloadLink.getPlugin().setDownloadInterface(dl);
+        if (plugin.getBrowser() == br) {
+            plugin.setDownloadInterface(dl);
         }
         return dl;
     }
 
-    private RAFDownload createHackedDownloadInterface2(final DownloadLink downloadLink, final Request request) throws IOException, PluginException {
+    private RAFDownload createHackedDownloadInterface2(PluginForHost plugin, final DownloadLink downloadLink, final Request request) throws IOException, PluginException {
         request.getHeaders().put("Accept-Encoding", "");
-        final RAFDownload dl = new RAFDownload(downloadLink.getPlugin(), downloadLink, request) {
+        final RAFDownload dl = new RAFDownload(plugin, downloadLink, request) {
 
             long lastWrite = -1;
 
@@ -466,7 +466,7 @@ public class Rapidshare extends PluginForHost {
             }
 
         };
-        downloadLink.getPlugin().setDownloadInterface(dl);
+        plugin.setDownloadInterface(dl);
         dl.setResume(true);
         dl.setChunkNum(1);
         return dl;
@@ -664,7 +664,7 @@ public class Rapidshare extends PluginForHost {
             // "Rapidshare disabled the ability to resume downloads that were stopped for free users and also limited the average download speed to 30 kb/s.\r\nBecause of the way they are doing this, it may look like the download is frozen!\r\n\r\nDon't worry - it's not. It's just waiting for the next piece of the file to be transferred.\r\n\r\nThe pauses in between are added by Rapidshare in order to make the overall average speed slower for free-users.");
             // }
             if (downloadLink.getDownloadSize() > 30 * 1024 * 1024 && oldStyle() && false) {
-                this.dl = this.createHackedDownloadInterface(this.br, downloadLink, directurl);
+                this.dl = this.createHackedDownloadInterface(this, this.br, downloadLink, directurl);
             } else {
                 this.dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, directurl, true, 1);
             }

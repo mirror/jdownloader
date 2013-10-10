@@ -6,14 +6,13 @@ import java.util.List;
 import jd.controlling.downloadcontroller.DownloadController;
 import jd.controlling.packagecontroller.AbstractPackageChildrenNodeFilter;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.FilePackage;
-import jd.plugins.LinkStatus;
 
 import org.appwork.utils.event.queue.QueueAction;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.downloads.table.DownloadsTableModel;
+import org.jdownloader.plugins.FinalLinkState;
 
 public class RemoveOfflineAction extends DeleteAppAction {
 
@@ -42,8 +41,8 @@ public class RemoveOfflineAction extends DeleteAppAction {
 
                     @Override
                     public boolean acceptNode(DownloadLink node) {
-                        if (node.getLinkStatus().hasStatus(LinkStatus.ERROR_FILE_NOT_FOUND)) return true;
-                        return node.getAvailableStatus() == AvailableStatus.FALSE;
+                        if (node.getFinalLinkState() == FinalLinkState.OFFLINE) return true;
+                        return false;
                     }
                 });
                 deleteLinksRequest(new SelectionInfo<FilePackage, DownloadLink>(null, nodesToDelete, null, null, e, DownloadsTableModel.getInstance().getTable()), _GUI._.RemoveOfflineAction_actionPerformed());

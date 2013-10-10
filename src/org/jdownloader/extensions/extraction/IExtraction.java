@@ -37,7 +37,7 @@ public abstract class IExtraction {
     protected ExtractionConfig     config;
     private Exception              exception;
     private ArchiveFile            lastAccessedArchiveFile;
-    private ExtractLogFileWriter        crashLog;
+    private ExtractLogFileWriter   crashLog;
 
     public void setLastAccessedArchiveFile(ArchiveFile lastAccessedArchiveFile) {
 
@@ -169,7 +169,7 @@ public abstract class IExtraction {
      * 
      * @return
      */
-    public abstract boolean isArchivSupported(ArchiveFactory factory);
+    public abstract boolean isArchivSupported(ArchiveFactory factory, boolean allowDeepInspection);
 
     //
     // /**

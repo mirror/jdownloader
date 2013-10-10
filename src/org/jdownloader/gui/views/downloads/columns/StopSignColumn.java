@@ -75,11 +75,6 @@ public class StopSignColumn extends ExtTextColumn<AbstractNode> {
         return 30;
     }
 
-    // @Override
-    // public int getMaxWidth() {
-    // return getDefaultWidth();
-    // }
-
     @Override
     public boolean isEnabled(AbstractNode obj) {
         return obj.isEnabled();

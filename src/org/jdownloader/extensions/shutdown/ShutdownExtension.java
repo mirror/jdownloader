@@ -93,6 +93,7 @@ public class ShutdownExtension extends AbstractExtension<ShutdownConfig, Shutdow
         case WINDOWS_XP:
         case WINDOWS_7:
         case WINDOWS_8:
+        case WINDOWS_SERVER_2012:
             /* modern windows versions */
         case WINDOWS_2000:
         case WINDOWS_NT:

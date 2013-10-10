@@ -1,6 +1,9 @@
 package org.jdownloader.controlling.hosterrule;
 
 import java.util.ArrayList;
+import java.util.List;
+
+import jd.plugins.Account;
 
 import org.appwork.storage.Storable;
 import org.jdownloader.controlling.hosterrule.AccountGroup.Rules;
@@ -48,13 +51,19 @@ public class AccountGroupStorable implements Storable {
         this.children = children;
     }
 
-    public AccountGroup restore(String hoster) {
-        ArrayList<AccountReference> childsP = new ArrayList<AccountReference>();
-        for (AccountReferenceStorable ars : children) {
-            childsP.add(ars.restore(hoster));
+    public AccountGroup restore(String hoster, List<Account> availableAccounts) {
+        if (availableAccounts != null) {
+            ArrayList<AccountReference> childsP = new ArrayList<AccountReference>(children.size());
+            for (AccountReferenceStorable ars : children) {
+                AccountReference child = ars.restore(hoster, availableAccounts);
+                if (child != null) childsP.add(child);
+            }
+            if (childsP.size() > 0) {
+                AccountGroup ret = new AccountGroup(childsP);
+                ret.setName(getName());
+                return ret;
+            }
         }
-        AccountGroup ret = new AccountGroup(childsP);
-        ret.setName(getName());
-        return ret;
+        return null;
     }
 }

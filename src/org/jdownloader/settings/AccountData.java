@@ -63,7 +63,7 @@ public class AccountData implements Storable {
 
     private boolean             concurrentUsePossible = true;
 
-    private long                id;
+    private long                id                    = -1;
 
     public long getId() {
         return id;

@@ -160,8 +160,8 @@ public class RealDebridCom extends PluginForHost {
                 if (dl.getConnection().isContentDisposition()) {
                     /* content disposition, lets download it */
                     RUNNING_DOWNLOADS.incrementAndGet();
-                    dl.startDownload();
-                    if (link.getLinkStatus().isFinished()) {
+                    boolean ret = dl.startDownload();
+                    if (ret && link.getLinkStatus().hasStatus(LinkStatus.FINISHED)) {
                         // download is 100%
                         break;
                     }

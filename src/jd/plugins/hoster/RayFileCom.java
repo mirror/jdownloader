@@ -95,7 +95,7 @@ public class RayFileCom extends PluginForHost {
 
         if (oldStyle()) {
             /* setup Range-Header for old 09581 stable */
-            dl = createHackedDownloadInterface(br, downloadLink, downloadUrl);
+            dl = createHackedDownloadInterface(this, br, downloadLink, downloadUrl);
         } else {
             dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadUrl, false, 1);
         }
@@ -122,9 +122,9 @@ public class RayFileCom extends PluginForHost {
         return false;
     }
 
-    private RAFDownload createHackedDownloadInterface(final Browser br, final DownloadLink downloadLink, final String url) throws IOException, PluginException, Exception {
+    private RAFDownload createHackedDownloadInterface(PluginForHost plugin, final Browser br, final DownloadLink downloadLink, final String url) throws IOException, PluginException, Exception {
         Request r = br.createRequest(url);
-        RAFDownload dl = this.createHackedDownloadInterface2(downloadLink, r);
+        RAFDownload dl = this.createHackedDownloadInterface2(plugin, downloadLink, r);
         try {
             dl.connect(br);
         } catch (final PluginException e) {
@@ -132,7 +132,7 @@ public class RayFileCom extends PluginForHost {
 
                 int maxRedirects = 10;
                 while (maxRedirects-- > 0) {
-                    dl = this.createHackedDownloadInterface2(downloadLink, r = br.createGetRequestRedirectedRequest(r));
+                    dl = this.createHackedDownloadInterface2(plugin, downloadLink, r = br.createGetRequestRedirectedRequest(r));
                     try {
                         dl.connect(br);
                         break;
@@ -144,15 +144,15 @@ public class RayFileCom extends PluginForHost {
 
             }
         }
-        if (downloadLink.getPlugin().getBrowser() == br) {
-            downloadLink.getPlugin().setDownloadInterface(dl);
+        if (plugin.getBrowser() == br) {
+            plugin.setDownloadInterface(dl);
         }
         return dl;
     }
 
-    private RAFDownload createHackedDownloadInterface2(final DownloadLink downloadLink, final Request request) throws IOException, PluginException {
+    private RAFDownload createHackedDownloadInterface2(PluginForHost plugin, final DownloadLink downloadLink, final Request request) throws IOException, PluginException {
         request.getHeaders().put("Range", "bytes=" + (0) + "-");
-        final RAFDownload dl = new RAFDownload(downloadLink.getPlugin(), downloadLink, request) {
+        final RAFDownload dl = new RAFDownload(plugin, downloadLink, request) {
 
             private boolean connected;
 
@@ -183,7 +183,7 @@ public class RayFileCom extends PluginForHost {
 
         };
 
-        downloadLink.getPlugin().setDownloadInterface(dl);
+        plugin.setDownloadInterface(dl);
         dl.setResume(false);
         dl.setChunkNum(1);
         return dl;

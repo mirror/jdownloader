@@ -44,13 +44,13 @@ import jd.controlling.linkcrawler.LinkCrawler;
 import jd.controlling.linkcrawler.LinkCrawlerEvent;
 import jd.controlling.linkcrawler.LinkCrawlerListener;
 import jd.controlling.reconnect.Reconnecter;
+import jd.controlling.reconnect.ReconnecterEvent;
+import jd.controlling.reconnect.ReconnecterListener;
 import jd.gui.swing.jdgui.components.premiumbar.ServicePanel;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import net.miginfocom.swing.MigLayout;
 
-import org.appwork.controlling.StateEvent;
-import org.appwork.controlling.StateEventListener;
 import org.appwork.exceptions.WTFException;
 import org.appwork.scheduler.DelayedRunnable;
 import org.appwork.swing.components.tooltips.ToolTipController;
@@ -61,7 +61,6 @@ import org.jdownloader.actions.AppAction;
 import org.jdownloader.controlling.DownloadLinkWalker;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
-import org.jdownloader.plugins.SkipReason;
 import org.jdownloader.updatev2.gui.LAFOptions;
 
 public class StatusBarImpl extends JPanel implements DownloadWatchdogListener {
@@ -110,26 +109,29 @@ public class StatusBarImpl extends JPanel implements DownloadWatchdogListener {
         SecondLevelLaunch.GUI_COMPLETE.executeWhenReached(new Runnable() {
 
             public void run() {
-                Reconnecter.getInstance().getStateMachine().addListener(new StateEventListener() {
+                Reconnecter.getInstance().getEventSender().addListener(new ReconnecterListener() {
 
-                    public void onStateChange(StateEvent event) {
-                        boolean r = false;
-                        if (event.getNewState() == Reconnecter.RECONNECT_RUNNING) {
-                            r = true;
-                        }
-                        final boolean running = r;
+                    @Override
+                    public void onBeforeReconnect(ReconnecterEvent event) {
                         new EDTRunner() {
                             @Override
                             protected void runInEDT() {
-                                reconnectIndicator.setEnabled(running);
-                                reconnectIndicator.setIndeterminate(running);
+                                reconnectIndicator.setEnabled(true);
+                                reconnectIndicator.setIndeterminate(true);
                             }
                         };
                     }
 
-                    public void onStateUpdate(StateEvent event) {
+                    @Override
+                    public void onAfterReconnect(ReconnecterEvent event) {
+                        new EDTRunner() {
+                            @Override
+                            protected void runInEDT() {
+                                reconnectIndicator.setEnabled(false);
+                                reconnectIndicator.setIndeterminate(false);
+                            }
+                        };
                     }
-
                 });
             }
 
@@ -290,12 +292,10 @@ public class StatusBarImpl extends JPanel implements DownloadWatchdogListener {
 
     public void remove(Component comp) {
         throw new WTFException("Use #removeProcessIndicator");
-
     }
 
     public void add(Component comp, Object constraints) {
         throw new WTFException("Use #addProcessIndicator");
-
     }
 
     public Component add(Component comp) {
@@ -342,7 +342,7 @@ public class StatusBarImpl extends JPanel implements DownloadWatchdogListener {
 
                                     @Override
                                     public void handle(DownloadLink link) {
-                                        if (link.getSkipReason() != SkipReason.PLUGIN_DEFECT) link.setSkipReason(null);
+                                        link.setSkipReason(null);
                                     }
 
                                     @Override

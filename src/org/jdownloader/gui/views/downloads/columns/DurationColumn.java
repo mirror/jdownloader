@@ -4,6 +4,8 @@ import javax.swing.SwingConstants;
 
 import jd.controlling.packagecontroller.AbstractNode;
 import jd.plugins.DownloadLink;
+import jd.plugins.PluginProgress;
+import jd.plugins.download.DownloadPluginProgress;
 
 import org.appwork.swing.exttable.columns.ExtTextColumn;
 import org.appwork.utils.formatter.TimeFormatter;
@@ -40,6 +42,10 @@ public class DurationColumn extends ExtTextColumn<AbstractNode> {
     public String getStringValue(AbstractNode value) {
         if (value instanceof DownloadLink) {
             long time = ((DownloadLink) value).getDownloadTime();
+            PluginProgress progress = ((DownloadLink) value).getPluginProgress();
+            if (progress instanceof DownloadPluginProgress) {
+                time = time + ((DownloadPluginProgress) progress).getDuration();
+            }
             if (time > 0) { return TimeFormatter.formatMilliSeconds(time, 0); }
         }
         return null;

@@ -16,49 +16,51 @@ import javax.swing.JPopupMenu;
 import javax.swing.JWindow;
 import javax.swing.SwingUtilities;
 
-import jd.controlling.downloadcontroller.DownloadInformations;
+import jd.controlling.downloadcontroller.DownloadController;
 import jd.gui.swing.jdgui.GUIUtils;
 import jd.gui.swing.jdgui.components.JDProgressBar;
 import jd.gui.swing.jdgui.components.speedmeter.SpeedMeterPanel;
 import jd.nutils.Formatter;
+import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
 import net.miginfocom.swing.MigLayout;
 
 import org.appwork.storage.config.JsonConfig;
+import org.appwork.utils.NullsafeAtomicReference;
 import org.appwork.utils.swing.EDTHelper;
+import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.WindowManager;
 import org.appwork.utils.swing.WindowManager.FrameState;
+import org.jdownloader.controlling.DownloadLinkAggregator;
 import org.jdownloader.extensions.infobar.translate.T;
+import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings;
 
 public class InfoDialog extends JWindow implements ActionListener, MouseListener, MouseMotionListener {
 
-    private static final long          serialVersionUID = 4715904261105562064L;
+    private static final long               serialVersionUID = 4715904261105562064L;
 
-    private static final int           DOCKING_DISTANCE = 25;
+    private static final int                DOCKING_DISTANCE = 25;
 
-    private final DownloadInformations ds;
+    private final DragDropHandler           ddh;
+    private boolean                         enableDocking;
 
-    private final DragDropHandler      ddh;
-    private boolean                    enableDocking;
+    private NullsafeAtomicReference<Thread> updater          = new NullsafeAtomicReference<Thread>(null);
+    private Point                           point;
 
-    private InfoUpdater                updater          = null;
-    private Point                      point;
+    private JDProgressBar                   prgTotal;
+    private JLabel                          lblProgress;
+    private JLabel                          lblETA;
+    private JLabel                          lblHelp;
 
-    private JDProgressBar              prgTotal;
-    private JLabel                     lblProgress;
-    private JLabel                     lblETA;
-    private JLabel                     lblHelp;
+    private SpeedMeterPanel                 speedmeter;
 
-    private SpeedMeterPanel            speedmeter;
-
-    private InfoBarExtension           extension;
+    private InfoBarExtension                extension;
 
     public InfoDialog(InfoBarExtension infoBarExtension) {
         super();
         extension = infoBarExtension;
-        this.ds = DownloadInformations.getInstance();
-
         this.ddh = new DragDropHandler();
 
         this.setName("INFODIALOG");
@@ -115,17 +117,18 @@ public class InfoDialog extends JWindow implements ActionListener, MouseListener
 
     public void showDialog() {
         if (isVisible()) return;
-
-        if (updater != null) updater.interrupt();
-        updater = new InfoUpdater();
-        updater.start();
-        WindowManager.getInstance().setVisible(this, true,FrameState.OS_DEFAULT);
+        InfoUpdater thread = new InfoUpdater();
+        Thread oldThread = updater.getAndSet(thread);
+        if (oldThread != null) oldThread.interrupt();
+        thread.start();
+        WindowManager.getInstance().setVisible(this, true, FrameState.OS_DEFAULT);
 
     }
 
     public void hideDialog() {
+        Thread thread = updater.getAndSet(null);
+        if (thread != null) thread.interrupt();
         if (!isVisible()) return;
-
         GUIUtils.saveLastLocation(this);
         dispose();
     }
@@ -151,37 +154,33 @@ public class InfoDialog extends JWindow implements ActionListener, MouseListener
         }.start();
     }
 
-    private void updateInfos() {
-        ds.updateInformations();
-
-        lblProgress.setText(Formatter.formatFilesize(ds.getCurrentDownloadSize(), 0) + " / " + Formatter.formatFilesize(ds.getTotalDownloadSize(), 0));
-        lblETA.setText(Formatter.formatSeconds(ds.getETA()));
-
-        long totalDl = ds.getTotalDownloadSize();
-        long curDl = ds.getCurrentDownloadSize();
-        prgTotal.setString(ds.getPercent() + "%");
-        prgTotal.setMaximum(totalDl);
-        prgTotal.setValue(curDl);
-    }
-
     private final class InfoUpdater extends Thread implements Runnable {
 
         @Override
         public void run() {
-            while (isVisible()) {
-                SwingUtilities.invokeLater(new Runnable() {
+            final Thread thread = Thread.currentThread();
+            while (thread == updater.get()) {
+                final DownloadLinkAggregator dla = new DownloadLinkAggregator(new SelectionInfo<FilePackage, DownloadLink>(null, DownloadController.getInstance().getAllChildren(), null, null, null, null));
+                new EDTRunner() {
 
-                    public void run() {
-                        updateInfos();
+                    @Override
+                    protected void runInEDT() {
+                        if (isVisible()) {
+                            long totalDl = dla.getTotalBytes();
+                            long curDl = dla.getBytesLoaded();
+                            lblProgress.setText(Formatter.formatFilesize(curDl, 0) + " / " + Formatter.formatFilesize(totalDl, 0));
+                            lblETA.setText(Formatter.formatSeconds(dla.getEta()));
+                            prgTotal.setMaximum(totalDl);
+                            prgTotal.setValue(curDl);
+                        } else {
+                            updater.compareAndSet(thread, null);
+                        }
                     }
-
-                });
-
+                }.waitForEDT();
                 try {
                     Thread.sleep(1000);
                 } catch (InterruptedException e) {
-                    e.printStackTrace();
-                    interrupt();
+                    return;
                 }
             }
         }

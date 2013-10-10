@@ -71,7 +71,7 @@ public class LinkCrawler {
     private LinkCrawlerFilter              filter                      = null;
     private volatile boolean               allowCrawling               = true;
     private AtomicInteger                  crawlerGeneration           = new AtomicInteger(0);
-    private LinkCrawler                    parentCrawler               = null;
+    private final LinkCrawler              parentCrawler;
     private final long                     created;
 
     public static final String             PACKAGE_ALLOW_MERGE         = "ALLOW_MERGE";
@@ -167,6 +167,7 @@ public class LinkCrawler {
             parentCrawler = thread.getCurrentLinkCrawler();
             classLoader = parentCrawler.getPluginClassLoaderChild();
         } else {
+            parentCrawler = null;
             classLoader = PluginClassLoader.getInstance().getChild();
         }
         pHosts = new ArrayList<LazyHostPlugin>(HostPluginController.getInstance().list());
@@ -202,8 +203,7 @@ public class LinkCrawler {
     /**
      * returns the generation of this LinkCrawler if thisGeneration is true.
      * 
-     * if a parent LinkCrawler does exist and thisGeneration is false, we return the older generation of the parent LinkCrawler or this
-     * child
+     * if a parent LinkCrawler does exist and thisGeneration is false, we return the older generation of the parent LinkCrawler or this child
      * 
      * @param thisGeneration
      * @return
@@ -225,21 +225,33 @@ public class LinkCrawler {
     private HashSet<String> hostPluginBlacklist;
 
     public void setCrawlerPluginBlacklist(String[] list) {
-        this.crawlerPluginBlacklist = new HashSet<String>();
+        HashSet<String> lcrawlerPluginBlacklist = new HashSet<String>();
         if (list != null) {
             for (String s : list) {
-                crawlerPluginBlacklist.add(s);
+                lcrawlerPluginBlacklist.add(s);
             }
         }
+        this.crawlerPluginBlacklist = lcrawlerPluginBlacklist;
+    }
+
+    public boolean isBlacklisted(LazyCrawlerPlugin plugin) {
+        if (parentCrawler != null) return parentCrawler.isBlacklisted(plugin);
+        return crawlerPluginBlacklist.contains(plugin.getDisplayName());
+    }
+
+    public boolean isBlacklisted(LazyHostPlugin plugin) {
+        if (parentCrawler != null) return parentCrawler.isBlacklisted(plugin);
+        return hostPluginBlacklist.contains(plugin.getDisplayName());
     }
 
     public void setHostPluginBlacklist(String[] list) {
-        this.hostPluginBlacklist = new HashSet<String>();
+        HashSet<String> lhostPluginBlacklist = new HashSet<String>();
         if (list != null) {
             for (String s : list) {
-                hostPluginBlacklist.add(s);
+                lhostPluginBlacklist.add(s);
             }
         }
+        this.hostPluginBlacklist = lhostPluginBlacklist;
     }
 
     public void crawl(final String text, final String url, final boolean allowDeep) {
@@ -286,8 +298,8 @@ public class LinkCrawler {
             if (possibleCryptedLinks == null || possibleCryptedLinks.size() == 0) return;
             if (insideCrawlerPlugin()) {
                 /*
-                 * direct decrypt this link because we are already inside a LinkCrawlerThread and this avoids deadlocks on plugin waiting
-                 * for linkcrawler results
+                 * direct decrypt this link because we are already inside a LinkCrawlerThread and this avoids deadlocks on plugin waiting for linkcrawler
+                 * results
                  */
                 distribute(possibleCryptedLinks);
                 return;
@@ -438,10 +450,7 @@ public class LinkCrawler {
                     br.setLoadLimit(limit);
                     br.followConnection();
                     // We need browser currentURL and not sourceURL, because of possible redirects will change domain and or relative path.
-                    String baseUrl = new Regex(br.getURL(), "(https?://.+)(/|$)").getMatch(0);
-                    if (baseUrl != null && !baseUrl.endsWith("/")) {
-                        baseUrl = baseUrl + "/";
-                    }
+                    String baseUrl = new Regex(br.getURL(), "(https?://.*?)(\\?|$)").getMatch(0);
                     final String finalBaseUrl = baseUrl;
                     final String browserContent = br.toString();
                     possibleCryptedLinks = _crawl(url, null, false);
@@ -521,8 +530,8 @@ public class LinkCrawler {
                                     if (allPossibleCryptedLinks != null) {
                                         if (insideCrawlerPlugin()) {
                                             /*
-                                             * direct decrypt this link because we are already inside a LinkCrawlerThread and this avoids
-                                             * deadlocks on plugin waiting for linkcrawler results
+                                             * direct decrypt this link because we are already inside a LinkCrawlerThread and this avoids deadlocks on plugin
+                                             * waiting for linkcrawler results
                                              */
                                             for (final CrawledLink decryptThis : allPossibleCryptedLinks) {
                                                 if (generation != this.getCrawlerGeneration(false)) {
@@ -558,15 +567,15 @@ public class LinkCrawler {
                          */
                         for (final LazyCrawlerPlugin pDecrypt : CrawlerPluginController.getInstance().list()) {
 
-                            if (crawlerPluginBlacklist != null && crawlerPluginBlacklist.contains(pDecrypt.getDisplayName())) continue;
+                            if (isBlacklisted(pDecrypt)) continue;
                             if (pDecrypt.canHandle(url)) {
                                 try {
                                     final java.util.List<CrawledLink> allPossibleCryptedLinks = getCrawlableLinks(pDecrypt.getPattern(), possibleCryptedLink, null);
                                     if (allPossibleCryptedLinks != null) {
                                         if (insideCrawlerPlugin()) {
                                             /*
-                                             * direct decrypt this link because we are already inside a LinkCrawlerThread and this avoids
-                                             * deadlocks on plugin waiting for linkcrawler results
+                                             * direct decrypt this link because we are already inside a LinkCrawlerThread and this avoids deadlocks on plugin
+                                             * waiting for linkcrawler results
                                              */
                                             for (final CrawledLink decryptThis : allPossibleCryptedLinks) {
                                                 if (generation != this.getCrawlerGeneration(false)) {
@@ -614,7 +623,7 @@ public class LinkCrawler {
                     }
                     /* now we will walk through all available hoster plugins */
                     for (final LazyHostPlugin pHost : pHosts) {
-                        if (hostPluginBlacklist != null && hostPluginBlacklist.contains(pHost.getDisplayName())) continue;
+                        if (isBlacklisted(pHost)) continue;
                         if (!isDirectHttpEnabled() && (pHost.getDisplayName().equals(DIRECT_HTTP) || pHost.getDisplayName().equals(HTTP_LINKS))) {
                             continue;
                         }
@@ -645,8 +654,7 @@ public class LinkCrawler {
                     }
                     if (unnknownHandler != null) {
                         /*
-                         * CrawledLink is unhandled till now , but has an UnknownHandler set, lets call it, maybe it makes the Link handable
-                         * by a Plugin
+                         * CrawledLink is unhandled till now , but has an UnknownHandler set, lets call it, maybe it makes the Link handable by a Plugin
                          */
                         try {
                             unnknownHandler.unhandledCrawledLink(possibleCryptedLink, this);
@@ -658,7 +666,7 @@ public class LinkCrawler {
                     }
                     /* now we will check for normal http links */
 
-                    if (directHTTP != null && isDirectHttpEnabled() && !(hostPluginBlacklist != null && hostPluginBlacklist.contains(directHTTP.getDisplayName()))) {
+                    if (directHTTP != null && isDirectHttpEnabled() && !isBlacklisted(directHTTP)) {
                         url = url.replaceFirst("http://", "httpviajd://");
                         url = url.replaceFirst("https://", "httpsviajd://");
                         /* create new CrawledLink that holds the modified CrawledLink */

@@ -633,7 +633,7 @@ public class Oceanus extends PluginForHost {
         public void setDownloadLink(DownloadLink downloadLink) {
             this.downloadLink = downloadLink;
             this.manager = new ManagedThrottledConnectionHandler(this.downloadLink);
-            downloadLink.setDownloadInstance(this);
+            downloadLink.getDownloadLinkController().setDownloadInstance(this);
         }
 
         public void setOceanus(Oceanus oceanus) {
@@ -651,7 +651,6 @@ public class Oceanus extends PluginForHost {
             File outputCompleteFile = null;
             File partCompleteFile = null;
             try {
-                downloadLink.getLinkStatus().addStatus(LinkStatus.DOWNLOADINTERFACE_IN_PROGRESS);
                 try {
                     downloadLink.getDownloadLinkController().getConnectionHandler().addConnectionHandler(this.getManagedConnetionHandler());
                 } catch (final Throwable e) {
@@ -755,7 +754,6 @@ public class Oceanus extends PluginForHost {
                     downloadLink.getDownloadLinkController().getConnectionHandler().removeConnectionHandler(this.getManagedConnetionHandler());
                 } catch (final Throwable e) {
                 }
-                downloadLink.getLinkStatus().removeStatus(LinkStatus.DOWNLOADINTERFACE_IN_PROGRESS);
             }
         }
 

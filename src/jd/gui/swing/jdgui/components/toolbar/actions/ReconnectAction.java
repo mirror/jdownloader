@@ -3,8 +3,9 @@ package jd.gui.swing.jdgui.components.toolbar.actions;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
 
+import jd.controlling.downloadcontroller.DownloadWatchDog;
 import jd.controlling.reconnect.ReconnectException;
-import jd.controlling.reconnect.Reconnecter;
+import jd.controlling.reconnect.Reconnecter.ReconnectResult;
 import jd.gui.swing.jdgui.views.settings.panels.reconnect.ReconnectDialog;
 
 import org.appwork.uio.UIOManager;
@@ -33,7 +34,7 @@ public class ReconnectAction extends ToolBarAction {
             try {
                 Dialog.getInstance().showDialog(new ReconnectDialog() {
                     protected boolean startReconnectAndWait(LogSource logger) throws ReconnectException, InterruptedException {
-                        return Reconnecter.getInstance().forceReconnect();
+                        return DownloadWatchDog.getInstance().requestReconnect(true) == ReconnectResult.SUCCESSFUL;
                     }
                 });
             } catch (DialogClosedException e1) {

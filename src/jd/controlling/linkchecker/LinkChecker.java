@@ -2,6 +2,7 @@ package jd.controlling.linkchecker;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map.Entry;
@@ -225,121 +226,144 @@ public class LinkChecker<E extends CheckableLink> {
                     int stopDelay = 1;
                     PluginForHost plg = null;
                     LogSource logger = null;
-                    while (true) {
-                        /*
-                         * arraylist to hold the current checkable links
-                         */
-                        java.util.List<InternCheckableLink> roundComplete = new ArrayList<InternCheckableLink>();
-                        try {
-                            synchronized (LOCK) {
-                                java.util.List<LinkChecker<? extends CheckableLink>> map = LINKCHECKER.get(threadHost);
-                                if (map != null) {
-                                    for (LinkChecker<? extends CheckableLink> lc : map) {
-                                        synchronized (lc) {
-                                            LinkedList<InternCheckableLink> map2 = lc.links2Check.get(threadHost);
-                                            if (map2 != null) {
-                                                roundComplete.addAll(map2);
-                                                for (InternCheckableLink link : map2) {
-                                                    if (lc.isForceRecheck()) {
-                                                        /*
-                                                         * linkChecker instance is set to forceRecheck
-                                                         */
-                                                        link.getCheckableLink().getDownloadLink().setAvailableStatus(AvailableStatus.UNCHECKED);
+                    try {
+                        while (true) {
+                            /*
+                             * arraylist to hold the current checkable links
+                             */
+                            java.util.List<InternCheckableLink> roundComplete = new ArrayList<InternCheckableLink>();
+                            try {
+                                synchronized (LOCK) {
+                                    java.util.List<LinkChecker<? extends CheckableLink>> map = LINKCHECKER.get(threadHost);
+                                    if (map != null) {
+                                        for (LinkChecker<? extends CheckableLink> lc : map) {
+                                            synchronized (lc) {
+                                                LinkedList<InternCheckableLink> map2 = lc.links2Check.get(threadHost);
+                                                if (map2 != null) {
+                                                    roundComplete.addAll(map2);
+                                                    for (InternCheckableLink link : map2) {
+                                                        if (lc.isForceRecheck() && link.linkCheckAllowed()) {
+                                                            /*
+                                                             * linkChecker instance is set to forceRecheck
+                                                             */
+                                                            link.getCheckableLink().getDownloadLink().setAvailableStatus(AvailableStatus.UNCHECKED);
+                                                        }
                                                     }
+                                                    /*
+                                                     * just clear the map to allow fast adding of new links to the given linkChecker instance
+                                                     */
+                                                    map2.clear();
                                                 }
-                                                /*
-                                                 * just clear the map to allow fast adding of new links to the given linkChecker instance
-                                                 */
-                                                map2.clear();
+                                            }
+                                        }
+                                        /*
+                                         * remove threadHost from static list to remove unwanted references
+                                         */
+                                        LINKCHECKER.remove(threadHost);
+                                    }
+                                }
+                                /* add LinkStatus from roundComplete */
+                                for (InternCheckableLink link : roundComplete) {
+                                    link.getCheckableLink().getDownloadLink().setLinkStatus(new LinkStatus(link.getCheckableLink().getDownloadLink()));
+                                }
+                                int n = roundComplete.size();
+                                for (int i = 0; i < n; i += SPLITSIZE) {
+                                    List<InternCheckableLink> roundSplit = roundComplete.subList(i, Math.min(n, i + SPLITSIZE));
+                                    if (roundSplit.size() > 0) {
+                                        stopDelay = 1;
+                                        HashSet<DownloadLink> massLinkCheck = new HashSet<DownloadLink>();
+                                        for (InternCheckableLink link : roundSplit) {
+                                            if (link.linkCheckAllowed()) massLinkCheck.add(link.getCheckableLink().getDownloadLink());
+                                        }
+                                        /* now we check the links */
+                                        if (plg == null && massLinkCheck.size() > 0) {
+                                            /* create plugin if not done yet */
+                                            PluginClassLoaderChild cl;
+                                            Thread.currentThread().setContextClassLoader(cl = PluginClassLoader.getInstance().getChild());
+                                            DownloadLink first = massLinkCheck.iterator().next();
+                                            LazyHostPlugin lazyp = HostPluginController.getInstance().get(first.getDefaultPlugin().getHost());
+                                            plg = lazyp.newInstance(cl);
+                                            plg.setLogger(logger = LogController.getInstance().getLogger(plg));
+                                            logger.info("LinkChecker: " + threadHost);
+                                            logger.setAllowTimeoutFlush(false);
+                                            ((BrowserSettingsThread) Thread.currentThread()).setLogger(logger);
+                                            plg.setBrowser(new Browser());
+                                            plg.init();
+                                        }
+                                        boolean massCheck = false;
+                                        try {
+                                            /* try mass link check */
+                                            logger.clear();
+                                            plg.setBrowser(new Browser());
+                                            logger.info("Check Multiple FileInformation");
+                                            massCheck = plg.checkLinks(massLinkCheck.toArray(new DownloadLink[massLinkCheck.size()]));
+                                        } catch (final Throwable e) {
+                                            logger.log(e);
+                                            logger.flush();
+                                        } finally {
+                                            logger.clear();
+                                            massLinkCheck = null;
+                                            try {
+                                                plg.getBrowser().getHttpConnection().disconnect();
+                                            } catch (Throwable e) {
+                                            }
+                                        }
+                                        logger.info("Multiple FileInformation Available: " + massCheck);
+                                        if (massCheck == false) {
+                                            HashSet<DownloadLink> dupCheck = new HashSet<DownloadLink>();
+                                            for (InternCheckableLink link : roundSplit) {
+                                                if (link.linkCheckAllowed() && plg != null) {
+                                                    /*
+                                                     * this will check the link, if not already checked
+                                                     */
+                                                    if (dupCheck.add(link.getCheckableLink().getDownloadLink())) LinkChecker.updateAvailableStatus(plg, link.getCheckableLink().getDownloadLink(), logger);
+                                                }
+                                                link.getLinkChecker().linkChecked(link);
+                                            }
+                                        } else {
+                                            for (InternCheckableLink link : roundSplit) {
+                                                link.getLinkChecker().linkChecked(link);
                                             }
                                         }
                                     }
-                                    /*
-                                     * remove threadHost from static list to remove unwanted references
-                                     */
-                                    LINKCHECKER.remove(threadHost);
+                                }
+                            } catch (Throwable e) {
+                                LogController.CL().log(e);
+                            } finally {
+                                /* remove LinkStatus from roundComplete */
+                                for (InternCheckableLink link : roundComplete) {
+                                    link.getCheckableLink().getDownloadLink().setLinkStatus(null);
+                                }
+                                try {
+                                    logger.close();
+                                } catch (final Throwable e) {
                                 }
                             }
-                            int n = roundComplete.size();
-                            for (int i = 0; i < n; i += SPLITSIZE) {
-                                List<InternCheckableLink> roundSplit = roundComplete.subList(i, Math.min(n, i + SPLITSIZE));
-                                if (roundSplit.size() > 0) {
-                                    stopDelay = 1;
-                                    java.util.List<DownloadLink> massLinkCheck = new ArrayList<DownloadLink>(roundSplit.size());
-                                    for (InternCheckableLink link : roundSplit) {
-                                        if (link.linkCheckAllowed()) massLinkCheck.add(link.getCheckableLink().getDownloadLink());
-                                    }
-                                    /* now we check the links */
-                                    if (plg == null && massLinkCheck.size() > 0) {
-                                        /* create plugin if not done yet */
-                                        PluginClassLoaderChild cl;
-                                        Thread.currentThread().setContextClassLoader(cl = PluginClassLoader.getInstance().getChild());
-                                        LazyHostPlugin lazyp = HostPluginController.getInstance().get(massLinkCheck.get(0).getDefaultPlugin().getHost());
-                                        plg = lazyp.newInstance(cl);
-                                        plg.setLogger(logger = LogController.getInstance().getLogger(plg));
-                                        logger.info("LinkChecker: " + threadHost);
-                                        logger.setAllowTimeoutFlush(false);
-                                        ((BrowserSettingsThread) Thread.currentThread()).setLogger(logger);
-                                        plg.setBrowser(new Browser());
-                                        plg.init();
-                                    }
-                                    try {
-                                        /* try mass link check */
-                                        logger.clear();
-                                        plg.setBrowser(new Browser());
-                                        logger.info("Check Multiple FileInformation");
-                                        boolean massCheck = plg.checkLinks(massLinkCheck.toArray(new DownloadLink[massLinkCheck.size()]));
-                                        logger.info("Multiple FileInformation Available: " + massCheck);
-                                    } catch (final Throwable e) {
-                                        logger.log(e);
-                                        logger.flush();
-                                    } finally {
-                                        logger.clear();
-                                        massLinkCheck = null;
-                                        try {
-                                            plg.getBrowser().getHttpConnection().disconnect();
-                                        } catch (Throwable e) {
-                                        }
-                                    }
-                                    for (InternCheckableLink link : roundSplit) {
-                                        if (link.linkCheckAllowed() && plg != null) {
-                                            /*
-                                             * this will check the link, if not already checked
-                                             */
-                                            plg.setBrowser(new Browser());
-                                            LinkChecker.updateAvailableStatus(plg, link.getCheckableLink().getDownloadLink(), logger);
-                                        }
-                                        link.getLinkChecker().linkChecked(link);
-                                    }
-                                }
-                            }
-                        } catch (Throwable e) {
-                            LogController.CL().log(e);
-                        } finally {
                             try {
-                                logger.close();
-                            } catch (final Throwable e) {
-                            }
-                        }
-                        try {
-                            Thread.sleep(KEEP_ALIVE);
-                        } catch (InterruptedException e) {
-                            LogController.CL().log(e);
-                            synchronized (LOCK) {
-                                CHECK_THREADS.remove(threadHost);
-                                return;
-                            }
-                        }
-                        synchronized (LOCK) {
-                            java.util.List<LinkChecker<? extends CheckableLink>> stopCheck = LINKCHECKER.get(threadHost);
-                            if (stopCheck == null || stopCheck.size() == 0) {
-                                stopDelay--;
-                                if (stopDelay < 0) {
+                                Thread.sleep(KEEP_ALIVE);
+                            } catch (InterruptedException e) {
+                                LogController.CL().log(e);
+                                synchronized (LOCK) {
                                     CHECK_THREADS.remove(threadHost);
-                                    startNewThreads();
                                     return;
                                 }
                             }
+                            synchronized (LOCK) {
+                                java.util.List<LinkChecker<? extends CheckableLink>> stopCheck = LINKCHECKER.get(threadHost);
+                                if (stopCheck == null || stopCheck.size() == 0) {
+                                    stopDelay--;
+                                    if (stopDelay < 0) {
+                                        CHECK_THREADS.remove(threadHost);
+                                        startNewThreads();
+                                        return;
+                                    }
+                                }
+                            }
+                        }
+                    } finally {
+                        try {
+                            plg.clean();
+                        } catch (final Throwable e) {
                         }
                     }
                 }
@@ -367,12 +391,36 @@ public class LinkChecker<E extends CheckableLink> {
     /* start new linkCheckThreads until max is reached or no left to start */
     private static void startNewThreads() {
         synchronized (LOCK) {
+            Set<String> removeHosts = new HashSet<String>();
             Set<Entry<String, java.util.List<LinkChecker<? extends CheckableLink>>>> sets = LINKCHECKER.entrySet();
             for (Entry<String, java.util.List<LinkChecker<? extends CheckableLink>>> set : sets) {
                 String host = set.getKey();
                 Thread thread = CHECK_THREADS.get(host);
                 if (thread == null || !thread.isAlive()) {
-                    CHECK_THREADS.remove(host);
+                    java.util.List<LinkChecker<? extends CheckableLink>> map = set.getValue();
+                    /* avoid starting a linkCheckerThread when no there are no more link to check */
+                    boolean remove = true;
+                    if (map != null) {
+                        for (LinkChecker<? extends CheckableLink> lc : map) {
+                            if (remove == false) break;
+                            synchronized (lc) {
+                                LinkedList<InternCheckableLink> map2 = lc.links2Check.get(host);
+                                if (map2 != null) {
+                                    for (InternCheckableLink link : map2) {
+                                        if (link.linkCheckAllowed()) {
+                                            remove = false;
+                                            break;
+                                        }
+                                    }
+                                }
+                                if (remove) map2.clear();
+                            }
+                        }
+                    }
+                    if (remove) {
+                        removeHosts.add(host);
+                        continue;
+                    }
                     if (CHECK_THREADS.size() < MAX_THREADS) {
                         startNewThread(host);
                     } else {
@@ -380,31 +428,35 @@ public class LinkChecker<E extends CheckableLink> {
                     }
                 }
             }
+            for (String host : removeHosts) {
+                LINKCHECKER.remove(host);
+            }
         }
     }
 
     private static void updateAvailableStatus(PluginForHost plgToUse, DownloadLink link, LogSource logger) {
         if (link.getAvailableStatus() != AvailableStatus.UNCHECKED) {
-            logger.info("Link " + link.getDownloadURL() + " is " + link.getAvailableStatus());
+            logger.info("Link " + link.getDownloadURL() + " is(already) " + link.getAvailableStatus());
             logger.clear();
             return;
         }
         AvailableStatus availableStatus = null;
         try {
+            plgToUse.setBrowser(new Browser());
             logger.clear();
             plgToUse.reset();
             logger.info("Check FileInformation: " + link.getDownloadURL());
             availableStatus = plgToUse.requestFileInformation(link);
         } catch (PluginException e) {
             logger.log(e);
-            e.fillLinkStatus(link.getLinkStatus());
-            if (!link.getLinkStatus().hasStatus(LinkStatus.ERROR_FILE_NOT_FOUND) && link.getLinkStatus().hasStatus(LinkStatus.ERROR_PLUGIN_DEFECT) || link.getLinkStatus().hasStatus(LinkStatus.ERROR_PREMIUM) || link.getLinkStatus().hasStatus(LinkStatus.ERROR_IP_BLOCKED) || link.getLinkStatus().hasStatus(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE) || link.getLinkStatus().hasStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE)) {
-                availableStatus = AvailableStatus.UNCHECKABLE;
-            } else {
+            switch (e.getLinkStatus()) {
+            case LinkStatus.ERROR_FILE_NOT_FOUND:
                 availableStatus = AvailableStatus.FALSE;
-            }
-            if (link.getLinkStatus().hasStatus(LinkStatus.ERROR_PLUGIN_DEFECT)) {
+                break;
+            default:
+                availableStatus = AvailableStatus.UNCHECKABLE;
                 plgToUse.errLog(e, plgToUse.getBrowser(), link);
+                break;
             }
         } catch (Throwable e) {
             plgToUse.errLog(e, plgToUse.getBrowser(), link);
@@ -422,8 +474,6 @@ public class LinkChecker<E extends CheckableLink> {
                 logger.flush();
                 break;
             case TRUE:
-                link.getLinkStatus().removeStatus(LinkStatus.ERROR_PLUGIN_DEFECT);
-                link.getLinkStatus().removeStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
             case FALSE:
             default:
                 logger.clear();
@@ -433,7 +483,7 @@ public class LinkChecker<E extends CheckableLink> {
                 plgToUse.getBrowser().getHttpConnection().disconnect();
             } catch (Throwable e) {
             }
+            link.setAvailableStatus(availableStatus);
         }
-        link.setAvailableStatus(availableStatus);
     }
 }

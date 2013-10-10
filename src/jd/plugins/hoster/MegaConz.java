@@ -129,7 +129,7 @@ public class MegaConz extends PluginForHost {
         }
         if (oldStyle()) {
             /* old 09581 stable only */
-            dl = createHackedDownloadInterface(br, link, downloadURL);
+            dl = createHackedDownloadInterface(this, br, link, downloadURL);
         } else {
             /* mega does not like much connections! */
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, downloadURL, true, -10);
@@ -139,7 +139,7 @@ public class MegaConz extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         if (dl.startDownload()) {
-            if (link.getLinkStatus().isFinished() && link.getDownloadCurrent() > 0) {
+            if (link.getLinkStatus().hasStatus(LinkStatus.FINISHED) && link.getDownloadCurrent() > 0) {
                 decrypt(link, keyString);
             }
         }
@@ -186,18 +186,18 @@ public class MegaConz extends PluginForHost {
         return false;
     }
 
-    private RAFDownload createHackedDownloadInterface2(final DownloadLink downloadLink, final Request request) throws IOException, PluginException {
-        final RAFDownload dl = new RAFDownload(downloadLink.getPlugin(), downloadLink, request);
-        downloadLink.getPlugin().setDownloadInterface(dl);
+    private RAFDownload createHackedDownloadInterface2(final PluginForHost plugin, final DownloadLink downloadLink, final Request request) throws IOException, PluginException {
+        final RAFDownload dl = new RAFDownload(plugin, downloadLink, request);
+        plugin.setDownloadInterface(dl);
         dl.setResume(true);
         dl.setChunkNum(1);
         return dl;
     }
 
     /* Workaround for Bug in old 09581 Downloadsystem bug */
-    private RAFDownload createHackedDownloadInterface(final Browser br, final DownloadLink downloadLink, final String url) throws IOException, PluginException, Exception {
+    private RAFDownload createHackedDownloadInterface(final PluginForHost plugin, final Browser br, final DownloadLink downloadLink, final String url) throws IOException, PluginException, Exception {
         Request r = br.createRequest(url);
-        RAFDownload dl = this.createHackedDownloadInterface2(downloadLink, r);
+        RAFDownload dl = this.createHackedDownloadInterface2(plugin, downloadLink, r);
         try {
             r.getHeaders().remove("Accept-Encoding");
             dl.connect(br);
@@ -206,7 +206,7 @@ public class MegaConz extends PluginForHost {
 
                 int maxRedirects = 10;
                 while (maxRedirects-- > 0) {
-                    dl = this.createHackedDownloadInterface2(downloadLink, r = br.createGetRequestRedirectedRequest(r));
+                    dl = this.createHackedDownloadInterface2(plugin, downloadLink, r = br.createGetRequestRedirectedRequest(r));
                     try {
                         r.getHeaders().remove("Accept-Encoding");
                         dl.connect(br);
@@ -219,8 +219,8 @@ public class MegaConz extends PluginForHost {
 
             }
         }
-        if (downloadLink.getPlugin().getBrowser() == br) {
-            downloadLink.getPlugin().setDownloadInterface(dl);
+        if (plugin.getBrowser() == br) {
+            plugin.setDownloadInterface(dl);
         }
         return dl;
     }
@@ -270,6 +270,11 @@ public class MegaConz extends PluginForHost {
                 long startTimeStamp = -1;
 
                 @Override
+                public String getMessage(Object requestor) {
+                    return "Decrypting";
+                }
+
+                @Override
                 public void updateValues(long current, long total) {
                     super.updateValues(current, total);
                     if (lastCurrent == -1 || lastCurrent > current) {
@@ -289,8 +294,6 @@ public class MegaConz extends PluginForHost {
             };
             progress.setProgressSource(this);
             progress.setIcon(NewTheme.I().getIcon("lock", 16));
-            link.getLinkStatus().setStatusText("Decrypting");
-            progress.setMessage("Decrypting");
             link.setPluginProgress(progress);
             fis = new FileInputStream(src);
             if (tmp != null) {

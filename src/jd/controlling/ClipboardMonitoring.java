@@ -9,6 +9,8 @@ import java.awt.datatransfer.Transferable;
 import java.awt.datatransfer.UnsupportedFlavorException;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Method;
 import java.net.URISyntaxException;
 import java.net.URL;
@@ -18,6 +20,7 @@ import java.util.StringTokenizer;
 import jd.controlling.linkcollector.LinkCollectingJob;
 import jd.controlling.linkcollector.LinkCollector;
 
+import org.appwork.utils.IO;
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging.Log;
@@ -214,7 +217,7 @@ public class ClipboardMonitoring {
         monitoringThread.start();
     }
 
-    public String getCurrentContent() {
+    public synchronized String getCurrentContent() {
         Transferable currentContent = null;
         try {
             currentContent = clipboard.getContents(null);
@@ -228,10 +231,16 @@ public class ClipboardMonitoring {
         } catch (final Throwable e) {
         }
         String htmlContent = null;
+        String browserUrl = null;
         try {
             /* lets fetch fresh HTML Content if available */
             htmlContent = getHTMLTransferData(currentContent);
+            if (htmlContent != null) browserUrl = getCurrentBrowserURL(currentContent);
+            if (browserUrl != null) {
+                htmlContent = "<base href=\"" + browserUrl + "\">\r\n" + htmlContent;
+            }
         } catch (final Throwable e) {
+            e.printStackTrace();
         }
         StringBuilder sb = new StringBuilder();
         if (stringContent != null) sb.append(stringContent);
@@ -314,15 +323,16 @@ public class ClipboardMonitoring {
 
     public static String getHTMLTransferData(final Transferable transferable) throws UnsupportedFlavorException, IOException {
         DataFlavor htmlFlavor = null;
+        final Class<?> preferClass = InputStream.class;
         /*
          * for our workaround for https://bugzilla.mozilla.org/show_bug.cgi?id=385421, it would be good if we have utf8 charset
          */
         for (final DataFlavor flav : transferable.getTransferDataFlavors()) {
-            if (flav.getMimeType().contains("html") && flav.getRepresentationClass().isAssignableFrom(byte[].class)) {
+            if (flav.getMimeType().contains("html") && flav.getRepresentationClass().isAssignableFrom(preferClass)) {
                 /*
                  * we use first hit and search UTF-8
                  */
-                if (htmlFlavor != null) {
+                if (htmlFlavor == null) {
                     htmlFlavor = flav;
                 }
                 final String charSet = new Regex(flav.toString(), "charset=(.*?)]").getMatch(0);
@@ -333,42 +343,37 @@ public class ClipboardMonitoring {
                 }
             }
         }
-        if (htmlFlavor != null) {
-            /* we found a flavor for html content, lets fetch its content */
-            final String charSet = new Regex(htmlFlavor.toString(), "charset=(.*?)]").getMatch(0);
-            byte[] htmlBytes = (byte[]) transferable.getTransferData(htmlFlavor);
-            if (htmlBytes == null || htmlBytes.length == 0) return null;
-            if (CrossSystem.isLinux()) {
-                /*
-                 * workaround for firefox bug https://bugzilla .mozilla.org/show_bug .cgi?id=385421
-                 */
-                /*
-                 * write check to skip broken first bytes and discard 0 bytes if they are in intervalls
-                 */
-                int indexOriginal = 0;
-                for (int i = 6; i < htmlBytes.length - 1; i++) {
-                    if (htmlBytes[i] != 0) {
-                        /* copy byte */
-                        htmlBytes[indexOriginal++] = htmlBytes[i];
-                    }
-                }
-                String ret = null;
-                if (charSet != null) {
-                    ret = new String(htmlBytes, 0, indexOriginal, charSet);
-                } else {
-                    ret = new String(htmlBytes, 0, indexOriginal, "UTF-8");
-                }
-                return ret;
-            } else {
-                /* no workaround needed */
-                if (charSet != null) {
-                    return new String(htmlBytes, charSet);
-                } else {
-                    return new String(htmlBytes, "UTF-8");
-                }
-            }
+        byte[] htmlDataBytes = getBytes(null, htmlFlavor, transferable);
+        if (htmlDataBytes != null && htmlDataBytes.length != 0) {
+            String charSet = new Regex(htmlFlavor.toString(), "charset=(.*?)]").getMatch(0);
+            return convertBytes(htmlDataBytes, charSet, true);
         }
         return null;
+    }
+
+    private static String convertBytes(byte[] bytes, String charSet, boolean linuxWorkaround) throws UnsupportedEncodingException {
+        if (bytes == null || bytes.length == 0) return null;
+        if (StringUtils.isEmpty(charSet)) charSet = "UTF-8";
+        if (CrossSystem.isLinux()) {
+            /*
+             * workaround for firefox bug https://bugzilla .mozilla.org/show_bug .cgi?id=385421
+             */
+            /*
+             * write check to skip broken first bytes and discard 0 bytes if they are in intervalls
+             */
+            int indexOriginal = 0;
+            int i = 0;
+            if (linuxWorkaround) i = 6;
+            for (; i < bytes.length - 1; i++) {
+                if (bytes[i] != 0) {
+                    /* copy byte */
+                    bytes[indexOriginal++] = bytes[i];
+                }
+            }
+            return new String(bytes, 0, indexOriginal, charSet);
+        } else {
+            return new String(bytes, charSet);
+        }
     }
 
     public static boolean hasSupportedTransferData(final Transferable transferable) {
@@ -481,48 +486,49 @@ public class ClipboardMonitoring {
         return INSTANCE;
     }
 
+    private static byte[] getBytes(String mimeType, DataFlavor flavor, final Transferable transferable) throws UnsupportedFlavorException, IOException {
+        if (mimeType == null && flavor == null) return null;
+        final Class<?> preferClass = byte[].class;
+        /*
+         * for our workaround for https://bugzilla.mozilla.org/show_bug.cgi?id=385421, it would be good if we have utf8 charset
+         */
+        if (flavor == null) {
+            for (final DataFlavor flav : transferable.getTransferDataFlavors()) {
+                if (flav.getMimeType().contains(mimeType) && flav.getRepresentationClass().isAssignableFrom(preferClass)) {
+                    flavor = flav;
+                    break;
+                }
+            }
+        }
+        if (flavor != null) {
+            byte[] htmlBytes = null;
+            /* this can throw exception on some java versions when content is >256kb */
+            if (flavor.getRepresentationClass().isAssignableFrom(byte[].class)) {
+                htmlBytes = (byte[]) transferable.getTransferData(flavor);
+            } else if (flavor.getRepresentationClass().isAssignableFrom(InputStream.class)) {
+                InputStream is = null;
+                try {
+                    is = (InputStream) transferable.getTransferData(flavor);
+                    htmlBytes = IO.readStream(-1, is);
+                } finally {
+                    try {
+                        is.close();
+                    } catch (final Throwable ignore) {
+                    }
+                }
+            }
+            return htmlBytes;
+        }
+        return null;
+    }
+
     public static String getCurrentBrowserURL(final Transferable transferable) throws UnsupportedFlavorException, IOException {
         String ret = null;
         if (clipboardHack != null) {
             ret = clipboardHack.getURLFromCF_HTML();
         }
         if (!StringUtils.isEmpty(ret)) return ret;
-        String charSet = null;
-        for (final DataFlavor flav : transferable.getTransferDataFlavors()) {
-            if (flav.getMimeType().contains("x-moz-url-priv") && flav.getRepresentationClass().isAssignableFrom(byte[].class)) {
-                byte[] xmozurlprivBytes = (byte[]) transferable.getTransferData(flav);
-                if (xmozurlprivBytes == null || xmozurlprivBytes.length == 0) return null;
-                if (CrossSystem.isLinux()) {
-                    /*
-                     * workaround for firefox bug https://bugzilla .mozilla.org/show_bug .cgi?id=385421
-                     */
-                    /*
-                     * discard 0 bytes if they are in intervalls
-                     */
-                    int indexOriginal = 0;
-                    for (int i = 0; i < xmozurlprivBytes.length - 1; i++) {
-                        if (xmozurlprivBytes[i] != 0) {
-                            /* copy byte */
-                            xmozurlprivBytes[indexOriginal++] = xmozurlprivBytes[i];
-                        }
-                    }
-
-                    if (charSet != null) {
-                        ret = new String(xmozurlprivBytes, 0, indexOriginal, charSet);
-                    } else {
-                        ret = new String(xmozurlprivBytes, 0, indexOriginal, "UTF-8");
-                    }
-                    break;
-                } else {
-                    /* no workaround needed */
-                    if (charSet != null) {
-                        ret = new String(xmozurlprivBytes, charSet);
-                    } else {
-                        ret = new String(xmozurlprivBytes, "UTF-8");
-                    }
-                }
-            }
-        }
-        return ret;
+        byte[] xmozurlprivBytes = getBytes("x-moz-url-priv", null, transferable);
+        return convertBytes(xmozurlprivBytes, "UTF-8", false);
     }
 }

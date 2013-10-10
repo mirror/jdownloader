@@ -44,6 +44,10 @@ public class ValidateArchiveAction<PackageType extends AbstractPackageNode<Child
         setEnabled(archives.size() > 0);
     }
 
+    public ExtractionExtension getExtractionExtension() {
+        return extractor;
+    }
+
     public ValidateArchiveAction(ExtractionExtension extractionExtension, SelectionInfo<PackageType, ChildrenType> si) {
         setName(T._.ValidateArchiveAction_ValidateArchiveAction_object_());
         setSmallIcon(new ImageIcon(ImageProvider.merge(NewTheme.I().getImage("archive", 18), NewTheme.I().getImage("ok", 11), -1, 0, 6, 8)));
@@ -89,10 +93,14 @@ public class ValidateArchiveAction<PackageType extends AbstractPackageNode<Child
         setEnabled(archives.size() > 0);
     }
 
+    public DummyArchive createDummyArchive(Archive a) throws CheckException {
+        return extractor.createDummyArchive(a);
+    }
+
     public void actionPerformed(ActionEvent e) {
         for (Archive archive : archives) {
             try {
-                DummyArchive da = archive.createDummyArchive();
+                DummyArchive da = createDummyArchive(archive);
 
                 DummyArchiveDialog d = new DummyArchiveDialog(da);
 

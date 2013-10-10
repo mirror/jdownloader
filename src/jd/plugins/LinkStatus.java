@@ -18,20 +18,9 @@ package jd.plugins;
 
 import java.io.Serializable;
 
-import javax.swing.ImageIcon;
-
-import jd.nutils.JDFlags;
-import jd.plugins.DownloadLink.AvailableStatus;
-
 import org.appwork.utils.formatter.StringFormatter;
-import org.jdownloader.translate._JDT;
 
 public class LinkStatus implements Serializable {
-
-    /**
-     * Controlling: Link is in queue and is waiting for beeing processed
-     */
-    public static final int TODO                                 = 1 << 0;
 
     /**
      * Controlling & Downloadinterface: Link has been downloaded
@@ -64,14 +53,9 @@ public class LinkStatus implements Serializable {
     public static final int ERROR_PREMIUM                        = 1 << 8;
 
     /**
-     * Downloadinterface: The download started, but has not been finished successfully
+     * this indicates an error during download and we should be able to resume/retry the download
      */
     public static final int ERROR_DOWNLOAD_INCOMPLETE            = 1 << 9;
-
-    /**
-     * Controlling: DownloadLink is in progress. Download or plugin is running
-     */
-    public static final int DOWNLOADINTERFACE_IN_PROGRESS        = 1 << 10;
 
     /**
      * Plugins:Download is not possible right now. May be back later. Maybe server problems or anything like this
@@ -84,12 +68,7 @@ public class LinkStatus implements Serializable {
     public static final int ERROR_HOSTER_TEMPORARILY_UNAVAILABLE = 1 << 12;
 
     /**
-     * Controlling & Downloadinterface: The destination file already exists on harddisk
-     */
-    public static final int ERROR_ALREADYEXISTS                  = 1 << 13;
-
-    /**
-     * Downloadinterface: The actual download failed. Example: Chunkerrors
+     * download failed in a way we cannot simply retry/restart it
      */
     public static final int ERROR_DOWNLOAD_FAILED                = 1 << 14;
 
@@ -99,28 +78,19 @@ public class LinkStatus implements Serializable {
     public static final int ERROR_FATAL                          = 1 << 17;
 
     /**
-     * DownloadINterface & Controlling a timeout occured
-     */
-    public static final int ERROR_TIMEOUT_REACHED                = 1 << 20;
-
-    /**
-     * Downloadinterface Local IO problem. we could not write to harddisk
-     */
-    public static final int ERROR_LOCAL_IO                       = 1 << 21;
-
-    /**
      * Plugin out of date. This flag says that the plugin noticed parsing problems and might be out of date.
      */
     public static final int ERROR_PLUGIN_DEFECT                  = 1 << 22;
 
     /**
-     * Error in post processing. for example downloading
+     * timeout reached during download
      */
-    public static final int ERROR_POST_PROCESS                   = 1 << 24;
+    public static final int VALUE_TIMEOUT_REACHED                = 1 << 1;
+
     /**
-     * Hash Check failed after download process
+     * local IO error, eg invalid rights, not existing folder...
      */
-    public static final int VALUE_FAILED_HASH                    = 1 << 27;
+    public static final int VALUE_LOCAL_IO_ERROR                 = 1 << 2;
 
     private void readObject(final java.io.ObjectInputStream stream) throws java.io.IOException, ClassNotFoundException {
         /* make sure we set transient variables here */
@@ -132,155 +102,23 @@ public class LinkStatus implements Serializable {
     private final DownloadLink downloadLink;
 
     private String             errorMessage;
-    private int                lastestStatus    = TODO;
-    private int                status           = TODO;
+
+    private int                status           = ERROR_RETRY;
     private String             statusText       = null;
     private long               value            = 0;
-    private long               waitUntil        = 0;
     private int                retryCount       = 0;
-
-    private ImageIcon          statusIcon;
 
     public LinkStatus(final DownloadLink downloadLink) {
         this.downloadLink = downloadLink;
-    }
-
-    /**
-     * Fügt einen LinkStatus.* Status hinzu.Der alte status wird dabei nicht gelöscht.
-     * 
-     * @param status
-     */
-    public void addStatus(final int status) {
-        if (lastestStatus == status) return;
-        this.status |= status;
-        if (JDFlags.hasSomeFlags(status, FINISHED, ERROR_ALREADYEXISTS)) {
-            if (downloadLink.getFinishedDate() == -1l) downloadLink.setFinishedDate(System.currentTimeMillis());
-        }
-        lastestStatus = status;
-    }
-
-    public String getMessage(boolean customizedMessageOnly) {
-        if (customizedMessageOnly) {
-            if (errorMessage != null) return errorMessage;
-            if (statusText != null) return statusText;
-            return null;
-        }
-        switch (lastestStatus) {
-        /* first we check for LinkStatus */
-        case LinkStatus.FINISHED:
-        case LinkStatus.TODO:
-            if (statusText != null) return statusText;
-            return null;
-        case LinkStatus.DOWNLOADINTERFACE_IN_PROGRESS:
-            return _JDT._.download_connection_normal();
-        case LinkStatus.ERROR_RETRY:
-            return _JDT._.downloadlink_status_error_retry();
-        case LinkStatus.ERROR_PLUGIN_DEFECT:
-            if (errorMessage != null) return errorMessage;
-            if (statusText != null) return statusText;
-            return _JDT._.downloadlink_status_error_defect();
-        case LinkStatus.ERROR_DOWNLOAD_INCOMPLETE:
-            return _JDT._.downloadlink_status_incomplete();
-        case LinkStatus.ERROR_ALREADYEXISTS:
-            return _JDT._.downloadlink_status_error_file_exists();
-        case LinkStatus.ERROR_CAPTCHA:
-            return _JDT._.downloadlink_status_error_captcha_wrong();
-        case LinkStatus.ERROR_DOWNLOAD_FAILED:
-            return _JDT._.downloadlink_status_error_downloadfailed();
-        case LinkStatus.ERROR_IP_BLOCKED:
-            return _JDT._.downloadlink_status_error_download_limit();
-        case LinkStatus.ERROR_FILE_NOT_FOUND:
-            return _JDT._.downloadlink_status_error_file_not_found();
-        case LinkStatus.ERROR_POST_PROCESS:
-            if (errorMessage != null) return errorMessage;
-            if (statusText != null) return statusText;
-            return _JDT._.downloadlink_status_error_post_process();
-        case LinkStatus.ERROR_TIMEOUT_REACHED:
-            return _JDT._.downloadlink_status_error_no_connection();
-        case LinkStatus.ERROR_PREMIUM:
-            if (errorMessage != null) return errorMessage;
-            return _JDT._.downloadlink_status_error_premium();
-        case LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE:
-            if (errorMessage != null) return errorMessage;
-            if (statusText != null) return statusText;
-            return _JDT._.downloadlink_status_error_temp_unavailable();
-        case LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE:
-            if (errorMessage != null) return errorMessage;
-            if (statusText != null) return statusText;
-            return _JDT._.downloadlink_status_error_hoster_temp_unavailable();
-        case LinkStatus.ERROR_FATAL:
-            if (errorMessage != null) return errorMessage;
-            if (statusText != null) return statusText;
-            return _JDT._.downloadlink_status_error_fatal();
-        }
-        if (downloadLink.getAvailableStatus() == AvailableStatus.FALSE) return _JDT._.gui_download_onlinecheckfailed();
-        return null;
-    }
-
-    public int getLatestStatus() {
-        return lastestStatus;
-    }
-
-    public void setLatestStatus(final int s) {
-        lastestStatus = s;
-    }
-
-    public long getRemainingWaittime() {
-        final long now = System.currentTimeMillis();
-        final long ab = waitUntil - now;
-        return Math.max(0l, ab);
     }
 
     public long getValue() {
         return value;
     }
 
-    private boolean hasOnlyStatus(final int statusCode) {
-        return (status & ~statusCode) == 0;
-    }
-
-    /**
-     * Gibt zurück ob der zugehörige Link einen bestimmten status hat.
-     * 
-     * @param status
-     * @return
-     */
+    @Deprecated
     public boolean hasStatus(final int status) {
         return (this.status & status) != 0;
-    }
-
-    public boolean isFailed() {
-        return downloadLink.getDownloadLinkController() == null && !hasOnlyStatus(FINISHED | ERROR_ALREADYEXISTS | ERROR_IP_BLOCKED | TODO | DOWNLOADINTERFACE_IN_PROGRESS);
-    }
-
-    public boolean isStatus(final int status) {
-        return this.status == status;
-    }
-
-    /** Entfernt eine Statusid */
-    public void removeStatus(final int status) {
-        int mask = 0xffffffff;
-        mask &= ~status;
-        this.status &= mask;
-    }
-
-    public void reset(boolean resetRetryCounter) {
-        setStatus(TODO);
-        setLatestStatus(TODO);
-        errorMessage = null;
-        statusText = null;
-        if (resetRetryCounter) retryCount = 0;
-        value = 0;
-        resetWaitTime();
-
-    }
-
-    public void reset() {
-        reset(true);
-    }
-
-    public void resetWaitTime() {
-        waitUntil = 0;
     }
 
     public void setErrorMessage(final String string) {
@@ -298,32 +136,13 @@ public class LinkStatus implements Serializable {
      * @param status
      */
     public void setStatus(final int status) {
-        if (status == FINISHED) {
-            resetWaitTime();
-        }
         this.status = status;
-        if (JDFlags.hasSomeFlags(status, FINISHED, ERROR_ALREADYEXISTS)) {
-            if (downloadLink.getFinishedDate() == -1l) downloadLink.setFinishedDate(System.currentTimeMillis());
-        }
-        lastestStatus = status;
     }
 
     public void setStatusText(final String l) {
         if (statusText != null && statusText.equals(l)) return;
         statusText = l;
         notifyChanges(new LinkStatusProperty(this, LinkStatusProperty.Property.STATUSTEXT, l));
-    }
-
-    public void setValue(final long i) {
-        value = i;
-    }
-
-    public void setWaitTime(final long milliSeconds) {
-        waitUntil = System.currentTimeMillis() + milliSeconds;
-    }
-
-    public long getWaitTime() {
-        return waitUntil;
     }
 
     @Override
@@ -360,54 +179,4 @@ public class LinkStatus implements Serializable {
         return status;
     }
 
-    public void setStatusIcon(ImageIcon statusIcon) {
-        this.statusIcon = statusIcon;
-    }
-
-    public ImageIcon getStatusIcon() {
-        return statusIcon;
-    }
-
-    public boolean isFinished() {
-        return hasStatus(ERROR_ALREADYEXISTS) || hasStatus(FINISHED);
-    }
-
-    public DownloadLink _getDownloadLink() {
-        return downloadLink;
-    }
-
-    /**
-     * Use this function to reset linkstatus to {@link #TODO}, if no notResetIfFlag match.
-     */
-    public void resetStatus(int... notResetIfFlag) {
-        if (this.downloadLink != null) {
-            int curState = LinkStatus.TODO;
-            int curLState = LinkStatus.TODO;
-            String tmp2 = null;
-            String tmp3 = null;
-            int resetFlag = 0;
-            for (final int flag : notResetIfFlag) {
-                resetFlag = resetFlag | flag;
-            }
-            final LinkStatus linkStatus = downloadLink.getLinkStatus();
-            for (final int flag : notResetIfFlag) {
-                if (linkStatus.hasStatus(flag)) {
-                    curState = linkStatus.getStatus();
-                    curLState = linkStatus.getLatestStatus();
-                    tmp2 = linkStatus.getErrorMessage();
-                    tmp3 = linkStatus.getStatusText();
-                    break;
-                }
-            }
-            // filter flags
-            curState = JDFlags.filterFlags(curState, resetFlag | LinkStatus.TODO);
-            curLState = JDFlags.filterFlags(curLState, resetFlag | LinkStatus.TODO);
-            /* reset and if needed restore the old state */
-            linkStatus.reset();
-            linkStatus.setStatus(curState);
-            linkStatus.setLatestStatus(curLState);
-            linkStatus.setErrorMessage(tmp2);
-            linkStatus.setStatusText(tmp3);
-        }
-    }
 }

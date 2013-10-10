@@ -39,7 +39,6 @@ public class ConnectionColumn extends ExtColumn<AbstractNode> {
     private MigPanel          panel;
     private RenderLabel[]     labels;
     private final ImageIcon   resumeIndicator;
-    private final ImageIcon   accountInUse;
     private final ImageIcon   directConnection;
     private final ImageIcon   proxyConnection;
     private final ImageIcon   connections;
@@ -76,7 +75,6 @@ public class ConnectionColumn extends ExtColumn<AbstractNode> {
         resumeIndicator = NewTheme.I().getIcon("refresh", 16);
         directConnection = NewTheme.I().getIcon("modem", 16);
         proxyConnection = NewTheme.I().getIcon("proxy_rotate", 16);
-        accountInUse = NewTheme.I().getIcon("users", 16);
         connections = NewTheme.I().getIcon("paralell", 16);
         panel.setLayout(new MigLayout("ins 0 0 0 0", sb.toString(), "[grow,fill]"));
         // panel.add(Box.createGlue(), "pushx,growx");
@@ -126,7 +124,7 @@ public class ConnectionColumn extends ExtColumn<AbstractNode> {
         if (value instanceof DownloadLink) {
             SingleDownloadController dlc = ((DownloadLink) value).getDownloadLinkController();
             if (dlc != null) {
-                DownloadInterface dli = ((DownloadLink) value).getDownloadInstance();
+                DownloadInterface dli = dlc.getDownloadInstance();
                 if (dli != null) return 1;
             }
         } else if (value instanceof FilePackage) { return DownloadWatchDog.getInstance().getDownloadsbyFilePackage((FilePackage) value); }
@@ -172,8 +170,9 @@ public class ConnectionColumn extends ExtColumn<AbstractNode> {
     public void configureRendererComponent(AbstractNode value, boolean isSelected, boolean hasFocus, int row, int column) {
         if (value instanceof DownloadLink) {
             DownloadLink dlLink = (DownloadLink) value;
-            DownloadInterface dli = dlLink.getDownloadInstance();
+            DownloadInterface dli = null;
             SingleDownloadController sdc = dlLink.getDownloadLinkController();
+            if (sdc != null) dli = sdc.getDownloadInstance();
             int index = 0;
             if (dlLink.isSkipped()) {
                 labels[index].setIcon(skipped);
@@ -202,7 +201,8 @@ public class ConnectionColumn extends ExtColumn<AbstractNode> {
                 }
                 index++;
                 if (sdc.getAccount() != null) {
-                    labels[index].setIcon(accountInUse);
+                    ImageIcon icon = sdc.getAccount().getPlugin().getDomainInfo(dlLink).getFavIcon();
+                    labels[index].setIcon(icon);
                     labels[index].setVisible(true);
                     index++;
                 }
@@ -246,8 +246,9 @@ public class ConnectionColumn extends ExtColumn<AbstractNode> {
         public ConnectionTooltip(DownloadLink link) {
             JLabel lbl;
             this.panel = new TooltipPanel("ins 3,wrap 1", "[grow,fill]", "[grow,fill]");
-            DownloadInterface dli = link.getDownloadInstance();
+            DownloadInterface dli = null;
             SingleDownloadController sdc = link.getDownloadLinkController();
+            if (sdc != null) dli = sdc.getDownloadInstance();
             {
                 if (dlWatchdog.isLinkForced(link)) {
                     panel.add(lbl = new JLabel(_GUI._.ConnectionColumn_DownloadIsForced(), forced, JLabel.LEADING));
@@ -278,7 +279,8 @@ public class ConnectionColumn extends ExtColumn<AbstractNode> {
                 }
                 if (sdc.getAccount() != null) {
                     /* account in use? */
-                    panel.add(lbl = new JLabel(_GUI._.ConnectionColumn_DownloadUsesAccount(sdc.getAccount().getUser()), accountInUse, JLabel.LEADING));
+                    ImageIcon icon = sdc.getAccount().getPlugin().getDomainInfo(link).getFavIcon();
+                    panel.add(lbl = new JLabel(_GUI._.ConnectionColumn_DownloadUsesAccount(sdc.getAccount().getUser()), icon, JLabel.LEADING));
                     SwingUtils.setOpaque(lbl, false);
                     lbl.setForeground(new Color(this.getConfig().getForegroundColor()));
                 }

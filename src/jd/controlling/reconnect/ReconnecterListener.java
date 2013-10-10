@@ -8,6 +8,4 @@ public interface ReconnecterListener extends EventListener {
 
     void onBeforeReconnect(ReconnecterEvent event);
 
-    void onReconnectSettingsUpdated(ReconnecterEvent event);
-
 }

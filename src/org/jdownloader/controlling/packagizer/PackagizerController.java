@@ -9,7 +9,6 @@ import java.util.Locale;
 import java.util.regex.Pattern;
 
 import jd.controlling.TaskQueue;
-import jd.controlling.downloadcontroller.SingleDownloadController;
 import jd.controlling.linkcollector.PackagizerInterface;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.PackageInfo;
@@ -462,10 +461,7 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
 
     public void onNewFile(Object caller, File[] fileList) {
         if (!org.jdownloader.settings.staticreferences.CFG_PACKAGIZER.PACKAGIZER_ENABLED.isEnabled()) return;
-        if (caller instanceof SingleDownloadController) {
-            // do nothing
-            return;
-        } else if (caller == this) {
+        if (caller == this || caller instanceof PackagizerController) {
             // do nothing - avoid rename loops here
             return;
         } else if (caller instanceof ExtractionController) {
@@ -544,7 +540,7 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
             }
             if (successful) {
                 Log.L.info("Packagizer moved/renamed " + f + " to " + newFile);
-                FileCreationManager.getInstance().getEventSender().fireEvent(new FileCreationEvent(this, FileCreationEvent.Type.NEW_FILES, new File[] { newFile }));
+                FileCreationManager.getInstance().getEventSender().fireEvent(new FileCreationEvent(PackagizerController.this, FileCreationEvent.Type.NEW_FILES, new File[] { newFile }));
             }
         }
     }

@@ -37,6 +37,9 @@ import jd.plugins.PluginForHost;
 import jd.plugins.download.RAFDownload;
 import jd.utils.JDUtilities;
 
+import org.jdownloader.plugins.SkipReason;
+import org.jdownloader.plugins.SkipReasonException;
+
 // DEV NOTES:
 // - ftp filenames can contain & characters!
 
@@ -57,7 +60,7 @@ public class Ftp extends PluginForHost {
         return null;
     }
 
-    public void download(String ftpurl, final DownloadLink downloadLink, boolean throwException) throws IOException, PluginException {
+    public void download(String ftpurl, final DownloadLink downloadLink, boolean throwException) throws Exception {
         SimpleFTP ftp = new SimpleFTP();
         try {
             ftp.setLogger(logger);
@@ -65,7 +68,7 @@ public class Ftp extends PluginForHost {
             /* does not exist in 09581 stable */
         }
         try {
-            if (new File(downloadLink.getFileOutput()).exists()) throw new PluginException(LinkStatus.ERROR_ALREADYEXISTS);
+            if (new File(downloadLink.getFileOutput()).exists()) throw new SkipReasonException(SkipReason.FILE_EXISTS);
             URL url = new URL(ftpurl);
             /* cut off all ?xyz at the end */
             String filePath = new Regex(ftpurl, "://[^/]+/(.+?)(\\?|$)").getMatch(0);
@@ -164,7 +167,7 @@ public class Ftp extends PluginForHost {
             raf.setResume(false);
             raf.addChunksDownloading(1);
             dl = raf;
-            downloadLink.setDownloadInstance(dl);
+            downloadLink.getDownloadLinkController().setDownloadInstance(dl);
             try {
                 ftp.setCmanager(dl.getManagedConnetionHandler());
             } catch (final Throwable e) {
@@ -173,7 +176,6 @@ public class Ftp extends PluginForHost {
                 ftp.setDownloadInterface(dl);
             } catch (final Throwable e) {
             }
-            downloadLink.getLinkStatus().addStatus(LinkStatus.DOWNLOADINTERFACE_IN_PROGRESS);
             try {
                 try {
                     downloadLink.getDownloadLinkController().getConnectionHandler().addConnectionHandler(dl.getManagedConnetionHandler());
@@ -206,8 +208,7 @@ public class Ftp extends PluginForHost {
                     ftp.setDownloadInterface(null);
                 } catch (final Throwable e) {
                 }
-                downloadLink.getLinkStatus().removeStatus(LinkStatus.DOWNLOADINTERFACE_IN_PROGRESS);
-                downloadLink.setDownloadInstance(null);
+                downloadLink.getDownloadLinkController().setDownloadInstance(null);
                 downloadLink.getLinkStatus().setStatusText(null);
             }
             if (tmp.length() != downloadLink.getDownloadSize()) {
@@ -222,11 +223,10 @@ public class Ftp extends PluginForHost {
             if (!isEmpty(downloadLink.getSha1Hash()) && !downloadLink.getSha1Hash().equalsIgnoreCase(JDHash.getSHA1(tmp))) { throw new PluginException(LinkStatus.ERROR_DOWNLOAD_FAILED, " CRC error"); }
 
             if (!tmp.renameTo(new File(downloadLink.getFileOutput()))) { throw new PluginException(LinkStatus.ERROR_DOWNLOAD_FAILED, " Rename failed. file exists?"); }
-            downloadLink.getLinkStatus().addStatus(LinkStatus.FINISHED);
+            downloadLink.getLinkStatus().setStatus(LinkStatus.FINISHED);
         } catch (IOException e) {
             if (throwException && e.getMessage() != null && e.getMessage().contains("530")) {
-                downloadLink.getLinkStatus().setErrorMessage("Login incorrect");
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "Login incorrect");
             } else
                 throw e;
         } finally {

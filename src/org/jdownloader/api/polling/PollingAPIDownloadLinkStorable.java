@@ -1,10 +1,10 @@
 package org.jdownloader.api.polling;
 
 import jd.plugins.DownloadLink;
-import jd.plugins.LinkStatus;
 
 import org.appwork.storage.Storable;
 import org.jdownloader.api.downloads.LinkStatusAPIStorable;
+import org.jdownloader.plugins.FinalLinkState;
 
 public class PollingAPIDownloadLinkStorable implements Storable {
 
@@ -27,7 +27,7 @@ public class PollingAPIDownloadLinkStorable implements Storable {
     }
 
     public Boolean getFinished() {
-        return link.getLinkStatus().getLatestStatus() == LinkStatus.FINISHED;
+        return FinalLinkState.CheckFinished(link.getFinalLinkState());
     }
 
     public Long getSize() {
@@ -43,6 +43,6 @@ public class PollingAPIDownloadLinkStorable implements Storable {
     }
 
     public LinkStatusAPIStorable getLinkStatus() {
-        return new LinkStatusAPIStorable(link.getLinkStatus());
+        return new LinkStatusAPIStorable(link);
     }
 }

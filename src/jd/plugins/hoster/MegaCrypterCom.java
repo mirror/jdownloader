@@ -106,7 +106,7 @@ public class MegaCrypterCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         if (dl.startDownload()) {
-            if (downloadLink.getLinkStatus().isFinished() && downloadLink.getDownloadCurrent() > 0) {
+            if (downloadLink.getLinkStatus().hasStatus(LinkStatus.FINISHED) && downloadLink.getDownloadCurrent() > 0) {
                 decrypt(downloadLink, key);
             }
         }
@@ -148,18 +148,18 @@ public class MegaCrypterCom extends PluginForHost {
         return false;
     }
 
-    private RAFDownload createHackedDownloadInterface2(final DownloadLink downloadLink, final Request request) throws IOException, PluginException {
-        final RAFDownload dl = new RAFDownload(downloadLink.getPlugin(), downloadLink, request);
-        downloadLink.getPlugin().setDownloadInterface(dl);
+    private RAFDownload createHackedDownloadInterface2(final PluginForHost plugin, final DownloadLink downloadLink, final Request request) throws IOException, PluginException {
+        final RAFDownload dl = new RAFDownload(plugin, downloadLink, request);
+        plugin.setDownloadInterface(dl);
         dl.setResume(true);
         dl.setChunkNum(1);
         return dl;
     }
 
     /* Workaround for Bug in old 09581 Downloadsystem bug */
-    private RAFDownload createHackedDownloadInterface(final Browser br, final DownloadLink downloadLink, final String url) throws IOException, PluginException, Exception {
+    private RAFDownload createHackedDownloadInterface(PluginForHost plugin, final Browser br, final DownloadLink downloadLink, final String url) throws IOException, PluginException, Exception {
         Request r = br.createRequest(url);
-        RAFDownload dl = this.createHackedDownloadInterface2(downloadLink, r);
+        RAFDownload dl = this.createHackedDownloadInterface2(plugin, downloadLink, r);
         try {
             r.getHeaders().remove("Accept-Encoding");
             dl.connect(br);
@@ -168,7 +168,7 @@ public class MegaCrypterCom extends PluginForHost {
 
                 int maxRedirects = 10;
                 while (maxRedirects-- > 0) {
-                    dl = this.createHackedDownloadInterface2(downloadLink, r = br.createGetRequestRedirectedRequest(r));
+                    dl = this.createHackedDownloadInterface2(plugin, downloadLink, r = br.createGetRequestRedirectedRequest(r));
                     try {
                         r.getHeaders().remove("Accept-Encoding");
                         dl.connect(br);
@@ -181,8 +181,8 @@ public class MegaCrypterCom extends PluginForHost {
 
             }
         }
-        if (downloadLink.getPlugin().getBrowser() == br) {
-            downloadLink.getPlugin().setDownloadInterface(dl);
+        if (plugin.getBrowser() == br) {
+            plugin.setDownloadInterface(dl);
         }
         return dl;
     }
@@ -231,6 +231,11 @@ public class MegaCrypterCom extends PluginForHost {
                 long startTimeStamp = -1;
 
                 @Override
+                public String getMessage(Object requestor) {
+                    return "Decrypting";
+                }
+
+                @Override
                 public void updateValues(long current, long total) {
                     super.updateValues(current, total);
                     if (lastCurrent == -1 || lastCurrent > current) {
@@ -251,7 +256,6 @@ public class MegaCrypterCom extends PluginForHost {
             progress.setProgressSource(this);
             progress.setIcon(NewTheme.I().getIcon("lock", 16));
             link.getLinkStatus().setStatusText("Decrypting");
-            progress.setMessage("Decrypting");
             link.setPluginProgress(progress);
             fis = new FileInputStream(src);
             if (tmp != null) {
@@ -313,22 +317,6 @@ public class MegaCrypterCom extends PluginForHost {
             }
         }
 
-    }
-
-    private String getPublicFileID(DownloadLink link) {
-        return new Regex(link.getDownloadURL(), "#\\!([a-zA-Z0-9]+)\\!").getMatch(0);
-    }
-
-    private String getPublicFileKey(DownloadLink link) {
-        return new Regex(link.getDownloadURL(), "#\\![a-zA-Z0-9]+\\!([a-zA-Z0-9_,\\-]+)").getMatch(0);
-    }
-
-    private String getNodeFileID(DownloadLink link) {
-        return new Regex(link.getDownloadURL(), "#N\\!([a-zA-Z0-9]+)\\!").getMatch(0);
-    }
-
-    private String getNodeFileKey(DownloadLink link) {
-        return new Regex(link.getDownloadURL(), "#N\\![a-zA-Z0-9]+\\!([a-zA-Z0-9_,\\-]+)").getMatch(0);
     }
 
     private byte[] b64decode(String data) {

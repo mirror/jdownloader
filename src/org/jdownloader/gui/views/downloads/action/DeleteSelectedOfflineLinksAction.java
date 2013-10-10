@@ -5,13 +5,12 @@ import java.util.ArrayList;
 import java.util.List;
 
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.FilePackage;
-import jd.plugins.LinkStatus;
 
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.downloads.table.DownloadsTableModel;
+import org.jdownloader.plugins.FinalLinkState;
 
 public class DeleteSelectedOfflineLinksAction extends DeleteAppAction {
 
@@ -28,7 +27,7 @@ public class DeleteSelectedOfflineLinksAction extends DeleteAppAction {
         if (!isEnabled()) return;
         List<DownloadLink> nodesToDelete = new ArrayList<DownloadLink>();
         for (DownloadLink dl : getSelection().getChildren()) {
-            if (dl.getAvailableStatus() == AvailableStatus.FALSE || dl.getLinkStatus().hasStatus(LinkStatus.ERROR_FILE_NOT_FOUND)) {
+            if (dl.getFinalLinkState() == FinalLinkState.OFFLINE) {
                 nodesToDelete.add(dl);
             }
         }
@@ -40,7 +39,7 @@ public class DeleteSelectedOfflineLinksAction extends DeleteAppAction {
     public boolean isEnabled() {
         if (super.isEnabled()) {
             for (DownloadLink dl : getSelection().getChildren()) {
-                if (dl.getAvailableStatus() == AvailableStatus.FALSE || dl.getLinkStatus().hasStatus(LinkStatus.ERROR_FILE_NOT_FOUND)) { return true; }
+                if (dl.getFinalLinkState() == FinalLinkState.OFFLINE) { return true; }
             }
         }
         return false;

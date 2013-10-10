@@ -140,7 +140,6 @@ public abstract class ReconnectInvoker {
             ReconnectResult r;
             try {
                 r = validate();
-
             } catch (ReconnectException e) {
                 e.printStackTrace();
                 r = createReconnectResult();

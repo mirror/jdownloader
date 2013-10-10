@@ -154,7 +154,6 @@ public class AccountListTableModel extends ExtTableModel<AccountEntry> implement
             @Override
             protected void setBooleanValue(boolean value, final AccountEntry object) {
                 object.getAccount().setEnabled(value);
-                AccountController.getInstance().saveDelayedRequest();
                 fireTableStructureChanged();
             }
         });
@@ -272,7 +271,6 @@ public class AccountListTableModel extends ExtTableModel<AccountEntry> implement
             @Override
             protected void setStringValue(String value, AccountEntry object) {
                 object.getAccount().setUser(value);
-                AccountController.getInstance().saveDelayedRequest();
             }
 
             @Override

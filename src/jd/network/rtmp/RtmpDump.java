@@ -98,8 +98,8 @@ public class RtmpDump extends RTMPDownload {
     }
 
     /**
-     * Attempt to locate a rtmpdump executable. The *nix /usr bin folders is searched first, then local tools folder. If found, the path
-     * will is saved to the variable RTMPDUMP.
+     * Attempt to locate a rtmpdump executable. The *nix /usr bin folders is searched first, then local tools folder. If found, the path will is saved to the
+     * variable RTMPDUMP.
      * 
      * @return Whether or not rtmpdump executable was found
      */
@@ -214,27 +214,22 @@ public class RtmpDump extends RTMPDownload {
         FlvFixer flvfix = new FlvFixer();
         flvfix.setInputFile(tmpFile);
         if (config.isFlvFixerDebugModeEnabled()) flvfix.setDebug(true);
-
-        LinkStatus lnkStatus = downloadLink.getLinkStatus();
-        linkStatus.reset();
         if (!flvfix.scan(downloadLink)) return false;
-        linkStatus.setStatus(lnkStatus.getStatus());
-
         File fixedFile = flvfix.getoutputFile();
         if (!fixedFile.exists()) {
             logger.severe("File " + fixedFile.getAbsolutePath() + " not found!");
-            error(LinkStatus.ERROR_LOCAL_IO, _JDT._.downloadlink_status_error_file_not_found());
+            error(new PluginException(LinkStatus.ERROR_DOWNLOAD_FAILED, _JDT._.downloadlink_status_error_file_not_found(), LinkStatus.VALUE_LOCAL_IO_ERROR));
             return false;
         }
         if (!FileCreationManager.getInstance().delete(tmpFile)) {
             logger.severe("Could not delete part file " + tmpFile);
-            error(LinkStatus.ERROR_LOCAL_IO, _JDT._.system_download_errors_couldnotdelete());
+            error(new PluginException(LinkStatus.ERROR_DOWNLOAD_FAILED, _JDT._.system_download_errors_couldnotdelete(), LinkStatus.VALUE_LOCAL_IO_ERROR));
             FileCreationManager.getInstance().delete(fixedFile);
             return false;
         }
         if (!fixedFile.renameTo(tmpFile)) {
             logger.severe("Could not rename file " + fixedFile.getName() + " to " + tmpFile.getName());
-            error(LinkStatus.ERROR_LOCAL_IO, _JDT._.system_download_errors_couldnotrename());
+            error(new PluginException(LinkStatus.ERROR_DOWNLOAD_FAILED, _JDT._.system_download_errors_couldnotrename(), LinkStatus.VALUE_LOCAL_IO_ERROR));
             FileCreationManager.getInstance().delete(fixedFile);
             return false;
         }
@@ -268,7 +263,6 @@ public class RtmpDump extends RTMPDownload {
         File tmpFile = new File(downloadLink.getFileOutput() + ".part");
         try {
             getManagedConnetionHandler().addThrottledConnection(tcon);
-            downloadLink.getLinkStatus().addStatus(LinkStatus.DOWNLOADINTERFACE_IN_PROGRESS);
             try {
                 downloadLink.getDownloadLinkController().getConnectionHandler().addConnectionHandler(getManagedConnetionHandler());
             } catch (final Throwable e) {
@@ -393,12 +387,7 @@ public class RtmpDump extends RTMPDownload {
 
                     // autoresuming when FMS sends NetStatus.Play.Stop and progress less than 100%
                     if (progressFloat < 99.8 && !line.toLowerCase().contains("download complete")) {
-                        int retry = downloadLink.getLinkStatus().getRetryCount() + 1;
-                        System.out.println("Versuch Nr.: " + retry + " ::: " + plugin.getMaxRetries(downloadLink, null));
-                        if (retry == plugin.getMaxRetries(downloadLink, null)) {
-                            downloadLink.getLinkStatus().setRetryCount(0);
-                        }
-                        downloadLink.getLinkStatus().setStatus(LinkStatus.ERROR_DOWNLOAD_INCOMPLETE);
+                        downloadLink.getDownloadLinkController().getLinkStatus().setStatus(LinkStatus.ERROR_DOWNLOAD_INCOMPLETE);
                     }
                     Thread.sleep(500);
                     break;
@@ -421,15 +410,13 @@ public class RtmpDump extends RTMPDownload {
                 }
             }
 
-            if (downloadLink.getLinkStatus().getStatus() == LinkStatus.ERROR_DOWNLOAD_INCOMPLETE) return false;
+            if (downloadLink.getDownloadLinkController().getLinkStatus().getStatus() == LinkStatus.ERROR_DOWNLOAD_INCOMPLETE) return false;
             if (error.isEmpty() && line == null) {
                 if (downloadLink.getBooleanProperty("FLVFIXER", false)) {
                     if (!FixFlv(tmpFile)) return false;
                 }
                 logger.severe("RtmpDump: An unknown error has occured!");
-                downloadLink.getLinkStatus().addStatus(LinkStatus.ERROR_RETRY);
-                /* CHECK: downloadLink.reset was here */
-                return false;
+                throw new PluginException(LinkStatus.ERROR_RETRY);
             }
             if (line != null) {
                 if (line.toLowerCase().contains("download complete") || complete) {
@@ -440,9 +427,9 @@ public class RtmpDump extends RTMPDownload {
                     logger.finest("rtmpdump: no errors -> rename");
                     if (!tmpFile.renameTo(new File(downloadLink.getFileOutput()))) {
                         logger.severe("Could not rename file " + tmpFile + " to " + downloadLink.getFileOutput());
-                        error(LinkStatus.ERROR_LOCAL_IO, _JDT._.system_download_errors_couldnotrename());
+                        error(new PluginException(LinkStatus.ERROR_DOWNLOAD_FAILED, _JDT._.system_download_errors_couldnotrename(), LinkStatus.VALUE_LOCAL_IO_ERROR));
                     }
-                    downloadLink.getLinkStatus().addStatus(LinkStatus.FINISHED);
+                    downloadLink.getDownloadLinkController().getLinkStatus().setStatus(LinkStatus.FINISHED);
                     return true;
                 }
             }
@@ -460,16 +447,15 @@ public class RtmpDump extends RTMPDownload {
                 }
                 if (e.contains("last tag size must be greater/equal zero")) {
                     if (!FixFlv(tmpFile)) return false;
-                    downloadLink.getLinkStatus().addStatus(LinkStatus.ERROR_DOWNLOAD_INCOMPLETE);
+                    throw new PluginException(LinkStatus.ERROR_DOWNLOAD_INCOMPLETE);
                 } else if (e.contains("rtmp_readpacket, failed to read rtmp packet header")) {
-                    downloadLink.getLinkStatus().addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
                 } else if (e.contains("netstream.play.streamnotfound")) {
                     FileCreationManager.getInstance().delete(tmpFile);
-                    downloadLink.getLinkStatus().addStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
-                    return true;
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 } else if (error.startsWith(timeoutMessage)) {
                     logger.severe(error);
-                    downloadLink.getLinkStatus().addStatus(LinkStatus.ERROR_TIMEOUT_REACHED);
+                    throw new PluginException(LinkStatus.ERROR_DOWNLOAD_FAILED, LinkStatus.VALUE_TIMEOUT_REACHED);
                 } else {
                     String cmd = cmdArgsWindows;
                     if (!CrossSystem.isWindows()) {
@@ -489,10 +475,8 @@ public class RtmpDump extends RTMPDownload {
         } finally {
             if (BYTESLOADED > 0) {
                 downloadLink.setDownloadCurrent(BYTESLOADED);
-                downloadLink.getLinkStatus().setStatusText(null);
             }
-            downloadLink.getLinkStatus().removeStatus(LinkStatus.DOWNLOADINTERFACE_IN_PROGRESS);
-            downloadLink.setDownloadInstance(null);
+            downloadLink.getDownloadLinkController().setDownloadInstance(null);
             getManagedConnetionHandler().removeThrottledConnection(tcon);
             try {
                 downloadLink.getDownloadLinkController().getConnectionHandler().removeConnectionHandler(getManagedConnetionHandler());

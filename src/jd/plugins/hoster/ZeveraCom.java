@@ -22,7 +22,7 @@ import java.net.SocketTimeoutException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 
 import jd.PluginWrapper;
@@ -80,7 +80,7 @@ public class ZeveraCom extends PluginForHost {
         prepBrowser();
         if (urls == null || urls.length == 0) { return false; }
         try {
-            LinkedList<Account> accs = AccountController.getInstance().getValidAccounts(this.getHost());
+            List<Account> accs = AccountController.getInstance().getValidAccounts(this.getHost());
             if (accs == null || accs.size() == 0) {
                 logger.info("No account present, Please add a premium" + mName + "account.");
                 for (DownloadLink dl : urls) {

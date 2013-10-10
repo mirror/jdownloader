@@ -4,14 +4,18 @@ import java.awt.Color;
 
 import jd.plugins.PluginProgress;
 
+import org.jdownloader.images.NewTheme;
+
 public class ExtractionProgress extends PluginProgress {
 
-    protected long lastCurrent    = -1;
-    protected long lastTotal      = -1;
-    protected long startTimeStamp = -1;
+    protected long   lastCurrent    = -1;
+    protected long   lastTotal      = -1;
+    protected long   startTimeStamp = -1;
+    protected String message        = null;
 
     public ExtractionProgress(long current, long total, Color color) {
         super(current, total, color);
+        setIcon(NewTheme.I().getIcon("unpack", 16));
     }
 
     @Override
@@ -30,6 +34,15 @@ public class ExtractionProgress extends PluginProgress {
         if (speed == 0) return;
         long eta = ((total - current) * 10000) / speed;
         this.setETA(eta);
+    }
+
+    @Override
+    public String getMessage(Object requestor) {
+        return message;
+    }
+
+    public void setMessage(String message) {
+        this.message = message;
     }
 
 }

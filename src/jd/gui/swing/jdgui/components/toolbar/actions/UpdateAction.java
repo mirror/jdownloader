@@ -34,6 +34,7 @@ public class UpdateAction extends ToolBarAction {
     }
 
     public void actionPerformed(ActionEvent e) {
+
         /* WebUpdate is running in its own Thread */
         new Thread() {
             public void run() {

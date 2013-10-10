@@ -11,11 +11,9 @@ import java.net.SocketAddress;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 import jd.config.SubConfiguration;
-import jd.plugins.Account;
-import jd.plugins.DownloadLink;
-import jd.plugins.PluginForHost;
 
 import org.appwork.scheduler.DelayedRunnable;
 import org.appwork.shutdown.ShutdownController;
@@ -44,7 +42,7 @@ public class ProxyController {
     private java.util.List<ProxyInfo>                 proxies       = new ArrayList<ProxyInfo>();
     private java.util.List<ProxyInfo>                 directs       = new ArrayList<ProxyInfo>();
     private ProxyInfo                                 defaultproxy  = null;
-    private ProxyInfo                                 none          = null;
+    private final ProxyInfo                           none;
 
     private DefaultEventSender<ProxyEvent<ProxyInfo>> eventSender   = null;
 
@@ -524,210 +522,34 @@ public class ProxyController {
         if (removed) eventSender.fireEvent(new ProxyEvent<ProxyInfo>(this, ProxyEvent.Types.REMOVED, proxy));
     }
 
-    public ProxyInfo getProxyForDownload(PluginForHost plugin, DownloadLink link, Account acc, boolean byPassMaxSimultanDownload) {
-        final String host = link.getHost();
-        final int maxactive = plugin.getMaxSimultanDownload(link, acc);
-        if (acc != null) {
-            /* an account must be used or waittime must be over */
-            /*
-             * only the default proxy may use accounts, to prevent accountblocks because of simultan ip's using it
-             */
+    public List<ProxyInfo> getPossibleProxies(String host, boolean accountInUse, int maxActive) {
+        List<ProxyInfo> ret = new ArrayList<ProxyInfo>();
+        host = host.toLowerCase(Locale.ENGLISH);
+        if (accountInUse) {
             ProxyInfo ldefaultProxy = defaultproxy;
             int active = ldefaultProxy.activeDownloadsbyHosts(host);
-            if (byPassMaxSimultanDownload || active < maxactive) return ldefaultProxy;
-            return null;
-        }
-        if (none.isProxyRotationEnabled()) {
-            /* only use enabled proxies */
-            if (none.getHostBlockedTimeout(host) == null && none.getHostIPBlockTimeout(host) == null) {
-                /* active downloads must be less than allowed download */
+            if (active < maxActive) ret.add(ldefaultProxy);
+        } else {
+            if (none.isProxyRotationEnabled()) {
                 int active = none.activeDownloadsbyHosts(host);
-                if (byPassMaxSimultanDownload || active < maxactive) {
-                    if (none.isHostAllowed(host)) {
-                        if (link.getChunksProgress() == null || none.isResumeAllowed()) return none;
-                    }
-                }
+                if (active < maxActive) ret.add(none);
             }
-        }
-        java.util.List<ProxyInfo> ldirects = directs;
-        for (ProxyInfo info : ldirects) {
-            if (info.isProxyRotationEnabled()) {
-                /* only use enabled proxies */
-                if (info.getHostBlockedTimeout(host) == null && info.getHostIPBlockTimeout(host) == null) {
-                    /* active downloads must be less than allowed download */
+            java.util.List<ProxyInfo> ldirects = directs;
+            for (ProxyInfo info : ldirects) {
+                if (info.isProxyRotationEnabled()) {
                     int active = info.activeDownloadsbyHosts(host);
-                    if (byPassMaxSimultanDownload || active < maxactive) {
-                        /* connection to hoster must be allowed */
-                        if (info.isHostAllowed(host)) {
-                            /* proxy must allow resume, if selected */
-                            if (link.getChunksProgress() == null || info.isResumeAllowed()) return info;
-                        } else {
-                            continue;
-                        }
-                    }
+                    if (active < maxActive) ret.add(info);
                 }
             }
-        }
-        java.util.List<ProxyInfo> lproxies = proxies;
-        for (ProxyInfo info : lproxies) {
-            if (info.isProxyRotationEnabled()) {
-                /* only use enabled proxies */
-                if (info.getHostBlockedTimeout(host) == null && info.getHostIPBlockTimeout(host) == null) {
-                    /* active downloads must be less than allowed download */
+            java.util.List<ProxyInfo> lproxies = proxies;
+            for (ProxyInfo info : lproxies) {
+                if (info.isProxyRotationEnabled()) {
                     int active = info.activeDownloadsbyHosts(host);
-                    if (byPassMaxSimultanDownload || active < maxactive) {
-                        /* connection to hoster must be allowed */
-                        if (info.isHostAllowed(host)) {
-                            /* proxy must allow resume, if selected */
-                            if (link.getChunksProgress() == null || info.isResumeAllowed()) return info;
-                        } else {
-                            continue;
-                        }
-                    }
-                }
-            }
-        }
-        return null;
-    }
-
-    public ProxyBlock getHostIPBlockTimeout(final String host) {
-        ProxyBlock ret = null;
-        if (none.isProxyRotationEnabled()) {
-            ret = none.getHostIPBlockTimeout(host);
-        }
-        if (ret == null) return null;
-        java.util.List<ProxyInfo> lproxies = proxies;
-        for (ProxyInfo info : lproxies) {
-            if (info.isProxyRotationEnabled()) {
-                /* only use enabled proxies */
-                ProxyBlock ret2 = info.getHostIPBlockTimeout(host);
-                if (ret2 == null) {
-                    return null;
-                } else if (ret == null || ret2.getBlockedUntil() < ret.getBlockedUntil()) {
-                    ret = ret2;
-                }
-
-            }
-        }
-        java.util.List<ProxyInfo> ldirects = directs;
-        for (ProxyInfo info : ldirects) {
-            if (info.isProxyRotationEnabled()) {
-                /* only use enabled proxies */
-                ProxyBlock ret2 = info.getHostIPBlockTimeout(host);
-                if (ret2 == null) {
-                    return null;
-                } else if (ret == null || ret2.getBlockedUntil() < ret.getBlockedUntil()) {
-                    ret = ret2;
+                    if (active < maxActive) ret.add(info);
                 }
             }
         }
         return ret;
-    }
-
-    /* optimize for speed */
-    public ProxyBlock getHostBlockedTimeout(final String host) {
-        ProxyBlock ret = null;
-        if (none.isProxyRotationEnabled()) {
-            ret = none.getHostBlockedTimeout(host);
-        }
-        if (ret == null) return null;
-        java.util.List<ProxyInfo> lproxies = proxies;
-        for (ProxyInfo info : lproxies) {
-            if (info.isProxyRotationEnabled()) {
-                /* only use enabled proxies */
-                ProxyBlock ret2 = info.getHostBlockedTimeout(host);
-                if (ret2 == null) {
-                    return null;
-                } else if (ret == null || ret2.getBlockedUntil() < ret.getBlockedUntil()) {
-                    ret = ret2;
-                }
-
-            }
-        }
-        java.util.List<ProxyInfo> ldirects = directs;
-        for (ProxyInfo info : ldirects) {
-            if (info.isProxyRotationEnabled()) {
-                /* only use enabled proxies */
-                ProxyBlock ret2 = info.getHostBlockedTimeout(host);
-                if (ret2 == null) {
-                    return null;
-                } else if (ret == null || ret2.getBlockedUntil() < ret.getBlockedUntil()) {
-                    ret = ret2;
-                }
-            }
-        }
-        return ret;
-    }
-
-    public boolean hasIPBlock(final String host) {
-        if (none.isProxyRotationEnabled()) {
-            if (none.getHostIPBlockTimeout(host) != null) return true;
-        }
-        java.util.List<ProxyInfo> lproxies = proxies;
-        for (ProxyInfo info : lproxies) {
-            if (info.isProxyRotationEnabled()) {
-                /* only use enabled proxies */
-                if (info.getHostIPBlockTimeout(host) != null) return true;
-            }
-        }
-        java.util.List<ProxyInfo> ldirects = directs;
-        for (ProxyInfo info : ldirects) {
-            if (info.isProxyRotationEnabled()) {
-                /* only use enabled proxies */
-                if (info.getHostIPBlockTimeout(host) != null) return true;
-            }
-        }
-        return false;
-    }
-
-    public boolean hasHostBlocked(final String host) {
-        if (none.isProxyRotationEnabled()) {
-            if (none.getHostBlockedTimeout(host) != null) return true;
-        }
-        java.util.List<ProxyInfo> lproxies = proxies;
-        for (ProxyInfo info : lproxies) {
-            if (info.isProxyRotationEnabled()) {
-                /* only use enabled proxies */
-                if (info.getHostBlockedTimeout(host) != null) return true;
-            }
-        }
-        java.util.List<ProxyInfo> ldirects = directs;
-        for (ProxyInfo info : ldirects) {
-            if (info.isProxyRotationEnabled()) {
-                /* only use enabled proxies */
-                if (info.getHostBlockedTimeout(host) != null) return true;
-            }
-        }
-        return false;
-    }
-
-    public void removeHostBlockedTimeout(final String host, boolean onlyLocal) {
-        none.removeHostBlockedWaittime(host);
-        java.util.List<ProxyInfo> ldirects = directs;
-        for (ProxyInfo info : ldirects) {
-            info.removeHostBlockedWaittime(host);
-        }
-        if (!onlyLocal) {
-            java.util.List<ProxyInfo> lproxies = proxies;
-            for (ProxyInfo info : lproxies) {
-                // if (onlyLocal && info.getProxy().isRemote()) continue;
-                info.removeHostBlockedWaittime(host);
-            }
-        }
-    }
-
-    public void removeIPBlockTimeout(final String host, boolean onlyLocal) {
-        none.removeHostIPBlockTimeout(host);
-        java.util.List<ProxyInfo> ldirects = directs;
-        for (ProxyInfo info : ldirects) {
-            info.removeHostIPBlockTimeout(host);
-        }
-        if (!onlyLocal) {
-            java.util.List<ProxyInfo> lproxies = proxies;
-            for (ProxyInfo info : lproxies) {
-                info.removeHostIPBlockTimeout(host);
-            }
-        }
     }
 
     public boolean hasRotation() {

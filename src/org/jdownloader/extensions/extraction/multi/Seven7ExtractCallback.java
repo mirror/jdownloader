@@ -272,15 +272,15 @@ public class Seven7ExtractCallback implements IArchiveExtractCallback, ICryptoGe
             }
             results[lastIndex] = res;
             ISimpleInArchiveItem item = items[lastIndex];
-            if (item != null) {
+            if (item != null && ret != null) {
                 if (item.getSize() != ret.getWritten()) {
+                    logger.info("Size missmatch for " + item.getPath() + " is " + ret.getWritten() + " but should be " + item.getSize());
                     if (ExtractOperationResult.OK == res) {
                         logger.info("Size missmatch for " + item.getPath() + ", but Extraction returned OK?! Archive seems incomplete");
                         archive.setExitCode(ExtractionControllerConstants.EXIT_CODE_INCOMPLETE_ERROR);
                         error.set(true);
                         throw new SevenZipException("Extraction error");
                     }
-                    logger.info("Size missmatch for " + item.getPath() + " is " + ret.getWritten() + " but should be " + item.getSize());
                     try {
                         for (ArchiveFile link : multi.getAffectedArchiveFileFromArchvieFiles(item.getPath())) {
                             multi.writeCrashLog("CRC Error in " + link);
@@ -289,9 +289,6 @@ public class Seven7ExtractCallback implements IArchiveExtractCallback, ICryptoGe
                     } catch (final Throwable e) {
                         logger.log(e);
                     }
-                    archive.setExitCode(ExtractionControllerConstants.EXIT_CODE_CRC_ERROR);
-                    error.set(true);
-                    throw new SevenZipException("Extraction error");
                 }
             }
             switch (res) {
@@ -301,11 +298,27 @@ public class Seven7ExtractCallback implements IArchiveExtractCallback, ICryptoGe
                 break;
             case CRCERROR:
                 if (item != null) {
-                    logger.info("CRC Error for " + item.getPath());
+                    logger.info("CRC Error in " + item.getPath());
                 }
                 archive.setExitCode(ExtractionControllerConstants.EXIT_CODE_CRC_ERROR);
                 error.set(true);
-                throw new SevenZipException("Extraction error");
+                if (item != null) {
+                    throw new SevenZipException("CRC-Extraction error in " + item.getPath());
+                } else {
+                    throw new SevenZipException("CRC-Extraction error");
+                }
+            case UNSUPPORTEDMETHOD:
+                if (item != null) {
+                    logger.info("Unsupported Method " + item.getMethod() + " in " + item.getPath());
+                }
+                /* seven7binding does not support all compression methods! */
+                archive.setExitCode(ExtractionControllerConstants.EXIT_CODE_FATAL_ERROR);
+                error.set(true);
+                if (item != null) {
+                    throw new SevenZipException("Unsupported Method " + item.getMethod() + " in " + item.getPath());
+                } else {
+                    throw new SevenZipException("Unsupported Method");
+                }
             default:
                 archive.setExitCode(ExtractionControllerConstants.EXIT_CODE_FATAL_ERROR);
                 error.set(true);

@@ -13,20 +13,24 @@ import jd.plugins.DownloadLink;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.DomainInfo;
 import org.jdownloader.controlling.Priority;
+import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.gui.views.downloads.columns.AvailabilityColumn;
 
 public class CrawledPackageView extends ChildrenView<CrawledLink> {
 
     protected long                      fileSize;
     private DomainInfo[]                domainInfos;
-    protected boolean                   enabled         = false;
-    private int                         offline         = 0;
-    private int                         online          = 0;
-    private java.util.List<CrawledLink> items           = new ArrayList<CrawledLink>();
-    private AtomicLong                  updatesRequired = new AtomicLong(0);
-    private long                        updatesDone     = -1;
+    protected boolean                   enabled                  = false;
+    private int                         offline                  = 0;
+    private int                         online                   = 0;
+    private java.util.List<CrawledLink> items                    = new ArrayList<CrawledLink>();
+    private AtomicLong                  updatesRequired          = new AtomicLong(0);
+    private long                        updatesDone              = -1;
     private Priority                    lowestPriority;
     private Priority                    highestPriority;
     private String                      commonSourceUrl;
+    private String                      availabilityColumnString = null;
+    private ChildrenAvailablility       availability             = ChildrenAvailablility.UNKNOWN;
 
     public CrawledPackageView() {
         this.fileSize = 0l;
@@ -95,7 +99,9 @@ public class CrawledPackageView extends ChildrenView<CrawledLink> {
             this.highestPriority = priorityHighest;
             offline = newOffline;
             online = newOnline;
+            updateAvailability(litems.size(), newOffline, newOnline);
             updatesDone = lupdatesRequired;
+            availabilityColumnString = _GUI._.AvailabilityColumn_getStringValue_object_(newOnline, litems.size());
         }
     }
 
@@ -166,12 +172,31 @@ public class CrawledPackageView extends ChildrenView<CrawledLink> {
             enabled = newEnabled;
             offline = newOffline;
             online = newOnline;
+            updateAvailability(updatedItems.size(), newOffline, newOnline);
             this.lowestPriority = priorityLowset;
             this.highestPriority = priorityHighest;
             items = updatedItems;
             domainInfos = domains.toArray(new DomainInfo[] {});
             updatesDone = lupdatesRequired;
+            availabilityColumnString = _GUI._.AvailabilityColumn_getStringValue_object_(newOnline, updatedItems.size());
         }
+    }
+
+    private final void updateAvailability(int size, int offline, int online) {
+        if (online == size) {
+            availability = ChildrenAvailablility.ONLINE;
+            return;
+        }
+        if (offline == size) {
+            availability = ChildrenAvailablility.OFFLINE;
+            return;
+        }
+        if ((offline == 0 && online == 0) || (online == 0 && offline > 0)) {
+            availability = ChildrenAvailablility.UNKNOWN;
+            return;
+        }
+        availability = ChildrenAvailablility.MIXED;
+        return;
     }
 
     public String getCommonSourceUrl() {
@@ -216,6 +241,17 @@ public class CrawledPackageView extends ChildrenView<CrawledLink> {
     @Override
     public boolean updateRequired() {
         return updatesRequired.get() != updatesDone;
+    }
+
+    @Override
+    public ChildrenAvailablility getAvailability() {
+        return availability;
+    }
+
+    @Override
+    public String getMessage(Object requestor) {
+        if (requestor instanceof AvailabilityColumn) return availabilityColumnString;
+        return null;
     }
 
 }

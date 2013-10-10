@@ -1,5 +1,7 @@
 package jd.gui.swing.jdgui.views.settings.components;
 
+import java.util.concurrent.atomic.AtomicBoolean;
+
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 
@@ -16,22 +18,22 @@ public class TextInput extends ExtTextField implements SettingsComponent, Generi
      */
     private static final long                 serialVersionUID = 1L;
     private StateUpdateEventSender<TextInput> eventSender;
-    private boolean                           setting;
+    private AtomicBoolean                     settings         = new AtomicBoolean(false);
     private StringKeyHandler                  keyhandler;
     {
         eventSender = new StateUpdateEventSender<TextInput>();
         this.getDocument().addDocumentListener(new DocumentListener() {
 
             public void removeUpdate(DocumentEvent e) {
-                if (!setting) eventSender.fireEvent(new StateUpdateEvent<TextInput>(TextInput.this));
+                if (!settings.get()) eventSender.fireEvent(new StateUpdateEvent<TextInput>(TextInput.this));
             }
 
             public void insertUpdate(DocumentEvent e) {
-                if (!setting) eventSender.fireEvent(new StateUpdateEvent<TextInput>(TextInput.this));
+                if (!settings.get()) eventSender.fireEvent(new StateUpdateEvent<TextInput>(TextInput.this));
             }
 
             public void changedUpdate(DocumentEvent e) {
-                if (!setting) eventSender.fireEvent(new StateUpdateEvent<TextInput>(TextInput.this));
+                if (!settings.get()) eventSender.fireEvent(new StateUpdateEvent<TextInput>(TextInput.this));
             }
         });
     }
@@ -44,12 +46,11 @@ public class TextInput extends ExtTextField implements SettingsComponent, Generi
 
     @Override
     public void setText(String t) {
-        if (setting) return;
-        setting = true;
+        if (settings.compareAndSet(false, true)) return;
         try {
             super.setText(t);
         } finally {
-            setting = false;
+            settings.set(false);
         }
     }
 
@@ -60,12 +61,11 @@ public class TextInput extends ExtTextField implements SettingsComponent, Generi
     @Override
     public void onChanged() {
         super.onChanged();
-
+        if (settings.compareAndSet(false, true)) return;
         try {
-            setting = true;
             if (keyhandler != null) keyhandler.setValue(getText());
         } finally {
-            setting = false;
+            settings.set(false);
         }
 
     }
@@ -95,7 +95,7 @@ public class TextInput extends ExtTextField implements SettingsComponent, Generi
 
     @Override
     public void onConfigValueModified(KeyHandler<String> keyHandler, String newValue) {
-        if (!setting) {
+        if (!settings.get()) {
             setText(keyhandler.getValue());
         }
     }

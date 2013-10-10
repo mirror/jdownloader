@@ -687,7 +687,6 @@ public class DepositFiles extends PluginForHost {
                 account.setProperty("free", Property.NULL);
                 account.setProperty("cookies", Property.NULL);
                 account.setProperty("uprand", Property.NULL);
-                if (e instanceof PluginException && e.getLinkStatus() == 4194304) useAPI.set(true);
                 throw e;
             }
         }
@@ -712,10 +711,7 @@ public class DepositFiles extends PluginForHost {
             try {
                 apiHandlePremium(downloadLink, account);
             } catch (PluginException e) {
-                if (e instanceof PluginException && e.getLinkStatus() == 4194304)
-                    useAPI.set(false);
-                else
-                    throw e;
+                if (useAPI.getAndSet(false) == false) throw e;
             }
         }
         if (!useAPI.get()) {
@@ -908,18 +904,21 @@ public class DepositFiles extends PluginForHost {
                 token = br.getCookie(br.getHost(), "autologin");
             if (token == null) {
                 logger.warning("Could not find 'token'");
+                useAPI.set(false);
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             accountData.put("token", (Object) token);
             String passKey = getJson("member_passkey");
             if (passKey == null) {
                 logger.warning("Could not find 'passKey'");
+                useAPI.set(false);
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             accountData.put("passKey", (Object) passKey);
             String mode = getJson("mode");
             if (mode == null) {
                 logger.warning("Could not find 'mode'");
+                useAPI.set(false);
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             accountData.put("mode", (Object) mode);
@@ -967,13 +966,9 @@ public class DepositFiles extends PluginForHost {
         } catch (PluginException e) {
             account.setProperty("accountData", Property.NULL);
             account.setProperty("free", Property.NULL);
-            if (e instanceof PluginException && e.getLinkStatus() == 4194304)
-                useAPI.set(false);
-            else {
-                ai.setStatus(JDL.L("plugins.hoster.depositfilescom.accountbad", "Account expired or not valid."));
-                account.setValid(false);
-                return ai;
-            }
+            ai.setStatus(JDL.L("plugins.hoster.depositfilescom.accountbad", "Account expired or not valid."));
+            account.setValid(false);
+            return ai;
         }
         // }
         return ai;

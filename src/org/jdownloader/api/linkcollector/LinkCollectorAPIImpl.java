@@ -319,7 +319,6 @@ public class LinkCollectorAPIImpl implements LinkCollectorAPI {
         } finally {
             lc.writeUnlock();
         }
-
         return true;
     }
 

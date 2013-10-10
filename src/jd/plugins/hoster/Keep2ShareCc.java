@@ -234,7 +234,7 @@ public class Keep2ShareCc extends PluginForHost {
     }
 
     @SuppressWarnings("unchecked")
-    private void login(final Account account, final boolean force) throws Exception {
+    private HashMap<String, String> login(final Account account, final boolean force) throws Exception {
         synchronized (LOCK) {
             try {
                 // Load cookies
@@ -250,7 +250,7 @@ public class Keep2ShareCc extends PluginForHost {
                             final String value = cookieEntry.getValue();
                             this.br.setCookie(MAINPAGE, key, value);
                         }
-                        return;
+                        return cookies;
                     }
                 }
                 prepBrowser(br);
@@ -278,6 +278,7 @@ public class Keep2ShareCc extends PluginForHost {
                 account.setProperty("name", Encoding.urlEncode(account.getUser()));
                 account.setProperty("pass", Encoding.urlEncode(account.getPass()));
                 account.setProperty("cookies", cookies);
+                return cookies;
             } catch (final PluginException e) {
                 account.setProperty("cookies", Property.NULL);
                 throw e;
@@ -339,8 +340,9 @@ public class Keep2ShareCc extends PluginForHost {
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         requestFileInformation(link);
-        login(account, false);
-        if (account.getBooleanProperty("free")) {
+        HashMap<String, String> cookies = login(account, false);
+        br.getPage("/site/profile.html");
+        if (br.containsHTML("class=\"free\">Free</a>")) {
             br.getPage(link.getDownloadURL());
             doFree(link);
         } else {
@@ -349,6 +351,12 @@ public class Keep2ShareCc extends PluginForHost {
             if (br.containsHTML("Traffic limit exceed\\!<")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
             String dllink = br.getRegex("\\'(/file/url\\.html\\?file=[a-z0-9]+)\\'").getMatch(0);
             if (dllink == null) {
+                synchronized (LOCK) {
+                    if (cookies == account.getProperty("cookies", null)) {
+                        account.setProperty("cookies", Property.NULL);
+                        throw new PluginException(LinkStatus.ERROR_RETRY);
+                    }
+                }
                 logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }

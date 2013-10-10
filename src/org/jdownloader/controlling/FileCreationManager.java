@@ -33,8 +33,7 @@ public class FileCreationManager {
     }
 
     /**
-     * Create a new instance of FileCreationManager. This is a singleton class. Access the only existing instance by using
-     * {@link #getInstance()}.
+     * Create a new instance of FileCreationManager. This is a singleton class. Access the only existing instance by using {@link #getInstance()}.
      */
     private FileCreationManager() {
         eventSender = new FileCreationEventSender();
@@ -74,9 +73,7 @@ public class FileCreationManager {
 
     public boolean delete(File file) {
         if (!file.exists()) return false;
-        //
         if (file.delete()) {
-            // getEventSender().fireEvent(new FileCreationEvent(this, FileCreationEvent.Type.REMOVE_FILES, file));
             return true;
         } else {
             if (Application.getJavaVersion() >= Application.JAVA17) {

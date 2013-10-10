@@ -493,25 +493,12 @@ public class Netloadin extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws PluginException {
-        try {
-            DownloadLink urls[] = new DownloadLink[1];
-            urls[0] = downloadLink;
-            checkLinks(urls);
-            if (!downloadLink.isAvailabilityStatusChecked()) return AvailableStatus.UNCHECKED;
-            if (downloadLink.isAvailable()) return AvailableStatus.TRUE;
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        } catch (PluginException e) {
-            /* workaround for buggy api */
-            /* workaround for stable */
-            DownloadLink tmpLink = new DownloadLink(null, "temp", "temp", "temp", false);
-            LinkStatus linkState = new LinkStatus(tmpLink);
-            e.fillLinkStatus(linkState);
-            if (linkState.hasStatus(LinkStatus.ERROR_FILE_NOT_FOUND)) {
-                return websiteFileCheck(downloadLink);
-            } else {
-                throw e;
-            }
-        }
+        DownloadLink urls[] = new DownloadLink[1];
+        urls[0] = downloadLink;
+        checkLinks(urls);
+        if (!downloadLink.isAvailabilityStatusChecked()) return AvailableStatus.UNCHECKED;
+        if (downloadLink.isAvailable()) return AvailableStatus.TRUE;
+        return websiteFileCheck(downloadLink);
     }
 
     @Override

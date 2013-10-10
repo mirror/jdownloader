@@ -13,6 +13,7 @@ import org.appwork.storage.Storable;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.encoding.Base64;
 import org.appwork.utils.logging.Log;
+import org.jdownloader.plugins.FinalLinkState;
 
 public class DownloadLinkStorable implements Storable {
 
@@ -68,27 +69,53 @@ public class DownloadLinkStorable implements Storable {
         this.link.setProperties(props);
     }
 
+    /**
+     * keep for compatibility
+     * 
+     * @return
+     */
+    @Deprecated
     public HashMap<String, String> getLinkStatus() {
-        HashMap<String, String> ret = new HashMap<String, String>();
-        ret.put("errormsg", link.getLinkStatus().getErrorMessage());
-        ret.put("lateststatus", "" + link.getLinkStatus().getLatestStatus());
-        ret.put("status", "" + link.getLinkStatus().getStatus());
-        ret.put("statustxt", link.getLinkStatus().getStatusText());
-        return ret;
+        return null;
+    }
+
+    public void setFinalLinkState(String state) {
+        if (state != null) {
+            try {
+                link.setFinalLinkState(FinalLinkState.valueOf(state));
+            } catch (final Throwable e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    public String getFinalLinkState() {
+        FinalLinkState state = link.getFinalLinkState();
+        if (state != null) { return state.name(); }
+        return null;
     }
 
     public void setLinkStatus(HashMap<String, String> status) {
         if (status != null) {
             try {
-                LinkStatus ls = link.getLinkStatus();
-                ls.setStatus(Integer.parseInt(status.get("status")));
-                ls.setLatestStatus(Integer.parseInt(status.get("lateststatus")));
-                ls.setErrorMessage(status.get("errormsg"));
-                ls.setStatusText(status.get("statustxt"));
+                int linkStatus = Integer.parseInt(status.get("status"));
+                String errormsg = status.get("errormsg");
+                String statustxt = status.get("statustxt");
+                if (linkStatus == LinkStatus.FINISHED || hasStatus(linkStatus, LinkStatus.FINISHED)) {
+                    link.setFinalLinkState(FinalLinkState.FINISHED);
+                } else if (linkStatus == LinkStatus.ERROR_FILE_NOT_FOUND || hasStatus(linkStatus, LinkStatus.ERROR_FILE_NOT_FOUND)) {
+                    link.setFinalLinkState(FinalLinkState.OFFLINE);
+                } else if (linkStatus == LinkStatus.ERROR_FATAL || hasStatus(linkStatus, LinkStatus.ERROR_FATAL)) {
+                    link.setFinalLinkState(FinalLinkState.FAILED_FATAL);
+                }
             } catch (final Throwable e) {
                 Log.exception(e);
             }
         }
+    }
+
+    private boolean hasStatus(final int is, final int expected) {
+        return (is & expected) != 0;
     }
 
     public long getSize() {

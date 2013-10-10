@@ -52,8 +52,8 @@ public class RouterUtils {
     private static InetAddress  ADDRESS_CACHE;
 
     /**
-     * Runs throw a predefined Host Table (multithreaded) and checks if there is a service on port 80. returns the ip if there is a
-     * webservice on any adress. See {@link #updateHostTable()}
+     * Runs throw a predefined Host Table (multithreaded) and checks if there is a service on port 80. returns the ip if there is a webservice on any adress.
+     * See {@link #updateHostTable()}
      * 
      * @return
      */
@@ -140,8 +140,9 @@ public class RouterUtils {
             br.setDebug(true);
             br.setVerbose(true);
             br.setProxy(HTTPProxy.NONE);
-            br.setConnectTimeout(Math.max(10, JsonConfig.create(InternetConnectionSettings.PATH, InternetConnectionSettings.class).getRouterIPCheckConnectTimeout()));
-            br.setReadTimeout(Math.max(10, JsonConfig.create(InternetConnectionSettings.PATH, InternetConnectionSettings.class).getRouterIPCheckReadTimeout()));
+            InternetConnectionSettings config = JsonConfig.create(InternetConnectionSettings.PATH, InternetConnectionSettings.class);
+            br.setConnectTimeout(Math.max(10, config.getRouterIPCheckConnectTimeout()));
+            br.setReadTimeout(Math.max(10, config.getRouterIPCheckReadTimeout()));
             br.setFollowRedirects(false);
             if (port == 443) {
                 /* 443 is https */

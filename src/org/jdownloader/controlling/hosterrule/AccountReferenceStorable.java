@@ -1,13 +1,14 @@
 package org.jdownloader.controlling.hosterrule;
 
-import jd.controlling.AccountController;
+import java.util.List;
+
 import jd.plugins.Account;
 
 import org.appwork.storage.Storable;
 
 public class AccountReferenceStorable implements Storable {
-    private long    id;
-    private boolean enabled;
+    private long    id      = -1;
+    private boolean enabled = false;
 
     public boolean isEnabled() {
         return enabled;
@@ -33,18 +34,17 @@ public class AccountReferenceStorable implements Storable {
         this.enabled = acc.isEnabled();
     }
 
-    public AccountReference restore(String hoster) {
+    public AccountReference restore(String hoster, List<Account> availableAccounts) {
         if (getId() == FreeAccountReference.FREE_ID) { return new FreeAccountReference(hoster); }
-        AccountReference ret = new AccountReference();
-        for (Account acc : AccountController.getInstance().list(null)) {
-            System.out.println(acc + " - " + acc.getId().getID() + " - " + getId());
-            if (acc.getId().getID() == getId()) {
-                ret.setAccount(acc);
-                break;
+        if (availableAccounts != null) {
+            for (Account acc : availableAccounts) {
+                if (acc.getId().getID() == getId()) {
+                    AccountReference ret = new AccountReference(acc);
+                    ret.setEnabled(isEnabled());
+                    return ret;
+                }
             }
         }
-        ret.setEnabled(isEnabled());
-        return ret;
+        return null;
     }
-
 }

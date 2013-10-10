@@ -70,26 +70,28 @@ public class LAFOptions {
 
     public static Color createColor(String str) {
         // no synch required. in worth case we create the color twice
-        Color ret = CACHE.get(str);
-        if (ret != null) return ret;
-        try {
+        synchronized (CACHE) {
+            Color ret = CACHE.get(str);
+            if (ret != null) return ret;
+            try {
 
-            if (str == null) return null;
-            str = str.toLowerCase(Locale.ENGLISH);
-            if (str.startsWith("0x")) str = str.substring(2);
-            if (str.startsWith("#")) str = str.substring(1);
-            if (str.length() < 6) return null;
-            // add alpha channel
-            while (str.length() < 8) {
-                str = "F" + str;
+                if (str == null) return null;
+                str = str.toLowerCase(Locale.ENGLISH);
+                if (str.startsWith("0x")) str = str.substring(2);
+                if (str.startsWith("#")) str = str.substring(1);
+                if (str.length() < 6) return null;
+                // add alpha channel
+                while (str.length() < 8) {
+                    str = "F" + str;
+                }
+                long rgb = Long.parseLong(str, 16);
+
+                ret = new Color((int) rgb, true);
+                CACHE.put(str, ret);
+                return ret;
+            } catch (Exception e) {
+                return null;
             }
-            long rgb = Long.parseLong(str, 16);
-
-            ret = new Color((int) rgb, true);
-            CACHE.put(str, ret);
-            return ret;
-        } catch (Exception e) {
-            return null;
         }
 
     }

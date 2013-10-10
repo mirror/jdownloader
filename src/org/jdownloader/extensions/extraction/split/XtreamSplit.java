@@ -62,7 +62,6 @@ public class XtreamSplit extends IExtraction {
     public Archive buildArchive(ArchiveFactory link) {
         String pattern = "^" + Regex.escape(link.getFilePath().replaceAll("(?i)\\.[\\d]+\\.xtm$", "")) + "\\.[\\d]+\\.xtm$";
         Archive a = SplitUtil.buildArchive(link, pattern, ".*\\.001\\.xtm$");
-        a.setExtractor(this);
         a.setName(getArchiveName(link));
         return a;
     }
@@ -312,7 +311,7 @@ public class XtreamSplit extends IExtraction {
         return createID(factory);
     }
 
-    public boolean isArchivSupported(ArchiveFactory factory) {
+    public boolean isArchivSupported(ArchiveFactory factory, boolean allowDeepInspection) {
         if (factory.getName().matches(".*\\.[\\d]+\\.xtm$")) return true;
         return false;
     }

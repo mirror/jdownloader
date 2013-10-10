@@ -76,12 +76,12 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> {
         return fileSignatures;
     }
 
-    ExtractionController(ExtractionExtension extractionExtension, Archive archiv) {
+    ExtractionController(ExtractionExtension extractionExtension, Archive archiv, IExtraction extractor) {
         this.archive = archiv;
         logger = LogController.CL(false);
         logger.setAllowTimeoutFlush(false);
         logger.info("Extraction of" + archive);
-        extractor = archive.getExtractor();
+        this.extractor = extractor;
         extractor.setArchiv(archiv);
         extractor.setExtractionController(this);
         extension = extractionExtension;
@@ -111,7 +111,7 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> {
 
     private boolean checkPassword(String pw, boolean optimized) throws ExtractionException {
         logger.info("Check Password: " + pw);
-        if (pw == null || "".equals(pw)) return false;
+        if (StringUtils.isEmpty(pw)) return false;
 
         fireEvent(ExtractionEvent.Type.PASSWORT_CRACKING);
         return extractor.findPassword(this, pw, optimized);

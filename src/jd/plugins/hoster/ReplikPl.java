@@ -220,7 +220,7 @@ public class ReplikPl extends PluginForHost {
                         else
                             logger.warning("Couldn't determine account status!");
                     }
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "Premium Account is invalid: it's free or not recognized!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
                 /** Save cookies */
                 final HashMap<String, String> cookies = new HashMap<String, String>();
@@ -232,7 +232,6 @@ public class ReplikPl extends PluginForHost {
                 account.setProperty("pass", Encoding.urlEncode(account.getPass()));
                 account.setProperty("cookies", cookies);
             } catch (final PluginException e) {
-                if (e.getErrorMessage() == null) e.setErrorMessage("Premium Account is invalid: it's free or not recognized!");
                 account.setProperty("cookies", Property.NULL);
                 throw e;
             }

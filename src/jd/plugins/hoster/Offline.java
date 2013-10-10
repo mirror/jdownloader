@@ -87,8 +87,6 @@ public class Offline extends PluginForHost {
     public boolean checkLinks(DownloadLink[] urls) {
         if (urls != null) {
             for (DownloadLink link : urls) {
-                link.getLinkStatus().addStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
-                link.getLinkStatus().setErrorMessage("Permanently Offline: Host provider no longer exists");
                 link.setAvailable(false);
             }
         }

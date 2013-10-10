@@ -463,6 +463,9 @@ public interface JdownloaderTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Skipped - File already exists" })
     String DownloadLink_setSkipped_statusmessage_file_exists();
 
+    @Default(lngs = { "en" }, values = { "Skipped - Too many retries" })
+    String DownloadLink_setSkipped_statusmessage_toomanyretries();
+
     @Default(lngs = { "en" }, values = { "Skipped - File is loading" })
     String DownloadLink_setSkipped_statusmessage_file_loading();
 

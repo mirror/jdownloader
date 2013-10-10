@@ -17,6 +17,9 @@ public class AddedDateColumn extends ExtDateColumn<AbstractNode> {
      */
     private static final long serialVersionUID = -8841119846403017974L;
 
+    private final String      formatString     = _GUI._.added_date_column_dateformat();
+    private final String      bad              = _GUI._.added_date_column_invalid();
+
     public AddedDateColumn() {
         super(_GUI._.added_date_column_title());
         rendererField.setHorizontalAlignment(SwingConstants.CENTER);
@@ -26,7 +29,6 @@ public class AddedDateColumn extends ExtDateColumn<AbstractNode> {
     @Override
     public boolean isEnabled(AbstractNode obj) {
         if (obj instanceof CrawledPackage) { return ((CrawledPackage) obj).getView().isEnabled(); }
-
         return obj.isEnabled();
     }
 
@@ -47,12 +49,11 @@ public class AddedDateColumn extends ExtDateColumn<AbstractNode> {
 
     @Override
     protected String getBadDateText(AbstractNode value) {
-        return _GUI._.added_date_column_invalid();
+        return bad;
     }
 
     protected String getDateFormatString() {
-
-        return _GUI._.added_date_column_dateformat();
+        return formatString;
     }
 
     @Override

@@ -106,7 +106,7 @@ public abstract class Challenge<T> {
         if (plugin == null) throw new WTFException("no plugin for this challenge!?");
         if (plugin instanceof PluginForHost) {
             DownloadLink dl = getDownloadLink(challenge);
-            if (dl != null) return dl.getDomainInfo(true);
+            if (dl != null) return dl.getDomainInfo();
         } else if (plugin instanceof PluginForDecrypt) {
             DomainInfo ret = DomainInfo.getInstance(getHost(challenge));
             if (ret != null) return ret;

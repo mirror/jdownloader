@@ -19,31 +19,31 @@ package org.jdownloader.gui.jdtrayicon;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 
-import jd.controlling.downloadcontroller.DownloadInformations;
+import jd.controlling.downloadcontroller.DownloadController;
 import jd.controlling.downloadcontroller.DownloadWatchDog;
 import jd.gui.swing.components.JWindowTooltip;
 import jd.gui.swing.jdgui.components.JDProgressBar;
 import jd.nutils.Formatter;
+import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
 import net.miginfocom.swing.MigLayout;
 
+import org.appwork.utils.swing.EDTRunner;
+import org.jdownloader.controlling.DownloadLinkAggregator;
 import org.jdownloader.gui.jdtrayicon.translate._TRAY;
+import org.jdownloader.gui.views.SelectionInfo;
 
 public class TrayIconTooltip extends JWindowTooltip {
 
-    private static final long          serialVersionUID = -400023413449818691L;
+    private static final long serialVersionUID = -400023413449818691L;
 
-    private JLabel                     lblSpeed;
-    private JLabel                     lblDlRunning;
-    private JLabel                     lblDlFinished;
-    private JLabel                     lblDlTotal;
-    private JDProgressBar              prgTotal;
-    private JLabel                     lblETA;
-    private JLabel                     lblProgress;
-
-    private final DownloadInformations ds;
+    private JLabel            lblSpeed;
+    private JLabel            lblDlRunning;
+    private JDProgressBar     prgTotal;
+    private JLabel            lblETA;
+    private JLabel            lblProgress;
 
     public TrayIconTooltip() {
-        ds = DownloadInformations.getInstance();
     }
 
     protected void addContent(JPanel panel) {
@@ -51,10 +51,6 @@ public class TrayIconTooltip extends JWindowTooltip {
         panel.add(new JLabel(_TRAY._.plugins_optional_trayIcon_downloads()), "spanx 2");
         panel.add(new JLabel(_TRAY._.plugins_optional_trayIcon_dl_running()), "gapleft 10");
         panel.add(lblDlRunning = new JLabel(""));
-        panel.add(new JLabel(_TRAY._.plugins_optional_trayIcon_dl_finished()), "gapleft 10");
-        panel.add(lblDlFinished = new JLabel(""));
-        panel.add(new JLabel(_TRAY._.plugins_optional_trayIcon_dl_total()), "gapleft 10");
-        panel.add(lblDlTotal = new JLabel(""));
         panel.add(new JLabel(_TRAY._.plugins_optional_trayIcon_speed()));
         panel.add(lblSpeed = new JLabel(""));
         panel.add(new JLabel(_TRAY._.plugins_optional_trayIcon_progress()));
@@ -64,19 +60,31 @@ public class TrayIconTooltip extends JWindowTooltip {
         panel.add(lblETA = new JLabel(""));
     }
 
+    @Override
     protected void updateContent() {
-        ds.updateInformations();
+        final Thread thread = Thread.currentThread();
+        final DownloadLinkAggregator dla = new DownloadLinkAggregator(new SelectionInfo<FilePackage, DownloadLink>(null, DownloadController.getInstance().getAllChildren(), null, null, null, null));
+        new EDTRunner() {
 
-        lblDlRunning.setText(String.valueOf(ds.getRunningDownloads()));
-        lblDlFinished.setText(String.valueOf(ds.getFinishedDownloads()));
-        lblDlTotal.setText(String.valueOf(ds.getDownloadCount()));
-        lblSpeed.setText(Formatter.formatReadable(DownloadWatchDog.getInstance().getDownloadSpeedManager().getSpeed()) + "/s");
+            @Override
+            protected void runInEDT() {
+                if (isVisible()) {
+                    long totalDl = dla.getTotalBytes();
+                    long curDl = dla.getBytesLoaded();
 
-        lblProgress.setText(Formatter.formatFilesize(ds.getCurrentDownloadSize(), 0) + " / " + Formatter.formatFilesize(ds.getTotalDownloadSize(), 0));
-        prgTotal.setMaximum(ds.getTotalDownloadSize());
-        prgTotal.setValue(ds.getCurrentDownloadSize());
+                    lblDlRunning.setText(String.valueOf(DownloadWatchDog.getInstance().getRunningDownloadLinks().size()));
+                    lblSpeed.setText(Formatter.formatReadable(DownloadWatchDog.getInstance().getDownloadSpeedManager().getSpeed()) + "/s");
 
-        lblETA.setText(Formatter.formatSeconds(ds.getETA()));
+                    lblProgress.setText(Formatter.formatFilesize(curDl, 0) + " / " + Formatter.formatFilesize(totalDl, 0));
+                    prgTotal.setMaximum(totalDl);
+                    prgTotal.setValue(curDl);
+
+                    lblETA.setText(Formatter.formatSeconds(dla.getEta()));
+                } else {
+                    updater.compareAndSet(thread, null);
+                }
+            }
+        }.waitForEDT();
+
     }
-
 }

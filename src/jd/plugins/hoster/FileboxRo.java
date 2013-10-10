@@ -100,8 +100,7 @@ public class FileboxRo extends PluginForHost {
         if (!dl.startDownload()) {
             /* workaround for buggy server, there is always 12 bytes missing */
             if (downloadLink.getDownloadSize() == downloadLink.getDownloadCurrent() + 13) {
-                downloadLink.getLinkStatus().reset();
-                downloadLink.getLinkStatus().addStatus(LinkStatus.FINISHED);
+                downloadLink.getLinkStatus().setStatus(LinkStatus.FINISHED);
             }
         }
     }

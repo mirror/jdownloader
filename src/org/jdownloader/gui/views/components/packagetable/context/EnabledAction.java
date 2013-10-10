@@ -7,10 +7,10 @@ import javax.swing.ImageIcon;
 
 import jd.controlling.TaskQueue;
 import jd.controlling.downloadcontroller.DownloadWatchDog;
+import jd.controlling.downloadcontroller.SingleDownloadController;
 import jd.controlling.packagecontroller.AbstractPackageChildrenNode;
 import jd.controlling.packagecontroller.AbstractPackageNode;
 import jd.plugins.DownloadLink;
-import jd.plugins.LinkStatus;
 import jd.plugins.download.DownloadInterface;
 
 import org.appwork.uio.UIOManager;
@@ -95,11 +95,10 @@ public class EnabledAction<PackageType extends AbstractPackageNode<ChildrenType,
                         for (ChildrenType a : getSelection().getChildren()) {
                             if (a instanceof DownloadLink) {
                                 DownloadLink link = (DownloadLink) a;
-                                if (link.getLinkStatus().hasStatus(LinkStatus.DOWNLOADINTERFACE_IN_PROGRESS)) {
-                                    DownloadInterface dl = link.getDownloadInstance();
-                                    if (dl != null && !dl.isResumable()) {
-                                        count++;
-                                    }
+                                SingleDownloadController slc = link.getDownloadLinkController();
+                                DownloadInterface dl = null;
+                                if (slc != null && (dl = slc.getDownloadInstance()) != null && !dl.isResumable()) {
+                                    count++;
                                 }
                             }
                         }

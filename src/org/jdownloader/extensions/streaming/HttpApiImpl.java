@@ -269,14 +269,10 @@ public class HttpApiImpl implements HttpRequestHandler {
     private void handleException(Throwable e, DownloadLink dlink, MediaItem mediaItem) {
         if (e instanceof PluginException) {
             if (dlink != null) {
-                ((PluginException) e).fillLinkStatus(dlink.getLinkStatus());
-
-                if (dlink.getLinkStatus().hasStatus(LinkStatus.ERROR_FILE_NOT_FOUND)) {
+                if (((PluginException) e).getLinkStatus() == LinkStatus.ERROR_FILE_NOT_FOUND) {
                     if (mediaItem != null) mediaItem.setDownloadError(new StreamError(ErrorCode.LINK_OFFLINE));
-
                 }
             }
-
         }
         if (e.getCause() != null && e.getCause() != e) handleException(e.getCause(), dlink, mediaItem);
     }

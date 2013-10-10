@@ -51,7 +51,7 @@ public class ReconnectPluginController {
 
     private java.util.List<RouterPlugin> plugins;
 
-    private final ReconnectConfig   storage;
+    private final ReconnectConfig        storage;
 
     private ReconnectPluginController() {
         this.storage = JsonConfig.create(ReconnectConfig.class);
@@ -174,7 +174,7 @@ public class ReconnectPluginController {
      * @throws InterruptedException
      * @throws ReconnectException
      */
-    public final boolean doReconnect(final RouterPlugin plg, LogSource logger) throws InterruptedException, ReconnectException {
+    protected final boolean doReconnect(final RouterPlugin plg, LogSource logger) throws InterruptedException, ReconnectException {
         final int waittime = Math.max(this.getWaittimeBeforeFirstIPCheck(), 0);
         // make sure that we have the current ip
         logger.info("IP Before=" + IPController.getInstance().getIP());
@@ -192,7 +192,6 @@ public class ReconnectPluginController {
         } finally {
             logger.info("IP AFTER=" + IPController.getInstance().getIP());
         }
-
     }
 
     /**

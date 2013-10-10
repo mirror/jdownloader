@@ -25,6 +25,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Random;
 import java.util.regex.Pattern;
 
 import javax.swing.ImageIcon;
@@ -37,6 +38,7 @@ import jd.controlling.captcha.CaptchaSettings;
 import jd.controlling.captcha.SkipException;
 import jd.controlling.captcha.SkipRequest;
 import jd.controlling.downloadcontroller.DownloadController;
+import jd.controlling.downloadcontroller.SingleDownloadController.WaitingQueueItem;
 import jd.http.Browser;
 import jd.nutils.Formatter;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -73,7 +75,6 @@ import org.jdownloader.logging.LogController;
 import org.jdownloader.plugins.SkipReason;
 import org.jdownloader.plugins.accounts.AccountFactory;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin;
-import org.jdownloader.settings.GeneralSettings;
 import org.jdownloader.translate._JDT;
 
 /**
@@ -84,8 +85,7 @@ import org.jdownloader.translate._JDT;
 public abstract class PluginForHost extends Plugin {
     private static Pattern[]            PATTERNS              = new Pattern[] {
                                                               /**
-                                                               * these patterns should split filename and fileextension (extension must
-                                                               * include the point)
+                                                               * these patterns should split filename and fileextension (extension must include the point)
                                                                */
                                                               // multipart rar archives
             Pattern.compile("(.*)(\\.pa?r?t?\\.?[0-9]+.*?\\.rar$)", Pattern.CASE_INSENSITIVE),
@@ -231,19 +231,23 @@ public abstract class PluginForHost extends Plugin {
     }
 
     protected String getCaptchaCode(final String method, File file, final int flag, final DownloadLink link, final String defaultValue, final String explain) throws PluginException {
-        final LinkStatus linkStatus = link.getLinkStatus();
-        final String status = linkStatus.getStatusText();
-        int latest = linkStatus.getLatestStatus();
+
+        PluginProgress progress = new PluginProgress(0, 1, null) {
+            @Override
+            public String getMessage(Object requestor) {
+                return _JDT._.gui_downloadview_statustext_jac();
+            }
+        };
+        progress.setProgressSource(this);
         this.hasCaptchas = true;
         try {
-            linkStatus.setStatusText(_JDT._.gui_downloadview_statustext_jac());
             try {
                 final BufferedImage img = ImageProvider.read(file);
-                linkStatus.setStatusIcon(new ImageIcon(IconIO.getScaledInstance(img, 16, 16)));
+                progress.setIcon(new ImageIcon(IconIO.getScaledInstance(img, 16, 16)));
             } catch (Throwable e) {
                 e.printStackTrace();
             }
-
+            link.setPluginProgress(progress);
             String orgCaptchaImage = link.getStringProperty("orgCaptchaFile", null);
             if (orgCaptchaImage != null && new File(orgCaptchaImage).exists()) {
                 file = new File(orgCaptchaImage);
@@ -278,12 +282,7 @@ public abstract class PluginForHost extends Plugin {
                 logger.warning("Cancel. Blacklist Matching");
                 throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             }
-            try {
-                ChallengeResponseController.getInstance().handle(c);
-            } finally {
-                linkStatus.addStatus(latest);
-                linkStatus.setStatusText(status);
-            }
+            ChallengeResponseController.getInstance().handle(c);
             if (!c.isSolved()) {
                 throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             } else {
@@ -307,7 +306,7 @@ public abstract class PluginForHost extends Plugin {
                             // is skipped. no reason to skip again
                             if (link.isSkipped()) return false;
                             // download is running. do not skip
-                            if (link.getDownloadInstance() != null) return false;
+                            // if (link.getDownloadInstance() != null) return false;
                             // plugin is in progress. captcha has been entered
                             PluginForHost livePlugin = link.getLivePlugin();
                             if (livePlugin != null && livePlugin.hasChallengeResponse()) { return false; }
@@ -337,7 +336,7 @@ public abstract class PluginForHost extends Plugin {
                             /* no captcha, no need to skip */
                             if (((PluginForHost) link.getDefaultPlugin()).hasCaptcha(link, null) == false) return false;
                             // download is running. do not skip
-                            if (link.getDownloadInstance() != null) return false;
+                            // if (link.getDownloadInstance() != null) return false;
                             // is skipped. no reason to skip again
                             if (link.isSkipped()) return false;
                             // plugin is in progress. captcha has been entered
@@ -370,7 +369,7 @@ public abstract class PluginForHost extends Plugin {
                             /* no captcha, no need to skip */
                             if (((PluginForHost) link.getDefaultPlugin()).hasCaptcha(link, null) == false) return false;
                             // download is running. do not skip
-                            if (link.getDownloadInstance() != null) return false;
+                            // if (link.getDownloadInstance() != null) return false;
                             // is skipped. no reason to skip again
                             if (link.isSkipped()) return false;
                             // plugin is in progress. captcha has been entered
@@ -411,28 +410,25 @@ public abstract class PluginForHost extends Plugin {
             }
             throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         } finally {
-            linkStatus.setStatusIcon(null);
+            link.setPluginProgress(null);
         }
     }
 
-    protected DownloadInterface                dl                                           = null;
+    protected DownloadInterface        dl                                           = null;
+    private static final String        AUTO_FILE_NAME_CORRECTION_NAME_SPLIT         = "AUTO_FILE_NAME_CORRECTION_NAME_SPLIT";
+    private static final String        AUTO_FILE_NAME_CORRECTION_NAME_SPLIT_PATTERN = "AUTO_FILE_NAME_CORRECTION_NAME_SPLIT_PATTERN";
 
-    private static final HashMap<String, Long> LAST_CONNECTION_TIME                         = new HashMap<String, Long>();
-    private static final HashMap<String, Long> LAST_STARTED_TIME                            = new HashMap<String, Long>();
-    private static final String                AUTO_FILE_NAME_CORRECTION_NAME_SPLIT         = "AUTO_FILE_NAME_CORRECTION_NAME_SPLIT";
-    private static final String                AUTO_FILE_NAME_CORRECTION_NAME_SPLIT_PATTERN = "AUTO_FILE_NAME_CORRECTION_NAME_SPLIT_PATTERN";
+    private long                       WAIT_BETWEEN_STARTS                          = 0;
 
-    private Long                               WAIT_BETWEEN_STARTS                          = 0L;
+    private boolean                    enablePremium                                = false;
 
-    private boolean                            enablePremium                                = false;
+    private boolean                    accountWithoutUsername                       = false;
 
-    private boolean                            accountWithoutUsername                       = false;
+    private String                     premiumurl                                   = null;
 
-    private String                             premiumurl                                   = null;
+    private DownloadLink               link                                         = null;
 
-    private DownloadLink                       link                                         = null;
-
-    protected DownloadInterfaceFactory         customizedDownloadFactory                    = null;
+    protected DownloadInterfaceFactory customizedDownloadFactory                    = null;
 
     public DownloadInterfaceFactory getCustomizedDownloadFactory() {
         return customizedDownloadFactory;
@@ -519,8 +515,7 @@ public abstract class PluginForHost extends Plugin {
     }
 
     /**
-     * Hier werden Treffer fuer Downloadlinks dieses Anbieters in diesem Text gesucht. Gefundene Links werden dann in einem ArrayList
-     * zurueckgeliefert
+     * Hier werden Treffer fuer Downloadlinks dieses Anbieters in diesem Text gesucht. Gefundene Links werden dann in einem ArrayList zurueckgeliefert
      * 
      * @param data
      *            Ein Text mit beliebig vielen Downloadlinks dieses Anbieters
@@ -532,31 +527,32 @@ public abstract class PluginForHost extends Plugin {
         final String[] hits = new Regex(data, getSupportedLinks()).getColumn(-1);
         if (hits != null && hits.length > 0) {
             links = new ArrayList<DownloadLink>(hits.length);
-            for (String file : hits) {
-                /* remove newlines... */
-                file = file.trim();
-                /*
-                 * this removes the " from HTMLParser.ArrayToString
-                 */
-                /* only 1 " at start */
-                while (file.charAt(0) == '"') {
-                    file = file.substring(1);
-                }
-                /* can have several " at the end */
-                while (file.charAt(file.length() - 1) == '"') {
-                    file = file.substring(0, file.length() - 1);
-                }
+            try {
+                PluginForHost plugin = getLazyP().getPrototype(null);
+                for (String file : hits) {
+                    /* remove newlines... */
+                    file = file.trim();
+                    /*
+                     * this removes the " from HTMLParser.ArrayToString
+                     */
+                    /* only 1 " at start */
+                    while (file.charAt(0) == '"') {
+                        file = file.substring(1);
+                    }
+                    /* can have several " at the end */
+                    while (file.charAt(file.length() - 1) == '"') {
+                        file = file.substring(0, file.length() - 1);
+                    }
 
-                try {
                     /*
                      * use this REGEX to cut of following http links, (?=https?:|$|\r|\n|)
                      */
                     /* we use null as ClassLoader to make sure all share the same ProtoTypeClassLoader */
-                    final DownloadLink link = new DownloadLink(getLazyP().getPrototype(null), null, getHost(), file, true);
+                    final DownloadLink link = new DownloadLink(plugin, null, getHost(), file, true);
                     links.add(link);
-                } catch (Throwable e) {
-                    LogSource.exception(logger, e);
                 }
+            } catch (Throwable e) {
+                LogSource.exception(logger, e);
             }
         }
         if (links != null && fp != null && fp != FilePackage.getDefaultFilePackage()) {
@@ -566,8 +562,7 @@ public abstract class PluginForHost extends Plugin {
     }
 
     /*
-     * OVERRIDE this function if you need to modify the link, ATTENTION: you have to use new browser instances, this plugin might not have
-     * one!
+     * OVERRIDE this function if you need to modify the link, ATTENTION: you have to use new browser instances, this plugin might not have one!
      */
     public void correctDownloadLink(final DownloadLink link) throws Exception {
     }
@@ -642,35 +637,10 @@ public abstract class PluginForHost extends Plugin {
         }
     }
 
-    /*
-     * Override this if you want special handling for DownloadLinks to bypass MaxSimultanDownloadNum
-     */
-    public boolean bypassMaxSimultanDownloadNum(DownloadLink link, Account acc) {
-        return false;
-    }
-
     /* TODO: remove with next major update */
     @Deprecated
     public boolean isPremiumDownload() {
         return true;
-    }
-
-    public synchronized long getLastTimeStarted() {
-        if (!LAST_STARTED_TIME.containsKey(getHost())) { return 0; }
-        return Math.max(0, (LAST_STARTED_TIME.get(getHost())));
-    }
-
-    public synchronized void putLastTimeStarted(long time) {
-        LAST_STARTED_TIME.put(getHost(), time);
-    }
-
-    public synchronized long getLastConnectionTime() {
-        if (!LAST_CONNECTION_TIME.containsKey(getHost())) { return 0; }
-        return Math.max(0, (LAST_CONNECTION_TIME.get(getHost())));
-    }
-
-    public synchronized void putLastConnectionTime(long time) {
-        LAST_CONNECTION_TIME.put(getHost(), time);
     }
 
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
@@ -714,6 +684,7 @@ public abstract class PluginForHost extends Plugin {
     public boolean enoughTrafficFor(DownloadLink downloadLink, Account account) {
         AccountInfo ai = null;
         if (account != null && (ai = account.getAccountInfo()) != null) {
+            if (ai.isUnlimitedTraffic()) return true;
             if (ai.getTrafficLeft() >= 0 && ai.getTrafficLeft() < downloadLink.getDownloadSize()) return false;
         }
         return true;
@@ -721,13 +692,20 @@ public abstract class PluginForHost extends Plugin {
 
     public void handle(final DownloadLink downloadLink, final Account account) throws Exception {
         try {
-            try {
-                while (waitForNextStartAllowed(downloadLink)) {
+            waitForNextStartAllowed(downloadLink);
+            if (false) {
+                if (false) {
+                    throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 5 * 60 * 1000l);
+                } else if (getHost().contains("share")) {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 60 * 5 * 1000l);
+                } else if (getHost().contains("upload")) {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 90 * 5 * 1000l);
+                } else if (getHost().contains("cloud")) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, new Random().nextInt(5) * 60 * 1000l);
                 }
-            } catch (InterruptedException e) {
-                return;
             }
-            putLastTimeStarted(System.currentTimeMillis());
             if (account != null) {
                 /* with account */
                 if (account.getHoster().equalsIgnoreCase(downloadLink.getHost())) {
@@ -755,8 +733,8 @@ public abstract class PluginForHost extends Plugin {
          * 
          * in fetchAccountInfo we don't have to synchronize because we create a new instance of AccountInfo and fill it
          * 
-         * if you need customizable maxDownloads, please use getMaxSimultanDownload to handle this you are in multihost when account host
-         * does not equal link host!
+         * if you need customizable maxDownloads, please use getMaxSimultanDownload to handle this you are in multihost when account host does not equal link
+         * host!
          * 
          * 
          * 
@@ -772,70 +750,139 @@ public abstract class PluginForHost extends Plugin {
 
     public abstract void resetDownloadlink(DownloadLink link);
 
-    @Deprecated
-    public void resetPluginGlobals() {
-    }
-
     public int getTimegapBetweenConnections() {
         return 50;
     }
 
     public void setStartIntervall(long interval) {
-        WAIT_BETWEEN_STARTS = interval;
+        WAIT_BETWEEN_STARTS = Math.max(0, interval);
     }
 
-    public boolean waitForNextStartAllowed(final DownloadLink downloadLink) throws InterruptedException {
-        final long time = Math.max(0, WAIT_BETWEEN_STARTS - (System.currentTimeMillis() - getLastTimeStarted()));
-        if (time > 0) {
-            try {
-                sleep(time, downloadLink);
-            } catch (PluginException e) {
-                throw new InterruptedException();
+    protected void waitForNextStartAllowed(final DownloadLink downloadLink) throws PluginException, InterruptedException {
+        WaitingQueueItem queueItem = downloadLink.getDownloadLinkController().getQueueItem();
+        long wait = WAIT_BETWEEN_STARTS;
+        if (wait == 0) {
+            queueItem.lastStartTimestamp.set(System.currentTimeMillis());
+            return;
+        }
+        PluginProgress progress = new PluginProgress(0, 0, null) {
+            private String pluginMessage = null;
+
+            @Override
+            public String getMessage(Object requestor) {
+                return pluginMessage;
             }
-            return true;
-        } else {
-            return false;
+
+            @Override
+            public void updateValues(long current, long total) {
+                if (current > 0) {
+                    pluginMessage = _JDT._.gui_download_waittime_status2(Formatter.formatSeconds(current / 1000));
+                } else {
+                    pluginMessage = null;
+                }
+                super.updateValues(current, total);
+            }
+        };
+        progress.setIcon(NewTheme.I().getIcon("wait", 16));
+        progress.setProgressSource(this);
+        try {
+            long lastQueuePosition = -1;
+            long waitQueuePosition = -1;
+            long waitMax = 0;
+            long waitCur = 0;
+            while ((waitQueuePosition = queueItem.indexOf(downloadLink)) >= 0) {
+                if (waitQueuePosition != lastQueuePosition) {
+                    waitMax = (queueItem.lastStartTimestamp.get() - System.currentTimeMillis()) + ((waitQueuePosition + 1) * wait);
+                    waitCur = waitMax;
+                    lastQueuePosition = waitQueuePosition;
+                }
+                if (waitCur <= 0) {
+                    break;
+                }
+                downloadLink.setPluginProgress(progress);
+                progress.updateValues(waitCur, waitMax);
+                long wTimeout = Math.min(1000, Math.max(0, waitCur));
+                synchronized (this) {
+                    wait(wTimeout);
+                }
+                waitCur -= wTimeout;
+            }
+            if (downloadLink.getDownloadLinkController().isAborting()) throw new PluginException(LinkStatus.ERROR_RETRY);
+            queueItem.lastStartTimestamp.set(System.currentTimeMillis());
+        } catch (final InterruptedException e) {
+            if (downloadLink.getDownloadLinkController().isAborting()) throw new PluginException(LinkStatus.ERROR_RETRY);
+            throw e;
+        } finally {
+            downloadLink.setPluginProgress(null);
         }
     }
 
-    public boolean waitForNextConnectionAllowed() throws InterruptedException {
-        final long time = Math.max(0, getTimegapBetweenConnections() - (System.currentTimeMillis() - getLastConnectionTime()));
-        if (time > 0) {
-            Thread.sleep(time);
-            return true;
-        } else {
-            return false;
+    public void waitForNextConnectionAllowed(DownloadLink downloadLink) throws InterruptedException {
+        WaitingQueueItem queueItem = downloadLink.getDownloadLinkController().getQueueItem();
+        long wait = getTimegapBetweenConnections();
+        if (wait <= 0) {
+            queueItem.lastConnectionTimestamp.set(System.currentTimeMillis());
+            return;
         }
+        while (true) {
+            long lastConnectionTimestamp = queueItem.lastConnectionTimestamp.get();
+            long waitCur = Math.max(0, lastConnectionTimestamp - System.currentTimeMillis() + wait);
+            if (waitCur <= 0) {
+                queueItem.lastConnectionTimestamp.set(System.currentTimeMillis());
+                break;
+            }
+            if (downloadLink.getDownloadLinkController().isAborting()) throw new InterruptedException("Controller aborted");
+            Thread.sleep(waitCur);
+            if (queueItem.lastConnectionTimestamp.compareAndSet(lastConnectionTimestamp, System.currentTimeMillis())) break;
+        }
+        if (downloadLink.getDownloadLinkController().isAborting()) throw new InterruptedException("Controller aborted");
     }
 
-    public void sleep(final long i, final DownloadLink downloadLink) throws PluginException {
+    protected void sleep(final long i, final DownloadLink downloadLink) throws PluginException {
         sleep(i, downloadLink, "");
     }
 
-    public void sleep(long i, DownloadLink downloadLink, String message) throws PluginException {
-        PluginProgress progress = new PluginProgress(i, i, null);
+    @Deprecated
+    public void resetPluginGlobals() {
+    }
+
+    protected void sleep(long i, DownloadLink downloadLink, final String message) throws PluginException {
+        PluginProgress progress = new PluginProgress(i, i, null) {
+            private String pluginMessage = message;
+
+            @Override
+            public String getMessage(Object requestor) {
+
+                return pluginMessage;
+            }
+
+            @Override
+            public void setCurrent(long current) {
+                if (current > 0) {
+                    pluginMessage = _JDT._.gui_download_waittime_status2(Formatter.formatSeconds(current / 1000));
+                } else {
+                    pluginMessage = message;
+                }
+                super.setCurrent(current);
+            }
+        };
         progress.setIcon(NewTheme.I().getIcon("wait", 16));
         progress.setProgressSource(this);
         try {
             downloadLink.setPluginProgress(progress);
             while (i > 0) {
-                i -= 1000;
                 progress.setCurrent(i);
-                String msg = message + _JDT._.gui_download_waittime_status2(Formatter.formatSeconds(i / 1000));
-                progress.setMessage(msg);
-                downloadLink.getLinkStatus().setStatusText(msg);
                 synchronized (this) {
-                    wait(1000);
+                    wait(Math.min(1000, Math.max(0, i)));
                 }
+                i -= 1000;
             }
         } catch (InterruptedException e) {
-            throw new PluginException(LinkStatus.TODO);
+            throw new PluginException(LinkStatus.ERROR_RETRY);
         } finally {
             downloadLink.setPluginProgress(null);
-            downloadLink.getLinkStatus().setStatusText(null);
         }
-        // if (downloadLink.getDownloadLinkController().isAborting()) throw new PluginException(LinkStatus.TODO);
-
+        if (downloadLink.getDownloadLinkController().isAborting()) throw new PluginException(LinkStatus.ERROR_RETRY);
     }
 
     public Browser getBrowser() {
@@ -966,8 +1013,8 @@ public abstract class PluginForHost extends Plugin {
     }
 
     /**
-     * Some hosters have bad filenames. Rapidshare for example replaces all special chars and spaces with _. Plugins can try to autocorrect
-     * this based on other downloadlinks
+     * Some hosters have bad filenames. Rapidshare for example replaces all special chars and spaces with _. Plugins can try to autocorrect this based on other
+     * downloadlinks
      * 
      * @param cache
      *            TODO
@@ -1063,8 +1110,7 @@ public abstract class PluginForHost extends Plugin {
                     /* no prototypesplit available yet, create new one */
                     if (pattern != null) {
                         /*
-                         * a pattern does exist, we must use the same one to make sure the *filetypes* match (eg . part01.rar and .r01 with
-                         * same filename
+                         * a pattern does exist, we must use the same one to make sure the *filetypes* match (eg . part01.rar and .r01 with same filename
                          */
                         prototypesplit = new Regex(prototypeName, pattern).getMatch(0);
                     } else {
@@ -1181,10 +1227,6 @@ public abstract class PluginForHost extends Plugin {
      */
     public boolean isHosterManipulatesFilenames() {
         return false;
-    }
-
-    public int getMaxRetries(DownloadLink link, Account acc) {
-        return JsonConfig.create(GeneralSettings.class).getMaxPluginRetries();
     }
 
     /**

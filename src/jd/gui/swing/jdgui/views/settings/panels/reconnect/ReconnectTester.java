@@ -10,8 +10,9 @@ import javax.swing.JButton;
 import javax.swing.JLabel;
 import javax.swing.SwingConstants;
 
+import jd.controlling.downloadcontroller.DownloadWatchDog;
 import jd.controlling.reconnect.ReconnectConfig;
-import jd.controlling.reconnect.Reconnecter;
+import jd.controlling.reconnect.Reconnecter.ReconnectResult;
 import jd.controlling.reconnect.ipcheck.IP;
 import jd.controlling.reconnect.ipcheck.IPController;
 import jd.gui.swing.jdgui.views.settings.components.SettingsComponent;
@@ -126,32 +127,40 @@ public class ReconnectTester extends MigPanel implements SettingsComponent, Acti
         this.lblBeforeIP.setEnabled(true);
         this.lblBeforeIpLabel.setEnabled(true);
         this.lblCurrentIP.setText("?");
-        final long timel = System.currentTimeMillis();
-        final ScheduledExecutorService scheduler = DelayedRunnable.getNewScheduledExecutorService();
-        final ScheduledFuture<?> timer = scheduler.scheduleAtFixedRate(new Runnable() {
 
-            public void run() {
-                new EDTRunner() {
-
-                    @Override
-                    protected void runInEDT() {
-                        lblTime.setText(Formatter.formatSeconds((System.currentTimeMillis() - timel) / 1000));
-                        lblTime.setEnabled(true);
-                        lblDuration.setEnabled(true);
-                    }
-
-                };
-            }
-
-        }, 1, 1, TimeUnit.SECONDS);
-        final ReconnectConfig config = JsonConfig.create(ReconnectConfig.class);
-        final int retries = config.getMaxReconnectRetryNum();
         new Thread() {
             @Override
             public void run() {
+                final ScheduledExecutorService scheduler = DelayedRunnable.getNewScheduledExecutorService();
+                final ScheduledFuture<?> timer = scheduler.scheduleAtFixedRate(new Runnable() {
+                    private final long startTimeStamp = System.currentTimeMillis();
+
+                    public void run() {
+                        new EDTRunner() {
+
+                            @Override
+                            protected void runInEDT() {
+                                lblTime.setText(Formatter.formatSeconds((System.currentTimeMillis() - startTimeStamp) / 1000));
+                                lblTime.setEnabled(true);
+                                lblDuration.setEnabled(true);
+                            }
+
+                        };
+                    }
+                }, 1, 1, TimeUnit.SECONDS);
+                final ReconnectConfig config = JsonConfig.create(ReconnectConfig.class);
+                final int retries = config.getMaxReconnectRetryNum();
                 try {
                     config.setMaxReconnectRetryNum(0);
-                    if (Reconnecter.getInstance().forceReconnect()) {
+                    boolean ret = false;
+                    try {
+                        if (DownloadWatchDog.getInstance().requestReconnect(true) == ReconnectResult.SUCCESSFUL) {
+                            ret = true;
+                        }
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                    if (ret) {
                         new EDTRunner() {
 
                             @Override
@@ -189,8 +198,8 @@ public class ReconnectTester extends MigPanel implements SettingsComponent, Acti
 
                         };
                     }
-                    config.setMaxReconnectRetryNum(retries);
                 } finally {
+                    config.setMaxReconnectRetryNum(retries);
                     timer.cancel(true);
                     scheduler.shutdown();
                     new EDTRunner() {

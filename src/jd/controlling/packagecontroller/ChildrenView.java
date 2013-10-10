@@ -6,6 +6,13 @@ import org.jdownloader.DomainInfo;
 
 public abstract class ChildrenView<T> {
 
+    public static enum ChildrenAvailablility {
+        ONLINE,
+        OFFLINE,
+        MIXED,
+        UNKNOWN;
+    }
+
     abstract public void setItems(List<T> items);
 
     abstract public void aggregate();
@@ -21,5 +28,9 @@ public abstract class ChildrenView<T> {
     abstract public List<T> getItems();
 
     abstract public boolean isEnabled();
+
+    abstract public ChildrenAvailablility getAvailability();
+
+    abstract public String getMessage(Object requestor);
 
 }

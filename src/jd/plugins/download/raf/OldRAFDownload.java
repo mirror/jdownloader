@@ -16,20 +16,24 @@ package jd.plugins.download.raf;
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import java.awt.Color;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
+import java.security.DigestInputStream;
+import java.security.MessageDigest;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
-import java.util.Vector;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.zip.CRC32;
+import java.util.zip.CheckedInputStream;
 
 import jd.controlling.downloadcontroller.DownloadController;
 import jd.controlling.downloadcontroller.DownloadWatchDog;
@@ -48,22 +52,25 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.PluginProgress;
 import jd.plugins.download.DownloadInterface;
+import jd.plugins.download.DownloadPluginProgress;
+import jd.plugins.download.HashCheckPluginProgress;
 import jd.plugins.download.RAFDownload;
 
 import org.appwork.exceptions.WTFException;
 import org.appwork.storage.config.JsonConfig;
-import org.appwork.uio.UIOManager;
 import org.appwork.utils.Exceptions;
-import org.appwork.utils.Hash;
 import org.appwork.utils.IO;
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.HexFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.logging2.LogSource;
-import org.appwork.utils.swing.dialog.Dialog;
 import org.jdownloader.controlling.FileCreationManager;
+import org.jdownloader.plugins.FinalLinkState;
 import org.jdownloader.plugins.SkipReason;
+import org.jdownloader.plugins.SkipReasonException;
 import org.jdownloader.settings.GeneralSettings;
 import org.jdownloader.statistics.StatsManager;
 import org.jdownloader.translate._JDT;
@@ -81,17 +88,11 @@ public class OldRAFDownload extends DownloadInterface {
     protected long                              totalLinkBytesLoaded     = 0;
     protected AtomicLong                        totalLinkBytesLoadedLive = new AtomicLong(0);
 
-    private Vector<Integer>                     errors                   = new Vector<Integer>();
-
-    private Vector<Exception>                   exceptions               = null;
-
     private int                                 readTimeout              = 100000;
     private int                                 requestTimeout           = 100000;
 
     private AtomicBoolean                       terminated               = new AtomicBoolean(false);
     private AtomicBoolean                       abort                    = new AtomicBoolean(false);
-
-    private boolean                             fatalErrorOccured        = false;
 
     protected int                               chunkNum                 = 1;
     private boolean                             resume                   = false;
@@ -103,7 +104,7 @@ public class OldRAFDownload extends DownloadInterface {
 
     protected final DownloadLink                downloadLink;
 
-    protected final LinkStatus                  linkStatus;
+    protected PluginException                   caughtPluginException    = null;
     public Logger                               logger;
     protected final PluginForHost               plugin;
 
@@ -145,18 +146,13 @@ public class OldRAFDownload extends DownloadInterface {
         this.downloadLink = downloadLink;
         this.plugin = plugin;
         logger = plugin.getLogger();
-        linkStatus = downloadLink.getLinkStatus();
-        linkStatus.setStatusText(_JDT._.download_connection_normal());
         browser = plugin.getBrowser().cloneBrowser();
-        requestTimeout = JsonConfig.create(InternetConnectionSettings.class).getHttpConnectTimeout();
-        readTimeout = JsonConfig.create(InternetConnectionSettings.class).getHttpReadTimeout();
+        InternetConnectionSettings config = JsonConfig.create(InternetConnectionSettings.PATH, InternetConnectionSettings.class);
+        requestTimeout = config.getHttpConnectTimeout();
+        readTimeout = config.getHttpReadTimeout();
         this.request = request;
         /* setDownloadInstance after all variables are set! */
-        downloadLink.setDownloadInstance(this);
-    }
-
-    public Vector<Exception> getExceptions() {
-        return exceptions;
+        downloadLink.getDownloadLinkController().setDownloadInstance(this);
     }
 
     /**
@@ -232,7 +228,7 @@ public class OldRAFDownload extends DownloadInterface {
         }
         if (this.plugin.getBrowser().isDebug()) logger.finest("\r\n" + request.printHeaders());
         connection = request.getHttpConnection();
-        if (request.getLocation() != null) throw new PluginException(LinkStatus.ERROR_DOWNLOAD_FAILED, BrowserAdapter.ERROR_REDIRECTED);
+        if (request.getLocation() != null) throw new PluginException(LinkStatus.ERROR_DOWNLOAD_INCOMPLETE, BrowserAdapter.ERROR_REDIRECTED);
         if (downloadLink.getVerifiedFileSize() < 0) {
             /* only set DownloadSize if we do not have a verified FileSize yet */
             String contentType = connection.getContentType();
@@ -374,7 +370,7 @@ public class OldRAFDownload extends DownloadInterface {
     /**
      * Setzt im Downloadlink und PLugin die entsprechende Fehlerids
      */
-    public boolean handleErrors() {
+    public boolean handleErrors() throws PluginException {
         if (externalDownloadStop()) return false;
         if (doFilesizeCheck() && (totalLinkBytesLoaded <= 0 || totalLinkBytesLoaded != getFileSize() && getFileSize() > 0)) {
             if (totalLinkBytesLoaded > getFileSize()) {
@@ -383,65 +379,36 @@ public class OldRAFDownload extends DownloadInterface {
                  * is okay! WONTFIX because new downloadsystem is on its way
                  */
                 logger.severe("Filesize: " + getFileSize() + " Loaded: " + totalLinkBytesLoaded);
-                if (!linkStatus.isFailed()) {
-                    linkStatus.setStatus(LinkStatus.FINISHED);
+                if (caughtPluginException == null) {
+                    downloadLink.getDownloadLinkController().getLinkStatus().setStatus(LinkStatus.FINISHED);
                 }
                 return true;
             }
             logger.severe("Filesize: " + getFileSize() + " Loaded: " + totalLinkBytesLoaded);
             logger.severe("DOWNLOAD INCOMPLETE DUE TO FILESIZECHECK");
-            error(LinkStatus.ERROR_DOWNLOAD_INCOMPLETE, _JDT._.download_error_message_incomplete());
-            return false;
+            throw new PluginException(LinkStatus.ERROR_DOWNLOAD_INCOMPLETE, _JDT._.download_error_message_incomplete());
         }
-
-        if (getExceptions() != null && getExceptions().size() > 0) {
-            error(LinkStatus.ERROR_RETRY, _JDT._.download_error_message_incomplete());
-            return false;
+        if (caughtPluginException == null) {
+            downloadLink.getDownloadLinkController().getLinkStatus().setStatus(LinkStatus.FINISHED);
+            return true;
+        } else {
+            throw caughtPluginException;
         }
-        if (!linkStatus.isFailed()) {
-            linkStatus.setStatus(LinkStatus.FINISHED);
-        }
-        return true;
-    }
-
-    protected void addException(Exception e) {
-        if (exceptions == null) {
-            exceptions = new Vector<Exception>();
-        }
-        exceptions.add(e);
     }
 
     /**
      * ueber error() kann ein fehler gemeldet werden. DIe Methode entscheided dann ob dieser fehler zu einem Abbruch fuehren muss
      */
-    protected void error(int id, String string) {
-        boolean terminate = false;
+    protected void error(PluginException pluginException) {
         synchronized (this) {
             /* if we recieved external stop, then we dont have to handle errors */
             if (externalDownloadStop()) return;
-
-            logger.severe("Error occured (" + id + "): ");
-
-            if (errors.indexOf(id) < 0) errors.add(id);
-            if (fatalErrorOccured) return;
-
-            linkStatus.addStatus(id);
-
-            linkStatus.setErrorMessage(string);
-            switch (id) {
-            case LinkStatus.ERROR_RETRY:
-            case LinkStatus.ERROR_FATAL:
-            case LinkStatus.ERROR_TIMEOUT_REACHED:
-            case LinkStatus.ERROR_FILE_NOT_FOUND:
-            case LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE:
-            case LinkStatus.ERROR_LOCAL_IO:
-            case LinkStatus.ERROR_ALREADYEXISTS:
-            case LinkStatus.ERROR_DOWNLOAD_FAILED:
-                fatalErrorOccured = true;
-                terminate = true;
+            LogSource.exception(logger, pluginException);
+            if (caughtPluginException == null) {
+                caughtPluginException = pluginException;
             }
         }
-        if (terminate) terminate(false);
+        terminate(false);
     }
 
     /**
@@ -470,60 +437,13 @@ public class OldRAFDownload extends DownloadInterface {
             } catch (final Throwable e) {
                 LogSource.exception(logger, e);
             }
-            startTimeStamp = System.currentTimeMillis();
             sizeBefore = downloadLink.getDownloadCurrent();
-            linkStatus.addStatus(LinkStatus.DOWNLOADINTERFACE_IN_PROGRESS);
-            try {
-                downloadLink.getDownloadLinkController().getConnectionHandler().addConnectionHandler(this.getManagedConnetionHandler());
-            } catch (final Throwable e) {
-            }
-            if (this.dlAlreadyFinished == false) {
-                try {
-                    boolean watchAsYouDownloadTypeLink = (Boolean) downloadLink.getFilePackage().getProperty(org.jdownloader.extensions.neembuu.NeembuuExtension.WATCH_AS_YOU_DOWNLOAD_KEY, false);
-                    boolean initiatedByWatchAsYouDownloadAction = (Boolean) downloadLink.getFilePackage().getProperty(org.jdownloader.extensions.neembuu.NeembuuExtension.INITIATED_BY_WATCH_ACTION, false);
-                    if (watchAsYouDownloadTypeLink && initiatedByWatchAsYouDownloadAction) {
-                        org.jdownloader.extensions.neembuu.DownloadSession downloadSession = new org.jdownloader.extensions.neembuu.DownloadSession(downloadLink, this, this.plugin, this.getConnection(), this.browser.cloneBrowser());
-                        if (org.jdownloader.extensions.neembuu.NeembuuExtension.tryHandle(downloadSession)) {
-                            org.jdownloader.extensions.neembuu.WatchAsYouDownloadSession watchAsYouDownloadSession = downloadSession.getWatchAsYouDownloadSession();
-                            try {
-                                watchAsYouDownloadSession.waitForDownloadToFinish();
-                            } catch (Exception a) {
-                                logger.log(Level.SEVERE, "Exception in waiting for neembuu watch as you download", a);
-                                // if we do not return, normal download would start.
-                                return false;
-                            }
-                            return true;
-                        }
-                        int o = 0;
-                        try {
-                            o = Dialog.I().showConfirmDialog(UIOManager.LOGIC_COUNTDOWN, org.jdownloader.extensions.neembuu.translate._NT._.neembuu_could_not_handle_title(), org.jdownloader.extensions.neembuu.translate._NT._.neembuu_could_not_handle_message());
-                        } catch (Exception a) {
-                            o = Dialog.RETURN_CANCEL;
-                        }
-                        if (o == Dialog.RETURN_CANCEL) return false;
-                        logger.severe("Neembuu could not handle this link/filehost. Using default download system.");
-                    } else if (watchAsYouDownloadTypeLink && !initiatedByWatchAsYouDownloadAction) {
-                        // Neembuu downloads should start if and only if user clicks
-                        // watch as you download
-                        // action in the context menu. We don't want neembuu to
-                        // start when user pressed
-                        // forced download, or simple download button.
-                        // We shall skip this link and disable all in this
-                        // filepackage
-                        downloadLink.getFilePackage().setEnabled(false);
-                        /* TODO: change me */
-                        throw new PluginException(LinkStatus.ERROR_FATAL);
-                    }
-                } catch (final Throwable e) {
-                    logger.severe("Exception in neembuu watch as you download");
-                    LogSource.exception(logger, e);
-                }
-            }
+            downloadLink.getDownloadLinkController().getConnectionHandler().addConnectionHandler(this.getManagedConnetionHandler());
             logger.finer("Start Download");
             if (this.dlAlreadyFinished == true) {
                 downloadLink.setAvailable(true);
                 logger.finer("DownloadAlreadyFinished workaround");
-                linkStatus.setStatus(LinkStatus.FINISHED);
+                downloadLink.getDownloadLinkController().getLinkStatus().setStatus(LinkStatus.FINISHED);
                 return true;
             }
             if (connected.get() == false) connect();
@@ -542,7 +462,6 @@ public class OldRAFDownload extends DownloadInterface {
                     this.downloadLink.setFinalFileName(name);
                 }
             }
-            downloadLink.getLinkStatus().setStatusText(null);
             if (connection == null || !connection.isOK()) {
                 if (connection != null) logger.finest(connection.toString());
                 try {
@@ -551,10 +470,7 @@ public class OldRAFDownload extends DownloadInterface {
                 }
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 10 * 60 * 1000l);
             }
-            if (connection.getHeaderField("Location") != null) {
-                error(LinkStatus.ERROR_PLUGIN_DEFECT, "Sent a redirect to Downloadinterface");
-                return false;
-            }
+            if (connection.getHeaderField("Location") != null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
 
             if (downloadLink.getVerifiedFileSize() < 0) {
                 /* we don't have a verified filesize yet, let's check if we have it now! */
@@ -576,22 +492,41 @@ public class OldRAFDownload extends DownloadInterface {
                         try {
                             /* first lock the part file */
                             DownloadWatchDog.getInstance().getSession().getFileAccessManager().lock(outputPartFile, dlc);
-                        } catch (FileIsLockedException e) {
-                            throw new PluginException(SkipReason.FILE_IN_PROCESS);
-                        }
-                        try {
                             /* then lock the final file */
                             DownloadWatchDog.getInstance().getSession().getFileAccessManager().lock(outputCompleteFile, dlc);
                         } catch (FileIsLockedException e) {
-                            throw new PluginException(SkipReason.FILE_EXISTS);
+                            DownloadWatchDog.getInstance().getSession().getFileAccessManager().unlock(outputCompleteFile, dlc);
+                            DownloadWatchDog.getInstance().getSession().getFileAccessManager().unlock(outputPartFile, dlc);
+                            throw new SkipReasonException(SkipReason.FILE_EXISTS);
                         }
                     }
                 }, null);
-                setupChunks();
-                /* download in progress so file should be online ;) */
-                downloadLink.setAvailable(true);
-                waitForChunks();
-                onChunksReady();
+                DownloadPluginProgress downloadPluginProgress = null;
+                try {
+                    startTimeStamp = System.currentTimeMillis();
+                    downloadPluginProgress = new DownloadPluginProgress(downloadLink, this, Color.GREEN.darker());
+                    downloadPluginProgress.setProgressSource(this);
+                    downloadLink.setPluginProgress(downloadPluginProgress);
+                    setupChunks();
+                    /* download in progress so file should be online ;) */
+                    downloadLink.setAvailable(true);
+                    waitForChunks();
+                } finally {
+                    try {
+                        downloadLink.addDownloadTime(System.currentTimeMillis() - getStartTimeStamp());
+                    } catch (final Throwable e) {
+                    }
+                    downloadLink.setPluginProgress(null);
+                }
+                HashResult result = onChunksReady();
+                if (result != null) {
+                    logger.info(result.getType() + "-Check: " + (result.hashMatch() ? "ok" : "failed"));
+                    if (result.hashMatch()) {
+                        downloadLink.getDownloadLinkController().getLinkStatus().setStatusText(_JDT._.system_download_doCRC2_success(result.getType()));
+                    } else {
+                        throw new PluginException(LinkStatus.ERROR_DOWNLOAD_FAILED, _JDT._.system_download_doCRC2_failed(result.getType()));
+                    }
+                }
                 return handleErrors();
             } finally {
                 cleanupDownladInterface();
@@ -599,27 +534,17 @@ public class OldRAFDownload extends DownloadInterface {
                 DownloadWatchDog.getInstance().getSession().getFileAccessManager().unlock(outputPartFile, dlc);
             }
         } catch (PluginException e) {
-            error(e.getLinkStatus(), e.getErrorMessage());
-            return false;
+            error(e);
+            throw e;
         } catch (Exception e) {
             if (e instanceof FileNotFoundException) {
-                this.error(LinkStatus.ERROR_LOCAL_IO, _JDT._.download_error_message_localio(e.getMessage()));
+                this.error(new PluginException(LinkStatus.ERROR_DOWNLOAD_FAILED, _JDT._.download_error_message_localio(e.getMessage()), LinkStatus.VALUE_LOCAL_IO_ERROR));
             } else {
                 LogSource.exception(logger, e);
             }
-            handleErrors();
-            return false;
+            throw e;
         } finally {
             cleanupDownladInterface();
-            try {
-                downloadLink.addDownloadTime(System.currentTimeMillis() - getStartTimeStamp());
-            } catch (final Throwable e) {
-            }
-            try {
-                downloadLink.getDownloadLinkController().getConnectionHandler().removeConnectionHandler(this.getManagedConnetionHandler());
-            } catch (final Throwable e) {
-            }
-            linkStatus.removeStatus(LinkStatus.DOWNLOADINTERFACE_IN_PROGRESS);
         }
     }
 
@@ -781,166 +706,193 @@ public class OldRAFDownload extends DownloadInterface {
         this.requestTimeout = requestTimeout;
     }
 
-    protected void onChunksReady() {
+    protected HashResult onChunksReady() throws Exception {
         logger.info("Close connections if they are not closed yet");
+        HashResult result = null;
         try {
             for (RAFChunk c : chunks) {
                 c.closeConnections();
             }
         } finally {
-            closeOutputChannel();
+            cleanupDownladInterface();
         }
-        downloadLink.getLinkStatus().setStatusText(null);
-        if (!handleErrors()) return;
-        try {
-            /* lets check the hash/crc/sfv */
-            if (JsonConfig.create(GeneralSettings.class).isHashCheckEnabled()) {
-                synchronized (HASHCHECKLOCK) {
-                    /*
-                     * we only want one hashcheck running at the same time. many finished downloads can cause heavy diskusage here
-                     */
-                    String hash = null;
-                    String type = null;
-                    Boolean success = null;
-
-                    // StatsManager
-                    if ((hash = downloadLink.getMD5Hash()) != null && hash.length() == 32) {
-                        /* MD5 Check */
-                        type = "MD5";
-                        downloadLink.getLinkStatus().setStatusText(_JDT._.system_download_doCRC2("MD5"));
-                        String hashFile = Hash.getMD5(outputPartFile);
-                        success = hash.equalsIgnoreCase(hashFile);
-                    } else if (!StringUtils.isEmpty(hash = downloadLink.getSha1Hash()) && hash.length() == 40) {
-                        /* SHA1 Check */
-                        type = "SHA1";
-                        downloadLink.getLinkStatus().setStatusText(_JDT._.system_download_doCRC2("SHA1"));
-                        String hashFile = Hash.getSHA1(outputPartFile);
-                        success = hash.equalsIgnoreCase(hashFile);
-                    } else if ((hash = new Regex(downloadLink.getName(), ".*?\\[([A-Fa-f0-9]{8})\\]").getMatch(0)) != null) {
-                        type = "CRC32";
-                        String hashFile = Long.toHexString(Hash.getCRC32(outputPartFile));
-                        success = hash.equalsIgnoreCase(hashFile);
-                    } else {
-                        DownloadLink sfv = null;
-                        boolean readL = downloadLink.getFilePackage().getModifyLock().readLock();
-                        try {
-                            for (DownloadLink dl : downloadLink.getFilePackage().getChildren()) {
-                                if (dl.getFileOutput().toLowerCase().endsWith(".sfv")) {
-                                    sfv = dl;
-                                    break;
-                                }
+        if (!handleErrors()) return result;
+        /* lets check the hash/crc/sfv */
+        if (JsonConfig.create(GeneralSettings.class).isHashCheckEnabled()) {
+            synchronized (HASHCHECKLOCK) {
+                /*
+                 * we only want one hashcheck running at the same time. many finished downloads can cause heavy diskusage here
+                 */
+                String hash = null;
+                HashResult.TYPE type = null;
+                // StatsManager
+                if ((hash = downloadLink.getMD5Hash()) != null && hash.length() == 32) {
+                    /* MD5 Check */
+                    type = HashResult.TYPE.MD5;
+                } else if (!StringUtils.isEmpty(hash = downloadLink.getSha1Hash()) && hash.length() == 40) {
+                    /* SHA1 Check */
+                    type = HashResult.TYPE.SHA1;
+                } else if ((hash = new Regex(downloadLink.getName(), ".*?\\[([A-Fa-f0-9]{8})\\]").getMatch(0)) != null) {
+                    type = HashResult.TYPE.CRC32;
+                } else {
+                    ArrayList<DownloadLink> SFVs = new ArrayList<DownloadLink>();
+                    boolean readL = downloadLink.getFilePackage().getModifyLock().readLock();
+                    try {
+                        for (DownloadLink dl : downloadLink.getFilePackage().getChildren()) {
+                            if (dl.getFileOutput().toLowerCase().endsWith(".sfv") && FinalLinkState.CheckFinished(dl.getFinalLinkState())) {
+                                SFVs.add(dl);
                             }
-                        } finally {
-                            downloadLink.getFilePackage().getModifyLock().readUnlock(readL);
                         }
-                        /* SFV File Available, lets use it */
-                        if (sfv != null && sfv.getLinkStatus().hasStatus(LinkStatus.FINISHED)) {
-                            String sfvText = IO.readFileToString(new File(sfv.getFileOutput()));
+                    } finally {
+                        downloadLink.getFilePackage().getModifyLock().readUnlock(readL);
+                    }
+                    /* SFV File Available, lets use it */
+                    for (DownloadLink SFV : SFVs) {
+                        File file = new File(SFV.getFileOutput());
+                        if (file.exists()) {
+                            String sfvText = IO.readFileToString(file);
                             if (sfvText != null) {
                                 /* Delete comments */
                                 sfvText = sfvText.replaceAll(";(.*?)[\r\n]{1,2}", "");
                                 if (sfvText != null && sfvText.contains(downloadLink.getName())) {
-                                    downloadLink.getLinkStatus().setStatusText(_JDT._.system_download_doCRC2("CRC32"));
-                                    type = "CRC32";
-                                    String crc = Long.toHexString(Hash.getCRC32(outputPartFile));
-                                    success = new Regex(sfvText, downloadLink.getName() + "\\s*" + crc).matches();
+                                    hash = new Regex(sfvText, downloadLink.getName() + "\\s*([A-Fa-f0-9]{8})").getMatch(0);
+                                    if (hash != null) {
+                                        type = HashResult.TYPE.CRC32;
+                                        break;
+                                    }
                                 }
                             }
                         }
                     }
-                    if (success != null) {
-                        hashCheckFinished(type, success);
-                    }
                 }
-            }
-
-            boolean renameOkay = false;
-            int retry = 5;
-            /* rename part file to final filename */
-            while (retry > 0) {
-                /* first we try normal rename method */
-                if ((renameOkay = outputPartFile.renameTo(outputCompleteFile)) == true) {
-                    break;
-                }
-                /* this may fail because something might lock the file */
-                Thread.sleep(1000);
-                retry--;
-            }
-            /* Fallback */
-            if (renameOkay == false) {
-                /* rename failed, lets try fallback */
-                logger.severe("Could not rename file " + outputPartFile + " to " + outputCompleteFile);
-                logger.severe("Try copy workaround!");
-                try {
-                    DISKSPACECHECK freeSpace = DownloadWatchDog.getInstance().checkFreeDiskSpace(outputPartFile.getParentFile(), downloadLink.getDownloadLinkController(), outputPartFile.length());
-                    if (DISKSPACECHECK.FAILED.equals(freeSpace)) throw new Throwable("not enough diskspace free to copy part to complete file");
-                    IO.copyFile(outputPartFile, outputCompleteFile);
-                    renameOkay = true;
-                    outputPartFile.delete();
-                } catch (Throwable e) {
-                    LogSource.exception(logger, e);
-                    /* error happened, lets delete complete file */
-                    if (outputCompleteFile.exists() && outputCompleteFile.length() != outputPartFile.length()) {
-                        FileCreationManager.getInstance().delete(outputCompleteFile);
-                    }
-                }
-                if (!renameOkay) {
-                    logger.severe("Copy workaround: :(");
-                    error(LinkStatus.ERROR_LOCAL_IO, _JDT._.system_download_errors_couldnotrename());
-                } else {
-                    logger.severe("Copy workaround: :)");
-                }
-            }
-            if (renameOkay) {
-
-                if (StatsManager.I().isEnabled()) {
-                    long speed = 0;
-                    long startDelay = -1;
+                if (type != null) {
+                    PluginProgress hashProgress = new HashCheckPluginProgress(outputPartFile, Color.YELLOW.darker(), type);
+                    hashProgress.setProgressSource(this);
                     try {
-                        speed = (outputCompleteFile.length() - Math.max(0, sizeBefore)) / ((System.currentTimeMillis() - getStartTimeStamp()) / 1000);
-                    } catch (final Throwable e) {
-                        // LogSource.exception(logger, e);
+                        downloadLink.setPluginProgress(hashProgress);
+                        final byte[] b = new byte[32767];
+                        String hashFile = null;
+                        FileInputStream fis = null;
+                        int n = 0;
+                        int cur = 0;
+                        switch (type) {
+                        case MD5:
+                        case SHA1:
+                            try {
+                                DigestInputStream is = new DigestInputStream(fis = new FileInputStream(outputPartFile), MessageDigest.getInstance(type.name()));
+                                while ((n = is.read(b)) >= 0) {
+                                    cur += n;
+                                    hashProgress.setCurrent(cur);
+                                }
+                                hashFile = HexFormatter.byteArrayToHex(is.getMessageDigest().digest());
+                            } catch (final Throwable e) {
+                                LogSource.exception(logger, e);
+                            } finally {
+                                try {
+                                    fis.close();
+                                } catch (final Throwable e) {
+                                }
+                            }
+                            break;
+                        case CRC32:
+                            try {
+                                fis = new FileInputStream(outputPartFile);
+                                CheckedInputStream cis = new CheckedInputStream(fis, new CRC32());
+                                while ((n = cis.read(b)) >= 0) {
+                                    cur += n;
+                                    hashProgress.setCurrent(cur);
+                                }
+                                hashFile = Long.toHexString(cis.getChecksum().getValue());
+                            } catch (final Throwable e) {
+                                LogSource.exception(logger, e);
+                            } finally {
+                                try {
+                                    fis.close();
+                                } catch (final Throwable e) {
+                                }
+                            }
+                            break;
+                        }
+                        result = new HashResult(hash, hashFile, type);
+                        downloadLink.getDownloadLinkController().setHashResult(result);
+                    } finally {
+                        downloadLink.setPluginProgress(null);
                     }
-                    try {
-                        startDelay = System.currentTimeMillis() - downloadLink.getDownloadLinkController().getStartTimestamp();
-                    } catch (final Throwable e) {
-                        // LogSource.exception(logger, e);
-                    }
-                    StatsManager.I().onFileDownloaded(outputCompleteFile, downloadLink, speed, startDelay, chunks.size());
                 }
+            }
+        }
 
-                /* save absolutepath as final location property */
-                downloadLink.setFinalFileOutput(outputCompleteFile.getAbsolutePath());
+        boolean renameOkay = false;
+        int retry = 5;
+        /* rename part file to final filename */
+        while (retry > 0) {
+            /* first we try normal rename method */
+            if ((renameOkay = outputPartFile.renameTo(outputCompleteFile)) == true) {
+                break;
+            }
+            /* this may fail because something might lock the file */
+            Thread.sleep(1000);
+            retry--;
+        }
+        /* Fallback */
+        if (renameOkay == false) {
+            /* rename failed, lets try fallback */
+            logger.severe("Could not rename file " + outputPartFile + " to " + outputCompleteFile);
+            logger.severe("Try copy workaround!");
+            try {
+                DISKSPACECHECK freeSpace = DownloadWatchDog.getInstance().checkFreeDiskSpace(outputPartFile.getParentFile(), downloadLink.getDownloadLinkController(), outputPartFile.length());
+                if (DISKSPACECHECK.FAILED.equals(freeSpace)) throw new Throwable("not enough diskspace free to copy part to complete file");
+                IO.copyFile(outputPartFile, outputCompleteFile);
+                renameOkay = true;
+                outputPartFile.delete();
+            } catch (Throwable e) {
+                LogSource.exception(logger, e);
+                /* error happened, lets delete complete file */
+                if (outputCompleteFile.exists() && outputCompleteFile.length() != outputPartFile.length()) {
+                    FileCreationManager.getInstance().delete(outputCompleteFile);
+                }
+            }
+            if (!renameOkay) {
+                logger.severe("Copy workaround: :(");
+                error(new PluginException(LinkStatus.ERROR_DOWNLOAD_FAILED, _JDT._.system_download_errors_couldnotrename(), LinkStatus.VALUE_LOCAL_IO_ERROR));
+            } else {
+                logger.severe("Copy workaround: :)");
+            }
+        }
+        if (renameOkay) {
+            if (StatsManager.I().isEnabled()) {
+                long speed = 0;
+                long startDelay = -1;
                 try {
-                    Date last = TimeFormatter.parseDateString(connection.getHeaderField("Last-Modified"));
-                    if (last != null && JsonConfig.create(GeneralSettings.class).isUseOriginalLastModified()) {
-                        /* set original lastModified timestamp */
-                        outputCompleteFile.setLastModified(last.getTime());
-                    } else {
-                        /* set current timestamp as lastModified timestamp */
-                        outputCompleteFile.setLastModified(System.currentTimeMillis());
-                    }
+                    speed = (outputCompleteFile.length() - Math.max(0, sizeBefore)) / ((System.currentTimeMillis() - getStartTimeStamp()) / 1000);
                 } catch (final Throwable e) {
-                    LogSource.exception(logger, e);
+                    // LogSource.exception(logger, e);
                 }
+                try {
+                    startDelay = System.currentTimeMillis() - downloadLink.getDownloadLinkController().getStartTimestamp();
+                } catch (final Throwable e) {
+                    // LogSource.exception(logger, e);
+                }
+                StatsManager.I().onFileDownloaded(outputCompleteFile, downloadLink, speed, startDelay, chunks.size());
             }
-        } catch (Exception e) {
-            logger.log(Level.SEVERE, "Exception", e);
-            addException(e);
-        }
-    }
 
-    private void hashCheckFinished(String hashType, boolean success) {
-        logger.info(hashType + "-Check: " + (success ? "ok" : "failed"));
-        if (success) {
-            downloadLink.getLinkStatus().setStatusText(_JDT._.system_download_doCRC2_success(hashType));
-        } else {
-            String error = _JDT._.system_download_doCRC2_failed(hashType);
-            downloadLink.getLinkStatus().removeStatus(LinkStatus.FINISHED);
-            downloadLink.getLinkStatus().setStatusText(error);
-            downloadLink.getLinkStatus().setValue(LinkStatus.VALUE_FAILED_HASH);
-            error(LinkStatus.ERROR_DOWNLOAD_FAILED, error);
+            /* save absolutepath as final location property */
+            downloadLink.setFinalFileOutput(outputCompleteFile.getAbsolutePath());
+            try {
+                Date last = TimeFormatter.parseDateString(connection.getHeaderField("Last-Modified"));
+                if (last != null && JsonConfig.create(GeneralSettings.class).isUseOriginalLastModified()) {
+                    /* set original lastModified timestamp */
+                    outputCompleteFile.setLastModified(last.getTime());
+                } else {
+                    /* set current timestamp as lastModified timestamp */
+                    outputCompleteFile.setLastModified(System.currentTimeMillis());
+                }
+            } catch (final Throwable e) {
+                LogSource.exception(logger, e);
+            }
         }
+
+        return result;
     }
 
     protected void setupChunks() throws Exception {
@@ -953,7 +905,6 @@ public class OldRAFDownload extends DownloadInterface {
                 this.setupVirginStart();
             }
         } catch (Exception e) {
-            addException(e);
             throw e;
         }
     }
@@ -1081,8 +1032,7 @@ public class OldRAFDownload extends DownloadInterface {
             return true;
         } catch (Exception e) {
             LogSource.exception(logger, e);
-            error(LinkStatus.ERROR_LOCAL_IO, Exceptions.getStackTrace(e));
-            addException(e);
+            error(new PluginException(LinkStatus.ERROR_DOWNLOAD_FAILED, Exceptions.getStackTrace(e), LinkStatus.VALUE_LOCAL_IO_ERROR));
             return false;
         }
     }
@@ -1122,6 +1072,10 @@ public class OldRAFDownload extends DownloadInterface {
     }
 
     public void cleanupDownladInterface() {
+        try {
+            downloadLink.getDownloadLinkController().getConnectionHandler().removeConnectionHandler(this.getManagedConnetionHandler());
+        } catch (final Throwable e) {
+        }
         try {
             this.connection.disconnect();
         } catch (Throwable e) {

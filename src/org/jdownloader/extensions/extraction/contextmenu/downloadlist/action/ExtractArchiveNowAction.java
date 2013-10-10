@@ -37,7 +37,7 @@ public class ExtractArchiveNowAction<PackageType extends AbstractPackageNode<Chi
             @Override
             public void run() {
                 for (Archive archive : archives) {
-                    if (archive.isComplete()) {
+                    if (_getExtension().isComplete(archive)) {
                         _getExtension().addToQueue(archive, true);
                     } else {
                         Dialog.getInstance().showMessageDialog(org.jdownloader.extensions.extraction.translate.T._.cannot_extract_incopmplete(archive.getName()));

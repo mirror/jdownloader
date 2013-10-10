@@ -1,6 +1,7 @@
 package org.jdownloader.controlling;
 
 import jd.controlling.downloadcontroller.ManagedThrottledConnectionHandler;
+import jd.controlling.downloadcontroller.SingleDownloadController;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.download.DownloadInterface;
@@ -8,6 +9,7 @@ import jd.plugins.download.DownloadInterface;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.gui.views.SelectionInfo;
+import org.jdownloader.plugins.FinalLinkState;
 
 public class AggregatedNumbers {
 
@@ -66,7 +68,6 @@ public class AggregatedNumbers {
     }
 
     public AggregatedNumbers(SelectionInfo<FilePackage, DownloadLink> selection) {
-
         totalBytes = 0l;
         disabledTotalBytes = 0l;
         disabledLoadedBytes = 0l;
@@ -79,7 +80,7 @@ public class AggregatedNumbers {
         linkCount = selection.getChildren().size();
         for (DownloadLink dl : selection.getChildren()) {
             if (dl == null) continue;
-            if (dl.getLinkStatus().isFailed()) {
+            if (FinalLinkState.CheckFailed(dl.getFinalLinkState())) {
                 failedTotalBytes += dl.getDownloadSize();
             } else {
                 if (dl.isEnabled()) {
@@ -94,13 +95,13 @@ public class AggregatedNumbers {
                 }
             }
             downloadSpeed += dl.getDownloadSpeed();
-            if (dl.getDownloadLinkController() != null) {
+            SingleDownloadController sdc = dl.getDownloadLinkController();
+            if (sdc != null) {
                 running++;
-                DownloadInterface conInst = dl.getDownloadInstance();
+                DownloadInterface conInst = sdc.getDownloadInstance();
                 if (conInst != null) {
                     ManagedThrottledConnectionHandler handlerP = conInst.getManagedConnetionHandler();
                     if (handlerP != null) {
-
                         connections += handlerP.size();
 
                     }

@@ -1,6 +1,9 @@
 package org.jdownloader.controlling.hosterrule;
 
 import java.util.ArrayList;
+import java.util.List;
+
+import jd.plugins.Account;
 
 import org.appwork.storage.Storable;
 
@@ -36,11 +39,9 @@ public class AccountRuleStorable implements Storable {
     private ArrayList<AccountGroupStorable> accounts;
 
     private AccountRuleStorable(/* Storable */) {
-
     }
 
     public AccountRuleStorable(AccountUsageRule hr) {
-
         this.hoster = hr.getHoster();
         this.enabled = hr.isEnabled();
         this.accounts = new ArrayList<AccountGroupStorable>();
@@ -49,12 +50,13 @@ public class AccountRuleStorable implements Storable {
         }
     }
 
-    public AccountUsageRule restore() {
+    public AccountUsageRule restore(List<Account> availableAccounts) {
         AccountUsageRule ret = new AccountUsageRule(this.getHoster());
         ret.setEnabled(isEnabled());
         ArrayList<AccountGroup> list = new ArrayList<AccountGroup>(accounts.size());
         for (AccountGroupStorable ags : accounts) {
-            list.add(ags.restore(getHoster()));
+            AccountGroup ag = ags.restore(getHoster(), availableAccounts);
+            if (ag != null) list.add(ag);
         }
         ret.setAccounts(list);
         return ret;

@@ -28,7 +28,9 @@ import org.jdownloader.extensions.extraction.ArchiveFile;
 import org.jdownloader.extensions.extraction.DummyArchive;
 import org.jdownloader.extensions.extraction.ExtractionController;
 import org.jdownloader.extensions.extraction.ExtractionControllerConstants;
+import org.jdownloader.extensions.extraction.FileSignatures;
 import org.jdownloader.extensions.extraction.IExtraction;
+import org.jdownloader.extensions.extraction.Signature;
 
 /**
  * Joins HJSplit files.
@@ -41,7 +43,6 @@ public class HJSplit extends IExtraction {
     public Archive buildArchive(ArchiveFactory link) {
         String pattern = "^" + Regex.escape(link.getFilePath().replaceAll("(?i)\\.[\\d]+$", "")) + "\\.[\\d]+$";
         Archive a = SplitUtil.buildArchive(link, pattern, ".*\\.001$");
-        a.setExtractor(this);
         a.setName(getArchiveName(link));
         return a;
     }
@@ -94,25 +95,48 @@ public class HJSplit extends IExtraction {
 
     }
 
-    public boolean isArchivSupported(ArchiveFactory factory) {
+    public boolean isArchivSupported(ArchiveFactory factory, boolean allowDeepInspection) {
         String file = factory.getFilePath();
+        boolean ret = false;
+        Archive a = null;
         if (file.matches(".*\\.[\\d]+$")) {
             if (file.matches("(?i).*\\.7z\\.\\d+$")) {
-                return false;
+                ret = false;
             } else if (file.matches("(?i).*\\..+?\\.\\d+$")) {
-                return true;
+                ret = true;
             } else {
-                // TODO
-
-                Archive a = buildArchive(factory);
-                if (a.getFirstArchiveFile() == null || a.getArchiveFiles().size() <= 1) {
-                    return false;
-                } else {
-                    return true;
+                a = buildArchive(factory);
+                if (a.getFirstArchiveFile() != null && a.getArchiveFiles().size() > 1) {
+                    ret = true;
                 }
             }
         }
-        return false;
+        if (ret && allowDeepInspection) {
+            if (a == null) {
+                a = buildArchive(factory);
+                if (a.getFirstArchiveFile() == null || a.getArchiveFiles().size() <= 1) {
+                    ret = false;
+                }
+            }
+            if (ret) {
+                String path = a.getFirstArchiveFile().getFilePath();
+                File firstFile = new File(path);
+                if (firstFile.exists() && firstFile.isFile()) {
+                    Signature signature = null;
+                    try {
+                        String sig = FileSignatures.readFileSignature(firstFile);
+                        signature = new FileSignatures().getSignature(sig);
+                    } catch (Throwable e) {
+                        e.printStackTrace();
+                    }
+                    if (signature != null) {
+                        if ("7Z".equalsIgnoreCase(signature.getId())) ret = false;
+                        if ("RAR".equalsIgnoreCase(signature.getId())) ret = false;
+                    }
+                }
+            }
+        }
+        return ret;
     }
 
     // @Override

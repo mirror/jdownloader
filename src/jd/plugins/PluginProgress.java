@@ -20,25 +20,17 @@ import java.awt.Color;
 
 import javax.swing.ImageIcon;
 
-public class PluginProgress {
+public abstract class PluginProgress {
 
     protected long      total;
-
     protected long      current;
     protected long      ETA            = -1;
 
     protected Color     color;
     protected ImageIcon icon           = null;
     protected Object    progressSource = null;
-    protected String    message        = null;
 
-    public String getMessage() {
-        return message;
-    }
-
-    public void setMessage(String message) {
-        this.message = message;
-    }
+    public abstract String getMessage(Object requestor);
 
     public PluginProgress(final long current, final long total, final Color color) {
         this.total = total;
@@ -55,7 +47,7 @@ public class PluginProgress {
     }
 
     public double getPercent() {
-        return Math.round((current * 10000.0) / total) / 100.0;
+        return Math.round((getCurrent() * 10000.0) / getTotal()) / 100.0;
     }
 
     public long getTotal() {

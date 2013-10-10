@@ -7,7 +7,9 @@ public class DownloadLinkProperty {
         PRIORITY,
         ENABLED,
         AVAILABILITY,
-        SKIPPED
+        FINAL_STATE,
+        SKIPPED,
+        CONDITIONAL_SKIPPED;
     }
 
     private final Object       value;

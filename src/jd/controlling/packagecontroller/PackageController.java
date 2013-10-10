@@ -1,6 +1,7 @@
 package jd.controlling.packagecontroller;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -69,8 +70,8 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
                                               };
 
     /**
-     * add a Package at given position position in this PackageController. in case the Package is already controlled by this
-     * PackageController this function does move it to the given position
+     * add a Package at given position position in this PackageController. in case the Package is already controlled by this PackageController this function
+     * does move it to the given position
      * 
      * @param pkg
      * @param index
@@ -99,8 +100,17 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
 
                 @Override
                 protected Void run() throws RuntimeException {
-                    pkg.setCurrentSorter(comparator);
-                    pkg.sort();
+                    try {
+                        pkg.getModifyLock().writeLock();
+                        pkg.setCurrentSorter(comparator);
+                        for (ChildType child : pkg.getChildren()) {
+                            /* this resets getPreviousParentNodeID */
+                            child.setParentNode(pkg);
+                        }
+                        Collections.sort(pkg.getChildren(), comparator);
+                    } finally {
+                        pkg.getModifyLock().writeUnlock();
+                    }
                     structureChanged.incrementAndGet();
                     _controllerPackageNodeStructureChanged(pkg, this.getQueuePrio());
                     return null;
@@ -491,6 +501,11 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
 
                         int destIndex = index;
                         List<ChildType> pkgchildren = pkg.getChildren();
+                        for (ChildType child : pkgchildren) {
+                            /* this resets getPreviousParentNodeID */
+                            child.setParentNode(pkg);
+                        }
+
                         /* remove all */
                         /*
                          * TODO: speed optimization, we have to correct the index to match changes in children structure
@@ -539,8 +554,7 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
     }
 
     /**
-     * remove the given children from the package. also removes the package from this PackageController in case it is empty after removal of
-     * the children
+     * remove the given children from the package. also removes the package from this PackageController in case it is empty after removal of the children
      * 
      * @param pkg
      * @param children
@@ -561,6 +575,10 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
                     try {
                         pkg.getModifyLock().writeLock();
                         List<ChildType> pkgchildren = pkg.getChildren();
+                        for (ChildType child : pkgchildren) {
+                            /* this resets getPreviousParentNodeID */
+                            child.setParentNode(pkg);
+                        }
                         Iterator<ChildType> it = links.iterator();
                         while (it.hasNext()) {
                             ChildType dl = it.next();

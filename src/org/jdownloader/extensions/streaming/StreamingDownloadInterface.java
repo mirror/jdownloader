@@ -21,12 +21,12 @@ public class StreamingDownloadInterface extends DownloadInterface {
     private URLConnectionAdapter              connection;
 
     public StreamingDownloadInterface(PluginForHost plugin, DownloadLink downloadLink, Request request) throws Exception {
-        downloadLink.setDownloadInstance(this);
         connectionHandler = new ManagedThrottledConnectionHandler(downloadLink);
         this.downloadLink = downloadLink;
         this.plugin = plugin;
         browser = plugin.getBrowser().cloneBrowser();
         this.request = request;
+        downloadLink.getDownloadLinkController().setDownloadInstance(this);
     }
 
     @Override
@@ -74,7 +74,7 @@ public class StreamingDownloadInterface extends DownloadInterface {
         browser.connect(request);
         if (this.plugin.getBrowser().isDebug()) plugin.getLogger().finest("\r\n" + request.printHeaders());
         connection = request.getHttpConnection();
-        if (request.getLocation() != null) throw new PluginException(LinkStatus.ERROR_DOWNLOAD_FAILED, BrowserAdapter.ERROR_REDIRECTED);
+        if (request.getLocation() != null) throw new PluginException(LinkStatus.ERROR_DOWNLOAD_INCOMPLETE, BrowserAdapter.ERROR_REDIRECTED);
         if (connection.getRange() != null) {
             /* we have a range response, let's use it */
             if (connection.getRange()[2] > 0) {
