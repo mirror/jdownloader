@@ -21,7 +21,6 @@ import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.utils.event.queue.QueueAction;
 import org.appwork.utils.swing.EDTRunner;
 import org.jdownloader.controlling.contextmenu.Customizer;
-import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.event.GUIEventSender;
 import org.jdownloader.gui.event.GUIListener;
 import org.jdownloader.gui.toolbar.action.ToolBarAction;
@@ -30,7 +29,6 @@ import org.jdownloader.gui.views.linkgrabber.LinkGrabberTableModel;
 import org.jdownloader.gui.views.linkgrabber.LinkGrabberView;
 import org.jdownloader.gui.views.linkgrabber.actions.ConfirmAutoAction;
 import org.jdownloader.gui.views.linkgrabber.actions.ConfirmAutoAction.AutoStartOptions;
-import org.jdownloader.images.NewTheme;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings.StartButtonAction;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
 import org.jdownloader.translate._JDT;
@@ -105,52 +103,15 @@ public class StartDownloadsAction extends ToolBarAction implements DownloadWatch
 
     @Override
     public void onDownloadWatchdogDataUpdate() {
-        update();
     }
 
     @Override
     public void onDownloadWatchdogStateIsIdle() {
-        update();
-
-    }
-
-    private void update() {
         new EDTRunner() {
 
             @Override
             protected void runInEDT() {
-                if (DownloadWatchDog.getInstance().isIdle()) {
-
-                    new EDTRunner() {
-
-                        @Override
-                        protected void runInEDT() {
-                            setSmallIcon(NewTheme.I().getIcon(IconKey.ICON_ADD, 24));
-                            setEnabled(true);
-                            setVisible(true);
-                        }
-                    };
-
-                } else if (DownloadWatchDog.getInstance().isRunning()) {
-                    new EDTRunner() {
-
-                        @Override
-                        protected void runInEDT() {
-                            setSmallIcon(NewTheme.I().getIcon(IconKey.ICON_ADD, 24));
-                            setEnabled(true);
-                            setVisible(true);
-                        }
-                    };
-                } else if (DownloadWatchDog.getInstance().isStopping()) {
-
-                } else {
-
-                }
-                setEnabled(false);
-                if (isHideIfDownloadsAreRunning()) {
-                    setVisible(false);
-
-                }
+                setEnabled(true);
             }
         };
 
@@ -163,18 +124,33 @@ public class StartDownloadsAction extends ToolBarAction implements DownloadWatch
 
     @Override
     public void onDownloadWatchdogStateIsRunning() {
-        update();
+        new EDTRunner() {
+
+            @Override
+            protected void runInEDT() {
+                setEnabled(false);
+                if (isHideIfDownloadsAreRunning()) {
+                    setVisible(false);
+
+                }
+            }
+        };
     }
 
     @Override
     public void onDownloadWatchdogStateIsStopped() {
-        update();
+        new EDTRunner() {
 
+            @Override
+            protected void runInEDT() {
+                setEnabled(true);
+                setVisible(true);
+            }
+        };
     }
 
     @Override
     public void onDownloadWatchdogStateIsStopping() {
-        update();
     }
 
     @Override
