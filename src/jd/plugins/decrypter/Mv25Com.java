@@ -43,6 +43,10 @@ public class Mv25Com extends PluginForDecrypt {
         final String parameter = param.toString().replace("movie25.com/", DOMAIN + "/");
         br.setFollowRedirects(true);
         br.getPage(parameter);
+        // for some users they present html based redirect!
+        String redirect = br.getRegex("<meta http-equiv=\"refresh\" content=\"\\d+;url=(https?://(www\\.)?movie25\\.so/[^\"]+\\.html)\"").getMatch(0);
+        if (redirect != null) br.getPage(redirect);
+
         if (br.getURL().equals("http://www." + DOMAIN + "/404.shtml")) {
             logger.info("Link offline: " + parameter);
             return decryptedLinks;

@@ -65,8 +65,12 @@ public class NmLdsrg extends PluginForDecrypt {
             links.add(parameter);
         } else {
             br.getPage(parameter);
-            if (br.containsHTML("Link existiert nicht")) {
+            if (br.containsHTML("Link existiert nicht|</div>[\r\n\t ]+Nicht gefunden[\r\n\t ]+</div>")) {
                 logger.info("Link offline: " + parameter);
+                DownloadLink dl = createDownloadlink("directhttp://" + parameter);
+                dl.setProperty("OFFLINE", true);
+                dl.setAvailable(false);
+                decryptedLinks.add(dl);
                 return decryptedLinks;
             }
             fpName = br.getRegex(":: (.*?)</span></h2>").getMatch(0);
