@@ -176,7 +176,8 @@ public class NowVideoEu extends PluginForHost {
 
     private void doFree(final DownloadLink downloadLink) throws Exception {
         if (br.containsHTML(ISBEINGCONVERTED)) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "This file is being converted!", 2 * 60 * 60 * 1000l);
-        final String fKey = br.getRegex("flashvars\\.filekey=\"([^<>\"]*?)\"").getMatch(0);
+        String fKey = br.getRegex("flashvars\\.filekey=\"([^<>\"]*)\"").getMatch(0);
+        if (fKey == null) fKey = br.getRegex("var fkzd=\"([^<>\"]*)\"").getMatch(0);
         if (fKey == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         br.getPage(MAINPAGE.string + "/api/player.api.php?pass=undefined&user=undefined&codes=undefined&file=" + new Regex(downloadLink.getDownloadURL(), "([a-z0-9]+)$").getMatch(0) + "&key=" + Encoding.urlEncode(fKey));
         if (br.containsHTML("The video is being transfered")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error: The video is being transfered", 30 * 60 * 1000l);
