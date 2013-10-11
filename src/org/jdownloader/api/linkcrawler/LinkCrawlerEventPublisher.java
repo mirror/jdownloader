@@ -1,4 +1,4 @@
-package org.jdownloader.api.linkcollector;
+package org.jdownloader.api.linkcrawler;
 
 import java.util.concurrent.CopyOnWriteArraySet;
 
