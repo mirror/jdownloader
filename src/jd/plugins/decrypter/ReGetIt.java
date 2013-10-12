@@ -38,7 +38,7 @@ public class ReGetIt extends PluginForDecrypt {
         final String parameter = param.toString();
         br.setFollowRedirects(true);
         br.getPage(parameter);
-        if (br.containsHTML("File not found")) {
+        if (br.containsHTML("File not found|>Links were deleted|>No links available yet")) {
             logger.info("Link offline: " + parameter);
             return decryptedLinks;
         }
@@ -46,7 +46,10 @@ public class ReGetIt extends PluginForDecrypt {
         String fpName = br.getRegex("<title>Download file (.*?) \\&mdash;").getMatch(0);
         if (fpName == null) fpName = br.getRegex("<h2>(.*?)</h2>").getMatch(0);
         String[] links = br.getRegex("\" align=\"absmiddle\"> .*?:[\t\n\r ]+<a href=\"(.*?)\"").getColumn(0);
-        if (links == null || links.length == 0) return null;
+        if (links == null || links.length == 0) {
+            logger.warning("Decrypter broken for link: " + parameter);
+            return null;
+        }
         for (String finallink : links) {
             DownloadLink dl = createDownloadlink(finallink);
             // Set filename (if available) so filename is the same for every

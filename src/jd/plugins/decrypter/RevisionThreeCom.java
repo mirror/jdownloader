@@ -34,7 +34,7 @@ public class RevisionThreeCom extends PluginForDecrypt {
     }
 
     private static final String INVALIDLINKS  = "http://(www\\.)?revision3\\.com/(blog|api|content|category|search|shows|login|forum|episodes|host|network|hub)/.*?";
-    private static final String INVALIDLINKS2 = "http://(www\\.)?revision3\\.com/[a-z0-9]+/(feed|about|subscribe).*?";
+    private static final String INVALIDLINKS2 = "http://(www\\.)?revision3\\.com/[a-z0-9]+/(feed|about|subscribe|episodes).*?";
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
@@ -45,6 +45,10 @@ public class RevisionThreeCom extends PluginForDecrypt {
             return decryptedLinks;
         }
         br.getPage(parameter);
+        if (br.containsHTML("ey there\\! You look a little lo|404: Page Not Found<")) {
+            logger.info("Link offline: " + parameter);
+            return decryptedLinks;
+        }
         String fpName = br.getRegex("<title>(.*?) \\- ").getMatch(0);
         if (fpName != null) fpName = fpName.replace("...", "");
         // Probably this handling is also good for more links but that's not
@@ -61,12 +65,6 @@ public class RevisionThreeCom extends PluginForDecrypt {
                 decryptedLinks.add(fina);
             }
         } else {
-            // Offline 1
-            if (br.containsHTML("ey there\\! You look a little lo|404: Page Not Found<")) {
-                logger.info("Link offline: " + parameter);
-                return decryptedLinks;
-            }
-            // Offline 2
             if (br.containsHTML(">This episode hasn\\'t been published yet")) {
                 logger.info("Link offline: " + parameter);
                 return decryptedLinks;

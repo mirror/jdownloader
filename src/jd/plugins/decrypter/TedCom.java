@@ -86,6 +86,7 @@ public class TedCom extends PluginForDecrypt {
         br.getPage(url);
         /** Look for external links */
         String externalLink = br.getRegex("class=\"external\" href=\"(http://(www\\.)?youtube\\.com/[^<>\"]*?)\"").getMatch(0);
+        if (externalLink == null) externalLink = br.getRegex("<iframe src=\"(https?://(www\\.)?youtube\\.com/embed/[A-Za-z0-9\\-_]+)").getMatch(0);
         if (externalLink != null) {
             decryptedLinks.add(createDownloadlink(externalLink));
             return decryptedLinks;
@@ -98,6 +99,10 @@ public class TedCom extends PluginForDecrypt {
         /** Decrypt video */
         final SubConfiguration cfg = SubConfiguration.getConfig("ted.com");
         String talkInfo = br.getRegex(">var talkDetails = \\{(.*?)<div class=\"talk\\-wrapper\">").getMatch(0);
+        if (talkInfo == null) {
+            logger.warning("Decrypter broken for link: " + parameter);
+            return decryptedLinks;
+        }
         talkInfo = Encoding.htmlDecode(talkInfo).replace("\\", "");
         if (talkInfo == null) {
             logger.warning("Decrypter broken for link: " + parameter);

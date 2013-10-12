@@ -26,7 +26,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "plunder.com" }, urls = { "http://[\\w\\.]*?(youdownload\\.eu|binarybooty\\.com|mashupscene\\.com|plunder\\.com|files\\.youdownload\\.com)/((-download-[a-z0-9]+|.+-download-.+)\\.htm|(?!/)[0-9a-z]+)" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "plunder.com" }, urls = { "http://[\\w\\.]*?(youdownload\\.eu|binarybooty\\.com|mashupscene\\.com|plunder\\.com|files\\.youdownload\\.com)/((-download-[a-z0-9]+|.+\\-download\\-.+)\\.htm|(?!/)[0-9a-z]+)" }, flags = { 0 })
 public class PlunderCom extends PluginForHost {
 
     /**

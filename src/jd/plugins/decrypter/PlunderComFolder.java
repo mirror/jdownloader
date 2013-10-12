@@ -20,6 +20,7 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.nutils.encoding.Encoding;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
@@ -44,7 +45,8 @@ public class PlunderComFolder extends PluginForDecrypt {
         }
         String fpName = br.getRegex("<title>.*?\\-(.*?)\\- Plunder").getMatch(0);
         if (fpName == null) fpName = br.getRegex("<h1>.*?files \\-(.*?)</h1>").getMatch(0);
-        String[] links = br.getRegex("title=\".*?\" href='(.*?)'>").getColumn(0);
+        if (fpName == null) fpName = br.getRegex("<title>([^<>\"]*?)</title>").getMatch(0);
+        String[] links = br.getRegex("\\'(http://(www\\.)?plunder\\.com/[a-z0-9\\-]+\\-download\\-[A-Z0-9]+\\.htm)\\'").getColumn(0);
         if (links.length == 0) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
@@ -53,7 +55,7 @@ public class PlunderComFolder extends PluginForDecrypt {
             decryptedLinks.add(createDownloadlink(dl));
         if (fpName != null) {
             FilePackage fp = FilePackage.getInstance();
-            fp.setName(fpName.trim());
+            fp.setName(Encoding.htmlDecode(fpName.trim()));
             fp.addLinks(decryptedLinks);
         }
         return decryptedLinks;
