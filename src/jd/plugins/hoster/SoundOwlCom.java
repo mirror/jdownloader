@@ -28,7 +28,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "soundowl.com" }, urls = { "http://(www\\.)?soundowl\\.com/track/[a-z0-9]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "soundowl.com" }, urls = { "http://(www\\.)?soundowl\\.com/track/[a-z0-9]+|http://dl\\.soundowl\\.com/[a-z0-9]+\\.mp3" }, flags = { 0 })
 public class SoundOwlCom extends PluginForHost {
 
     public SoundOwlCom(PluginWrapper wrapper) {
@@ -38,6 +38,12 @@ public class SoundOwlCom extends PluginForHost {
     @Override
     public String getAGBLink() {
         return "http://soundowl.com/";
+    }
+
+    public void correctDownloadLink(final DownloadLink link) {
+        if (link.getDownloadURL().contains("dl\\.")) {
+            link.setUrlDownload("http://soundowl.com/track/" + new Regex(link.getDownloadURL(), "\\.com/([^<>]+)\\.").getMatch(0));
+        }
     }
 
     @Override
