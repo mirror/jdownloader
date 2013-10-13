@@ -46,9 +46,13 @@ public class FilesFlashCom extends PluginForHost {
         this.enablePremium("http://filesflash.com/premium.php");
     }
 
-    /** Leave most of the urls unchanged as for some countries, only urls with the port in it are accessable */
+    /**
+     * Leave most of the urls unchanged as for some countries, only urls with
+     * the port in it are accessable
+     */
     // public void correctDownloadLink(DownloadLink link) {
-    // link.setUrlDownload("http://filesflash.com/" + new Regex(link.getDownloadURL(), "([a-z0-9]+)$").getMatch(0));
+    // link.setUrlDownload("http://filesflash.com/" + new
+    // Regex(link.getDownloadURL(), "([a-z0-9]+)$").getMatch(0));
     // }
 
     @Override
@@ -73,16 +77,20 @@ public class FilesFlashCom extends PluginForHost {
         AccountInfo ai = new AccountInfo();
         try {
             login(account);
-        } catch (PluginException e) {
+        } catch (final PluginException e) {
             account.setValid(false);
-            return ai;
+            throw e;
         }
         br.getPage("http://filesflash.com/index.php");
         ai.setUnlimitedTraffic();
         String expire = br.getRegex("Premium: (\\d{4}\\-\\d{2}\\-\\d{2} \\d{2}:\\d{2}:\\d{2}) UTC").getMatch(0);
         if (expire == null) {
-            account.setValid(false);
-            return ai;
+            final String lang = System.getProperty("user.language");
+            if ("de".equalsIgnoreCase(lang)) {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Accounttyp!\r\nDieses Plugin unterstützt keine Free-Accounts, da diese bei diesem Hoster keine Vorteile bringen.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid accounttype!\r\nThis plugin doesn't support free accounts for this host because they don't bring any advantages.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+            }
         } else {
             ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "yyyy-MM-dd hh:mm:ss", null));
         }
@@ -184,7 +192,14 @@ public class FilesFlashCom extends PluginForHost {
     private void login(Account account) throws Exception {
         this.setBrowserExclusive();
         br.postPage("http://filesflash.com/login.php", "email=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&submit=Login");
-        if (br.getCookie(MAINPAGE, "userid") == null || br.getCookie(MAINPAGE, "password") == null || br.containsHTML(">Invalid email address or password")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        if (br.getCookie(MAINPAGE, "userid") == null || br.getCookie(MAINPAGE, "password") == null || br.containsHTML(">Invalid email address or password")) {
+            final String lang = System.getProperty("user.language");
+            if ("de".equalsIgnoreCase(lang)) {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+            }
+        }
     }
 
     @Override
