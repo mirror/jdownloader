@@ -46,11 +46,14 @@ public class DevArtCm extends PluginForDecrypt {
     // profile.devart.com/favorites/*
     // * = ?offset=\\d+
     //
-    // All of the above formats should support spanning pages, but when parameter contains '?offset=x' it will not span.
+    // All of the above formats should support spanning pages, but when
+    // parameter contains '?offset=x' it will not span.
     //
-    // profilename.deviantart.com/art/uid/ == grabs the 'download image' (best quality available).
+    // profilename.deviantart.com/art/uid/ == grabs the 'download image' (best
+    // quality available).
     //
-    // I've created the plugin this way to allow users to grab as little or as much, content as they wish. Hopefully this wont create any
+    // I've created the plugin this way to allow users to grab as little or as
+    // much, content as they wish. Hopefully this wont create any
     // issues.
 
     private static final String FASTLINKCHECK = "FASTLINKCHECK";
@@ -103,7 +106,8 @@ public class DevArtCm extends PluginForDecrypt {
         final boolean fastcheck = SubConfiguration.getConfig("deviantart.com").getBooleanProperty(FASTLINKCHECK, false);
         final String grab = br.getRegex("<smoothie q=(.*?)(class=\"folderview-bottom\"></div>|div id=\"gallery_pager\")").getMatch(0);
         String[] artlinks = new Regex(grab, "\"(https?://[\\w\\.\\-]*?deviantart\\.com/art/[\\w\\-]+)\"").getColumn(0);
-        String nextPage = br.getRegex("href=\"(/(gallery|favourites)/(\\d+)?(\\?catpath=[^\"]+)?((\\?|&amp;|&)offset=\\d+))\">Next</a>").getMatch(0);
+        // href="/gallery/?set=46236989&amp;offset=24">Next</a></li><
+        String nextPage = br.getRegex("href=\"(/(gallery|favourites)/[^<>\"]*?((\\?|&amp;|&)offset=\\d+))\">Next</a>").getMatch(0);
         if (artlinks == null || artlinks.length == 0) {
             logger.warning("Possible Plugin error, with finding /art/ links: " + parameter);
             return;
