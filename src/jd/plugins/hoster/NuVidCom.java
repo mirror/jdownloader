@@ -82,9 +82,9 @@ public class NuVidCom extends PluginForHost {
         if (br.containsHTML("This video was deleted\\.")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
         String filename = br.getRegex("<h2>([^<>\"]*?)</h2>").getMatch(0);
         if (filename == null) {
-            filename = br.getRegex("<title>([^<>\"]*?) - Free Porn \\& Sex Video \\- Hardcore, Cum").getMatch(0);
+            filename = br.getRegex("<title>([^<>\"]*?) - Free Porn \\& Sex Video").getMatch(0);
         }
-        final String linkPart = br.getRegex("\\'(/player/config\\.php\\?t=.*?)\\'\\);").getMatch(0);
+        final String linkPart = br.getRegex("\\'http://nuvid\\.com(/player/config\\.php\\?t=.*?)\\'\\);").getMatch(0);
         if (filename == null || linkPart == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
         getDllink(linkPart);
         if (DLLINK == null && br.containsHTML("Invalid video key")) throw new PluginException(LinkStatus.ERROR_FATAL, "Plugin outdated, key has changed!");
