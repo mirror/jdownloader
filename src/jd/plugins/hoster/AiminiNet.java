@@ -49,8 +49,8 @@ public class AiminiNet extends PluginForHost {
         br.getPage(link.getDownloadURL());
         if (br.containsHTML(">File does not exist or is not valid")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (br.containsHTML(">This file has been removed")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        final String filename = br.getRegex(">Display Name</font><br>([^<>\"]*?)</td>").getMatch(0);
-        final String filesize = br.getRegex(">File Size \\(Bytes\\)</font><br>([^<>\"]*?)</td>").getMatch(0);
+        final String filename = br.getRegex(">Display Name</font><br />([^<>\"]*?)</td>").getMatch(0);
+        final String filesize = br.getRegex(">File Size \\(Bytes\\)</font><br />([^<>\"]*?)</td>").getMatch(0);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         link.setName(Encoding.htmlDecode(filename.trim()));
         link.setDownloadSize(SizeFormatter.getSize(filesize.replace(",", "") + "b"));
