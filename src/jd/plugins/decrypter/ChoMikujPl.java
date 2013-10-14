@@ -54,7 +54,7 @@ public class ChoMikujPl extends PluginForDecrypt {
     private final String       PAGEDECRYPTLINK          = "https?://chomikujpagedecrypt\\.pl/.+";
     private final String       ENDINGS                  = "\\.(3gp|7zip|7z|abr|ac3|aiff|aifc|aif|ai|au|avi|bin|bat|bz2|cbr|cbz|ccf|chm|cso|cue|cvd|dta|deb|divx|djvu|dlc|dmg|doc|docx|dot|eps|epub|exe|ff|flv|flac|f4v|gsd|gif|gz|iwd|idx|iso|ipa|ipsw|java|jar|jpg|jpeg|load|m2ts|mws|mv|m4v|m4a|mkv|mp2|mp3|mp4|mobi|mov|movie|mpeg|mpe|mpg|mpq|msi|msu|msp|nfo|npk|oga|ogg|ogv|otrkey|par2|pkg|png|pdf|pptx|ppt|pps|ppz|pot|psd|qt|rmvb|rm|rar|ram|ra|rev|rnd|[r-z]\\d{2}|r\\d+|rpm|run|rsdf|reg|rtf|shnf|sh(?!tml)|ssa|smi|sub|srt|snd|sfv|swf|tar\\.gz|tar\\.bz2|tar\\.xz|tar|tgz|tiff|tif|ts|txt|viv|vivo|vob|webm|wav|wmv|wma|xla|xls|xpi|zeno|zip)";
     private final String       VIDEOENDINGS             = "\\.(avi|flv|mp4|mpg|rmvb|divx|wmv|mkv)";
-    private final String       UNSUPPORTED              = "http://(www\\.)?chomikuj\\.pl//?(action/[^<>\"]+|(Media|Kontakt|PolitykaPrywatnosci|Empty|Abuse|Sugestia|LostPassword|Zmiany|Regulamin|Platforma)\\.aspx|favicon\\.ico)";
+    private final String       UNSUPPORTED              = "http://(www\\.)?chomikuj\\.pl//?(action/[^<>\"]+|(Media|Kontakt|PolitykaPrywatnosci|Empty|Abuse|Sugestia|LostPassword|Zmiany|Regulamin|Platforma)\\.aspx|favicon\\.ico|konkurs_literacki/info)";
     private static Object      LOCK                     = new Object();
 
     public int getMaxConcurrentProcessingInstances() {
@@ -91,7 +91,8 @@ public class ChoMikujPl extends PluginForDecrypt {
             final boolean isLinkendingWithoutID = (!linkending.contains(",") && tempExt != null && new Regex(tempExt, Pattern.compile(ENDINGS, Pattern.CASE_INSENSITIVE & Pattern.CANON_EQ)).matches());
             if (linkending.matches(",\\d+\\.[A-Za-z0-9]{1,5}") || isLinkendingWithoutID) {
                 /**
-                 * If the ID is missing but it's a single link we have to access the link to get it's read link and it's download ID.
+                 * If the ID is missing but it's a single link we have to access
+                 * the link to get it's read link and it's download ID.
                  */
                 if (isLinkendingWithoutID) {
                     br.getPage(parameter);
@@ -105,7 +106,8 @@ public class ChoMikujPl extends PluginForDecrypt {
                         parameter = orgLink;
                     } else {
                         // Hmm nothing to download --> Offline
-                        // first check if it is folder - i.e foldername with ENDINGS ("8 Cold fusion 2011 pl brrip x264")
+                        // first check if it is folder - i.e foldername with
+                        // ENDINGS ("8 Cold fusion 2011 pl brrip x264")
                         String folderIdCheck = br.getRegex("type=\"hidden\" name=\"FolderId\" value=\"(\\d+)\"").getMatch(0);
                         if (folderIdCheck == null) folderIdCheck = br.getRegex("name=\"folderId\" type=\"hidden\" value=\"(\\d+)\"").getMatch(0);
                         // if it is not folder then report offline file
@@ -227,7 +229,9 @@ public class ChoMikujPl extends PluginForDecrypt {
             br.getPage(br.getRedirectLocation());
         }
         /** Get needed values */
-        // String fpName = br.getRegex("<meta name=\"keywords\" content=\"(.+?),(.+?)\" />").getMatch(0); // Sorry, which links need this?
+        // String fpName =
+        // br.getRegex("<meta name=\"keywords\" content=\"(.+?),(.+?)\" />").getMatch(0);
+        // // Sorry, which links need this?
         String fpName = br.getRegex("<meta name=\"keywords\" content=\"(.+?)\" />").getMatch(0);
         if (fpName == null) {
             br.getRegex("<title>(.*?) \\- .*? \\- Chomikuj\\.pl.*?</title>").getMatch(0);
@@ -293,7 +297,8 @@ public class ChoMikujPl extends PluginForDecrypt {
         final boolean decryptFolders = chomikujpl.getPluginConfig().getBooleanProperty(jd.plugins.hoster.ChoMikujPl.DECRYPTFOLDERS, false);
         // Password handling
         if (br.containsHTML(PASSWORDTEXT)) {
-            // prevent more than one password from processing and displaying at any point in time!
+            // prevent more than one password from processing and displaying at
+            // any point in time!
             synchronized (LOCK) {
                 prepareBrowser(parameter, br);
                 final Form pass = br.getFormbyProperty("id", "LoginToFolder");
@@ -313,7 +318,8 @@ public class ChoMikujPl extends PluginForDecrypt {
                     if (br.containsHTML("\\{\"IsSuccess\":true")) {
                         break;
                     } else {
-                        // Maybe password was saved before but has changed in the meantime!
+                        // Maybe password was saved before but has changed in
+                        // the meantime!
                         param.setProperty("password", Property.NULL);
                         continue;
                     }
@@ -339,7 +345,8 @@ public class ChoMikujPl extends PluginForDecrypt {
             return null;
         } else if (pageCount == 0) pageCount = 1;
 
-        // More than one page? Every page goes back into the decrypter as a single link!
+        // More than one page? Every page goes back into the decrypter as a
+        // single link!
         if (pageCount > 1 && !param.toString().matches(PAGEDECRYPTLINK)) {
             logger.info("Found " + pageCount + " pages. Adding those for the decryption now.");
             for (int i = 1; i <= pageCount; i++) {
@@ -376,9 +383,11 @@ public class ChoMikujPl extends PluginForDecrypt {
             addRegexInt(0, 1, 3, 4, 2);
             if (fileIds == null || fileIds.length == 0) {
                 /**
-                 * Specified for videos (also works for mp3s, maybe also for other types)
+                 * Specified for videos (also works for mp3s, maybe also for
+                 * other types)
                  */
-                // this will also handle the table data with ratings, also removed
+                // this will also handle the table data with ratings, also
+                // removed
                 // <span class=\"e\"> </span> from Regex, this is removed at the
                 // later stage of parsing
                 fileIds = tempBr.getRegex("<ul class=\"borderRadius tabGradientBg\">([\t\n\r ]+<li>[\t\n\r ]+<span class=\"rating_info\">[\t\n\r ]+<span style=\"display: none\" class=\"ratingTooltip\">.+?</span>[\t\n\r ]+<img src=\".+[\t\n\r ]+</span>[\t\n\r ]+</li>)*?[\t\n\r ]+<li><span>([^<>\"\\']+)</span></li>[\t\n\r ]+<li><span class=\"date\">[^<>\"\\']+</span></li>[\t\n\r ]+</ul>[\t\n\r ]+</div>[\t\n\r ]+<div class=\"fileActionsButtons clear visibleButtons  fileIdContainer\" rel=\"(\\d+)\" style=\"visibility: hidden;\">.*?class=\"expanderHeader downloadAction\" href=\"[^<>\"\\']+\" title=\"[^<>\"\\']+\">[\t\n\r ]+<span class=\"bold\">(.*?)</span>([^<>\"\\']+)</a>[\t\n\r ]+<img alt=\"pobierz\" class=\"downloadArrow visibleArrow\" src=\"").getMatches();
@@ -419,7 +428,8 @@ public class ChoMikujPl extends PluginForDecrypt {
                         dl.setDownloadSize(SizeFormatter.getSize(id[REGEXSORT.get(2)].replace(",", ".")));
                         dl.setAvailable(true);
                         /**
-                         * If the link is a video it needs other download handling
+                         * If the link is a video it needs other download
+                         * handling
                          */
                         if (id[REGEXSORT.get(1)].trim().matches(VIDEOENDINGS)) dl.setProperty("video", true);
                     } else {

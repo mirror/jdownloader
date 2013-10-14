@@ -49,7 +49,8 @@ public class AnySendCom extends PluginForHost {
         return "http://www.anysend.com/terms.html";
     }
 
-    private static StringContainer agent = new StringContainer();
+    private static StringContainer agent   = new StringContainer();
+    private final String           NOSLOTS = ">No slow download slots available";
 
     public static class StringContainer {
         public String string = null;
@@ -92,16 +93,18 @@ public class AnySendCom extends PluginForHost {
         String filename = br.getRegex("class=\"filename\">([^<>\"]+)</h1>").getMatch(0);
         if (filename == null) filename = br.getRegex(">File Name: (.*?)<").getMatch(0);
         String filesize = br.getRegex("id=\"files-size\">([^<>\"]+)</td>").getMatch(0);
-        if (filesize == null) filesize = br.getRegex(">File Size: (\\d+(\\.\\d+)? (KB|MB|GB))<").getMatch(0);
+        if (filesize == null) filesize = br.getRegex(">File Size: (\\d+((\\.|,)\\d+)? ?(KB|MB|GB))<").getMatch(0);
         if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         link.setName(Encoding.htmlDecode(filename.trim()));
-        if (filesize != null) link.setDownloadSize(SizeFormatter.getSize(filesize.trim()));
+        if (filesize != null) link.setDownloadSize(SizeFormatter.getSize(filesize.trim().replace(",", ".")));
+        if (br.containsHTML(NOSLOTS)) link.getLinkStatus().setStatusText("No free slots available");
         return AvailableStatus.TRUE;
     }
 
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
+        if (br.containsHTML(NOSLOTS)) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "No free slots available", 5 * 60 * 1000l);
         String dllink = checkDirectLink(downloadLink, "directlink");
         if (dllink == null) {
             final String a = br.getRegex("a:'([A-Za-z0-9]+)'").getMatch(0);
@@ -128,8 +131,7 @@ public class AnySendCom extends PluginForHost {
             XMLBR.getPage("http://download.anysend.com/download/getcode.php?a=" + a + "&v=" + v + "&key=" + key + "&code=" + JDHash.getMD5(code + rc.getChallenge() + c).toUpperCase() + "&challenge=" + rc.getChallenge() + "&response=" + Encoding.urlEncode(c));
             if ("true".equalsIgnoreCase(getResult(XMLBR, "isRecaptchaError")) && "Incorrect response".equalsIgnoreCase(getResult(XMLBR, "recaptchaMessage")))
                 throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-            else if ("true".equalsIgnoreCase(getResult(XMLBR, "isError")) && "Not authorized".equalsIgnoreCase(getResult(XMLBR, "error"))) 
-                throw new PluginException(LinkStatus.ERROR_RETRY);
+            else if ("true".equalsIgnoreCase(getResult(XMLBR, "isError")) && "Not authorized".equalsIgnoreCase(getResult(XMLBR, "error"))) throw new PluginException(LinkStatus.ERROR_RETRY);
             final String dlkey = XMLBR.getRegex("\"dlkey\":\"([A-Za-z0-9]+)\"").getMatch(0);
             if (dlkey == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             XMLBR.getPage("http://" + ip + "/anysend/info/" + key + "?callback=jQuery" + System.currentTimeMillis() + "_" + random + "&_=" + System.currentTimeMillis());

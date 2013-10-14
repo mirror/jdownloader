@@ -64,35 +64,40 @@ public class UzManTvCom extends PluginForHost {
     }
 
     private String getDllink() throws Exception {
-        String crypticID = br.getRegex("/getswf/(.*?)\"").getMatch(0);
-        if (crypticID == null) {
-            crypticID = br.getRegex("id=\"konulink(.*?)\"").getMatch(0);
+        String dllink = br.getRegex("var \\$flv = encodeURIComponent\\(\"(http://[^<>\"]*?)\"\\)").getMatch(0);
+        if (dllink == null) {
+            String crypticID = br.getRegex("/getswf/(.*?)\"").getMatch(0);
             if (crypticID == null) {
-                crypticID = br.getRegex(">video=\\'(.*?)\\'").getMatch(0);
+                crypticID = br.getRegex("id=\"konulink(.*?)\"").getMatch(0);
                 if (crypticID == null) {
-                    crypticID = br.getRegex("v:\\((.*?)\\)").getMatch(0);
+                    crypticID = br.getRegex(">video=\\'(.*?)\\'").getMatch(0);
                     if (crypticID == null) {
-                        crypticID = br.getRegex("\\'v=(.*?)\\&").getMatch(0);
+                        crypticID = br.getRegex("v:\\((.*?)\\)").getMatch(0);
+                        if (crypticID == null) {
+                            crypticID = br.getRegex("\\'v=(.*?)\\&").getMatch(0);
+                        }
                     }
                 }
             }
-        }
-        String videoID = br.getRegex("\\'\\&no=(\\d+)\\&").getMatch(0);
-        if (videoID == null) {
-            videoID = br.getRegex("property=\"og:title\" /><meta content=\"http://st\\d+\\.uzmantv\\.com/videos/(\\d+)/").getMatch(0);
+            String videoID = br.getRegex("\\'\\&no=(\\d+)\\&").getMatch(0);
             if (videoID == null) {
-                videoID = br.getRegex("rel=\"canonical\" /><link href=\"http://st\\d+\\.uzmantv\\.com/videos/(\\d+)/").getMatch(0);
+                videoID = br.getRegex("property=\"og:title\" /><meta content=\"http://st\\d+\\.uzmantv\\.com/videos/(\\d+)/").getMatch(0);
                 if (videoID == null) {
-                    videoID = br.getRegex("rel=\"image_src\" /><link href=\"http://st\\d+\\.uzmantv\\.com/videos/(\\d+)/").getMatch(0);
+                    videoID = br.getRegex("rel=\"canonical\" /><link href=\"http://st\\d+\\.uzmantv\\.com/videos/(\\d+)/").getMatch(0);
                     if (videoID == null) {
-                        videoID = br.getRegex("rel=\"thumbnail\" /><link href=\"http://st\\d+\\.uzmantv\\.com/videos/(\\d+)/").getMatch(0);
+                        videoID = br.getRegex("rel=\"image_src\" /><link href=\"http://st\\d+\\.uzmantv\\.com/videos/(\\d+)/").getMatch(0);
+                        if (videoID == null) {
+                            videoID = br.getRegex("rel=\"thumbnail\" /><link href=\"http://st\\d+\\.uzmantv\\.com/videos/(\\d+)/").getMatch(0);
+                        }
                     }
                 }
             }
+            if (videoID == null) return null;
+            String ext = br.getRegex("ext=([a-z0-9]{2,5})\\&").getMatch(0);
+            if (ext == null) ext = "flv";
+            dllink = "http://st2.uzmantv.com/c/" + crypticID + "_" + videoID + "_" + execJS(getCorrectJsAdditional()) + "." + ext;
         }
-        String ext = br.getRegex("ext=([a-z0-9]{2,5})\\&").getMatch(0);
-        if (ext == null) ext = "flv";
-        return "http://st2.uzmantv.com/c/" + crypticID + "_" + videoID + "_" + execJS(getCorrectJsAdditional()) + "." + ext;
+        return dllink;
     }
 
     private String getCorrectJsAdditional() {
@@ -151,7 +156,10 @@ public class UzManTvCom extends PluginForHost {
         DLLINK = getDllink();
         if (filename == null || DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         filename = filename.trim();
-        downloadLink.setFinalFileName(filename.replaceAll("\\?$", "") + DLLINK.substring(DLLINK.length() - 4, DLLINK.length()));
+        String ext = DLLINK.substring(DLLINK.length() - 4, DLLINK.length());
+        if (ext == null || ext.length() > 5) ext = ".mp4";
+        if (DLLINK.contains(".mp4")) ext = ".mp4";
+        downloadLink.setFinalFileName(filename.replaceAll("\\?$", "") + ext);
         DLLINK += DLLINKPART;
         Browser br2 = br.cloneBrowser();
         // In case the link redirects to the finallink

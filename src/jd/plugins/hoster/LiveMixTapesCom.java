@@ -37,13 +37,14 @@ import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "livemixtapes.com" }, urls = { "http://(www\\.)?(livemixtap\\.es/[a-z0-9]+|(\\w+\\.)?livemixtapes\\.com/(download(/mp3)?|mixtapes)/\\d+/.*?\\.html)" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "livemixtapes.com" }, urls = { "http://(\\w+\\.)?livemixtapes\\.com/download(/mp3)?/\\d+/.*?\\.html" }, flags = { 2 })
 public class LiveMixTapesCom extends PluginForHost {
 
     private static final String CAPTCHATEXT            = "/captcha/captcha\\.gif\\?";
     private static final String MAINPAGE               = "http://www.livemixtapes.com/";
     private static final String MUSTBELOGGEDIN         = ">You must be logged in to access this page";
     private static final String ONLYREGISTEREDUSERTEXT = "Download is only available for registered users";
+    private static final String REDIRECTLINK           = "http://(www\\.)?livemixtap\\.es/[a-z0-9]+";
 
     public LiveMixTapesCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -51,8 +52,42 @@ public class LiveMixTapesCom extends PluginForHost {
         this.enablePremium("http://www.livemixtapes.com/signup.html");
     }
 
-    public void correctDownloadLink(DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replace("/mixtapes/", "/download/"));
+    public void correctDownloadLink(final DownloadLink link) {
+        link.setUrlDownload(link.getDownloadURL().replace("livemixtapesdecrypted.com/", "livemixtapes.com/"));
+    }
+
+    @Override
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+        this.setBrowserExclusive();
+        br.getHeaders().put("Accept-Encoding", "gzip,deflate");
+        br.setFollowRedirects(true);
+        br.getPage(link.getDownloadURL());
+        if (br.containsHTML("(>Not Found</|The page you requested could not be found\\.<|>This mixtape is no longer available for download.<)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = null, filesize = null;
+        if (br.containsHTML(MUSTBELOGGEDIN)) {
+            final Regex fileInfo = br.getRegex("<td height=\"35\"><div style=\"padding\\-left: 8px\">([^<>\"]*?)</div></td>[\t\n\r ]+<td align=\"center\">([^<>\"]*?)</td>");
+            filename = fileInfo.getMatch(0);
+            filesize = fileInfo.getMatch(1);
+            if (filename == null || filesize == null) {
+                link.getLinkStatus().setStatusText(ONLYREGISTEREDUSERTEXT);
+                return AvailableStatus.TRUE;
+            }
+        } else {
+            final String timeRemaining = br.getRegex("TimeRemaining = (\\d+);").getMatch(0);
+            if (timeRemaining != null) {
+                link.getLinkStatus().setStatusText("Not yet released, cannot download");
+                link.setName(Encoding.htmlDecode(br.getRegex("<title>([^<>\"]*?)</title>").getMatch(0)));
+                return AvailableStatus.TRUE;
+            }
+
+            final Regex fileInfo = br.getRegex("<td height=\"35\"><div[^>]+>(.*?)</div></td>[\t\n\r ]+<td align=\"center\">((\\d+(\\.\\d+)? ?(KB|MB|GB)))</td>");
+            filename = fileInfo.getMatch(0);
+            filesize = fileInfo.getMatch(1);
+        }
+        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        link.setFinalFileName(Encoding.htmlDecode(filename.trim()));
+        link.setDownloadSize(SizeFormatter.getSize(filesize));
+        return AvailableStatus.TRUE;
     }
 
     private void doFree(final DownloadLink downloadLink) throws Exception, PluginException {
@@ -175,52 +210,6 @@ public class LiveMixTapesCom extends PluginForHost {
         // br.getPage(MAINPAGE);
         br.postPage("http://www.livemixtapes.com/login.php", "username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
         if (br.getCookie(MAINPAGE, "u") == null || br.getCookie(MAINPAGE, "p") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-    }
-
-    @Override
-    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
-        this.setBrowserExclusive();
-        br.getHeaders().put("Accept-Encoding", "gzip,deflate");
-        /** If link is a short link correct it */
-        if (new Regex(link.getDownloadURL(), "http://(www\\.)?livemixtap\\.es/[a-z0-9]+").matches()) {
-            br.setFollowRedirects(false);
-            br.getPage(link.getDownloadURL());
-            String correctLink = br.getRedirectLocation();
-            if (correctLink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            br.getPage(correctLink);
-            correctLink = br.getRedirectLocation();
-            if (correctLink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            link.setUrlDownload(correctLink);
-            correctDownloadLink(link);
-        }
-        br.setFollowRedirects(true);
-        br.getPage(link.getDownloadURL());
-        if (br.containsHTML("(>Not Found</|The page you requested could not be found\\.<|>This mixtape is no longer available for download.<)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = null, filesize = null;
-        if (br.containsHTML(MUSTBELOGGEDIN)) {
-            final Regex fileInfo = br.getRegex("<td height=\"35\"><div style=\"padding\\-left: 8px\">([^<>\"]*?)</div></td>[\t\n\r ]+<td align=\"center\">([^<>\"]*?)</td>");
-            filename = fileInfo.getMatch(0);
-            filesize = fileInfo.getMatch(1);
-            if (filename == null || filesize == null) {
-                link.getLinkStatus().setStatusText(ONLYREGISTEREDUSERTEXT);
-                return AvailableStatus.TRUE;
-            }
-        } else {
-            final String timeRemaining = br.getRegex("TimeRemaining = (\\d+);").getMatch(0);
-            if (timeRemaining != null) {
-                link.getLinkStatus().setStatusText("Not yet released, cannot download");
-                link.setName(Encoding.htmlDecode(br.getRegex("<title>([^<>\"]*?)</title>").getMatch(0)));
-                return AvailableStatus.TRUE;
-            }
-
-            final Regex fileInfo = br.getRegex("<td height=\"35\"><div[^>]+>(.*?)</div></td>[\t\n\r ]+<td align=\"center\">((\\d+(\\.\\d+)? ?(KB|MB|GB)))</td>");
-            filename = fileInfo.getMatch(0);
-            filesize = fileInfo.getMatch(1);
-        }
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        link.setFinalFileName(Encoding.htmlDecode(filename.trim()));
-        link.setDownloadSize(SizeFormatter.getSize(filesize));
-        return AvailableStatus.TRUE;
     }
 
     @Override

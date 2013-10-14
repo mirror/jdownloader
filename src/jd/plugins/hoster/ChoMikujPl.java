@@ -39,6 +39,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
 //This plugin gets all its links from a decrypter!
@@ -54,6 +55,8 @@ public class ChoMikujPl extends PluginForHost {
     private boolean             videolink           = false;
     private static Object       LOCK                = new Object();
     public static final String  DECRYPTFOLDERS      = "DECRYPTFOLDERS";
+
+    private static boolean      pluginloaded        = false;
 
     public ChoMikujPl(PluginWrapper wrapper) {
         super(wrapper);
@@ -100,6 +103,16 @@ public class ChoMikujPl extends PluginForHost {
             } catch (Throwable e) {
             }
         }
+    }
+
+    private static synchronized String unescape(final String s) {
+        /* we have to make sure the youtube plugin is loaded */
+        if (pluginloaded == false) {
+            final PluginForHost plugin = JDUtilities.getPluginForHost("youtube.com");
+            if (plugin == null) throw new IllegalStateException("youtube plugin not found!");
+            pluginloaded = true;
+        }
+        return jd.plugins.hoster.Youtube.unescape(s);
     }
 
     @Override
@@ -155,6 +168,7 @@ public class ChoMikujPl extends PluginForHost {
             if (DLLINK == null) DLLINK = br.getRegex("\\\\u003ca href=\\\\\"([^\"]*?)\\\\\" title").getMatch(0);
             if (DLLINK != null) DLLINK = Encoding.htmlDecode(DLLINK);
         }
+        if (DLLINK != null) DLLINK = unescape(DLLINK);
         br.setFollowRedirects(redirectsSetting);
         return true;
     }

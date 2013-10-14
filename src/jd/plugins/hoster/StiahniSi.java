@@ -81,6 +81,7 @@ public class StiahniSi extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
+        if (br.containsHTML("You cannot download more than one file at once")) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Finish running downloads to start more", 2 * 60 * 1000l);
         if (!SKIPWAIT) {
             if (br.containsHTML("All free slots are currently occupied")) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "No free slots available at the moment", 10 * 60 * 1000l);
             final String waittime = br.getRegex("var limit='(\\d+):00'").getMatch(0);
@@ -95,6 +96,7 @@ public class StiahniSi extends PluginForHost {
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
+            if (br.containsHTML("Error: all free slots are currently occupied")) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "No free slots available at the moment", 10 * 60 * 1000l);
             // too many concurrent connections?? or something else not sure.
             if (br.containsHTML("No htmlCode read")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 5 * 60 * 1000);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -195,7 +197,7 @@ public class StiahniSi extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return -1;
+        return 1;
     }
 
     @Override
