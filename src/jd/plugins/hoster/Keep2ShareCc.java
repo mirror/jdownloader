@@ -91,6 +91,7 @@ public class Keep2ShareCc extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
+        correctDownloadLink(link);
         prepBrowser(br);
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
