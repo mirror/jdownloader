@@ -56,6 +56,8 @@ public class VideoOnlineUa extends PluginForHost {
         br.setCookie("http://video.online.ua/", "online_18", "1");
         br.getPage("http://video.online.ua/embed/" + new Regex(downloadLink.getDownloadURL(), "(\\d+)$").getMatch(0));
         if (br.containsHTML(">Страница по данному адресу отсутствует<")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        // External sites - their videos don't even play via browser
+        if (br.containsHTML("stb\\.ua/embed/")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
 
         String filename = br.getRegex("<title>([^<>\"]*?)</title>").getMatch(0);
         DLLINK = br.getRegex("file: \\'(http://video\\.online\\.ua/playlist/\\d+\\.xml[^<>\"]*?)\\'").getMatch(0);

@@ -26,6 +26,7 @@ import javax.xml.xpath.XPathFactory;
 
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -45,6 +46,49 @@ public class VideoCnnturkCom extends PluginForHost {
 
     public VideoCnnturkCom(final PluginWrapper wrapper) {
         super(wrapper);
+    }
+
+    @Override
+    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
+        setBrowserExclusive();
+        br.getPage(downloadLink.getDownloadURL());
+        if (br.getRedirectLocation() != null) {
+            if ("/".equals(br.getRedirectLocation()) || "http://video.cnnturk.com/".equals(br.getRedirectLocation())) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+        }
+
+        final String xmlUrl = br.getRegex("\"FlashPlayerConfigUrl\": \"(http://[^<>\"]*?)\"").getMatch(0);
+        String filename = null, server = null, playPath = null;
+        if (xmlUrl != null) {
+            final XPath xPath = xmlParser(Encoding.htmlDecode(xmlUrl));
+            try {
+                filename = xPath.evaluate("/VideoRoot/Video/Title", doc);
+                server = xPath.evaluate("/VideoRoot/Video/Server", doc);
+                playPath = xPath.evaluate("/VideoRoot/Video/Url", doc);
+            } catch (final Throwable e) {
+            }
+            if (filename == null || server == null || playPath == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            filename = Encoding.htmlDecode(filename.trim()) + ".mp4";
+            DLLINK = server + "@" + playPath;
+        } else {
+            filename = br.getRegex("<title>([^<>]*?) CNN TÜRK Video([\t\n\r ]+)?</title>").getMatch(0);
+            if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            filename = Encoding.htmlDecode(filename.trim()).replace("\"", "'");
+            final Regex urlinfo = new Regex(downloadLink.getDownloadURL(), "video\\.cnnturk\\.com/(\\d+)/(\\w+)/(\\d+)/(\\d+)/([a-z0-9\\-]+)");
+            final String playerURL = "http://video.cnnturk.com/actions/Video/NetDVideoPlayer?year=" + urlinfo.getMatch(0) + "&category=" + urlinfo.getMatch(1) + "&month=" + urlinfo.getMatch(2) + "&day=" + urlinfo.getMatch(3) + "&name=" + urlinfo.getMatch(4) + "&height=360";
+            br.getPage(playerURL);
+            DLLINK = br.getRegex("path: \\'([^<>\"]*?)\\'").getMatch(0);
+            if (DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (DLLINK.contains(".mp4")) {
+                filename = filename + ".mp4";
+            } else {
+                filename = filename + ".m3u";
+                downloadLink.getLinkStatus().setStatusText("Download impossible: Cannot download segmented streams");
+                SEGMENTSTREAM = true;
+            }
+        }
+
+        downloadLink.setFinalFileName(filename);
+        return AvailableStatus.TRUE;
     }
 
     public void download(final DownloadLink downloadLink) throws Exception {
@@ -75,36 +119,13 @@ public class VideoCnnturkCom extends PluginForHost {
         return -1;
     }
 
+    private boolean SEGMENTSTREAM = false;
+
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
+        if (SEGMENTSTREAM) throw new PluginException(LinkStatus.ERROR_FATAL, "Download impossible: Cannot download segmented streams");
         download(downloadLink);
-    }
-
-    @Override
-    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
-        setBrowserExclusive();
-        br.getPage(downloadLink.getDownloadURL());
-        if (br.getRedirectLocation() != null) {
-            if ("/".equals(br.getRedirectLocation()) || "http://video.cnnturk.com/".equals(br.getRedirectLocation())) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
-        }
-
-        final String xmlUrl = br.getRegex("\"FlashPlayerConfigUrl\": \"(http://[^<>\"]*?)\"").getMatch(0);
-        String filename = null, server = null, playPath = null;
-        if (xmlUrl != null) {
-            final XPath xPath = xmlParser(Encoding.htmlDecode(xmlUrl));
-            try {
-                filename = xPath.evaluate("/VideoRoot/Video/Title", doc);
-                server = xPath.evaluate("/VideoRoot/Video/Server", doc);
-                playPath = xPath.evaluate("/VideoRoot/Video/Url", doc);
-            } catch (final Throwable e) {
-            }
-        }
-
-        if (filename == null || server == null || playPath == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
-        DLLINK = server + "@" + playPath;
-        downloadLink.setFinalFileName(Encoding.htmlDecode(filename.trim()) + ".mp4");
-        return AvailableStatus.TRUE;
     }
 
     @Override

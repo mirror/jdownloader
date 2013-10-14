@@ -52,9 +52,12 @@ public class StaSh extends PluginForHost {
     private String              DLLINK               = null;
     private final String        MATURECONTENTFILTER  = ">Mature Content Filter<";
 
+    private final String        INVALIDLINKS         = "http://(www\\.)?sta\\.sh/(muro|writer)";
+
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
+        if (link.getDownloadURL().matches(INVALIDLINKS)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
         if (br.containsHTML("/error\\-title\\-oops\\.png\\)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -128,7 +131,8 @@ public class StaSh extends PluginForHost {
         String dllink = null;
         // Check if it's a video
         dllink = br.getRegex("\"src\":\"(http:[^<>\"]*?mp4)\"").getMatch(0);
-        // First try to get downloadlink, if that doesn't exist, try to get the link to the picture which is displayed in browser
+        // First try to get downloadlink, if that doesn't exist, try to get the
+        // link to the picture which is displayed in browser
         if (dllink == null) dllink = br.getRegex("\"(http://(www\\.)?sta\\.sh/download/[^<>\"]*?)\"").getMatch(0);
         if (dllink == null) {
             if (br.containsHTML(">Mature Content</span>")) {
