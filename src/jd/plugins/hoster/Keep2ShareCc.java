@@ -57,7 +57,7 @@ public class Keep2ShareCc extends PluginForHost {
     }
 
     private final String           DOWNLOADPOSSIBLE = ">To download this file with slow speed, use";
-    private final String           MAINPAGE         = "http://ks2.cc";
+    private final String           MAINPAGE         = "http://k2c.cc";
     private final String           DOMAINS          = "(https?://(www\\.)?(keep2share|k2s|k2share|keep2s|keep2)\\.cc)";
 
     private static Object          LOCK             = new Object();
@@ -70,7 +70,7 @@ public class Keep2ShareCc extends PluginForHost {
 
     @Override
     public void correctDownloadLink(final DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replaceFirst("(keep2share|k2share|keep2s|keep2)\\.cc", "ks2.cc"));
+        link.setUrlDownload(link.getDownloadURL().replaceFirst("(keep2share|k2share|keep2s|keep2)\\.cc", "k2c.cc"));
     }
 
     private Browser prepBrowser(final Browser prepBr) {
