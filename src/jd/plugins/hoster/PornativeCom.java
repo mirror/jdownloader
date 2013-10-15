@@ -103,8 +103,8 @@ public class PornativeCom extends PluginForHost {
         rtmp.setUrl(DLLINK.split("\\&id=")[0]);
         rtmp.setSwfVfy("http://www.pornative.com/flash/player_new.swf");
         rtmp.setToken(Encoding.Base64Decode("ZG12N3NuMjl2bWJuZmQ2czg="));
-        rtmp.setResume(true);
-        rtmp.setTimeOut(-10);
+        rtmp.setResume(false);
+        rtmp.setTimeOut(5);
     }
 
 }
