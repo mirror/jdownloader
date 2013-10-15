@@ -153,6 +153,7 @@ public class GrvShrkCm extends PluginForDecrypt {
             String format = "%0" + String.valueOf(decryptedLinks.size()).length() + "d";
             for (DownloadLink dl : decryptedLinks) {
                 String trackNumber = dl.getStringProperty("TrackNum");
+                if (!trackNumber.matches("\\d+")) trackNumber = null;
                 dl.setName(String.format(format, isEmpty(trackNumber) ? decryptedLinks.indexOf(dl) + 1 : Integer.parseInt(trackNumber)) + "." + dl.getName());
             }
         }
