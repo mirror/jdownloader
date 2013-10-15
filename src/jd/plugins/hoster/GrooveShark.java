@@ -211,11 +211,12 @@ public class GrooveShark extends PluginForHost {
 
     public static boolean getFileVersion(Browser br) {
         if (APPJSURL.string == null || FLASHURL.string == null || CLIENTREVISION.string == null) {
-            APPJSURL.string = br.getRegex("app\\.src = \'(http://.*?/app_\\d+\\.js)\'").getMatch(0);
+            APPJSURL.string = br.getRegex("appUrl = \'(http://.*?/app_\\d+\\.js)\'").getMatch(0);
             CLIENTREVISION.string = getClientVersion(br);
             FLASHURL.string = br.getRegex("type=\"application\\/x\\-shockwave\\-flash\" data=\"\\/?(.*?)\"").getMatch(0);
             FLASHURL.string = FLASHURL.string == null ? null : LISTEN + FLASHURL.string;
             COUNTRY.string = br.getRegex(",(\"country\":\\{.*?\\}),").getMatch(0);
+            if (COUNTRY.string == null) COUNTRY.string = "\"country\":{\"ID\":223,\"CC1\":0,\"CC2\":0,\"CC3\":0,\"CC4\":1073741824,\"DMA\":528,\"IPR\":0}";
         }
         if (APPJSURL.string == null || COUNTRY.string == null || FLASHURL.string == null || CLIENTREVISION.string == null) return false;
         return true;
