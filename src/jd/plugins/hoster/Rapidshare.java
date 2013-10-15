@@ -57,6 +57,7 @@ public class Rapidshare extends PluginForHost {
 
     public static class RSLink {
 
+        //
         public static RSLink parse(final DownloadLink link) {
 
             // test comment
