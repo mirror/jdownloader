@@ -43,6 +43,10 @@ public class ChThnhInfo extends PluginForDecrypt {
         br.getPage(parameter);
         String fpName = null;
         if (parameter.matches(ANIMEVIEW)) {
+            if (br.containsHTML(">Licensed, no download available<")) {
+                logger.info("Link offline (not downloadable): " + parameter);
+                return decryptedLinks;
+            }
             fpName = br.getRegex("<h2 itemprop=\"name\">([^<>\"]*?)</h2>").getMatch(0);
             if (br.getURL().equals("http://chauthanh.info/404")) {
                 logger.info("Link offline: " + parameter);
