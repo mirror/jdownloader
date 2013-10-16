@@ -57,7 +57,7 @@ public class Keep2ShareCc extends PluginForHost {
     }
 
     private final String           DOWNLOADPOSSIBLE = ">To download this file with slow speed, use";
-    private final String           MAINPAGE         = "http://k2c.cc";
+    private final String           MAINPAGE         = "http://k2s.cc";
     private final String           DOMAINS          = "(https?://(www\\.)?(keep2share|k2s|k2share|keep2s|keep2)\\.cc)";
 
     private static Object          LOCK             = new Object();
@@ -70,7 +70,7 @@ public class Keep2ShareCc extends PluginForHost {
 
     @Override
     public void correctDownloadLink(final DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replaceFirst("(keep2share|k2share|keep2s|keep2)\\.cc", "k2c.cc"));
+        link.setUrlDownload(link.getDownloadURL().replaceFirst("://[a-zA-Z0-9]+\\.cc/", "://k2s.cc/"));
     }
 
     private Browser prepBrowser(final Browser prepBr) {
@@ -95,18 +95,31 @@ public class Keep2ShareCc extends PluginForHost {
         prepBrowser(br);
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
-        if (br.containsHTML("Sorry, an error occurred while processing your request|File not found or deleted")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = null, filesize = null;
         // This might not be needed anymore but keeping it doesn't hurt either
         if (br.containsHTML(DOWNLOADPOSSIBLE)) {
             filename = br.getRegex(">Downloading file:</span><br>[\t\n\r ]+<span class=\"c2\">.*?alt=\"\" style=\"\">([^<>\"]*?)</span>").getMatch(0);
             filesize = br.getRegex("File size ([^<>\"]*?)</div>").getMatch(0);
         }
-        if (filename == null) filename = br.getRegex("File: <span>([^<>\"]*?)</span>").getMatch(0);
-        if (filesize == null) filesize = br.getRegex(">Size: ([^<>\"]*?)</div>").getMatch(0);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        link.setName(Encoding.htmlDecode(filename.trim()));
-        link.setDownloadSize(SizeFormatter.getSize(filesize));
+        if (filename == null) {
+            filename = br.getRegex("File: <span>([^<>\"]*?)</span>").getMatch(0);
+            if (filename == null) {
+                // offline/deleted
+                filename = br.getRegex("File name:</b>(.*?)<br>").getMatch(0);
+            }
+        }
+        if (filesize == null) {
+            filesize = br.getRegex(">Size: ([^<>\"]*?)</div>").getMatch(0);
+            if (filesize == null) {
+                // offline/deleted
+                filesize = br.getRegex("<b>File size:</b>(.*?)<br>").getMatch(0);
+            }
+        }
+        if (filename != null) link.setName(Encoding.htmlDecode(filename.trim()));
+        if (filesize != null) link.setDownloadSize(SizeFormatter.getSize(filesize.trim()));
+        // you can set filename for offline links! handling should come here!
+        if (br.containsHTML("Sorry, an error occurred while processing your request|File not found or deleted|>Sorry, this file is blocked or deleted\\.</h5>")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         return AvailableStatus.TRUE;
     }
 

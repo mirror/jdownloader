@@ -41,7 +41,7 @@ public class SoundOwlCom extends PluginForHost {
     }
 
     public void correctDownloadLink(final DownloadLink link) {
-        if (link.getDownloadURL().contains("dl\\.")) {
+        if (link.getDownloadURL().contains("dl.")) {
             link.setUrlDownload("http://soundowl.com/track/" + new Regex(link.getDownloadURL(), "\\.com/([^<>]+)\\.").getMatch(0));
         }
     }

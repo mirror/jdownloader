@@ -85,7 +85,7 @@ public class KingFilesNet extends PluginForHost {
     private final String               dllinkRegex                  = "https?://(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|([\\w\\-]+\\.)?" + DOMAINS + ")(:\\d{1,5})?/(files(/(dl|download))?|d|cgi-bin/dl\\.cgi)/(\\d+/)?([a-z0-9]+/){1,4}[^/<>\r\n\t]+";
     private final boolean              supportsHTTPS                = false;
     private final boolean              enforcesHTTPS                = false;
-    private final boolean              useRUA                       = false;
+    private final boolean              useRUA                       = true;
     private final boolean              useAltLinkCheck              = false;
     private final boolean              useVidEmbed                  = false;
     private final boolean              useAltEmbed                  = false;
@@ -475,6 +475,9 @@ public class KingFilesNet extends PluginForHost {
                 checkServerErrors();
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
+        } else if (br.getRequest().getContentLength() == 0) {
+            // content range = 0, prevent retry!
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else {
             // we can not 'rename' filename once the download started, could be problematic!
             if (downloadLink.getDownloadCurrent() == 0) {
@@ -926,6 +929,9 @@ public class KingFilesNet extends PluginForHost {
                     checkServerErrors();
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
+            } else if (br.getRequest().getContentLength() == 0) {
+                // content range = 0, prevent retry!
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             } else {
                 // we can not 'rename' filename once the download started, could be problematic!
                 if (downloadLink.getDownloadCurrent() == 0) {
