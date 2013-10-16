@@ -70,7 +70,7 @@ public class Keep2ShareCc extends PluginForHost {
 
     @Override
     public void correctDownloadLink(final DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replaceFirst("://[a-zA-Z0-9]+\\.cc/", "://k2s.cc/"));
+        link.setUrlDownload(link.getDownloadURL().replaceFirst("://[a-zA-Z0-9\\.]+\\.cc/", "://k2s.cc/"));
     }
 
     private Browser prepBrowser(final Browser prepBr) {
