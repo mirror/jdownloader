@@ -122,8 +122,7 @@ public class UploadingCom extends PluginForHost {
                 int c = 0;
                 for (DownloadLink dl : links) {
                     /*
-                     * append fake filename , because api will not report
-                     * anything else
+                     * append fake filename , because api will not report anything else
                      */
                     if (c > 0) sb.append("%0D%0A");
                     sb.append(Encoding.urlEncode(dl.getDownloadURL()));
@@ -331,20 +330,19 @@ public class UploadingCom extends PluginForHost {
             return;
         }
         logger.info("Submitting ajax request");
-        ajax.postPage("http://uploading.com/files/get/?ajax", "action=get_link&code=" + Encoding.urlEncode(fileID) + "&pass=false&force_exe=1");
+        ajax.postPage("http://uploading.com/files/get/?ajax", "action=get_link&code=" + Encoding.urlEncode(fileID) + "&pass=false&force_exe=0");
         checkErrors(ajax);
         String nextLink = ajax.getRegex("\"link\":\"(http:[^<>\"]*?)\"").getMatch(0);
         if (nextLink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         nextLink = nextLink.replace("\\", "");
         br.getPage(nextLink);
         checkErrors(br);
-        nextLink = br.getRegex("\\'(http://uploading\\.com/files/acc_thankyou/[^<>\"]*?)\\'").getMatch(0);
+        nextLink = br.getRegex("\\'(http://uploading\\.com/files/thankyou/" + fileID + "/[^<>\"]*?)\\'").getMatch(0);
         if (nextLink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         br.getPage(nextLink);
         checkErrors(br);
 
-        String dllink = br.getRegex("id=\"download_file\" href=\"(http://[^<>\"]*?)\"").getMatch(0);
-        if (dllink == null) dllink = br.getRegex("\"(http://(www\\.)?uploading\\.com/[^<>\"]*?\\?rundownloaderrun)\"").getMatch(0);
+        String dllink = br.getRegex("\"(http://[a-zA-Z0-9]+\\.uploading\\.com/get_file/[^<>\"]+)\"").getMatch(0);
         if (dllink == null) {
             logger.warning("Can not find final dllink");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -436,8 +434,7 @@ public class UploadingCom extends PluginForHost {
     }
 
     /**
-     * TODO: remove with next major update, DownloadWatchDog/AccountController
-     * handle blocked accounts now
+     * TODO: remove with next major update, DownloadWatchDog/AccountController handle blocked accounts now
      */
     @SuppressWarnings("deprecation")
     @Override
