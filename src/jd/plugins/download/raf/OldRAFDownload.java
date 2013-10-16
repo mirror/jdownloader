@@ -81,6 +81,7 @@ public class OldRAFDownload extends DownloadInterface {
     public static final Object                  HASHCHECKLOCK            = new Object();
     private RandomAccessFile                    outputPartFileRaf;
     private File                                outputCompleteFile;
+    private File                                outputFinalCompleteFile;
     private File                                outputPartFile;
     private AtomicBoolean                       connected                = new AtomicBoolean(false);
     private CopyOnWriteArrayList<RAFChunk>      chunks                   = new CopyOnWriteArrayList<RAFChunk>();
@@ -245,7 +246,7 @@ public class OldRAFDownload extends DownloadInterface {
                 this.downloadLink.setDownloadSize(connection.getLongContentLength());
             }
         }
-        if (connection.getResponseCode() == 416 && resumed == true && downloadLink.getChunksProgress().length == 1 && downloadLink.getVerifiedFileSize() == downloadLink.getChunksProgress()[0] + 1) {
+        if (connection.getResponseCode() == 416 && resumed == true && downloadLink.getChunksProgress() != null && downloadLink.getChunksProgress().length == 1 && downloadLink.getVerifiedFileSize() == downloadLink.getChunksProgress()[0] + 1) {
             logger.info("Faking Content-Disposition for already finished downloads");
             /* we requested a finished loaded file, got 416 and content-range with * and one chunk only */
             /* we fake a content disposition connection so plugins work normal */
@@ -428,6 +429,20 @@ public class OldRAFDownload extends DownloadInterface {
         return writeChunkBytes(chunk);
     }
 
+    private void lockFiles(SingleDownloadController dlc) throws FileIsLockedException {
+        DownloadWatchDog.getInstance().getSession().getFileAccessManager().lock(outputPartFile, dlc);
+        /* then lock the final downloaded file */
+        DownloadWatchDog.getInstance().getSession().getFileAccessManager().lock(outputCompleteFile, dlc);
+        /* then lock the final file after download */
+        DownloadWatchDog.getInstance().getSession().getFileAccessManager().lock(outputFinalCompleteFile, dlc);
+    }
+
+    private void unlockFiles(SingleDownloadController dlc) {
+        DownloadWatchDog.getInstance().getSession().getFileAccessManager().unlock(outputFinalCompleteFile, dlc);
+        DownloadWatchDog.getInstance().getSession().getFileAccessManager().unlock(outputCompleteFile, dlc);
+        DownloadWatchDog.getInstance().getSession().getFileAccessManager().unlock(outputPartFile, dlc);
+    }
+
     /**
      * Startet den Download. Nach dem Aufruf dieser Funktion koennen keine Downlaodparameter mehr gesetzt werden bzw bleiben wirkungslos.
      * 
@@ -494,13 +509,9 @@ public class OldRAFDownload extends DownloadInterface {
                     public void run() throws Exception {
                         createOutputChannel();
                         try {
-                            /* first lock the part file */
-                            DownloadWatchDog.getInstance().getSession().getFileAccessManager().lock(outputPartFile, dlc);
-                            /* then lock the final file */
-                            DownloadWatchDog.getInstance().getSession().getFileAccessManager().lock(outputCompleteFile, dlc);
+                            lockFiles(dlc);
                         } catch (FileIsLockedException e) {
-                            DownloadWatchDog.getInstance().getSession().getFileAccessManager().unlock(outputCompleteFile, dlc);
-                            DownloadWatchDog.getInstance().getSession().getFileAccessManager().unlock(outputPartFile, dlc);
+                            unlockFiles(dlc);
                             throw new SkipReasonException(SkipReason.FILE_EXISTS);
                         }
                     }
@@ -534,8 +545,7 @@ public class OldRAFDownload extends DownloadInterface {
                 return handleErrors();
             } finally {
                 cleanupDownladInterface();
-                DownloadWatchDog.getInstance().getSession().getFileAccessManager().unlock(outputCompleteFile, dlc);
-                DownloadWatchDog.getInstance().getSession().getFileAccessManager().unlock(outputPartFile, dlc);
+                unlockFiles(dlc);
             }
         } catch (PluginException e) {
             error(e);
@@ -1005,7 +1015,12 @@ public class OldRAFDownload extends DownloadInterface {
     private void createOutputChannel() throws SkipReasonException {
         try {
             String fileOutput = downloadLink.getFileOutput();
+            String finalFileOutput = downloadLink.getFileOutput(false, true);
             outputCompleteFile = new File(fileOutput);
+            outputFinalCompleteFile = outputCompleteFile;
+            if (!fileOutput.equals(finalFileOutput)) {
+                outputFinalCompleteFile = new File(finalFileOutput);
+            }
             outputPartFile = new File(fileOutput + ".part");
             outputPartFileRaf = new RandomAccessFile(outputPartFile, "rw");
         } catch (Exception e) {

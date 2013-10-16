@@ -36,6 +36,14 @@ public class FileAccessManager {
         locks.put(file, newLockHolder);
     }
 
+    public synchronized boolean isLockedBy(File file, Object lockHolder) {
+        return locks.get(file) == lockHolder;
+    }
+
+    public synchronized boolean holdsLocks(Object lockHolder) {
+        return locks.values().contains(lockHolder);
+    }
+
     public synchronized void unlockAllHeldby(Object lockHolder) {
         Iterator<Entry<File, Object>> it = locks.entrySet().iterator();
         while (it.hasNext()) {

@@ -2514,9 +2514,9 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
         final NullsafeAtomicReference<Object> asyncResult = new NullsafeAtomicReference<Object>(null);
         enqueueJob(new DownloadWatchDogJob() {
 
-            private void check(SingleDownloadController controller) throws Exception {
+            private void check(DownloadSession session, SingleDownloadController controller) throws Exception {
                 DownloadLink downloadLink = controller.getDownloadLink();
-                String localCheck = downloadLink.getFileOutput();
+                String localCheck = downloadLink.getFileOutput(false, true);
                 File fileOutput = new File(localCheck);
                 if (fileOutput.isDirectory()) {
                     controller.getLogger().severe("fileOutput is a directory " + fileOutput);
@@ -2564,16 +2564,16 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                 }
                 boolean fileInProgress = false;
                 if (!fileExists) {
-                    for (SingleDownloadController downloadController : getSession().getControllers()) {
+                    for (SingleDownloadController downloadController : session.getControllers()) {
                         if (downloadController == controller) continue;
                         DownloadLink block = downloadController.getDownloadLink();
                         if (block == downloadLink) continue;
-                        if (localCheck.equalsIgnoreCase(block.getFileOutput())) {
-                            fileInProgress = true;
+                        if (localCheck.equalsIgnoreCase(block.getFileOutput(false, true))) {
                             if (block.getFilePackage() == downloadLink.getFilePackage()) {
                                 /* only throw ConditionalSkipReasonException when file is from same package */
                                 throw new ConditionalSkipReasonException(new MirrorLoading(block));
                             }
+                            if (session.getFileAccessManager().isLockedBy(fileOutput, downloadController)) fileInProgress = true;
                         }
                     }
                 }
@@ -2659,7 +2659,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
             @Override
             public void execute(DownloadSession currentSession) {
                 try {
-                    check(controller);
+                    check(currentSession, controller);
                     if (runOkay != null) runOkay.run();
                     synchronized (asyncResult) {
                         asyncResult.set(asyncResult);
