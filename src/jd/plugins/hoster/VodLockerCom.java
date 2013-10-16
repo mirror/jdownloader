@@ -391,6 +391,7 @@ public class VodLockerCom extends PluginForHost {
                 download1 = cleanForm(download1);
                 // end of backward compatibility
                 download1.remove("method_premium");
+                waitTime(System.currentTimeMillis(), downloadLink);
                 sendForm(download1);
                 checkErrors(downloadLink, account, false);
                 getDllink();
@@ -586,7 +587,7 @@ public class VodLockerCom extends PluginForHost {
                 passCode = null;
                 theLink.setProperty("pass", Property.NULL);
                 throw new PluginException(LinkStatus.ERROR_RETRY, "Wrong password supplied");
-            }	
+            }
         }
         // monitor this
         if (cbr.containsHTML("(class=\"err\">You have reached the download(-| )limit[^<]+for last[^<]+)")) {
