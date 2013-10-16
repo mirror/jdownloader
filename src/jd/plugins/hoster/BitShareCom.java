@@ -65,6 +65,7 @@ public class BitShareCom extends PluginForHost {
 
     public BitShareCom(PluginWrapper wrapper) {
         super(wrapper);
+        setStartIntervall(1000l);
         this.enablePremium("http://bitshare.com/premium.html");
     }
 
@@ -325,8 +326,7 @@ public class BitShareCom extends PluginForHost {
                 br.setCookiesExclusive(true);
                 if (agent == null) {
                     /*
-                     * we first have to load the plugin, before we can reference
-                     * it
+                     * we first have to load the plugin, before we can reference it
                      */
                     JDUtilities.getPluginForHost("mediafire.com");
                     agent = jd.plugins.hoster.MediafireCom.stringUserAgent();

@@ -910,6 +910,13 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                 return;
             }
             break;
+        case FAILED_EXISTS:
+            if (onDetach) {
+                currentSession.removeHistory(link);
+                candidate.getLink().setFinalLinkState(FinalLinkState.FAILED_EXISTS);
+                return;
+            }
+            break;
         case FAILED:
             if (onDetach) {
                 currentSession.removeHistory(link);
@@ -1496,18 +1503,20 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                     logger.log(e);
                 }
             }
-            String finalFilePath = link.getFileOutput();
-            if (StringUtils.isNotEmpty(finalFilePath)) {
-                File deleteFinalFile = new File(finalFilePath);
-                if (deleteFinalFile.exists() && deleteFinalFile.isFile()) {
-                    try {
-                        getSession().getFileAccessManager().lock(deleteFinalFile, this);
-                        deleteFiles.add(deleteFinalFile);
-                    } catch (FileIsLockedException e) {
-                        logger.log(e);
+            String finalFilePaths[] = new String[] { link.getFileOutput(), link.getFileOutput(false, true) };
+            for (String finalFilePath : finalFilePaths) {
+                if (StringUtils.isNotEmpty(finalFilePath)) {
+                    File deleteFinalFile = new File(finalFilePath);
+                    if (deleteFinalFile.exists() && deleteFinalFile.isFile()) {
+                        try {
+                            getSession().getFileAccessManager().lock(deleteFinalFile, this);
+                            deleteFiles.add(deleteFinalFile);
+                        } catch (FileIsLockedException e) {
+                            logger.log(e);
+                        }
                     }
+                    link.setFinalFileOutput(null);
                 }
-                link.setFinalFileOutput(null);
             }
             for (File deleteFile : deleteFiles) {
                 switch (deleteTo) {
@@ -1951,8 +1960,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                 ret = new DownloadLinkCandidateResult(RESULT.FAILED_INCOMPLETE);
                 break;
             case LinkStatus.ERROR_ALREADYEXISTS:
-                /* needed to keep stable compatibility */
-                ret = new DownloadLinkCandidateResult(SkipReason.FILE_EXISTS);
+                ret = new DownloadLinkCandidateResult(RESULT.FAILED_EXISTS);
                 break;
             }
             if (ret == null) ret = new DownloadLinkCandidateResult(RESULT.PLUGIN_DEFECT);
@@ -2600,15 +2608,16 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                     }
                     switch (doAction) {
                     case SKIP_FILE:
-                        throw new SkipReasonException(SkipReason.FILE_EXISTS);
+                        throw new PluginException(LinkStatus.ERROR_ALREADYEXISTS);
                     case OVERWRITE_FILE:
                         if (fileInProgress) {
                             /* we cannot overwrite a file that is currently in progress */
-                            throw new SkipReasonException(SkipReason.FILE_EXISTS);
+                            controller.getLogger().severe("Cannot not overwrite file in progress! " + fileOutput);
+                            throw new PluginException(LinkStatus.ERROR_ALREADYEXISTS);
                         }
                         if (!fileOutput.delete()) {
                             controller.getLogger().severe("Could not overwrite file! " + fileOutput);
-                            throw new SkipReasonException(SkipReason.FILE_EXISTS);
+                            throw new PluginException(LinkStatus.ERROR_ALREADYEXISTS);
                         }
                         break;
                     case AUTO_RENAME:
@@ -2639,11 +2648,11 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                         } catch (Throwable e) {
                             LogSource.exception(controller.getLogger(), e);
                             downloadLink.forceFileName(null);
-                            throw new SkipReasonException(SkipReason.FILE_EXISTS);
+                            throw new PluginException(LinkStatus.ERROR_ALREADYEXISTS);
                         }
                         break;
                     default:
-                        throw new SkipReasonException(SkipReason.FILE_EXISTS);
+                        throw new PluginException(LinkStatus.ERROR_ALREADYEXISTS);
                     }
                 }
                 DISKSPACECHECK check = checkFreeDiskSpace(fileOutput.getParentFile(), controller, (downloadLink.getDownloadSize() - downloadLink.getDownloadCurrent()));

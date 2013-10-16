@@ -53,7 +53,7 @@ public class Freaksharenet extends PluginForHost {
 
     public Freaksharenet(final PluginWrapper wrapper) {
         super(wrapper);
-        setStartIntervall(100l);
+        setStartIntervall(1000l);
         this.enablePremium("http://freakshare.com/shop.html");
         setConfigElements();
     }

@@ -113,7 +113,6 @@ public class OldRAFDownload extends DownloadInterface {
     protected Request                           request                  = null;
     protected ManagedThrottledConnectionHandler connectionHandler        = null;
     private long                                startTimeStamp           = -1;
-    private long                                sizeBefore               = 0;
 
     /**
      * Gibt die Anzahl der Chunks an die dieser Download verwenden soll. Chu8nks koennen nur vor dem Downloadstart gesetzt werden!
@@ -392,9 +391,7 @@ public class OldRAFDownload extends DownloadInterface {
         }
         if (caughtPluginException == null) {
             downloadLink.getDownloadLinkController().getLinkStatus().setStatus(LinkStatus.FINISHED);
-            if (downloadLink.getKnownDownloadSize() < 0) {
-                downloadLink.setVerifiedFileSize(outputCompleteFile.length());
-            }
+            downloadLink.setVerifiedFileSize(outputCompleteFile.length());
             return true;
         } else {
             throw caughtPluginException;
@@ -456,7 +453,6 @@ public class OldRAFDownload extends DownloadInterface {
             } catch (final Throwable e) {
                 LogSource.exception(logger, e);
             }
-            sizeBefore = downloadLink.getDownloadCurrent();
             downloadLink.getDownloadLinkController().getConnectionHandler().addConnectionHandler(this.getManagedConnetionHandler());
             logger.finer("Start Download");
             if (this.dlAlreadyFinished == true) {
@@ -512,7 +508,7 @@ public class OldRAFDownload extends DownloadInterface {
                             lockFiles(dlc);
                         } catch (FileIsLockedException e) {
                             unlockFiles(dlc);
-                            throw new SkipReasonException(SkipReason.FILE_EXISTS);
+                            throw new PluginException(LinkStatus.ERROR_ALREADYEXISTS);
                         }
                     }
                 }, null);
@@ -878,7 +874,7 @@ public class OldRAFDownload extends DownloadInterface {
                 long speed = 0;
                 long startDelay = -1;
                 try {
-                    speed = (outputCompleteFile.length() - Math.max(0, sizeBefore)) / ((System.currentTimeMillis() - getStartTimeStamp()) / 1000);
+                    speed = (outputCompleteFile.length() - Math.max(0, downloadLink.getDownloadLinkController().getSizeBefore())) / ((System.currentTimeMillis() - getStartTimeStamp()) / 1000);
                 } catch (final Throwable e) {
                     // LogSource.exception(logger, e);
                 }

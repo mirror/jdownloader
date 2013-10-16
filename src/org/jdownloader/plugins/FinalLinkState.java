@@ -14,6 +14,7 @@ public enum FinalLinkState {
     FAILED_MD5(_JDT._.system_download_doCRC2_failed("MD5")),
     FAILED_SHA1(_JDT._.system_download_doCRC2_failed("SHA1")),
     FAILED_CRC32(_JDT._.system_download_doCRC2_failed("CRC32")),
+    FAILED_EXISTS(_JDT._.downloadlink_status_error_file_exists()),
 
     OFFLINE(_JDT._.downloadlink_status_error_file_not_found()),
 
@@ -34,6 +35,7 @@ public enum FinalLinkState {
     public boolean isFinished() {
         switch (this) {
         case FINISHED:
+        case FINISHED_MIRROR:
         case FINISHED_CRC32:
         case FINISHED_MD5:
         case FINISHED_SHA1:

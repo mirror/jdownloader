@@ -67,6 +67,7 @@ public class DownloadLinkCandidateHistory {
             case SKIPPED:
             case STOPPED:
             case FAILED:
+            case FAILED_EXISTS:
             case OFFLINE_TRUSTED:
                 /* these results(above) should have ended in removal of DownloadLinkHistory */
             case PROXY_UNAVAILABLE:

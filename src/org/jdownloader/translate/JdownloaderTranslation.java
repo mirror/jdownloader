@@ -466,9 +466,6 @@ public interface JdownloaderTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Skipped - Too many retries" })
     String DownloadLink_setSkipped_statusmessage_toomanyretries();
 
-    @Default(lngs = { "en" }, values = { "Skipped - File is loading" })
-    String DownloadLink_setSkipped_statusmessage_file_loading();
-
     @Default(lngs = { "en" }, values = { "Proxy Authentication failed" })
     String plugins_errors_proxy_auth();
 
