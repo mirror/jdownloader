@@ -230,7 +230,6 @@ public class MegaCrypterCom extends PluginForHost {
                 long lastCurrent    = -1;
                 long startTimeStamp = -1;
 
-                @Override
                 public String getMessage(Object requestor) {
                     return "Decrypting";
                 }

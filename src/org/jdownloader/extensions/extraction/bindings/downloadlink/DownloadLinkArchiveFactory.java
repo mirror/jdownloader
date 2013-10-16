@@ -100,12 +100,12 @@ public class DownloadLinkArchiveFactory extends DownloadLinkArchiveFile implemen
     }
 
     public java.util.List<ArchiveFile> createPartFileList(final String file, String pattern) {
-
-        final Pattern pat = Pattern.compile(pattern, Pattern.CASE_INSENSITIVE);
+        final Pattern pat = Pattern.compile(pattern, CrossSystem.isWindows() ? Pattern.CASE_INSENSITIVE : 0);
         List<DownloadLink> links = DownloadController.getInstance().getChildrenByFilter(new AbstractPackageChildrenNodeFilter<DownloadLink>() {
 
             public boolean acceptNode(DownloadLink node) {
-                return pat.matcher(node.getFileOutput()).matches() || file.equals(node.getFileOutput());
+                String nodeFile = node.getFileOutput();
+                return file.equals(nodeFile) || pat.matcher(nodeFile).matches();
             }
 
             public int returnMaxResults() {
@@ -115,16 +115,15 @@ public class DownloadLinkArchiveFactory extends DownloadLinkArchiveFile implemen
         HashMap<String, DownloadLinkArchiveFile> map = new HashMap<String, DownloadLinkArchiveFile>();
         java.util.List<ArchiveFile> ret = new ArrayList<ArchiveFile>();
         for (DownloadLink l : links) {
-            DownloadLinkArchiveFile af = map.get(new File(l.getFileOutput()).getName());
+            String linkName = l.getName();
+            DownloadLinkArchiveFile af = map.get(linkName);
             if (af == null) {
                 af = new DownloadLinkArchiveFile(l);
-
-                map.put(new File(l.getFileOutput()).getName(), af);
+                map.put(linkName, af);
                 ret.add(af);
             } else {
                 af.addMirror(l);
             }
-
         }
         java.util.List<ArchiveFile> filelist = new FileArchiveFactory(new File(getFilePath())).createPartFileList(file, pattern);
         for (ArchiveFile af : filelist) {
@@ -133,7 +132,6 @@ public class DownloadLinkArchiveFactory extends DownloadLinkArchiveFile implemen
                 // There is a matching local file, without a downloadlink link. this can happen if the user removes finished downloads
                 // immediatelly
                 ret.add(af);
-
             }
         }
         return ret;

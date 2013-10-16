@@ -101,7 +101,6 @@ public class DownloadFolderChooserDialog extends ExtFileChooserDialog {
                     return new File[] { new File(f, PACKAGETAG) };
                 }
             } else {
-                if (f.exists() && !f.canWrite()) return null;
                 return new File[] { f };
             }
 
@@ -155,8 +154,7 @@ public class DownloadFolderChooserDialog extends ExtFileChooserDialog {
     }
 
     /**
-     * checks if the given file is valid as a downloadfolder, this means it must be an existing folder or at least its parent folder must
-     * exist
+     * checks if the given file is valid as a downloadfolder, this means it must be an existing folder or at least its parent folder must exist
      * 
      * @param file
      * @return
@@ -188,7 +186,7 @@ public class DownloadFolderChooserDialog extends ExtFileChooserDialog {
         d.setFileSelectionMode(FileChooserSelectionMode.DIRECTORIES_ONLY);
 
         File[] dest = Dialog.getInstance().showDialog(d);
-        if (dest.length == 0) return null;
+        if (dest == null || dest.length == 0) return null;
         dest[0] = FolderChooser.checkPath(dest[0], null);
         if (dest[0] == null) return null;
         DownloadPath.saveList(dest[0].getAbsolutePath());

@@ -67,6 +67,9 @@ public class LinkStatus implements Serializable {
      */
     public static final int ERROR_HOSTER_TEMPORARILY_UNAVAILABLE = 1 << 12;
 
+    @Deprecated
+    public static final int ERROR_ALREADYEXISTS                  = 1 << 13;
+
     /**
      * download failed in a way we cannot simply retry/restart it
      */

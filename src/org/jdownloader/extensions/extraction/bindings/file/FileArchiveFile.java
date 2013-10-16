@@ -12,9 +12,13 @@ public class FileArchiveFile implements ArchiveFile {
 
     private File    file;
     private Archive archive;
+    private String  name;
+    private String  filePath;
 
     public FileArchiveFile(File f) {
         this.file = f;
+        name = file.getName();
+        filePath = file.getAbsolutePath();
     }
 
     public File getFile() {
@@ -22,11 +26,11 @@ public class FileArchiveFile implements ArchiveFile {
     }
 
     public boolean isComplete() {
-        return true;
+        return file.exists();
     }
 
     public String getFilePath() {
-        return file.getAbsolutePath();
+        return filePath;
     }
 
     @Override
@@ -37,27 +41,20 @@ public class FileArchiveFile implements ArchiveFile {
     @Override
     public boolean equals(Object obj) {
         if (obj == null || !(obj instanceof FileArchiveFile)) return false;
+        if (obj == this) return true;
         return file.equals(((FileArchiveFile) obj).file);
-    }
-
-    public boolean isValid() {
-        return exists();
     }
 
     public void deleteFile() {
         file.delete();
     }
 
-    public boolean exists() {
-        return file.exists();
-    }
-
     public String toString() {
-        return file.getAbsolutePath();
+        return "File: " + filePath + " Complete:" + isComplete();
     }
 
     public String getName() {
-        return file.getName();
+        return name;
     }
 
     public void setStatus(ExtractionStatus error) {
@@ -89,6 +86,11 @@ public class FileArchiveFile implements ArchiveFile {
 
     public Archive getArchive() {
         return archive;
+    }
+
+    @Override
+    public boolean exists() {
+        return file.exists();
     }
 
 }

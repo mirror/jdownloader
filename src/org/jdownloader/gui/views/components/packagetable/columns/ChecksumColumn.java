@@ -63,7 +63,6 @@ public class ChecksumColumn extends ExtTextColumn<AbstractNode> {
 
     @Override
     protected boolean isEditable(final AbstractNode obj, final boolean enabled) {
-
         return isEditable(obj);
     }
 

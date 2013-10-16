@@ -165,7 +165,7 @@ public class FilePackageView extends ChildrenView<DownloadLink> {
                                 fpRunning = true;
                                 eta.add(link.getName());
                             }
-                            if (link.getDownloadMax() >= 0) {
+                            if (link.getKnownDownloadSize() >= 0) {
                                 /* we know at least one filesize */
                                 sizeKnown = true;
                             }
@@ -336,7 +336,7 @@ public class FilePackageView extends ChildrenView<DownloadLink> {
                                 eta.add(link.getName());
                             }
 
-                            if (link.getDownloadMax() >= 0) {
+                            if (link.getKnownDownloadSize() >= 0) {
                                 /* we know at least one filesize */
                                 sizeKnown = true;
                             }

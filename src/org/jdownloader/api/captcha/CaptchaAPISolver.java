@@ -8,6 +8,7 @@ import java.util.List;
 
 import jd.controlling.captcha.SkipException;
 import jd.controlling.captcha.SkipRequest;
+import jd.plugins.DownloadLink;
 
 import org.appwork.remoteapi.RemoteAPI;
 import org.appwork.remoteapi.RemoteAPIRequest;
@@ -253,11 +254,10 @@ public class CaptchaAPISolver extends ChallengeSolver<Object> implements Captcha
         ret.setHoster(((ImageCaptchaChallenge) entry.getChallenge()).getPlugin().getHost());
         ret.setCaptchaCategory(entry.getChallenge().getTypeID());
         ret.setExplain(entry.getChallenge().getExplain());
-
-        if (entry.getChallenge().getDownloadLink(entry.getChallenge()) != null) {
-            ret.setLink(entry.getChallenge().getDownloadLink(entry.getChallenge()).getUniqueID().getID());
+        DownloadLink link = entry.getChallenge().getDownloadLink(entry.getChallenge());
+        if (link != null) {
+            ret.setLink(link.getUniqueID().getID());
         }
-
         return ret;
     }
 

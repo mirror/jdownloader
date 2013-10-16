@@ -1,6 +1,5 @@
 package org.jdownloader.gui.views.downloads.columns;
 
-import java.awt.FontMetrics;
 import java.awt.Point;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -106,12 +105,12 @@ public class ProgressColumn extends ExtProgressColumn<AbstractNode> {
 
     public void updateRanges(final AbstractNode obj, final MultiProgressBar mpb) {
         if (obj instanceof DownloadLink) {
-            mpb.getModel().setMaximum(((DownloadLink) obj).getDownloadMax());
+            mpb.getModel().setMaximum(((DownloadLink) obj).getKnownDownloadSize());
             java.util.List<Range> ranges = new ArrayList<Range>();
 
             long[] chunks = ((DownloadLink) obj).getChunksProgress();
             if (chunks != null) {
-                long part = ((DownloadLink) obj).getDownloadMax() / chunks.length;
+                long part = ((DownloadLink) obj).getKnownDownloadSize() / chunks.length;
                 for (int i = 0; i < chunks.length; i++) {
                     ranges.add(new Range(i * part, chunks[i]));
                 }
@@ -139,7 +138,6 @@ public class ProgressColumn extends ExtProgressColumn<AbstractNode> {
 
     @Override
     public int getMinWidth() {
-
         return 16;
     }
 
@@ -151,43 +149,16 @@ public class ProgressColumn extends ExtProgressColumn<AbstractNode> {
     @Override
     protected String getString(AbstractNode value, long current, long total) {
         if (value instanceof FilePackage) {
-            return checkWidth(getPercentString(current, total));
+            return String.valueOf(getPercentString(current, total));
         } else {
             DownloadLink dLink = (DownloadLink) value;
             PluginProgress progress;
             if (dLink.getDefaultPlugin() == null) {
                 return _GUI._.gui_treetable_error_plugin();
-            } else if ((progress = dLink.getPluginProgress()) != null && !(progress.getProgressSource() instanceof PluginForHost)) {
-                //
-
-                // SwingUtilities2.clipStringIfNecessary(rendererField, rendererField.getFontMetrics(rendererField.getFont()), str,
-                // getTableColumn().getWidth() - rendererIcon.getPreferredSize().width - 32)
-
-                return checkWidth(progress.getPercent());
-            }
+            } else if ((progress = dLink.getPluginProgress()) != null && !(progress.getProgressSource() instanceof PluginForHost)) { return progress.getMessage(this); }
         }
-        return checkWidth(getPercentString(current, total));
-    }
-
-    private String checkWidth(double d) {
-        FontMetrics fm = determinatedRenderer.getFontMetrics(determinatedRenderer.getFont());
-        String ret = d + " %";
-        int w = fm.stringWidth(ret);
-
-        if (w < getWidth() - 6) {
-            return ret;
-        } else {
-            ret = (int) d + " %";
-            w = fm.stringWidth(ret);
-
-            if (w < getWidth() - 6) {
-                return ret;
-            } else {
-                return "";
-
-            }
-
-        }
+        if (total < 0) return "~";
+        return String.valueOf(getPercentString(current, total));
     }
 
     @Override
@@ -202,17 +173,19 @@ public class ProgressColumn extends ExtProgressColumn<AbstractNode> {
         } else {
             DownloadLink dLink = (DownloadLink) value;
             PluginProgress progress = null;
+            long size = -1;
             if (dLink.getDefaultPlugin() == null) {
                 return 100;
             } else if ((progress = dLink.getPluginProgress()) != null && !(progress.getProgressSource() instanceof PluginForHost)) {
                 return (progress.getTotal());
             } else if (FinalLinkState.CheckFinished(dLink.getFinalLinkState())) {
                 return 100;
-            } else if (dLink.getDownloadCurrent() > 0 || dLink.getDownloadSize() > 0) { return (dLink.getDownloadSize());
-
+            } else if ((size = dLink.getKnownDownloadSize()) > 0) {
+                return size;
+            } else {
+                return -1;
             }
         }
-        return 100;
     }
 
     @Override
@@ -228,7 +201,6 @@ public class ProgressColumn extends ExtProgressColumn<AbstractNode> {
             } else {
                 return (fp.getView().getDone());
             }
-
         } else {
             DownloadLink dLink = (DownloadLink) value;
             PluginProgress progress = null;
@@ -238,9 +210,12 @@ public class ProgressColumn extends ExtProgressColumn<AbstractNode> {
                 return (progress.getCurrent());
             } else if (FinalLinkState.CheckFinished(dLink.getFinalLinkState())) {
                 return 100;
-            } else if (dLink.getDownloadCurrent() > 0 || dLink.getDownloadSize() > 0) { return (dLink.getDownloadCurrent()); }
+            } else if (dLink.getKnownDownloadSize() > 0) {
+                return dLink.getDownloadCurrent();
+            } else {
+                return 0;
+            }
         }
-        return 0;
     }
 
 }

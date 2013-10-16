@@ -26,7 +26,7 @@ public class StreamingDownloadInterface extends DownloadInterface {
         this.plugin = plugin;
         browser = plugin.getBrowser().cloneBrowser();
         this.request = request;
-        downloadLink.getDownloadLinkController().setDownloadInstance(this);
+        plugin.setDownloadInterface(this);
     }
 
     @Override

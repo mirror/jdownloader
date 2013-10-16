@@ -6,6 +6,7 @@ import jd.nutils.Formatter;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginProgress;
 
+import org.jdownloader.gui.views.downloads.columns.ProgressColumn;
 import org.jdownloader.gui.views.downloads.columns.TaskColumn;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.translate._JDT;
@@ -34,13 +35,21 @@ public class DownloadPluginProgress extends PluginProgress {
 
     @Override
     public long getTotal() {
-        return Math.max(link.getDownloadSize(), getCurrent());
+        return link.getKnownDownloadSize();
     }
 
     @Override
     public String getMessage(Object requestor) {
         if (requestor instanceof TaskColumn) { return normal; }
-        if (getTotal() < 0) { return unknownFileSize; }
+        long total = getTotal();
+        if (requestor instanceof ProgressColumn) {
+            if (total > 0) {
+                return String.valueOf(getPercent());
+            } else {
+                return "~";
+            }
+        }
+        if (total < 0) { return unknownFileSize; }
         long speed = getSpeed();
         if (speed > 0) {
             long remainingBytes = (getTotal() - getCurrent());

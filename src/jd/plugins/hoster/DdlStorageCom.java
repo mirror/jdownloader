@@ -331,8 +331,8 @@ public class DdlStorageCom extends PluginForHost {
     }
 
     /**
-     * Provides alternative linkchecking method for a single link at a time. Can be used as generic failover, though kinda pointless as this
-     * method doesn't give filename...
+     * Provides alternative linkchecking method for a single link at a time. Can be used as generic failover, though kinda pointless as this method doesn't give
+     * filename...
      * 
      * */
     private String[] altAvailStat(final DownloadLink downloadLink, final String[] fileInfo) throws Exception {
@@ -603,13 +603,13 @@ public class DdlStorageCom extends PluginForHost {
         // monitor this
         if (cbr.containsHTML("(class=(\"err\"|'err')[^>]+><b>You have reached the download(-| )limit[^<]+for last[^<]+)")) {
             /*
-             * Indication of when you've reached the max download limit for that given session! Usually shows how long the session was
-             * recorded from x time (hours|days) which can trigger false positive below wait handling. As its only indication of what's
-             * previous happened, as in past tense and not a wait time going forward... unknown wait time!
+             * Indication of when you've reached the max download limit for that given session! Usually shows how long the session was recorded from x time
+             * (hours|days) which can trigger false positive below wait handling. As its only indication of what's previous happened, as in past tense and not a
+             * wait time going forward... unknown wait time!
              */
             if (account != null) {
                 logger.warning("Your account ( " + account.getUser() + " @ " + acctype + " ) has been temporarily disabled for going over the download session limit. JDownloader parses HTML for error messages, if you believe this is not a valid response please confirm issue within your browser. If you can download within your browser please contact JDownloader Development Team, if you can not download in your browser please take the issue up with " + this.getHost());
-                synchronized (LOCK) {
+                synchronized (ACCLOCK) {
                     AccountInfo ai = account.getAccountInfo();
                     ai.setTrafficLeft(0);
                     account.setAccountInfo(ai);
@@ -814,7 +814,7 @@ public class DdlStorageCom extends PluginForHost {
 
     @SuppressWarnings("unchecked")
     private void login(final Account account, final boolean force) throws Exception {
-        synchronized (LOCK) {
+        synchronized (ACCLOCK) {
             try {
                 /** Load cookies */
                 prepBrowser(br);
@@ -889,7 +889,7 @@ public class DdlStorageCom extends PluginForHost {
                 getPage(downloadLink.getDownloadURL());
                 // if the cached cookie expired, relogin.
                 if ((br.getCookie(COOKIE_HOST, "login")) == null || br.getCookie(COOKIE_HOST, "xfss") == null) {
-                    synchronized (LOCK) {
+                    synchronized (ACCLOCK) {
                         account.setProperty("cookies", Property.NULL);
                         // if you retry, it can use another account...
                         throw new PluginException(LinkStatus.ERROR_RETRY);
@@ -906,7 +906,7 @@ public class DdlStorageCom extends PluginForHost {
                     if (br.getRedirectLocation() != null && !br.getRedirectLocation().matches(dllinkRegex)) getPage(br.getRedirectLocation());
                     // if the cached cookie expired, relogin.
                     if ((br.getCookie(COOKIE_HOST, "login")) == null || br.getCookie(COOKIE_HOST, "xfss") == null) {
-                        synchronized (LOCK) {
+                        synchronized (ACCLOCK) {
                             account.setProperty("cookies", Property.NULL);
                             // if you retry, it can use another account...
                             throw new PluginException(LinkStatus.ERROR_RETRY);
@@ -1073,10 +1073,9 @@ public class DdlStorageCom extends PluginForHost {
     private static HashMap<String, String>                    cloudflareCookies      = new HashMap<String, String>();
     private static HashMap<Account, HashMap<String, Integer>> hostMap                = new HashMap<Account, HashMap<String, Integer>>();
 
-    private static Object                                     LOCK                   = new Object();
-    private static Object                                     controlSlotLock        = new Object();
-    private static Object                                     controlSimHostLock     = new Object();
-    private static Object                                     controlHostLock        = new Object();
+    private static Object                                     ACCLOCK                = new Object();
+
+    private static Object                                     CTRLLOCK               = new Object();
 
     private static StringContainer                            agent                  = new StringContainer();
 
@@ -1317,8 +1316,8 @@ public class DdlStorageCom extends PluginForHost {
     }
 
     /**
-     * This fixes filenames from all xfs modules: file hoster, audio/video streaming (including transcoded video), or blocked link checking
-     * which is based on fuid.
+     * This fixes filenames from all xfs modules: file hoster, audio/video streaming (including transcoded video), or blocked link checking which is based on
+     * fuid.
      * 
      * @version 0.2
      * @author raztoki
@@ -1553,20 +1552,20 @@ public class DdlStorageCom extends PluginForHost {
     }
 
     /**
-     * Prevents more than one free download from starting at a given time. One step prior to dl.startDownload(), it adds a slot to maxFree
-     * which allows the next singleton download to start, or at least try.
+     * Prevents more than one free download from starting at a given time. One step prior to dl.startDownload(), it adds a slot to maxFree which allows the next
+     * singleton download to start, or at least try.
      * 
-     * This is needed because xfileshare(website) only throws errors after a final dllink starts transferring or at a given step within pre
-     * download sequence. But this template(XfileSharingProBasic) allows multiple slots(when available) to commence the download sequence,
-     * this.setstartintival does not resolve this issue. Which results in x(20) captcha events all at once and only allows one download to
-     * start. This prevents wasting peoples time and effort on captcha solving and|or wasting captcha trading credits. Users will experience
-     * minimal harm to downloading as slots are freed up soon as current download begins.
+     * This is needed because xfileshare(website) only throws errors after a final dllink starts transferring or at a given step within pre download sequence.
+     * But this template(XfileSharingProBasic) allows multiple slots(when available) to commence the download sequence, this.setstartintival does not resolve
+     * this issue. Which results in x(20) captcha events all at once and only allows one download to start. This prevents wasting peoples time and effort on
+     * captcha solving and|or wasting captcha trading credits. Users will experience minimal harm to downloading as slots are freed up soon as current download
+     * begins.
      * 
      * @param controlSlot
      *            (+1|-1)
      * */
     private void controlSlot(final int num, final Account account) {
-        synchronized (controlSlotLock) {
+        synchronized (CTRLLOCK) {
             if (account == null) {
                 int was = maxFree.get();
                 maxFree.set(Math.min(Math.max(1, maxFree.addAndGet(num)), totalMaxSimultanFreeDownload.get()));
@@ -1580,15 +1579,15 @@ public class DdlStorageCom extends PluginForHost {
     }
 
     /**
-     * ControlSimHost, On error it will set the upper mark for 'max sim dl per host'. This will be the new 'static' setting used going
-     * forward. Thus prevents new downloads starting when not possible and is self aware and requires no coder interaction.
+     * ControlSimHost, On error it will set the upper mark for 'max sim dl per host'. This will be the new 'static' setting used going forward. Thus prevents
+     * new downloads starting when not possible and is self aware and requires no coder interaction.
      * 
      * @param account
      * 
      * @category 'Experimental', Mod written February 2013
      * */
     private void controlSimHost(final Account account) {
-        synchronized (controlSimHostLock) {
+        synchronized (CTRLLOCK) {
             if (usedHost == null) return;
             int was, current;
             if (account != null && account.getBooleanProperty("free")) {
@@ -1616,9 +1615,9 @@ public class DdlStorageCom extends PluginForHost {
     }
 
     /**
-     * This matches dllink against an array of used 'host' servers. Use this when site have multiple download servers and they allow x
-     * connections to ip/host server. Currently JD allows a global connection controller and doesn't allow for handling of different
-     * hosts/IP setup. This will help with those situations by allowing more connection when possible.
+     * This matches dllink against an array of used 'host' servers. Use this when site have multiple download servers and they allow x connections to ip/host
+     * server. Currently JD allows a global connection controller and doesn't allow for handling of different hosts/IP setup. This will help with those
+     * situations by allowing more connection when possible.
      * 
      * @param Account
      *            Account that's been used, can be null
@@ -1628,7 +1627,7 @@ public class DdlStorageCom extends PluginForHost {
      * @throws Exception
      * */
     private void controlHost(final Account account, final DownloadLink downloadLink, final boolean action) throws Exception {
-        synchronized (controlHostLock) {
+        synchronized (CTRLLOCK) {
             // xfileshare valid links are either https://((sub.)?domain|IP)(:port)?/blah
             usedHost = new Regex(dllink, "https?://([^/\\:]+)").getMatch(0);
             if (inValidate(dllink) || usedHost == null) {
@@ -1693,9 +1692,9 @@ public class DdlStorageCom extends PluginForHost {
                 // New download started, check finallink host against hostMap values && max(Free|Prem)SimDlHost!
 
                 /*
-                 * max(Free|Prem)SimDlHost prevents more downloads from starting on a given host! At least until one of the previous
-                 * downloads finishes. This is best practice otherwise you have to use some crude system of waits, but you have no control
-                 * over to reset the count. Highly dependent on how fast or slow the users connections is.
+                 * max(Free|Prem)SimDlHost prevents more downloads from starting on a given host! At least until one of the previous downloads finishes. This is
+                 * best practice otherwise you have to use some crude system of waits, but you have no control over to reset the count. Highly dependent on how
+                 * fast or slow the users connections is.
                  */
                 if (isHashedHashedKey(account, usedHost)) {
                     Integer usedSlots = getHashedHashedValue(account);
@@ -1725,36 +1724,38 @@ public class DdlStorageCom extends PluginForHost {
      * @param x
      *            Integer positive or negative. Positive adds slots. Negative integer removes slots.
      * */
-    private synchronized void setHashedHashKeyValue(final Account account, final Integer x) {
-        if (usedHost == null || x == null) return;
-        HashMap<String, Integer> holder = new HashMap<String, Integer>();
-        if (!hostMap.isEmpty()) {
-            // load hostMap within holder if not empty
-            holder = hostMap.get(account);
-            // remove old hashMap reference, prevents creating duplicate entry of 'account' when returning result.
-            if (holder.containsKey(account)) hostMap.remove(account);
-        }
-        String currentKey = getHashedHashedKey(account);
-        Integer currentValue = getHashedHashedValue(account);
-        if (currentKey == null) {
-            // virgin entry
-            holder.put(usedHost, 1);
-        } else {
-            if (currentValue.equals(1) && x.equals(-1)) {
-                // remove table
-                holder.remove(usedHost);
-            } else {
-                // add value, must first remove old to prevent duplication
-                holder.remove(usedHost);
-                holder.put(usedHost, currentValue + x);
+    private void setHashedHashKeyValue(final Account account, final Integer x) {
+        synchronized (CTRLLOCK) {
+            if (usedHost == null || x == null) return;
+            HashMap<String, Integer> holder = new HashMap<String, Integer>();
+            if (!hostMap.isEmpty()) {
+                // load hostMap within holder if not empty
+                holder = hostMap.get(account);
+                // remove old hashMap reference, prevents creating duplicate entry of 'account' when returning result.
+                if (holder.containsKey(account)) hostMap.remove(account);
             }
-        }
-        if (holder.isEmpty()) {
-            // the last value(download) within holder->account. Remove entry to reduce memory allocation
-            hostMap.remove(account);
-        } else {
-            // put updated holder back into hostMap
-            hostMap.put(account, holder);
+            String currentKey = getHashedHashedKey(account);
+            Integer currentValue = getHashedHashedValue(account);
+            if (currentKey == null) {
+                // virgin entry
+                holder.put(usedHost, 1);
+            } else {
+                if (currentValue.equals(1) && x.equals(-1)) {
+                    // remove table
+                    holder.remove(usedHost);
+                } else {
+                    // add value, must first remove old to prevent duplication
+                    holder.remove(usedHost);
+                    holder.put(usedHost, currentValue + x);
+                }
+            }
+            if (holder.isEmpty()) {
+                // the last value(download) within holder->account. Remove entry to reduce memory allocation
+                hostMap.remove(account);
+            } else {
+                // put updated holder back into hostMap
+                hostMap.put(account, holder);
+            }
         }
     }
 
@@ -1764,18 +1765,20 @@ public class DdlStorageCom extends PluginForHost {
      * @param account
      *            Account that's been used, can be null
      * */
-    private synchronized String getHashedHashedKey(final Account account) {
-        if (usedHost == null) return null;
-        if (hostMap.containsKey(account)) {
-            final HashMap<String, Integer> accKeyValue = hostMap.get(account);
-            if (accKeyValue.containsKey(usedHost)) {
-                for (final Entry<String, Integer> keyValue : accKeyValue.entrySet()) {
-                    String key = keyValue.getKey();
-                    return key;
+    private String getHashedHashedKey(final Account account) {
+        synchronized (CTRLLOCK) {
+            if (usedHost == null) return null;
+            if (hostMap.containsKey(account)) {
+                final HashMap<String, Integer> accKeyValue = hostMap.get(account);
+                if (accKeyValue.containsKey(usedHost)) {
+                    for (final Entry<String, Integer> keyValue : accKeyValue.entrySet()) {
+                        String key = keyValue.getKey();
+                        return key;
+                    }
                 }
             }
+            return null;
         }
-        return null;
     }
 
     /**
@@ -1784,18 +1787,20 @@ public class DdlStorageCom extends PluginForHost {
      * @param account
      *            Account that's been used, can be null
      * */
-    private synchronized Integer getHashedHashedValue(final Account account) {
-        if (usedHost == null) return null;
-        if (hostMap.containsKey(account)) {
-            final HashMap<String, Integer> accKeyValue = hostMap.get(account);
-            if (accKeyValue.containsKey(usedHost)) {
-                for (final Entry<String, Integer> keyValue : accKeyValue.entrySet()) {
-                    Integer value = keyValue.getValue();
-                    return value;
+    private Integer getHashedHashedValue(final Account account) {
+        synchronized (CTRLLOCK) {
+            if (usedHost == null) return null;
+            if (hostMap.containsKey(account)) {
+                final HashMap<String, Integer> accKeyValue = hostMap.get(account);
+                if (accKeyValue.containsKey(usedHost)) {
+                    for (final Entry<String, Integer> keyValue : accKeyValue.entrySet()) {
+                        Integer value = keyValue.getValue();
+                        return value;
+                    }
                 }
             }
+            return null;
         }
-        return null;
     }
 
     /**
@@ -1806,17 +1811,19 @@ public class DdlStorageCom extends PluginForHost {
      * @param key
      *            String of what ever you want to find
      * */
-    private synchronized boolean isHashedHashedKey(final Account account, final String key) {
-        if (key == null) return false;
-        final HashMap<String, Integer> accKeyValue = hostMap.get(account);
-        if (accKeyValue != null) {
-            if (accKeyValue.containsKey(key)) {
-                for (final Entry<String, Integer> keyValue : accKeyValue.entrySet()) {
-                    if (keyValue.getKey().equals(key)) return true;
+    private boolean isHashedHashedKey(final Account account, final String key) {
+        synchronized (CTRLLOCK) {
+            if (key == null) return false;
+            final HashMap<String, Integer> accKeyValue = hostMap.get(account);
+            if (accKeyValue != null) {
+                if (accKeyValue.containsKey(key)) {
+                    for (final Entry<String, Integer> keyValue : accKeyValue.entrySet()) {
+                        if (keyValue.getKey().equals(key)) return true;
+                    }
                 }
             }
+            return false;
         }
-        return false;
     }
 
     /**
@@ -1861,8 +1868,8 @@ public class DdlStorageCom extends PluginForHost {
     }
 
     /**
-     * If form contain both " and ' quotation marks within input fields it can return null values, thus you submit wrong/incorrect data re:
-     * InputField parse(final String data). Affects revision 19688 and earlier!
+     * If form contain both " and ' quotation marks within input fields it can return null values, thus you submit wrong/incorrect data re: InputField
+     * parse(final String data). Affects revision 19688 and earlier!
      * 
      * TODO: remove after JD2 goes stable!
      * 
@@ -1891,8 +1898,8 @@ public class DdlStorageCom extends PluginForHost {
     }
 
     /**
-     * This allows backward compatibility for design flaw in setHtmlCode(), It injects updated html into all browsers that share the same
-     * request id. This is needed as request.cloneRequest() was never fully implemented like browser.cloneBrowser().
+     * This allows backward compatibility for design flaw in setHtmlCode(), It injects updated html into all browsers that share the same request id. This is
+     * needed as request.cloneRequest() was never fully implemented like browser.cloneBrowser().
      * 
      * @param ibr
      *            Import Browser

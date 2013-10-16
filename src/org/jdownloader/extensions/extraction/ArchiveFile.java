@@ -10,14 +10,6 @@ public interface ArchiveFile {
 
     public long getFileSize();
 
-    /**
-     * returns false if this file matches the patterns, but is not a valid archive file due to other reasons. for example, because it
-     * contains a downloadlink that has not been downloaded.
-     * 
-     * @return
-     */
-    public boolean isValid();
-
     public void deleteFile();
 
     public void deleteLink();

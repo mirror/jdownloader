@@ -28,7 +28,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "meocloud.pt" }, urls = { "https?://(www\\.)?meocloud\\.pt/link/[a-z0-9\\-]+/[^<>\"/]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "meocloud.pt" }, urls = { "https?://(www\\.)?meocloud\\.pt/link/[a-z0-9\\-]+/[^<>\"]+" }, flags = { 0 })
 public class MeoCloudPt extends PluginForHost {
 
     public MeoCloudPt(PluginWrapper wrapper) {
@@ -46,7 +46,7 @@ public class MeoCloudPt extends PluginForHost {
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
         if (br.containsHTML("class=\"error type404\"")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("/dl/zipdir/[a-z0-9\\-]+/([^<>\"]*?)\\?(public|download)=").getMatch(0);
+        String filename = br.getRegex("/dl/zipdir/[a-z0-9\\-]+/.*?/([^<>\"/]*?)\\?(public|download)=").getMatch(0);
         if (filename == null) filename = br.getRegex("class=\"pick_file\" value=\"/([^<>\"]*?)\">").getMatch(0);
         if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         link.setName(Encoding.htmlDecode(filename.trim()));

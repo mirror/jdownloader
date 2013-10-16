@@ -19,10 +19,12 @@ package org.jdownloader.extensions.extraction.multi;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Logger;
 
 import jd.parser.Regex;
@@ -32,6 +34,7 @@ import net.sf.sevenzipjbinding.ICryptoGetTextPassword;
 import net.sf.sevenzipjbinding.IInStream;
 import net.sf.sevenzipjbinding.PropID;
 import net.sf.sevenzipjbinding.SevenZipException;
+import net.sf.sevenzipjbinding.impl.RandomAccessFileInStream;
 
 import org.appwork.exceptions.WTFException;
 import org.jdownloader.extensions.extraction.Archive;
@@ -44,14 +47,14 @@ import org.jdownloader.extensions.extraction.ArchiveFile;
  * 
  */
 class RarOpener implements IArchiveOpenVolumeCallback, IArchiveOpenCallback, ICryptoGetTextPassword {
-    private Map<String, RandomAccessFile> openedRandomAccessFileList = new HashMap<String, RandomAccessFile>();
-    private String                        name;
-    private final String                  password;
-    private final Archive                 archive;
-    private HashMap<String, ArchiveFile>  map;
-    private String                        firstName;
-    private Logger                        logger;
-    private ExtRandomAccessFileInStream   latestAccessedStream;
+    private Map<String, OpenerAccessTracker> openedRandomAccessFileList = new HashMap<String, OpenerAccessTracker>();
+    private String                           name;
+    private final String                     password;
+    private final Archive                    archive;
+    private HashMap<String, ArchiveFile>     map;
+    private String                           firstName;
+    private Logger                           logger;
+    private final AtomicLong                 accessCounter              = new AtomicLong(0);
 
     RarOpener(Archive archive) {
         this(archive, null);
@@ -65,6 +68,12 @@ class RarOpener implements IArchiveOpenVolumeCallback, IArchiveOpenCallback, ICr
         this.password = password;
         this.archive = archive;
         init();
+    }
+
+    public void resetTracker() {
+        for (OpenerAccessTracker tracker : getTrackedFiles()) {
+            tracker.setAccessIndex(0);
+        }
     }
 
     private void init() {
@@ -108,21 +117,24 @@ class RarOpener implements IArchiveOpenVolumeCallback, IArchiveOpenCallback, ICr
 
     public IInStream getStream(String filename) throws SevenZipException {
         try {
-
-            if (logger != null) logger.info("Stream request: " + filename);
-            RandomAccessFile randomAccessFile = openedRandomAccessFileList.get(filename);
-            ArchiveFile af = map.get(filename);
-            if (randomAccessFile != null) {
-                randomAccessFile.seek(0);
-                name = filename;
-                return new ExtRandomAccessFileInStream(randomAccessFile, af == null ? archive.getArchiveFileByPath(filename) : af, filename, this);
+            OpenerAccessTracker tracker = openedRandomAccessFileList.get(filename);
+            if (tracker == null) {
+                ArchiveFile af = map.get(filename);
+                filename = af == null ? filename : af.getFilePath();
+                tracker = new OpenerAccessTracker(filename, new RandomAccessFile(filename, "r"));
+                openedRandomAccessFileList.put(filename, tracker);
             }
-
-            randomAccessFile = new RandomAccessFile(af == null ? filename : af.getFilePath(), "r");
-            openedRandomAccessFileList.put(filename, randomAccessFile);
-            if (logger != null) logger.info("New RandomAccess: " + (af == null ? filename : af.getFilePath()));
             name = filename;
-            return new ExtRandomAccessFileInStream(randomAccessFile, af == null ? archive.getArchiveFileByPath(filename) : af, filename, this);
+            final OpenerAccessTracker finalTracker = tracker;
+            finalTracker.getRandomAccessFile().seek(0);
+            return new RandomAccessFileInStream(finalTracker.getRandomAccessFile()) {
+                @Override
+                public int read(byte[] abyte0) throws SevenZipException {
+                    finalTracker.setAccessIndex(accessCounter.incrementAndGet());
+                    return super.read(abyte0);
+                }
+
+            };
         } catch (FileNotFoundException fileNotFoundException) {
             return null;
         } catch (Exception e) {
@@ -136,15 +148,19 @@ class RarOpener implements IArchiveOpenVolumeCallback, IArchiveOpenCallback, ICr
      * @throws IOException
      */
     void close() throws IOException {
-        Iterator<Entry<String, RandomAccessFile>> it = openedRandomAccessFileList.entrySet().iterator();
+        Iterator<Entry<String, OpenerAccessTracker>> it = openedRandomAccessFileList.entrySet().iterator();
         while (it.hasNext()) {
-            Entry<String, RandomAccessFile> next = it.next();
+            Entry<String, OpenerAccessTracker> next = it.next();
             try {
-                next.getValue().close();
+                next.getValue().getRandomAccessFile().close();
             } catch (final Throwable e) {
             }
             it.remove();
         }
+    }
+
+    public Collection<OpenerAccessTracker> getTrackedFiles() {
+        return openedRandomAccessFileList.values();
     }
 
     public void setCompleted(Long files, Long bytes) throws SevenZipException {
@@ -152,7 +168,6 @@ class RarOpener implements IArchiveOpenVolumeCallback, IArchiveOpenCallback, ICr
     }
 
     public void setTotal(Long files, Long bytes) throws SevenZipException {
-        System.out.println(2);
     }
 
     public String cryptoGetTextPassword() throws SevenZipException {
@@ -161,24 +176,6 @@ class RarOpener implements IArchiveOpenVolumeCallback, IArchiveOpenCallback, ICr
 
     public void setLogger(Logger logger) {
         this.logger = logger;
-    }
-
-    public void setLatestAccessedStream(ExtRandomAccessFileInStream extRandomAccessFileInStream) {
-        if (extRandomAccessFileInStream != latestAccessedStream) {
-
-            latestAccessedStream = extRandomAccessFileInStream;
-            onStreamUpdate(extRandomAccessFileInStream);
-
-        }
-    }
-
-    protected void onStreamUpdate(ExtRandomAccessFileInStream extRandomAccessFileInStream) {
-
-        logger.info("Extract from: " + extRandomAccessFileInStream.getFilename());
-    }
-
-    public ExtRandomAccessFileInStream getLatestAccessedStream() {
-        return latestAccessedStream;
     }
 
 }

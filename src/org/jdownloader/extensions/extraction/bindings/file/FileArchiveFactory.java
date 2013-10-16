@@ -6,13 +6,13 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
 import java.util.HashSet;
+import java.util.List;
 import java.util.regex.Pattern;
 
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
 import org.appwork.utils.Hash;
-import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging.Log;
 import org.appwork.utils.os.CrossSystem;
@@ -30,14 +30,17 @@ public class FileArchiveFactory extends FileArchiveFile implements ArchiveFactor
     }
 
     public java.util.List<ArchiveFile> createPartFileList(String file, String pattern) {
-        java.util.List<ArchiveFile> ret = new ArrayList<ArchiveFile>();
-
+        final Pattern pat = Pattern.compile(pattern, CrossSystem.isWindows() ? Pattern.CASE_INSENSITIVE : 0);
+        List<ArchiveFile> ret = new ArrayList<ArchiveFile>();
         if (getFile().getParentFile() != null && getFile().getParentFile().exists()) {
-            for (File f : getFile().getParentFile().listFiles()) {
-                if (f.isDirectory()) continue;
-                if (f.getAbsolutePath().equals(file) || new Regex(f.getAbsolutePath(), pattern, Pattern.CASE_INSENSITIVE).matches()) {
-                    ret.add(new FileArchiveFile(f));
-
+            File[] list = getFile().getParentFile().listFiles();
+            if (list != null) {
+                for (File f : list) {
+                    if (f.isDirectory()) continue;
+                    String nodeFile = f.getAbsolutePath();
+                    if (nodeFile.equals(file) || pat.matcher(nodeFile).matches()) {
+                        ret.add(new FileArchiveFile(f));
+                    }
                 }
             }
         }

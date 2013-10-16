@@ -124,7 +124,7 @@ public class CrawledLink implements AbstractPackageChildrenNode<CrawledPackage>,
     }
 
     public long getSize() {
-        if (dlLink != null) return dlLink.getDownloadSize();
+        if (dlLink != null) return dlLink.getKnownDownloadSize();
         return -1;
     }
 

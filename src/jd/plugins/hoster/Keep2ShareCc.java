@@ -117,6 +117,7 @@ public class Keep2ShareCc extends PluginForHost {
         }
         if (filename != null) link.setName(Encoding.htmlDecode(filename.trim()));
         if (filesize != null) link.setDownloadSize(SizeFormatter.getSize(filesize.trim()));
+        if (br.containsHTML("Downloading blocked due to")) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Downloading blocked", 10 * 60 * 1000l);
         // you can set filename for offline links! handling should come here!
         if (br.containsHTML("Sorry, an error occurred while processing your request|File not found or deleted|>Sorry, this file is blocked or deleted\\.</h5>")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

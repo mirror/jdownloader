@@ -13,6 +13,7 @@ import jd.plugins.FilePackage;
 import org.jdownloader.actions.SelectionAppAction;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo;
+import org.jdownloader.gui.views.downloads.table.DownloadsTableModel;
 import org.jdownloader.images.NewTheme;
 
 public class StopsignAction extends SelectionAppAction<FilePackage, DownloadLink> {
@@ -52,6 +53,7 @@ public class StopsignAction extends SelectionAppAction<FilePackage, DownloadLink
                 currentSession.toggleStopMark(context);
             }
         });
+        DownloadsTableModel.getInstance().setStopSignColumnVisible(true);
 
     }
 }

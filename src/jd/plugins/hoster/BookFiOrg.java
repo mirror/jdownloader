@@ -27,7 +27,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "bookfi.org, bookos.org" }, urls = { "http://(www\\.)?([a-z]+\\.)?bookfi\\.org/((book|dl)/\\d+(/[a-z0-9]+)?|md5/[A-F0-9]{32})", "http://(www\\.)?([a-z]+\\.)?bookos\\.org/((book|dl)/\\d+/[a-z0-9]+|md5/[A-F0-9]{32})" }, flags = { 0, 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "bookfi.org", "bookos.org" }, urls = { "http://(www\\.)?([a-z]+\\.)?bookfi\\.org/((book|dl)/\\d+(/[a-z0-9]+)?|md5/[A-F0-9]{32})", "http://(www\\.)?([a-z]+\\.)?bookos\\.org/((book|dl)/\\d+/[a-z0-9]+|md5/[A-F0-9]{32})" }, flags = { 0, 0 })
 public class BookFiOrg extends PluginForHost {
 
     // DEV NOTES

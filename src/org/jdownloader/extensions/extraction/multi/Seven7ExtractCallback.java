@@ -18,7 +18,6 @@ import net.sf.sevenzipjbinding.simple.ISimpleInArchiveItem;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging2.LogSource;
 import org.jdownloader.extensions.extraction.Archive;
-import org.jdownloader.extensions.extraction.ArchiveFile;
 import org.jdownloader.extensions.extraction.ExtractionConfig;
 import org.jdownloader.extensions.extraction.ExtractionController;
 import org.jdownloader.extensions.extraction.ExtractionControllerConstants;
@@ -280,14 +279,6 @@ public class Seven7ExtractCallback implements IArchiveExtractCallback, ICryptoGe
                         archive.setExitCode(ExtractionControllerConstants.EXIT_CODE_INCOMPLETE_ERROR);
                         error.set(true);
                         throw new SevenZipException("Extraction error");
-                    }
-                    try {
-                        for (ArchiveFile link : multi.getAffectedArchiveFileFromArchvieFiles(item.getPath())) {
-                            multi.writeCrashLog("CRC Error in " + link);
-                            archive.addCrcError(link);
-                        }
-                    } catch (final Throwable e) {
-                        logger.log(e);
                     }
                 }
             }

@@ -80,7 +80,7 @@ public class AccountCache implements Iterable<CachedAccount> {
 
         @Override
         public String toString() {
-            return "Plugin: " + plugin.getHost() + "|Version: " + plugin.getVersion() + "|Account: " + (account != null);
+            return "Plugin:" + plugin.getHost() + "|Version:" + plugin.getVersion() + "|Type:" + type + "|Account:" + account;
         }
 
         @Override

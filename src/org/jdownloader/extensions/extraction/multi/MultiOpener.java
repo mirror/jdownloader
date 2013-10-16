@@ -19,10 +19,12 @@ package org.jdownloader.extensions.extraction.multi;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.concurrent.atomic.AtomicLong;
 
 import net.sf.sevenzipjbinding.IArchiveOpenVolumeCallback;
 import net.sf.sevenzipjbinding.ICryptoGetTextPassword;
@@ -38,8 +40,9 @@ import net.sf.sevenzipjbinding.impl.RandomAccessFileInStream;
  * 
  */
 class MultiOpener implements IArchiveOpenVolumeCallback, ICryptoGetTextPassword {
-    private Map<String, RandomAccessFile> openedRandomAccessFileList = new HashMap<String, RandomAccessFile>();
-    private final String                  password;
+    private Map<String, OpenerAccessTracker> openedRandomAccessFileList = new HashMap<String, OpenerAccessTracker>();
+    private final String                     password;
+    private final AtomicLong                 accessCounter              = new AtomicLong(0);
 
     MultiOpener() {
         this(null);
@@ -63,21 +66,41 @@ class MultiOpener implements IArchiveOpenVolumeCallback, ICryptoGetTextPassword 
 
     public IInStream getStream(String filename) throws SevenZipException {
         try {
-            RandomAccessFile randomAccessFile = openedRandomAccessFileList.get(filename);
-            if (randomAccessFile != null) {
-                randomAccessFile.seek(0);
-                return new RandomAccessFileInStream(randomAccessFile);
+            OpenerAccessTracker tracker = openedRandomAccessFileList.get(filename);
+            if (tracker == null) {
+                tracker = new OpenerAccessTracker(filename, new RandomAccessFile(filename, "r"));
+                openedRandomAccessFileList.put(filename, tracker);
             }
+            final OpenerAccessTracker finalTracker = tracker;
+            finalTracker.getRandomAccessFile().seek(0);
+            return new RandomAccessFileInStream(finalTracker.getRandomAccessFile()) {
+                @Override
+                public int read(byte[] abyte0) throws SevenZipException {
+                    finalTracker.setAccessIndex(accessCounter.incrementAndGet());
+                    return super.read(abyte0);
+                }
 
-            randomAccessFile = new RandomAccessFile(filename, "r");
-            openedRandomAccessFileList.put(filename, randomAccessFile);
-
-            return new RandomAccessFileInStream(randomAccessFile);
+                @Override
+                public long seek(long l, int i) throws SevenZipException {
+                    finalTracker.setAccessIndex(accessCounter.incrementAndGet());
+                    return super.seek(l, i);
+                }
+            };
         } catch (FileNotFoundException fileNotFoundException) {
             return null;
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
+    }
+
+    public void resetTracker() {
+        for (OpenerAccessTracker tracker : getTrackedFiles()) {
+            tracker.setAccessIndex(0);
+        }
+    }
+
+    public Collection<OpenerAccessTracker> getTrackedFiles() {
+        return openedRandomAccessFileList.values();
     }
 
     /**
@@ -86,11 +109,11 @@ class MultiOpener implements IArchiveOpenVolumeCallback, ICryptoGetTextPassword 
      * @throws IOException
      */
     void close() throws IOException {
-        Iterator<Entry<String, RandomAccessFile>> it = openedRandomAccessFileList.entrySet().iterator();
+        Iterator<Entry<String, OpenerAccessTracker>> it = openedRandomAccessFileList.entrySet().iterator();
         while (it.hasNext()) {
-            Entry<String, RandomAccessFile> next = it.next();
+            Entry<String, OpenerAccessTracker> next = it.next();
             try {
-                next.getValue().close();
+                next.getValue().getRandomAccessFile().close();
             } catch (final Throwable e) {
             }
             it.remove();

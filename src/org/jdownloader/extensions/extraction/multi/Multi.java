@@ -17,7 +17,6 @@
 package org.jdownloader.extensions.extraction.multi;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.charset.Charset;
@@ -26,7 +25,6 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.regex.Matcher;
@@ -192,7 +190,7 @@ public class Multi extends IExtraction {
                             archive.setFirstArchiveFile(l);
                         }
                     }
-                    if (!l.isValid()) {
+                    if (l.isComplete() == false) {
                         /* this should help finding the link that got downloaded */
                         continue;
                     }
@@ -204,7 +202,7 @@ public class Multi extends IExtraction {
                         archive.setType(ArchiveType.MULTI_RAR);
                         archive.setFirstArchiveFile(l);
                     }
-                    if (!l.isValid()) {
+                    if (l.isComplete() == false) {
                         /* this should help finding the link that got downloaded */
                         continue;
                     }
@@ -214,7 +212,7 @@ public class Multi extends IExtraction {
                         /* rar archive with 001 ending */
                         archive.setType(ArchiveType.MULTI_RAR);
                         archive.setFirstArchiveFile(l);
-                        if (!l.isValid()) {
+                        if (l.isComplete() == false) {
                             /* this should help finding the link that got downloaded */
                             continue;
                         }
@@ -222,7 +220,7 @@ public class Multi extends IExtraction {
                         /* 7z archive with 001 ending */
                         archive.setType(ArchiveType.MULTI);
                         archive.setFirstArchiveFile(l);
-                        if (!l.isValid()) {
+                        if (l.isComplete() == false) {
                             /* this should help finding the link that got downloaded */
                             continue;
                         }
@@ -237,10 +235,8 @@ public class Multi extends IExtraction {
 
                 for (ArchiveFile l : archive.getArchiveFiles()) {
                     if (l.getFilePath().matches(REGEX_ANY_MULTI_RAR_PART_FILE)) {
-
                         archive.setType(ArchiveType.MULTI_RAR);
-
-                        if (!l.isValid()) {
+                        if (l.isComplete() == false) {
                             /*
                              * this should help finding the link that got downloaded
                              */
@@ -249,8 +245,7 @@ public class Multi extends IExtraction {
                         break;
                     } else if (l.getFilePath().matches(REGEX_ANY_7ZIP_PART)) {
                         archive.setType(ArchiveType.MULTI);
-
-                        if (!l.isValid()) {
+                        if (l.isComplete() == false) {
                             /*
                              * this should help finding the link that got downloaded
                              */
@@ -259,7 +254,7 @@ public class Multi extends IExtraction {
                         break;
                     } else if (l.getFilePath().matches(REGEX_ANY_DOT_R19_FILE)) {
                         archive.setType(ArchiveType.MULTI_RAR);
-                        if (!l.isValid()) {
+                        if (l.isComplete() == false) {
                             /*
                              * this should help finding the link that got downloaded
                              */
@@ -539,10 +534,6 @@ public class Multi extends IExtraction {
             } catch (final Throwable e) {
             }
             try {
-                raropener.close();
-            } catch (final Throwable e) {
-            }
-            try {
                 stream.close();
             } catch (final Throwable e) {
             }
@@ -676,10 +667,6 @@ public class Multi extends IExtraction {
                             return;
                         }
                         logger.info("Size missmatch for " + item.getPath() + " is " + extractTo.length() + " but should be " + item.getSize());
-                        for (ArchiveFile link : getAffectedArchiveFileFromArchvieFiles(item.getPath())) {
-                            writeCrashLog("CRC Error in " + link);
-                            archive.addCrcError(link);
-                        }
                         archive.setExitCode(ExtractionControllerConstants.EXIT_CODE_CRC_ERROR);
                         return;
                     }
@@ -895,15 +882,7 @@ public class Multi extends IExtraction {
                 IInStream inStream = new VolumedArchiveInStream(archive.getFirstArchiveFile().getFilePath(), multiopener);
                 inArchive = SevenZip.openInArchive(ArchiveFormat.SEVEN_ZIP, inStream);
             } else if (archive.getType() == ArchiveType.MULTI_RAR) {
-                raropener = new RarOpener(archive, password) {
-
-                    @Override
-                    protected void onStreamUpdate(ExtRandomAccessFileInStream extRandomAccessFileInStream) {
-                        super.onStreamUpdate(extRandomAccessFileInStream);
-                        setLastAccessedArchiveFile(extRandomAccessFileInStream.getArchiveFile());
-                    }
-
-                };
+                raropener = new RarOpener(archive, password);
                 raropener.setLogger(logger);
                 IInStream inStream = raropener.getStream(archive.getFirstArchiveFile());
                 inArchive = SevenZip.openInArchive(ArchiveFormat.RAR, inStream, raropener);
@@ -1000,62 +979,15 @@ public class Multi extends IExtraction {
                 archive.setPasswordRequiredToOpen(true);
                 return false;
             }
-            throw new ExtractionException(e, raropener != null ? raropener.getLatestAccessedStream().getArchiveFile() : null);
+            throw new ExtractionException(e, null);
         } catch (Throwable e) {
-            throw new ExtractionException(e, raropener != null ? raropener.getLatestAccessedStream().getArchiveFile() : null);
+            throw new ExtractionException(e, null);
         } finally {
             if (passwordfound.get()) {
                 archive.setFinalPassword(password);
                 updateContentView(inArchive.getSimpleInterface());
             }
         }
-    }
-
-    /**
-     * Returns the ArchiveFiles in which the given extracted file is present. Works only with Rar multipart files.
-     * 
-     * @param path
-     *            The extracted file.
-     * @return The ArchiveFiles.
-     * @throws FileNotFoundException
-     * @throws SevenZipException
-     */
-    protected List<ArchiveFile> getAffectedArchiveFileFromArchvieFiles(String path) throws FileNotFoundException, SevenZipException {
-        java.util.List<ArchiveFile> result = new ArrayList<ArchiveFile>();
-
-        if (archive.getType() == ArchiveType.MULTI || archive.getType() == ArchiveType.SINGLE_FILE) {
-            result = archive.getArchiveFiles();
-            return result;
-        }
-
-        ISevenZipInArchive in = null;
-        RandomAccessFile raf = null;
-        RandomAccessFileInStream rafi = null;
-        for (ArchiveFile link : archive.getArchiveFiles()) {
-            try {
-                in = SevenZip.openInArchive(null, rafi = new RandomAccessFileInStream(raf = new RandomAccessFile(link.getFilePath(), "r")));
-                for (ISimpleInArchiveItem item : in.getSimpleInterface().getArchiveItems()) {
-                    if (item.getPath().equals(path)) {
-                        result.add(link);
-                    }
-                }
-            } finally {
-                try {
-                    in.close();
-                } catch (final Throwable e) {
-                }
-                try {
-                    rafi.close();
-                } catch (final Throwable e) {
-                }
-                try {
-                    raf.close();
-                } catch (final Throwable e) {
-                }
-            }
-        }
-
-        return result;
     }
 
     @Override
@@ -1136,13 +1068,7 @@ public class Multi extends IExtraction {
                 IInStream inStream = new ModdedVolumedArchiveInStream(archive.getFirstArchiveFile().getFilePath(), multiopener);
                 inArchive = SevenZip.openInArchive(ArchiveFormat.SEVEN_ZIP, inStream);
             } else if (archive.getType() == ArchiveType.MULTI_RAR) {
-                raropener = new RarOpener(archive) {
-                    @Override
-                    protected void onStreamUpdate(ExtRandomAccessFileInStream extRandomAccessFileInStream) {
-                        super.onStreamUpdate(extRandomAccessFileInStream);
-                        setLastAccessedArchiveFile(extRandomAccessFileInStream.getArchiveFile());
-                    }
-                };
+                raropener = new RarOpener(archive);
                 raropener.setLogger(logger);
                 IInStream inStream = raropener.getStream(archive.getFirstArchiveFile());
                 inArchive = SevenZip.openInArchive(ArchiveFormat.RAR, inStream, raropener);
@@ -1167,12 +1093,12 @@ public class Multi extends IExtraction {
                 return true;
             } else {
                 logger.log(e);
-                throw new ExtractionException(e, raropener != null ? raropener.getLatestAccessedStream().getArchiveFile() : null);
+                throw new ExtractionException(e, null);
             }
 
         } catch (Throwable e) {
             logger.log(e);
-            throw new ExtractionException(e, raropener != null ? raropener.getLatestAccessedStream().getArchiveFile() : null);
+            throw new ExtractionException(e, null);
         }
 
         return true;

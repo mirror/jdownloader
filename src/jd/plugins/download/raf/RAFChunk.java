@@ -346,8 +346,10 @@ public class RAFChunk extends Thread {
                 }
             }
             logger.info("ExternalAbort: " + isExternalyAborted());
-            if (getCurrentBytesPosition() < endByte && endByte > 0 || getCurrentBytesPosition() <= 0) {
-                logger.warning("Download not finished. Loaded until now: " + getCurrentBytesPosition() + "/" + endByte);
+            long endPosition = endByte;
+            if (endPosition < 0) endPosition = dl.getFileSize();
+            if (endPosition > 0 && getCurrentBytesPosition() < endPosition) {
+                logger.warning("Download not finished. Loaded until now: " + getCurrentBytesPosition() + "/" + endPosition);
                 dl.error(new PluginException(LinkStatus.ERROR_DOWNLOAD_INCOMPLETE, _JDT._.download_error_message_incomplete()));
             }
         } catch (FileNotFoundException e) {

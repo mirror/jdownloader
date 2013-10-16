@@ -59,12 +59,12 @@ public class CrawledLinkFactory extends CrawledLinkArchiveFile implements Archiv
                 List<CrawledLink> links = getFirstLink().getParentNode().getChildren();
                 HashMap<String, CrawledLinkArchiveFile> map = new HashMap<String, CrawledLinkArchiveFile>();
                 for (CrawledLink l : links) {
-                    if (l.getName().equals(file) || pat.matcher(l.getName()).matches()) {
-                        CrawledLinkArchiveFile af = map.get(l.getName());
+                    String linkName = l.getName();
+                    if (linkName.equals(file) || pat.matcher(linkName).matches()) {
+                        CrawledLinkArchiveFile af = map.get(linkName);
                         if (af == null) {
                             af = new CrawledLinkArchiveFile(l);
-
-                            map.put(l.getName(), af);
+                            map.put(linkName, af);
                             ret.add(af);
                         } else {
                             af.addMirror(l);

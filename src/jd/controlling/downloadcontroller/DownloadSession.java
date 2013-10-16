@@ -8,6 +8,7 @@ import java.util.Locale;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 
 import jd.controlling.AccountController;
 import jd.controlling.downloadcontroller.AccountCache.ACCOUNTTYPE;
@@ -21,7 +22,6 @@ import jd.utils.JDUtilities;
 import org.appwork.utils.NullsafeAtomicReference;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.controlling.UniqueAlltimeID;
-import org.jdownloader.gui.views.downloads.table.DownloadsTableModel;
 import org.jdownloader.settings.IfFileExistsAction;
 
 public class DownloadSession {
@@ -43,28 +43,57 @@ public class DownloadSession {
         RECONNECT_RUNNING;
     }
 
-    private static final FileAccessManager                     FILE_ACCESS_MANAGER           = new FileAccessManager();
-    private final long                                         created;
-    private final HashMap<UniqueAlltimeID, IfFileExistsAction> fileExistsActions             = new HashMap<UniqueAlltimeID, IfFileExistsAction>();
-    private final FileAccessManager                            fileAccessManager;
+    /* non shared between DownloadSessions */
+    private static final FileAccessManager                            FILE_ACCESS_MANAGER     = new FileAccessManager();
+    private final NullsafeAtomicReference<SessionState>               sessionState            = new NullsafeAtomicReference<SessionState>(SessionState.NORMAL);
+    private final HashMap<String, AccountCache>                       accountCache            = new HashMap<String, AccountCache>();
+    private final HashMap<DownloadLink, DownloadLinkCandidateHistory> candidateHistory        = new HashMap<DownloadLink, DownloadLinkCandidateHistory>();
+    private final HashMap<UniqueAlltimeID, IfFileExistsAction>        fileExistsActions       = new HashMap<UniqueAlltimeID, IfFileExistsAction>();
+    private final AtomicInteger                                       downloadsStarted        = new AtomicInteger(0);
+    private final AtomicInteger                                       skipCounter             = new AtomicInteger(0);
+    private final AtomicInteger                                       speedLimitBeforePause   = new AtomicInteger(-1);
+    private final AtomicBoolean                                       speedLimitedBeforePause = new AtomicBoolean(false);
+    private volatile List<DownloadLink>                               forcedLinks             = new CopyOnWriteArrayList<DownloadLink>();
+    private volatile List<DownloadLink>                               activationRequests      = new CopyOnWriteArrayList<DownloadLink>();
+    private final HashMap<String, PluginForHost>                      activationPluginCache   = new HashMap<String, PluginForHost>();
+    private final AtomicBoolean                                       refreshCandidates       = new AtomicBoolean(false);
+    private final AtomicBoolean                                       activateForcedOnly      = new AtomicBoolean(false);
+    private AtomicLong                                                activatorRebuildRequest = new AtomicLong(1);
 
-    private final NullsafeAtomicReference<Object>              stopMark                      = new NullsafeAtomicReference<Object>(STOPMARK.NONE);
-    private final AtomicInteger                                downloadsStarted              = new AtomicInteger(0);
-    private final AtomicInteger                                skipCounter                   = new AtomicInteger(0);
-    private final AtomicBoolean                                activateForcedOnly            = new AtomicBoolean(false);
-    private final AtomicBoolean                                avoidCaptchas                 = new AtomicBoolean(false);
-    private final AtomicBoolean                                mirrorManagement              = new AtomicBoolean(true);
-    private final AtomicBoolean                                refreshCandidates             = new AtomicBoolean(false);
-    private final AtomicInteger                                maxConcurrentDownloadsPerHost = new AtomicInteger(Integer.MAX_VALUE);
+    public long getActivatorRebuildRequest() {
+        return activatorRebuildRequest.get();
+    }
 
-    private final NullsafeAtomicReference<SessionState>        sessionState                  = new NullsafeAtomicReference<SessionState>(SessionState.NORMAL);
+    public void incrementActivatorRebuildRequest() {
+        activatorRebuildRequest.incrementAndGet();
+    }
+
+    /* shared between DownloadSessions */
+    private final ProxyInfoHistory                proxyInfoHistory;
+    private final AtomicInteger                   maxConcurrentDownloadsPerHost = new AtomicInteger(Integer.MAX_VALUE);
+    private final NullsafeAtomicReference<Object> stopMark                      = new NullsafeAtomicReference<Object>(STOPMARK.NONE);
+    private final AtomicBoolean                   useAccounts                   = new AtomicBoolean(true);
+    private final AtomicBoolean                   mirrorManagement              = new AtomicBoolean(true);
+    private final AtomicBoolean                   avoidCaptchas                 = new AtomicBoolean(false);
 
     public boolean isCandidatesRefreshRequired() {
         return refreshCandidates.get();
     }
 
+    public boolean isUseAccountsEnabled() {
+        return useAccounts.get();
+    }
+
+    public void setUseAccountsEnabled(boolean b) {
+        useAccounts.set(b);
+    }
+
     public boolean isMirrorManagementEnabled() {
         return mirrorManagement.get();
+    }
+
+    public void setMirrorManagementEnabled(boolean b) {
+        mirrorManagement.set(b);
     }
 
     public int getMaxConcurrentDownloadsPerHost() {
@@ -83,9 +112,9 @@ public class DownloadSession {
         return avoidCaptchas.get();
     }
 
-    private final HashMap<String, AccountCache>                       accountCache     = new HashMap<String, AccountCache>();
-    private final HashMap<DownloadLink, DownloadLinkCandidateHistory> candidateHistory = new HashMap<DownloadLink, DownloadLinkCandidateHistory>();
-    private final ProxyInfoHistory                                    proxyInfoHistory;                                                             ;
+    public void setAvoidCaptchas(boolean b) {
+        avoidCaptchas.set(b);
+    }
 
     public boolean isForcedOnlyModeEnabled() {
         return activateForcedOnly.get();
@@ -96,19 +125,12 @@ public class DownloadSession {
     }
 
     public int getSpeedLimitBeforePause() {
-        Integer ret = speedLimitBeforePause.get();
-        return ret == null ? -1 : ret;
+        return Math.max(-1, speedLimitBeforePause.get());
     }
 
     public boolean isSpeedWasLimitedBeforePauseEnabled() {
-        return speedLimitedBeforePause.get() == Boolean.TRUE;
+        return speedLimitedBeforePause.get();
     }
-
-    private final NullsafeAtomicReference<Integer> speedLimitBeforePause   = new NullsafeAtomicReference<Integer>(null);
-    private final NullsafeAtomicReference<Boolean> speedLimitedBeforePause = new NullsafeAtomicReference<Boolean>(null);
-
-    private List<DownloadLink>                     forcedLinks             = new CopyOnWriteArrayList<DownloadLink>();
-    private List<DownloadLink>                     activationRequests      = new CopyOnWriteArrayList<DownloadLink>();
 
     public void setActivationRequests(List<DownloadLink> activationRequests) {
         if (isCandidatesRefreshRequired() == false) {
@@ -131,8 +153,6 @@ public class DownloadSession {
         }
         this.forcedLinks = forcedLinks;
     }
-
-    private final HashMap<String, PluginForHost> activationPluginCache = new HashMap<String, PluginForHost>();
 
     public HashMap<String, PluginForHost> getActivationPluginCache() {
         return activationPluginCache;
@@ -207,7 +227,6 @@ public class DownloadSession {
         } else {
             /* set new stopmark */
             stopMark.set(entry);
-            DownloadsTableModel.getInstance().setStopSignColumnVisible(true);
         }
     }
 
@@ -223,64 +242,55 @@ public class DownloadSession {
         }
     }
 
-    public long getCreated() {
-        return created;
-    }
-
     protected DownloadSession() {
         this(null);
     }
 
     protected DownloadSession(DownloadSession previousSession) {
-        created = System.currentTimeMillis();
-        fileAccessManager = FILE_ACCESS_MANAGER;
         if (previousSession == null) {
             proxyInfoHistory = new ProxyInfoHistory();
         } else {
+            if (previousSession.getControllers().size() > 0) throw new IllegalArgumentException("previousSession contains active controllers!");
             proxyInfoHistory = previousSession.getProxyInfoHistory();
             if (previousSession.isStopMarkSet() && previousSession.isStopMarkReached() == false) {
                 setStopMark(previousSession.getStopMark());
             }
             setMaxConcurrentDownloadsPerHost(previousSession.getMaxConcurrentDownloadsPerHost());
+            setUseAccountsEnabled(previousSession.isUseAccountsEnabled());
+            setMirrorManagementEnabled(previousSession.isMirrorManagementEnabled());
+            setAvoidCaptchas(previousSession.isAvoidCaptchas());
+
         }
     }
 
     public DownloadLinkCandidateHistory getHistory(DownloadLink downloadLink) {
-        synchronized (candidateHistory) {
-            return candidateHistory.get(downloadLink);
-        }
+        return candidateHistory.get(downloadLink);
     }
 
     public DownloadLinkCandidateHistory buildHistory(DownloadLink downloadLink) {
-        synchronized (candidateHistory) {
-            DownloadLinkCandidateHistory ret = candidateHistory.get(downloadLink);
-            if (ret == null) {
-                ret = new DownloadLinkCandidateHistory();
-                candidateHistory.put(downloadLink, ret);
-            }
-            return ret;
+        DownloadLinkCandidateHistory ret = candidateHistory.get(downloadLink);
+        if (ret == null) {
+            ret = new DownloadLinkCandidateHistory();
+            candidateHistory.put(downloadLink, ret);
         }
+        return ret;
     }
 
     public DownloadLinkCandidateHistory removeHistory(DownloadLink downloadLink) {
-        synchronized (candidateHistory) {
-            if (downloadLink == null) {
-                candidateHistory.clear();
-                return null;
-            } else {
-                return candidateHistory.remove(downloadLink);
-            }
+        if (downloadLink == null) {
+            candidateHistory.clear();
+            return null;
+        } else {
+            return candidateHistory.remove(downloadLink);
         }
     }
 
     public void removeAccountCache(String host) {
         refreshCandidates.set(true);
-        synchronized (accountCache) {
-            if (StringUtils.isEmpty(host)) {
-                accountCache.clear();
-            } else {
-                accountCache.remove(host.toLowerCase(Locale.ENGLISH));
-            }
+        if (StringUtils.isEmpty(host)) {
+            accountCache.clear();
+        } else {
+            accountCache.remove(host.toLowerCase(Locale.ENGLISH));
         }
     }
 
@@ -369,23 +379,19 @@ public class DownloadSession {
     }
 
     public IfFileExistsAction getOnFileExistsAction(FilePackage filePackage) {
-        synchronized (fileExistsActions) {
-            return fileExistsActions.get(filePackage.getUniqueID().toString());
-        }
+        return fileExistsActions.get(filePackage.getUniqueID().toString());
     }
 
     public void setOnFileExistsAction(FilePackage filePackage, IfFileExistsAction doAction) {
-        synchronized (fileExistsActions) {
-            if (doAction == null) {
-                fileExistsActions.remove(filePackage.getUniqueID());
-            } else {
-                fileExistsActions.put(filePackage.getUniqueID(), doAction);
-            }
+        if (doAction == null) {
+            fileExistsActions.remove(filePackage.getUniqueID());
+        } else {
+            fileExistsActions.put(filePackage.getUniqueID(), doAction);
         }
     }
 
     public FileAccessManager getFileAccessManager() {
-        return fileAccessManager;
+        return FILE_ACCESS_MANAGER;
     }
 
     public Object getStopMark() {

@@ -30,18 +30,15 @@ public class DownloadLinkArchiveFile implements ArchiveFile {
     private Archive            archive;
 
     public DownloadLinkArchiveFile(DownloadLink link) {
-
         downloadLinks = new ArrayList<DownloadLink>();
         downloadLinks.add(link);
-
         name = new File(link.getFileOutput()).getName();
         filePath = link.getFileOutput();
         size = link.getDownloadSize();
-
     }
 
     public String toString() {
-        return filePath + " Complete " + isComplete() + " valid: " + isValid() + " exists: " + exists();
+        return "DownloadLink: " + filePath + " Complete:" + isComplete();
     }
 
     @Override
@@ -52,48 +49,28 @@ public class DownloadLinkArchiveFile implements ArchiveFile {
     @Override
     public boolean equals(Object obj) {
         if (obj == null || !(obj instanceof DownloadLinkArchiveFile)) return false;
+        if (obj == this) return true;
         // this equals is used by the build method of ExtractionExtension. If we have one matching link, the archivefile matches as well
         for (DownloadLink dl : ((DownloadLinkArchiveFile) obj).downloadLinks) {
             if (downloadLinks.contains(dl)) return true;
-
         }
-
         return false;
     }
 
+    @Override
     public boolean isComplete() {
         for (DownloadLink downloadLink : downloadLinks) {
-            if (isLinkComplete(downloadLink)) return true;
+            if (FinalLinkState.CheckFinished(downloadLink.getFinalLinkState()) && new File(filePath).exists()) return true;
         }
         return false;
-    }
-
-    private boolean isLinkComplete(DownloadLink downloadLink) {
-        if (FinalLinkState.CheckFinished(downloadLink.getFinalLinkState()) && new File(downloadLink.getFileOutput()).exists()) return true;
-        return true;
     }
 
     public String getFilePath() {
         return filePath;
     }
 
-    public boolean isValid() {
-        for (DownloadLink downloadLink : downloadLinks) {
-            if (FinalLinkState.CheckFinished(downloadLink.getFinalLinkState())) return true;
-        }
-        return false;
-    }
-
     public void deleteFile() {
         DownloadWatchDog.getInstance().delete(downloadLinks, null);
-    }
-
-    public boolean exists() {
-        // Log.L.info("Does file exist: " + getName());
-        for (DownloadLink l : downloadLinks) {
-            if (new File(l.getFileOutput()).exists()) return true;
-        }
-        return false;
     }
 
     public List<DownloadLink> getDownloadLinks() {
@@ -171,25 +148,23 @@ public class DownloadLinkArchiveFile implements ArchiveFile {
     }
 
     public AvailableStatus getAvailableStatus() {
+        AvailableStatus ret = null;
         for (DownloadLink downloadLink : downloadLinks) {
             switch (downloadLink.getAvailableStatus()) {
             case TRUE:
                 return downloadLink.getAvailableStatus();
-            }
-        }
-        for (DownloadLink downloadLink : downloadLinks) {
-            switch (downloadLink.getAvailableStatus()) {
             case UNCHECKED:
-                return downloadLink.getAvailableStatus();
-            }
-        }
-        for (DownloadLink downloadLink : downloadLinks) {
-            switch (downloadLink.getAvailableStatus()) {
+                ret = AvailableStatus.UNCHECKED;
+                break;
             case UNCHECKABLE:
-                return downloadLink.getAvailableStatus();
+                if (ret != AvailableStatus.UNCHECKED) ret = AvailableStatus.UNCHECKABLE;
+                break;
+            case FALSE:
+                if (ret == null) ret = AvailableStatus.FALSE;
+                break;
             }
         }
-        return downloadLinks.get(0).getAvailableStatus();
+        return ret;
     }
 
     @Override
@@ -214,13 +189,21 @@ public class DownloadLinkArchiveFile implements ArchiveFile {
                 });
                 break;
             case CLEANUP_AFTER_PACKAGE_HAS_FINISHED:
-                controller.getLogger().info("Remove Package " + downloadLink.getName() + " because Finished and CleanupImmediately and Extrating finished!");
-                FilePackage fp = downloadLink.getFilePackage();
-                if (fp.getControlledBy() != null) {
-                    DownloadController.removePackageIfFinished(controller.getLogger(), fp);
-                } else {
-                    controller.getLogger().info("Cannot remove. Package has no controller");
-                }
+                DownloadController.getInstance().getQueue().add(new QueueAction<Void, RuntimeException>() {
+
+                    @Override
+                    protected Void run() throws RuntimeException {
+                        controller.getLogger().info("Remove Package " + downloadLink.getName() + " because Finished and CleanupImmediately and Extrating finished!");
+                        FilePackage fp = downloadLink.getFilePackage();
+                        if (fp.getControlledBy() != null) {
+                            DownloadController.removePackageIfFinished(controller.getLogger(), fp);
+                        } else {
+                            controller.getLogger().info("Cannot remove. Package has no controller");
+                        }
+                        return null;
+                    }
+
+                });
                 break;
             case CLEANUP_ONCE_AT_STARTUP:
             case NEVER:
@@ -232,7 +215,6 @@ public class DownloadLinkArchiveFile implements ArchiveFile {
     @Override
     public void setArchive(Archive archive) {
         this.archive = archive;
-
         if (archive != null && archive.getFactory() != null) {
             for (DownloadLink downloadLink : downloadLinks) {
                 downloadLink.setArchiveID(archive.getFactory().getID());
@@ -243,6 +225,11 @@ public class DownloadLinkArchiveFile implements ArchiveFile {
 
     public Archive getArchive() {
         return archive;
+    }
+
+    @Override
+    public boolean exists() {
+        return new File(filePath).exists();
     }
 
 }

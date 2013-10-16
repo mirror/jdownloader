@@ -26,7 +26,6 @@ public class CrawledLinkArchiveFile implements ArchiveFile {
         links.add(l);
         name = l.getName();
         size = l.getSize();
-
     }
 
     public java.util.List<CrawledLink> getLinks() {
@@ -41,48 +40,33 @@ public class CrawledLinkArchiveFile implements ArchiveFile {
     @Override
     public boolean equals(Object obj) {
         if (obj == null || !(obj instanceof CrawledLinkArchiveFile)) return false;
+        if (obj == this) return true;
         // this equals is used by the build method of ExtractionExtension. If we have one matching link, the archivefile matches as well
         for (CrawledLink dl : ((CrawledLinkArchiveFile) obj).links) {
             if (links.contains(dl)) return true;
-
         }
-
         return false;
     }
 
     public boolean isComplete() {
         for (CrawledLink downloadLink : links) {
-            if (isLinkComplete(downloadLink)) return true;
+            switch (downloadLink.getLinkState()) {
+            case OFFLINE:
+                return false;
+            }
         }
-        return false;
-    }
-
-    private boolean isLinkComplete(CrawledLink link) {
-        switch (link.getLinkState()) {
-        case OFFLINE:
-            return false;
-        default:
-            return true;
-        }
+        return true;
     }
 
     public String toString() {
-        return getName();
+        return "CrawledLink: " + name + " Complete:" + isComplete();
     }
 
     public String getFilePath() {
         return name;
     }
 
-    public boolean isValid() {
-        return true;
-    }
-
     public void deleteFile() {
-    }
-
-    public boolean exists() {
-        return false;
     }
 
     public String getName() {
@@ -106,7 +90,6 @@ public class CrawledLinkArchiveFile implements ArchiveFile {
     public void addMirror(CrawledLink link) {
         links.add(link);
         size = Math.max(link.getSize(), size);
-
     }
 
     @Override
@@ -114,30 +97,23 @@ public class CrawledLinkArchiveFile implements ArchiveFile {
     }
 
     public AvailableStatus getAvailableStatus() {
+        AvailableStatus ret = null;
         for (CrawledLink downloadLink : links) {
-            switch (downloadLink.getDownloadLink().getAvailableStatus()) {
-            case TRUE:
-                return downloadLink.getDownloadLink().getAvailableStatus();
+            switch (downloadLink.getLinkState()) {
+            case ONLINE:
+                return AvailableStatus.TRUE;
+            case TEMP_UNKNOWN:
+                ret = AvailableStatus.UNCHECKED;
+                break;
+            case UNKNOWN:
+                if (ret != AvailableStatus.UNCHECKED) ret = AvailableStatus.UNCHECKABLE;
+                break;
+            case OFFLINE:
+                if (ret == null) ret = AvailableStatus.FALSE;
+                break;
             }
         }
-        for (CrawledLink downloadLink : links) {
-            switch (downloadLink.getDownloadLink().getAvailableStatus()) {
-            case UNCHECKED:
-                return downloadLink.getDownloadLink().getAvailableStatus();
-            }
-        }
-        for (CrawledLink downloadLink : links) {
-            switch (downloadLink.getDownloadLink().getAvailableStatus()) {
-            case UNCHECKABLE:
-                return downloadLink.getDownloadLink().getAvailableStatus();
-            }
-        }
-        return links.get(0).getDownloadLink().getAvailableStatus();
-    }
-
-    public boolean existsLocalFile() {
-        return new File(LinkTreeUtils.getDownloadDirectory(links.get(0)), links.get(0).getName()).exists();
-
+        return ret;
     }
 
     @Override
@@ -147,10 +123,8 @@ public class CrawledLinkArchiveFile implements ArchiveFile {
     @Override
     public void setArchive(Archive archive) {
         this.archive = archive;
-
         if (archive != null && archive.getFactory() != null) {
             for (CrawledLink link : links) {
-
                 link.setArchiveID(archive.getFactory().getID());
             }
         }
@@ -158,5 +132,10 @@ public class CrawledLinkArchiveFile implements ArchiveFile {
 
     public Archive getArchive() {
         return archive;
+    }
+
+    @Override
+    public boolean exists() {
+        return new File(LinkTreeUtils.getDownloadDirectory(links.get(0)), name).exists();
     }
 }

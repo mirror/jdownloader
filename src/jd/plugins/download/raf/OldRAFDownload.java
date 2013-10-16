@@ -152,7 +152,7 @@ public class OldRAFDownload extends DownloadInterface {
         readTimeout = config.getHttpReadTimeout();
         this.request = request;
         /* setDownloadInstance after all variables are set! */
-        downloadLink.getDownloadLinkController().setDownloadInstance(this);
+        plugin.setDownloadInterface(this);
     }
 
     /**
@@ -280,17 +280,18 @@ public class OldRAFDownload extends DownloadInterface {
      * Validiert das Chunk Progress array
      */
     protected boolean checkResumabled() {
-        if (downloadLink.getChunksProgress() == null || downloadLink.getChunksProgress().length == 0) return false;
+        long[] chunksP = downloadLink.getChunksProgress();
+        if (chunksP == null || chunksP.length == 0) return false;
         long fileSize = getFileSize();
-        int chunks = downloadLink.getChunksProgress().length;
+        int chunks = chunksP.length;
         long part = fileSize / chunks;
         long dif;
         long last = -1;
         for (int i = 0; i < chunks; i++) {
-            dif = downloadLink.getChunksProgress()[i] - i * part;
+            dif = chunksP[i] - i * part;
             if (dif < 0) return false;
-            if (downloadLink.getChunksProgress()[i] <= last) return false;
-            last = downloadLink.getChunksProgress()[i];
+            if (chunksP[i] <= last) return false;
+            last = chunksP[i];
         }
         if (chunks > 0) {
             if (chunks <= this.getChunkNum()) {
@@ -302,7 +303,7 @@ public class OldRAFDownload extends DownloadInterface {
                  */
                 logger.info("Download has " + chunks + " Chunks but only " + getChunkNum() + " allowed! Change to 1!");
                 setChunkNum(1);
-                downloadLink.setChunksProgress(new long[] { downloadLink.getChunksProgress()[0] });
+                downloadLink.setChunksProgress(new long[] { chunksP[0] });
             }
             return true;
         }
@@ -372,11 +373,11 @@ public class OldRAFDownload extends DownloadInterface {
      */
     public boolean handleErrors() throws PluginException {
         if (externalDownloadStop()) return false;
-        if (doFilesizeCheck() && (totalLinkBytesLoaded <= 0 || totalLinkBytesLoaded != getFileSize() && getFileSize() > 0)) {
+        if (doFilesizeCheck() && getFileSize() > 0 && totalLinkBytesLoaded != getFileSize()) {
             if (totalLinkBytesLoaded > getFileSize()) {
                 /*
-                 * workaround for old bug deep in this downloadsystem. more data got loaded (maybe just counting bug) than filesize. but in
-                 * most cases the file is okay! WONTFIX because new downloadsystem is on its way
+                 * workaround for old bug deep in this downloadsystem. more data got loaded (maybe just counting bug) than filesize. but in most cases the file
+                 * is okay! WONTFIX because new downloadsystem is on its way
                  */
                 logger.severe("Filesize: " + getFileSize() + " Loaded: " + totalLinkBytesLoaded);
                 if (caughtPluginException == null) {
@@ -390,6 +391,9 @@ public class OldRAFDownload extends DownloadInterface {
         }
         if (caughtPluginException == null) {
             downloadLink.getDownloadLinkController().getLinkStatus().setStatus(LinkStatus.FINISHED);
+            if (downloadLink.getKnownDownloadSize() < 0) {
+                downloadLink.setVerifiedFileSize(outputCompleteFile.length());
+            }
             return true;
         } else {
             throw caughtPluginException;
@@ -412,8 +416,7 @@ public class OldRAFDownload extends DownloadInterface {
     }
 
     /**
-     * Wartet bis alle Chunks fertig sind, aktuelisiert den downloadlink regelmaesig und fordert beim Controller eine aktualisierung des
-     * links an
+     * Wartet bis alle Chunks fertig sind, aktuelisiert den downloadlink regelmaesig und fordert beim Controller eine aktualisierung des links an
      */
     protected void onChunkFinished(RAFChunk chunk) {
         synchronized (chunks) {
@@ -476,10 +479,10 @@ public class OldRAFDownload extends DownloadInterface {
             if (downloadLink.getVerifiedFileSize() < 0) {
                 /* we don't have a verified filesize yet, let's check if we have it now! */
                 if (connection.getRange() != null) {
-                    if (connection.getRange()[2] > 0) {
+                    if (connection.getRange()[2] >= 0) {
                         downloadLink.setVerifiedFileSize(connection.getRange()[2]);
                     }
-                } else if (connection.getRequestProperty("Range") == null && connection.getLongContentLength() > 0 && connection.isOK()) {
+                } else if (connection.getRequestProperty("Range") == null && connection.getLongContentLength() >= 0 && connection.isOK()) {
                     downloadLink.setVerifiedFileSize(connection.getLongContentLength());
                 }
             }
@@ -701,8 +704,7 @@ public class OldRAFDownload extends DownloadInterface {
     }
 
     /**
-     * Setzt vor ! dem download dden requesttimeout. Sollte nicht zu niedrig sein weil sonst das automatische kopieren der Connections fehl
-     * schlaegt.,
+     * Setzt vor ! dem download dden requesttimeout. Sollte nicht zu niedrig sein weil sonst das automatische kopieren der Connections fehl schlaegt.,
      */
     public void setRequestTimeout(int requestTimeout) {
         this.requestTimeout = requestTimeout;
@@ -915,20 +917,40 @@ public class OldRAFDownload extends DownloadInterface {
         RAFChunk chunk;
         totalLinkBytesLoaded = 0;
         downloadLink.setDownloadCurrent(0);
-        long partSize = getFileSize() / getChunkNum();
-        if (connection.getRange() != null) {
-            if ((connection.getRange()[1] == connection.getRange()[2] - 1) || (connection.getRange()[1] == connection.getRange()[2])) {
-                logger.warning("Chunkload protection. this may cause traffic errors");
-                partSize = getFileSize() / getChunkNum();
+        long fileSize = getFileSize();
+        long partSize = 0;
+        if (fileSize < 0) {
+            /* unknown filesize handling */
+            if (getChunkNum() > 1) {
+                logger.warning("Unknown FileSize->reset chunks to 1 and start at beginning");
+                setChunkNum(1);
             } else {
-                // Falls schon der 1. range angefordert wurde.... werden die
-                // restlichen chunks angepasst
-                partSize = (getFileSize() - connection.getLongContentLength()) / (getChunkNum() - 1);
+                logger.warning("Unknown FileSize->start at beginning");
             }
-        }
-        if (partSize <= 0) {
-            logger.warning("Could not get Filesize.... reset chunks to 1");
-            setChunkNum(1);
+        } else if (fileSize == 0) {
+            /* zero filesize handling */
+            if (getChunkNum() > 1) {
+                logger.warning("Zero FileSize->reset chunks to 1 and start at beginning");
+                setChunkNum(1);
+            } else {
+                logger.warning("Zero FileSize->start at beginning");
+            }
+        } else {
+            partSize = fileSize / getChunkNum();
+            if (connection.getRange() != null) {
+                if ((connection.getRange()[1] == connection.getRange()[2] - 1) || (connection.getRange()[1] == connection.getRange()[2])) {
+                    logger.warning("Chunkload protection. this may cause traffic errors");
+                    partSize = fileSize / getChunkNum();
+                } else {
+                    // Falls schon der 1. range angefordert wurde.... werden die
+                    // restlichen chunks angepasst
+                    partSize = (fileSize - connection.getLongContentLength()) / (getChunkNum() - 1);
+                }
+            }
+            if (partSize <= 0) {
+                logger.warning("Filesize is " + fileSize + " but partSize is " + partSize + "-> reset chunks to 1");
+                setChunkNum(1);
+            }
         }
         logger.finer("Start Download in " + getChunkNum() + " chunks. Chunksize: " + partSize);
         downloadLink.setChunksProgress(new long[chunkNum]);
@@ -980,12 +1002,11 @@ public class OldRAFDownload extends DownloadInterface {
         throw new WTFException("This should not happen!");
     }
 
-    private void createOutputChannel() throws FileNotFoundException, SkipReasonException {
+    private void createOutputChannel() throws SkipReasonException {
         try {
             String fileOutput = downloadLink.getFileOutput();
             outputCompleteFile = new File(fileOutput);
             outputPartFile = new File(fileOutput + ".part");
-
             outputPartFileRaf = new RandomAccessFile(outputPartFile, "rw");
         } catch (Exception e) {
             throw new SkipReasonException(SkipReason.INVALID_DESTINATION, e);

@@ -617,7 +617,6 @@ public class MyJDownloaderConnectThread extends Thread {
         }
         /* fetch new jdToken if needed */
         connectionHelper.backoff();
-
         try {
             lapi.reconnect();
             /* we need an additional call that will activate the new session */

@@ -476,7 +476,7 @@ public class RtmpDump extends RTMPDownload {
             if (BYTESLOADED > 0) {
                 downloadLink.setDownloadCurrent(BYTESLOADED);
             }
-            downloadLink.getDownloadLinkController().setDownloadInstance(null);
+            plugin.setDownloadInterface(null);
             getManagedConnetionHandler().removeThrottledConnection(tcon);
             try {
                 downloadLink.getDownloadLinkController().getConnectionHandler().removeConnectionHandler(getManagedConnetionHandler());

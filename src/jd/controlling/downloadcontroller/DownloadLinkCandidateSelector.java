@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import jd.controlling.downloadcontroller.AccountCache.ACCOUNTTYPE;
 import jd.controlling.downloadcontroller.AccountCache.CachedAccount;
 import jd.controlling.downloadcontroller.DownloadLinkCandidateResult.RESULT;
 import jd.plugins.Account;
@@ -35,7 +36,12 @@ public class DownloadLinkCandidateSelector {
             this.result = result;
             this.candidate = candidate;
         }
+    }
 
+    public static enum AccountPermission {
+        OK,
+        FORBIDDEN,
+        DISABLED
     }
 
     private final Comparator<CandidateResultHolder>                                                        RESULT_SORTER = new Comparator<CandidateResultHolder>() {
@@ -70,7 +76,6 @@ public class DownloadLinkCandidateSelector {
                                                                                                                              };
                                                                                                                          };
 
-    private boolean                                                                                        avoidCaptchas = false;
     private final DownloadSession                                                                          session;
 
     private LinkedHashMap<DownloadLink, LinkedHashMap<DownloadLinkCandidate, DownloadLinkCandidateResult>> roundResults  = new LinkedHashMap<DownloadLink, LinkedHashMap<DownloadLinkCandidate, DownloadLinkCandidateResult>>();
@@ -81,8 +86,7 @@ public class DownloadLinkCandidateSelector {
 
     public DownloadLinkCandidateSelector(DownloadSession session) {
         this.session = session;
-        this.avoidCaptchas = session.isAvoidCaptchas();
-        this.mirrorManagement = session.isMirrorManagementEnabled();
+        avoidCaptchas = session.isAvoidCaptchas();
     }
 
     public int getMaxNumberOfDownloadLinkCandidatesResults(DownloadLinkCandidate candidate) {
@@ -91,6 +95,10 @@ public class DownloadLinkCandidateSelector {
 
     public boolean isAvoidCaptchas() {
         return avoidCaptchas;
+    }
+
+    public void setAvoidCaptchas(boolean avoidCaptchas) {
+        this.avoidCaptchas = avoidCaptchas;
     }
 
     public boolean isDownloadLinkCandidateAllowed(DownloadLinkCandidate candidate) {
@@ -107,7 +115,8 @@ public class DownloadLinkCandidateSelector {
 
     }
 
-    public boolean checkCachedAccount(CachedAccount cachedAccount) {
+    public AccountPermission getCachedAccountPermission(CachedAccount cachedAccount) {
+        if (session.isUseAccountsEnabled() == false && (cachedAccount.getType() == ACCOUNTTYPE.MULTI || cachedAccount.getType() == ACCOUNTTYPE.ORIGINAL)) return AccountPermission.DISABLED;
         for (SingleDownloadController con : session.getControllers()) {
             Account accountInUse = con.getAccount();
             if (accountInUse == null) {
@@ -116,23 +125,15 @@ public class DownloadLinkCandidateSelector {
             }
             if (accountInUse == cachedAccount.getAccount()) {
                 /* same account */
-                if (!accountInUse.isConcurrentUsePossible()) return false;
-                return true;
+                if (!accountInUse.isConcurrentUsePossible()) return AccountPermission.FORBIDDEN;
+                return AccountPermission.OK;
             }
         }
-        return true;
-    }
-
-    public void setAvoidCaptchas(boolean avoidCaptchas) {
-        this.avoidCaptchas = avoidCaptchas;
+        return AccountPermission.OK;
     }
 
     public boolean isMirrorManagement() {
-        return mirrorManagement;
-    }
-
-    public void setMirrorManagement(boolean mirrorManagement) {
-        this.mirrorManagement = mirrorManagement;
+        return session.isMirrorManagementEnabled();
     }
 
     public boolean isForcedOnly() {
@@ -243,7 +244,7 @@ public class DownloadLinkCandidateSelector {
         return ret;
     }
 
-    private boolean mirrorManagement = true;
-    private boolean forcedOnly       = false;
+    private boolean avoidCaptchas = false;
+    private boolean forcedOnly    = false;
 
 }

@@ -105,11 +105,9 @@ public class SingleDownloadController extends BrowserSettingsThread {
     }
 
     public DownloadInterface getDownloadInstance() {
-        return downloadInstance.get();
-    }
-
-    public void setDownloadInstance(DownloadInterface downloadInterface) {
-        downloadInstance.set(downloadInterface);
+        PluginForHost plugin = processingPlugin.get();
+        if (plugin != null) return plugin.getDownloadInterface();
+        return null;
     }
 
     public DownloadLinkCandidate getDownloadLinkCandidate() {
@@ -258,8 +256,6 @@ public class SingleDownloadController extends BrowserSettingsThread {
                 } else {
                     throw browserException;
                 }
-            } finally {
-                setDownloadInstance(null);
             }
         } catch (final Throwable e) {
             if (e instanceof PluginException && ((PluginException) e).getLinkStatus() == LinkStatus.ERROR_CAPTCHA) {
@@ -288,6 +284,10 @@ public class SingleDownloadController extends BrowserSettingsThread {
                     } else {
                         originalPlugin.invalidateLastChallengeResponse();
                     }
+                } catch (final Throwable ignore) {
+                    logger.log(ignore);
+                }
+                try {
                     originalPlugin.clean();
                 } catch (final Throwable ignore) {
                     logger.log(ignore);
@@ -302,6 +302,10 @@ public class SingleDownloadController extends BrowserSettingsThread {
                     } else {
                         livePlugin.invalidateLastChallengeResponse();
                     }
+                } catch (final Throwable ignore) {
+                    logger.log(ignore);
+                }
+                try {
                     livePlugin.clean();
                 } catch (final Throwable ignore) {
                     logger.log(ignore);

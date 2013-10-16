@@ -120,7 +120,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
     private transient NullsafeAtomicReference<SingleDownloadController> downloadLinkController              = new NullsafeAtomicReference<SingleDownloadController>(null);
 
     /** Maximum der heruntergeladenen Datei (Dateilaenge) */
-    private long                                                        downloadMax                         = 0;
+    private long                                                        downloadMax                         = -1;
 
     private String                                                      browserurl                          = null;
 
@@ -156,7 +156,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
      */
     private String                                                      urlDownload;
 
-    private transient PluginProgress                                    pluginProgress;
+    private transient NullsafeAtomicReference<PluginProgress>           pluginProgress                      = new NullsafeAtomicReference<PluginProgress>(null);
 
     private transient ImageIcon                                         icon                                = null;
 
@@ -192,7 +192,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
     public DownloadLink(PluginForHost plugin, String name, String host, String urlDownload, boolean isEnabled) {
         this.defaultplugin = plugin;
         setName(name);
-        downloadMax = 0;
+        downloadMax = -1;
         setHost(host);
         this.isEnabled = isEnabled;
         enabled.set(isEnabled);
@@ -252,6 +252,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
         downloadLinkController = new NullsafeAtomicReference<SingleDownloadController>(null);
         finalLinkState = new NullsafeAtomicReference<FinalLinkState>(null);
         currentLinkStatus = new NullsafeAtomicReference<LinkStatus>(null);
+        pluginProgress = new NullsafeAtomicReference<PluginProgress>(null);
         availableStatus = AvailableStatus.UNCHECKED;
         try {
             if (linkStatus != null) {
@@ -355,10 +356,6 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
             }
         }
         return downloadCurrent;
-    }
-
-    public long getRemainingKB() {
-        return getDownloadSize() - getDownloadCurrent();
     }
 
     public SingleDownloadController getDownloadLinkController() {
@@ -703,9 +700,9 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
         setCustomFileOutputFilename(null);
         setFinalFileName(null);
         setFinalLinkState(null);
-        long size = getDownloadSize();
+        long size = getVerifiedFileSize();
         setVerifiedFileSize(-1);
-        setDownloadSize(size);
+        if (size >= 0) setDownloadSize(size);
         setChunksProgress(null);
         setDownloadCurrent(0);
         setFinishedDate(-1l);
@@ -767,7 +764,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
      */
     public void setDownloadSize(long downloadMax) {
         if (this.downloadMax == downloadMax) return;
-        this.downloadMax = downloadMax;
+        this.downloadMax = Math.max(-1, downloadMax);
         if (hasNotificationListener() && this.getCurrentDownloadInterface() == null) notifyChanges(AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, null);
     }
 
@@ -995,7 +992,9 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
      * 
      * @return
      */
-    public long getDownloadMax() {
+    public long getKnownDownloadSize() {
+        long ret = getVerifiedFileSize();
+        if (ret >= 0) return ret;
         return downloadMax;
     }
 
@@ -1036,11 +1035,12 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
     }
 
     public void setPluginProgress(PluginProgress progress) {
-        this.pluginProgress = progress;
+        if (pluginProgress.getAndSet(progress) == progress) return;
+        if (hasNotificationListener()) notifyChanges(AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, new DownloadLinkProperty(this, DownloadLinkProperty.Property.PLUGIN_PROGRESS, progress));
     }
 
     public PluginProgress getPluginProgress() {
-        return pluginProgress;
+        return pluginProgress.get();
     }
 
     public void setSha1Hash(String sha1) {

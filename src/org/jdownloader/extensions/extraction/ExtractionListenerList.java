@@ -70,15 +70,7 @@ public class ExtractionListenerList implements ExtractionListener {
                         link.setMessage(errorMsg);
                     }
                 }
-                for (File f : controller.getArchiv().getExtractedFiles()) {
-                    if (f.exists()) {
-                        if (!FileCreationManager.getInstance().delete(f)) {
-                            logger.warning("Could not delete file " + f.getAbsolutePath());
-                        } else {
-                            logger.warning("Deleted file " + f.getAbsolutePath());
-                        }
-                    }
-                }
+                cleanUpIncomplete(controller);
             } finally {
                 controller.getArchiv().setActive(false);
                 ex.onFinished(controller);
@@ -139,15 +131,7 @@ public class ExtractionListenerList implements ExtractionListener {
                         link.setMessage(T._.plugins_optional_extraction_error_extrfailedcrc());
                     }
                 }
-                for (File f : controller.getArchiv().getExtractedFiles()) {
-                    if (f.exists()) {
-                        if (!FileCreationManager.getInstance().delete(f)) {
-                            logger.warning("Could not delete file " + f.getAbsolutePath());
-                        } else {
-                            logger.warning("Deleted file " + f.getAbsolutePath());
-                        }
-                    }
-                }
+                cleanUpIncomplete(controller);
             } finally {
                 controller.getArchiv().setActive(false);
                 ex.onFinished(controller);
@@ -238,6 +222,19 @@ public class ExtractionListenerList implements ExtractionListener {
                 ex.onFinished(controller);
             }
             break;
+        }
+    }
+
+    private void cleanUpIncomplete(ExtractionController controller) {
+        final LogSource logger = controller.getLogger();
+        for (File f : controller.getArchiv().getExtractedFiles()) {
+            if (f.exists()) {
+                if (!FileCreationManager.getInstance().delete(f)) {
+                    logger.warning("Could not delete file " + f.getAbsolutePath());
+                } else {
+                    logger.warning("Deleted file " + f.getAbsolutePath());
+                }
+            }
         }
     }
 }

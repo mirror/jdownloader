@@ -6,7 +6,6 @@ import java.lang.reflect.Type;
 import jd.controlling.captcha.SkipRequest;
 import jd.plugins.DownloadLink;
 import jd.plugins.Plugin;
-import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 
 import org.appwork.exceptions.WTFException;
@@ -104,13 +103,13 @@ public abstract class Challenge<T> {
     public static DomainInfo getDomainInfo(Challenge<?> challenge) {
         Plugin plugin = getPlugin(challenge);
         if (plugin == null) throw new WTFException("no plugin for this challenge!?");
+        DomainInfo ret = null;
         if (plugin instanceof PluginForHost) {
-            DownloadLink dl = getDownloadLink(challenge);
-            if (dl != null) return dl.getDomainInfo();
-        } else if (plugin instanceof PluginForDecrypt) {
-            DomainInfo ret = DomainInfo.getInstance(getHost(challenge));
-            if (ret != null) return ret;
+            DownloadLink dl = ((PluginForHost) plugin).getDownloadLink();
+            if (dl != null) ret = dl.getDomainInfo();
         }
+        if (ret == null) ret = DomainInfo.getInstance(plugin.getHost());
+        if (ret != null) return ret;
         throw new WTFException("no domaininfo for this challenge!?");
     }
 

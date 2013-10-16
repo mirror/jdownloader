@@ -119,7 +119,7 @@ public class DownloadLinkStorable implements Storable {
     }
 
     public long getSize() {
-        return link.getDownloadSize();
+        return link.getKnownDownloadSize();
     }
 
     public void setSize(long size) {

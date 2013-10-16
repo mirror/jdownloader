@@ -170,7 +170,6 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> {
                     if (!StringUtils.isEmpty(archive.getFinalPassword()) && !checkPassword(archive.getFinalPassword(), false)) {
                         /* open archive with found pw */
                         logger.info("Password " + archive.getFinalPassword() + " is invalid, try to find correct one");
-
                         archive.setFinalPassword(null);
                     }
                     if (StringUtils.isEmpty(archive.getFinalPassword())) {
@@ -185,14 +184,10 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> {
                         java.util.List<String> pwList = extractor.config.getPasswordList();
                         if (pwList == null) pwList = new ArrayList<String>();
                         passwordList.addAll(pwList);
-
                         passwordListSize = passwordList.size() + 2;
-
                         fireEvent(ExtractionEvent.Type.START_CRACK_PASSWORD);
                         logger.info("Start password finding for " + archive);
-
                         String correctPW = null;
-
                         for (String password : passwordList) {
                             if (gotKilled()) return null;
                             crashLog.write("Try Password: " + password);

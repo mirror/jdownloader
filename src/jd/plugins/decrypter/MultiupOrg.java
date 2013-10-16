@@ -86,7 +86,8 @@ public class MultiupOrg extends PluginForDecrypt {
             return null;
         }
         for (String singleLink : links) {
-            decryptedLinks.add(createDownloadlink(singleLink.trim()));
+            singleLink = singleLink.trim().replaceFirst(":/+", "://");
+            decryptedLinks.add(createDownloadlink(singleLink));
         }
 
         return decryptedLinks;

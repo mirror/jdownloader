@@ -378,7 +378,7 @@ public class VeohCom extends PluginForHost {
                     FILEOUT.close();
                 } catch (final Throwable e) {
                 }
-                downloadLink.getDownloadLinkController().setDownloadInstance(null);
+                setDownloadInterface(null);
                 // System.out.println("SOLL: " + downloadLink.getDownloadSize()
                 // +
                 // " - IST: " + BYTESLOADED);

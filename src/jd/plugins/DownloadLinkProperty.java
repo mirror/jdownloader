@@ -9,6 +9,7 @@ public class DownloadLinkProperty {
         AVAILABILITY,
         FINAL_STATE,
         SKIPPED,
+        PLUGIN_PROGRESS,
         CONDITIONAL_SKIPPED;
     }
 

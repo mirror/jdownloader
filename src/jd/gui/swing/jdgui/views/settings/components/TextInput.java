@@ -46,7 +46,7 @@ public class TextInput extends ExtTextField implements SettingsComponent, Generi
 
     @Override
     public void setText(String t) {
-        if (settings.compareAndSet(false, true)) return;
+        if (!settings.compareAndSet(false, true)) return;
         try {
             super.setText(t);
         } finally {
@@ -61,7 +61,7 @@ public class TextInput extends ExtTextField implements SettingsComponent, Generi
     @Override
     public void onChanged() {
         super.onChanged();
-        if (settings.compareAndSet(false, true)) return;
+        if (!settings.compareAndSet(false, true)) { return; }
         try {
             if (keyhandler != null) keyhandler.setValue(getText());
         } finally {

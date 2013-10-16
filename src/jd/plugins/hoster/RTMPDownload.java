@@ -34,7 +34,6 @@ public class RTMPDownload extends RAFDownload {
         // TODO Auto-generated constructor stub
         url = new URL(rtmpURL);
         rtmpConnection = (RtmpUrlConnection) url.openConnection();
-        downloadLink.getDownloadLinkController().setDownloadInstance(this);
     }
 
     public RtmpUrlConnection getRtmpConnection() {

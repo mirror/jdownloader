@@ -3,6 +3,7 @@ package org.jdownloader.api.myjdownloader;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.appwork.utils.NullsafeAtomicReference;
 import org.appwork.utils.logging2.LogSource;
@@ -81,12 +82,12 @@ public class MyJDownloaderWaitingConnectionThread extends Thread {
     protected AtomicBoolean                                           running           = new AtomicBoolean(true);
     protected NullsafeAtomicReference<MyJDownloaderConnectionRequest> connectionRequest = new NullsafeAtomicReference<MyJDownloaderConnectionRequest>();
     private final LogSource                                           logger;
-    protected Socket                                                  connectionSocket  = null;
     protected final MyJDownloaderConnectThread                        connectThread;
+    private final static AtomicInteger                                THREADID          = new AtomicInteger(0);
 
     public MyJDownloaderWaitingConnectionThread(MyJDownloaderConnectThread connectThread) {
         this.setDaemon(true);
-        this.setName("MyJDownloaderWaitingConnectionThread");
+        this.setName("MyJDownloaderWaitingConnectionThread:" + THREADID.incrementAndGet());
         logger = connectThread.getLogger();
         this.connectThread = connectThread;
     }
@@ -108,6 +109,7 @@ public class MyJDownloaderWaitingConnectionThread extends Thread {
                     Throwable e = null;
                     DeviceConnectionStatus connectionStatus = null;
                     request.getConnectionHelper().backoff();
+                    Socket connectionSocket = null;
                     try {
                         logger.info("Connect " + request.getAddr());
                         connectionSocket = new Socket();
@@ -120,19 +122,24 @@ public class MyJDownloaderWaitingConnectionThread extends Thread {
                         int validToken = connectionSocket.getInputStream().read();
                         connectionStatus = DeviceConnectionStatus.parse(validToken);
                     } catch (final Throwable throwable) {
+                        try {
+                            connectionSocket.close();
+                        } catch (final Throwable ignore) {
+                        }
                         e = throwable;
                     }
                     synchronized (connectionRequest) {
                         MyJDownloaderConnectionResponse response = new MyJDownloaderConnectionResponse(this, request.getConnectionHelper(), connectionStatus, connectionSocket, e);
                         if (running.get() == false || connectThread.putResponse(response) == false) {
-                            logger.info("Could not putResponse to connectThread. Close responseSocket");
+                            if (running.get() == false) {
+                                logger.info("got closed/interrupted, do not putResponse");
+                            } else {
+                                logger.info("putResponse failed, maybe connectThread is closed/interrupted.");
+                            }
                             try {
                                 connectionSocket.close();
                             } catch (final Throwable ignore) {
                             }
-                        } else {
-                            /* clear reference to avoid WaitingThread closing a current in process connection */
-                            connectionSocket = null;
                         }
                     }
                 }
@@ -163,10 +170,6 @@ public class MyJDownloaderWaitingConnectionThread extends Thread {
     public void interrupt() {
         synchronized (connectionRequest) {
             running.set(false);
-            try {
-                connectionSocket.close();
-            } catch (final Throwable e) {
-            }
             connectionRequest.notifyAll();
         }
         super.interrupt();

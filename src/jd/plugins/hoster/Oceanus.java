@@ -633,11 +633,11 @@ public class Oceanus extends PluginForHost {
         public void setDownloadLink(DownloadLink downloadLink) {
             this.downloadLink = downloadLink;
             this.manager = new ManagedThrottledConnectionHandler(this.downloadLink);
-            downloadLink.getDownloadLinkController().setDownloadInstance(this);
         }
 
         public void setOceanus(Oceanus oceanus) {
             this.oceanus = oceanus;
+            oceanus.setDownloadInterface(this);
         }
 
         /**

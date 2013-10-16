@@ -54,9 +54,9 @@ public class MirrorPackage {
     }
 
     public String add(DownloadLink link) {
-        if (bytesTotal > 0 && link.getDownloadMax() > 0 && link.getDownloadMax() != bytesTotal) {
+        if (bytesTotal > 0 && link.getKnownDownloadSize() > 0 && link.getKnownDownloadSize() != bytesTotal) {
             // size mismatch
-            return id + "/" + link.getDownloadMax();
+            return id + "/" + link.getKnownDownloadSize();
         }
         if (StringUtils.isNotEmpty(md5) && StringUtils.isNotEmpty(link.getMD5Hash()) && !link.getMD5Hash().toLowerCase(Locale.ENGLISH).equals(md5)) {
             // hash mismatch
@@ -92,7 +92,7 @@ public class MirrorPackage {
         if (StringUtils.isEmpty(sha1) && StringUtils.isNotEmpty(link.getSha1Hash())) {
             sha1 = link.getSha1Hash().toLowerCase(Locale.ENGLISH);
         }
-        if (bytesTotal < 0) bytesTotal = link.getDownloadMax();
+        if (bytesTotal < 0) bytesTotal = link.getKnownDownloadSize();
 
         online |= link.getAvailableStatus() == AvailableStatus.TRUE;
         offline &= link.getAvailableStatus() == AvailableStatus.FALSE;

@@ -37,9 +37,6 @@ import jd.plugins.PluginForHost;
 import jd.plugins.download.RAFDownload;
 import jd.utils.JDUtilities;
 
-import org.jdownloader.plugins.SkipReason;
-import org.jdownloader.plugins.SkipReasonException;
-
 // DEV NOTES:
 // - ftp filenames can contain & characters!
 
@@ -68,7 +65,7 @@ public class Ftp extends PluginForHost {
             /* does not exist in 09581 stable */
         }
         try {
-            if (new File(downloadLink.getFileOutput()).exists()) throw new SkipReasonException(SkipReason.FILE_EXISTS);
+            if (new File(downloadLink.getFileOutput()).exists()) throw new PluginException(LinkStatus.ERROR_ALREADYEXISTS);
             URL url = new URL(ftpurl);
             /* cut off all ?xyz at the end */
             String filePath = new Regex(ftpurl, "://[^/]+/(.+?)(\\?|$)").getMatch(0);
@@ -167,7 +164,6 @@ public class Ftp extends PluginForHost {
             raf.setResume(false);
             raf.addChunksDownloading(1);
             dl = raf;
-            downloadLink.getDownloadLinkController().setDownloadInstance(dl);
             try {
                 ftp.setCmanager(dl.getManagedConnetionHandler());
             } catch (final Throwable e) {
@@ -208,7 +204,6 @@ public class Ftp extends PluginForHost {
                     ftp.setDownloadInterface(null);
                 } catch (final Throwable e) {
                 }
-                downloadLink.getDownloadLinkController().setDownloadInstance(null);
                 downloadLink.getLinkStatus().setStatusText(null);
             }
             if (tmp.length() != downloadLink.getDownloadSize()) {

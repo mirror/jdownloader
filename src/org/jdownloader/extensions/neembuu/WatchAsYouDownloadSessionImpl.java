@@ -261,7 +261,6 @@ final class WatchAsYouDownloadSessionImpl implements WatchAsYouDownloadSession {
             }
         }
 
-        jdds.getDownloadLink().getDownloadLinkController().setDownloadInstance(null);
         // jdds.getDownloadLink().getLinkStatus().setStatusText(null);
         jdds.getDownloadLink().setChunksProgress(new long[] { getTotalDownloaded() });
 
