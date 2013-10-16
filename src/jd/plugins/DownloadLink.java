@@ -700,7 +700,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
         setCustomFileOutputFilename(null);
         setFinalFileName(null);
         setFinalLinkState(null);
-        long size = getVerifiedFileSize();
+        long size = getKnownDownloadSize();
         setVerifiedFileSize(-1);
         if (size >= 0) setDownloadSize(size);
         setChunksProgress(null);
