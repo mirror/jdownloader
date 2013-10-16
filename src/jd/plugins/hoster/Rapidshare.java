@@ -95,6 +95,7 @@ public class Rapidshare extends PluginForHost {
         public RSLink(final DownloadLink link) {
             this.link = link;
             this.url = link.getDownloadURL();
+
         }
 
         public long getId() {
