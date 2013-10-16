@@ -101,7 +101,7 @@ public class SanShareCom extends PluginForHost {
     private static final AtomicInteger totalMaxSimultanFreeDownload = new AtomicInteger(20);
 
     // DEV NOTES
-    // XfileShare Version 3.0.8.3
+    // XfileShare Version 3.0.8.4
     // last XfileSharingProBasic compare :: 2.6.2.1
     // protocol: no https, accepts but goes into infinite loop
     // captchatype: null 4dignum recaptcha solvemedia keycaptcha
@@ -325,8 +325,8 @@ public class SanShareCom extends PluginForHost {
     }
 
     /**
-     * Provides alternative linkchecking method for a single link at a time. Can be used as generic failover, though kinda pointless as this method doesn't give
-     * filename...
+     * Provides alternative linkchecking method for a single link at a time. Can be used as generic failover, though kinda pointless as this
+     * method doesn't give filename...
      * 
      * */
     private String[] altAvailStat(final DownloadLink downloadLink, final String[] fileInfo) throws Exception {
@@ -582,18 +582,18 @@ public class SanShareCom extends PluginForHost {
                 passCode = null;
                 theLink.setProperty("pass", Property.NULL);
                 throw new PluginException(LinkStatus.ERROR_RETRY, "Wrong password supplied");
-            }	
+            }
         }
         // monitor this
         if (cbr.containsHTML("(class=\"err\">You have reached the download(-| )limit[^<]+for last[^<]+)")) {
             /*
-             * Indication of when you've reached the max download limit for that given session! Usually shows how long the session was recorded from x time
-             * (hours|days) which can trigger false positive below wait handling. As its only indication of what's previous happened, as in past tense and not a
-             * wait time going forward... unknown wait time!
+             * Indication of when you've reached the max download limit for that given session! Usually shows how long the session was
+             * recorded from x time (hours|days) which can trigger false positive below wait handling. As its only indication of what's
+             * previous happened, as in past tense and not a wait time going forward... unknown wait time!
              */
             if (account != null) {
                 logger.warning("Your account ( " + account.getUser() + " @ " + acctype + " ) has been temporarily disabled for going over the download session limit. JDownloader parses HTML for error messages, if you believe this is not a valid response please confirm issue within your browser. If you can download within your browser please contact JDownloader Development Team, if you can not download in your browser please take the issue up with " + this.getHost());
-                synchronized (LOCK) {
+                synchronized (ACCLOCK) {
                     AccountInfo ai = account.getAccountInfo();
                     ai.setTrafficLeft(0);
                     account.setAccountInfo(ai);
@@ -780,7 +780,7 @@ public class SanShareCom extends PluginForHost {
 
     @SuppressWarnings("unchecked")
     private void login(final Account account, final boolean force) throws Exception {
-        synchronized (LOCK) {
+        synchronized (ACCLOCK) {
             try {
                 /** Load cookies */
                 prepBrowser(br);
@@ -851,7 +851,7 @@ public class SanShareCom extends PluginForHost {
             getPage(downloadLink.getDownloadURL());
             // if the cached cookie expired, relogin.
             if ((br.getCookie(COOKIE_HOST, "login")) == null || br.getCookie(COOKIE_HOST, "xfss") == null) {
-                synchronized (LOCK) {
+                synchronized (ACCLOCK) {
                     account.setProperty("cookies", Property.NULL);
                     // if you retry, it can use another account...
                     throw new PluginException(LinkStatus.ERROR_RETRY);
@@ -868,7 +868,7 @@ public class SanShareCom extends PluginForHost {
                 if (br.getRedirectLocation() != null && !br.getRedirectLocation().matches(dllinkRegex)) getPage(br.getRedirectLocation());
                 // if the cached cookie expired, relogin.
                 if ((br.getCookie(COOKIE_HOST, "login")) == null || br.getCookie(COOKIE_HOST, "xfss") == null) {
-                    synchronized (LOCK) {
+                    synchronized (ACCLOCK) {
                         account.setProperty("cookies", Property.NULL);
                         // if you retry, it can use another account...
                         throw new PluginException(LinkStatus.ERROR_RETRY);
@@ -979,7 +979,8 @@ public class SanShareCom extends PluginForHost {
     private static HashMap<String, String>                    cloudflareCookies      = new HashMap<String, String>();
     private static HashMap<Account, HashMap<String, Integer>> hostMap                = new HashMap<Account, HashMap<String, Integer>>();
 
-    private static Object                                     LOCK                   = new Object();
+    private static Object                                     ACCLOCK                = new Object();
+    private static Object                                     CTRLLOCK               = new Object();
 
     private static StringContainer                            agent                  = new StringContainer();
 
@@ -1211,8 +1212,8 @@ public class SanShareCom extends PluginForHost {
     }
 
     /**
-     * This fixes filenames from all xfs modules: file hoster, audio/video streaming (including transcoded video), or blocked link checking which is based on
-     * fuid.
+     * This fixes filenames from all xfs modules: file hoster, audio/video streaming (including transcoded video), or blocked link checking
+     * which is based on fuid.
      * 
      * @version 0.2
      * @author raztoki
@@ -1447,68 +1448,72 @@ public class SanShareCom extends PluginForHost {
     }
 
     /**
-     * Prevents more than one free download from starting at a given time. One step prior to dl.startDownload(), it adds a slot to maxFree which allows the next
-     * singleton download to start, or at least try.
+     * Prevents more than one free download from starting at a given time. One step prior to dl.startDownload(), it adds a slot to maxFree
+     * which allows the next singleton download to start, or at least try.
      * 
-     * This is needed because xfileshare(website) only throws errors after a final dllink starts transferring or at a given step within pre download sequence.
-     * But this template(XfileSharingProBasic) allows multiple slots(when available) to commence the download sequence, this.setstartintival does not resolve
-     * this issue. Which results in x(20) captcha events all at once and only allows one download to start. This prevents wasting peoples time and effort on
-     * captcha solving and|or wasting captcha trading credits. Users will experience minimal harm to downloading as slots are freed up soon as current download
-     * begins.
+     * This is needed because xfileshare(website) only throws errors after a final dllink starts transferring or at a given step within pre
+     * download sequence. But this template(XfileSharingProBasic) allows multiple slots(when available) to commence the download sequence,
+     * this.setstartintival does not resolve this issue. Which results in x(20) captcha events all at once and only allows one download to
+     * start. This prevents wasting peoples time and effort on captcha solving and|or wasting captcha trading credits. Users will experience
+     * minimal harm to downloading as slots are freed up soon as current download begins.
      * 
      * @param controlSlot
      *            (+1|-1)
      * */
-    private synchronized void controlSlot(final int num, final Account account) {
-        if (account == null) {
-            int was = maxFree.get();
-            maxFree.set(Math.min(Math.max(1, maxFree.addAndGet(num)), totalMaxSimultanFreeDownload.get()));
-            logger.info("maxFree was = " + was + " && maxFree now = " + maxFree.get());
-        } else {
-            int was = maxPrem.get();
-            maxPrem.set(Math.min(Math.max(1, maxPrem.addAndGet(num)), account.getIntegerProperty("totalMaxSim", 20)));
-            logger.info("maxPrem was = " + was + " && maxPrem now = " + maxPrem.get());
+    private void controlSlot(final int num, final Account account) {
+        synchronized (CTRLLOCK) {
+            if (account == null) {
+                int was = maxFree.get();
+                maxFree.set(Math.min(Math.max(1, maxFree.addAndGet(num)), totalMaxSimultanFreeDownload.get()));
+                logger.info("maxFree was = " + was + " && maxFree now = " + maxFree.get());
+            } else {
+                int was = maxPrem.get();
+                maxPrem.set(Math.min(Math.max(1, maxPrem.addAndGet(num)), account.getIntegerProperty("totalMaxSim", 20)));
+                logger.info("maxPrem was = " + was + " && maxPrem now = " + maxPrem.get());
+            }
         }
     }
 
     /**
-     * ControlSimHost, On error it will set the upper mark for 'max sim dl per host'. This will be the new 'static' setting used going forward. Thus prevents
-     * new downloads starting when not possible and is self aware and requires no coder interaction.
+     * ControlSimHost, On error it will set the upper mark for 'max sim dl per host'. This will be the new 'static' setting used going
+     * forward. Thus prevents new downloads starting when not possible and is self aware and requires no coder interaction.
      * 
      * @param account
      * 
      * @category 'Experimental', Mod written February 2013
      * */
-    private synchronized void controlSimHost(final Account account) {
-        if (usedHost == null) return;
-        int was, current;
-        if (account != null && account.getBooleanProperty("free")) {
-            // free account
-            was = maxFreeAccSimDlPerHost.get();
-            maxFreeAccSimDlPerHost.set(getHashedHashedValue(account) - 1);
-            current = maxFreeAccSimDlPerHost.get();
-        } else if (account != null && !account.getBooleanProperty("free")) {
-            // premium account
-            was = maxPremAccSimDlPerHost.get();
-            maxPremAccSimDlPerHost.set(getHashedHashedValue(account) - 1);
-            current = maxPremAccSimDlPerHost.get();
-        } else {
-            // non account
-            was = maxNonAccSimDlPerHost.get();
-            maxNonAccSimDlPerHost.set(getHashedHashedValue(account) - 1);
-            current = maxNonAccSimDlPerHost.get();
-        }
-        if (account == null) {
-            logger.info("maxSimPerHost = Guest @ " + acctype + " -> was = " + was + " && new upper limit = " + current);
-        } else {
-            logger.info("maxSimPerHost = " + account.getUser() + " @ " + acctype + " -> was = " + was + " && new upper limit = " + current);
+    private void controlSimHost(final Account account) {
+        synchronized (CTRLLOCK) {
+            if (usedHost == null) return;
+            int was, current;
+            if (account != null && account.getBooleanProperty("free")) {
+                // free account
+                was = maxFreeAccSimDlPerHost.get();
+                maxFreeAccSimDlPerHost.set(getHashedHashedValue(account) - 1);
+                current = maxFreeAccSimDlPerHost.get();
+            } else if (account != null && !account.getBooleanProperty("free")) {
+                // premium account
+                was = maxPremAccSimDlPerHost.get();
+                maxPremAccSimDlPerHost.set(getHashedHashedValue(account) - 1);
+                current = maxPremAccSimDlPerHost.get();
+            } else {
+                // non account
+                was = maxNonAccSimDlPerHost.get();
+                maxNonAccSimDlPerHost.set(getHashedHashedValue(account) - 1);
+                current = maxNonAccSimDlPerHost.get();
+            }
+            if (account == null) {
+                logger.info("maxSimPerHost = Guest @ " + acctype + " -> was = " + was + " && new upper limit = " + current);
+            } else {
+                logger.info("maxSimPerHost = " + account.getUser() + " @ " + acctype + " -> was = " + was + " && new upper limit = " + current);
+            }
         }
     }
 
     /**
-     * This matches dllink against an array of used 'host' servers. Use this when site have multiple download servers and they allow x connections to ip/host
-     * server. Currently JD allows a global connection controller and doesn't allow for handling of different hosts/IP setup. This will help with those
-     * situations by allowing more connection when possible.
+     * This matches dllink against an array of used 'host' servers. Use this when site have multiple download servers and they allow x
+     * connections to ip/host server. Currently JD allows a global connection controller and doesn't allow for handling of different
+     * hosts/IP setup. This will help with those situations by allowing more connection when possible.
      * 
      * @param Account
      *            Account that's been used, can be null
@@ -1517,91 +1522,92 @@ public class SanShareCom extends PluginForHost {
      *            To add or remove slot, true == adds, false == removes
      * @throws Exception
      * */
-    private synchronized void controlHost(final Account account, final DownloadLink downloadLink, final boolean action) throws Exception {
+    private void controlHost(final Account account, final DownloadLink downloadLink, final boolean action) throws Exception {
+        synchronized (CTRLLOCK) {
+            // xfileshare valid links are either https://((sub.)?domain|IP)(:port)?/blah
+            usedHost = new Regex(dllink, "https?://([^/\\:]+)").getMatch(0);
+            if (inValidate(dllink) || usedHost == null) {
+                if (inValidate(dllink))
+                    logger.warning("Invalid URL given to controlHost");
+                else
+                    logger.warning("Regex on usedHost failed, Please report this to JDownloader Development Team");
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
 
-        // xfileshare valid links are either https://((sub.)?domain|IP)(:port)?/blah
-        usedHost = new Regex(dllink, "https?://([^/\\:]+)").getMatch(0);
-        if (inValidate(dllink) || usedHost == null) {
-            if (inValidate(dllink))
-                logger.warning("Invalid URL given to controlHost");
-            else
-                logger.warning("Regex on usedHost failed, Please report this to JDownloader Development Team");
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
+            // save finallink and use it for later, this script can determine if it's usable at a later stage. (more for dev purposes)
+            downloadLink.setProperty(directlinkproperty, dllink);
 
-        // save finallink and use it for later, this script can determine if it's usable at a later stage. (more for dev purposes)
-        downloadLink.setProperty(directlinkproperty, dllink);
+            // place account into a place holder, for later references;
+            Account accHolder = account;
 
-        // place account into a place holder, for later references;
-        Account accHolder = account;
-
-        // allows concurrent logic
-        boolean thisAccount = allowsConcurrent(account);
-        boolean continu = true;
-        if (!hostMap.isEmpty()) {
-            // compare stored values within hashmap, determine if they allow concurrent with current account download request!
-            for (Entry<Account, HashMap<String, Integer>> holder : hostMap.entrySet()) {
-                if (!allowsConcurrent(holder.getKey())) {
-                    continu = false;
+            // allows concurrent logic
+            boolean thisAccount = allowsConcurrent(account);
+            boolean continu = true;
+            if (!hostMap.isEmpty()) {
+                // compare stored values within hashmap, determine if they allow concurrent with current account download request!
+                for (Entry<Account, HashMap<String, Integer>> holder : hostMap.entrySet()) {
+                    if (!allowsConcurrent(holder.getKey())) {
+                        continu = false;
+                    }
                 }
-            }
-            if (thisAccount && continu) {
-                // current account allows concurrent
-                // hostmap entries c
+                if (thisAccount && continu) {
+                    // current account allows concurrent
+                    // hostmap entries c
+                }
+
             }
 
-        }
-
-        String user = null;
-        Integer simHost;
-        if (accHolder != null) {
-            user = accHolder.getUser();
-            if (accHolder.getBooleanProperty("free")) {
-                // free account
-                simHost = maxFreeAccSimDlPerHost.get();
+            String user = null;
+            Integer simHost;
+            if (accHolder != null) {
+                user = accHolder.getUser();
+                if (accHolder.getBooleanProperty("free")) {
+                    // free account
+                    simHost = maxFreeAccSimDlPerHost.get();
+                } else {
+                    // normal account
+                    simHost = maxPremAccSimDlPerHost.get();
+                }
             } else {
-                // normal account
-                simHost = maxPremAccSimDlPerHost.get();
+                user = "Guest";
+                simHost = maxNonAccSimDlPerHost.get();
             }
-        } else {
-            user = "Guest";
-            simHost = maxNonAccSimDlPerHost.get();
-        }
-        user = user + " @ " + acctype;
+            user = user + " @ " + acctype;
 
-        if (!action) {
-            // download finished (completed, failed, etc), check for value and remove a value
-            Integer usedSlots = getHashedHashedValue(account);
-            if (usedSlots == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            setHashedHashKeyValue(account, -1);
-            if (usedSlots.equals(1)) {
-                logger.info("controlHost = " + user + " -> " + usedHost + " :: No longer used!");
-            } else {
-                logger.info("controlHost = " + user + " -> " + usedHost + " :: " + getHashedHashedValue(account) + " simulatious connection(s)");
-            }
-        } else {
-            // New download started, check finallink host against hostMap values && max(Free|Prem)SimDlHost!
-
-            /*
-             * max(Free|Prem)SimDlHost prevents more downloads from starting on a given host! At least until one of the previous downloads finishes. This is
-             * best practice otherwise you have to use some crude system of waits, but you have no control over to reset the count. Highly dependent on how fast
-             * or slow the users connections is.
-             */
-            if (isHashedHashedKey(account, usedHost)) {
+            if (!action) {
+                // download finished (completed, failed, etc), check for value and remove a value
                 Integer usedSlots = getHashedHashedValue(account);
                 if (usedSlots == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                if (!usedSlots.equals(simHost)) {
-                    setHashedHashKeyValue(account, 1);
-                    logger.info("controlHost = " + user + " -> " + usedHost + " :: " + getHashedHashedValue(account) + " simulatious connection(s)");
+                setHashedHashKeyValue(account, -1);
+                if (usedSlots.equals(1)) {
+                    logger.info("controlHost = " + user + " -> " + usedHost + " :: No longer used!");
                 } else {
-                    logger.info("controlHost = " + user + " -> " + usedHost + " :: Too many concurrent connectons. We will try again when next possible.");
-                    controlSlot(-1, accHolder);
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Too many concurrent connectons. We will try again when next possible.", 10 * 1000);
+                    logger.info("controlHost = " + user + " -> " + usedHost + " :: " + getHashedHashedValue(account) + " simulatious connection(s)");
                 }
             } else {
-                // virgin download for given usedHost.
-                setHashedHashKeyValue(account, 1);
-                logger.info("controlHost = " + user + " -> " + usedHost + " :: " + getHashedHashedValue(account) + " simulatious connection(s)");
+                // New download started, check finallink host against hostMap values && max(Free|Prem)SimDlHost!
+
+                /*
+                 * max(Free|Prem)SimDlHost prevents more downloads from starting on a given host! At least until one of the previous
+                 * downloads finishes. This is best practice otherwise you have to use some crude system of waits, but you have no control
+                 * over to reset the count. Highly dependent on how fast or slow the users connections is.
+                 */
+                if (isHashedHashedKey(account, usedHost)) {
+                    Integer usedSlots = getHashedHashedValue(account);
+                    if (usedSlots == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    if (!usedSlots.equals(simHost)) {
+                        setHashedHashKeyValue(account, 1);
+                        logger.info("controlHost = " + user + " -> " + usedHost + " :: " + getHashedHashedValue(account) + " simulatious connection(s)");
+                    } else {
+                        logger.info("controlHost = " + user + " -> " + usedHost + " :: Too many concurrent connectons. We will try again when next possible.");
+                        controlSlot(-1, accHolder);
+                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Too many concurrent connectons. We will try again when next possible.", 10 * 1000);
+                    }
+                } else {
+                    // virgin download for given usedHost.
+                    setHashedHashKeyValue(account, 1);
+                    logger.info("controlHost = " + user + " -> " + usedHost + " :: " + getHashedHashedValue(account) + " simulatious connection(s)");
+                }
             }
         }
     }
@@ -1750,8 +1756,8 @@ public class SanShareCom extends PluginForHost {
     }
 
     /**
-     * If form contain both " and ' quotation marks within input fields it can return null values, thus you submit wrong/incorrect data re: InputField
-     * parse(final String data). Affects revision 19688 and earlier!
+     * If form contain both " and ' quotation marks within input fields it can return null values, thus you submit wrong/incorrect data re:
+     * InputField parse(final String data). Affects revision 19688 and earlier!
      * 
      * TODO: remove after JD2 goes stable!
      * 
@@ -1780,8 +1786,8 @@ public class SanShareCom extends PluginForHost {
     }
 
     /**
-     * This allows backward compatibility for design flaw in setHtmlCode(), It injects updated html into all browsers that share the same request id. This is
-     * needed as request.cloneRequest() was never fully implemented like browser.cloneBrowser().
+     * This allows backward compatibility for design flaw in setHtmlCode(), It injects updated html into all browsers that share the same
+     * request id. This is needed as request.cloneRequest() was never fully implemented like browser.cloneBrowser().
      * 
      * @param ibr
      *            Import Browser
