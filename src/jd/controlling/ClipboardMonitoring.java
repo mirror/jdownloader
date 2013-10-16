@@ -11,6 +11,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
+import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.net.URISyntaxException;
 import java.net.URL;
@@ -84,6 +85,22 @@ public class ClipboardMonitoring {
         firstRoundDone = b;
     }
 
+    private boolean ignoreTransferable(Transferable transferable) {
+        if (transferable == null) return true;
+        try {
+            if (transferable.getClass().getName().contains("TransferableProxy")) {
+                Field isLocal = transferable.getClass().getDeclaredField("isLocal");
+                if (isLocal != null) {
+                    isLocal.setAccessible(true);
+                    if (Boolean.TRUE.equals(isLocal.getBoolean(transferable))) return true;
+                }
+            }
+        } catch (final Throwable e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+
     public synchronized void startMonitoring() {
         if (isMonitoring()) return;
         monitoringThread = new Thread() {
@@ -115,7 +132,7 @@ public class ClipboardMonitoring {
                     try {
                         lastBrowserUrl = null;
                         Transferable currentContent = clipboard.getContents(null);
-                        if (currentContent == null) continue;
+                        if (ignoreTransferable(currentContent)) continue;
                         if (currentContent.isDataFlavorSupported(PackageControllerTableTransferable.FLAVOR)) {
                             /* we have Package/Children in clipboard, skip them */
                             continue;
