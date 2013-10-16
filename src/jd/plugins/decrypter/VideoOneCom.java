@@ -87,10 +87,14 @@ public class VideoOneCom extends PluginForDecrypt {
             }
             if (externID.matches("http://media\\.8\\-d\\.com/getcode\\.php\\?id=\\d+\\&code=\\d+")) {
                 br.getPage(externID);
-                externID = br.getRegex("<url>(http://[^<>\"]*?)</url>").getMatch(0);
+                externID = br.getRegex("<url>([^<>\"]*?)</url>").getMatch(0);
                 if (externID == null) {
                     logger.warning("Decrypter broken for link: " + parameter);
                     return null;
+                }
+                if (!externID.startsWith("http")) {
+                    logger.info("Link offline: " + parameter);
+                    return decryptedLinks;
                 }
                 externID = "directhttp://" + externID;
             }

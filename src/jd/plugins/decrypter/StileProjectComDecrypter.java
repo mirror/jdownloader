@@ -182,11 +182,6 @@ public class StileProjectComDecrypter extends PluginForDecrypt {
             decryptedLinks.add(createDownloadlink("http://www.yobt.tv/content/" + externID + "/" + System.currentTimeMillis() + ".html"));
             return decryptedLinks;
         }
-        externID = br.getRegex("stileproject\\.com/embed/(\\d+)").getMatch(0);
-        if (externID != null) {
-            decryptedLinks.add(createDownloadlink("http://stileproject.com/video/" + externID));
-            return decryptedLinks;
-        }
         externID = br.getRegex("book\\-mark\\.net/playerconfig/(\\d+)/").getMatch(0);
         if (externID != null) {
             DownloadLink dl = createDownloadlink("http://www.book-mark.net/videos/" + externID + "/x.html");

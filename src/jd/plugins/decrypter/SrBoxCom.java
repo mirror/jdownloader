@@ -25,14 +25,12 @@ import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.CryptedLink;
-import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
-import jd.utils.locale.JDL;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "israbox.com" }, urls = { "http://[\\w\\.]*israbox\\.com/[0-9]+-.*?\\.html" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "israbox.com" }, urls = { "http://[\\w\\.]*israbox\\.com/[0-9]+\\-.*?\\.html" }, flags = { 0 })
 public class SrBoxCom extends PluginForDecrypt {
 
     public SrBoxCom(PluginWrapper wrapper) {
@@ -45,7 +43,10 @@ public class SrBoxCom extends PluginForDecrypt {
         String parameter = param.toString();
         br.setFollowRedirects(false);
         br.getPage(parameter);
-        if (br.containsHTML("(An error has occurred|The article cannot be found)")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
+        if (br.containsHTML("(An error has occurred|The article cannot be found)") || "http://www.israbox.com/".equals(br.getRedirectLocation())) {
+            logger.info("Link offline: " + parameter);
+            return decryptedLinks;
+        }
         String fpName = br.getRegex("<h1><a href.*>(.*?)</a></h1>").getMatch(0);
         if (fpName == null) {
             fpName = br.getRegex("<title>(.*?)</title>").getMatch(0);
@@ -185,12 +186,14 @@ public class SrBoxCom extends PluginForDecrypt {
         matcher = pattern.matcher(strName);
         strName = matcher.replaceAll("0");
 
-        // Replace the [ ] with nothing because the string in this bracket has been removed
+        // Replace the [ ] with nothing because the string in this bracket has
+        // been removed
         pattern = Pattern.compile("\\[ *\\]", Pattern.CASE_INSENSITIVE);
         matcher = pattern.matcher(strName);
         strName = matcher.replaceAll("");
 
-        // Replace the ( ) with nothing because the string in this parenthesis has been removed
+        // Replace the ( ) with nothing because the string in this parenthesis
+        // has been removed
         pattern = Pattern.compile("\\( *\\)", Pattern.CASE_INSENSITIVE);
         matcher = pattern.matcher(strName);
         strName = matcher.replaceAll("");

@@ -56,6 +56,8 @@ public class DizzCloudCom extends PluginForHost {
         return "http://dizzcloud.com/tos";
     }
 
+    private final String PREMIUMONLY = ">Only premium users can download this file|disabled the ability to free download a file larger than  \\d+ Mb\\.<|>File owner has disabled<";
+
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
@@ -85,7 +87,7 @@ public class DizzCloudCom extends PluginForHost {
     private void doFree(final DownloadLink downloadLink) throws Exception {
         String dllink = checkDirectLink(downloadLink, "directlink");
         if (dllink == null) {
-            if (br.containsHTML(">Only premium users can download this file|disabled the ability to free download a file larger than  \\d+ Mb\\.<|>File owner has disabled<")) {
+            if (br.containsHTML(PREMIUMONLY)) {
                 try {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
                 } catch (final Throwable e) {
@@ -236,6 +238,9 @@ public class DizzCloudCom extends PluginForHost {
                 logger.warning("The final dllink seems not to be a file!");
                 br.followConnection();
                 if (br.containsHTML("Dynamic ip error")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+                // Premium traffic is gone or expired -> Reverts to free account
+                // -> Disable it
+                if (br.containsHTML(PREMIUMONLY)) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             dl.startDownload();

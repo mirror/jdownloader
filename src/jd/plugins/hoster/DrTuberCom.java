@@ -106,6 +106,8 @@ public class DrTuberCom extends PluginForHost {
 
         br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML("This video was deleted") || br.getURL().contains("missing=true")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        // No account support -> No support for private videos
+        if (br.containsHTML("Sorry\\.\\.\\. Video is private")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
 
         /* normal links */
         if (new Regex(downloadLink.getDownloadURL(), Pattern.compile("http://(www\\.)?drtuber\\.com/video/\\d+", Pattern.CASE_INSENSITIVE)).matches()) {

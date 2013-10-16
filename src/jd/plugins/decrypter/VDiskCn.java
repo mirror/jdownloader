@@ -48,6 +48,10 @@ public class VDiskCn extends PluginForDecrypt {
             logger.info("Link offline: " + parameter);
             return decryptedLinks;
         }
+        if (br.containsHTML("class=\\'tab_sel\\'>所有文件\\(0\\)</div>")) {
+            logger.info("Link offline (folder empty): " + parameter);
+            return decryptedLinks;
+        }
         final String[] pages = br.getRegex("<a href=\\'\\?tag=ALLFILES\\&p=(\\d+)\\'").getColumn(0);
         if (pages == null || pages.length == 0)
             allPages.add("1");

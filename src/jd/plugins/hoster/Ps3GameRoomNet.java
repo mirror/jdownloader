@@ -1,5 +1,5 @@
 //jDownloader - Downloadmanager
-//Copyright (C) 2009  JD-Team support@jdownloader.org
+//Copyright (C) 2010  JD-Team support@jdownloader.org
 //
 //This program is free software: you can redistribute it and/or modify
 //it under the terms of the GNU General Public License as published by
@@ -22,9 +22,9 @@ import java.util.Map;
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.controlling.AccountController;
-import jd.http.Browser;
 import jd.http.Cookie;
 import jd.http.Cookies;
+import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
@@ -35,73 +35,72 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "wallbase.cc" }, urls = { "http://(www\\.)?wallbase.cc/wallpaper/\\d+" }, flags = { 2 })
-public class WallBaseCc extends PluginForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ps3gameroom.net" }, urls = { "http://(www\\.)?ps3gameroom\\.net/(?!account_home|account_folders|account_edit|logout)[a-z0-9]+" }, flags = { 2 })
+public class Ps3GameRoomNet extends PluginForHost {
 
-    public WallBaseCc(PluginWrapper wrapper) {
+    public Ps3GameRoomNet(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium();
     }
 
+    // DTemplate Version 0.1.7-psp
+    // mods: Account-only
+    // non account: unsupported
+    // premium account: chunks * maxdls
+    // protocol: no https
+    // captchatype: null
+
     @Override
     public String getAGBLink() {
-        return "http://wallbase.cc/terms";
+        return MAINPAGE + "/terms." + TYPE;
     }
+
+    private final String MAINPAGE = "http://ps3gameroom.net";
+    private final String TYPE     = "html";
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         this.setBrowserExclusive();
-        final Account acc = AccountController.getInstance().getValidAccount(this);
-        if (acc != null) login(this.br, acc, false);
-        br.setFollowRedirects(true);
-        br.getPage(link.getDownloadURL());
-        // Offline1
-        if (br.getURL().equals("http://wallbase.cc/home") || br.getURL().equals("http://wallbase.cc/index.php") || br.containsHTML("Access denied\\!|This might be happening because|>We are experiencing some technical|>404 Page Not Found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        // Offline2
-        if (br.containsHTML("(>Not found \\(404\\)|>The page you requested was not found)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("<title>(.*?) \\- Wallpaper \\(").getMatch(0);
-        if (filename == null) filename = br.getRegex("<title>([^<>\"]*?) \\(#\\d+\\) / Wallbase\\.cc</title>").getMatch(0);
-        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        link.setFinalFileName(Encoding.htmlDecode(filename.trim()) + ".jpg");
-        return AvailableStatus.TRUE;
+        final Account aa = AccountController.getInstance().getValidAccount(this);
+        if (aa != null) {
+            login(aa, false);
+            br.setFollowRedirects(true);
+            URLConnectionAdapter con = null;
+            try {
+                con = br.openGetConnection(link.getDownloadURL());
+                if (!con.getContentType().contains("html")) {
+                    link.setFinalFileName(Encoding.htmlDecode(getFileNameFromHeader(con)));
+                    link.setDownloadSize(con.getLongContentLength());
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
+                return AvailableStatus.TRUE;
+            } finally {
+                try {
+                    con.disconnect();
+                } catch (Throwable e) {
+                }
+            }
+        } else {
+            link.getLinkStatus().setStatusText("Status can only be chacked with account enabled");
+            return AvailableStatus.UNCHECKABLE;
+        }
     }
 
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
-        requestFileInformation(downloadLink);
-        handleDownload(downloadLink);
-    }
-
-    public void handleDownload(final DownloadLink downloadLink) throws Exception, PluginException {
-        br.setFollowRedirects(false);
-        final String dllink = getDllink();
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        try {
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+        } catch (final Throwable e) {
+            if (e instanceof PluginException) throw (PluginException) e;
         }
-        dl.startDownload();
+        throw new PluginException(LinkStatus.ERROR_FATAL, "Only downloadable for registered users");
     }
 
-    private String getDllink() throws PluginException {
-        String finallink = br.getRegex("<div id=\"bigwall\" class=\"right\">[\t\n\r ]+<img src=\"(http://.*?)\"").getMatch(0);
-        if (finallink == null) finallink = br.getRegex("\"(http://ns\\d+\\.ovh\\.net/.*?)\"").getMatch(0);
-        /* simple Base64 */
-        if (finallink == null) {
-            finallink = br.getRegex("\\d+x\\d+ Wallpaper\"[^\\(]+\\(\'([^\']+)\'\\)").getMatch(0);
-            if (finallink == null) finallink = br.getRegex("<img src=\"[^\\(]+\\('([a-zA-Z0-9\\+/\\=]+)").getMatch(0);
-            if (finallink != null) finallink = Encoding.Base64Decode(finallink);
-        }
-        if (finallink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        return Encoding.htmlDecode(finallink);
-    }
-
-    private static final String MAINPAGE = "http://wallbase.cc";
-    private static Object       LOCK     = new Object();
+    private static final Object LOCK = new Object();
 
     @SuppressWarnings("unchecked")
-    public void login(Browser br, final Account account, final boolean force) throws Exception {
+    private void login(final Account account, boolean force) throws Exception {
         synchronized (LOCK) {
             try {
                 // Load cookies
@@ -115,15 +114,14 @@ public class WallBaseCc extends PluginForHost {
                         for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
                             final String key = cookieEntry.getKey();
                             final String value = cookieEntry.getValue();
-                            br.setCookie(MAINPAGE, key, value);
+                            this.br.setCookie(MAINPAGE, key, value);
                         }
                         return;
                     }
                 }
                 br.setFollowRedirects(true);
-                // br.getPage("");
-                br.postPage("http://wallbase.cc/user/login", "nopass_email=Type+in+your+e-mail+and+press+enter&nopass=0&usrname=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass()));
-                if (!br.containsHTML("class=\"wlcm\">Hey \\&nbsp; ")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                br.postPage("http://" + this.getHost() + "/login." + TYPE, "submit=Login&submitme=1&loginUsername=" + Encoding.urlEncode(account.getUser()) + "&loginPassword=" + Encoding.urlEncode(account.getPass()));
+                if (!br.getURL().contains("ps3gameroom.net/account_home.html")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 // Save cookies
                 final HashMap<String, String> cookies = new HashMap<String, String>();
                 final Cookies add = this.br.getCookies(MAINPAGE);
@@ -141,27 +139,31 @@ public class WallBaseCc extends PluginForHost {
     }
 
     @Override
-    public AccountInfo fetchAccountInfo(final Account account) throws Exception {
+    public AccountInfo fetchAccountInfo(Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
         try {
-            login(this.br, account, true);
+            login(account, true);
         } catch (PluginException e) {
             account.setValid(false);
             return ai;
         }
         ai.setUnlimitedTraffic();
         account.setValid(true);
-        ai.setStatus("Account active");
+        ai.setStatus("Registered (free) User");
         return ai;
     }
 
     @Override
-    public void handlePremium(final DownloadLink link, final Account account) throws Exception {
+    public void handlePremium(DownloadLink link, Account account) throws Exception {
         requestFileInformation(link);
-        login(this.br, account, false);
-        br.setFollowRedirects(false);
-        br.getPage(link.getDownloadURL());
-        handleDownload(link);
+        login(account, false);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, link.getDownloadURL(), true, 0);
+        if (!dl.getConnection().isContentDisposition()) {
+            logger.warning("The final dllink seems not to be a file!");
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dl.startDownload();
     }
 
     @Override

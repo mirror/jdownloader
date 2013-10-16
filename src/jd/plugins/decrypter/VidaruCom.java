@@ -131,6 +131,14 @@ public class VidaruCom extends PluginForDecrypt {
             decryptedLinks.add(dl);
             return decryptedLinks;
         }
+        externID = br.getRegex("property=\"og:image\" content=\"(http://[a-z0-9]+\\.timsah\\.com/videos/\\d+/[A-Za-z0-9]+/)").getMatch(0);
+        if (externID != null) {
+            externID = externID.replace(".timsah.com/", "cdn.timsah.com/") + "video.flv";
+            final DownloadLink dl = createDownloadlink("directhttp://" + externID);
+            dl.setFinalFileName(filename + ".flv");
+            decryptedLinks.add(dl);
+            return decryptedLinks;
+        }
         logger.warning("Decrypter broken for link: " + parameter);
         return null;
     }

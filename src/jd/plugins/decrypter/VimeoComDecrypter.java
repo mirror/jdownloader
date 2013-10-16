@@ -73,7 +73,7 @@ public class VimeoComDecrypter extends PluginForDecrypt {
         /* Workaround for User from Iran */
         if (br.containsHTML("<body><iframe src=\"http://10\\.10\\.\\d+\\.\\d+\\?type=(Invalid Site)?\\&policy=MainPolicy")) br.getPage("http://player.vimeo.com/config/" + ID);
 
-        if (br.containsHTML("(Page not found|This video does not exist)")) {
+        if (br.containsHTML("Page not found|This video does not exist|>We couldn\\'t find that page")) {
             logger.info("vimeo.com: File not found for Link: " + parameter);
             return decryptedLinks;
         }

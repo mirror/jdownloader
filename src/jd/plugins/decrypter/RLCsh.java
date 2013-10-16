@@ -84,7 +84,8 @@ public class RLCsh extends PluginForDecrypt {
         correctedBR = br.toString();
         ArrayList<String> regexStuff = new ArrayList<String>();
 
-        // remove custom rules first!!! As html can change because of generic cleanup rules.
+        // remove custom rules first!!! As html can change because of generic
+        // cleanup rules.
 
         // generic cleanup
         regexStuff.add("<\\!(\\-\\-.*?\\-\\-)>");
@@ -101,10 +102,15 @@ public class RLCsh extends PluginForDecrypt {
         }
     }
 
+    private final String INVALIDLINKS = "http://images\\..+";
+
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
-
+        if (parameter.matches(INVALIDLINKS)) {
+            logger.info("Link invalid: " + parameter);
+            return decryptedLinks;
+        }
         br.getPage(parameter);
         correctBR();
         String link = new Regex(correctedBR, "<META HTTP\\-EQUIV=\"Refresh\" .*? URL=(.*?)\">").getMatch(0);

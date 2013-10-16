@@ -35,10 +35,15 @@ public class PerseoIn extends PluginForDecrypt {
     }
 
     private static final String PERSEOFOLDER = "http://(www\\.)?perseo\\.in/f/[A-Za-z0-9]+";
+    private static final String INVALIDLINKS = "http://(www\\.)?perseo\\.in/(analytics|contact)";
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
+        if (parameter.matches(INVALIDLINKS)) {
+            logger.info("Link invalid: " + parameter);
+            return decryptedLinks;
+        }
         br.setFollowRedirects(true);
         br.getPage(parameter);
         br.setFollowRedirects(false);
@@ -65,6 +70,10 @@ public class PerseoIn extends PluginForDecrypt {
         } else {
             if (br.getURL().contains("/error.php?e=")) {
                 logger.info("Link offline: " + parameter);
+                return decryptedLinks;
+            }
+            if (br.containsHTML("<title>Index of")) {
+                logger.info("Link invalid: " + parameter);
                 return decryptedLinks;
             }
             br.getHeaders().put("Referer", parameter);

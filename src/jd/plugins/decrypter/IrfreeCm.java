@@ -43,7 +43,7 @@ public class IrfreeCm extends PluginForDecrypt {
         ArrayList<String> passwords;
         br.setFollowRedirects(true);
         String parameter = param.toString().replace("irfree.eu/", "irfree.com/");
-        if (parameter.matches(INVALIDLINKS)) {
+        if (parameter.matches(INVALIDLINKS) || parameter.contains("rss.xml")) {
             logger.info("Link invalid: " + parameter);
             return decryptedLinks;
         }

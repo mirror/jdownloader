@@ -52,32 +52,51 @@ public class IlxN extends PluginForDecrypt {
         }
         if (br.containsHTML("captcha.php")) throw new DecrypterException(DecrypterException.CAPTCHA);
         // "Redirect" links handling
-        if (br.containsHTML("src='encrypt.php'")) {
+        String unescape = br.getRegex("document\\.write\\(unescape\\(\\'(.*?)\\'\\)").getMatch(0);
+        if (unescape != null) {
+            unescape = Encoding.htmlDecode(unescape);
+            final String finallink = new Regex(unescape, "name=\"iframe?\" src=\"(http[^<>\"]*?)\"").getMatch(0);
+            if (finallink == null) {
+                logger.warning("Decrypter broken for link: " + parameter);
+                return null;
+            }
+            decryptedLinks.add(createDownloadlink(finallink));
+        } else if (br.containsHTML("src='encrypt.php'")) {
             br.getPage("http://ilix.in/encrypt.php");
             String finallink0 = br.getRegex("\\(unescape\\('(.*?)'\\)\\)").getMatch(0);
-            if (finallink0 == null) return null;
+            if (finallink0 == null) {
+                logger.warning("Decrypter broken for link: " + parameter);
+                return null;
+            }
             finallink0 = Encoding.htmlDecode(finallink0);
             String finallink = new Regex(finallink0, "ifram\" src=\"(.*?)\"").getMatch(0);
-            if (finallink == null) return null;
+            if (finallink == null) {
+                logger.warning("Decrypter broken for link: " + parameter);
+                return null;
+            }
             decryptedLinks.add(createDownloadlink(finallink));
         } else {
             // Multiple/Single links handling
             String[] multipleLinks = br.getRegex("name='n' value='([0-9]{1,3})'>").getColumn(0);
             if (multipleLinks != null && multipleLinks.length != 0) {
-                progress.setRange(multipleLinks.length);
                 for (String link : multipleLinks) {
-                    Form form = new Form();
+                    final Form form = new Form();
                     form.setMethod(Form.MethodType.POST);
                     form.put("n", link);
                     br.submitForm(form);
                     br.getPage("http://ilix.in/encrypt.php");
                     String finallink0 = br.getRegex("\\(unescape\\('(.*?)'\\)\\)").getMatch(0);
-                    if (finallink0 == null) return null;
+                    if (finallink0 == null) {
+                        logger.warning("Decrypter broken for link: " + parameter);
+                        return null;
+                    }
                     finallink0 = Encoding.htmlDecode(finallink0);
                     String finallink = new Regex(finallink0, "ifram\" src=\"(.*?)\"").getMatch(0);
-                    if (finallink == null) return null;
+                    if (finallink == null) {
+                        logger.warning("Decrypter broken for link: " + parameter);
+                        return null;
+                    }
                     decryptedLinks.add(createDownloadlink(finallink));
-                    progress.increase(1);
                 }
             }
         }
