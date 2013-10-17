@@ -34,7 +34,7 @@ public class EightTracksCom extends PluginForDecrypt {
     private static final String MAINPAGE          = "http://8tracks.com/";
     private boolean             ATEND             = false;
     private String              clipData;
-    private static final String UNSAUPPORTEDLINKS = "http://(www\\.)?8tracks\\.com/((assets_js/|explore|auth|settings|mixes|developers|users)/.+|[\\w\\-]+/homepage.+)";
+    private static final String UNSAUPPORTEDLINKS = "http://(www\\.)?8tracks\\.com/((assets_js/|explore|auth|settings|mixes|developers|users)/.+|[\\w\\-]+/homepage)";
 
     public EightTracksCom(final PluginWrapper wrapper) {
         super(wrapper);

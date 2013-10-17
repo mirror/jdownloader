@@ -38,8 +38,11 @@ import jd.utils.JDUtilities;
 public class Lxn extends PluginForDecrypt {
 
     static private Object LOCK = new Object(); /*
-                                                * lixin checkt anhand der ip und der globalen phpsessionid, daher müssen parallel zugriffe
-                                                * vermieden werden, sonst ist das captcha imme falsch
+                                                * lixin checkt anhand der ip und
+                                                * der globalen phpsessionid,
+                                                * daher müssen parallel zugriffe
+                                                * vermieden werden, sonst ist
+                                                * das captcha imme falsch
                                                 */
 
     public Lxn(PluginWrapper wrapper) {
@@ -83,6 +86,10 @@ public class Lxn extends PluginForDecrypt {
                     lix_continue = true;
                     break;
                 }
+            }
+            if (br.containsHTML("<script>window\\.location=")) {
+                logger.info("Link offline: " + parameter);
+                return decryptedLinks;
             }
             if (lix_continue == true) {
                 /* EinzelLink filtern */

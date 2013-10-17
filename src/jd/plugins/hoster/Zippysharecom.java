@@ -36,7 +36,7 @@ import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "zippyshare.com" }, urls = { "http://www\\d{0,}\\.zippyshare\\.com/(v/\\d+/file\\.html?|.*?key=\\d+|downloadMusic\\?key=\\d+|swf/player_local\\.swf\\?file=\\d+)" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "zippyshare.com" }, urls = { "http://www\\d{0,}\\.zippyshare\\.com/(v/\\d+/[^<>\"/]*?\\.html?|.*?key=\\d+|downloadMusic\\?key=\\d+|swf/player_local\\.swf\\?file=\\d+)" }, flags = { 0 })
 public class Zippysharecom extends PluginForHost {
 
     private String DLLINK = null;

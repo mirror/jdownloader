@@ -41,8 +41,8 @@ public class IlxN extends PluginForDecrypt {
         final String parameter = "http://ilix.in/" + new Regex(param.toString(), "([0-9a-z]+)$").getMatch(0);
         br.setFollowRedirects(false);
         br.getPage(parameter);
-        for (int i = 0; i <= 5; i++) {
-            if (br.containsHTML("captcha.php")) {
+        if (br.containsHTML("captcha.php")) {
+            for (int i = 0; i <= 5; i++) {
                 String captchalink = "http://ilix.in/captcha2/captcha.php";
                 String code = getCaptchaCode(captchalink, param);
                 br.postPage(parameter, "n=0&captcha=" + code);
@@ -70,6 +70,14 @@ public class IlxN extends PluginForDecrypt {
             }
             finallink0 = Encoding.htmlDecode(finallink0);
             String finallink = new Regex(finallink0, "ifram\" src=\"(.*?)\"").getMatch(0);
+            if (finallink == null) {
+                logger.warning("Decrypter broken for link: " + parameter);
+                return null;
+            }
+            decryptedLinks.add(createDownloadlink(finallink));
+        } else if (br.containsHTML("name='n'")) {
+            br.postPage(br.getURL(), "n=0&consubmit=Continue");
+            final String finallink = br.getRedirectLocation();
             if (finallink == null) {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
