@@ -59,7 +59,7 @@ public class AccountAPIImpl implements AccountAPI {
             }
             if (queryParams.fieldRequested("trafficMax")) {
                 AccountInfo ai = acc.getAccountInfo();
-                if (ai != null) infoMap.put("trafficMax", ai.getTrafficLeft());
+                if (ai != null) infoMap.put("trafficMax", ai.getTrafficMax());
             }
             if (queryParams.fieldRequested("enabled")) {
                 infoMap.put("enabled", acc.isEnabled());
