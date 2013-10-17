@@ -135,7 +135,7 @@ public class YkCm extends PluginForDecrypt {
                 }
             }
         }
-        if (br.containsHTML("\\u8be5\\u89c6\\u9891\\u88ab\\u8bbe\\u4e3a\\u79c1\\u5bc6\\uff0c\\u8bf7\\u8054\\u7cfb")) {
+        if (br.containsHTML("\\u8be5\\u89c6\\u9891\\u88ab\\u8bbe\\u4e3a\\u79c1\\u5bc6\\uff0c\\u8bf7\\u8054\\u7cfb|\u8be5\u89c6\u9891\u88ab\u8bbe\u4e3a\u79c1\u5bc6\uff0c\u8bf7\u8054\u7cfb|\"error_code\":-5,")) {
             // private video
             final DownloadLink dlLink = createDownloadlink("http://f.youku.com/player/getFlvPath/sid" + videoId);
             dlLink.setAvailable(false);
