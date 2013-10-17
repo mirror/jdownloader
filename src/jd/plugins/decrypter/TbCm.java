@@ -849,6 +849,7 @@ public class TbCm extends PluginForDecrypt {
                     } else if ((LinksFound.containsKey(37) && ytVideo.containsKey(37)) || (LinksFound.containsKey(46) && ytVideo.containsKey(46))) {
                         // 1080p mp4
                         if (LinksFound.containsKey(37) && ytVideo.containsKey(37)) bestFound.put(37, LinksFound.get(37));
+                        if (LinksFound.containsKey(137) && ytVideo.containsKey(137)) bestFound.put(137, LinksFound.get(137));
                         // 1080p webm
                         if (LinksFound.containsKey(46) && ytVideo.containsKey(46)) bestFound.put(46, LinksFound.get(46));
                     } else if ((LinksFound.containsKey(22) && ytVideo.containsKey(22)) || (LinksFound.containsKey(45) && ytVideo.containsKey(45)) || (LinksFound.containsKey(84) && ytVideo.containsKey(84)) || (LinksFound.containsKey(102) && ytVideo.containsKey(102))) {

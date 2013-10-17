@@ -630,7 +630,7 @@ public class ShareOnlineBiz extends PluginForHost {
 
     // do not add @Override here to keep 0.* compatibility
     public boolean hasAutoCaptcha() {
-        return true;
+        return false;
     }
 
     public HashMap<String, String> loginAPI(Account account, boolean forceLogin) throws IOException, PluginException {
