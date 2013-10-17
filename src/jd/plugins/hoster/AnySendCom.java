@@ -91,9 +91,19 @@ public class AnySendCom extends PluginForHost {
         continuelink += visitorid;
         br.getPage(continuelink);
         String filename = br.getRegex("class=\"filename\">([^<>\"]+)</h1>").getMatch(0);
-        if (filename == null) filename = br.getRegex(">File Name: (.*?)<").getMatch(0);
+        if (filename == null) {
+            filename = br.getRegex(">File Name: (.*?)<").getMatch(0);
+            if (filename == null) {
+                filename = br.getRegex(">File Name:</div>(.*?)</div>").getMatch(0);
+            }
+        }
         String filesize = br.getRegex("id=\"files-size\">([^<>\"]+)</td>").getMatch(0);
-        if (filesize == null) filesize = br.getRegex(">File Size: (\\d+((\\.|,)\\d+)? ?(KB|MB|GB))<").getMatch(0);
+        if (filesize == null) {
+            filesize = br.getRegex(">File Size: (\\d+((\\.|,)\\d+)? ?(KB|MB|GB))<").getMatch(0);
+            if (filesize == null) {
+                filesize = br.getRegex(">File Size:</div>(.*?)</div>").getMatch(0);
+            }
+        }
         if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         link.setName(Encoding.htmlDecode(filename.trim()));
         if (filesize != null) link.setDownloadSize(SizeFormatter.getSize(filesize.trim().replace(",", ".")));
