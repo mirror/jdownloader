@@ -71,7 +71,7 @@ import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.os.CrossSystem;
 
-@HostPlugin(revision = "$Revision: 19496 $", interfaceVersion = 2, names = { "wallobit.com" }, urls = { "https?://(www\\.)?wallobit\\.com/((vid)?embed-)?[a-z0-9]{12}" }, flags = { 0 })
+@HostPlugin(revision = "$Revision: 19496 $", interfaceVersion = 2, names = { "wallobit.com" }, urls = { "https?://(www\\.)?wallobit\\.com/((vid)?embed-)?[a-z0-9]{12}" }, flags = { 2 })
 @SuppressWarnings("deprecation")
 public class WalloBitCom extends PluginForHost {
 
@@ -105,7 +105,7 @@ public class WalloBitCom extends PluginForHost {
     // last XfileSharingProBasic compare :: 2.6.2.1
     // captchatype: 4dignum
     // other: no redirects
-    // mods:
+    // mods: fetchAccount regex for space (same as exclusivefaile)
 
     private void setConstants(final Account account) {
         if (account != null && account.getBooleanProperty("free")) {
@@ -166,7 +166,7 @@ public class WalloBitCom extends PluginForHost {
     public WalloBitCom(PluginWrapper wrapper) {
         super(wrapper);
         setConfigElements();
-        // this.enablePremium(COOKIE_HOST + "/premium.html");
+        this.enablePremium(COOKIE_HOST + "/premium.html");
     }
 
     /**
@@ -710,8 +710,8 @@ public class WalloBitCom extends PluginForHost {
         } else {
             account.setProperty("free", false);
         }
-        String space[] = cbr.getRegex(">Used space.*?<b>([0-9\\.]+) ?(KB|MB|GB|TB)?</b>").getRow(0);
-        if (space == null || space.length == 0) space = cbr.getRegex(">Used space.*?<b>([0-9\\.]+) of [0-9\\.]+ ?(KB|MB|GB|TB)?</b>").getRow(0);
+        String space[] = cbr.getRegex(">Used space.*?>([0-9\\.]+) of [0-9\\.]+ ?(KB|MB|GB|TB)?</").getRow(0);
+        if (space == null || space.length == 0) cbr.getRegex(">Used space.*?<b>([0-9\\.]+) ?(KB|MB|GB|TB)?</b>").getRow(0);
         if ((space != null && space.length != 0) && (!inValidate(space[0]) && !inValidate(space[1]))) {
             // free users it's provided by default
             ai.setUsedSpace(space[0] + " " + space[1]);
@@ -720,7 +720,7 @@ public class WalloBitCom extends PluginForHost {
             ai.setUsedSpace(space[0] + "Mb");
         }
         account.setValid(true);
-        String availabletraffic = cbr.getRegex("Traffic available.*?:</TD><TD><b>([^<>\"']+)</b>").getMatch(0);
+        String availabletraffic = cbr.getRegex("Traffic available.*?:</TD><TD>([^<>\"']+)</").getMatch(0);
         if (!inValidate(availabletraffic) && !availabletraffic.contains("nlimited") && !availabletraffic.equalsIgnoreCase(" Mb")) {
             availabletraffic = availabletraffic.trim();
             // need to set 0 traffic left, as getSize returns positive result, even when negative value supplied.
@@ -1459,7 +1459,7 @@ public class WalloBitCom extends PluginForHost {
      * @param controlSlot
      *            (+1|-1)
      * */
-   private void controlSlot(final int num, final Account account) {
+    private void controlSlot(final int num, final Account account) {
         synchronized (CTRLLOCK) {
             if (account == null) {
                 int was = maxFree.get();
