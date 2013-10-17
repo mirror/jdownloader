@@ -324,6 +324,7 @@ public class VimeoCom extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
         setBrowserExclusive();
+        if (downloadLink.getBooleanProperty("offline", false)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         br.setFollowRedirects(true);
         URLConnectionAdapter con = null;
         finalURL = downloadLink.getStringProperty("directURL", null);

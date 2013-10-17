@@ -92,14 +92,15 @@ public class FileGoOrg extends PluginForHost {
         // first try to get the streaming link (skips captcha)
         try {
             /**
-             * We could also use: http://filego.org/fghtml5.php?id=ID or http://filego.org/fgdivx.php?id=ID
+             * We could also use: http://filego.org/fghtml5.php?id=ID or
+             * http://filego.org/fgdivx.php?id=ID
              */
-            br.getPage("http://filego.org/fgflash.php?id=" + new Regex(downloadLink.getDownloadURL(), "([A-Z0-9]+)$").getMatch(0));
-            final String[] hits = br.getRegex("\\'(http://s\\d+\\.filego\\.org/[^<>\";]*?\\.mp4)\\'").getColumn(0);
+            final Browser br2 = br.cloneBrowser();
+            br2.getPage("http://filego.org/fgflash.php?id=" + new Regex(downloadLink.getDownloadURL(), "([A-Z0-9]+)$").getMatch(0));
+            final String[] hits = br2.getRegex("\\'(http://s\\d+\\.filego\\.org/[^<>\";]*?\\.mp4)\\'").getColumn(0);
             for (final String hit : hits) {
                 if (hits != null && hits.length != 0) {
                     try {
-                        Browser br2 = br.cloneBrowser();
                         URLConnectionAdapter con = br2.openGetConnection(hit);
                         if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
                             continue;
@@ -211,7 +212,7 @@ public class FileGoOrg extends PluginForHost {
     }
 
     private String findLink() throws Exception {
-        final String finalLink = br.getRegex("\\'(http://[a-z0-9]+\\.filego\\.org/fl/[a-z0-9]+/[^<>\"]*?)\\'").getMatch(0);
+        final String finalLink = br.getRegex("\\'(http://[a-z0-9]+\\.filego\\.org/getfile[^<>\"]*?)\\'").getMatch(0);
         if (finalLink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         return finalLink;
     }

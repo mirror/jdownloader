@@ -31,7 +31,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "tomwans.com" }, urls = { "http://(www\\.)?tomwans\\.com/video/[a-z0-9]{32}/" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "tomwans.com" }, urls = { "http://(www\\.)?tomwans\\.com/(video/[a-z0-9]{32}/|video\\.php\\?v=[a-z0-9]{32})" }, flags = { 0 })
 public class TomWansCom extends PluginForHost {
 
     public TomWansCom(PluginWrapper wrapper) {
@@ -49,7 +49,7 @@ public class TomWansCom extends PluginForHost {
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
         if (br.containsHTML(">404: Video not found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("<title>([^<>\"]*?)</title>").getMatch(0);
+        String filename = br.getRegex("<title>([^<>\"]*?) \\- TOMWANS</title>").getMatch(0);
         if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         link.setFinalFileName(Encoding.htmlDecode(filename.trim()) + ".flv");
         return AvailableStatus.TRUE;
@@ -58,11 +58,11 @@ public class TomWansCom extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        final Form humanform = br.getForm(0);
+        final Form humanform = br.getForm(3);
         if (humanform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         br.submitForm(humanform);
-        final String cryptedScript = br.getRegex("eval(.*?)[\r\n]+").getMatch(0);
-        final String dllink = getFinalLink(cryptedScript);
+        String dllink = br.getRegex("<source type=\"video/flv\" src=\"(http://[^<>\"]*?)\"").getMatch(0);
+        if (dllink == null) dllink = br.getRegex("\"(http://[a-z0-9]+\\.tomwans\\.com/files/[^<>\"]*?)\"").getMatch(0);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
         if (dl.getConnection().getContentType().contains("html")) {
@@ -80,7 +80,8 @@ public class TomWansCom extends PluginForHost {
             /* unpacked js */
             result = engine.eval(s);
             /*
-             * make a function and return jwplayer("mediaspace").setup({'file': value,...})
+             * make a function and return jwplayer("mediaspace").setup({'file':
+             * value,...})
              */
             engine.eval("function jwplayer(name) { var newObj = new Object(); function setup(array) { return array.file; } newObj.setup = setup; return newObj; }");
             /* splitting with delimiters and execute jwplayer().setup() function */

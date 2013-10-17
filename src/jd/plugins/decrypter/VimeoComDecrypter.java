@@ -74,17 +74,26 @@ public class VimeoComDecrypter extends PluginForDecrypt {
         if (br.containsHTML("<body><iframe src=\"http://10\\.10\\.\\d+\\.\\d+\\?type=(Invalid Site)?\\&policy=MainPolicy")) br.getPage("http://player.vimeo.com/config/" + ID);
 
         if (br.containsHTML("Page not found|This video does not exist|>We couldn\\'t find that page")) {
-            logger.info("vimeo.com: File not found for Link: " + parameter);
+            final DownloadLink link = createDownloadlink(parameter.replace("http://", "decryptedforVimeoHosterPlugin1" + "://"));
+            link.setAvailable(false);
+            link.setProperty("offline", true);
+            decryptedLinks.add(link);
             return decryptedLinks;
         }
         if (br.containsHTML("This is a private video")) {
             if (!br.containsHTML("If so please provide the correct password")) {
-                logger.info("vimeo.com: can't decrypt video because it's private: " + parameter);
+                final DownloadLink link = createDownloadlink(parameter.replace("http://", "decryptedforVimeoHosterPlugin1" + "://"));
+                link.setAvailable(false);
+                link.setProperty("offline", true);
+                decryptedLinks.add(link);
                 return decryptedLinks;
             }
         }
         if (br.containsHTML(">There was a problem loading this video")) {
-            logger.info("vimeo.com: cannot decrypt link (server error): " + parameter);
+            final DownloadLink link = createDownloadlink(parameter.replace("http://", "decryptedforVimeoHosterPlugin1" + "://"));
+            link.setAvailable(false);
+            link.setProperty("offline", true);
+            decryptedLinks.add(link);
             return decryptedLinks;
         }
 
