@@ -557,7 +557,7 @@ public class LomaFileCom extends PluginForHost {
     private void waitTime(final long timeBefore, final DownloadLink downloadLink) throws PluginException {
         /** Ticket Time */
         String ttt = cbr.getRegex("id=\"countdown_str\">[^<>\"]+<span id=\"[^<>\"]+\"( class=\"[^<>\"]+\")?>([\n ]+)?(\\d+)([\n ]+)?</span>").getMatch(2);
-        if (inValidate(ttt)) ttt = cbr.getRegex("id=\"countdown_str\"[^>]+>Wait[^>]+>(\\d+)\\s?+</span>").getMatch(0);
+        if (inValidate(ttt)) ttt = cbr.getRegex("id=\"countdown_str\"[^>]*>Wait[^>]+>(\\d+)\\s?+</span>").getMatch(0);
         if (!inValidate(ttt)) {
             // remove one second from past, to prevent returning too quickly.
             final long passedTime = ((System.currentTimeMillis() - timeBefore) / 1000) - 1;
@@ -885,7 +885,7 @@ public class LomaFileCom extends PluginForHost {
                 }
                 getDllink();
                 if (inValidate(dllink)) {
-                    checkErrors(downloadLink, account, true);
+                    checkErrors(downloadLink, account, false);
                     Form dlform = cbr.getFormbyProperty("name", "F1");
                     if (dlform == null)
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
