@@ -80,7 +80,7 @@ public class Multi extends IExtraction {
      * 
      */
 
-    private static final String      _7Z_D                                                       = "(\\.7z)?\\.?(\\d+)$";
+    private static final String      _7Z_D                                                       = "(\\.7z)?\\..?.?(\\d+)$";
     private static final String      REGEX_ANY_7ZIP_PART                                         = "(?i).*(\\.7z)?\\.\\d+$";
 
     private static final String      _7Z$                                                        = "\\.7z$";
@@ -948,7 +948,8 @@ public class Multi extends IExtraction {
                                 ExtractOperationResult result = item.extractSlow(signatureOutStream, password);
                                 if (ExtractOperationResult.DATAERROR.equals(result)) {
                                     /*
-                                     * 100% wrong password, DO NOT CONTINUE as unrar already might have cleaned up (nullpointer in native -> crash jvm)
+                                     * 100% wrong password, DO NOT CONTINUE as unrar already might have cleaned up (nullpointer in native ->
+                                     * crash jvm)
                                      */
                                     return false;
                                 }
@@ -1022,7 +1023,11 @@ public class Multi extends IExtraction {
             Pattern pattern = Pattern.compile(p, Pattern.CASE_INSENSITIVE);
 
             Matcher matcher = pattern.matcher(factory.getName());
-            if (matcher.find()) { return true;
+            if (matcher.find()) {
+
+                //
+                //
+                return true;
 
             }
         }
