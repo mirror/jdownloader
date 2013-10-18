@@ -1,6 +1,8 @@
 package org.jdownloader.gui.views.linkgrabber.contextmenu;
 
+import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
+import java.awt.event.KeyEvent;
 
 import jd.controlling.linkcollector.LinkCollector;
 import jd.controlling.linkcrawler.CrawledLink;
@@ -12,11 +14,11 @@ import org.appwork.uio.UIOManager;
 import org.appwork.utils.event.queue.QueueAction;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogNoAnswerException;
-import org.jdownloader.actions.SelectionAppAction;
+import org.jdownloader.actions.AbstractSelectionContextAction;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo;
 
-public class RemoveSelectionLinkgrabberAction extends SelectionAppAction<CrawledPackage, CrawledLink> {
+public class RemoveSelectionLinkgrabberAction extends AbstractSelectionContextAction<CrawledPackage, CrawledLink> {
 
     /**
      * 
@@ -27,11 +29,15 @@ public class RemoveSelectionLinkgrabberAction extends SelectionAppAction<Crawled
         super(si);
         setIconKey("remove");
         setName(_GUI._.RemoveSelectionLinkgrabberAction_RemoveSelectionLinkgrabberAction_object_());
+        setAccelerator(KeyEvent.VK_DELETE);
 
     }
 
     public void actionPerformed(ActionEvent e) {
-        if (!isEnabled()) return;
+        if (!isEnabled()) {
+            Toolkit.getDefaultToolkit().beep();
+            return;
+        }
         try {
             boolean containsOnline = false;
 

@@ -7,11 +7,11 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
 import org.appwork.utils.os.CrossSystem;
-import org.jdownloader.actions.SelectionAppAction;
+import org.jdownloader.actions.AbstractSelectionContextAction;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo;
 
-public class OpenDirectoryAction extends SelectionAppAction<FilePackage, DownloadLink> {
+public class OpenDirectoryAction extends AbstractSelectionContextAction<FilePackage, DownloadLink> {
 
     private static final long serialVersionUID = 3656369075540437063L;
 

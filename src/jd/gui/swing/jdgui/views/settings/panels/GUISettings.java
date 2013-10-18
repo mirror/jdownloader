@@ -50,15 +50,16 @@ import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.jdtrayicon.CFG_TRAY_CONFIG;
-import org.jdownloader.gui.jdtrayicon.TrayIconMenuManager;
-import org.jdownloader.gui.mainmenu.MainMenuManager;
+import org.jdownloader.gui.jdtrayicon.MenuManagerTrayIcon;
+import org.jdownloader.gui.mainmenu.MenuManagerMainmenu;
 import org.jdownloader.gui.settings.AbstractConfigPanel;
-import org.jdownloader.gui.toolbar.MainToolbarManager;
+import org.jdownloader.gui.toolbar.MenuManagerMainToolbar;
 import org.jdownloader.gui.translate.GuiTranslation;
 import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.gui.views.downloads.bottombar.BottomBarMenuManager;
-import org.jdownloader.gui.views.downloads.contextmenumanager.DownloadListContextMenuManager;
-import org.jdownloader.gui.views.linkgrabber.contextmenu.LinkgrabberContextMenuManager;
+import org.jdownloader.gui.views.downloads.MenuManagerDownloadTabBottomBar;
+import org.jdownloader.gui.views.downloads.contextmenumanager.MenuManagerDownloadTableContext;
+import org.jdownloader.gui.views.linkgrabber.bottombar.MenuManagerLinkgrabberTabBottombar;
+import org.jdownloader.gui.views.linkgrabber.contextmenu.MenuManagerLinkgrabberTableContext;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings.NewLinksInLinkgrabberAction;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
@@ -207,7 +208,7 @@ public class GUISettings extends AbstractConfigPanel implements StateUpdateListe
                     protected void runInEDT() {
                         JDGui.getInstance().requestPanel(JDGui.Panels.DOWNLOADLIST);
 
-                        DownloadListContextMenuManager.getInstance().openGui();
+                        MenuManagerDownloadTableContext.getInstance().openGui();
                     }
                 };
 
@@ -228,7 +229,7 @@ public class GUISettings extends AbstractConfigPanel implements StateUpdateListe
                     protected void runInEDT() {
                         JDGui.getInstance().requestPanel(JDGui.Panels.LINKGRABBER);
 
-                        LinkgrabberContextMenuManager.getInstance().openGui();
+                        MenuManagerLinkgrabberTableContext.getInstance().openGui();
                     }
                 };
 
@@ -247,7 +248,7 @@ public class GUISettings extends AbstractConfigPanel implements StateUpdateListe
                     @Override
                     protected void runInEDT() {
 
-                        MainToolbarManager.getInstance().openGui();
+                        MenuManagerMainToolbar.getInstance().openGui();
                     }
                 };
 
@@ -266,7 +267,7 @@ public class GUISettings extends AbstractConfigPanel implements StateUpdateListe
 
                     @Override
                     protected void runInEDT() {
-                        MainMenuManager.getInstance().openGui();
+                        MenuManagerMainmenu.getInstance().openGui();
                     }
                 };
 
@@ -285,7 +286,7 @@ public class GUISettings extends AbstractConfigPanel implements StateUpdateListe
 
                     @Override
                     protected void runInEDT() {
-                        TrayIconMenuManager.getInstance().openGui();
+                        MenuManagerTrayIcon.getInstance().openGui();
                     }
                 };
 
@@ -305,7 +306,7 @@ public class GUISettings extends AbstractConfigPanel implements StateUpdateListe
                     @Override
                     protected void runInEDT() {
 
-                        BottomBarMenuManager.getInstance().openGui();
+                        MenuManagerDownloadTabBottomBar.getInstance().openGui();
                     }
                 };
 
@@ -315,7 +316,7 @@ public class GUISettings extends AbstractConfigPanel implements StateUpdateListe
         linkgrabberBottomManager = new SettingsButton(new AppAction() {
             {
                 setName(_GUI._.gui_config_menumanager_linkgrabberBottom());
-                setEnabled(false);
+
             }
 
             @Override
@@ -325,12 +326,13 @@ public class GUISettings extends AbstractConfigPanel implements StateUpdateListe
                     @Override
                     protected void runInEDT() {
 
-                        BottomBarMenuManager.getInstance().openGui();
+                        MenuManagerLinkgrabberTabBottombar.getInstance().openGui();
                     }
                 };
 
             }
         });
+
         this.addHeader(getTitle(), NewTheme.I().getIcon("gui", 32));
         this.addDescription(_GUI._.GUISettings_GUISettings_description());
         // this.addHeader(getTitle(),
@@ -348,6 +350,7 @@ public class GUISettings extends AbstractConfigPanel implements StateUpdateListe
         this.addPair("", null, trayMenuManager);
         this.addPair("", null, downloadBottomManager);
         this.addPair("", null, linkgrabberBottomManager);
+
         this.addHeader(_GUI._.GUISettings_GUISettings_object_frames(), NewTheme.I().getIcon(IconKey.ICON_DESKTOP, 32));
         this.addDescription(_GUI._.GUISettings_GUISettings_object_frames_description());
         // this.addHeader(_GUI._.GUISettings_GUISettings_object_accessability(), NewTheme.I().getIcon("barrierfreesettings", 32));

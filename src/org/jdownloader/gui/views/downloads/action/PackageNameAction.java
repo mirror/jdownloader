@@ -6,11 +6,11 @@ import jd.gui.UserIO;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
-import org.jdownloader.actions.SelectionAppAction;
+import org.jdownloader.actions.AbstractSelectionContextAction;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo;
 
-public class PackageNameAction extends SelectionAppAction<FilePackage, DownloadLink> {
+public class PackageNameAction extends AbstractSelectionContextAction<FilePackage, DownloadLink> {
 
     private static final long serialVersionUID = -5155537516674035401L;
 

@@ -10,12 +10,12 @@ import jd.controlling.packagecontroller.ChildComparator;
 import org.appwork.swing.exttable.ExtColumn;
 import org.appwork.utils.event.queue.Queue.QueuePriority;
 import org.appwork.utils.event.queue.QueueAction;
-import org.jdownloader.actions.SelectionAppAction;
+import org.jdownloader.actions.AbstractSelectionContextAction;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.components.packagetable.PackageControllerTableModel;
 
-public class SortAction<PackageType extends AbstractPackageNode<ChildrenType, PackageType>, ChildrenType extends AbstractPackageChildrenNode<PackageType>> extends SelectionAppAction<PackageType, ChildrenType> {
+public class SortAction<PackageType extends AbstractPackageNode<ChildrenType, PackageType>, ChildrenType extends AbstractPackageChildrenNode<PackageType>> extends AbstractSelectionContextAction<PackageType, ChildrenType> {
 
     /**
      * 

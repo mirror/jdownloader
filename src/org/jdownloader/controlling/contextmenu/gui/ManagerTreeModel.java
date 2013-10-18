@@ -1,7 +1,6 @@
 package org.jdownloader.controlling.contextmenu.gui;
 
 import java.util.ArrayList;
-import java.util.Enumeration;
 import java.util.List;
 
 import javax.swing.tree.DefaultTreeModel;
@@ -41,6 +40,7 @@ public class ManagerTreeModel extends DefaultTreeModel implements TreeModel {
                     protected void runInEDT() {
                         data = menuContainerRoot;
                         fireTreeStructureChanged(this, new Object[] { data }, null, null);
+
                     }
                 };
             }
@@ -164,16 +164,11 @@ public class ManagerTreeModel extends DefaultTreeModel implements TreeModel {
         // }
         if (tree != null) {
             TreePath[] paths = tree.getSelectionPaths();
-            Enumeration<TreePath> desc = tree.getExpandedDescendants(new TreePath(data));
 
             super.fireTreeStructureChanged(source, path, childIndices, children);
-            if (desc != null) {
-                while (desc.hasMoreElements()) {
-                    TreePath p = desc.nextElement();
-                    tree.expandPath(p);
-                }
-            }
+
             if (paths != null) tree.setSelectionPaths(paths);
+            tree.expandAll();
         }
     }
 

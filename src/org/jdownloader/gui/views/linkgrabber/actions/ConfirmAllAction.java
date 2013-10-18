@@ -2,11 +2,8 @@ package org.jdownloader.gui.views.linkgrabber.actions;
 
 import java.awt.Image;
 import java.awt.event.ActionEvent;
-import java.awt.event.InputEvent;
-import java.awt.event.KeyEvent;
 
 import javax.swing.ImageIcon;
-import javax.swing.KeyStroke;
 
 import jd.controlling.TaskQueue;
 import jd.controlling.linkcrawler.CrawledLink;
@@ -16,23 +13,34 @@ import org.appwork.utils.ImageProvider.ImageProvider;
 import org.appwork.utils.event.queue.Queue.QueuePriority;
 import org.appwork.utils.event.queue.QueueAction;
 import org.jdownloader.actions.AppAction;
+import org.jdownloader.actions.CachableInterface;
+import org.jdownloader.controlling.contextmenu.Customizer;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.linkgrabber.LinkGrabberTableModel;
-import org.jdownloader.gui.views.linkgrabber.actions.ConfirmAutoAction.AutoStartOptions;
+import org.jdownloader.gui.views.linkgrabber.contextmenu.ConfirmSelectionContextAction;
+import org.jdownloader.gui.views.linkgrabber.contextmenu.ConfirmSelectionContextAction.AutoStartOptions;
 import org.jdownloader.images.NewTheme;
 
-public class ConfirmAllAction extends AppAction {
+public class ConfirmAllAction extends AppAction implements CachableInterface {
+
     /**
      * 
      */
-    private static final long serialVersionUID = 4794612717641894527L;
+    private static final long  serialVersionUID = 4794612717641894527L;
 
-    private boolean           autostart;
+    private boolean            autoStart;
+    public static final String AUTO_START       = "autoStart";
+
+    @Customizer(name = "Start Downloads automatically")
+    public boolean isAutoStart() {
+
+        return autoStart;
+    }
 
     public ConfirmAllAction(boolean autostart) {
         setAutoStart(autostart);
-        setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_ENTER, InputEvent.CTRL_DOWN_MASK));
+
     }
 
     public void setAutoStart(boolean b) {
@@ -41,12 +49,12 @@ public class ConfirmAllAction extends AppAction {
             Image add = NewTheme.I().getImage("media-playback-start", 20);
             Image play = NewTheme.I().getImage("add", 12);
             setSmallIcon(new ImageIcon(ImageProvider.merge(add, play, 0, 0, 9, 10)));
-            this.autostart = b;
+            this.autoStart = b;
 
         } else {
             setName(_GUI._.ConfirmAction_ConfirmAction_context_add());
             setSmallIcon(NewTheme.I().getIcon("go-next", 20));
-            this.autostart = b;
+            this.autoStart = b;
 
         }
     }
@@ -65,12 +73,16 @@ public class ConfirmAllAction extends AppAction {
             @Override
             protected Void run() throws RuntimeException {
                 final SelectionInfo<CrawledPackage, CrawledLink> si = new SelectionInfo<CrawledPackage, CrawledLink>(null, LinkGrabberTableModel.getInstance().getAllPackageNodes(), null, null, e, LinkGrabberTableModel.getInstance().getTable());
-                ConfirmAutoAction ca = new ConfirmAutoAction(si);
-                ca.setAutoStart(autostart ? AutoStartOptions.ENABLED : AutoStartOptions.DISABLED);
+                ConfirmSelectionContextAction ca = new ConfirmSelectionContextAction(si);
+                ca.setAutoStart(autoStart ? AutoStartOptions.ENABLED : AutoStartOptions.DISABLED);
                 ca.actionPerformed(null);
                 return null;
             }
         });
+    }
+
+    @Override
+    public void setData(String data) {
     }
 
 }

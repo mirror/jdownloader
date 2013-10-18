@@ -20,7 +20,7 @@ import org.appwork.utils.StringUtils;
 import org.appwork.utils.reflection.Clazz;
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.actions.CachableInterface;
-import org.jdownloader.actions.SelectionAppAction;
+import org.jdownloader.actions.AbstractSelectionContextAction;
 import org.jdownloader.extensions.AbstractExtension;
 import org.jdownloader.extensions.ExtensionController;
 import org.jdownloader.extensions.ExtensionNotLoadedException;
@@ -233,15 +233,15 @@ public class MenuItemData implements Storable {
             //
             throw new WTFException("No ACTION");
         }
-        if (action != null && action instanceof SelectionAppAction) {
-            ((SelectionAppAction) action).setSelection(selection);
+        if (action != null && action instanceof AbstractSelectionContextAction) {
+            ((AbstractSelectionContextAction) action).setSelection(selection);
             if (action instanceof CachableInterface) {
                 if (StringUtils.isNotEmpty(actionData.getData())) {
                     ((CachableInterface) action).setData(actionData.getData());
                 }
             }
             fill(action.getClass(), action);
-            return action;
+            return customize(action);
         } else if (action != null && action instanceof CachableInterface) {
             // no need to set selection. action does not need any selection
 
@@ -249,7 +249,7 @@ public class MenuItemData implements Storable {
                 ((CachableInterface) action).setData(actionData.getData());
             }
             fill(action.getClass(), action);
-            return action;
+            return customize(action);
         } else if (action != null) {
             System.out.println("Please Update Action " + action.getClass().getName());
         }
@@ -308,11 +308,26 @@ public class MenuItemData implements Storable {
             action.setIconKey(getIconKey());
             // actionData.setIconKey(getIconKey());
         }
+
+        if (StringUtils.isNotEmpty(actionData.getName())) {
+            if (StringUtils.isEmpty(action.getTooltipText()) && (StringUtils.isEmpty(actionData.getName()) || MenuItemData.EMPTY_NAME.equals(actionData.getName()))) {
+                // set old name as tooltip
+                action.setTooltipText(action.getName());
+            }
+            action.setName(actionData.getName());
+            // actionData.setName(getName());
+        }
         if (StringUtils.isNotEmpty(getName())) {
+            if (StringUtils.isEmpty(action.getTooltipText()) && (StringUtils.isEmpty(getName()) || MenuItemData.EMPTY_NAME.equals(getName()))) {
+                // set old name as tooltip
+                action.setTooltipText(action.getName());
+            }
+
             action.setName(getName());
             // actionData.setName(getName());
         }
         if (MenuItemData.EMPTY_NAME.equals(action.getName())) {
+
             action.setName("");
         }
 

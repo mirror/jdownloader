@@ -4,30 +4,28 @@ import java.awt.event.ActionEvent;
 
 import jd.controlling.TaskQueue;
 import jd.controlling.linkcollector.LinkCollector;
-import jd.controlling.linkcrawler.CrawledLink;
-import jd.controlling.linkcrawler.CrawledPackage;
 
 import org.appwork.utils.event.queue.QueueAction;
 import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogNoAnswerException;
 import org.jdownloader.actions.AppAction;
+import org.jdownloader.actions.CachableInterface;
 import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.linkgrabber.LinkGrabberTable;
-import org.jdownloader.gui.views.linkgrabber.contextmenu.LinkgrabberContextMenuManager;
+import org.jdownloader.gui.views.linkgrabber.LinkgrabberSearchField;
+import org.jdownloader.gui.views.linkgrabber.contextmenu.MenuManagerLinkgrabberTableContext;
 
-public class ResetAction extends AppAction {
+public class ResetAction extends AppAction implements CachableInterface {
     /**
      * 
      */
-    private static final long                          serialVersionUID = 6027982395476716687L;
-    private SelectionInfo<CrawledPackage, CrawledLink> selection;
+    private static final long serialVersionUID = 6027982395476716687L;
 
-    public ResetAction(SelectionInfo<CrawledPackage, CrawledLink> selection) {
+    public ResetAction() {
+
         setIconKey("reset");
         putValue(SHORT_DESCRIPTION, _GUI._.ResetAction_ResetAction_tt());
-        this.selection = selection;
 
     }
 
@@ -51,7 +49,7 @@ public class ResetAction extends AppAction {
 
                             @Override
                             protected void runInEDT() {
-                                final LinkGrabberTable table = LinkgrabberContextMenuManager.getInstance().getTable();
+                                final LinkGrabberTable table = MenuManagerLinkgrabberTableContext.getInstance().getTable();
                                 table.getModel().setSortColumn(null);
                                 table.getModel().refreshSort();
                                 table.getTableHeader().repaint();
@@ -59,7 +57,9 @@ public class ResetAction extends AppAction {
                         };
                     }
                     if (dialog.getSettings().isClearSearchFilter()) {
-                        LinkgrabberContextMenuManager.getInstance().getPanel().resetSearch();
+
+                        LinkgrabberSearchField.getInstance().setText("");
+                        LinkgrabberSearchField.getInstance().onChanged();
 
                     }
                     return null;
@@ -68,6 +68,10 @@ public class ResetAction extends AppAction {
         } catch (DialogNoAnswerException e1) {
             e1.printStackTrace();
         }
+    }
+
+    @Override
+    public void setData(String data) {
     }
 
 }

@@ -37,7 +37,7 @@ import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.components.packagetable.PackageControllerTableModel;
 import org.jdownloader.gui.views.components.packagetable.PackageControllerTableModelFilter;
 import org.jdownloader.gui.views.linkgrabber.LinkGrabberTable;
-import org.jdownloader.gui.views.linkgrabber.actions.ConfirmAutoAction;
+import org.jdownloader.gui.views.linkgrabber.contextmenu.ConfirmSelectionContextAction;
 import org.jdownloader.gui.views.linkgrabber.contextmenu.CreateDLCAction;
 import org.jdownloader.gui.views.linkgrabber.contextmenu.MergeToPackageAction;
 import org.jdownloader.gui.views.linkgrabber.contextmenu.RemoveNonSelectedAction;
@@ -147,7 +147,7 @@ public abstract class FilterTable extends BasicJDTable<Filter> implements Packag
 
             @Override
             public void onConfigValueModified(KeyHandler<Boolean> keyHandler, Boolean newValue) {
-                if (Boolean.TRUE.equals(newValue) && org.jdownloader.settings.staticreferences.CFG_GUI.CFG.isLinkgrabberSidebarEnabled()) {
+                if (Boolean.TRUE.equals(newValue) && org.jdownloader.settings.staticreferences.CFG_GUI.CFG.isLinkgrabberSidebarVisible()) {
                     enabled = true;
                     filterTableUpdates.add(filterTableUpdater);
                     linkgrabberTable.getModel().addFilter(FilterTable.this);
@@ -169,7 +169,7 @@ public abstract class FilterTable extends BasicJDTable<Filter> implements Packag
             }
         };
         visible.getEventSender().addListener(sidebarListener);
-        org.jdownloader.settings.staticreferences.CFG_GUI.LINKGRABBER_SIDEBAR_ENABLED.getEventSender().addListener(sidebarListener, true);
+        org.jdownloader.settings.staticreferences.CFG_GUI.LINKGRABBER_SIDEBAR_VISIBLE.getEventSender().addListener(sidebarListener, true);
         SecondLevelLaunch.INIT_COMPLETE.executeWhenReached(new Runnable() {
 
             @Override
@@ -253,7 +253,7 @@ public abstract class FilterTable extends BasicJDTable<Filter> implements Packag
         // (org.jdownloader.settings.statics.LINKGRABBER.QUICK_VIEW_SELECTION_ENABLED.getValue())
         // {
         SelectionInfo<CrawledPackage, CrawledLink> matches = new SelectionInfo<CrawledPackage, CrawledLink>(null, getMatches(getSelectedFilters()), mouseEvent, null, null, null);
-        popup.add(new ConfirmAutoAction(matches));
+        popup.add(new ConfirmSelectionContextAction(matches));
         popup.add(new MergeToPackageAction(matches));
         popup.add(new CreateDLCAction(matches));
         popup.add(new RemoveNonSelectedAction(matches));

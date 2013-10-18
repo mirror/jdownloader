@@ -17,11 +17,11 @@ import org.jdownloader.extensions.StartException;
 import org.jdownloader.extensions.StopException;
 import org.jdownloader.extensions.infobar.translate.InfobarTranslation;
 import org.jdownloader.extensions.infobar.translate.T;
-import org.jdownloader.gui.mainmenu.MainMenuManager;
+import org.jdownloader.gui.mainmenu.MenuManagerMainmenu;
 import org.jdownloader.gui.mainmenu.container.ExtensionsMenuContainer;
 import org.jdownloader.gui.mainmenu.container.ExtensionsMenuWindowContainer;
 import org.jdownloader.gui.mainmenu.container.OptionalContainer;
-import org.jdownloader.gui.toolbar.MainToolbarManager;
+import org.jdownloader.gui.toolbar.MenuManagerMainToolbar;
 import org.jdownloader.logging.LogController;
 
 public class InfoBarExtension extends AbstractExtension<InfoBarConfig, InfobarTranslation> implements MenuExtenderHandler {
@@ -106,23 +106,23 @@ public class InfoBarExtension extends AbstractExtension<InfoBarConfig, InfobarTr
     @Override
     protected void stop() throws StopException {
         if (infoDialog != null) infoDialog.hideDialog();
-        MainMenuManager.getInstance().unregisterExtender(this);
-        MainToolbarManager.getInstance().unregisterExtender(this);
+        MenuManagerMainmenu.getInstance().unregisterExtender(this);
+        MenuManagerMainToolbar.getInstance().unregisterExtender(this);
     }
 
     @Override
     protected void start() throws StartException {
         LogController.CL().info("InfoBar: OK");
-        MainMenuManager.getInstance().registerExtender(this);
-        MainToolbarManager.getInstance().registerExtender(this);
+        MenuManagerMainmenu.getInstance().registerExtender(this);
+        MenuManagerMainToolbar.getInstance().registerExtender(this);
     }
 
     @Override
     public MenuItemData updateMenuModel(ContextMenuManager manager, MenuContainerRoot mr) {
 
-        if (manager instanceof MainToolbarManager) {
+        if (manager instanceof MenuManagerMainToolbar) {
             return updateMainToolbar(mr);
-        } else if (manager instanceof MainMenuManager) {
+        } else if (manager instanceof MenuManagerMainmenu) {
             //
             return updateMainMenu(mr);
         }

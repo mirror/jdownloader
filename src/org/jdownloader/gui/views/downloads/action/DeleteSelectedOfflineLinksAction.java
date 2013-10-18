@@ -12,7 +12,7 @@ import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.downloads.table.DownloadsTableModel;
 import org.jdownloader.plugins.FinalLinkState;
 
-public class DeleteSelectedOfflineLinksAction extends DeleteAppAction {
+public class DeleteSelectedOfflineLinksAction extends AbstractDeleteSelectionFromDownloadlistAction {
 
     private SelectionInfo<FilePackage, DownloadLink> si;
 
@@ -31,7 +31,7 @@ public class DeleteSelectedOfflineLinksAction extends DeleteAppAction {
                 nodesToDelete.add(dl);
             }
         }
-        deleteLinksRequest(new SelectionInfo<FilePackage, DownloadLink>(null, nodesToDelete, null, null, e, DownloadsTableModel.getInstance().getTable()), _GUI._.DeleteSelectedOfflineLinksAction_actionPerformed());
+        DownloadTabActionUtils.deleteLinksRequest(new SelectionInfo<FilePackage, DownloadLink>(null, nodesToDelete, null, null, e, DownloadsTableModel.getInstance().getTable()), _GUI._.DeleteSelectedOfflineLinksAction_actionPerformed());
 
     }
 

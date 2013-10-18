@@ -3,10 +3,10 @@ package org.jdownloader.actions;
 import jd.controlling.packagecontroller.AbstractPackageChildrenNode;
 import jd.controlling.packagecontroller.AbstractPackageNode;
 
-import org.jdownloader.controlling.contextmenu.Customizer;
 import org.jdownloader.gui.views.SelectionInfo;
 
-public abstract class SelectionAppAction<PackageType extends AbstractPackageNode<ChildrenType, PackageType>, ChildrenType extends AbstractPackageChildrenNode<PackageType>> extends AppAction implements CachableInterface {
+public abstract class AbstractSelectionContextAction<PackageType extends AbstractPackageNode<ChildrenType, PackageType>, ChildrenType extends AbstractPackageChildrenNode<PackageType>> extends AbstractContextMenuAction {
+
     /**
      * 
      */
@@ -15,38 +15,15 @@ public abstract class SelectionAppAction<PackageType extends AbstractPackageNode
     private String                                     data;
 
     public String getData() {
+
         return data;
-    }
-
-    private boolean itemVisibleForSelections = true;
-
-    @Customizer(name = "Item is visible for selected Links")
-    public boolean isItemVisibleForSelections() {
-        return itemVisibleForSelections;
-    }
-
-    @Customizer(name = "Item is visible for selected Links")
-    public void setItemVisibleForSelections(boolean clearListAfterConfirm) {
-        this.itemVisibleForSelections = clearListAfterConfirm;
-    }
-
-    private boolean itemVisibleForEmptySelection = false;
-
-    @Customizer(name = "Item is visible for empty selections")
-    public boolean isItemVisibleForEmptySelection() {
-        return itemVisibleForEmptySelection;
-    }
-
-    @Customizer(name = "Item is visible for empty selections")
-    public void setItemVisibleForEmptySelection(boolean clearListAfterConfirm) {
-        this.itemVisibleForEmptySelection = clearListAfterConfirm;
     }
 
     public void setData(String data) {
         this.data = data;
     }
 
-    public SelectionAppAction(SelectionInfo<PackageType, ChildrenType> si) {
+    public AbstractSelectionContextAction(SelectionInfo<PackageType, ChildrenType> si) {
         setSelection(si);
     }
 

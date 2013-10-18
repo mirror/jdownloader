@@ -14,13 +14,13 @@ import jd.controlling.packagecontroller.AbstractNode;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.event.queue.QueueAction;
-import org.jdownloader.actions.SelectionAppAction;
+import org.jdownloader.actions.AbstractSelectionContextAction;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.linkgrabber.addlinksdialog.LinkgrabberSettings;
 import org.jdownloader.translate._JDT;
 
-public class SplitPackagesByHost extends SelectionAppAction<CrawledPackage, CrawledLink> {
+public class SplitPackagesByHost extends AbstractSelectionContextAction<CrawledPackage, CrawledLink> {
 
     /**
      * 

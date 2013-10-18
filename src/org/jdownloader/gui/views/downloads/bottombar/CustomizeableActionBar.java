@@ -10,12 +10,15 @@ import java.awt.Point;
 import java.awt.Transparency;
 import java.awt.event.ActionEvent;
 import java.awt.image.BufferedImage;
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
 import java.lang.reflect.InvocationTargetException;
 
 import javax.swing.AbstractButton;
 import javax.swing.ImageIcon;
 import javax.swing.JComponent;
 import javax.swing.JSeparator;
+import javax.swing.JToggleButton;
 import javax.swing.KeyStroke;
 import javax.swing.SwingConstants;
 import javax.swing.SwingUtilities;
@@ -24,7 +27,6 @@ import jd.SecondLevelLaunch;
 import jd.gui.swing.jdgui.JDGui;
 import net.miginfocom.swing.MigLayout;
 
-import org.appwork.storage.config.JsonConfig;
 import org.appwork.swing.MigPanel;
 import org.appwork.swing.components.ExtButton;
 import org.appwork.utils.StringUtils;
@@ -39,20 +41,26 @@ import org.jdownloader.controlling.contextmenu.gui.ExtPopupMenu;
 import org.jdownloader.controlling.contextmenu.gui.MenuBuilder;
 import org.jdownloader.extensions.ExtensionNotLoadedException;
 import org.jdownloader.gui.IconKey;
-import org.jdownloader.gui.views.downloads.table.DownloadsTable;
+import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.images.NewTheme;
-import org.jdownloader.settings.GraphicalUserInterfaceSettings;
 import org.jdownloader.updatev2.gui.LAFOptions;
 
-public class BottomBar extends MigPanel {
+public class CustomizeableActionBar extends MigPanel implements PropertyChangeListener {
 
-    private GraphicalUserInterfaceSettings config;
+    private AbstractBottomBarMenuManager manager;
 
-    public BottomBar(final DownloadsTable table) {
+    @Override
+    public void propertyChange(PropertyChangeEvent evt) {
+        if ("visible".equals(evt.getPropertyName())) {
+            manager.refresh();
+
+        }
+    }
+
+    public CustomizeableActionBar(AbstractBottomBarMenuManager bottomBarMenuManager) {
         super("ins 0 0 1 0", "[]1[]1[]1[]", "[]");
-        BottomBarMenuManager.getInstance().setLink(this);
-        config = JsonConfig.create(GraphicalUserInterfaceSettings.class);
-
+        manager = bottomBarMenuManager;
+        manager.addLink(this);
         SecondLevelLaunch.GUI_COMPLETE.executeWhenReached(new Runnable() {
 
             @Override
@@ -72,7 +80,8 @@ public class BottomBar extends MigPanel {
     public void updateGui() {
         if (!SecondLevelLaunch.GUI_COMPLETE.isReached()) return;
         removeAll();
-        MenuContainerRoot items = BottomBarMenuManager.getInstance().getMenuData();
+        MenuContainerRoot items = prepare(manager.getMenuData());
+
         this.setLayout(new MigLayout("ins 0 0 1 0", "[]1[]1[]1[]", "[]"));
         AbstractButton ab;
         // System.out.println(this.getColConstraints(list.length));
@@ -113,6 +122,14 @@ public class BottomBar extends MigPanel {
         repaint();
     }
 
+    protected MenuContainerRoot prepare(MenuContainerRoot menuData) {
+        return menuData;
+    }
+
+    protected boolean isValid(MenuItemData menudata) {
+        return true;
+    }
+
     private void addLink(MenuItemData menudata) throws InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException, ClassNotFoundException, NoSuchMethodException, SecurityException, ExtensionNotLoadedException {
         final JComponent item = menudata.createItem(null);
         if (menudata instanceof SelfLayoutInterface) {
@@ -125,16 +142,30 @@ public class BottomBar extends MigPanel {
 
     private void addAction(MenuItemData menudata) throws ClassNotFoundException, NoSuchMethodException, SecurityException, InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException, ExtensionNotLoadedException {
         AppAction action = menudata.createAction(null);
+        action.setEnabled(true);
+        action.removePropertyChangeListener(this);
+        action.addPropertyChangeListener(this);
+        if (!action.isVisible()) return;
         if (StringUtils.isNotEmpty(menudata.getShortcut())) {
             action.setAccelerator(KeyStroke.getKeyStroke(menudata.getShortcut()));
         }
 
-        ExtButton bt = new ExtButton(action);
-
-        if (StringUtils.isEmpty(action.getName())) {
-            add(bt, "height 24!,width 24!,aligny top");
+        AbstractButton bt = null;
+        if (action.isToggle()) {
+            bt = new JToggleButton(action);
         } else {
-            add(bt, "height 24!,aligny top");
+
+            bt = new ExtButton(action);
+        }
+        if (menudata instanceof SelfLayoutInterface) {
+            add(bt, ((SelfLayoutInterface) menudata).getConstraints());
+        } else {
+            if (StringUtils.isEmpty(action.getName())) {
+
+                add(bt, "height 24!,width 24!,aligny top");
+            } else {
+                add(bt, "height 24!,aligny top");
+            }
         }
 
     }
@@ -228,7 +259,12 @@ public class BottomBar extends MigPanel {
 
                     };
                 };
-                new MenuBuilder(BottomBarMenuManager.getInstance(), popup, null, (MenuContainer) menudata).run();
+
+                new MenuBuilder(manager, popup, getCurrentSelection(), (MenuContainer) menudata) {
+                    protected void addAction(final JComponent root, final MenuItemData inst) throws InstantiationException, IllegalAccessException, InvocationTargetException, ClassNotFoundException, NoSuchMethodException, ExtensionNotLoadedException {
+                        super.addAction(root, inst);
+                    }
+                }.run();
 
                 int[] insets = LAFOptions.getInstance().getPopupBorderInsets();
                 Dimension pref = popup.getPreferredSize();
@@ -258,5 +294,9 @@ public class BottomBar extends MigPanel {
                 }
             }
         };
+    }
+
+    protected SelectionInfo<?, ?> getCurrentSelection() {
+        return null;
     }
 }

@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.concurrent.ScheduledExecutorService;
 
 import javax.swing.Icon;
+import javax.swing.ListSelectionModel;
 
 import jd.controlling.packagecontroller.AbstractNode;
 import jd.controlling.packagecontroller.AbstractPackageChildrenNode;
@@ -23,6 +24,7 @@ import org.appwork.utils.event.queue.Queue;
 import org.appwork.utils.event.queue.QueueAction;
 import org.appwork.utils.logging.Log;
 import org.appwork.utils.swing.EDTRunner;
+import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
 
 public abstract class PackageControllerTableModel<PackageType extends AbstractPackageNode<ChildrenType, PackageType>, ChildrenType extends AbstractPackageChildrenNode<PackageType>> extends ExtTableModel<AbstractNode> {
@@ -39,6 +41,14 @@ public abstract class PackageControllerTableModel<PackageType extends AbstractPa
 
     private abstract class TableDataModifier {
         public abstract void modifyTableData(java.util.List<PackageType> packages);
+    }
+
+    public SelectionInfo<PackageType, ChildrenType> createSelectionInfo() {
+        ListSelectionModel sm = getTable().getSelectionModel();
+        if (sm.isSelectionEmpty()) return null;
+
+        return new SelectionInfo<PackageType, ChildrenType>(getObjectbyRow(sm.getLeadSelectionIndex()), getSelectedObjects(), null, null, null, getTable());
+
     }
 
     @SuppressWarnings("unchecked")
@@ -291,7 +301,8 @@ public abstract class PackageControllerTableModel<PackageType extends AbstractPa
     }
 
     /*
-     * we override sort to have a better sorting of packages/files, to keep their structure alive,data is only used to specify the size of the new ArrayList
+     * we override sort to have a better sorting of packages/files, to keep their structure alive,data is only used to specify the size of
+     * the new ArrayList
      */
     @Override
     public java.util.List<AbstractNode> sort(final java.util.List<AbstractNode> data, ExtColumn<AbstractNode> column) {

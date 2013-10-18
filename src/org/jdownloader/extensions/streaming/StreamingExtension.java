@@ -41,8 +41,8 @@ import org.jdownloader.extensions.streaming.mediaarchive.MediaItem;
 import org.jdownloader.extensions.streaming.upnp.MediaServer;
 import org.jdownloader.extensions.streaming.upnp.PlayToDevice;
 import org.jdownloader.extensions.streaming.upnp.PlayToUpnpRendererDevice;
-import org.jdownloader.gui.views.downloads.contextmenumanager.DownloadListContextMenuManager;
-import org.jdownloader.gui.views.linkgrabber.contextmenu.LinkgrabberContextMenuManager;
+import org.jdownloader.gui.views.downloads.contextmenumanager.MenuManagerDownloadTableContext;
+import org.jdownloader.gui.views.linkgrabber.contextmenu.MenuManagerLinkgrabberTableContext;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.logging.LogController;
 
@@ -180,8 +180,8 @@ public class StreamingExtension extends AbstractExtension<StreamingConfig, Strea
     @Override
     protected void initExtension() throws StartException {
 
-        DownloadListContextMenuManager.getInstance().registerExtender(this);
-        LinkgrabberContextMenuManager.getInstance().registerExtender(this);
+        MenuManagerDownloadTableContext.getInstance().registerExtender(this);
+        MenuManagerLinkgrabberTableContext.getInstance().registerExtender(this);
     }
 
     @Override

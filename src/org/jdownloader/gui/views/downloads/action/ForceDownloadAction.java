@@ -11,12 +11,12 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
 import org.appwork.utils.ImageProvider.ImageProvider;
-import org.jdownloader.actions.SelectionAppAction;
+import org.jdownloader.actions.AbstractSelectionContextAction;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.images.NewTheme;
 
-public class ForceDownloadAction extends SelectionAppAction<FilePackage, DownloadLink> {
+public class ForceDownloadAction extends AbstractSelectionContextAction<FilePackage, DownloadLink> {
 
     private static final long serialVersionUID = 7107840091963427544L;
 

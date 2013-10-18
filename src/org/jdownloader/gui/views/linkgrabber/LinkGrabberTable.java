@@ -47,23 +47,27 @@ import org.appwork.swing.exttable.ExtDefaultRowSorter;
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.ImageProvider.ImageProvider;
+import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.SwingUtils;
 import org.appwork.utils.swing.dialog.Dialog;
+import org.jdownloader.actions.AbstractSelectionContextAction;
 import org.jdownloader.actions.AppAction;
-import org.jdownloader.actions.SelectionAppAction;
 import org.jdownloader.controlling.contextmenu.MenuContainer;
 import org.jdownloader.controlling.contextmenu.MenuItemData;
+import org.jdownloader.controlling.contextmenu.MenuLink;
 import org.jdownloader.controlling.contextmenu.SeperatorData;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.components.packagetable.PackageControllerTable;
 import org.jdownloader.gui.views.downloads.table.HorizontalScrollbarAction;
-import org.jdownloader.gui.views.linkgrabber.actions.ConfirmAutoAction;
+import org.jdownloader.gui.views.linkgrabber.bottombar.MenuManagerLinkgrabberTabBottombar;
+import org.jdownloader.gui.views.linkgrabber.contextmenu.ConfirmSelectionContextAction;
 import org.jdownloader.gui.views.linkgrabber.contextmenu.ContextMenuFactory;
-import org.jdownloader.gui.views.linkgrabber.contextmenu.LinkgrabberContextMenuManager;
+import org.jdownloader.gui.views.linkgrabber.contextmenu.MenuManagerLinkgrabberTableContext;
 import org.jdownloader.gui.views.linkgrabber.contextmenu.RemoveSelectionLinkgrabberAction;
 import org.jdownloader.images.NewTheme;
+import org.jdownloader.logging.LogController;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
 import org.jdownloader.translate._JDT;
 
@@ -72,6 +76,7 @@ public class LinkGrabberTable extends PackageControllerTable<CrawledPackage, Cra
     private static final long          serialVersionUID = 8843600834248098174L;
     private ContextMenuFactory         contextMenuFactory;
     private HashMap<KeyStroke, Action> shortCutActions;
+    private LogSource                  logger;
 
     public LinkGrabberTable(LinkGrabberPanel linkGrabberPanel, final LinkGrabberTableModel tableModel) {
         super(tableModel);
@@ -80,7 +85,7 @@ public class LinkGrabberTable extends PackageControllerTable<CrawledPackage, Cra
         this.setTransferHandler(new LinkGrabberTableTransferHandler(this));
         this.setDragEnabled(true);
         this.setDropMode(DropMode.ON_OR_INSERT_ROWS);
-
+        logger = LogController.getInstance().getLogger(LinkGrabberTable.class.getName());
         contextMenuFactory = new ContextMenuFactory(this, linkGrabberPanel);
         final MigPanel loaderPanel = new MigPanel("ins 0,wrap 1", "[grow,fill]", "[grow,fill][]");
         // loaderPanel.setPreferredSize(new Dimension(200, 200));
@@ -158,7 +163,7 @@ public class LinkGrabberTable extends PackageControllerTable<CrawledPackage, Cra
                             // clicked on a selected row. let's confirm them all
                             List<AbstractNode> selection = getModel().getSelectedObjects();
 
-                            new ConfirmAutoAction(new SelectionInfo<CrawledPackage, CrawledLink>(obj, selection, e, null, null, this)) {
+                            new ConfirmSelectionContextAction(new SelectionInfo<CrawledPackage, CrawledLink>(obj, selection, e, null, null, this)) {
 
                                 protected void switchToDownloadTab() {
 
@@ -169,7 +174,7 @@ public class LinkGrabberTable extends PackageControllerTable<CrawledPackage, Cra
                             // clicked on a not-selected row. only add the context item
                             List<AbstractNode> selection = getModel().getSelectedObjects();
 
-                            new ConfirmAutoAction(new SelectionInfo<CrawledPackage, CrawledLink>(obj, null, e, null, null, this)) {
+                            new ConfirmSelectionContextAction(new SelectionInfo<CrawledPackage, CrawledLink>(obj, null, e, null, null, this)) {
 
                                 protected void switchToDownloadTab() {
 
@@ -339,10 +344,10 @@ public class LinkGrabberTable extends PackageControllerTable<CrawledPackage, Cra
             if (map != null && am != null && isEnabled()) {
                 final Object binding = map.get(stroke);
                 final Action action = (binding == null) ? null : am.get(binding);
-                if (action != null && action instanceof SelectionAppAction) {
+                if (action != null && action instanceof AbstractSelectionContextAction) {
 
-                    SelectionInfo<CrawledPackage, CrawledLink> si = new SelectionInfo<CrawledPackage, CrawledLink>(getModel().getObjectbyRow(getSelectionModel().getLeadSelectionIndex()), getModel().getSelectedObjects(), null, evt, null, this);
-                    ((SelectionAppAction) action).setSelection(si);
+                    ((AbstractSelectionContextAction) action).setSelection(getModel().createSelectionInfo());
+
                     if (!action.isEnabled()) {
 
                         Toolkit.getDefaultToolkit().beep();
@@ -361,7 +366,7 @@ public class LinkGrabberTable extends PackageControllerTable<CrawledPackage, Cra
         return super.processKeyBinding(stroke, evt, condition, pressed);
     }
 
-    public void updateContextShortcuts(LinkgrabberContextMenuManager manager) {
+    public void updateContextShortcuts() {
 
         final InputMap input = getInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT);
         final InputMap input2 = getInputMap(JComponent.WHEN_FOCUSED);
@@ -380,7 +385,8 @@ public class LinkGrabberTable extends PackageControllerTable<CrawledPackage, Cra
         }
 
         shortCutActions = new HashMap<KeyStroke, Action>();
-        fillActions(manager.getMenuData());
+        fillActions(MenuManagerLinkgrabberTableContext.getInstance().getMenuData());
+        fillActions(MenuManagerLinkgrabberTabBottombar.getInstance().getMenuData());
 
     }
 
@@ -396,9 +402,12 @@ public class LinkGrabberTable extends PackageControllerTable<CrawledPackage, Cra
                 fillActions((MenuContainer) mi);
             } else if (mi instanceof SeperatorData) {
                 continue;
+            } else if (mi instanceof MenuLink) {
+                continue;
             } else {
                 AppAction action;
                 try {
+                    if (mi.getActionData() == null) continue;
                     action = mi.createAction(null);
                     KeyStroke keystroke;
                     if (StringUtils.isNotEmpty(mi.getShortcut())) {
@@ -410,7 +419,33 @@ public class LinkGrabberTable extends PackageControllerTable<CrawledPackage, Cra
 
                     if (action != null && (keystroke = (KeyStroke) action.getValue(Action.ACCELERATOR_KEY)) != null) {
                         String key = "CONTEXT_ACTION_" + keystroke;
-                        System.out.println(keystroke + " -> " + action);
+                        try {
+                            Object old = input.get(keystroke);
+                            if (old != null && action.getClass() != actions.get(old).getClass()) {
+                                logger.warning("Duplicate Shortcuts: " + action + " overwrites " + actions.get(old) + "(" + old + ")" + " for keystroke " + keystroke);
+                            }
+                        } catch (Exception e) {
+                            logger.log(e);
+                        }
+                        try {
+                            Object old = input2.get(keystroke);
+                            if (old != null && action.getClass() != actions.get(old).getClass()) {
+                                logger.warning("Duplicate Shortcuts: " + action + " overwrites " + actions.get(old) + "(" + old + ")" + " for keystroke " + keystroke);
+                            }
+                        } catch (Exception e) {
+                            logger.log(e);
+                        }
+                        try {
+                            Object old = input3.get(keystroke);
+                            if (old != null && action.getClass() != actions.get(old).getClass()) {
+                                logger.warning("Duplicate Shortcuts: " + action + " overwrites " + actions.get(old) + "(" + old + ")" + " for keystroke " + keystroke);
+                            }
+                        } catch (Exception e) {
+                            logger.log(e);
+                        }
+
+                        logger.info(keystroke + " -> " + action);
+
                         input.put(keystroke, key);
                         input2.put(keystroke, key);
                         input3.put(keystroke, key);

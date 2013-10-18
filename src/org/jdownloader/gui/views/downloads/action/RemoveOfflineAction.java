@@ -14,7 +14,7 @@ import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.downloads.table.DownloadsTableModel;
 import org.jdownloader.plugins.FinalLinkState;
 
-public class RemoveOfflineAction extends DeleteAppAction {
+public class RemoveOfflineAction extends AbstractDeleteSelectionFromDownloadlistAction {
 
     /**
      * 
@@ -45,7 +45,7 @@ public class RemoveOfflineAction extends DeleteAppAction {
                         return false;
                     }
                 });
-                deleteLinksRequest(new SelectionInfo<FilePackage, DownloadLink>(null, nodesToDelete, null, null, e, DownloadsTableModel.getInstance().getTable()), _GUI._.RemoveOfflineAction_actionPerformed());
+                DownloadTabActionUtils.deleteLinksRequest(new SelectionInfo<FilePackage, DownloadLink>(null, nodesToDelete, null, null, e, DownloadsTableModel.getInstance().getTable()), _GUI._.RemoveOfflineAction_actionPerformed());
 
                 return null;
             }

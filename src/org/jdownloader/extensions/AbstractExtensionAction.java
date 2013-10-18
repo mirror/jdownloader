@@ -6,12 +6,12 @@ import jd.controlling.packagecontroller.AbstractPackageChildrenNode;
 import jd.controlling.packagecontroller.AbstractPackageNode;
 
 import org.appwork.exceptions.WTFException;
-import org.jdownloader.actions.SelectionAppAction;
+import org.jdownloader.actions.AbstractSelectionContextAction;
 import org.jdownloader.gui.views.SelectionInfo;
 
 import sun.reflect.generics.reflectiveObjects.ParameterizedTypeImpl;
 
-public abstract class AbstractExtensionAction<T extends AbstractExtension<?, ?>, PackageType extends AbstractPackageNode<ChildrenType, PackageType>, ChildrenType extends AbstractPackageChildrenNode<PackageType>> extends SelectionAppAction<PackageType, ChildrenType> {
+public abstract class AbstractExtensionAction<T extends AbstractExtension<?, ?>, PackageType extends AbstractPackageNode<ChildrenType, PackageType>, ChildrenType extends AbstractPackageChildrenNode<PackageType>> extends AbstractSelectionContextAction<PackageType, ChildrenType> {
 
     public AbstractExtensionAction(SelectionInfo<PackageType, ChildrenType> si) {
         super(si);

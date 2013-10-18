@@ -377,6 +377,11 @@ public class InfoPanel extends MigPanel implements ActionListener {
                     name = name.substring(name.lastIndexOf(".") + 1);
 
                 }
+                if (name.equals(MenuItemData.EMPTY_NAME)) {
+                    name = mid.getActionData().getClazzName();
+                    name = name.substring(name.lastIndexOf(".") + 1);
+                    name += "(" + MenuItemData.EMPTY_NAME + ")";
+                }
 
             }
 

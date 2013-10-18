@@ -214,6 +214,7 @@ public class MenuManagerDialog extends AbstractDialog<Object> implements TreeSel
                 MenuContainerRoot data = manager.setupDefaultStructure();
                 data.validateFull();
                 model.set(data);
+
                 if (tree.getRowCount() > 0) tree.setSelectionRow(0);
             }
 
@@ -291,8 +292,18 @@ public class MenuManagerDialog extends AbstractDialog<Object> implements TreeSel
 
                 data = manager.getMenuData();
                 data.validateFull();
+
+                // tree.getSelectionModel().removeTreeSelectionListener(MenuManagerDialog.this);
+                TreePath[] sel = tree.getSelectionPaths();
+
+                // tree.getSelectionModel().addTreeSelectionListener(MenuManagerDialog.this);
                 model.set(data);
-                if (tree.getRowCount() > 0) tree.setSelectionRow(0);
+                if (sel != null) {
+                    tree.setSelectionPaths(sel);
+                } else {
+                    if (tree.getRowCount() > 0) tree.setSelectionRow(0);
+                }
+
             }
         });
         bottom.add(save, "tag ok,height 24!");

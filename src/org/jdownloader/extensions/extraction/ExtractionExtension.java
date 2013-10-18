@@ -83,14 +83,14 @@ import org.jdownloader.extensions.extraction.split.Unix;
 import org.jdownloader.extensions.extraction.split.XtreamSplit;
 import org.jdownloader.extensions.extraction.translate.ExtractionTranslation;
 import org.jdownloader.extensions.extraction.translate.T;
-import org.jdownloader.gui.mainmenu.MainMenuManager;
+import org.jdownloader.gui.mainmenu.MenuManagerMainmenu;
 import org.jdownloader.gui.mainmenu.container.ExtensionsMenuContainer;
 import org.jdownloader.gui.mainmenu.container.OptionalContainer;
-import org.jdownloader.gui.toolbar.MainToolbarManager;
+import org.jdownloader.gui.toolbar.MenuManagerMainToolbar;
 import org.jdownloader.gui.views.downloads.context.submenu.MoreMenuContainer;
-import org.jdownloader.gui.views.downloads.contextmenumanager.DownloadListContextMenuManager;
+import org.jdownloader.gui.views.downloads.contextmenumanager.MenuManagerDownloadTableContext;
 import org.jdownloader.gui.views.linkgrabber.contextmenu.LinkGrabberMoreSubMenu;
-import org.jdownloader.gui.views.linkgrabber.contextmenu.LinkgrabberContextMenuManager;
+import org.jdownloader.gui.views.linkgrabber.contextmenu.MenuManagerLinkgrabberTableContext;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.settings.staticreferences.CFG_LINKGRABBER;
@@ -408,8 +408,8 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
     protected void stop() throws StopException {
         ShutdownController.getInstance().removeShutdownVetoListener(listener);
         LinkCollector.getInstance().setArchiver(null);
-        DownloadListContextMenuManager.getInstance().unregisterExtender(this);
-        LinkgrabberContextMenuManager.getInstance().unregisterExtender(this);
+        MenuManagerDownloadTableContext.getInstance().unregisterExtender(this);
+        MenuManagerLinkgrabberTableContext.getInstance().unregisterExtender(this);
         DownloadController.getInstance().removeVetoListener(this);
         FileCreationManager.getInstance().getEventSender().removeListener(this);
         SecondLevelLaunch.GUI_COMPLETE.executeWhenReached(new Runnable() {
@@ -446,10 +446,10 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
     @Override
     protected void start() throws StartException {
         lazyInitOnceOnStart();
-        DownloadListContextMenuManager.getInstance().registerExtender(this);
-        LinkgrabberContextMenuManager.getInstance().registerExtender(this);
-        MainMenuManager.getInstance().registerExtender(this);
-        MainToolbarManager.getInstance().registerExtender(this);
+        MenuManagerDownloadTableContext.getInstance().registerExtender(this);
+        MenuManagerLinkgrabberTableContext.getInstance().registerExtender(this);
+        MenuManagerMainmenu.getInstance().registerExtender(this);
+        MenuManagerMainToolbar.getInstance().registerExtender(this);
         LinkCollector.getInstance().setArchiver(this);
         DownloadController.getInstance().addVetoListener(this);
 
@@ -841,11 +841,11 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
     @Override
     public MenuItemData updateMenuModel(ContextMenuManager manager, MenuContainerRoot mr) {
 
-        if (manager instanceof MainToolbarManager) {
+        if (manager instanceof MenuManagerMainToolbar) {
             return updateMainToolbar(mr);
-        } else if (manager instanceof MainMenuManager) {
+        } else if (manager instanceof MenuManagerMainmenu) {
             return updateMainMenu(mr);
-        } else if (manager instanceof LinkgrabberContextMenuManager) {
+        } else if (manager instanceof MenuManagerLinkgrabberTableContext) {
             int addonLinkIndex = 0;
             for (int i = 0; i < mr.getItems().size(); i++) {
                 if (mr.getItems().get(i) instanceof LinkGrabberMoreSubMenu) {
@@ -867,7 +867,7 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
             cleanup.add(new MenuItemData(new ActionData(CleanupAutoDeleteLinksEnabledToggleAction.class)));
             return null;
 
-        } else if (manager instanceof DownloadListContextMenuManager) {
+        } else if (manager instanceof MenuManagerDownloadTableContext) {
             int addonLinkIndex = 0;
             for (int i = 0; i < mr.getItems().size(); i++) {
                 if (mr.getItems().get(i) instanceof MoreMenuContainer) {

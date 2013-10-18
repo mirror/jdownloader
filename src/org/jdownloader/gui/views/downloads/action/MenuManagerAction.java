@@ -5,7 +5,7 @@ import java.awt.event.ActionEvent;
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.actions.CachableInterface;
 import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.gui.views.downloads.contextmenumanager.DownloadListContextMenuManager;
+import org.jdownloader.gui.views.downloads.contextmenumanager.MenuManagerDownloadTableContext;
 
 public class MenuManagerAction extends AppAction implements CachableInterface {
 
@@ -17,7 +17,7 @@ public class MenuManagerAction extends AppAction implements CachableInterface {
 
     @Override
     public void actionPerformed(ActionEvent e) {
-        DownloadListContextMenuManager.getInstance().openGui();
+        MenuManagerDownloadTableContext.getInstance().openGui();
 
     }
 

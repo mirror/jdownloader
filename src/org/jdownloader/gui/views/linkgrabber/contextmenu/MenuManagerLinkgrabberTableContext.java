@@ -1,13 +1,19 @@
 package org.jdownloader.gui.views.linkgrabber.contextmenu;
 
+import java.awt.event.KeyEvent;
+
+import javax.swing.KeyStroke;
+
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledPackage;
 
+import org.jdownloader.actions.AbstractContextMenuAction;
 import org.jdownloader.controlling.contextmenu.ActionData;
 import org.jdownloader.controlling.contextmenu.ContextMenuManager;
 import org.jdownloader.controlling.contextmenu.MenuContainerRoot;
 import org.jdownloader.controlling.contextmenu.MenuItemData;
 import org.jdownloader.controlling.contextmenu.SeperatorData;
+import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.components.packagetable.context.CheckStatusAction;
 import org.jdownloader.gui.views.components.packagetable.context.EnabledAction;
@@ -29,20 +35,20 @@ import org.jdownloader.gui.views.linkgrabber.LinkGrabberTable;
 import org.jdownloader.gui.views.linkgrabber.LinkGrabberTableModel;
 import org.jdownloader.gui.views.linkgrabber.actions.AddContainerAction;
 import org.jdownloader.gui.views.linkgrabber.actions.AddLinksAction;
-import org.jdownloader.gui.views.linkgrabber.actions.ConfirmAllContextmenuAction;
-import org.jdownloader.gui.views.linkgrabber.actions.ConfirmAutoAction;
+import org.jdownloader.gui.views.linkgrabber.actions.GenericDeleteFromLinkgrabberAction;
+import org.jdownloader.gui.views.linkgrabber.actions.ResetAction;
 
-public class LinkgrabberContextMenuManager extends ContextMenuManager<CrawledPackage, CrawledLink> {
+public class MenuManagerLinkgrabberTableContext extends ContextMenuManager<CrawledPackage, CrawledLink> {
 
-    private static final LinkgrabberContextMenuManager INSTANCE = new LinkgrabberContextMenuManager();
+    private static final MenuManagerLinkgrabberTableContext INSTANCE = new MenuManagerLinkgrabberTableContext();
 
     /**
      * get the only existing instance of DownloadListContextMenuManager. This is a singleton
      * 
      * @return
      */
-    public static LinkgrabberContextMenuManager getInstance() {
-        return LinkgrabberContextMenuManager.INSTANCE;
+    public static MenuManagerLinkgrabberTableContext getInstance() {
+        return MenuManagerLinkgrabberTableContext.INSTANCE;
     }
 
     @Override
@@ -58,21 +64,24 @@ public class LinkgrabberContextMenuManager extends ContextMenuManager<CrawledPac
      * {@link #getInstance()}.
      */
 
-    private LinkgrabberContextMenuManager() {
+    private MenuManagerLinkgrabberTableContext() {
         super();
 
     }
 
-    private static final int VERSION = 0;
+    @Override
+    public synchronized MenuContainerRoot getMenuData() {
+        return super.getMenuData();
+    }
 
     public MenuContainerRoot createDefaultStructure() {
         MenuContainerRoot mr = new MenuContainerRoot();
-        mr.setSource(VERSION);
 
         mr.add(AddLinksContextMenuAction.class);
         mr.add(AddContainerContextMenuAction.class);
+
         mr.add(new SeperatorData());
-        mr.add(new MenuItemData(new ActionData(ConfirmAutoAction.class)));
+        mr.add(new MenuItemData(new ActionData(ConfirmSelectionContextAction.class)));
         mr.add(new MenuItemData(new ActionData(ConfirmAllContextmenuAction.class)));
         mr.add(new SeperatorData());
         mr.add(new MenuItemData(new ActionData(AddLinksAction.class), false));
@@ -93,7 +102,9 @@ public class LinkgrabberContextMenuManager extends ContextMenuManager<CrawledPac
 
         mr.add(new SeperatorData());
         /* remove menu */
-        mr.add(RemoveSelectionLinkgrabberAction.class);
+
+        mr.add(setShortcut(new MenuItemData(setIconKey(new ActionData(GenericDeleteFromLinkgrabberContextAction.class).putSetup(GenericDeleteFromLinkgrabberContextAction.DELETE_ALL, true).putSetup(GenericDeleteFromLinkgrabberAction.ONLY_SELECTED_ITEMS, true).putSetup(AbstractContextMenuAction.ITEM_VISIBLE_FOR_EMPTY_SELECTION, false), IconKey.ICON_DELETE), true), KeyStroke.getKeyStroke(KeyEvent.VK_DELETE, 0)));
+
         mr.add(createCleanupMenu());
         mr.add(new SeperatorData());
         mr.add(new MenuItemData(new ActionData(LGMenuManagerAction.class)));
@@ -101,15 +112,24 @@ public class LinkgrabberContextMenuManager extends ContextMenuManager<CrawledPac
         return mr;
     }
 
+    private MenuItemData setShortcut(MenuItemData menuItemData, KeyStroke keyStroke) {
+        menuItemData.setShortcut(keyStroke == null ? null : keyStroke.toString());
+        return menuItemData;
+    }
+
     private LinkgrabberCleanUpSubMenu createCleanupMenu() {
         LinkgrabberCleanUpSubMenu cleanup = new LinkgrabberCleanUpSubMenu();
 
-        cleanup.add(RemoveAllLinkgrabberAction.class);
+        cleanup.add((new MenuItemData(setIconKey(new ActionData(GenericDeleteFromLinkgrabberContextAction.class).putSetup(GenericDeleteFromLinkgrabberContextAction.DELETE_ALL, true).putSetup(GenericDeleteFromLinkgrabberAction.ONLY_SELECTED_ITEMS, false).putSetup(AbstractContextMenuAction.ITEM_VISIBLE_FOR_EMPTY_SELECTION, true), IconKey.ICON_RESET), true)));
+        cleanup.add((new MenuItemData(setIconKey(new ActionData(GenericDeleteFromLinkgrabberContextAction.class).putSetup(GenericDeleteFromLinkgrabberContextAction.DELETE_DISABLED, true).putSetup(GenericDeleteFromLinkgrabberAction.ONLY_SELECTED_ITEMS, false).putSetup(AbstractContextMenuAction.ITEM_VISIBLE_FOR_EMPTY_SELECTION, true), IconKey.ICON_REMOVE_DISABLED), true)));
+
+        cleanup.add((new MenuItemData(setIconKey(new ActionData(GenericDeleteFromLinkgrabberContextAction.class).putSetup(GenericDeleteFromLinkgrabberContextAction.DELETE_OFFLINE, true).putSetup(GenericDeleteFromLinkgrabberAction.ONLY_SELECTED_ITEMS, false).putSetup(AbstractContextMenuAction.ITEM_VISIBLE_FOR_EMPTY_SELECTION, true), IconKey.ICON_REMOVE_OFFLINE), true)));
+
         cleanup.add(RemoveNonSelectedAction.class);
-        cleanup.add(RemoveOfflineAction.class);
+
         cleanup.add(RemoveIncompleteArchives.class);
         cleanup.add(new SeperatorData());
-        cleanup.add(ResetPopupAction.class);
+        cleanup.add(setName(new ActionData(ResetAction.class), _GUI._.ResetPopupAction_ResetPopupAction_()));
 
         return cleanup;
     }
@@ -180,7 +200,7 @@ public class LinkgrabberContextMenuManager extends ContextMenuManager<CrawledPac
 
     @Override
     protected void updateGui() {
-        ((LinkGrabberTable) LinkGrabberTableModel.getInstance().getTable()).updateContextShortcuts(this);
+        ((LinkGrabberTable) LinkGrabberTableModel.getInstance().getTable()).updateContextShortcuts();
 
     }
 

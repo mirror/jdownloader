@@ -16,13 +16,13 @@ import org.appwork.utils.ImageProvider.ImageProvider;
 import org.appwork.utils.event.queue.QueueAction;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.swing.dialog.Dialog;
-import org.jdownloader.actions.SelectionAppAction;
+import org.jdownloader.actions.AbstractSelectionContextAction;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.plugins.SkipReason;
 
-public class SkipAction extends SelectionAppAction<FilePackage, DownloadLink> {
+public class SkipAction extends AbstractSelectionContextAction<FilePackage, DownloadLink> {
 
     enum State {
         ALL_SKIPPED,

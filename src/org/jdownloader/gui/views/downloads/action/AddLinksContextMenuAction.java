@@ -2,30 +2,26 @@ package org.jdownloader.gui.views.downloads.action;
 
 import java.awt.event.ActionEvent;
 
-import jd.gui.swing.jdgui.menu.actions.AddContainerAction;
-import jd.plugins.DownloadLink;
-import jd.plugins.FilePackage;
-
-import org.jdownloader.actions.SelectionAppAction;
+import org.jdownloader.actions.AbstractContextMenuAction;
 import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.gui.views.SelectionInfo;
+import org.jdownloader.gui.views.linkgrabber.actions.AddLinksAction;
 
-public class AddLinksContextMenuAction extends SelectionAppAction<FilePackage, DownloadLink> {
+public class AddLinksContextMenuAction extends AbstractContextMenuAction {
 
     private static final long serialVersionUID = 1901008532686173167L;
 
-    public AddLinksContextMenuAction(final SelectionInfo<FilePackage, DownloadLink> si) {
-        super(si);
+    public AddLinksContextMenuAction() {
+        super();
         setItemVisibleForEmptySelection(true);
         setItemVisibleForSelections(false);
-        setName(_GUI._.action_addcontainer());
-        setTooltipText(_GUI._.action_addcontainer_tooltip());
-        setIconKey("load");
+        setName(_GUI._.AddLinksToLinkgrabberAction());
+        setIconKey("add");
+        setTooltipText(_GUI._.AddLinksAction_AddLinksAction_tt());
 
     }
 
     public void actionPerformed(ActionEvent e) {
-        new AddContainerAction().actionPerformed(e);
+        new AddLinksAction().actionPerformed(e);
     }
 
 }

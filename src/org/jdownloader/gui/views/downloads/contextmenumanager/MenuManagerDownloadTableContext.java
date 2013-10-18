@@ -48,17 +48,17 @@ import org.jdownloader.gui.views.downloads.table.DownloadsTable;
 import org.jdownloader.gui.views.downloads.table.DownloadsTableModel;
 import org.jdownloader.gui.views.linkgrabber.contextmenu.SortAction;
 
-public class DownloadListContextMenuManager extends ContextMenuManager<FilePackage, DownloadLink> {
+public class MenuManagerDownloadTableContext extends ContextMenuManager<FilePackage, DownloadLink> {
 
-    private static final DownloadListContextMenuManager INSTANCE = new DownloadListContextMenuManager();
+    private static final MenuManagerDownloadTableContext INSTANCE = new MenuManagerDownloadTableContext();
 
     /**
      * get the only existing instance of DownloadListContextMenuManager. This is a singleton
      * 
      * @return
      */
-    public static DownloadListContextMenuManager getInstance() {
-        return DownloadListContextMenuManager.INSTANCE;
+    public static MenuManagerDownloadTableContext getInstance() {
+        return MenuManagerDownloadTableContext.INSTANCE;
     }
 
     /**
@@ -66,7 +66,7 @@ public class DownloadListContextMenuManager extends ContextMenuManager<FilePacka
      * {@link #getInstance()}.
      */
 
-    private DownloadListContextMenuManager() {
+    private MenuManagerDownloadTableContext() {
         super();
 
     }
@@ -75,14 +75,12 @@ public class DownloadListContextMenuManager extends ContextMenuManager<FilePacka
         return true;
     }
 
-    private static final int VERSION = 0;
-
     public MenuContainerRoot createDefaultStructure() {
         MenuContainerRoot mr = new MenuContainerRoot();
-        mr.setSource(VERSION);
 
         mr.add(AddLinksContextMenuAction.class);
         mr.add(AddContainerContextMenuAction.class);
+
         mr.add(new SeperatorData());
         // mr.add()
         mr.add(createSettingsMenu());

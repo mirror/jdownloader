@@ -12,7 +12,7 @@ import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.downloads.table.DownloadsTableModel;
 import org.jdownloader.plugins.FinalLinkState;
 
-public class DeleteSelectedAndFailedLinksAction extends DeleteAppAction {
+public class DeleteSelectedAndFailedLinksAction extends AbstractDeleteSelectionFromDownloadlistAction {
 
     /**
      * 
@@ -34,7 +34,7 @@ public class DeleteSelectedAndFailedLinksAction extends DeleteAppAction {
                 nodesToDelete.add(dl);
             }
         }
-        deleteLinksRequest(new SelectionInfo<FilePackage, DownloadLink>(null, nodesToDelete, null, null, e, DownloadsTableModel.getInstance().getTable()), _GUI._.DeleteFailedFromListAndDiskAction_actionPerformed());
+        DownloadTabActionUtils.deleteLinksRequest(new SelectionInfo<FilePackage, DownloadLink>(null, nodesToDelete, null, null, e, DownloadsTableModel.getInstance().getTable()), _GUI._.DeleteFailedFromListAndDiskAction_actionPerformed());
     }
 
     @Override

@@ -137,7 +137,6 @@ public class Account extends Property {
     public void setValid(final boolean b) {
         valid = b;
 
-        if (valid) setProperty(LATEST_VALID_TIMESTAMP, System.currentTimeMillis());
         if (valid == false) {
             this.setEnabled(false);
         }
@@ -323,6 +322,10 @@ public class Account extends Property {
             super.setProperty(key, value);
         }
 
+    }
+
+    public void setLastValidTimestamp(long currentTimeMillis) {
+        setProperty(LATEST_VALID_TIMESTAMP, currentTimeMillis);
     }
 
 }

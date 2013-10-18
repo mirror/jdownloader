@@ -7,11 +7,11 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
 import org.appwork.utils.os.CrossSystem;
-import org.jdownloader.actions.SelectionAppAction;
+import org.jdownloader.actions.AbstractSelectionContextAction;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo;
 
-public class OpenInBrowserAction extends SelectionAppAction<FilePackage, DownloadLink> {
+public class OpenInBrowserAction extends AbstractSelectionContextAction<FilePackage, DownloadLink> {
 
     private static final long serialVersionUID = 7911375550836173693L;
     private static final int  MAX_LINKS        = 4;

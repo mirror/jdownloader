@@ -25,9 +25,7 @@ public class CFG_LINKFILTER {
     // = false
     public static final BooleanKeyHandler                  LINKGRABBER_ADD_AT_TOP                     = SH.getKeyHandler("LinkgrabberAddAtTop", BooleanKeyHandler.class);
     // Keyhandler interface
-    // org.jdownloader.controlling.filter.LinkFilterSettings.linkgrabberquicksettingsvisible
-    // = true
-    public static final BooleanKeyHandler                  LINKGRABBER_QUICK_SETTINGS_VISIBLE         = SH.getKeyHandler("LinkgrabberQuickSettingsVisible", BooleanKeyHandler.class);
+
     // Keyhandler interface
     // org.jdownloader.controlling.filter.LinkFilterSettings.exceptionasquickfilterenabled
     // = true

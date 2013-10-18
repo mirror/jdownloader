@@ -6,7 +6,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
 import org.jdownloader.actions.AppAction;
-import org.jdownloader.gui.jdtrayicon.TrayIconMenuManager;
+import org.jdownloader.gui.jdtrayicon.MenuManagerTrayIcon;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo;
 
@@ -23,7 +23,7 @@ public class TrayMenuManagerAction extends AppAction {
 
     @Override
     public void actionPerformed(ActionEvent e) {
-        TrayIconMenuManager.getInstance().openGui();
+        MenuManagerTrayIcon.getInstance().openGui();
 
     }
 

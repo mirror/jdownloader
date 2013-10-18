@@ -8,7 +8,7 @@ import jd.plugins.FilePackage;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo;
 
-public class DeleteSelectedLinks extends DeleteAppAction {
+public class DeleteSelectedLinks extends AbstractDeleteSelectionFromDownloadlistAction {
 
     public DeleteSelectedLinks(SelectionInfo<FilePackage, DownloadLink> si) {
         super(si);
@@ -18,6 +18,6 @@ public class DeleteSelectedLinks extends DeleteAppAction {
 
     public void actionPerformed(ActionEvent e) {
         if (!isEnabled()) return;
-        deleteLinksRequest(getSelection(), _GUI._.RemoveSelectionAction_actionPerformed_());
+        DownloadTabActionUtils.deleteLinksRequest(getSelection(), _GUI._.RemoveSelectionAction_actionPerformed_());
     }
 }

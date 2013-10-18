@@ -22,7 +22,7 @@ import org.jdownloader.controlling.contextmenu.MenuContainer;
 import org.jdownloader.controlling.contextmenu.MenuItemData;
 import org.jdownloader.controlling.contextmenu.gui.MenuBuilder;
 import org.jdownloader.extensions.ExtensionNotLoadedException;
-import org.jdownloader.gui.mainmenu.MainMenuManager;
+import org.jdownloader.gui.mainmenu.MenuManagerMainmenu;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.logging.LogController;
 
@@ -81,7 +81,7 @@ public class JDMenuBar extends JMenuBar implements MouseListener {
 
         removeAll();
 
-        new MenuBuilder(MainMenuManager.getInstance(), this, null, MainMenuManager.getInstance().getMenuData()) {
+        new MenuBuilder(MenuManagerMainmenu.getInstance(), this, null, MenuManagerMainmenu.getInstance().getMenuData()) {
 
             @Override
             protected void addContainer(JComponent root, MenuItemData inst) throws InstantiationException, IllegalAccessException, InvocationTargetException, ClassNotFoundException, NoSuchMethodException, ExtensionNotLoadedException {
@@ -179,7 +179,7 @@ public class JDMenuBar extends JMenuBar implements MouseListener {
 
         if (getMenuCount() == 0) {
 
-            new MenuBuilder(MainMenuManager.getInstance(), this, null, MainMenuManager.getInstance().createDefaultStructure()) {
+            new MenuBuilder(MenuManagerMainmenu.getInstance(), this, null, MenuManagerMainmenu.getInstance().createDefaultStructure()) {
 
                 @Override
                 protected void addContainer(JComponent root, MenuItemData inst) throws InstantiationException, IllegalAccessException, InvocationTargetException, ClassNotFoundException, NoSuchMethodException, ExtensionNotLoadedException {
@@ -211,7 +211,7 @@ public class JDMenuBar extends JMenuBar implements MouseListener {
     public void mousePressed(MouseEvent e) {
         if (e.isPopupTrigger() || e.getButton() == 3) {
 
-            MainMenuManager.getInstance().openGui();
+            MenuManagerMainmenu.getInstance().openGui();
         }
     }
 

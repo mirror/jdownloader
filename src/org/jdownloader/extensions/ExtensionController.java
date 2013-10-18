@@ -42,10 +42,10 @@ import org.jdownloader.controlling.contextmenu.ContextMenuManager;
 import org.jdownloader.controlling.contextmenu.MenuContainerRoot;
 import org.jdownloader.controlling.contextmenu.MenuExtenderHandler;
 import org.jdownloader.controlling.contextmenu.MenuItemData;
-import org.jdownloader.gui.mainmenu.MainMenuManager;
+import org.jdownloader.gui.mainmenu.MenuManagerMainmenu;
 import org.jdownloader.gui.mainmenu.container.ExtensionsMenuContainer;
 import org.jdownloader.gui.mainmenu.container.OptionalContainer;
-import org.jdownloader.gui.toolbar.MainToolbarManager;
+import org.jdownloader.gui.toolbar.MenuManagerMainToolbar;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.translate._JDT;
 
@@ -152,8 +152,8 @@ public class ExtensionController implements MenuExtenderHandler {
             } catch (final Throwable e) {
                 Log.exception(e);
             }
-            MainMenuManager.getInstance().registerExtender(this);
-            MainToolbarManager.getInstance().registerExtender(this);
+            MenuManagerMainmenu.getInstance().registerExtender(this);
+            MenuManagerMainToolbar.getInstance().registerExtender(this);
             list = Collections.unmodifiableList(ret);
             SecondLevelLaunch.GUI_COMPLETE.executeWhenReached(new Runnable() {
 
@@ -520,9 +520,9 @@ public class ExtensionController implements MenuExtenderHandler {
                 return o1.getName().compareTo(o2.getName());
             }
         });
-        if (manager instanceof MainToolbarManager) {
+        if (manager instanceof MenuManagerMainToolbar) {
             return updateMainToolbar(pluginsOptional, mr);
-        } else if (manager instanceof MainMenuManager) { return updateMainMenu(pluginsOptional, mr); }
+        } else if (manager instanceof MenuManagerMainmenu) { return updateMainMenu(pluginsOptional, mr); }
         return null;
     }
 

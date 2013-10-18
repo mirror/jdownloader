@@ -12,7 +12,7 @@ import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.downloads.table.DownloadsTableModel;
 import org.jdownloader.plugins.FinalLinkState;
 
-public class DeleteSelectedFinishedLinksAction extends DeleteAppAction {
+public class DeleteSelectedFinishedLinksAction extends AbstractDeleteSelectionFromDownloadlistAction {
 
     public DeleteSelectedFinishedLinksAction(SelectionInfo<FilePackage, DownloadLink> si) {
         super(si);
@@ -29,7 +29,7 @@ public class DeleteSelectedFinishedLinksAction extends DeleteAppAction {
                 nodesToDelete.add(dl);
             }
         }
-        deleteLinksRequest(new SelectionInfo<FilePackage, DownloadLink>(null, nodesToDelete, null, null, e, DownloadsTableModel.getInstance().getTable()), _GUI._.DeleteSelectedFinishedLinksAction_actionPerformed());
+        DownloadTabActionUtils.deleteLinksRequest(new SelectionInfo<FilePackage, DownloadLink>(null, nodesToDelete, null, null, e, DownloadsTableModel.getInstance().getTable()), _GUI._.DeleteSelectedFinishedLinksAction_actionPerformed());
     }
 
     @Override

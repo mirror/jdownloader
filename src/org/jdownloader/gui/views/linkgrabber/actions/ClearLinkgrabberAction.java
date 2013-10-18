@@ -9,9 +9,10 @@ import org.appwork.utils.event.queue.QueueAction;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogNoAnswerException;
 import org.jdownloader.actions.AppAction;
+import org.jdownloader.actions.CachableInterface;
 import org.jdownloader.gui.translate._GUI;
 
-public class ClearLinkgrabberAction extends AppAction {
+public class ClearLinkgrabberAction extends AppAction implements CachableInterface {
     /**
      * 
      */
@@ -35,5 +36,9 @@ public class ClearLinkgrabberAction extends AppAction {
             });
         } catch (DialogNoAnswerException e1) {
         }
+    }
+
+    @Override
+    public void setData(String data) {
     }
 }

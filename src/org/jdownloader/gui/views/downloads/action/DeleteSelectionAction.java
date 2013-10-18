@@ -8,7 +8,7 @@ import jd.plugins.FilePackage;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo;
 
-public class DeleteSelectionAction extends DeleteAppAction {
+public class DeleteSelectionAction extends AbstractDeleteSelectionFromDownloadlistAction {
 
     private static final long serialVersionUID = -5721724901676405104L;
 
@@ -20,7 +20,7 @@ public class DeleteSelectionAction extends DeleteAppAction {
 
     public void actionPerformed(ActionEvent e) {
         if (!isEnabled()) return;
-        deleteLinksRequest(getSelection(), _GUI._.RemoveSelectionAction_actionPerformed_());
+        DownloadTabActionUtils.deleteLinksRequest(getSelection(), _GUI._.RemoveSelectionAction_actionPerformed_());
     }
 
 }

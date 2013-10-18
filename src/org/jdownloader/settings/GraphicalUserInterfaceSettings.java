@@ -142,12 +142,6 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
     public void setSwitchToLinkgrabberTabOnNewLinksAddedEnabled(boolean b);
 
     @AboutConfig
-    @DescriptionForConfigEntry("Enable/Disable the Linkgrabber Sidebar")
-    @DefaultBooleanValue(true)
-    @RequiresRestart("A JDownloader Restart is Required")
-    boolean isLinkgrabberSidebarEnabled();
-
-    @AboutConfig
     @DescriptionForConfigEntry("Enable/Disable the DownloadPanel Overview panel ")
     @DefaultBooleanValue(false)
     @RequiresRestart("A JDownloader Restart is Required")
@@ -192,12 +186,6 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
     boolean isOverviewPanelSmartInfoVisible();
 
     void setOverviewPanelSmartInfoVisible(boolean b);
-
-    @AboutConfig
-    @DescriptionForConfigEntry("Enable/Disable the Linkgrabber Sidebar QuicktoggleButton")
-    @DefaultBooleanValue(true)
-    @RequiresRestart("A JDownloader Restart is Required")
-    boolean isLinkgrabberSidebarToggleButtonEnabled();
 
     @DefaultBooleanValue(true)
     @RequiresRestart("A JDownloader Restart is Required")
@@ -291,10 +279,6 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
 
     void setLinkgrabberAutoTabSwitchEnabled(boolean b);
 
-    void setLinkgrabberSidebarEnabled(boolean b);
-
-    void setLinkgrabberSidebarToggleButtonEnabled(boolean b);
-
     void setLinkgrabberSidebarVisible(boolean b);
 
     void setLogViewVisible(boolean b);
@@ -364,20 +348,6 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
     boolean isSpeedmeterAntiAliasingEnabled();
 
     void setSpeedmeterAntiAliasingEnabled(boolean b);
-
-    public static enum ClearAction {
-        @EnumLabel("Clear List only")
-        CLEAR_LIST,
-        @EnumLabel("Reset full Panel")
-        RESET_PANEL
-    }
-
-    @DefaultEnumValue("CLEAR_LIST")
-    @AboutConfig
-    @RequiresRestart("A JDownloader Restart is Required")
-    ClearAction getLinkgrabberDefaultClearAction();
-
-    void setLinkgrabberDefaultClearAction(ClearAction action);
 
     public static enum DeleteLinksDialogOption {
         @EnumLabel("Always hide Dialog and never delete Files from Harddisk")

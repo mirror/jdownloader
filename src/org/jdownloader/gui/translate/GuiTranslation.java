@@ -2821,8 +2821,11 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "finished" })
     String lit_finished();
 
+    @Default(lngs = { "en" }, values = { "Delete Selected Links" })
+    String GenericDeleteSelectedToolbarAction_updateName_object_selected_all();
+
     @Default(lngs = { "en" }, values = { "Delete Links: Selected & " })
-    String GenericDeleteSelectedToolbarAction_updateName_object_();
+    String GenericDeleteSelectedToolbarAction_updateName_object_selected();
 
     @Default(lngs = { "en" }, values = { "Load Proxy Setup" })
     String SetProxySetupAction_SetProxySetupAction_();
@@ -3211,8 +3214,11 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "There is nothing to delete here!" })
     String GenericDeleteSelectedToolbarAction_actionPerformed_nothing_to_delete_();
 
-    @Default(lngs = { "en" }, values = { "Delete Links: " })
+    @Default(lngs = { "en" }, values = { "Clear Downloadlist" })
     String GenericDeleteSelectedToolbarAction_updateName_object_all();
+
+    @Default(lngs = { "en" }, values = { "Delete Links: " })
+    String GenericDeleteSelectedToolbarAction_updateName_object();
 
     @Default(lngs = { "en" }, values = { "Below, all premium accounts and the 'free download' option for %s1 are listed. You can set up a custom order here. JDownloader will try to use the account(s) in the first group for downloading. If all Accounts in the first group fail, it will try the second group, and so on. If there are several accounts in one group, the group's 'Distribution Rule' will be used to select the next account." })
     String EditHosterRuleDialog_layoutDialogContent_description_(String hoster);
@@ -3280,9 +3286,6 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Download Tab Bottom Panel" })
     String gui_config_menumanager_downloadBottom();
 
-    @Default(lngs = { "en" }, values = { "Linkgrabber Tab Bottom Panel" })
-    String gui_config_menumanager_linkgrabberBottom();
-
     @Default(lngs = { "en" }, values = { "Apply" })
     String lit_apply();
 
@@ -3291,5 +3294,41 @@ public interface GuiTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Horizontal expanding empty Box" })
     String HorizontalBoxItem_HorizontalBoxItem();
+
+    @Default(lngs = { "en" }, values = { "All visible" })
+    String lit_all_visible();
+
+    @Default(lngs = { "en" }, values = { "Are you sure that you want to do this:\r\n%s1" })
+    String GenericDeleteFromDownloadlistAction_actionPerformed_ask_(String taskname);
+
+    @Default(lngs = { "en" }, values = { "Clear Linkgrabber List" })
+    String GenericDeleteFromLinkgrabberAction_createName_updateName_object_all();
+
+    @Default(lngs = { "en" }, values = { "Are you sure that you want to do this: %s1\r\nLinks affected: %s2" })
+    String GenericDeleteFromLinkgrabberContextAction_actionPerformed_ask_(String createName, int linkcount);
+
+    @Default(lngs = { "en" }, values = { "Auto Confirm Button" })
+    String AutoConfirmMenuLink_getName();
+
+    @Default(lngs = { "en" }, values = { "Sidebar Seperator: |" })
+    String LeftRightDividerItem_LeftRightDividerItem();
+
+    @Default(lngs = { "en" }, values = { "Linkgrabber Bottom Bar" })
+    String gui_config_menumanager_linkgrabberBottom();
+
+    @Default(lngs = { "en" }, values = { "Overview Panel visible" })
+    String DownloadsOverviewPanelToggleAction_DownloadsOverviewPanelToggleAction();
+
+    @Default(lngs = { "en" }, values = { "Overview Panel visible" })
+    String LinkgrabberOverviewPanelToggleAction_LinkgrabberOverviewPanelToggleAction();
+
+    @Default(lngs = { "en" }, values = { "Sidebar visible" })
+    String LinkgrabberSidebarToggleAction_LinkgrabberSidebarToggleAction();
+
+    @Default(lngs = { "en" }, values = { "Add & Analyse Links from your Clipboard" })
+    String PasteLinksAction_PasteLinksAction();
+
+    @Default(lngs = { "en" }, values = { "Add & DeepAnalyse Links from your Clipboard" })
+    String PasteLinksAction_PasteLinksAction_deep();
 
 }

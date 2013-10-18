@@ -64,7 +64,7 @@ import org.jdownloader.controlling.contextmenu.MenuLink;
 import org.jdownloader.controlling.contextmenu.SeperatorData;
 import org.jdownloader.controlling.contextmenu.gui.ExtPopupMenu;
 import org.jdownloader.controlling.contextmenu.gui.MenuBuilder;
-import org.jdownloader.gui.toolbar.MainToolbarManager;
+import org.jdownloader.gui.toolbar.MenuManagerMainToolbar;
 import org.jdownloader.gui.toolbar.action.ToolBarAction;
 import org.jdownloader.gui.views.downloads.QuickSettingsPopup;
 import org.jdownloader.images.NewTheme;
@@ -165,7 +165,7 @@ public class MainToolBar extends JToolBar implements MouseListener, DownloadWatc
 
     private void initToolbar() {
 
-        List<MenuItemData> list = MainToolbarManager.getInstance().getMenuData().getItems();
+        List<MenuItemData> list = MenuManagerMainToolbar.getInstance().getMenuData().getItems();
         this.setLayout(new MigLayout("ins 0 3 0 0", "[]", "[grow,32!]"));
         AbstractButton ab;
         // System.out.println(this.getColConstraints(list.length));
@@ -204,7 +204,7 @@ public class MainToolBar extends JToolBar implements MouseListener, DownloadWatc
                             Object src = e.getSource();
                             if (e.getSource() instanceof Component) {
                                 lroot = new ExtPopupMenu();
-                                new MenuBuilder(MainToolbarManager.getInstance(), lroot, null, (MenuContainer) menudata).run();
+                                new MenuBuilder(MenuManagerMainToolbar.getInstance(), lroot, null, (MenuContainer) menudata).run();
                                 Component button = (Component) e.getSource();
                                 Dimension prefSize = lroot.getPreferredSize();
                                 int[] insets = LAFOptions.getInstance().getPopupBorderInsets();
@@ -444,7 +444,7 @@ public class MainToolBar extends JToolBar implements MouseListener, DownloadWatc
     @Override
     public void mousePressed(MouseEvent e) {
         if (e.isPopupTrigger() || e.getButton() == 3) {
-            MainToolbarManager.getInstance().openGui();
+            MenuManagerMainToolbar.getInstance().openGui();
         }
     }
 

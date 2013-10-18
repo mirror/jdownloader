@@ -27,32 +27,14 @@ import org.jdownloader.controlling.contextmenu.MenuItemData;
 import org.jdownloader.controlling.contextmenu.SeperatorData;
 
 public class MenuManagerTree extends JTree {
-    // private void expandAll(boolean expand) {
-    // Object root = getModel().getRoot();
-    //
-    // // Traverse tree from root
-    // expandAll(new TreePath(root), expand);
-    // }
-    //
-    // private void expandAll(TreePath parent, boolean expand) {
-    // // Traverse children
-    // MenuItemData node = (MenuItemData) parent.getLastPathComponent();
-    // if (node.getItems() != null) {
-    // for (MenuItemData mid : node.getItems()) {
-    // TreePath path = parent.pathByAddingChild(mid);
-    // expandAll(path, expand);
-    // }
-    // }
-    //
-    // if (expand) {
-    // expandPath(parent);
-    // } else {
-    // collapsePath(parent);
-    // }
-    // }
+    public void expandAll() {
+        for (int i = 0; i < getRowCount(); i++) {
+            expandRow(i);
+        }
+    }
 
-    private ManagerTreeModel model;
-    private MenuManagerDialog     managerFrame;
+    private ManagerTreeModel  model;
+    private MenuManagerDialog managerFrame;
 
     public TreeUI getUI() {
         return (TreeUI) ui;
@@ -62,24 +44,42 @@ public class MenuManagerTree extends JTree {
         super(mf.getModel());
         this.model = mf.getModel();
         model.setTree(this);
+        model.addTreeModelListener(new TreeModelListener() {
+
+            @Override
+            public void treeStructureChanged(TreeModelEvent e) {
+                // expandAll(true);
+            }
+
+            @Override
+            public void treeNodesRemoved(TreeModelEvent e) {
+                // expandAll(true);
+            }
+
+            @Override
+            public void treeNodesInserted(TreeModelEvent e) {
+                // expandAll(true);
+            }
+
+            @Override
+            public void treeNodesChanged(TreeModelEvent e) {
+                // expandAll(true);
+            }
+        });
+
+        // addTreeWillExpandListener(new TreeWillExpandListener() {
+        // public void treeWillExpand(TreeExpansionEvent e) {
+        // }
+        //
+        // public void treeWillCollapse(TreeExpansionEvent e) throws ExpandVetoException {
+        // throw new ExpandVetoException(e, "you can't collapse this JTree");
+        // }
+        // });
+        expandAll();
         this.managerFrame = mf;
         getSelectionModel().setSelectionMode(TreeSelectionModel.SINGLE_TREE_SELECTION);
 
         setOpaque(true);
-        // setExpandsSelectedPaths(true);
-        // addTreeWillExpandListener(new TreeWillExpandListener() {
-        //
-        // @Override
-        // public void treeWillExpand(TreeExpansionEvent event) throws ExpandVetoException {
-        // }
-        //
-        // @Override
-        // public void treeWillCollapse(TreeExpansionEvent event) throws ExpandVetoException {
-        // throw new ExpandVetoException(event);
-        // }
-        //
-        // });
-        // expandAll(true);
 
         setCellRenderer(new Renderer());
         setRootVisible(false);

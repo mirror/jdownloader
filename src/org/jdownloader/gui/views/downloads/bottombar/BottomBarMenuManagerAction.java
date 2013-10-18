@@ -6,6 +6,7 @@ import org.jdownloader.actions.AppAction;
 import org.jdownloader.actions.CachableInterface;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.gui.views.downloads.MenuManagerDownloadTabBottomBar;
 
 public class BottomBarMenuManagerAction extends AppAction implements CachableInterface {
 
@@ -17,7 +18,7 @@ public class BottomBarMenuManagerAction extends AppAction implements CachableInt
 
     @Override
     public void actionPerformed(ActionEvent e) {
-        BottomBarMenuManager.getInstance().openGui();
+        MenuManagerDownloadTabBottomBar.getInstance().openGui();
 
     }
 

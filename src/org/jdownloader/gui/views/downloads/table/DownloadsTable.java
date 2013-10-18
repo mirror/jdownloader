@@ -38,8 +38,8 @@ import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.dialog.Dialog;
+import org.jdownloader.actions.AbstractSelectionContextAction;
 import org.jdownloader.actions.AppAction;
-import org.jdownloader.actions.SelectionAppAction;
 import org.jdownloader.controlling.contextmenu.MenuContainer;
 import org.jdownloader.controlling.contextmenu.MenuItemData;
 import org.jdownloader.controlling.contextmenu.MenuLink;
@@ -48,9 +48,9 @@ import org.jdownloader.gui.helpdialogs.HelpDialog;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.components.packagetable.PackageControllerTable;
+import org.jdownloader.gui.views.downloads.MenuManagerDownloadTabBottomBar;
 import org.jdownloader.gui.views.downloads.action.DeleteSelectionAction;
-import org.jdownloader.gui.views.downloads.bottombar.BottomBarMenuManager;
-import org.jdownloader.gui.views.downloads.contextmenumanager.DownloadListContextMenuManager;
+import org.jdownloader.gui.views.downloads.contextmenumanager.MenuManagerDownloadTableContext;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
@@ -245,10 +245,10 @@ public class DownloadsTable extends PackageControllerTable<FilePackage, Download
             if (map != null && am != null && isEnabled()) {
                 final Object binding = map.get(stroke);
                 final Action action = (binding == null) ? null : am.get(binding);
-                if (action != null && action instanceof SelectionAppAction) {
+                if (action != null && action instanceof AbstractSelectionContextAction) {
 
-                    SelectionInfo<FilePackage, DownloadLink> si = new SelectionInfo<FilePackage, DownloadLink>(getModel().getObjectbyRow(getSelectionModel().getLeadSelectionIndex()), getModel().getSelectedObjects(), null, evt, null, this);
-                    ((SelectionAppAction) action).setSelection(si);
+                    ((AbstractSelectionContextAction) action).setSelection(getModel().createSelectionInfo());
+
                     if (!action.isEnabled()) {
 
                         Toolkit.getDefaultToolkit().beep();
@@ -291,8 +291,8 @@ public class DownloadsTable extends PackageControllerTable<FilePackage, Download
         }
 
         shortCutActions = new HashMap<KeyStroke, Action>();
-        fillActions(DownloadListContextMenuManager.getInstance().getMenuData());
-        fillActions(BottomBarMenuManager.getInstance().getMenuData());
+        fillActions(MenuManagerDownloadTableContext.getInstance().getMenuData());
+        fillActions(MenuManagerDownloadTabBottomBar.getInstance().getMenuData());
 
     }
 

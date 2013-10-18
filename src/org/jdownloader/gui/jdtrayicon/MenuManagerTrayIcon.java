@@ -29,17 +29,17 @@ import org.jdownloader.gui.jdtrayicon.actions.TrayUpdateAction;
 import org.jdownloader.gui.jdtrayicon.translate._TRAY;
 import org.jdownloader.gui.views.SelectionInfo;
 
-public class TrayIconMenuManager extends ContextMenuManager<FilePackage, DownloadLink> {
+public class MenuManagerTrayIcon extends ContextMenuManager<FilePackage, DownloadLink> {
 
-    private static final TrayIconMenuManager INSTANCE = new TrayIconMenuManager();
+    private static final MenuManagerTrayIcon INSTANCE = new MenuManagerTrayIcon();
 
     /**
      * get the only existing instance of DownloadListContextMenuManager. This is a singleton
      * 
      * @return
      */
-    public static TrayIconMenuManager getInstance() {
-        return TrayIconMenuManager.INSTANCE;
+    public static MenuManagerTrayIcon getInstance() {
+        return MenuManagerTrayIcon.INSTANCE;
     }
 
     /**
@@ -47,7 +47,7 @@ public class TrayIconMenuManager extends ContextMenuManager<FilePackage, Downloa
      * {@link #getInstance()}.
      */
 
-    private TrayIconMenuManager() {
+    private MenuManagerTrayIcon() {
         super();
 
     }
@@ -57,11 +57,9 @@ public class TrayIconMenuManager extends ContextMenuManager<FilePackage, Downloa
 
     }
 
-    private static final int VERSION = 0;
-
     public MenuContainerRoot createDefaultStructure() {
         MenuContainerRoot mr = new MenuContainerRoot();
-        mr.setSource(VERSION);
+
         // mr.add()
 
         mr.add(new MenuItemData(new ActionData(StartDownloadsAction.class).putSetup(StartDownloadsAction.HIDE_IF_DOWNLOADS_ARE_RUNNING, true)));

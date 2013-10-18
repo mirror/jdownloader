@@ -5,11 +5,11 @@ import java.awt.event.ActionEvent;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledPackage;
 
-import org.jdownloader.actions.SelectionAppAction;
+import org.jdownloader.actions.AbstractSelectionContextAction;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo;
 
-public class LGMenuManagerAction extends SelectionAppAction<CrawledPackage, CrawledLink> {
+public class LGMenuManagerAction extends AbstractSelectionContextAction<CrawledPackage, CrawledLink> {
 
     public LGMenuManagerAction(SelectionInfo<CrawledPackage, CrawledLink> si) {
         super(si);
@@ -20,6 +20,6 @@ public class LGMenuManagerAction extends SelectionAppAction<CrawledPackage, Craw
 
     @Override
     public void actionPerformed(ActionEvent e) {
-        LinkgrabberContextMenuManager.getInstance().openGui();
+        MenuManagerLinkgrabberTableContext.getInstance().openGui();
     }
 }

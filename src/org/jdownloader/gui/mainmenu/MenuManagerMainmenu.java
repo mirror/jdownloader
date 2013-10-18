@@ -39,17 +39,17 @@ import org.jdownloader.gui.views.components.packagetable.context.RenameAction;
 import org.jdownloader.gui.views.downloads.action.MenuManagerAction;
 import org.jdownloader.gui.views.linkgrabber.actions.AddContainerAction;
 
-public class MainMenuManager extends ContextMenuManager<FilePackage, DownloadLink> {
+public class MenuManagerMainmenu extends ContextMenuManager<FilePackage, DownloadLink> {
 
-    private static final MainMenuManager INSTANCE = new MainMenuManager();
+    private static final MenuManagerMainmenu INSTANCE = new MenuManagerMainmenu();
 
     /**
      * get the only existing instance of DownloadListContextMenuManager. This is a singleton
      * 
      * @return
      */
-    public static MainMenuManager getInstance() {
-        return MainMenuManager.INSTANCE;
+    public static MenuManagerMainmenu getInstance() {
+        return MenuManagerMainmenu.INSTANCE;
     }
 
     @Override
@@ -62,7 +62,7 @@ public class MainMenuManager extends ContextMenuManager<FilePackage, DownloadLin
      * {@link #getInstance()}.
      */
 
-    private MainMenuManager() {
+    private MenuManagerMainmenu() {
         super();
 
     }
@@ -72,11 +72,8 @@ public class MainMenuManager extends ContextMenuManager<FilePackage, DownloadLin
 
     }
 
-    private static final int VERSION = 0;
-
     public MenuContainerRoot createDefaultStructure() {
         MenuContainerRoot mr = new MenuContainerRoot();
-        mr.setSource(VERSION);
 
         mr.add(createFileMenu());
         if (!CrossSystem.isMac()) {

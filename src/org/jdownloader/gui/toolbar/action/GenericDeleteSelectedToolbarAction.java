@@ -1,5 +1,6 @@
 package org.jdownloader.gui.toolbar.action;
 
+import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
 import java.util.ArrayList;
 import java.util.List;
@@ -12,6 +13,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.FilePackage;
 
+import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogNoAnswerException;
 import org.jdownloader.controlling.contextmenu.Customizer;
@@ -19,13 +21,13 @@ import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.components.packagetable.PackageControllerTable;
-import org.jdownloader.gui.views.downloads.action.DeleteSelectedLinks;
+import org.jdownloader.gui.views.downloads.action.DownloadTabActionUtils;
 import org.jdownloader.gui.views.downloads.table.DownloadsTable;
 import org.jdownloader.gui.views.linkgrabber.LinkGrabberTable;
 import org.jdownloader.plugins.FinalLinkState;
 
 public class GenericDeleteSelectedToolbarAction extends SelectionBasedToolbarAction {
-
+    public static final String DELETE_ALL        = "deleteAll";
     public static final String DELETE_DISABLED   = "deleteDisabled";
     public static final String DELETE_FAILED     = "deleteFailed";
     public static final String DELETE_FINISHED   = "deleteFinished";
@@ -42,6 +44,29 @@ public class GenericDeleteSelectedToolbarAction extends SelectionBasedToolbarAct
 
     public void setOnlySelectedItems(boolean onlySelectedItems) {
         this.onlySelectedItems = onlySelectedItems;
+    }
+
+    private boolean deleteAll = false;
+
+    @Customizer(name = "Include All Links")
+    public boolean isDeleteAll() {
+        return deleteAll;
+    }
+
+    public void setDeleteAll(boolean deleteIdle) {
+        this.deleteAll = deleteIdle;
+        updateName();
+    }
+
+    private boolean ignoreFiltered = true;
+
+    @Customizer(name = "Exclude filtered Links")
+    public boolean isIgnoreFiltered() {
+        return ignoreFiltered;
+    }
+
+    public void setIgnoreFiltered(boolean ignoreFiltered) {
+        this.ignoreFiltered = ignoreFiltered;
     }
 
     private boolean            deleteFailed   = false;
@@ -73,13 +98,13 @@ public class GenericDeleteSelectedToolbarAction extends SelectionBasedToolbarAct
             if (ltable instanceof DownloadsTable && lfilteredDownloadLinks != null) {
                 SelectionInfo<FilePackage, DownloadLink> si = new SelectionInfo<FilePackage, DownloadLink>(null, lfilteredDownloadLinks, null, null, e, (DownloadsTable) ltable);
                 if (si.getChildren().size() > 0) {
-                    new DeleteSelectedLinks(si).deleteLinksRequest(si, getName() + "(" + si.getChildren().size() + ")" + "\r\n" + _GUI._.lit_are_you_sure());
+                    DownloadTabActionUtils.deleteLinksRequest(si, _GUI._.GenericDeleteFromDownloadlistAction_actionPerformed_ask_(this.createName()));
                     return;
                 }
             } else if (ltable instanceof LinkGrabberTable && lfilteredCrawledLinks != null && lfilteredCrawledLinks.size() > 0) {
                 try {
 
-                    Dialog.getInstance().showConfirmDialog(0, _GUI._.literally_are_you_sure(), getName() + "(" + lfilteredCrawledLinks.size() + ")" + "\r\n" + _GUI._.lit_are_you_sure(), null, _GUI._.literally_yes(), _GUI._.literall_no());
+                    Dialog.getInstance().showConfirmDialog(0, _GUI._.literally_are_you_sure(), _GUI._.GenericDeleteFromDownloadlistAction_actionPerformed_ask_(this.createName()), null, _GUI._.literally_yes(), _GUI._.literall_no());
                     LinkCollector.getInstance().removeChildren(lfilteredCrawledLinks);
 
                 } catch (DialogNoAnswerException e1) {
@@ -87,6 +112,8 @@ public class GenericDeleteSelectedToolbarAction extends SelectionBasedToolbarAct
                 return;
             }
         }
+
+        Toolkit.getDefaultToolkit().beep();
         Dialog.getInstance().showErrorDialog(_GUI._.GenericDeleteSelectedToolbarAction_actionPerformed_nothing_to_delete_());
     }
 
@@ -95,7 +122,13 @@ public class GenericDeleteSelectedToolbarAction extends SelectionBasedToolbarAct
         if (isOnlySelectedItems()) {
             currentSelection = getTable().getModel().getSelectedObjects();
         } else {
-            currentSelection = getTable().getModel().getElements();
+            if (isIgnoreFiltered()) {
+                currentSelection = getTable().getModel().getElements();
+            } else {
+
+                currentSelection = new ArrayList<AbstractNode>(getTable().getModel().getController().getAllChildren());
+            }
+
         }
         filteredDownloadLinks = null;
         filteredCrawledLinks = null;
@@ -108,6 +141,10 @@ public class GenericDeleteSelectedToolbarAction extends SelectionBasedToolbarAct
 
                 List<DownloadLink> nodesToDelete = new ArrayList<DownloadLink>();
                 for (DownloadLink dl : si.getChildren()) {
+                    if (isDeleteAll()) {
+                        nodesToDelete.add(dl);
+                        continue;
+                    }
                     if (isDeleteDisabled() && !dl.isEnabled()) {
                         nodesToDelete.add(dl);
                         continue;
@@ -132,6 +169,10 @@ public class GenericDeleteSelectedToolbarAction extends SelectionBasedToolbarAct
                 SelectionInfo<CrawledPackage, CrawledLink> si = new SelectionInfo<CrawledPackage, CrawledLink>(null, currentSelection, null, null, null, (LinkGrabberTable) ltable);
                 List<CrawledLink> filtered = new ArrayList<CrawledLink>();
                 for (CrawledLink cl : si.getChildren()) {
+                    if (isDeleteAll()) {
+                        filtered.add(cl);
+                        continue;
+                    }
                     if (isDeleteDisabled() && !cl.isEnabled()) {
                         filtered.add(cl);
                         continue;
@@ -207,36 +248,57 @@ public class GenericDeleteSelectedToolbarAction extends SelectionBasedToolbarAct
         // if (isDeleteFailed() && isDeleteDisabled() && isDeleteFinished() && isDeleteOffline()) {
         // setName(_GUI._.ContextMenuFactory_createPopup_cleanup_only());
         // } else {
-        StringBuilder sb = new StringBuilder();
-        if (isOnlySelectedItems()) {
-            sb.append(_GUI._.GenericDeleteSelectedToolbarAction_updateName_object_());
-        } else {
-            sb.append(_GUI._.GenericDeleteSelectedToolbarAction_updateName_object_all());
-        }
-        boolean first = true;
-        if (isDeleteDisabled()) {
-            if (!first) sb.append(" & ");
-            sb.append(_GUI._.lit_disabled());
-            first = false;
-        }
-        if (isDeleteFailed()) {
-            if (!first) sb.append(" & ");
-            first = false;
-            sb.append(_GUI._.lit_failed());
-        }
-        if (isDeleteFinished()) {
-            if (!first) sb.append(" & ");
-            first = false;
-            sb.append(_GUI._.lit_finished());
-        }
-        if (isDeleteOffline()) {
-            if (!first) sb.append(" & ");
-            first = false;
-            sb.append(_GUI._.lit_offline());
-        }
-        setName(sb.toString());
+        new EDTRunner() {
+
+            @Override
+            protected void runInEDT() {
+                setName(createName());
+            }
+        };
+
         // }
 
+    }
+
+    protected String createName() {
+        StringBuilder sb = new StringBuilder();
+
+        if (isDeleteAll()) {
+            if (isOnlySelectedItems()) {
+                sb.append(_GUI._.GenericDeleteSelectedToolbarAction_updateName_object_selected_all());
+            } else {
+                sb.append(_GUI._.GenericDeleteSelectedToolbarAction_updateName_object_all());
+            }
+        } else {
+            if (isOnlySelectedItems()) {
+                sb.append(_GUI._.GenericDeleteSelectedToolbarAction_updateName_object_selected());
+            } else {
+                sb.append(_GUI._.GenericDeleteSelectedToolbarAction_updateName_object());
+            }
+            boolean first = true;
+
+            if (isDeleteDisabled()) {
+                if (!first) sb.append(" & ");
+                sb.append(_GUI._.lit_disabled());
+                first = false;
+            }
+            if (isDeleteFailed()) {
+                if (!first) sb.append(" & ");
+                first = false;
+                sb.append(_GUI._.lit_failed());
+            }
+            if (isDeleteFinished()) {
+                if (!first) sb.append(" & ");
+                first = false;
+                sb.append(_GUI._.lit_finished());
+            }
+            if (isDeleteOffline()) {
+                if (!first) sb.append(" & ");
+                first = false;
+                sb.append(_GUI._.lit_offline());
+            }
+        }
+        return sb.toString();
     }
 
 }

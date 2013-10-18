@@ -13,11 +13,11 @@ import org.appwork.uio.UIOManager;
 import org.appwork.utils.event.queue.QueueAction;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogNoAnswerException;
-import org.jdownloader.actions.SelectionAppAction;
+import org.jdownloader.actions.AbstractSelectionContextAction;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo;
 
-public class RemoveNonSelectedAction extends SelectionAppAction<CrawledPackage, CrawledLink> {
+public class RemoveNonSelectedAction extends AbstractSelectionContextAction<CrawledPackage, CrawledLink> {
 
     /**
      * 

@@ -10,7 +10,7 @@ import jd.plugins.FilePackage;
 
 import org.appwork.swing.exttable.ExtColumn;
 import org.jdownloader.gui.views.SelectionInfo;
-import org.jdownloader.gui.views.downloads.contextmenumanager.DownloadListContextMenuManager;
+import org.jdownloader.gui.views.downloads.contextmenumanager.MenuManagerDownloadTableContext;
 
 public class DownloadTableContextMenuFactory {
     private static final DownloadTableContextMenuFactory INSTANCE = new DownloadTableContextMenuFactory();
@@ -24,14 +24,14 @@ public class DownloadTableContextMenuFactory {
         return DownloadTableContextMenuFactory.INSTANCE;
     }
 
-    private DownloadListContextMenuManager manager;
+    private MenuManagerDownloadTableContext manager;
 
     /**
      * Create a new instance of DownloadTableContextMenuFactory. This is a singleton class. Access the only existing instance by using
      * {@link #getInstance()}.
      */
     private DownloadTableContextMenuFactory() {
-        manager = DownloadListContextMenuManager.getInstance();
+        manager = MenuManagerDownloadTableContext.getInstance();
 
     }
 

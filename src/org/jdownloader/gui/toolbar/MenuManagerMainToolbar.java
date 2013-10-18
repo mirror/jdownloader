@@ -52,7 +52,6 @@ import org.jdownloader.gui.toolbar.action.MoveToBottomAction;
 import org.jdownloader.gui.toolbar.action.MoveToTopAction;
 import org.jdownloader.gui.toolbar.action.MoveUpAction;
 import org.jdownloader.gui.toolbar.action.RemoteCaptchaToogleAction;
-import org.jdownloader.gui.toolbar.action.ToolbarDeleteAction;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.components.packagetable.context.RenameAction;
@@ -60,17 +59,17 @@ import org.jdownloader.gui.views.downloads.action.MenuManagerAction;
 import org.jdownloader.gui.views.downloads.context.submenu.DeleteMenuContainer;
 import org.jdownloader.gui.views.linkgrabber.actions.AddContainerAction;
 
-public class MainToolbarManager extends ContextMenuManager<FilePackage, DownloadLink> implements GUIListener {
+public class MenuManagerMainToolbar extends ContextMenuManager<FilePackage, DownloadLink> implements GUIListener {
 
-    private static final MainToolbarManager INSTANCE = new MainToolbarManager();
+    private static final MenuManagerMainToolbar INSTANCE = new MenuManagerMainToolbar();
 
     /**
      * get the only existing instance of DownloadListContextMenuManager. This is a singleton
      * 
      * @return
      */
-    public static MainToolbarManager getInstance() {
-        return MainToolbarManager.INSTANCE;
+    public static MenuManagerMainToolbar getInstance() {
+        return MenuManagerMainToolbar.INSTANCE;
     }
 
     @Override
@@ -90,7 +89,7 @@ public class MainToolbarManager extends ContextMenuManager<FilePackage, Download
      * {@link #getInstance()}.
      */
 
-    private MainToolbarManager() {
+    private MenuManagerMainToolbar() {
         super();
 
         GUIEventSender.getInstance().addListener(this, true);
@@ -106,11 +105,8 @@ public class MainToolbarManager extends ContextMenuManager<FilePackage, Download
         return true;
     }
 
-    private static final int VERSION = 0;
-
     public MenuContainerRoot createDefaultStructure() {
         MenuContainerRoot mr = new MenuContainerRoot();
-        mr.setSource(VERSION);
 
         mr.add(StartDownloadsAction.class);
 
@@ -186,7 +182,7 @@ public class MainToolbarManager extends ContextMenuManager<FilePackage, Download
     private MenuItemData createDeleteMenu() {
         DeleteMenuContainer delete = new DeleteMenuContainer();
         delete.setVisible(false);
-        delete.add(ToolbarDeleteAction.class);
+        delete.add(setIconKey(new ActionData(GenericDeleteSelectedToolbarAction.class).putSetup(GenericDeleteSelectedToolbarAction.DELETE_ALL, true), IconKey.ICON_RESET));
         delete.add(setIconKey(new ActionData(GenericDeleteSelectedToolbarAction.class).putSetup(GenericDeleteSelectedToolbarAction.DELETE_DISABLED, true), IconKey.ICON_REMOVE_DISABLED));
         delete.add(setIconKey(new ActionData(GenericDeleteSelectedToolbarAction.class).putSetup(GenericDeleteSelectedToolbarAction.DELETE_FAILED, true), IconKey.ICON_REMOVE_FAILED));
         delete.add(setIconKey(new ActionData(GenericDeleteSelectedToolbarAction.class).putSetup(GenericDeleteSelectedToolbarAction.DELETE_FINISHED, true), IconKey.ICON_REMOVE_OK));
@@ -197,7 +193,7 @@ public class MainToolbarManager extends ContextMenuManager<FilePackage, Download
         return delete;
     }
 
-    private ActionData setIconKey(ActionData putSetup, String KEY) {
+    protected static ActionData setIconKey(ActionData putSetup, String KEY) {
         putSetup.setIconKey(KEY);
         return putSetup;
     }

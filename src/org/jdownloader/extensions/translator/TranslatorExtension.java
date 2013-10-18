@@ -62,11 +62,11 @@ import org.jdownloader.extensions.StopException;
 import org.jdownloader.extensions.translator.gui.GuiToggleAction;
 import org.jdownloader.extensions.translator.gui.TranslatorGui;
 import org.jdownloader.gui.jdtrayicon.translate.TrayiconTranslation;
-import org.jdownloader.gui.mainmenu.MainMenuManager;
+import org.jdownloader.gui.mainmenu.MenuManagerMainmenu;
 import org.jdownloader.gui.mainmenu.container.ExtensionsMenuContainer;
 import org.jdownloader.gui.mainmenu.container.ExtensionsMenuWindowContainer;
 import org.jdownloader.gui.mainmenu.container.OptionalContainer;
-import org.jdownloader.gui.toolbar.MainToolbarManager;
+import org.jdownloader.gui.toolbar.MenuManagerMainToolbar;
 import org.jdownloader.gui.translate.GuiTranslation;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.translate.JdownloaderTranslation;
@@ -157,8 +157,8 @@ public class TranslatorExtension extends AbstractExtension<TranslatorConfig, Tra
      */
     @Override
     protected void stop() throws StopException {
-        MainMenuManager.getInstance().unregisterExtender(this);
-        MainToolbarManager.getInstance().unregisterExtender(this);
+        MenuManagerMainmenu.getInstance().unregisterExtender(this);
+        MenuManagerMainToolbar.getInstance().unregisterExtender(this);
         logger.finer("Stopped " + getClass().getSimpleName());
         if (timer != null) {
             timer.interrupt();
@@ -172,8 +172,8 @@ public class TranslatorExtension extends AbstractExtension<TranslatorConfig, Tra
     @Override
     protected void start() throws StartException {
 
-        MainMenuManager.getInstance().registerExtender(this);
-        MainToolbarManager.getInstance().registerExtender(this);
+        MenuManagerMainmenu.getInstance().registerExtender(this);
+        MenuManagerMainToolbar.getInstance().registerExtender(this);
         // get all LanguageIDs
         List<String> ids = TranslationFactory.listAvailableTranslations(JdownloaderTranslation.class, GuiTranslation.class);
         // create a list of TLocale instances
@@ -218,9 +218,9 @@ public class TranslatorExtension extends AbstractExtension<TranslatorConfig, Tra
 
     @Override
     public MenuItemData updateMenuModel(ContextMenuManager manager, MenuContainerRoot mr) {
-        if (manager instanceof MainToolbarManager) {
+        if (manager instanceof MenuManagerMainToolbar) {
             return updateMainToolbar(mr);
-        } else if (manager instanceof MainMenuManager) {
+        } else if (manager instanceof MenuManagerMainmenu) {
             //
             return updateMainMenu(mr);
         }

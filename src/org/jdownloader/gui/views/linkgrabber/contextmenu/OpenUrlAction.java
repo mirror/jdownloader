@@ -7,11 +7,11 @@ import jd.controlling.linkcrawler.CrawledPackage;
 import jd.plugins.DownloadLink;
 
 import org.appwork.utils.os.CrossSystem;
-import org.jdownloader.actions.SelectionAppAction;
+import org.jdownloader.actions.AbstractSelectionContextAction;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo;
 
-public class OpenUrlAction extends SelectionAppAction<CrawledPackage, CrawledLink> {
+public class OpenUrlAction extends AbstractSelectionContextAction<CrawledPackage, CrawledLink> {
 
     /**
      * 

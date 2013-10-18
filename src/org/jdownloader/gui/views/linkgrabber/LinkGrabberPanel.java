@@ -3,16 +3,9 @@ package org.jdownloader.gui.views.linkgrabber;
 import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.Insets;
-import java.awt.event.ActionEvent;
-import java.awt.event.KeyEvent;
-import java.awt.event.KeyListener;
-import java.util.regex.Pattern;
 
-import javax.swing.JButton;
 import javax.swing.JScrollPane;
-import javax.swing.JToggleButton;
 import javax.swing.ScrollPaneConstants;
-import javax.swing.SwingUtilities;
 
 import jd.controlling.linkcollector.LinkCollector;
 import jd.controlling.linkcollector.LinkCollectorCrawler;
@@ -20,41 +13,31 @@ import jd.controlling.linkcollector.LinkCollectorEvent;
 import jd.controlling.linkcollector.LinkCollectorHighlightListener;
 import jd.controlling.linkcollector.LinkCollectorListener;
 import jd.controlling.linkcrawler.CrawledLink;
-import jd.controlling.linkcrawler.CrawledPackage;
 import jd.gui.swing.jdgui.JDGui;
 import jd.gui.swing.jdgui.interfaces.SwitchPanel;
 import net.miginfocom.swing.MigLayout;
 
-import org.appwork.storage.config.JsonConfig;
 import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.events.GenericConfigEventListener;
 import org.appwork.storage.config.handler.KeyHandler;
-import org.appwork.swing.MigPanel;
-import org.appwork.swing.components.ExtButton;
 import org.appwork.utils.NullsafeAtomicReference;
 import org.appwork.utils.event.queue.Queue.QueuePriority;
-import org.appwork.utils.event.queue.QueueAction;
 import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.WindowManager.FrameState;
-import org.jdownloader.actions.AppAction;
+import org.jdownloader.controlling.contextmenu.MenuContainerRoot;
+import org.jdownloader.controlling.contextmenu.MenuItemData;
 import org.jdownloader.gui.components.OverviewHeaderScrollPane;
 import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.components.HeaderScrollPane;
-import org.jdownloader.gui.views.components.LinktablesSearchCategory;
-import org.jdownloader.gui.views.components.packagetable.SearchField;
+import org.jdownloader.gui.views.downloads.bottombar.CustomizeableActionBar;
 import org.jdownloader.gui.views.downloads.table.HorizontalScrollbarAction;
-import org.jdownloader.gui.views.linkgrabber.actions.AddLinksAction;
-import org.jdownloader.gui.views.linkgrabber.actions.AddOptionsAction;
-import org.jdownloader.gui.views.linkgrabber.actions.ClearLinkgrabberAction;
-import org.jdownloader.gui.views.linkgrabber.actions.ConfirmAllAction;
-import org.jdownloader.gui.views.linkgrabber.actions.ConfirmOptionsAction;
-import org.jdownloader.gui.views.linkgrabber.actions.RemoveOptionsAction;
-import org.jdownloader.gui.views.linkgrabber.actions.ResetAction;
-import org.jdownloader.gui.views.linkgrabber.contextmenu.LinkgrabberContextMenuManager;
+import org.jdownloader.gui.views.linkgrabber.bottombar.LeftRightDividerItem;
+import org.jdownloader.gui.views.linkgrabber.bottombar.MenuManagerLinkgrabberTabBottombar;
+import org.jdownloader.gui.views.linkgrabber.contextmenu.MenuManagerLinkgrabberTableContext;
 import org.jdownloader.gui.views.linkgrabber.overview.LinkgrabberOverViewHeader;
 import org.jdownloader.gui.views.linkgrabber.overview.LinkgrabberOverview;
 import org.jdownloader.images.NewTheme;
-import org.jdownloader.settings.GraphicalUserInterfaceSettings;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings.NewLinksInLinkgrabberAction;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
 import org.jdownloader.updatev2.gui.LAFOptions;
@@ -71,24 +54,14 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
         return table;
     }
 
-    private JScrollPane                                                        tableScrollPane;
-    private LinkGrabberSidebar                                                 sidebar;
-    private JButton                                                            addLinks;
-    private JButton                                                            confirmAll;
-    private JButton                                                            resetButton;
-    private JButton                                                            popup;
-    private JButton                                                            popupConfirm;
-    private HeaderScrollPane                                                   sidebarScrollPane;
-    private MigPanel                                                           leftBar;
-    private MigPanel                                                           rightBar;
-    private SearchField<LinktablesSearchCategory, CrawledPackage, CrawledLink> searchField;
-    private ExtButton                                                          filteredAdd;
+    private JScrollPane                                       tableScrollPane;
+    private LinkGrabberSidebar                                sidebar;
 
-    private JButton                                                            popupRemove;
-    private JToggleButton                                                      showHideSidebar;
-    private AutoConfirmButton                                                  autoConfirm;
-    private NullsafeAtomicReference<OverviewHeaderScrollPane>                  overViewScrollBar = new NullsafeAtomicReference<OverviewHeaderScrollPane>(null);
-    private JToggleButton                                                      bottomBar;
+    private HeaderScrollPane                                  sidebarScrollPane;
+
+    private NullsafeAtomicReference<OverviewHeaderScrollPane> overViewScrollBar = new NullsafeAtomicReference<OverviewHeaderScrollPane>(null);
+    private CustomizeableActionBar                            rightBar;
+    private CustomizeableActionBar                            leftBar;
 
     public LinkGrabberPanel() {
         super(new MigLayout("ins 0, wrap 2", "[grow,fill]2[]2[fill]", "[grow, fill]2[]"));
@@ -97,40 +70,9 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
         table = new LinkGrabberTable(this, tableModel);
         tableScrollPane = new JScrollPane(table);
         HorizontalScrollbarAction.setup(CFG_GUI.HORIZONTAL_SCROLLBARS_IN_LINKGRABBER_TABLE_ENABLED, table);
-        filteredAdd = new ExtButton(new AppAction() {
-            /**
-             * 
-             */
-            private static final long serialVersionUID = 1L;
-
-            {
-                setIconKey("filter");
-            }
-
-            public void actionPerformed(ActionEvent e) {
-                LinkCollector.getInstance().getQueue().add(new QueueAction<Void, RuntimeException>() {
-
-                    @Override
-                    protected Void run() throws RuntimeException {
-                        java.util.List<CrawledLink> filteredStuff = LinkCollector.getInstance().getFilteredStuff(true);
-                        LinkCollector.getInstance().addCrawlerJob(filteredStuff);
-                        return null;
-                    }
-                });
-            }
-
-        });
 
         // filteredAdd.setVisible(false);
         LinkCollector.getInstance().getEventsender().addListener(new LinkCollectorHighlightListener() {
-
-            public void onLinkCollectorFilteredLinksAvailable(LinkCollectorEvent event) {
-                setFilteredAvailable(LinkCollector.getInstance().getfilteredStuffSize());
-            }
-
-            public void onLinkCollectorFilteredLinksEmpty(LinkCollectorEvent event) {
-                setFilteredAvailable(0);
-            }
 
             @Override
             public void onHighLight(CrawledLink parameter) {
@@ -179,205 +121,68 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
 
         });
 
-        autoConfirm = new AutoConfirmButton();
+        rightBar = new CustomizeableActionBar(MenuManagerLinkgrabberTabBottombar.getInstance()) {
+            protected SelectionInfo<?, ?> getCurrentSelection() {
+                return tableModel.createSelectionInfo();
 
-        setFilteredAvailable(LinkCollector.getInstance().getfilteredStuffSize());
-        addLinks = new ExtButton(new AddLinksAction());
-        confirmAll = new ExtButton(new ConfirmAllAction() {
-            {
-                org.jdownloader.settings.staticreferences.CFG_LINKFILTER.LINKGRABBER_AUTO_START_ENABLED.getEventSender().addListener(new GenericConfigEventListener<Boolean>() {
+            }
 
-                    @Override
-                    public void onConfigValueModified(KeyHandler<Boolean> keyHandler, Boolean newValue) {
-                        if (newValue != null) setAutoStart(newValue);
+            protected MenuContainerRoot prepare(MenuContainerRoot menuData) {
+                MenuContainerRoot ret = new MenuContainerRoot();
+                boolean foundSeperator = false;
+                for (MenuItemData mi : menuData.getItems()) {
+                    if (mi instanceof LeftRightDividerItem) {
+                        foundSeperator = true;
+                        continue;
                     }
-
-                    @Override
-                    public void onConfigValidatorError(KeyHandler<Boolean> keyHandler, Boolean invalidValue, ValidationException validateException) {
+                    if (foundSeperator) {
+                        ret.add(mi);
                     }
-                }, false);
-                setAutoStart(org.jdownloader.settings.staticreferences.CFG_LINKFILTER.LINKGRABBER_AUTO_START_ENABLED.isEnabled());
-
+                }
+                return ret;
             }
 
-        });
-        switch (CFG_GUI.CFG.getLinkgrabberDefaultClearAction()) {
-
-        case RESET_PANEL:
-            resetButton = new JButton(new ResetAction(null));
-            break;
-        default:
-            resetButton = new JButton(new ClearLinkgrabberAction());
-        }
-
-        popup = new JButton(new AddOptionsAction(addLinks)) {
-            /**
-             * 
-             */
-            private static final long serialVersionUID = 1L;
-
-            public void setBounds(int x, int y, int width, int height) {
-                super.setBounds(x - 2, y, width + 2, height);
-            }
-        };
-        popupRemove = new JButton(new RemoveOptionsAction(this, resetButton)) {
-            /**
-             * 
-             */
-            private static final long serialVersionUID = 1L;
-
-            public void setBounds(int x, int y, int width, int height) {
-                super.setBounds(x - 2, y, width + 2, height);
-            }
-        };
-
-        popupConfirm = new JButton(new ConfirmOptionsAction(table, confirmAll)) {
-            /**
-             * 
-             */
-            private static final long serialVersionUID = 1L;
-
-            public void setBounds(int x, int y, int width, int height) {
-                super.setBounds(x - 2, y, width + 2, height);
+            @Override
+            public void updateGui() {
+                super.updateGui();
+                table.updateContextShortcuts();
             }
 
         };
 
-        showHideSidebar = new JToggleButton(new AppAction() {
-            /**
-             * 
-             */
-            private static final long serialVersionUID = 1L;
-
-            {
-
-                putValue(SMALL_ICON, NewTheme.I().getIcon("sidebar", -1));
-                setTooltipText(_GUI._.LinkGrabberPanel_LinkGrabberPanel_btn_showsidebar_tt_up());
+        leftBar = new CustomizeableActionBar(MenuManagerLinkgrabberTabBottombar.getInstance()) {
+            protected SelectionInfo<?, ?> getCurrentSelection() {
+                return tableModel.createSelectionInfo();
 
             }
 
-            public void actionPerformed(ActionEvent e) {
-                org.jdownloader.settings.staticreferences.CFG_GUI.CFG.setLinkgrabberSidebarVisible(!org.jdownloader.settings.staticreferences.CFG_GUI.CFG.isLinkgrabberSidebarVisible());
-            }
-        });
-        showHideSidebar.setSelected(org.jdownloader.settings.staticreferences.CFG_GUI.CFG.isLinkgrabberSidebarVisible());
-        leftBar = new MigPanel("ins 0", "[]1[]3[]1[]3[grow,fill]0[]", "[]");
-        rightBar = new MigPanel("ins 0,debug", "[]0[]1[]0[]0", "[]");
-
-        leftBar.add(addLinks, "height 24!,aligny top");
-
-        leftBar.add(popup, "height 24!,width 12!,aligny top");
-        leftBar.add(resetButton, "width 24!,height 24!,aligny top");
-        leftBar.add(popupRemove, "height 24!,width 12!,aligny top");
-        bottomBar = new JToggleButton(new AppAction() {
-            {
-                setIconKey("bottombar");
-                setSelected(CFG_GUI.LINKGRABBER_OVERVIEW_VISIBLE.isEnabled());
-
-            }
-
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                CFG_GUI.LINKGRABBER_OVERVIEW_VISIBLE.toggle();
-            }
-        });
-
-        searchField = new SearchField<LinktablesSearchCategory, CrawledPackage, CrawledLink>(table, LinktablesSearchCategory.FILENAME) {
-            @Override
-            public void setSelectedCategory(LinktablesSearchCategory selectedCategory) {
-                super.setSelectedCategory(selectedCategory);
-                JsonConfig.create(GraphicalUserInterfaceSettings.class).setSelectedLinkgrabberSearchCategory(selectedCategory);
-            }
-
-            @Override
-            public boolean isFiltered(CrawledPackage e) {
-                if (LinktablesSearchCategory.PACKAGE == selectedCategory) {
-
-                    for (Pattern filterPattern : filterPatterns) {
-                        if (filterPattern.matcher(e.getName()).find()) return false;
+            protected MenuContainerRoot prepare(MenuContainerRoot menuData) {
+                MenuContainerRoot ret = new MenuContainerRoot();
+                for (MenuItemData mi : menuData.getItems()) {
+                    if (mi instanceof LeftRightDividerItem) {
+                        break;
                     }
-                    return true;
+
+                    ret.add(mi);
 
                 }
-                return false;
+                return ret;
             }
 
             @Override
-            public boolean isFiltered(CrawledLink v) {
-
-                switch (selectedCategory) {
-                case FILENAME:
-                    for (Pattern filterPattern : filterPatterns) {
-                        if (filterPattern.matcher(v.getName()).find()) return false;
-                    }
-                    return true;
-                case HOSTER:
-                    for (Pattern filterPattern : filterPatterns) {
-                        if (filterPattern.matcher(v.getHost()).find()) return false;
-                    }
-                    return true;
-                }
-                return false;
-
+            public void updateGui() {
+                super.updateGui();
+                table.updateContextShortcuts();
             }
 
         };
-        searchField.addKeyListener(new KeyListener() {
-
-            public void keyTyped(KeyEvent e) {
-            }
-
-            public void keyReleased(KeyEvent e) {
-                if (e.getKeyCode() == KeyEvent.VK_ESCAPE) {
-                    searchField.setText("");
-
-                }
-            }
-
-            public void keyPressed(KeyEvent e) {
-            }
-        });
-        searchField.setSelectedCategory(JsonConfig.create(GraphicalUserInterfaceSettings.class).getSelectedLinkgrabberSearchCategory());
-        searchField.setCategories(new LinktablesSearchCategory[] { LinktablesSearchCategory.FILENAME, LinktablesSearchCategory.HOSTER, LinktablesSearchCategory.PACKAGE });
-        leftBar.add(searchField, "height 24!,aligny top");
-
-        leftBar.add(filteredAdd, "height 24!,hidemode 3,gapleft 4");
         // leftBar.add(Box.createGlue());
         layoutComponents();
 
-        // showHideSidebar.setVisible(org.jdownloader.settings.statics.GUI.LINKGRABBER_SIDEBAR_ENABLED.getValue());
-        org.jdownloader.settings.staticreferences.CFG_GUI.LINKGRABBER_SIDEBAR_ENABLED.getEventSender().addListener(this);
-
-        org.jdownloader.settings.staticreferences.CFG_GUI.LINKGRABBER_SIDEBAR_TOGGLE_BUTTON_ENABLED.getEventSender().addListener(this);
         org.jdownloader.settings.staticreferences.CFG_GUI.LINKGRABBER_SIDEBAR_VISIBLE.getEventSender().addListener(this);
         org.jdownloader.settings.staticreferences.CFG_GUI.LINKGRABBER_OVERVIEW_VISIBLE.getEventSender().addListener(this);
-        LinkgrabberContextMenuManager.getInstance().setPanel(this);
+        MenuManagerLinkgrabberTableContext.getInstance().setPanel(this);
 
-    }
-
-    public SearchField<LinktablesSearchCategory, CrawledPackage, CrawledLink> getSearchField() {
-        return searchField;
-    }
-
-    private void setFilteredAvailable(final int size) {
-        if (size > 0) {
-            new EDTRunner() {
-
-                @Override
-                protected void runInEDT() {
-                    filteredAdd.setText(_GUI._.RestoreFilteredLinksAction_(size));
-                    filteredAdd.setVisible(true);
-                }
-            };
-        } else {
-            new EDTRunner() {
-
-                @Override
-                protected void runInEDT() {
-                    filteredAdd.setVisible(false);
-                }
-            };
-        }
     }
 
     private Component getOverView() {
@@ -409,28 +214,9 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
     }
 
     private void layoutComponents() {
-        rightBar.removeAll();
-
-        boolean showSidebarToggle = org.jdownloader.settings.staticreferences.CFG_GUI.LINKGRABBER_SIDEBAR_TOGGLE_BUTTON_ENABLED.getValue() && org.jdownloader.settings.staticreferences.CFG_GUI.LINKGRABBER_SIDEBAR_ENABLED.getValue();
-        if (showSidebarToggle) {
-
-            rightBar.setLayout(new MigLayout("ins 0", "[]0[]1[]0[]0[]0", "[]"));
-        } else {
-            rightBar.setLayout(new MigLayout("ins 0", "[]0[]1[]0[]0", "[]"));
-        }
-
-        rightBar.add(autoConfirm, "height 24!,width 24!,hidemode 3,gapright 3");
-        autoConfirm.setVisible(false);
-        rightBar.add(confirmAll, "height 24!,pushx,growx");
-        rightBar.add(popupConfirm, "height 24!,width 12!");
-        rightBar.add(bottomBar, "height 24!,width 24!,gapleft 1");
-        if (showSidebarToggle) {
-            //
-            rightBar.add(showHideSidebar, "height 24!,width 24!,gapleft 2");
-
-        }
-
-        if (org.jdownloader.settings.staticreferences.CFG_GUI.CFG.isLinkgrabberSidebarEnabled() && org.jdownloader.settings.staticreferences.CFG_GUI.LINKGRABBER_SIDEBAR_VISIBLE.getValue()) {
+        removeAll();
+        setLayout(new MigLayout("ins 0, wrap 2", "[grow,fill]2[fill]0", "[grow, fill]2[]2[]0"));
+        if (org.jdownloader.settings.staticreferences.CFG_GUI.LINKGRABBER_SIDEBAR_VISIBLE.getValue()) {
 
             if (sidebarScrollPane == null) {
                 createSidebar();
@@ -458,8 +244,8 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
 
         }
 
-        add(leftBar);
-        add(rightBar, "growx");
+        add(leftBar, "height 24!");
+        add(rightBar, "height 24!,growx");
     }
 
     private void createSidebar() {
@@ -513,24 +299,6 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
         //
         // sidebarScrollPane.setCorner(ScrollPaneConstants.UPPER_RIGHT_CORNER,
         // bt);
-        org.jdownloader.settings.staticreferences.CFG_LINKFILTER.LINKGRABBER_QUICK_SETTINGS_VISIBLE.getEventSender().addListener(new GenericConfigEventListener<Boolean>() {
-
-            public void onConfigValidatorError(KeyHandler<Boolean> keyHandler, Boolean invalidValue, ValidationException validateException) {
-            }
-
-            public void onConfigValueModified(KeyHandler<Boolean> keyHandler, Boolean newValue) {
-
-                if (Boolean.TRUE.equals(newValue)) {
-                    SwingUtilities.invokeLater(new Runnable() {
-
-                        public void run() {
-                            sidebarScrollPane.getVerticalScrollBar().setValue(sidebarScrollPane.getVerticalScrollBar().getMaximum());
-                        }
-                    });
-
-                }
-            }
-        });
 
     }
 
@@ -557,7 +325,7 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
 
             @Override
             protected void runInEDT() {
-                bottomBar.setSelected(CFG_GUI.LINKGRABBER_OVERVIEW_VISIBLE.isEnabled());
+
                 removeAll();
                 layoutComponents();
 
@@ -592,17 +360,6 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
 
     @Override
     public void onLinkCollectorDupeAdded(LinkCollectorEvent event, CrawledLink parameter) {
-    }
-
-    public void resetSearch() {
-        new EDTRunner() {
-
-            @Override
-            protected void runInEDT() {
-                searchField.setText("");
-                searchField.onChanged();
-            }
-        };
     }
 
     public void onLinkCollectorContentRemoved(LinkCollectorEvent event) {

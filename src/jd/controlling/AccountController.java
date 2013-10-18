@@ -259,6 +259,9 @@ public class AccountController implements AccountControllerListener {
                 LogController.CL().info("Account " + whoAmI + " is invalid!");
                 this.broadcaster.fireEvent(new AccountControllerEvent(this, AccountControllerEvent.Types.INVALID, account));
                 return ai;
+            } else {
+                account.setLastValidTimestamp(System.currentTimeMillis());
+
             }
             if (ai != null && ai.isExpired()) {
                 /* expired account */

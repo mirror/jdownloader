@@ -77,8 +77,8 @@ import org.jdownloader.extensions.StartException;
 import org.jdownloader.extensions.StopException;
 import org.jdownloader.extensions.chat.settings.ChatConfigPanel;
 import org.jdownloader.extensions.chat.translate.ChatTranslation;
-import org.jdownloader.gui.mainmenu.MainMenuManager;
-import org.jdownloader.gui.toolbar.MainToolbarManager;
+import org.jdownloader.gui.mainmenu.MenuManagerMainmenu;
+import org.jdownloader.gui.toolbar.MenuManagerMainToolbar;
 import org.jdownloader.logging.LogController;
 import org.schwering.irc.lib.IRCConnection;
 
@@ -1049,8 +1049,8 @@ public class ChatExtension extends AbstractExtension<ChatConfig, ChatTranslation
             this.conn.close();
         }
         this.conn = null;
-        MainMenuManager.getInstance().unregisterExtender(this);
-        MainToolbarManager.getInstance().unregisterExtender(this);
+        MenuManagerMainmenu.getInstance().unregisterExtender(this);
+        MenuManagerMainToolbar.getInstance().unregisterExtender(this);
     }
 
     @Override
@@ -1062,8 +1062,8 @@ public class ChatExtension extends AbstractExtension<ChatConfig, ChatTranslation
         }
         Reconnecter.getInstance().getEventSender().addListener(this);
 
-        MainMenuManager.getInstance().registerExtender(this);
-        MainToolbarManager.getInstance().registerExtender(this);
+        MenuManagerMainmenu.getInstance().registerExtender(this);
+        MenuManagerMainToolbar.getInstance().registerExtender(this);
     }
 
     @Override
@@ -1126,9 +1126,9 @@ public class ChatExtension extends AbstractExtension<ChatConfig, ChatTranslation
 
     @Override
     public MenuItemData updateMenuModel(ContextMenuManager manager, MenuContainerRoot mr) {
-        if (manager instanceof MainToolbarManager) {
+        if (manager instanceof MenuManagerMainToolbar) {
             return updateMainToolbar(mr);
-        } else if (manager instanceof MainMenuManager) {
+        } else if (manager instanceof MenuManagerMainmenu) {
             //
             return updateMainMenu(mr);
         }

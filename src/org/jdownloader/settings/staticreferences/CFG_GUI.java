@@ -39,6 +39,8 @@ public class CFG_GUI {
      * Refreshrate in ms for the DownloadView
      **/
     public static final LongKeyHandler                                 DOWNLOAD_VIEW_REFRESH                                = SH.getKeyHandler("DownloadViewRefresh", LongKeyHandler.class);
+    // NOTHING
+    public static final EnumKeyHandler                                 NEW_LINKS_ACTION                                     = SH.getKeyHandler("NewLinksAction", EnumKeyHandler.class);
     // true
     /**
      * Packages get a different background color if enabled
@@ -46,23 +48,21 @@ public class CFG_GUI {
     public static final BooleanKeyHandler                              PACKAGES_BACKGROUND_HIGHLIGHT_ENABLED                = SH.getKeyHandler("PackagesBackgroundHighlightEnabled", BooleanKeyHandler.class);
     // false
     /**
-     * If true, java will try to use D3D for graphics
-     **/
-    public static final BooleanKeyHandler                              USE_D3D                                              = SH.getKeyHandler("UseD3D", BooleanKeyHandler.class);
-    // NOTHING
-    public static final EnumKeyHandler                                 NEW_LINKS_ACTION                                     = SH.getKeyHandler("NewLinksAction", EnumKeyHandler.class);
-    // false
-    /**
      * Enable/disable Enable/disable Clipboard monitoring
      **/
     public static final BooleanKeyHandler                              CLIPBOARD_MONITORED                                  = SH.getKeyHandler("ClipboardMonitored", BooleanKeyHandler.class);
     // false
     /**
+     * If true, java will try to use D3D for graphics
+     **/
+    public static final BooleanKeyHandler                              USE_D3D                                              = SH.getKeyHandler("UseD3D", BooleanKeyHandler.class);
+    // TO_FRONT
+    public static final EnumKeyHandler                                 NEW_DIALOG_FRAME_STATE                               = SH.getKeyHandler("NewDialogFrameState", EnumKeyHandler.class);
+    // false
+    /**
      * Use horizontal Scrollbars in Linkgrabber
      **/
     public static final BooleanKeyHandler                              HORIZONTAL_SCROLLBARS_IN_LINKGRABBER_TABLE_ENABLED   = SH.getKeyHandler("HorizontalScrollbarsInLinkgrabberTableEnabled", BooleanKeyHandler.class);
-    // TO_FRONT
-    public static final EnumKeyHandler                                 NEW_DIALOG_FRAME_STATE                               = SH.getKeyHandler("NewDialogFrameState", EnumKeyHandler.class);
     // jd.gui.swing.jdgui.views.settings.panels.advanced.AdvancedSettings
     public static final StringKeyHandler                               ACTIVE_CONFIG_PANEL                                  = SH.getKeyHandler("ActiveConfigPanel", StringKeyHandler.class);
     // null
@@ -74,7 +74,7 @@ public class CFG_GUI {
      * Icon Theme ID. Make sure that ./themes/<ID>/ exists
      **/
     public static final StringKeyHandler                               THEME_ID                                             = SH.getKeyHandler("ThemeID", StringKeyHandler.class);
-    // [I@25b199c3
+    // [I@2e378b91
     /**
      * JDownloader uses a workaround to bring it's window or dialogs to focused to front. It simulates an ALT key shortcut. If disabled, you
      * will get focus problems
@@ -85,8 +85,6 @@ public class CFG_GUI {
      * If true, TaskColumn will show Premium Alerts in Free Download mode if JD thinks Premium would be better currently.
      **/
     public static final BooleanKeyHandler                              PREMIUM_ALERT_TASK_COLUMN_ENABLED                    = SH.getKeyHandler("PremiumAlertTaskColumnEnabled", BooleanKeyHandler.class);
-    // CLEAR_LIST
-    public static final EnumKeyHandler                                 LINKGRABBER_DEFAULT_CLEAR_ACTION                     = SH.getKeyHandler("LinkgrabberDefaultClearAction", EnumKeyHandler.class);
     // true
     /**
      * Enable/Disable the DownloadPanel Overview panel
@@ -94,10 +92,10 @@ public class CFG_GUI {
     public static final BooleanKeyHandler                              DOWNLOAD_PANEL_OVERVIEW_VISIBLE                      = SH.getKeyHandler("DownloadPanelOverviewVisible", BooleanKeyHandler.class);
     // true
     public static final BooleanKeyHandler                              BALLOON_NOTIFICATION_ENABLED                         = SH.getKeyHandler("BalloonNotificationEnabled", BooleanKeyHandler.class);
-    // true
-    public static final BooleanKeyHandler                              OVERVIEW_PANEL_VISIBLE_ONLY_INFO_VISIBLE             = SH.getKeyHandler("OverviewPanelVisibleOnlyInfoVisible", BooleanKeyHandler.class);
     // false
     public static final BooleanKeyHandler                              CONFIG_VIEW_VISIBLE                                  = SH.getKeyHandler("ConfigViewVisible", BooleanKeyHandler.class);
+    // true
+    public static final BooleanKeyHandler                              OVERVIEW_PANEL_VISIBLE_ONLY_INFO_VISIBLE             = SH.getKeyHandler("OverviewPanelVisibleOnlyInfoVisible", BooleanKeyHandler.class);
     // SKIP_FILE
     public static final EnumKeyHandler                                 LAST_IF_FILE_EXISTS                                  = SH.getKeyHandler("LastIfFileExists", EnumKeyHandler.class);
     // 100
@@ -105,10 +103,10 @@ public class CFG_GUI {
      * Captcha Dialog Image scale Faktor in %
      **/
     public static final IntegerKeyHandler                              CAPTCHA_SCALE_FACTOR                                 = SH.getKeyHandler("CaptchaScaleFactor", IntegerKeyHandler.class);
-    // FILENAME
-    public static final EnumKeyHandler                                 SELECTED_DOWNLOAD_SEARCH_CATEGORY                    = SH.getKeyHandler("SelectedDownloadSearchCategory", EnumKeyHandler.class);
     // false
     public static final BooleanKeyHandler                              PASSWORD_PROTECTION_ENABLED                          = SH.getKeyHandler("PasswordProtectionEnabled", BooleanKeyHandler.class);
+    // FILENAME
+    public static final EnumKeyHandler                                 SELECTED_DOWNLOAD_SEARCH_CATEGORY                    = SH.getKeyHandler("SelectedDownloadSearchCategory", EnumKeyHandler.class);
     // DEFAULT
     public static final EnumKeyHandler                                 LOOK_AND_FEEL_THEME                                  = SH.getKeyHandler("LookAndFeelTheme", EnumKeyHandler.class);
     // false
@@ -144,10 +142,6 @@ public class CFG_GUI {
     // true
     public static final BooleanKeyHandler                              FILE_COUNT_IN_SIZE_COLUMN_VISIBLE                    = SH.getKeyHandler("FileCountInSizeColumnVisible", BooleanKeyHandler.class);
     // true
-    /**
-     * Enable/Disable the Linkgrabber Sidebar
-     **/
-    public static final BooleanKeyHandler                              LINKGRABBER_SIDEBAR_ENABLED                          = SH.getKeyHandler("LinkgrabberSidebarEnabled", BooleanKeyHandler.class);
     // true
     /**
      * The row that is 'touched' by the mouse cursor gets a darker shadow
@@ -172,10 +166,6 @@ public class CFG_GUI {
     // false
     public static final BooleanKeyHandler                              SKIP_CLIPBOARD_MONITOR_FIRST_ROUND                   = SH.getKeyHandler("SkipClipboardMonitorFirstRound", BooleanKeyHandler.class);
     // true
-    /**
-     * Enable/Disable the Linkgrabber Sidebar QuicktoggleButton
-     **/
-    public static final BooleanKeyHandler                              LINKGRABBER_SIDEBAR_TOGGLE_BUTTON_ENABLED            = SH.getKeyHandler("LinkgrabberSidebarToggleButtonEnabled", BooleanKeyHandler.class);
     // false
     /**
      * If disabled, The Hostercolumn will show gray disabled icons if the link is disabled
@@ -217,13 +207,13 @@ public class CFG_GUI {
      * Use horizontal Scrollbars in DownloadTable
      **/
     public static final BooleanKeyHandler                              HORIZONTAL_SCROLLBARS_IN_DOWNLOAD_TABLE_ENABLED      = SH.getKeyHandler("HorizontalScrollbarsInDownloadTableEnabled", BooleanKeyHandler.class);
-    // null
-    public static final ObjectKeyHandler                               LAST_FRAME_STATUS                                    = SH.getKeyHandler("LastFrameStatus", ObjectKeyHandler.class);
     // true
     /**
      * Highlight Table in Downloadview if table is filtered
      **/
     public static final BooleanKeyHandler                              FILTER_HIGHLIGHT_ENABLED                             = SH.getKeyHandler("FilterHighlightEnabled", BooleanKeyHandler.class);
+    // null
+    public static final ObjectKeyHandler                               LAST_FRAME_STATUS                                    = SH.getKeyHandler("LastFrameStatus", ObjectKeyHandler.class);
     // true
     public static final BooleanKeyHandler                              OVERVIEW_PANEL_SMART_INFO_VISIBLE                    = SH.getKeyHandler("OverviewPanelSmartInfoVisible", BooleanKeyHandler.class);
     // true

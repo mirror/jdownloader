@@ -11,7 +11,7 @@ import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.downloads.table.DownloadsTableModel;
 
-public class DeleteDisabledSelectedLinks extends DeleteAppAction {
+public class DeleteDisabledSelectedLinks extends AbstractDeleteSelectionFromDownloadlistAction {
 
     /**
      * 
@@ -33,7 +33,7 @@ public class DeleteDisabledSelectedLinks extends DeleteAppAction {
                 nodesToDelete.add(dl);
             }
         }
-        deleteLinksRequest(new SelectionInfo<FilePackage, DownloadLink>(null, nodesToDelete, null, null, e, DownloadsTableModel.getInstance().getTable()), _GUI._.DeleteDisabledLinksFromListAndDiskAction_actionPerformed_object_());
+        DownloadTabActionUtils.deleteLinksRequest(new SelectionInfo<FilePackage, DownloadLink>(null, nodesToDelete, null, null, e, DownloadsTableModel.getInstance().getTable()), _GUI._.DeleteDisabledLinksFromListAndDiskAction_actionPerformed_object_());
     }
 
     @Override

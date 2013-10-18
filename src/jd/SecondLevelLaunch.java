@@ -101,8 +101,8 @@ import org.jdownloader.controlling.FileCreationManager;
 import org.jdownloader.dynamic.Dynamic;
 import org.jdownloader.extensions.ExtensionController;
 import org.jdownloader.extensions.extraction.ArchiveController;
-import org.jdownloader.gui.views.downloads.contextmenumanager.DownloadListContextMenuManager;
-import org.jdownloader.gui.views.linkgrabber.contextmenu.LinkgrabberContextMenuManager;
+import org.jdownloader.gui.views.downloads.contextmenumanager.MenuManagerDownloadTableContext;
+import org.jdownloader.gui.views.linkgrabber.contextmenu.MenuManagerLinkgrabberTableContext;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.osevents.OperatingSystemEventSender;
@@ -674,8 +674,8 @@ public class SecondLevelLaunch {
                             OperatingSystemEventSender.getInstance().init();
                         }
                         // parse Menu Data. This will result in a better direct feeling when using the contextmenu the first time
-                        DownloadListContextMenuManager.getInstance().getMenuData();
-                        LinkgrabberContextMenuManager.getInstance().getMenuData();
+                        MenuManagerDownloadTableContext.getInstance().getMenuData();
+                        MenuManagerLinkgrabberTableContext.getInstance().getMenuData();
                         if (CFG_GENERAL.CFG.isSambaPrefetchEnabled()) {
                             ExtFileSystemView.runSambaScanner();
                         }

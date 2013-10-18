@@ -55,9 +55,9 @@ import org.jdownloader.extensions.extraction.ExtractionExtension;
 import org.jdownloader.extensions.shutdown.actions.ShutdownToggleAction;
 import org.jdownloader.extensions.shutdown.translate.ShutdownTranslation;
 import org.jdownloader.extensions.shutdown.translate.T;
-import org.jdownloader.gui.mainmenu.MainMenuManager;
+import org.jdownloader.gui.mainmenu.MenuManagerMainmenu;
 import org.jdownloader.gui.mainmenu.container.ExtensionsMenuContainer;
-import org.jdownloader.gui.toolbar.MainToolbarManager;
+import org.jdownloader.gui.toolbar.MenuManagerMainToolbar;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.updatev2.ForcedShutdown;
 import org.jdownloader.updatev2.RestartController;
@@ -455,15 +455,15 @@ public class ShutdownExtension extends AbstractExtension<ShutdownConfig, Shutdow
     @Override
     protected void stop() throws StopException {
         DownloadWatchDog.getInstance().getStateMachine().removeListener(this);
-        MainToolbarManager.getInstance().unregisterExtender(this);
-        MainMenuManager.getInstance().unregisterExtender(this);
+        MenuManagerMainToolbar.getInstance().unregisterExtender(this);
+        MenuManagerMainmenu.getInstance().unregisterExtender(this);
 
     }
 
     @Override
     protected void start() throws StartException {
-        MainToolbarManager.getInstance().registerExtender(this);
-        MainMenuManager.getInstance().registerExtender(this);
+        MenuManagerMainToolbar.getInstance().registerExtender(this);
+        MenuManagerMainmenu.getInstance().registerExtender(this);
         if (!getSettings().isShutdownActiveByDefaultEnabled()) {
             CFG_SHUTDOWN.SHUTDOWN_ACTIVE.setValue(false);
         }
@@ -626,11 +626,11 @@ public class ShutdownExtension extends AbstractExtension<ShutdownConfig, Shutdow
 
     @Override
     public MenuItemData updateMenuModel(ContextMenuManager manager, MenuContainerRoot mr) {
-        if (manager instanceof MainMenuManager) {
+        if (manager instanceof MenuManagerMainmenu) {
             ExtensionsMenuContainer container = new ExtensionsMenuContainer();
             container.add(org.jdownloader.extensions.shutdown.actions.ShutdownToggleAction.class);
             return container;
-        } else if (manager instanceof MainToolbarManager) {
+        } else if (manager instanceof MenuManagerMainToolbar) {
             // try to search a toggle action and queue it after it.
             for (int i = mr.getItems().size() - 1; i >= 0; i--) {
                 MenuItemData mid = mr.getItems().get(i);

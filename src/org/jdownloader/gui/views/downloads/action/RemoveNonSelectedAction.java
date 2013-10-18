@@ -14,7 +14,7 @@ import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.downloads.table.DownloadsTableModel;
 
-public class RemoveNonSelectedAction extends DeleteAppAction {
+public class RemoveNonSelectedAction extends AbstractDeleteSelectionFromDownloadlistAction {
 
     /**
      * 
@@ -48,7 +48,7 @@ public class RemoveNonSelectedAction extends DeleteAppAction {
                         return !set.contains(node);
                     }
                 });
-                deleteLinksRequest(new SelectionInfo<FilePackage, DownloadLink>(null, nodesToDelete, null, null, e, DownloadsTableModel.getInstance().getTable()), _GUI._.RemoveNonSelectedAction_actionPerformed());
+                DownloadTabActionUtils.deleteLinksRequest(new SelectionInfo<FilePackage, DownloadLink>(null, nodesToDelete, null, null, e, DownloadsTableModel.getInstance().getTable()), _GUI._.RemoveNonSelectedAction_actionPerformed());
                 return null;
             }
         });

@@ -188,9 +188,6 @@ public class SearchField<SearchCat extends SearchCatInterface, PackageType exten
         return false;
     }
 
-    public void reset() {
-    }
-
     public void mouseDragged(MouseEvent e) {
     }
 
@@ -326,5 +323,9 @@ public class SearchField<SearchCat extends SearchCatInterface, PackageType exten
 
     public boolean highlightFilter() {
         return true;
+    }
+
+    @Override
+    public void reset() {
     }
 }

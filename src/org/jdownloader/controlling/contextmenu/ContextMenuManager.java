@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Map.Entry;
 
 import javax.swing.JPopupMenu;
+import javax.swing.KeyStroke;
 
 import jd.controlling.packagecontroller.AbstractPackageChildrenNode;
 import jd.controlling.packagecontroller.AbstractPackageNode;
@@ -34,7 +35,7 @@ import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.logging.LogController;
 
 public abstract class ContextMenuManager<PackageType extends AbstractPackageNode<ChildrenType, PackageType>, ChildrenType extends AbstractPackageChildrenNode<PackageType>> {
-    private DelayedRunnable updateDelayer;
+    protected DelayedRunnable updateDelayer;
 
     public ContextMenuManager() {
         config = JsonConfig.create(Application.getResource("cfg/menus/" + getClass().getName()), ContextMenuConfigInterface.class);
@@ -51,6 +52,27 @@ public abstract class ContextMenuManager<PackageType extends AbstractPackageNode
             }
 
         };
+    }
+
+    protected static MenuItemData setAccelerator(MenuItemData menuItemData, KeyStroke keyStroke) {
+        menuItemData.setShortcut(keyStroke == null ? null : keyStroke.toString());
+        return menuItemData;
+    }
+
+    protected static ActionData setName(ActionData actionData, String name) {
+        if (StringUtils.isEmpty(name)) name = MenuItemData.EMPTY_NAME;
+        actionData.setName(name);
+        return actionData;
+    }
+
+    protected static MenuItemData setOptional(MenuItemData menuItemData) {
+        menuItemData.setVisible(false);
+        return menuItemData;
+    }
+
+    protected static ActionData setIconKey(ActionData putSetup, String KEY) {
+        putSetup.setIconKey(KEY);
+        return putSetup;
     }
 
     protected abstract void updateGui();
@@ -346,6 +368,10 @@ public abstract class ContextMenuManager<PackageType extends AbstractPackageNode
         }
         updateDelayer.resetAndStart();
 
+    }
+
+    public void refresh() {
+        updateDelayer.resetAndStart();
     }
 
     public void unregisterExtender(MenuExtenderHandler handler) {

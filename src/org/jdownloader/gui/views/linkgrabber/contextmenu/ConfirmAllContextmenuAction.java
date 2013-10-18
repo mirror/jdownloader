@@ -1,4 +1,4 @@
-package org.jdownloader.gui.views.linkgrabber.actions;
+package org.jdownloader.gui.views.linkgrabber.contextmenu;
 
 import java.awt.Image;
 import java.awt.event.ActionEvent;
@@ -22,6 +22,7 @@ import jd.plugins.FilePackage;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.storage.config.annotations.EnumLabel;
 import org.appwork.utils.ImageProvider.ImageProvider;
+import org.appwork.utils.event.queue.QueueAction;
 import org.appwork.utils.logging.Log;
 import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.dialog.ConfirmDialog;
@@ -30,8 +31,8 @@ import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.appwork.utils.swing.dialog.DialogNoAnswerException;
+import org.jdownloader.actions.AbstractSelectionContextAction;
 import org.jdownloader.actions.AppAction;
-import org.jdownloader.actions.SelectionAppAction;
 import org.jdownloader.controlling.contextmenu.Customizer;
 import org.jdownloader.extensions.ExtensionController;
 import org.jdownloader.extensions.extraction.Archive;
@@ -46,7 +47,7 @@ import org.jdownloader.gui.views.linkgrabber.LinkGrabberTableModel;
 import org.jdownloader.gui.views.linkgrabber.addlinksdialog.LinkgrabberSettings;
 import org.jdownloader.images.NewTheme;
 
-public class ConfirmAllContextmenuAction extends SelectionAppAction<CrawledPackage, CrawledLink> {
+public class ConfirmAllContextmenuAction extends AbstractSelectionContextAction<CrawledPackage, CrawledLink> {
 
     /**
      * 
@@ -230,7 +231,14 @@ public class ConfirmAllContextmenuAction extends SelectionAppAction<CrawledPacka
                 }
 
                 if (isClearListAfterConfirm()) {
-                    new ClearLinkgrabberAction().actionPerformed(null);
+                    LinkCollector.getInstance().getQueue().add(new QueueAction<Void, RuntimeException>() {
+
+                        @Override
+                        protected Void run() throws RuntimeException {
+                            LinkCollector.getInstance().clear();
+                            return null;
+                        }
+                    });
                 }
             }
 

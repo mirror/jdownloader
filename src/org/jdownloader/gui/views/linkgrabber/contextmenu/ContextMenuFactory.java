@@ -17,12 +17,12 @@ public class ContextMenuFactory {
 
     private LinkGrabberTable              table;
     private LinkGrabberPanel              panel;
-    private LinkgrabberContextMenuManager manager;
+    private MenuManagerLinkgrabberTableContext manager;
 
     public ContextMenuFactory(LinkGrabberTable linkGrabberTable, LinkGrabberPanel linkGrabberPanel) {
         this.table = linkGrabberTable;
         this.panel = linkGrabberPanel;
-        manager = LinkgrabberContextMenuManager.getInstance();
+        manager = MenuManagerLinkgrabberTableContext.getInstance();
     }
 
     public JPopupMenu createPopup(AbstractNode context, java.util.List<AbstractNode> selection, ExtColumn<AbstractNode> column, MouseEvent event) {

@@ -5,12 +5,12 @@ import java.awt.event.ActionEvent;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledPackage;
 
-import org.jdownloader.actions.SelectionAppAction;
+import org.jdownloader.actions.AbstractSelectionContextAction;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.linkgrabber.actions.AddLinksAction;
 
-public class AddContainerContextMenuAction extends SelectionAppAction<CrawledPackage, CrawledLink> {
+public class AddContainerContextMenuAction extends AbstractSelectionContextAction<CrawledPackage, CrawledLink> {
 
     private static final long serialVersionUID = 1901008532686173167L;
 

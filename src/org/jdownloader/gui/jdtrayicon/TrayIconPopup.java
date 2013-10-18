@@ -61,7 +61,7 @@ import org.jdownloader.controlling.contextmenu.SeperatorData;
 import org.jdownloader.controlling.contextmenu.gui.ExtPopupMenu;
 import org.jdownloader.controlling.contextmenu.gui.MenuBuilder;
 import org.jdownloader.extensions.ExtensionNotLoadedException;
-import org.jdownloader.gui.toolbar.MainToolbarManager;
+import org.jdownloader.gui.toolbar.MenuManagerMainToolbar;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.updatev2.gui.LAFOptions;
 
@@ -130,7 +130,7 @@ public final class TrayIconPopup extends ExtJFrame implements MouseListener {
         AbstractButton ab;
         // System.out.println(this.getColConstraints(list.length));
         MenuItemData last = null;
-        for (final MenuItemData menudata : TrayIconMenuManager.getInstance().getMenuData().getItems()) {
+        for (final MenuItemData menudata : MenuManagerTrayIcon.getInstance().getMenuData().getItems()) {
             AbstractButton bt = null;
             AppAction action;
             try {
@@ -176,7 +176,7 @@ public final class TrayIconPopup extends ExtJFrame implements MouseListener {
                             if (root != null && root.isShowing()) return;
                             root = new ExtPopupMenu();
 
-                            new MenuBuilder(MainToolbarManager.getInstance(), root, null, (MenuContainer) menudata) {
+                            new MenuBuilder(MenuManagerMainToolbar.getInstance(), root, null, (MenuContainer) menudata) {
                                 protected void addAction(final JComponent root, final MenuItemData inst) throws InstantiationException, IllegalAccessException, InvocationTargetException, ClassNotFoundException, NoSuchMethodException, ExtensionNotLoadedException {
                                     final JComponent ret = inst.addTo(root, selection);
                                     if (ret instanceof AbstractButton) {

@@ -17,11 +17,6 @@ public interface LinkFilterSettings extends ConfigInterface {
     void setFilterList(ArrayList<LinkgrabberFilterRule> list);
 
     @DefaultBooleanValue(true)
-    boolean isLinkgrabberQuickSettingsVisible();
-
-    void setLinkgrabberQuickSettingsVisible(boolean b);
-
-    @DefaultBooleanValue(true)
     @AboutConfig
     boolean isLinkFilterEnabled();
 
