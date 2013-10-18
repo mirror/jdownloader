@@ -83,8 +83,8 @@ public interface ExtractionTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Delete Archive Downloadlinks after suc. extraction?" })
     String settings_remove_after_extract_downloadlink();
 
-    @Default(lngs = { "en" }, values = { "Password for %s1?" })
-    String plugins_optional_extraction_askForPassword(Object s1);
+    @Default(lngs = { "en" }, values = { "To extract the archive, a password is required!" })
+    String plugins_optional_extraction_askForPassword2();
 
     @Default(lngs = { "en" }, values = { "Extract destination folder" })
     String settings_extractto();
@@ -322,5 +322,8 @@ public interface ExtractionTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "and at least" })
     String and();
+
+    @Default(lngs = { "en" }, values = { "Archive Password required!" })
+    String ask_for_password();
 
 }

@@ -49,6 +49,11 @@ public class MenuManagerDownloadTabBottomBar extends AbstractBottomBarMenuManage
     }
 
     @Override
+    protected String getStorageKey() {
+        return "DownloadTabBottomBar";
+    }
+
+    @Override
     public String getName() {
         return _GUI._.BottomBarMenuManager_getName();
     }

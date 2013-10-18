@@ -38,7 +38,7 @@ public abstract class ContextMenuManager<PackageType extends AbstractPackageNode
     protected DelayedRunnable updateDelayer;
 
     public ContextMenuManager() {
-        config = JsonConfig.create(Application.getResource("cfg/menus/" + getClass().getName()), ContextMenuConfigInterface.class);
+        config = JsonConfig.create(Application.getResource("cfg/menus/" + getStorageKey()), ContextMenuConfigInterface.class);
         logger = LogController.getInstance().getLogger(getClass().getName());
         updateDelayer = new DelayedRunnable(1000l, 2000) {
             @Override
@@ -54,6 +54,8 @@ public abstract class ContextMenuManager<PackageType extends AbstractPackageNode
         };
     }
 
+    protected abstract String getStorageKey();
+
     protected static MenuItemData setAccelerator(MenuItemData menuItemData, KeyStroke keyStroke) {
         menuItemData.setShortcut(keyStroke == null ? null : keyStroke.toString());
         return menuItemData;
@@ -63,6 +65,10 @@ public abstract class ContextMenuManager<PackageType extends AbstractPackageNode
         if (StringUtils.isEmpty(name)) name = MenuItemData.EMPTY_NAME;
         actionData.setName(name);
         return actionData;
+    }
+
+    protected static MenuItemData setOptional(Class<?> class1) {
+        return setOptional(new MenuItemData(new ActionData(class1)));
     }
 
     protected static MenuItemData setOptional(MenuItemData menuItemData) {
@@ -154,6 +160,7 @@ public abstract class ContextMenuManager<PackageType extends AbstractPackageNode
         long t = System.currentTimeMillis();
         if (menuData != null) return menuData;
         try {
+            convertOldFiles();
             MenuContainerRoot ret = config.getMenu();
 
             MenuContainerRoot defaultMenu = setupDefaultStructure();
@@ -273,6 +280,10 @@ public abstract class ContextMenuManager<PackageType extends AbstractPackageNode
                 return menuData;
             }
         }
+
+    }
+
+    private void convertOldFiles() {
 
     }
 

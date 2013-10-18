@@ -73,6 +73,11 @@ public class MenuManagerMainToolbar extends ContextMenuManager<FilePackage, Down
     }
 
     @Override
+    protected String getStorageKey() {
+        return "MainToolbar";
+    }
+
+    @Override
     public void setMenuData(MenuContainerRoot root) {
         super.setMenuData(root);
         // no delayer here.

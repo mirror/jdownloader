@@ -80,7 +80,7 @@ public class Multi extends IExtraction {
      * 
      */
 
-    private static final String      _7Z_D                                                       = "(\\.7z)?\\..?.?(\\d+)$";
+    private static final String      _7Z_D                                                       = "(\\.7z)?\\..?(\\d+)$";
     private static final String      REGEX_ANY_7ZIP_PART                                         = "(?i).*(\\.7z)?\\.\\d+$";
 
     private static final String      _7Z$                                                        = "\\.7z$";

@@ -49,6 +49,11 @@ public class MenuManagerLinkgrabberTabBottombar extends AbstractBottomBarMenuMan
     }
 
     @Override
+    protected String getStorageKey() {
+        return "LinkgrabberTabBottomBar";
+    }
+
+    @Override
     public String getName() {
         return _GUI._.gui_config_menumanager_linkgrabberBottom();
     }
@@ -119,7 +124,7 @@ public class MenuManagerLinkgrabberTabBottombar extends AbstractBottomBarMenuMan
         quicksettings.add(AddAtTopToggleAction.class);
         quicksettings.add(AutoConfirmToggleAction.class);
         quicksettings.add(AutoStartToggleAction.class);
-        quicksettings.add(LinkFilterToggleAction.class);
+        quicksettings.add(setOptional(LinkFilterToggleAction.class));
 
         quicksettings.add(new SeperatorData());
         quicksettings.add(LinkgrabberOverviewPanelToggleAction.class);
@@ -129,4 +134,5 @@ public class MenuManagerLinkgrabberTabBottombar extends AbstractBottomBarMenuMan
         mr.add(quicksettings);
         return mr;
     }
+
 }

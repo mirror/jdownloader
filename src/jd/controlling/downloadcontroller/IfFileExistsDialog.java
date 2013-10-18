@@ -3,10 +3,13 @@ package jd.controlling.downloadcontroller;
 import java.awt.Dialog.ModalityType;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.FocusEvent;
+import java.awt.event.FocusListener;
 import java.io.File;
 
 import javax.swing.ButtonGroup;
 import javax.swing.JComponent;
+import javax.swing.JLabel;
 import javax.swing.JRadioButton;
 import javax.swing.JSeparator;
 
@@ -16,13 +19,15 @@ import org.appwork.swing.MigPanel;
 import org.appwork.swing.components.ExtTextArea;
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.swing.SwingUtils;
 import org.appwork.utils.swing.dialog.AbstractDialog;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.gui.views.downloads.table.DownloadsTableModel;
 import org.jdownloader.settings.IfFileExistsAction;
 import org.jdownloader.translate._JDT;
 
-public class IfFileExistsDialog extends AbstractDialog<IfFileExistsAction> implements IfFileExistsDialogInterface {
+public class IfFileExistsDialog extends AbstractDialog<IfFileExistsAction> implements IfFileExistsDialogInterface, FocusListener {
 
     private String             path;
     private IfFileExistsAction result;
@@ -65,7 +70,7 @@ public class IfFileExistsDialog extends AbstractDialog<IfFileExistsAction> imple
 
     @Override
     protected IfFileExistsAction createReturnValue() {
-
+        if (okButton != null) okButton.removeFocusListener(this);
         if (result != null) org.jdownloader.settings.staticreferences.CFG_GUI.CFG.setLastIfFileExists(result);
         return result;
     }
@@ -86,8 +91,19 @@ public class IfFileExistsDialog extends AbstractDialog<IfFileExistsAction> imple
             localFile = new File(downloadLink.getFileOutput() + ".part");
         }
 
-        txt.setText(_JDT._.jd_controlling_SingleDownloadController_askexists2(new File(path).getName(), packagename, SizeFormatter.formatBytes(localFile.length()), downloadLink.getDomainInfo().getTld()));
+        txt.setText(_JDT._.jd_controlling_SingleDownloadController_askexists3());
         p.add(txt);
+        p.add(SwingUtils.toBold(new JLabel(_GUI._.IfFileExistsDialog_layoutDialogContent_filename())), "split 2,sg 1");
+        p.add(new JLabel(new File(path).getName()));
+
+        p.add(SwingUtils.toBold(new JLabel(_GUI._.IfFileExistsDialog_layoutDialogContent_filesize())), "split 2,sg 1");
+        p.add(new JLabel(SizeFormatter.formatBytes(downloadLink.getDownloadSize())));
+
+        p.add(SwingUtils.toBold(new JLabel(_GUI._.IfFileExistsDialog_layoutDialogContent_package())), "split 2,sg 1");
+        p.add(new JLabel(packagename));
+
+        p.add(SwingUtils.toBold(new JLabel(_GUI._.IfFileExistsDialog_layoutDialogContent_hoster())), "split 2,sg 1");
+        p.add(new JLabel(downloadLink.getDomainInfo().getTld()));
 
         skip = new JRadioButton(_GUI._.IfFileExistsDialog_layoutDialogContent_skip_());
         skip.addActionListener(new ActionListener() {
@@ -135,6 +151,9 @@ public class IfFileExistsDialog extends AbstractDialog<IfFileExistsAction> imple
             skip.setSelected(true);
         }
         result = def;
+        if (okButton != null) {
+            okButton.addFocusListener(this);
+        }
         return p;
     }
 
@@ -149,6 +168,15 @@ public class IfFileExistsDialog extends AbstractDialog<IfFileExistsAction> imple
     public IfFileExistsDialogInterface show() {
 
         return UIOManager.I().show(IfFileExistsDialogInterface.class, this);
+    }
+
+    @Override
+    public void focusGained(FocusEvent e) {
+        DownloadsTableModel.getInstance().setSelectedObject(downloadLink);
+    }
+
+    @Override
+    public void focusLost(FocusEvent e) {
     }
 
 }

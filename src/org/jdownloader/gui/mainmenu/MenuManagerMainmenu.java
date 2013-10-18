@@ -53,6 +53,11 @@ public class MenuManagerMainmenu extends ContextMenuManager<FilePackage, Downloa
     }
 
     @Override
+    protected String getStorageKey() {
+        return "MainMenu";
+    }
+
+    @Override
     public String getFileExtension() {
         return ".jdmenu";
     }

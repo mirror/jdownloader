@@ -3331,4 +3331,28 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Add & DeepAnalyse Links from your Clipboard" })
     String PasteLinksAction_PasteLinksAction_deep();
 
+    @Default(lngs = { "en" }, values = { "Filename:" })
+    String IfFileExistsDialog_layoutDialogContent_filename();
+
+    @Default(lngs = { "en" }, values = { "Package:" })
+    String IfFileExistsDialog_layoutDialogContent_package();
+
+    @Default(lngs = { "en" }, values = { "Hoster:" })
+    String IfFileExistsDialog_layoutDialogContent_hoster();
+
+    @Default(lngs = { "en" }, values = { "Filesize:" })
+    String IfFileExistsDialog_layoutDialogContent_filesize();
+
+    @Default(lngs = { "en" }, values = { "Archivename:" })
+    String ExtractionListenerList_layoutDialogContent_archivename();
+
+    @Default(lngs = { "en" }, values = { "First File:" })
+    String ExtractionListenerList_layoutDialogContent_filename();
+
+    @Default(lngs = { "en" }, values = { "Password:" })
+    String ExtractionListenerList_layoutDialogContent_password();
+
+    @Default(lngs = { "en" }, values = { "Reset to Default?" })
+    String MenuManagerDialog_actionPerformed_title();
+
 }

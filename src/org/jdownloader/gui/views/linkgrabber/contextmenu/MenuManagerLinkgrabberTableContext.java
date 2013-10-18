@@ -56,6 +56,11 @@ public class MenuManagerLinkgrabberTableContext extends ContextMenuManager<Crawl
         return ".jdLGMenu";
     }
 
+    @Override
+    protected String getStorageKey() {
+        return "LinkgrabberContext";
+    }
+
     private LinkGrabberPanel panel;
     private LinkGrabberTable table;
 

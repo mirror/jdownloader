@@ -182,4 +182,9 @@ public class MenuManagerDownloadTableContext extends ContextMenuManager<FilePack
 
     }
 
+    @Override
+    protected String getStorageKey() {
+        return "DownloadTableContext";
+    }
+
 }

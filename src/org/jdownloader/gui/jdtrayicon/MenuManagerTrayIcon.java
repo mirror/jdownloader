@@ -46,6 +46,10 @@ public class MenuManagerTrayIcon extends ContextMenuManager<FilePackage, Downloa
      * Create a new instance of DownloadListContextMenuManager. This is a singleton class. Access the only existing instance by using
      * {@link #getInstance()}.
      */
+    @Override
+    protected String getStorageKey() {
+        return "TrayIcon";
+    }
 
     private MenuManagerTrayIcon() {
         super();
