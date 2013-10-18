@@ -645,13 +645,13 @@ public class TbCm extends PluginForDecrypt {
                     if (q240p) {
                         this.put(133, new Object[] { DestinationFormat.VIDEOMP4, "H.264", "AAC", "Stereo", "240p" });
                     }
-                    if (q480p) {
-                        this.put(135, new Object[] { DestinationFormat.VIDEOMP4, "H.264", "AAC", "Stereo", "480p" });
-                    }
                     if (q360p) {
                         // 270p / 360p
                         this.put(18, new Object[] { DestinationFormat.VIDEOMP4, "H.264", "AAC", "Stereo", "360p" });
                         this.put(134, new Object[] { DestinationFormat.VIDEOMP4, "H.264", "AAC", "Stereo", "360p" });
+                    }
+                    if (q480p) {
+                        this.put(135, new Object[] { DestinationFormat.VIDEOMP4, "H.264", "AAC", "Stereo", "480p" });
                     }
                     if (q720p) {
                         this.put(136, new Object[] { DestinationFormat.VIDEOMP4, "H.264", "AAC", "Stereo", "720p" });
@@ -846,7 +846,7 @@ public class TbCm extends PluginForDecrypt {
                     if (LinksFound.get(38) != null && ytVideo.containsKey(38)) {
                         // 3072p mp4
                         if (LinksFound.containsKey(38) && ytVideo.containsKey(38)) bestFound.put(38, LinksFound.get(38));
-                    } else if ((LinksFound.containsKey(37) && ytVideo.containsKey(37)) || (LinksFound.containsKey(46) && ytVideo.containsKey(46))) {
+                    } else if ((LinksFound.containsKey(37) && ytVideo.containsKey(37)) || (LinksFound.containsKey(137) && ytVideo.containsKey(137)) || (LinksFound.containsKey(46) && ytVideo.containsKey(46))) {
                         // 1080p mp4
                         if (LinksFound.containsKey(37) && ytVideo.containsKey(37)) bestFound.put(37, LinksFound.get(37));
                         if (LinksFound.containsKey(137) && ytVideo.containsKey(137)) bestFound.put(137, LinksFound.get(137));
