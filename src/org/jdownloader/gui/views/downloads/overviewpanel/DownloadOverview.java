@@ -136,7 +136,7 @@ public class DownloadOverview extends MigPanel implements DownloadControllerList
             }
         });
         settings.setVisible(CFG_GUI.DOWNLOAD_PANEL_OVERVIEW_SETTINGS_VISIBLE.isEnabled());
-        CFG_GUI.DOWNLOAD_PANEL_OVERVIEW_VISIBLE.getEventSender().addListener(this, true);
+        CFG_GUI.DOWNLOAD_TAB_OVERVIEW_VISIBLE.getEventSender().addListener(this, true);
         add(info, "pushy,growy");
         add(Box.createHorizontalGlue());
 
@@ -192,7 +192,7 @@ public class DownloadOverview extends MigPanel implements DownloadControllerList
         CFG_GUI.OVERVIEW_PANEL_VISIBLE_ONLY_INFO_VISIBLE.getEventSender().removeListener(this);
         CFG_GUI.OVERVIEW_PANEL_SMART_INFO_VISIBLE.getEventSender().removeListener(this);
         CFG_GUI.DOWNLOAD_PANEL_OVERVIEW_SETTINGS_VISIBLE.getEventSender().removeListener(settingsListener);
-        CFG_GUI.DOWNLOAD_PANEL_OVERVIEW_VISIBLE.getEventSender().removeListener(this);
+        CFG_GUI.DOWNLOAD_TAB_OVERVIEW_VISIBLE.getEventSender().removeListener(this);
         removeHierarchyListener(this);
         DownloadController.getInstance().removeListener(this);
         DownloadsTableModel.getInstance().removeTableModelListener(tableListener);
@@ -333,7 +333,7 @@ public class DownloadOverview extends MigPanel implements DownloadControllerList
 
     @Override
     public void onConfigValueModified(KeyHandler<Boolean> keyHandler, Boolean newValue) {
-        if (CFG_GUI.DOWNLOAD_PANEL_OVERVIEW_VISIBLE == keyHandler && Boolean.FALSE.equals(newValue)) {
+        if (CFG_GUI.DOWNLOAD_TAB_OVERVIEW_VISIBLE == keyHandler && Boolean.FALSE.equals(newValue)) {
             removeListeners();
             visible.set(false);
         } else {

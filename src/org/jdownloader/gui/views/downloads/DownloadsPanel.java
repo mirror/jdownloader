@@ -100,7 +100,7 @@ public class DownloadsPanel extends SwitchPanel implements DownloadControllerLis
             }
         });
 
-        CFG_GUI.DOWNLOAD_PANEL_OVERVIEW_VISIBLE.getEventSender().addListener(new GenericConfigEventListener<Boolean>() {
+        CFG_GUI.DOWNLOAD_TAB_OVERVIEW_VISIBLE.getEventSender().addListener(new GenericConfigEventListener<Boolean>() {
 
             @Override
             public void onConfigValidatorError(KeyHandler<Boolean> keyHandler, Boolean invalidValue, ValidationException validateException) {
@@ -114,7 +114,7 @@ public class DownloadsPanel extends SwitchPanel implements DownloadControllerLis
                     @Override
                     protected void runInEDT() {
                         removeAll();
-                        if (CFG_GUI.DOWNLOAD_PANEL_OVERVIEW_VISIBLE.isEnabled()) {
+                        if (CFG_GUI.DOWNLOAD_TAB_OVERVIEW_VISIBLE.isEnabled()) {
                             getOverView();
                         }
                         layoutComponents(DownloadController.DOWNLOADLIST_LOADED.isReached());
@@ -194,7 +194,7 @@ public class DownloadsPanel extends SwitchPanel implements DownloadControllerLis
             setLayout(new MigLayout("ins 0, wrap 1", "[grow,fill]", "[grow,fill]"));
             add(new JScrollPane(loader), "alignx center,aligny 20%");
         } else {
-            if (CFG_GUI.DOWNLOAD_PANEL_OVERVIEW_VISIBLE.isEnabled()) {
+            if (CFG_GUI.DOWNLOAD_TAB_OVERVIEW_VISIBLE.isEnabled()) {
                 setLayout(new MigLayout("ins 0, wrap 1", "[grow,fill]", "[grow,fill]2[]2[]"));
                 this.add(tableScrollPane, "");
                 Dimension p = tableScrollPane.getPreferredSize();
@@ -230,7 +230,7 @@ public class DownloadsPanel extends SwitchPanel implements DownloadControllerLis
 
                 @Override
                 protected void onCloseAction() {
-                    CFG_GUI.DOWNLOAD_PANEL_OVERVIEW_VISIBLE.setValue(false);
+                    CFG_GUI.DOWNLOAD_TAB_OVERVIEW_VISIBLE.setValue(false);
                     overView.removeListeners();
                 }
 

@@ -86,7 +86,7 @@ public class DownloadFolderColumn extends ExtTextColumn<AbstractNode> {
     protected void setStringValue(final String value, final AbstractNode object) {
         if (StringUtils.isEmpty(value) || object == null) return;
         File oldPath = LinkTreeUtils.getDownloadDirectory(object);
-        File newPath = LinkTreeUtils.getDownloadDirectory(value);
+        File newPath = LinkTreeUtils.getDownloadDirectory(value, null);
         if (oldPath.equals(newPath)) {
             /* both pathes are same, so nothing to do */
             return;

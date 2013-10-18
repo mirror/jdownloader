@@ -96,7 +96,7 @@ public class LinkgrabberOverview extends MigPanel implements GenericConfigEventL
         CFG_GUI.OVERVIEW_PANEL_SELECTED_INFO_VISIBLE.getEventSender().addListener(this, true);
         CFG_GUI.OVERVIEW_PANEL_VISIBLE_ONLY_INFO_VISIBLE.getEventSender().addListener(this, true);
         CFG_GUI.OVERVIEW_PANEL_SMART_INFO_VISIBLE.getEventSender().addListener(this, true);
-        CFG_GUI.LINKGRABBER_OVERVIEW_VISIBLE.getEventSender().addListener(this, true);
+        CFG_GUI.LINKGRABBER_TAB_OVERVIEW_VISIBLE.getEventSender().addListener(this, true);
 
         add(info, "pushy,growy");
         add(Box.createHorizontalGlue());
@@ -137,7 +137,7 @@ public class LinkgrabberOverview extends MigPanel implements GenericConfigEventL
         CFG_GUI.OVERVIEW_PANEL_SELECTED_INFO_VISIBLE.getEventSender().removeListener(this);
         CFG_GUI.OVERVIEW_PANEL_VISIBLE_ONLY_INFO_VISIBLE.getEventSender().removeListener(this);
         CFG_GUI.OVERVIEW_PANEL_SMART_INFO_VISIBLE.getEventSender().removeListener(this);
-        CFG_GUI.LINKGRABBER_OVERVIEW_VISIBLE.getEventSender().removeListener(this);
+        CFG_GUI.LINKGRABBER_TAB_OVERVIEW_VISIBLE.getEventSender().removeListener(this);
         LinkCollector.getInstance().getEventsender().removeListener(this);
         LinkGrabberTableModel.getInstance().removeTableModelListener(tableListener);
         table.getSelectionModel().removeListSelectionListener(selectionListener);
@@ -222,7 +222,7 @@ public class LinkgrabberOverview extends MigPanel implements GenericConfigEventL
 
     @Override
     public void onConfigValueModified(KeyHandler<Boolean> keyHandler, Boolean newValue) {
-        if (CFG_GUI.LINKGRABBER_OVERVIEW_VISIBLE == keyHandler && Boolean.FALSE.equals(newValue)) {
+        if (CFG_GUI.LINKGRABBER_TAB_OVERVIEW_VISIBLE == keyHandler && Boolean.FALSE.equals(newValue)) {
             removeListeners();
             visible.set(false);
         } else {

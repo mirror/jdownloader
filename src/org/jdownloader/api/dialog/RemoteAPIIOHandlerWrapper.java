@@ -19,7 +19,6 @@ import org.appwork.uio.UIOManager;
 import org.appwork.uio.UserIODefinition;
 import org.appwork.uio.UserIODefinition.CloseReason;
 import org.appwork.uio.UserIOHandlerInterface;
-import org.appwork.utils.Application;
 import org.appwork.utils.locale._AWU;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.swing.EDTRunner;
@@ -253,9 +252,9 @@ public class RemoteAPIIOHandlerWrapper implements UserIOHandlerInterface {
         try {
             try {
                 if (impl instanceof AbstractDialog) {
-                    if (!Application.isJared(RemoteAPIIOHandlerWrapper.class)) {
-                        ((AbstractDialog<?>) impl).setTitle(((AbstractDialog<?>) impl).getTitle() + " DialogID: " + handle.getId());
-                    }
+                    // if (!Application.isJared(RemoteAPIIOHandlerWrapper.class)) {
+                    // ((AbstractDialog<?>) impl).setTitle(((AbstractDialog<?>) impl).getTitle() + " DialogID: " + handle.getId());
+                    // }
 
                     Dialog.getInstance().showDialog((AbstractDialog<?>) impl);
                 } else {

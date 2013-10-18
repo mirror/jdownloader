@@ -32,7 +32,7 @@ public class QuickSettingsPopup extends JPopupMenu {
             public void onConfigValidatorError(KeyHandler<Boolean> keyHandler, Boolean invalidValue, ValidationException validateException) {
             }
         };
-        CFG_GUI.DOWNLOAD_PANEL_OVERVIEW_VISIBLE.getEventSender().addListener(list, true);
+        CFG_GUI.DOWNLOAD_TAB_OVERVIEW_VISIBLE.getEventSender().addListener(list, true);
     }
 
     public void superSetVisible(boolean b) {

@@ -143,19 +143,19 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
 
     @AboutConfig
     @DescriptionForConfigEntry("Enable/Disable the DownloadPanel Overview panel ")
-    @DefaultBooleanValue(false)
+    @DefaultBooleanValue(true)
     @RequiresRestart("A JDownloader Restart is Required")
-    boolean isDownloadPanelOverviewVisible();
+    boolean isDownloadTabOverviewVisible();
 
-    void setDownloadPanelOverviewVisible(boolean b);
+    void setDownloadTabOverviewVisible(boolean b);
 
     @AboutConfig
     @DescriptionForConfigEntry("Enable/Disable the Linkgrabber Overview panel ")
-    @DefaultBooleanValue(false)
+    @DefaultBooleanValue(true)
     @RequiresRestart("A JDownloader Restart is Required")
-    boolean isLinkgrabberOverviewVisible();
+    boolean isLinkgrabberTabOverviewVisible();
 
-    void setLinkgrabberOverviewVisible(boolean b);
+    void setLinkgrabberTabOverviewVisible(boolean b);
 
     @AboutConfig
     @DefaultBooleanValue(true)

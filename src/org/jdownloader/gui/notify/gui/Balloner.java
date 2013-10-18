@@ -9,6 +9,7 @@ import java.awt.Rectangle;
 import java.awt.Toolkit;
 import java.awt.event.ComponentEvent;
 import java.awt.event.ComponentListener;
+import java.util.ArrayList;
 import java.util.HashMap;
 
 import javax.swing.JFrame;
@@ -61,13 +62,23 @@ public class Balloner implements ComponentListener {
         int x = 0;
         int width = 0;
         for (AbstractNotifyWindow n : screenStack) {
-            n.setPreferredSize(null);
-            width = Math.max(width, n.getPreferredSize().width);
+            if (!n.isDisposed()) {
+
+                n.setPreferredSize(null);
+                width = Math.max(width, n.getPreferredSize().width);
+
+            }
 
         }
 
+        ArrayList<AbstractNotifyWindow> removes = new ArrayList<AbstractNotifyWindow>();
         for (AbstractNotifyWindow n : screenStack) {
+            if (n.isDisposed()) {
+                // remove badly implemented ballons
+                removes.add(n);
+                continue;
 
+            }
             Dimension ps = n.getPreferredSize();
             ps.width = width;
             n.setPreferredSize(ps);
@@ -90,6 +101,7 @@ public class Balloner implements ComponentListener {
             }
 
         }
+        screenStack.removeAll(removes);
     }
 
     private Point calculateLocation(Rectangle bounds, Dimension ps, Anchor anchor, Point point) {

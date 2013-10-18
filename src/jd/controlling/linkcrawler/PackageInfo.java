@@ -32,6 +32,14 @@ public class PackageInfo {
     }
 
     public void setDestinationFolder(String destinationFolder) {
+        // do not set if the path is already set. if we need this, we should introduce some kind of marker like \\replace\\c:/blabla
+        // this may happen in this case:
+        // the user adds a links via the addlinkdialog
+        // the user has to enter the downloadpaath in the dialog
+        // the path will be forwarded in the crawlerjob, and finally in this packaginfo.
+        // packagizer rules like the use subfolder rule will replace this path then.
+        if (!StringUtils.isEmpty(this.destinationFolder)) return;
+
         this.destinationFolder = destinationFolder;
     }
 
@@ -48,8 +56,8 @@ public class PackageInfo {
     private String comment           = null;
 
     /**
-     * Returns a packageID or null, of no id specific values are set. if this method returns a value !=null, it should get an own package, which is not part of
-     * autopackaging.
+     * Returns a packageID or null, of no id specific values are set. if this method returns a value !=null, it should get an own package,
+     * which is not part of autopackaging.
      * 
      * @return
      */

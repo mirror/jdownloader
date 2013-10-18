@@ -14,8 +14,8 @@ public class DownloadsOverviewPanelToggleAction extends AppAction implements Cac
     public DownloadsOverviewPanelToggleAction() {
         setIconKey("bottombar");
         setName(_GUI._.DownloadsOverviewPanelToggleAction_DownloadsOverviewPanelToggleAction());
-        setSelected(CFG_GUI.DOWNLOAD_PANEL_OVERVIEW_VISIBLE.isEnabled());
-        CFG_GUI.DOWNLOAD_PANEL_OVERVIEW_VISIBLE.getEventSender().addListener(new GenericConfigEventListener<Boolean>() {
+        setSelected(CFG_GUI.DOWNLOAD_TAB_OVERVIEW_VISIBLE.isEnabled());
+        CFG_GUI.DOWNLOAD_TAB_OVERVIEW_VISIBLE.getEventSender().addListener(new GenericConfigEventListener<Boolean>() {
 
             @Override
             public void onConfigValueModified(KeyHandler<Boolean> keyHandler, Boolean newValue) {
@@ -32,7 +32,7 @@ public class DownloadsOverviewPanelToggleAction extends AppAction implements Cac
 
     @Override
     public void actionPerformed(ActionEvent e) {
-        CFG_GUI.DOWNLOAD_PANEL_OVERVIEW_VISIBLE.toggle();
+        CFG_GUI.DOWNLOAD_TAB_OVERVIEW_VISIBLE.toggle();
     }
 
     @Override

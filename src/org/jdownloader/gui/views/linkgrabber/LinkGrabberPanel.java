@@ -180,7 +180,7 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
         layoutComponents();
 
         org.jdownloader.settings.staticreferences.CFG_GUI.LINKGRABBER_SIDEBAR_VISIBLE.getEventSender().addListener(this);
-        org.jdownloader.settings.staticreferences.CFG_GUI.LINKGRABBER_OVERVIEW_VISIBLE.getEventSender().addListener(this);
+        org.jdownloader.settings.staticreferences.CFG_GUI.LINKGRABBER_TAB_OVERVIEW_VISIBLE.getEventSender().addListener(this);
         MenuManagerLinkgrabberTableContext.getInstance().setPanel(this);
 
     }
@@ -204,7 +204,7 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
 
                 @Override
                 protected void onCloseAction() {
-                    CFG_GUI.LINKGRABBER_OVERVIEW_VISIBLE.setValue(false);
+                    CFG_GUI.LINKGRABBER_TAB_OVERVIEW_VISIBLE.setValue(false);
                     loverView.removeListeners();
                 }
             });
@@ -222,7 +222,7 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
                 createSidebar();
             }
 
-            if (CFG_GUI.LINKGRABBER_OVERVIEW_VISIBLE.isEnabled()) {
+            if (CFG_GUI.LINKGRABBER_TAB_OVERVIEW_VISIBLE.isEnabled()) {
                 this.add(tableScrollPane, "");
                 add(sidebarScrollPane, "spany 2,growx");
                 add(getOverView());
@@ -234,7 +234,7 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
 
         } else {
 
-            if (CFG_GUI.LINKGRABBER_OVERVIEW_VISIBLE.isEnabled()) {
+            if (CFG_GUI.LINKGRABBER_TAB_OVERVIEW_VISIBLE.isEnabled()) {
 
                 this.add(tableScrollPane, "spanx");
                 add(getOverView(), "spanx");

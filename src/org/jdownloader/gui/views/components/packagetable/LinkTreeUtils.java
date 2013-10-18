@@ -16,6 +16,7 @@ import jd.plugins.FilePackage;
 import org.appwork.exceptions.WTFException;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.os.CrossSystem;
+import org.jdownloader.controlling.packagizer.PackagizerController;
 import org.jdownloader.settings.GeneralSettings;
 
 public class LinkTreeUtils {
@@ -114,16 +115,25 @@ public class LinkTreeUtils {
         if (node instanceof DownloadLink) {
             FilePackage parent = ((DownloadLink) node).getFilePackage();
             if (parent != null) directory = parent.getDownloadDirectory();
+
+            return getDownloadDirectory(directory, parent.getName());
         } else if (node instanceof FilePackage) {
             directory = ((FilePackage) node).getDownloadDirectory();
+
+            return getDownloadDirectory(directory, ((FilePackage) node).getName());
         } else if (node instanceof CrawledLink) {
             CrawledPackage parent = ((CrawledLink) node).getParentNode();
             if (parent != null) directory = parent.getDownloadFolder();
+
+            return getDownloadDirectory(directory, parent.getName());
         } else if (node instanceof CrawledPackage) {
             directory = ((CrawledPackage) node).getDownloadFolder();
-        } else
+
+            return getDownloadDirectory(directory, ((CrawledPackage) node).getName());
+        } else {
             throw new WTFException("Unknown Type: " + node.getClass());
-        return getDownloadDirectory(directory);
+        }
+
     }
 
     public static File getRawDownloadDirectory(AbstractNode node) {
@@ -140,15 +150,28 @@ public class LinkTreeUtils {
             directory = ((CrawledPackage) node).getRawDownloadFolder();
         } else
             throw new WTFException("Unknown Type: " + node.getClass());
-        return getDownloadDirectory(directory);
+        return getRawDownloadDirectory(directory);
     }
 
-    public static File getDownloadDirectory(String path) {
+    private static File getRawDownloadDirectory(String path) {
         if (path == null) return null;
+
         if (CrossSystem.isAbsolutePath(path)) {
             return new File(path);
         } else {
+
             return new File(org.jdownloader.settings.staticreferences.CFG_GENERAL.DEFAULT_DOWNLOAD_FOLDER.getValue(), path);
+        }
+    }
+
+    public static File getDownloadDirectory(String path, String packagename) {
+        if (path == null) return null;
+        path = PackagizerController.replaceDynamicTags(path, packagename);
+        if (CrossSystem.isAbsolutePath(path)) {
+            return new File(path);
+        } else {
+
+            return new File(PackagizerController.replaceDynamicTags(org.jdownloader.settings.staticreferences.CFG_GENERAL.DEFAULT_DOWNLOAD_FOLDER.getValue(), packagename), path);
         }
     }
 

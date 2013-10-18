@@ -16,14 +16,14 @@ public class LinkgrabberOverviewPanelToggleAction extends AppAction implements C
     public LinkgrabberOverviewPanelToggleAction() {
         setIconKey("bottombar");
         setName(_GUI._.LinkgrabberOverviewPanelToggleAction_LinkgrabberOverviewPanelToggleAction());
-        CFG_GUI.LINKGRABBER_OVERVIEW_VISIBLE.getEventSender().addListener(this, true);
-        setSelected(CFG_GUI.LINKGRABBER_OVERVIEW_VISIBLE.isEnabled());
+        CFG_GUI.LINKGRABBER_TAB_OVERVIEW_VISIBLE.getEventSender().addListener(this, true);
+        setSelected(CFG_GUI.LINKGRABBER_TAB_OVERVIEW_VISIBLE.isEnabled());
 
     }
 
     @Override
     public void actionPerformed(ActionEvent e) {
-        CFG_GUI.LINKGRABBER_OVERVIEW_VISIBLE.toggle();
+        CFG_GUI.LINKGRABBER_TAB_OVERVIEW_VISIBLE.toggle();
     }
 
     @Override
@@ -36,7 +36,7 @@ public class LinkgrabberOverviewPanelToggleAction extends AppAction implements C
 
             @Override
             protected void runInEDT() {
-                setSelected(CFG_GUI.LINKGRABBER_OVERVIEW_VISIBLE.isEnabled());
+                setSelected(CFG_GUI.LINKGRABBER_TAB_OVERVIEW_VISIBLE.isEnabled());
             }
         };
 
