@@ -1,5 +1,7 @@
 AbstractCaptchaDialog_AbstractCaptchaDialog_cancel=跳过
 AbstractCaptchaDialog_AbstractCaptchaDialog_continue=发送
+AbstractCaptchaDialog_createPopup_skip_and_disable_all_downloads_from=为主机 '%s1' 跳过所有验证码
+AbstractCaptchaDialog_createPopup_skip_and_disable_package=为包 '%s1' 跳过所有验证码
 AbstractCaptchaDialog_createPopup_skip_and_hide_all_captchas_download=跳过所有验证码
 AbstractCaptchaDialog_createPopup_skip_and_stop_all_downloads=停止所有下载
 AbstractConfigPanel_addPair_enabled=启用/禁用这个选项
@@ -543,6 +545,7 @@ StopsignAction_actionPerformed_help_msg_package_=如果您在包上设置停止�
 StopsignAction_actionPerformed_help_title_=下载链接的停止标记
 StopsignAction_actionPerformed_help_title_package_=包的停止标记
 TaskColumn_getDescription_object_=%s1 拦截了您的当前 IP (互联网地址)。\n\n在大多数情况，JDownloader 通常会进行一次重新连接并获取一个新 IP。\n\n如果是不可用的话，我们建议您使用 %s1 的付费模式。
+TaskColumn_getStringValue_extraction_error=提取错误
 TaskColumn_getStringValue_finished_=已完成
 TaskColumn_getStringValue_running_=正在运行
 TaskColumn_onSingleClick_object_=当前 IP 被 %s1 拦截
