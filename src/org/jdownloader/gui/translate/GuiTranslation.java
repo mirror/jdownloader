@@ -3355,4 +3355,7 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Reset to Default?" })
     String MenuManagerDialog_actionPerformed_title();
 
+    @Default(lngs = { "en" }, values = { "Package or Link Properties" })
+    String LinkgrabberPropertiesToggleAction_LinkgrabberPropertiesToggleAction();
+
 }

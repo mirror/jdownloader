@@ -158,6 +158,13 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
     void setLinkgrabberTabOverviewVisible(boolean b);
 
     @AboutConfig
+    @DescriptionForConfigEntry("Enable/Disable the Linkgrabber properties panel ")
+    @DefaultBooleanValue(true)
+    boolean isLinkgrabberTabPropertiesPanelVisible();
+
+    void setLinkgrabberTabPropertiesPanelVisible(boolean b);
+
+    @AboutConfig
     @DefaultBooleanValue(true)
     boolean isOverviewPanelTotalInfoVisible();
 

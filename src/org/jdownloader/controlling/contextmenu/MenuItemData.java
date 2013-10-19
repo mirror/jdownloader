@@ -18,9 +18,10 @@ import org.appwork.utils.GetterSetter;
 import org.appwork.utils.ReflectionUtils;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.reflection.Clazz;
+import org.jdownloader.actions.AbstractSelectionContextAction;
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.actions.CachableInterface;
-import org.jdownloader.actions.AbstractSelectionContextAction;
+import org.jdownloader.actions.ComponentProviderInterface;
 import org.jdownloader.extensions.AbstractExtension;
 import org.jdownloader.extensions.ExtensionController;
 import org.jdownloader.extensions.ExtensionNotLoadedException;
@@ -209,6 +210,7 @@ public class MenuItemData implements Storable {
         if (StringUtils.isNotEmpty(getShortcut())) {
             action.setAccelerator(KeyStroke.getKeyStroke(getShortcut()));
         }
+        if (action instanceof ComponentProviderInterface) { return ((ComponentProviderInterface) action).createComponent(this); }
         JMenuItem ret = action.isToggle() ? new JCheckBoxMenuItem(action) : new JMenuItem(action);
 
         ret.getAccessibleContext().setAccessibleName(action.getName());

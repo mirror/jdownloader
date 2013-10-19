@@ -15,6 +15,7 @@ import org.jdownloader.gui.views.downloads.bottombar.DeleteContainer;
 import org.jdownloader.gui.views.downloads.bottombar.HorizontalBoxItem;
 import org.jdownloader.gui.views.downloads.bottombar.QuickSettingsMenuContainer;
 import org.jdownloader.gui.views.linkgrabber.LinkgrabberOverviewPanelToggleAction;
+import org.jdownloader.gui.views.linkgrabber.LinkgrabberPropertiesToggleAction;
 import org.jdownloader.gui.views.linkgrabber.LinkgrabberSearchMenuItem;
 import org.jdownloader.gui.views.linkgrabber.LinkgrabberSidebarToggleAction;
 import org.jdownloader.gui.views.linkgrabber.actions.ClearLinkgrabberAction;
@@ -127,8 +128,10 @@ public class MenuManagerLinkgrabberTabBottombar extends AbstractBottomBarMenuMan
         quicksettings.add(setOptional(LinkFilterToggleAction.class));
 
         quicksettings.add(new SeperatorData());
-        quicksettings.add(LinkgrabberOverviewPanelToggleAction.class);
-        quicksettings.add(LinkgrabberSidebarToggleAction.class);
+        quicksettings.add((LinkgrabberOverviewPanelToggleAction.class));
+        quicksettings.add((LinkgrabberPropertiesToggleAction.class));
+
+        quicksettings.add((LinkgrabberSidebarToggleAction.class));
         quicksettings.add(new SeperatorData());
         quicksettings.add(BottomBarMenuManagerAction.class);
         mr.add(quicksettings);

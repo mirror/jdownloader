@@ -37,6 +37,8 @@ import org.jdownloader.gui.views.linkgrabber.bottombar.MenuManagerLinkgrabberTab
 import org.jdownloader.gui.views.linkgrabber.contextmenu.MenuManagerLinkgrabberTableContext;
 import org.jdownloader.gui.views.linkgrabber.overview.LinkgrabberOverViewHeader;
 import org.jdownloader.gui.views.linkgrabber.overview.LinkgrabberOverview;
+import org.jdownloader.gui.views.linkgrabber.properties.LinkgrabberProperties;
+import org.jdownloader.gui.views.linkgrabber.properties.LinkgrabberPropertiesHeader;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings.NewLinksInLinkgrabberAction;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
@@ -59,7 +61,8 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
 
     private HeaderScrollPane                                  sidebarScrollPane;
 
-    private NullsafeAtomicReference<OverviewHeaderScrollPane> overViewScrollBar = new NullsafeAtomicReference<OverviewHeaderScrollPane>(null);
+    private NullsafeAtomicReference<OverviewHeaderScrollPane> overViewScrollBar    = new NullsafeAtomicReference<OverviewHeaderScrollPane>(null);
+    private NullsafeAtomicReference<OverviewHeaderScrollPane> propertiesScrollPane = new NullsafeAtomicReference<OverviewHeaderScrollPane>(null);
     private CustomizeableActionBar                            rightBar;
     private CustomizeableActionBar                            leftBar;
 
@@ -181,6 +184,7 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
 
         org.jdownloader.settings.staticreferences.CFG_GUI.LINKGRABBER_SIDEBAR_VISIBLE.getEventSender().addListener(this);
         org.jdownloader.settings.staticreferences.CFG_GUI.LINKGRABBER_TAB_OVERVIEW_VISIBLE.getEventSender().addListener(this);
+        org.jdownloader.settings.staticreferences.CFG_GUI.LINKGRABBER_TAB_PROPERTIES_PANEL_VISIBLE.getEventSender().addListener(this);
         MenuManagerLinkgrabberTableContext.getInstance().setPanel(this);
 
     }
@@ -215,37 +219,126 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
 
     private void layoutComponents() {
         removeAll();
-        setLayout(new MigLayout("ins 0, wrap 2", "[grow,fill]2[fill]0", "[grow, fill]2[]2[]0"));
-        if (org.jdownloader.settings.staticreferences.CFG_GUI.LINKGRABBER_SIDEBAR_VISIBLE.getValue()) {
 
-            if (sidebarScrollPane == null) {
-                createSidebar();
-            }
+        if (CFG_GUI.LINKGRABBER_SIDEBAR_VISIBLE.isEnabled()) {
 
             if (CFG_GUI.LINKGRABBER_TAB_OVERVIEW_VISIBLE.isEnabled()) {
-                this.add(tableScrollPane, "");
-                add(sidebarScrollPane, "spany 2,growx");
-                add(getOverView());
+                if (CFG_GUI.LINKGRABBER_TAB_PROPERTIES_PANEL_VISIBLE.isEnabled()) {
+
+                    // all panels visible
+                    setLayout(new MigLayout("ins 0, wrap 2", "[grow,fill]2[fill]0", "[grow, fill]2[]2[]2[]0"));
+                } else {
+                    setLayout(new MigLayout("ins 0, wrap 2", "[grow,fill]2[fill]0", "[grow, fill]2[]2[]0"));
+                }
 
             } else {
-                this.add(tableScrollPane, "spany 2");
-                add(sidebarScrollPane, "spany 2,growx");
+                if (CFG_GUI.LINKGRABBER_TAB_PROPERTIES_PANEL_VISIBLE.isEnabled()) {
+                    setLayout(new MigLayout("ins 0, wrap 2", "[grow,fill]2[fill]0", "[grow, fill]2[]2[]0"));
+                } else {
+                    setLayout(new MigLayout("ins 0, wrap 2", "[grow,fill]2[fill]0", "[grow, fill]2[]0"));
+                }
             }
 
         } else {
 
             if (CFG_GUI.LINKGRABBER_TAB_OVERVIEW_VISIBLE.isEnabled()) {
+                if (CFG_GUI.LINKGRABBER_TAB_PROPERTIES_PANEL_VISIBLE.isEnabled()) {
 
-                this.add(tableScrollPane, "spanx");
-                add(getOverView(), "spanx");
+                    // all panels visible
+                    setLayout(new MigLayout("ins 0, wrap 2", "[grow,fill]2[fill]0", "[grow, fill]2[]2[]2[]0"));
+                } else {
+                    setLayout(new MigLayout("ins 0, wrap 2", "[grow,fill]2[fill]0", "[grow, fill]2[]2[]0"));
+                }
+
             } else {
-                this.add(tableScrollPane, "spany 2,spanx,growx");
+                if (CFG_GUI.LINKGRABBER_TAB_PROPERTIES_PANEL_VISIBLE.isEnabled()) {
+                    setLayout(new MigLayout("ins 0, wrap 2", "[grow,fill]2[fill]0", "[grow, fill]2[]2[]0"));
+                } else {
+                    setLayout(new MigLayout("ins 0, wrap 2", "[grow,fill]2[fill]0", "[grow, fill]2[]0"));
+                }
             }
 
         }
 
+        String constrains = "spanx";
+
+        if (CFG_GUI.LINKGRABBER_SIDEBAR_VISIBLE.getValue()) {
+            constrains = "";
+            this.add(tableScrollPane, "");
+            if (sidebarScrollPane == null) {
+                createSidebar();
+            }
+            int height = 1;
+            if (CFG_GUI.LINKGRABBER_TAB_OVERVIEW_VISIBLE.isEnabled()) height++;
+            if (CFG_GUI.LINKGRABBER_TAB_PROPERTIES_PANEL_VISIBLE.isEnabled()) height++;
+
+            add(sidebarScrollPane, "spany " + height);
+        } else {
+            this.add(tableScrollPane, "spanx");
+        }
+
+        if (CFG_GUI.LINKGRABBER_TAB_OVERVIEW_VISIBLE.isEnabled()) {
+            add(getOverView(), constrains);
+        }
+
+        if (CFG_GUI.LINKGRABBER_TAB_PROPERTIES_PANEL_VISIBLE.isEnabled()) {
+
+            add(createPropertiesPanel(), constrains);
+        }
+        //
+        // if (CFG_GUI.LINKGRABBER_TAB_OVERVIEW_VISIBLE.isEnabled()) {
+        // this.add(tableScrollPane, "");
+        // add(sidebarScrollPane, "spany 2,growx");
+        // add(getOverView());
+        //
+        // } else {
+        // this.add(tableScrollPane, "spany 2");
+        // add(sidebarScrollPane, "spany 2,growx");
+        // }
+        //
+        // } else {
+        //
+        // if (CFG_GUI.LINKGRABBER_TAB_OVERVIEW_VISIBLE.isEnabled()) {
+        //
+        // this.add(tableScrollPane, "spanx");
+        // add(getOverView(), "spanx");
+        // } else {
+        // this.add(tableScrollPane, "spany 2,spanx,growx");
+        // }
+        //
+        // }
+
         add(leftBar, "height 24!");
-        add(rightBar, "height 24!,growx");
+
+        add(rightBar, "height 24!");
+    }
+
+    private OverviewHeaderScrollPane createPropertiesPanel() {
+        OverviewHeaderScrollPane ret = propertiesScrollPane.get();
+        if (ret != null) {
+            return ret;
+        } else {
+            final LinkgrabberProperties loverView = new LinkgrabberProperties(table) {
+                @Override
+                public void removeListeners() {
+                    super.removeListeners();
+                    propertiesScrollPane.set(null);
+                }
+            };
+            ret = new OverviewHeaderScrollPane(loverView);
+            final OverviewHeaderScrollPane finalRet = ret;
+            LAFOptions.getInstance().applyPanelBackground(ret);
+            ret.setColumnHeaderView(new LinkgrabberPropertiesHeader() {
+
+                @Override
+                protected void onCloseAction() {
+                    CFG_GUI.LINKGRABBER_TAB_PROPERTIES_PANEL_VISIBLE.setValue(false);
+                    loverView.removeListeners();
+                }
+            });
+            propertiesScrollPane.compareAndSet(null, ret);
+        }
+        return ret;
     }
 
     private void createSidebar() {
