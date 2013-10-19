@@ -46,7 +46,7 @@ public class MixUploadOrg extends PluginForHost {
         String trackID = link.getStringProperty("trackid", null);
         if (trackID == null) {
             br.getPage(link.getDownloadURL());
-            if (br.containsHTML(">Page not found<|>Error<")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            if (br.containsHTML(">Page not found<|>Error<|\"/img/404\\-img\\.png\"|\"/img/forbidden\\.png\"")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             trackID = br.getRegex("id=\"pl_track(\\d+)\"").getMatch(0);
             if (trackID == null) {
                 trackID = br.getRegex("p\\.playTrackId\\((\\d+)\\)").getMatch(0);

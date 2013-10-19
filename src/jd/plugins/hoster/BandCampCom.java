@@ -21,6 +21,7 @@ import java.text.DecimalFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.Locale;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
@@ -38,6 +39,8 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
+
+import org.appwork.utils.formatter.TimeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "bandcamp.com" }, urls = { "http://(www\\.)?[a-z0-9\\-]+\\.bandcamp\\.com/track/[a-z0-9\\-_]+" }, flags = { 2 })
 public class BandCampCom extends PluginForHost {
@@ -123,7 +126,11 @@ public class BandCampCom extends PluginForHost {
                 df = new DecimalFormat("000");
             else if (trackNum > 9) df = new DecimalFormat("00");
             final String filename = br.getRegex("\"title\":\"([^<>\"]*?)\"").getMatch(0);
-            final String date = br.getRegex("<meta itemprop=\"datePublished\" content=\"(\\d+)\"/>").getMatch(0);
+            String date = br.getRegex("<meta itemprop=\"datePublished\" content=\"(\\d+)\"/>").getMatch(0);
+            if (date == null) {
+                date = br.getRegex("\"publish_date\":\"([^<>\"]*?)\"").getMatch(0);
+                if (date != null) date = Long.toString(TimeFormatter.getMilliSeconds(date, "dd MMM yyyy hh:mm:ss Z", Locale.ENGLISH));
+            }
             final Regex inforegex = br.getRegex("<title>(.*?) \\| (.*?)</title>");
             final String artist = inforegex.getMatch(1);
             final String albumname = inforegex.getMatch(0);

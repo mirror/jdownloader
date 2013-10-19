@@ -34,7 +34,7 @@ public class EightTracksCom extends PluginForDecrypt {
     private static final String MAINPAGE          = "http://8tracks.com/";
     private boolean             ATEND             = false;
     private String              clipData;
-    private static final String UNSAUPPORTEDLINKS = "http://(www\\.)?8tracks\\.com/((assets_js/|explore|auth|settings|mixes|developers|users)/.+|[\\w\\-]+/homepage)";
+    private static final String UNSAUPPORTEDLINKS = "http://(www\\.)?8tracks\\.com/((assets_js/|explore|auth|settings|mixes|developers|users)/.+|[\\w\\-]+/homepage|sets/new)";
 
     public EightTracksCom(final PluginWrapper wrapper) {
         super(wrapper);
@@ -71,6 +71,10 @@ public class EightTracksCom extends PluginForDecrypt {
 
         if (br.containsHTML(">Sorry, that page doesn\\'t exist")) {
             logger.info("Link offline: " + parameter);
+            return decryptedLinks;
+        }
+        if (br.containsHTML(">The mix you're looking for is currently in private mode")) {
+            logger.info("Link offline (this is a private link): " + parameter);
             return decryptedLinks;
         }
 

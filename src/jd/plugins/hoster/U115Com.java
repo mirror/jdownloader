@@ -194,7 +194,8 @@ public class U115Com extends PluginForHost {
         ai.setUnlimitedTraffic();
         account.setValid(true);
         /**
-         * Doesn't have a premium login, plugin is only designed for free accounts!
+         * Doesn't have a premium login, plugin is only designed for free
+         * accounts!
          */
         ai.setStatus("Registered (free) User");
         return ai;
@@ -254,7 +255,7 @@ public class U115Com extends PluginForHost {
                 if (fileDeleted) {
                     logger.info("File successfully deleted from account...");
                 } else {
-                    logger.warning("Warning, file could not be deleted from account...");
+                    logger.info("Warning, file could not be deleted from account...");
                 }
             }
         }
@@ -284,7 +285,7 @@ public class U115Com extends PluginForHost {
     }
 
     public String findLink() throws Exception {
-        String linkToDownload = br.getRegex("\"(http://\\d+\\.\\d+\\.\\d+\\.\\d+/gdown_group[^<>\"]*?)\"").getMatch(0);
+        String linkToDownload = br.getRegex("\"(http://(\\d+\\.\\d+\\.\\d+\\.\\d+|[a-z0-9\\.]+\\.115\\.com)/gdown_group[^<>\"]*?)\"").getMatch(0);
         return linkToDownload;
     }
 

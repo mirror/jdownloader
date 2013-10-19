@@ -56,6 +56,7 @@ public class WorldStarHipHopCom extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
+        downloadLink.setName(new Regex(downloadLink.getDownloadURL(), "video\\.php\\?v=(.+)").getMatch(0));
         br.setCookie("http://worldstaruncut.com/", "worldstarAdultOk", "true");
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());

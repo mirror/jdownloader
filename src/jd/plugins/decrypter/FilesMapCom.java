@@ -58,6 +58,10 @@ public class FilesMapCom extends PluginForDecrypt {
             }
             decryptedLinks.add(createDownloadlink("http://www.goear.com/listen/" + dlID + "/" + "x"));
         } else {
+            if (br.getURL().contains("/files/search/")) {
+                logger.info("Link offline: " + parameter);
+                return decryptedLinks;
+            }
             /** Handling for all others */
             String fpName = br.getRegex("property=\"og:title\" content=\"(.*?) \\(\\d+\\.?.{1,6}\\)").getMatch(0);
             if (fpName == null) fpName = br.getRegex("<title>(.*?) \\(\\d+\\.?.{1,6}\\)").getMatch(0);

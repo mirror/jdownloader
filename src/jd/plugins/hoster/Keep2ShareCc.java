@@ -434,9 +434,12 @@ public class Keep2ShareCc extends PluginForHost {
         } else {
             br.setFollowRedirects(false);
             br.getPage(link.getDownloadURL());
-            if (br.containsHTML("Traffic limit exceed\\!<")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
-            String dllink = br.getRegex("\\'(/file/url\\.html\\?file=[a-z0-9]+)\\'").getMatch(0);
+            // Direct download
+            String dllink = br.getRedirectLocation();
+            // Or no direct download
+            if (dllink == null) dllink = br.getRegex("\\'(/file/url\\.html\\?file=[a-z0-9]+)\\'").getMatch(0);
             if (dllink == null) {
+                if (br.containsHTML("Traffic limit exceed\\!<")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
                 synchronized (LOCK) {
                     if (cookies == account.getProperty("cookies", null)) {
                         account.setProperty("cookies", Property.NULL);

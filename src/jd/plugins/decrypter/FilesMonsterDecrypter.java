@@ -52,16 +52,20 @@ public class FilesMonsterDecrypter extends PluginForDecrypt {
         if (fid != null) parameter = protocol + "://filesmonster.com/download.php?id=" + fid;
         br.getPage(parameter);
         // Link offline
-        if (br.containsHTML("(>File was deleted by owner or it was deleted for violation of copyrights<|>File not found<|>The link could not be decoded<)")) {
+        if (br.containsHTML(">File was deleted by owner or it was deleted for violation of copyrights<|>File not found<|>The link could not be decoded<")) {
             final DownloadLink finalOne = createDownloadlink(parameter.replace("filesmonster.com", "filesmonsterdecrypted.com"));
             finalOne.setAvailable(false);
+            finalOne.setProperty("offline", true);
+            finalOne.setName(new Regex(parameter, "download\\.php\\?id=(.+)").getMatch(0));
             decryptedLinks.add(finalOne);
             return decryptedLinks;
         }
         // Advertising link
-        if (br.containsHTML(">the file can be accessed at the")) {
+        if (br.containsHTML("the file can be accessed at the")) {
             final DownloadLink finalOne = createDownloadlink(parameter.replace("filesmonster.com", "filesmonsterdecrypted.com"));
             finalOne.setAvailable(false);
+            finalOne.setProperty("offline", true);
+            finalOne.setName(new Regex(parameter, "download\\.php\\?id=(.+)").getMatch(0));
             decryptedLinks.add(finalOne);
             return decryptedLinks;
         }

@@ -82,7 +82,7 @@ public class FilesMonsterCom extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws Exception {
+    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
         br.setReadTimeout(3 * 60 * 1000);
         br.setFollowRedirects(false);
         if (downloadLink.getDownloadURL().contains("/free/2/")) {
@@ -94,6 +94,7 @@ public class FilesMonsterCom extends PluginForHost {
             downloadLink.setName(downloadLink.getName());
             downloadLink.setDownloadSize(downloadLink.getDownloadSize());
         } else {
+            if (downloadLink.getBooleanProperty("offline", false)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             br.getPage(downloadLink.getDownloadURL());
             // Link offline
             if (br.containsHTML("(>File was deleted by owner or it was deleted for violation of copyrights<|>File not found<|>The link could not be decoded<)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -286,7 +287,8 @@ public class FilesMonsterCom extends PluginForHost {
                 }
                 br.setReadTimeout(3 * 60 * 1000);
                 br.setFollowRedirects(true);
-                // get login page first, that way we don't post twice in case captcha is already invoked!
+                // get login page first, that way we don't post twice in case
+                // captcha is already invoked!
                 br.getPage("http://filesmonster.com/login.php");
                 Form login = br.getFormbyProperty("name", "login");
                 if (login == null) {
@@ -337,8 +339,10 @@ public class FilesMonsterCom extends PluginForHost {
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
         try {
-            // CAPTCHA is shown after 30 successful logins since beginning of the day or after 5 unsuccessful login attempts.
-            // Make sure account service updates do not login more than once every 4 hours? so we only use up to 6 logins a day?
+            // CAPTCHA is shown after 30 successful logins since beginning of
+            // the day or after 5 unsuccessful login attempts.
+            // Make sure account service updates do not login more than once
+            // every 4 hours? so we only use up to 6 logins a day?
             if (account.getStringProperty("lastlogin") != null && (System.currentTimeMillis() - 14400000 <= Long.parseLong(account.getStringProperty("lastlogin"))))
                 login(account, false);
             else
@@ -347,7 +351,8 @@ public class FilesMonsterCom extends PluginForHost {
             account.setValid(false);
             throw e;
         }
-        // needed because of cached login and we need to have a browser containing html to regex against!
+        // needed because of cached login and we need to have a browser
+        // containing html to regex against!
         if (br.getURL() == null || !br.getURL().equalsIgnoreCase("http://filesmoster.com/")) br.getPage("http://filesmonster.com/");
         ai.setUnlimitedTraffic();
         String expires = br.getRegex("<span>Valid until: <span class=\\'green\\'>([^<>\"]*?)</span>").getMatch(0);

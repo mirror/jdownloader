@@ -27,8 +27,6 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-import org.appwork.utils.formatter.SizeFormatter;
-
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "zaycev.net" }, urls = { "http://(www\\.)?zaycev\\.net/artist/\\d+(\\?page=\\d+)?" }, flags = { 0 })
 public class ZyvNt extends PluginForDecrypt {
 
@@ -41,8 +39,8 @@ public class ZyvNt extends PluginForDecrypt {
         String parameter = param.toString();
         br.setFollowRedirects(true);
         br.getPage(parameter);
-        final String artist = br.getRegex("<title>(.*?) - биография, онлайн биография, музыка</title>").getMatch(0);
-        String[][] fileInfo = br.getRegex("<tr[^\r\n]+<a href=\"(/pages/\\d+/\\d+\\.shtml)\" itemprop=\"url audio\">(.*?)</span>[^\r\n]+<td class=\"size\">(.*?)</td>[^\r\n]+</tr>").getMatches();
+        final String artist = br.getRegex("class=\"box\\-artist__name\">([^<>\"]*?)</span>").getMatch(0);
+        String[] fileInfo = br.getRegex("class=\"musicset\\-track__control\"></i><a href=\"(/pages/\\d+/\\d+\\.shtml)\"").getColumn(0);
         if (fileInfo == null || fileInfo.length == 0) {
             if (br.containsHTML(">Нет информации<")) {
                 logger.info("Link offline: " + parameter);
@@ -51,11 +49,8 @@ public class ZyvNt extends PluginForDecrypt {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
-        for (String[] file : fileInfo) {
-            final DownloadLink dl = createDownloadlink("http://zaycev.net" + file[0]);
-            dl.setFinalFileName(Encoding.htmlDecode(file[1].trim()).replaceAll("</?span[^>]+", "") + ".mp3");
-            dl.setDownloadSize(SizeFormatter.getSize(file[2] + " MB"));
-            dl.setAvailable(true);
+        for (String link : fileInfo) {
+            final DownloadLink dl = createDownloadlink("http://zaycev.net" + link);
             decryptedLinks.add(dl);
         }
         if (artist != null) {

@@ -21,7 +21,6 @@ import java.io.IOException;
 import jd.PluginWrapper;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -58,19 +57,19 @@ public class AnitubeCo extends PluginForHost {
         if (br.containsHTML(">403 Forbidden<") && br.containsHTML(">nginx/[\\d+\\.]+<")) throw new PluginException(LinkStatus.ERROR_FATAL, "IP Blocked: Provider prevents access based on IP address.");
         if (br.containsHTML("Unfortunately it\\'s impossible to access the site from your current geographic location")) return AvailableStatus.UNCHECKABLE;
         if (br.getURL().contains("error.php?type=video_missing")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = br.getRegex("<title>([^<>\"]*?)\\- AniTube\\! Animes Online</title>").getMatch(0);
+        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         String[] matches = br.getRegex("(http://(?:www\\.)?anitube\\.[^ \"']+/config\\.php\\?key=[0-9a-f]+)'").getColumn(0);
-        // final Regex match = br.getRegex("(http://(?:www\\.)?anitube\\.[^/]+)/[^ \"']+/config\\.php\\?key=([0-9a-f]+)'");
+        // final Regex match =
+        // br.getRegex("(http://(?:www\\.)?anitube\\.[^/]+)/[^ \"']+/config\\.php\\?key=([0-9a-f]+)'");
         // http://www.anitube.jp/nuevo/config.php?key=0f114c048f4a91d70108
         // if (match.count() > 0) {
         for (String match : matches) {
-            String host = new Regex(match, "(https?://.+)/config\\.php\\?key=([0-9a-f]+)").getMatch(0);
-            String key = new Regex(match, "(https?://.+)/config\\.php\\?key=([0-9a-f]+)").getMatch(1);
-            if (host == null || key == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
-            br.getPage(host + "/playlist.php?key=" + key);
+            br.getHeaders().put("Referer", "http://www.anitube.se/nuevo/playerv7.swf");
+            br.getPage(match);
             dllink = br.getRegex("<file>\\s*(http://[^<]+\\d+\\.flv)\\s*</file>").getMatch(0);
             if (dllink == null) dllink = br.getRegex("<html5>(http[^<]+)</html5>").getMatch(0);
-            String filename = br.getRegex("<title>\\s*([^<]+)\\s*</title>").getMatch(0);
-            if (filename == null || dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             URLConnectionAdapter con = null;
             try {
                 con = br.openGetConnection(dllink);

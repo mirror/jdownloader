@@ -176,8 +176,8 @@ public class DailyMotionCom extends PluginForHost {
         br.setFollowRedirects(true);
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         br.getHeaders().put("X-Prototype-Version", "1.6.1");
-        br.postPage("http://www.dailymotion.com/pageitem/login?urlback=%2Fde&request=%2Flogin", "form_name=dm_pageitem_login&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&rememberme=1&login_submit=Login");
-        if (br.getCookie(MAINPAGE, "sid") == null || br.getCookie(MAINPAGE, "dailymotion_auth") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        br.postPage("http://www.dailymotion.com/pageitem/login", "form_name=dm_pageitem_login&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&login_submit=Login");
+        if (br.getCookie(MAINPAGE, "sid") == null || br.getCookie(MAINPAGE, "sdx") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
     }
 
     private void getRTMPlink() throws IOException, PluginException {

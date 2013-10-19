@@ -115,8 +115,10 @@ public class SpglD extends PluginForDecrypt {
             fp.setName(name);
             fp.addLinks(decryptedLinks);
         } else {
+            br.setFollowRedirects(true);
             final String url = cryptedLink.getCryptedUrl();
-            String title = new Regex(this.br.getPage(url), SpglD.PATTERN_IMG_TITLE).getMatch(0);
+            this.br.getPage(url);
+            String title = br.getRegex(SpglD.PATTERN_IMG_TITLE).getMatch(0);
             if (title == null) {
                 logger.warning("Decrypter broken for link: " + cryptedLink.toString());
                 return null;

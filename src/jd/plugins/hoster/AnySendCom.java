@@ -90,6 +90,7 @@ public class AnySendCom extends PluginForHost {
         br.setCookie("http://www.anysend.com/", "PAPVisitorId", visitorid);
         continuelink += visitorid;
         br.getPage(continuelink);
+        if (br.containsHTML(">Your download is no longer available")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("class=\"filename\">([^<>\"]+)</h1>").getMatch(0);
         if (filename == null) {
             filename = br.getRegex(">File Name: (.*?)<").getMatch(0);

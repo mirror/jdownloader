@@ -62,9 +62,13 @@ public class LiveMistapesComDecrypter extends PluginForDecrypt {
             br.setFollowRedirects(true);
             br.getPage(parameter);
         }
+        if (br.getURL().contains("error/login.html")) {
+            logger.info("Login needed to decrypt link: " + parameter);
+            return decryptedLinks;
+        }
         // Check for embedded video(s)
         if (br.containsHTML("function videoEmbed")) {
-            final String finallink = br.getRegex("videoEmbed\\(\\'(http://(www\\.)?trillhd\\.com/embed/\\d{4})\\'").getMatch(0);
+            final String finallink = br.getRegex("videoEmbed\\(\\'(http://[^<>\"]*?)\\'").getMatch(0);
             if (finallink != null) {
                 decryptedLinks.add(createDownloadlink(finallink));
                 return decryptedLinks;

@@ -54,7 +54,7 @@ public class MxCloudCom extends PluginForDecrypt {
         super(wrapper);
     }
 
-    private static final String INVALIDLINKS = "http://(www\\.)?mixcloud\\.com/((developers|categories|media|competitions|tag)/.+|[\\w\\-]+/playlists.+)";
+    private static final String INVALIDLINKS = "http://(www\\.)?mixcloud\\.com/((developers|categories|media|competitions|tag)/.+|[\\w\\-]+/(playlists|activity|followers|following|listens|favourites).+)";
 
     private byte[] AESdecrypt(final byte[] plain, final byte[] key, final byte[] iv) throws Exception {
         final KeyParameter keyParam = new KeyParameter(key);
@@ -103,10 +103,16 @@ public class MxCloudCom extends PluginForDecrypt {
         br.setCookie(MAINPAGE, "play-uri", Encoding.urlEncode(playResource));
         br.getPage(playerUrl);
         String playInfoUrl = br.getRegex("playinfo: ?\'(.*?)\'").getMatch(0);
-        final String playModuleSwfUrl = br.getRegex("playerModuleSwfUrl: ?\'(.*?)\'").getMatch(0);
-        if (playInfoUrl == null || playModuleSwfUrl == null) { return null; }
+        String playModuleSwfUrl = br.getRegex("playerModuleSwfUrl: ?\'(.*?)\'").getMatch(0);
+        if (playModuleSwfUrl == null) { return null; }
+        if (!playModuleSwfUrl.startsWith("http:")) playModuleSwfUrl = "http:" + playModuleSwfUrl;
 
         playInfoUrl = playInfoUrl + "?key=" + playResource + "&module=" + playModuleSwfUrl + "&page=" + playerUrl;
+
+        // TODO: Check this
+        // String playInfoUrl = "http://www.mixcloud.com/player/play_info/?key="
+        // + playResource + "&module=" + playModuleSwfUrl + "&page=" + parameter
+        // + "&v=2";
 
         byte[] enc = null;
         try {
@@ -150,7 +156,10 @@ public class MxCloudCom extends PluginForDecrypt {
         System.arraycopy(enc, 0, iv, 0, 16);
         String result = null;
         try {
-            /* CHECK: we should always use new String (bytes,charset) to avoid issues with system charset and utf-8 */
+            /*
+             * CHECK: we should always use new String (bytes,charset) to avoid
+             * issues with system charset and utf-8
+             */
             result = new String(AESdecrypt(enc, key, iv)).substring(16);
         } catch (final InvalidKeyException e) {
             if (e.getMessage().contains("Illegal key size")) {

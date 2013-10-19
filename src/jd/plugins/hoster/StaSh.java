@@ -52,7 +52,7 @@ public class StaSh extends PluginForHost {
     private String              DLLINK               = null;
     private final String        MATURECONTENTFILTER  = ">Mature Content Filter<";
 
-    private final String        INVALIDLINKS         = "http://(www\\.)?sta\\.sh/(muro|writer)";
+    private final String        INVALIDLINKS         = "http://(www\\.)?sta\\.sh/(muro|writer|login)";
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
@@ -60,7 +60,7 @@ public class StaSh extends PluginForHost {
         if (link.getDownloadURL().matches(INVALIDLINKS)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
-        if (br.containsHTML("/error\\-title\\-oops\\.png\\)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("/error\\-title\\-oops\\.png\\)") || br.containsHTML("The page you wanted to visit doesn't exist")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         final boolean loggedIn = false;
         // Motionbooks are not supported (yet)
         if (br.containsHTML(",target: \\'motionbooks/")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);

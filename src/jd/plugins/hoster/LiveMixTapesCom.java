@@ -37,7 +37,7 @@ import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "livemixtapes.com" }, urls = { "http://(\\w+\\.)?livemixtapes\\.com/download(/mp3)?/\\d+/.*?\\.html" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "livemixtapes.com" }, urls = { "http://(\\w+\\.)?livemixtapesdecrypted\\.com/download(/mp3)?/\\d+/.*?\\.html" }, flags = { 2 })
 public class LiveMixTapesCom extends PluginForHost {
 
     private static final String CAPTCHATEXT            = "/captcha/captcha\\.gif\\?";
