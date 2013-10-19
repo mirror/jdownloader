@@ -96,9 +96,8 @@ public class CtDiskCom extends PluginForHost {
         String dllink = checkDirectLink(downloadLink, "directlink");
         Form free = br.getFormbyProperty("name", "user_form");
         if (free != null && dllink == null) {
-            String captcha = br.getRegex("(/randcodeV2_login\\.php\\?fid=" + uid + "&rand=)").getMatch(0);
+            String captcha = br.getRegex("((https?://[^/]+)?/randcodeV2(_login)?\\.php\\?fid=" + uid + "&rand=)").getMatch(0);
             if (captcha != null) {
-                captcha = "http://www.400gb.com/" + captcha;
                 captcha = captcha + new Random().nextInt(999999999);
                 String code = getCaptchaCode(captcha, downloadLink);
                 free.put("randcode", code);
