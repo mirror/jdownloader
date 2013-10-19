@@ -278,7 +278,8 @@ public class RapidGatorNet extends PluginForHost {
 
     private void doFree(final DownloadLink downloadLink) throws Exception {
         // experimental code - raz
-        // so called 15mins between your last download, ends up with your IP blocked for the day..
+        // so called 15mins between your last download, ends up with your IP
+        // blocked for the day..
         // Trail and error until we find the sweet spot.
         checkShowFreeDialog();
         final boolean useExperimentalHandling = getPluginConfig().getBooleanProperty(EXPERIMENTALHANDLING, false);
@@ -473,7 +474,7 @@ public class RapidGatorNet extends PluginForHost {
             login(account, true);
         } catch (PluginException e) {
             account.setValid(false);
-            return ai;
+            throw e;
         }
         ai.setUnlimitedTraffic();
         if (account.getBooleanProperty("free")) {
@@ -566,7 +567,12 @@ public class RapidGatorNet extends PluginForHost {
 
                 if (br.getCookie(MAINPAGE, "user__") == null) {
                     logger.info("disabled because of" + br.toString());
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    final String lang = System.getProperty("user.language");
+                    if ("de".equalsIgnoreCase(lang)) {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    } else {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    }
                 }
                 if (br.containsHTML("Account:&nbsp;<a href=\"/article/premium\">Free</a>")) {
                     account.setProperty("free", true);
@@ -600,7 +606,8 @@ public class RapidGatorNet extends PluginForHost {
             br.setFollowRedirects(false);
             br.getPage(link.getDownloadURL());
             if (br.getCookie(MAINPAGE, "user__") == null && i + 1 != repeat) {
-                // lets login fully again, as hoster as removed premium cookie for some unknown reason...
+                // lets login fully again, as hoster as removed premium cookie
+                // for some unknown reason...
                 logger.info("Performing full login sequence!!");
                 br = new Browser();
                 cookies = login(account, true);
@@ -643,7 +650,9 @@ public class RapidGatorNet extends PluginForHost {
                             }
                             if (br.getCookie(MAINPAGE, "user__") == null) {
                                 logger.info("Account seems to be invalid!");
-                                // throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                                // throw new
+                                // PluginException(LinkStatus.ERROR_PREMIUM,
+                                // PluginException.VALUE_ID_PREMIUM_DISABLE);
                                 account.setProperty("cookies", Property.NULL);
                                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                             }
