@@ -278,8 +278,7 @@ public class RapidGatorNet extends PluginForHost {
 
     private void doFree(final DownloadLink downloadLink) throws Exception {
         // experimental code - raz
-        // so called 15mins between your last download, ends up with your IP
-        // blocked for the day..
+        // so called 15mins between your last download, ends up with your IP blocked for the day..
         // Trail and error until we find the sweet spot.
         checkShowFreeDialog();
         final boolean useExperimentalHandling = getPluginConfig().getBooleanProperty(EXPERIMENTALHANDLING, false);
@@ -512,6 +511,11 @@ public class RapidGatorNet extends PluginForHost {
     private HashMap<String, String> login(Account account, boolean force) throws Exception {
         synchronized (LOCK) {
             try {
+                // Enforces https login, and post requests!
+                if (isJava7nJDStable()) {
+                    showSSLWarning(this.getHost());
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "Can not login to " + this.getHost() + " within this version of JDownloader! Upgrade to JDownloader 2. ", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                }
                 // Load cookies
                 br.setCookiesExclusive(true);
                 prepareBrowser(br);
@@ -536,11 +540,6 @@ public class RapidGatorNet extends PluginForHost {
                 Form loginForm = br.getFormbyProperty("id", "login");
                 String loginPostData = "LoginForm%5Bemail%5D=" + Encoding.urlEncode(account.getUser()) + "&LoginForm%5Bpassword%5D=" + Encoding.urlEncode(account.getPass());
                 if (loginForm != null) {
-                    String action = loginForm.getAction();
-                    if (action != null && action.startsWith("https://") && isJava7nJDStable()) {
-                        if (!stableSucks.get()) showSSLWarning(this.getHost());
-                        loginForm.setAction(action.replace("https://", "http://"));
-                    }
                     String user = loginForm.getBestVariable("email");
                     String pass = loginForm.getBestVariable("password");
                     if (user == null) user = "LoginForm%5Bemail%5D";
@@ -550,11 +549,7 @@ public class RapidGatorNet extends PluginForHost {
                     br.submitForm(loginForm);
                     loginPostData = loginForm.getPropertyString();
                 } else {
-                    if (isJava7nJDStable()) {
-                        if (!stableSucks.get()) showSSLWarning(this.getHost());
-                        br.postPage("http://rapidgator.net/auth/login", loginPostData);
-                    } else
-                        br.postPage("https://rapidgator.net/auth/login", loginPostData);
+                    br.postPage("https://rapidgator.net/auth/login", loginPostData);
                 }
 
                 /* jsRedirect */
@@ -606,8 +601,7 @@ public class RapidGatorNet extends PluginForHost {
             br.setFollowRedirects(false);
             br.getPage(link.getDownloadURL());
             if (br.getCookie(MAINPAGE, "user__") == null && i + 1 != repeat) {
-                // lets login fully again, as hoster as removed premium cookie
-                // for some unknown reason...
+                // lets login fully again, as hoster as removed premium cookie for some unknown reason...
                 logger.info("Performing full login sequence!!");
                 br = new Browser();
                 cookies = login(account, true);
@@ -650,9 +644,7 @@ public class RapidGatorNet extends PluginForHost {
                             }
                             if (br.getCookie(MAINPAGE, "user__") == null) {
                                 logger.info("Account seems to be invalid!");
-                                // throw new
-                                // PluginException(LinkStatus.ERROR_PREMIUM,
-                                // PluginException.VALUE_ID_PREMIUM_DISABLE);
+                                // throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                                 account.setProperty("cookies", Property.NULL);
                                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                             }
@@ -782,9 +774,7 @@ public class RapidGatorNet extends PluginForHost {
                         if ("de".equalsIgnoreCase(lng)) {
                             title = domain + " :: Java 7+ && HTTPS Post Requests.";
                             message = "Wegen einem Bug in in Java 7+ in dieser JDownloader version koennen wir keine HTTPS Post Requests ausfuehren.\r\n";
-                            message += "Wir haben eine Notloesung ergaenzt durch die man weiterhin diese JDownloader Version nutzen kann.\r\n";
-                            message += "Bitte bedenke, dass HTTPS Post Requests als HTTP gesendet werden. Nutzung auf eigene Gefahr!\r\n";
-                            message += "Falls du keine unverschluesselten Daten versenden willst, update bitte auf JDownloader 2!\r\n";
+                            message += "If you want to continue to using JDownloader with " + domain + " Account Services, you will need to upgrade to JDownloader 2.";
                             if (xSystem)
                                 message += "JDownloader 2 Installationsanleitung und Downloadlink: Klicke -OK- (per Browser oeffnen)\r\n ";
                             else
@@ -792,9 +782,7 @@ public class RapidGatorNet extends PluginForHost {
                         } else if ("es".equalsIgnoreCase(lng)) {
                             title = domain + " :: Java 7+ && HTTPS Solicitudes Post.";
                             message = "Debido a un bug en Java 7+, al utilizar esta versión de JDownloader, no se puede enviar correctamente las solicitudes Post en HTTPS\r\n";
-                            message += "Por ello, hemos añadido una solución alternativa para que pueda seguir utilizando esta versión de JDownloader...\r\n";
-                            message += "Tenga en cuenta que las peticiones Post de HTTPS se envían como HTTP. Utilice esto a su propia discreción.\r\n";
-                            message += "Si usted no desea enviar información o datos desencriptados, por favor utilice JDownloader 2!\r\n";
+                            message += "If you want to continue to using JDownloader with " + domain + " Account Services, you will need to upgrade to JDownloader 2.";
                             if (xSystem)
                                 message += " Las instrucciones para descargar e instalar Jdownloader 2 se muestran a continuación: Hacer Click en -Aceptar- (El navegador de internet se abrirá)\r\n ";
                             else
@@ -802,11 +790,9 @@ public class RapidGatorNet extends PluginForHost {
                         } else {
                             title = domain + " :: Java 7+ && HTTPS Post Requests.";
                             message = "Due to a bug in Java 7+ when using this version of JDownloader, we can not successfully send HTTPS Post Requests.\r\n";
-                            message += "We have added a work around so you can continue to use this version of JDownloader...\r\n";
-                            message += "Please be aware that HTTPS Post Requests are sent as HTTP. Use at your own discretion.\r\n";
-                            message += "If you do not want to send unecrypted data, please upgrade to JDownloader 2!\r\n";
+                            message += "If you want to continue to using JDownloader with " + domain + " Account Services, you will need to upgrade to JDownloader 2.";
                             if (xSystem)
-                                message += "Jdownloader 2 install instructions and download link: Click -OK- (open in browser)\r\n ";
+                                message += "JDownloader 2 install instructions and download link: Click -OK- (open in browser)\r\n ";
                             else
                                 message += "JDownloader 2 install instructions and download link:\r\n" + new URL("http://board.jdownloader.org/showthread.php?t=37365") + "\r\n";
                         }
