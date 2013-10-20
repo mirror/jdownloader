@@ -27,7 +27,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "livedrive.com" }, urls = { "https?://([a-z0-9]+\\.livedrive\\.com/((I|i)tem|files)/\\d+|[a-z0-9]+\\.livedrivefolderlink\\.com/[a-z0-9]{32})" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "livedrive.com" }, urls = { "https?://([a-z0-9]+\\.livedrive\\.com/((I|i)tem|files)/[a-z0-9]+|[a-z0-9]+\\.livedrivefolderlink\\.com/[a-z0-9]{32})" }, flags = { 0 })
 public class LiveDriveComFolder extends PluginForDecrypt {
 
     public LiveDriveComFolder(PluginWrapper wrapper) {
@@ -52,7 +52,7 @@ public class LiveDriveComFolder extends PluginForDecrypt {
         }
         // Single link or folder
         if (parameter.matches("http://[a-z0-9]+\\.livedrive\\.com/item/[a-z0-9]{32}")) {
-            decryptedLinks.add(createDownloadlink(parameter.replace("livedrive.com/", "livedrivedecrypter.com/")));
+            decryptedLinks.add(createDownloadlink(parameter.replace("livedrive.com/", "livedrivedecrypted.com/")));
         } else {
             String liveDriveUrlUserPart = new Regex(parameter, "(.*?)\\.livedrive\\.com").getMatch(0);
             liveDriveUrlUserPart = liveDriveUrlUserPart.replaceAll("(http://|www\\.)", "");
