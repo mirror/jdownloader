@@ -3358,4 +3358,25 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Package or Link Properties" })
     String LinkgrabberPropertiesToggleAction_LinkgrabberPropertiesToggleAction();
 
+    @Default(lngs = { "en" }, values = { "Package Properties: %s1" })
+    String LinkgrabberPropertiesHeader_update_package(String name);
+
+    @Default(lngs = { "en" }, values = { "File Properties: %s1" })
+    String LinkgrabberPropertiesHeader_update_link(String name);
+
+    @Default(lngs = { "en" }, values = { "Save to:" })
+    String propertiespanel_downloadpath();
+
+    @Default(lngs = { "en" }, values = { "Package name:" })
+    String propertiespanel_packagename();
+
+    @Default(lngs = { "en" }, values = { "Comment:" })
+    String propertiespanel_comment();
+
+    @Default(lngs = { "en" }, values = { "Archive Password:" })
+    String propertiespanel_archivepassword();
+
+    @Default(lngs = { "en" }, values = { "Download Password:" })
+    String propertiespanel_downloadpassword();
+
 }

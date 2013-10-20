@@ -6,6 +6,8 @@ import java.awt.Insets;
 
 import javax.swing.JScrollPane;
 import javax.swing.ScrollPaneConstants;
+import javax.swing.event.ListSelectionEvent;
+import javax.swing.event.ListSelectionListener;
 
 import jd.controlling.linkcollector.LinkCollector;
 import jd.controlling.linkcollector.LinkCollectorCrawler;
@@ -61,16 +63,50 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
 
     private HeaderScrollPane                                  sidebarScrollPane;
 
-    private NullsafeAtomicReference<OverviewHeaderScrollPane> overViewScrollBar    = new NullsafeAtomicReference<OverviewHeaderScrollPane>(null);
-    private NullsafeAtomicReference<OverviewHeaderScrollPane> propertiesScrollPane = new NullsafeAtomicReference<OverviewHeaderScrollPane>(null);
+    private NullsafeAtomicReference<OverviewHeaderScrollPane> overViewScrollBar      = new NullsafeAtomicReference<OverviewHeaderScrollPane>(null);
+    private PropertiesScrollPane                              propertiesScrollPane   = null;
     private CustomizeableActionBar                            rightBar;
     private CustomizeableActionBar                            leftBar;
+    private boolean                                           propertiesPanelVisible = false;
+
+    public void setPropertiesPanelVisible(boolean propertiesPanelVisible) {
+        if (propertiesPanelVisible == this.propertiesPanelVisible) return;
+        this.propertiesPanelVisible = propertiesPanelVisible;
+        new EDTRunner() {
+
+            @Override
+            protected void runInEDT() {
+
+                layoutComponents();
+
+                revalidate();
+            }
+        };
+
+    }
 
     public LinkGrabberPanel() {
         super(new MigLayout("ins 0, wrap 2", "[grow,fill]2[]2[fill]", "[grow, fill]2[]"));
 
         tableModel = LinkGrabberTableModel.getInstance();
         table = new LinkGrabberTable(this, tableModel);
+        table.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
+
+            @Override
+            public void valueChanged(ListSelectionEvent e) {
+                if (!CFG_GUI.LINKGRABBER_TAB_PROPERTIES_PANEL_VISIBLE.isEnabled()) return;
+                if (table.getSelectedRowCount() > 0) {
+                    setPropertiesPanelVisible(true);
+
+                    propertiesScrollPane.update(table.getModel().getObjectbyRow(table.getSelectionModel().getLeadSelectionIndex()));
+
+                } else {
+                    setPropertiesPanelVisible(false);
+
+                }
+
+            }
+        });
         tableScrollPane = new JScrollPane(table);
         HorizontalScrollbarAction.setup(CFG_GUI.HORIZONTAL_SCROLLBARS_IN_LINKGRABBER_TABLE_ENABLED, table);
 
@@ -219,11 +255,11 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
 
     private void layoutComponents() {
         removeAll();
-
+        boolean propertiesPanel = CFG_GUI.LINKGRABBER_TAB_PROPERTIES_PANEL_VISIBLE.isEnabled() && isPropertiesPanelVisible();
         if (CFG_GUI.LINKGRABBER_SIDEBAR_VISIBLE.isEnabled()) {
 
             if (CFG_GUI.LINKGRABBER_TAB_OVERVIEW_VISIBLE.isEnabled()) {
-                if (CFG_GUI.LINKGRABBER_TAB_PROPERTIES_PANEL_VISIBLE.isEnabled()) {
+                if (propertiesPanel) {
 
                     // all panels visible
                     setLayout(new MigLayout("ins 0, wrap 2", "[grow,fill]2[fill]0", "[grow, fill]2[]2[]2[]0"));
@@ -232,7 +268,7 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
                 }
 
             } else {
-                if (CFG_GUI.LINKGRABBER_TAB_PROPERTIES_PANEL_VISIBLE.isEnabled()) {
+                if (propertiesPanel) {
                     setLayout(new MigLayout("ins 0, wrap 2", "[grow,fill]2[fill]0", "[grow, fill]2[]2[]0"));
                 } else {
                     setLayout(new MigLayout("ins 0, wrap 2", "[grow,fill]2[fill]0", "[grow, fill]2[]0"));
@@ -242,7 +278,7 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
         } else {
 
             if (CFG_GUI.LINKGRABBER_TAB_OVERVIEW_VISIBLE.isEnabled()) {
-                if (CFG_GUI.LINKGRABBER_TAB_PROPERTIES_PANEL_VISIBLE.isEnabled()) {
+                if (propertiesPanel) {
 
                     // all panels visible
                     setLayout(new MigLayout("ins 0, wrap 2", "[grow,fill]2[fill]0", "[grow, fill]2[]2[]2[]0"));
@@ -251,7 +287,7 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
                 }
 
             } else {
-                if (CFG_GUI.LINKGRABBER_TAB_PROPERTIES_PANEL_VISIBLE.isEnabled()) {
+                if (propertiesPanel) {
                     setLayout(new MigLayout("ins 0, wrap 2", "[grow,fill]2[fill]0", "[grow, fill]2[]2[]0"));
                 } else {
                     setLayout(new MigLayout("ins 0, wrap 2", "[grow,fill]2[fill]0", "[grow, fill]2[]0"));
@@ -270,21 +306,20 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
             }
             int height = 1;
             if (CFG_GUI.LINKGRABBER_TAB_OVERVIEW_VISIBLE.isEnabled()) height++;
-            if (CFG_GUI.LINKGRABBER_TAB_PROPERTIES_PANEL_VISIBLE.isEnabled()) height++;
+            if (propertiesPanel) height++;
 
             add(sidebarScrollPane, "spany " + height);
         } else {
             this.add(tableScrollPane, "spanx");
         }
+        if (propertiesPanel) {
 
+            add(createPropertiesPanel(), constrains);
+        }
         if (CFG_GUI.LINKGRABBER_TAB_OVERVIEW_VISIBLE.isEnabled()) {
             add(getOverView(), constrains);
         }
 
-        if (CFG_GUI.LINKGRABBER_TAB_PROPERTIES_PANEL_VISIBLE.isEnabled()) {
-
-            add(createPropertiesPanel(), constrains);
-        }
         //
         // if (CFG_GUI.LINKGRABBER_TAB_OVERVIEW_VISIBLE.isEnabled()) {
         // this.add(tableScrollPane, "");
@@ -313,32 +348,31 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
         add(rightBar, "height 24!");
     }
 
-    private OverviewHeaderScrollPane createPropertiesPanel() {
-        OverviewHeaderScrollPane ret = propertiesScrollPane.get();
-        if (ret != null) {
-            return ret;
+    private boolean isPropertiesPanelVisible() {
+        return propertiesPanelVisible;
+    }
+
+    private PropertiesScrollPane createPropertiesPanel() {
+
+        if (propertiesScrollPane != null) {
+            return propertiesScrollPane;
         } else {
-            final LinkgrabberProperties loverView = new LinkgrabberProperties(table) {
-                @Override
-                public void removeListeners() {
-                    super.removeListeners();
-                    propertiesScrollPane.set(null);
-                }
-            };
-            ret = new OverviewHeaderScrollPane(loverView);
-            final OverviewHeaderScrollPane finalRet = ret;
-            LAFOptions.getInstance().applyPanelBackground(ret);
-            ret.setColumnHeaderView(new LinkgrabberPropertiesHeader() {
+            final LinkgrabberProperties loverView = new LinkgrabberProperties(table);
+            propertiesScrollPane = new PropertiesScrollPane(loverView, table);
+
+            LAFOptions.getInstance().applyPanelBackground(propertiesScrollPane);
+            propertiesScrollPane.setColumnHeaderView(new LinkgrabberPropertiesHeader() {
 
                 @Override
                 protected void onCloseAction() {
                     CFG_GUI.LINKGRABBER_TAB_PROPERTIES_PANEL_VISIBLE.setValue(false);
-                    loverView.removeListeners();
+
                 }
             });
-            propertiesScrollPane.compareAndSet(null, ret);
+
         }
-        return ret;
+
+        return propertiesScrollPane;
     }
 
     private void createSidebar() {
@@ -419,7 +453,6 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
             @Override
             protected void runInEDT() {
 
-                removeAll();
                 layoutComponents();
 
                 revalidate();

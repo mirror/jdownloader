@@ -319,7 +319,7 @@ public class AddLinksDialog extends AbstractDialog<LinkCollectingJob> {
 
         comment = new ExtTextField();
         comment.setHelpText(_GUI._.AddLinksDialog_layoutDialogContent_comment_help());
-        comment.setBorder(BorderFactory.createCompoundBorder(comment.getBorder(), BorderFactory.createEmptyBorder(2, 6, 2, 6)));
+        comment.setBorder(BorderFactory.createCompoundBorder(comment.getBorder(), BorderFactory.createEmptyBorder(2, 6, 1, 6)));
         destination.setQuickSelectionList(DownloadPath.loadList(org.appwork.storage.config.JsonConfig.create(GeneralSettings.class).getDefaultDownloadFolder()));
 
         String latest = config.getLatestDownloadDestinationFolder();
@@ -340,11 +340,11 @@ public class AddLinksDialog extends AbstractDialog<LinkCollectingJob> {
         input.setWrapStyleWord(true);
         input.setHelpText(_GUI._.AddLinksDialog_layoutDialogContent_input_help());
         sp = new JScrollPane(input);
-        sp.setViewportBorder(BorderFactory.createEmptyBorder(2, 6, 2, 6));
+        sp.setViewportBorder(BorderFactory.createEmptyBorder(2, 6, 1, 6));
 
         password = new ExtTextField();
         password.setHelpText(_GUI._.AddLinksDialog_createExtracOptionsPanel_password());
-        password.setBorder(BorderFactory.createCompoundBorder(password.getBorder(), BorderFactory.createEmptyBorder(2, 6, 2, 6)));
+        password.setBorder(BorderFactory.createCompoundBorder(password.getBorder(), BorderFactory.createEmptyBorder(2, 6, 1, 6)));
 
         priority = new JComboBox(Priority.values());
         final ListCellRenderer org = priority.getRenderer();
@@ -359,7 +359,7 @@ public class AddLinksDialog extends AbstractDialog<LinkCollectingJob> {
         priority.setSelectedItem(Priority.DEFAULT);
         downloadPassword = new ExtTextField();
         downloadPassword.setHelpText(_GUI._.AddLinksDialog_createExtracOptionsPanel_downloadpassword());
-        downloadPassword.setBorder(BorderFactory.createCompoundBorder(downloadPassword.getBorder(), BorderFactory.createEmptyBorder(2, 6, 2, 6)));
+        downloadPassword.setBorder(BorderFactory.createCompoundBorder(downloadPassword.getBorder(), BorderFactory.createEmptyBorder(2, 6, 1, 6)));
 
         extractToggle = new ExtCheckBox();
 
@@ -373,10 +373,10 @@ public class AddLinksDialog extends AbstractDialog<LinkCollectingJob> {
         p.add(new JLabel(NewTheme.I().getIcon("linkgrabber", 32)), "aligny top,height 32!,width 32!");
 
         p.add(sp, "height 30:100:n,spanx");
-        p.add(createIconLabel("save", _GUI._.AddLinksDialog_layoutDialogContent_save_tt()), "aligny center,width 32!");
+        p.add(createIconLabel("save", _GUI._.AddLinksDialog_layoutDialogContent_save_tt()), "aligny center,width 32!,height " + height + "!");
 
-        p.add(destination, "height " + height + "!");
-        p.add(destination.getButton(), "sg right");
+        p.add(destination.getDestination(), "height " + height + "!");
+        p.add(destination.getButton(), "sg right,height " + height + "!");
 
         p.add(createIconLabel("package_open", _GUI._.AddLinksDialog_layoutDialogContent_package_tt()), "aligny center,width 32!");
         p.add(packagename, "spanx,height " + height + "!");

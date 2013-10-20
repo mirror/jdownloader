@@ -11,34 +11,36 @@ import javax.swing.Box;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JLabel;
-import javax.swing.JPopupMenu;
-import javax.swing.JSeparator;
+
+import jd.controlling.linkcrawler.CrawledLink;
+import jd.controlling.linkcrawler.CrawledPackage;
+import jd.controlling.packagecontroller.AbstractNode;
 
 import org.appwork.swing.MigPanel;
 import org.appwork.swing.components.ExtButton;
 import org.appwork.utils.ImageProvider.ImageProvider;
 import org.appwork.utils.swing.SwingUtils;
 import org.jdownloader.actions.AppAction;
-import org.jdownloader.gui.components.CheckboxMenuItem;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
-import org.jdownloader.settings.staticreferences.CFG_GUI;
 import org.jdownloader.updatev2.gui.LAFOptions;
 
 public class LinkgrabberPropertiesHeader extends MigPanel {
 
     private JButton   bt;
     private ExtButton options;
+    private JLabel    lbl;
+    private JLabel    icon;
 
     public LinkgrabberPropertiesHeader() {
-        super("ins 0 0 1 0", "[]2[][][grow,fill][]0", "[grow,fill]");
+        super("ins 0 0 1 0", "[]2[][grow,fill][]0", "[grow,fill]");
 
         // setBackground(Color.RED);
         // setOpaque(true);
 
-        JLabel lbl = SwingUtils.toBold(new JLabel(_GUI._.LinkgrabberOverViewHeader_LinkgrabberOverViewHeader_()));
+        lbl = SwingUtils.toBold(new JLabel(""));
         LAFOptions.getInstance().applyHeaderColorBackground(lbl);
-        add(new JLabel(NewTheme.I().getIcon("download", 16)), "gapleft 1");
+        add(icon = new JLabel(NewTheme.I().getIcon("download", 16)), "gapleft 1");
         add(lbl, "height 17!");
 
         options = new ExtButton(new AppAction() {
@@ -51,28 +53,32 @@ public class LinkgrabberPropertiesHeader extends MigPanel {
 
             @Override
             public void actionPerformed(ActionEvent e) {
-                JPopupMenu pu = new JPopupMenu();
-                CheckboxMenuItem total = new CheckboxMenuItem(_GUI._.OverViewHeader_actionPerformed_total_(), CFG_GUI.OVERVIEW_PANEL_TOTAL_INFO_VISIBLE);
-                CheckboxMenuItem filtered = new CheckboxMenuItem(_GUI._.OverViewHeader_actionPerformed_visible_only_(), CFG_GUI.OVERVIEW_PANEL_VISIBLE_ONLY_INFO_VISIBLE);
-                CheckboxMenuItem selected = new CheckboxMenuItem(_GUI._.OverViewHeader_actionPerformed_selected_(), CFG_GUI.OVERVIEW_PANEL_SELECTED_INFO_VISIBLE);
-                pu.add(new CheckboxMenuItem(_GUI._.OverViewHeader_actionPerformed_smart_(), CFG_GUI.OVERVIEW_PANEL_SMART_INFO_VISIBLE, total, filtered, selected));
-
-                pu.add(new JSeparator(JSeparator.HORIZONTAL));
-                pu.add(total);
-                pu.add(filtered);
-                pu.add(selected);
-                int[] insets = LAFOptions.getInstance().getPopupBorderInsets();
-
-                Dimension pref = pu.getPreferredSize();
-                // pref.width = positionComp.getWidth() + ((Component)
-                // e.getSource()).getWidth() + insets[1] + insets[3];
-                // pu.setPreferredSize(new Dimension(optionsgetWidth() + insets[1] + insets[3], (int) pref.getHeight()));
-
-                pu.show(options, -insets[1], -pu.getPreferredSize().height + insets[2]);
+                // JPopupMenu pu = new JPopupMenu();
+                // CheckboxMenuItem total = new CheckboxMenuItem(_GUI._.OverViewHeader_actionPerformed_total_(),
+                // CFG_GUI.OVERVIEW_PANEL_TOTAL_INFO_VISIBLE);
+                // CheckboxMenuItem filtered = new CheckboxMenuItem(_GUI._.OverViewHeader_actionPerformed_visible_only_(),
+                // CFG_GUI.OVERVIEW_PANEL_VISIBLE_ONLY_INFO_VISIBLE);
+                // CheckboxMenuItem selected = new CheckboxMenuItem(_GUI._.OverViewHeader_actionPerformed_selected_(),
+                // CFG_GUI.OVERVIEW_PANEL_SELECTED_INFO_VISIBLE);
+                // pu.add(new CheckboxMenuItem(_GUI._.OverViewHeader_actionPerformed_smart_(), CFG_GUI.OVERVIEW_PANEL_SMART_INFO_VISIBLE,
+                // total, filtered, selected));
+                //
+                // pu.add(new JSeparator(JSeparator.HORIZONTAL));
+                // pu.add(total);
+                // pu.add(filtered);
+                // pu.add(selected);
+                // int[] insets = LAFOptions.getInstance().getPopupBorderInsets();
+                //
+                // Dimension pref = pu.getPreferredSize();
+                // // pref.width = positionComp.getWidth() + ((Component)
+                // // e.getSource()).getWidth() + insets[1] + insets[3];
+                // // pu.setPreferredSize(new Dimension(optionsgetWidth() + insets[1] + insets[3], (int) pref.getHeight()));
+                //
+                // pu.show(options, -insets[1], -pu.getPreferredSize().height + insets[2]);
             }
         });
         options.setRolloverEffectEnabled(true);
-        add(options, "height 17!,width 24!");
+        // add(options, "height 17!,width 24!");
         add(Box.createHorizontalGlue());
         setOpaque(true);
         SwingUtils.setOpaque(lbl, false);
@@ -136,5 +142,17 @@ public class LinkgrabberPropertiesHeader extends MigPanel {
         Dimension ret = super.getSize();
 
         return ret;
+    }
+
+    public void update(AbstractNode objectbyRow) {
+        if (objectbyRow instanceof CrawledPackage) {
+            CrawledPackage pkg = (CrawledPackage) objectbyRow;
+            icon.setIcon(NewTheme.I().getIcon("package_open", 16));
+            lbl.setText(_GUI._.LinkgrabberPropertiesHeader_update_package(pkg.getName()));
+        } else if (objectbyRow instanceof CrawledLink) {
+            CrawledLink link = (CrawledLink) objectbyRow;
+            icon.setIcon(link.getIcon());
+            lbl.setText(_GUI._.LinkgrabberPropertiesHeader_update_link(link.getName()));
+        }
     }
 }
