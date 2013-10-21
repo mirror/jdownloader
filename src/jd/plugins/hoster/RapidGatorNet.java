@@ -534,6 +534,7 @@ public class RapidGatorNet extends PluginForHost {
 
                 Form loginForm = br.getFormbyProperty("id", "login");
                 String loginPostData = "LoginForm%5Bemail%5D=" + Encoding.urlEncode(account.getUser()) + "&LoginForm%5Bpassword%5D=" + Encoding.urlEncode(account.getPass());
+                br.getPage("https://rapidgator.net/auth/login");
                 boolean sslFormFix = false;
                 boolean sslForm = false;
                 boolean isjava7Issue = isJava7nJDStable();
@@ -542,7 +543,7 @@ public class RapidGatorNet extends PluginForHost {
                     if (action != null && action.startsWith("https://")) {
                         sslForm = true;
                     }
-                    if (sslForm && isjava7Issue) {
+                    if (sslForm && true || isjava7Issue) {
                         // if (!stableSucks.get()) showSSLWarning(this.getHost());
                         action = action.replace("https://", "http://");
                         sslFormFix = true;
@@ -561,16 +562,6 @@ public class RapidGatorNet extends PluginForHost {
                         br.getHeaders().put("Content-Type", null);
                     } else {
                         br.submitForm(loginForm);
-                    }
-                    if (sslFormFix) {
-                        /* it seems we need double post, then the login worked while testing */
-                        if (isOld09581Stable()) {
-                            br.getHeaders().put("Content-Type", "application/x-www-form-urlencoded");
-                            br.submitForm(loginForm);
-                            br.getHeaders().put("Content-Type", null);
-                        } else {
-                            br.submitForm(loginForm);
-                        }
                     }
                     loginPostData = loginForm.getPropertyString();
                 } else {
