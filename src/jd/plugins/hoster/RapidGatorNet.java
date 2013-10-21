@@ -531,11 +531,8 @@ public class RapidGatorNet extends PluginForHost {
 
                 br.setFollowRedirects(true);
                 br.getPage(MAINPAGE);
-
                 Form loginForm = br.getFormbyProperty("id", "login");
                 String loginPostData = "LoginForm%5Bemail%5D=" + Encoding.urlEncode(account.getUser()) + "&LoginForm%5Bpassword%5D=" + Encoding.urlEncode(account.getPass());
-                br.getPage("https://rapidgator.net/auth/login");
-                boolean sslFormFix = false;
                 boolean sslForm = false;
                 boolean isjava7Issue = isJava7nJDStable();
                 if (loginForm != null) {
@@ -543,10 +540,9 @@ public class RapidGatorNet extends PluginForHost {
                     if (action != null && action.startsWith("https://")) {
                         sslForm = true;
                     }
-                    if (sslForm && true || isjava7Issue) {
+                    if (sslForm && isjava7Issue) {
                         // if (!stableSucks.get()) showSSLWarning(this.getHost());
                         action = action.replace("https://", "http://");
-                        sslFormFix = true;
                         loginForm.setAction(action);
                     }
                     logger.info("Use loginForm: " + action);
