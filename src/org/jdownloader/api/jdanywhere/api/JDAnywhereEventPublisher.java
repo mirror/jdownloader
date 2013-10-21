@@ -531,7 +531,6 @@ public class JDAnywhereEventPublisher implements EventPublisher, DownloadWatchdo
                         publishEvent(EVENTID.CRAWLEDPACKAGESTATUSCHANGED, data, "CRAWLEDPACKAGE_FOLDER_" + cl.getUniqueID().getID());
                         break;
                     }
-
                 }
             }
         }

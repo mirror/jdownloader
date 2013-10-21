@@ -52,6 +52,8 @@ abstract public class DownloadInterface {
         this.allowFilenameFromURL = b;
     }
 
+    /* do not use in old JD 09581 plugins */
+    @Deprecated
     public abstract ManagedThrottledConnectionHandler getManagedConnetionHandler();
 
     public abstract URLConnectionAdapter connect(Browser br) throws Exception;
