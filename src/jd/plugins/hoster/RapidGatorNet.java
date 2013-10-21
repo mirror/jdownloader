@@ -508,7 +508,7 @@ public class RapidGatorNet extends PluginForHost {
     }
 
     @SuppressWarnings("unchecked")
-    private HashMap<String, String> login(Account account, boolean force) throws Exception {
+    private Map<String, String> login(Account account, boolean force) throws Exception {
         synchronized (LOCK) {
             try {
                 // Enforces https login, and post requests!
@@ -522,8 +522,8 @@ public class RapidGatorNet extends PluginForHost {
                 final Object ret = account.getProperty("cookies", null);
                 boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
                 if (acmatch) acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
-                if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
-                    final HashMap<String, String> cookies = (HashMap<String, String>) ret;
+                if (acmatch && ret != null && ret instanceof Map<?, ?> && !force) {
+                    final Map<String, String> cookies = (Map<String, String>) ret;
                     if (account.isValid()) {
                         for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
                             final String key = cookieEntry.getKey();
@@ -539,7 +539,16 @@ public class RapidGatorNet extends PluginForHost {
 
                 Form loginForm = br.getFormbyProperty("id", "login");
                 String loginPostData = "LoginForm%5Bemail%5D=" + Encoding.urlEncode(account.getUser()) + "&LoginForm%5Bpassword%5D=" + Encoding.urlEncode(account.getPass());
+                boolean sslForm = false;
                 if (loginForm != null) {
+                    String action = loginForm.getAction();
+                    if (action != null && action.startsWith("https://")) {
+                        sslForm = true;
+                    }
+                    if (sslForm && isJava7nJDStable()) {
+                        if (!stableSucks.get()) showSSLWarning(this.getHost());
+                        loginForm.setAction(action.replace("https://", "http://"));
+                    }
                     String user = loginForm.getBestVariable("email");
                     String pass = loginForm.getBestVariable("password");
                     if (user == null) user = "LoginForm%5Bemail%5D";
@@ -549,7 +558,12 @@ public class RapidGatorNet extends PluginForHost {
                     br.submitForm(loginForm);
                     loginPostData = loginForm.getPropertyString();
                 } else {
-                    br.postPage("https://rapidgator.net/auth/login", loginPostData);
+                    if (isJava7nJDStable()) {
+                        if (!stableSucks.get()) showSSLWarning(this.getHost());
+                        br.postPage("http://rapidgator.net/auth/login", loginPostData);
+                    } else {
+                        br.postPage("https://rapidgator.net/auth/login", loginPostData);
+                    }
                 }
 
                 /* jsRedirect */
@@ -557,13 +571,17 @@ public class RapidGatorNet extends PluginForHost {
                 if (reDirHash != null) {
                     logger.info("JSRedirect in login");
                     // prob should be https also!!
-                    br.postPage("http://rapidgator.net/auth/login", loginPostData + "&" + reDirHash);
+                    if (isJava7nJDStable()) {
+                        br.postPage("http://rapidgator.net/auth/login", loginPostData + "&" + reDirHash);
+                    } else {
+                        br.postPage("https://rapidgator.net/auth/login", loginPostData + "&" + reDirHash);
+                    }
                 }
 
                 if (br.getCookie(MAINPAGE, "user__") == null) {
                     logger.info("disabled because of" + br.toString());
                     final String lang = System.getProperty("user.language");
-                    if ("de".equalsIgnoreCase(lang)) {
+                    if (lang != null && "de".equalsIgnoreCase(lang)) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     } else {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -595,7 +613,7 @@ public class RapidGatorNet extends PluginForHost {
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         requestFileInformation(link);
         logger.info("Performing cached login sequence!!");
-        HashMap<String, String> cookies = login(account, false);
+        Map<String, String> cookies = login(account, false);
         int repeat = 2;
         for (int i = 0; i <= repeat; i++) {
             br.setFollowRedirects(false);
