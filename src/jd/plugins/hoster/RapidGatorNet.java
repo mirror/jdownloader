@@ -787,7 +787,9 @@ public class RapidGatorNet extends PluginForHost {
                         if ("de".equalsIgnoreCase(lng)) {
                             title = domain + " :: Java 7+ && HTTPS Post Requests.";
                             message = "Wegen einem Bug in in Java 7+ in dieser JDownloader version koennen wir keine HTTPS Post Requests ausfuehren.\r\n";
-                            message += "If you want to continue to using JDownloader with " + domain + " Account Services, you will need to upgrade to JDownloader 2.";
+                            message += "Wir haben eine Notloesung ergaenzt durch die man weiterhin diese JDownloader Version nutzen kann.\r\n";
+                            message += "Bitte bedenke, dass HTTPS Post Requests als HTTP gesendet werden. Nutzung auf eigene Gefahr!\r\n";
+                            message += "Falls du keine unverschluesselten Daten versenden willst, update bitte auf JDownloader 2!\r\n";
                             if (xSystem)
                                 message += "JDownloader 2 Installationsanleitung und Downloadlink: Klicke -OK- (per Browser oeffnen)\r\n ";
                             else
@@ -795,7 +797,9 @@ public class RapidGatorNet extends PluginForHost {
                         } else if ("es".equalsIgnoreCase(lng)) {
                             title = domain + " :: Java 7+ && HTTPS Solicitudes Post.";
                             message = "Debido a un bug en Java 7+, al utilizar esta versión de JDownloader, no se puede enviar correctamente las solicitudes Post en HTTPS\r\n";
-                            message += "If you want to continue to using JDownloader with " + domain + " Account Services, you will need to upgrade to JDownloader 2.";
+                            message += "Por ello, hemos añadido una solución alternativa para que pueda seguir utilizando esta versión de JDownloader...\r\n";
+                            message += "Tenga en cuenta que las peticiones Post de HTTPS se envían como HTTP. Utilice esto a su propia discreción.\r\n";
+                            message += "Si usted no desea enviar información o datos desencriptados, por favor utilice JDownloader 2!\r\n";
                             if (xSystem)
                                 message += " Las instrucciones para descargar e instalar Jdownloader 2 se muestran a continuación: Hacer Click en -Aceptar- (El navegador de internet se abrirá)\r\n ";
                             else
@@ -803,9 +807,11 @@ public class RapidGatorNet extends PluginForHost {
                         } else {
                             title = domain + " :: Java 7+ && HTTPS Post Requests.";
                             message = "Due to a bug in Java 7+ when using this version of JDownloader, we can not successfully send HTTPS Post Requests.\r\n";
-                            message += "If you want to continue to using JDownloader with " + domain + " Account Services, you will need to upgrade to JDownloader 2.";
+                            message += "We have added a work around so you can continue to use this version of JDownloader...\r\n";
+                            message += "Please be aware that HTTPS Post Requests are sent as HTTP. Use at your own discretion.\r\n";
+                            message += "If you do not want to send unecrypted data, please upgrade to JDownloader 2!\r\n";
                             if (xSystem)
-                                message += "JDownloader 2 install instructions and download link: Click -OK- (open in browser)\r\n ";
+                                message += "Jdownloader 2 install instructions and download link: Click -OK- (open in browser)\r\n ";
                             else
                                 message += "JDownloader 2 install instructions and download link:\r\n" + new URL("http://board.jdownloader.org/showthread.php?t=37365") + "\r\n";
                         }
