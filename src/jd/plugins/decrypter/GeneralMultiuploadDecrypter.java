@@ -65,7 +65,8 @@ public class GeneralMultiuploadDecrypter extends PluginForDecrypt {
         LinkedHashSet<String> dupeList = new LinkedHashSet<String>();
         prepBrowser(br);
         String parameter = param.toString();
-        // Only uploadmirrors.com has those "/download/" links so we need to correct them
+        // Only uploadmirrors.com has those "/download/" links so we need to
+        // correct them
         if (parameter.contains("go4up.com")) {
             parameter = parameter.replace("link.php?id=", "dl/");
         } else if (parameter.contains("uploadmirrors.com/")) {
@@ -79,7 +80,8 @@ public class GeneralMultiuploadDecrypter extends PluginForDecrypt {
         String protocol = new Regex(parameter, "(https?://)").getMatch(0);
         String host = new Regex(parameter, "://([^/]+)/").getMatch(0);
         String id = new Regex(parameter, "https?://.+/(\\?go=|download\\.php\\?uid=)?([0-9A-Za-z]{8,18})").getMatch(1);
-        // This should never happen but in case a dev changes the plugin without much testing he'll see the error later!
+        // This should never happen but in case a dev changes the plugin without
+        // much testing he'll see the error later!
         if (host == null || id == null) {
             logger.warning("A critical error happened! Please inform the support. : " + param.toString());
             return null;
@@ -115,6 +117,12 @@ public class GeneralMultiuploadDecrypter extends PluginForDecrypt {
         String[] redirectLinks = br.getRegex("(/(rd?|redirect|dl|mirror)/[0-9A-Z]+/[a-z0-9]+)").getColumn(0);
         if (redirectLinks == null || redirectLinks.length == 0) redirectLinks = br.getRegex("><a href=(.*?)target=").getColumn(0);
         if (redirectLinks == null || redirectLinks.length == 0) {
+            // So far only tested for maxmirror.com, happens when all links have
+            // the status "Unavailable"
+            if (br.containsHTML("<td><img src=/images/Upload.gif")) {
+                logger.info("All links are unavailable: " + parameter);
+                return decryptedLinks;
+            }
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
@@ -124,7 +132,8 @@ public class GeneralMultiuploadDecrypter extends PluginForDecrypt {
             singleLink = singleLink.replace("\"", "").trim();
             Browser brc = br.cloneBrowser();
             String dllink = null;
-            // Handling for links that need to be regexed or that need to be get by redirect
+            // Handling for links that need to be regexed or that need to be get
+            // by redirect
             if (singleLink.matches("(?i)/(redirect|rd?|dl|mirror)/.+")) {
                 getPage(brc, singleLink);
                 dllink = decryptLink(brc, parameter);
@@ -158,7 +167,9 @@ public class GeneralMultiuploadDecrypter extends PluginForDecrypt {
         } else if (parameter.contains("go4up.com/")) {
             dllink = brc.getRedirectLocation();
             if (dllink == null) dllink = brc.getRegex("window\\.location = \"(http[^<>\"]*?)\"").getMatch(0);
-        } else if (parameter.matches(".+(qooy\\.com|multfile\\.com|maxmirror\\.com)/.+")) {
+        } else if (parameter.contains("maxmirror.com/")) {
+            dllink = brc.getRegex("\"(http[^<>\"]*?)\"><img border=\"0\" src=\"http://(www\\.)?maxmirror\\.com/").getMatch(0);
+        } else if (parameter.matches(".+(qooy\\.com|multfile\\.com)/.+")) {
             dllink = brc.getRegex("<a style=\"text\\-decoration: none;border:none;\" href=\"(https?://[^<>\"]*?)\"").getMatch(0);
         } else if (parameter.contains("exzip.net/")) {
             dllink = brc.getRegex("\"(/down/[A-Z0-9]{8}/\\d+)\"").getMatch(0);

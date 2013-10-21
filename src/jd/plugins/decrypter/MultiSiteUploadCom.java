@@ -23,11 +23,9 @@ import jd.controlling.ProgressController;
 import jd.http.Browser;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
-import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
-import jd.utils.locale.JDL;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "multisiteupload.com" }, urls = { "http://(www\\.)?multisiteupload\\.com/files/[0-9A-Z]{8}" }, flags = { 0 })
 public class MultiSiteUploadCom extends PluginForDecrypt {
@@ -59,13 +57,19 @@ public class MultiSiteUploadCom extends PluginForDecrypt {
         /* Error handling */
         if (!br.containsHTML("<img src=") && !br.containsHTML("<td class=\"host\">")) {
             logger.info("The following link should be offline: " + parameter);
-            throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
+            return decryptedLinks;
         }
         br.setFollowRedirects(false);
         final String adfLink = br.getRegex("(http://adf\\.ly/\\d+/)").getMatch(0);
         String[] redirectLinks = br.getRegex("(/(redirect|rd)/[0-9A-Z]+/[a-z0-9]+)").getColumn(0);
         if (redirectLinks == null || redirectLinks.length == 0) redirectLinks = br.getRegex("><a href=(.*?)target=").getColumn(0);
-        if (redirectLinks == null || redirectLinks.length == 0 || adfLink == null) return null;
+        if (redirectLinks == null || redirectLinks.length == 0 || adfLink == null) {
+            if (br.containsHTML("<td><img src=/images/Failed\\.gif />")) {
+                logger.info("All links are unavailable: " + parameter);
+                return decryptedLinks;
+            }
+            return null;
+        }
         progress.setRange(redirectLinks.length);
         String nicelookinghost = host.replaceAll("(www\\.|http://|/)", "");
         logger.info("Found " + redirectLinks.length + " " + nicelookinghost + " links to decrypt...");

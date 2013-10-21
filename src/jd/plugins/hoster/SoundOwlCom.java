@@ -55,8 +55,7 @@ public class SoundOwlCom extends PluginForHost {
         br.getHeaders().put("Accept-Language", "en-us,en;q=0.5");
         br.getPage(link.getDownloadURL());
         // Found no offline links yet
-        // if (br.containsHTML("")) throw new
-        // PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML(">This track has been removed")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("<title>([^<>\"]*?) download</title>").getMatch(0);
         if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         link.setFinalFileName(Encoding.htmlDecode(filename.trim()) + ".mp3");

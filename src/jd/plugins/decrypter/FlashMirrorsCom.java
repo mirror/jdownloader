@@ -38,12 +38,9 @@ public class FlashMirrorsCom extends PluginForDecrypt {
         final String parameter = param.toString();
         // For slow servers
         br.setReadTimeout(3 * 60 * 1000);
+        br.setCookie("http://flashmirrors.com/", "rl", "is_set");
         br.getPage("http://flashmirrors.com/mirrors/" + new Regex(parameter, "flashmirrors\\.com/files/(.+)").getMatch(0));
-        if (!br.containsHTML("<img src=")) {
-            logger.info("Link offline: " + parameter);
-            return decryptedLinks;
-        }
-        final String[] links = br.getRegex("/download\\.php\\?url=(https?://.*?)[ \r\n\t]*?(\"|\\')").getColumn(0);
+        final String[] links = br.getRegex("\"link_data\":\"([^<>\"]*?)\"").getColumn(0);
         if (links == null || links.length == 0) {
             if (br.containsHTML("alt=\"Not Available\"")) {
                 logger.info("Link offline: " + parameter);
@@ -52,9 +49,16 @@ public class FlashMirrorsCom extends PluginForDecrypt {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
-        for (String dl : links)
-            decryptedLinks.add(createDownloadlink(dl));
-
+        for (final String dl : links) {
+            if (dl.equals("")) continue;
+            br.getPage("http://flashmirrors.com/download?data=" + dl);
+            final String finallink = br.getRegex("document\\.getElementById\\(\\'ifram\\'\\)\\.src=\\'(http[^<>\"]*?)\\';").getMatch(0);
+            if (finallink == null) {
+                logger.warning("Decrypter broken for link: " + parameter);
+                return null;
+            }
+            decryptedLinks.add(createDownloadlink(finallink));
+        }
         return decryptedLinks;
     }
 

@@ -24,7 +24,6 @@ import jd.PluginWrapper;
 import jd.config.Property;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
-import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
@@ -55,7 +54,7 @@ public class MultiShareCz extends PluginForHost {
             if (multiHostSupported()) {
                 ai.setProperty("multiHostSupport", Property.NULL);
             }
-            return ai;
+            throw e;
         }
         account.setValid(true);
         try {
@@ -63,27 +62,21 @@ public class MultiShareCz extends PluginForHost {
             account.setMaxSimultanDownloads(-1);
         } catch (final Throwable e) {
         }
-        String space = br.getRegex("Velikost nahraných souborů:</span>.*?<strong>(.*?)</strong>").getMatch(0);
-        if (space != null) ai.setUsedSpace(space.trim().replace("&nbsp;", ""));
-        String trafficleft = br.getRegex("Kredit:</span>.*?<strong>(.*?)</strong").getMatch(0);
-        if (trafficleft == null) trafficleft = br.getRegex("class=\"big\"><strong>Kredit:(.*?)</strong>").getMatch(0);
+        final String trafficleft = getJson("credit");
         if (trafficleft != null) {
-            trafficleft = trafficleft.replace("&nbsp;", "");
-            trafficleft = trafficleft.replace(" ", "");
-            ai.setTrafficLeft(SizeFormatter.getSize(trafficleft));
+            ai.setTrafficLeft(SizeFormatter.getSize(trafficleft + " MB"));
         }
-        String hostedFiles = br.getRegex("Počet nahraných souborů:</span>.*?<strong>(\\d+)</strong>").getMatch(0);
-        if (hostedFiles != null) ai.setFilesNum(Integer.parseInt(hostedFiles));
         ai.setStatus("Premium User");
         if (multiHostSupported()) {
             try {
-                String hostsSup = br.cloneBrowser().getPage("https://www.multishare.cz/html/mms_support.php");
-                String[] hosts = Regex.getLines(hostsSup);
+                br.getPage("https://www.multishare.cz/api/?sub=supported-hosters");
+                final String hostsText = br.getRegex("\\{\"server\":\\[(.*?)\\]").getMatch(0);
+                String[] hosts = hostsText.split(",");
                 ArrayList<String> supportedHosts = new ArrayList<String>(Arrays.asList(hosts));
                 for (String host : hosts) {
-                    if ("freakshare.net".equalsIgnoreCase(host)) {
-                        supportedHosts.add("freakshare.com");
-                    }
+                    host = host.replace("\"", "");
+                    if ("freakshare.net".equalsIgnoreCase(host)) host = "freakshare.com";
+                    supportedHosts.add(host);
                 }
                 /*
                  * set ArrayList<String> with all supported multiHosts of this service
@@ -95,6 +88,12 @@ public class MultiShareCz extends PluginForHost {
             }
         }
         return ai;
+    }
+
+    private String getJson(final String parameter) {
+        String result = br.getRegex("\"" + parameter + "\":(\\d+)").getMatch(0);
+        if (result == null) result = br.getRegex("\"" + parameter + "\":\"([^<>\"]*?)\"").getMatch(0);
+        return result;
     }
 
     private boolean multiHostSupported() {
@@ -158,76 +157,45 @@ public class MultiShareCz extends PluginForHost {
     }
 
     /** no override to keep plugin compatible to old stable */
-    public void handleMultiHost(DownloadLink link, Account acc) throws Exception {
+    public void handleMultiHost(final DownloadLink link, final Account acc) throws Exception {
         this.setBrowserExclusive();
         br.setCustomCharset("utf-8");
         br.setFollowRedirects(false);
         /* login to get u_ID and u_HASH */
-        br.getPage("https://www.multishare.cz/");
-        br.postPage("https://www.multishare.cz/html/prihlaseni_process.php", "jmeno=" + Encoding.urlEncode(acc.getUser()) + "&heslo=" + Encoding.urlEncode(acc.getPass()) + "&trvale=ano&akce=P%C5%99ihl%C3%A1sit");
-        if (br.getCookie("http://www.multishare.cz", "sess_ID") == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
-        br.getPage("https://www.multishare.cz/");
-        String trafficleft = br.getRegex("Kredit:</span>.*?<strong>(.*?)</strong").getMatch(0);
-        if (trafficleft == null) trafficleft = br.getRegex("class=\"big\"><strong>Kredit:(.*?)</strong>").getMatch(0);
-        if (trafficleft != null) {
-            trafficleft = trafficleft.replace("&nbsp;", "");
-            trafficleft = trafficleft.replace(" ", "");
-            AccountInfo ai = acc.getAccountInfo();
-            if (ai != null) ai.setTrafficLeft(SizeFormatter.getSize(trafficleft));
+        br.getPage("https://www.multishare.cz/api/?sub=download-link&login=" + Encoding.urlEncode(acc.getUser()) + "&password=" + Encoding.urlEncode(acc.getPass()) + "&link=" + Encoding.urlEncode(link.getDownloadURL()));
+        String dllink = getJson("link");
+        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        dllink = dllink.replace("\\", "");
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 1);
+        if (dl.getConnection().isContentDisposition()) {
+            /* contentdisposition, lets download it */
+            dl.startDownload();
+            return;
+        } else {
+            /*
+             * download is not contentdisposition, so remove this host from premiumHosts list
+             */
+            br.followConnection();
         }
-        Form form = br.getForm(0);
-        if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        /* parse u_ID and u_HASH */
-        String u_ID = form.getVarsMap().get("u_ID");
-        String u_HASH = form.getVarsMap().get("u_hash");
-        if (u_ID == null || u_HASH == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
-        showMessage(link, "Phase 1/3: Check Download");
-        String url = Encoding.urlEncode(link.getDownloadURL());
-        /* request Download */
-        String page = br.postPage("https://www.multishare.cz/html/mms_ajax.php", "link=" + url);
-        if (page.contains("Vašeho kreditu bude")) {
-            showMessage(link, "Phase 2/3: Request Download");
-            /* download is possible */
-            br.getPage("https://www.multishare.cz/html/mms_process.php?link=" + url + "&u_ID=" + u_ID + "&u_hash=" + u_HASH + "&over=ano");
-            if (br.containsHTML("ready")) {
-                showMessage(link, "Phase 3/3: Download");
-                /* download is ready */
-                /* build final URL */
-                String rnd = "dl" + Math.round(Math.random() * 10000l * Math.random());
-                String fUrl = "https://" + rnd + "mms.multishare.cz/html/mms_process.php?link=" + url + "&u_ID=" + u_ID + "&u_hash=" + u_HASH;
-                /*
-                 * resume is supported, chunks make no sense and did not work for me either
-                 */
-                dl = jd.plugins.BrowserAdapter.openDownload(br, link, fUrl, true, 1);
-                if (dl.getConnection().isContentDisposition()) {
-                    /* contentdisposition, lets download it */
-                    dl.startDownload();
-                    return;
-                } else {
-                    /*
-                     * download is not contentdisposition, so remove this host from premiumHosts list
-                     */
-                    br.followConnection();
-                }
-            } else {
-                /* not enough credits */
-            }
-        }
-        /* temp disabled the host */
-        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
     }
 
     private void login(Account account) throws Exception {
         this.setBrowserExclusive();
         br.setCustomCharset("utf-8");
         br.setFollowRedirects(true);
-        br.getPage("https://www.multishare.cz/");
-        br.postPage("https://www.multishare.cz/html/prihlaseni_process.php", "jmeno=" + Encoding.urlEncode(account.getUser()) + "&heslo=" + Encoding.urlEncode(account.getPass()) + "&trvale=ano&akce=P%C5%99ihl%C3%A1sit");
-        if (br.getCookie("https://www.multishare.cz", "sess_ID") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        br.getPage("https://www.multishare.cz/api/?sub=account-details&login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
+        if (br.containsHTML("ERR: User does not exists")) {
+            final String lang = System.getProperty("user.language");
+            if ("de".equalsIgnoreCase(lang)) {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+            }
+        }
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.setCustomCharset("utf-8");

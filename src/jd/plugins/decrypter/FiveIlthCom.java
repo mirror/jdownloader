@@ -144,6 +144,13 @@ public class FiveIlthCom extends PluginForDecrypt {
             return decryptedLinks;
 
         }
+        externID = br.getRegex("static\\.xvideos\\.com/swf/.*?value=\"id_video=(\\d+)\"").getMatch(0);
+        if (externID != null) {
+            final DownloadLink dl = createDownloadlink("http://www.xvideos.com/video" + externID);
+            decryptedLinks.add(dl);
+            return decryptedLinks;
+
+        }
         logger.warning("Decrypter broken for link: " + parameter);
         return null;
     }

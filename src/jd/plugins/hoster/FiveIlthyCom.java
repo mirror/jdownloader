@@ -30,7 +30,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "5ilthy.com" }, urls = { "http://(www\\.)?5ilthy\\.com/(videos/\\d+/[a-z0-9\\-]+\\.html|playerConfig\\.php\\?[a-z0-9]+\\.(flv|mp4))" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "5ilthy.com" }, urls = { "http://(www\\.)?5ilthy\\.com/(videos/\\d+/[a-z0-9\\-]+\\.html|playerConfig\\.php\\?[A-Za-z0-9]+\\.(flv|mp4))" }, flags = { 0 })
 public class FiveIlthyCom extends PluginForHost {
 
     private String DLLINK = null;
@@ -49,7 +49,7 @@ public class FiveIlthyCom extends PluginForHost {
         return -1;
     }
 
-    private static final String EMBEDLINK = "http://(www\\.)?5ilthy\\.com/playerConfig\\.php\\?[a-z0-9]+\\.(flv|mp4)";
+    private static final String EMBEDLINK = "http://(www\\.)?5ilthy\\.com/playerConfig\\.php\\?[A-Za-z0-9]+\\.(flv|mp4)";
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
@@ -59,7 +59,7 @@ public class FiveIlthyCom extends PluginForHost {
         String filename = null;
         if (downloadLink.getDownloadURL().matches(EMBEDLINK)) {
             filename = downloadLink.getStringProperty("5ilthydirectfilename", null);
-            if (filename == null) filename = new Regex(downloadLink.getDownloadURL(), "([a-z0-9]+)\\.(flv|mp4)$").getMatch(0);
+            if (filename == null) filename = new Regex(downloadLink.getDownloadURL(), "([A-Za-z0-9]+)\\.(flv|mp4)$").getMatch(0);
             DLLINK = br.getRegex("flvMask:(http://[^<>\"]*?);").getMatch(0);
         } else {
             if (br.getURL().contains("?=index")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
