@@ -534,6 +534,7 @@ public class RapidGatorNet extends PluginForHost {
 
                 Form loginForm = br.getFormbyProperty("id", "login");
                 String loginPostData = "LoginForm%5Bemail%5D=" + Encoding.urlEncode(account.getUser()) + "&LoginForm%5Bpassword%5D=" + Encoding.urlEncode(account.getPass());
+                boolean sslFormFix = false;
                 boolean sslForm = false;
                 if (loginForm != null) {
                     String action = loginForm.getAction();
@@ -541,9 +542,12 @@ public class RapidGatorNet extends PluginForHost {
                         sslForm = true;
                     }
                     if (sslForm && isJava7nJDStable()) {
-                        if (!stableSucks.get()) showSSLWarning(this.getHost());
-                        loginForm.setAction(action.replace("https://", "http://"));
+                        // if (!stableSucks.get()) showSSLWarning(this.getHost());
+                        action = action.replace("https://", "http://");
+                        sslFormFix = true;
+                        loginForm.setAction(action);
                     }
+                    logger.info("Use loginForm: " + action);
                     String user = loginForm.getBestVariable("email");
                     String pass = loginForm.getBestVariable("password");
                     if (user == null) user = "LoginForm%5Bemail%5D";
@@ -551,10 +555,15 @@ public class RapidGatorNet extends PluginForHost {
                     loginForm.put(user, Encoding.urlEncode(account.getUser()));
                     loginForm.put(pass, Encoding.urlEncode(account.getPass()));
                     br.submitForm(loginForm);
+                    if (sslFormFix) {
+                        /* it seems we need double post, then the login worked while testing */
+                        br.submitForm(loginForm);
+                    }
                     loginPostData = loginForm.getPropertyString();
                 } else {
+                    logger.info("Use postLogin: http(s)://rapidgator.net/auth/login");
                     if (isJava7nJDStable()) {
-                        if (!stableSucks.get()) showSSLWarning(this.getHost());
+                        // if (!stableSucks.get()) showSSLWarning(this.getHost());
                         br.postPage("http://rapidgator.net/auth/login", loginPostData);
                     } else {
                         br.postPage("https://rapidgator.net/auth/login", loginPostData);
