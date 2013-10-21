@@ -45,10 +45,25 @@ public class DailyMotionComDecrypter extends PluginForDecrypt {
         super(wrapper);
     }
 
-    private String                        VIDEOSOURCE    = null;
-    private LinkedHashMap<String, String> FOUNDQUALITIES = new LinkedHashMap<String, String>();
-    private String                        FILENAME       = null;
-    private String                        PARAMETER      = null;
+    private String                          VIDEOSOURCE    = null;
+    /**
+     * @ 1hd1080URL
+     * 
+     * @ 2 hd720URL
+     * 
+     * @ 3 hqURL or stream_h264_hd_url
+     * 
+     * @ 4 sdURL or stream_h264_hq_url
+     * 
+     * @ 5 ldURL or stream_h264_ld_url
+     * 
+     * @ 6 video_url or hds or rtmp
+     * 
+     * @String[] = {"Direct download url", "filename, if available before quality selection"}
+     */
+    private LinkedHashMap<String, String[]> FOUNDQUALITIES = new LinkedHashMap<String, String[]>();
+    private String                          FILENAME       = null;
+    private String                          PARAMETER      = null;
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
@@ -70,6 +85,7 @@ public class DailyMotionComDecrypter extends PluginForDecrypt {
         /** Login end... */
 
         br.setCookie("http://www.dailymotion.com", "family_filter", "off");
+        br.setCookie("http://www.dailymotion.com", "ff", "off");
         br.setCookie("http://www.dailymotion.com", "lang", "en_US");
         try {
             br.getPage(PARAMETER);
@@ -101,13 +117,22 @@ public class DailyMotionComDecrypter extends PluginForDecrypt {
             return decryptedLinks;
         }
         /** Decrypt start */
+        /** Decrypt external links START */
         String externID = br.getRegex("player\\.hulu\\.com/express/(\\d+)").getMatch(0);
         if (externID != null) {
             decryptedLinks.add(createDownloadlink("http://www.hulu.com/watch/" + externID));
             return decryptedLinks;
         }
+        externID = br.getRegex("name=\"movie\" value=\"(http://(www\\.)?embed\\.5min\\.com/\\d+)").getMatch(0);
+        if (externID != null) {
+            decryptedLinks.add(createDownloadlink(externID));
+            return decryptedLinks;
+        }
+        /** Decrypt external links END */
+        /** Find videolinks START */
         VIDEOSOURCE = br.getRegex("\"sequence\":\"([^<>\"]*?)\"").getMatch(0);
         if (VIDEOSOURCE == null) VIDEOSOURCE = br.getRegex("%2Fsequence%2F(.*?)</object>").getMatch(0);
+        if (VIDEOSOURCE == null) VIDEOSOURCE = br.getRegex("name=\"flashvars\" value=\"(.*?)\"/></object>").getMatch(0);
         FILENAME = br.getRegex("<meta itemprop=\"name\" content=\"([^<>\"]*?)\"").getMatch(0);
         if (FILENAME == null) {
             FILENAME = br.getRegex("<meta property=\"og:title\" content=\"([^<>\"]*?)\"").getMatch(0);
@@ -155,36 +180,64 @@ public class DailyMotionComDecrypter extends PluginForDecrypt {
             }
         }
 
-        /** Decrypt qualities start */
-        /** First, find all available qualities */
-        final String[] qualities = { "hd1080URL", "hd720URL", "hqURL", "sdURL", "ldURL", "video_url" };
-        for (final String quality : qualities) {
-            final String currentQualityUrl = getQuality(quality);
+        final String[][] qualities = { { "hd1080URL", "1" }, { "hd720URL", "2" }, { "hqURL", "3" }, { "sdURL", "4" }, { "ldURL", "5" }, { "video_url", "6" } };
+        for (final String quality[] : qualities) {
+            final String currentQualityUrl = getQuality(quality[0]);
             if (currentQualityUrl != null) {
-                FOUNDQUALITIES.put(quality, currentQualityUrl);
+                final String[] dlinfo = new String[2];
+                dlinfo[0] = currentQualityUrl;
+                dlinfo[1] = null;
+                FOUNDQUALITIES.put(quality[1], dlinfo);
             }
         }
         if (FOUNDQUALITIES.isEmpty()) {
             final String manifestURL = new Regex(VIDEOSOURCE, "\"autoURL\":\"(http://[^<>\"]*?)\"").getMatch(0);
             if (manifestURL != null) {
-                logger.info("This video needs Adobe HDS streaming which is not supported yet: " + PARAMETER);
-                return decryptedLinks;
+                /** HDS */
+                final String[] dlinfo = new String[2];
+                dlinfo[0] = manifestURL;
+                dlinfo[1] = "hds";
+                FOUNDQUALITIES.put("6", dlinfo);
             }
-            String[] values = br.getRegex("new SWFObject\\(\"(http://player\\.grabnetworks\\.com/swf/GrabOSMFPlayer\\.swf)\\?id=\\d+\\&content=v([0-9a-f]+)\"").getRow(0);
-            if (values == null || values.length != 2) {
-                /** RTMP */
-                final DownloadLink dl = createDownloadlink("http://dailymotiondecrypted.com/video/" + System.currentTimeMillis() + new Random(10000));
-                dl.setProperty("isrtmp", true);
-                dl.setProperty("mainlink", PARAMETER);
-                dl.setFinalFileName(FILENAME + "_RTMP.mp4");
-                fp.add(dl);
-                decryptedLinks.add(dl);
-                return decryptedLinks;
+
+            // Try to avoid HDS
+            br.getPage("http://www.dailymotion.com/embed/video/" + new Regex(PARAMETER, "([A-Za-z0-9\\-_]+)$").getMatch(0));
+            VIDEOSOURCE = br.getRegex("var info = \\{(.*?)\\},").getMatch(0);
+            if (VIDEOSOURCE != null) {
+                VIDEOSOURCE = Encoding.htmlDecode(VIDEOSOURCE).replace("\\", "");
+                final String[][] embedQualities = { { "stream_h264_hd_url", "3" }, { "stream_h264_hq_url", "4" }, { "stream_h264_ld_url", "5" } };
+                for (final String quality[] : embedQualities) {
+                    final String currentQualityUrl = getQuality(quality[0]);
+                    if (currentQualityUrl != null) {
+                        final String[] dlinfo = new String[2];
+                        dlinfo[0] = currentQualityUrl;
+                        dlinfo[1] = null;
+                        FOUNDQUALITIES.put(quality[1], dlinfo);
+                    }
+                }
             }
-            logger.warning("Found no quality for link: " + PARAMETER);
-            return null;
+            // if (FOUNDQUALITIES.isEmpty()) {
+            // String[] values =
+            // br.getRegex("new SWFObject\\(\"(http://player\\.grabnetworks\\.com/swf/GrabOSMFPlayer\\.swf)\\?id=\\d+\\&content=v([0-9a-f]+)\"").getRow(0);
+            // if (values == null || values.length != 2) {
+            // /** RTMP */
+            // final DownloadLink dl = createDownloadlink("http://dailymotiondecrypted.com/video/" + System.currentTimeMillis() + new
+            // Random(10000));
+            // dl.setProperty("isrtmp", true);
+            // dl.setProperty("mainlink", PARAMETER);
+            // dl.setFinalFileName(FILENAME + "_RTMP.mp4");
+            // fp.add(dl);
+            // decryptedLinks.add(dl);
+            // return decryptedLinks;
+            // }
+            // }
+            if (FOUNDQUALITIES.isEmpty() && decryptedLinks.size() == 0) {
+                logger.warning("Found no quality for link: " + PARAMETER);
+                return null;
+            }
         }
-        /** Decrypt qualities, selected by the user */
+        /** Find videolinks END */
+        /** Pick qualities, selected by the user START */
         final ArrayList<String> selectedQualities = new ArrayList<String>();
         final SubConfiguration cfg = SubConfiguration.getConfig("dailymotion.com");
         if (cfg.getBooleanProperty("ALLOW_BEST", false)) {
@@ -207,12 +260,12 @@ public class DailyMotionComDecrypter extends PluginForDecrypt {
                 q1080 = true;
                 others = true;
             }
-            if (qld) selectedQualities.add("ldURL");
-            if (qsd) selectedQualities.add("sdURL");
-            if (qhq) selectedQualities.add("hqURL");
-            if (q720) selectedQualities.add("hd720URL");
-            if (q1080) selectedQualities.add("hd1080URL");
-            if (others) selectedQualities.add("video_url");
+            if (qld) selectedQualities.add("5");
+            if (qsd) selectedQualities.add("4");
+            if (qhq) selectedQualities.add("3");
+            if (q720) selectedQualities.add("2");
+            if (q1080) selectedQualities.add("1");
+            if (others) selectedQualities.add("6");
         }
         for (final String selectedQualityValue : selectedQualities) {
             final DownloadLink dl = getVideoDownloadlink(selectedQualityValue);
@@ -221,6 +274,7 @@ public class DailyMotionComDecrypter extends PluginForDecrypt {
                 decryptedLinks.add(dl);
             }
         }
+        /** Pick qualities, selected by the user END */
         if (decryptedLinks.size() == 0) {
             logger.info("None of the selected qualities were found, decrypting done...");
             return decryptedLinks;
@@ -229,14 +283,17 @@ public class DailyMotionComDecrypter extends PluginForDecrypt {
     }
 
     private DownloadLink getVideoDownloadlink(final String qualityValue) {
-        String directlink = FOUNDQUALITIES.get(qualityValue);
-        if (directlink != null) {
-            directlink = Encoding.htmlDecode(directlink);
+        String directlinkinfo[] = FOUNDQUALITIES.get(qualityValue);
+        if (directlinkinfo != null) {
+            final String directlink = Encoding.htmlDecode(directlinkinfo[0]);
             final DownloadLink dl = createDownloadlink("http://dailymotiondecrypted.com/video/" + System.currentTimeMillis() + new Random().nextInt(10000));
+            String qualityName = directlinkinfo[1];
+            if (qualityName == null) qualityName = new Regex(directlink, "cdn/([^<>\"]*?)/video").getMatch(0);
             dl.setProperty("directlink", directlink);
             dl.setProperty("qualityvalue", qualityValue);
+            dl.setProperty("qualityname", qualityName);
             dl.setProperty("mainlink", PARAMETER);
-            dl.setFinalFileName(correctFilename(FILENAME + "_" + new Regex(directlink, "cdn/([^<>\"]*?)/video").getMatch(0) + ".mp4"));
+            dl.setFinalFileName(correctFilename(FILENAME + "_" + qualityName + ".mp4"));
             return dl;
         } else {
             return null;
@@ -254,7 +311,7 @@ public class DailyMotionComDecrypter extends PluginForDecrypt {
         return filename;
     }
 
-    private String getQuality(String quality) {
+    private String getQuality(final String quality) {
         return new Regex(VIDEOSOURCE, "\"" + quality + "\":\"(http[^<>\"\\']+)\"").getMatch(0);
     }
 

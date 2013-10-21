@@ -57,7 +57,7 @@ public class DailyMotionCom extends PluginForHost {
         setConfigElements();
     }
 
-    public void correctDownloadLink(DownloadLink link) {
+    public void correctDownloadLink(final DownloadLink link) {
         link.setUrlDownload(link.getDownloadURL().replace("dailymotiondecrypted.com/", "dailymotion.com/"));
     }
 
@@ -65,6 +65,7 @@ public class DailyMotionCom extends PluginForHost {
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
         br.setFollowRedirects(true);
         br.setCookie("http://www.dailymotion.com", "family_filter", "off");
+        br.setCookie("http://www.dailymotion.com", "ff", "off");
         br.setCookie("http://www.dailymotion.com", "lang", "en_US");
         prepBrowser();
         if (downloadLink.getBooleanProperty("offline", false)) {
@@ -76,7 +77,11 @@ public class DailyMotionCom extends PluginForHost {
             downloadLink.getLinkStatus().setStatusText(JDL.L("plugins.hoster.dailymotioncom.registeredonly", REGISTEREDONLYUSERTEXT));
             return AvailableStatus.TRUE;
         }
-        if (downloadLink.getBooleanProperty("isrtmp", false)) {
+        if (isHDS(downloadLink)) {
+            downloadLink.getLinkStatus().setStatusText("HDS stream download is not supported (yet)!");
+            downloadLink.setFinalFileName(downloadLink.getStringProperty("directname", null));
+            return AvailableStatus.TRUE;
+        } else if (downloadLink.getBooleanProperty("isrtmp", false)) {
             getRTMPlink();
         } else {
             dllink = downloadLink.getStringProperty("directlink");
@@ -107,7 +112,9 @@ public class DailyMotionCom extends PluginForHost {
     }
 
     public void doFree(final DownloadLink downloadLink) throws Exception {
-        if (dllink.startsWith("rtmp")) {
+        if (isHDS(downloadLink)) {
+            throw new PluginException(LinkStatus.ERROR_FATAL, "HDS stream download is not supported (yet)!");
+        } else if (dllink.startsWith("rtmp")) {
             String[] stream = dllink.split("@");
             dl = new RTMPDownload(this, downloadLink, stream[0]);
             setupRTMPConnection(stream, dl);
@@ -167,7 +174,9 @@ public class DailyMotionCom extends PluginForHost {
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         login(account, this.br);
         requestFileInformation(link);
-        if (link.getBooleanProperty("countryblock", false)) { throw new PluginException(LinkStatus.ERROR_FATAL, COUNTRYBLOCKUSERTEXT); }
+        if (link.getBooleanProperty("ishds", false)) {
+            throw new PluginException(LinkStatus.ERROR_FATAL, "HDS stream download is not supported (yet)!");
+        } else if (link.getBooleanProperty("countryblock", false)) { throw new PluginException(LinkStatus.ERROR_FATAL, COUNTRYBLOCKUSERTEXT); }
         doFree(link);
     }
 
@@ -205,6 +214,10 @@ public class DailyMotionCom extends PluginForHost {
         br.getHeaders().put("Accept-Charset", "ISO-8859-1,utf-8;q=0.7,*;q=0.7");
     }
 
+    private boolean isHDS(final DownloadLink dl) {
+        return "hds".equals(dl.getStringProperty("qualityname", null));
+    }
+
     @Override
     public String getDescription() {
         return "JDownloader's DailyMotion Plugin helps downloading Videoclips from dailymotion.com. DailyMotion provides different video formats and qualities.";
@@ -214,12 +227,12 @@ public class DailyMotionCom extends PluginForHost {
         final ConfigEntry hq = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_BEST, JDL.L("plugins.hoster.dailymotioncom.checkbest", "Only grab the best available resolution")).setDefaultValue(false);
         getConfig().addEntry(hq);
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_LQ, JDL.L("plugins.hoster.dailymotioncom.checkLQ", "Grab LQ?")).setDefaultValue(true).setEnabledCondidtion(hq, false));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_SD, JDL.L("plugins.hoster.dailymotioncom.checkSD", "Grab SD?")).setDefaultValue(true).setEnabledCondidtion(hq, false));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_HQ, JDL.L("plugins.hoster.dailymotioncom.checkHQ", "Grab HQ?")).setDefaultValue(true).setEnabledCondidtion(hq, false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_LQ, JDL.L("plugins.hoster.dailymotioncom.checkLQ", "Grab LQ/LD?")).setDefaultValue(true).setEnabledCondidtion(hq, false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_SD, JDL.L("plugins.hoster.dailymotioncom.checkSD", "Grab SD/HQ?")).setDefaultValue(true).setEnabledCondidtion(hq, false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_HQ, JDL.L("plugins.hoster.dailymotioncom.checkHQ", "Grab HQ/HD?")).setDefaultValue(true).setEnabledCondidtion(hq, false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_720, JDL.L("plugins.hoster.dailymotioncom.check720", "Grab 720p?")).setDefaultValue(true).setEnabledCondidtion(hq, false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_1080, JDL.L("plugins.hoster.dailymotioncom.check1080", "Grab 1080p?")).setDefaultValue(true).setEnabledCondidtion(hq, false));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_OTHERS, JDL.L("plugins.hoster.dailymotioncom.checkother", "Grab other available qualities?")).setDefaultValue(true).setEnabledCondidtion(hq, false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_OTHERS, JDL.L("plugins.hoster.dailymotioncom.checkother", "Grab other available qualities (HDS/RTMP/OTHERS)?")).setDefaultValue(true).setEnabledCondidtion(hq, false));
     }
 
     @Override
