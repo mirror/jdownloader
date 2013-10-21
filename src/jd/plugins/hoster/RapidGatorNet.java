@@ -536,12 +536,13 @@ public class RapidGatorNet extends PluginForHost {
                 String loginPostData = "LoginForm%5Bemail%5D=" + Encoding.urlEncode(account.getUser()) + "&LoginForm%5Bpassword%5D=" + Encoding.urlEncode(account.getPass());
                 boolean sslFormFix = false;
                 boolean sslForm = false;
+                boolean isjava7Issue = isJava7nJDStable();
                 if (loginForm != null) {
                     String action = loginForm.getAction();
                     if (action != null && action.startsWith("https://")) {
                         sslForm = true;
                     }
-                    if (sslForm && isJava7nJDStable()) {
+                    if (sslForm && isjava7Issue) {
                         // if (!stableSucks.get()) showSSLWarning(this.getHost());
                         action = action.replace("https://", "http://");
                         sslFormFix = true;
@@ -554,10 +555,22 @@ public class RapidGatorNet extends PluginForHost {
                     if (pass == null) pass = "LoginForm%5Bpassword%5D";
                     loginForm.put(user, Encoding.urlEncode(account.getUser()));
                     loginForm.put(pass, Encoding.urlEncode(account.getPass()));
-                    br.submitForm(loginForm);
+                    if (isjava7Issue) {
+                        br.getHeaders().put("Content-Type", "application/x-www-form-urlencoded");
+                        br.submitForm(loginForm);
+                        br.getHeaders().put("Content-Type", null);
+                    } else {
+                        br.submitForm(loginForm);
+                    }
                     if (sslFormFix) {
                         /* it seems we need double post, then the login worked while testing */
-                        br.submitForm(loginForm);
+                        if (isjava7Issue) {
+                            br.getHeaders().put("Content-Type", "application/x-www-form-urlencoded");
+                            br.submitForm(loginForm);
+                            br.getHeaders().put("Content-Type", null);
+                        } else {
+                            br.submitForm(loginForm);
+                        }
                     }
                     loginPostData = loginForm.getPropertyString();
                 } else {
