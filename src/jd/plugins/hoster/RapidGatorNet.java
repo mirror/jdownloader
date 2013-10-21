@@ -511,11 +511,6 @@ public class RapidGatorNet extends PluginForHost {
     private Map<String, String> login(Account account, boolean force) throws Exception {
         synchronized (LOCK) {
             try {
-                // Enforces https login, and post requests!
-                if (isJava7nJDStable()) {
-                    showSSLWarning(this.getHost());
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "Can not login to " + this.getHost() + " within this version of JDownloader! Upgrade to JDownloader 2. ", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                }
                 // Load cookies
                 br.setCookiesExclusive(true);
                 prepareBrowser(br);
