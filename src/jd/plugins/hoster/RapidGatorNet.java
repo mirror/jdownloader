@@ -555,7 +555,7 @@ public class RapidGatorNet extends PluginForHost {
                     if (pass == null) pass = "LoginForm%5Bpassword%5D";
                     loginForm.put(user, Encoding.urlEncode(account.getUser()));
                     loginForm.put(pass, Encoding.urlEncode(account.getPass()));
-                    if (isjava7Issue) {
+                    if (isOld09581Stable()) {
                         br.getHeaders().put("Content-Type", "application/x-www-form-urlencoded");
                         br.submitForm(loginForm);
                         br.getHeaders().put("Content-Type", null);
@@ -564,7 +564,7 @@ public class RapidGatorNet extends PluginForHost {
                     }
                     if (sslFormFix) {
                         /* it seems we need double post, then the login worked while testing */
-                        if (isjava7Issue) {
+                        if (isOld09581Stable()) {
                             br.getHeaders().put("Content-Type", "application/x-www-form-urlencoded");
                             br.submitForm(loginForm);
                             br.getHeaders().put("Content-Type", null);
@@ -791,6 +791,10 @@ public class RapidGatorNet extends PluginForHost {
             return true;
         else
             return false;
+    }
+
+    private boolean isOld09581Stable() {
+        return System.getProperty("jd.revision.jdownloaderrevision") == null;
     }
 
     private static AtomicBoolean stableSucks = new AtomicBoolean(false);
