@@ -49,9 +49,9 @@ import org.jdownloader.controlling.packagizer.PackagizerController;
 import org.jdownloader.controlling.packagizer.PackagizerRule;
 import org.jdownloader.controlling.packagizer.PackagizerRuleWrapper;
 import org.jdownloader.gui.IconKey;
+import org.jdownloader.gui.packagehistorycontroller.DownloadPathHistoryManager;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.DownloadFolderChooserDialog;
-import org.jdownloader.gui.views.linkgrabber.addlinksdialog.DownloadPath;
 import org.jdownloader.images.NewTheme;
 
 public class PackagizerFilterRuleDialog extends ConditionDialog<PackagizerRule> {
@@ -214,10 +214,12 @@ public class PackagizerFilterRuleDialog extends ConditionDialog<PackagizerRule> 
         rule.setDownloadDestination(cbDest.isSelected() ? fpDest.getPath() : null);
 
         if (cbDest.isSelected()) {
-            DownloadPath.saveList(fpDest.getPath());
+            DownloadPathHistoryManager.getInstance().add(fpDest.getPath());
+
         }
         if (cbMove.isSelected()) {
-            DownloadPath.saveList(fpMove.getPath());
+            DownloadPathHistoryManager.getInstance().add(fpMove.getPath());
+
         }
         rule.setMoveto(cbMove.isSelected() ? fpMove.getPath() : null);
         rule.setRename(cbRename.isSelected() ? txtRename.getText() : null);
@@ -255,9 +257,9 @@ public class PackagizerFilterRuleDialog extends ConditionDialog<PackagizerRule> 
         txtNewFilename.setText(rule.getFilename());
         txtRename.setText(rule.getRename());
         txtTestUrl.setText(rule.getTestUrl());
-        fpDest.setQuickSelectionList(DownloadPath.loadList(rule.getDownloadDestination()));
+        fpDest.setQuickSelectionList(DownloadPathHistoryManager.getInstance().listPathes(rule.getDownloadDestination()));
         fpDest.setPath(rule.getDownloadDestination());
-        fpMove.setQuickSelectionList(DownloadPath.loadList(rule.getMoveto()));
+        fpMove.setQuickSelectionList(DownloadPathHistoryManager.getInstance().listPathes(rule.getMoveto()));
         fpMove.setPath(rule.getMoveto());
 
         cbExtract.setSelected(rule.isAutoExtractionEnabled() != null);

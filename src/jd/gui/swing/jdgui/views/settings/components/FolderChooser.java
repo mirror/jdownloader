@@ -21,9 +21,9 @@ import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.appwork.utils.swing.dialog.DialogNoAnswerException;
 import org.jdownloader.controlling.FileCreationManager;
 import org.jdownloader.controlling.packagizer.PackagizerController;
+import org.jdownloader.gui.packagehistorycontroller.DownloadPathHistoryManager;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.DownloadFolderChooserDialog;
-import org.jdownloader.gui.views.linkgrabber.addlinksdialog.DownloadPath;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.translate._JDT;
 
@@ -61,7 +61,7 @@ public class FolderChooser extends PathChooser implements SettingsComponent {
 
             @Override
             public void popupMenuWillBecomeVisible(PopupMenuEvent e) {
-                destination.setList(DownloadPath.loadList(getPath()));
+                destination.setList(DownloadPathHistoryManager.getInstance().listPathes(getPath()));
             }
 
             @Override
@@ -131,7 +131,8 @@ public class FolderChooser extends PathChooser implements SettingsComponent {
         if (file == null) return null;
         file = checkPath(file, originalPath == null ? null : new File(originalPath));
         if (file == null) return null;
-        DownloadPath.saveList(file.getAbsolutePath());
+        DownloadPathHistoryManager.getInstance().add(file.getAbsolutePath());
+
         return file.getAbsolutePath();
     }
 

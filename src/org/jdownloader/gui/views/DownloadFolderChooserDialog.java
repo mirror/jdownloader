@@ -25,8 +25,8 @@ import org.appwork.utils.swing.dialog.FileChooserSelectionMode;
 import org.appwork.utils.swing.dialog.dimensor.RememberLastDialogDimension;
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.controlling.packagizer.PackagizerController;
+import org.jdownloader.gui.packagehistorycontroller.DownloadPathHistoryManager;
 import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.gui.views.linkgrabber.addlinksdialog.DownloadPath;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings;
 
 public class DownloadFolderChooserDialog extends ExtFileChooserDialog {
@@ -154,7 +154,8 @@ public class DownloadFolderChooserDialog extends ExtFileChooserDialog {
     }
 
     /**
-     * checks if the given file is valid as a downloadfolder, this means it must be an existing folder or at least its parent folder must exist
+     * checks if the given file is valid as a downloadfolder, this means it must be an existing folder or at least its parent folder must
+     * exist
      * 
      * @param file
      * @return
@@ -182,14 +183,15 @@ public class DownloadFolderChooserDialog extends ExtFileChooserDialog {
             });
         }
 
-        d.setQuickSelectionList(DownloadPath.loadList(path != null ? path.getAbsolutePath() : null));
+        d.setQuickSelectionList(DownloadPathHistoryManager.getInstance().listPathes(path != null ? path.getAbsolutePath() : null));
         d.setFileSelectionMode(FileChooserSelectionMode.DIRECTORIES_ONLY);
 
         File[] dest = Dialog.getInstance().showDialog(d);
         if (dest == null || dest.length == 0) return null;
         dest[0] = FolderChooser.checkPath(dest[0], null);
         if (dest[0] == null) return null;
-        DownloadPath.saveList(dest[0].getAbsolutePath());
+        DownloadPathHistoryManager.getInstance().add(dest[0].getAbsolutePath());
+
         return dest[0];
     }
 

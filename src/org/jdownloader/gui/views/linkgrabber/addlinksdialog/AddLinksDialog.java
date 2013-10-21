@@ -8,11 +8,7 @@ import java.awt.event.HierarchyListener;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
 import java.io.File;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashSet;
-import java.util.Iterator;
 
 import javax.swing.AbstractAction;
 import javax.swing.BorderFactory;
@@ -48,7 +44,6 @@ import org.appwork.swing.components.pathchooser.PathChooser;
 import org.appwork.swing.components.searchcombo.SearchComboBox;
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.Application;
-import org.appwork.utils.Lists;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.swing.EDTHelper;
 import org.appwork.utils.swing.EDTRunner;
@@ -63,6 +58,9 @@ import org.jdownloader.controlling.Priority;
 import org.jdownloader.controlling.packagizer.PackagizerController;
 import org.jdownloader.extensions.extraction.BooleanStatus;
 import org.jdownloader.gui.helpdialogs.HelpDialog;
+import org.jdownloader.gui.packagehistorycontroller.DownloadPathHistoryManager;
+import org.jdownloader.gui.packagehistorycontroller.PackageHistoryEntry;
+import org.jdownloader.gui.packagehistorycontroller.PackageHistoryManager;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.DownloadFolderChooserDialog;
 import org.jdownloader.images.NewTheme;
@@ -88,8 +86,6 @@ public class AddLinksDialog extends AbstractDialog<LinkCollectingJob> {
     private JButton                             confirmOptions;
 
     private boolean                             deepAnalyse   = false;
-
-    private ArrayList<PackageHistoryEntry>      packageHistory;
 
     private JLabel                              errorLabel;
 
@@ -184,9 +180,9 @@ public class AddLinksDialog extends AbstractDialog<LinkCollectingJob> {
         ret.setOutputFolder(destination.getFile());
         // }
         ret.setDeepAnalyse(isDeepAnalyse());
-        ret.setPackageName(packagename.getText());
+        ret.setPackageName(packagename.getText().trim());
         ret.setAutoExtract(this.extractToggle.isSelected() ? BooleanStatus.TRUE : BooleanStatus.FALSE);
-        ret.setCustomComment(getComment());
+        ret.setCustomComment(getComment().trim());
         String passwordTxt = password.getText();
         if (!StringUtils.isEmpty(passwordTxt)) {
             /* avoid empty hashsets */
@@ -194,32 +190,17 @@ public class AddLinksDialog extends AbstractDialog<LinkCollectingJob> {
             }, new HashSet<String>());
             if (passwords == null || passwords.size() == 0) {
                 passwords = new HashSet<String>();
-                passwords.add(password.getText());
+                passwords.add(password.getText().trim());
             }
             ret.setExtractPasswords(passwords);
         }
         ret.setPriority((Priority) priority.getSelectedItem());
         ret.setDownloadPassword(downloadPassword.getText());
+        PackageHistoryManager.getInstance().add(ret.getPackageName());
 
-        if (!StringUtils.isEmpty(ret.getPackageName())) {
-            boolean found = false;
-            for (PackageHistoryEntry pe : packageHistory) {
-                if (pe.getName().equalsIgnoreCase(ret.getPackageName())) {
-                    pe.setTime(System.currentTimeMillis());
-                    found = true;
-                    break;
-                }
-            }
-            if (!found) {
-                packageHistory.add(new PackageHistoryEntry(ret.getPackageName()));
-            }
-            config.setPackageNameHistory(Lists.unique(packageHistory));
-        }
         if (ret.getOutputFolder() != null) {
+            DownloadPathHistoryManager.getInstance().add(ret.getOutputFolder().getAbsolutePath());
 
-            DownloadPath.saveList(ret.getOutputFolder().getAbsolutePath());
-
-            config.setLatestDownloadDestinationFolder(ret.getOutputFolder().getAbsolutePath());
         }
 
         return ret;
@@ -288,31 +269,8 @@ public class AddLinksDialog extends AbstractDialog<LinkCollectingJob> {
             }
         };
         packagename.setBadColor(null);
-        packageHistory = config.getPackageNameHistory();
-        if (packageHistory == null) {
-            packageHistory = new ArrayList<PackageHistoryEntry>();
-        }
-        for (Iterator<PackageHistoryEntry> it = packageHistory.iterator(); it.hasNext();) {
-            PackageHistoryEntry next = it.next();
-            if (next == null || StringUtils.isEmpty(next.getName())) {
-                it.remove();
-                continue;
-            }
-            if (packageHistory.size() > 25) {
-                // if list is very long, remove entries older than 30 days
-                if (System.currentTimeMillis() - next.getTime() > 60 * 60 * 24 * 30) {
-                    it.remove();
-                }
-            }
 
-        }
-        Collections.sort(packageHistory, new Comparator<PackageHistoryEntry>() {
-
-            public int compare(PackageHistoryEntry o1, PackageHistoryEntry o2) {
-                return o1.getName().compareToIgnoreCase(o2.getName());
-            }
-        });
-        packagename.setList(packageHistory);
+        packagename.setList(PackageHistoryManager.getInstance().list());
         packagename.setUnkownTextInputAllowed(true);
         packagename.setHelpText(_GUI._.AddLinksDialog_layoutDialogContent_packagename_help());
         packagename.setSelectedItem(null);
@@ -320,7 +278,7 @@ public class AddLinksDialog extends AbstractDialog<LinkCollectingJob> {
         comment = new ExtTextField();
         comment.setHelpText(_GUI._.AddLinksDialog_layoutDialogContent_comment_help());
         comment.setBorder(BorderFactory.createCompoundBorder(comment.getBorder(), BorderFactory.createEmptyBorder(2, 6, 1, 6)));
-        destination.setQuickSelectionList(DownloadPath.loadList(org.appwork.storage.config.JsonConfig.create(GeneralSettings.class).getDefaultDownloadFolder()));
+        destination.setQuickSelectionList(DownloadPathHistoryManager.getInstance().listPathes(org.appwork.storage.config.JsonConfig.create(GeneralSettings.class).getDefaultDownloadFolder()));
 
         String latest = config.getLatestDownloadDestinationFolder();
         if (latest == null || !config.isUseLastDownloadDestinationAsDefault()) {

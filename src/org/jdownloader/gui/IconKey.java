@@ -45,10 +45,13 @@ public class IconKey {
     }
 
     public static final String ICON_16_FILTER                    = "16/filter";
+    public static final String ICON_16_MIMIGLYPHS_CLOSE          = "16/mimiglyphs/close";
     public static final String ICON_16_TRASH                     = "16/trash";
+    public static final String ICON_9KW                          = "9kw";
     public static final String ICON_ABOUT                        = "about";
     public static final String ICON_ADD                          = "add";
     public static final String ICON_ADDCONTAINER                 = "addContainer";
+    public static final String ICON_ADD_SPECIAL                  = "add_special";
     public static final String ICON_ADVANCEDCONFIG               = "advancedConfig";
     public static final String ICON_ARCHIVE                      = "archive";
     public static final String ICON_ARCHIVEPASSWORD              = "archivepassword";
@@ -63,11 +66,17 @@ public class IconKey {
     public static final String ICON_BATCH                        = "batch";
     public static final String ICON_BOARD                        = "board";
     public static final String ICON_BOTTOMBAR                    = "bottombar";
+    public static final String ICON_BOTTY_STOP                   = "botty_stop";
+    public static final String ICON_BOX                          = "box";
+    public static final String ICON_BRIGHTMIX_WRENCH             = "brightmix/wrench";
     public static final String ICON_BROWSE                       = "browse";
+    public static final String ICON_BUBBLE                       = "bubble";
     public static final String ICON_BUG                          = "bug";
     public static final String ICON_BUY                          = "buy";
     public static final String ICON_CANCEL                       = "cancel";
     public static final String ICON_CASE                         = "case";
+    public static final String ICON_CBH                          = "cbh";
+    public static final String ICON_CES                          = "ces";
     public static final String ICON_CHAT                         = "chat";
     public static final String ICON_CHECKBOX_FALSE               = "checkbox_false";
     public static final String ICON_CHECKBOX_TRUE                = "checkbox_true";
@@ -96,6 +105,7 @@ public class IconKey {
     public static final String ICON_DIALOG_INFO                  = "dialog/info";
     public static final String ICON_DIALOG_LOGIN                 = "dialog/login";
     public static final String ICON_DIALOG_WARNING               = "dialog/warning";
+    public static final String ICON_DIALOGOCR                    = "dialogOCR";
     public static final String ICON_DISABLE                      = "disable";
     public static final String ICON_DISABLED                     = "disabled";
     public static final String ICON_DLC                          = "dlc";
@@ -122,6 +132,7 @@ public class IconKey {
     public static final String ICON_EXTTABLE_SORTASC             = "exttable/sortAsc";
     public static final String ICON_EXTTABLE_SORTDESC            = "exttable/sortDesc";
     public static final String ICON_EXTTABLE_WIDTHLOCKED         = "exttable/widthLocked";
+    public static final String ICON_FALSE_ORANGE                 = "false-orange";
     public static final String ICON_FALSE                        = "false";
     public static final String ICON_FAV_BIG_NETLOAD_IN           = "fav/big.netload.in";
     public static final String ICON_FAV_BIG_SHARE_ONLINE_BIZ     = "fav/big.share-online.biz";
@@ -193,11 +204,13 @@ public class IconKey {
     public static final String ICON_MEDIA_PLAYBACK_STOP          = "media-playback-stop";
     public static final String ICON_MEDIAPLAYER                  = "mediaplayer";
     public static final String ICON_MENU                         = "menu";
+    public static final String ICON_MINIMIZE                     = "minimize";
     public static final String ICON_MINIMIZE_LEFT                = "minimize_left";
     public static final String ICON_MINIMIZE_RIGHT               = "minimize_right";
     public static final String ICON_MODEM                        = "modem";
     public static final String ICON_MONEY                        = "money";
     public static final String ICON_MORE                         = "more";
+    public static final String ICON_MYJDOWNLOADER                = "myjdownloader";
     public static final String ICON_NETWORK_ERROR                = "network-error";
     public static final String ICON_NETWORK_IDLE                 = "network-idle";
     public static final String ICON_NEW                          = "new";
@@ -205,6 +218,7 @@ public class IconKey {
     public static final String ICON_OK                           = "ok";
     public static final String ICON_OPEN                         = "open";
     public static final String ICON_OPTIONS                      = "options";
+    public static final String ICON_ORDER                        = "order";
     public static final String ICON_PACKAGE_CLOSED               = "package_closed";
     public static final String ICON_PACKAGE_CLOSED_ERROR         = "package_closed_error";
     public static final String ICON_PACKAGE_NEW                  = "package_new";
@@ -217,7 +231,9 @@ public class IconKey {
     public static final String ICON_PLAY                         = "play";
     public static final String ICON_PLUGIN                       = "plugin";
     public static final String ICON_POPDOWNBUTTON                = "popdownButton";
+    public static final String ICON_POPUP                        = "popup";
     public static final String ICON_POPUPBUTTON                  = "popupButton";
+    public static final String ICON_POPUPDOWN                    = "popupdown";
     public static final String ICON_PREMIUM                      = "premium";
     public static final String ICON_PREMIUMZONE                  = "premiumzone";
     public static final String ICON_PRIO__1                      = "prio_-1";
@@ -236,6 +252,7 @@ public class IconKey {
     public static final String ICON_REFRESH                      = "refresh";
     public static final String ICON_REGEX                        = "regex";
     public static final String ICON_REGEXSTAR                    = "regexStar";
+    public static final String ICON_REMOTEOCR                    = "remoteOCR";
     public static final String ICON_REMOVE                       = "remove";
     public static final String ICON_REMOVE_DISABLED              = "remove_disabled";
     public static final String ICON_REMOVE_DUPES                 = "remove_dupes";
@@ -263,6 +280,7 @@ public class IconKey {
     public static final String ICON_SETTINGS                     = "settings";
     public static final String ICON_SHARE                        = "share";
     public static final String ICON_SIDEBAR                      = "sidebar";
+    public static final String ICON_SILENTMODE                   = "silentmode";
     public static final String ICON_SKIPPED                      = "skipped";
     public static final String ICON_SMART                        = "smart";
     public static final String ICON_SORT                         = "sort";
@@ -274,6 +292,7 @@ public class IconKey {
     public static final String ICON_STOP                         = "stop";
     public static final String ICON_STOPPING                     = "stopping";
     public static final String ICON_STOPSIGN                     = "stopsign";
+    public static final String ICON_STOP_CONDITIONAL             = "stop_conditional";
     public static final String ICON_SYSTEM_FILE_MANAGER          = "system-file-manager";
     public static final String ICON_TAB                          = "tab";
     public static final String ICON_TERMS                        = "terms";
@@ -299,6 +318,7 @@ public class IconKey {
     public static final String ICON_UPDATERICON                  = "updatericon";
     public static final String ICON_UPDATERICON0                 = "updaterIcon0";
     public static final String ICON_UPDATERICON100               = "updaterIcon100";
+    public static final String ICON_UPDATE_B                     = "update_b";
     public static final String ICON_UPLOAD                       = "upload";
     public static final String ICON_UPNP                         = "upnp";
     public static final String ICON_URL                          = "url";

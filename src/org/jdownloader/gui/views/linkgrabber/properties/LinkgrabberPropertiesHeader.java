@@ -3,15 +3,20 @@ package org.jdownloader.gui.views.linkgrabber.properties;
 import java.awt.Dimension;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.HierarchyBoundsListener;
+import java.awt.event.HierarchyEvent;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 
 import javax.swing.BorderFactory;
-import javax.swing.Box;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JLabel;
 
+import jd.controlling.linkcollector.LinkCollector;
+import jd.controlling.linkcollector.LinkCollectorCrawler;
+import jd.controlling.linkcollector.LinkCollectorEvent;
+import jd.controlling.linkcollector.LinkCollectorListener;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledPackage;
 import jd.controlling.packagecontroller.AbstractNode;
@@ -19,26 +24,44 @@ import jd.controlling.packagecontroller.AbstractNode;
 import org.appwork.swing.MigPanel;
 import org.appwork.swing.components.ExtButton;
 import org.appwork.utils.ImageProvider.ImageProvider;
+import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.SwingUtils;
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.updatev2.gui.LAFOptions;
 
-public class LinkgrabberPropertiesHeader extends MigPanel {
+import sun.swing.SwingUtilities2;
 
-    private JButton   bt;
-    private ExtButton options;
-    private JLabel    lbl;
-    private JLabel    icon;
+public class LinkgrabberPropertiesHeader extends MigPanel implements LinkCollectorListener {
+
+    private JButton        bt;
+    private ExtButton      options;
+    private JLabel         lbl;
+    private JLabel         icon;
+    private String         labelString;
+    protected AbstractNode current;
 
     public LinkgrabberPropertiesHeader() {
-        super("ins 0 0 1 0", "[]2[][grow,fill][]0", "[grow,fill]");
+        super("ins 0 0 1 0", "[]2[grow,fill][]0", "[grow,fill]");
 
         // setBackground(Color.RED);
         // setOpaque(true);
 
         lbl = SwingUtils.toBold(new JLabel(""));
+        this.addHierarchyBoundsListener(new HierarchyBoundsListener() {
+
+            @Override
+            public void ancestorResized(HierarchyEvent e) {
+                updateLabelString();
+            }
+
+            @Override
+            public void ancestorMoved(HierarchyEvent e) {
+            }
+        });
+
+        LinkCollector.getInstance().getEventsender().addListener(this, true);
         LAFOptions.getInstance().applyHeaderColorBackground(lbl);
         add(icon = new JLabel(NewTheme.I().getIcon("download", 16)), "gapleft 1");
         add(lbl, "height 17!");
@@ -79,7 +102,7 @@ public class LinkgrabberPropertiesHeader extends MigPanel {
         });
         options.setRolloverEffectEnabled(true);
         // add(options, "height 17!,width 24!");
-        add(Box.createHorizontalGlue());
+
         setOpaque(true);
         SwingUtils.setOpaque(lbl, false);
         setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, (LAFOptions.getInstance().getColorForPanelHeaderLine())));
@@ -144,15 +167,87 @@ public class LinkgrabberPropertiesHeader extends MigPanel {
         return ret;
     }
 
-    public void update(AbstractNode objectbyRow) {
-        if (objectbyRow instanceof CrawledPackage) {
-            CrawledPackage pkg = (CrawledPackage) objectbyRow;
-            icon.setIcon(NewTheme.I().getIcon("package_open", 16));
-            lbl.setText(_GUI._.LinkgrabberPropertiesHeader_update_package(pkg.getName()));
-        } else if (objectbyRow instanceof CrawledLink) {
-            CrawledLink link = (CrawledLink) objectbyRow;
-            icon.setIcon(link.getIcon());
-            lbl.setText(_GUI._.LinkgrabberPropertiesHeader_update_link(link.getName()));
+    public void update(final AbstractNode objectbyRow) {
+        new EDTRunner() {
+
+            @Override
+            protected void runInEDT() {
+                current = objectbyRow;
+                String str = "";
+                if (objectbyRow instanceof CrawledPackage) {
+                    CrawledPackage pkg = (CrawledPackage) objectbyRow;
+                    icon.setIcon(NewTheme.I().getIcon("package_open", 16));
+                    str = (_GUI._.LinkgrabberPropertiesHeader_update_package(pkg.getName()));
+                } else if (objectbyRow instanceof CrawledLink) {
+                    CrawledLink link = (CrawledLink) objectbyRow;
+                    icon.setIcon(link.getIcon());
+                    str = (_GUI._.LinkgrabberPropertiesHeader_update_link(link.getName()));
+                }
+
+                labelString = str;
+                updateLabelString();
+            }
+        };
+
+    }
+
+    private void updateLabelString() {
+        if (labelString != null) {
+            ;
+            lbl.setText("");
+            lbl.setText(SwingUtilities2.clipStringIfNecessary(lbl, lbl.getFontMetrics(getFont()), labelString, lbl.getWidth() - 15));
         }
+    }
+
+    @Override
+    public void onLinkCollectorAbort(LinkCollectorEvent event) {
+    }
+
+    @Override
+    public void onLinkCollectorFilteredLinksAvailable(LinkCollectorEvent event) {
+    }
+
+    @Override
+    public void onLinkCollectorFilteredLinksEmpty(LinkCollectorEvent event) {
+    }
+
+    @Override
+    public void onLinkCollectorDataRefresh(LinkCollectorEvent event) {
+        if (event.getParameter() == current) {
+            update(current);
+        }
+
+    }
+
+    @Override
+    public void onLinkCollectorStructureRefresh(LinkCollectorEvent event) {
+    }
+
+    @Override
+    public void onLinkCollectorContentRemoved(LinkCollectorEvent event) {
+    }
+
+    @Override
+    public void onLinkCollectorContentAdded(LinkCollectorEvent event) {
+    }
+
+    @Override
+    public void onLinkCollectorLinkAdded(LinkCollectorEvent event, CrawledLink parameter) {
+    }
+
+    @Override
+    public void onLinkCollectorDupeAdded(LinkCollectorEvent event, CrawledLink parameter) {
+    }
+
+    @Override
+    public void onLinkCrawlerAdded(LinkCollectorCrawler parameter) {
+    }
+
+    @Override
+    public void onLinkCrawlerStarted(LinkCollectorCrawler parameter) {
+    }
+
+    @Override
+    public void onLinkCrawlerStopped(LinkCollectorCrawler parameter) {
     }
 }

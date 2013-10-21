@@ -3379,4 +3379,54 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Download Password:" })
     String propertiespanel_downloadpassword();
 
+    @Default(lngs = { "en" }, values = { "Panel has been hidden" })
+    String DownloadsPanel_onCloseAction();
+
+    @Default(lngs = { "en" }, values = { "you clicked the close button to hide this panel.\r\nIf you ever feel like getting it back, use the settings button in the bar at the bottom right!" })
+    String DownloadsPanel_onCloseAction_help();
+
+    @Default(lngs = { "en" }, values = { "you clicked the close button to hide the properties panel.\r\nIf you ever feel like getting it back, use the settings button in the bar at the bottom right\r\nor rightclick on a link/package in the table to open the context menu.!" })
+    String Linkgrabber_properties_onCloseAction_help();
+
+    @Default(lngs = { "en" }, values = { "You activated the properties panel!" })
+    String LinkGrabberPanel_setPropertiesPanelVisible();
+
+    @Default(lngs = { "en" }, values = { "...the properties panel is not visible right now, because there is no package or Downloadlink selected. \r\nTo see the properties panel, add Downloads to the Linkgrabber an click on a table row." })
+    String LinkGrabberPanel_setPropertiesPanelVisible_help();
+
+    @Default(lngs = { "en" }, values = { "Auto Extract Disabled" })
+    String PackagePropertiesPanel_getListCellRendererComponent_autoextractdisabled();
+
+    @Default(lngs = { "en" }, values = { "Auto Extract Enabled" })
+    String PackagePropertiesPanel_getListCellRendererComponent_autoextractenabled();
+
+    @Default(lngs = { "en" }, values = { "Global Setting(Auto Extract Enabled)" })
+    String PackagePropertiesPanel_getListCellRendererComponent_autoextract_default_true();
+
+    @Default(lngs = { "en" }, values = { "Global Setting(Auto Extract disable)" })
+    String PackagePropertiesPanel_getListCellRendererComponent_autoextract_default_false();
+
+    @Default(lngs = { "en" }, values = { "Auto Extract Disabled" })
+    String PackagePropertiesPanel_getListCellRendererComponent_autoextractdisabled_closed();
+
+    @Default(lngs = { "en" }, values = { "Auto Extract Enabled" })
+    String PackagePropertiesPanel_getListCellRendererComponent_autoextractenabled_closed();
+
+    @Default(lngs = { "en" }, values = { "Auto Extract Enabled*" })
+    String PackagePropertiesPanel_getListCellRendererComponent_autoextract_default_true_closed();
+
+    @Default(lngs = { "en" }, values = { "Auto Extract Disable*" })
+    String PackagePropertiesPanel_getListCellRendererComponent_autoextract_default_false_closed();
+
+    @Default(lngs = { "en" }, values = { "Mixed Priority" })
+    String PackagePropertiesPanel_getLabel_mixed_priority();
+
+    @Default(lngs = { "en" }, values = { "File name:" })
+    String propertiespanel_filename();
+
+    @Default(lngs = { "en" }, values = { "The File name" })
+    String AddLinksDialog_layoutDialogContent_filename_tt();
+
+    @Default(lngs = { "en" }, values = { "Properties" })
+    String PropertiesAction_PropertiesAction();
 }

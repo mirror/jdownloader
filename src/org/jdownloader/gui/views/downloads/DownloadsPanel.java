@@ -2,6 +2,7 @@ package org.jdownloader.gui.views.downloads;
 
 import java.awt.Component;
 import java.awt.Dimension;
+import java.awt.Point;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
@@ -24,7 +25,9 @@ import org.appwork.swing.components.circlebar.CircledProgressBar;
 import org.appwork.swing.components.circlebar.ImagePainter;
 import org.appwork.utils.NullsafeAtomicReference;
 import org.appwork.utils.swing.EDTRunner;
+import org.appwork.utils.swing.dialog.Dialog;
 import org.jdownloader.gui.components.OverviewHeaderScrollPane;
+import org.jdownloader.gui.helpdialogs.HelpDialog;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.components.HeaderScrollPane;
@@ -232,6 +235,12 @@ public class DownloadsPanel extends SwitchPanel implements DownloadControllerLis
                 protected void onCloseAction() {
                     CFG_GUI.DOWNLOAD_TAB_OVERVIEW_VISIBLE.setValue(false);
                     overView.removeListeners();
+
+                    CustomizeableActionBar iconComp = bottomBar;
+                    Point loc = bottomBar.getLocationOnScreen();
+
+                    HelpDialog.show(false, false, new Point(loc.x + iconComp.getWidth() - iconComp.getHeight() / 2, loc.y + iconComp.getHeight() / 2), "overviewclosed", Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI._.DownloadsPanel_onCloseAction(), _GUI._.DownloadsPanel_onCloseAction_help(), NewTheme.I().getIcon("bottombar", 32));
+
                 }
 
             });

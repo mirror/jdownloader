@@ -112,6 +112,8 @@ public class MenuManagerLinkgrabberTableContext extends ContextMenuManager<Crawl
 
         mr.add(createCleanupMenu());
         mr.add(new SeperatorData());
+        mr.add(new ActionData(PropertiesAction.class));
+        mr.add(new SeperatorData());
         mr.add(new MenuItemData(new ActionData(LGMenuManagerAction.class)));
 
         return mr;

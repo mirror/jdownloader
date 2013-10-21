@@ -19,7 +19,7 @@ import jd.plugins.FilePackage;
 import org.appwork.remoteapi.APIQuery;
 import org.appwork.remoteapi.QueryResponseMap;
 import org.jdownloader.controlling.Priority;
-import org.jdownloader.gui.views.linkgrabber.addlinksdialog.DownloadPath;
+import org.jdownloader.gui.packagehistorycontroller.DownloadPathHistoryManager;
 import org.jdownloader.settings.GeneralSettings;
 
 public class LinkCollectorAPIImpl implements LinkCollectorAPI {
@@ -509,9 +509,8 @@ public class LinkCollectorAPIImpl implements LinkCollectorAPI {
 
     @Override
     public List<String> getDownloadFolderHistorySelectionBase() {
-        List<String> ret = new ArrayList<String>();
-        List<String> paths = DownloadPath.loadList(org.appwork.storage.config.JsonConfig.create(GeneralSettings.class).getDefaultDownloadFolder());
-        ret.addAll(paths);
-        return ret;
+
+        return DownloadPathHistoryManager.getInstance().listPathes(org.appwork.storage.config.JsonConfig.create(GeneralSettings.class).getDefaultDownloadFolder());
+
     }
 }

@@ -11,6 +11,8 @@ import org.appwork.storage.config.annotations.DefaultStringValue;
 import org.appwork.storage.config.annotations.DescriptionForConfigEntry;
 import org.appwork.storage.config.annotations.RequiresRestart;
 import org.appwork.storage.config.annotations.SpinnerValidator;
+import org.jdownloader.gui.packagehistorycontroller.DownloadPath;
+import org.jdownloader.gui.packagehistorycontroller.PackageHistoryEntry;
 
 public interface LinkgrabberSettings extends ConfigInterface {
 
@@ -26,6 +28,7 @@ public interface LinkgrabberSettings extends ConfigInterface {
 
     void setPackageNameHistory(ArrayList<PackageHistoryEntry> value);
 
+    @AboutConfig
     @DefaultBooleanValue(true)
     boolean isAutoExtractionEnabled();
 

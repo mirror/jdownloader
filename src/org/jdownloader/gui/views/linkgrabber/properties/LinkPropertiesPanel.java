@@ -1,16 +1,725 @@
 package org.jdownloader.gui.views.linkgrabber.properties;
 
-import jd.controlling.linkcrawler.CrawledLink;
+import java.awt.Component;
+import java.awt.KeyboardFocusManager;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.FocusEvent;
+import java.awt.event.FocusListener;
+import java.io.File;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashSet;
+import java.util.List;
 
+import javax.swing.AbstractAction;
+import javax.swing.BorderFactory;
+import javax.swing.Icon;
+import javax.swing.JLabel;
+import javax.swing.JPopupMenu;
+import javax.swing.JTextField;
+import javax.swing.Timer;
+
+import jd.controlling.linkcollector.LinkCollector;
+import jd.controlling.linkcollector.LinkCollectorCrawler;
+import jd.controlling.linkcollector.LinkCollectorEvent;
+import jd.controlling.linkcollector.LinkCollectorListener;
+import jd.controlling.linkcrawler.CrawledLink;
+import jd.controlling.linkcrawler.CrawledPackage;
+import jd.gui.swing.jdgui.views.settings.panels.packagizer.VariableAction;
+import net.miginfocom.swing.MigLayout;
+
+import org.appwork.scheduler.DelayedRunnable;
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.storage.config.JsonConfig;
 import org.appwork.swing.MigPanel;
+import org.appwork.swing.components.ExtTextField;
+import org.appwork.swing.components.pathchooser.PathChooser;
+import org.appwork.swing.components.searchcombo.SearchComboBox;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.ImageProvider.ImageProvider;
+import org.appwork.utils.swing.EDTRunner;
+import org.appwork.utils.swing.SwingUtils;
+import org.appwork.utils.swing.dialog.DialogCanceledException;
+import org.appwork.utils.swing.dialog.DialogClosedException;
+import org.jdownloader.controlling.Priority;
+import org.jdownloader.controlling.packagizer.PackagizerController;
+import org.jdownloader.extensions.extraction.Archive;
+import org.jdownloader.extensions.extraction.BooleanStatus;
+import org.jdownloader.extensions.extraction.contextmenu.downloadlist.ArchiveValidator;
+import org.jdownloader.gui.IconKey;
+import org.jdownloader.gui.packagehistorycontroller.DownloadPathHistoryManager;
+import org.jdownloader.gui.packagehistorycontroller.PackageHistoryEntry;
+import org.jdownloader.gui.packagehistorycontroller.PackageHistoryManager;
+import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.gui.views.DownloadFolderChooserDialog;
+import org.jdownloader.gui.views.SelectionInfo;
+import org.jdownloader.gui.views.components.packagetable.LinkTreeUtils;
+import org.jdownloader.gui.views.downloads.PseudoCombo;
+import org.jdownloader.gui.views.linkgrabber.addlinksdialog.LinkgrabberSettings;
+import org.jdownloader.images.NewTheme;
+import org.jdownloader.settings.GeneralSettings;
+import org.jdownloader.settings.staticreferences.CFG_LINKGRABBER;
 import org.jdownloader.updatev2.gui.LAFOptions;
 
-public class LinkPropertiesPanel extends MigPanel {
+public class LinkPropertiesPanel extends MigPanel implements LinkCollectorListener, ActionListener {
+
+    protected PathChooser                         destination;
+    protected SearchComboBox<PackageHistoryEntry> packagename;
+    protected LinkgrabberSettings                 config;
+    protected ExtTextField                        comment;
+
+    protected ExtTextField                        password;
+    protected PseudoCombo<Priority>               priority;
+    // private ExtTextField downloadPassword;
+    protected PseudoCombo<BooleanStatus>          autoExtract;
+    protected CrawledPackage                      currentPackage;
+    private DelayedRunnable                       saveDelayer;
+    private Timer                                 timer;
+    protected boolean                             saving;
+    protected ExtTextField                        filename;
+
     public LinkPropertiesPanel() {
-        super("ins 0", "[grow,fill]", "[grow,fill]");
+        super("ins 0,debug", "[grow,fill]", "[grow,fill]");
         LAFOptions.getInstance().applyPanelBackground(this);
+        config = JsonConfig.create(LinkgrabberSettings.class);
+        LinkCollector.getInstance().getEventsender().addListener(this, true);
+        // some properties like archive password have not listener support
+        timer = new Timer(5000, this);
+        timer.setRepeats(true);
+        // timer.start();
+        saveDelayer = new DelayedRunnable(500l, 2000l) {
+
+            @Override
+            public String getID() {
+                return "PropertiesSaver";
+            }
+
+            @Override
+            public void delayedrun() {
+                save();
+            }
+
+        };
+
+        destination = new PathChooser("ADDLinks", true) {
+            protected void onChanged(ExtTextField txt2) {
+
+                // delayedSave();
+            }
+
+            @Override
+            public JPopupMenu getPopupMenu(ExtTextField txt, AbstractAction cutAction, AbstractAction copyAction, AbstractAction pasteAction, AbstractAction deleteAction, AbstractAction selectAction) {
+                JPopupMenu menu = new JPopupMenu();
+                menu.add(new VariableAction(txt, _GUI._.PackagizerFilterRuleDialog_createVariablesMenu_date(), "<jd:" + PackagizerController.SIMPLEDATE + ":dd.MM.yyyy>"));
+                menu.add(new VariableAction(txt, _GUI._.PackagizerFilterRuleDialog_createVariablesMenu_packagename(), "<jd:" + PackagizerController.PACKAGENAME + ">"));
+                return menu;
+            }
+
+            public void setFile(final File file) {
+                super.setFile(file);
+                save();
+            }
+
+            public File doFileChooser() {
+                try {
+                    return DownloadFolderChooserDialog.open(getFile(), true, getDialogTitle());
+                } catch (DialogClosedException e) {
+                    e.printStackTrace();
+                } catch (DialogCanceledException e) {
+                    e.printStackTrace();
+                }
+                return null;
+
+            }
+
+            protected String getHelpText() {
+                return _GUI._.AddLinksDialog_layoutDialogContent_help_destination();
+            }
+        };
+        setListeners(destination.getTxt());
+        packagename = new SearchComboBox<PackageHistoryEntry>() {
+
+            @Override
+            public void onChanged() {
+                // delayedSave();
+            }
+
+            /**
+             * @param found
+             */
+            protected void sortFound(final List<PackageHistoryEntry> found) {
+                Collections.sort(found, new Comparator<PackageHistoryEntry>() {
+
+                    @Override
+                    public int compare(PackageHistoryEntry o1, PackageHistoryEntry o2) {
+                        return o1.getName().compareTo(o2.getName());
+                    }
+                });
+                System.out.println(found);
+            }
+
+            @Override
+            protected Icon getIconForValue(PackageHistoryEntry value) {
+                return null;
+            }
+
+            @Override
+            protected String getTextForValue(PackageHistoryEntry value) {
+                return value == null ? null : value.getName();
+            }
+        };
+        packagename.setBadColor(null);
+        packagename.setUnkownTextInputAllowed(true);
+        packagename.setHelpText(_GUI._.AddLinksDialog_layoutDialogContent_packagename_help());
+        packagename.setSelectedItem(null);
+        setListeners(packagename.getTextField());
+        comment = new ExtTextField() {
+
+            @Override
+            public void onChanged() {
+                // delayedSave();
+            }
+
+        };
+        comment.setHelpText(_GUI._.AddLinksDialog_layoutDialogContent_comment_help());
+        comment.setBorder(BorderFactory.createCompoundBorder(comment.getBorder(), BorderFactory.createEmptyBorder(2, 6, 1, 6)));
+        setListeners(comment);
+        filename = new ExtTextField() {
+
+            @Override
+            public void onChanged() {
+                // delayedSave();
+            }
+
+        };
+        setListeners(filename);
+
+        filename.setBorder(BorderFactory.createCompoundBorder(filename.getBorder(), BorderFactory.createEmptyBorder(2, 6, 1, 6)));
+
+        String latest = config.getLatestDownloadDestinationFolder();
+        if (latest == null || !config.isUseLastDownloadDestinationAsDefault()) {
+            destination.setFile(new File(org.appwork.storage.config.JsonConfig.create(GeneralSettings.class).getDefaultDownloadFolder()));
+
+        } else {
+            destination.setFile(new File(latest));
+
+        }
+
+        password = new ExtTextField() {
+
+            @Override
+            public void onChanged() {
+                // delayedSave();
+            }
+
+        };
+        setListeners(password);
+        password.setHelpText(_GUI._.AddLinksDialog_createExtracOptionsPanel_password());
+        password.setBorder(BorderFactory.createCompoundBorder(password.getBorder(), BorderFactory.createEmptyBorder(2, 6, 1, 6)));
+
+        priority = new PseudoCombo<Priority>(Priority.values()) {
+
+            @Override
+            public void onChanged(Priority newValue) {
+                super.onChanged(newValue);
+                save();
+            }
+
+            @Override
+            protected Icon getPopIcon(boolean closed) {
+                if (closed) {
+                    return NewTheme.I().getIcon(IconKey.ICON_POPUPDOWN, -1);
+                } else {
+                    return NewTheme.I().getIcon(IconKey.ICON_POPUP, -1);
+                }
+
+            }
+
+            @Override
+            protected Icon getIcon(Priority v, boolean closed) {
+                if (v == null) { return ImageProvider.getDisabledIcon(currentPackage.getView().getHighestPriority().loadIcon(18));
+
+                }
+                return v.loadIcon(18);
+            }
+
+            @Override
+            protected String getLabel(Priority v, boolean closed) {
+                if (v == null) {
+
+                return _GUI._.PackagePropertiesPanel_getLabel_mixed_priority(); }
+                return v._();
+            }
+
+        };
+        priority.setPopDown(true);
+        // downloadPassword = new ExtTextField();
+        // downloadPassword.setHelpText(_GUI._.AddLinksDialog_createExtracOptionsPanel_downloadpassword());
+        // downloadPassword.setBorder(BorderFactory.createCompoundBorder(downloadPassword.getBorder(), BorderFactory.createEmptyBorder(2, 6,
+        // 1, 6)));
+
+        autoExtract = new PseudoCombo<BooleanStatus>(BooleanStatus.values()) {
+            @Override
+            protected Icon getPopIcon(boolean closed) {
+                if (closed) {
+                    return NewTheme.I().getIcon(IconKey.ICON_POPUPDOWN, -1);
+                } else {
+                    return NewTheme.I().getIcon(IconKey.ICON_POPUP, -1);
+                }
+
+            }
+
+            @Override
+            public void onChanged(BooleanStatus newValue) {
+                super.onChanged(newValue);
+                save();
+            }
+
+            @Override
+            protected Icon getIcon(BooleanStatus v, boolean closed) {
+                if (closed) {
+                    switch ((BooleanStatus) v) {
+                    case FALSE:
+                        return NewTheme.I().getIcon(IconKey.ICON_FALSE, 18);
+
+                    case TRUE:
+                        return NewTheme.I().getIcon(IconKey.ICON_TRUE, 18);
+
+                    case UNSET:
+                        if (CFG_LINKGRABBER.AUTO_EXTRACTION_ENABLED.isEnabled()) {
+                            return NewTheme.I().getIcon(IconKey.ICON_TRUE_ORANGE, 18);
+                        } else {
+                            return NewTheme.I().getIcon(IconKey.ICON_FALSE_ORANGE, 18);
+                        }
+
+                    }
+
+                } else {
+                    switch ((BooleanStatus) v) {
+                    case FALSE:
+                        return NewTheme.I().getIcon(IconKey.ICON_FALSE, 18);
+
+                    case TRUE:
+                        return NewTheme.I().getIcon(IconKey.ICON_TRUE, 18);
+
+                    case UNSET:
+                        if (CFG_LINKGRABBER.AUTO_EXTRACTION_ENABLED.isEnabled()) {
+                            return NewTheme.I().getIcon(IconKey.ICON_TRUE_ORANGE, 18);
+                        } else {
+                            return NewTheme.I().getIcon(IconKey.ICON_FALSE_ORANGE, 18);
+                        }
+
+                    }
+
+                }
+                return null;
+            }
+
+            @Override
+            protected String getLabel(BooleanStatus v, boolean closed) {
+                if (closed) {
+                    switch ((BooleanStatus) v) {
+                    case FALSE:
+                        return _GUI._.PackagePropertiesPanel_getListCellRendererComponent_autoextractdisabled_closed();
+
+                    case TRUE:
+                        return _GUI._.PackagePropertiesPanel_getListCellRendererComponent_autoextractenabled_closed();
+
+                    case UNSET:
+                        if (CFG_LINKGRABBER.AUTO_EXTRACTION_ENABLED.isEnabled()) {
+                            return _GUI._.PackagePropertiesPanel_getListCellRendererComponent_autoextract_default_true_closed();
+                        } else {
+                            return _GUI._.PackagePropertiesPanel_getListCellRendererComponent_autoextract_default_false_closed();
+                        }
+
+                    }
+
+                } else {
+                    switch ((BooleanStatus) v) {
+                    case FALSE:
+                        return _GUI._.PackagePropertiesPanel_getListCellRendererComponent_autoextractdisabled();
+
+                    case TRUE:
+                        return _GUI._.PackagePropertiesPanel_getListCellRendererComponent_autoextractenabled();
+
+                    case UNSET:
+                        if (CFG_LINKGRABBER.AUTO_EXTRACTION_ENABLED.isEnabled()) {
+                            return _GUI._.PackagePropertiesPanel_getListCellRendererComponent_autoextract_default_true();
+                        } else {
+                            return _GUI._.PackagePropertiesPanel_getListCellRendererComponent_autoextract_default_false();
+                        }
+
+                    }
+
+                }
+
+                return "";
+            }
+        };
+        autoExtract.setPopDown(true);
+        int height = Math.max(24, (int) (comment.getPreferredSize().height * 0.9));
+
+        MigPanel p = this;
+        p.setLayout(new MigLayout("ins 0 0 0 0,wrap 3", "[][grow,fill]2[]", "2[]0"));
+        addSaveTo(height, p);
+        addFilename(height, p);
+        addPackagename(height, p);
+        addCommentLine(height, p);
+        addArchiveLine(height, p);
+        autoExtract.setEnabled(false);
+        password.setEnabled(false);
+        // p.add(createIconLabel("downloadpassword", _GUI._.propertiespanel_downloadpassword(),
+        // _GUI._.AddLinksDialog_layoutDialogContent_downloadpassword_tt()), "alignx right,aligny center,height " + height + "!");
+
+        // p.add(downloadPassword, "height " + height + "!");
+
+        // this.getDialog().setLocation(new Point((int) (screenSize.getWidth() -
+        // this.getDialog().getWidth()) / 2, (int) (screenSize.getHeight() -
+        // this.getDialog().getHeight()) / 2));
+
     }
 
-    public void update(CrawledLink link) {
+    protected void addArchiveLine(int height, MigPanel p) {
+        p.add(createIconLabel("archivepassword", _GUI._.propertiespanel_archivepassword(), _GUI._.AddLinksDialog_layoutDialogContent_downloadpassword_tt()), "aligny center,alignx right,height " + height + "!");
+
+        p.add(password, "pushx,growx,height " + height + "!");
+
+        p.add(autoExtract, "sg right,height " + height + "!");
     }
+
+    protected void addCommentLine(int height, MigPanel p) {
+        p.add(createIconLabel("document", _GUI._.propertiespanel_comment(), _GUI._.AddLinksDialog_layoutDialogContent_comment_tt()), "alignx right,aligny center,height " + height + "!");
+        p.add(comment, "height " + height + "!");
+        p.add(priority, "sg right,height " + height + "!");
+    }
+
+    protected void addPackagename(int height, MigPanel p) {
+        p.add(createIconLabel("package_open", _GUI._.propertiespanel_packagename(), _GUI._.AddLinksDialog_layoutDialogContent_package_tt()), "aligny center,alignx right,height " + height + "!");
+        p.add(packagename, "spanx,height " + height + "!");
+    }
+
+    protected void addFilename(int height, MigPanel p) {
+        p.add(createIconLabel("package_open", _GUI._.propertiespanel_filename(), _GUI._.AddLinksDialog_layoutDialogContent_filename_tt()), "aligny center,alignx right,height " + height + "!");
+        p.add(filename, "spanx,height " + height + "!");
+    }
+
+    protected void addSaveTo(int height, MigPanel p) {
+        p.add(createIconLabel("save", _GUI._.propertiespanel_downloadpath(), _GUI._.AddLinksDialog_layoutDialogContent_save_tt()), "aligny center,alignx right,height " + height + "!");
+
+        p.add(destination.getDestination(), "height " + height + "!");
+        p.add(destination.getButton(), "sg right,height " + height + "! ");
+    }
+
+    protected void setListeners(final JTextField filename) {
+        filename.addActionListener(new ActionListener() {
+
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                save();
+                KeyboardFocusManager.getCurrentKeyboardFocusManager().clearGlobalFocusOwner();
+            }
+        });
+        filename.addFocusListener(new FocusListener() {
+
+            @Override
+            public void focusLost(FocusEvent e) {
+                if (currentLink != null) {
+                    update(currentLink);
+                } else if (currentPackage != null) {
+                    update(currentPackage);
+                }
+            }
+
+            @Override
+            public void focusGained(FocusEvent e) {
+            }
+        });
+    }
+
+    protected void delayedSave() {
+        if (setting) return;
+        saveDelayer.resetAndStart();
+    }
+
+    protected void saveInEDT() {
+        if (currentPackage != null) {
+
+            Priority priop = priority.getSelectedItem();
+            currentLink.setPriority(priop);
+            currentLink.getDownloadLink().setComment(comment.getText());
+            currentLink.setName(filename.getText());
+            if (!currentPackage.getName().equals(packagename.getText())) {
+                currentPackage.setName(packagename.getText());
+                PackageHistoryManager.getInstance().add(packagename.getText());
+            }
+
+            if (currentArchive != null) {
+                System.out.println("SAVE");
+                ArrayList<String> passwords = null;
+                String txt = password.getText().trim();
+                if (txt.startsWith("[") && txt.endsWith("]")) {
+                    passwords = JSonStorage.restoreFromString(password.getText(), new TypeRef<ArrayList<String>>() {
+                    }, null);
+                }
+                if (passwords != null && passwords.size() > 0) {
+                    currentArchive.getSettings().setPasswords(new HashSet<String>(passwords));
+                } else {
+                    HashSet<String> hs = new HashSet<String>();
+                    if (StringUtils.isNotEmpty(password.getText())) hs.add(password.getText().trim());
+                    currentArchive.getSettings().setPasswords(hs);
+                }
+                currentArchive.getSettings().setAutoExtract(autoExtract.getSelectedItem());
+
+                if (!LinkTreeUtils.getRawDownloadDirectory(currentPackage).equals(new File(destination.getPath()))) {
+                    currentPackage.setDownloadFolder(destination.getPath());
+                    DownloadPathHistoryManager.getInstance().add(destination.getPath());
+                }
+            }
+
+        }
+    }
+
+    protected void save() {
+        new EDTRunner() {
+
+            @Override
+            protected void runInEDT() {
+                if (setting) return;
+                saving = true;
+                try {
+                    saveInEDT();
+                } finally {
+                    saving = false;
+                }
+            }
+
+        };
+
+    }
+
+    private Component createIconLabel(String iconKey, String label, String tooltip) {
+        JLabel ret = new JLabel();
+        // ret.setDisabledIcon(NewTheme.I().getIcon(iconKey, 20));
+        ret.setText(label);
+        ret.setToolTipText(tooltip);
+        SwingUtils.toBold(ret);
+        ret.setEnabled(false);
+        return ret;
+    }
+
+    protected Archive     currentArchive;
+    protected boolean     setting;
+    protected CrawledLink currentLink;
+
+    public void update(final CrawledPackage pkg) {
+        if (!isVisible()) return;
+        if (saving) return;
+
+        new EDTRunner() {
+
+            @Override
+            protected void runInEDT() {
+                System.out.println("LOAD");
+                setting = true;
+                try {
+                    updateInEDT(null, pkg);
+                    currentLink = null;
+                    currentPackage = pkg;
+                } finally {
+                    setting = false;
+                }
+                // extractToggle.setSelected(true);
+
+            }
+        };
+        currentArchive = null;
+        new Thread("PropertiesPanelUpdater") {
+            public void run() {
+
+                final List<Archive> archives = ArchiveValidator.validate(new SelectionInfo<CrawledPackage, CrawledLink>(pkg, null, null, null, null, null)).getArchives();
+
+                new EDTRunner() {
+
+                    @Override
+                    protected void runInEDT() {
+                        setting = true;
+                        try {
+                            autoExtract.setEnabled(archives != null && archives.size() == 1);
+                            password.setEnabled(archives != null && archives.size() == 1);
+                            if (password.isEnabled()) {
+                                updateArchiveInEDT(archives.get(0));
+
+                            }
+                        } finally {
+                            setting = false;
+                        }
+                    }
+                };
+            }
+        }.start();
+    }
+
+    public void update(final CrawledLink link) {
+        if (!isVisible()) return;
+        if (saving) return;
+        final CrawledPackage pkg = link.getParentNode();
+        new EDTRunner() {
+
+            @Override
+            protected void runInEDT() {
+                System.out.println("LOAD");
+                setting = true;
+                try {
+                    updateInEDT(link, pkg);
+                    currentLink = link;
+                    currentPackage = pkg;
+                } finally {
+                    setting = false;
+                }
+                // extractToggle.setSelected(true);
+
+            }
+        };
+        currentArchive = null;
+        new Thread("PropertiesPanelUpdater") {
+            public void run() {
+
+                final List<Archive> archives = ArchiveValidator.validate(new SelectionInfo<CrawledPackage, CrawledLink>(link, null, null, null, null, null)).getArchives();
+
+                new EDTRunner() {
+
+                    @Override
+                    protected void runInEDT() {
+                        setting = true;
+                        try {
+                            autoExtract.setEnabled(archives != null && archives.size() == 1);
+                            password.setEnabled(archives != null && archives.size() == 1);
+                            if (password.isEnabled()) {
+                                updateArchiveInEDT(archives.get(0));
+
+                            }
+                        } finally {
+                            setting = false;
+                        }
+                    }
+                };
+            }
+        }.start();
+    }
+
+    @Override
+    public void onLinkCollectorAbort(LinkCollectorEvent event) {
+    }
+
+    @Override
+    public void onLinkCollectorFilteredLinksAvailable(LinkCollectorEvent event) {
+    }
+
+    @Override
+    public void onLinkCollectorFilteredLinksEmpty(LinkCollectorEvent event) {
+    }
+
+    @Override
+    public void onLinkCollectorDataRefresh(LinkCollectorEvent event) {
+        //
+        if (event.getParameter() == currentPackage || event.getParameter() == currentLink) {
+            if (currentLink != null) {
+                update(currentLink);
+            } else if (currentPackage != null) {
+                update(currentPackage);
+            }
+        }
+    }
+
+    @Override
+    public void onLinkCollectorStructureRefresh(LinkCollectorEvent event) {
+        if (currentLink != null) {
+            update(currentLink);
+        } else if (currentPackage != null) {
+            update(currentPackage);
+        }
+    }
+
+    @Override
+    public void onLinkCollectorContentRemoved(LinkCollectorEvent event) {
+    }
+
+    @Override
+    public void onLinkCollectorContentAdded(LinkCollectorEvent event) {
+    }
+
+    @Override
+    public void onLinkCollectorLinkAdded(LinkCollectorEvent event, CrawledLink parameter) {
+    }
+
+    @Override
+    public void onLinkCollectorDupeAdded(LinkCollectorEvent event, CrawledLink parameter) {
+    }
+
+    @Override
+    public void onLinkCrawlerAdded(LinkCollectorCrawler parameter) {
+    }
+
+    @Override
+    public void onLinkCrawlerStarted(LinkCollectorCrawler parameter) {
+    }
+
+    @Override
+    public void onLinkCrawlerStopped(LinkCollectorCrawler parameter) {
+    }
+
+    @Override
+    public void actionPerformed(ActionEvent e) {
+        if (currentLink != null) {
+            update(currentLink);
+        } else if (currentPackage != null) {
+            update(currentPackage);
+        }
+    }
+
+    protected void updateInEDT(final CrawledLink link, final CrawledPackage pkg) {
+        if (link != null && !filename.hasFocus()) {
+            filename.setText(link.getName());
+        }
+        if (!comment.hasFocus()) {
+            if (link != null) {
+                comment.setText(link.getDownloadLink().getComment());
+            }
+        }
+        List<String> pathlist = DownloadPathHistoryManager.getInstance().listPathes(LinkTreeUtils.getRawDownloadDirectory(pkg).getAbsolutePath(), org.appwork.storage.config.JsonConfig.create(GeneralSettings.class).getDefaultDownloadFolder());
+
+        if (!destination.getDestination().hasFocus()) {
+            destination.setQuickSelectionList(pathlist);
+            destination.setFile(LinkTreeUtils.getRawDownloadDirectory(pkg));
+        }
+
+        if (!packagename.hasFocus()) {
+            packagename.setList(PackageHistoryManager.getInstance().list(new PackageHistoryEntry(pkg.getName())));
+            packagename.setSelectedItem(new PackageHistoryEntry(pkg.getName()));
+        }
+        if (pkg != currentPackage) {
+            if (!password.hasFocus()) password.setText("");
+        }
+        priority.setSelectedItem(link.getPriority());
+
+    }
+
+    protected void updateArchiveInEDT(final Archive archive) {
+        currentArchive = archive;
+        if (!password.hasFocus()) {
+            if (currentArchive.getSettings().getPasswords() == null || currentArchive.getSettings().getPasswords().size() == 0) {
+                password.setText(null);
+            } else if (currentArchive.getSettings().getPasswords().size() == 1) {
+
+                password.setText(currentArchive.getSettings().getPasswords().iterator().next());
+            } else {
+                password.setText(JSonStorage.toString(currentArchive.getSettings().getPasswords()));
+            }
+        }
+        autoExtract.setSelectedItem(currentArchive.getSettings().getAutoExtract());
+    }
+
 }

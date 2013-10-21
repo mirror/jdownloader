@@ -13,10 +13,10 @@ public class LinkgrabberProperties extends MigPanel {
     /**
      * 
      */
-    private static final long      serialVersionUID = -195024600818162517L;
-    private LinkGrabberTable       table;
-    private PackagePropertiesPanel pkgPanel;
-    private LinkPropertiesPanel    linkPanel;
+    private static final long   serialVersionUID = -195024600818162517L;
+    private LinkGrabberTable    table;
+    private LinkPropertiesPanel pkgPanel;
+    private LinkPropertiesPanel linkPanel;
 
     public LinkgrabberProperties(LinkGrabberTable table) {
         super("ins 0", "[grow,fill]", "[grow,fill]");

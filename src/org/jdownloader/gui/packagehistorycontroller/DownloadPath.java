@@ -1,16 +1,21 @@
-package org.jdownloader.gui.views.linkgrabber.addlinksdialog;
+package org.jdownloader.gui.packagehistorycontroller;
 
 import org.appwork.storage.Storable;
 
-public class PackageHistoryEntry implements Storable {
+public class DownloadPath implements Storable, HistoryEntry {
     @SuppressWarnings("unused")
-    private PackageHistoryEntry(/* Storable */) {
+    private DownloadPath(/* Storable */) {
 
     }
 
-    public PackageHistoryEntry(String name) {
-        this.name = name;
+    public DownloadPath(String myPath) {
+        name = myPath;
         time = System.currentTimeMillis();
+    }
+
+    public String getName() {
+
+        return name;
     }
 
     public boolean equals(Object obj) {
@@ -22,12 +27,8 @@ public class PackageHistoryEntry implements Storable {
         return name.hashCode();
     }
 
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
+    public void setName(String path) {
+        this.name = path;
     }
 
     public long getTime() {
@@ -40,4 +41,10 @@ public class PackageHistoryEntry implements Storable {
 
     private String name;
     private long   time;
+
+    @Override
+    public int compareTo(HistoryEntry o) {
+        return new Long(o.getTime()).compareTo(new Long(getTime()));
+    }
+
 }

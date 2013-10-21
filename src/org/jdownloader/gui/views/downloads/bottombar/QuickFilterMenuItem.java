@@ -2,6 +2,7 @@ package org.jdownloader.gui.views.downloads.bottombar;
 
 import java.lang.reflect.InvocationTargetException;
 
+import javax.swing.Icon;
 import javax.swing.JComponent;
 
 import jd.plugins.DownloadLink;
@@ -25,7 +26,7 @@ import org.jdownloader.settings.GraphicalUserInterfaceSettings;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
 
 public class QuickFilterMenuItem extends MenuItemData implements MenuLink {
-    public static final class FilterCombo extends PseudoCombo {
+    public static final class FilterCombo extends PseudoCombo<View> {
         private final DownloadsTable                                         table;
         private PackageControllerTableModelFilter<FilePackage, DownloadLink> filter = new PackageControllerTableModelFilter<FilePackage, DownloadLink>() {
 
@@ -70,9 +71,19 @@ public class QuickFilterMenuItem extends MenuItemData implements MenuLink {
 
         }
 
+        @Override
+        protected Icon getIcon(View v, boolean closed) {
+            return v.getIcon();
+        }
+
+        @Override
+        protected String getLabel(View v, boolean closed) {
+            return v.getLabel();
+        }
+
         private FilterCombo() {
             super(new View[] { View.ALL, View.RUNNING, View.FAILED, View.SUCCESSFUL, View.TODO });
-
+            this.setToolTipText(_GUI._.PseudoCombo_PseudoCombo_tt_());
             this.table = (DownloadsTable) DownloadsTableModel.getInstance().getTable();
             if (JsonConfig.create(GraphicalUserInterfaceSettings.class).isSaveDownloadViewCrossSessionEnabled()) {
                 setSelectedItem((View) CFG_GUI.DOWNLOAD_VIEW.getValue());
