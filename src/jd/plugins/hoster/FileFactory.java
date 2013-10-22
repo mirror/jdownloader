@@ -75,7 +75,7 @@ public class FileFactory extends PluginForHost {
     private String               dlUrl              = null;
     private final String         TRAFFICSHARELINK   = "filefactory.com/trafficshare/";
     private final String         TRAFFICSHARETEXT   = ">Download with FileFactory TrafficShare<";
-    private final String         PASSWORDPROTECTED  = ">You are trying to access a password protected file";
+    private final String         PASSWORDPROTECTED  = ">You are trying to access a password protected file|This File has been password protected by the uploader\\.";
     private final String         DBCONNECTIONFAILED = "Couldn't get valid connection to DB";
 
     public FileFactory(final PluginWrapper wrapper) {
@@ -120,7 +120,7 @@ public class FileFactory extends PluginForHost {
         }
         if (!premiumActive) {
             if (br.containsHTML(CAPTCHALIMIT)) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 10 * 60 * 1000l);
-            if (br.containsHTML(NO_SLOT)) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, NO_SLOT_USERTEXT, 10 * 60 * 1000l); }
+            if (br.containsHTML(NO_SLOT) || br.getURL().contains("error.php?code=257")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, NO_SLOT_USERTEXT, 10 * 60 * 1000l); }
             if (br.getRegex("Please wait (\\d+) minutes to download more files, or").getMatch(0) != null) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(br.getRegex("Please wait (\\d+) minutes to download more files, or").getMatch(0)) * 60 * 1001l); }
         }
         if (br.containsHTML(SERVERFAIL)) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 60 * 60 * 1000l); }
@@ -188,6 +188,11 @@ public class FileFactory extends PluginForHost {
                 sb.append("&Submit=Check+Links");
                 br.postPage(br.getURL(), sb.toString());
                 for (final DownloadLink dl : links) {
+                    if (br.getRedirectLocation() != null && (br.getRedirectLocation().endsWith("/member/setpwd.php") || br.getRedirectLocation().endsWith("/member/setdob.php"))) {
+                        // password needs changing or dob needs setting.
+                        dl.setAvailable(true);
+                        continue;
+                    }
                     String filter = br.getRegex("(<tr([^\n]+\n){4}[^\"]+\"" + dl.getDownloadURL() + "([^\n]+\n){4})").getMatch(0);
                     if (filter == null) dl.setAvailable(false);
                     String size = new Regex(filter, ">([\\d\\.]+ (KB|MB|GB|TB))<").getMatch(0);
@@ -394,7 +399,10 @@ public class FileFactory extends PluginForHost {
                 checkErrors(false);
                 if (br.containsHTML(PASSWORDPROTECTED)) {
                     if (passCode == null) passCode = Plugin.getUserInput("Password?", downloadLink);
-                    br.postPage(br.getURL(), "action=password&password=" + Encoding.urlEncode(passCode));
+                    // stable is lame
+                    br.getHeaders().put("Content-Type", "application/x-www-form-urlencoded");
+                    br.postPage(br.getURL(), "password=" + Encoding.urlEncode(passCode) + "Submit=Continue");
+                    br.getHeaders().put("Content-Type", null);
                     if (br.containsHTML(PASSWORDPROTECTED)) throw new PluginException(LinkStatus.ERROR_RETRY, "Wrong password");
                 }
                 // new 20130911
@@ -495,6 +503,7 @@ public class FileFactory extends PluginForHost {
                 br.getPage(downloadLink.getDownloadURL());
                 doFree(downloadLink);
             } else {
+                // NOTE: no premium, pre download password handling yet...
                 br.setFollowRedirects(false);
                 br.getPage(downloadLink.getDownloadURL());
                 // Directlink
@@ -529,8 +538,8 @@ public class FileFactory extends PluginForHost {
 
     public void handleTrafficShare(final DownloadLink downloadLink) throws Exception {
         /*
-         * This is for filefactory.com/trafficshare/ sharing links or I guess what we call public premium links. This might replace dlUrl, Unknown until proven
-         * otherwise.
+         * This is for filefactory.com/trafficshare/ sharing links or I guess what we call public premium links. This might replace dlUrl,
+         * Unknown until proven otherwise.
          */
         logger.finer("Traffic sharing link - Free Premium Donwload");
         String finalLink = br.getRegex("<a href=\"(https?://\\w+\\.filefactory\\.com/[^\"]+)\"([^>]+)?>Download").getMatch(0);
@@ -664,7 +673,7 @@ public class FileFactory extends PluginForHost {
             if (isPremiumOnly(br)) {
                 downloadLink.getLinkStatus().setErrorMessage("This file is only available to Premium Members");
                 downloadLink.getLinkStatus().setStatusText("This file is only available to Premium Members");
-            } else if (br.containsHTML(NO_SLOT)) {
+            } else if (br.containsHTML(NO_SLOT) || br.getURL().contains("error.php?code=257")) {
                 downloadLink.getLinkStatus().setErrorMessage(JDL.L("plugins.hoster.filefactorycom.errors.nofreeslots", NO_SLOT_USERTEXT));
                 downloadLink.getLinkStatus().setStatusText(JDL.L("plugins.hoster.filefactorycom.errors.nofreeslots", NO_SLOT_USERTEXT));
             } else if (br.containsHTML("Server Maintenance")) {

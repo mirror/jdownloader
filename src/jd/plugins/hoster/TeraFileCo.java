@@ -71,22 +71,22 @@ import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.os.CrossSystem;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filebox.com" }, urls = { "https?://(www\\.)?filebox\\.com/((vid)?embed-)?[a-z0-9]{12}" }, flags = { 2 })
+@HostPlugin(revision = "$Revision: 19496 $", interfaceVersion = 2, names = { "terafile.co" }, urls = { "https?://(www\\.)?terafile\\.co/((vid)?embed-)?[a-z0-9]{12}" }, flags = { 2 })
 @SuppressWarnings("deprecation")
-public class FileBoxCom extends PluginForHost {
+public class TeraFileCo extends PluginForHost {
 
     // Site Setters
     // primary website url, take note of redirects
-    private final String               COOKIE_HOST                  = "http://filebox.com";
+    private final String               COOKIE_HOST                  = "http://terafile.co";
     // domain names used within download links.
-    private final String               DOMAINS                      = "(filebox\\.com)";
+    private final String               DOMAINS                      = "(terafile\\.co)";
     private final String               PASSWORDTEXT                 = "<br><b>Passwor(d|t):</b> <input";
     private final String               MAINTENANCE                  = ">This server is in maintenance mode";
     private final String               dllinkRegex                  = "https?://(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|([\\w\\-]+\\.)?" + DOMAINS + ")(:\\d{1,5})?/((files(/(dl|download))?|d|cgi-bin/dl\\.cgi)/(\\d+/)?([a-z0-9]+/){1,4}[^/<>\r\n\t]+|[a-z0-9]{58}/v(ideo)?\\.mp4)";
     private final boolean              supportsHTTPS                = false;
     private final boolean              enforcesHTTPS                = false;
-    private final boolean              useRUA                       = true;
-    private final boolean              useAltLinkCheck              = true;
+    private final boolean              useRUA                       = false;
+    private final boolean              useAltLinkCheck              = false;
     private final boolean              useVidEmbed                  = false;
     private final boolean              useAltEmbed                  = false;
     private final boolean              useAltExpire                 = true;
@@ -103,26 +103,28 @@ public class FileBoxCom extends PluginForHost {
     // DEV NOTES
     // XfileShare Version 3.0.8.4
     // last XfileSharingProBasic compare :: 2.6.2.1
-    // captchatype: recaptcha
+    // captchatype: null
     // other: no redirects
-    // mods: requestFileInformation
+    // mods: recaptcha is javascript inserted into dlform, hacked up captchaForm.
+    // notes: they have pre download wait times after captcha event, also not normal.
+    // notes: they have https support, but doFree fails with https, disabled
 
     private void setConstants(final Account account) {
         if (account != null && account.getBooleanProperty("free")) {
             // free account
-            chunks = -2;
+            chunks = -2; // tested
             resumes = true;
             acctype = "Free Account";
             directlinkproperty = "freelink2";
         } else if (account != null && !account.getBooleanProperty("free")) {
             // prem account
-            chunks = -10;
+            chunks = 0;
             resumes = true;
             acctype = "Premium Account";
             directlinkproperty = "premlink";
         } else {
             // non account
-            chunks = -2; // tested
+            chunks = 1; // tested
             resumes = true;
             acctype = "Non Account";
             directlinkproperty = "freelink";
@@ -149,11 +151,11 @@ public class FileBoxCom extends PluginForHost {
     public boolean hasCaptcha(final DownloadLink downloadLink, final jd.plugins.Account acc) {
         if (acc == null) {
             /* no account, yes we can expect captcha */
-            return true;
+            return false;
         }
         if (Boolean.TRUE.equals(acc.getBooleanProperty("free"))) {
             /* free accounts also have captchas */
-            return true;
+            return false;
         }
         return false;
     }
@@ -163,7 +165,7 @@ public class FileBoxCom extends PluginForHost {
      * 
      * @category 'Experimental', Mods written July 2012 - 2013
      * */
-    public FileBoxCom(PluginWrapper wrapper) {
+    public TeraFileCo(PluginWrapper wrapper) {
         super(wrapper);
         setConfigElements();
         this.enablePremium(COOKIE_HOST + "/premium.html");
@@ -245,7 +247,6 @@ public class FileBoxCom extends PluginForHost {
             downloadLink.getLinkStatus().setStatusText(MAINTENANCEUSERTEXT);
             return AvailableStatus.TRUE;
         }
-        if (useAltLinkCheck) return getAvailableStatus(downloadLink);
         // scan the first page
         scanInfo(downloadLink, fileInfo);
         // scan the second page. filesize[1] and md5hash[2] are not mission critical
@@ -313,7 +314,7 @@ public class FileBoxCom extends PluginForHost {
                     if (inValidate(fileInfo[1])) {
                         try {
                             // only needed in rare circumstances
-                            altAvailStat(downloadLink, fileInfo);
+                            // altAvailStat(downloadLink, fileInfo);
                         } catch (Exception e) {
                         }
                     }
@@ -335,7 +336,7 @@ public class FileBoxCom extends PluginForHost {
         // cloudflare initial support is within getPage.. otherwise not needed.
         alt.getPage(COOKIE_HOST.replaceFirst("https?://", getProtocol()) + "/?op=checkfiles");
         alt.postPage("/?op=checkfiles", "op=checkfiles&process=Check+URLs&list=" + downloadLink.getDownloadURL());
-        String[] linkInformation = alt.getRegex(">" + downloadLink.getDownloadURL() + " (\\w+)</font><br />(garbage)?").getRow(0);
+        String[] linkInformation = alt.getRegex(">" + downloadLink.getDownloadURL() + "</td><td style=\"color:[^;]+;\">(\\w+)</td><td>([^<>]+)?</td>").getRow(0);
         if (linkInformation != null && linkInformation[0].equalsIgnoreCase("found")) {
             downloadLink.setAvailable(true);
             if (!inValidate(linkInformation[1]) && inValidate(fileInfo[1])) fileInfo[1] = linkInformation[1];
@@ -550,7 +551,14 @@ public class FileBoxCom extends PluginForHost {
     private void waitTime(final long timeBefore, final DownloadLink downloadLink) throws PluginException {
         /** Ticket Time */
         String ttt = cbr.getRegex("id=\"countdown_str\">[^<>\"]+<span id=\"[^<>\"]+\"( class=\"[^<>\"]+\")?>([\n ]+)?(\\d+)([\n ]+)?</span>").getMatch(2);
-        if (inValidate(ttt)) ttt = cbr.getRegex("id=\"countdown_str\"[^>]*>Wait[^>]+>(\\d+)\\s?+</span>").getMatch(0);
+        if (inValidate(ttt)) {
+            ttt = cbr.getRegex("id=\"countdown_str\"[^>]*>Wait[^>]+>(\\d+)\\s?+</span>").getMatch(0);
+            if (inValidate(ttt)) {
+                // <span style="font-size: 11px; color: #393939">Wait time:</span><br />
+                // <span style="font-size: 44px; color: #cc3131; font-weight: bold">00:00:<span id="kcqknc">50</span></span>
+                ttt = cbr.getRegex(">Wait time:.*>(\\d+)</span></span>").getMatch(0);
+            }
+        }
         if (!inValidate(ttt)) {
             // remove one second from past, to prevent returning too quickly.
             final long passedTime = ((System.currentTimeMillis() - timeBefore) / 1000) - 1;
@@ -713,6 +721,9 @@ public class FileBoxCom extends PluginForHost {
         }
         String space[] = cbr.getRegex(">Used space.*?<b>([0-9\\.]+) ?(KB|MB|GB|TB)?</b>").getRow(0);
         if (space == null || space.length == 0) space = cbr.getRegex(">Used space.*?<b>([0-9\\.]+) of [0-9\\.]+ ?(KB|MB|GB|TB)?</b>").getRow(0);
+        if (space == null || space.length == 0) {
+            space = cbr.getRegex("<li class=\"store\">Storage: ([\\d\\.]+) ?(KB|MB|GB|TB)?</li>").getRow(0);
+        }
         if ((space != null && space.length != 0) && (!inValidate(space[0]) && !inValidate(space[1]))) {
             // free users it's provided by default
             ai.setUsedSpace(space[0] + " " + space[1]);
@@ -1296,7 +1307,7 @@ public class FileBoxCom extends PluginForHost {
      * */
     private Form captchaForm(DownloadLink downloadLink, Form form) throws Exception {
         final int captchaTries = downloadLink.getIntegerProperty("captchaTries", 0);
-        if (form.containsHTML(";background:#ccc;text-align")) {
+        if (form.containsHTML(";background:#ccc;text-align") || cbr.containsHTML(";background:#ccc;text-align")) {
             logger.info("Detected captcha method \"Plaintext Captcha\"");
             /** Captcha method by ManiacMansion */
             String[][] letters = form.getRegex("<span style=\"position:absolute;padding-left:(\\d+)px;padding-top:\\d+px;\">(&#\\d+;)</span>").getMatches();
@@ -1316,7 +1327,7 @@ public class FileBoxCom extends PluginForHost {
                 code.append(value);
             }
             form.put("code", code.toString());
-        } else if (form.containsHTML("/captchas/")) {
+        } else if (form.containsHTML("/captchas/") || cbr.containsHTML("/captchas/")) {
             logger.info("Detected captcha method \"Standard Captcha\"");
             final String[] sitelinks = HTMLParser.getHttpLinks(form.getHtmlCode(), null);
             if (sitelinks == null || sitelinks.length == 0) {
@@ -1344,13 +1355,13 @@ public class FileBoxCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             form.put("code", code);
-        } else if (form.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)")) {
+        } else if (form.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)") || cbr.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)")) {
             logger.info("Detected captcha method \"Re Captcha\"");
             final Browser captcha = br.cloneBrowser();
             cleanupBrowser(captcha, form.getHtmlCode());
             final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
             final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(captcha);
-            final String id = form.getRegex("\\?k=([A-Za-z0-9%_\\+\\- ]+)\"").getMatch(0);
+            final String id = cbr.getRegex("\\?k=([A-Za-z0-9%_\\+\\- ]+)\"").getMatch(0);
             if (inValidate(id)) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             rc.setId(id);
             rc.load();
@@ -1360,7 +1371,7 @@ public class FileBoxCom extends PluginForHost {
             form.put("recaptcha_response_field", Encoding.urlEncode(c));
             /** wait time is often skippable for reCaptcha handling */
             skipWaitTime = waitTimeSkipableReCaptcha;
-        } else if (form.containsHTML("solvemedia\\.com/papi/")) {
+        } else if (form.containsHTML("solvemedia\\.com/papi/") || cbr.containsHTML("solvemedia\\.com/papi/")) {
             logger.info("Detected captcha method \"Solve Media\"");
             final Browser captcha = br.cloneBrowser();
             cleanupBrowser(captcha, form.getHtmlCode());
@@ -1376,7 +1387,7 @@ public class FileBoxCom extends PluginForHost {
             form.put("adcopy_challenge", chid);
             form.put("adcopy_response", code);
             skipWaitTime = waitTimeSkipableSolveMedia;
-        } else if (form.containsHTML("id=\"capcode\" name= \"capcode\"")) {
+        } else if (form.containsHTML("id=\"capcode\" name= \"capcode\"") || cbr.containsHTML("id=\"capcode\" name= \"capcode\"")) {
             logger.info("Detected captcha method \"Key Captcha\"");
             final Browser captcha = br.cloneBrowser();
             cleanupBrowser(captcha, form.getHtmlCode());

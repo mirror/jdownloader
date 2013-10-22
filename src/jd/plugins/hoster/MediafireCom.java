@@ -63,13 +63,10 @@ public class MediafireCom extends PluginForHost {
     private static final ArrayList<String> stringAgent = new ArrayList<String>();
 
     /**
-     * Returns a random User-Agent String (common browsers) of specified array.
-     * This array contains current user agents gathered from httpd access logs.
-     * Benefits over RandomUserAgent.* are: versions and respective release
-     * dates are valid.
+     * Returns a random User-Agent String (common browsers) of specified array. This array contains current user agents gathered from httpd
+     * access logs. Benefits over RandomUserAgent.* are: versions and respective release dates are valid.
      * 
-     * @return eg.
-     *         "Opera/9.80 (X11; Linux i686; U; en) Presto/2.6.30 Version/10.63"
+     * @return eg. "Opera/9.80 (X11; Linux i686; U; en) Presto/2.6.30 Version/10.63"
      */
     public static String stringUserAgent() {
         final Random rand = new Random();
@@ -77,15 +74,10 @@ public class MediafireCom extends PluginForHost {
             if (stringAgent.size() == 0) {
                 // Internet Explorer
                 // release:
-                // ie9:
-                // "Stable release     9.0.19 (August 13, 2013; 26 days ago)"
-                // http://en.wikipedia.org/wiki/Internet_Explorer_9
-                // ie10:
-                // "Stable release    10.0.8 (13 August 2013; 26 days ago)"
-                // http://en.wikipedia.org/wiki/Internet_Explorer_10
+                // ie9: "Stable release     9.0.19 (August 13, 2013; 26 days ago)" http://en.wikipedia.org/wiki/Internet_Explorer_9
+                // ie10: "Stable release    10.0.8 (13 August 2013; 26 days ago)" http://en.wikipedia.org/wiki/Internet_Explorer_10
                 // notes: only version 9 and 10
-                // notes: chromeframe
-                // http://en.wikipedia.org/wiki/Google_Chrome_Frame
+                // notes: chromeframe http://en.wikipedia.org/wiki/Google_Chrome_Frame
                 stringAgent.add("Mozilla/5.0 (compatible; MSIE 9.0; Windows NT 6.0; Trident/5.0)");
                 stringAgent.add("Mozilla/5.0 (compatible; MSIE 9.0; Windows NT 6.1; Trident/5.0)");
                 stringAgent.add("Mozilla/5.0 (compatible; MSIE 9.0; Windows NT 6.1; Trident/5.0; MANM)");
@@ -122,11 +114,9 @@ public class MediafireCom extends PluginForHost {
                 stringAgent.add("Mozilla/5.0 (compatible; MSIE 10.0; Windows NT 6.2; WOW64; Trident/6.0; MDDSJS)"); // 33
 
                 // chrome
-                // release:
-                // "Stable release             30.0.1599.69 (October 3, 2013; 6 days ago)"
+                // release: "Stable release             30.0.1599.69 (October 3, 2013; 6 days ago)"
                 // http://en.wikipedia.org/wiki/Google_Chrome
-                // notes: google changes version like it's going out of fashion!
-                // try and give balance in array. (30+)
+                // notes: google changes version like it's going out of fashion! try and give balance in array. (30+)
                 stringAgent.add("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_6_8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/30.0.1599.69 Safari/537.36");
                 stringAgent.add("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_7_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/30.0.1599.69 Safari/537.36");
                 stringAgent.add("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_8_4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/30.0.1599.69 Safari/537.36");
@@ -176,9 +166,7 @@ public class MediafireCom extends PluginForHost {
                 stringAgent.add("Mozilla/5.0 (Windows NT 6.3; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/32.0.1662.2 Safari/537.36"); // 45
 
                 // firefox
-                // release:
-                // "Stable release         24.0 (September 17, 2013; 22 days ago)"
-                // http://en.wikipedia.org/wiki/Firefox
+                // release: "Stable release         24.0 (September 17, 2013; 22 days ago)" http://en.wikipedia.org/wiki/Firefox
                 // notes: version 24+
                 stringAgent.add("Mozilla/5.0 (Macintosh; Intel Mac OS X 10.6; rv:24.0) Gecko/20100101 Firefox/24.0");
                 stringAgent.add("Mozilla/5.0 (Macintosh; Intel Mac OS X 10.7; rv:24.0) Gecko/20100101 Firefox/24.0");
@@ -207,19 +195,15 @@ public class MediafireCom extends PluginForHost {
 
                 // safari
                 // release:
-                // "Stable release     6.0.5 (June 4, 2013; 4 months ago)"
-                // http://en.wikipedia.org/wiki/Safari_(web_browser)
+                // "Stable release     6.0.5 (June 4, 2013; 4 months ago)" http://en.wikipedia.org/wiki/Safari_(web_browser)
                 // notes: version 6
                 stringAgent.add("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_7_5) AppleWebKit/536.30.1 (KHTML, like Gecko) Version/6.0.5 Safari/536.30.1");
                 stringAgent.add("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_8_4) AppleWebKit/536.30.1 (KHTML, like Gecko) Version/6.0.5 Safari/536.30.1");
                 stringAgent.add("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_8_5) AppleWebKit/536.30.1 (KHTML, like Gecko) Version/6.0.5 Safari/536.30.1"); // 3
 
                 // opera
-                // release: Presto
-                // "Stable release      12.16 (July 4, 2013; 2 months ago"
-                // http://en.wikipedia.org/wiki/Opera_(web_browser)
-                // release: Blink (chrome)
-                // "Stable release      16.0.1196.73 (September 5, 2013; 3 days ago)"
+                // release: Presto "Stable release      12.16 (July 4, 2013; 2 months ago" http://en.wikipedia.org/wiki/Opera_(web_browser)
+                // release: Blink (chrome) "Stable release      16.0.1196.73 (September 5, 2013; 3 days ago)"
                 // notes: 12.16+
                 stringAgent.add("Opera/9.80 (Windows NT 5.1) Presto/2.12.388 Version/12.16");
                 stringAgent.add("Opera/9.80 (Windows NT 6.0; WOW64) Presto/2.12.388 Version/12.16");
@@ -240,13 +224,10 @@ public class MediafireCom extends PluginForHost {
     private static final ArrayList<String> portableAgent = new ArrayList<String>();
 
     /**
-     * Returns a random User-Agent String (from a portable device) of specified
-     * array. This array contains current user agents gathered from httpd access
-     * logs. Benefits over RandomUserAgent.* are: versions and respective
-     * release dates are valid.
+     * Returns a random User-Agent String (from a portable device) of specified array. This array contains current user agents gathered from
+     * httpd access logs. Benefits over RandomUserAgent.* are: versions and respective release dates are valid.
      * 
-     * @return eg.
-     *         "Opera/9.80 (Android 4.0.3; Linux; Opera Mobi/ADR-1205181138; U; en) Presto/2.10.254 Version/12.00"
+     * @return eg. "Opera/9.80 (Android 4.0.3; Linux; Opera Mobi/ADR-1205181138; U; en) Presto/2.10.254 Version/12.00"
      */
     public static String portableUserAgent() {
         final Random rand = new Random();
@@ -370,8 +351,7 @@ public class MediafireCom extends PluginForHost {
     /** The name of the error page used by MediaFire */
     private static final String    ERROR_PAGE        = "error.php";
     /**
-     * The number of retries to be performed in order to determine if a file is
-     * available
+     * The number of retries to be performed in order to determine if a file is available
      */
     private int                    NUMBER_OF_RETRIES = 3;
 
@@ -555,8 +535,7 @@ public class MediafireCom extends PluginForHost {
                             } catch (final PluginException e) {
                                 if (defect) throw e;
                                 /**
-                                 * captcha input timeout run out.. try to
-                                 * reconnect
+                                 * captcha input timeout run out.. try to reconnect
                                  */
                                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 5 * 60 * 1000l);
                             }
@@ -658,23 +637,17 @@ public class MediafireCom extends PluginForHost {
         if (account.getBooleanProperty("free", false)) {
             doFree(downloadLink, account);
         } else {
-            // TODO: See if there is a way to implement the premium API again:
-            // http://developers.mediafire.com/index.php/REST_API
+            // TODO: See if there is a way to implement the premium API again: http://developers.mediafire.com/index.php/REST_API
             /**
-             * Problem: This API doesn't (yet) work with password protected
-             * links...
+             * Problem: This API doesn't (yet) work with password protected links...
              */
             // getSessionToken(this.br, account);
-            // apiRequest(this.br,
-            // "http://www.mediafire.com/api/file/get_links.php",
-            // "?link_type=direct_download&session_token=" +
-            // this.SESSIONTOKEN + "&quick_key=" + getFID(downloadLink) +
-            // "&response_format=json");
+            // apiRequest(this.br, "http://www.mediafire.com/api/file/get_links.php", "?link_type=direct_download&session_token=" +
+            // this.SESSIONTOKEN + "&quick_key=" + getFID(downloadLink) + "&response_format=json");
             String url = dlURL;
             boolean passwordprotected = false;
             boolean useAPI = false;
-            // the below if statement is always false by the above: useAPI =
-            // false
+            // the below if statement is always false by the above: useAPI = false
             if (url == null && useAPI) {
                 this.fileID = getID(downloadLink);
                 this.br.postPageRaw("http://www.mediafire.com/basicapi/premiumapi.php", "premium_key=" + MediafireCom.CONFIGURATION_KEYS.get(account) + "&files=" + this.fileID);
@@ -878,8 +851,7 @@ public class MediafireCom extends PluginForHost {
                     String di = lbr.getRegex("di='(.*?)'").getMatch(0);
                     lbr.getPage("/dynamic/download_options.php?enable_me_from_me=0&nocache=" + new Random().nextInt(1000) + "&di=" + di);
                     // String configurationKey = getAPIKEY(lbr);
-                    // if (configurationKey == null) throw new
-                    // PluginException(LinkStatus.ERROR_PREMIUM,
+                    // if (configurationKey == null) throw new PluginException(LinkStatus.ERROR_PREMIUM,
                     // PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
                 cookies = new HashMap<String, String>();
@@ -899,10 +871,8 @@ public class MediafireCom extends PluginForHost {
 
     // private String getAPIKEY(Browser br) {
     // if (br == null) return null;
-    // String configurationKey =
-    // this.br.getRegex("Configuration Key:.*? value=\"(.*?)\"").getMatch(0);
-    // if (configurationKey == null) configurationKey =
-    // this.br.getRegex("Configuration Key.*? value=\"(.*?)\"").getMatch(0);
+    // String configurationKey = this.br.getRegex("Configuration Key:.*? value=\"(.*?)\"").getMatch(0);
+    // if (configurationKey == null) configurationKey = this.br.getRegex("Configuration Key.*? value=\"(.*?)\"").getMatch(0);
     // return configurationKey;
     // }
 
@@ -931,15 +901,12 @@ public class MediafireCom extends PluginForHost {
         }
 
         if ("110".equals(errorCode)) {
-            // <response><action>file/get_info</action><message>Unknown or
-            // Invalid
+            // <response><action>file/get_info</action><message>Unknown or Invalid
             // QuickKey</message><error>110</error><result>Error</result><current_api_version>2.15</current_api_version></response>
-
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         downloadLink.setDownloadSize(SizeFormatter.getSize(getXML("size", apiBR.toString() + "b")));
-        // stable has issues with utf-8 filenames provided from
-        // Content-Disposition, even when customcharset is used..
+        // stable has issues with utf-8 filenames provided from Content-Disposition, even when customcharset is used..
         downloadLink.setFinalFileName(Encoding.htmlDecode(getXML("filename", apiBR.toString())));
         return AvailableStatus.TRUE;
     }
@@ -957,8 +924,7 @@ public class MediafireCom extends PluginForHost {
     }
 
     private void getSessionToken(final Browser apiBR, final Account aa) throws IOException {
-        // Try to re-use session token as long as possible (it's valid for 10
-        // minutes)
+        // Try to re-use session token as long as possible (it's valid for 10 minutes)
         final String savedusername = this.getPluginConfig().getStringProperty("username");
         final String savedpassword = this.getPluginConfig().getStringProperty("password");
         final String sessiontokenCreateDateObject = this.getPluginConfig().getStringProperty("sessiontokencreated2");
@@ -988,8 +954,7 @@ public class MediafireCom extends PluginForHost {
     }
 
     private void handleNonAPIErrors(final DownloadLink dl, Browser imported) throws PluginException, IOException {
-        // imported browser affects this.br so lets make a new browser just for
-        // error checking.
+        // imported browser affects this.br so lets make a new browser just for error checking.
         Browser eBr = new Browser();
         // catch, and prevent a null imported browser
         if (imported == null) {
@@ -1001,8 +966,7 @@ public class MediafireCom extends PluginForHost {
             // prob not required...
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        // Some errors are only provided if isFollowingRedirects==true. As this
-        // isn't always the case throughout the plugin, lets grab the
+        // Some errors are only provided if isFollowingRedirects==true. As this isn't always the case throughout the plugin, lets grab the
         // redirect page so we can use .containsHTML
         if (!eBr.isFollowingRedirects()) {
             if (eBr.getRedirectLocation() != null) {
@@ -1019,14 +983,10 @@ public class MediafireCom extends PluginForHost {
         }
         if (eBr.getURL().matches(".+/error\\.php\\?errno=394.*?")) {
             /*
-             * The file you attempted to download is an archive that is
-             * encrypted or password protected. MediaFire does not support
-             * unlimited downloads of encrypted or password protected archives
-             * and the limit for this file has been reached. MediaFire
-             * understands the need for users to transfer encrypted and secured
-             * files, we offer this service starting at $1.50 per month. We have
-             * informed the owner that sharing of this file has been limited and
-             * how they can resolve this issue.
+             * The file you attempted to download is an archive that is encrypted or password protected. MediaFire does not support
+             * unlimited downloads of encrypted or password protected archives and the limit for this file has been reached. MediaFire
+             * understands the need for users to transfer encrypted and secured files, we offer this service starting at $1.50 per month. We
+             * have informed the owner that sharing of this file has been limited and how they can resolve this issue.
              */
             throw new PluginException(LinkStatus.ERROR_FATAL, "Download not possible, retriction based on uploaders account");
         }

@@ -30,7 +30,7 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision: 20105 $", interfaceVersion = 2, names = { "docs.google.com" }, urls = { "https?://(www\\.)?(docs\\.google\\.com/folder/d/[a-zA-Z0-9\\-_]+|(docs|drive)\\.google\\.com/folderview\\?pli=1\\&id=[A-Za-z0-9]+(\\&tid=[A-Za-z0-9]+)?)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision: 20105 $", interfaceVersion = 2, names = { "docs.google.com" }, urls = { "https?://(www\\.)?(docs\\.google\\.com/folder/d/[a-zA-Z0-9\\-_]+|(docs|drive)\\.google\\.com/folderview\\?(pli=1\\&id=[A-Za-z0-9_]+(\\&tid=[A-Za-z0-9]+)?|id=[A-Za-z0-9_]+&usp=sharing))" }, flags = { 0 })
 public class DocsGoogleCom extends PluginForDecrypt {
 
     /**
@@ -51,7 +51,7 @@ public class DocsGoogleCom extends PluginForDecrypt {
     // user-agent required to use new ones otherwise blocks with javascript notice.
 
     private static final String FOLDER_NORMAL = "https?://(www\\.)?docs\\.google\\.com/folder/d/[a-zA-Z0-9\\-_]+";
-    private static final String FOLDER_SECOND = "https?://(www\\.)?(docs|drive)\\.google\\.com/folderview\\?pli=1\\&id=[A-Za-z0-9]+(\\&tid=[A-Za-z0-9]+)?";
+    private static final String FOLDER_SECOND = "https?://(www\\.)?(docs|drive)\\.google\\.com/folderview\\?(pli=1\\&id=[A-Za-z0-9_]+(\\&tid=[A-Za-z0-9]+)?|id=[A-Za-z0-9_]+&usp=sharing)";
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
@@ -96,14 +96,14 @@ public class DocsGoogleCom extends PluginForDecrypt {
             // New way
             final String content = br.getRegex("\\{folderModel: \\[(.*?\\])[\t\n\r ]+\\]").getMatch(0);
             if (content != null) {
-                final String[] filelinks = new Regex(content, "\"(https?://docs\\.google\\.com/file/d/[A-Za-z0-9]+/?)").getColumn(0);
+                final String[] filelinks = new Regex(content, "\"(https?://docs\\.google\\.com/file/d/[A-Za-z0-9_]+/?)").getColumn(0);
                 if (filelinks != null && filelinks.length != 0) {
                     for (final String filelink : filelinks) {
                         decryptedLinks.add(createDownloadlink(filelink));
                     }
                 }
 
-                final String[] folderlinks = new Regex(content, "\"(https?://(docs|drive)\\.google\\.com/folderview\\?pli[^<>\"]*?)\"").getColumn(0);
+                final String[] folderlinks = new Regex(content, "(" + FOLDER_SECOND + ")").getColumn(0);
                 if (folderlinks != null && folderlinks.length != 0) {
                     for (String folderlink : folderlinks) {
                         folderlink = unescape(folderlink);

@@ -32,8 +32,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
 
-import org.appwork.utils.Regex;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "mega-debrid.eu" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32423" }, flags = { 2 })
 public class MegaDebridEu extends PluginForHost {
 
@@ -87,8 +85,7 @@ public class MegaDebridEu extends PluginForHost {
             account.setValid(false);
             return ac;
         }
-        String hostsString = br.getRegex("\"hosters\":\\[([^\\]]+)").getMatch(0);
-        String[] hosts = new Regex(hostsString, "\"([^\"]+)\"").getColumn(0);
+        String[] hosts = br.getRegex("\\[\"([a-z0-9\\.]+)\"").getColumn(0);
         ArrayList<String> supportedHosts = new ArrayList<String>(Arrays.asList(hosts));
         // workaround for uploaded.to
         if (supportedHosts.contains("uploaded.net") || supportedHosts.contains("ul.to") || supportedHosts.contains("uploaded.to")) {

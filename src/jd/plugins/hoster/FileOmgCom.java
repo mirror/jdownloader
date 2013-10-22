@@ -71,22 +71,22 @@ import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.os.CrossSystem;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filebox.com" }, urls = { "https?://(www\\.)?filebox\\.com/((vid)?embed-)?[a-z0-9]{12}" }, flags = { 2 })
+@HostPlugin(revision = "$Revision: 19496 $", interfaceVersion = 2, names = { "fileomg.com" }, urls = { "https?://(www\\.)?fileomg\\.com/((vid)?embed-)?[a-z0-9]{12}" }, flags = { 2 })
 @SuppressWarnings("deprecation")
-public class FileBoxCom extends PluginForHost {
+public class FileOmgCom extends PluginForHost {
 
     // Site Setters
     // primary website url, take note of redirects
-    private final String               COOKIE_HOST                  = "http://filebox.com";
+    private final String               COOKIE_HOST                  = "http://fileomg.com";
     // domain names used within download links.
-    private final String               DOMAINS                      = "(filebox\\.com)";
+    private final String               DOMAINS                      = "(fileomg\\.com)";
     private final String               PASSWORDTEXT                 = "<br><b>Passwor(d|t):</b> <input";
     private final String               MAINTENANCE                  = ">This server is in maintenance mode";
     private final String               dllinkRegex                  = "https?://(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|([\\w\\-]+\\.)?" + DOMAINS + ")(:\\d{1,5})?/((files(/(dl|download))?|d|cgi-bin/dl\\.cgi)/(\\d+/)?([a-z0-9]+/){1,4}[^/<>\r\n\t]+|[a-z0-9]{58}/v(ideo)?\\.mp4)";
     private final boolean              supportsHTTPS                = false;
     private final boolean              enforcesHTTPS                = false;
-    private final boolean              useRUA                       = true;
-    private final boolean              useAltLinkCheck              = true;
+    private final boolean              useRUA                       = false;
+    private final boolean              useAltLinkCheck              = false;
     private final boolean              useVidEmbed                  = false;
     private final boolean              useAltEmbed                  = false;
     private final boolean              useAltExpire                 = true;
@@ -105,24 +105,24 @@ public class FileBoxCom extends PluginForHost {
     // last XfileSharingProBasic compare :: 2.6.2.1
     // captchatype: recaptcha
     // other: no redirects
-    // mods: requestFileInformation
+    // mods:
 
     private void setConstants(final Account account) {
         if (account != null && account.getBooleanProperty("free")) {
             // free account
-            chunks = -2;
+            chunks = 1;
             resumes = true;
             acctype = "Free Account";
             directlinkproperty = "freelink2";
         } else if (account != null && !account.getBooleanProperty("free")) {
             // prem account
-            chunks = -10;
+            chunks = 0; // tested
             resumes = true;
             acctype = "Premium Account";
             directlinkproperty = "premlink";
         } else {
             // non account
-            chunks = -2; // tested
+            chunks = 1; // tested
             resumes = true;
             acctype = "Non Account";
             directlinkproperty = "freelink";
@@ -163,7 +163,7 @@ public class FileBoxCom extends PluginForHost {
      * 
      * @category 'Experimental', Mods written July 2012 - 2013
      * */
-    public FileBoxCom(PluginWrapper wrapper) {
+    public FileOmgCom(PluginWrapper wrapper) {
         super(wrapper);
         setConfigElements();
         this.enablePremium(COOKIE_HOST + "/premium.html");
@@ -245,7 +245,6 @@ public class FileBoxCom extends PluginForHost {
             downloadLink.getLinkStatus().setStatusText(MAINTENANCEUSERTEXT);
             return AvailableStatus.TRUE;
         }
-        if (useAltLinkCheck) return getAvailableStatus(downloadLink);
         // scan the first page
         scanInfo(downloadLink, fileInfo);
         // scan the second page. filesize[1] and md5hash[2] are not mission critical
@@ -313,7 +312,7 @@ public class FileBoxCom extends PluginForHost {
                     if (inValidate(fileInfo[1])) {
                         try {
                             // only needed in rare circumstances
-                            altAvailStat(downloadLink, fileInfo);
+                            // altAvailStat(downloadLink, fileInfo);
                         } catch (Exception e) {
                         }
                     }
@@ -335,7 +334,7 @@ public class FileBoxCom extends PluginForHost {
         // cloudflare initial support is within getPage.. otherwise not needed.
         alt.getPage(COOKIE_HOST.replaceFirst("https?://", getProtocol()) + "/?op=checkfiles");
         alt.postPage("/?op=checkfiles", "op=checkfiles&process=Check+URLs&list=" + downloadLink.getDownloadURL());
-        String[] linkInformation = alt.getRegex(">" + downloadLink.getDownloadURL() + " (\\w+)</font><br />(garbage)?").getRow(0);
+        String[] linkInformation = alt.getRegex(">" + downloadLink.getDownloadURL() + "</td><td style=\"color:[^;]+;\">(\\w+)</td><td>([^<>]+)?</td>").getRow(0);
         if (linkInformation != null && linkInformation[0].equalsIgnoreCase("found")) {
             downloadLink.setAvailable(true);
             if (!inValidate(linkInformation[1]) && inValidate(fileInfo[1])) fileInfo[1] = linkInformation[1];
