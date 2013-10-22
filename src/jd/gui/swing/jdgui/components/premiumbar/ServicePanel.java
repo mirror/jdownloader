@@ -49,9 +49,10 @@ import org.appwork.utils.swing.EDTHelper;
 import org.jdownloader.DomainInfo;
 import org.jdownloader.plugins.controller.host.HostPluginController;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin;
+import org.jdownloader.settings.GraphicalUserInterfaceSettings.PremiumStatusBarDisplay;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
 
-public class ServicePanel extends JPanel implements MouseListener {
+public class ServicePanel extends JPanel implements MouseListener, AccountTooltipOwner {
 
     private static final long               serialVersionUID = 7290466989514173719L;
 
@@ -191,112 +192,9 @@ public class ServicePanel extends JPanel implements MouseListener {
         }
     }
 
-    void redraw() {
-        List<Account> accs = AccountController.getInstance().list();
+    public void redraw() {
+        final LinkedList<ServiceCollection<?>> services = groupServices(CFG_GUI.CFG.getPremiumStatusBarDisplay(), true, null);
 
-        // final HashSet<DomainInfo> enabled = new HashSet<DomainInfo>();
-        final HashMap<String, AccountServiceCollection> map = new HashMap<String, AccountServiceCollection>();
-        final LinkedList<ServiceCollection<?>> services = new LinkedList<ServiceCollection<?>>();
-        HashMap<String, LazyHostPlugin> plugins = new HashMap<String, LazyHostPlugin>();
-        for (Account acc : accs) {
-            AccountInfo ai = acc.getAccountInfo();
-            if (!acc.isValid() || (ai != null && ai.isExpired())) continue;
-
-            PluginForHost plugin = JDUtilities.getPluginForHost(acc.getHoster());
-            DomainInfo domainInfo;
-            if (plugin != null) {
-                domainInfo = plugin.getDomainInfo(null);
-                domainInfo.getFavIcon();
-
-                AccountServiceCollection ac;
-                switch (CFG_GUI.CFG.getPremiumStatusBarDisplay()) {
-                case DONT_GROUP:
-                    ac = new AccountServiceCollection(domainInfo);
-                    ac.add(acc);
-                    services.add(ac);
-                    break;
-                case GROUP_BY_ACCOUNT_TYPE:
-                    ac = map.get(domainInfo.getTld());
-                    if (ac == null) {
-                        ac = new AccountServiceCollection(domainInfo);
-                        map.put(domainInfo.getTld(), ac);
-                        services.add(ac);
-                    }
-                    ac.add(acc);
-                    break;
-
-                case GROUP_BY_SUPPORTED_HOSTS:
-
-                    ai = acc.getAccountInfo();
-                    if (ai == null) continue;
-                    Object supported = null;
-                    synchronized (ai) {
-                        /*
-                         * synchronized on accountinfo because properties are not threadsafe
-                         */
-                        supported = ai.getProperty("multiHostSupport", Property.NULL);
-                    }
-                    if (Property.NULL == supported || supported == null) {
-                        // dedicated account
-                        ac = map.get(domainInfo.getTld());
-                        if (ac == null) {
-                            ac = new AccountServiceCollection(domainInfo);
-                            map.put(domainInfo.getTld(), ac);
-                            services.add(ac);
-                        }
-                        ac.add(acc);
-                    } else {
-                        synchronized (supported) {
-                            /*
-                             * synchronized on list because plugins can change the list in runtime
-                             */
-
-                            if (supported instanceof ArrayList) {
-                                for (String sup : (java.util.List<String>) supported) {
-
-                                    LazyHostPlugin plg = HostPluginController.getInstance().get((String) sup);
-
-                                    if (plg != null) {
-                                        LazyHostPlugin cached = plugins.get(plg.getClassname());
-                                        if (cached != null) plg = cached;
-                                        plugins.put(plg.getClassname(), plg);
-                                        sup = plg.getHost();
-                                    } else {
-                                        //
-                                        System.out.println(plg);
-                                        continue;
-                                    }
-
-                                    ac = map.get(sup);
-                                    if (ac == null) {
-                                        ac = new AccountServiceCollection(DomainInfo.getInstance(sup));
-                                        map.put(sup, ac);
-                                        services.add(ac);
-                                    }
-                                    ac.add(acc);
-                                }
-                            }
-                        }
-                    }
-
-                    break;
-                }
-
-            }
-
-            /* prefetch outside EDT */
-
-        }
-        synchronized (extender) {
-            for (ServicePanelExtender bla : extender) {
-                bla.extendServicePabel(services);
-            }
-
-        }
-
-        Collections.sort(services);
-
-        accs = null;
         new EDTHelper<Object>() {
             @Override
             public Object edtRun() {
@@ -325,6 +223,118 @@ public class ServicePanel extends JPanel implements MouseListener {
                 return null;
             }
         }.start();
+    }
+
+    public LinkedList<ServiceCollection<?>> groupServices(PremiumStatusBarDisplay premiumStatusBarDisplay, boolean extend, String filter) {
+        List<Account> accs = AccountController.getInstance().list();
+
+        // final HashSet<DomainInfo> enabled = new HashSet<DomainInfo>();
+        final HashMap<String, AccountServiceCollection> map = new HashMap<String, AccountServiceCollection>();
+        final LinkedList<ServiceCollection<?>> services = new LinkedList<ServiceCollection<?>>();
+        HashMap<String, LazyHostPlugin> plugins = new HashMap<String, LazyHostPlugin>();
+        for (Account acc : accs) {
+            AccountInfo ai = acc.getAccountInfo();
+            if (!acc.isValid() || (ai != null && ai.isExpired())) continue;
+
+            PluginForHost plugin = JDUtilities.getPluginForHost(acc.getHoster());
+            DomainInfo domainInfo;
+            if (plugin != null) {
+                domainInfo = plugin.getDomainInfo(null);
+                domainInfo.getFavIcon();
+
+                AccountServiceCollection ac;
+                switch (premiumStatusBarDisplay) {
+                case DONT_GROUP:
+                    if (filter != null && !filter.equals(domainInfo.getTld())) continue;
+                    ac = new AccountServiceCollection(domainInfo);
+                    ac.add(acc);
+                    services.add(ac);
+                    break;
+                case GROUP_BY_ACCOUNT_TYPE:
+                    if (filter != null && !filter.equals(domainInfo.getTld())) continue;
+                    ac = map.get(domainInfo.getTld());
+                    if (ac == null) {
+                        ac = new AccountServiceCollection(domainInfo);
+                        map.put(domainInfo.getTld(), ac);
+                        services.add(ac);
+                    }
+                    ac.add(acc);
+                    break;
+
+                case GROUP_BY_SUPPORTED_HOSTS:
+
+                    ai = acc.getAccountInfo();
+                    if (ai == null) continue;
+                    Object supported = null;
+                    synchronized (ai) {
+                        /*
+                         * synchronized on accountinfo because properties are not threadsafe
+                         */
+                        supported = ai.getProperty("multiHostSupport", Property.NULL);
+                    }
+                    if (Property.NULL == supported || supported == null) {
+                        // dedicated account
+                        if (filter != null && !filter.equals(domainInfo.getTld())) continue;
+                        ac = map.get(domainInfo.getTld());
+                        if (ac == null) {
+                            ac = new AccountServiceCollection(domainInfo);
+                            map.put(domainInfo.getTld(), ac);
+                            services.add(ac);
+                        }
+                        ac.add(acc);
+                    } else {
+                        synchronized (supported) {
+                            /*
+                             * synchronized on list because plugins can change the list in runtime
+                             */
+
+                            if (supported instanceof ArrayList) {
+                                for (String sup : (java.util.List<String>) supported) {
+
+                                    LazyHostPlugin plg = HostPluginController.getInstance().get((String) sup);
+
+                                    if (plg != null) {
+                                        LazyHostPlugin cached = plugins.get(plg.getClassname());
+                                        if (cached != null) plg = cached;
+                                        plugins.put(plg.getClassname(), plg);
+                                        sup = plg.getHost();
+                                    } else {
+                                        //
+                                        System.out.println(plg);
+                                        continue;
+                                    }
+                                    if (filter != null && !filter.equals(sup)) continue;
+                                    ac = map.get(sup);
+                                    if (ac == null) {
+                                        ac = new AccountServiceCollection(DomainInfo.getInstance(sup));
+                                        map.put(sup, ac);
+                                        services.add(ac);
+                                    }
+                                    ac.add(acc);
+                                }
+                            }
+                        }
+                    }
+
+                    break;
+                }
+
+            }
+
+            /* prefetch outside EDT */
+
+        }
+        if (extend) {
+            synchronized (extender) {
+                for (ServicePanelExtender bla : extender) {
+                    bla.extendServicePabel(services);
+                }
+
+            }
+        }
+
+        Collections.sort(services);
+        return services;
     }
 
     public void mouseClicked(MouseEvent e) {

@@ -1,13 +1,20 @@
 package jd.gui.swing.jdgui.views.settings.panels.accountmanager;
 
+import java.awt.Point;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
+import java.util.LinkedList;
 
 import javax.swing.JPopupMenu;
 
 import jd.gui.swing.jdgui.BasicJDTable;
+import jd.gui.swing.jdgui.components.premiumbar.ServiceCollection;
+import jd.gui.swing.jdgui.components.premiumbar.ServicePanel;
 
+import org.appwork.swing.components.tooltips.ExtTooltip;
+import org.appwork.swing.components.tooltips.ToolTipController;
 import org.appwork.swing.exttable.ExtColumn;
+import org.jdownloader.settings.GraphicalUserInterfaceSettings.PremiumStatusBarDisplay;
 
 public class PremiumAccountTable extends BasicJDTable<AccountEntry> {
 
@@ -27,6 +34,20 @@ public class PremiumAccountTable extends BasicJDTable<AccountEntry> {
     protected boolean onShortcutDelete(java.util.List<AccountEntry> selectedObjects, KeyEvent evt, boolean direct) {
         new RemoveAction(selectedObjects, direct).actionPerformed(null);
         return true;
+    }
+
+    @Override
+    protected boolean onDoubleClick(MouseEvent e, AccountEntry obj) {
+        ToolTipController.getInstance().show(this);
+        return true;
+    }
+
+    @Override
+    protected ExtTooltip createToolTip(ExtColumn<AccountEntry> col, int row, Point position, AccountEntry elementAt) {
+
+        LinkedList<ServiceCollection<?>> services = ServicePanel.getInstance().groupServices(PremiumStatusBarDisplay.GROUP_BY_ACCOUNT_TYPE, false, elementAt.getAccount().getHoster());
+        if (services.size() > 0) { return services.get(0).createTooltip(null); }
+        return null;
     }
 
     /*

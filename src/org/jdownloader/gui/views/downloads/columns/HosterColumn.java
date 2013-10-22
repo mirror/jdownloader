@@ -2,6 +2,7 @@ package org.jdownloader.gui.views.downloads.columns;
 
 import java.awt.Point;
 import java.awt.event.MouseEvent;
+import java.util.LinkedList;
 
 import javax.swing.ImageIcon;
 import javax.swing.JComponent;
@@ -11,6 +12,8 @@ import jd.controlling.linkcrawler.CrawledPackage;
 import jd.controlling.packagecontroller.AbstractNode;
 import jd.controlling.packagecontroller.AbstractPackageChildrenNode;
 import jd.controlling.packagecontroller.AbstractPackageNode;
+import jd.gui.swing.jdgui.components.premiumbar.ServiceCollection;
+import jd.gui.swing.jdgui.components.premiumbar.ServicePanel;
 import net.miginfocom.swing.MigLayout;
 
 import org.appwork.storage.config.ValidationException;
@@ -28,6 +31,7 @@ import org.jdownloader.DomainInfo;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.downloads.HosterToolTip;
 import org.jdownloader.images.NewTheme;
+import org.jdownloader.settings.GraphicalUserInterfaceSettings.PremiumStatusBarDisplay;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
 
 public class HosterColumn extends ExtColumn<AbstractNode> {
@@ -205,12 +209,25 @@ public class HosterColumn extends ExtColumn<AbstractNode> {
     }
 
     @Override
-    public boolean onDoubleClick(MouseEvent e, AbstractNode value) {
+    public boolean onDoubleClick(MouseEvent e, final AbstractNode obj) {
 
         SwingUtilities.invokeLater(new Runnable() {
 
             public void run() {
-                ToolTipController.getInstance().show(getModel().getTable().createExtTooltip(null));
+
+                if (obj instanceof AbstractPackageChildrenNode) {
+                    DomainInfo di = ((AbstractPackageChildrenNode<?>) obj).getDomainInfo();
+
+                    LinkedList<ServiceCollection<?>> services = ServicePanel.getInstance().groupServices(PremiumStatusBarDisplay.GROUP_BY_SUPPORTED_HOSTS, false, di.getTld());
+                    if (services.size() > 0) {
+                        ToolTipController.getInstance().show(services.get(0).createTooltip(null));
+
+                    }
+
+                } else if (obj instanceof AbstractPackageNode) {
+
+                }
+
             }
         });
 
@@ -219,10 +236,15 @@ public class HosterColumn extends ExtColumn<AbstractNode> {
 
     @Override
     public ExtTooltip createToolTip(Point position, AbstractNode obj) {
+
         if (obj instanceof AbstractPackageChildrenNode) {
             DomainInfo di = ((AbstractPackageChildrenNode<?>) obj).getDomainInfo();
+
             return new IconLabelToolTip(di.getTld(), di.getFavIcon());
-        } else if (obj instanceof AbstractPackageNode) { return new HosterToolTip(((AbstractPackageNode<?, ?>) obj).getView().getDomainInfos()); }
+        } else if (obj instanceof AbstractPackageNode) {
+
+        return new HosterToolTip(((AbstractPackageNode<?, ?>) obj).getView().getDomainInfos()); }
+
         return null;
     }
 

@@ -2,6 +2,7 @@ package jd.gui.swing.jdgui.components.premiumbar;
 
 import java.awt.Color;
 import java.awt.Component;
+import java.awt.MouseInfo;
 import java.awt.Point;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -42,16 +43,21 @@ public class AccountTooltip extends PanelToolTip {
     private Color                 color;
     private AccountListTable      table;
     private AccountListTableModel model;
-    private ServicePanel         owner;
+    private AccountTooltipOwner   owner;
 
     public Point getDesiredLocation(JComponent activeComponent, Point ttPosition) {
-        ttPosition.y = activeComponent.getLocationOnScreen().y - getPreferredSize().height;
-        ttPosition.x = activeComponent.getLocationOnScreen().x;
+        if (owner instanceof ServicePanel) {
+            ttPosition.y = activeComponent.getLocationOnScreen().y - getPreferredSize().height;
+            ttPosition.x = activeComponent.getLocationOnScreen().x;
 
-        return AbstractLocator.correct(ttPosition, getPreferredSize());
+            return AbstractLocator.correct(ttPosition, getPreferredSize());
+        } else {
+
+            return MouseInfo.getPointerInfo().getLocation();
+        }
     }
 
-    public AccountTooltip(ServicePanel owner, AccountServiceCollection accountCollection) {
+    public AccountTooltip(AccountTooltipOwner owner, AccountServiceCollection accountCollection) {
 
         super(new TooltipPanel("ins 0,wrap 1", "[grow,fill]", "[][grow,fill]"));
         this.owner = owner;
@@ -65,13 +71,13 @@ public class AccountTooltip extends PanelToolTip {
 
         }
 
-        table = new AccountListTable(model = new AccountListTableModel(this));
+        table = new AccountListTable(model = new AccountListTableModel(this, owner));
         model.setData(domains);
         model.addTableModelListener(new TableModelListener() {
 
             @Override
             public void tableChanged(TableModelEvent e) {
-                AccountTooltip.this.owner.redraw();
+                if (AccountTooltip.this.owner != null) AccountTooltip.this.owner.redraw();
                 table.getTableHeader().repaint();
             }
         });

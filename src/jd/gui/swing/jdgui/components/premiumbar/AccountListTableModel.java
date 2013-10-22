@@ -58,9 +58,11 @@ public class AccountListTableModel extends ExtTableModel<AccountEntry> implement
 
     private LinkedList<AccountEntry>         accounts;
 
-    public AccountListTableModel(AccountTooltip accountTooltip) {
-        super("PremiumAccountfilteredTableModel2");
+    private AccountTooltipOwner              owner;
 
+    public AccountListTableModel(AccountTooltip accountTooltip, AccountTooltipOwner owner) {
+        super("PremiumAccountfilteredTableModel3");
+        this.owner = owner;
         ScheduledExecutorService scheduler = DelayedRunnable.getNewScheduledExecutorService();
         delayedFill = new DelayedRunnable(scheduler, 250l) {
 
@@ -102,61 +104,62 @@ public class AccountListTableModel extends ExtTableModel<AccountEntry> implement
 
     @Override
     protected void initColumns() {
+        if (owner != null && owner instanceof ServicePanel) {
+            this.addColumn(new ExtCheckColumn<AccountEntry>(_GUI._.premiumaccounttablemodel_column_enabled()) {
 
-        this.addColumn(new ExtCheckColumn<AccountEntry>(_GUI._.premiumaccounttablemodel_column_enabled()) {
+                private static final long serialVersionUID = 1515656228974789237L;
 
-            private static final long serialVersionUID = 1515656228974789237L;
+                public ExtTableHeaderRenderer getHeaderRenderer(final JTableHeader jTableHeader) {
 
-            public ExtTableHeaderRenderer getHeaderRenderer(final JTableHeader jTableHeader) {
+                    final ExtTableHeaderRenderer ret = new ExtTableHeaderRenderer(this, jTableHeader) {
+                        {
+                            AccountListTable.setHeaderRendererColors(this);
 
-                final ExtTableHeaderRenderer ret = new ExtTableHeaderRenderer(this, jTableHeader) {
-                    {
-                        AccountListTable.setHeaderRendererColors(this);
+                        }
 
-                    }
+                        private static final long serialVersionUID = 3224931991570756349L;
 
-                    private static final long serialVersionUID = 3224931991570756349L;
+                        @Override
+                        public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
+                            super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
+                            setIcon(NewTheme.I().getIcon("ok", 14));
+                            setHorizontalAlignment(CENTER);
+                            setText(null);
+                            return this;
+                        }
 
-                    @Override
-                    public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
-                        super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
-                        setIcon(NewTheme.I().getIcon("ok", 14));
-                        setHorizontalAlignment(CENTER);
-                        setText(null);
-                        return this;
-                    }
+                    };
 
-                };
+                    return ret;
+                }
 
-                return ret;
-            }
+                @Override
+                public int getMaxWidth() {
+                    return 30;
+                }
 
-            @Override
-            public int getMaxWidth() {
-                return 30;
-            }
+                @Override
+                public boolean isHidable() {
+                    return false;
+                }
 
-            @Override
-            public boolean isHidable() {
-                return false;
-            }
+                @Override
+                protected boolean getBooleanValue(AccountEntry value) {
+                    return value.getAccount().isEnabled();
+                }
 
-            @Override
-            protected boolean getBooleanValue(AccountEntry value) {
-                return value.getAccount().isEnabled();
-            }
+                @Override
+                public boolean isEditable(AccountEntry obj) {
+                    return true;
+                }
 
-            @Override
-            public boolean isEditable(AccountEntry obj) {
-                return true;
-            }
-
-            @Override
-            protected void setBooleanValue(boolean value, final AccountEntry object) {
-                object.getAccount().setEnabled(value);
-                fireTableStructureChanged();
-            }
-        });
+                @Override
+                protected void setBooleanValue(boolean value, final AccountEntry object) {
+                    object.getAccount().setEnabled(value);
+                    fireTableStructureChanged();
+                }
+            });
+        }
         this.addColumn(new ExtTextColumn<AccountEntry>(_GUI._.premiumaccounttablemodel_column_hoster()) {
 
             private static final long serialVersionUID = -3693931358975303164L;
@@ -278,40 +281,6 @@ public class AccountListTableModel extends ExtTableModel<AccountEntry> implement
                 return value.getAccount().getUser();
             }
         });
-        // this.addColumn(new ExtPasswordEditorColumn<AccountEntry>(_GUI._.premiumaccounttablemodel_column_password()) {
-        // private static final long serialVersionUID = 3180414754658474808L;
-        //
-        // @Override
-        // public boolean isHidable() {
-        // return false;
-        // }
-        //
-        // @Override
-        // public int getMaxWidth() {
-        // return 140;
-        // }
-        //
-        // @Override
-        // public int getDefaultWidth() {
-        // return 110;
-        // }
-        //
-        // @Override
-        // public int getMinWidth() {
-        // return 100;
-        // }
-        //
-        // @Override
-        // protected String getPlainStringValue(AccountEntry value) {
-        // return value.getAccount().getPass();
-        // }
-        //
-        // @Override
-        // protected void setStringValue(String value, AccountEntry object) {
-        // object.getAccount().setPass(value);
-        // AccountController.getInstance().saveDelayedRequest();
-        // }
-        // });
 
         this.addColumn(new ExtDateColumn<AccountEntry>(_GUI._.premiumaccounttablemodel_column_expiredate()) {
             private static final long serialVersionUID = 5067606909520874358L;
@@ -375,7 +344,7 @@ public class AccountListTableModel extends ExtTableModel<AccountEntry> implement
 
             @Override
             public int getMinWidth() {
-                return 120;
+                return 140;
             }
 
             protected Color getDefaultForeground() {
@@ -443,105 +412,105 @@ public class AccountListTableModel extends ExtTableModel<AccountEntry> implement
                 }
             }
         });
-        //
-        this.addColumn(details = new ExtComponentColumn<AccountEntry>(_GUI._.premiumaccounttablemodel_column_info()) {
-            private JButton      button;
-            private MigPanel     panel;
-            private JButton      rbutton;
-            private MigPanel     rpanel;
-            private AccountEntry editing;
+        if (owner != null && owner instanceof ServicePanel) {
+            this.addColumn(details = new ExtComponentColumn<AccountEntry>(_GUI._.premiumaccounttablemodel_column_info()) {
+                private JButton      button;
+                private MigPanel     panel;
+                private JButton      rbutton;
+                private MigPanel     rpanel;
+                private AccountEntry editing;
 
-            {
-                button = new JButton(_GUI._.premiumaccounttablemodel_column_info_button());
+                {
+                    button = new JButton(_GUI._.premiumaccounttablemodel_column_info_button());
 
-                panel = new RendererMigPanel("ins 2", "[]", "[16!]");
-                panel.add(button);
-                button.setOpaque(false);
+                    panel = new RendererMigPanel("ins 2", "[]", "[16!]");
+                    panel.add(button);
+                    button.setOpaque(false);
 
-                rbutton = new JButton(_GUI._.premiumaccounttablemodel_column_info_button());
+                    rbutton = new JButton(_GUI._.premiumaccounttablemodel_column_info_button());
 
-                rbutton.addActionListener(new ActionListener() {
+                    rbutton.addActionListener(new ActionListener() {
 
-                    @Override
-                    public void actionPerformed(ActionEvent e) {
-                        if (editing != null) {
-                            editing.showAccountInfoDialog();
+                        @Override
+                        public void actionPerformed(ActionEvent e) {
+                            if (editing != null) {
+                                editing.showAccountInfoDialog();
+                            }
                         }
-                    }
-                });
+                    });
 
-                rpanel = new MigPanel("ins 2", "[]", "[18!]");
-                rpanel.add(rbutton);
-                rbutton.setOpaque(false);
-            }
+                    rpanel = new MigPanel("ins 2", "[]", "[18!]");
+                    rpanel.add(rbutton);
+                    rbutton.setOpaque(false);
+                }
 
-            @Override
-            public int getMaxWidth() {
-                return panel.getPreferredSize().width;
-            }
+                @Override
+                public int getMaxWidth() {
+                    return panel.getPreferredSize().width;
+                }
 
-            @Override
-            public boolean isEnabled(AccountEntry obj) {
-                return obj.getAccount().isEnabled() && obj.isDetailsDialogSupported();
-            }
+                @Override
+                public boolean isEnabled(AccountEntry obj) {
+                    return obj.getAccount().isEnabled() && obj.isDetailsDialogSupported();
+                }
 
-            @Override
-            public int getDefaultWidth() {
-                return panel.getPreferredSize().width;
-            }
+                @Override
+                public int getDefaultWidth() {
+                    return panel.getPreferredSize().width;
+                }
 
-            @Override
-            public int getMinWidth() {
-                return panel.getPreferredSize().width;
-            }
+                @Override
+                public int getMinWidth() {
+                    return panel.getPreferredSize().width;
+                }
 
-            @Override
-            public boolean isEditable(AccountEntry obj) {
-                return super.isEditable(obj);
-            }
+                @Override
+                public boolean isEditable(AccountEntry obj) {
+                    return super.isEditable(obj);
+                }
 
-            @Override
-            public boolean onSingleClick(MouseEvent e, AccountEntry obj) {
-                return super.onSingleClick(e, obj);
-            }
+                @Override
+                public boolean onSingleClick(MouseEvent e, AccountEntry obj) {
+                    return super.onSingleClick(e, obj);
+                }
 
-            @Override
-            protected JComponent getInternalEditorComponent(AccountEntry value, boolean isSelected, int row, int column) {
-                return rpanel;
-            }
+                @Override
+                protected JComponent getInternalEditorComponent(AccountEntry value, boolean isSelected, int row, int column) {
+                    return rpanel;
+                }
 
-            @Override
-            protected JComponent getInternalRendererComponent(AccountEntry value, boolean isSelected, boolean hasFocus, int row, int column) {
+                @Override
+                protected JComponent getInternalRendererComponent(AccountEntry value, boolean isSelected, boolean hasFocus, int row, int column) {
 
-                return panel;
-            }
+                    return panel;
+                }
 
-            @Override
-            public void configureEditorComponent(AccountEntry value, boolean isSelected, int row, int column) {
-                editing = value;
-                // rbutton.setEnabled(isEnabled(value));
-            }
+                @Override
+                public void configureEditorComponent(AccountEntry value, boolean isSelected, int row, int column) {
+                    editing = value;
+                    // rbutton.setEnabled(isEnabled(value));
+                }
 
-            @Override
-            public void configureRendererComponent(AccountEntry value, boolean isSelected, boolean hasFocus, int row, int column) {
-                // button.setEnabled(isEnabled(value));
-                ;
-            }
+                @Override
+                public void configureRendererComponent(AccountEntry value, boolean isSelected, boolean hasFocus, int row, int column) {
+                    // button.setEnabled(isEnabled(value));
+                    ;
+                }
 
-            @Override
-            public void resetEditor() {
-                rpanel.setBackground(null);
-                rpanel.setOpaque(false);
-            }
+                @Override
+                public void resetEditor() {
+                    rpanel.setBackground(null);
+                    rpanel.setOpaque(false);
+                }
 
-            @Override
-            public void resetRenderer() {
-                panel.setBackground(null);
-                panel.setOpaque(false);
-            }
+                @Override
+                public void resetRenderer() {
+                    panel.setBackground(null);
+                    panel.setOpaque(false);
+                }
 
-        });
-
+            });
+        }
     }
 
     public void onCheckStarted() {
@@ -571,7 +540,7 @@ public class AccountListTableModel extends ExtTableModel<AccountEntry> implement
 
         for (AccountEntry acc : accounts) {
 
-            if (acc.isDetailsDialogSupported()) {
+            if (acc.isDetailsDialogSupported() && acc.getAccount().isValid()) {
                 hasDetailsButton = true;
 
             }
