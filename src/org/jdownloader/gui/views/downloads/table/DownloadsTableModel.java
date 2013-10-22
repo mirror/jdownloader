@@ -42,6 +42,8 @@ public class DownloadsTableModel extends PackageControllerTableModel<FilePackage
 
     private PriorityColumn priorityColumn;
 
+    private TaskColumn     taskColumn;
+
     private DownloadsTableModel() {
         super(DownloadController.getInstance(), "downloadstable3");
 
@@ -53,7 +55,7 @@ public class DownloadsTableModel extends PackageControllerTableModel<FilePackage
         this.addColumn(new SizeColumn());
         this.addColumn(new HosterColumn());
         this.addColumn(new ConnectionColumn());
-        this.addColumn(new TaskColumn());
+        this.addColumn(taskColumn = new TaskColumn());
         this.addColumn(new RemainingColumn());
 
         this.addColumn(new AddedDateColumn());
@@ -77,6 +79,10 @@ public class DownloadsTableModel extends PackageControllerTableModel<FilePackage
 
         // reset sort
 
+    }
+
+    public TaskColumn getTaskColumn() {
+        return taskColumn;
     }
 
     public void setStopSignColumnVisible(boolean b) {

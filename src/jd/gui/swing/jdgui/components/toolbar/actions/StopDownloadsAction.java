@@ -4,6 +4,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
 
 import jd.controlling.downloadcontroller.DownloadWatchDog;
+import jd.controlling.downloadcontroller.SingleDownloadController;
 import jd.controlling.downloadcontroller.event.DownloadWatchdogListener;
 
 import org.appwork.uio.UIOManager;
@@ -117,6 +118,14 @@ public class StopDownloadsAction extends ToolBarAction implements DownloadWatchd
 
     @Override
     public void onDownloadWatchdogDataUpdate() {
+    }
+
+    @Override
+    public void onDownloadControllerStart(SingleDownloadController downloadController) {
+    }
+
+    @Override
+    public void onDownloadControllerStopped(SingleDownloadController downloadController) {
     }
 
 }

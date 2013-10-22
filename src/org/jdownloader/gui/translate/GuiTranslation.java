@@ -3435,4 +3435,52 @@ public interface GuiTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Open Toolbar manager" })
     String MenuManagerMainToolbarAction_MenuManagerMainToolbarAction();
+
+    @Default(lngs = { "en" }, values = { "Pause" })
+    String download_paused();
+
+    @Default(lngs = { "en" }, values = { "All downloads have been paused." })
+    String download_paused_msg();
+
+    @Default(lngs = { "en" }, values = { "Stop" })
+    String download_stopped();
+
+    @Default(lngs = { "en" }, values = { "All downloads stopped or finished." })
+    String download_stopped_msg();
+
+    @Default(lngs = { "en" }, values = { "Start" })
+    String download_start();
+
+    @Default(lngs = { "en" }, values = { "Go, go, go! Downloads are running now!" })
+    String download_start_msg();
+
+    @Default(lngs = { "en" }, values = { "A Download started!" })
+    String DownloadStartNotify_DownloadStartNotify();
+
+    @Default(lngs = { "en" }, values = { "Filename" })
+    String lit_filename();
+
+    @Default(lngs = { "en" }, values = { "Hoster" })
+    String lit_hoster();
+
+    @Default(lngs = { "en" }, values = { "Account" })
+    String lit_account();
+
+    @Default(lngs = { "en" }, values = { "Proxy" })
+    String lit_proxy();
+
+    @Default(lngs = { "en" }, values = { "Save to" })
+    String lit_save_to();
+
+    @Default(lngs = { "en" }, values = { "A Download stopped!" })
+    String DownloadStoppedNotify();
+
+    @Default(lngs = { "en" }, values = { "Status" })
+    String lit_status();
+
+    @Default(lngs = { "en" }, values = { "Show a Bubble when a Downloadlink started or stopped" })
+    String plugins_optional_JDLightTray_ballon_startstopdownloads();
+
+    @Default(lngs = { "en" }, values = { "Show a Bubble when the Download started, stopped or has been paused " })
+    String plugins_optional_JDLightTray_ballon_startpausestop();
 }

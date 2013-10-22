@@ -35,6 +35,7 @@ import javax.swing.SwingConstants;
 import jd.SecondLevelLaunch;
 import jd.controlling.downloadcontroller.DownloadController;
 import jd.controlling.downloadcontroller.DownloadWatchDog;
+import jd.controlling.downloadcontroller.SingleDownloadController;
 import jd.controlling.downloadcontroller.event.DownloadWatchdogListener;
 import jd.controlling.linkchecker.LinkChecker;
 import jd.controlling.linkchecker.LinkCheckerEvent;
@@ -424,6 +425,14 @@ public class StatusBarImpl extends JPanel implements DownloadWatchdogListener {
 
     @Override
     public void onDownloadWatchdogStateIsStopping() {
+    }
+
+    @Override
+    public void onDownloadControllerStart(SingleDownloadController downloadController) {
+    }
+
+    @Override
+    public void onDownloadControllerStopped(SingleDownloadController downloadController) {
     }
 
 }

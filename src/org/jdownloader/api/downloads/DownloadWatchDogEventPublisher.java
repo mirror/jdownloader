@@ -3,6 +3,7 @@ package org.jdownloader.api.downloads;
 import java.util.concurrent.CopyOnWriteArraySet;
 
 import jd.controlling.downloadcontroller.DownloadWatchDog;
+import jd.controlling.downloadcontroller.SingleDownloadController;
 import jd.controlling.downloadcontroller.event.DownloadWatchdogListener;
 
 import org.appwork.remoteapi.events.EventPublisher;
@@ -85,5 +86,15 @@ public class DownloadWatchDogEventPublisher implements EventPublisher, DownloadW
         if (eventSenders.isEmpty()) {
             DownloadWatchDog.getInstance().getEventSender().removeListener(this);
         }
+    }
+
+    @Override
+    public void onDownloadControllerStart(SingleDownloadController downloadController) {
+        // not implemented yet
+    }
+
+    @Override
+    public void onDownloadControllerStopped(SingleDownloadController downloadController) {
+        // not implemented yet
     }
 }

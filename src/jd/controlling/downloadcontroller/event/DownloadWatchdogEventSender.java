@@ -1,5 +1,7 @@
 package jd.controlling.downloadcontroller.event;
 
+import jd.controlling.downloadcontroller.SingleDownloadController;
+
 import org.appwork.utils.event.Eventsender;
 
 public class DownloadWatchdogEventSender extends Eventsender<DownloadWatchdogListener, DownloadWatchdogEvent> {
@@ -26,7 +28,12 @@ public class DownloadWatchdogEventSender extends Eventsender<DownloadWatchdogLis
             listener.onDownloadWatchdogStateIsStopping();
 
             break;
-
+        case LINK_STARTED:
+            listener.onDownloadControllerStart((SingleDownloadController) event.getParameter());
+            break;
+        case LINK_STOPPED:
+            listener.onDownloadControllerStopped((SingleDownloadController) event.getParameter());
+            break;
         // fill
         default:
             System.out.println("Unhandled Event: " + event);

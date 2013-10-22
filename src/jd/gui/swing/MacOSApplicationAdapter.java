@@ -26,6 +26,7 @@ import jd.SecondLevelLaunch;
 import jd.controlling.TaskQueue;
 import jd.controlling.downloadcontroller.DownloadController;
 import jd.controlling.downloadcontroller.DownloadWatchDog;
+import jd.controlling.downloadcontroller.SingleDownloadController;
 import jd.controlling.downloadcontroller.event.DownloadWatchdogListener;
 import jd.controlling.linkcollector.LinkCollectingJob;
 import jd.controlling.linkcollector.LinkCollector;
@@ -165,6 +166,14 @@ public class MacOSApplicationAdapter implements QuitHandler, AboutHandler, Prefe
 
                     @Override
                     public void onDownloadWatchdogDataUpdate() {
+                    }
+
+                    @Override
+                    public void onDownloadControllerStart(SingleDownloadController downloadController) {
+                    }
+
+                    @Override
+                    public void onDownloadControllerStopped(SingleDownloadController downloadController) {
                     }
                 });
                 DownloadWatchDog.getInstance().notifyCurrentState(listener);

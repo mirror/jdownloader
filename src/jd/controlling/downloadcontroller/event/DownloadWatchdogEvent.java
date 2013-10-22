@@ -10,7 +10,9 @@ public class DownloadWatchdogEvent extends SimpleEvent<Object, Object, DownloadW
         STATE_STOPPED,
         STATE_IDLE,
         STATE_PAUSE,
-        STATE_STOPPING
+        STATE_STOPPING,
+        LINK_STARTED,
+        LINK_STOPPED
     }
 
     public DownloadWatchdogEvent(Object caller, Type type, Object... parameters) {

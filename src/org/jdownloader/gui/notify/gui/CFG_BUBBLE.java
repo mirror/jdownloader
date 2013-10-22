@@ -5,6 +5,7 @@ import org.appwork.storage.config.JsonConfig;
 import org.appwork.storage.config.handler.BooleanKeyHandler;
 import org.appwork.storage.config.handler.EnumKeyHandler;
 import org.appwork.storage.config.handler.IntegerKeyHandler;
+import org.appwork.storage.config.handler.LongKeyHandler;
 import org.appwork.storage.config.handler.StorageHandler;
 import org.appwork.storage.config.handler.StringKeyHandler;
 
@@ -32,6 +33,8 @@ public class CFG_BUBBLE {
      * Animation End Anchor. TOP_RIGHT means, that the topright corner of the bubble is the reference anchor
      **/
     public static final EnumKeyHandler                     ANIMATION_END_POSITION_ANCHOR                    = SH.getKeyHandler("AnimationEndPositionAnchor", EnumKeyHandler.class);
+    // 10000
+    public static final LongKeyHandler                     DOWNLOAD_START_END_NOTIFY_DELAY                  = SH.getKeyHandler("DownloadStartEndNotifyDelay", LongKeyHandler.class);
     // SYSTEM_DEFAULT
     /**
      * Position Anchor for the First Bubble. TOP_RIGHT means, that the topright corner of the bubble is the reference anchor
@@ -44,14 +47,18 @@ public class CFG_BUBBLE {
      * Animation Start Anchor. TOP_RIGHT means, that the topright corner of the bubble is the reference anchor
      **/
     public static final EnumKeyHandler                     ANIMATION_START_POSITION_ANCHOR                  = SH.getKeyHandler("AnimationStartPositionAnchor", EnumKeyHandler.class);
-    // 15000
-    public static final IntegerKeyHandler                  DEFAULT_TIMEOUT                                  = SH.getKeyHandler("DefaultTimeout", IntegerKeyHandler.class);
     // true
     public static final BooleanKeyHandler                  BUBBLE_NOTIFY_ON_UPDATE_AVAILABLE_ENABLED        = SH.getKeyHandler("BubbleNotifyOnUpdateAvailableEnabled", BooleanKeyHandler.class);
+    // 15000
+    public static final IntegerKeyHandler                  DEFAULT_TIMEOUT                                  = SH.getKeyHandler("DefaultTimeout", IntegerKeyHandler.class);
+    // false
+    public static final BooleanKeyHandler                  BUBBLE_NOTIFY_ENABLED_DURING_SILENT_MODE         = SH.getKeyHandler("BubbleNotifyEnabledDuringSilentMode", BooleanKeyHandler.class);
     // true
     public static final BooleanKeyHandler                  BUBBLE_NOTIFY_ON_NEW_LINKGRABBER_PACKAGE_ENABLED = SH.getKeyHandler("BubbleNotifyOnNewLinkgrabberPackageEnabled", BooleanKeyHandler.class);
     // false
-    public static final BooleanKeyHandler                  BUBBLE_NOTIFY_ENABLED_DURING_SILENT_MODE         = SH.getKeyHandler("BubbleNotifyEnabledDuringSilentMode", BooleanKeyHandler.class);
+    public static final BooleanKeyHandler                  BUBBLE_NOTIFY_START_STOP_DOWNLOADS_ENABLED       = SH.getKeyHandler("BubbleNotifyStartStopDownloadsEnabled", BooleanKeyHandler.class);
+    // true
+    public static final BooleanKeyHandler                  BUBBLE_NOTIFY_START_PAUSE_STOP_ENABLED           = SH.getKeyHandler("BubbleNotifyStartPauseStopEnabled", BooleanKeyHandler.class);
     // true
     public static final BooleanKeyHandler                  BUBBLE_NOTIFY_ON_NEW_LINKGRABBER_LINKS_ENABLED   = SH.getKeyHandler("BubbleNotifyOnNewLinkgrabberLinksEnabled", BooleanKeyHandler.class);
     // true

@@ -13,10 +13,10 @@ public class BasicContentPanel extends MigPanel {
 
     public BasicContentPanel(String text, ImageIcon icon) {
 
-        super("ins 0,wrap 2", "[][grow,fill]", "[grow,fill]");
+        super("ins 0,wrap 2", "[][grow,fill]", "[]");
 
-        add(getIconPanel(icon));
-        add(getMessage(text));
+        add(getIconPanel(icon), "aligny center");
+        add(getMessage(text), "aligny center");
         SwingUtils.setOpaque(this, false);
     }
 
@@ -25,6 +25,7 @@ public class BasicContentPanel extends MigPanel {
         SwingUtils.setOpaque(ret, false);
         ret.setText(text);
         ret.setLabelMode(true);
+
         return ret;
     }
 

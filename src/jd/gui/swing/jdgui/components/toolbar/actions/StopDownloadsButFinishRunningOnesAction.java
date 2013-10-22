@@ -6,6 +6,7 @@ import jd.controlling.downloadcontroller.DownloadSession;
 import jd.controlling.downloadcontroller.DownloadSession.STOPMARK;
 import jd.controlling.downloadcontroller.DownloadWatchDog;
 import jd.controlling.downloadcontroller.DownloadWatchDogJob;
+import jd.controlling.downloadcontroller.SingleDownloadController;
 import jd.controlling.downloadcontroller.event.DownloadWatchdogListener;
 
 import org.appwork.utils.swing.EDTRunner;
@@ -115,6 +116,14 @@ public class StopDownloadsButFinishRunningOnesAction extends ToolBarAction imple
 
     @Override
     public void onDownloadWatchdogDataUpdate() {
+    }
+
+    @Override
+    public void onDownloadControllerStart(SingleDownloadController downloadController) {
+    }
+
+    @Override
+    public void onDownloadControllerStopped(SingleDownloadController downloadController) {
     }
 
 }

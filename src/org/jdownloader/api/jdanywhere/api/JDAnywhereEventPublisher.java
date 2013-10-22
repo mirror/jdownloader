@@ -9,6 +9,7 @@ import jd.controlling.downloadcontroller.DownloadController;
 import jd.controlling.downloadcontroller.DownloadControllerEvent;
 import jd.controlling.downloadcontroller.DownloadControllerListener;
 import jd.controlling.downloadcontroller.DownloadWatchDog;
+import jd.controlling.downloadcontroller.SingleDownloadController;
 import jd.controlling.downloadcontroller.event.DownloadWatchdogListener;
 import jd.controlling.linkcollector.LinkCollector;
 import jd.controlling.linkcollector.LinkCollectorCrawler;
@@ -698,6 +699,14 @@ public class JDAnywhereEventPublisher implements EventPublisher, DownloadWatchdo
 
     @Override
     public void onLinkCrawlerStopped(LinkCollectorCrawler parameter) {
+    }
+
+    @Override
+    public void onDownloadControllerStart(SingleDownloadController downloadController) {
+    }
+
+    @Override
+    public void onDownloadControllerStopped(SingleDownloadController downloadController) {
     }
 
 }

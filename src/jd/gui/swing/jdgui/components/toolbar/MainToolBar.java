@@ -46,6 +46,7 @@ import javax.swing.Timer;
 
 import jd.SecondLevelLaunch;
 import jd.controlling.downloadcontroller.DownloadWatchDog;
+import jd.controlling.downloadcontroller.SingleDownloadController;
 import jd.controlling.downloadcontroller.event.DownloadWatchdogListener;
 import jd.gui.swing.jdgui.JDGui;
 import jd.gui.swing.jdgui.components.speedmeter.SpeedMeterPanel;
@@ -541,6 +542,14 @@ public class MainToolBar extends JToolBar implements MouseListener, DownloadWatc
                 updateToolbar();
             }
         };
+    }
+
+    @Override
+    public void onDownloadControllerStart(SingleDownloadController downloadController) {
+    }
+
+    @Override
+    public void onDownloadControllerStopped(SingleDownloadController downloadController) {
     }
 
 }

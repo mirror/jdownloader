@@ -5,6 +5,7 @@ import org.appwork.storage.config.annotations.AboutConfig;
 import org.appwork.storage.config.annotations.DefaultBooleanValue;
 import org.appwork.storage.config.annotations.DefaultEnumValue;
 import org.appwork.storage.config.annotations.DefaultIntValue;
+import org.appwork.storage.config.annotations.DefaultLongValue;
 import org.appwork.storage.config.annotations.DefaultStringValue;
 import org.appwork.storage.config.annotations.DescriptionForConfigEntry;
 
@@ -130,6 +131,18 @@ public interface BubbleNotifyConfig extends ConfigInterface {
 
     public void setBubbleNotifyOnCaptchaInBackgroundEnabled(boolean b);
 
+    @AboutConfig()
+    @DefaultBooleanValue(false)
+    public boolean isBubbleNotifyStartStopDownloadsEnabled();
+
+    public void setBubbleNotifyStartStopDownloadsEnabled(boolean b);
+
+    @AboutConfig()
+    @DefaultBooleanValue(true)
+    public boolean isBubbleNotifyStartPauseStopEnabled();
+
+    public void setBubbleNotifyStartPauseStopEnabled(boolean b);
+
     @AboutConfig
     @DefaultIntValue(15000)
     public int getDefaultTimeout();
@@ -141,4 +154,10 @@ public interface BubbleNotifyConfig extends ConfigInterface {
     public int getFadeAnimationDuration();
 
     public void setFadeAnimationDuration(int ms);
+
+    @AboutConfig
+    @DefaultLongValue(10000)
+    public long getDownloadStartEndNotifyDelay();
+
+    public void setDownloadStartEndNotifyDelay(long ms);
 }

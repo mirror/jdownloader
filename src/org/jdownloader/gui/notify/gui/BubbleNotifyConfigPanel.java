@@ -46,6 +46,8 @@ public class BubbleNotifyConfigPanel extends AbstractConfigPanel implements Stat
         addPair(_GUI._.plugins_optional_JDLightTray_ballon_reconnectstart(), null, new Checkbox(CFG_BUBBLE.BUBBLE_NOTIFY_ON_RECONNECT_START_ENABLED));
         addPair(_GUI._.plugins_optional_JDLightTray_ballon_reconnectend(), null, new Checkbox(CFG_BUBBLE.BUBBLE_NOTIFY_ON_RECONNECT_END_ENABLED));
         addPair(_GUI._.plugins_optional_JDLightTray_ballon_captcha(), null, new Checkbox(CFG_BUBBLE.BUBBLE_NOTIFY_ON_CAPTCHA_IN_BACKGROUND_ENABLED));
+        addPair(_GUI._.plugins_optional_JDLightTray_ballon_startstopdownloads(), null, new Checkbox(CFG_BUBBLE.BUBBLE_NOTIFY_START_STOP_DOWNLOADS_ENABLED));
+        addPair(_GUI._.plugins_optional_JDLightTray_ballon_startpausestop(), null, new Checkbox(CFG_BUBBLE.BUBBLE_NOTIFY_START_PAUSE_STOP_ENABLED));
         this.addHeader(_GUI._.BubbleNotifyConfigPanel_BubbleNotifyConfigPanel_settings_(), NewTheme.I().getIcon("settings", 32));
         addPair(_GUI._.BubbleNotifyConfigPanel_BubbleNotifyConfigPanel_silent_(), null, new Checkbox(CFG_BUBBLE.BUBBLE_NOTIFY_ENABLED_DURING_SILENT_MODE));
         addPair(_GUI._.BubbleNotifyConfigPanel_BubbleNotifyConfigPanel_timeout(), null, new Spinner(CFG_BUBBLE.DEFAULT_TIMEOUT));

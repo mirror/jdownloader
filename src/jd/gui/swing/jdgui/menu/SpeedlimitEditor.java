@@ -8,6 +8,7 @@ import javax.swing.JSpinner.DefaultEditor;
 import javax.swing.SwingUtilities;
 
 import jd.controlling.downloadcontroller.DownloadWatchDog;
+import jd.controlling.downloadcontroller.SingleDownloadController;
 import jd.controlling.downloadcontroller.event.DownloadWatchdogListener;
 import net.miginfocom.swing.MigLayout;
 
@@ -168,5 +169,13 @@ public class SpeedlimitEditor extends MenuEditor implements DownloadWatchdogList
                 checkbox.setEnabled(true);
             }
         };
+    }
+
+    @Override
+    public void onDownloadControllerStart(SingleDownloadController downloadController) {
+    }
+
+    @Override
+    public void onDownloadControllerStopped(SingleDownloadController downloadController) {
     }
 }

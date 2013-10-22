@@ -38,9 +38,26 @@ import org.jdownloader.settings.GraphicalUserInterfaceSettings;
 
 public class TaskColumn extends ExtTextColumn<AbstractNode> {
 
-    private class ColumnHelper {
-        private ImageIcon icon   = null;
-        private String    string = null;
+    public static class ColumnHelper {
+        private ImageIcon icon = null;
+
+        public ImageIcon getIcon() {
+            return icon;
+        }
+
+        public void setIcon(ImageIcon icon) {
+            this.icon = icon;
+        }
+
+        public String getString() {
+            return string;
+        }
+
+        public void setString(String string) {
+            this.string = string;
+        }
+
+        private String string = null;
     }
 
     /**
@@ -153,6 +170,10 @@ public class TaskColumn extends ExtTextColumn<AbstractNode> {
 
     @Override
     protected void prepareColumn(AbstractNode value) {
+        fillColumnHelper(columnHelper, value);
+    }
+
+    public void fillColumnHelper(ColumnHelper columnHelper, AbstractNode value) {
         if (value instanceof DownloadLink) {
             DownloadLink link = (DownloadLink) value;
             PluginProgress prog = link.getPluginProgress();

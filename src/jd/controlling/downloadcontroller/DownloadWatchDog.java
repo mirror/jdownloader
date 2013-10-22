@@ -562,7 +562,8 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
 
                 if (DownloadWatchDog.this.stateMachine.isStartState() || DownloadWatchDog.this.stateMachine.isFinal()) {
                     /*
-                     * no downloads are running, so we will force only the selected links to get started by setting stopmark to first forced link
+                     * no downloads are running, so we will force only the selected links to get started by setting stopmark to first forced
+                     * link
                      */
 
                     // DownloadWatchDog.this.setStopMark(linksForce.get(0));
@@ -1699,6 +1700,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
         candidate.getLink().setEnabled(true);
         getSession().getControllers().add(con);
         con.start();
+        eventSender.fireEvent(new DownloadWatchdogEvent(this, DownloadWatchdogEvent.Type.LINK_STARTED, con));
         return con;
     }
 
@@ -1785,6 +1787,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                         });
                     }
                     singleDownloadController.getDownloadLink().getFilePackage().getView().requestUpdate();
+                    eventSender.fireEvent(new DownloadWatchdogEvent(this, DownloadWatchdogEvent.Type.LINK_STOPPED, singleDownloadController));
                 } catch (final Throwable e) {
                     logger.log(e);
                 } finally {
@@ -2351,8 +2354,8 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                                     waitedForNewActivationRequests += System.currentTimeMillis() - currentTimeStamp;
                                     if ((getSession().isActivationRequestsWaiting() == false && DownloadWatchDog.this.getActiveDownloads() == 0)) {
                                         /*
-                                         * it's important that this if statement gets checked after wait!, else we will loop through without waiting for new
-                                         * links/user interaction
+                                         * it's important that this if statement gets checked after wait!, else we will loop through without
+                                         * waiting for new links/user interaction
                                          */
                                         break;
                                     }

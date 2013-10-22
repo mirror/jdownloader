@@ -116,7 +116,7 @@ public class LinkTreeUtils {
             FilePackage parent = ((DownloadLink) node).getFilePackage();
             if (parent != null) directory = parent.getDownloadDirectory();
 
-            return getDownloadDirectory(directory, parent.getName());
+            return getDownloadDirectory(directory, parent == null ? null : parent.getName());
         } else if (node instanceof FilePackage) {
             directory = ((FilePackage) node).getDownloadDirectory();
 
@@ -125,7 +125,7 @@ public class LinkTreeUtils {
             CrawledPackage parent = ((CrawledLink) node).getParentNode();
             if (parent != null) directory = parent.getDownloadFolder();
 
-            return getDownloadDirectory(directory, parent.getName());
+            return getDownloadDirectory(directory, parent == null ? null : parent.getName());
         } else if (node instanceof CrawledPackage) {
             directory = ((CrawledPackage) node).getDownloadFolder();
 

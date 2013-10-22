@@ -3,9 +3,15 @@ package org.jdownloader.gui.notify;
 import java.awt.Point;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.LinkedList;
 
 import javax.swing.JFrame;
 
+import jd.controlling.downloadcontroller.DownloadWatchDog;
+import jd.controlling.downloadcontroller.SingleDownloadController;
+import jd.controlling.downloadcontroller.event.DownloadWatchdogListener;
 import jd.controlling.linkcollector.LinkCollector;
 import jd.controlling.linkcollector.LinkCollectorCrawler;
 import jd.controlling.linkcollector.LinkCollectorEvent;
@@ -30,6 +36,7 @@ import org.jdownloader.captcha.v2.AbstractResponse;
 import org.jdownloader.captcha.v2.ChallengeResponseController;
 import org.jdownloader.captcha.v2.ChallengeSolver;
 import org.jdownloader.captcha.v2.solverjob.SolverJob;
+import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.notify.gui.AbstractNotifyWindow;
 import org.jdownloader.gui.notify.gui.Balloner;
 import org.jdownloader.gui.notify.gui.BubbleNotifyConfig.Anchor;
@@ -40,7 +47,7 @@ import org.jdownloader.updatev2.InstallLog;
 import org.jdownloader.updatev2.UpdateController;
 import org.jdownloader.updatev2.UpdaterListener;
 
-public class BubbleNotify implements UpdaterListener, ReconnecterListener, ChallengeResponseListener {
+public class BubbleNotify implements UpdaterListener, ReconnecterListener, ChallengeResponseListener, DownloadWatchdogListener {
     private static final BubbleNotify INSTANCE = new BubbleNotify();
 
     /**
@@ -66,6 +73,7 @@ public class BubbleNotify implements UpdaterListener, ReconnecterListener, Chall
             }
         };
         ChallengeResponseController.getInstance().getEventSender().addListener(this);
+        DownloadWatchDog.getInstance().getEventSender().addListener(this);
         GenericConfigEventListener<Object> update = new GenericConfigEventListener<Object>() {
 
             @Override
@@ -338,5 +346,146 @@ public class BubbleNotify implements UpdaterListener, ReconnecterListener, Chall
 
     public void relayout() {
         ballooner.relayout();
+    }
+
+    @Override
+    public void onDownloadWatchdogDataUpdate() {
+    }
+
+    @Override
+    public void onDownloadWatchdogStateIsIdle() {
+    }
+
+    @Override
+    public void onDownloadWatchdogStateIsPause() {
+        if (!CFG_BUBBLE.BUBBLE_NOTIFY_START_PAUSE_STOP_ENABLED.isEnabled()) {
+
+        return; }
+        new EDTRunner() {
+            @Override
+            protected void runInEDT() {
+                BasicNotify no = new BasicNotify(_GUI._.download_paused(), _GUI._.download_paused_msg(), NewTheme.I().getIcon("pause", 24));
+                show(no);
+            }
+        };
+    }
+
+    @Override
+    public void onDownloadWatchdogStateIsRunning() {
+        if (!CFG_BUBBLE.BUBBLE_NOTIFY_START_PAUSE_STOP_ENABLED.isEnabled()) {
+
+        return; }
+        new EDTRunner() {
+            @Override
+            protected void runInEDT() {
+                BasicNotify no = new BasicNotify(_GUI._.download_start(), _GUI._.download_start_msg(), NewTheme.I().getIcon(IconKey.ICON_MEDIA_PLAYBACK_START, 24));
+                show(no);
+            }
+        };
+    }
+
+    @Override
+    public void onDownloadWatchdogStateIsStopped() {
+
+        if (!CFG_BUBBLE.BUBBLE_NOTIFY_START_PAUSE_STOP_ENABLED.isEnabled()) {
+
+        return; }
+        new EDTRunner() {
+            @Override
+            protected void runInEDT() {
+                BasicNotify no = new BasicNotify(_GUI._.download_stopped(), _GUI._.download_stopped_msg(), NewTheme.I().getIcon(IconKey.ICON_MEDIA_PLAYBACK_STOP, 24));
+                show(no);
+            }
+        };
+    }
+
+    @Override
+    public void onDownloadWatchdogStateIsStopping() {
+
+    }
+
+    private class QueuedStart {
+        public QueuedStart(SingleDownloadController downloadController) {
+            controller = downloadController;
+            this.time = System.currentTimeMillis();
+        }
+
+        private SingleDownloadController controller;
+        private long                     time;
+    }
+
+    private LinkedList<QueuedStart>           queue   = new LinkedList<QueuedStart>();
+    private Thread                            queueWorker;
+    private HashSet<SingleDownloadController> started = new HashSet<SingleDownloadController>();
+
+    @Override
+    public void onDownloadControllerStart(final SingleDownloadController downloadController) {
+        if (!CFG_BUBBLE.BUBBLE_NOTIFY_START_STOP_DOWNLOADS_ENABLED.isEnabled()) {
+            started.clear();
+            queue.clear();
+            return;
+        }
+        synchronized (queue) {
+            queue.add(new QueuedStart(downloadController));
+            if (queueWorker == null) {
+                queueWorker = new Thread("BubbleNotofyDelayerQUeue") {
+                    public void run() {
+                        while (true) {
+                            try {
+                                Thread.sleep(500);
+                            } catch (InterruptedException e) {
+                                return;
+                            }
+                            synchronized (queue) {
+
+                                for (Iterator<QueuedStart> it = queue.iterator(); it.hasNext();) {
+                                    final QueuedStart next = it.next();
+                                    if (!next.controller.isActive()) {
+                                        it.remove();
+                                    } else if (System.currentTimeMillis() - next.time > CFG_BUBBLE.CFG.getDownloadStartEndNotifyDelay()) {
+                                        it.remove();
+                                        started.add(next.controller);
+                                        new EDTRunner() {
+                                            @Override
+                                            protected void runInEDT() {
+
+                                                DownloadStartedNotify no = new DownloadStartedNotify(next.controller);
+                                                show(no);
+                                            }
+                                        };
+                                    }
+                                }
+                                if (queue.size() == 0) {
+                                    queueWorker = null;
+                                    return;
+                                }
+                            }
+                        }
+                    }
+                };
+                queueWorker.start();
+            }
+        }
+
+    }
+
+    @Override
+    public void onDownloadControllerStopped(final SingleDownloadController downloadController) {
+        if (!CFG_BUBBLE.BUBBLE_NOTIFY_START_STOP_DOWNLOADS_ENABLED.isEnabled()) {
+            started.clear();
+            queue.clear();
+            return;
+        }
+        synchronized (queue) {
+            if (!started.contains(downloadController)) return;
+            started.remove(downloadController);
+        }
+        new EDTRunner() {
+            @Override
+            protected void runInEDT() {
+                DownloadStoppedNotify no = new DownloadStoppedNotify(downloadController);
+                show(no);
+            }
+        };
     }
 }
