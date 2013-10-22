@@ -57,10 +57,11 @@ public class FlashxTv extends PluginForHost {
     }
 
     private String fx(final int i) {
-        final String[] s = new String[3];
+        final String[] s = new String[4];
         s[0] = "f8dbfbfafa57cde11f94b695de5042f1299371b7095fdd9a1e185a3b116e82845888fd3e8900e26f211655e8eb771a74e722299bc69a6263a823d6e66e0f373e5af4c82e5827ffcf25a92ebe5261c8e945a78e856ffc9dad998a2a9528657811c6733e016c8b806b391101aa1b30162b03b18a7534a6719d83c0607d4f625dc08a6e4db2cd63d9c7321c08d37306c3b7d933074e56c2b0a81d8739ac6c6775c51d775c0e345d7b121226c64adc65d86d1db07b2042f449930428adf7d6a9520b60d0f0d6";
         s[1] = "fd80faf7fb07cce61ec5b2cbda0343f829c771be0952dc9b1a1c5f68156d87875983fd328c5ce338201554eaef201823e4722c9fc5986267ad21d2b56f0d37355af2cc785879facd24a92ab85761cce440ad8ad86ffb9dae988c2a922c307c11c7263e546c8381653f16";
         s[2] = "f8dbfbf5fa55cdb31a90b29dde5642ae29c771e90959dd9a1e185e39156986805d89f96f8b09e06f231253b5eb751b73e6212e9ec1ce6562a829d0e56d5f343558f4cf28582ff9c526ff29bb546dcfb245a68bde";
+        s[3] = "fd80faf7fb07cce61ec5b2cbda0343f829c771be0952dc9b1a1c5f68156d87875983fd328c5ce338201554eaef201823e4722c9fc5986267ad21d2b56f0d37355af2cc785879facd24a92ab85761cce840ab8ad86ffb9dae988c2a922c307c11c7263e546c8381653f16";
         return JDHexUtils.toString(jd.plugins.decrypter.LnkCrptWs.IMAGEREGEX(s[i]));
     }
 
@@ -150,9 +151,8 @@ public class FlashxTv extends PluginForHost {
         if (thirdLink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
 
         Browser br2 = br.cloneBrowser();
-        // br2.getHttpConnection().setRequestMethod(RequestMethod.HEAD);
         br2.getHeaders().put("Pragma", "no-cache");
-        br2.openGetConnection(fx(1) + thirdLink);
+        br2.openGetConnection(fx(3) + thirdLink);
 
         br.getPage(thirdLink);
         dllink = br.getRegex("<file>(http://[^<>\"]*?)</file>").getMatch(0);
