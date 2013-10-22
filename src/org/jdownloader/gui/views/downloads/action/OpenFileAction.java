@@ -37,7 +37,8 @@ public class OpenFileAction extends AbstractSelectionContextAction<FilePackage, 
 
             } else {
                 this.file = getSelection() == null ? null : new File(getSelection().getContextPackage().getDownloadDirectory());
-
+                // Do not show for packages
+                setVisible(false);
             }
 
         }
