@@ -17,6 +17,10 @@
 package jd.plugins.hoster;
 
 import java.io.File;
+import java.util.logging.Level;
+
+import javax.script.ScriptEngine;
+import javax.script.ScriptEngineManager;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -88,32 +92,33 @@ public class FileGoOrg extends PluginForHost {
         this.setBrowserExclusive();
         requestFileInformation(downloadLink);
 
-        String finalLink = null;
+        String finalLink = findLinkNatively();
         // first try to get the streaming link (skips captcha)
-        try {
-            /**
-             * We could also use: http://filego.org/fghtml5.php?id=ID or
-             * http://filego.org/fgdivx.php?id=ID
-             */
-            final Browser br2 = br.cloneBrowser();
-            br2.getPage("http://filego.org/fgflash.php?id=" + new Regex(downloadLink.getDownloadURL(), "([A-Z0-9]+)$").getMatch(0));
-            final String[] hits = br2.getRegex("\\'(http://s\\d+\\.filego\\.org/[^<>\";]*?\\.mp4)\\'").getColumn(0);
-            for (final String hit : hits) {
-                if (hits != null && hits.length != 0) {
-                    try {
-                        URLConnectionAdapter con = br2.openGetConnection(hit);
-                        if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
-                            continue;
+        if (finalLink == null) {
+            try {
+                /**
+                 * We could also use: http://filego.org/fghtml5.php?id=ID or http://filego.org/fgdivx.php?id=ID
+                 */
+                final Browser br2 = br.cloneBrowser();
+                br2.getPage("http://filego.org/fgflash.php?id=" + new Regex(downloadLink.getDownloadURL(), "([A-Z0-9]+)$").getMatch(0));
+                final String[] hits = br2.getRegex("\\'(http://s\\d+\\.filego\\.org/[^<>\";]*?\\.mp4)\\'").getColumn(0);
+                for (final String hit : hits) {
+                    if (hits != null && hits.length != 0) {
+                        try {
+                            URLConnectionAdapter con = br2.openGetConnection(hit);
+                            if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
+                                continue;
+                            }
+                            con.disconnect();
+                            finalLink = hit;
+                            break;
+                        } catch (Exception e) {
+                            finalLink = null;
                         }
-                        con.disconnect();
-                        finalLink = hit;
-                        break;
-                    } catch (Exception e) {
-                        finalLink = null;
                     }
                 }
+            } catch (final Exception e) {
             }
-        } catch (final Exception e) {
         }
         if (finalLink == null) {
             // embeded content
@@ -215,6 +220,33 @@ public class FileGoOrg extends PluginForHost {
         final String finalLink = br.getRegex("\\'(http://[a-z0-9]+\\.filego\\.org/getfile[^<>\"]*?)\\'").getMatch(0);
         if (finalLink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         return finalLink;
+    }
+
+    private String findLinkNatively() throws Exception {
+        String result = null;
+        final Form free = br.getFormbyProperty("name", "vali2");
+        if (free == null) return null;
+        int val3 = Integer.parseInt(free.getInputField("val3").getValue());
+        free.remove("val3");
+        val3 += 77;
+        free.put("val3", Integer.toString(val3));
+        br.submitForm(free);
+        String square = br.getRegex("(function square\\(\\).*?\\})").getMatch(0);
+        Browser newTab = br.cloneBrowser();
+        newTab.getPage("/skin/stylish/js/javawraper.js");
+        String joc = newTab.getRegex("(function joc\\(.*?\\})").getMatch(0);
+        if (square == null || joc == null) return null;
+        final ScriptEngineManager manager = new ScriptEngineManager();
+        final ScriptEngine engine = manager.getEngineByName("ECMAScript");
+        try {
+            engine.eval(joc);
+            engine.eval(square);
+            result = (String) engine.eval("square()");
+        } catch (final Exception e) {
+            logger.log(Level.SEVERE, e.getMessage(), e);
+            return null;
+        }
+        return result;
     }
 
     private String getData(final String data) {
