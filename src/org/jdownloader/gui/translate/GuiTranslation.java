@@ -3429,4 +3429,10 @@ public interface GuiTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Properties" })
     String PropertiesAction_PropertiesAction();
+
+    @Default(lngs = { "en" }, values = { "Speedmeter visible" })
+    String SpeedlimitToggleAction_SpeedlimitToggleAction();
+
+    @Default(lngs = { "en" }, values = { "Open Toolbar manager" })
+    String MenuManagerMainToolbarAction_MenuManagerMainToolbarAction();
 }

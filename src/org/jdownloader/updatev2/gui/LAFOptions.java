@@ -219,4 +219,24 @@ public class LAFOptions {
     public Color getColorForTooltipBackground() {
         return createColor(cfg.getColorForTooltipBackground());
     }
+
+    public Color getColorForSpeedMeterAverage() {
+        return createColor(cfg.getColorForSpeedMeterAverage());
+    }
+
+    public Color getColorForSpeedmeterCurrentBottom() {
+        return createColor(cfg.getColorForSpeedmeterCurrentBottom());
+    }
+
+    public Color getColorForSpeedmeterCurrentTop() {
+        return createColor(cfg.getColorForSpeedmeterCurrentTop());
+    }
+
+    public Color getColorForSpeedmeterLimiterBottom() {
+        return createColor(cfg.getColorForSpeedmeterLimiterBottom());
+    }
+
+    public Color getColorForSpeedmeterLimiterTop() {
+        return createColor(cfg.getColorForSpeedmeterLimiterTop());
+    }
 }

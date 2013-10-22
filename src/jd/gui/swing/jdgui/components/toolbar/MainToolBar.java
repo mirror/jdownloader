@@ -52,6 +52,9 @@ import jd.gui.swing.jdgui.components.speedmeter.SpeedMeterPanel;
 import net.miginfocom.swing.MigLayout;
 
 import org.appwork.storage.config.JsonConfig;
+import org.appwork.storage.config.ValidationException;
+import org.appwork.storage.config.events.GenericConfigEventListener;
+import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.swing.components.ExtButton;
 import org.appwork.swing.synthetica.SyntheticaSettings;
 import org.appwork.utils.StringUtils;
@@ -68,9 +71,10 @@ import org.jdownloader.gui.toolbar.MenuManagerMainToolbar;
 import org.jdownloader.gui.toolbar.action.ToolBarAction;
 import org.jdownloader.gui.views.downloads.QuickSettingsPopup;
 import org.jdownloader.images.NewTheme;
+import org.jdownloader.settings.staticreferences.CFG_GUI;
 import org.jdownloader.updatev2.gui.LAFOptions;
 
-public class MainToolBar extends JToolBar implements MouseListener, DownloadWatchdogListener {
+public class MainToolBar extends JToolBar implements MouseListener, DownloadWatchdogListener, GenericConfigEventListener<Boolean> {
 
     private static final long  serialVersionUID = 922971719957349497L;
 
@@ -113,10 +117,25 @@ public class MainToolBar extends JToolBar implements MouseListener, DownloadWatc
 
                         });
                         updateToolbar();
+
+                        CFG_GUI.SPEED_METER_VISIBLE.getEventSender().addListener(MainToolBar.this, false);
                     }
                 };
                 DownloadWatchDog.getInstance().getEventSender().addListener(MainToolBar.this);
 
+            }
+
+        });
+
+        addMouseListener(new MouseAdapter() {
+
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                if (e.isPopupTrigger() || e.getButton() == MouseEvent.BUTTON3) {
+                    QuickSettingsPopup pu = new QuickSettingsPopup();
+                    pu.show((Component) e.getSource(), e.getX(), e.getY());
+
+                }
             }
 
         });
@@ -142,6 +161,7 @@ public class MainToolBar extends JToolBar implements MouseListener, DownloadWatc
 
             @Override
             protected void runInEDT() {
+
                 setVisible(false);
                 removeAll();
                 initToolbar();
@@ -429,7 +449,7 @@ public class MainToolBar extends JToolBar implements MouseListener, DownloadWatc
     }
 
     protected void updateSpecial() {
-        if (speedmeter != null) add(speedmeter, "hidemode 3, width 32:300:300,pushy,growy");
+        if (speedmeter != null && CFG_GUI.SPEED_METER_VISIBLE.isEnabled()) add(speedmeter, "width 32:300:300,pushy,growy");
     }
 
     // made speedMeter Instance public. Used in remote API
@@ -443,9 +463,7 @@ public class MainToolBar extends JToolBar implements MouseListener, DownloadWatc
 
     @Override
     public void mousePressed(MouseEvent e) {
-        if (e.isPopupTrigger() || e.getButton() == 3) {
-            MenuManagerMainToolbar.getInstance().openGui();
-        }
+
     }
 
     @Override
@@ -503,6 +521,26 @@ public class MainToolBar extends JToolBar implements MouseListener, DownloadWatc
 
     @Override
     public void onDownloadWatchdogStateIsStopping() {
+    }
+
+    @Override
+    public void onConfigValidatorError(KeyHandler<Boolean> keyHandler, Boolean invalidValue, ValidationException validateException) {
+    }
+
+    @Override
+    public void onConfigValueModified(KeyHandler<Boolean> keyHandler, Boolean newValue) {
+        new EDTRunner() {
+
+            @Override
+            protected void runInEDT() {
+                if (CFG_GUI.SPEED_METER_VISIBLE.isEnabled()) {
+                    if (speedmeter != null) speedmeter.start();
+                } else {
+                    if (speedmeter != null) speedmeter.stop();
+                }
+                updateToolbar();
+            }
+        };
     }
 
 }

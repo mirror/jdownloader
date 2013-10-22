@@ -41,6 +41,28 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
 
     }
 
+    /**
+     * How many ms the speedmeter shall show/record. Please note that big Timeframes and high fps values may cause high CPU usage
+     * 
+     * @return
+     */
+    @AboutConfig
+    @DefaultIntValue(30000)
+    int getSpeedMeterTimeFrame();
+
+    void setSpeedMeterTimeFrame(int i);
+
+    /**
+     * How many refreshes and datasamples the speedmeter uses. Please note that big Timeframes and high fps values may cause high CPU usage
+     * 
+     * @return
+     */
+    @AboutConfig
+    @DefaultIntValue(4)
+    int getSpeedMeterFramesPerSecond();
+
+    void setSpeedMeterFramesPerSecond(int i);
+
     String getActivePluginConfigPanel();
 
     String getActiveConfigPanel();
@@ -245,6 +267,12 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
     boolean isUseD3D();
 
     public void setUseD3D(boolean b);
+
+    @AboutConfig
+    @DefaultBooleanValue(true)
+    boolean isSpeedMeterVisible();
+
+    public void setSpeedMeterVisible(boolean b);
 
     public void setShowFullHostname(boolean b);
 

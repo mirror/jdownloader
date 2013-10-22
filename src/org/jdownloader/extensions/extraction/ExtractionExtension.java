@@ -509,7 +509,13 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
                         for (File f : files) {
                             if (f.getName().matches("\\w+\\.txt")) {
                                 getLogger().log(new Exception("Extraction Crashlog found! " + f.getName()));
-                                File renamedTo = new File(f.getParentFile().getParentFile(), "crashed_" + f.getName());
+                                int i = 1;
+                                File renamedTo = new File(f.getParentFile().getParentFile(), "crashed_" + i + "_" + f.getName());
+
+                                while (renamedTo.exists()) {
+                                    i++;
+                                    renamedTo = new File(f.getParentFile().getParentFile(), "crashed_" + i + "_" + f.getName());
+                                }
                                 f.renameTo(renamedTo);
                                 byte[] bytes = IO.readFile(renamedTo, 512 * 1024);
                                 latestLog = new String(bytes, "UTF-8");

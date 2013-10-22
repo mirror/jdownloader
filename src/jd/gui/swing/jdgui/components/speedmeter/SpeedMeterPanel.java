@@ -32,6 +32,8 @@ import org.appwork.utils.swing.Graph;
 import org.appwork.utils.swing.graph.Limiter;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.settings.GeneralSettings;
+import org.jdownloader.settings.staticreferences.CFG_GUI;
+import org.jdownloader.updatev2.gui.LAFOptions;
 
 public class SpeedMeterPanel extends Graph {
 
@@ -44,19 +46,18 @@ public class SpeedMeterPanel extends Graph {
     public SpeedMeterPanel(boolean contextMenu, boolean start) {
         super();
 
-        SpeedMeterConfig sConfig = JsonConfig.create(SpeedMeterConfig.class);
-        this.setCapacity(sConfig.getTimeFrame() * sConfig.getFramesPerSecond());
-        this.setInterval(1000 / sConfig.getFramesPerSecond());
-        setColorA(new Color((int) Long.parseLong(sConfig.getCurrentColorA(), 16), true));
-        setColorB(new Color((int) Long.parseLong(sConfig.getCurrentColorB(), 16), true));
-        setAverageColor(new Color((int) Long.parseLong(sConfig.getAverageGraphColor(), 16), true));
+        this.setCapacity((CFG_GUI.CFG.getSpeedMeterTimeFrame() * CFG_GUI.CFG.getSpeedMeterFramesPerSecond()) / 1000);
+        this.setInterval(1000 / CFG_GUI.CFG.getSpeedMeterFramesPerSecond());
+        ;
+        setCurrentColorTop(LAFOptions.getInstance().getColorForSpeedmeterCurrentTop());
+        setCurrentColorBottom(LAFOptions.getInstance().getColorForSpeedmeterCurrentBottom());
+        setAverageColor(LAFOptions.getInstance().getColorForSpeedMeterAverage());
         Color col = new JLabel().getForeground();
         setAverageTextColor(col);
         setTextColor(col);
         setOpaque(false);
-        Color a = new Color((int) Long.parseLong(sConfig.getLimitColorA(), 16), true);
-        Color b = new Color((int) Long.parseLong(sConfig.getLimitColorB(), 16), true);
-        speedLimiter = new Limiter(a, b);
+
+        speedLimiter = new Limiter(LAFOptions.getInstance().getColorForSpeedmeterLimiterTop(), LAFOptions.getInstance().getColorForSpeedmeterLimiterBottom());
         config = JsonConfig.create(GeneralSettings.class);
         speedLimiter.setValue(config.isDownloadSpeedLimitEnabled() ? config.getDownloadSpeedLimit() : 0);
         org.jdownloader.settings.staticreferences.CFG_GENERAL.DOWNLOAD_SPEED_LIMIT.getEventSender().addListener(new GenericConfigEventListener<Integer>() {

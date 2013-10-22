@@ -10,11 +10,11 @@ import org.appwork.storage.config.annotations.HexColorString;
 import org.appwork.storage.config.annotations.RequiresRestart;
 
 public interface LAFSettings extends ConfigInterface {
-    public static final String DE_JAVASOFT_PLAF_SYNTHETICA_SIMPLE2D_MENU_PAINTER = "de.javasoft.plaf.synthetica.simple2D.MenuPainter";
     public static final String ALICE_BLUE_APPROX                                 = "ffF5FCFF";
-
     public static final String ALPHA_CC_TROPICAL_BLUE_APPROX                     = "ccCAE8FA";
+
     public static final String BLACK                                             = "FF000000";
+    public static final String DE_JAVASOFT_PLAF_SYNTHETICA_SIMPLE2D_MENU_PAINTER = "de.javasoft.plaf.synthetica.simple2D.MenuPainter";
     public static final String GRAY                                              = "ffC0C0C0";
     public static final String GREEN                                             = "FF00FF00";
     public static final String JAGGED_ICE_APPROX                                 = "ffD7E7F0";
@@ -78,6 +78,13 @@ public interface LAFSettings extends ConfigInterface {
     @DefaultStringValue(JAGGED_ICE_APPROX)
     String getColorForPanelHeaderBackground();
 
+    @DescriptionForConfigEntry("Customized Color in aRGB Format (Pure red: #ffFF0000)")
+    @AboutConfig
+    @RequiresRestart("A JDownloader Restart is Required")
+    @HexColorString
+    @DefaultStringValue(BLACK)
+    public String getColorForPanelHeaderForeground();
+
     // if (StringUtils.isNotEmpty(c)) lafOptions.setPanelHeaderLineColor(c);
     @DescriptionForConfigEntry("Customized Color in aRGB Format (Pure red: #ffFF0000)")
     @AboutConfig
@@ -99,6 +106,20 @@ public interface LAFSettings extends ConfigInterface {
     @HexColorString
     @DefaultStringValue(JAGGED_ICE_APPROX)
     String getColorForScrollbarsNormalState();
+
+    @DescriptionForConfigEntry("Customized Color in aRGB Format (Pure red: #ffFF0000)")
+    @AboutConfig
+    @RequiresRestart("A JDownloader Restart is Required")
+    @HexColorString
+    @DefaultStringValue("CC3DC83D")
+    public String getColorForSpeedmeterCurrentBottom();
+
+    @DescriptionForConfigEntry("Customized Color in aRGB Format (Pure red: #ffFF0000)")
+    @AboutConfig
+    @RequiresRestart("A JDownloader Restart is Required")
+    @HexColorString
+    @DefaultStringValue("2051F251")
+    public String getColorForSpeedmeterCurrentTop();
 
     @DescriptionForConfigEntry("Customized Color in aRGB Format (Pure red: #ffFF0000)")
     @AboutConfig
@@ -168,6 +189,13 @@ public interface LAFSettings extends ConfigInterface {
     @DefaultStringValue(ORANGE)
     String getColorForTableSortedColumnView();
 
+    @DescriptionForConfigEntry("Customized Color in aRGB Format (Pure red: #ffFF0000)")
+    @AboutConfig
+    @RequiresRestart("A JDownloader Restart is Required")
+    @HexColorString
+    @DefaultStringValue("ff3B3B3B")
+    public String getColorForTooltipBackground();
+
     // if (StringUtils.isNotEmpty(c)) lafOptions.setTooltipForegroundColor(c);
     @DescriptionForConfigEntry("Customized Color in aRGB Format (Pure red: #ffFF0000)")
     @AboutConfig
@@ -176,14 +204,20 @@ public interface LAFSettings extends ConfigInterface {
     @DefaultStringValue(ALICE_BLUE_APPROX)
     public String getColorForTooltipForeground();
 
-    @DescriptionForConfigEntry("Customized Color in aRGB Format (Pure red: #ffFF0000)")
+    @DescriptionForConfigEntry("This Painter class is used to paint Main Menu Items without a popdown menu")
     @AboutConfig
     @RequiresRestart("A JDownloader Restart is Required")
-    @HexColorString
-    @DefaultStringValue("ff3B3B3B")
-    public String getColorForTooltipBackground();
+    @DefaultStringValue(DE_JAVASOFT_PLAF_SYNTHETICA_SIMPLE2D_MENU_PAINTER)
+    public abstract String getMenuBackgroundPainterClass();
 
-    public void setColorForTooltipBackground(String background);
+    @AboutConfig
+    @DefaultIntArrayValue({ 0, 2, 4, 2 })
+    public abstract int[] getPopupBorderInsets();
+
+    @AboutConfig
+    @RequiresRestart("A JDownloader Restart is Required")
+    @DefaultBooleanValue(false)
+    public abstract boolean isPaintStatusbarTopBorder();
 
     public void setColorForErrorForeground(String errorForeground);
 
@@ -191,11 +225,17 @@ public interface LAFSettings extends ConfigInterface {
 
     void setColorForPanelHeaderBackground(String colorHex);
 
+    void setColorForPanelHeaderForeground(String colorHex);
+
     void setColorForPanelHeaderLine(String colorHex);
 
     void setColorForScrollbarsMouseOverState(String color);
 
     void setColorForScrollbarsNormalState(String color);
+
+    void setColorForSpeedmeterCurrentBottom(String colorHex);
+
+    void setColorForSpeedmeterCurrentTop(String colorHex);
 
     void setColorForTableAlternateRowBackground(String color);
 
@@ -217,36 +257,41 @@ public interface LAFSettings extends ConfigInterface {
 
     void setColorForTableSortedColumnView(String colorHex);
 
+    public void setColorForTooltipBackground(String background);
+
     public void setColorForTooltipForeground(String colorHex);
-
-    public abstract void setPopupBorderInsets(int[] popupBorderInsets);
-
-    public abstract void setPaintStatusbarTopBorder(boolean paintStatusbarTopBorder);
 
     public abstract void setMenuBackgroundPainterClass(String menuBackgroundPainterClass);
 
-    @AboutConfig
-    @RequiresRestart("A JDownloader Restart is Required")
-    @DefaultBooleanValue(false)
-    public abstract boolean isPaintStatusbarTopBorder();
+    public abstract void setPaintStatusbarTopBorder(boolean paintStatusbarTopBorder);
 
-    @AboutConfig
-    @DefaultIntArrayValue({ 0, 2, 4, 2 })
-    public abstract int[] getPopupBorderInsets();
-
-    @DescriptionForConfigEntry("This Painter class is used to paint Main Menu Items without a popdown menu")
-    @AboutConfig
-    @RequiresRestart("A JDownloader Restart is Required")
-    @DefaultStringValue(DE_JAVASOFT_PLAF_SYNTHETICA_SIMPLE2D_MENU_PAINTER)
-    public abstract String getMenuBackgroundPainterClass();
+    public abstract void setPopupBorderInsets(int[] popupBorderInsets);
 
     @DescriptionForConfigEntry("Customized Color in aRGB Format (Pure red: #ffFF0000)")
     @AboutConfig
     @RequiresRestart("A JDownloader Restart is Required")
     @HexColorString
-    @DefaultStringValue(BLACK)
-    public String getColorForPanelHeaderForeground();
+    @DefaultStringValue("FF359E35")
+    public String getColorForSpeedMeterAverage();
 
-    void setColorForPanelHeaderForeground(String colorHex);
+    public void setColorForSpeedMeterAverage(String color);
+
+    @DescriptionForConfigEntry("Customized Color in aRGB Format (Pure red: #ffFF0000)")
+    @AboutConfig
+    @RequiresRestart("A JDownloader Restart is Required")
+    @HexColorString
+    @DefaultStringValue("00FF0000")
+    public String getColorForSpeedmeterLimiterBottom();
+
+    @DescriptionForConfigEntry("Customized Color in aRGB Format (Pure red: #ffFF0000)")
+    @AboutConfig
+    @RequiresRestart("A JDownloader Restart is Required")
+    @HexColorString
+    @DefaultStringValue("ccFF0000")
+    public String getColorForSpeedmeterLimiterTop();
+
+    void setColorForSpeedmeterLimiterBottom(String colorHex);
+
+    void setColorForSpeedmeterLimiterTop(String colorHex);
 
 }

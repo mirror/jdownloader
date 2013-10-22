@@ -57,6 +57,7 @@ public class AdvancedConfigManager {
         register(CFG_MYJD.CFG);
         register(JsonConfig.create(AccountSettings.class));
         register(CFG_GUI.CFG);
+
         register(JsonConfig.create(LinkCheckerConfig.class));
         register(JsonConfig.create(LinkCrawlerConfig.class));
         register(CFG_LINKGRABBER.CFG);
