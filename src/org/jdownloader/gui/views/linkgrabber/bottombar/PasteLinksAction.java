@@ -55,6 +55,7 @@ public class PasteLinksAction extends AppAction implements CachableInterface {
     public void actionPerformed(ActionEvent e) {
 
         final LinkCollectingJob crawljob = new LinkCollectingJob(ClipboardMonitoring.getINSTANCE().getCurrentContent()).setSource(this);
+        crawljob.setDeepAnalyse(isDeepDecryptEnabled());
         AddLinksProgress d = new AddLinksProgress(crawljob);
         if (d.isHiddenByDontShowAgain()) {
             Thread thread = new Thread("AddLinksDialog") {
