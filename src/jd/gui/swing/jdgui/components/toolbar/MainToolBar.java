@@ -45,7 +45,9 @@ import javax.swing.SwingConstants;
 import javax.swing.Timer;
 
 import jd.SecondLevelLaunch;
+import jd.controlling.downloadcontroller.DownloadSession;
 import jd.controlling.downloadcontroller.DownloadWatchDog;
+import jd.controlling.downloadcontroller.DownloadWatchDogJob;
 import jd.controlling.downloadcontroller.SingleDownloadController;
 import jd.controlling.downloadcontroller.event.DownloadWatchdogListener;
 import jd.gui.swing.jdgui.JDGui;
@@ -530,18 +532,34 @@ public class MainToolBar extends JToolBar implements MouseListener, DownloadWatc
 
     @Override
     public void onConfigValueModified(KeyHandler<Boolean> keyHandler, Boolean newValue) {
-        new EDTRunner() {
+
+        DownloadWatchDog.getInstance().enqueueJob(new DownloadWatchDogJob() {
 
             @Override
-            protected void runInEDT() {
-                if (CFG_GUI.SPEED_METER_VISIBLE.isEnabled()) {
-                    if (speedmeter != null) speedmeter.start();
-                } else {
-                    if (speedmeter != null) speedmeter.stop();
-                }
-                updateToolbar();
+            public void execute(DownloadSession currentSession) {
+
+                final boolean running = DownloadWatchDog.getInstance().isRunning();
+
+                new EDTRunner() {
+
+                    @Override
+                    protected void runInEDT() {
+                        if (CFG_GUI.SPEED_METER_VISIBLE.isEnabled()) {
+
+                            if (speedmeter != null && running) {
+                                speedmeter.start();
+                            }
+                        } else {
+                            if (speedmeter != null) {
+                                speedmeter.stop();
+                            }
+                        }
+                    }
+                };
+
             }
-        };
+        });
+
     }
 
     @Override
