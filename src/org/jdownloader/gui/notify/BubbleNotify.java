@@ -364,7 +364,7 @@ public class BubbleNotify implements UpdaterListener, ReconnecterListener, Chall
         new EDTRunner() {
             @Override
             protected void runInEDT() {
-                BasicNotify no = new BasicNotify(_GUI._.download_paused(), _GUI._.download_paused_msg(), NewTheme.I().getIcon("pause", 24));
+                BasicNotify no = new BasicNotify(_GUI._.download_paused(), _GUI._.download_paused_msg(), NewTheme.I().getIcon(IconKey.ICON_MEDIA_PLAYBACK_PAUSE, 24));
                 show(no);
             }
         };
