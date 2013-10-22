@@ -29,19 +29,19 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "general-files.com" }, urls = { "http://(www\\.)?(general\\-files\\.com|generalfiles\\.org|generalfiles\\.me)/download/[a-z0-9]+/[^<>\"/]*?\\.html" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "general-files.com" }, urls = { "http://(www\\.)?(general\\-files\\.com|generalfiles\\.org|generalfiles\\.me|general\\-files\\.org)/download/[a-z0-9]+/[^<>\"/]*?\\.html" }, flags = { 0 })
 public class GeneralFilesCom extends PluginForDecrypt {
 
     public GeneralFilesCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    private static final String currenthost = "generalfiles.me";
+    private static final String currenthost = "general-files.org";
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         br.setFollowRedirects(true);
-        final String parameter = param.toString().replaceAll("(general\\-files\\.com|generalfiles\\.org)/", "generalfiles.me/");
+        final String parameter = param.toString().replaceAll("(general\\-files\\.com|generalfiles\\.org|generalfiles\\.me)/", "general-files.org/");
         br.getPage(parameter);
 
         if (br.containsHTML(">File was removed from filehosting<|>The file no longer exists at this location")) {

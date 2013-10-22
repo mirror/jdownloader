@@ -52,7 +52,8 @@ public class FreeDiscPl extends PluginForHost {
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
         if (br.containsHTML("Ten plik został usunięty przez użytkownika lub administratora")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        final String filename = br.getRegex("itemprop=\"name\">([^<>\"]*?)</h2>").getMatch(0);
+        String filename = br.getRegex("itemprop=\"name\">([^<>\"]*?)</h2>").getMatch(0);
+        if (filename == null) filename = br.getRegex("itemprop=\"name\">([^<>\"]*?)</h1>").getMatch(0);
         String filesize = br.getRegex("class=\\'frameFilesSize\\'>Rozmiar pliku</div>[\t\n\r ]+<div class=\\'frameFilesCountNumber\\'>([^<>\"]*?)</div>").getMatch(0);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         link.setFinalFileName(Encoding.htmlDecode(filename.trim()));

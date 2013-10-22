@@ -25,7 +25,6 @@ import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.Property;
-import jd.gui.UserIO;
 import jd.http.Browser;
 import jd.http.Cookie;
 import jd.http.Cookies;
@@ -122,9 +121,7 @@ public class ChoMikujPl extends PluginForHost {
             login(account, true);
         } catch (PluginException e) {
             account.setValid(false);
-            ai.setStatus("<Login failed/Nieprawidłowe dane>");
-            UserIO.getInstance().requestMessageDialog(0, "Chomikuj.pl Premium Error", "Login failed!\r\nPlease check your Username and Password!");
-            return ai;
+            throw e;
         }
         account.setValid(true);
         ai.setUnlimitedTraffic();
@@ -186,9 +183,23 @@ public class ChoMikujPl extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        if (br.containsHTML(PREMIUMONLY)) throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.chomikujpl.only4registered", PREMIUMONLYUSERTEXT));
+        if (br.containsHTML(PREMIUMONLY)) {
+            try {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+            } catch (final Throwable e) {
+                if (e instanceof PluginException) throw (PluginException) e;
+            }
+            throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.chomikujpl.only4registered", PREMIUMONLYUSERTEXT));
+        }
         if (!videolink) {
-            if (!getDllink(downloadLink, br, false)) throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.chomikujpl.only4registered", PREMIUMONLYUSERTEXT));
+            if (!getDllink(downloadLink, br, false)) {
+                try {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+                } catch (final Throwable e) {
+                    if (e instanceof PluginException) throw (PluginException) e;
+                }
+                throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.chomikujpl.only4registered", PREMIUMONLYUSERTEXT));
+            }
         }
         if (DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, false, 1);
@@ -262,10 +273,23 @@ public class ChoMikujPl extends PluginForHost {
                     }
                 }
                 br.getPage("http://chomikuj.pl/");
+                final String lang = System.getProperty("user.language");
                 final String requestVerificationToken = br.getRegex("<input name=\"__RequestVerificationToken\" type=\"hidden\" value=\"([^<>\"\\']+)\"").getMatch(0);
-                if (requestVerificationToken == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                if (requestVerificationToken == null) {
+                    if ("de".equalsIgnoreCase(lang)) {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin defekt, bitte den JDownloader Support kontaktieren!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    } else {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin broken, please contact the JDownloader Support!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    }
+                }
                 br.postPage("http://chomikuj.pl/action/Login/TopBarLogin", "rememberLogin=true&rememberLogin=false&topBar_LoginBtn=Zaloguj&ReturnUrl=&Login=" + Encoding.urlEncode(account.getUser()) + "&Password=" + Encoding.urlEncode(account.getPass()) + "&__RequestVerificationToken=" + Encoding.urlEncode(requestVerificationToken));
-                if (br.getURL().equals(MAINPAGE)) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                if (br.getURL().equals(MAINPAGE)) {
+                    if ("de".equalsIgnoreCase(lang)) {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    } else {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    }
+                }
                 /** Save cookies */
                 final HashMap<String, String> cookies = new HashMap<String, String>();
                 final Cookies add = this.br.getCookies(MAINPAGE);

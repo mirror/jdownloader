@@ -514,16 +514,19 @@ public class FaceBookComGallery extends PluginForDecrypt {
         if (aa != null) {
             try {
                 ((jd.plugins.hoster.FaceBookComVideos) facebookPlugin).login(aa, false, this.br);
+                // New account is valid, let's add it to the premium overview
+                if (addAcc) {
+                    AccountController.getInstance().addAccount(facebookPlugin, aa);
+                }
+                return true;
             } catch (final PluginException e) {
                 aa.setEnabled(false);
                 aa.setValid(false);
                 logger.info("Account seems to be invalid, returnung empty linklist!");
                 return false;
             }
-            // New account is valid, let's add it to the premium overview
-            if (addAcc) AccountController.getInstance().addAccount(facebookPlugin, aa);
         }
-        return true;
+        return false;
         /** Login stuff end */
     }
 

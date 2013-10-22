@@ -35,12 +35,18 @@ public class FotoLogComBr extends PluginForDecrypt {
         super(wrapper);
     }
 
+    private final String INVALIDLINKS = "http://(www\\.)?fotolog\\.com\\.br/(mobile_apps|about|privacy|register|community_guide|search|faq|login|advertise|gallery|terms_of_use|contact_us|directory).*?";
+
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
+        if (parameter.matches(INVALIDLINKS)) {
+            logger.info("Invalid link: " + parameter);
+            return decryptedLinks;
+        }
         br.setCookie("http://www.fotolog.com.br/", "foto-lang", "en");
         br.getPage(parameter);
-        if (br.containsHTML(">Error 404 :")) {
+        if (br.containsHTML(">Error 404 :") || br.getRedirectLocation() != null) {
             logger.info("Link offline: " + parameter);
             return decryptedLinks;
         }
@@ -52,6 +58,10 @@ public class FotoLogComBr extends PluginForDecrypt {
             }
             decryptedLinks.add(createDownloadlink("directhttp://" + finallink));
         } else {
+            if (br.containsHTML(">Latest popular photos<")) {
+                logger.info("Link offline: " + parameter);
+                return decryptedLinks;
+            }
             String fpName = br.getRegex("<title>([^<>\"]*?)\\- Fotolog</title>").getMatch(0);
             if (fpName == null) {
                 logger.warning("Decrypter broken for link: " + parameter);
