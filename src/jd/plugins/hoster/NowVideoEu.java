@@ -20,6 +20,10 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.logging.Level;
+
+import javax.script.ScriptEngine;
+import javax.script.ScriptEngineManager;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -36,6 +40,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.utils.JDUtilities;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "nowvideo.eu", "nowvideo.co" }, urls = { "http://(www\\.)?(nowvideo\\.(sx|eu|co|ch)/(?!share\\.php)(video/|player\\.php\\?v=)|embed\\.nowvideo\\.(sx|eu|co|ch)/embed\\.php\\?v=)[a-z0-9]+", "NEVERUSETHISSUPERDUBERREGEXATALL2013" }, flags = { 2, 0 })
 public class NowVideoEu extends PluginForHost {
@@ -148,9 +153,21 @@ public class NowVideoEu extends PluginForHost {
     private static StringContainer ccTLD              = new StringContainer("sx");
     private static final String    ISBEINGCONVERTED   = ">The file is being converted.";
     private static AtomicBoolean   AVAILABLE_PRECHECK = new AtomicBoolean(false);
+    private static StringContainer agent              = new StringContainer(null);
+
+    private Browser prepBrowser(Browser prepBr) {
+        if (agent.string == null) {
+            /* we first have to load the plugin, before we can reference it */
+            JDUtilities.getPluginForHost("mediafire.com");
+            agent.string = jd.plugins.hoster.MediafireCom.stringUserAgent();
+        }
+        prepBr.getHeaders().put("User-Agent", agent.string);
+        return prepBr;
+    }
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+        prepBrowser(br);
         correctCurrentDomain();
         correctDownloadLink(link);
         this.setBrowserExclusive();
@@ -178,6 +195,10 @@ public class NowVideoEu extends PluginForHost {
         if (br.containsHTML(ISBEINGCONVERTED)) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "This file is being converted!", 2 * 60 * 60 * 1000l);
         String fKey = br.getRegex("flashvars\\.filekey=\"([^<>\"]*)\"").getMatch(0);
         if (fKey == null) fKey = br.getRegex("var fkzd=\"([^<>\"]*)\"").getMatch(0);
+        if (fKey == null && br.containsHTML("w,i,s,e")) {
+            String result = unWise();
+            fKey = new Regex(result, "(\"\\d+{1,3}\\.\\d+{1,3}\\.\\d+{1,3}\\.\\d+{1,3}-[a-f0-9]{32})\"").getMatch(0);
+        }
         if (fKey == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         br.getPage(MAINPAGE.string + "/api/player.api.php?pass=undefined&user=undefined&codes=undefined&file=" + new Regex(downloadLink.getDownloadURL(), "([a-z0-9]+)$").getMatch(0) + "&key=" + Encoding.urlEncode(fKey));
         if (br.containsHTML("The video is being transfered")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error: The video is being transfered", 30 * 60 * 1000l);
@@ -189,6 +210,28 @@ public class NowVideoEu extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
+    }
+
+    private String unWise() {
+        String result = null;
+        String fn = br.getRegex("eval\\((function\\(.*?\'\\))\\);").getMatch(0);
+        if (fn == null) return null;
+        final ScriptEngineManager manager = new ScriptEngineManager();
+        final ScriptEngine engine = manager.getEngineByName("ECMAScript");
+        try {
+            engine.eval("var res = " + fn);
+            result = (String) engine.get("res");
+            result = new Regex(result, "eval\\((.*?)\\);$").getMatch(0);
+            engine.eval("res = " + result);
+            result = (String) engine.get("res");
+            String res[] = result.split(";\\s;");
+            engine.eval("res = " + new Regex(res[res.length - 1], "eval\\((.*?)\\);$").getMatch(0));
+            result = (String) engine.get("res");
+        } catch (final Exception e) {
+            logger.log(Level.SEVERE, e.getMessage(), e);
+            return null;
+        }
+        return result;
     }
 
     @Override
@@ -208,6 +251,7 @@ public class NowVideoEu extends PluginForHost {
     private void login(Account account, boolean force) throws Exception {
         synchronized (LOCK) {
             try {
+                prepBrowser(br);
                 correctCurrentDomain();
                 // Load cookies
                 br.setCookiesExclusive(true);

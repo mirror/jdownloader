@@ -17,6 +17,10 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.util.logging.Level;
+
+import javax.script.ScriptEngine;
+import javax.script.ScriptEngineManager;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -74,6 +78,10 @@ public class VideoWeedCom extends PluginForHost {
             }
         }
         String key = br.getRegex("flashvars\\.filekey=\"(.*?)\"").getMatch(0);
+        if (key == null && br.containsHTML("w,i,s,e")) {
+            String result = unWise();
+            key = new Regex(result, "(\"\\d+{1,3}\\.\\d+{1,3}\\.\\d+{1,3}\\.\\d+{1,3}-[a-f0-9]{32})\"").getMatch(0);
+        }
         if (key == null || filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         br.getPage("http://www.videoweed.es/api/player.api.php?user=undefined&codes=1&file=" + new Regex(downloadLink.getDownloadURL(), "videoweed\\.es/file/(.+)").getMatch(0) + "&pass=undefined&key=" + Encoding.urlEncode(key));
         filename = filename.trim();
@@ -125,6 +133,28 @@ public class VideoWeedCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
+    }
+
+    private String unWise() {
+        String result = null;
+        String fn = br.getRegex("eval\\((function\\(.*?\'\\))\\);").getMatch(0);
+        if (fn == null) return null;
+        final ScriptEngineManager manager = new ScriptEngineManager();
+        final ScriptEngine engine = manager.getEngineByName("ECMAScript");
+        try {
+            engine.eval("var res = " + fn);
+            result = (String) engine.get("res");
+            result = new Regex(result, "eval\\((.*?)\\);$").getMatch(0);
+            engine.eval("res = " + result);
+            result = (String) engine.get("res");
+            String res[] = result.split(";\\s;");
+            engine.eval("res = " + new Regex(res[res.length - 1], "eval\\((.*?)\\);$").getMatch(0));
+            result = (String) engine.get("res");
+        } catch (final Exception e) {
+            logger.log(Level.SEVERE, e.getMessage(), e);
+            return null;
+        }
+        return result;
     }
 
     @Override
