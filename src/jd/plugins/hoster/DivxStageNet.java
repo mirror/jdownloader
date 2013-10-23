@@ -15,6 +15,11 @@
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import java.util.logging.Level;
+
+import javax.script.ScriptEngine;
+import javax.script.ScriptEngineManager;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -77,7 +82,11 @@ public class DivxStageNet extends PluginForHost {
         String filename = br.getRegex("class=\"video_det\">.*?<strong>(.*?)</strong>").getMatch(0);
         if (filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (!br.containsHTML("The file is beeing transfered to our other servers")) {
-            final String fkey = br.getRegex("filekey=\"([^<>\"]*?)\"").getMatch(0);
+            String fkey = br.getRegex("filekey=\"([^<>\"]*?)\"").getMatch(0);
+            if (fkey == null && br.containsHTML("w,i,s,e")) {
+                String result = unWise();
+                fkey = new Regex(result, "(\"\\d+{1,3}\\.\\d+{1,3}\\.\\d+{1,3}\\.\\d+{1,3}-[a-f0-9]{32})\"").getMatch(0);
+            }
             if (fkey == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             br.getPage("http://divxstage.eu/api/player.api.php?file=" + new Regex(downloadLink.getDownloadURL(), "([a-z0-9]+)$").getMatch(0) + "&user=undefined&key=" + Encoding.urlEncode(fkey) + "&pass=undefined&codes=1");
             DLLINK = br.getRegex("url=(http://[^<>\"]*?)\\&").getMatch(0);
@@ -97,6 +106,28 @@ public class DivxStageNet extends PluginForHost {
             downloadLink.setFinalFileName(filename + ".flv");
         }
         return AvailableStatus.TRUE;
+    }
+
+    private String unWise() {
+        String result = null;
+        String fn = br.getRegex("eval\\((function\\(.*?\'\\))\\);").getMatch(0);
+        if (fn == null) return null;
+        final ScriptEngineManager manager = new ScriptEngineManager();
+        final ScriptEngine engine = manager.getEngineByName("ECMAScript");
+        try {
+            engine.eval("var res = " + fn);
+            result = (String) engine.get("res");
+            result = new Regex(result, "eval\\((.*?)\\);$").getMatch(0);
+            engine.eval("res = " + result);
+            result = (String) engine.get("res");
+            String res[] = result.split(";\\s;");
+            engine.eval("res = " + new Regex(res[res.length - 1], "eval\\((.*?)\\);$").getMatch(0));
+            result = (String) engine.get("res");
+        } catch (final Exception e) {
+            logger.log(Level.SEVERE, e.getMessage(), e);
+            return null;
+        }
+        return result;
     }
 
     @Override

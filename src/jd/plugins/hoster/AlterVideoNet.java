@@ -50,7 +50,7 @@ public class AlterVideoNet extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML("Video not found<")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("Video not found<|>404 ERROR: VIDEO NOT FOUND!<")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         downloadLink.setFinalFileName(Encoding.htmlDecode(new Regex(downloadLink.getDownloadURL(), "([a-z0-9]+)$").getMatch(0)) + ".flv");
         return AvailableStatus.TRUE;
     }
