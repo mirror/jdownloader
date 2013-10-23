@@ -16,8 +16,12 @@
 
 package jd.plugins.hoster;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.UnsupportedEncodingException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -88,6 +92,8 @@ public class RapidGatorNet extends PluginForHost {
     private static StringContainer lastIP               = new StringContainer();
     private final Pattern          IPREGEX              = Pattern.compile("(([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9]))", Pattern.CASE_INSENSITIVE);
     private final String           EXPERIMENTALHANDLING = "EXPERIMENTALHANDLING";
+    private static AtomicBoolean   useAPI               = new AtomicBoolean(true);
+    private final String           apiURL               = "https://rapidgator.net/api/";
 
     private String[]               IPCHECK              = new String[] { "http://ipcheck0.jdownloader.org", "http://ipcheck1.jdownloader.org", "http://ipcheck2.jdownloader.org", "http://ipcheck3.jdownloader.org" };
 
@@ -201,7 +207,7 @@ public class RapidGatorNet extends PluginForHost {
             /* Temp workaround for mac user */
             filename = filename.substring(1);
         }
-        link.setFinalFileName(Encoding.htmlDecode(filename.trim()));
+        link.setName(Encoding.htmlDecode(filename.trim()));
         if (filesize != null) link.setDownloadSize(SizeFormatter.getSize(filesize));
         br.setFollowRedirects(false);
         // Only show message if user has no active premium account
@@ -298,7 +304,14 @@ public class RapidGatorNet extends PluginForHost {
             if (br.containsHTML("You have reached your daily downloads limit. Please try")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "You have reached your daily downloads limit", 60 * 60 * 1000l);
             if (br.containsHTML("(You can`t download not more than 1 file at a time in free mode\\.<|>Wish to remove the restrictions\\?)")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "You can't download more than one file within a certain time period in free mode", 60 * 60 * 1000l);
             final String freedlsizelimit = br.getRegex("'You can download files up to ([\\d\\.]+ ?(MB|GB)) in free mode<").getMatch(0);
-            if (freedlsizelimit != null) throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.rapidgatornet.only4premium", "No free download link for this file"));
+            if (freedlsizelimit != null) {
+                try {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+                } catch (final Throwable e) {
+                    if (e instanceof PluginException) throw (PluginException) e;
+                }
+                throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.rapidgatornet.only4premium", "No free download link for this file"));
+            }
             final String reconnectWait = br.getRegex("Delay between downloads must be not less than (\\d+) min\\.<br>Don`t want to wait\\? <a style=\"").getMatch(0);
             if (reconnectWait != null) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, (Integer.parseInt(reconnectWait) + 1) * 60 * 1000l);
             String fid = br.getRegex("var fid = (\\d+);").getMatch(0);
@@ -467,10 +480,75 @@ public class RapidGatorNet extends PluginForHost {
 
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
+        if (useAPI.get()) {
+            return fetchAccountInfo_api(account);
+        } else {
+            return fetchAccountInfo_web(account);
+        }
+    }
+
+    public AccountInfo fetchAccountInfo_api(final Account account) throws Exception {
+        synchronized (LOCK) {
+            try {
+                AccountInfo ai = new AccountInfo();
+                maxPrem.set(1);
+                String sid = login_api(account);
+                if (sid != null) {
+                    account.setValid(true);
+                    /* premium account */
+                    String expire_date = getJSonValueByKey("expire_date");
+                    String traffic_left = getJSonValueByKey("traffic_left");
+                    String reset_in = getJSonValueByKey("reset_in");
+                    if (expire_date != null && traffic_left != null) {
+                        /* expire date and traffic left are available, so its a premium account */
+                        ai.setValidUntil(Long.parseLong(expire_date) * 1000);
+                        ai.setTrafficLeft(Long.parseLong(traffic_left));
+                        if (!ai.isExpired()) {
+                            account.setProperty("session_type", "premium");
+                            /* account still valid */
+                            if (reset_in != null) {
+                                ai.setStatus("Traffic exceeded " + reset_in);
+                                account.setTempDisabled(true);
+                            } else {
+                                ai.setStatus("Premium account");
+                            }
+                            try {
+                                maxPrem.set(-1);
+                                account.setMaxSimultanDownloads(-1);
+                                account.setConcurrentUsePossible(true);
+                            } catch (final Throwable e) {
+                                // not available in old Stable 0.9.581
+                            }
+                            return ai;
+                        }
+                    }
+                    ai.setStatus("Free account");
+                    account.setProperty("session_type", null);
+                    try {
+                        maxPrem.set(1);
+                        account.setMaxSimultanDownloads(1);
+                        account.setConcurrentUsePossible(false);
+                    } catch (final Throwable e) {
+                        // not available in old Stable 0.9.581
+                    }
+                    return ai;
+                }
+
+                account.setValid(false);
+                return ai;
+            } catch (PluginException e) {
+                account.setProperty("session_type", null);
+                account.setValid(false);
+                throw e;
+            }
+        }
+    }
+
+    public AccountInfo fetchAccountInfo_web(final Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
         maxPrem.set(1);
         try {
-            login(account, true);
+            login_web(account, true);
         } catch (PluginException e) {
             account.setValid(false);
             throw e;
@@ -508,7 +586,7 @@ public class RapidGatorNet extends PluginForHost {
     }
 
     @SuppressWarnings("unchecked")
-    private Map<String, String> login(Account account, boolean force) throws Exception {
+    private Map<String, String> login_web(Account account, boolean force) throws Exception {
         synchronized (LOCK) {
             try {
                 // Load cookies
@@ -530,58 +608,61 @@ public class RapidGatorNet extends PluginForHost {
                 }
 
                 br.setFollowRedirects(true);
-                br.getPage(MAINPAGE);
-                Form loginForm = br.getFormbyProperty("id", "login");
-                String loginPostData = "LoginForm%5Bemail%5D=" + Encoding.urlEncode(account.getUser()) + "&LoginForm%5Bpassword%5D=" + Encoding.urlEncode(account.getPass());
-                boolean sslForm = false;
-                boolean isjava7Issue = isJava7nJDStable();
-                if (loginForm != null) {
-                    String action = loginForm.getAction();
-                    if (action != null && action.startsWith("https://")) {
-                        sslForm = true;
-                    }
-                    if (sslForm && isjava7Issue) {
-                        // if (!stableSucks.get()) showSSLWarning(this.getHost());
-                        action = action.replace("https://", "http://");
-                        loginForm.setAction(action);
-                    }
-                    logger.info("Use loginForm: " + action);
-                    String user = loginForm.getBestVariable("email");
-                    String pass = loginForm.getBestVariable("password");
-                    if (user == null) user = "LoginForm%5Bemail%5D";
-                    if (pass == null) pass = "LoginForm%5Bpassword%5D";
-                    loginForm.put(user, Encoding.urlEncode(account.getUser()));
-                    loginForm.put(pass, Encoding.urlEncode(account.getPass()));
-                    if (isOld09581Stable()) {
-                        br.getHeaders().put("Content-Type", "application/x-www-form-urlencoded");
-                        br.submitForm(loginForm);
-                        br.getHeaders().put("Content-Type", null);
+                if (true) {
+                    br.getPage(MAINPAGE);
+                    Form loginForm = br.getFormbyProperty("id", "login");
+                    String loginPostData = "LoginForm%5Bemail%5D=" + Encoding.urlEncode(account.getUser()) + "&LoginForm%5Bpassword%5D=" + Encoding.urlEncode(account.getPass());
+                    boolean sslForm = false;
+                    boolean isjava7Issue = isJava7nJDStable();
+                    if (loginForm != null) {
+                        String action = loginForm.getAction();
+                        if (action != null && action.startsWith("https://")) {
+                            sslForm = true;
+                        }
+                        if (sslForm && isjava7Issue) {
+                            // if (!stableSucks.get()) showSSLWarning(this.getHost());
+                            action = action.replace("https://", "http://");
+                            loginForm.setAction(action);
+                        }
+                        logger.info("Use loginForm: " + action);
+                        String user = loginForm.getBestVariable("email");
+                        String pass = loginForm.getBestVariable("password");
+                        if (user == null) user = "LoginForm%5Bemail%5D";
+                        if (pass == null) pass = "LoginForm%5Bpassword%5D";
+                        loginForm.put(user, Encoding.urlEncode(account.getUser()));
+                        loginForm.put(pass, Encoding.urlEncode(account.getPass()));
+                        if (isOld09581Stable()) {
+                            br.getHeaders().put("Content-Type", "application/x-www-form-urlencoded");
+                            br.submitForm(loginForm);
+                            br.getHeaders().put("Content-Type", null);
+                        } else {
+                            br.submitForm(loginForm);
+                        }
+                        loginPostData = loginForm.getPropertyString();
                     } else {
-                        br.submitForm(loginForm);
+                        logger.info("Use postLogin: http(s)://rapidgator.net/auth/login");
+                        if (isJava7nJDStable()) {
+                            // if (!stableSucks.get()) showSSLWarning(this.getHost());
+                            br.postPage("http://rapidgator.net/auth/login", loginPostData);
+                        } else {
+                            br.postPage("https://rapidgator.net/auth/login", loginPostData);
+                        }
                     }
-                    loginPostData = loginForm.getPropertyString();
+
+                    /* jsRedirect */
+                    String reDirHash = handleJavaScriptRedirect();
+                    if (reDirHash != null) {
+                        logger.info("JSRedirect in login");
+                        // prob should be https also!!
+                        if (isJava7nJDStable()) {
+                            br.postPage("http://rapidgator.net/auth/login", loginPostData + "&" + reDirHash);
+                        } else {
+                            br.postPage("https://rapidgator.net/auth/login", loginPostData + "&" + reDirHash);
+                        }
+                    }
                 } else {
-                    logger.info("Use postLogin: http(s)://rapidgator.net/auth/login");
-                    if (isJava7nJDStable()) {
-                        // if (!stableSucks.get()) showSSLWarning(this.getHost());
-                        br.postPage("http://rapidgator.net/auth/login", loginPostData);
-                    } else {
-                        br.postPage("https://rapidgator.net/auth/login", loginPostData);
-                    }
+                    login_api(account);
                 }
-
-                /* jsRedirect */
-                String reDirHash = handleJavaScriptRedirect();
-                if (reDirHash != null) {
-                    logger.info("JSRedirect in login");
-                    // prob should be https also!!
-                    if (isJava7nJDStable()) {
-                        br.postPage("http://rapidgator.net/auth/login", loginPostData + "&" + reDirHash);
-                    } else {
-                        br.postPage("https://rapidgator.net/auth/login", loginPostData + "&" + reDirHash);
-                    }
-                }
-
                 if (br.getCookie(MAINPAGE, "user__") == null) {
                     logger.info("disabled because of" + br.toString());
                     final String lang = System.getProperty("user.language");
@@ -613,11 +694,208 @@ public class RapidGatorNet extends PluginForHost {
         }
     }
 
+    private String login_api(final Account account) throws Exception {
+        String session_id = null;
+        URLConnectionAdapter con = null;
+        synchronized (LOCK) {
+            try {
+                prepareBrowser_api(br);
+                con = br.openGetConnection(apiURL + "user/login?username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
+                handleErrors_api(null, null, account, con);
+                if (con.getResponseCode() == 200) {
+                    br.followConnection();
+                    session_id = getJSonValueByKey("session_id");
+                    return session_id;
+                }
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            } finally {
+                try {
+                    con.disconnect();
+                } catch (final Throwable ignore) {
+                }
+                account.setProperty("session_id", session_id);
+            }
+        }
+    }
+
+    private String getJSonValueByKey(String key) {
+        String result = br.getRegex("\"" + key + "\":\"([^\"]+)\"").getMatch(0);
+        if (result == null) result = br.getRegex("\"" + key + "\":(\\d+)").getMatch(0);
+        return result;
+    }
+
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
-        requestFileInformation(link);
+        if (useAPI.get()) {
+            handlePremium_api(link, account);
+        } else {
+            requestFileInformation(link);
+            handlePremium_web(link, account);
+        }
+    }
+
+    public static String readErrorStream(URLConnectionAdapter con) throws UnsupportedEncodingException, IOException {
+        BufferedReader f = null;
+        try {
+            try {
+                con.setAllowedResponseCodes(new int[] { con.getResponseCode() });
+            } catch (final Throwable not09581) {
+            }
+            InputStream es = con.getErrorStream();
+            if (es == null) throw new IOException("No errorstream!");
+            f = new BufferedReader(new InputStreamReader(es, "UTF8"));
+            String line;
+            StringBuilder ret = new StringBuilder();
+            String sep = System.getProperty("line.separator");
+            while ((line = f.readLine()) != null) {
+                if (ret.length() > 0) {
+                    ret.append(sep);
+                }
+                ret.append(line);
+            }
+            return ret.toString();
+        } finally {
+            try {
+                f.close();
+            } catch (Throwable e) {
+            }
+
+        }
+    }
+
+    private void handleErrors_api(final String session_id, final DownloadLink link, final Account account, URLConnectionAdapter con) throws PluginException, UnsupportedEncodingException, IOException {
+        if (link != null && con.getResponseCode() == 404) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+        if (con.getResponseCode() != 200) {
+            String errorMessage = readErrorStream(con);
+            logger.info("ErrorMessage: " + errorMessage);
+            if (link != null && errorMessage.contains("Exceeded traffic")) {
+                AccountInfo ac = new AccountInfo();
+                ac.setTrafficLeft(0);
+                account.setAccountInfo(ac);
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+            }
+            boolean sessionReset = false;
+            synchronized (LOCK) {
+                if (session_id != null && session_id.equals(account.getStringProperty("session_id", null))) {
+                    sessionReset = true;
+                    account.setProperty("session_id", Property.NULL);
+                }
+            }
+            if (errorMessage.contains("Please wait")) {
+                if (link == null) {
+                    /* we are inside fetchAccountInfo */
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+                } else {
+                    /* we are inside handlePremium */
+                    throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, 10 * 60 * 1000l);
+                }
+            }
+            if (errorMessage.contains("User is not PREMIUM") || errorMessage.contains("This file can be downloaded by premium only") || errorMessage.contains("You can download files up to")) {
+                if (sessionReset) {
+                    synchronized (LOCK) {
+                        account.setProperty("session_type", Property.NULL);
+                    }
+                }
+                throw new PluginException(LinkStatus.ERROR_RETRY);
+            }
+            if (errorMessage.contains("Login or password is wrong")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+            if (errorMessage.contains("User is FROZEN")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+            if (errorMessage.contains("Parameter login or password is missing")) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (errorMessage.contains("Session not exist")) throw new PluginException(LinkStatus.ERROR_RETRY);
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+    }
+
+    private void prepareBrowser_api(Browser br) {
+        try {
+            /* not available in old stable */
+            br.setAllowedResponseCodes(new int[] { 401, 402 });
+        } catch (Throwable not09581) {
+        }
+    }
+
+    public void handlePremium_api(final DownloadLink link, final Account account) throws Exception {
+        String session_id = null;
+        prepareBrowser_api(br);
+        boolean isPremium = true;
+        synchronized (LOCK) {
+            session_id = account.getStringProperty("session_id", null);
+            if (session_id == null) {
+                session_id = login_api(account);
+            }
+            if (!"premium".equals(account.getStringProperty("session_type", null))) {
+                isPremium = false;
+            }
+        }
+        if (isPremium == false) {
+            handleFree(link);
+            return;
+        }
+        if (session_id == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        URLConnectionAdapter con = null;
+        String fileName = link.getFinalFileName();
+        if (fileName == null) {
+            /* no final filename yet, do linkcheck */
+            try {
+                con = br.openGetConnection(apiURL + "file/info?sid=" + session_id + "&url=" + Encoding.urlEncode(link.getDownloadURL()));
+                handleErrors_api(session_id, link, account, con);
+                if (con.getResponseCode() == 200) {
+                    br.followConnection();
+                    fileName = getJSonValueByKey("filename");
+                    String fileSize = getJSonValueByKey("size");
+                    String fileHash = getJSonValueByKey("hash");
+                    if (fileName != null) link.setFinalFileName(fileName);
+                    if (fileSize != null) {
+                        long size = Long.parseLong(fileSize);
+                        try {
+                            link.setVerifiedFileSize(size);
+                        } catch (final Throwable not09581) {
+                            link.setDownloadSize(size);
+                        }
+                    }
+                    if (fileHash != null) {
+                        link.setMD5Hash(fileHash);
+                    }
+                }
+            } finally {
+                try {
+                    con.disconnect();
+                } catch (final Throwable ignore) {
+                }
+            }
+        }
+        if (fileName == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        String url = null;
+        try {
+            con = br.openGetConnection(apiURL + "file/download?sid=" + session_id + "&url=" + Encoding.urlEncode(link.getDownloadURL()));
+            handleErrors_api(session_id, link, account, con);
+            if (con.getResponseCode() == 200) {
+                br.followConnection();
+                url = getJSonValueByKey("url");
+                if (url != null) url = url.replace("\\", "");
+            }
+        } finally {
+            try {
+                con.disconnect();
+            } catch (final Throwable ignore) {
+            }
+        }
+        if (url == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, url, true, 0);
+        if (dl.getConnection().getContentType().contains("html")) {
+            logger.warning("The final dllink seems not to be a file!");
+            br.followConnection();
+            if (br.containsHTML("<h2>Error 500</h2>[\r\n ]+<div class=\"error\">"))
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Hoster is issues", 60 * 60 * 1000l);
+            else
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dl.startDownload();
+    }
+
+    public void handlePremium_web(final DownloadLink link, final Account account) throws Exception {
         logger.info("Performing cached login sequence!!");
-        Map<String, String> cookies = login(account, false);
+        Map<String, String> cookies = login_web(account, false);
         int repeat = 2;
         for (int i = 0; i <= repeat; i++) {
             br.setFollowRedirects(false);
@@ -626,7 +904,7 @@ public class RapidGatorNet extends PluginForHost {
                 // lets login fully again, as hoster as removed premium cookie for some unknown reason...
                 logger.info("Performing full login sequence!!");
                 br = new Browser();
-                cookies = login(account, true);
+                cookies = login_web(account, true);
                 continue;
             } else if (br.getCookie(MAINPAGE, "user__") == null && i + 1 == repeat) {
                 // failure

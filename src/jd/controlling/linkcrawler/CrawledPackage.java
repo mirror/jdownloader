@@ -13,6 +13,7 @@ import jd.controlling.packagecontroller.PackageController;
 
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.os.CrossSystem;
 import org.jdownloader.controlling.UniqueAlltimeID;
 import org.jdownloader.controlling.packagizer.PackagizerController;
 import org.jdownloader.settings.GeneralSettings;
@@ -211,7 +212,10 @@ public class CrawledPackage implements AbstractPackageNode<CrawledLink, CrawledP
     }
 
     public void setName(String name) {
-        if (name != null && name.equals(this.name)) return;
+        if (name != null) {
+            name = CrossSystem.alleviatePathParts(name);
+            if (name.equals(this.name)) return;
+        }
         setType(TYPE.NORMAL);
         this.name = name;
         compiledDownloadFolder = null;

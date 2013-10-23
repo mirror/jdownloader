@@ -148,6 +148,10 @@ public class MegaConz extends PluginForHost {
     private String decrypt(String input, String keyString) throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, InvalidAlgorithmParameterException, IllegalBlockSizeException, BadPaddingException, UnsupportedEncodingException, PluginException {
         byte[] b64Dec = b64decode(keyString);
         int[] intKey = aByte_to_aInt(b64Dec);
+        if (intKey.length < 8) {
+            /* key is not given in link */
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         byte[] key = aInt_to_aByte(intKey[0] ^ intKey[4], intKey[1] ^ intKey[5], intKey[2] ^ intKey[6], intKey[3] ^ intKey[7]);
         byte[] iv = aInt_to_aByte(0, 0, 0, 0);
         final IvParameterSpec ivSpec = new IvParameterSpec(iv);
