@@ -40,6 +40,13 @@ public class FlashMirrorsCom extends PluginForDecrypt {
         br.setReadTimeout(3 * 60 * 1000);
         br.setCookie("http://flashmirrors.com/", "rl", "is_set");
         br.getPage("http://flashmirrors.com/mirrors/" + new Regex(parameter, "flashmirrors\\.com/files/(.+)").getMatch(0));
+        if ("http://flashmirrors.com/".equals(br.getRedirectLocation())) {
+            br.getPage("http://flashmirrors.com/mirrors/" + new Regex(parameter, "flashmirrors\\.com/files/(.+)").getMatch(0));
+            if ("http://flashmirrors.com/".equals(br.getRedirectLocation())) {
+                logger.info("Link offline: " + parameter);
+                return decryptedLinks;
+            }
+        }
         final String[] links = br.getRegex("\"link_data\":\"([^<>\"]*?)\"").getColumn(0);
         if (links == null || links.length == 0) {
             if (br.containsHTML("alt=\"Not Available\"")) {

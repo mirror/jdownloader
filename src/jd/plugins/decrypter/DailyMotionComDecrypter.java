@@ -38,7 +38,7 @@ import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
 //Decrypts embedded videos from dailymotion
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "dailymotion.com" }, urls = { "http://(www\\.)?dailymotion\\.com/((embed/)?video/[a-z0-9\\-_]+|swf(/video)?/[a-zA-Z0-9]+)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "dailymotion.com" }, urls = { "https?://(www\\.)?dailymotion\\.com/((embed/)?video/[a-z0-9\\-_]+|swf(/video)?/[a-zA-Z0-9]+)" }, flags = { 0 })
 public class DailyMotionComDecrypter extends PluginForDecrypt {
 
     public DailyMotionComDecrypter(PluginWrapper wrapper) {
@@ -57,7 +57,9 @@ public class DailyMotionComDecrypter extends PluginForDecrypt {
      * 
      * @ 5 ldURL or stream_h264_ld_url
      * 
-     * @ 6 video_url or hds or rtmp
+     * @ 6 video_url or rtmp
+     * 
+     * @ 7 hds
      * 
      * @String[] = {"Direct download url", "filename, if available before quality selection"}
      */
@@ -65,9 +67,16 @@ public class DailyMotionComDecrypter extends PluginForDecrypt {
     private String                          FILENAME       = null;
     private String                          PARAMETER      = null;
 
+    private static final String             ALLOW_LQ       = "ALLOW_LQ";
+    private static final String             ALLOW_SD       = "ALLOW_SD";
+    private static final String             ALLOW_HQ       = "ALLOW_HQ";
+    private static final String             ALLOW_720      = "ALLOW_720";
+    private static final String             ALLOW_OTHERS   = "ALLOW_OTHERS";
+    private static final String             ALLOW_HDS      = "ALLOW_HDS";
+
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        PARAMETER = param.toString().replace("www.", "").replace("embed/video/", "video/").replaceAll("\\.com/swf(/video)?/", ".com/video/");
+        PARAMETER = param.toString().replace("www.", "").replace("embed/video/", "video/").replaceAll("\\.com/swf(/video)?/", ".com/video/").replace("https://", "http://");
         br.setFollowRedirects(true);
 
         /** Login if account available */
@@ -190,14 +199,15 @@ public class DailyMotionComDecrypter extends PluginForDecrypt {
                 FOUNDQUALITIES.put(quality[1], dlinfo);
             }
         }
-        if (FOUNDQUALITIES.isEmpty()) {
+        // List empty or only 1 link found -> Check for (more) links
+        if (FOUNDQUALITIES.isEmpty() || FOUNDQUALITIES.size() == 1) {
             final String manifestURL = new Regex(VIDEOSOURCE, "\"autoURL\":\"(http://[^<>\"]*?)\"").getMatch(0);
             if (manifestURL != null) {
                 /** HDS */
                 final String[] dlinfo = new String[2];
                 dlinfo[0] = manifestURL;
                 dlinfo[1] = "hds";
-                FOUNDQUALITIES.put("6", dlinfo);
+                FOUNDQUALITIES.put("7", dlinfo);
             }
 
             // Try to avoid HDS
@@ -205,7 +215,7 @@ public class DailyMotionComDecrypter extends PluginForDecrypt {
             VIDEOSOURCE = br.getRegex("var info = \\{(.*?)\\},").getMatch(0);
             if (VIDEOSOURCE != null) {
                 VIDEOSOURCE = Encoding.htmlDecode(VIDEOSOURCE).replace("\\", "");
-                final String[][] embedQualities = { { "stream_h264_hd_url", "3" }, { "stream_h264_hq_url", "4" }, { "stream_h264_ld_url", "5" } };
+                final String[][] embedQualities = { { "stream_h264_ld_url", "5" }, { "stream_h264_hq_url", "4" }, { "stream_h264_hd_url", "3" } };
                 for (final String quality[] : embedQualities) {
                     final String currentQualityUrl = getQuality(quality[0]);
                     if (currentQualityUrl != null) {
@@ -242,23 +252,25 @@ public class DailyMotionComDecrypter extends PluginForDecrypt {
         final SubConfiguration cfg = SubConfiguration.getConfig("dailymotion.com");
         if (cfg.getBooleanProperty("ALLOW_BEST", false)) {
             ArrayList<String> list = new ArrayList<String>(FOUNDQUALITIES.keySet());
-            final String highestAvailableQualityValue = list.get(0);
+            final String highestAvailableQualityValue = list.get(list.size() - 1);
             selectedQualities.add(highestAvailableQualityValue);
         } else {
+            boolean qld = cfg.getBooleanProperty(ALLOW_LQ, false);
+            boolean qsd = cfg.getBooleanProperty(ALLOW_SD, false);
+            boolean qhq = cfg.getBooleanProperty(ALLOW_HQ, false);
+            boolean q720 = cfg.getBooleanProperty(ALLOW_720, false);
+            boolean q1080 = cfg.getBooleanProperty(ALLOW_720, false);
+            boolean others = cfg.getBooleanProperty(ALLOW_OTHERS, false);
+            boolean hds = cfg.getBooleanProperty(ALLOW_HDS, false);
             /** User selected nothing -> Decrypt everything */
-            boolean qld = cfg.getBooleanProperty("ALLOW_LQ", false);
-            boolean qsd = cfg.getBooleanProperty("ALLOW_SD", false);
-            boolean qhq = cfg.getBooleanProperty("ALLOW_HQ", false);
-            boolean q720 = cfg.getBooleanProperty("ALLOW_720", false);
-            boolean q1080 = cfg.getBooleanProperty("ALLOW_720", false);
-            boolean others = cfg.getBooleanProperty("ALLOW_OTHERS", false);
-            if (qld == false && qsd == false && qhq == false && q720 == false && q1080 == false && others == false) {
+            if (qld == false && qsd == false && qhq == false && q720 == false && q1080 == false && others == false && hds == false) {
                 qld = true;
                 qsd = true;
                 qhq = true;
                 q720 = true;
                 q1080 = true;
                 others = true;
+                hds = true;
             }
             if (qld) selectedQualities.add("5");
             if (qsd) selectedQualities.add("4");
@@ -266,6 +278,7 @@ public class DailyMotionComDecrypter extends PluginForDecrypt {
             if (q720) selectedQualities.add("2");
             if (q1080) selectedQualities.add("1");
             if (others) selectedQualities.add("6");
+            if (hds) selectedQualities.add("7");
         }
         for (final String selectedQualityValue : selectedQualities) {
             final DownloadLink dl = getVideoDownloadlink(selectedQualityValue);

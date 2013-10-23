@@ -687,27 +687,40 @@ public class DecrypterForRedirectServicesWithoutDirectRedirects extends PluginFo
                 logger.info("Link invalid: " + parameter);
                 return decryptedLinks;
             }
-            if (br.getRedirectLocation() != null) br.getPage(br.getRedirectLocation());
-            if (br.containsHTML("No htmlCode read")) {
-                logger.info("Link offline: " + parameter);
-                return decryptedLinks;
+            for (int i = 1; i <= 3; i++) {
+                if (br.getRedirectLocation() != null) {
+                    if (br.getRedirectLocation().matches("http://(www\\.)?(lnx\\.lu|z\\.gs|url\\.fm)/.+")) {
+                        br.getPage(br.getRedirectLocation());
+                        continue;
+                    } else {
+                        finallink = br.getRedirectLocation();
+                        break;
+                    }
+                }
+                break;
             }
-            if (br.containsHTML("id=\"shrinkfield\">")) {
-                logger.info("Link offline: " + parameter);
-                return decryptedLinks;
-            }
-            if (br.containsHTML("<title>Index of")) {
-                logger.info("Link offline: " + parameter);
-                return decryptedLinks;
-            }
-            finallink = br.getRegex("\"(/\\?click=[^<>\"/]*?)\"").getMatch(0);
-            if (finallink != null) {
-                br.getPage("http://lnx.lu" + finallink);
+            if (finallink == null) {
                 if (br.containsHTML("No htmlCode read")) {
                     logger.info("Link offline: " + parameter);
                     return decryptedLinks;
                 }
-                finallink = br.getRedirectLocation();
+                if (br.containsHTML("id=\"shrinkfield\">")) {
+                    logger.info("Link offline: " + parameter);
+                    return decryptedLinks;
+                }
+                if (br.containsHTML("<title>Index of")) {
+                    logger.info("Link offline: " + parameter);
+                    return decryptedLinks;
+                }
+                finallink = br.getRegex("\"(/\\?click=[^<>\"/]*?)\"").getMatch(0);
+                if (finallink != null) {
+                    br.getPage("http://lnx.lu" + finallink);
+                    if (br.containsHTML("No htmlCode read")) {
+                        logger.info("Link offline: " + parameter);
+                        return decryptedLinks;
+                    }
+                    finallink = br.getRedirectLocation();
+                }
             }
         } else if (parameter.contains("peeplink.in/")) {
             finallink = br.getRegex("<article>(.*?)</article>").getMatch(0);

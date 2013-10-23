@@ -163,6 +163,7 @@ public class ChoMikujPl extends PluginForHost {
             if (br.containsHTML(PREMIUMONLY)) return false;
             DLLINK = br.getRegex("redirectUrl\":\"(http://.*?)\"").getMatch(0);
             if (DLLINK == null) DLLINK = br.getRegex("\\\\u003ca href=\\\\\"([^\"]*?)\\\\\" title").getMatch(0);
+            if (DLLINK == null) DLLINK = br.getRegex("\"(http://[A-Za-z0-9\\-_\\.]+\\.chomikuj\\.pl/File\\.aspx[^<>\"]*?)\\\\\"").getMatch(0);
             if (DLLINK != null) DLLINK = Encoding.htmlDecode(DLLINK);
         }
         if (DLLINK != null) DLLINK = unescape(DLLINK);

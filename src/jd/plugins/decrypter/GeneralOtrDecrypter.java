@@ -42,6 +42,10 @@ public class GeneralOtrDecrypter extends PluginForDecrypt {
         br.setFollowRedirects(false);
         if (parameter.contains("die-schnelle-kuh.de/")) {
             br.getPage(parameter);
+            if (br.containsHTML("Leider bieten wir diese Datei nicht als Download an")) {
+                logger.info("Link offline: " + parameter);
+                return decryptedLinks;
+            }
             final String contnue = br.getRegex("onclick=\"window\\.location\\.href=\\'(\\?[^<>\"\\']+)\\'\"").getMatch(0);
             if (contnue == null) {
                 logger.warning("Decrypter broken for link: " + parameter);

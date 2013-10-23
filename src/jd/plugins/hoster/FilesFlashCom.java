@@ -47,8 +47,7 @@ public class FilesFlashCom extends PluginForHost {
     }
 
     /**
-     * Leave most of the urls unchanged as for some countries, only urls with
-     * the port in it are accessable
+     * Leave most of the urls unchanged as for some countries, only urls with the port in it are accessable
      */
     // public void correctDownloadLink(DownloadLink link) {
     // link.setUrlDownload("http://filesflash.com/" + new
@@ -61,7 +60,7 @@ public class FilesFlashCom extends PluginForHost {
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
         // Link offline
-        if (br.containsHTML("(>That is not a valid url\\.<|>That file is not available for download\\.<|>That file has been banned from this website|>That file was deleted due to inactivity<|>That file has been deleted)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("(>That is not a valid url\\.<|>That file is not available for download\\.<|>That file has been banned from this website|>That file was deleted due to inactivity<|>That file has been deleted|>That file was deleted due to inactivity)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         // Invalid link
         if (br.containsHTML(">403 Forbidden<")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex(">Filename: (.*?)<br").getMatch(0);

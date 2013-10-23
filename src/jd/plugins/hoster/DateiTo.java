@@ -192,6 +192,7 @@ public class DateiTo extends PluginForHost {
             logger.warning("The dllink doesn't seem to be a file...");
             br.followConnection();
             // Shouldn't happen often
+            handleServerErrors();
             if (br.containsHTML("(window\\.location\\.href=\\'http://datei\\.to/login|form id=\"UploadForm\")")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1001l);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -206,6 +207,10 @@ public class DateiTo extends PluginForHost {
     private void generalFreeAPIErrorhandling() throws NumberFormatException, PluginException {
         if (br.containsHTML("limit reached")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Long.parseLong(br.getRegex("limit reached;(\\d+)").getMatch(0)));
         if (br.containsHTML("download active")) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Another free download is already active, please wait before starting new ones.", 5 * 60 * 1000l);
+    }
+
+    private void handleServerErrors() throws PluginException {
+        if (br.containsHTML("datei\\.to/error/notfound")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 60 * 60 * 1000l);
     }
 
     @Override
@@ -353,6 +358,7 @@ public class DateiTo extends PluginForHost {
             br.setFollowRedirects(true);
             if (dl.getConnection() == null || dl.getConnection().getContentType().contains("html")) {
                 br.followConnection();
+                handleServerErrors();
                 logger.severe("PremiumError: " + br.toString());
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
             }
@@ -384,6 +390,7 @@ public class DateiTo extends PluginForHost {
             dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
             if (dl.getConnection().getContentType().contains("html")) {
                 br.followConnection();
+                handleServerErrors();
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             dl.startDownload();

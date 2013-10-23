@@ -44,7 +44,7 @@ public class FlStbCm extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final FilePackage fp = FilePackage.getInstance();
-        final String parameter = param.toString().toLowerCase();
+        final String parameter = param.toString();
         if (parameter.matches(INVALIDLINKS)) {
             logger.info("Link invalid: " + parameter);
             return decryptedLinks;

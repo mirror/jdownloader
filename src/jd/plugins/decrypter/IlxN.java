@@ -61,15 +61,9 @@ public class IlxN extends PluginForDecrypt {
                 return null;
             }
             decryptedLinks.add(createDownloadlink(finallink));
-        } else if (br.containsHTML("src='encrypt.php'")) {
+        } else if (br.containsHTML("src=\\'encrypt\\.php\\'")) {
             br.getPage("http://ilix.in/encrypt.php");
-            String finallink0 = br.getRegex("\\(unescape\\('(.*?)'\\)\\)").getMatch(0);
-            if (finallink0 == null) {
-                logger.warning("Decrypter broken for link: " + parameter);
-                return null;
-            }
-            finallink0 = Encoding.htmlDecode(finallink0);
-            String finallink = new Regex(finallink0, "ifram\" src=\"(.*?)\"").getMatch(0);
+            String finallink = decryptEscaped();
             if (finallink == null) {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
@@ -77,7 +71,11 @@ public class IlxN extends PluginForDecrypt {
             decryptedLinks.add(createDownloadlink(finallink));
         } else if (br.containsHTML("name='n'")) {
             br.postPage(br.getURL(), "n=0&consubmit=Continue");
-            final String finallink = br.getRedirectLocation();
+            String finallink = br.getRedirectLocation();
+            if (finallink == null && br.containsHTML("src=\\'encrypt\\.php\\'")) {
+                br.getPage("http://ilix.in/encrypt.php");
+                finallink = decryptEscaped();
+            }
             if (finallink == null) {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
@@ -109,6 +107,14 @@ public class IlxN extends PluginForDecrypt {
             }
         }
         return decryptedLinks;
+    }
+
+    private String decryptEscaped() {
+        String finallink0 = br.getRegex("\\(unescape\\('(.*?)'\\)\\)").getMatch(0);
+        if (finallink0 == null) { return null; }
+        finallink0 = Encoding.htmlDecode(finallink0);
+        String finallink = new Regex(finallink0, "ifram\" src=\"(.*?)\"").getMatch(0);
+        return finallink;
     }
 
     /* NO OVERRIDE!! */
