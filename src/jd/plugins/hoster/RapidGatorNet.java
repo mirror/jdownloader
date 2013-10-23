@@ -807,9 +807,10 @@ public class RapidGatorNet extends PluginForHost {
     }
 
     private void prepareBrowser_api(Browser br) {
+        prepareBrowser(br);
         try {
             /* not available in old stable */
-            br.setAllowedResponseCodes(new int[] { 401, 402 });
+            if (br != null) br.setAllowedResponseCodes(new int[] { 401, 402, 501, 423 });
         } catch (Throwable not09581) {
         }
     }
