@@ -17,6 +17,10 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.util.logging.Level;
+
+import javax.script.ScriptEngine;
+import javax.script.ScriptEngineManager;
 
 import jd.PluginWrapper;
 import jd.http.URLConnectionAdapter;
@@ -134,12 +138,35 @@ public class NovaUpMovcom extends PluginForHost {
     }
 
     private void getVideoLink() throws PluginException, IOException {
-        final String fileId = br.getRegex("flashvars\\.file=\"(.*?)\"").getMatch(0);
-        final String fileKey = br.getRegex("flashvars\\.filekey=\"(.*?)\"").getMatch(0);
-        final String fileCid = br.getRegex("flashvars\\.cid=\"(.*?)\"").getMatch(0);
+        String result = unWise();
+        final String fileId = new Regex(result, "flashvars\\.file=\"(.*?)\"").getMatch(0);
+        final String fileKey = new Regex(result, "flashvars\\.filekey=\"(.*?)\"").getMatch(0);
+        final String fileCid = new Regex(result, "flashvars\\.cid=\"(.*?)\"").getMatch(0);
         if (fileId == null || fileKey == null || fileCid == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
         br.getPage("http://www.novamov.com/api/player.api.php?user=undefined&codes=" + fileCid + "&file=" + fileId + "&pass=undefined&key=" + fileKey);
         DLLINK = br.getRegex("url=(.*?)\\&").getMatch(0);
+    }
+
+    private String unWise() {
+        String result = null;
+        String fn = br.getRegex("eval\\((function\\(.*?\'\\))\\);").getMatch(0);
+        if (fn == null) return null;
+        final ScriptEngineManager manager = new ScriptEngineManager();
+        final ScriptEngine engine = manager.getEngineByName("ECMAScript");
+        try {
+            engine.eval("var res = " + fn);
+            result = (String) engine.get("res");
+            result = new Regex(result, "eval\\((.*?)\\);$").getMatch(0);
+            engine.eval("res = " + result);
+            result = (String) engine.get("res");
+            String res[] = result.split(";\\s;");
+            engine.eval("res = " + new Regex(res[res.length - 1], "eval\\((.*?)\\);$").getMatch(0));
+            result = (String) engine.get("res");
+        } catch (final Exception e) {
+            logger.log(Level.SEVERE, e.getMessage(), e);
+            return null;
+        }
+        return result;
     }
 
     @Override

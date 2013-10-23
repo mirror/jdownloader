@@ -15,6 +15,12 @@
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import java.util.HashMap;
+import java.util.logging.Level;
+
+import javax.script.ScriptEngine;
+import javax.script.ScriptEngineManager;
+
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -113,6 +119,13 @@ public class MovShareNet extends PluginForHost {
                             br.getPage("http://www.movshare.net/api/player.api.php?key=" + Encoding.urlEncode(key) + "&user=undefined&codes=undefined&pass=undefined&file=" + new Regex(downloadLink.getDownloadURL(), "movshare\\.net/video/(.+)").getMatch(0));
                             dllink = br.getRegex("url=(http://.*?)\\&title=").getMatch(0);
                         }
+                        if (dllink == null) {
+                            HashMap<String, String> values = new HashMap<String, String>(unWise());
+                            if (values.size() > 0) {
+                                br.getPage("/api/player.api.php?user=undefined&codes=" + values.get("cid") + "&file=" + values.get("file") + "&pass=undefined&key=" + values.get("filekey"));
+                                dllink = br.getRegex("url=(http://.*?)\\&title=").getMatch(0);
+                            }
+                        }
                     }
                 }
             }
@@ -127,6 +140,39 @@ public class MovShareNet extends PluginForHost {
         dl.startDownload();
     }
 
+    private HashMap<String, String> unWise() {
+        String result = null;
+        String fn = br.getRegex("eval\\((function\\(.*?\'\\))\\);").getMatch(0);
+        if (fn == null) return null;
+        HashMap<String, String> values = new HashMap<String, String>();
+        final ScriptEngineManager manager = new ScriptEngineManager();
+        final ScriptEngine engine = manager.getEngineByName("javascript");
+        try {
+            engine.eval("var res = " + fn);
+            result = (String) engine.get("res");
+            result = new Regex(result, "eval\\((.*?)\\);$").getMatch(0);
+            engine.eval("res = " + result);
+            result = (String) engine.get("res");
+            String res[] = result.split(";\\s;");
+            engine.eval("res = " + new Regex(res[res.length - 1], "eval\\((.*?)\\);$").getMatch(0));
+            result = (String) engine.get("res");
+            if (result.startsWith("eval(function(p,a,c,k,e,d)")) {
+                result = new Regex(result, "eval\\((.*?)\\)$").getMatch(0);
+                engine.eval("res = " + result);
+                result = (String) engine.get("res");
+            }
+            String tmp = new Regex(result, "^(.*?)function").getMatch(0);
+            tmp += new Regex(result, "(var flashvars.*?)var params").getMatch(0);
+            engine.eval(tmp);
+            engine.put("map", values);
+            engine.eval("for (var i in flashvars){map.put(i,flashvars[i]);}");
+        } catch (final Exception e) {
+            logger.log(Level.SEVERE, e.getMessage(), e);
+            return null;
+        }
+        return values;
+    }
+
     @Override
     public void reset() {
     }
@@ -138,4 +184,5 @@ public class MovShareNet extends PluginForHost {
     @Override
     public void resetPluginGlobals() {
     }
+
 }
