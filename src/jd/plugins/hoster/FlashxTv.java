@@ -147,12 +147,13 @@ public class FlashxTv extends PluginForHost {
         // 4
         regex = "config=(http://play.flashx.tv/nuevo/[^\"]+)\"";
         String thirdLink = br.getRegex(regex).getMatch(0);
+        String fp = br.getRegex("data=\"(http.*?config=)http").getMatch(0);
         if (thirdLink == null) thirdLink = getPlainData(regex);
-        if (thirdLink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (thirdLink == null || fp == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
 
         Browser br2 = br.cloneBrowser();
         br2.getHeaders().put("Pragma", "no-cache");
-        br2.openGetConnection(fx(3) + thirdLink);
+        br2.openGetConnection(fp + thirdLink);
 
         br.getPage(thirdLink);
         dllink = br.getRegex("<file>(http://[^<>\"]*?)</file>").getMatch(0);
