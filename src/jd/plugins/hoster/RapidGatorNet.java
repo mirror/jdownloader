@@ -533,8 +533,8 @@ public class RapidGatorNet extends PluginForHost {
                     }
                     return ai;
                 }
-
                 account.setValid(false);
+                account.setProperty("session_type", null);
                 return ai;
             } catch (PluginException e) {
                 account.setProperty("session_type", null);
