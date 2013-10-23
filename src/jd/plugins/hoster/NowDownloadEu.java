@@ -20,6 +20,10 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.logging.Level;
+
+import javax.script.ScriptEngine;
+import javax.script.ScriptEngineManager;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -155,6 +159,10 @@ public class NowDownloadEu extends PluginForHost {
         String dllink = (checkDirectLink(downloadLink, "directlink"));
         if (dllink == null) dllink = getDllink();
         // This handling maybe isn't needed anymore
+        if (dllink == null && br.containsHTML("w,i,s,e")) {
+            String result = unWise();
+            br.getRequest().setHtmlCode(result + "\r\n" + br.getRequest().getHtmlCode());
+        }
         if (dllink == null) {
             final String tokenPage = br.getRegex("\"(/api/token\\.php\\?token=[a-z0-9]+)\"").getMatch(0);
             final String continuePage = br.getRegex("\"(/dl2/[a-z0-9]+/[a-z0-9]+)\"").getMatch(0);
@@ -180,6 +188,28 @@ public class NowDownloadEu extends PluginForHost {
         downloadLink.setProperty("directlink", dllink);
         downloadLink.setFinalFileName(Encoding.htmlDecode(getFileNameFromHeader(dl.getConnection())));
         dl.startDownload();
+    }
+
+    private String unWise() {
+        String result = null;
+        String fn = br.getRegex("eval\\((function\\(.*?\'\\))\\);").getMatch(0);
+        if (fn == null) return null;
+        final ScriptEngineManager manager = new ScriptEngineManager();
+        final ScriptEngine engine = manager.getEngineByName("ECMAScript");
+        try {
+            engine.eval("var res = " + fn);
+            result = (String) engine.get("res");
+            result = new Regex(result, "eval\\((.*?)\\);$").getMatch(0);
+            engine.eval("res = " + result);
+            result = (String) engine.get("res");
+            String res[] = result.split(";\\s;");
+            engine.eval("res = " + new Regex(res[res.length - 1], "eval\\((.*?)\\);$").getMatch(0));
+            result = (String) engine.get("res");
+        } catch (final Exception e) {
+            logger.log(Level.SEVERE, e.getMessage(), e);
+            return null;
+        }
+        return result;
     }
 
     private static void workAroundTimeOut(final Browser br) {
