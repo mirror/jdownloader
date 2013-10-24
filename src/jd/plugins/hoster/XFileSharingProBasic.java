@@ -743,7 +743,7 @@ public class XFileSharingProBasic extends PluginForHost {
                     // not available in old Stable 0.9.581
                 }
             }
-            ai.setStatus("Premium User");
+            ai.setStatus("Premium user");
         }
         return ai;
     }
