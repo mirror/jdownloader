@@ -16,14 +16,15 @@
 
 package jd.plugins.hoster;
 
-import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
 import jd.PluginWrapper;
 import jd.config.Property;
+import jd.controlling.AccountController;
 import jd.http.Cookie;
 import jd.http.Cookies;
+import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
@@ -37,7 +38,7 @@ import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "speedyshare.com" }, urls = { "http://(www\\.)?(speedyshare\\.com|speedy\\.sh)/(files?/)?[A-Za-z0-9]+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "speedyshare.com" }, urls = { "http://(www\\.)?(speedyshare\\.com|speedy\\.sh)/((files?|remote)/)?[A-Za-z0-9]+" }, flags = { 2 })
 public class SpeedyShareCom extends PluginForHost {
 
     private static final String PREMIUMONLY     = "(>This paraticular file can only be downloaded after you purchase|this file can only be downloaded with SpeedyShare Premium)";
@@ -45,6 +46,7 @@ public class SpeedyShareCom extends PluginForHost {
     private static final String MAINPAGE        = "http://www.speedyshare.com";
     private static final String CAPTCHATEXT     = "/captcha\\.php\\?";
     private static Object       LOCK            = new Object();
+    private final String        REMOTELINK      = "http://(www\\.)?speedyshare\\.com/remote/[A-Za-z0-9]+";
 
     public SpeedyShareCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -74,28 +76,64 @@ public class SpeedyShareCom extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         prepBrowser();
-        br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML("(class=sizetagtext>not found<|File not found|It has been deleted<|>or it never existed at all)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("\"(og:title|name)\" content=\"Download File: ([^\"]+)").getMatch(1);
-        if (filename == null) filename = br.getRegex("<title>(.+) \\- Speedy Share \\- .+</title>").getMatch(0);
-        String filesize = br.getRegex("<div class=sizetagtext>(.*?)</div>").getMatch(0);
-        if (filesize == null) filesize = br.getRegex("([\\d\\.]+ (KB|MB|GB|TB))").getMatch(0);
-        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        downloadLink.setName(Encoding.htmlDecode(filename));
-        if (filesize != null) downloadLink.setDownloadSize(SizeFormatter.getSize(filesize));
-        if (br.containsHTML(PREMIUMONLY)) downloadLink.getLinkStatus().setStatusText(JDL.L("plugins.hoster.speedysharecom.errors.only4premium", PREMIUMONLYTEXT));
-        br.setFollowRedirects(false);
+        if (downloadLink.getDownloadURL().matches(REMOTELINK)) {
+            final Account aa = AccountController.getInstance().getValidAccount(this);
+            if (aa == null) {
+                downloadLink.getLinkStatus().setStatusText("This link can only be checked when a valid premium account is active");
+                return AvailableStatus.UNCHECKABLE;
+            } else {
+                login(aa, false);
+                br.setFollowRedirects(true);
+                URLConnectionAdapter con = null;
+                try {
+                    con = br.openGetConnection(downloadLink.getDownloadURL());
+                    if (!con.getContentType().contains("html")) {
+                        downloadLink.setFinalFileName(Encoding.htmlDecode(getFileNameFromHeader(con).trim()));
+                        downloadLink.setDownloadSize(con.getLongContentLength());
+                    } else {
+                        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                    }
+                    downloadLink.getLinkStatus().setStatusText("This file can only be downloaded by premium users");
+                    return AvailableStatus.TRUE;
+                } finally {
+                    try {
+                        con.disconnect();
+                    } catch (Throwable e) {
+                    }
+                }
+            }
+        } else {
+            br.getPage(downloadLink.getDownloadURL());
+            if (br.containsHTML("(class=sizetagtext>not found<|File not found|It has been deleted<|>or it never existed at all)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            String filename = br.getRegex("\"(og:title|name)\" content=\"Download File: ([^\"]+)").getMatch(1);
+            if (filename == null) filename = br.getRegex("<title>(.+) \\- Speedy Share \\- .+</title>").getMatch(0);
+            String filesize = br.getRegex("<div class=sizetagtext>(.*?)</div>").getMatch(0);
+            if (filesize == null) filesize = br.getRegex("([\\d\\.]+ (KB|MB|GB|TB))").getMatch(0);
+            if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            downloadLink.setName(Encoding.htmlDecode(filename));
+            if (filesize != null) downloadLink.setDownloadSize(SizeFormatter.getSize(filesize));
+            if (br.containsHTML(PREMIUMONLY)) downloadLink.getLinkStatus().setStatusText(JDL.L("plugins.hoster.speedysharecom.errors.only4premium", PREMIUMONLYTEXT));
+            br.setFollowRedirects(false);
+        }
         return AvailableStatus.TRUE;
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception {
+    public void handleFree(final DownloadLink downloadLink) throws Exception {
         /* Nochmals das File überprüfen */
         requestFileInformation(downloadLink);
+        if (downloadLink.getDownloadURL().matches(REMOTELINK)) {
+            try {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+            } catch (final Throwable e) {
+                if (e instanceof PluginException) throw (PluginException) e;
+            }
+            throw new PluginException(LinkStatus.ERROR_FATAL, "This file can only be downloaded by premium users");
+        }
         if (br.containsHTML("The one\\-hour limit has been reached\\. Wait")) {
             String wait[] = br.getRegex("id=minwait1>(\\d+):(\\d+)</span> minutes").getRow(0);
             long waittime = 1000l * 60 * Long.parseLong(wait[0]) + 1000 * Long.parseLong(wait[1]);
@@ -150,7 +188,7 @@ public class SpeedyShareCom extends PluginForHost {
     }
 
     @SuppressWarnings("unchecked")
-    private void login(Account account, boolean force) throws Exception {
+    private void login(final Account account, final boolean force) throws Exception {
         synchronized (LOCK) {
             try {
                 prepBrowser();
@@ -206,27 +244,38 @@ public class SpeedyShareCom extends PluginForHost {
     }
 
     @Override
-    public void handlePremium(DownloadLink link, Account account) throws Exception {
+    public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         requestFileInformation(link);
         login(account, false);
-        br.setFollowRedirects(false);
-        br.getPage(link.getDownloadURL());
-        String dllink = br.getRedirectLocation();
-        if (dllink == null) dllink = br.getRegex("class=downloadfilename href=\\'((file/)?[^<>\"]*?)\\'").getMatch(0);
-        if (dllink == null) {
-            logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        String finallink = null;
+        if (link.getDownloadURL().matches(REMOTELINK)) {
+            finallink = link.getDownloadURL();
+        } else {
+            br.setFollowRedirects(false);
+            br.getPage(link.getDownloadURL());
+            finallink = br.getRedirectLocation();
+            if (finallink == null) finallink = br.getRegex("class=downloadfilename href=\\'((file/)?[^<>\"]*?)\\'").getMatch(0);
+            if (finallink == null) {
+                logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            if (!finallink.startsWith("http")) finallink = "http://www.speedyshare.com" + finallink;
         }
-        if (!dllink.startsWith("http")) dllink = "http://www.speedyshare.com" + dllink;
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, Encoding.htmlDecode(dllink), true, 0);
-        if (dl.getConnection().getContentType().contains("html")) {
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, Encoding.htmlDecode(finallink), true, 0);
+        if (dl.getConnection().getContentType().contains("html") && !link.getDownloadURL().matches(REMOTELINK)) {
+            br.followConnection();
+            finallink = br.getRegex("class=downloadfilename href=\\'(/(file/)?[^<>\"]*?)\\'").getMatch(0);
+            if (finallink == null) {
+                logger.warning("The final dllink seems not to be a file!");
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+        } else if (dl.getConnection().getContentType().contains("html") && link.getDownloadURL().matches(REMOTELINK)) {
             logger.warning("The final dllink seems not to be a file!");
             br.followConnection();
-            dllink = br.getRegex("class=downloadfilename href=\\'(/(file/)?[^<>\"]*?)\\'").getMatch(0);
-            if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        if (!dllink.startsWith("http")) dllink = "http://www.speedyshare.com" + dllink;
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, Encoding.htmlDecode(dllink), true, 0);
+        if (!finallink.startsWith("http")) finallink = "http://www.speedyshare.com" + finallink;
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, Encoding.htmlDecode(finallink), true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             logger.warning("The final dllink seems not to be a file!");
             br.followConnection();

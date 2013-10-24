@@ -47,15 +47,15 @@ public class DailyMotionComDecrypter extends PluginForDecrypt {
 
     private String                          VIDEOSOURCE    = null;
     /**
-     * @ 1hd1080URL
+     * @ 1hd1080URL or stream_h264_hd1080_url
      * 
-     * @ 2 hd720URL
+     * @ 2 hd720URL or stream_h264_hd_url
      * 
-     * @ 3 hqURL or stream_h264_hd_url
+     * @ 3 hqURL
      * 
-     * @ 4 sdURL or stream_h264_hq_url
+     * @ 4 sdURL or stream_h264_hq_url [848p]
      * 
-     * @ 5 ldURL or stream_h264_ld_url
+     * @ 5 ldURL or stream_h264_ld_url [320p]
      * 
      * @ 6 video_url or rtmp
      * 
@@ -71,6 +71,7 @@ public class DailyMotionComDecrypter extends PluginForDecrypt {
     private static final String             ALLOW_SD       = "ALLOW_SD";
     private static final String             ALLOW_HQ       = "ALLOW_HQ";
     private static final String             ALLOW_720      = "ALLOW_720";
+    private static final String             ALLOW_1080     = "ALLOW_1080";
     private static final String             ALLOW_OTHERS   = "ALLOW_OTHERS";
     private static final String             ALLOW_HDS      = "ALLOW_HDS";
 
@@ -215,7 +216,7 @@ public class DailyMotionComDecrypter extends PluginForDecrypt {
             VIDEOSOURCE = br.getRegex("var info = \\{(.*?)\\},").getMatch(0);
             if (VIDEOSOURCE != null) {
                 VIDEOSOURCE = Encoding.htmlDecode(VIDEOSOURCE).replace("\\", "");
-                final String[][] embedQualities = { { "stream_h264_ld_url", "5" }, { "stream_h264_hq_url", "4" }, { "stream_h264_hd_url", "3" } };
+                final String[][] embedQualities = { { "stream_h264_ld_url", "5" }, { "stream_h264_hq_url", "4" }, { "stream_h264_hd_url", "2" }, { "stream_h264_hd1080_url", "1" } };
                 for (final String quality[] : embedQualities) {
                     final String currentQualityUrl = getQuality(quality[0]);
                     if (currentQualityUrl != null) {
@@ -259,7 +260,7 @@ public class DailyMotionComDecrypter extends PluginForDecrypt {
             boolean qsd = cfg.getBooleanProperty(ALLOW_SD, false);
             boolean qhq = cfg.getBooleanProperty(ALLOW_HQ, false);
             boolean q720 = cfg.getBooleanProperty(ALLOW_720, false);
-            boolean q1080 = cfg.getBooleanProperty(ALLOW_720, false);
+            boolean q1080 = cfg.getBooleanProperty(ALLOW_1080, false);
             boolean others = cfg.getBooleanProperty(ALLOW_OTHERS, false);
             boolean hds = cfg.getBooleanProperty(ALLOW_HDS, false);
             /** User selected nothing -> Decrypt everything */

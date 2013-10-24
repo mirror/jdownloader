@@ -26,6 +26,8 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.hoster.BeStreamsNet.StringContainer;
+import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
@@ -41,9 +43,20 @@ public class TurtleShareCom extends PluginForHost {
         return "http://www.turtleshare.com/information/terms-of-service/";
     }
 
+    private final boolean          useRUA = true;
+    private static StringContainer agent  = new StringContainer();
+
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
+        if (useRUA) {
+            if (agent.string == null) {
+                /* we first have to load the plugin, before we can reference it */
+                JDUtilities.getPluginForHost("mediafire.com");
+                agent.string = jd.plugins.hoster.MediafireCom.stringUserAgent();
+            }
+            br.getHeaders().put("User-Agent", agent.string);
+        }
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
         if (br.containsHTML("We do not know this file\\.")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);

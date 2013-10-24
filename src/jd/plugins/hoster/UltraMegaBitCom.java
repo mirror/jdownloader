@@ -68,8 +68,8 @@ public class UltraMegaBitCom extends PluginForHost {
         if (br.getURL().contains("ultramegabit.com/folder/add/")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (br.containsHTML(">File not found<|>File restricted<|>File not available")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("<title>ULTRAMEGABIT\\.COM \\- ([^<>\"]*?)</title>").getMatch(0);
-        String filesize = br.getRegex("class=\"label label\\-info\" style=\"font\\-size: 14px; margin\\-left: 10px;\">([^<>\"]*?)</span>").getMatch(0);
-        if (filesize == null) filesize = br.getRegex("<input type=\"submit\" value=\"Download file \\(([^<>\"]*?)\\)\"").getMatch(0);
+        String filesize = br.getRegex("data\\-toggle=\"modal\">Download \\(([^<>\"]*?)\\) <span").getMatch(0);
+        if (filesize == null) filesize = br.getRegex("id=\"download_button\" value=\"Free download \\(([^<>\"]*?)\\)\"").getMatch(0);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         link.setName(Encoding.htmlDecode(filename.trim()));
         link.setDownloadSize(SizeFormatter.getSize(filesize));
@@ -101,6 +101,7 @@ public class UltraMegaBitCom extends PluginForHost {
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dlform, true, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
+            if (br.containsHTML("<div id=\"file_delay_carousel\"")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1001l);
             if (br.containsHTML("guests are only able to download 1 file every")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 30 * 60 * 1000l);
             if (br.containsHTML(">Account limitation notice|files smaller than")) throw new PluginException(LinkStatus.ERROR_FATAL, "Only downloadable for premium users");
             if (br.containsHTML("<h3 id=\"download_delay\">Please wait\\.\\.\\.</h3>")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, waitSum());
