@@ -111,7 +111,7 @@ public class VimeoComDecrypter extends PluginForDecrypt {
         final PluginForHost hostPlugin = JDUtilities.getPluginForHost("vimeo.com");
 
         String qualities[][] = getQualities(br, ID, title);
-
+        if (qualities == null) return null;
         ArrayList<DownloadLink> newRet = new ArrayList<DownloadLink>();
         HashMap<String, DownloadLink> bestMap = new HashMap<String, DownloadLink>();
         int format = 0;
@@ -232,7 +232,23 @@ public class VimeoComDecrypter extends PluginForDecrypt {
          */
         Thread.sleep(1000);
         String qualities[][] = null;
-        if (br.containsHTML("iconify_down_b")) {
+        String configURL = br.getRegex("data-config-url=\"(https?://player.vimeo.com/v2/video/\\d+/config.*?)\"").getMatch(0);
+        if (configURL != null) {
+            configURL = configURL.replaceAll("&amp;", "&");
+            br.getPage(configURL);
+            String fmts = br.getRegex("\"files\":\\{\"h264\":\\{(.*?)\\}\\}").getMatch(0);
+            if (fmts != null) {
+                String quality[][] = new Regex(fmts, "\"(.*?)\":\\{(.*?)(\\}|$)").getMatches();
+                qualities = new String[quality.length][4];
+                for (int i = 0; i < quality.length; i++) {
+                    String url = new Regex(quality[i][1], "\"url\":\"(http.*?)\"").getMatch(0);
+                    qualities[i][0] = url;
+                    qualities[i][1] = title;
+                    qualities[i][2] = quality[i][0];
+                    qualities[i][3] = null;
+                }
+            }
+        } else if (br.containsHTML("iconify_down_b")) {
             br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
             br.getPage("http://vimeo.com/" + ID + "?action=download");
             qualities = br.getRegex("href=\"[^\"]+(/\\d+/download.*?)\" download=\"(.*?)\" .*?>(.*? file)<.*?\\d+x\\d+ /(.*?)\\)").getMatches();
@@ -240,24 +256,25 @@ public class VimeoComDecrypter extends PluginForDecrypt {
             /* withoutDlBtn */
             String sig = br.getRegex("\"signature\":\"([0-9a-f]+)\"").getMatch(0);
             String time = br.getRegex("\"timestamp\":(\\d+)").getMatch(0);
-            if (sig == null || time == null) { return qualities; }
-            String fmts = br.getRegex("\"files\":\\{\"h264\":\\[(.*?)\\]\\}").getMatch(0);
-            if (fmts != null) {
-                String quality[] = fmts.replaceAll("\"", "").split(",");
-                qualities = new String[quality.length][4];
-                for (int i = 0; i < quality.length; i++) {
-                    qualities[i][0] = "http://player.vimeo.com/play_redirect?clip_id=" + ID + "&sig=" + sig + "&time=" + time + "&quality=" + quality[i];
-                    qualities[i][1] = title;
-                    qualities[i][2] = quality[i];
-                    qualities[i][3] = null;
+            if (sig != null && time != null) {
+                String fmts = br.getRegex("\"files\":\\{\"h264\":\\[(.*?)\\]\\}").getMatch(0);
+                if (fmts != null) {
+                    String quality[] = fmts.replaceAll("\"", "").split(",");
+                    qualities = new String[quality.length][4];
+                    for (int i = 0; i < quality.length; i++) {
+                        qualities[i][0] = "http://player.vimeo.com/play_redirect?clip_id=" + ID + "&sig=" + sig + "&time=" + time + "&quality=" + quality[i];
+                        qualities[i][1] = title;
+                        qualities[i][2] = quality[i];
+                        qualities[i][3] = null;
+                    }
+                } else {
+                    // Nothing found so SD should be available at least...
+                    qualities = new String[1][4];
+                    qualities[0][0] = "http://player.vimeo.com/play_redirect?clip_id=" + ID + "&sig=" + sig + "&time=" + time + "&quality=sd&codecs=H264,VP8,VP6&type=moogaloop_local&embed_location=&seek=0";
+                    qualities[0][1] = title;
+                    qualities[0][2] = "sd";
+                    qualities[0][3] = null;
                 }
-            } else {
-                // Nothing found so SD should be available at least...
-                qualities = new String[1][4];
-                qualities[0][0] = "http://player.vimeo.com/play_redirect?clip_id=" + ID + "&sig=" + sig + "&time=" + time + "&quality=sd&codecs=H264,VP8,VP6&type=moogaloop_local&embed_location=&seek=0";
-                qualities[0][1] = title;
-                qualities[0][2] = "sd";
-                qualities[0][3] = null;
             }
         }
         return qualities;
