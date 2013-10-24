@@ -258,10 +258,7 @@ public class SpeedyShareCom extends PluginForHost {
                 br.getPage("http://www.speedyshare.com/remote_downloader.php");
                 final String[] hosts = br.getRegex("src=/gf/ru/([A-Za-z0-9\\.]+)\\.png width=").getColumn(0);
                 if (hosts == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                ArrayList<String> supportedHosts = new ArrayList<String>(Arrays.asList(hosts));
-                for (final String host : hosts) {
-                    supportedHosts.add(host);
-                }
+                final ArrayList<String> supportedHosts = new ArrayList<String>(Arrays.asList(hosts));
                 /*
                  * set ArrayList<String> with all supported multiHosts of this service
                  */
