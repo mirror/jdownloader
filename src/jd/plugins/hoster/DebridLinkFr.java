@@ -104,9 +104,11 @@ public class DebridLinkFr extends PluginForHost {
             ac.setStatus("Premium Account");
             account.setValid(true);
             ac.setValidUntil(System.currentTimeMillis() + Long.parseLong(getJson("PREMIUMLEFT")) * 1000);
+            break;
         case 2:
             ac.setStatus("Lifetime Premium Account");
             account.setValid(true);
+            break;
         }
 
         int maxChunks = Integer.parseInt(getJson("NB_CONNECT_PER_DOWNLOAD"));
@@ -178,9 +180,12 @@ public class DebridLinkFr extends PluginForHost {
     public void handleMultiHost(final DownloadLink link, final Account acc) throws Exception {
         String user = Encoding.urlEncode(acc.getUser());
         final String pw = Encoding.urlEncode(acc.getPass());
-        final String url = Encoding.urlEncode(link.getDownloadURL());
+        String url = link.getDownloadURL();
+        if ("1fichier.com".equals(link.getHost()) && !url.endsWith("/")) {
+            url = url + "/";
+        }
         showMessage(link, "Phase 1/2: Generating link");
-        br.getPage("http://debrid-link.fr/api/?act=1&user=" + user + "&pass=" + pw + "&link=" + url);
+        br.getPage("http://debrid-link.fr/api/?act=1&user=" + user + "&pass=" + pw + "&link=" + Encoding.urlEncode(url));
 
         int errorcode = 0;
         final String errorcodeString = getJson("ID");
@@ -200,15 +205,19 @@ public class DebridLinkFr extends PluginForHost {
         case 7:
             logger.info("The file hoster is under maintenance");
             tempUnavailableHoster(acc, link, 30 * 60 * 1000l);
+            break;
         case 8:
             logger.info("No server available for the file hoster");
             tempUnavailableHoster(acc, link, 30 * 60 * 1000l);
+            break;
         case 9:
             logger.info("Limit for host globally reached, temporarily disabling it...");
             tempUnavailableHoster(acc, link, 2 * 60 * 60 * 1000l);
+            break;
         case 10:
             logger.info("Limit for host for user reached, temporarily disabling it...");
             tempUnavailableHoster(acc, link, 2 * 60 * 60 * 1000l);
+            break;
         case 11:
             logger.info("Flood protection enabled, temporarily disabling premium account");
             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
