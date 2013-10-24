@@ -87,7 +87,9 @@ public class AddAccountDialog extends AbstractDialog<Integer> {
     }
 
     private Account getAccount() {
-        return editAccountPanel.getAccount();
+        EditAccountPanel leditAccountPanel = editAccountPanel;
+        if (leditAccountPanel != null) return leditAccountPanel.getAccount();
+        return null;
     }
 
     public static boolean addAccount(final Account ac) throws DialogClosedException, DialogCanceledException {
@@ -183,26 +185,6 @@ public class AddAccountDialog extends AbstractDialog<Integer> {
     }
 
     protected void initFocus(final JComponent focus) {
-        getDialog().addWindowFocusListener(new WindowFocusListener() {
-
-            @Override
-            public void windowLostFocus(final WindowEvent windowevent) {
-                // TODO Auto-generated method stub
-
-            }
-
-            @Override
-            public void windowGainedFocus(final WindowEvent windowevent) {
-
-                final Component focusOwner = getDialog().getFocusOwner();
-                if (focusOwner != null) {
-                    // dialog component has already focus...
-                    return;
-                }
-                hoster.requestFocus();
-
-            }
-        });
     }
 
     @Override
@@ -286,7 +268,26 @@ public class AddAccountDialog extends AbstractDialog<Integer> {
             } catch (final Exception e) {
             }
         }
+        getDialog().addWindowFocusListener(new WindowFocusListener() {
 
+            @Override
+            public void windowLostFocus(final WindowEvent windowevent) {
+                // TODO Auto-generated method stub
+
+            }
+
+            @Override
+            public void windowGainedFocus(final WindowEvent windowevent) {
+                final Component focusOwner = getDialog().getFocusOwner();
+                if (focusOwner != null) {
+                    // dialog component has already focus...
+                    return;
+                }
+                /* we only want to force focus on first window open */
+                getDialog().removeWindowFocusListener(this);
+                hoster.requestFocus();
+            }
+        });
         return content;
     }
 
@@ -299,7 +300,6 @@ public class AddAccountDialog extends AbstractDialog<Integer> {
     }
 
     protected int getPreferredWidth() {
-        // TODO Auto-generated method stub
         return 450;
     }
 
