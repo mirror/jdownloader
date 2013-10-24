@@ -18,7 +18,6 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -32,7 +31,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
@@ -51,9 +49,7 @@ public class MultiShareCz extends PluginForHost {
             login(account);
         } catch (PluginException e) {
             account.setValid(false);
-            if (multiHostSupported()) {
-                ai.setProperty("multiHostSupport", Property.NULL);
-            }
+            ai.setProperty("multiHostSupport", Property.NULL);
             throw e;
         }
         account.setValid(true);
@@ -67,12 +63,12 @@ public class MultiShareCz extends PluginForHost {
             ai.setTrafficLeft(SizeFormatter.getSize(trafficleft + " MB"));
         }
         ai.setStatus("Premium User");
-        if (multiHostSupported()) {
+        if (System.getProperty("jd.revision.jdownloaderrevision") != null) {
             try {
                 br.getPage("https://www.multishare.cz/api/?sub=supported-hosters");
                 final String hostsText = br.getRegex("\\{\"server\":\\[(.*?)\\]").getMatch(0);
                 String[] hosts = hostsText.split(",");
-                ArrayList<String> supportedHosts = new ArrayList<String>(Arrays.asList(hosts));
+                ArrayList<String> supportedHosts = new ArrayList<String>();
                 for (String host : hosts) {
                     host = host.replace("\"", "");
                     if ("freakshare.net".equalsIgnoreCase(host)) host = "freakshare.com";
@@ -94,18 +90,6 @@ public class MultiShareCz extends PluginForHost {
         String result = br.getRegex("\"" + parameter + "\":(\\d+)").getMatch(0);
         if (result == null) result = br.getRegex("\"" + parameter + "\":\"([^<>\"]*?)\"").getMatch(0);
         return result;
-    }
-
-    private boolean multiHostSupported() {
-        String prev = JDUtilities.getRevision();
-        if (prev == null || prev.length() < 3) {
-            prev = "0";
-        } else {
-            prev = prev.replaceAll(",|\\.", "");
-        }
-        int rev = Integer.parseInt(prev);
-        if (rev < 16116) return false;
-        return true;
     }
 
     @Override

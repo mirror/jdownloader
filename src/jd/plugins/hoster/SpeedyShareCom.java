@@ -37,7 +37,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
@@ -214,9 +213,14 @@ public class SpeedyShareCom extends PluginForHost {
                         return;
                     }
                 }
-                br.setFollowRedirects(false);
-                br.postPage("https://www.speedyshare.com/login.php", "redir=%2Fupload_page.php&remember=on&login=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass()));
-                br.getPage("http://www.speedyshare.com/user.php");
+                br.setFollowRedirects(true);
+                br.postPage("https://www.speedyshare.com/login.php", "redir=%2user.php&remember=on&login=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass()));
+                if (br.containsHTML("<b>Error occured</b>") && (br.containsHTML(">Your login information has been used from several networks recently"))) {
+                    // account sharing ?? can happen when devs use the account also!!
+                    logger.warning("Login failed, hoster determined you've logged in from too many IP subnets.");
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                }
+                if (br.getURL().endsWith("/user.php")) br.getPage("/user.php");
                 if (br.getCookie(MAINPAGE, "spl") == null || !br.containsHTML("<td>Account type:</td><td><b style=\\'color: green\\'>Premium</b>")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 // Save cookies
                 final HashMap<String, String> cookies = new HashMap<String, String>();
@@ -237,14 +241,11 @@ public class SpeedyShareCom extends PluginForHost {
     @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
-        final boolean multihostsupport = multiHostSupported();
         try {
             login(account, true);
         } catch (PluginException e) {
             account.setValid(false);
-            if (multihostsupport) {
-                ai.setProperty("multiHostSupport", Property.NULL);
-            }
+            ai.setProperty("multiHostSupport", Property.NULL);
             return ai;
         }
         final String expire = br.getRegex("<td>Next payment:</td><td>([^<>\"]*?)</td>").getMatch(0);
@@ -253,12 +254,12 @@ public class SpeedyShareCom extends PluginForHost {
         }
         ai.setUnlimitedTraffic();
         account.setValid(true);
-        if (multihostsupport) {
+        if (System.getProperty("jd.revision.jdownloaderrevision") != null) {
             try {
-                br.getPage("http://www.speedyshare.com/remote_downloader.php");
+                br.getPage("/remote_downloader.php");
                 final String[] hosts = br.getRegex("src=/gf/ru/([A-Za-z0-9\\.]+)\\.png width=").getColumn(0);
                 if (hosts == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                final ArrayList<String> supportedHosts = new ArrayList<String>(Arrays.asList(hosts));
+                ArrayList<String> supportedHosts = new ArrayList<String>(Arrays.asList(hosts));
                 /*
                  * set ArrayList<String> with all supported multiHosts of this service
                  */
@@ -337,18 +338,6 @@ public class SpeedyShareCom extends PluginForHost {
         }
         link.setProperty("speedysharedirectlink", dllink);
         dl.startDownload();
-    }
-
-    private boolean multiHostSupported() {
-        String prev = JDUtilities.getRevision();
-        if (prev == null || prev.length() < 3) {
-            prev = "0";
-        } else {
-            prev = prev.replaceAll(",|\\.", "");
-        }
-        int rev = Integer.parseInt(prev);
-        if (rev < 16116) return false;
-        return true;
     }
 
     private void tempUnavailableHoster(Account account, DownloadLink downloadLink, long timeout) throws PluginException {
