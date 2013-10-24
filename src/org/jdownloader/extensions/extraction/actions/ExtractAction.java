@@ -37,6 +37,8 @@ public class ExtractAction<PackageType extends AbstractPackageNode<ChildrenType,
 
     public ExtractAction() {
         super(null);
+        setItemVisibleForEmptySelection(true);
+        setItemVisibleForSelections(true);
         setName(T._.menu_tools_extract_files());
         setIconKey("unpack");
 
