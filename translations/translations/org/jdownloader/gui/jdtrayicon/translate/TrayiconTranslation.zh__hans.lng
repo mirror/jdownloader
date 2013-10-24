@@ -27,6 +27,7 @@ plugins_optional_trayIcon_speed=速度:
 popup_downloadfolder=打开下载目录
 popup_exit=退出 JDownloader
 popup_pause=暂停下载
+popup_premiumtoggle=启用黄金账号
 popup_reconnect=现在重连
 popup_reconnecttoggle=自动重连已启用
 popup_update=检查更新
