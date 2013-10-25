@@ -33,6 +33,8 @@ import javax.xml.xpath.XPathFactory;
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
+import jd.http.Browser;
+import jd.http.URLConnectionAdapter;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -63,6 +65,8 @@ public class ArteTv extends PluginForHost {
     private static final String Q_HIGH      = "Q_HIGH";
     private static final String Q_VERYHIGH  = "Q_VERYHIGH";
     private static final String Q_HD        = "Q_HD";
+    private static final String HBBTV       = "HBBTV";
+    private static final String THUMBNAIL   = "THUMBNAIL";
 
     public ArteTv(PluginWrapper wrapper) {
         super(wrapper);
@@ -244,6 +248,25 @@ public class ArteTv extends PluginForHost {
         if (fileName.endsWith(".")) {
             fileName = fileName.substring(0, fileName.length() - 1);
         }
+        if ("HBBTV".equals(downloadLink.getStringProperty("streamingType", "RTMP"))) {
+            URLConnectionAdapter con = null;
+            final Browser br2 = br.cloneBrowser();
+            // In case the link redirects to the finallink
+            br2.setFollowRedirects(true);
+            try {
+                con = br2.openGetConnection(CLIPURL);
+                if (!con.getContentType().contains("html")) {
+                    downloadLink.setDownloadSize(con.getLongContentLength());
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
+            } finally {
+                try {
+                    con.disconnect();
+                } catch (Throwable e) {
+                }
+            }
+        }
         downloadLink.setFinalFileName(fileName.trim() + ext);
         return AvailableStatus.TRUE;
     }
@@ -347,7 +370,9 @@ public class ArteTv extends PluginForHost {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), Q_HIGH, JDL.L("plugins.hoster.arte.loadhigh", "Load high version")).setDefaultValue(true).setEnabledCondidtion(bestonly, false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), Q_VERYHIGH, JDL.L("plugins.hoster.arte.loadveryhigh", "Load veryhigh version")).setDefaultValue(true).setEnabledCondidtion(bestonly, false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), Q_HD, JDL.L("plugins.hoster.arte.loadhd", "Load HD version")).setDefaultValue(true).setEnabledCondidtion(bestonly, false));
-
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), HBBTV, JDL.L("plugins.hoster.arte.usehbbtv", "Load only http streams (HbbTV)")).setDefaultValue(false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), THUMBNAIL, JDL.L("plugins.hoster.arte.loadthumbnail", "Load thumbnail")).setDefaultValue(false));
     }
 
 }
