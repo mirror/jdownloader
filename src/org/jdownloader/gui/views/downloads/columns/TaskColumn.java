@@ -191,14 +191,14 @@ public class TaskColumn extends ExtTextColumn<AbstractNode> {
             SkipReason skipReason = link.getSkipReason();
             if (skipReason != null) {
                 columnHelper.icon = infoIcon;
-                columnHelper.string = skipReason.getExplanation();
+                columnHelper.string = skipReason.getExplanation(this, link);
                 return;
             }
             FinalLinkState finalLinkState = link.getFinalLinkState();
             if (finalLinkState != null) {
                 if (FinalLinkState.CheckFailed(finalLinkState)) {
                     columnHelper.icon = falseIcon;
-                    columnHelper.string = finalLinkState.getExplanation();
+                    columnHelper.string = finalLinkState.getExplanation(this, link);
                     return;
                 }
                 ExtractionStatus extractionStatus = link.getExtractionStatus();
@@ -223,7 +223,7 @@ public class TaskColumn extends ExtTextColumn<AbstractNode> {
                     }
                 }
                 columnHelper.icon = trueIcon;
-                columnHelper.string = finalLinkState.getExplanation();
+                columnHelper.string = finalLinkState.getExplanation(this, link);
                 return;
             }
             columnHelper.icon = null;

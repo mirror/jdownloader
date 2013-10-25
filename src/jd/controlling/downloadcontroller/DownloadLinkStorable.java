@@ -61,11 +61,13 @@ public class DownloadLinkStorable implements Storable {
 
     public Map<String, Object> getProperties() {
         if (crypt()) return null;
-        return link.getProperties();
+        Map<String, Object> ret = link.getProperties();
+        if (ret == null || ret.isEmpty()) return null;
+        return ret;
     }
 
     public void setProperties(Map<String, Object> props) {
-        if (props == null || props.size() == 0) return;
+        if (props == null || props.isEmpty()) return;
         this.link.setProperties(props);
     }
 
@@ -217,6 +219,7 @@ public class DownloadLinkStorable implements Storable {
     public String getPropertiesString() {
         if (crypt()) {
             Map<String, Object> properties = link.getProperties();
+            if (properties == null || properties.isEmpty()) return null;
             byte[] crypted = JDCrypt.encrypt(JSonStorage.serializeToJson(properties), KEY);
             return CRYPTED + Base64.encodeToString(crypted, false);
         }

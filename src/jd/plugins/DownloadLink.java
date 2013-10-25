@@ -100,6 +100,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
     public static final String                                          PROPERTY_DOWNLOADTIME               = "DOWNLOADTIME";
     public static final String                                          PROPERTY_ARCHIVE_ID                 = "ARCHIVE_ID";
     public static final String                                          PROPERTY_EXTRACTION_STATUS          = "EXTRACTION_STATUS";
+    public static final String                                          PROPERTY_CUSTOM_MESSAGE             = "CUSTOM_MESSAGE";
 
     public static final int                                             LINKTYPE_CONTAINER                  = 1;
 
@@ -814,6 +815,9 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
         }
         if (finalLinkState == FinalLinkState.OFFLINE) {
             setAvailable(false);
+        }
+        if (finalLinkState != FinalLinkState.FAILED_FATAL) {
+            setProperty(PROPERTY_CUSTOM_MESSAGE, Property.NULL);
         }
         if (hasNotificationListener()) notifyChanges(AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, new DownloadLinkProperty(this, DownloadLinkProperty.Property.FINAL_STATE, finalLinkState));
     }

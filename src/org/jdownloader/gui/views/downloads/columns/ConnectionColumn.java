@@ -28,6 +28,7 @@ import org.appwork.utils.swing.renderer.RenderLabel;
 import org.appwork.utils.swing.renderer.RendererMigPanel;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
+import org.jdownloader.plugins.SkipReason;
 
 public class ConnectionColumn extends ExtColumn<AbstractNode> {
 
@@ -255,8 +256,9 @@ public class ConnectionColumn extends ExtColumn<AbstractNode> {
                     SwingUtils.setOpaque(lbl, false);
                     lbl.setForeground(new Color(this.getConfig().getForegroundColor()));
                 }
-                if (link.isSkipped()) {
-                    panel.add(lbl = new JLabel(link.getSkipReason().getExplanation(), skipped, JLabel.LEADING));
+                SkipReason skipReason = link.getSkipReason();
+                if (skipReason != null) {
+                    panel.add(lbl = new JLabel(skipReason.getExplanation(ConnectionColumn.this, link), skipped, JLabel.LEADING));
                     SwingUtils.setOpaque(lbl, false);
                     lbl.setForeground(new Color(this.getConfig().getForegroundColor()));
                 }

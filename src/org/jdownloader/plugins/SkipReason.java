@@ -1,5 +1,7 @@
 package org.jdownloader.plugins;
 
+import jd.plugins.DownloadLink;
+
 import org.jdownloader.translate._JDT;
 
 public enum SkipReason {
@@ -17,7 +19,7 @@ public enum SkipReason {
         this.exp = exp;
     }
 
-    public String getExplanation() {
+    public String getExplanation(Object requestor, DownloadLink link) {
         return exp;
     }
 }

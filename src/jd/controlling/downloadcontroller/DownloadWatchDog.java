@@ -562,8 +562,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
 
                 if (DownloadWatchDog.this.stateMachine.isStartState() || DownloadWatchDog.this.stateMachine.isFinal()) {
                     /*
-                     * no downloads are running, so we will force only the selected links to get started by setting stopmark to first forced
-                     * link
+                     * no downloads are running, so we will force only the selected links to get started by setting stopmark to first forced link
                      */
 
                     // DownloadWatchDog.this.setStopMark(linksForce.get(0));
@@ -973,6 +972,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
             if (!onDetach) {
                 currentSession.removeHistory(link);
                 candidate.getLink().setFinalLinkState(FinalLinkState.FAILED_FATAL);
+                candidate.getLink().setProperty(DownloadLink.PROPERTY_CUSTOM_MESSAGE, value.getMessage());
             }
             return;
         default:
@@ -2354,8 +2354,8 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                                     waitedForNewActivationRequests += System.currentTimeMillis() - currentTimeStamp;
                                     if ((getSession().isActivationRequestsWaiting() == false && DownloadWatchDog.this.getActiveDownloads() == 0)) {
                                         /*
-                                         * it's important that this if statement gets checked after wait!, else we will loop through without
-                                         * waiting for new links/user interaction
+                                         * it's important that this if statement gets checked after wait!, else we will loop through without waiting for new
+                                         * links/user interaction
                                          */
                                         break;
                                     }

@@ -1,5 +1,7 @@
 package org.jdownloader.plugins;
 
+import jd.plugins.DownloadLink;
+
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.translate._JDT;
 
@@ -28,7 +30,11 @@ public enum FinalLinkState {
         this.exp = exp;
     }
 
-    public String getExplanation() {
+    public String getExplanation(Object requestor, DownloadLink link) {
+        if (this == FAILED_FATAL && link != null) {
+            String ret = link.getStringProperty(DownloadLink.PROPERTY_CUSTOM_MESSAGE, null);
+            if (ret != null) return ret;
+        }
         return exp;
     }
 
