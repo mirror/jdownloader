@@ -156,8 +156,8 @@ public class MovShareNet extends PluginForHost {
             String res[] = result.split(";\\s;");
             engine.eval("res = " + new Regex(res[res.length - 1], "eval\\((.*?)\\);$").getMatch(0));
             result = (String) engine.get("res");
-            if (result.startsWith("eval(function(p,a,c,k,e,d)")) {
-                result = new Regex(result, "eval\\((.*?)\\)$").getMatch(0);
+            result = new Regex(result, "eval\\((.*?)\\)$").getMatch(0);
+            if (result.startsWith("function(p,a,c,k,e,d)")) {
                 engine.eval("res = " + result);
                 result = (String) engine.get("res");
             }
