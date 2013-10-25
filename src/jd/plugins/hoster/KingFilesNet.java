@@ -105,12 +105,12 @@ public class KingFilesNet extends PluginForHost {
     // last XfileSharingProBasic compare :: 2.6.2.1
     // captchatype: 4dignum
     // other: no redirects
-    // mods:
+    // mods: handleDl(error handling for 0 byte files on finallink).
 
     private void setConstants(final Account account) {
         if (account != null && account.getBooleanProperty("free")) {
             // free account
-            chunks = 0;
+            chunks = -2;
             resumes = true;
             acctype = "Free Account";
             directlinkproperty = "freelink2";
@@ -122,7 +122,7 @@ public class KingFilesNet extends PluginForHost {
             directlinkproperty = "premlink";
         } else {
             // non account
-            chunks = 0; // tested
+            chunks = -2; // tested
             resumes = true;
             acctype = "Non Account";
             directlinkproperty = "freelink";
@@ -437,64 +437,7 @@ public class KingFilesNet extends PluginForHost {
                 }
             }
         }
-        if (!inValidate(passCode)) downloadLink.setProperty("pass", passCode);
-        // Process usedHost within hostMap. We do it here so that we can probe if slots are already used before openDownload.
-        controlHost(account, downloadLink, true);
-        logger.info("Final downloadlink = " + dllink + " starting the download...");
-        try {
-            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumes, chunks);
-        } catch (UnknownHostException e) {
-            // Try catch required otherwise plugin logic wont work as intended. Also prevents infinite loops when dns record is missing.
-
-            // dump the saved host from directlinkproperty
-            downloadLink.setProperty(directlinkproperty, Property.NULL);
-            // remove usedHost slot from hostMap
-            controlHost(account, downloadLink, false);
-            logger.warning("DNS issue has occured!");
-            e.printStackTrace();
-            // int value of plugin property, as core error in current JD2 prevents proper retry handling.
-            // TODO: remove when retry issues are resolved!
-            int retry = downloadLink.getIntegerProperty("retry", 0);
-            if (retry == 3) {
-                downloadLink.setProperty("retry", Property.NULL);
-                throw new PluginException(LinkStatus.ERROR_FATAL, "DNS issue cannot be resolved!");
-            } else {
-                retry++;
-                downloadLink.setProperty("retry", retry);
-                throw new PluginException(LinkStatus.ERROR_RETRY, 15000);
-            }
-        }
-        if (dl.getConnection().getContentType().contains("html")) {
-            if (dl.getConnection().getResponseCode() == 503 && dl.getConnection().getHeaderFields("server").contains("nginx")) {
-                controlSimHost(account);
-                controlHost(account, downloadLink, false);
-            } else {
-                logger.warning("The final dllink seems not to be a file!");
-                br.followConnection();
-                correctBR();
-                checkServerErrors();
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-        } else if (br.getRequest().getContentLength() == 0) {
-            // content range = 0, prevent retry!
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        } else {
-            // we can not 'rename' filename once the download started, could be problematic!
-            if (downloadLink.getDownloadCurrent() == 0) {
-                fixFilename(downloadLink);
-            }
-            try {
-                // add a download slot
-                controlSlot(+1, account);
-                // start the dl
-                dl.startDownload();
-            } finally {
-                // remove usedHost slot from hostMap
-                controlHost(account, downloadLink, false);
-                // remove download slot
-                controlSlot(-1, account);
-            }
-        }
+        handleDl(downloadLink, account);
     }
 
     /**
@@ -892,63 +835,7 @@ public class KingFilesNet extends PluginForHost {
                     }
                 }
             }
-            if (!inValidate(passCode)) downloadLink.setProperty("pass", passCode);
-            // Process usedHost within hostMap. We do it here so that we can probe if slots are already used before openDownload.
-            controlHost(account, downloadLink, true);
-            logger.info("Final downloadlink = " + dllink + " starting the download...");
-            // Try catch required otherwise plugin logic wont work as intended. Also prevents infinite loops when dns record is missing.
-            try {
-                dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumes, chunks);
-            } catch (UnknownHostException e) {
-                // dump the saved host from directlinkproperty
-                downloadLink.setProperty(directlinkproperty, Property.NULL);
-                // remove usedHost slot from hostMap
-                controlHost(account, downloadLink, false);
-                logger.warning("DNS issue has occured!");
-                e.printStackTrace();
-                // int value of plugin property, as core error in current JD2 prevents proper retry handling.
-                // TODO: remove when retry issues are resolved!
-                int retry = downloadLink.getIntegerProperty("retry", 0);
-                if (retry == 3) {
-                    downloadLink.setProperty("retry", Property.NULL);
-                    throw new PluginException(LinkStatus.ERROR_FATAL, "DNS issue cannot be resolved!");
-                } else {
-                    retry++;
-                    downloadLink.setProperty("retry", retry);
-                    throw new PluginException(LinkStatus.ERROR_RETRY, 15000);
-                }
-            }
-            if (dl.getConnection().getContentType().contains("html")) {
-                if (dl.getConnection().getResponseCode() == 503 && dl.getConnection().getHeaderFields("server").contains("nginx")) {
-                    controlSimHost(account);
-                    controlHost(account, downloadLink, false);
-                } else {
-                    logger.warning("The final dllink seems not to be a file!");
-                    br.followConnection();
-                    correctBR();
-                    checkServerErrors();
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-            } else if (br.getRequest().getContentLength() == 0) {
-                // content range = 0, prevent retry!
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            } else {
-                // we can not 'rename' filename once the download started, could be problematic!
-                if (downloadLink.getDownloadCurrent() == 0) {
-                    fixFilename(downloadLink);
-                }
-                try {
-                    // add a download slot
-                    controlSlot(+1, account);
-                    // start the dl
-                    dl.startDownload();
-                } finally {
-                    // remove usedHost slot from hostMap
-                    controlHost(account, downloadLink, false);
-                    // remove download slot
-                    controlSlot(-1, account);
-                }
-            }
+            handleDl(downloadLink, account);
         }
     }
 
@@ -1094,6 +981,79 @@ public class KingFilesNet extends PluginForHost {
         downloadLink.setProperty("captchaTries", Property.NULL);
         downloadLink.setProperty("requiresAnyAccount", Property.NULL);
         downloadLink.setProperty("requiresPremiumAccount", Property.NULL);
+    }
+
+    /**
+     * Shared download method components.
+     * */
+    private void handleDl(final DownloadLink downloadLink, final Account account) throws Exception {
+        if (!inValidate(passCode)) downloadLink.setProperty("pass", passCode);
+        // Process usedHost within hostMap. We do it here so that we can probe if slots are already used before openDownload.
+        controlHost(account, downloadLink, true);
+        logger.info("Final downloadlink = " + dllink + " starting the download...");
+        // Try catch required otherwise plugin logic wont work as intended. Also prevents infinite loops when dns record is missing.
+        try {
+            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumes, chunks);
+        } catch (UnknownHostException e) {
+            // dump the saved host from directlinkproperty
+            downloadLink.setProperty(directlinkproperty, Property.NULL);
+            // remove usedHost slot from hostMap
+            controlHost(account, downloadLink, false);
+            logger.warning("DNS issue has occured!");
+            e.printStackTrace();
+            // int value of plugin property, as core error in current JD2 prevents proper retry handling.
+            // TODO: remove when retry issues are resolved!
+            int retry = downloadLink.getIntegerProperty("retry", 0);
+            if (retry == 3) {
+                downloadLink.setProperty("retry", Property.NULL);
+                throw new PluginException(LinkStatus.ERROR_FATAL, "DNS issue cannot be resolved!");
+            } else {
+                retry++;
+                downloadLink.setProperty("retry", retry);
+                throw new PluginException(LinkStatus.ERROR_RETRY, 15000);
+            }
+        }
+        if (dl.getConnection().getContentType().contains("html")) {
+            try {
+                if (dl.getConnection().getResponseCode() == 503 && dl.getConnection().getHeaderFields("server").contains("nginx")) {
+                    // set upper limit
+                    logger.warning("Connection upper limit reached!");
+                    controlSimHost(account);
+                    throw new PluginException(LinkStatus.ERROR_RETRY, 15000);
+                } else {
+                    logger.warning("The final dllink seems not to be a file!");
+                    br.followConnection();
+                    correctBR();
+                    checkServerErrors();
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+            } finally {
+                // remove usedHost slot from hostMap
+                controlHost(account, downloadLink, false);
+            }
+        } else if (br.getRequest().getContentLength() == 0) {
+            logger.info("0 Byte file, we will assume this is not downloadable!");
+            // remove usedHost slot from hostMap
+            controlHost(account, downloadLink, false);
+            // content range = 0, prevent retry!
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else {
+            // we can not 'rename' filename once the download started, could be problematic!
+            if (downloadLink.getDownloadCurrent() == 0) {
+                fixFilename(downloadLink);
+            }
+            try {
+                // add a download slot
+                controlSlot(+1, account);
+                // start the dl
+                dl.startDownload();
+            } finally {
+                // remove usedHost slot from hostMap
+                controlHost(account, downloadLink, false);
+                // remove download slot
+                controlSlot(-1, account);
+            }
+        }
     }
 
     /**
@@ -1465,7 +1425,7 @@ public class KingFilesNet extends PluginForHost {
      * @param controlSlot
      *            (+1|-1)
      * */
-   private void controlSlot(final int num, final Account account) {
+    private void controlSlot(final int num, final Account account) {
         synchronized (CTRLLOCK) {
             if (account == null) {
                 int was = maxFree.get();
