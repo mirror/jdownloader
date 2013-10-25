@@ -240,10 +240,12 @@ public class AniLinkzCom extends PluginForDecrypt {
         if (inValidate(link)) link = new Regex(escapeAll, "src=\"(https?://([^<>\"]+)?" + supported_hoster + "/[^<>\"]+)\"").getMatch(0);
         if (!inValidate(link))
             decryptedLinks.add(createDownloadlink(link));
-        else if (inValidate(link) && new Regex(escapeAll, "(anilinkz\\.com/get/|chia\\-anime\\.com)").matches()) {
+        else if (inValidate(link) && new Regex(escapeAll, "(anilinkz\\.com/get/|chia\\-anime\\.com/|myvideo\\.de/)").matches()) {
             String[] aLinks = new Regex(escapeAll, "(http[^\"]+/get/[^\"]+)").getColumn(0);
             // chia-anime can't be redirected back into dedicated plugin
             if ((aLinks == null || aLinks.length == 0) && escapeAll.contains("chia-anime.com")) aLinks = new Regex(escapeAll, "url\":\"(https?[^\"]+chia-anime\\.com[^\"]+)").getColumn(0);
+            // myvideo links are also direct links to flvs, using anilinks own swf player.
+            if ((aLinks == null || aLinks.length == 0) && escapeAll.contains("myvideo.de")) aLinks = new Regex(escapeAll, "=(https?[^\"]+myvideo\\.de/[^\"]+)").getColumn(0);
             if (aLinks != null && aLinks.length != 0) {
                 for (String aLink : aLinks) {
                     DownloadLink downloadLink = createDownloadlink("directhttp://" + aLink);
