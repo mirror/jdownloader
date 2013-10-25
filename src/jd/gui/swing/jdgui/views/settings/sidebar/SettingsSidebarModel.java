@@ -258,6 +258,17 @@ public class SettingsSidebarModel extends DefaultListModel implements GenericCon
         }.getReturnValue();
     }
 
+    private void edtAllElement(final Object element) {
+        if (element == null) return;
+        new EDTRunner() {
+
+            @Override
+            protected void runInEDT() {
+                addElement(element);
+            }
+        };
+    }
+
     public void fill(final boolean finalWithExtensions) {
         new Thread("FillSettingsSideBarModel") {
             @Override
@@ -273,44 +284,42 @@ public class SettingsSidebarModel extends DefaultListModel implements GenericCon
                             /* plugin not loaded yet */
                         }
 
-                        final LazyExtension finalExtract = extract;
-                        getConfigPanelGeneral();
-                        getReconnectSettings();
-                        getProxyConfig();
-                        getAccountManagerSettings();
-                        getBasicAuthentication();
-                        getPluginSettings();
-                        getAntiCaptchaConfigPanel();
-                        getGUISettings();
-                        getNotifierConfigPanel();
-                        getMyJDownloaderPanel();
-                        getLinkgrabber();
-                        getPackagizer();
-
-                        getAdvancedSettings();
                         new EDTRunner() {
 
                             @Override
                             protected void runInEDT() {
                                 removeAllElements();
-                                addElement(getConfigPanelGeneral());
-                                addElement(getReconnectSettings());
-                                addElement(getProxyConfig());
-                                addElement(getAccountManagerSettings());
-                                addElement(getBasicAuthentication());
-                                addElement(getPluginSettings());
-                                addElement(getAntiCaptchaConfigPanel());
-                                addElement(getGUISettings());
-                                addElement(getNotifierConfigPanel());
-                                addElement(getMyJDownloaderPanel());
-                                addElement(getLinkgrabber());
-                                addElement(getPackagizer());
-                                if (finalExtract != null) addElement(finalExtract);
-                                addElement(JDGui.getInstance().getTray());
-
-                                addElement(getAdvancedSettings());
                             }
-                        }.waitForEDT();
+                        };
+                        final LazyExtension finalExtract = extract;
+                        getConfigPanelGeneral();
+                        edtAllElement(getConfigPanelGeneral());
+                        getReconnectSettings();
+                        edtAllElement(getReconnectSettings());
+                        getProxyConfig();
+                        edtAllElement(getProxyConfig());
+                        getAccountManagerSettings();
+                        edtAllElement(getAccountManagerSettings());
+                        getBasicAuthentication();
+                        edtAllElement(getBasicAuthentication());
+                        getPluginSettings();
+                        edtAllElement(getPluginSettings());
+                        getAntiCaptchaConfigPanel();
+                        edtAllElement(getAntiCaptchaConfigPanel());
+                        getGUISettings();
+                        edtAllElement(getGUISettings());
+                        getNotifierConfigPanel();
+                        edtAllElement(getNotifierConfigPanel());
+                        getMyJDownloaderPanel();
+                        edtAllElement(getMyJDownloaderPanel());
+                        getLinkgrabber();
+                        edtAllElement(getLinkgrabber());
+                        getPackagizer();
+                        edtAllElement(getPackagizer());
+                        getAdvancedSettings();
+                        if (finalExtract != null) edtAllElement(finalExtract);
+                        edtAllElement(JDGui.getInstance().getTray());
+                        edtAllElement(getAdvancedSettings());
                         if (withExtensions) {
                             final AtomicBoolean firstExtension = new AtomicBoolean(true);
                             List<LazyExtension> pluginsOptional = ExtensionController.getInstance().getExtensions();

@@ -60,6 +60,7 @@ import org.jdownloader.plugins.accounts.AccountFactory;
 import org.jdownloader.plugins.accounts.EditAccountPanel;
 import org.jdownloader.plugins.accounts.Notifier;
 import org.jdownloader.plugins.controller.PluginClassLoader;
+import org.jdownloader.plugins.controller.PluginClassLoader.PluginClassLoaderChild;
 import org.jdownloader.plugins.controller.UpdateRequiredClassNotFoundException;
 import org.jdownloader.plugins.controller.host.HostPluginController;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin;
@@ -172,10 +173,13 @@ public class AddAccountDialog extends AbstractDialog<Integer> {
 
     private JPanel                         content;
 
+    private final PluginClassLoaderChild   cl;
+
     private AddAccountDialog(final PluginForHost plugin, Account acc) {
         super(UserIO.NO_ICON, _GUI._.jd_gui_swing_components_AccountDialog_title(), null, _GUI._.lit_save(), null);
         this.defaultAccount = acc;
         this.plugin = plugin;
+        cl = PluginClassLoader.getInstance().getChild();
     }
 
     @Override
@@ -215,7 +219,7 @@ public class AddAccountDialog extends AbstractDialog<Integer> {
 
                 try {
                     if (getSelectedItem() == null || content == null) return;
-                    PluginForHost plg = ((LazyHostPlugin) getSelectedItem()).newInstance(PluginClassLoader.getInstance().getChild());
+                    PluginForHost plg = ((LazyHostPlugin) getSelectedItem()).newInstance(cl);
                     if (plg != plugin) {
                         plugin = plg;
                         updatePanel();
@@ -318,7 +322,7 @@ public class AddAccountDialog extends AbstractDialog<Integer> {
                     if (it.hasNext()) p = it.next();
                 }
                 hoster.setSelectedItem(p);
-                plg = p.newInstance(PluginClassLoader.getInstance().getChild());
+                plg = p.newInstance(cl);
             }
 
             AccountFactory accountFactory = plg.getAccountFactory();

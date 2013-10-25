@@ -1064,7 +1064,7 @@ public class LinkCrawler {
             }
             processedLinksCounter.incrementAndGet();
             /* set new PluginClassLoaderChild because ContainerPlugin maybe uses Hoster/Crawler */
-            Thread.currentThread().setContextClassLoader(PluginClassLoader.getInstance().getChild());
+            Thread.currentThread().setContextClassLoader(getPluginClassLoaderChild());
             PluginsC plg = null;
             try {
                 plg = oplg.getClass().newInstance();

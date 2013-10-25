@@ -26,7 +26,6 @@ public class DownloadWatchdogEventSender extends Eventsender<DownloadWatchdogLis
             break;
         case STATE_STOPPING:
             listener.onDownloadWatchdogStateIsStopping();
-
             break;
         case LINK_STARTED:
             listener.onDownloadControllerStart((SingleDownloadController) event.getParameter());

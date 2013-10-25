@@ -22,6 +22,7 @@ import java.net.URL;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
@@ -320,15 +321,17 @@ public class Keep2ShareCc extends PluginForHost {
     }
 
     @SuppressWarnings("unchecked")
-    private HashMap<String, String> login(final Account account, final boolean force) throws Exception {
+    private HashMap<String, String> login(final Account account, final boolean force, AtomicBoolean validateCookie) throws Exception {
         synchronized (LOCK) {
             try {
                 // Load cookies
                 br.setCookiesExclusive(true);
+                prepBrowser(br);
+                br.setFollowRedirects(true);
                 final Object ret = account.getProperty("cookies", null);
                 boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
                 if (acmatch) acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
-                if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
+                if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force || (validateCookie != null && validateCookie.get() == true)) {
                     final HashMap<String, String> cookies = (HashMap<String, String>) ret;
                     if (account.isValid()) {
                         for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
@@ -336,11 +339,15 @@ public class Keep2ShareCc extends PluginForHost {
                             final String value = cookieEntry.getValue();
                             this.br.setCookie(MAINPAGE, key, value);
                         }
-                        return cookies;
+                        if (validateCookie != null) {
+                            br.getPage(MAINPAGE + "/site/profile.html");
+                            if (force == false || !br.getURL().contains("login.html")) { return cookies; }
+                        } else {
+                            return cookies;
+                        }
                     }
                 }
-                prepBrowser(br);
-                br.setFollowRedirects(true);
+                if (validateCookie != null) validateCookie.set(false);
                 br.getPage(MAINPAGE + "/login.html");
                 br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
                 String postData = "LoginForm%5BrememberMe%5D=0&LoginForm%5BrememberMe%5D=1&LoginForm%5Busername%5D=" + Encoding.urlEncode(account.getUser()) + "&LoginForm%5Bpassword%5D=" + Encoding.urlEncode(account.getPass());
@@ -350,11 +357,28 @@ public class Keep2ShareCc extends PluginForHost {
                     final DownloadLink dummyLink = new DownloadLink(this, "Account", "keep2share.cc", "http://keep2share.cc", true);
                     final String code = getCaptchaCode("http://keep2share.cc" + captchaLink, dummyLink);
                     postData += "&LoginForm%5BverifyCode%5D=" + Encoding.urlEncode(code);
+                } else {
+                    if (br.containsHTML("recaptcha/api/challenge") || br.containsHTML("Recaptcha.create")) {
+                        final DownloadLink dummyLink = new DownloadLink(this, "Account", "keep2share.cc", "http://keep2share.cc", true);
+                        PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
+                        jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
+                        String challenge = br.getRegex("recaptcha/api/challenge\\?k=(.*?)\"").getMatch(0);
+                        if (challenge == null) challenge = br.getRegex("Recaptcha.create\\('(.*?)'").getMatch(0);
+                        rc.setId(challenge);
+                        rc.load();
+                        File cf = rc.downloadCaptcha(getLocalCaptchaFile());
+                        String c = getCaptchaCode(cf, dummyLink);
+                        postData = postData + "&recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + Encoding.urlEncode(c);
+                    }
                 }
-                br.postPage("/login.html", postData);
+                br.postPage(MAINPAGE + "/login.html", postData);
+                if (br.containsHTML("Incorrect username or password")) throw new PluginException(LinkStatus.ERROR_PREMIUM, "Incorrect username or password", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                if (br.containsHTML("The verification code is incorrect.")) throw new PluginException(LinkStatus.ERROR_PREMIUM, "LoginCaptcha invalid", PluginException.VALUE_ID_PREMIUM_DISABLE);
                 if (br.containsHTML(">We have a suspicion that your account was stolen, this is why we")) throw new PluginException(LinkStatus.ERROR_PREMIUM, "Account temporarily blocked", PluginException.VALUE_ID_PREMIUM_DISABLE);
                 if (br.containsHTML(">Please fill in the form with your login credentials")) throw new PluginException(LinkStatus.ERROR_PREMIUM, "Account invalid", PluginException.VALUE_ID_PREMIUM_DISABLE);
                 br.getHeaders().put("X-Requested-With", null);
+                String url = br.getRegex("url\":\"(.*?)\"").getMatch(0);
+                if (url == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 // Save cookies
                 final HashMap<String, String> cookies = new HashMap<String, String>();
                 final Cookies add = this.br.getCookies(MAINPAGE);
@@ -375,29 +399,26 @@ public class Keep2ShareCc extends PluginForHost {
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
+        if (account.getUser() == null || !account.getUser().contains("@")) {
+            account.setValid(false);
+            ai.setStatus("Please use E-Mail as login/name!");
+            return ai;
+        }
+        AtomicBoolean validateCookie = new AtomicBoolean(true);
         try {
-            login(account, true);
+            login(account, true, validateCookie);
         } catch (PluginException e) {
             account.setValid(false);
             throw e;
         }
-        String url = br.getRegex("url\":\"(.*?)\"").getMatch(0);
-        if (url != null) {
-            br.getPage(url.replaceAll("\\\\/", "/"));
-        } else {
-            br.getPage("/");
-        }
-        br.getPage("/site/profile.html");
-        // if (!br.containsHTML(">Account type:<a href=\"/premium\\.html\"")) {
-        // account.setValid(false);
-        // return ai;
-        // }
+        if (validateCookie.get() == false) br.getPage(MAINPAGE + "/site/profile.html");
+        account.setValid(true);
         if (br.containsHTML("class=\"free\">Free</a>")) {
             account.setProperty("free", true);
             ai.setStatus("Registered Free User");
         } else {
-            String availableTraffic = br.getRegex("Available traffic: ([^<>\"]*?)</a>").getMatch(0);
-            if (availableTraffic == null) availableTraffic = br.getRegex("Available traffic:[\r\n\t ]+<b><a href=\"/user/statistic\\.html\">(.*?)</a>").getMatch(0);
+            account.setProperty("free", false);
+            String availableTraffic = br.getRegex("Available traffic(.*?\\(today\\))?:.*?<a href=\"/user/statistic\\.html\">(.*?)</a>").getMatch(1);
             if (availableTraffic != null) {
                 ai.setTrafficLeft(SizeFormatter.getSize(availableTraffic));
             } else {
@@ -407,27 +428,38 @@ public class Keep2ShareCc extends PluginForHost {
             if (expire == null) expire = br.getRegex("Premium expires:\\s*?<b>(\\d{4}\\.\\d{2}\\.\\d{2})").getMatch(0);
             if (expire == null && br.containsHTML(">Premium:[\t\n\r ]+LifeTime")) {
                 ai.setStatus("Premium Lifetime User");
+                ai.setValidUntil(-1);
             } else if (expire == null) {
                 ai.setStatus("Premium User");
+                ai.setValidUntil(-1);
             } else {
-                // Expired but actually we still got one day ('today')
-                if (br.containsHTML("\\(1 day\\)"))
-                    ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "yyyy.MM.dd", Locale.ENGLISH) + 24 * 60 * 60 * 1000l);
-                else
-                    ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "yyyy.MM.dd", Locale.ENGLISH));
                 ai.setStatus("Premium User");
+                // Expired but actually we still got one day ('today')
+                if (br.containsHTML("\\(1 day\\)")) {
+                    ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "yyyy.MM.dd", Locale.ENGLISH) + 24 * 60 * 60 * 1000l);
+                } else {
+                    ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "yyyy.MM.dd", Locale.ENGLISH));
+                }
             }
-            account.setProperty("free", false);
         }
-        account.setValid(true);
         return ai;
     }
 
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         requestFileInformation(link);
-        HashMap<String, String> cookies = login(account, false);
-        br.getPage("/site/profile.html");
+        HashMap<String, String> cookies = login(account, false, null);
+        br.getPage(MAINPAGE + "/site/profile.html");
+        if (br.getURL().contains("login.html")) {
+            logger.info("Redirected to login page, seems cookies are no longer valid!");
+            synchronized (LOCK) {
+                if (cookies == account.getProperty("cookies", null)) {
+                    account.setProperty("cookies", Property.NULL);
+                    throw new PluginException(LinkStatus.ERROR_RETRY);
+                }
+            }
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         if (br.containsHTML("class=\"free\">Free</a>")) {
             br.getPage(link.getDownloadURL());
             doFree(link);
@@ -450,6 +482,9 @@ public class Keep2ShareCc extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             dllink = Encoding.htmlDecode(dllink);
+            if (!dllink.startsWith("http")) {
+                dllink = MAINPAGE + dllink;
+            }
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
             if (dl.getConnection().getContentType().contains("html")) {
                 logger.warning("The final dllink seems not to be a file!");

@@ -27,21 +27,25 @@ import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.plugins.accounts.EditAccountPanel;
 import org.jdownloader.plugins.controller.PluginClassLoader;
+import org.jdownloader.plugins.controller.PluginClassLoader.PluginClassLoaderChild;
 import org.jdownloader.plugins.controller.UpdateRequiredClassNotFoundException;
 import org.jdownloader.plugins.controller.host.HostPluginController;
 
 public class BuyAndAddPremiumAccount extends AbstractDialog<Boolean> implements BuyAndAddPremiumDialogInterface {
 
-    private DomainInfo       info;
+    private DomainInfo                   info;
 
-    private String           id;
+    private String                       id;
 
-    private EditAccountPanel creater;
+    private EditAccountPanel             creater;
+
+    private final PluginClassLoaderChild cl;
 
     public BuyAndAddPremiumAccount(DomainInfo info, String id) {
         super(0, _GUI._.BuyAndAddPremiumAccount_BuyAndAddPremiumAccount_title_(), null, null, null);
         this.info = info;
         this.id = id;
+        cl = PluginClassLoader.getInstance().getChild();
     }
 
     @Override
@@ -114,7 +118,7 @@ public class BuyAndAddPremiumAccount extends AbstractDialog<Boolean> implements 
         ret.add(header(_GUI._.BuyAndAddPremiumAccount_layoutDialogContent_enter()), "gapleft 15,pushx,growx");
         PluginForHost plg;
         try {
-            plg = HostPluginController.getInstance().get(info.getTld()).newInstance(PluginClassLoader.getInstance().getChild());
+            plg = HostPluginController.getInstance().get(info.getTld()).newInstance(cl);
         } catch (UpdateRequiredClassNotFoundException e) {
             throw new WTFException(e);
         }
