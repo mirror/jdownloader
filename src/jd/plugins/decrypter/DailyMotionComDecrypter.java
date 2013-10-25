@@ -35,7 +35,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
-import jd.utils.locale.JDL;
 
 //Decrypts embedded videos from dailymotion
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "dailymotion.com" }, urls = { "https?://(www\\.)?dailymotion\\.com/((embed/)?video/[a-z0-9\\-_]+|swf(/video)?/[a-zA-Z0-9]+)" }, flags = { 0 })
@@ -152,12 +151,12 @@ public class DailyMotionComDecrypter extends PluginForDecrypt {
             return null;
         }
         VIDEOSOURCE = Encoding.htmlDecode(VIDEOSOURCE).replace("\\", "");
+        FILENAME = Encoding.htmlDecode(FILENAME.trim()).replace(":", " - ").replaceAll("/|<|>", "");
         if (new Regex(VIDEOSOURCE, "(Dein Land nicht abrufbar|this content is not available for your country|This video has not been made available in your country by the owner)").matches()) {
             final DownloadLink dl = createDownloadlink(PARAMETER.replace("dailymotion.com/", "dailymotiondecrypted.com/"));
             dl.setFinalFileName(FILENAME + ".mp4");
             dl.setProperty("countryblock", true);
             dl.setAvailable(true);
-            dl.getLinkStatus().setStatusText(JDL.L("plugins.hoster.dailymotioncom.countryblocked", "This video is not available for your country"));
             decryptedLinks.add(dl);
             return decryptedLinks;
         } else if (new Regex(VIDEOSOURCE, "(his content as suitable for mature audiences only|You must be logged in, over 18 years old, and set your family filter OFF, in order to watch it)").matches() && !accInUse) {
@@ -165,11 +164,16 @@ public class DailyMotionComDecrypter extends PluginForDecrypt {
             dl.setFinalFileName(FILENAME + ".mp4");
             dl.setProperty("registeredonly", true);
             dl.setAvailable(true);
-            dl.getLinkStatus().setStatusText(JDL.L("plugins.hoster.dailymotioncom.only4registered", "Download only possible for registered users"));
+            decryptedLinks.add(dl);
+            return decryptedLinks;
+        } else if (new Regex(VIDEOSOURCE, "\"message\":\"Publication of this video is in progress").matches()) {
+            final DownloadLink dl = createDownloadlink(PARAMETER.replace("dailymotion.com/", "dailymotiondecrypted.com/"));
+            dl.setFinalFileName(FILENAME + ".mp4");
+            dl.setProperty("offline", true);
+            dl.setAvailable(false);
             decryptedLinks.add(dl);
             return decryptedLinks;
         }
-        FILENAME = Encoding.htmlDecode(FILENAME.trim()).replace(":", " - ").replaceAll("/|<|>", "");
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(FILENAME);
 

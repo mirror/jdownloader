@@ -53,6 +53,8 @@ public class YourUploadCom extends PluginForHost {
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
+        br.setReadTimeout(3 * 60 * 1000);
+        br.setConnectTimeout(3 * 60 * 1000);
         // Correct old links
         correctDownloadLink(link);
         br.getPage(link.getDownloadURL());

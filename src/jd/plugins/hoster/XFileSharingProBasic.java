@@ -717,7 +717,7 @@ public class XFileSharingProBasic extends PluginForHost {
             ai.setUnlimitedTraffic();
         }
         if (account.getBooleanProperty("nopremium")) {
-            ai.setStatus("Registered (free) User");
+            ai.setStatus("Registered (free) user");
             try {
                 maxPrem.set(20);
                 // free accounts can still have captcha.

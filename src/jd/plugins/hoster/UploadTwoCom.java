@@ -63,6 +63,8 @@ public class UploadTwoCom extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws Exception {
         this.setBrowserExclusive();
+        br.setReadTimeout(3 * 60 * 1000);
+        br.setConnectTimeout(3 * 60 * 1000);
         br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML(">This video has been removed due to a breach of the Terms of Use\\.<")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("&video_title=(.*?)&video").getMatch(0);

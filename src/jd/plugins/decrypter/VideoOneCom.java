@@ -70,12 +70,16 @@ public class VideoOneCom extends PluginForDecrypt {
         if (continueURL != null) {
             br.getPage(continueURL);
             fuu = jsString();
-            final String embedID = new Regex(continueURL, "\\.html\\?(.+)$").getMatch(0);
-            if (fuu == null || embedID == null) {
+            if (fuu == null) {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
             }
+            final String embedID = new Regex(continueURL, "\\.html\\?(.+)$").getMatch(0);
             externID = new Regex(fuu, "starturl = \"(http[^<>\"]*?)\"").getMatch(0);
+            if (externID != null && embedID == null) {
+                logger.info("Link offline: " + parameter);
+                return decryptedLinks;
+            }
             if (externID == null) {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;

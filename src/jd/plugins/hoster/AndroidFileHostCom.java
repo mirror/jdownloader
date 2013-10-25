@@ -17,6 +17,7 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.util.Random;
 
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
@@ -62,14 +63,20 @@ public class AndroidFileHostCom extends PluginForHost {
         final String filesize = br.getRegex("name=\"file_size\" id=\"file_size\" value=\"(\\d+)\"").getMatch(0);
         final String flid = br.getRegex("name=\"flid\" id=\"flid\" value=\"(\\d+)\"").getMatch(0);
         final String hc = br.getRegex("name=\"hc\" id=\"hc\" value=\"([^<>\"]*?)\"").getMatch(0);
+        final String tid = br.getRegex("name=\"tid\" id=\"tid\" value=\"([^<>\"]*?)\"").getMatch(0);
+        final String download_id = br.getRegex("name=\"download_id\" id=\"download_id\" value=\"([^<>\"]*?)\"").getMatch(0);
         final String fid = new Regex(downloadLink.getDownloadURL(), "(\\d+)$").getMatch(0);
-        if (filesize == null || flid == null || hc == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (filesize == null || flid == null || hc == null || tid == null || download_id == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        // sleep(10 * 1001l, downloadLink);
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         br.postPage("http://www.androidfilehost.com/libs/otf/mirrors.otf.php", "submit=submit&action=getdownloadmirrors&fid=" + fid);
-        final String adress = br.getRegex("\"address\":\"([^<>\"]*?)\"").getMatch(0);
+        final String[] adresses = br.getRegex("\"address\":\"([^<>\"]*?)\"").getColumn(0);
+        if (adresses == null || adresses.length == 0) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        final String adress = adresses[new Random().nextInt(adresses.length - 1)];
         if (adress == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        String dllink = "http://" + adress + "/download.php?fid=" + fid + "&registered=0&waittime=10&fid=" + fid + "&flid=" + flid + "&uid=&file_size=" + filesize + "&hc=" + hc + "&filename=" + downloadLink.getFinalFileName() + "&action=downloa";
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
+        String dllink = "http://" + adress + "/download.php?fid=" + fid + "&registered=0&waittime=10&fid=" + fid + "&flid=" + flid + "&uid=&file_size=" + filesize + "&hc=" + hc + "&tid=" + tid + "&download_id=" + download_id + "&filename=" + downloadLink.getFinalFileName() + "&action=download";
+        // Disabled chunks and resume because different downloadserver = different connection limits
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
