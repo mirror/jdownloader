@@ -22,13 +22,14 @@ import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
 import jd.http.RandomUserAgent;
+import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "hoerbuch.in" }, urls = { "http://(www\\.)?hoerbuch\\.in/protection/(folder_\\d+|[a-z0-9]+/[a-z0-9]+)\\.html" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "hoerbuch.in" }, urls = { "http://(www\\.)?hoerbuch\\.in/(protection/(folder_\\d+|[a-z0-9]+/[a-z0-9]+)\\.html|wp/goto/Download/\\d+)" }, flags = { 0 })
 public class RsHrbchn extends PluginForDecrypt {
     private final String ua = RandomUserAgent.generate();
 
@@ -36,16 +37,33 @@ public class RsHrbchn extends PluginForDecrypt {
         super(wrapper);
     }
 
+    private final String FOLDERLINK          = "http://(www\\.)?hoerbuch\\.in/protection/folder_\\d+\\.html";
+    private final String FOLDER_REDIRECTLINK = "http://(www\\.)?hoerbuch\\.in/wp/goto/Download/\\d+";
+
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final ArrayList<String> passwords = new ArrayList<String>();
         passwords.add("www.hoerbuch.in");
         br.setFollowRedirects(false);
         br.getHeaders().put("User-Agent", ua);
-        final String parameter = param.toString();
+        String parameter = param.toString();
         br.getPage("http://hoerbuch.in/wp/");
         br.getPage(parameter);
-        if (parameter.matches("http://(www\\.)?hoerbuch\\.in/protection/folder_\\d+\\.html")) {
+        if (parameter.matches(FOLDER_REDIRECTLINK)) {
+            String newlink = br.getRedirectLocation();
+            if (newlink == null) {
+                logger.warning("Decrypter broken for link: " + parameter);
+                return null;
+            }
+            newlink = new Regex(newlink, "(http://(www\\.)?hoerbuch\\.in/protection/folder_\\d+\\.html)").getMatch(0);
+            if (newlink == null) {
+                logger.warning("Decrypter broken for link: " + parameter);
+                return null;
+            }
+            parameter = newlink;
+            br.getPage(newlink);
+        }
+        if (parameter.matches(FOLDERLINK)) {
             final Form form = br.getForm(1);
             if (form == null) {
                 logger.warning("Decrypter broken for link: " + parameter);

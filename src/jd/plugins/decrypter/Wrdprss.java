@@ -50,7 +50,7 @@ public class Wrdprss extends PluginForDecrypt {
         StringBuilder completePattern = new StringBuilder();
         completePattern.append("http://(\\w+\\.)?(");
         completePattern.append("(cinetopia\\.ws/.*\\.html)");
-        String[] listType1 = { "hd-area.org", "movie-blog.org", "doku.cc", "sound-blog.org" };
+        String[] listType1 = { "hd-area.org", "movie-blog.org", "doku.cc" };
         for (String pattern : listType1) {
             completePattern.append("|(" + pattern.replaceAll("\\.", "\\\\.") + "/\\d{4}/\\d{2}/\\d{2}/.+)");
         }
@@ -83,7 +83,6 @@ public class Wrdprss extends PluginForDecrypt {
         defaultPasswords.put("doku.cc", new String[] { "doku.cc", "doku.dl.am" });
         defaultPasswords.put("hd-area.org", new String[] { "hd-area.org" });
         defaultPasswords.put("movie-blog.org", new String[] { "movie-blog.org", "movie-blog.dl.am" });
-        defaultPasswords.put("sound-blog.org", new String[] { "sound-blog.org" });
         defaultPasswords.put("cinetopia.ws", new String[] { "cinetopia.ws" });
     }
 
