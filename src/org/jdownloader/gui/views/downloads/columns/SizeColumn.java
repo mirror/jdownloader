@@ -4,6 +4,7 @@ import java.text.DecimalFormat;
 import java.text.FieldPosition;
 
 import javax.swing.JComponent;
+import javax.swing.JPopupMenu;
 import javax.swing.SwingConstants;
 
 import jd.controlling.linkcrawler.CrawledLink;
@@ -34,6 +35,12 @@ public class SizeColumn extends ExtColumn<AbstractNode> {
     private RenderLabel      countRenderer;
     private RendererMigPanel renderer;
     private boolean          fileCountVisible;
+
+    public JPopupMenu createHeaderPopup() {
+
+        return FileColumn.createColumnPopup(this, getMinWidth() == getMaxWidth() && getMaxWidth() > 0);
+
+    }
 
     public SizeColumn() {
         super(_GUI._.SizeColumn_SizeColumn(), null);

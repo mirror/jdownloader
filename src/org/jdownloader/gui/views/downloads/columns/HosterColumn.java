@@ -6,6 +6,7 @@ import java.util.LinkedList;
 
 import javax.swing.ImageIcon;
 import javax.swing.JComponent;
+import javax.swing.JPopupMenu;
 import javax.swing.SwingUtilities;
 
 import jd.controlling.linkcrawler.CrawledPackage;
@@ -74,6 +75,12 @@ public class HosterColumn extends ExtColumn<AbstractNode> {
     private ImageIcon         moreIcon;
 
     private static int        DEFAULT_ICON_COUNT = 4;
+
+    public JPopupMenu createHeaderPopup() {
+
+        return FileColumn.createColumnPopup(this, getMinWidth() == getMaxWidth() && getMaxWidth() > 0);
+
+    }
 
     public HosterColumn() {
         super(_GUI._.HosterColumn_HosterColumn(), null);

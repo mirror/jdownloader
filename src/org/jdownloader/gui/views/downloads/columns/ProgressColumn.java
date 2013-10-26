@@ -9,6 +9,7 @@ import java.util.List;
 
 import javax.swing.BorderFactory;
 import javax.swing.JLabel;
+import javax.swing.JPopupMenu;
 import javax.swing.SwingUtilities;
 import javax.swing.Timer;
 
@@ -39,6 +40,12 @@ public class ProgressColumn extends ExtProgressColumn<AbstractNode> {
 
     public ProgressColumn() {
         super(_GUI._.ProgressColumn_ProgressColumn());
+
+    }
+
+    public JPopupMenu createHeaderPopup() {
+
+        return FileColumn.createColumnPopup(this, getMinWidth() == getMaxWidth() && getMaxWidth() > 0);
 
     }
 

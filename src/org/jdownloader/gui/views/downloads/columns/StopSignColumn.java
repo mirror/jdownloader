@@ -4,6 +4,7 @@ import java.awt.Component;
 
 import javax.swing.Icon;
 import javax.swing.ImageIcon;
+import javax.swing.JPopupMenu;
 import javax.swing.JTable;
 import javax.swing.table.JTableHeader;
 
@@ -56,6 +57,12 @@ public class StopSignColumn extends ExtTextColumn<AbstractNode> {
     @Override
     protected boolean isDefaultResizable() {
         return false;
+    }
+
+    public JPopupMenu createHeaderPopup() {
+
+        return FileColumn.createColumnPopup(this, getMinWidth() == getMaxWidth() && getMaxWidth() > 0);
+
     }
 
     @Override

@@ -1,13 +1,10 @@
 package org.jdownloader.gui.views.downloads.columns;
 
-import java.awt.event.ActionEvent;
 import java.awt.event.MouseEvent;
 
 import javax.swing.Icon;
 import javax.swing.ImageIcon;
-import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JPopupMenu;
-import javax.swing.JSeparator;
 
 import jd.controlling.packagecontroller.AbstractNode;
 import jd.plugins.DownloadLink;
@@ -17,14 +14,12 @@ import jd.plugins.PluginForHost;
 import jd.plugins.PluginProgress;
 
 import org.appwork.storage.config.JsonConfig;
-import org.appwork.swing.exttable.columnmenu.LockColumnWidthAction;
 import org.appwork.swing.exttable.columns.ExtTextColumn;
 import org.appwork.utils.ImageProvider.ImageProvider;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.jdownloader.DomainInfo;
-import org.jdownloader.actions.AppAction;
 import org.jdownloader.extensions.extraction.ExtractionStatus;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
@@ -92,6 +87,12 @@ public class TaskColumn extends ExtTextColumn<AbstractNode> {
         return obj.isEnabled();
     }
 
+    public JPopupMenu createHeaderPopup() {
+
+        return FileColumn.createColumnPopup(this, getMinWidth() == getMaxWidth() && getMaxWidth() > 0);
+
+    }
+
     public TaskColumn() {
         super(_GUI._.StatusColumn_StatusColumn());
         this.trueIcon = NewTheme.I().getIcon("true", 16);
@@ -101,30 +102,6 @@ public class TaskColumn extends ExtTextColumn<AbstractNode> {
         this.extracting = NewTheme.I().getIcon("archive", 16);
         trueIconExtracted = new ImageIcon(ImageProvider.merge(trueIcon.getImage(), NewTheme.I().getImage("archive", 16), 0, 0, trueIcon.getIconWidth() + 4, (trueIcon.getIconHeight() - 16) / 2 + 2));
         trueIconExtractedFailed = new ImageIcon(ImageProvider.merge(trueIconExtracted.getImage(), NewTheme.I().getImage("error", 10), 0, 0, trueIcon.getIconWidth() + 12, trueIconExtracted.getIconHeight() - 10));
-    }
-
-    @Override
-    public JPopupMenu createHeaderPopup() {
-
-        final JPopupMenu ret = new JPopupMenu();
-        LockColumnWidthAction action;
-        ret.add(new JCheckBoxMenuItem(action = new LockColumnWidthAction(this)));
-
-        ret.add(new JCheckBoxMenuItem(new AppAction() {
-            {
-                setName(_GUI._.literall_premium_alert());
-                setSmallIcon(iconWait);
-                setSelected(JsonConfig.create(GraphicalUserInterfaceSettings.class).isPremiumAlertTaskColumnEnabled());
-            }
-
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                JsonConfig.create(GraphicalUserInterfaceSettings.class).setPremiumAlertTaskColumnEnabled(!JsonConfig.create(GraphicalUserInterfaceSettings.class).isPremiumAlertTaskColumnEnabled());
-            }
-        }));
-        ret.add(new JSeparator());
-        return ret;
-
     }
 
     public boolean onSingleClick(final MouseEvent e, final AbstractNode value) {

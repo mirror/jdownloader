@@ -2,6 +2,7 @@ package org.jdownloader.gui.views.downloads.columns;
 
 import java.util.Date;
 
+import javax.swing.JPopupMenu;
 import javax.swing.SwingConstants;
 
 import jd.controlling.linkcrawler.CrawledPackage;
@@ -19,6 +20,12 @@ public class AddedDateColumn extends ExtDateColumn<AbstractNode> {
 
     private final String      formatString     = _GUI._.added_date_column_dateformat();
     private final String      bad              = _GUI._.added_date_column_invalid();
+
+    public JPopupMenu createHeaderPopup() {
+
+        return FileColumn.createColumnPopup(this, getMinWidth() == getMaxWidth() && getMaxWidth() > 0);
+
+    }
 
     public AddedDateColumn() {
         super(_GUI._.added_date_column_title());

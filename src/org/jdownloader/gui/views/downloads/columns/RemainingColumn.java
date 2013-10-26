@@ -1,5 +1,7 @@
 package org.jdownloader.gui.views.downloads.columns;
 
+import javax.swing.JPopupMenu;
+
 import jd.controlling.packagecontroller.AbstractNode;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
@@ -14,6 +16,12 @@ public class RemainingColumn extends ExtFileSizeColumn<AbstractNode> {
      * 
      */
     private static final long serialVersionUID = 1L;
+
+    public JPopupMenu createHeaderPopup() {
+
+        return FileColumn.createColumnPopup(this, getMinWidth() == getMaxWidth() && getMaxWidth() > 0);
+
+    }
 
     public RemainingColumn() {
         super(_GUI._.RemainingColumn_RemainingColumn());

@@ -1,5 +1,7 @@
 package org.jdownloader.gui.views.components.packagetable.columns;
 
+import javax.swing.JPopupMenu;
+
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledPackage;
 import jd.controlling.packagecontroller.AbstractNode;
@@ -8,6 +10,7 @@ import jd.plugins.FilePackage;
 
 import org.appwork.swing.exttable.columns.ExtTextColumn;
 import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.gui.views.downloads.columns.FileColumn;
 
 public class DownloadPasswordColumn extends ExtTextColumn<AbstractNode> {
 
@@ -18,6 +21,12 @@ public class DownloadPasswordColumn extends ExtTextColumn<AbstractNode> {
 
     public DownloadPasswordColumn() {
         super(_GUI._.DownloadPasswordColumn_DownloadPasswordColumn_object_());
+
+    }
+
+    public JPopupMenu createHeaderPopup() {
+
+        return FileColumn.createColumnPopup(this, getMinWidth() == getMaxWidth() && getMaxWidth() > 0);
 
     }
 

@@ -1,5 +1,7 @@
 package org.jdownloader.gui.views.components.packagetable.columns;
 
+import javax.swing.JPopupMenu;
+
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledPackage;
 import jd.controlling.packagecontroller.AbstractNode;
@@ -9,6 +11,7 @@ import jd.plugins.FilePackage;
 import org.appwork.swing.exttable.columns.ExtTextColumn;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.gui.views.downloads.columns.FileColumn;
 
 public class ChecksumColumn extends ExtTextColumn<AbstractNode> {
 
@@ -19,6 +22,12 @@ public class ChecksumColumn extends ExtTextColumn<AbstractNode> {
 
     public ChecksumColumn() {
         super(_GUI._.checksumcolumnmd5());
+
+    }
+
+    public JPopupMenu createHeaderPopup() {
+
+        return FileColumn.createColumnPopup(this, getMinWidth() == getMaxWidth() && getMaxWidth() > 0);
 
     }
 

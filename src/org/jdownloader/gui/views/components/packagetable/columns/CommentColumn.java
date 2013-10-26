@@ -1,5 +1,7 @@
 package org.jdownloader.gui.views.components.packagetable.columns;
 
+import javax.swing.JPopupMenu;
+
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledPackage;
 import jd.controlling.packagecontroller.AbstractNode;
@@ -9,6 +11,7 @@ import jd.plugins.FilePackage;
 
 import org.appwork.swing.exttable.columns.ExtTextAreaColumn;
 import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.gui.views.downloads.columns.FileColumn;
 
 public class CommentColumn extends ExtTextAreaColumn<AbstractNode> {
 
@@ -19,6 +22,12 @@ public class CommentColumn extends ExtTextAreaColumn<AbstractNode> {
 
     public CommentColumn() {
         super(_GUI._.CommentColumn_CommentColumn_());
+    }
+
+    public JPopupMenu createHeaderPopup() {
+
+        return FileColumn.createColumnPopup(this, getMinWidth() == getMaxWidth() && getMaxWidth() > 0);
+
     }
 
     @Override

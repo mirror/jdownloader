@@ -5,6 +5,8 @@ import java.awt.event.MouseEvent;
 import java.io.File;
 import java.util.ArrayList;
 
+import javax.swing.JPopupMenu;
+
 import jd.controlling.linkcollector.LinkCollector;
 import jd.controlling.linkcollector.LinknameCleaner;
 import jd.controlling.linkcrawler.CrawledLink;
@@ -24,6 +26,7 @@ import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.components.packagetable.LinkTreeUtils;
+import org.jdownloader.gui.views.downloads.columns.FileColumn;
 import org.jdownloader.gui.views.linkgrabber.LinkGrabberTableModel;
 import org.jdownloader.gui.views.linkgrabber.contextmenu.SetDownloadFolderInLinkgrabberAction;
 import org.jdownloader.translate._JDT;
@@ -39,6 +42,12 @@ public class DownloadFolderColumn extends ExtTextColumn<AbstractNode> {
     public DownloadFolderColumn() {
         super(_GUI._.LinkGrabberTableModel_initColumns_folder());
         setClickcount(0);
+
+    }
+
+    public JPopupMenu createHeaderPopup() {
+
+        return FileColumn.createColumnPopup(this, getMinWidth() == getMaxWidth() && getMaxWidth() > 0);
 
     }
 

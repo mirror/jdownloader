@@ -2,6 +2,7 @@ package org.jdownloader.gui.views.downloads.columns;
 
 import java.util.Date;
 
+import javax.swing.JPopupMenu;
 import javax.swing.SwingConstants;
 
 import jd.controlling.packagecontroller.AbstractNode;
@@ -19,6 +20,12 @@ public class FinishedDateColumn extends ExtDateColumn<AbstractNode> {
     public FinishedDateColumn() {
         super(_GUI._.FinishedDateColumn_FinishedDateColumn());
         rendererField.setHorizontalAlignment(SwingConstants.CENTER);
+    }
+
+    public JPopupMenu createHeaderPopup() {
+
+        return FileColumn.createColumnPopup(this, getMinWidth() == getMaxWidth() && getMaxWidth() > 0);
+
     }
 
     @Override

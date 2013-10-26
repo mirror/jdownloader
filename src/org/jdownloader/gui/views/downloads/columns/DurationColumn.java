@@ -1,5 +1,6 @@
 package org.jdownloader.gui.views.downloads.columns;
 
+import javax.swing.JPopupMenu;
 import javax.swing.SwingConstants;
 
 import jd.controlling.packagecontroller.AbstractNode;
@@ -16,6 +17,12 @@ public class DurationColumn extends ExtTextColumn<AbstractNode> {
     public DurationColumn() {
         super(_GUI._.DurationColumn_DurationColumn_object_());
         rendererField.setHorizontalAlignment(SwingConstants.CENTER);
+    }
+
+    public JPopupMenu createHeaderPopup() {
+
+        return FileColumn.createColumnPopup(this, getMinWidth() == getMaxWidth() && getMaxWidth() > 0);
+
     }
 
     @Override

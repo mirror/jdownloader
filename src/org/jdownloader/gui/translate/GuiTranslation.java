@@ -3483,4 +3483,7 @@ public interface GuiTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Show a Bubble when the Download started, stopped or has been paused " })
     String plugins_optional_JDLightTray_ballon_startpausestop();
+
+    @Default(lngs = { "en" }, values = { "Sort Downloadorder on '%s1'" })
+    String SortPackagesDownloadOrdnerOnColumn(String name);
 }

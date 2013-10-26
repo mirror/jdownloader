@@ -2,6 +2,7 @@ package org.jdownloader.gui.views.downloads.columns;
 
 import javax.swing.Icon;
 import javax.swing.ImageIcon;
+import javax.swing.JPopupMenu;
 
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledPackage;
@@ -34,6 +35,12 @@ public class AvailabilityColumn extends ExtTextColumn<AbstractNode> {
     private ImageIcon         offline;
     private ImageIcon         mixed;
     private ColumnHelper      columnHelper     = new ColumnHelper();
+
+    public JPopupMenu createHeaderPopup() {
+
+        return FileColumn.createColumnPopup(this, getMinWidth() == getMaxWidth() && getMaxWidth() > 0);
+
+    }
 
     public AvailabilityColumn() {
         super(_GUI._.AvailabilityColumn_AvailabilityColumn());

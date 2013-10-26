@@ -4,6 +4,7 @@ import java.awt.event.FocusEvent;
 import java.awt.event.MouseEvent;
 import java.io.File;
 
+import javax.swing.JPopupMenu;
 import javax.swing.JTextField;
 
 import jd.controlling.packagecontroller.AbstractNode;
@@ -25,6 +26,12 @@ public class DownloadFolderColumn extends ExtTextColumn<AbstractNode> {
      * 
      */
     private static final long serialVersionUID = 1L;
+
+    public JPopupMenu createHeaderPopup() {
+
+        return FileColumn.createColumnPopup(this, getMinWidth() == getMaxWidth() && getMaxWidth() > 0);
+
+    }
 
     public DownloadFolderColumn() {
         super(_GUI._.LinkGrabberTableModel_initColumns_folder());

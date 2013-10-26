@@ -8,6 +8,9 @@ import java.util.logging.Level;
 import javax.swing.BorderFactory;
 import javax.swing.Icon;
 import javax.swing.ImageIcon;
+import javax.swing.JCheckBoxMenuItem;
+import javax.swing.JPopupMenu;
+import javax.swing.JSeparator;
 import javax.swing.border.Border;
 
 import jd.controlling.linkcrawler.ArchiveCrawledPackage;
@@ -23,6 +26,8 @@ import jd.plugins.FilePackage;
 import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.events.GenericConfigEventListener;
 import org.appwork.storage.config.handler.KeyHandler;
+import org.appwork.swing.exttable.ExtColumn;
+import org.appwork.swing.exttable.columnmenu.LockColumnWidthAction;
 import org.appwork.swing.exttable.columns.ExtTextColumn;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging.Log;
@@ -32,6 +37,7 @@ import org.jdownloader.extensions.extraction.ExtractionExtension;
 import org.jdownloader.extensions.extraction.bindings.crawledlink.CrawledLinkFactory;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.components.packagetable.LinkTreeUtils;
+import org.jdownloader.gui.views.components.packagetable.actions.SortPackagesDownloadOrdnerOnColumn;
 import org.jdownloader.gui.views.downloads.action.OpenFileAction;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
@@ -65,6 +71,37 @@ public class FileColumn extends ExtTextColumn<AbstractNode> implements GenericCo
         hideSinglePackage = CFG_GUI.HIDE_SINGLE_CHILD_PACKAGES.isEnabled();
         CFG_GUI.HIDE_SINGLE_CHILD_PACKAGES.getEventSender().addListener(this, true);
 
+    }
+
+    /**
+     * @return
+     */
+    public JPopupMenu createHeaderPopup() {
+
+        return FileColumn.createColumnPopup(this, !(getMinWidth() == getMaxWidth() && getMaxWidth() > 0));
+
+    }
+
+    public static JPopupMenu createColumnPopup(ExtColumn<AbstractNode> fileColumn, boolean isResizable) {
+        final JPopupMenu ret = new JPopupMenu();
+        LockColumnWidthAction action;
+        boolean sepRequired = false;
+        if (isResizable) {
+            sepRequired = true;
+            ret.add(new JCheckBoxMenuItem(action = new LockColumnWidthAction(fileColumn)));
+        }
+        if (fileColumn.isSortable(null)) {
+            // if (sepRequired) {
+            // ret.add(new JSeparator());
+            // }
+            sepRequired = true;
+            ret.add(new SortPackagesDownloadOrdnerOnColumn(fileColumn));
+            // ret.add(new SortPackagesAndLinksDownloadOrdnerOnColumn(this));
+        }
+        if (sepRequired) {
+            ret.add(new JSeparator());
+        }
+        return ret;
     }
 
     @Override

@@ -7,6 +7,7 @@ import java.awt.event.MouseEvent;
 import javax.swing.ImageIcon;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
+import javax.swing.JPopupMenu;
 
 import jd.controlling.downloadcontroller.DownloadWatchDog;
 import jd.controlling.downloadcontroller.SingleDownloadController;
@@ -51,6 +52,12 @@ public class ConnectionColumn extends ExtColumn<AbstractNode> {
     private ImageIcon         forced;
 
     private DownloadWatchDog  dlWatchdog;
+
+    public JPopupMenu createHeaderPopup() {
+
+        return FileColumn.createColumnPopup(this, getMinWidth() == getMaxWidth() && getMaxWidth() > 0);
+
+    }
 
     public ConnectionColumn() {
         super(_GUI._.ConnectionColumn_ConnectionColumn(), null);

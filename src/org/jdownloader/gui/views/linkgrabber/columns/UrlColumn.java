@@ -8,6 +8,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.List;
 
+import javax.swing.JPopupMenu;
 import javax.swing.JTextField;
 
 import jd.controlling.linkcrawler.CrawledLink;
@@ -22,6 +23,7 @@ import org.appwork.swing.components.ExtButton;
 import org.appwork.swing.exttable.columns.ExtTextColumn;
 import org.appwork.utils.os.CrossSystem;
 import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.gui.views.downloads.columns.FileColumn;
 import org.jdownloader.images.NewTheme;
 
 public class UrlColumn extends ExtTextColumn<AbstractNode> {
@@ -46,6 +48,12 @@ public class UrlColumn extends ExtTextColumn<AbstractNode> {
     @Override
     public boolean isDefaultVisible() {
         return false;
+    }
+
+    public JPopupMenu createHeaderPopup() {
+
+        return FileColumn.createColumnPopup(this, getMinWidth() == getMaxWidth() && getMaxWidth() > 0);
+
     }
 
     public UrlColumn() {
