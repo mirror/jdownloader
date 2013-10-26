@@ -21,6 +21,7 @@ import java.io.IOException;
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.parser.html.Form;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -58,10 +59,12 @@ public class AlterVideoNet extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        final String c = br.getRegex("type=\"hidden\" value=\"([a-z0-9]+)\" name=\"c\"").getMatch(0);
-        if (c == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        br.postPage(downloadLink.getDownloadURL(), "c=" + c + "&choice=Download");
-        DLLINK = br.getRegex("\\'(http://av\\d+\\.altervideo\\.net/files/[a-z0-9]+/[a-z0-9]+/altervideo/[a-z0-9]+\\.flv)\\'").getMatch(0);
+        Form download = br.getForm(0);
+        if (download == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        download.put("DOWNLOAD", "true");
+        sleep(5033, downloadLink);
+        br.submitForm(download);
+        DLLINK = br.getRegex("\\'(http://[^\"]+\\.altervideo\\.net/files/[a-f0-9]{32}/[a-z0-9]+/[a-z0-9]+\\.flv)\\'").getMatch(0);
         if (DLLINK == null) DLLINK = br.getRegex("document\\.location\\.href=\\'(http://[^<>\"]*?)\\'").getMatch(0);
         if (DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 0);
