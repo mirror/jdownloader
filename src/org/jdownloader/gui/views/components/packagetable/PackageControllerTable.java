@@ -96,12 +96,12 @@ public abstract class PackageControllerTable<ParentType extends AbstractPackageN
         if (CrossSystem.isMac()) {
             if (e.isMetaDown()) {
 
-                new SortPackagesDownloadOrdnerOnColumn(column).actionPerformed(null);
+                new SortPackagesDownloadOrdnerOnColumn(column).actionPerformed(new ActionEvent(e.getSource(), e.getID(), "sort", System.currentTimeMillis(), e.getModifiers()));
                 return;
             }
         } else {
             if (e.isControlDown()) {
-                new SortPackagesDownloadOrdnerOnColumn(column).actionPerformed(null);
+                new SortPackagesDownloadOrdnerOnColumn(column).actionPerformed(new ActionEvent(e.getSource(), e.getID(), "sort", System.currentTimeMillis(), e.getModifiers()));
                 return;
             }
         }

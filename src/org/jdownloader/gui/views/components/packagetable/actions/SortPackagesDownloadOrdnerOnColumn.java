@@ -11,6 +11,7 @@ import org.appwork.swing.exttable.ExtColumn;
 import org.appwork.swing.exttable.ExtDefaultRowSorter;
 import org.appwork.swing.exttable.ExtTableModel;
 import org.appwork.utils.Application;
+import org.appwork.utils.os.CrossSystem;
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.components.packagetable.PackageControllerTableModel;
@@ -42,6 +43,14 @@ public class SortPackagesDownloadOrdnerOnColumn extends AppAction {
             if (currentComparator != null && newID.equals(currentComparator.getID())) {
                 asc.set(!currentComparator.isAsc());
             }
+            boolean sortPackages = true;
+
+            // if (CrossSystem.isMac() && ((e.getModifiers() & ActionEvent.META_MASK) == ActionEvent.META_MASK)) {
+            // sortPackages = false;
+            // }
+            if (!CrossSystem.isMac() && ((e.getModifiers() & ActionEvent.SHIFT_MASK) == ActionEvent.SHIFT_MASK)) {
+                sortPackages = false;
+            }
             modelController.sort(new PackageControllerComparator<AbstractNode>() {
 
                 @Override
@@ -63,7 +72,7 @@ public class SortPackagesDownloadOrdnerOnColumn extends AppAction {
                 public boolean isAsc() {
                     return asc.get();
                 }
-            });
+            }, sortPackages);
 
         }
     }

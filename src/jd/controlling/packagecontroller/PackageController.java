@@ -722,7 +722,7 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
         }
     }
 
-    public void sort(final PackageControllerComparator<AbstractNode> comparator) {
+    public void sort(final PackageControllerComparator<AbstractNode> comparator, final boolean sortPackages) {
         this.sorter = comparator;
         QUEUE.add(new QueueAction<Void, RuntimeException>() {
 
@@ -730,21 +730,22 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
             protected Void run() throws RuntimeException {
 
                 Collections.sort(packages, comparator);
-
-                for (PackageType pkg : packages) {
-                    try {
-                        pkg.getModifyLock().writeLock();
-                        pkg.setCurrentSorter((PackageControllerComparator<ChildType>) comparator);
-                        for (ChildType child : pkg.getChildren()) {
-                            /* this resets getPreviousParentNodeID */
-                            child.setParentNode(pkg);
+                if (sortPackages) {
+                    for (PackageType pkg : packages) {
+                        try {
+                            pkg.getModifyLock().writeLock();
+                            pkg.setCurrentSorter((PackageControllerComparator<ChildType>) comparator);
+                            for (ChildType child : pkg.getChildren()) {
+                                /* this resets getPreviousParentNodeID */
+                                child.setParentNode(pkg);
+                            }
+                            Collections.sort(pkg.getChildren(), comparator);
+                        } finally {
+                            pkg.getModifyLock().writeUnlock();
                         }
-                        Collections.sort(pkg.getChildren(), comparator);
-                    } finally {
-                        pkg.getModifyLock().writeUnlock();
+                        structureChanged.incrementAndGet();
+                        _controllerPackageNodeStructureChanged(pkg, this.getQueuePrio());
                     }
-                    structureChanged.incrementAndGet();
-                    _controllerPackageNodeStructureChanged(pkg, this.getQueuePrio());
                 }
                 structureChanged.incrementAndGet();
 
