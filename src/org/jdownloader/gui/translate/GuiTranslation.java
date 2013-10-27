@@ -3486,4 +3486,19 @@ public interface GuiTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Sort Downloadorder on '%s1'" })
     String SortPackagesDownloadOrdnerOnColumn(String name);
+
+    @Default(lngs = { "en" }, values = { "Archive Part" })
+    String LinkGrabberTableModel_partcolumn();
+
+    @Default(lngs = { "en" }, values = { "Download Password:" })
+    String propertiespanel_passwod();
+
+    @Default(lngs = { "en" }, values = { "Enter the password required to download the file..." })
+    String AddLinksDialog_layoutDialogContent_password_tt();
+
+    @Default(lngs = { "en" }, values = { "MD5/SHA1:" })
+    String propertiespanel_checksum();
+
+    @Default(lngs = { "en" }, values = { "Enter the MD5 or SHA1 Checksum..." })
+    String AddLinksDialog_layoutDialogContent_checksum_tt();
 }

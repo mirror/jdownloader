@@ -13,6 +13,7 @@ import jd.plugins.Account;
 import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLinkProperty;
+import jd.plugins.PartInfo;
 import jd.plugins.PluginForHost;
 
 import org.appwork.utils.StringUtils;
@@ -93,11 +94,12 @@ public class CrawledLink implements AbstractPackageChildrenNode<CrawledPackage>,
     }
 
     /**
-     * Linkid should be unique for a certain link. in most cases, this is the url itself, but somtimes (youtube e.g.) the id contains info about how to prozess
-     * the file afterwards.
+     * Linkid should be unique for a certain link. in most cases, this is the url itself, but somtimes (youtube e.g.) the id contains info
+     * about how to prozess the file afterwards.
      * 
      * example:<br>
-     * 2 youtube links may have the same url, but the one will be converted into mp3, and the other stays flv. url is the same, but linkID different.
+     * 2 youtube links may have the same url, but the one will be converted into mp3, and the other stays flv. url is the same, but linkID
+     * different.
      * 
      * @return
      */
@@ -171,7 +173,8 @@ public class CrawledLink implements AbstractPackageChildrenNode<CrawledPackage>,
     private FilterRule           matchingFilter;
 
     private volatile ArchiveInfo archiveInfo;
-    private UniqueAlltimeID      previousParent = null; ;
+    private UniqueAlltimeID      previousParent = null;
+    private PartInfo             partInfo;              ;
 
     public CrawledLink(DownloadLink dlLink) {
         this.dlLink = dlLink;
@@ -231,7 +234,16 @@ public class CrawledLink implements AbstractPackageChildrenNode<CrawledPackage>,
         } else {
             this.name = name;
         }
+        updatePartInfo();
         if (hasNotificationListener()) nodeUpdated(this, AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, new CrawledLinkProperty(this, CrawledLinkProperty.Property.NAME, getName()));
+    }
+
+    private void updatePartInfo() {
+        this.partInfo = DownloadLink.createPartInfo(getName());
+    }
+
+    public PartInfo getPartInfo() {
+        return partInfo;
     }
 
     /* returns unmodified name variable */

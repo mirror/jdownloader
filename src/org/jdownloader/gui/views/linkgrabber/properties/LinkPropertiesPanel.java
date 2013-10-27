@@ -80,6 +80,8 @@ public class LinkPropertiesPanel extends MigPanel implements LinkCollectorListen
     private Timer                                 timer;
     protected boolean                             saving;
     protected ExtTextField                        filename;
+    private ExtTextField                          downloadpassword;
+    private ExtTextField                          checksum;
 
     public LinkPropertiesPanel() {
         super("ins 0,debug", "[grow,fill]", "[grow,fill]");
@@ -198,6 +200,54 @@ public class LinkPropertiesPanel extends MigPanel implements LinkCollectorListen
         setListeners(filename);
 
         filename.setBorder(BorderFactory.createCompoundBorder(filename.getBorder(), BorderFactory.createEmptyBorder(2, 6, 1, 6)));
+        //
+        downloadpassword = new ExtTextField() {
+
+            @Override
+            public void onChanged() {
+                // delayedSave();
+            }
+
+        };
+        downloadpassword.addFocusListener(new FocusListener() {
+
+            @Override
+            public void focusLost(FocusEvent e) {
+            }
+
+            @Override
+            public void focusGained(FocusEvent e) {
+                downloadpassword.selectAll();
+            }
+        });
+        downloadpassword.setHelpText(_GUI._.AddLinksDialog_layoutDialogContent_password_tt());
+        setListeners(downloadpassword);
+
+        downloadpassword.setBorder(BorderFactory.createCompoundBorder(downloadpassword.getBorder(), BorderFactory.createEmptyBorder(2, 6, 1, 6)));
+
+        checksum = new ExtTextField() {
+
+            @Override
+            public void onChanged() {
+                // delayedSave();
+            }
+
+        };
+        checksum.addFocusListener(new FocusListener() {
+
+            @Override
+            public void focusLost(FocusEvent e) {
+            }
+
+            @Override
+            public void focusGained(FocusEvent e) {
+                checksum.selectAll();
+            }
+        });
+        checksum.setHelpText(_GUI._.AddLinksDialog_layoutDialogContent_checksum_tt());
+        setListeners(checksum);
+
+        checksum.setBorder(BorderFactory.createCompoundBorder(checksum.getBorder(), BorderFactory.createEmptyBorder(2, 6, 1, 6)));
 
         String latest = config.getLatestDownloadDestinationFolder();
         if (latest == null || !config.isUseLastDownloadDestinationAsDefault()) {
@@ -216,6 +266,17 @@ public class LinkPropertiesPanel extends MigPanel implements LinkCollectorListen
             }
 
         };
+        password.addFocusListener(new FocusListener() {
+
+            @Override
+            public void focusLost(FocusEvent e) {
+            }
+
+            @Override
+            public void focusGained(FocusEvent e) {
+                password.selectAll();
+            }
+        });
         setListeners(password);
         password.setHelpText(_GUI._.AddLinksDialog_createExtracOptionsPanel_password());
         password.setBorder(BorderFactory.createCompoundBorder(password.getBorder(), BorderFactory.createEmptyBorder(2, 6, 1, 6)));
@@ -367,6 +428,9 @@ public class LinkPropertiesPanel extends MigPanel implements LinkCollectorListen
         addSaveTo(height, p);
         addFilename(height, p);
         addPackagename(height, p);
+
+        addDownloadPassword(height, p);
+        addChecksum(height, p);
         addCommentLine(height, p);
         addArchiveLine(height, p);
         autoExtract.setEnabled(false);
@@ -399,6 +463,16 @@ public class LinkPropertiesPanel extends MigPanel implements LinkCollectorListen
     protected void addPackagename(int height, MigPanel p) {
         p.add(createIconLabel("package_open", _GUI._.propertiespanel_packagename(), _GUI._.AddLinksDialog_layoutDialogContent_package_tt()), "aligny center,alignx right,height " + height + "!");
         p.add(packagename, "spanx,height " + height + "!");
+    }
+
+    protected void addChecksum(int height, MigPanel p) {
+        p.add(createIconLabel("package_open", _GUI._.propertiespanel_checksum(), _GUI._.AddLinksDialog_layoutDialogContent_checksum_tt()), "aligny center,alignx right,height " + height + "!");
+        p.add(checksum, "spanx,height " + height + "!");
+    }
+
+    protected void addDownloadPassword(int height, MigPanel p) {
+        p.add(createIconLabel("password", _GUI._.propertiespanel_passwod(), _GUI._.AddLinksDialog_layoutDialogContent_password_tt()), "aligny center,alignx right,height " + height + "!");
+        p.add(downloadpassword, "spanx,height " + height + "!");
     }
 
     protected void addFilename(int height, MigPanel p) {
@@ -451,6 +525,17 @@ public class LinkPropertiesPanel extends MigPanel implements LinkCollectorListen
             currentLink.setPriority(priop);
             currentLink.getDownloadLink().setComment(comment.getText());
             currentLink.setName(filename.getText());
+            currentLink.getDownloadLink().setDownloadPassword(downloadpassword.getText());
+            String cs = checksum.getText();
+            cs = cs.replaceAll("\\[.*?\\]", "").trim();
+            if (cs.length() == 32) {
+                currentLink.getDownloadLink().setMD5Hash(cs);
+            } else if (cs.length() == 40) {
+                currentLink.getDownloadLink().setSha1Hash(cs);
+            } else {
+                currentLink.getDownloadLink().setMD5Hash(null);
+                currentLink.getDownloadLink().setSha1Hash(null);
+            }
             if (!currentPackage.getName().equals(packagename.getText())) {
                 currentPackage.setName(packagename.getText());
                 PackageHistoryManager.getInstance().add(packagename.getText());
@@ -696,6 +781,21 @@ public class LinkPropertiesPanel extends MigPanel implements LinkCollectorListen
             destination.setFile(LinkTreeUtils.getRawDownloadDirectory(pkg));
         }
 
+        if (!checksum.hasFocus()) {
+            //
+            // if (dl.getMD5Hash() != null) return "[MD5] " + dl.getMD5Hash();
+            if (!StringUtils.isEmpty(link.getDownloadLink().getSha1Hash())) {
+                checksum.setText("[SHA1] " + link.getDownloadLink().getSha1Hash());
+            } else if (!StringUtils.isEmpty(link.getDownloadLink().getMD5Hash())) {
+                checksum.setText("[MD5] " + link.getDownloadLink().getMD5Hash());
+            } else {
+                checksum.setText(null);
+            }
+
+        }
+        if (!downloadpassword.hasFocus()) {
+            downloadpassword.setText(link.getDownloadLink().getDownloadPassword());
+        }
         if (!packagename.hasFocus()) {
             packagename.setList(PackageHistoryManager.getInstance().list(new PackageHistoryEntry(pkg.getName())));
             packagename.setSelectedItem(new PackageHistoryEntry(pkg.getName()));

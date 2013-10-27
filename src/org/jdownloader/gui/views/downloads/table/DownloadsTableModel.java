@@ -25,6 +25,7 @@ import org.jdownloader.gui.views.downloads.columns.SizeColumn;
 import org.jdownloader.gui.views.downloads.columns.SpeedColumn;
 import org.jdownloader.gui.views.downloads.columns.StopSignColumn;
 import org.jdownloader.gui.views.downloads.columns.TaskColumn;
+import org.jdownloader.gui.views.linkgrabber.columns.PartColumn;
 
 public class DownloadsTableModel extends PackageControllerTableModel<FilePackage, DownloadLink> {
 
@@ -52,6 +53,7 @@ public class DownloadsTableModel extends PackageControllerTableModel<FilePackage
     @Override
     protected void initColumns() {
         this.addColumn(expandCollapse = new FileColumn());
+        addColumn(new PartColumn());
         this.addColumn(new SizeColumn());
         this.addColumn(new HosterColumn());
         this.addColumn(new ConnectionColumn());
