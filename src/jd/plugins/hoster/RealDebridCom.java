@@ -76,15 +76,17 @@ public class RealDebridCom extends PluginForHost {
         return mProt + mName + "/terms";
     }
 
-    public void prepBrowser() {
+    private Browser prepBrowser(Browser prepBr) {
         // define custom browser headers and language settings.
-        br.getHeaders().put("Accept-Language", "en-gb, en;q=0.9");
-        br.setCookie(mProt + mName, "lang", "english");
-        br.getHeaders().put("User-Agent", "JDownloader");
-        br.setCustomCharset("utf-8");
-        br.setConnectTimeout(2 * 60 * 1000);
-        br.setReadTimeout(2 * 60 * 1000);
-        br.setFollowRedirects(true);
+        prepBr.getHeaders().put("Accept-Language", "en-gb, en;q=0.9");
+        prepBr.setCookie(mProt + mName, "lang", "english");
+        prepBr.getHeaders().put("User-Agent", "JDownloader");
+        prepBr.setCustomCharset("utf-8");
+        prepBr.setConnectTimeout(2 * 60 * 1000);
+        prepBr.setReadTimeout(2 * 60 * 1000);
+        prepBr.setFollowRedirects(true);
+        prepBr.setAllowedResponseCodes(new int[] { 504 });
+        return prepBr;
     }
 
     @Override
@@ -210,47 +212,40 @@ public class RealDebridCom extends PluginForHost {
 
     /** no override to keep plugin compatible to old stable */
     public void handleMultiHost(DownloadLink link, Account acc) throws Exception {
-        prepBrowser();
+        prepBrowser(br);
         login(acc, false);
         showMessage(link, "Task 1: Generating Link");
         /* request Download */
         String dllink = link.getDownloadURL();
         for (int retry = 0; retry < 3; retry++) {
             try {
-                if (link.getStringProperty("pass", null) != null) {
-                    br.getPage(mProt + mName + "/ajax/unrestrict.php?link=" + Encoding.urlEncode(dllink) + "&password=" + Encoding.urlEncode(link.getStringProperty("pass", null)));
-                } else {
-                    br.getPage(mProt + mName + "/ajax/unrestrict.php?link=" + Encoding.urlEncode(dllink));
+                br.getPage(mProt + mName + "/ajax/unrestrict.php?link=" + Encoding.urlEncode(dllink) + (link.getStringProperty("pass", null) != null ? "&password=" + Encoding.urlEncode(link.getStringProperty("pass", null)) : ""));
+                if (br.containsHTML("\"error\":4,")) {
+                    if (retry != 2) {
+                        if (dllink.contains("https://")) {
+                            dllink = dllink.replace("https://", "http://");
+                        } else {
+                            // not likely but lets try anyway.
+                            dllink = dllink.replace("http://", "https://");
+                        }
+                    } else {
+                        logger.warning("Problemo in the old corral");
+                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Can not download from " + mName);
+                    }
+                    continue;
+                } else if (br.getHttpConnection().getResponseCode() == 504 || "23764902a26fbd6345d3cc3533d1d5eb".equalsIgnoreCase(Hash.getMD5(br.toString()))) {
+                    if (retry != 2) {
+                        sleep(3000l, link);
+                        continue;
+                    } else {
+                        logger.warning(mName + " has problems! Repeated bad gateway!");
+                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Can not download from " + mName);
+                    }
                 }
                 break;
             } catch (SocketException e) {
                 if (retry == 2) throw e;
                 sleep(3000l, link);
-            }
-        }
-        if (br.containsHTML("\"error\":4,")) {
-            if (dllink.contains("https://")) {
-                dllink = dllink.replace("https://", "http://");
-            } else {
-                // not likely but lets try anyway.
-                dllink = dllink.replace("http://", "https://");
-            }
-            for (int retry = 0; retry < 3; retry++) {
-                try {
-                    if (link.getStringProperty("pass", null) != null) {
-                        br.getPage(mProt + mName + "/ajax/unrestrict.php?link=" + Encoding.urlEncode(dllink) + "&password=" + Encoding.urlEncode(link.getStringProperty("pass", null)));
-                    } else {
-                        br.getPage(mProt + mName + "/ajax/unrestrict.php?link=" + Encoding.urlEncode(dllink));
-                    }
-                    break;
-                } catch (SocketException e) {
-                    if (retry == 2) throw e;
-                    sleep(3000l, link);
-                }
-            }
-            if (br.containsHTML("\"error\":4,")) {
-                logger.warning("Problemo in the old corral");
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Can not download from " + mName);
             }
         }
         String generatedLinks = br.getRegex("\"generated_links\":\\[\\[(.*?)\\]\\]").getMatch(0);
@@ -364,6 +359,15 @@ public class RealDebridCom extends PluginForHost {
         for (int retry = 0; retry < 3; retry++) {
             try {
                 br.getPage(mProt + mName + "/api/account.php");
+                if (br.getHttpConnection().getResponseCode() == 504 || "23764902a26fbd6345d3cc3533d1d5eb".equalsIgnoreCase(Hash.getMD5(br.toString()))) {
+                    if (retry != 2) {
+                        Thread.sleep(3000l);
+                        continue;
+                    } else {
+                        logger.warning(mName + " has problems! Repeated bad gateway!");
+                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Can not download from " + mName);
+                    }
+                }
                 break;
             } catch (SocketException e) {
                 if (retry == 2) throw e;
@@ -436,7 +440,7 @@ public class RealDebridCom extends PluginForHost {
             try {
                 /** Load cookies */
                 br.setCookiesExclusive(true);
-                prepBrowser();
+                prepBrowser(br);
                 final Object ret = account.getProperty("cookies", null);
                 boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
                 if (acmatch) acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
@@ -480,24 +484,23 @@ public class RealDebridCom extends PluginForHost {
                                             String title = null;
                                             boolean xSystem = CrossSystem.isOpenBrowserSupported();
                                             if ("de".equalsIgnoreCase(lng)) {
-                                                title = mName + " Zwei-Faktor-Authentifizierung wird benoetigt!";
-                                                message = " Zwei-Faktor-Authentifizierung wird benoetigt!\r\n";
+                                                title = mName + " Two Factor Authentication wird benoetigt";
                                                 message = "Oeffne bitte Deinen Webbrowser:\r\n";
                                                 message += " - Melde den Nutzer " + mName + " ab.\r\n";
                                                 message += " - Melde Dich neu an. \r\n";
-                                                message += " - Vervollstaendige die Zwei-Faktor-Authentifizierung.\r\n";
-                                                message += "Nach dem erfolgreichen Login im Browser kannst du deinen Account wieder im JD hinzufuegen.\r\n\r\n";
+                                                message += " - Vervollstaendige die Two Factor Authentication.\r\n";
+                                                message += "Nach dem erfolgreichen Login kannst Du Dich im JDownloader neu anmelden.\r\n\r\n";
                                                 if (xSystem)
-                                                    message += "Klicke -OK- (Oeffnet " + mName + " in deinem Webbrowser)\r\n";
+                                                    message += "Klicke -OK- (Oeffnet " + mName + " in Deinem Webbrowser)\r\n";
                                                 else
                                                     message += new URL(mProt + mName);
                                             } else {
-                                                title = mName + " Two factor authentication required!";
+                                                title = mName + " Two Factor Authentication Required";
                                                 message = "Please goto your Browser:\r\n";
                                                 message += " - Logout of " + mName + ".\r\n";
                                                 message += " - Re-Login. \r\n";
                                                 message += " - Complete Two Factor Authentication.\r\n";
-                                                message += "Once completed, you will be able to re-add your account within JDownloader.\r\n\r\n";
+                                                message += "Once completed, you will be able to relogin within JDownloader.\r\n\r\n";
                                                 if (xSystem)
                                                     message += "Click -OK- (Opens " + mName + " in your Browser)\r\n";
                                                 else
