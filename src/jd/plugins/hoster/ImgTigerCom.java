@@ -28,7 +28,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "imgtiger.com" }, urls = { "http://(www\\.)?imgtiger\\.com/viewer\\.php\\?file=\\d+\\.jpg" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "imgtiger.com" }, urls = { "http://(www\\.)?imgtiger\\.com/viewer\\.php\\?file=\\d+\\.(jpg|png)" }, flags = { 0 })
 public class ImgTigerCom extends PluginForHost {
 
     public ImgTigerCom(PluginWrapper wrapper) {
@@ -52,8 +52,8 @@ public class ImgTigerCom extends PluginForHost {
         br.setReadTimeout(3 * 60 * 1000);
         br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML("does not exist or has been deleted")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = new Regex(downloadLink.getDownloadURL(), "file=(\\d+\\.jpg)").getMatch(0);
-        DLLINK = br.getRegex("\"(http://img\\d+\\.imgtiger\\.com/images/\\d+\\.jpg)\"").getMatch(0);
+        String filename = new Regex(downloadLink.getDownloadURL(), "file=(\\d+\\.(jpg|png))").getMatch(0);
+        DLLINK = br.getRegex("\"(http://img\\d+\\.imgtiger\\.com/images/\\d+\\.(jpg|png))\"").getMatch(0);
         if (filename == null || DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         DLLINK = Encoding.htmlDecode(DLLINK);
         filename = filename.trim();
