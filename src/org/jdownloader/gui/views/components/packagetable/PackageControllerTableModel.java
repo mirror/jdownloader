@@ -13,7 +13,7 @@ import javax.swing.ListSelectionModel;
 import jd.controlling.packagecontroller.AbstractNode;
 import jd.controlling.packagecontroller.AbstractPackageChildrenNode;
 import jd.controlling.packagecontroller.AbstractPackageNode;
-import jd.controlling.packagecontroller.ChildComparator;
+import jd.controlling.packagecontroller.PackageControllerComparator;
 import jd.controlling.packagecontroller.ChildrenView;
 import jd.controlling.packagecontroller.PackageController;
 
@@ -204,7 +204,7 @@ public abstract class PackageControllerTableModel<PackageType extends AbstractPa
         refreshModel(true);
     }
 
-    public void sortPackageChildren(final AbstractPackageNode pkg, ChildComparator<ChildrenType> comparator) {
+    public void sortPackageChildren(final AbstractPackageNode pkg, PackageControllerComparator<ChildrenType> comparator) {
         this.resetSorting();
         pc.sortPackageChildren((PackageType) pkg, comparator);
     }

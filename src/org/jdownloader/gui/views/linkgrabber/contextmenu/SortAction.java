@@ -5,7 +5,7 @@ import java.awt.event.ActionEvent;
 import jd.controlling.packagecontroller.AbstractNode;
 import jd.controlling.packagecontroller.AbstractPackageChildrenNode;
 import jd.controlling.packagecontroller.AbstractPackageNode;
-import jd.controlling.packagecontroller.ChildComparator;
+import jd.controlling.packagecontroller.PackageControllerComparator;
 
 import org.appwork.swing.exttable.ExtColumn;
 import org.appwork.utils.event.queue.Queue.QueuePriority;
@@ -55,12 +55,12 @@ public class SortAction<PackageType extends AbstractPackageNode<ChildrenType, Pa
 
                     if (column.getModel() instanceof PackageControllerTableModel) {
                         PackageControllerTableModel model = (PackageControllerTableModel) column.getModel();
-                        ChildComparator<AbstractNode> comparator = null;
+                        PackageControllerComparator<AbstractNode> comparator = null;
                         for (AbstractNode node : getSelection().getAllPackages()) {
                             if (node instanceof AbstractPackageNode) {
                                 if (comparator == null) {
                                     if (((AbstractPackageNode) node).getCurrentSorter() == null || !((AbstractPackageNode) node).getCurrentSorter().getID().equals(column.getModel().getModelID() + ".Column." + column.getID()) || ((AbstractPackageNode) node).getCurrentSorter().isAsc()) {
-                                        comparator = new ChildComparator<AbstractNode>() {
+                                        comparator = new PackageControllerComparator<AbstractNode>() {
 
                                             public int compare(AbstractNode o1, AbstractNode o2) {
 
@@ -80,7 +80,7 @@ public class SortAction<PackageType extends AbstractPackageNode<ChildrenType, Pa
                                         };
 
                                     } else {
-                                        comparator = new ChildComparator<AbstractNode>() {
+                                        comparator = new PackageControllerComparator<AbstractNode>() {
 
                                             public int compare(AbstractNode o1, AbstractNode o2) {
 

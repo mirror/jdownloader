@@ -70,8 +70,8 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
                                               };
 
     /**
-     * add a Package at given position position in this PackageController. in case the Package is already controlled by this PackageController this function
-     * does move it to the given position
+     * add a Package at given position position in this PackageController. in case the Package is already controlled by this
+     * PackageController this function does move it to the given position
      * 
      * @param pkg
      * @param index
@@ -94,7 +94,7 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
         return getChildrenByFilter(null).size();
     }
 
-    public void sortPackageChildren(final PackageType pkg, final ChildComparator<ChildType> comparator) {
+    public void sortPackageChildren(final PackageType pkg, final PackageControllerComparator<ChildType> comparator) {
         if (pkg != null && comparator != null) {
             QUEUE.add(new QueueAction<Void, RuntimeException>() {
 
@@ -208,6 +208,7 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
     }
 
     private List<PackageControllerModifyVetoListener<PackageType, ChildType>> vetoListener = new ArrayList<PackageControllerModifyVetoListener<PackageType, ChildType>>();
+    private PackageControllerComparator<AbstractNode>                         sorter;
 
     public void removeVetoListener(PackageControllerModifyVetoListener<PackageType, ChildType> list) {
         synchronized (vetoListener) {
@@ -426,7 +427,7 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
                  * @param sorter
                  * @return
                  */
-                protected int search(List<ChildType> pkgchildren, ChildType elementToMove, ChildComparator<ChildType> sorter) {
+                protected int search(List<ChildType> pkgchildren, ChildType elementToMove, PackageControllerComparator<ChildType> sorter) {
                     int min = 0;
                     int max = pkgchildren.size() - 1;
 
@@ -520,7 +521,7 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
                         /* add at wanted position */
                         if (destIndex < 0 || destIndex > pkgchildren.size()) {
                             /* add at the end */
-                            ChildComparator<ChildType> sorter = pkg.getCurrentSorter();
+                            PackageControllerComparator<ChildType> sorter = pkg.getCurrentSorter();
                             if (sorter != null) {
                                 for (ChildType c : elementsToMove) {
                                     pkgchildren.add(search(pkgchildren, c, sorter), c);
@@ -554,7 +555,8 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
     }
 
     /**
-     * remove the given children from the package. also removes the package from this PackageController in case it is empty after removal of the children
+     * remove the given children from the package. also removes the package from this PackageController in case it is empty after removal of
+     * the children
      * 
      * @param pkg
      * @param children
@@ -720,4 +722,40 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
         }
     }
 
+    public void sort(final PackageControllerComparator<AbstractNode> comparator) {
+        this.sorter = comparator;
+        QUEUE.add(new QueueAction<Void, RuntimeException>() {
+
+            @Override
+            protected Void run() throws RuntimeException {
+
+                Collections.sort(packages, comparator);
+
+                for (PackageType pkg : packages) {
+                    try {
+                        pkg.getModifyLock().writeLock();
+                        pkg.setCurrentSorter((PackageControllerComparator<ChildType>) comparator);
+                        for (ChildType child : pkg.getChildren()) {
+                            /* this resets getPreviousParentNodeID */
+                            child.setParentNode(pkg);
+                        }
+                        Collections.sort(pkg.getChildren(), comparator);
+                    } finally {
+                        pkg.getModifyLock().writeUnlock();
+                    }
+                    structureChanged.incrementAndGet();
+                    _controllerPackageNodeStructureChanged(pkg, this.getQueuePrio());
+                }
+                structureChanged.incrementAndGet();
+
+                _controllerStructureChanged(this.getQueuePrio());
+                return null;
+            }
+        });
+
+    }
+
+    public PackageControllerComparator<AbstractNode> getSorter() {
+        return sorter;
+    }
 }

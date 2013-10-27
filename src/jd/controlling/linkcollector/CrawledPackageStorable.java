@@ -5,7 +5,7 @@ import java.util.ArrayList;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledPackage;
 import jd.controlling.packagecontroller.AbstractNode;
-import jd.controlling.packagecontroller.ChildComparator;
+import jd.controlling.packagecontroller.PackageControllerComparator;
 
 import org.appwork.storage.Storable;
 import org.appwork.swing.exttable.ExtColumn;
@@ -88,7 +88,7 @@ public class CrawledPackageStorable implements Storable {
             for (final ExtColumn<AbstractNode> c : LinkGrabberTableModel.getInstance().getColumns()) {
                 if (colID.equals(c.getID())) {
                     if (asc) {
-                        pkg.setCurrentSorter(new ChildComparator<CrawledLink>() {
+                        pkg.setCurrentSorter(new PackageControllerComparator<CrawledLink>() {
 
                             public int compare(CrawledLink o1, CrawledLink o2) {
 
@@ -107,7 +107,7 @@ public class CrawledPackageStorable implements Storable {
                             }
                         });
                     } else {
-                        pkg.setCurrentSorter(new ChildComparator<CrawledLink>() {
+                        pkg.setCurrentSorter(new PackageControllerComparator<CrawledLink>() {
 
                             public int compare(CrawledLink o1, CrawledLink o2) {
 

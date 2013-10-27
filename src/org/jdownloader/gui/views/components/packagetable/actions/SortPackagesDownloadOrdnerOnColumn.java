@@ -1,13 +1,19 @@
 package org.jdownloader.gui.views.components.packagetable.actions;
 
 import java.awt.event.ActionEvent;
+import java.util.concurrent.atomic.AtomicBoolean;
+
+import jd.controlling.packagecontroller.AbstractNode;
+import jd.controlling.packagecontroller.PackageController;
+import jd.controlling.packagecontroller.PackageControllerComparator;
 
 import org.appwork.swing.exttable.ExtColumn;
-import org.appwork.swing.exttable.ExtTable;
+import org.appwork.swing.exttable.ExtDefaultRowSorter;
+import org.appwork.swing.exttable.ExtTableModel;
 import org.appwork.utils.Application;
-import org.appwork.utils.swing.dialog.Dialog;
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.gui.views.components.packagetable.PackageControllerTableModel;
 
 public class SortPackagesDownloadOrdnerOnColumn extends AppAction {
 
@@ -17,17 +23,47 @@ public class SortPackagesDownloadOrdnerOnColumn extends AppAction {
         setName(_GUI._.SortPackagesDownloadOrdnerOnColumn(column.getName()));
         setIconKey("exttable/sort");
         this.column = column;
-        setEnabled(Application.isJared(SortPackagesDownloadOrdnerOnColumn.class));
+        setEnabled(!Application.isJared(SortPackagesDownloadOrdnerOnColumn.class));
     }
 
     @Override
     public void actionPerformed(ActionEvent e) {
-        Dialog.getInstance().showMessageDialog("TODO JIAZ");
+
         if (column.isSortable(null)) {
-            ExtTable<?> table = column.getModel().getTable();
-            ExtColumn<?> oldColumn = table.getModel().getSortColumn();
-            final String oldIdentifier = oldColumn == null ? null : oldColumn.getSortOrderIdentifier();
-            column.doSort();
+            ExtTableModel<?> model = column.getModel();
+            PackageController modelController = ((PackageControllerTableModel) model).getController();
+
+            final ExtDefaultRowSorter<AbstractNode> sorter = (ExtDefaultRowSorter<AbstractNode>) column.getRowSorter();
+
+            PackageControllerComparator currentComparator = modelController.getSorter();
+            final String newID = column.getModel().getModelID() + ".Column." + column.getID();
+
+            final AtomicBoolean asc = new AtomicBoolean(true);
+            if (currentComparator != null && newID.equals(currentComparator.getID())) {
+                asc.set(!currentComparator.isAsc());
+            }
+            modelController.sort(new PackageControllerComparator<AbstractNode>() {
+
+                @Override
+                public int compare(AbstractNode o1, AbstractNode o2) {
+                    if (isAsc()) {
+                        return sorter.compare(o1, o2);
+                    } else {
+                        return sorter.compare(o2, o1);
+                    }
+
+                }
+
+                @Override
+                public String getID() {
+                    return newID;
+                }
+
+                @Override
+                public boolean isAsc() {
+                    return asc.get();
+                }
+            });
 
         }
     }

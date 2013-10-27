@@ -78,15 +78,15 @@ public class FileColumn extends ExtTextColumn<AbstractNode> implements GenericCo
      */
     public JPopupMenu createHeaderPopup() {
 
-        return FileColumn.createColumnPopup(this, !(getMinWidth() == getMaxWidth() && getMaxWidth() > 0));
+        return FileColumn.createColumnPopup(this, (getMinWidth() == getMaxWidth() && getMaxWidth() > 0));
 
     }
 
-    public static JPopupMenu createColumnPopup(ExtColumn<AbstractNode> fileColumn, boolean isResizable) {
+    public static JPopupMenu createColumnPopup(ExtColumn<AbstractNode> fileColumn, boolean isLocked) {
         final JPopupMenu ret = new JPopupMenu();
         LockColumnWidthAction action;
         boolean sepRequired = false;
-        if (isResizable) {
+        if (!isLocked) {
             sepRequired = true;
             ret.add(new JCheckBoxMenuItem(action = new LockColumnWidthAction(fileColumn)));
         }

@@ -7,7 +7,7 @@ import java.util.Locale;
 import jd.controlling.packagecontroller.AbstractNode;
 import jd.controlling.packagecontroller.AbstractNodeNotifier;
 import jd.controlling.packagecontroller.AbstractPackageNode;
-import jd.controlling.packagecontroller.ChildComparator;
+import jd.controlling.packagecontroller.PackageControllerComparator;
 import jd.controlling.packagecontroller.ModifyLock;
 import jd.controlling.packagecontroller.PackageController;
 
@@ -20,7 +20,7 @@ import org.jdownloader.settings.GeneralSettings;
 
 public class CrawledPackage implements AbstractPackageNode<CrawledLink, CrawledPackage> {
 
-    public static final ChildComparator<CrawledLink> SORTER_ASC  = new ChildComparator<CrawledLink>() {
+    public static final PackageControllerComparator<CrawledLink> SORTER_ASC  = new PackageControllerComparator<CrawledLink>() {
 
                                                                      public int compare(CrawledLink o1, CrawledLink o2) {
                                                                          String o1s = o1.getName().toLowerCase(Locale.ENGLISH);
@@ -45,7 +45,7 @@ public class CrawledPackage implements AbstractPackageNode<CrawledLink, CrawledP
                                                                          return true;
                                                                      }
                                                                  };
-    public static final ChildComparator<CrawledLink> SORTER_DESC = new ChildComparator<CrawledLink>() {
+    public static final PackageControllerComparator<CrawledLink> SORTER_DESC = new PackageControllerComparator<CrawledLink>() {
 
                                                                      public int compare(CrawledLink o1, CrawledLink o2) {
                                                                          String o1s = o1.getName().toLowerCase(Locale.ENGLISH);
@@ -108,7 +108,7 @@ public class CrawledPackage implements AbstractPackageNode<CrawledLink, CrawledP
     private String                                         compiledDownloadFolder = null;
     private transient ModifyLock                           lock                   = new ModifyLock();
 
-    private ChildComparator<CrawledLink>                   sorter;
+    private PackageControllerComparator<CrawledLink>                   sorter;
 
     public UniqueAlltimeID getUniqueID() {
         return uniqueID;
@@ -266,12 +266,12 @@ public class CrawledPackage implements AbstractPackageNode<CrawledLink, CrawledP
     }
 
     @Override
-    public ChildComparator<CrawledLink> getCurrentSorter() {
+    public PackageControllerComparator<CrawledLink> getCurrentSorter() {
         return sorter;
     }
 
     @Override
-    public void setCurrentSorter(ChildComparator<CrawledLink> comparator) {
+    public void setCurrentSorter(PackageControllerComparator<CrawledLink> comparator) {
         sorter = comparator;
     }
 

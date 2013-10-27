@@ -28,7 +28,7 @@ import jd.config.Property;
 import jd.controlling.packagecontroller.AbstractNode;
 import jd.controlling.packagecontroller.AbstractNodeNotifier;
 import jd.controlling.packagecontroller.AbstractPackageNode;
-import jd.controlling.packagecontroller.ChildComparator;
+import jd.controlling.packagecontroller.PackageControllerComparator;
 import jd.controlling.packagecontroller.ModifyLock;
 import jd.controlling.packagecontroller.PackageController;
 
@@ -149,7 +149,7 @@ public class FilePackage extends Property implements Serializable, AbstractPacka
 
     private volatile transient FilePackageView fpInfo = null;
 
-    private ChildComparator<DownloadLink>      sorter;
+    private PackageControllerComparator<DownloadLink>      sorter;
 
     /*
      * (non-Javadoc)
@@ -275,7 +275,7 @@ public class FilePackage extends Property implements Serializable, AbstractPacka
     }
 
     @Override
-    public void setCurrentSorter(ChildComparator<DownloadLink> comparator) {
+    public void setCurrentSorter(PackageControllerComparator<DownloadLink> comparator) {
         sorter = comparator;
     }
 
@@ -464,7 +464,7 @@ public class FilePackage extends Property implements Serializable, AbstractPacka
     }
 
     @Override
-    public ChildComparator<DownloadLink> getCurrentSorter() {
+    public PackageControllerComparator<DownloadLink> getCurrentSorter() {
         return sorter;
     }
 

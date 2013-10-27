@@ -28,9 +28,11 @@ import org.appwork.swing.exttable.ExtColumn;
 import org.appwork.swing.exttable.ExtComponentRowHighlighter;
 import org.appwork.utils.event.queue.QueueAction;
 import org.appwork.utils.logging.Log;
+import org.appwork.utils.os.CrossSystem;
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.components.packagetable.PackageControllerTableModel.TOGGLEMODE;
+import org.jdownloader.gui.views.components.packagetable.actions.SortPackagesDownloadOrdnerOnColumn;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
@@ -88,6 +90,22 @@ public abstract class PackageControllerTable<ParentType extends AbstractPackageN
     @SuppressWarnings("unchecked")
     public PackageControllerTableModel<ParentType, ChildrenType> getModel() {
         return (PackageControllerTableModel<ParentType, ChildrenType>) super.getModel();
+    }
+
+    protected void doSortOnColumn(ExtColumn<AbstractNode> column, MouseEvent e) {
+        if (CrossSystem.isMac()) {
+            if (e.isMetaDown()) {
+
+                new SortPackagesDownloadOrdnerOnColumn(column).actionPerformed(null);
+                return;
+            }
+        } else {
+            if (e.isControlDown()) {
+                new SortPackagesDownloadOrdnerOnColumn(column).actionPerformed(null);
+                return;
+            }
+        }
+        column.doSort();
     }
 
     public void setModel(TableModel dataModel) {
