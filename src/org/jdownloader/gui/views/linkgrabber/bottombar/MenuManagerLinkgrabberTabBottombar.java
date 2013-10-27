@@ -87,7 +87,7 @@ public class MenuManagerLinkgrabberTabBottombar extends AbstractBottomBarMenuMan
         // delete.add(setIconKey(new
         // ActionData(GenericDeleteSelectedToolbarAction.class).putSetup(GenericDeleteSelectedToolbarAction.DELETE_OFFLINE, true),
         // IconKey.ICON_REMOVE_OFFLINE));
-        delete.add(RemoveNonSelectedAction.class);
+        delete.add(org.jdownloader.gui.views.linkgrabber.actions.RemoveNonSelectedAction.class);
         delete.add(new SeperatorData());
         delete.add(new ActionData(RemoveIncompleteArchives.class).putSetup(AbstractContextMenuAction.ITEM_VISIBLE_FOR_EMPTY_SELECTION, true));
         delete.add(new ActionData(RemoveNonSelectedAction.class).putSetup(AbstractContextMenuAction.ITEM_VISIBLE_FOR_EMPTY_SELECTION, true));

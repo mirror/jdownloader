@@ -17,14 +17,14 @@ import org.jdownloader.actions.AbstractSelectionContextAction;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo;
 
-public class RemoveNonSelectedAction extends AbstractSelectionContextAction<CrawledPackage, CrawledLink> {
+public class RemoveNonSelectedContextAction extends AbstractSelectionContextAction<CrawledPackage, CrawledLink> {
 
     /**
      * 
      */
     private static final long serialVersionUID = 6855083561629297363L;
 
-    public RemoveNonSelectedAction(SelectionInfo<CrawledPackage, CrawledLink> si) {
+    public RemoveNonSelectedContextAction(SelectionInfo<CrawledPackage, CrawledLink> si) {
         super(si);
         setName(_GUI._.RemoveNonSelectedAction_RemoveNonSelectedAction_object_());
         setIconKey("ok");

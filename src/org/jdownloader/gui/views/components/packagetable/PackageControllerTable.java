@@ -537,6 +537,7 @@ public abstract class PackageControllerTable<ParentType extends AbstractPackageN
     }
 
     public boolean isOriginalOrder() {
+
         return getModel().getSortColumn() == null;
     }
 

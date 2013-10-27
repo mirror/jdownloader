@@ -37,10 +37,11 @@ import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.components.packagetable.PackageControllerTableModel;
 import org.jdownloader.gui.views.components.packagetable.PackageControllerTableModelFilter;
 import org.jdownloader.gui.views.linkgrabber.LinkGrabberTable;
+import org.jdownloader.gui.views.linkgrabber.LinkGrabberTableModel;
 import org.jdownloader.gui.views.linkgrabber.contextmenu.ConfirmSelectionContextAction;
 import org.jdownloader.gui.views.linkgrabber.contextmenu.CreateDLCAction;
 import org.jdownloader.gui.views.linkgrabber.contextmenu.MergeToPackageAction;
-import org.jdownloader.gui.views.linkgrabber.contextmenu.RemoveNonSelectedAction;
+import org.jdownloader.gui.views.linkgrabber.contextmenu.RemoveNonSelectedContextAction;
 import org.jdownloader.gui.views.linkgrabber.contextmenu.RemoveSelectionLinkgrabberAction;
 import org.jdownloader.updatev2.gui.LAFOptions;
 
@@ -189,6 +190,10 @@ public abstract class FilterTable extends BasicJDTable<Filter> implements Packag
         updateSelection();
     }
 
+    protected void initMouseOverRowHighlighter() {
+        super.initMouseOverRowHighlighter();
+    }
+
     private void updateSelection() {
 
         // clear selection in other filter tables if we switched to a new one
@@ -197,6 +202,10 @@ public abstract class FilterTable extends BasicJDTable<Filter> implements Packag
             if (org.jdownloader.settings.staticreferences.CFG_LINKGRABBER.QUICK_VIEW_SELECTION_ENABLED.getValue()) {
                 java.util.List<Filter> selection = getSelectedFilters();
                 java.util.List<AbstractNode> newSelection = getMatches(selection);
+                List<CrawledPackage> expands = getPackagesToExpand(selection);
+                for (CrawledPackage pkg : expands) {
+                    LinkGrabberTableModel.getInstance().setFilePackageExpand(pkg, true);
+                }
                 getLinkgrabberTable().getModel().setSelectedObjects(newSelection);
             }
         }
@@ -216,13 +225,12 @@ public abstract class FilterTable extends BasicJDTable<Filter> implements Packag
 
     public java.util.List<AbstractNode> getMatches(java.util.List<Filter> selection) {
         List<CrawledLink> all = getVisibleLinks();
-        HashSet<CrawledPackage> packages = new HashSet<CrawledPackage>();
+
         CrawledLink link;
         main: for (Iterator<CrawledLink> it = all.iterator(); it.hasNext();) {
             link = it.next();
             for (Filter f : selection) {
                 if (f.isFiltered(link)) {
-                    if (!link.getParentNode().isExpanded()) packages.add(link.getParentNode());
 
                     continue main;
                 }
@@ -232,8 +240,30 @@ public abstract class FilterTable extends BasicJDTable<Filter> implements Packag
         }
 
         java.util.List<AbstractNode> newSelection = new ArrayList<AbstractNode>(all);
-        newSelection.addAll(packages);
+
         return newSelection;
+    }
+
+    public java.util.List<CrawledPackage> getPackagesToExpand(java.util.List<Filter> selection) {
+        List<CrawledLink> all = getVisibleLinks();
+        HashSet<CrawledPackage> packages = new HashSet<CrawledPackage>();
+        CrawledLink link;
+        main: for (Iterator<CrawledLink> it = all.iterator(); it.hasNext();) {
+            link = it.next();
+            for (Filter f : selection) {
+                if (f.isFiltered(link)) {
+                    if (!link.getParentNode().isExpanded()) {
+                        //
+                        packages.add(link.getParentNode());
+                    }
+
+                    continue main;
+                }
+            }
+
+        }
+
+        return new ArrayList<CrawledPackage>(packages);
     }
 
     protected JPopupMenu onContextMenu(final JPopupMenu popup, final Filter contextObject, final java.util.List<Filter> selection, final ExtColumn<Filter> column, final MouseEvent mouseEvent) {
@@ -256,7 +286,7 @@ public abstract class FilterTable extends BasicJDTable<Filter> implements Packag
         popup.add(new ConfirmSelectionContextAction(matches));
         popup.add(new MergeToPackageAction(matches));
         popup.add(new CreateDLCAction(matches));
-        popup.add(new RemoveNonSelectedAction(matches));
+        popup.add(new RemoveNonSelectedContextAction(matches));
         popup.add(new RemoveSelectionLinkgrabberAction(matches));
         // popup.add(new
         // RemoveIncompleteArchives(matches));

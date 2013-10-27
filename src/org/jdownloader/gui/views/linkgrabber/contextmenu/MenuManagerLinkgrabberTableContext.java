@@ -132,7 +132,7 @@ public class MenuManagerLinkgrabberTableContext extends ContextMenuManager<Crawl
 
         cleanup.add((new MenuItemData(setIconKey(new ActionData(GenericDeleteFromLinkgrabberContextAction.class).putSetup(GenericDeleteFromLinkgrabberContextAction.DELETE_OFFLINE, true).putSetup(GenericDeleteFromLinkgrabberAction.ONLY_SELECTED_ITEMS, false).putSetup(AbstractContextMenuAction.ITEM_VISIBLE_FOR_EMPTY_SELECTION, true), IconKey.ICON_REMOVE_OFFLINE), true)));
 
-        cleanup.add(RemoveNonSelectedAction.class);
+        cleanup.add(RemoveNonSelectedContextAction.class);
 
         cleanup.add(RemoveIncompleteArchives.class);
         cleanup.add(new SeperatorData());

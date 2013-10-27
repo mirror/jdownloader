@@ -2,7 +2,6 @@ package org.jdownloader.gui.views.linkgrabber;
 
 import java.awt.Color;
 import java.awt.Component;
-import java.awt.Image;
 import java.awt.LayoutManager;
 import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
@@ -16,17 +15,14 @@ import java.util.Map.Entry;
 import javax.swing.Action;
 import javax.swing.ActionMap;
 import javax.swing.DropMode;
-import javax.swing.ImageIcon;
 import javax.swing.InputMap;
 import javax.swing.JComponent;
-import javax.swing.JLabel;
 import javax.swing.JPopupMenu;
 import javax.swing.JProgressBar;
 import javax.swing.JScrollPane;
 import javax.swing.JSeparator;
 import javax.swing.JTable;
 import javax.swing.KeyStroke;
-import javax.swing.SwingConstants;
 import javax.swing.SwingUtilities;
 import javax.swing.TransferHandler;
 
@@ -34,7 +30,6 @@ import jd.controlling.linkcollector.LinkCollector;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledPackage;
 import jd.controlling.packagecontroller.AbstractNode;
-import jd.controlling.packagecontroller.AbstractPackageNode;
 import net.miginfocom.swing.MigLayout;
 
 import org.appwork.swing.MigPanel;
@@ -46,10 +41,8 @@ import org.appwork.swing.exttable.ExtColumn;
 import org.appwork.swing.exttable.ExtDefaultRowSorter;
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.StringUtils;
-import org.appwork.utils.ImageProvider.ImageProvider;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.swing.EDTRunner;
-import org.appwork.utils.swing.SwingUtils;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.jdownloader.actions.AbstractSelectionContextAction;
 import org.jdownloader.actions.AppAction;
@@ -257,29 +250,7 @@ public class LinkGrabberTable extends PackageControllerTable<CrawledPackage, Cra
 
     @Override
     protected boolean onDoubleClick(final MouseEvent e, final AbstractNode obj) {
-        JPopupMenu m = new JPopupMenu();
 
-        if (obj instanceof AbstractPackageNode) {
-
-            Image back = (((AbstractPackageNode<?, ?>) obj).isExpanded() ? NewTheme.I().getImage("tree_package_open", 32) : NewTheme.I().getImage("tree_package_closed", 32));
-
-            m.add(SwingUtils.toBold(new JLabel(_GUI._.ContextMenuFactory_createPopup_properties(obj.getName()), new ImageIcon(ImageProvider.merge(back, NewTheme.I().getImage("settings", 14), -16, 0, 6, 6)), SwingConstants.LEFT)));
-            m.add(new JSeparator());
-        } else if (obj instanceof CrawledLink) {
-
-            Image back = (((CrawledLink) obj).getDownloadLink().getIcon().getImage());
-
-            m.add(SwingUtils.toBold(new JLabel(_GUI._.ContextMenuFactory_createPopup_properties(obj.getName()), new ImageIcon(ImageProvider.merge(back, NewTheme.I().getImage("settings", 14), 0, 0, 6, 6)), SwingConstants.LEFT)));
-            m.add(new JSeparator());
-        }
-
-        final ExtColumn<AbstractNode> col = this.getExtColumnAtPoint(e.getPoint());
-
-        // for (JMenuItem mm : ContextMenuFactory.fillPropertiesMenu(new SelectionInfo<CrawledPackage, CrawledLink>(obj,
-        // getModel().getSelectedObjects()), col)) {
-        // m.add(mm);
-        // }
-        m.show(this, e.getPoint().x, e.getPoint().y);
         return false;
     }
 

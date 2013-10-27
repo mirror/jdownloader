@@ -3,6 +3,7 @@ package jd.gui.swing.jdgui;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Rectangle;
+import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseMotionListener;
 
@@ -80,6 +81,26 @@ public class BasicJDTable<T> extends ExtTable<T> implements GenericConfigEventLi
                 }
             });
 
+            addMouseListener(new MouseAdapter() {
+
+                protected void repaintRow(int newRow) {
+                    Rectangle rect = getCellRect(newRow, 0, true);
+                    rect.width = getWidth();
+                    repaint(rect.x, rect.y, rect.width, rect.height);
+                }
+
+                @Override
+                public void mouseExited(MouseEvent e) {
+                    int newRow = -1;
+                    int oldRow = -1;
+
+                    oldRow = mouseOverRow;
+                    mouseOverRow = newRow;
+
+                    if (oldRow >= 0) repaintRow(oldRow);
+
+                }
+            });
             // addRowHighlighter(new ExtOverlayRowHighlighter(null, Colors.getColor(f2, 5)) {
             //
             // @Override
