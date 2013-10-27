@@ -26,7 +26,6 @@ import jd.config.Property;
 import jd.controlling.ProgressController;
 import jd.gui.UserIO;
 import jd.http.Browser;
-import jd.http.Browser.BrowserException;
 import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.nutils.encoding.Encoding;
@@ -40,7 +39,7 @@ import jd.plugins.PluginForDecrypt;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "jheberg.com" }, urls = { "http://(www\\.)?jheberg\\.net/captcha/[A-Z0-9a-z\\.\\-_]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "jheberg.com" }, urls = { "http://(www\\.)?jheberg\\.net/(captcha|download|mirrors)/[A-Z0-9a-z\\.\\-_]+" }, flags = { 0 })
 public class JBbergCom extends PluginForDecrypt {
 
     public JBbergCom(PluginWrapper wrapper) {
@@ -84,42 +83,29 @@ public class JBbergCom extends PluginForDecrypt {
         }
 
         final String fpName = br.getRegex("file-name\">([^<>\"]+)</h1>").getMatch(0);
-        br.getPage(parameter.replace("/captcha/", "/mirrors/"));
-        final String[] links = br.getRegex("\"(/redirect/[^<>\"/]+/[^<>\"]+)\"").getColumn(0);
-        if (links == null || links.length == 0) {
-            logger.warning("Decrypter broken for link: " + parameter);
-            return null;
-        }
-        final String linkID = parameter.substring(parameter.lastIndexOf("/") + 1);
-
+        final String linkID = new Regex(parameter, "/(captcha|download|mirrors)/(.*)").getMatch(1);
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(linkID);
         if (fpName != null) fp.setName(Encoding.htmlDecode(fpName.trim()));
 
-        for (final String singleLink : links) {
-            if (filter.add(singleLink) == false) continue;
-            final Browser br2 = br.cloneBrowser();
-            try {
-                br2.getPage(singleLink);
-
-                // Waittime can be skipped
-                // int wait = 10;
-                // final String waittime = br.getRegex("startNumber: (\\d+),").getMatch(0);
-                // if (waittime != null) wait = Integer.parseInt(waittime);
-                // sleep(wait * 1001l, param);
-                String host = new Regex(singleLink, "/redirect/" + linkID + "/([^/]+)").getMatch(0);
-                if (host == null) {
-                    logger.warning("Could not determine 'host");
-                    return null;
-                }
-                br2.getHeaders().put("Accept", "*/*");
-                br2.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-                br2.postPage("/get/link/", "slug=" + Encoding.urlEncode(linkID) + "&hoster=" + host);
-            } catch (final BrowserException e) {
-                logger.info("A link failed because of a browser exception (probably timeout): " + br2.getURL());
+        br.getPage(parameter.replaceFirst("/(captcha|download)/", "/mirrors/"));
+        String[] results = br.getRegex("(<div class=\"host_dl\".*?</span>[\r\n\t ]+</div>)").getColumn(0);
+        if (results == null || results.length == 0) {
+            logger.warning("Decrypter broken for link: " + parameter);
+            return null;
+        }
+        for (String result : results) {
+            String host = new Regex(result, "class=\"host_dl\" id=\"([^\"]+)\">").getMatch(0);
+            if (host == null) {
                 continue;
             }
-            final String finallink = br2.getRegex("\"url\"\\s*:\\s*\"(http[^<>\"]+)\"").getMatch(0);
+            final String hoster = "/redirect/" + linkID + "/" + host + "/";
+            if (filter.add(hoster) == false) continue;
+            if (result.contains("Hébergeur indisponible")) continue;
+            final Browser br2 = br.cloneBrowser();
+            br2.setFollowRedirects(false);
+            br2.getPage(hoster);
+            final String finallink = br2.getRedirectLocation();
             // not sure of best action here, but seems some are either down or require account?. Continue with the results
             if (br2.containsHTML("url\"\\s*:\\s*\"not authorized\"") || br2.containsHTML("\"url\"\\s*:\\s*\"\"") || br2.containsHTML("<title>404 Not Found</title>")) {
                 continue;
@@ -137,6 +123,7 @@ public class JBbergCom extends PluginForDecrypt {
             }
             decryptedLinks.add(dl);
         }
+
         return decryptedLinks;
     }
 
