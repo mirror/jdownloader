@@ -232,12 +232,8 @@ public class RealDebridCom extends PluginForHost {
                         logger.warning("Problemo in the old corral");
                         throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Can not download from " + mName);
                     }
-                    continue;
                 } else if (br.getHttpConnection().getResponseCode() == 504 || "23764902a26fbd6345d3cc3533d1d5eb".equalsIgnoreCase(Hash.getMD5(br.toString()))) {
-                    if (retry != 2) {
-                        sleep(3000l, link);
-                        continue;
-                    } else {
+                    if (retry == 2) {
                         logger.warning(mName + " has problems! Repeated bad gateway!");
                         throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Can not download from " + mName);
                     }
@@ -245,8 +241,8 @@ public class RealDebridCom extends PluginForHost {
                 break;
             } catch (SocketException e) {
                 if (retry == 2) throw e;
-                sleep(3000l, link);
             }
+            sleep(3000l, link);
         }
         String generatedLinks = br.getRegex("\"generated_links\":\\[\\[(.*?)\\]\\]").getMatch(0);
         String genLnks[] = new Regex(generatedLinks, "\"([^\"]*?)\"").getColumn(0);
@@ -484,14 +480,15 @@ public class RealDebridCom extends PluginForHost {
                                             String title = null;
                                             boolean xSystem = CrossSystem.isOpenBrowserSupported();
                                             if ("de".equalsIgnoreCase(lng)) {
-                                                title = mName + " Two Factor Authentication wird benoetigt";
+                                                title = mName + " Zwei-Faktor-Authentifizierung wird benoetigt!";
+                                                message = " Zwei-Faktor-Authentifizierung wird benoetigt!\r\n";
                                                 message = "Oeffne bitte Deinen Webbrowser:\r\n";
                                                 message += " - Melde den Nutzer " + mName + " ab.\r\n";
                                                 message += " - Melde Dich neu an. \r\n";
-                                                message += " - Vervollstaendige die Two Factor Authentication.\r\n";
-                                                message += "Nach dem erfolgreichen Login kannst Du Dich im JDownloader neu anmelden.\r\n\r\n";
+                                                message += " - Vervollstaendige die Zwei-Faktor-Authentifizierung.\r\n";
+                                                message += "Nach dem erfolgreichen Login im Browser kannst du deinen Account wieder im JD hinzufuegen.\r\n\r\n";
                                                 if (xSystem)
-                                                    message += "Klicke -OK- (Oeffnet " + mName + " in Deinem Webbrowser)\r\n";
+                                                    message += "Klicke -OK- (Oeffnet " + mName + " in deinem Webbrowser)\r\n";
                                                 else
                                                     message += new URL(mProt + mName);
                                             } else {
