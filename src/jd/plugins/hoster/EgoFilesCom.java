@@ -145,8 +145,10 @@ public class EgoFilesCom extends PluginForHost {
             logger.info("browser code: " + br.getRequest().getHtmlCode());
             if (br.containsHTML("Download link has expired.") || br.containsHTML("Download link has expired or you have reached the limit.")) {
                 throw new PluginException(LinkStatus.ERROR_RETRY, "Download link has expired or limit reached", 5 * 60 * 1000l);
-            } else
+            } else {
+                if (dl.getConnection().getResponseMessage().equalsIgnoreCase("Not found")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "getConnection returns html");
+            }
         }
         dl.startDownload();
     }
@@ -219,8 +221,16 @@ public class EgoFilesCom extends PluginForHost {
         } else
             ai.setUnlimitedTraffic();
 
+        if (br.containsHTML("You are logged as a Free User: <b>" + account.getUser())) {
+            ai.setStatus("Free Accounts Are Not Supported!");
+            UserIO.getInstance().requestMessageDialog(0, "EgoFiles.com Premium Error!", "This is Free Account!");
+            account.setValid(false);
+            return ai;
+        }
+
         final String expire = br.getRegex("<br/> Premium: (\\d{4}\\-\\d{2}\\-\\d{2} \\d{2}:\\d{2}:\\d{2})").getMatch(0);
         if (expire == null) {
+            ai.setStatus("Account expired");
             account.setValid(false);
             return ai;
         } else {
