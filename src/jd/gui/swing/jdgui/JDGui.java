@@ -46,7 +46,6 @@ import java.util.ArrayList;
 import javax.swing.AbstractAction;
 import javax.swing.ImageIcon;
 import javax.swing.JComponent;
-import javax.swing.JDialog;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
@@ -70,7 +69,6 @@ import jd.gui.swing.jdgui.views.settings.sidebar.AddonConfig;
 import jd.nutils.Screen;
 import net.miginfocom.swing.MigLayout;
 
-import org.appwork.app.gui.ActiveDialogException;
 import org.appwork.shutdown.ShutdownController;
 import org.appwork.shutdown.ShutdownEvent;
 import org.appwork.shutdown.ShutdownRequest;
@@ -182,11 +180,9 @@ public class JDGui implements UpdaterListener, OwnerFinder {
 
     private MainFrameClosingHandler closingHandler;
 
-    private volatile boolean        dialogShowing = false;
-
     private DownloadsView           downloadView;
 
-    private Thread                  initThread    = null;
+    private Thread                  initThread = null;
 
     private LinkGrabberView         linkgrabberView;
     private LogSource               logger;
@@ -612,70 +608,7 @@ public class JDGui implements UpdaterListener, OwnerFinder {
 
     private void initFrame(final String string) {
 
-        mainFrame = new ExtJFrame(string) {
-
-            /**
-                 * 
-                 */
-            private static final long serialVersionUID = -4218493713632551975L;
-
-            public void dispose() {
-
-                super.dispose();
-            }
-
-            public void setVisible(boolean b) {
-                if (b && !isVisible()) {
-                    if (CFG_GUI.PASSWORD_PROTECTION_ENABLED.isEnabled() && !StringUtils.isEmpty(CFG_GUI.PASSWORD.getValue())) {
-                        String password;
-                        if (dialogShowing) return;
-                        try {
-
-                            dialogShowing = true;
-                            password = Dialog.getInstance().showInputDialog(Dialog.STYLE_PASSWORD, _GUI._.JDGui_setVisible_password_(), _GUI._.JDGui_setVisible_password_msg(), null, NewTheme.I().getIcon("lock", 32), null, null);
-                            String internPw = CFG_GUI.PASSWORD.getValue();
-                            if (!internPw.equals(password)) {
-
-                                Dialog.getInstance().showMessageDialog(_GUI._.JDGui_setVisible_password_wrong());
-
-                                return;
-                            }
-                        } catch (DialogNoAnswerException e) {
-                            return;
-                        } finally {
-                            dialogShowing = false;
-                        }
-                    }
-                }
-                // if we hide a frame which is locked by an active modal dialog,
-                // we get in problems. avoid this!
-                if (!b) {
-                    for (Window w : getOwnedWindows()) {
-                        if (w instanceof JDialog) {
-                            boolean mod = ((JDialog) w).isModal();
-                            boolean v = w.isVisible();
-
-                            if (mod && v) {
-                                Toolkit.getDefaultToolkit().beep();
-                                logger.log(new ActiveDialogException(((JDialog) w)));
-                                WindowManager.getInstance().setZState(w, FrameState.TO_FRONT_FOCUSED);
-
-                                return;
-                            }
-                        }
-                    }
-                }
-                super.setVisible(b);
-            }
-
-            public void toFront() {
-
-                if (!isVisible()) return;
-                super.toFront();
-                //
-
-            }
-        };
+        mainFrame = new JDownloaderMainFrame(string, logger);
     }
 
     public void initLocationAndDimension() {
@@ -917,6 +850,7 @@ public class JDGui implements UpdaterListener, OwnerFinder {
             // Toolkit.getDefaultToolkit().isFrameStateSupported(Frame.MAXIMIZED_VERT)==false
             // check on other OSs
             break;
+
         }
 
         if (!status.isLocationSet()) {
@@ -1151,9 +1085,14 @@ public class JDGui implements UpdaterListener, OwnerFinder {
 
         mainTabbedPane.notifyCurrentTab();
         ShutdownController.getInstance().addShutdownEvent(new ShutdownEvent() {
+            public long getMaxDuration() {
+
+                return 30000 * 10;
+            }
 
             @Override
             public void onShutdown(final ShutdownRequest shutdownRequest) {
+
                 new EDTHelper<Object>() {
 
                     @Override

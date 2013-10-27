@@ -9,6 +9,8 @@ import java.awt.Toolkit;
 
 import javax.swing.JFrame;
 
+import jd.gui.swing.jdgui.JDownloaderMainFrame;
+
 import org.appwork.shutdown.ShutdownController;
 import org.appwork.shutdown.ShutdownRequest;
 import org.appwork.storage.Storable;
@@ -51,8 +53,8 @@ public class FrameStatus implements Storable {
         MAXIMIZED_VERT(Frame.MAXIMIZED_VERT),
 
         /**
-         * This state bit mask indicates that frame is fully maximized (that is both horizontally and vertically). It is just a convenience alias for
-         * <code>MAXIMIZED_VERT&nbsp;|&nbsp;MAXIMIZED_HORIZ</code>.
+         * This state bit mask indicates that frame is fully maximized (that is both horizontally and vertically). It is just a convenience
+         * alias for <code>MAXIMIZED_VERT&nbsp;|&nbsp;MAXIMIZED_HORIZ</code>.
          * 
          * <p>
          * Note that the correct test for frame being fully maximized is
@@ -252,7 +254,17 @@ public class FrameStatus implements Storable {
             @Override
             public Rectangle edtRun() {
                 try {
-                    if (!mainFrame.isShowing()) return null;
+                    if (!mainFrame.isShowing() && !(mainFrame instanceof JDownloaderMainFrame)) {
+
+                        return null;
+                    } else if (!mainFrame.isShowing() && (mainFrame instanceof JDownloaderMainFrame)) {
+                        FrameStatus fs = ((JDownloaderMainFrame) mainFrame).getLatestFrameStatus();
+                        if (fs == null || !fs.isVisible()) {
+                            return null;
+                        } else {
+                            return new Rectangle(fs.x, fs.y, fs.width, fs.height);
+                        }
+                    }
                     Rectangle ret = new Rectangle();
 
                     ret.width = 30;
@@ -260,11 +272,24 @@ public class FrameStatus implements Storable {
                     if (mainFrame.getExtendedState() == Frame.NORMAL) {
                         ret.width = mainFrame.getSize().width;
                         ret.height = mainFrame.getSize().height;
+                    } else if (mainFrame instanceof JDownloaderMainFrame) {
+                        FrameStatus fs = ((JDownloaderMainFrame) mainFrame).getLatestFrameStatus();
+                        if (fs != null && fs.isVisible()) {
+                            ret.width = fs.width;
+                            ret.height = fs.height;
+                        }
                     }
-                    /* we also have to save location in other modes! */
-                    ret.x = mainFrame.getLocationOnScreen().x;
-                    ret.y = mainFrame.getLocationOnScreen().y;
-
+                    if (mainFrame.isVisible() && mainFrame.getExtendedState() == JFrame.NORMAL) {
+                        /* we also have to save location in other modes! */
+                        ret.x = mainFrame.getLocationOnScreen().x;
+                        ret.y = mainFrame.getLocationOnScreen().y;
+                    } else if (mainFrame instanceof JDownloaderMainFrame) {
+                        FrameStatus fs = ((JDownloaderMainFrame) mainFrame).getLatestFrameStatus();
+                        if (fs != null && fs.isVisible()) {
+                            ret.x = fs.x;
+                            ret.y = fs.y;
+                        }
+                    }
                     return ret;
                 } catch (Exception e) {
                     return null;
