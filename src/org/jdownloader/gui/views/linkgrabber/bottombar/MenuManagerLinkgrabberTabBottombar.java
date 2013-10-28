@@ -9,7 +9,6 @@ import org.jdownloader.controlling.contextmenu.SeperatorData;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.downloads.MenuManagerDownloadTabBottomBar;
-import org.jdownloader.gui.views.downloads.action.RemoveNonSelectedAction;
 import org.jdownloader.gui.views.downloads.bottombar.AbstractBottomBarMenuManager;
 import org.jdownloader.gui.views.downloads.bottombar.DeleteContainer;
 import org.jdownloader.gui.views.downloads.bottombar.HorizontalBoxItem;
@@ -90,7 +89,6 @@ public class MenuManagerLinkgrabberTabBottombar extends AbstractBottomBarMenuMan
         delete.add(org.jdownloader.gui.views.linkgrabber.actions.RemoveNonSelectedAction.class);
         delete.add(new SeperatorData());
         delete.add(new ActionData(RemoveIncompleteArchives.class).putSetup(AbstractContextMenuAction.ITEM_VISIBLE_FOR_EMPTY_SELECTION, true));
-        delete.add(new ActionData(RemoveNonSelectedAction.class).putSetup(AbstractContextMenuAction.ITEM_VISIBLE_FOR_EMPTY_SELECTION, true));
 
         delete.add(new ActionData(ClearFilteredLinksAction.class));
         delete.add(new SeperatorData());
