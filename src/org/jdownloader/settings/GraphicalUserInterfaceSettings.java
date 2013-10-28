@@ -19,8 +19,8 @@ import org.appwork.storage.config.annotations.RequiresRestart;
 import org.appwork.storage.config.annotations.SpinnerValidator;
 import org.appwork.storage.config.annotations.ValidatorFactory;
 import org.appwork.utils.Application;
-import org.appwork.utils.swing.WindowManager.FrameState;
 import org.appwork.utils.swing.dialog.View;
+import org.appwork.utils.swing.windowmanager.WindowManager.FrameState;
 import org.jdownloader.gui.laf.jddefault.JDDefaultLookAndFeel;
 import org.jdownloader.gui.views.components.LinktablesSearchCategory;
 

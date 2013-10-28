@@ -5,8 +5,8 @@ import java.util.List;
 
 import javax.swing.JFrame;
 
-import org.appwork.utils.swing.WindowManager;
-import org.appwork.utils.swing.WindowManager.FrameState;
+import org.appwork.utils.swing.windowmanager.WindowManager;
+import org.appwork.utils.swing.windowmanager.WindowManager.FrameState;
 
 import com.sun.jna.Callback;
 import com.sun.jna.Native;

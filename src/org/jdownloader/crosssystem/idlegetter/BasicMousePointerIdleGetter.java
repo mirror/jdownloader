@@ -37,7 +37,7 @@ public class BasicMousePointerIdleGetter extends IdleGetter implements AWTEventL
         Point location = MouseInfo.getPointerInfo().getLocation();
 
         if (lastLocation == null || !lastLocation.equals(location)) {
-            System.out.println(location + " - " + lastLocation);
+
             lastChange = System.currentTimeMillis();
             lastLocation = location;
         }

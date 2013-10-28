@@ -89,9 +89,6 @@ import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.swing.EDTHelper;
 import org.appwork.utils.swing.EDTRunner;
-import org.appwork.utils.swing.WindowManager;
-import org.appwork.utils.swing.WindowManager.FrameState;
-import org.appwork.utils.swing.WindowManager.WindowExtendedState;
 import org.appwork.utils.swing.dialog.AbstractDialog;
 import org.appwork.utils.swing.dialog.ConfirmDialog;
 import org.appwork.utils.swing.dialog.Dialog;
@@ -106,6 +103,9 @@ import org.appwork.utils.swing.dialog.WindowZHandler;
 import org.appwork.utils.swing.dialog.locator.DialogLocator;
 import org.appwork.utils.swing.dialog.locator.RememberRelativeDialogLocator;
 import org.appwork.utils.swing.locator.AbstractLocator;
+import org.appwork.utils.swing.windowmanager.WindowManager;
+import org.appwork.utils.swing.windowmanager.WindowManager.FrameState;
+import org.appwork.utils.swing.windowmanager.WindowManager.WindowExtendedState;
 import org.jdownloader.controlling.FileCreationManager;
 import org.jdownloader.crosssystem.idlegetter.IdleGetter;
 import org.jdownloader.gui.GuiUtils;
@@ -307,7 +307,7 @@ public class JDGui implements UpdaterListener, OwnerFinder {
     }
 
     public void flashTaskbar() {
-        if (JsonConfig.create(GraphicalUserInterfaceSettings.class).isTaskBarFlashEnabled() && CrossSystem.isWindows()) {
+        if (JsonConfig.create(GraphicalUserInterfaceSettings.class).isTaskBarFlashEnabled()) {
             new EDTRunner() {
 
                 @Override

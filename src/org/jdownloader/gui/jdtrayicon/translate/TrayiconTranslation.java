@@ -94,8 +94,8 @@ public interface TrayiconTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Ask me" })
     String OnMinimizeAction_ask();
 
-    @Default(lngs = { "en" }, values = { "Close to Tray" })
-    String JDGui_windowClosing_try_title_();
+    @Default(lngs = { "en" }, values = { "Closing JDownloader..." })
+    String JDGui_windowClosing_try_title();
 
     @Default(lngs = { "en" }, values = { "Please choose between \r\n   - Exit JDownloader (Cancel all running processes)\r\n   - Minimize to Taskbar (Downloads will continue)\r\n   - Hide in System Tray (Downloads will continue in the background)" })
     String JDGui_windowClosing_try_msg_2();

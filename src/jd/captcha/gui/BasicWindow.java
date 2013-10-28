@@ -29,8 +29,8 @@ import javax.swing.SwingUtilities;
 import jd.captcha.utils.Utilities;
 
 import org.appwork.swing.ExtJFrame;
-import org.appwork.utils.swing.WindowManager;
-import org.appwork.utils.swing.WindowManager.FrameState;
+import org.appwork.utils.swing.windowmanager.WindowManager;
+import org.appwork.utils.swing.windowmanager.WindowManager.FrameState;
 
 /**
  * Die Klasse dient als Window Basis Klasse.

@@ -29,6 +29,7 @@ import org.appwork.utils.swing.dialog.FileChooserSelectionMode;
 import org.appwork.utils.swing.dialog.FileChooserType;
 import org.appwork.utils.swing.dialog.dimensor.RememberLastDialogDimension;
 import org.appwork.utils.swing.dialog.locator.RememberAbsoluteDialogLocator;
+import org.appwork.utils.swing.windowmanager.WindowManager.FrameState;
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.controlling.contextmenu.ActionData;
 import org.jdownloader.controlling.contextmenu.ContextMenuManager;
@@ -58,6 +59,12 @@ public class MenuManagerDialog extends AbstractDialog<Object> implements TreeSel
         setLocator(new RememberAbsoluteDialogLocator("dialogframe-" + manager.getClass().getName()));
         setDimensor(new RememberLastDialogDimension("dialogframe-" + manager.getClass().getName()));
         logger = LogController.getInstance().getLogger(MenuManagerDialog.class.getName());
+
+    }
+
+    protected FrameState getWindowStateOnVisible() {
+
+        return FrameState.TO_FRONT_FOCUSED;
     }
 
     @Override

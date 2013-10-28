@@ -31,8 +31,8 @@ import jd.captcha.utils.Utilities;
 import jd.gui.swing.components.BrowseFile;
 import net.miginfocom.swing.MigLayout;
 
-import org.appwork.utils.swing.WindowManager;
-import org.appwork.utils.swing.WindowManager.FrameState;
+import org.appwork.utils.swing.windowmanager.WindowManager;
+import org.appwork.utils.swing.windowmanager.WindowManager.FrameState;
 
 public class JACController {
     private static BrowseFile chooser;

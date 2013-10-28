@@ -11,7 +11,7 @@ import com.sun.jna.platform.win32.WinDef.HWND;
 
 public class GuiUtils {
 
-    public static void flashWindow(Window window, boolean flashTray) {
+    public static void flashWindow(final Window window, boolean flashTray) {
         if (CrossSystem.isWindows()) {
             System.out.println("Flash: " + flashTray);
 
@@ -33,6 +33,10 @@ public class GuiUtils {
 
             flash.cbSize = flash.size();
             lib.FlashWindowEx(flash);
+        } else if (CrossSystem.isMac()) {
+
+            final com.apple.eawt.Application application = com.apple.eawt.Application.getApplication();
+            application.requestUserAttention(true);
 
         } else {
             System.err.println("Flashing not supported on your System");

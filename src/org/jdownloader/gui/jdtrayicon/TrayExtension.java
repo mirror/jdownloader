@@ -60,11 +60,11 @@ import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.os.DesktopSupportLinux;
 import org.appwork.utils.swing.EDTHelper;
 import org.appwork.utils.swing.EDTRunner;
-import org.appwork.utils.swing.WindowManager;
-import org.appwork.utils.swing.WindowManager.FrameState;
 import org.appwork.utils.swing.dialog.ConfirmDialog;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogNoAnswerException;
+import org.appwork.utils.swing.windowmanager.WindowManager;
+import org.appwork.utils.swing.windowmanager.WindowManager.FrameState;
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.extensions.AbstractExtension;
 import org.jdownloader.extensions.ExtensionConfigPanel;
@@ -360,8 +360,8 @@ public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTransla
 
                         } catch (Throwable e) {
                             /*
-                             * on Gnome3, Unity, this can happen because icon might be blacklisted, see here http://www.webupd8.org/2011/04/how-to-re-enable
-                             * -notification-area.html
+                             * on Gnome3, Unity, this can happen because icon might be blacklisted, see here
+                             * http://www.webupd8.org/2011/04/how-to-re-enable -notification-area.html
                              * 
                              * dconf-editor", then navigate to desktop > unity > panel and whitelist JDownloader
                              * 
@@ -424,7 +424,7 @@ public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTransla
                         if (!checkPassword()) return;
                         trayIconPopup = new TrayIconPopup(this);
                         Point pointOnScreen = e.getLocationOnScreen();
-                        if (e.getX() > 0) pointOnScreen.x -= e.getPoint().x;
+                        // if (e.getX() > 0) pointOnScreen.x -= e.getPoint().x;
                         calcLocation(trayIconPopup, pointOnScreen);
                         WindowManager.getInstance().setVisible(trayIconPopup, true, FrameState.OS_DEFAULT);
                         trayIconPopup.startAutoHide();
@@ -572,9 +572,58 @@ public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTransla
     }
 
     private OnCloseAction windowClosedTray(final WindowEvent e) {
+        if (CrossSystem.isMac()) { return windowClosedTrayForMac(e); }
         final OnCloseAction[] ret = new OnCloseAction[1];
         ret[0] = null;
-        final ConfirmDialog d = new ConfirmDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN | UIOManager.LOGIC_DONT_SHOW_AGAIN_IGNORES_CANCEL | UIOManager.LOGIC_DONT_SHOW_AGAIN_IGNORES_OK, _.JDGui_windowClosing_try_title_(), _.JDGui_windowClosing_try_msg_2(), NewTheme.I().getIcon("exit", 32), _.JDGui_windowClosing_try_asnwer_close(), null);
+        final ConfirmDialog d = new ConfirmDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN | UIOManager.LOGIC_DONT_SHOW_AGAIN_IGNORES_CANCEL | UIOManager.LOGIC_DONT_SHOW_AGAIN_IGNORES_OK, _.JDGui_windowClosing_try_title(), _.JDGui_windowClosing_try_msg_2(), NewTheme.I().getIcon("exit", 32), _.JDGui_windowClosing_try_asnwer_close(), null);
+
+        try {
+
+            d.setLeftActions(new AppAction() {
+                {
+                    setName(_.JDGui_windowClosing_try_answer_totaskbar());
+                }
+
+                @Override
+                public void actionPerformed(ActionEvent e1) {
+                    ret[0] = OnCloseAction.TO_TASKBAR;
+                    d.dispose();
+
+                }
+            }, new AppAction() {
+                {
+                    setName(_.JDGui_windowClosing_try_answer_tray());
+                    setEnabled(SystemTray.isSupported());
+                }
+
+                @Override
+                public void actionPerformed(ActionEvent e1) {
+
+                    ret[0] = OnCloseAction.TO_TRAY;
+                    d.dispose();
+                }
+            });
+            Dialog.I().showDialog(d);
+            // to tray
+            if (ret[0] == null) ret[0] = OnCloseAction.EXIT;
+
+        } catch (DialogNoAnswerException e1) {
+            // set source to null in order to avoid further actions in - for example the Tray extension listsners
+            e.setSource(null);
+            e1.printStackTrace();
+            ret[0] = OnCloseAction.ASK;
+        }
+        if (d.isDontShowAgainSelected()) {
+            getSettings().setOnCloseAction(ret[0]);
+        }
+        return ret[0];
+    }
+
+    private OnCloseAction windowClosedTrayForMac(WindowEvent e) {
+
+        final OnCloseAction[] ret = new OnCloseAction[1];
+        ret[0] = null;
+        final ConfirmDialog d = new ConfirmDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN | UIOManager.LOGIC_DONT_SHOW_AGAIN_IGNORES_CANCEL | UIOManager.LOGIC_DONT_SHOW_AGAIN_IGNORES_OK, _.JDGui_windowClosing_try_title(), _.JDGui_windowClosing_try_msg_2(), NewTheme.I().getIcon("exit", 32), _.JDGui_windowClosing_try_asnwer_close(), null);
 
         try {
 
@@ -659,20 +708,7 @@ public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTransla
             /* plugin not loaded yet */
             Log.exception(e1);
         }
-        /*
-         * without trayicon also dont close/exit for macos
-         */
-        if (CrossSystem.isMac()) {
-            new EDTHelper<Object>() {
-                @Override
-                public Object edtRun() {
-                    /* set visible state */
-                    WindowManager.getInstance().setVisible(JDGui.getInstance().getMainFrame(), false, FrameState.OS_DEFAULT);
-                    return null;
-                }
-            }.start();
-            return;
-        }
+        // no special mac handling. the typical mac handling would be close to tray
         RestartController.getInstance().exitAsynch(new SmartRlyExitRequest(asked.get()));
 
     }

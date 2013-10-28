@@ -23,8 +23,8 @@ import java.awt.Container;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 
-import org.appwork.utils.swing.WindowManager;
-import org.appwork.utils.swing.WindowManager.FrameState;
+import org.appwork.utils.swing.windowmanager.WindowManager;
+import org.appwork.utils.swing.windowmanager.WindowManager.FrameState;
 import org.jdownloader.extensions.neembuu.translate._NT;
 import org.netbeans.lib.profiler.charts.xy.synchronous.SynchronousXYChart;
 

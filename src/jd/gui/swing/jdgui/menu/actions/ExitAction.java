@@ -22,6 +22,7 @@ import java.awt.event.KeyEvent;
 
 import javax.swing.KeyStroke;
 
+import org.appwork.utils.os.CrossSystem;
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.actions.CachableInterface;
 import org.jdownloader.controlling.contextmenu.Customizer;
@@ -53,6 +54,7 @@ public class ExitAction extends AppAction implements CachableInterface {
 
     public void setHideOnMac(boolean hideOnMac) {
         this.hideOnMac = hideOnMac;
+        if (hideOnMac && CrossSystem.isMac()) setVisible(false);
     }
 
     @Override
