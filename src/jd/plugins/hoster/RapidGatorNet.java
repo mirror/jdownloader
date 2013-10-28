@@ -411,7 +411,7 @@ public class RapidGatorNet extends PluginForHost {
 
                     if (!"3017".equals(captchaType)) {
                         logger.warning("ADSCaptcha: Captcha type not supported!");
-                        return;
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
                     capt.getPage(captchaAdress);
                     challenge = capt.getRegex("<img src=\"(http://api\\.adscaptcha\\.com//Challenge\\.aspx\\?cid=[^\"]+)").getMatch(0);
@@ -487,10 +487,11 @@ public class RapidGatorNet extends PluginForHost {
                 if (!useAPI.get()) {
                     br = new Browser();
                     ai = new AccountInfo();
+                } else {
+                    return ai;
                 }
             }
-            if (!useAPI.get()) ai = fetchAccountInfo_web(account, ai);
-            return ai;
+            return fetchAccountInfo_web(account, ai);
         }
     }
 
@@ -703,9 +704,7 @@ public class RapidGatorNet extends PluginForHost {
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         if (useAPI.get()) {
             handlePremium_api(link, account);
-            if (!useAPI.get()) br = new Browser();
-        }
-        if (!useAPI.get()) {
+        } else {
             requestFileInformation(link);
             handlePremium_web(link, account);
         }
@@ -811,8 +810,7 @@ public class RapidGatorNet extends PluginForHost {
         }
         if (session_id == null) {
             useAPI.set(false);
-            return;
-            // throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         URLConnectionAdapter con = null;
         String fileName = link.getFinalFileName();
@@ -879,8 +877,7 @@ public class RapidGatorNet extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Hoster is issues", 60 * 60 * 1000l);
             else {
                 useAPI.set(false);
-                return;
-                // throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }
         dl.startDownload();
@@ -1042,13 +1039,6 @@ public class RapidGatorNet extends PluginForHost {
 
     @Override
     public void resetDownloadlink(DownloadLink link) {
-    }
-
-    private boolean isJava7nJDStable() {
-        if (System.getProperty("jd.revision.jdownloaderrevision") == null && System.getProperty("java.version").matches("1\\.[7-9].+"))
-            return true;
-        else
-            return false;
     }
 
     private static AtomicBoolean stableSucks = new AtomicBoolean(false);
