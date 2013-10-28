@@ -54,7 +54,7 @@ public class Captcha9kwSolver extends ChallengeSolver<String> implements Challen
     }
 
     private Captcha9kwSolver() {
-        super(1);
+        super(Math.max(1, Math.min(25, JsonConfig.create(Captcha9kwSettings.class).getThreadpoolSize())));
         config = JsonConfig.create(Captcha9kwSettings.class);
         AdvancedConfigManager.getInstance().register(config);
         threadPool.allowCoreThreadTimeOut(true);
@@ -167,14 +167,19 @@ public class Captcha9kwSolver extends ChallengeSolver<String> implements Challen
                 // Error-No Credits
                 String captchaID = ret.substring(3);
                 data = null;
+                long startTime = System.currentTimeMillis();
 
-                int count9kw = 5;
                 Thread.sleep(5000);
+
                 while (true) {
-                    count9kw += 2;
+
                     job.getLogger().info("9kw.eu Ask " + captchaID);
                     ret = br.getPage(getAPIROOT() + "index.cgi?action=usercaptchacorrectdata&jd=2&source=jd2&apikey=" + Encoding.urlEncode(config.getApiKey()) + "&id=" + Encoding.urlEncode(captchaID) + "&version=1.1");
-                    job.getLogger().info("9kw.eu Answer " + count9kw + "s: " + ret);
+                    if (StringUtils.isEmpty(ret)) {
+                        job.getLogger().info("9kw.eu NO answer after " + ((System.currentTimeMillis() - startTime) / 1000) + "s ");
+                    } else {
+                        job.getLogger().info("9kw.eu Answer after " + ((System.currentTimeMillis() - startTime) / 1000) + "s: " + ret);
+                    }
                     if (ret.startsWith("OK-answered-")) {
                         job.addAnswer(new Captcha9kwResponse(challenge, this, ret.substring("OK-answered-".length()), 100, captchaID));
                         return;

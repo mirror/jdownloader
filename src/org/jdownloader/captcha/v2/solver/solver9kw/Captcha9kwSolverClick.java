@@ -45,7 +45,7 @@ public class Captcha9kwSolverClick extends ChallengeSolver<ClickedPoint> impleme
     }
 
     private Captcha9kwSolverClick() {
-        super(1);
+        super(JsonConfig.create(Captcha9kwSettings.class).getThreadpoolSize());
         config = JsonConfig.create(Captcha9kwSettings.class);
         // AdvancedConfigManager.getInstance().register(config);
         threadPool.allowCoreThreadTimeOut(true);
