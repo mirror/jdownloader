@@ -344,6 +344,7 @@ public class DepositFiles extends PluginForHost {
 
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
+        logger.info("Free @ Guest :: Web download method in use");
         setConstants();
         requestFileInformation(downloadLink);
         doFree(downloadLink);
@@ -537,12 +538,15 @@ public class DepositFiles extends PluginForHost {
             // via /api/
             if (useAPI.get()) {
                 ai = apiFetchAccountInfo(account);
+                // only way to detect plugin defect is to set false prior throwing.
+                if (!useAPI.get()) {
+                    br = new Browser();
+                    ai = new AccountInfo();
+                }
             }
-            if (!useAPI.get()) {
-                ai = webFetchAccountInfo(account);
-            }
+            if (!useAPI.get()) ai = webFetchAccountInfo(account);
+            return ai;
         }
-        return ai;
     }
 
     private AccountInfo webFetchAccountInfo(Account account) throws Exception {
@@ -711,9 +715,11 @@ public class DepositFiles extends PluginForHost {
             try {
                 apiHandlePremium(downloadLink, account);
             } catch (PluginException e) {
-                if (useAPI.getAndSet(false) == false) throw e;
+                throw e;
             }
         }
+        // plugin defect, work around as you can not catch exception id in older versions of JD
+        // only disable API when plugin defect is the status! all other error types should be treated as valid.
         if (!useAPI.get()) {
             webHandlePremium(downloadLink, account);
         }
@@ -722,9 +728,11 @@ public class DepositFiles extends PluginForHost {
     private void webHandlePremium(final DownloadLink downloadLink, Account account) throws Exception {
         webLogin(account, false);
         if (isFreeAccount(account, true)) {
+            logger.info(account.getUser() + " @ Free Account :: Web download method in use");
             br.getPage(downloadLink.getDownloadURL());
             doFree(downloadLink);
         } else {
+            logger.info(account.getUser() + " @ Gold Account :: Web download method in use");
             String link = downloadLink.getDownloadURL();
             br.getPage(link);
             if (br.getRedirectLocation() != null) {
@@ -1015,7 +1023,8 @@ public class DepositFiles extends PluginForHost {
             String dlToken = getJson("download_token");
             if (delay == null && mode == null && dlToken == null) {
                 logger.warning("api epic fail");
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                if (useAPI.getAndSet(false) == true) return;
+                // throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             // download modes seem to indicate if the user can download as 'gold' or 'free' connection ratios?. User can download there
             // own uploads under gold even though they don't have gold account status.
@@ -1054,7 +1063,8 @@ public class DepositFiles extends PluginForHost {
         String dllink = getJson("download_url");
         if (dllink == null) {
             logger.warning("Could not find 'dllink'");
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (useAPI.getAndSet(false) == true) return;
+            // throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dllink = dllink.replaceAll("\\\\/", "/");
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, apiResumes, apiChunks);
