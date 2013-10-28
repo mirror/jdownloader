@@ -31,6 +31,7 @@ SetDownloadFolderAction_msg=更改整个包 %s1，或仅用于 %s2 个选择的�
 SetDownloadFolderAction_no=选择内容
 SetDownloadFolderAction_yes=包
 StartDownloadsAction_createTooltip_=开始下载
+audiofilter_description=音频文件: mp3, wav, ogg, mid...
 basics_no=否
 basics_yes=是
 configheader_enabled=启用
