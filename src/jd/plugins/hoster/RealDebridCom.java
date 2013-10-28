@@ -219,6 +219,7 @@ public class RealDebridCom extends PluginForHost {
         String dllink = link.getDownloadURL();
         for (int retry = 0; retry < 3; retry++) {
             try {
+                if (retry != 0) sleep(3000l, link);
                 br.getPage(mProt + mName + "/ajax/unrestrict.php?link=" + Encoding.urlEncode(dllink) + (link.getStringProperty("pass", null) != null ? "&password=" + Encoding.urlEncode(link.getStringProperty("pass", null)) : ""));
                 if (br.containsHTML("\"error\":4,")) {
                     if (retry != 2) {
@@ -242,7 +243,6 @@ public class RealDebridCom extends PluginForHost {
             } catch (SocketException e) {
                 if (retry == 2) throw e;
             }
-            sleep(3000l, link);
         }
         String generatedLinks = br.getRegex("\"generated_links\":\\[\\[(.*?)\\]\\]").getMatch(0);
         String genLnks[] = new Regex(generatedLinks, "\"([^\"]*?)\"").getColumn(0);

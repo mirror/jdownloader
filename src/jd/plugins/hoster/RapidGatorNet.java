@@ -480,17 +480,23 @@ public class RapidGatorNet extends PluginForHost {
 
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
-        if (useAPI.get()) {
-            return fetchAccountInfo_api(account);
-        } else {
-            return fetchAccountInfo_web(account);
+        AccountInfo ai = new AccountInfo();
+        synchronized (LOCK) {
+            if (useAPI.get()) {
+                ai = fetchAccountInfo_api(account, ai);
+                if (!useAPI.get()) {
+                    br = new Browser();
+                    ai = new AccountInfo();
+                }
+            }
+            if (!useAPI.get()) ai = fetchAccountInfo_web(account, ai);
+            return ai;
         }
     }
 
-    public AccountInfo fetchAccountInfo_api(final Account account) throws Exception {
+    public AccountInfo fetchAccountInfo_api(final Account account, final AccountInfo ai) throws Exception {
         synchronized (LOCK) {
             try {
-                AccountInfo ai = new AccountInfo();
                 maxPrem.set(1);
                 String sid = login_api(account);
                 if (sid != null) {
@@ -544,8 +550,7 @@ public class RapidGatorNet extends PluginForHost {
         }
     }
 
-    public AccountInfo fetchAccountInfo_web(final Account account) throws Exception {
-        AccountInfo ai = new AccountInfo();
+    public AccountInfo fetchAccountInfo_web(final Account account, final AccountInfo ai) throws Exception {
         maxPrem.set(1);
         try {
             login_web(account, true);
@@ -698,7 +703,9 @@ public class RapidGatorNet extends PluginForHost {
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         if (useAPI.get()) {
             handlePremium_api(link, account);
-        } else {
+            if (!useAPI.get()) br = new Browser();
+        }
+        if (!useAPI.get()) {
             requestFileInformation(link);
             handlePremium_web(link, account);
         }
@@ -786,8 +793,8 @@ public class RapidGatorNet extends PluginForHost {
     }
 
     public void handlePremium_api(final DownloadLink link, final Account account) throws Exception {
-        String session_id = null;
         prepareBrowser_api(br);
+        String session_id = null;
         boolean isPremium = true;
         synchronized (LOCK) {
             session_id = account.getStringProperty("session_id", null);
@@ -802,7 +809,11 @@ public class RapidGatorNet extends PluginForHost {
             handleFree(link);
             return;
         }
-        if (session_id == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (session_id == null) {
+            useAPI.set(false);
+            return;
+            // throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         URLConnectionAdapter con = null;
         String fileName = link.getFinalFileName();
         if (fileName == null) {
@@ -835,7 +846,11 @@ public class RapidGatorNet extends PluginForHost {
                 }
             }
         }
-        if (fileName == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (fileName == null) {
+            useAPI.set(false);
+            return;
+            // throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         String url = null;
         try {
             con = br.openGetConnection(apiURL + "file/download?sid=" + session_id + "&url=" + Encoding.urlEncode(link.getDownloadURL()));
@@ -851,15 +866,22 @@ public class RapidGatorNet extends PluginForHost {
             } catch (final Throwable ignore) {
             }
         }
-        if (url == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (url == null) {
+            useAPI.set(false);
+            return;
+            // throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, url, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             logger.warning("The final dllink seems not to be a file!");
             br.followConnection();
             if (br.containsHTML("<h2>Error 500</h2>[\r\n ]+<div class=\"error\">"))
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Hoster is issues", 60 * 60 * 1000l);
-            else
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            else {
+                useAPI.set(false);
+                return;
+                // throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
         }
         dl.startDownload();
     }
@@ -1027,10 +1049,6 @@ public class RapidGatorNet extends PluginForHost {
             return true;
         else
             return false;
-    }
-
-    private boolean isOld09581Stable() {
-        return System.getProperty("jd.revision.jdownloaderrevision") == null;
     }
 
     private static AtomicBoolean stableSucks = new AtomicBoolean(false);

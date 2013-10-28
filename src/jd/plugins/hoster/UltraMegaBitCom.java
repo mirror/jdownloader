@@ -68,11 +68,18 @@ public class UltraMegaBitCom extends PluginForHost {
         if (br.getURL().contains("ultramegabit.com/folder/add/")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (br.containsHTML(">File not found<|>File restricted<|>File not available")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("<title>ULTRAMEGABIT\\.COM \\- ([^<>\"]*?)</title>").getMatch(0);
-        String filesize = br.getRegex("data\\-toggle=\"modal\">Download \\(([^<>\"]*?)\\) <span").getMatch(0);
-        if (filesize == null) filesize = br.getRegex("id=\"download_button\" value=\"Free download \\(([^<>\"]*?)\\)\"").getMatch(0);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (filename == null) {
+            filename = br.getRegex("<h4>(<img[^>]+>)?(.*?) \\(([^\\)]+)\\)</h4>").getMatch(1);
+        }
+        String filesize = br.getRegex("data-toggle=\"modal\">Download \\(([^<>\"]*?)\\) <span").getMatch(0);
+        if (filesize == null) {
+            filesize = br.getRegex("id=\"download_button\" value=\"Free download \\(([^<>\"]*?)\\)\"").getMatch(0);
+            if (filesize == null) filesize = br.getRegex("<h4>(<img[^>]+>)?(.*?) \\(([^\\)]+)\\)</h4>").getMatch(2);
+        }
+
+        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         link.setName(Encoding.htmlDecode(filename.trim()));
-        link.setDownloadSize(SizeFormatter.getSize(filesize));
+        if (filesize != null) link.setDownloadSize(SizeFormatter.getSize(filesize));
         return AvailableStatus.TRUE;
     }
 
@@ -177,25 +184,27 @@ public class UltraMegaBitCom extends PluginForHost {
             account.setValid(false);
             return ai;
         }
-        br.getPage("http://www.ultramegabit.com/user/details");
-        final String space = getData("Total storage");
-        if (space != null) ai.setUsedSpace(space.trim());
-        final String filesNum = getData("Total files served");
+        br.getPage("/user/details");
+        String space = br.getRegex("<span class=\"glyphicon glyphicon-hdd\"></span> ([\\d\\.]+ [A-Za-z]+)").getMatch(0);
+        if (space == null) space = br.getRegex("<li title=\"Quota\"[^\r\n]+\">([\\d\\.]+ [A-Za-z]+) / [^\r\n]+</li>").getMatch(0);
+        if (space != null) ai.setUsedSpace(SizeFormatter.getSize(space));
+        String filesNum = br.getRegex("<span class=\"glyphicon glyphicon-file\"></span> ([\\d]+)").getMatch(0);
         if (filesNum != null) ai.setFilesNum(Long.parseLong(filesNum));
         ai.setUnlimitedTraffic();
+        br.getPage("/user/billing");
 
-        String acctype = "Premium User";
+        String acctype = br.getRegex("<h4>[^\"]+\"([^\"]+)\"").getMatch(0);
         // some premiums have no expiration date, page shows only: Account status: Premium
-        final String accountStatus = getData("Account status").trim();
-        final String expire = br.getRegex("Premium[\t\n\r ]+</div>[\t\n\r ]+<div>([^<>\"]*? \\d{2} \\d{4})</div>").getMatch(0);
-        if (expire == null && !accountStatus.equalsIgnoreCase("Premium")) {
+        final String expire = br.getRegex("<h5>Account expires at (\\d+:\\d+(am|pm) \\d+/\\d+/\\d+)</h5>").getMatch(0);
+        if (expire == null && !acctype.equalsIgnoreCase("Premium Member")) {
+            // "Member"
             acctype = "Registered (free) User";
-            account.setProperty("freeacc", true);
+            account.setProperty("free", true);
         } else if (expire != null) {
-            ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "MMMM dd yyyy", Locale.ENGLISH));
-            account.setProperty("freeacc", false);
+            ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "h:mma dd/MM/yyyy", Locale.ENGLISH));
+            account.setProperty("free", false);
         } else {
-            account.setProperty("freeacc", false);
+            account.setProperty("free", false);
         }
         account.setValid(true);
         ai.setStatus(acctype);
@@ -206,7 +215,7 @@ public class UltraMegaBitCom extends PluginForHost {
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         requestFileInformation(link);
         login(account, false);
-        if (account.getBooleanProperty("freeacc", false)) {
+        if (account.getBooleanProperty("free", false)) {
             br.getPage(link.getDownloadURL());
             doFree(link);
         } else {
@@ -225,10 +234,6 @@ public class UltraMegaBitCom extends PluginForHost {
             link.setFinalFileName(Encoding.htmlDecode(getFileNameFromHeader(dl.getConnection())));
             dl.startDownload();
         }
-    }
-
-    private String getData(final String parameter) {
-        return br.getRegex(">" + parameter + "</div>[\t\n\r ]+<div class=\"profile_stats_value\">([^<>\"]*?)</div>").getMatch(0);
     }
 
     @Override
