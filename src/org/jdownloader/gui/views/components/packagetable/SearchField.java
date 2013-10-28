@@ -317,7 +317,7 @@ public class SearchField<SearchCat extends SearchCatInterface, PackageType exten
 
         label.setSize(labelWidth, 24);
         // label.setEnabled(false);
-        setBorder(BorderFactory.createCompoundBorder(orgBorder, BorderFactory.createEmptyBorder(0, labelWidth + 14 + iconGap, 0, 0)));
+        setBorder(BorderFactory.createCompoundBorder(orgBorder, BorderFactory.createEmptyBorder(0, labelWidth + 14 + iconGap, 0, 18)));
 
     }
 
