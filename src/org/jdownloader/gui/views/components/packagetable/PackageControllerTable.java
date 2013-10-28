@@ -155,7 +155,7 @@ public abstract class PackageControllerTable<ParentType extends AbstractPackageN
             boolean lock = false;
             try {
                 lock = pkg.getModifyLock().readLock();
-                allInPackages.addAll(pkg.getChildren());
+                if (pkg.isExpanded()) allInPackages.addAll(pkg.getChildren());
             } finally {
                 pkg.getModifyLock().readUnlock(lock);
             }
@@ -197,7 +197,13 @@ public abstract class PackageControllerTable<ParentType extends AbstractPackageN
         boolean onlyFullPackagesSelected = true;
         HashSet<ChildrenType> allInPackages = new HashSet<ChildrenType>();
         for (ParentType pkg : pkgs) {
-            allInPackages.addAll(pkg.getChildren());
+            boolean lock = false;
+            try {
+                lock = pkg.getModifyLock().readLock();
+                if (pkg.isExpanded()) allInPackages.addAll(pkg.getChildren());
+            } finally {
+                pkg.getModifyLock().readUnlock(lock);
+            }
         }
 
         for (ChildrenType ch : selectedChld) {
