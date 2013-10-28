@@ -4,6 +4,7 @@ import java.util.Arrays;
 
 import jd.controlling.linkcollector.LinkCollectingJob;
 import jd.controlling.linkcollector.LinkCollector;
+import jd.controlling.linkcollector.LinkSource;
 
 import org.appwork.utils.StringUtils;
 
@@ -20,7 +21,7 @@ public class FileCommand extends AbstractStartupCommand {
 
         for (String s : parameters) {
             if (StringUtils.isNotEmpty(s)) {
-                LinkCollector.getInstance().addCrawlerJob(new LinkCollectingJob("file://" + s).setSource(this));
+                LinkCollector.getInstance().addCrawlerJob(new LinkCollectingJob("file://" + s).setSource(LinkSource.START_PARAMETER));
             }
         }
 

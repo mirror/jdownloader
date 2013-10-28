@@ -119,13 +119,13 @@ public class LinkCollectingJob {
     private File        outputFolder;
     private String      packageName;
 
-    private Object      source;
+    private LinkSource  source;
 
-    public Object getSource() {
+    public LinkSource getSource() {
         return source;
     }
 
-    public LinkCollectingJob setSource(Object source) {
+    public LinkCollectingJob setSource(LinkSource source) {
 
         this.source = source;
         return this;

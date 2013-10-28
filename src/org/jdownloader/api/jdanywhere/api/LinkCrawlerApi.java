@@ -7,6 +7,7 @@ import java.util.List;
 import jd.controlling.downloadcontroller.DownloadController;
 import jd.controlling.linkcollector.LinkCollectingJob;
 import jd.controlling.linkcollector.LinkCollector;
+import jd.controlling.linkcollector.LinkSource;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledPackage;
 import jd.controlling.packagecontroller.AbstractPackageChildrenNodeFilter;
@@ -119,7 +120,7 @@ public class LinkCrawlerApi implements ILinkCrawlerApi {
             File tmp = JDUtilities.getResourceFile("tmp/jd_" + System.currentTimeMillis() + ".dlc", true);
             IO.writeToFile(tmp, dlc.getBytes("UTF-8"));
             String url = "file://" + tmp.getAbsolutePath();
-            LinkCollectingJob job = new LinkCollectingJob(url).setSource(this);
+            LinkCollectingJob job = new LinkCollectingJob(url).setSource(LinkSource.MYJD);
             LinkCollector.getInstance().addCrawlerJob(job);
         } catch (Throwable e) {
 

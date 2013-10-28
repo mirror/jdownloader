@@ -95,6 +95,11 @@ public class AccountListTableModel extends ExtTableModel<AccountEntry> implement
         if (AccountChecker.getInstance().isRunning()) {
             onCheckStarted();
         }
+        super.initModel();
+
+    }
+
+    protected void initModel() {
 
     }
 

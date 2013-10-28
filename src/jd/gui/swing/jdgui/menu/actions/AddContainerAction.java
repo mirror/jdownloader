@@ -22,6 +22,7 @@ import java.io.File;
 
 import jd.controlling.linkcollector.LinkCollectingJob;
 import jd.controlling.linkcollector.LinkCollector;
+import jd.controlling.linkcollector.LinkSource;
 import jd.gui.UserIO;
 import jd.nutils.io.JDFileFilter;
 
@@ -51,7 +52,7 @@ public class AddContainerAction extends AppAction implements CachableInterface {
             sb.append("file://");
             sb.append(r.getAbsolutePath());
         }
-        LinkCollector.getInstance().addCrawlerJob(new LinkCollectingJob(sb.toString()).setSource(this));
+        LinkCollector.getInstance().addCrawlerJob(new LinkCollectingJob(sb.toString()).setSource(LinkSource.ADD_CONTAINER_ACTION));
     }
 
     @Override

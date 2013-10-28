@@ -5,6 +5,7 @@ import java.awt.event.ActionEvent;
 import jd.controlling.ClipboardMonitoring;
 import jd.controlling.linkcollector.LinkCollectingJob;
 import jd.controlling.linkcollector.LinkCollector;
+import jd.controlling.linkcollector.LinkSource;
 import jd.controlling.linkcrawler.LinkCrawler;
 
 import org.appwork.utils.swing.dialog.Dialog;
@@ -54,7 +55,7 @@ public class PasteLinksAction extends AppAction implements CachableInterface {
     @Override
     public void actionPerformed(ActionEvent e) {
 
-        final LinkCollectingJob crawljob = new LinkCollectingJob(ClipboardMonitoring.getINSTANCE().getCurrentContent()).setSource(this);
+        final LinkCollectingJob crawljob = new LinkCollectingJob(ClipboardMonitoring.getINSTANCE().getCurrentContent()).setSource(LinkSource.PASTE_LINKS_ACTION);
         crawljob.setDeepAnalyse(isDeepDecryptEnabled());
         AddLinksProgress d = new AddLinksProgress(crawljob);
         if (d.isHiddenByDontShowAgain()) {

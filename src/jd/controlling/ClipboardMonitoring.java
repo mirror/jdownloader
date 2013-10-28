@@ -20,6 +20,7 @@ import java.util.StringTokenizer;
 
 import jd.controlling.linkcollector.LinkCollectingJob;
 import jd.controlling.linkcollector.LinkCollector;
+import jd.controlling.linkcollector.LinkSource;
 
 import org.appwork.utils.IO;
 import org.appwork.utils.Regex;
@@ -213,7 +214,7 @@ public class ClipboardMonitoring {
                         if (!StringUtils.isEmpty(handleThisRound)) {
                             if (firstRoundDone) {
                                 waitTimeout = minWaitTimeout;
-                                LinkCollectingJob job = new LinkCollectingJob(handleThisRound).setSource(ClipboardMonitoring.INSTANCE);
+                                LinkCollectingJob job = new LinkCollectingJob(handleThisRound).setSource(LinkSource.CLIPBOARD);
                                 ;
                                 job.setExtractPasswords(PasswordUtils.getPasswords(handleThisRound));
                                 job.setCustomSourceUrl(lastBrowserUrl);
@@ -436,7 +437,7 @@ public class ClipboardMonitoring {
             }
             String content = sb.toString();
             if (!StringUtils.isEmpty(content)) {
-                LinkCollectingJob job = new LinkCollectingJob(content).setSource(ClipboardMonitoring.INSTANCE);
+                LinkCollectingJob job = new LinkCollectingJob(content).setSource(LinkSource.CLIPBOARD);
                 ;
                 job.setCustomSourceUrl(browserUrl);
                 job.setExtractPasswords(PasswordUtils.getPasswords(content));
