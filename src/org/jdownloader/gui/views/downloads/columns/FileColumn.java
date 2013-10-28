@@ -37,6 +37,8 @@ import org.jdownloader.extensions.extraction.ExtractionExtension;
 import org.jdownloader.extensions.extraction.bindings.crawledlink.CrawledLinkFactory;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.components.packagetable.LinkTreeUtils;
+import org.jdownloader.gui.views.components.packagetable.PackageControllerTableModel;
+import org.jdownloader.gui.views.components.packagetable.PackageControllerTableModel.TOGGLEMODE;
 import org.jdownloader.gui.views.components.packagetable.actions.SortPackagesDownloadOrdnerOnColumn;
 import org.jdownloader.gui.views.downloads.action.OpenFileAction;
 import org.jdownloader.images.NewTheme;
@@ -108,27 +110,83 @@ public class FileColumn extends ExtTextColumn<AbstractNode> implements GenericCo
     public boolean onDoubleClick(MouseEvent e, AbstractNode contextObject) {
 
         if (e.getPoint().x - getBounds().x < 30) { return false; }
+
         if (contextObject instanceof DownloadLink) {
-            if (CrossSystem.isOpenFileSupported()) {
-                new OpenFileAction(new File(((DownloadLink) contextObject).getFileOutput())).actionPerformed(null);
+            switch (CFG_GUI.CFG.getLinkDoubleClickAction()) {
+            case NOTHING:
+                java.awt.Toolkit.getDefaultToolkit().beep();
+                break;
+            case OPEN_FILE:
+                if (CrossSystem.isOpenFileSupported()) {
+                    new OpenFileAction(new File(((DownloadLink) contextObject).getFileOutput())).actionPerformed(null);
 
+                }
+                break;
+            case OPEN_FOLDER:
+                if (CrossSystem.isOpenFileSupported()) {
+
+                    new OpenFileAction(LinkTreeUtils.getDownloadDirectory(((DownloadLink) contextObject).getParentNode())).actionPerformed(null);
+
+                }
+                break;
+            case RENAME:
+                startEditing(contextObject);
+                break;
             }
+
         } else if (contextObject instanceof CrawledLink) {
-            if (CrossSystem.isOpenFileSupported()) {
-                new OpenFileAction(LinkTreeUtils.getDownloadDirectory(contextObject)).actionPerformed(null);
 
+            switch (CFG_GUI.CFG.getLinkDoubleClickAction()) {
+            case NOTHING:
+                java.awt.Toolkit.getDefaultToolkit().beep();
+                break;
+            case OPEN_FILE:
+                if (CrossSystem.isOpenFileSupported()) {
+                    new OpenFileAction(LinkTreeUtils.getDownloadDirectory(contextObject)).actionPerformed(null);
+
+                }
+                break;
+            case OPEN_FOLDER:
+                if (CrossSystem.isOpenFileSupported()) {
+
+                    new OpenFileAction(LinkTreeUtils.getDownloadDirectory(((CrawledLink) contextObject).getParentNode())).actionPerformed(null);
+
+                }
+                break;
+            case RENAME:
+                startEditing(contextObject);
+                break;
             }
-        } else if (contextObject instanceof FilePackage) {
-            if (CrossSystem.isOpenFileSupported()) {
+        } else if (contextObject instanceof FilePackage || contextObject instanceof CrawledPackage) {
 
-                new OpenFileAction(LinkTreeUtils.getDownloadDirectory(contextObject)).actionPerformed(null);
+            switch (CFG_GUI.CFG.getPackageDoubleClickAction()) {
+            case EXPAND_COLLAPSE_TOGGLE:
 
+                if (e.isControlDown() && !e.isShiftDown()) {
+                    ((PackageControllerTableModel) getModel()).toggleFilePackageExpand((AbstractPackageNode) contextObject, TOGGLEMODE.BOTTOM);
+                } else if (e.isControlDown() && e.isShiftDown()) {
+                    ((PackageControllerTableModel) getModel()).toggleFilePackageExpand((AbstractPackageNode) contextObject, TOGGLEMODE.TOP);
+                } else {
+                    ((PackageControllerTableModel) getModel()).toggleFilePackageExpand((AbstractPackageNode) contextObject, TOGGLEMODE.CURRENT);
+                }
+                break;
+            case NOTHING:
+                java.awt.Toolkit.getDefaultToolkit().beep();
+                break;
+
+            case OPEN_FOLDER:
+                if (CrossSystem.isOpenFileSupported()) {
+
+                    new OpenFileAction(LinkTreeUtils.getDownloadDirectory(contextObject)).actionPerformed(null);
+
+                }
+                break;
+            case RENAME:
+
+                startEditing(contextObject);
+                break;
             }
-        } else if (contextObject instanceof CrawledPackage) {
-            if (CrossSystem.isOpenFileSupported()) {
-                new OpenFileAction(LinkTreeUtils.getDownloadDirectory(contextObject)).actionPerformed(null);
 
-            }
         }
 
         return true;

@@ -578,8 +578,11 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
     void setUpdateButtonFlashingEnabled(boolean b);
 
     public static enum ShowSpeedInWindowTitleTrigger {
+        @EnumLabel("Never")
         NEVER,
+        @EnumLabel("Only if JD is minimized to Taskbar")
         WHEN_WINDOW_IS_MINIMIZED,
+        @EnumLabel("Always")
         ALWAYS
     }
 
@@ -590,8 +593,11 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
     void setSpeedInWindowTitle(ShowSpeedInWindowTitleTrigger b);
 
     public static enum PremiumStatusBarDisplay {
+        @EnumLabel("Group by Account Type")
         GROUP_BY_ACCOUNT_TYPE,
+        @EnumLabel("Group supported Hoster")
         GROUP_BY_SUPPORTED_HOSTS,
+        @EnumLabel("Don't Group")
         DONT_GROUP
 
     }
@@ -601,5 +607,40 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
     PremiumStatusBarDisplay getPremiumStatusBarDisplay();
 
     void setPremiumStatusBarDisplay(PremiumStatusBarDisplay type);
+
+    public static enum PackageDoubleClickAction {
+        @EnumLabel("Expand or collapse Folder")
+        EXPAND_COLLAPSE_TOGGLE,
+        @EnumLabel("Open Downloadfolder")
+        OPEN_FOLDER,
+        @EnumLabel("Rename package")
+        RENAME,
+        @EnumLabel("Do nothing")
+        NOTHING
+    }
+
+    @AboutConfig
+    @DefaultEnumValue("OPEN_FOLDER")
+    PackageDoubleClickAction getPackageDoubleClickAction();
+
+    void setPackageDoubleClickAction(PackageDoubleClickAction action);
+
+    public static enum LinkDoubleClickAction {
+
+        @EnumLabel("Open Downloadfolder")
+        OPEN_FOLDER,
+        @EnumLabel("Open File")
+        OPEN_FILE,
+        @EnumLabel("Rename File")
+        RENAME,
+        @EnumLabel("Do nothing")
+        NOTHING
+    }
+
+    @AboutConfig
+    @DefaultEnumValue("OPEN_FILE")
+    LinkDoubleClickAction getLinkDoubleClickAction();
+
+    void setLinkDoubleClickAction(LinkDoubleClickAction action);
 
 }
