@@ -499,7 +499,7 @@ public class TbCm extends PluginForDecrypt {
                     videoNumberCounter++;
                 }
                 // not all pages are shown on first page! Grab next and continue loop
-                next = br.getRegex("<a href=\"(/playlist\\?list=" + luid + "&amp;page=\\d+)\"[^\r\n]+>Next »<").getMatch(0);
+                next = br.getRegex("<a href=\"(/playlist\\?list=" + luid + "\\&amp;page=\\d+)\"[^\r\n]+>Next").getMatch(0);
             } while (next != null);
         }
         // user support

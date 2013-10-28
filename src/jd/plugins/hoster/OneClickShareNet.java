@@ -69,7 +69,6 @@ public class OneClickShareNet extends PluginForHost {
         return ai;
     }
 
-    // Using same script as 4fastfile.com and 1-upload.com
     @Override
     public String getAGBLink() {
         return "http://1clickshare.net/terms";

@@ -64,7 +64,7 @@ public class Keep2ShareCc extends PluginForHost {
     }
 
     private final String           DOWNLOADPOSSIBLE = ">To download this file with slow speed, use";
-    private final String           MAINPAGE         = "http://k2s.cc";
+    private final String           MAINPAGE         = "http://keep2s.cc";
     private final String           DOMAINS          = "(https?://(www\\.)?(keep2share|k2s|k2share|keep2s|keep2)\\.cc)";
 
     private static Object          LOCK             = new Object();
@@ -466,10 +466,15 @@ public class Keep2ShareCc extends PluginForHost {
         } else {
             br.setFollowRedirects(false);
             br.getPage(link.getDownloadURL());
+            final String oldDomain = new Regex(link.getDownloadURL(), "([a-z0-9]+\\.cc)/file/").getMatch(0);
             // Direct download
             String dllink = br.getRedirectLocation();
+            if (!dllink.contains(oldDomain)) {
+                br.getPage(br.getRedirectLocation());
+                dllink = br.getRedirectLocation();
+            }
             // Or no direct download
-            if (dllink == null) dllink = br.getRegex("\\'(/file/url\\.html\\?file=[a-z0-9]+)\\'").getMatch(0);
+            if (dllink == null) dllink = br.getRegex("(\\'|\")(/file/url\\.html\\?file=[a-z0-9]+)(\\'|\")").getMatch(1);
             if (dllink == null) {
                 if (br.containsHTML("Traffic limit exceed\\!<")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
                 synchronized (LOCK) {
