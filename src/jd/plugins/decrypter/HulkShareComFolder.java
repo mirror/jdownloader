@@ -56,16 +56,19 @@ public class HulkShareComFolder extends PluginForDecrypt {
         br.getPage(parameter);
         String argh = br.getRedirectLocation();
         if (br.containsHTML("class=\"bigDownloadBtn") || br.containsHTML(">The owner of this file doesn\\'t allow downloading") || argh != null) {
+            logger.info("Link offline: " + parameter);
             decryptedLinks.add(createDownloadlink(parameter.replace("hulkshare.com/", "hulksharedecrypted.com/")));
             return decryptedLinks;
         }
         if (br.containsHTML("You have reached the download\\-limit")) {
+            logger.info("Link offline: " + parameter);
             final DownloadLink dl = createDownloadlink(parameter.replace("hulkshare.com/", "hulksharedecrypted.com/"));
             dl.setAvailable(false);
             decryptedLinks.add(dl);
             return decryptedLinks;
         }
-        if (br.containsHTML(">Page not found") || br.containsHTML(">This file has been subject to a DMCA notice") || br.containsHTML("<h2>Error</h2>") || br.containsHTML(">We\\'re sorry but this page is not accessible")) {
+        if (br.containsHTML(">Page not found") || br.containsHTML(">This file has been subject to a DMCA notice") || br.containsHTML("<h2>Error</h2>") || br.containsHTML(">We\\'re sorry but this page is not accessible") || br.containsHTML(">Error<")) {
+            logger.info("Link offline: " + parameter);
             final DownloadLink dl = createDownloadlink(parameter.replace("hulkshare.com/", "hulksharedecrypted.com/"));
             dl.setProperty("fileoffline", true);
             dl.setAvailable(false);
@@ -74,6 +77,15 @@ public class HulkShareComFolder extends PluginForDecrypt {
         }
         // Mainpage
         if (br.containsHTML("<title>Online Music, Free Internet Radio, Discover Artists \\- Hulkshare")) {
+            logger.info("Link offline: " + parameter);
+            final DownloadLink dl = createDownloadlink(parameter.replace("hulkshare.com/", "hulksharedecrypted.com/"));
+            dl.setProperty("fileoffline", true);
+            dl.setAvailable(false);
+            decryptedLinks.add(dl);
+            return decryptedLinks;
+        }
+        if (br.containsHTML("class=\"nhsUploadLink signupPopLink\">Sign up for Hulkshare<")) {
+            logger.info("Link doesn't contain any downloadable content: " + parameter);
             final DownloadLink dl = createDownloadlink(parameter.replace("hulkshare.com/", "hulksharedecrypted.com/"));
             dl.setProperty("fileoffline", true);
             dl.setAvailable(false);

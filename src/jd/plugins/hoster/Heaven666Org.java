@@ -53,7 +53,7 @@ public class Heaven666Org extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        if (br.getURL().contains("heaven666.org/index.php?session_id=") || br.containsHTML(">This media no longer exists, but you can watch")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.getURL().contains("session_id=") || br.containsHTML(">This media no longer exists, but you can watch")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("property=\"og:title\" content=\"([^<>\"]*?)\"").getMatch(0);
         if (filename == null) filename = br.getRegex("flashvars\\.Title = \"([^<>\"]*?)\"").getMatch(0);
         if (!br.containsHTML("\\.swf")) {

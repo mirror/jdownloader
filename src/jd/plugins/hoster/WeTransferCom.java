@@ -63,36 +63,6 @@ public class WeTransferCom extends PluginForHost {
     }
 
     @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
-        requestFileInformation(downloadLink);
-        // More chunks are possible for some links but not for all
-        String fields = br.getRegex("\"fields\":\\{(\".*?\"\\]\\}\\}\")\\}\\}").getMatch(0);
-        if (fields != null) {
-            fields = fields.replace("\\\"", "JDTEMPREPLACEJD");
-            final String[][] postData = new Regex(fields, "\"(.*?)\":\"(.*?)\"").getMatches();
-            String postString = "";
-            int counter = 0;
-            for (String[] field : postData) {
-                field[1] = field[1].replace("JDTEMPREPLACEJD", "\"");
-                if (counter == 0) {
-                    postString += field[0] + "=" + field[1];
-                } else {
-                    postString += "&" + field[0] + "=" + field[1];
-                }
-                counter++;
-            }
-            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, postString, true, -2);
-        } else {
-            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, -2);
-        }
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        dl.startDownload();
-    }
-
-    @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         setBrowserExclusive();
         String dlink = link.getDownloadURL();
@@ -108,9 +78,13 @@ public class WeTransferCom extends PluginForHost {
 
         // Allow redirects for change to https
         br.setFollowRedirects(true);
-        final String mainpage = new Regex(dlink, "(http://(www\\.)?([a-z0-9\\-\\.]+\\.)?wetransfer\\.com/)").getMatch(0);
+        br.getPage(link.getDownloadURL());
+        String recepientID = br.getRegex("data\\-recipient=\"([a-z0-9]+)\"").getMatch(0);
+        if (recepientID == null) recepientID = "";
+        String filesize = br.getRegex("<br>([^<>\"]*?)</div>[\t\n\r ]+<a href=\"#\" data\\-hash=").getMatch(0);
+        final String mainpage = new Regex(dlink, "(https?://(www\\.)?([a-z0-9\\-\\.]+\\.)?wetransfer\\.com/)").getMatch(0);
         // final String recID = new Regex(dlink, "wetransfer\\.com/downloads/[a-z0-9]+/([a-z0-9]+)").getMatch(0);
-        br.getPage(mainpage + "/api/v1/transfers/" + CODE + "/download?recipient_id=&security_hash=" + HASH + "&password=&ie=false");
+        br.getPage(mainpage + "/api/v1/transfers/" + CODE + "/download?recipient_id=" + recepientID + "&security_hash=" + HASH + "&password=&ie=false");
         DLLINK = br.getRegex("\"direct_link\":\"(http[^<>\"]*?)\"").getMatch(0);
         if (DLLINK == null) DLLINK = br.getRegex("\"action\":\"(http[^<>\"]*?)\"").getMatch(0);
         if (DLLINK != null) {
@@ -153,16 +127,46 @@ public class WeTransferCom extends PluginForHost {
             if (new Regex(result, "(download_error_no_download|download_error_file_expired)").matches()) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
 
             final String filename = new Regex(result, "#filename[#]+\\$?([^<>#]+)").getMatch(0);
-            final String filesize = new Regex(result, "#size[#]+(\\d+)[#]+").getMatch(0);
+            if (filesize == null) filesize = new Regex(result, "#size[#]+(\\d+)[#]+").getMatch(0);
             DLLINK = new Regex(result, "#awslink[#]+\\??([^<>#]+)").getMatch(0);
 
             if (filename == null || filesize == null || DLLINK == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
 
             link.setFinalFileName(Encoding.htmlDecode(filename.trim()));
-            link.setDownloadSize(SizeFormatter.getSize(filesize));
         }
+        if (filesize != null) link.setDownloadSize(SizeFormatter.getSize(filesize));
 
         return AvailableStatus.TRUE;
+    }
+
+    @Override
+    public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
+        requestFileInformation(downloadLink);
+        // More chunks are possible for some links but not for all
+        String fields = br.getRegex("\"fields\":\\{(\".*?\"\\]\\}\\}\")\\}\\}").getMatch(0);
+        if (fields != null) {
+            fields = fields.replace("\\\"", "JDTEMPREPLACEJD");
+            final String[][] postData = new Regex(fields, "\"(.*?)\":\"(.*?)\"").getMatches();
+            String postString = "";
+            int counter = 0;
+            for (String[] field : postData) {
+                field[1] = field[1].replace("JDTEMPREPLACEJD", "\"");
+                if (counter == 0) {
+                    postString += field[0] + "=" + field[1];
+                } else {
+                    postString += "&" + field[0] + "=" + field[1];
+                }
+                counter++;
+            }
+            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, postString, true, -2);
+        } else {
+            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, -2);
+        }
+        if (dl.getConnection().getContentType().contains("html")) {
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dl.startDownload();
     }
 
     @Override

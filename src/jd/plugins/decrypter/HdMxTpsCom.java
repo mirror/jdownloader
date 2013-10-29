@@ -71,6 +71,10 @@ public class HdMxTpsCom extends PluginForDecrypt {
             logger.info("Link offline: " + parameter);
             return decryptedLinks;
         }
+        if (br.containsHTML(">404 Not Found<")) {
+            logger.info("Link offline: " + parameter);
+            return decryptedLinks;
+        }
         if (br.containsHTML("<span style=\"font\\-size:30px; color:#f5ffa5;\">New Singles</span>")) {
             logger.info("Invalid link: " + parameter);
             return decryptedLinks;

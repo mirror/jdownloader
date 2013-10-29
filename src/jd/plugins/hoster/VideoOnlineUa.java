@@ -54,6 +54,11 @@ public class VideoOnlineUa extends PluginForHost {
         br.setFollowRedirects(true);
         // Allow adult videos
         br.setCookie("http://video.online.ua/", "online_18", "1");
+        br.getPage(downloadLink.getDownloadURL());
+        String externLink = br.getRegex("\"(http://(www\\.)?novy\\.tv/embed/\\d+)\"").getMatch(0);
+        if (externLink == null) externLink = br.getRegex("\"(http://(www\\.)?rutube\\.ru/video/embed/\\d+)\"").getMatch(0);
+        // External sites - not supported
+        if (externLink != null || br.containsHTML("ictv\\.ua/public/swfobject/zl_player\\.swf\"")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         br.getPage("http://video.online.ua/embed/" + new Regex(downloadLink.getDownloadURL(), "(\\d+)$").getMatch(0));
         if (br.containsHTML(">Страница по данному адресу отсутствует<")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         // External sites - their videos don't even play via browser
@@ -63,6 +68,7 @@ public class VideoOnlineUa extends PluginForHost {
         DLLINK = br.getRegex("file: \\'(http://video\\.online\\.ua/playlist/\\d+\\.xml[^<>\"]*?)\\'").getMatch(0);
         if (filename == null || DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         br.getPage(Encoding.htmlDecode(DLLINK));
+        if (br.containsHTML(">Страница по данному адресу отсутствует<")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         DLLINK = br.getRegex("<location>(http://[^<>\"]*?)</location>").getMatch(0);
         if (DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         DLLINK = Encoding.htmlDecode(DLLINK);

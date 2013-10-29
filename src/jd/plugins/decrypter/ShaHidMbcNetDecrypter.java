@@ -96,6 +96,10 @@ public class ShaHidMbcNetDecrypter extends PluginForDecrypt {
         String fpName = null;
 
         if ("bluefishtv.com".equals(PROVIDER)) {
+            if (br.containsHTML(">That product is not available at this time<")) {
+                logger.info("Link offline: " + parameter);
+                return decryptedLinks;
+            }
             fpName = br.getRegex("<span class=\"ProductDetails_Title\">(.*?)</span>").getMatch(0);
             if (fpName == null) fpName = br.getRegex("<div id=\"ProductDetails_Overview\" style=\"position.*?alt=\"[^\"]+").getMatch(0);
         }
