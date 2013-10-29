@@ -119,7 +119,7 @@ public class GrvShrkCm extends PluginForDecrypt {
             gsProxy(true);
         } catch (Throwable e) {
         }
-        br.getPage(LISTEN);
+        br.getPage(LISTEN + "preload.php?hash=" + Encoding.urlEncode(parameter.split("/#\\!/")[1]) + "&" + System.currentTimeMillis());
         if (br.containsHTML("Grooveshark den Zugriff aus Deutschland ein")) {
             logger.warning(jd.plugins.hoster.GrooveShark.BLOCKEDGERMANY);
             return decryptedLinks;
