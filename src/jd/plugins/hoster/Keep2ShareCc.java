@@ -469,7 +469,7 @@ public class Keep2ShareCc extends PluginForHost {
             final String oldDomain = new Regex(link.getDownloadURL(), "([a-z0-9]+\\.cc)/file/").getMatch(0);
             // Direct download
             String dllink = br.getRedirectLocation();
-            if (!dllink.contains(oldDomain)) {
+            if (dllink != null && !dllink.contains(oldDomain)) {
                 br.getPage(br.getRedirectLocation());
                 dllink = br.getRedirectLocation();
             }
