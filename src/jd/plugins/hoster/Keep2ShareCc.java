@@ -77,7 +77,7 @@ public class Keep2ShareCc extends PluginForHost {
 
     @Override
     public void correctDownloadLink(final DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replaceFirst("://[a-zA-Z0-9\\.]+\\.cc/", "://k2s.cc/"));
+        link.setUrlDownload(link.getDownloadURL().replaceFirst("://[a-zA-Z0-9\\.]+\\.cc/", "://keep2s.cc/"));
     }
 
     private Browser prepBrowser(final Browser prepBr) {
@@ -466,13 +466,15 @@ public class Keep2ShareCc extends PluginForHost {
         } else {
             br.setFollowRedirects(false);
             br.getPage(link.getDownloadURL());
-            final String oldDomain = new Regex(link.getDownloadURL(), "([a-z0-9]+\\.cc)/file/").getMatch(0);
+            if (br.containsHTML(">Login<")) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            // final String oldDomain = new Regex(link.getDownloadURL(), "([a-z0-9]+\\.cc)/file/").getMatch(0);
             // Direct download
             String dllink = br.getRedirectLocation();
-            if (dllink != null && !dllink.contains(oldDomain)) {
-                br.getPage(br.getRedirectLocation());
-                dllink = br.getRedirectLocation();
-            }
+            logger.info("dllink = " + dllink);
+            // if (dllink != null && !dllink.contains(oldDomain)) {
+            // br.getPage(br.getRedirectLocation());
+            // dllink = br.getRedirectLocation();
+            // }
             // Or no direct download
             if (dllink == null) dllink = br.getRegex("(\\'|\")(/file/url\\.html\\?file=[a-z0-9]+)(\\'|\")").getMatch(1);
             if (dllink == null) {
