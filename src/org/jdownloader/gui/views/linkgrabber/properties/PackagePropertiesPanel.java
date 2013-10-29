@@ -77,6 +77,16 @@ public class PackagePropertiesPanel extends LinkPropertiesPanel {
     }
 
     @Override
+    protected void addChecksum(int height, MigPanel p) {
+
+    }
+
+    @Override
+    protected void addDownloadPassword(int height, MigPanel p) {
+
+    }
+
+    @Override
     protected void updateInEDT(CrawledLink link, CrawledPackage pkg) {
 
         if (!comment.hasFocus()) {
