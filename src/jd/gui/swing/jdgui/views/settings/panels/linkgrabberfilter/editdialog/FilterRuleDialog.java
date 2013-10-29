@@ -112,6 +112,7 @@ public class FilterRuleDialog extends ConditionDialog<LinkgrabberFilterRule> {
         rule.setFilesizeFilter(getFilersizeFilter());
         rule.setSourceURLFilter(getSourceFilter());
         rule.setFiletypeFilter(getFiletypeFilter());
+        rule.setOriginFilter(getOriginFilter());
         rule.setOnlineStatusFilter(getOnlineStatusFilter());
         rule.setPluginStatusFilter(getPluginStatusFilter());
         rule.setAccept(false);
@@ -126,6 +127,7 @@ public class FilterRuleDialog extends ConditionDialog<LinkgrabberFilterRule> {
         setFilenameFilter(rule.getFilenameFilter());
         setHosterFilter(rule.getHosterURLFilter());
         setName(rule.getName());
+        setOriginFilter(rule.getOriginFilter());
         setFilesizeFilter(rule.getFilesizeFilter());
         setOnlineStatusFilter(rule.getOnlineStatusFilter());
         setPluginStatusFilter(rule.getPluginStatusFilter());

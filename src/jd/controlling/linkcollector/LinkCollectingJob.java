@@ -59,11 +59,11 @@ public class LinkCollectingJob {
     private BooleanStatus autoExtract = BooleanStatus.UNSET;
     private boolean       deepAnalyse;
 
-    public LinkCollectingJob() {
-        this(null);
+    public LinkCollectingJob(LinkOrigin origin) {
+        this(origin, null);
     }
 
-    public LinkCollectingJob(String text) {
+    public LinkCollectingJob(LinkOrigin origin, String text) {
         this.text = text;
     }
 
@@ -119,16 +119,10 @@ public class LinkCollectingJob {
     private File        outputFolder;
     private String      packageName;
 
-    private LinkSource  source;
+    private LinkOrigin  source;
 
-    public LinkSource getSource() {
+    public LinkOrigin getSource() {
         return source;
-    }
-
-    public LinkCollectingJob setSource(LinkSource source) {
-
-        this.source = source;
-        return this;
     }
 
 }

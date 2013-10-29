@@ -27,7 +27,7 @@ import javax.swing.SwingUtilities;
 
 import jd.controlling.ClipboardMonitoring;
 import jd.controlling.linkcollector.LinkCollectingJob;
-import jd.controlling.linkcollector.LinkSource;
+import jd.controlling.linkcollector.LinkOrigin;
 import jd.gui.swing.jdgui.JDGui;
 import jd.gui.swing.jdgui.views.settings.panels.packagizer.VariableAction;
 import jd.gui.swing.laf.LookAndFeelController;
@@ -173,8 +173,8 @@ public class AddLinksDialog extends AbstractDialog<LinkCollectingJob> {
 
     @Override
     protected LinkCollectingJob createReturnValue() {
-        LinkCollectingJob ret = new LinkCollectingJob();
-        ret.setSource(LinkSource.ADD_LINKS_DIALOG);
+        LinkCollectingJob ret = new LinkCollectingJob(LinkOrigin.ADD_LINKS_DIALOG);
+
         ret.setText(input.getText());
         // if (destination.getSelectedIndex() > 0) {
         //

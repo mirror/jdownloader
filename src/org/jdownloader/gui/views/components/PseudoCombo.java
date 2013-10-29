@@ -1,4 +1,4 @@
-package org.jdownloader.gui.views.downloads;
+package org.jdownloader.gui.views.components;
 
 import java.awt.Dimension;
 import java.awt.Graphics;

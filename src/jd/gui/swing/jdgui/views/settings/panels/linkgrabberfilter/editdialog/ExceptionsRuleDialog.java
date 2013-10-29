@@ -96,6 +96,7 @@ public class ExceptionsRuleDialog extends ConditionDialog<LinkgrabberFilterRule>
         rule.setName(getName());
         rule.setFilesizeFilter(getFilersizeFilter());
         rule.setSourceURLFilter(getSourceFilter());
+        rule.setOriginFilter(getOriginFilter());
         rule.setFiletypeFilter(getFiletypeFilter());
         rule.setOnlineStatusFilter(getOnlineStatusFilter());
         rule.setPluginStatusFilter(getPluginStatusFilter());
@@ -113,6 +114,7 @@ public class ExceptionsRuleDialog extends ConditionDialog<LinkgrabberFilterRule>
         setName(rule.getName());
         txtTestUrl.setText(rule.getTestUrl());
         setFilesizeFilter(rule.getFilesizeFilter());
+        setOriginFilter(rule.getOriginFilter());
         setOnlineStatusFilter(rule.getOnlineStatusFilter());
         setPluginStatusFilter(rule.getPluginStatusFilter());
         setSourceFilter(rule.getSourceURLFilter());

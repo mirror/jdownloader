@@ -47,6 +47,18 @@ public class CrawledLinkStorable implements Storable {
         this.link = link;
     }
 
+    public String getOrigin() {
+        if (link.getOrigin() == null) return null;
+        return link.getOrigin().toString();
+    }
+
+    public void setOrigin(String str) {
+        try {
+            link.setOrigin(LinkOrigin.valueOf(str));
+        } catch (Exception e) {
+        }
+    }
+
     public long getUID() {
         DownloadLink dll = link.getDownloadLink();
         if (dll != null) return dll.getUniqueID().getID();

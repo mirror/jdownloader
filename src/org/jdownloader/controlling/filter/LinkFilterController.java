@@ -230,6 +230,7 @@ public class LinkFilterController implements LinkCrawlerFilter {
              */
             return false;
         }
+
         if (isTestInstance() == false && !org.jdownloader.settings.staticreferences.CFG_LINKFILTER.LINK_FILTER_ENABLED.getValue()) return false;
         boolean matches = false;
         LinkgrabberFilterRule matchingFilter = null;
@@ -249,6 +250,7 @@ public class LinkFilterController implements LinkCrawlerFilter {
                 } catch (NoDownloadLinkException e) {
                     continue;
                 }
+                if (!lgr.checkOrigin(link)) continue;
                 if (!lgr.checkSource(link)) continue;
                 matches = true;
                 matchingFilter = lgr.getRule();
@@ -262,42 +264,42 @@ public class LinkFilterController implements LinkCrawlerFilter {
             return false;
         }
 
-        // now check if we have an accept filter for this link.
-        for (LinkgrabberFilterRuleWrapper lgr : localacceptUrlFilter) {
-
-            try {
-                if (!lgr.checkHoster(link)) continue;
-            } catch (NoDownloadLinkException e) {
-
-                return false;
-            }
-
-            try {
-                if (!lgr.checkPluginStatus(link)) continue;
-            } catch (NoDownloadLinkException e) {
-                return false;
-            }
-            if (!lgr.checkSource(link)) continue;
-            link.setMatchingFilter(lgr.getRule());
-            return false;
-
-        }
-        for (LinkgrabberFilterRuleWrapper lgr : localacceptFileFilter) {
-            try {
-                if (!lgr.checkHoster(link)) continue;
-            } catch (NoDownloadLinkException e) {
-                return false;
-            }
-
-            try {
-                if (!lgr.checkPluginStatus(link)) continue;
-            } catch (NoDownloadLinkException e) {
-                return false;
-            }
-            if (!lgr.checkSource(link)) continue;
-            link.setMatchingFilter(lgr.getRule());
-            return false;
-        }
+        // // now check if we have an accept filter for this link.
+        // for (LinkgrabberFilterRuleWrapper lgr : localacceptUrlFilter) {
+        //
+        // try {
+        // if (!lgr.checkHoster(link)) continue;
+        // } catch (NoDownloadLinkException e) {
+        //
+        // return false;
+        // }
+        //
+        // try {
+        // if (!lgr.checkPluginStatus(link)) continue;
+        // } catch (NoDownloadLinkException e) {
+        // return false;
+        // }
+        // if (!lgr.checkSource(link)) continue;
+        // link.setMatchingFilter(lgr.getRule());
+        // return false;
+        //
+        // }
+        // for (LinkgrabberFilterRuleWrapper lgr : localacceptFileFilter) {
+        // try {
+        // if (!lgr.checkHoster(link)) continue;
+        // } catch (NoDownloadLinkException e) {
+        // return false;
+        // }
+        //
+        // try {
+        // if (!lgr.checkPluginStatus(link)) continue;
+        // } catch (NoDownloadLinkException e) {
+        // return false;
+        // }
+        // if (!lgr.checkSource(link)) continue;
+        // link.setMatchingFilter(lgr.getRule());
+        // return false;
+        // }
         // System.out.println("true " + link);
         link.setMatchingFilter(matchingFilter);
         return true;
@@ -333,6 +335,7 @@ public class LinkFilterController implements LinkCrawlerFilter {
                 } catch (NoDownloadLinkException e) {
                     throw new WTFException();
                 }
+                if (!lgr.checkOrigin(link)) continue;
                 if (!lgr.checkSource(link)) continue;
                 if (!lgr.checkOnlineStatus(link)) continue;
 
@@ -366,47 +369,47 @@ public class LinkFilterController implements LinkCrawlerFilter {
         }
         if (!matches) return false;
 
-        // now check if we have an accept filter for this link.
-        for (LinkgrabberFilterRuleWrapper lgr : localacceptUrlFilter) {
-
-            try {
-                if (!lgr.checkHoster(link)) continue;
-            } catch (NoDownloadLinkException e) {
-                e.printStackTrace();
-                throw new WTFException();
-            }
-            try {
-                if (!lgr.checkPluginStatus(link)) continue;
-            } catch (NoDownloadLinkException e) {
-                throw new WTFException();
-            }
-            if (!lgr.checkSource(link)) continue;
-            link.setMatchingFilter(lgr.getRule());
-            return false;
-
-        }
-        for (LinkgrabberFilterRuleWrapper lgr : localacceptFileFilter) {
-            try {
-                if (!lgr.checkHoster(link)) continue;
-            } catch (NoDownloadLinkException e) {
-
-                throw new WTFException();
-            }
-            try {
-                if (!lgr.checkPluginStatus(link)) continue;
-            } catch (NoDownloadLinkException e) {
-                throw new WTFException();
-            }
-            if (!lgr.checkSource(link)) continue;
-            if (!lgr.checkOnlineStatus(link)) continue;
-
-            if (!lgr.checkFileName(link)) continue;
-            if (!lgr.checkFileSize(link)) continue;
-            if (!lgr.checkFileType(link)) continue;
-
-            link.setMatchingFilter(lgr.getRule());
-            return false;
-        }
+        // // now check if we have an accept filter for this link.
+        // for (LinkgrabberFilterRuleWrapper lgr : localacceptUrlFilter) {
+        //
+        // try {
+        // if (!lgr.checkHoster(link)) continue;
+        // } catch (NoDownloadLinkException e) {
+        // e.printStackTrace();
+        // throw new WTFException();
+        // }
+        // try {
+        // if (!lgr.checkPluginStatus(link)) continue;
+        // } catch (NoDownloadLinkException e) {
+        // throw new WTFException();
+        // }
+        // if (!lgr.checkSource(link)) continue;
+        // link.setMatchingFilter(lgr.getRule());
+        // return false;
+        //
+        // }
+        // for (LinkgrabberFilterRuleWrapper lgr : localacceptFileFilter) {
+        // try {
+        // if (!lgr.checkHoster(link)) continue;
+        // } catch (NoDownloadLinkException e) {
+        //
+        // throw new WTFException();
+        // }
+        // try {
+        // if (!lgr.checkPluginStatus(link)) continue;
+        // } catch (NoDownloadLinkException e) {
+        // throw new WTFException();
+        // }
+        // if (!lgr.checkSource(link)) continue;
+        // if (!lgr.checkOnlineStatus(link)) continue;
+        //
+        // if (!lgr.checkFileName(link)) continue;
+        // if (!lgr.checkFileSize(link)) continue;
+        // if (!lgr.checkFileType(link)) continue;
+        //
+        // link.setMatchingFilter(lgr.getRule());
+        // return false;
+        // }
 
         link.setMatchingFilter(matchedFilter);
         return true;

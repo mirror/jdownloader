@@ -9,7 +9,7 @@ import java.util.Set;
 import jd.controlling.downloadcontroller.DownloadController;
 import jd.controlling.linkcollector.LinkCollectingJob;
 import jd.controlling.linkcollector.LinkCollector;
-import jd.controlling.linkcollector.LinkSource;
+import jd.controlling.linkcollector.LinkOrigin;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledLink.LinkState;
 import jd.controlling.linkcrawler.CrawledPackage;
@@ -239,7 +239,7 @@ public class LinkCollectorAPIImpl implements LinkCollectorAPI {
     private Boolean addLinks(String links, String packageName, String extractPassword, String downloadPassword, String destinationFolder, boolean autostart) {
         LinkCollector lc = LinkCollector.getInstance();
 
-        LinkCollectingJob lcj = new LinkCollectingJob(links).setSource(LinkSource.MYJD);
+        LinkCollectingJob lcj = new LinkCollectingJob(LinkOrigin.MYJD, links);
         ;
         lcj.setAutoStart(autostart);
         if (autostart) lcj.setPriority(Priority.HIGHEST);

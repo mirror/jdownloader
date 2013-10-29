@@ -50,7 +50,7 @@ public class Linkgrabber extends AbstractConfigPanel implements CheckBoxedEntry 
         super();
 
         add(new Header(getTitle(), NewTheme.I().getIcon("linkgrabber", 32), org.jdownloader.settings.staticreferences.CFG_LINKFILTER.LINK_FILTER_ENABLED), "spanx,growx,pushx");
-        this.addDescriptionPlain(_JDT._.gui_settings_linkgrabber_filter_description());
+        this.addDescriptionPlain(_JDT._.gui_settings_linkgrabber_filter_description2());
         filter = LinkgrabberFilter.getInstance();
 
         add(filter);
@@ -88,7 +88,7 @@ public class Linkgrabber extends AbstractConfigPanel implements CheckBoxedEntry 
     }
 
     public String getDescription() {
-        return _JDT._.gui_settings_linkgrabber_filter_description();
+        return _JDT._.gui_settings_linkgrabber_filter_description2();
     }
 
     public void _setEnabled(boolean b) throws StartException, StopException {

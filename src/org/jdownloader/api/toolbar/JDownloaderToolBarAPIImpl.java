@@ -15,7 +15,7 @@ import jd.controlling.linkchecker.LinkChecker;
 import jd.controlling.linkchecker.LinkCheckerHandler;
 import jd.controlling.linkcollector.LinkCollectingJob;
 import jd.controlling.linkcollector.LinkCollector;
-import jd.controlling.linkcollector.LinkSource;
+import jd.controlling.linkcollector.LinkOrigin;
 import jd.controlling.linkcrawler.BrokenCrawlerHandler;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.LinkCrawler;
@@ -367,7 +367,7 @@ public class JDownloaderToolBarAPIImpl implements JDownloaderToolBarAPI, StateEv
 
     public void addCompleteDom(final String url, final String dom, CrawledLink link) {
 
-        final LinkCollectingJob job = new LinkCollectingJob(dom).setSource(LinkSource.TOOLBAR);
+        final LinkCollectingJob job = new LinkCollectingJob(LinkOrigin.TOOLBAR, dom);
         job.setCustomSourceUrl(url);
         AddLinksProgress d = new AddLinksProgress(job) {
             protected String getSearchInText() {

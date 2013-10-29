@@ -327,6 +327,7 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
                 } catch (NoDownloadLinkException e) {
                     throw new WTFException();
                 }
+                if (!lgr.checkOrigin(link)) continue;
                 if (!lgr.checkSource(link)) continue;
                 if (lgr.isRequiresLinkcheck()) {
                     if (!lgr.checkOnlineStatus(link)) continue;
@@ -354,6 +355,7 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
             } catch (NoDownloadLinkException e) {
                 continue;
             }
+            if (!lgr.checkOrigin(link)) continue;
             if (!lgr.checkSource(link)) continue;
             set(link, lgr);
         }
@@ -501,6 +503,7 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
                     } catch (NoDownloadLinkException e) {
                         throw new WTFException();
                     }
+                    if (!lgr.checkOrigin(link)) continue;
                     if (!lgr.checkSource(link)) continue;
                     if (lgr.isRequiresLinkcheck()) {
                         if (!lgr.checkOnlineStatus(link)) continue;

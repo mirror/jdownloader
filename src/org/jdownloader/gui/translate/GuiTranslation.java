@@ -964,11 +964,11 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Source URL %s1" })
     String FilterRule_toString_source(String string);
 
-    @Default(lngs = { "en" }, values = { ", %s1" })
-    String FilterRule_toString_comma(String string);
+    @Default(lngs = { "en" }, values = { ",\r\n%s1" })
+    String FilterRule_toString_comma2(String string);
 
-    @Default(lngs = { "en" }, values = { " and %s1" })
-    String FilterRule_toString_and(String string);
+    @Default(lngs = { "en" }, values = { " and\r\n%s1" })
+    String FilterRule_toString_and2(String string);
 
     @Default(lngs = { "en" }, values = { "Filter Links if, " })
     String settings_linkgrabber_filter_columns_condition();
@@ -3501,4 +3501,22 @@ public interface GuiTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Enter the MD5 or SHA1 Checksum..." })
     String AddLinksDialog_layoutDialogContent_checksum_tt();
+
+    @Default(lngs = { "en" }, values = { "Link origin" })
+    String FilterRuleDialog_layoutDialogContent_lbl_crawlersource();
+
+    @Default(lngs = { "en" }, values = { "No Selection" })
+    String PseudoMultiCombo_nothing();
+
+    @Default(lngs = { "en" }, values = { "Custom Type" })
+    String ConditionDialog_getLabel_customtype_();
+
+    @Default(lngs = { "en" }, values = { "Unknown" })
+    String OriginFilter_toString_nothing();
+
+    @Default(lngs = { "en" }, values = { "Link Source is: %s1" })
+    String OriginFilter_toString(String string);
+
+    @Default(lngs = { "en" }, values = { "Link Source is not: %s1" })
+    String OriginFilter_toString_isNot(String string);
 }

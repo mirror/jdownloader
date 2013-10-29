@@ -294,8 +294,8 @@ public interface JdownloaderTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Linkgrabber Filter" })
     String gui_settings_linkgrabber_title();
 
-    @Default(lngs = { "en" }, values = { "The linkfilter is used to filter links. Use it to ignore links, adresses, urls or files based on their properties. Add Exceptions to accept special links. Exceptions will be available as a Custom View in the Linkgrabber Sidebar." })
-    String gui_settings_linkgrabber_filter_description();
+    @Default(lngs = { "en" }, values = { "The linkfilter is used to filter or group links. Use it to ignore or group links, adresses, urls or files based on their properties. Set up 'Views' for the Linkgrabber's sidebar, or 'Filters' to avoid grabbing special links completely..." })
+    String gui_settings_linkgrabber_filter_description2();
 
     @Default(lngs = { "en" }, values = { "All options here help to make JDownloader usable by people of all abilities and disabilities." })
     String gui_settings_barrierfree_description();
@@ -501,5 +501,38 @@ public interface JdownloaderTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Direct HTTP" })
     String LinkFilterSettings_DefaultFilterList_directhttp();
+
+    @Default(lngs = { "en" }, values = { "Add Links Action" })
+    String LinkSource_ADD_LINKS_DIALOG();
+
+    @Default(lngs = { "en" }, values = { "Clipboard" })
+    String LinkSource_CLIPBOARD();
+
+    @Default(lngs = { "en" }, values = { "Add Container Action" })
+    String LinkSource_ADD_CONTAINER_ACTION();
+
+    @Default(lngs = { "en" }, values = { "Start Parameter" })
+    String LinkSource_START_PARAMETER();
+
+    @Default(lngs = { "en" }, values = { "Dock (Mac only)" })
+    String LinkSource_MAC_DOCK();
+
+    @Default(lngs = { "en" }, values = { "MyJDownloader" })
+    String LinkSource_MYJD();
+
+    @Default(lngs = { "en" }, values = { "Click'n'Load" })
+    String LinkSource_CNL();
+
+    @Default(lngs = { "en" }, values = { "Flashgot" })
+    String LinkSource_FLASHGOT();
+
+    @Default(lngs = { "en" }, values = { "Toolbar" })
+    String LinkSource_TOOLBAR();
+
+    @Default(lngs = { "en" }, values = { "Paste Links Action" })
+    String LinkSource_PASTE_LINKS_ACTION();
+
+    @Default(lngs = { "en" }, values = { "Downloaded Container" })
+    String LinkSource_DOWNLOADED_CONTAINER();
 
 }

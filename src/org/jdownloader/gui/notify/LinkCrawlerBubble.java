@@ -8,10 +8,10 @@ import java.net.URL;
 
 import javax.swing.Timer;
 
-import jd.controlling.ClipboardMonitoring;
 import jd.controlling.linkcollector.LinkCollector.CrawledLinkCrawler;
 import jd.controlling.linkcollector.LinkCollector.JobLinkCrawler;
 import jd.controlling.linkcollector.LinkCollectorCrawler;
+import jd.controlling.linkcollector.LinkOrigin;
 import jd.controlling.linkcollector.event.LinkCollectorCrawlerListener;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.gui.swing.jdgui.JDGui;
@@ -25,7 +25,6 @@ import org.appwork.utils.swing.windowmanager.WindowManager.FrameState;
 import org.jdownloader.gui.notify.gui.AbstractNotifyWindow;
 import org.jdownloader.gui.notify.gui.BubbleNotifyConfigPanel;
 import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.gui.views.linkgrabber.addlinksdialog.AddLinksDialog;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings;
 
 public class LinkCrawlerBubble extends AbstractNotifyWindow<LinkCrawlerBubbleContent> implements LinkCollectorCrawlerListener {
@@ -66,13 +65,13 @@ public class LinkCrawlerBubble extends AbstractNotifyWindow<LinkCrawlerBubbleCon
         if (crawler instanceof JobLinkCrawler) {
             JobLinkCrawler jlc = (JobLinkCrawler) crawler;
 
-            Object src = jlc.getJob().getSource();
+            LinkOrigin src = jlc.getJob().getSource();
 
             if (src == null) {
                 setHeaderText(_GUI._.LinkCrawlerBubble_update_header());
-            } else if (src instanceof AddLinksDialog) {
+            } else if (src == LinkOrigin.ADD_LINKS_DIALOG) {
                 setHeaderText(_GUI._.LinkCrawlerBubble_update_header());
-            } else if (src instanceof ClipboardMonitoring) {
+            } else if (src == LinkOrigin.CLIPBOARD) {
                 String txt = jlc.getJob().getText();
                 if (StringUtils.isNotEmpty(txt)) {
                     try {

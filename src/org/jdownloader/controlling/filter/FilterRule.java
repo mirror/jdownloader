@@ -4,6 +4,7 @@ import java.util.ArrayList;
 
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter.editdialog.OnlineStatusFilter;
+import jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter.editdialog.OriginFilter;
 import jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter.editdialog.PluginStatusFilter;
 
 import org.appwork.storage.Storable;
@@ -17,10 +18,21 @@ public abstract class FilterRule implements Storable {
     private RegexFilter        hosterURLFilter;
     private RegexFilter        sourceURLFilter;
     private OnlineStatusFilter onlineStatusFilter;
-    private BooleanFilter      matchesAlwaysFilter;
-    private String             iconKey;
-    private String             testUrl;
-    private long               created = System.currentTimeMillis();
+    private OriginFilter       originFilter;
+
+    public OriginFilter getOriginFilter() {
+        if (originFilter == null) originFilter = new OriginFilter();
+        return originFilter;
+    }
+
+    public void setOriginFilter(OriginFilter originFilter) {
+        this.originFilter = originFilter;
+    }
+
+    private BooleanFilter matchesAlwaysFilter;
+    private String        iconKey;
+    private String        testUrl;
+    private long          created = System.currentTimeMillis();
 
     public long getCreated() {
         return created;
@@ -98,7 +110,7 @@ public abstract class FilterRule implements Storable {
      * @return
      */
     public boolean isValid() {
-        return getMatchAlwaysFilter().isEnabled() || getFilenameFilter().isEnabled() || getFilesizeFilter().isEnabled() || getFiletypeFilter().isEnabled() || getHosterURLFilter().isEnabled() || getSourceURLFilter().isEnabled() || getOnlineStatusFilter().isEnabled() || getPluginStatusFilter().isEnabled();
+        return getMatchAlwaysFilter().isEnabled() || getFilenameFilter().isEnabled() || getFilesizeFilter().isEnabled() || getFiletypeFilter().isEnabled() || getHosterURLFilter().isEnabled() || getSourceURLFilter().isEnabled() || getOriginFilter().isEnabled() || getOnlineStatusFilter().isEnabled() || getPluginStatusFilter().isEnabled();
     }
 
     public String toString(CrawledLink link) {
@@ -109,6 +121,9 @@ public abstract class FilterRule implements Storable {
         } else {
             if (getOnlineStatusFilter().isEnabled()) {
                 cond.add(onlineStatusFilter.toString());
+            }
+            if (getOriginFilter().isEnabled()) {
+                cond.add(originFilter.toString());
             }
 
             if (getPluginStatusFilter().isEnabled()) {
@@ -156,9 +171,9 @@ public abstract class FilterRule implements Storable {
         for (int i = 0; i < cond.size(); i++) {
             if (i > 0) {
                 if (i < cond.size() - 1) {
-                    sb.append(_GUI._.FilterRule_toString_comma(cond.get(i)));
+                    sb.append(_GUI._.FilterRule_toString_comma2(cond.get(i)));
                 } else {
-                    sb.append(" " + _GUI._.FilterRule_toString_and(cond.get(i)).trim());
+                    sb.append(" " + _GUI._.FilterRule_toString_and2(cond.get(i)).trim());
                 }
 
             } else {

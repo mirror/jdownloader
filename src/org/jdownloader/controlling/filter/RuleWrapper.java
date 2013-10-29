@@ -13,6 +13,7 @@ public class RuleWrapper<T extends FilterRule> {
     protected boolean                 requiresLinkcheck = false;
     private CompiledPluginStatusFiler pluginStatusFilter;
     private BooleanFilter             alwaysFilter;
+    private CompiledOriginFilter      originFilter;
 
     public CompiledPluginStatusFiler getPluginStatusFilter() {
         return pluginStatusFilter;
@@ -53,12 +54,20 @@ public class RuleWrapper<T extends FilterRule> {
             sourceRule = new CompiledRegexFilter(rule.getSourceURLFilter());
         }
 
+        if (rule.getOriginFilter().isEnabled()) {
+            originFilter = new CompiledOriginFilter(rule.getOriginFilter());
+        }
+
         if (rule.getMatchAlwaysFilter().isEnabled()) {
             alwaysFilter = rule.getMatchAlwaysFilter();
             // overwrites all others
             requiresHoster = false;
             requiresLinkcheck = false;
         }
+    }
+
+    public CompiledOriginFilter getOriginFilter() {
+        return originFilter;
     }
 
     public BooleanFilter getAlwaysFilter() {
@@ -203,6 +212,12 @@ public class RuleWrapper<T extends FilterRule> {
     public boolean checkOnlineStatus(CrawledLink link) {
         if (LinkState.UNKNOWN == link.getLinkState()) return false;
         if (getOnlineStatusFilter() != null) { return getOnlineStatusFilter().matches(link.getLinkState()); }
+        return true;
+    }
+
+    public boolean checkOrigin(CrawledLink link) {
+        if (link == null || link.getOrigin() == null) return false;
+        if (getOriginFilter() != null) { return getOriginFilter().matches(link.getOrigin()); }
         return true;
     }
 

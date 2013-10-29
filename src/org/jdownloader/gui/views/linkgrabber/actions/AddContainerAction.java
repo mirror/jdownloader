@@ -6,7 +6,7 @@ import java.io.File;
 
 import jd.controlling.linkcollector.LinkCollectingJob;
 import jd.controlling.linkcollector.LinkCollector;
-import jd.controlling.linkcollector.LinkSource;
+import jd.controlling.linkcollector.LinkOrigin;
 import jd.controlling.linkcrawler.LinkCrawler;
 import jd.nutils.io.JDFileFilter;
 
@@ -60,7 +60,7 @@ public class AddContainerAction extends AppAction implements CachableInterface {
                 list.append(r.getAbsolutePath());
                 sb.append(r.getAbsolutePath());
             }
-            LinkCrawler lc = LinkCollector.getInstance().addCrawlerJob(new LinkCollectingJob(sb.toString()).setSource(LinkSource.ADD_CONTAINER_ACTION));
+            LinkCrawler lc = LinkCollector.getInstance().addCrawlerJob(new LinkCollectingJob(LinkOrigin.ADD_CONTAINER_ACTION, sb.toString()));
 
         } catch (DialogNoAnswerException e1) {
         }

@@ -52,6 +52,7 @@ import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.packagehistorycontroller.DownloadPathHistoryManager;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.DownloadFolderChooserDialog;
+import org.jdownloader.gui.views.components.CheckBoxIcon;
 import org.jdownloader.images.NewTheme;
 
 public class PackagizerFilterRuleDialog extends ConditionDialog<PackagizerRule> {
@@ -209,6 +210,7 @@ public class PackagizerFilterRuleDialog extends ConditionDialog<PackagizerRule> 
         rule.setName(getName());
         rule.setFilesizeFilter(getFilersizeFilter());
         rule.setSourceURLFilter(getSourceFilter());
+        rule.setOriginFilter(getOriginFilter());
         rule.setFiletypeFilter(getFiletypeFilter());
         rule.setMatchAlwaysFilter(getMatchAlwaysFilter());
         rule.setDownloadDestination(cbDest.isSelected() ? fpDest.getPath() : null);
@@ -253,6 +255,7 @@ public class PackagizerFilterRuleDialog extends ConditionDialog<PackagizerRule> 
         setFiletypeFilter(rule.getFiletypeFilter());
         setOnlineStatusFilter(rule.getOnlineStatusFilter());
         setPluginStatusFilter(rule.getPluginStatusFilter());
+        setOriginFilter(rule.getOriginFilter());
         txtPackagename.setText(rule.getPackageName());
         txtNewFilename.setText(rule.getFilename());
         txtRename.setText(rule.getRename());
@@ -318,9 +321,9 @@ public class PackagizerFilterRuleDialog extends ConditionDialog<PackagizerRule> 
             public Component getListCellRendererComponent(JList list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
                 JLabel r = (JLabel) org.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
                 if (index < 0) {
-                    r.setIcon(ret.getSelectedIndex() == 1 ? NewTheme.I().getIcon("checkbox_false", 14) : NewTheme.I().getIcon("checkbox_true", 14));
+                    r.setIcon(ret.getSelectedIndex() == 1 ? new CheckBoxIcon(false) : new CheckBoxIcon(true));
                 } else {
-                    r.setIcon(index == 1 ? NewTheme.I().getIcon("checkbox_false", 14) : NewTheme.I().getIcon("checkbox_true", 14));
+                    r.setIcon(index == 1 ? new CheckBoxIcon(false) : new CheckBoxIcon(true));
                 }
                 if (!ret.isEnabled()) {
                     r.setIcon(ImageProvider.getDisabledIcon(r.getIcon()));

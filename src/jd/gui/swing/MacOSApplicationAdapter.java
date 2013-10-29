@@ -30,7 +30,7 @@ import jd.controlling.downloadcontroller.SingleDownloadController;
 import jd.controlling.downloadcontroller.event.DownloadWatchdogListener;
 import jd.controlling.linkcollector.LinkCollectingJob;
 import jd.controlling.linkcollector.LinkCollector;
-import jd.controlling.linkcollector.LinkSource;
+import jd.controlling.linkcollector.LinkOrigin;
 import jd.gui.swing.dialog.AboutDialog;
 import jd.gui.swing.jdgui.JDGui;
 import jd.gui.swing.jdgui.views.settings.ConfigurationView;
@@ -101,7 +101,7 @@ public class MacOSApplicationAdapter implements QuitHandler, AboutHandler, Prefe
                 }
                 if (adapter.openURIlinks != null) {
                     LogController.GL.info("Distribute links: " + adapter.openURIlinks);
-                    LinkCollector.getInstance().addCrawlerJob(new LinkCollectingJob(adapter.openURIlinks).setSource(LinkSource.START_PARAMETER));
+                    LinkCollector.getInstance().addCrawlerJob(new LinkCollectingJob(LinkOrigin.START_PARAMETER, adapter.openURIlinks));
                     adapter.openURIlinks = null;
                 }
             }
@@ -328,7 +328,7 @@ public class MacOSApplicationAdapter implements QuitHandler, AboutHandler, Prefe
             sb.append("file://");
             sb.append(file.getPath());
         }
-        LinkCollector.getInstance().addCrawlerJob(new LinkCollectingJob(sb.toString()).setSource(LinkSource.MAC_DOCK));
+        LinkCollector.getInstance().addCrawlerJob(new LinkCollectingJob(LinkOrigin.MAC_DOCK, sb.toString()));
     }
 
     public void openURI(AppEvent.OpenURIEvent e) {
@@ -337,7 +337,7 @@ public class MacOSApplicationAdapter implements QuitHandler, AboutHandler, Prefe
         String links = e.getURI().toString();
         if (SecondLevelLaunch.GUI_COMPLETE.isReached()) {
             LogController.GL.info("Distribute links: " + links);
-            LinkCollector.getInstance().addCrawlerJob(new LinkCollectingJob(links).setSource(LinkSource.MAC_DOCK));
+            LinkCollector.getInstance().addCrawlerJob(new LinkCollectingJob(LinkOrigin.MAC_DOCK, links));
         } else {
             openURIlinks = links;
         }

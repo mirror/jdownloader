@@ -13,7 +13,7 @@ import javax.swing.ImageIcon;
 
 import jd.controlling.linkcollector.LinkCollectingJob;
 import jd.controlling.linkcollector.LinkCollector;
-import jd.controlling.linkcollector.LinkSource;
+import jd.controlling.linkcollector.LinkOrigin;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledLinkModifier;
 import jd.controlling.linkcrawler.LinkCrawler;
@@ -122,7 +122,7 @@ public class ExternInterfaceImpl implements Cnl2APIBasics, Cnl2APIFlash {
         String passwords = HttpRequest.getParameterbyKey(request, "passwords");
         String source = HttpRequest.getParameterbyKey(request, "source");
         String comment = HttpRequest.getParameterbyKey(request, "comment");
-        LinkCollectingJob job = new LinkCollectingJob(urls).setSource(LinkSource.CNL);
+        LinkCollectingJob job = new LinkCollectingJob(LinkOrigin.CNL, urls);
         ;
         String dir = HttpRequest.getParameterbyKey(request, "dir");
         if (!StringUtils.isEmpty(dir)) {
@@ -313,7 +313,7 @@ public class ExternInterfaceImpl implements Cnl2APIBasics, Cnl2APIFlash {
                 /*
                  * create LinkCollectingJob to forward general Information like directory, autostart...
                  */
-                LinkCollectingJob job = new LinkCollectingJob(null).setSource(LinkSource.FLASHGOT);
+                LinkCollectingJob job = new LinkCollectingJob(LinkOrigin.FLASHGOT, null);
                 ;
                 job.setPackageName(HttpRequest.getParameterbyKey(request, "package"));
                 if (archivePasswords != null) {

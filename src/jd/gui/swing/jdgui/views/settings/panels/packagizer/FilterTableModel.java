@@ -148,6 +148,10 @@ public class FilterTableModel extends ExtTableModel<PackagizerRule> implements C
                 return null;
             }
 
+            // @Override
+            // protected String getTooltipText(PackagizerRule obj) {
+            // return super.getTooltipText(obj);
+            // }
             @Override
             public String getStringValue(PackagizerRule value) {
                 if (!value.isValid()) {

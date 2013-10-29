@@ -6,6 +6,7 @@ import javax.swing.ImageIcon;
 
 import jd.controlling.linkcollector.LinkCollectingInformation;
 import jd.controlling.linkcollector.LinkCollectingJob;
+import jd.controlling.linkcollector.LinkOrigin;
 import jd.controlling.packagecontroller.AbstractNode;
 import jd.controlling.packagecontroller.AbstractNodeNotifier;
 import jd.controlling.packagecontroller.AbstractPackageChildrenNode;
@@ -51,9 +52,18 @@ public class CrawledLink implements AbstractPackageChildrenNode<CrawledPackage>,
     private boolean                   autoConfirmEnabled   = false;
 
     private transient UniqueAlltimeID uniqueID             = new UniqueAlltimeID();
+    private LinkOrigin                origin;
 
     public boolean isAutoConfirmEnabled() {
         return autoConfirmEnabled;
+    }
+
+    public void setOrigin(LinkOrigin source) {
+        this.origin = source;
+    }
+
+    public LinkOrigin getOrigin() {
+        return origin;
     }
 
     public void setAutoConfirmEnabled(boolean autoAddEnabled) {
@@ -123,6 +133,9 @@ public class CrawledLink implements AbstractPackageChildrenNode<CrawledPackage>,
      */
     public void setSourceJob(LinkCollectingJob sourceJob) {
         this.sourceJob = sourceJob;
+        if (sourceJob != null) {
+            setOrigin(sourceJob.getSource());
+        }
 
     }
 

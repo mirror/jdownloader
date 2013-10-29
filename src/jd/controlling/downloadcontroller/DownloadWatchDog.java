@@ -53,6 +53,7 @@ import jd.controlling.downloadcontroller.event.DownloadWatchdogEventSender;
 import jd.controlling.downloadcontroller.event.DownloadWatchdogListener;
 import jd.controlling.linkcollector.LinkCollectingJob;
 import jd.controlling.linkcollector.LinkCollector;
+import jd.controlling.linkcollector.LinkOrigin;
 import jd.controlling.packagecontroller.AbstractPackageChildrenNodeFilter;
 import jd.controlling.proxy.ProxyController;
 import jd.controlling.proxy.ProxyInfo;
@@ -562,7 +563,8 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
 
                 if (DownloadWatchDog.this.stateMachine.isStartState() || DownloadWatchDog.this.stateMachine.isFinal()) {
                     /*
-                     * no downloads are running, so we will force only the selected links to get started by setting stopmark to first forced link
+                     * no downloads are running, so we will force only the selected links to get started by setting stopmark to first forced
+                     * link
                      */
 
                     // DownloadWatchDog.this.setStopMark(linksForce.get(0));
@@ -2354,8 +2356,8 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                                     waitedForNewActivationRequests += System.currentTimeMillis() - currentTimeStamp;
                                     if ((getSession().isActivationRequestsWaiting() == false && DownloadWatchDog.this.getActiveDownloads() == 0)) {
                                         /*
-                                         * it's important that this if statement gets checked after wait!, else we will loop through without waiting for new
-                                         * links/user interaction
+                                         * it's important that this if statement gets checked after wait!, else we will loop through without
+                                         * waiting for new links/user interaction
                                          */
                                         break;
                                     }
@@ -2514,7 +2516,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                         sb.append("file://");
                         sb.append(file.getPath());
                     }
-                    LinkCollector.getInstance().addCrawlerJob(new LinkCollectingJob(sb.toString()));
+                    LinkCollector.getInstance().addCrawlerJob(new LinkCollectingJob(LinkOrigin.DOWNLOADED_CONTAINER, sb.toString()));
                 }
 
             }.start();

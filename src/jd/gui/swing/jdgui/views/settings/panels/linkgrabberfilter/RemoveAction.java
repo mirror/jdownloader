@@ -47,7 +47,7 @@ public class RemoveAction extends AbstractRemoveAction {
                     for (LinkgrabberFilterRule lf : remove) {
                         LinkFilterController.getInstance().remove(lf);
                     }
-                    getTable().getModel()._fireTableStructureChanged(LinkFilterController.getInstance().list(), false);
+                    // getTable().getModel()._fireTableStructureChanged(LinkFilterController.getInstance().list(), false);
                     return null;
                 }
             });

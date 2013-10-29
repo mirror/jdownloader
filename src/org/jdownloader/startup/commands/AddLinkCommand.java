@@ -2,7 +2,7 @@ package org.jdownloader.startup.commands;
 
 import jd.controlling.linkcollector.LinkCollectingJob;
 import jd.controlling.linkcollector.LinkCollector;
-import jd.controlling.linkcollector.LinkSource;
+import jd.controlling.linkcollector.LinkOrigin;
 
 public class AddLinkCommand extends AbstractStartupCommand {
 
@@ -13,7 +13,7 @@ public class AddLinkCommand extends AbstractStartupCommand {
     @Override
     public void run(String command, String... parameters) {
         for (String s : parameters) {
-            LinkCollector.getInstance().addCrawlerJob(new LinkCollectingJob(s).setSource(LinkSource.START_PARAMETER));
+            LinkCollector.getInstance().addCrawlerJob(new LinkCollectingJob(LinkOrigin.START_PARAMETER, s));
         }
     }
 

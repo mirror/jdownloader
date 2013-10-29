@@ -194,6 +194,7 @@ public class QuickFilterExceptionsTable extends FilterTable {
                         } catch (NoDownloadLinkException e) {
                             throw new WTFException();
                         }
+                        if (!rule.checkOrigin(link)) return false;
                         if (!rule.checkSource(link)) return false;
                         if (!rule.checkOnlineStatus(link)) return false;
 
