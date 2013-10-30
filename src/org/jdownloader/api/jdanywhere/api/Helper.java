@@ -88,10 +88,11 @@ public class Helper {
         return out.toByteArray();
     }
 
-    public static String getMessage(DownloadLink link) {
+    public static final Object REQUESTOR = new Object();
 
+    public static String getMessage(DownloadLink link) {
         PluginProgress prog = link.getPluginProgress();
-        if (prog != null) { return prog.getMessage(null); }
+        if (prog != null) { return prog.getMessage(REQUESTOR); }
         ConditionalSkipReason conditionalSkipReason = link.getConditionalSkipReason();
         if (conditionalSkipReason != null && !conditionalSkipReason.isConditionReached()) { return conditionalSkipReason.getMessage(null, null); }
         SkipReason skipReason = link.getSkipReason();
