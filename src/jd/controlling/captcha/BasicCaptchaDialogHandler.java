@@ -142,7 +142,10 @@ public class BasicCaptchaDialogHandler extends ChallengeDialogHandler<BasicCaptc
                 if (dialog.isStopDownloads()) throw new StopCurrentActionException();
                 if (dialog.isHideAllCaptchas()) throw new HideAllCaptchasException();
                 if (dialog.isStopCrawling()) throw new StopCurrentActionException();
-                if (dialog.isStopShowingCrawlerCaptchas()) throw new HideAllCaptchasException();
+                if (dialog.isStopShowingCrawlerCaptchas()) {
+                    //
+                    throw new HideAllCaptchasException();
+                }
                 if (dialog.isRefresh()) throw new RefreshException();
                 dialog.throwCloseExceptions();
                 throw new DialogClosedException(Dialog.RETURN_CLOSED);

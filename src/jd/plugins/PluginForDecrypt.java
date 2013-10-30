@@ -32,6 +32,7 @@ import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.LinkCrawler;
 import jd.controlling.linkcrawler.LinkCrawlerAbort;
 import jd.controlling.linkcrawler.LinkCrawlerDistributer;
+import jd.controlling.linkcrawler.LinkCrawlerThread;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 
@@ -440,7 +441,7 @@ public abstract class PluginForDecrypt extends Plugin {
         } catch (SkipException e) {
             switch (e.getSkipRequest()) {
             case BLOCK_ALL_CAPTCHAS:
-                CaptchaBlackList.getInstance().add(new CrawlerBlackListEntry(crawler));
+                CaptchaBlackList.getInstance().add(new CrawlerBlackListEntry(getCrawler()));
                 break;
             case BLOCK_HOSTER:
             case BLOCK_PACKAGE:
@@ -453,7 +454,7 @@ public abstract class PluginForDecrypt extends Plugin {
             case STOP_CURRENT_ACTION:
                 LinkCollector.getInstance().abort();
                 // Just to be sure
-                CaptchaBlackList.getInstance().add(new CrawlerBlackListEntry(crawler));
+                CaptchaBlackList.getInstance().add(new CrawlerBlackListEntry(getCrawler()));
                 throw new DecrypterException(DecrypterException.CAPTCHA);
             }
             throw new DecrypterException(DecrypterException.CAPTCHA);
@@ -514,6 +515,10 @@ public abstract class PluginForDecrypt extends Plugin {
     }
 
     public LinkCrawler getCrawler() {
+        if (Thread.currentThread() instanceof LinkCrawlerThread) {
+            LinkCrawler ret = ((LinkCrawlerThread) Thread.currentThread()).getCurrentLinkCrawler();
+            if (ret != null) return ret;
+        }
         return crawler;
     }
 

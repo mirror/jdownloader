@@ -31,7 +31,10 @@ public class CaptchaBlackList {
                         cleanups.add(e);
                         continue;
                     }
-                    if (e.matches(c)) return true;
+                    if (e.matches(c)) {
+                        //
+                        return true;
+                    }
                 }
             } finally {
                 // cleanup is not perfect. if we have a match, following entries will not be cleaned up.. but I think this is better than

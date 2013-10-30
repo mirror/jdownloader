@@ -17,7 +17,7 @@ public class CrawlerBlackListEntry implements BlacklistEntry {
 
     @Override
     public boolean canCleanUp() {
-        return !crawler.isRunning();
+        return crawler == null || !crawler.isRunning();
     }
 
     @Override
