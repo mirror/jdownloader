@@ -46,6 +46,13 @@ public class AnimeTheHyliaCom extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
+        // if taken from the decrypter then property "referer" is set to the main page of the "series"
+        // this is redirected url from the link, so we should set it the same way as the decrypter would
+        // if it is link not from decrypter
+        if (downloadLink.getStringProperty("referer") == null) {
+            br.getPage(downloadLink.getDownloadURL());
+            downloadLink.setProperty("referer", br.getRedirectLocation());
+        }
         br.getHeaders().put("Referer", downloadLink.getStringProperty("referer", null));
         br.setFollowRedirects(false);
         br.getPage(downloadLink.getDownloadURL());
