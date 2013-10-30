@@ -161,6 +161,7 @@ public class SizeColumn extends ExtColumn<AbstractNode> {
         if (fileSize >= 1024 * 1024 * 1024l) { return this.formatter.format(fileSize / (1024 * 1024 * 1024.0)) + " GiB"; }
         if (fileSize >= 1024 * 1024l) { return this.formatter.format(fileSize / (1024 * 1024.0)) + " MiB"; }
         if (fileSize >= 1024l) { return this.formatter.format(fileSize / 1024.0) + " KiB"; }
+        if (fileSize <= 0) { return _GUI._.SizeColumn_getSizeString_zero(); }
         return fileSize + " B";
     }
 
