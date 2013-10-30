@@ -69,7 +69,10 @@ public class FrShrdFldr extends PluginForDecrypt {
         // check the folder/ page for password stuff and validity of url
         br.getPage(parameter);
 
-        if (br.containsHTML("The file link that you requested is not valid")) return decryptedLinks;
+        if (br.containsHTML("The file link that you requested is not valid") || br.containsHTML("This folder was deleted")) {
+            logger.info("Link offline: " + parameter);
+            return decryptedLinks;
+        }
 
         if (br.containsHTML("enter a password to access")) {
             final Form form = br.getFormbyProperty("name", "theForm");
