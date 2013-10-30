@@ -181,7 +181,13 @@ public class GUIConfigEntry implements GuiConfigListener, ActionListener, Change
             break;
         }
 
-        if (input != null) enableComponent(input, configEntry.isEnabled());
+        if (input != null) {
+
+            boolean state = configEntry.isConditionalEnabled(null, null);
+            enableComponent(input, configEntry.isEnabled() && state);
+            enableComponent(decoration, configEntry.isEnabled() && state);
+        }
+
     }
 
     public JComponent getInput() {
@@ -243,6 +249,7 @@ public class GUIConfigEntry implements GuiConfigListener, ActionListener, Change
     }
 
     private final void enableComponent(JComponent cmp, boolean enabled) {
+        if (cmp == null) return;
         cmp.setEnabled(enabled);
         if (cmp.getComponents() != null) {
             for (Component c : cmp.getComponents()) {
@@ -255,6 +262,7 @@ public class GUIConfigEntry implements GuiConfigListener, ActionListener, Change
         if (input == null) return;
         boolean state = configEntry.isConditionalEnabled(source, newData);
         enableComponent(input, state);
+        enableComponent(decoration, state);
     }
 
     public JComponent getDecoration() {

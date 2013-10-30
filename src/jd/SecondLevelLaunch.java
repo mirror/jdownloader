@@ -129,7 +129,7 @@ public class SecondLevelLaunch {
     public final static SingleReachableState GUI_COMPLETE          = new SingleReachableState("GUI_COMPLETE");
     public final static SingleReachableState HOST_PLUGINS_COMPLETE = new SingleReachableState("HOST_PLG_COMPLETE");
     public final static SingleReachableState ACCOUNTLIST_LOADED    = new SingleReachableState("ACCOUNTLIST_LOADED");
-
+    public final static SingleReachableState EXTENSIONS_LOADED     = new SingleReachableState("EXTENSIONS_LOADED");
     private static File                      FILE;
     public final static long                 startup               = System.currentTimeMillis();
 
@@ -574,6 +574,7 @@ public class SecondLevelLaunch {
                                 ExtensionController.getInstance().invalidateCache();
                             }
                             ExtensionController.getInstance().init();
+                            EXTENSIONS_LOADED.setReached();
                             /* init clipboardMonitoring stuff */
                             if (JsonConfig.create(GraphicalUserInterfaceSettings.class).isSkipClipboardMonitorFirstRound()) {
                                 ClipboardMonitoring.getINSTANCE().setFirstRoundDone(false);

@@ -50,59 +50,59 @@ public class ConfigEntry implements Serializable {
 
     }
 
-    private static final long            serialVersionUID = 7422046260361380162L;
+    private static final long                 serialVersionUID = 7422046260361380162L;
 
     /**
      * Generelle Variablen
      */
-    private final int                    type;
-    private ConfigGroup                  group;
-    private String                       label;
-    private Object                       defaultValue;
-    private boolean                      enabled          = true;
-    private Property                     propertyInstance = null;
-    private String                       propertyName     = null;
-    private PropertyType                 propertyType     = PropertyType.NORMAL;
-    private GuiConfigListener            guiListener;
+    private final int                         type;
+    private ConfigGroup                       group;
+    private String                            label;
+    private Object                            defaultValue;
+    private boolean                           enabled          = true;
+    private Property                          propertyInstance = null;
+    private String                            propertyName     = null;
+    private PropertyType                      propertyType     = PropertyType.NORMAL;
+    private GuiConfigListener                 guiListener;
 
     /**
      * Variablen fuer den Vergleich mit einem anderen ConfigEntry.
      */
-    private ConfigEntry                  conditionEntry;
-    private Boolean                      compareValue;
+    private ConfigEntry                       conditionEntry;
+    private Boolean                           compareValue;
     private final java.util.List<ConfigEntry> listener         = new ArrayList<ConfigEntry>();
 
     /**
      * Variablen fuer einen Button-Eintrag.
      */
-    private String                       description;
-    private ActionListener               actionListener;
-    private ImageIcon                    imageIcon;
+    private String                            description;
+    private ActionListener                    actionListener;
+    private ImageIcon                         imageIcon;
 
     /**
      * Variablen fuer einen ListController-Eintrag.
      */
-    private transient ListController     controller;
+    private transient ListController          controller;
 
     /**
      * Variablen fuer einen ComboBox- oder RadioField-Eintrag.
      */
-    private Object[]                     list;
+    private Object[]                          list;
 
     /**
      * Variablen fuer einen Spinner-Eintrag.
      */
-    private int                          start;
-    private int                          end;
-    private int                          step             = 1;
+    private int                               start;
+    private int                               end;
+    private int                               step             = 1;
 
     /**
      * Variablen fuer einen Komponenten-Eintrag.
      */
-    private JComponent                   component;
-    private String                       constraints;
+    private JComponent                        component;
+    private String                            constraints;
 
-    private boolean                      notifyChanges    = false;
+    private boolean                           notifyChanges    = false;
 
     public boolean isNotifyChanges() {
         return notifyChanges;
@@ -123,8 +123,7 @@ public class ConfigEntry implements Serializable {
     }
 
     /**
-     * Konstruktor fuer Komponenten, welche eine Swing-Komponente darstellen
-     * sollen
+     * Konstruktor fuer Komponenten, welche eine Swing-Komponente darstellen sollen
      * 
      * @param type
      * @param component
@@ -143,8 +142,7 @@ public class ConfigEntry implements Serializable {
      * @param type
      *            Typ ID (ConfigContainer.TYPE_*)
      * @param actionListener
-     *            Actionlistener. Actionlistener werden z.B. von Buttons
-     *            unterstuetzt
+     *            Actionlistener. Actionlistener werden z.B. von Buttons unterstuetzt
      * @param label
      *            Label fuer die Komponente
      * @see ConfigContainer#TYPE_BUTTON
@@ -167,17 +165,14 @@ public class ConfigEntry implements Serializable {
     }
 
     /**
-     * Konstruktor z.B. fuer Combobox oder radiofield ( mehrere werte(list),
-     * eine auswahl (property)
+     * Konstruktor z.B. fuer Combobox oder radiofield ( mehrere werte(list), eine auswahl (property)
      * 
      * @param type
      * @param propertyInstance
-     *            EINE Instanz die von der propertyklasse abgeleitet wurde. mit
-     *            hilfe von propertyName werden Informationen aus ihr gelesen
+     *            EINE Instanz die von der propertyklasse abgeleitet wurde. mit hilfe von propertyName werden Informationen aus ihr gelesen
      *            und wieder in ihr abgelegt
      * @param propertyName
-     *            propertyname ueber den auf einen wert in der propertyInstanz
-     *            zugegriffen wird
+     *            propertyname ueber den auf einen wert in der propertyInstanz zugegriffen wird
      * @param list
      *            Liste mit allen werten aus denen ausgewaehlt werden kann
      * @param label
@@ -199,12 +194,10 @@ public class ConfigEntry implements Serializable {
      * @param type
      *            TYP ID
      * @param propertyInstance
-     *            EINE Instanz die von der propertyklasse abgeleitet wurde. mit
-     *            hilfe von propertyName werden Informationen aus ihr gelesen
+     *            EINE Instanz die von der propertyklasse abgeleitet wurde. mit hilfe von propertyName werden Informationen aus ihr gelesen
      *            und wieder in ihr abgelegt
      * @param propertyName
-     *            propertyname ueber den auf einen wert in der propertyInstanz
-     *            zugegriffen wird
+     *            propertyname ueber den auf einen wert in der propertyInstanz zugegriffen wird
      * @param label
      *            angezeigtes label
      * @see ConfigContainer#TYPE_BROWSEFILE
@@ -222,17 +215,14 @@ public class ConfigEntry implements Serializable {
     }
 
     /**
-     * Konstruktor z.B. fuer einen JSpinner (property, label, range (start/end),
-     * step)
+     * Konstruktor z.B. fuer einen JSpinner (property, label, range (start/end), step)
      * 
      * @param type
      * @param propertyInstance
-     *            EINE Instanz die von der propertyklasse abgeleitet wurde. mit
-     *            hilfe von propertyName werden Informationen aus ihr gelesen
+     *            EINE Instanz die von der propertyklasse abgeleitet wurde. mit hilfe von propertyName werden Informationen aus ihr gelesen
      *            und wieder in ihr abgelegt
      * @param propertyName
-     *            propertyname ueber den auf einen wert in der propertyInstanz
-     *            zugegriffen wird
+     *            propertyname ueber den auf einen wert in der propertyInstanz zugegriffen wird
      * @param label
      * @param start
      *            Range-Start
@@ -253,9 +243,7 @@ public class ConfigEntry implements Serializable {
     }
 
     /**
-     * @deprecated Use
-     *             {@link ConfigEntry#ConfigEntry(int, Property, String, String, int, int, int)}
-     *             instead.
+     * @deprecated Use {@link ConfigEntry#ConfigEntry(int, Property, String, String, int, int, int)} instead.
      */
     @Deprecated
     public ConfigEntry(final int type, final Property propertyInstance, final String propertyName, final String label, final int start, final int end) {
@@ -263,9 +251,7 @@ public class ConfigEntry implements Serializable {
     }
 
     /**
-     * @deprecated Use
-     *             {@link ConfigEntry#ConfigEntry(int, Property, String, String, int, int, int)}
-     *             instead.
+     * @deprecated Use {@link ConfigEntry#ConfigEntry(int, Property, String, String, int, int, int)} instead.
      */
     @Deprecated
     public ConfigEntry setStep(final int step) {
@@ -372,7 +358,19 @@ public class ConfigEntry implements Serializable {
         return type;
     }
 
-    public boolean isConditionalEnabled(final ConfigEntry source, final Object newData) {
+    public boolean isConditionalEnabled(ConfigEntry source, Object newData) {
+        if (conditionEntry == null) return true;
+        if (source == null) {
+
+            //
+            source = conditionEntry;
+            if (conditionEntry.getPropertyInstance().hasProperty(conditionEntry.getPropertyName())) {
+                newData = conditionEntry.getPropertyInstance().getProperty(conditionEntry.getPropertyName());
+            } else {
+                newData = conditionEntry.getDefaultValue();
+            }
+
+        }
         return (source == conditionEntry) ? compareValue.equals(newData) : true;
     }
 
@@ -381,13 +379,10 @@ public class ConfigEntry implements Serializable {
     }
 
     /**
-     * Legt den defaultwert fest, falls in der propertyinstanz keiner gefunden
-     * wurde.
+     * Legt den defaultwert fest, falls in der propertyinstanz keiner gefunden wurde.
      * 
      * @param value
-     * @return this. damit ist eine Struktur new
-     *         ConfigEntry(...).setdefaultValue(...).setStep(...).setBla...
-     *         moeglich
+     * @return this. damit ist eine Struktur new ConfigEntry(...).setdefaultValue(...).setStep(...).setBla... moeglich
      */
     public ConfigEntry setDefaultValue(final Object defaultValue) {
         this.defaultValue = defaultValue;

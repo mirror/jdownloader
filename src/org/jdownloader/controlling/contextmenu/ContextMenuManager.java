@@ -12,6 +12,7 @@ import java.util.Map.Entry;
 import javax.swing.JPopupMenu;
 import javax.swing.KeyStroke;
 
+import jd.SecondLevelLaunch;
 import jd.controlling.packagecontroller.AbstractPackageChildrenNode;
 import jd.controlling.packagecontroller.AbstractPackageNode;
 
@@ -48,6 +49,7 @@ public abstract class ContextMenuManager<PackageType extends AbstractPackageNode
 
             @Override
             public void delayedrun() {
+
                 updateGui();
             }
 
@@ -143,6 +145,7 @@ public abstract class ContextMenuManager<PackageType extends AbstractPackageNode
     }
 
     ArrayList<MenuExtenderHandler> extender = new ArrayList<MenuExtenderHandler>();
+    private Runnable               afterInitCallback;
 
     // public void addExtensionAction(MenuContainerRoot parent, int index, MenuExtenderHandler extender, ExtensionContextMenuItem
     // archiveSubMenu) {
@@ -377,12 +380,11 @@ public abstract class ContextMenuManager<PackageType extends AbstractPackageNode
             menuData = null;
 
         }
-        updateDelayer.resetAndStart();
 
     }
 
     public void refresh() {
-        updateDelayer.resetAndStart();
+        delayUpdate();
     }
 
     public void unregisterExtender(MenuExtenderHandler handler) {
@@ -392,7 +394,23 @@ public abstract class ContextMenuManager<PackageType extends AbstractPackageNode
             menuData = null;
 
         }
-        updateDelayer.resetAndStart();
+        delayUpdate();
+    }
+
+    private void delayUpdate() {
+
+        if (!SecondLevelLaunch.EXTENSIONS_LOADED.isReached()) {
+            if (afterInitCallback != null) return;
+            SecondLevelLaunch.EXTENSIONS_LOADED.executeWhenReached(afterInitCallback = new Runnable() {
+
+                @Override
+                public void run() {
+                    updateDelayer.resetAndStart();
+                }
+            });
+        } else {
+            updateDelayer.resetAndStart();
+        }
     }
 
     public ArrayList<MenuExtenderHandler> listExtender() {

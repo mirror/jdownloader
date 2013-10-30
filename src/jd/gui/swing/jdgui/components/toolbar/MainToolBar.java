@@ -86,6 +86,12 @@ public class MainToolBar extends JToolBar implements MouseListener, DownloadWatc
     private SpeedMeterPanel    speedmeter;
     private JRootPane          rootpane;
 
+    private boolean            initDone         = false;
+
+    public boolean isInitDone() {
+        return initDone;
+    }
+
     public static synchronized MainToolBar getInstance() {
         if (INSTANCE == null) INSTANCE = new MainToolBar();
         return INSTANCE;
@@ -119,7 +125,6 @@ public class MainToolBar extends JToolBar implements MouseListener, DownloadWatc
                             }
 
                         });
-                        updateToolbar();
 
                         CFG_GUI.SPEED_METER_VISIBLE.getEventSender().addListener(MainToolBar.this, false);
                     }
@@ -128,6 +133,21 @@ public class MainToolBar extends JToolBar implements MouseListener, DownloadWatc
 
             }
 
+        });
+        SecondLevelLaunch.EXTENSIONS_LOADED.executeWhenReached(new Runnable() {
+
+            @Override
+            public void run() {
+                new EDTRunner() {
+
+                    @Override
+                    protected void runInEDT() {
+                        if (!isInitDone()) {
+                            updateToolbar();
+                        }
+                    }
+                };
+            }
         });
 
         addMouseListener(new MouseAdapter() {
@@ -159,7 +179,7 @@ public class MainToolBar extends JToolBar implements MouseListener, DownloadWatc
      */
     public final void updateToolbar() {
         if (!SecondLevelLaunch.GUI_COMPLETE.isReached()) return;
-
+        initDone = true;
         new EDTRunner() {
 
             @Override

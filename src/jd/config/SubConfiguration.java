@@ -80,6 +80,7 @@ public class SubConfiguration extends Property implements Serializable {
 
     public void save() {
         if (valid) {
+            ((JsonKeyValueStorage) json).getInternalStorageMap().putAll(getProperties());
             json.save();
         }
     }
