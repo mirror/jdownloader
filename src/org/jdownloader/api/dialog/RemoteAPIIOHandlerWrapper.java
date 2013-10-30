@@ -64,6 +64,7 @@ public class RemoteAPIIOHandlerWrapper implements UserIOHandlerInterface {
 
     public <T extends UserIODefinition> T showModeless(Class<T> class1, T impl) {
         // synchronized (this) {
+
         if (impl instanceof AbstractDialog) {
             final AbstractDialog dialog = (AbstractDialog) impl;
             ApiHandle handle = null;
@@ -188,9 +189,8 @@ public class RemoteAPIIOHandlerWrapper implements UserIOHandlerInterface {
                     }
                 }
 
-                System.out.println(1);
             } catch (InterruptedException e) {
-                System.out.println(1);
+
                 // throw new DialogClosedException(Dialog.RETURN_INTERRUPT, e);
                 // throw new DialogClosedException(Dialog.RETURN_INTERRUPT);
             } catch (DialogClosedException e) {
@@ -205,7 +205,7 @@ public class RemoteAPIIOHandlerWrapper implements UserIOHandlerInterface {
 
                 }
                 try {
-                    handle.dispose();
+                    if (handle != null) handle.dispose();
                 } catch (Exception e) {
 
                 }
@@ -225,7 +225,10 @@ public class RemoteAPIIOHandlerWrapper implements UserIOHandlerInterface {
         // evaluate do not show again flag
         if (impl instanceof AbstractDialog) {
             AbstractDialog<?> dialog = (AbstractDialog<?>) impl;
-            if (dialog.getModalityType() == ModalityType.MODELESS) { return showModeless(class1, impl); }
+            if (dialog.getModalityType() == ModalityType.MODELESS) {
+                if (SwingUtilities.isEventDispatchThread()) throw new IllegalStateException("Cannot call a Modeless Blocking dialog in the EDT. Use a Wrapperthread");
+                return showModeless(class1, impl);
+            }
             try {
                 dialog.forceDummyInit();
                 if (dialog.evaluateDontShowAgainFlag()) {
@@ -268,8 +271,9 @@ public class RemoteAPIIOHandlerWrapper implements UserIOHandlerInterface {
             } catch (final DialogCanceledException e) {
                 // no Reason to log here
             } finally {
-                handle.dispose();
+                if (handle != null) handle.dispose();
             }
+            if (handle == null) return impl;
             return (T) (handle.getAnswer() != null ? handle.getAnswer() : impl);
         } catch (Exception e) {
             e.printStackTrace();

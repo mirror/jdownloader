@@ -67,7 +67,7 @@ public class BasicCaptchaDialogHandler extends ChallengeDialogHandler<BasicCaptc
         }
         // don't put this in the edt
         showDialog(dialog);
-        System.out.println(1);
+
         new EDTHelper<Object>() {
 
             @Override
@@ -123,7 +123,7 @@ public class BasicCaptchaDialogHandler extends ChallengeDialogHandler<BasicCaptc
 
                 }
             }
-            System.out.println(1);
+
         } catch (InterruptedException e) {
             throw new DialogClosedException(Dialog.RETURN_INTERRUPT);
         } finally {

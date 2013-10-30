@@ -4,14 +4,12 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
-import jd.controlling.downloadcontroller.DownloadController;
 import jd.controlling.linkcollector.LinkCollectingJob;
 import jd.controlling.linkcollector.LinkCollector;
 import jd.controlling.linkcollector.LinkOrigin;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledPackage;
 import jd.controlling.packagecontroller.AbstractPackageChildrenNodeFilter;
-import jd.plugins.FilePackage;
 import jd.utils.JDUtilities;
 
 import org.appwork.utils.IO;
@@ -20,6 +18,7 @@ import org.jdownloader.api.jdanywhere.api.storable.CrawledLinkStoreable;
 import org.jdownloader.api.jdanywhere.api.storable.CrawledPackageStorable;
 import org.jdownloader.api.linkcollector.LinkCollectorAPIImpl;
 import org.jdownloader.controlling.Priority;
+import org.jdownloader.gui.views.SelectionInfo;
 
 public class LinkCrawlerApi implements ILinkCrawlerApi {
 
@@ -99,12 +98,9 @@ public class LinkCrawlerApi implements ILinkCrawlerApi {
     public boolean AddCrawledPackageToDownloads(long crawledPackageID) {
         CrawledPackage cp = getCrawledPackageFromID(crawledPackageID);
         if (cp != null) {
-            java.util.List<FilePackage> fpkgs = new ArrayList<FilePackage>();
-            List<CrawledLink> links = new ArrayList<CrawledLink>(cp.getView().getItems());
-            java.util.List<FilePackage> packages = LinkCollector.getInstance().convert(links, true);
-            if (packages != null) fpkgs.addAll(packages);
-            /* add the converted FilePackages to DownloadController */
-            DownloadController.getInstance().addAllAt(fpkgs, -(fpkgs.size() + 10));
+
+            LinkCollector.getInstance().moveLinksToDownloadList(new SelectionInfo<CrawledPackage, CrawledLink>(cp, null, null, null, null, null));
+
         }
         return true;
     }

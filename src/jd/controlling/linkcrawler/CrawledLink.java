@@ -78,6 +78,16 @@ public class CrawledLink implements AbstractPackageChildrenNode<CrawledPackage>,
         this.autoStartEnabled = autoStartEnabled;
     }
 
+    private boolean forcedAutoStartEnabled = false;
+
+    public boolean isForcedAutoStartEnabled() {
+        return forcedAutoStartEnabled;
+    }
+
+    public void setForcedAutoStartEnabled(boolean forcedAutoStartEnabled) {
+        this.forcedAutoStartEnabled = forcedAutoStartEnabled;
+    }
+
     private boolean autoStartEnabled = false;
 
     public UnknownCrawledLinkHandler getUnknownHandler() {
@@ -134,7 +144,7 @@ public class CrawledLink implements AbstractPackageChildrenNode<CrawledPackage>,
     public void setSourceJob(LinkCollectingJob sourceJob) {
         this.sourceJob = sourceJob;
         if (sourceJob != null) {
-            setOrigin(sourceJob.getSource());
+            setOrigin(sourceJob.getOrigin());
         }
 
     }

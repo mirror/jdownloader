@@ -13,7 +13,6 @@ import jd.gui.swing.jdgui.BasicJDTable;
 import org.appwork.swing.exttable.ExtColumn;
 import org.appwork.swing.exttable.ExtTransferHandler;
 import org.appwork.utils.Application;
-import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.jdownloader.controlling.packagizer.PackagizerController;
@@ -56,7 +55,8 @@ public class PackagizerFilterTable extends BasicJDTable<PackagizerRule> {
     @Override
     protected boolean onDoubleClick(MouseEvent e, PackagizerRule obj) {
         try {
-            Dialog.getInstance().showDialog(new PackagizerFilterRuleDialog(obj));
+            PackagizerFilterRuleDialog.showDialog(obj);
+
         } catch (DialogClosedException e1) {
             e1.printStackTrace();
         } catch (DialogCanceledException e1) {

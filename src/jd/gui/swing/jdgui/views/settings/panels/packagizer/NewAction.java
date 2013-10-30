@@ -5,7 +5,6 @@ import java.awt.event.ActionEvent;
 import jd.controlling.TaskQueue;
 
 import org.appwork.utils.event.queue.QueueAction;
-import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.jdownloader.controlling.packagizer.PackagizerController;
@@ -29,9 +28,8 @@ public class NewAction extends AbstractAddAction {
     }
 
     public static void add(final PackagizerRule rule) {
-        PackagizerFilterRuleDialog d = new PackagizerFilterRuleDialog(rule);
         try {
-            Dialog.getInstance().showDialog(d);
+            PackagizerFilterRuleDialog.showDialog(rule);
             rule.setEnabled(true);
             TaskQueue.getQueue().add(new QueueAction<Void, RuntimeException>() {
 

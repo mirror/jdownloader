@@ -1,6 +1,7 @@
 package jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter.editdialog;
 
 import java.awt.Component;
+import java.awt.Dialog.ModalityType;
 import java.awt.Image;
 import java.awt.event.ActionEvent;
 import java.awt.event.FocusEvent;
@@ -88,6 +89,11 @@ public abstract class ConditionDialog<T> extends AbstractDialog<T> {
     public String getName() {
 
         return txtName.getText();
+    }
+
+    @Override
+    public ModalityType getModalityType() {
+        return ModalityType.MODELESS;
     }
 
     public void setName(String name) {

@@ -20,7 +20,7 @@ public class MyJDownloaderSettingsInitHook implements InitHookInterface {
 
     @Override
     public void doHook(String classPath, Class<?> configInterface) {
-        System.out.println(1);
+
     }
 
     // ""

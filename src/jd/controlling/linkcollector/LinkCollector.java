@@ -18,6 +18,8 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.zip.ZipEntry;
 
+import jd.controlling.downloadcontroller.DownloadController;
+import jd.controlling.downloadcontroller.DownloadWatchDog;
 import jd.controlling.linkchecker.LinkChecker;
 import jd.controlling.linkchecker.LinkCheckerHandler;
 import jd.controlling.linkcrawler.CrawledLink;
@@ -68,6 +70,7 @@ import org.jdownloader.extensions.extraction.BooleanStatus;
 import org.jdownloader.extensions.extraction.ExtractionExtension;
 import org.jdownloader.extensions.extraction.bindings.crawledlink.CrawledLinkFactory;
 import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.components.packagetable.LinkTreeUtils;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.plugins.controller.UpdateRequiredClassNotFoundException;
@@ -1576,6 +1579,48 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
     @Override
     public boolean hasNotificationListener() {
         return true;
+    }
+
+    public void moveLinksToDownloadList(SelectionInfo<CrawledPackage, CrawledLink> selection) {
+
+        java.util.List<FilePackage> filePackagesToAdd = new ArrayList<FilePackage>();
+
+        boolean autostart = false;
+        List<DownloadLink> force = new ArrayList<DownloadLink>();
+
+        for (CrawledPackage cp : selection.getAllPackages()) {
+            List<CrawledLink> links;
+            java.util.List<FilePackage> convertedLinks = LinkCollector.getInstance().convert(links = selection.getSelectedLinksByPackage(cp), true);
+            for (CrawledLink cl : links) {
+                autostart |= cl.isAutoStartEnabled();
+                if (cl.isForcedAutoStartEnabled()) {
+                    force.add(cl.getDownloadLink());
+                }
+            }
+
+            if (convertedLinks != null) {
+                filePackagesToAdd.addAll(convertedLinks);
+            }
+
+        }
+        if (autostart) {
+            DownloadWatchDog.getInstance().startDownloads();
+        }
+        if (force.size() > 0) {
+            DownloadWatchDog.getInstance().forceDownload(force);
+        }
+
+        /* convert all selected CrawledLinks to FilePackages */
+        boolean addTop = org.jdownloader.settings.staticreferences.CFG_LINKFILTER.LINKGRABBER_ADD_AT_TOP.getValue();
+
+        /* add the converted FilePackages to DownloadController */
+        /**
+         * addTop = 0, to insert the packages at the top
+         * 
+         * addBottom = negative number -> add at the end
+         */
+        DownloadController.getInstance().addAllAt(filePackagesToAdd, addTop ? 0 : -(filePackagesToAdd.size() + 10));
+
     }
 
 }

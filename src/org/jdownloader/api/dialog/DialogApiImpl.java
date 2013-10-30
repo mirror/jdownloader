@@ -51,6 +51,7 @@ public class DialogApiImpl implements EventPublisher, DialogApiInterface {
     }
 
     public <T extends UserIODefinition> ApiHandle enqueue(Class<T> class1, T impl) {
+        if (class1 == null) return null;
         final ApiHandle ret = new ApiHandle(class1, impl, id.incrementAndGet(), Thread.currentThread());
         synchronized (map) {
             map.put(ret.getId(), ret);

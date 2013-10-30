@@ -967,7 +967,7 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { ",\r\n%s1" })
     String FilterRule_toString_comma2(String string);
 
-    @Default(lngs = { "en" }, values = { " and\r\n%s1" })
+    @Default(lngs = { "en" }, values = { " and \r\n%s1" })
     String FilterRule_toString_and2(String string);
 
     @Default(lngs = { "en" }, values = { "Filter Links if, " })
@@ -1051,11 +1051,11 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Packagename" })
     String PackagizerFilterRuleDialog_createVariablesMenu_packagename();
 
-    @Default(lngs = { "en" }, values = { "Auto Start Package" })
-    String PackagizerFilterRuleDialog_layoutDialogContent_autostart();
+    @Default(lngs = { "en" }, values = { "Auto Start Download" })
+    String PackagizerFilterRuleDialog_layoutDialogContent_autostart2();
 
-    @Default(lngs = { "en" }, values = { "Auto Accept Package" })
-    String PackagizerFilterRuleDialog_layoutDialogContent_autoadd();
+    @Default(lngs = { "en" }, values = { "Auto Confirm" })
+    String PackagizerFilterRuleDialog_layoutDialogContent_autoadd2();
 
     @Default(lngs = { "en" }, values = { "Settings" })
     String SettingsMenu_SettingsMenu_();
@@ -3519,4 +3519,7 @@ public interface GuiTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Link Source is not: %s1" })
     String OriginFilter_toString_isNot(String string);
+
+    @Default(lngs = { "en" }, values = { "Auto Forced Download Start" })
+    String PackagizerFilterRuleDialog_layoutDialogContent_force();
 }

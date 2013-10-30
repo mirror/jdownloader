@@ -1,11 +1,13 @@
 package jd.gui.swing.jdgui.views.settings.panels.packagizer;
 
 import java.awt.Component;
+import java.awt.Dialog.ModalityType;
 import java.awt.event.ActionEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.io.File;
+import java.util.HashMap;
 
 import javax.swing.AbstractAction;
 import javax.swing.ButtonGroup;
@@ -37,12 +39,15 @@ import org.appwork.swing.components.ExtSpinner;
 import org.appwork.swing.components.ExtTextField;
 import org.appwork.swing.components.pathchooser.PathChooser;
 import org.appwork.swing.exttable.ExtTableModel;
+import org.appwork.uio.UIOManager;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.ImageProvider.ImageProvider;
 import org.appwork.utils.swing.SwingUtils;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
+import org.appwork.utils.swing.windowmanager.WindowManager;
+import org.appwork.utils.swing.windowmanager.WindowManager.FrameState;
 import org.jdownloader.controlling.Priority;
 import org.jdownloader.controlling.filter.BooleanFilter;
 import org.jdownloader.controlling.packagizer.PackagizerController;
@@ -146,7 +151,7 @@ public class PackagizerFilterRuleDialog extends ConditionDialog<PackagizerRule> 
         }
     }
 
-    public PackagizerFilterRuleDialog(PackagizerRule filterRule) {
+    private PackagizerFilterRuleDialog(PackagizerRule filterRule) {
         super();
         this.rule = filterRule;
     }
@@ -230,9 +235,11 @@ public class PackagizerFilterRuleDialog extends ConditionDialog<PackagizerRule> 
         rule.setPriority(cbPriority.isSelected() ? prio : null);
         rule.setPackageName(cbPackagename.isSelected() ? txtPackagename.getText() : null);
         rule.setFilename(cbName.isSelected() ? txtNewFilename.getText() : null);
+
         rule.setAutoExtractionEnabled(cbExtract.isSelected() ? cobExtract.getSelectedIndex() == 0 : null);
         rule.setAutoAddEnabled(cbAdd.isSelected() ? cobAutoAdd.getSelectedIndex() == 0 : null);
         rule.setAutoStartEnabled(cbStart.isSelected() ? cobAutostart.getSelectedIndex() == 0 : null);
+        rule.setAutoForcedStartEnabled(cbForce.isSelected() ? cobForce.getSelectedIndex() == 0 : null);
         rule.setIconKey(getIconKey());
         rule.setTestUrl(getTxtTestUrl());
         rule.setOnlineStatusFilter(getOnlineStatusFilter());
@@ -273,6 +280,9 @@ public class PackagizerFilterRuleDialog extends ConditionDialog<PackagizerRule> 
             spChunks.setValue(rule.getChunks());
         }
         cbStart.setSelected(rule.isAutoStartEnabled() != null);
+        cbForce.setSelected(rule.isAutoForcedStartEnabled() != null);
+        cobForce.setSelectedIndex((rule.isAutoForcedStartEnabled() == null || rule.isAutoForcedStartEnabled()) ? 0 : 1);
+
         cbAdd.setSelected(rule.isAutoAddEnabled() != null);
         cbAlways.setSelected(rule.getMatchAlwaysFilter() != null && rule.getMatchAlwaysFilter().isEnabled());
         cobAutoAdd.setSelectedIndex((rule.isAutoAddEnabled() == null || rule.isAutoAddEnabled()) ? 0 : 1);
@@ -366,6 +376,9 @@ public class PackagizerFilterRuleDialog extends ConditionDialog<PackagizerRule> 
     private JLabel        lblEnable;
     private ExtCheckBox   cbEnable;
     private JComboBox     cobEnable;
+    private JComboBox     cobForce;
+    private JLabel        lblForce;
+    private ExtCheckBox   cbForce;
 
     public void addConditionGui(final JComponent panel) {
         cbAlways = new ExtCheckBox();
@@ -384,15 +397,16 @@ public class PackagizerFilterRuleDialog extends ConditionDialog<PackagizerRule> 
         lblPackagename = createLbl(_GUI._.PackagizerFilterRuleDialog_layoutDialogContent_packagename());
         lblFilename = createLbl(_GUI._.PackagizerFilterRuleDialog_layoutDialogContent_filename());
         lblExtract = createLbl(_GUI._.PackagizerFilterRuleDialog_layoutDialogContent_extract());
-        lblAutostart = createLbl(_GUI._.PackagizerFilterRuleDialog_layoutDialogContent_autostart());
-        lblautoadd = createLbl(_GUI._.PackagizerFilterRuleDialog_layoutDialogContent_autoadd());
+        lblAutostart = createLbl(_GUI._.PackagizerFilterRuleDialog_layoutDialogContent_autostart2());
+        lblautoadd = createLbl(_GUI._.PackagizerFilterRuleDialog_layoutDialogContent_autoadd2());
         lblChunks = createLbl(_GUI._.PackagizerFilterRuleDialog_layoutDialogContent_chunks());
         lblEnable = createLbl(_GUI._.PackagizerFilterRuleDialog_layoutDialogContent_enable());
+        lblForce = createLbl(_GUI._.PackagizerFilterRuleDialog_layoutDialogContent_force());
         cobExtract = createEnabledBox();
         cobAutostart = createEnabledBox();
         cobAutoAdd = createEnabledBox();
         cobEnable = createEnabledBox();
-
+        cobForce = createEnabledBox();
         fpDest = new PathChooser("PackagizerDest", true) {
 
             /**
@@ -510,6 +524,7 @@ public class PackagizerFilterRuleDialog extends ConditionDialog<PackagizerRule> 
         cbPackagename = new ExtCheckBox(txtPackagename);
         cbExtract = new ExtCheckBox(cobExtract);
         cbStart = new ExtCheckBox(cobAutostart);
+        cbForce = new ExtCheckBox(cobForce);
         cbAdd = new ExtCheckBox(cobAutoAdd);
         cbChunks = new ExtCheckBox(spChunks);
         cbName = new ExtCheckBox(txtNewFilename);
@@ -555,7 +570,10 @@ public class PackagizerFilterRuleDialog extends ConditionDialog<PackagizerRule> 
         ret.add(lblAutostart, "spanx 2");
         ret.add(cobAutostart, "spanx,growx,pushx");
 
-        link(cbStart, lblAutostart, cobAutostart);
+        ret.add(cbForce);
+        ret.add(lblForce, "spanx 2");
+        ret.add(cobForce, "spanx,growx,pushx");
+        link(cbForce, lblForce, cobForce);
 
         ret.add(cbEnable);
         ret.add(lblEnable, "spanx 2");
@@ -752,6 +770,53 @@ public class PackagizerFilterRuleDialog extends ConditionDialog<PackagizerRule> 
     private JLabel createLbl(String packagizerFilterRuleDialog_layoutDialogContent_dest) {
         JLabel ret = new JLabel(packagizerFilterRuleDialog_layoutDialogContent_dest);
         return ret;
+    }
+
+    @Override
+    protected void setDisposed(boolean b) {
+        super.setDisposed(b);
+        if (b) {
+            synchronized (ACTIVE_DIALOGS) {
+                ACTIVE_DIALOGS.remove(rule);
+            }
+        }
+    }
+
+    @Override
+    public ModalityType getModalityType() {
+        return ModalityType.MODELESS;
+    }
+
+    private static final HashMap<PackagizerRule, PackagizerFilterRuleDialog> ACTIVE_DIALOGS = new HashMap<PackagizerRule, PackagizerFilterRuleDialog>();
+
+    public static void showDialog(final PackagizerRule rule) throws DialogClosedException, DialogCanceledException {
+        new Thread("ShowRuleDialogThread:" + rule) {
+            public void run() {
+                PackagizerFilterRuleDialog d = null;
+                synchronized (ACTIVE_DIALOGS) {
+
+                    d = ACTIVE_DIALOGS.get(rule);
+                    if (d == null || !d.isVisible()) {
+                        d = new PackagizerFilterRuleDialog(rule);
+                        ACTIVE_DIALOGS.put(rule, d);
+                    }
+                }
+                if (d.isVisible()) {
+                    WindowManager.getInstance().setZState(d.getDialog(), FrameState.TO_FRONT);
+                } else {
+                    UIOManager.I().show(null, d);
+                    // try {
+                    // d.throwCloseExceptions();
+                    // } catch (DialogClosedException e) {
+                    // e.printStackTrace();
+                    // } catch (DialogCanceledException e) {
+                    // e.printStackTrace();
+                    // }
+
+                }
+            }
+        }.start();
+
     }
 
 }

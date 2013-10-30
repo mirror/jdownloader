@@ -12,35 +12,7 @@ public class CustomCopyPasteSupport extends CopyPasteSupport {
 
     public CustomCopyPasteSupport() {
         super();
-        // KeyStroke stroke = KeyStroke.getKeyStroke(KeyEvent.VK_C, Toolkit.getDefaultToolkit().getMenuShortcutKeyMask());
 
-        //
-        // im.put(KeyStroke.getKeyStroke(KeyEvent.VK_C, KeyEvent.META_DOWN_MASK), DefaultEditorKit.copyAction);
-
-        // UIDefaults defaults = UIManager.getDefaults();
-        // Enumeration newKeys = defaults.keys();
-        //
-        // while (newKeys.hasMoreElements()) {
-        // Object obj = newKeys.nextElement();
-        // System.out.printf("%50s : %s\n", obj, UIManager.get(obj));
-        // }
-        //
-        // UIManager.put("TextField.focusInputMap", new UIDefaults.LazyInputMap(new Object[] {
-        //
-        // }));
-        //
-        // InputMap im = (InputMap) UIManager.get("TextField.focusInputMap");
-        // ActionMap am = (ActionMap) UIManager.get("TextField.actionMap");
-        //
-        // im.put(KeyStroke.getKeyStroke(KeyEvent.VK_K, KeyEvent.CTRL_DOWN_MASK), DefaultEditorKit.copyAction);
-        // am.put(DefaultEditorKit.copyAction, new AppAction() {
-        //
-        // @Override
-        // public void actionPerformed(ActionEvent e) {
-        // System.out.println("Paste!");
-        // }
-        // });
-        // System.out.println(1);
     }
 
     @Override

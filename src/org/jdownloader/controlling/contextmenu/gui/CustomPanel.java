@@ -22,7 +22,7 @@ import org.jdownloader.controlling.contextmenu.Customizer;
 public class CustomPanel extends MigPanel {
 
     private MenuManagerDialog managerFrame;
-    private LogSource    logger;
+    private LogSource         logger;
 
     public CustomPanel(MenuManagerDialog managerFrame) {
         super("ins 0", "[]", "[]");
@@ -68,7 +68,7 @@ public class CustomPanel extends MigPanel {
 
                 if (value == null || myValue == null) {
                     myValue = gs.get(actionClass);
-                    System.out.println(1);
+
                     value = myValue.toString();
                 }
 

@@ -6,7 +6,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import jd.controlling.downloadcontroller.DownloadController;
 import jd.controlling.linkcollector.LinkCollectingJob;
 import jd.controlling.linkcollector.LinkCollector;
 import jd.controlling.linkcollector.LinkOrigin;
@@ -15,12 +14,12 @@ import jd.controlling.linkcrawler.CrawledLink.LinkState;
 import jd.controlling.linkcrawler.CrawledPackage;
 import jd.controlling.linkcrawler.CrawledPackageView;
 import jd.controlling.packagecontroller.AbstractPackageChildrenNodeFilter;
-import jd.plugins.FilePackage;
 
 import org.appwork.remoteapi.APIQuery;
 import org.appwork.remoteapi.QueryResponseMap;
 import org.jdownloader.controlling.Priority;
 import org.jdownloader.gui.packagehistorycontroller.DownloadPathHistoryManager;
+import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.settings.GeneralSettings;
 
 public class LinkCollectorAPIImpl implements LinkCollectorAPI {
@@ -289,7 +288,6 @@ public class LinkCollectorAPIImpl implements LinkCollectorAPI {
     @Override
     public Boolean startDownloads(final List<Long> linkIds, final List<Long> packageIds) {
         LinkCollector lc = LinkCollector.getInstance();
-        DownloadController dc = DownloadController.getInstance();
 
         List<CrawledLink> lks;
 
@@ -300,8 +298,7 @@ public class LinkCollectorAPIImpl implements LinkCollectorAPI {
             lc.readUnlock(lb);
         }
 
-        List<FilePackage> frets = LinkCollector.getInstance().convert(lks, true);
-        dc.addAllAt(frets, dc.getPackages().size());
+        LinkCollector.getInstance().moveLinksToDownloadList(new SelectionInfo<CrawledPackage, CrawledLink>(null, lks, null, null, null, null));
 
         return true;
     }

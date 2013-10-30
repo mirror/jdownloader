@@ -65,6 +65,7 @@ public class LinkCollectingJob {
 
     public LinkCollectingJob(LinkOrigin origin, String text) {
         this.text = text;
+        this.origin = origin;
     }
 
     public String getText() {
@@ -119,10 +120,10 @@ public class LinkCollectingJob {
     private File        outputFolder;
     private String      packageName;
 
-    private LinkOrigin  source;
+    private LinkOrigin  origin;
 
-    public LinkOrigin getSource() {
-        return source;
+    public LinkOrigin getOrigin() {
+        return origin;
     }
 
 }

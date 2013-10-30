@@ -35,6 +35,7 @@ public class PackagizerRule extends FilterRule implements Storable {
         ret.downloadDestination = downloadDestination;
         ret.packageName = packageName;
         ret.priority = priority;
+        ret.autoForcedStartEnabled = autoForcedStartEnabled;
         ret.setCreated(System.currentTimeMillis());
         return ret;
     }
@@ -130,6 +131,7 @@ public class PackagizerRule extends FilterRule implements Storable {
     private int     chunks;
     private String  filename;
     private int     order = 0;
+    private Boolean autoForcedStartEnabled;
 
     public void setOrder(int order) {
         this.order = order;
@@ -153,6 +155,14 @@ public class PackagizerRule extends FilterRule implements Storable {
 
     public int getOrder() {
         return order;
+    }
+
+    public void setAutoForcedStartEnabled(Boolean autoForcedStartEnabled) {
+        this.autoForcedStartEnabled = autoForcedStartEnabled;
+    }
+
+    public Boolean isAutoForcedStartEnabled() {
+        return autoForcedStartEnabled;
     }
 
 }

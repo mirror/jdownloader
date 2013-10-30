@@ -10,6 +10,7 @@ import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogNoAnswerException;
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.actions.CachableInterface;
+import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
 
 public class ClearLinkgrabberAction extends AppAction implements CachableInterface {
@@ -19,7 +20,7 @@ public class ClearLinkgrabberAction extends AppAction implements CachableInterfa
     private static final long serialVersionUID = 6027982395476716687L;
 
     public ClearLinkgrabberAction() {
-        setIconKey("clear");
+        setIconKey(IconKey.ICON_DELETE);
         putValue(SHORT_DESCRIPTION, _GUI._.ClearAction_tt_());
     }
 

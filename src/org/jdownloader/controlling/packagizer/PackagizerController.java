@@ -338,6 +338,7 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
             }
             set(link, lgr);
         }
+
     }
 
     public void runByUrl(CrawledLink link) {
@@ -359,6 +360,7 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
             if (!lgr.checkSource(link)) continue;
             set(link, lgr);
         }
+
     }
 
     public static String replaceDynamicTags(String input, String packageName) {
@@ -429,15 +431,21 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
         }
         if ((b = lgr.getRule().isAutoAddEnabled()) != null) {
             /* customize auto add */
-            if (b) {
-                link.setAutoConfirmEnabled(b);
-            }
+
+            link.setAutoConfirmEnabled(b);
+
         }
         if ((b = lgr.getRule().isAutoStartEnabled()) != null) {
             /* customize auto start */
-            if (b) {
-                link.setAutoStartEnabled(b);
-            }
+
+            link.setAutoStartEnabled(b);
+
+        }
+        if ((b = lgr.getRule().isAutoForcedStartEnabled()) != null) {
+            /* customize auto start */
+
+            link.setForcedAutoStartEnabled(b);
+
         }
         if (dpiSet && link.getDesiredPackageInfo() == null) {
             /* set desiredpackageinfo if not set yet */

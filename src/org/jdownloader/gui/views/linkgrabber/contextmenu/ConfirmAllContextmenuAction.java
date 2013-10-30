@@ -2,22 +2,15 @@ package org.jdownloader.gui.views.linkgrabber.contextmenu;
 
 import java.awt.Image;
 import java.awt.event.ActionEvent;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
 
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
 
-import jd.controlling.downloadcontroller.DownloadController;
 import jd.controlling.downloadcontroller.DownloadWatchDog;
 import jd.controlling.linkcollector.LinkCollector;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledPackage;
-import jd.controlling.packagecontroller.AbstractNode;
 import jd.gui.swing.jdgui.JDGui;
-import jd.plugins.FilePackage;
 
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.storage.config.annotations.EnumLabel;
@@ -182,41 +175,8 @@ public class ConfirmAllContextmenuAction extends AbstractSelectionContextAction<
                     Log.exception(e);
                 }
 
-                java.util.List<FilePackage> filePackagesToAdd = new ArrayList<FilePackage>();
-                HashSet<AbstractNode> processedLinks = new HashSet<AbstractNode>();
-                java.util.List<CrawledLink> clinks = new ArrayList<CrawledLink>();
+                LinkCollector.getInstance().moveLinksToDownloadList(getSelection());
 
-                for (AbstractNode node : getSelection().getRawSelection()) {
-                    if (node instanceof CrawledPackage) {
-                        /* first convert all CrawledPackages to FilePackages */
-                        List<CrawledLink> links = new ArrayList<CrawledLink>(((CrawledPackage) node).getView().getItems());
-                        Iterator<CrawledLink> it = links.iterator();
-                        while (it.hasNext()) {
-                            CrawledLink next = it.next();
-                            if (processedLinks.add(next) == false) {
-                                it.remove();
-                            }
-                        }
-                        java.util.List<FilePackage> convertedLinks = LinkCollector.getInstance().convert(links, true);
-                        if (convertedLinks != null) filePackagesToAdd.addAll(convertedLinks);
-                    } else if (node instanceof CrawledLink) {
-                        /* collect all CrawledLinks */
-                        if (processedLinks.add(node)) {
-                            clinks.add((CrawledLink) node);
-                        }
-                    }
-                }
-                /* convert all selected CrawledLinks to FilePackages */
-                boolean addTop = org.jdownloader.settings.staticreferences.CFG_LINKFILTER.LINKGRABBER_ADD_AT_TOP.getValue();
-                java.util.List<FilePackage> convertedLinks = LinkCollector.getInstance().convert(clinks, true);
-                if (convertedLinks != null) filePackagesToAdd.addAll(convertedLinks);
-                /* add the converted FilePackages to DownloadController */
-                /**
-                 * addTop = 0, to insert the packages at the top
-                 * 
-                 * addBottom = negative number -> add at the end
-                 */
-                DownloadController.getInstance().addAllAt(filePackagesToAdd, addTop ? 0 : -(filePackagesToAdd.size() + 10));
                 if (doAutostart()) {
                     DownloadWatchDog.getInstance().startDownloads();
                 }

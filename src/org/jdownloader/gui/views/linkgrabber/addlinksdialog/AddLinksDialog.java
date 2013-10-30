@@ -1,6 +1,7 @@
 package org.jdownloader.gui.views.linkgrabber.addlinksdialog;
 
 import java.awt.Component;
+import java.awt.Dialog.ModalityType;
 import java.awt.Point;
 import java.awt.event.ActionEvent;
 import java.awt.event.HierarchyEvent;
@@ -126,6 +127,12 @@ public class AddLinksDialog extends AbstractDialog<LinkCollectingJob> {
 
         };
         setLocator(new RememberRelativeDialogLocator("AddLinksDialog", JDGui.getInstance().getMainFrame()));
+    }
+
+    @Override
+    public ModalityType getModalityType() {
+
+        return ModalityType.MODELESS;
     }
 
     // @Override
