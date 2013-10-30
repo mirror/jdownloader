@@ -53,7 +53,7 @@ public class DownloadLinkStorable implements Storable {
 	public long getSize() {
 		if (link == null)
 			return -1l;
-		return link.getDownloadSize();
+		return link.getKnownDownloadSize();
 	}
 
 	public long getDone() {

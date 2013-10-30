@@ -6,6 +6,7 @@ import jd.nutils.Formatter;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginProgress;
 
+import org.jdownloader.api.jdanywhere.api.Helper;
 import org.jdownloader.gui.views.downloads.columns.ProgressColumn;
 import org.jdownloader.gui.views.downloads.columns.TaskColumn;
 import org.jdownloader.images.NewTheme;
@@ -40,7 +41,7 @@ public class DownloadPluginProgress extends PluginProgress {
 
     @Override
     public String getMessage(Object requestor) {
-        if (requestor instanceof TaskColumn) { return normal; }
+        if (requestor instanceof TaskColumn || requestor == Helper.REQUESTOR) { return normal; }
         long total = getTotal();
         if (requestor instanceof ProgressColumn) {
             if (total > 0) {

@@ -42,7 +42,7 @@ public class DashboardApi implements IDashboardApi {
     JDownloaderToolBarAPIImpl tbAPI = new JDownloaderToolBarAPIImpl();
 
     public String apiVersion() {
-        return "1.0.20130505";
+        return "1.0.20131030";
     }
 
     /*
@@ -68,7 +68,7 @@ public class DashboardApi implements IDashboardApi {
     /*
      * (non-Javadoc)
      * 
-     * @see org.jdownloader.extensions.jdanywhere.api.IDashboardApi#pause(java.lang.Boolean)
+     * @see org.jdownloader.extensions.jdanywhere.api.IDashboardApi#pause(java.lang .Boolean)
      */
     @Override
     public boolean pause() {
@@ -101,7 +101,9 @@ public class DashboardApi implements IDashboardApi {
         int running = DownloadWatchDog.getInstance().getActiveDownloads();
         ret.put("running", running > 0);
         ret.put("limit", org.jdownloader.settings.staticreferences.CFG_GENERAL.DOWNLOAD_SPEED_LIMIT_ENABLED.isEnabled());
-        // if (org.jdownloader.settings.staticreferences.CFG_GENERAL.DOWNLOAD_SPEED_LIMIT_ENABLED.isEnabled()) {
+        // if
+        // (org.jdownloader.settings.staticreferences.CFG_GENERAL.DOWNLOAD_SPEED_LIMIT_ENABLED.isEnabled())
+        // {
         ret.put("limitspeed", org.jdownloader.settings.staticreferences.CFG_GENERAL.DOWNLOAD_SPEED_LIMIT.getValue());
         // } else {
         // ret.put("limitspeed", 0);
@@ -186,7 +188,7 @@ public class DashboardApi implements IDashboardApi {
     /*
      * (non-Javadoc)
      * 
-     * @see org.jdownloader.extensions.jdanywhere.api.IDashboardApi#setLimitspeed(int)
+     * @see org.jdownloader.extensions.jdanywhere.api.IDashboardApi#setLimitspeed (int)
      */
     @Override
     public boolean setLimitspeed(int speed) {
@@ -197,7 +199,7 @@ public class DashboardApi implements IDashboardApi {
     /*
      * (non-Javadoc)
      * 
-     * @see org.jdownloader.extensions.jdanywhere.api.IDashboardApi#activateLimitspeed(boolean)
+     * @see org.jdownloader.extensions.jdanywhere.api.IDashboardApi#activateLimitspeed (boolean)
      */
     @Override
     public boolean activateLimitspeed(boolean activate) {
@@ -205,12 +207,14 @@ public class DashboardApi implements IDashboardApi {
         return true;
     }
 
-    // returns the SpeedMeter from UI without the DownloadSpeed / AverageSpeed Text as an PNG
+    // returns the SpeedMeter from UI without the DownloadSpeed / AverageSpeed
+    // Text as an PNG
     // used in iPhone-App
     /*
      * (non-Javadoc)
      * 
-     * @see org.jdownloader.extensions.jdanywhere.api.IDashboardApi#speedMeter(org.appwork.remoteapi.RemoteAPIRequest, org.appwork.remoteapi.RemoteAPIResponse)
+     * @see org.jdownloader.extensions.jdanywhere.api.IDashboardApi#speedMeter(org .appwork.remoteapi.RemoteAPIRequest,
+     * org.appwork.remoteapi.RemoteAPIResponse)
      */
     @Override
     public void speedMeter(RemoteAPIRequest request, RemoteAPIResponse response) throws InternalApiException {
@@ -264,7 +268,7 @@ public class DashboardApi implements IDashboardApi {
                             ro.setLinkID(link.getUniqueID().getID());
                             ro.setDone(link.getDownloadCurrent());
                             ro.setSpeed(link.getDownloadSpeed());
-                            long remainingBytes = (link.getDownloadSize() - link.getDownloadCurrent());
+                            long remainingBytes = (link.getKnownDownloadSize() - link.getDownloadCurrent());
                             ro.setETA(remainingBytes / link.getDownloadSpeed());
                             ret.add(ro);
                         }
