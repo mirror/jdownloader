@@ -19,7 +19,7 @@ public class AdvancedTable extends BasicJDTable<AdvancedConfigEntry> {
     private static final long serialVersionUID = 1L;
 
     public AdvancedTable() {
-        super(new AdvancedTableModel("AdvancedTable"));
+        super(new AdvancedConfigTableModel("AdvancedTable"));
     }
 
     @Override
@@ -52,7 +52,7 @@ public class AdvancedTable extends BasicJDTable<AdvancedConfigEntry> {
     }
 
     public void filter(String text) {
-        ((AdvancedTableModel) this.getModel()).refresh(text);
+        ((AdvancedConfigTableModel) this.getModel()).refresh(text);
     }
 
 }

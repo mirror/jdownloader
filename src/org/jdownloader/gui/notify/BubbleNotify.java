@@ -31,6 +31,8 @@ import org.appwork.storage.config.events.GenericConfigEventListener;
 import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.swing.EDTRunner;
+import org.appwork.utils.swing.windowmanager.WindowManager;
+import org.appwork.utils.swing.windowmanager.WindowManager.WindowExtendedState;
 import org.jdownloader.captcha.event.ChallengeResponseListener;
 import org.jdownloader.captcha.v2.AbstractResponse;
 import org.jdownloader.captcha.v2.ChallengeResponseController;
@@ -238,10 +240,34 @@ public class BubbleNotify implements UpdaterListener, ReconnecterListener, Chall
 
     public void show(final AbstractNotifyWindow no) {
         if (JDGui.getInstance().isSilentModeActive() && !CFG_BUBBLE.BUBBLE_NOTIFY_ENABLED_DURING_SILENT_MODE.isEnabled()) return;
+
         new EDTRunner() {
 
             @Override
             protected void runInEDT() {
+
+                switch (CFG_BUBBLE.CFG.getBubbleNotifyEnabledState()) {
+                case JD_NOT_ACTIVE:
+                    if (WindowManager.getInstance().hasFocus()) { return; }
+                    break;
+
+                case NEVER:
+                    return;
+                case TASKBAR:
+                    if (WindowManager.getInstance().getExtendedState(JDGui.getInstance().getMainFrame()) != WindowExtendedState.ICONIFIED) { return; }
+                    break;
+
+                case TRAY:
+                    if (!JDGui.getInstance().getMainFrame().isVisible()) break;
+                    return;
+                case TRAY_OR_TASKBAR:
+
+                    if (WindowManager.getInstance().getExtendedState(JDGui.getInstance().getMainFrame()) == WindowExtendedState.ICONIFIED) {
+                        break;
+                    }
+                    if (!JDGui.getInstance().getMainFrame().isVisible()) break;
+                    return;
+                }
                 ballooner.add(no);
             }
         };

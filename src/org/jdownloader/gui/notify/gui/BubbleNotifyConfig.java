@@ -8,6 +8,7 @@ import org.appwork.storage.config.annotations.DefaultIntValue;
 import org.appwork.storage.config.annotations.DefaultLongValue;
 import org.appwork.storage.config.annotations.DefaultStringValue;
 import org.appwork.storage.config.annotations.DescriptionForConfigEntry;
+import org.appwork.storage.config.annotations.EnumLabel;
 
 public interface BubbleNotifyConfig extends ConfigInterface {
 
@@ -124,6 +125,28 @@ public interface BubbleNotifyConfig extends ConfigInterface {
     public boolean isBubbleNotifyEnabledDuringSilentMode();
 
     public void setBubbleNotifyEnabledDuringSilentMode(boolean b);
+
+    public static enum BubbleNotifyEnabledState {
+        @EnumLabel("Always")
+        ALWAYS,
+        @EnumLabel("Never")
+        NEVER,
+        @EnumLabel("Only if JDownloader is not the active window")
+        JD_NOT_ACTIVE,
+        @EnumLabel("Only if JDownloader is minimized to tray or taskbar")
+        TRAY_OR_TASKBAR,
+        @EnumLabel("Only if JDownloader is minimized to tray")
+        TRAY,
+        @EnumLabel("Only if JDownloader is minimized to taskbar")
+        TASKBAR
+
+    }
+
+    @AboutConfig()
+    @DefaultEnumValue("ALWAYS")
+    public BubbleNotifyEnabledState getBubbleNotifyEnabledState();
+
+    public void setBubbleNotifyEnabledState(BubbleNotifyEnabledState b);
 
     @AboutConfig()
     @DefaultBooleanValue(true)

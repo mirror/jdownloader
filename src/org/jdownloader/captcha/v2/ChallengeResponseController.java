@@ -144,9 +144,9 @@ public class ChallengeResponseController {
             while (!job.isSolved() && !job.isDone()) {
                 synchronized (job) {
                     if (!job.isSolved() && !job.isDone()) {
-                        System.out.println(job);
+
                         job.wait(10000);
-                        logger.info("Notified");
+
                     }
                 }
             }

@@ -2947,17 +2947,17 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Bubble Notify" })
     String plugins_optional_JDLightTray_ballon();
 
-    @Default(lngs = { "en" }, values = { "Show a Bubble if a new Package is in the Linkgrabber" })
-    String plugins_optional_JDLightTray_ballon_newPackages();
+    @Default(lngs = { "en" }, values = { "a new Package is in the Linkgrabber" })
+    String plugins_optional_JDLightTray_ballon_newPackages2();
 
     @Default(lngs = { "en" }, values = { "Bubble Notifications are tiny messages that notify you when special events occur. " })
     String plugins_optional_JDLightTray_ballon_desc();
 
-    @Default(lngs = { "en" }, values = { "Show a Bubble if new Links were grabbed" })
-    String plugins_optional_JDLightTray_ballon_newlinks();
+    @Default(lngs = { "en" }, values = { "new Links were grabbed" })
+    String plugins_optional_JDLightTray_ballon_newlinks2();
 
-    @Default(lngs = { "en" }, values = { "Show a Bubble if an Update is ready for installation" })
-    String plugins_optional_JDLightTray_ballon_updates();
+    @Default(lngs = { "en" }, values = { "an Update is ready for installation" })
+    String plugins_optional_JDLightTray_ballon_updates2();
 
     @Default(lngs = { "en" }, values = { "JDownloader Updates available!" })
     String balloon_updates();
@@ -2974,11 +2974,11 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Reconnect successful!\r\nYour new IP is %s1" })
     String balloon_reconnect_end_msg(IP ip);
 
-    @Default(lngs = { "en" }, values = { "Show a Bubble before a Reconnect" })
-    String plugins_optional_JDLightTray_ballon_reconnectstart();
+    @Default(lngs = { "en" }, values = { "before a Reconnect" })
+    String plugins_optional_JDLightTray_ballon_reconnectstart2();
 
-    @Default(lngs = { "en" }, values = { "Show a Bubble after a Reconnect" })
-    String plugins_optional_JDLightTray_ballon_reconnectend();
+    @Default(lngs = { "en" }, values = { "after a Reconnect" })
+    String plugins_optional_JDLightTray_ballon_reconnectend2();
 
     @Default(lngs = { "en" }, values = { "JDownloader Reconnect" })
     String balloon_reconnect();
@@ -3007,8 +3007,8 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Pending. This Solver is still running" })
     String CaptchaNotify_pending();
 
-    @Default(lngs = { "en" }, values = { "Show a Bubble if a Captcha Dialog is waiting in the Background" })
-    String plugins_optional_JDLightTray_ballon_captcha();
+    @Default(lngs = { "en" }, values = { "a Captcha Dialog is waiting in the Background" })
+    String plugins_optional_JDLightTray_ballon_captcha2();
 
     @Default(lngs = { "en" }, values = { "Time to Live (in ms)" })
     String BubbleNotifyConfigPanel_BubbleNotifyConfigPanel_timeout();
@@ -3478,11 +3478,11 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Status" })
     String lit_status();
 
-    @Default(lngs = { "en" }, values = { "Show a Bubble when a Downloadlink started or stopped" })
-    String plugins_optional_JDLightTray_ballon_startstopdownloads();
+    @Default(lngs = { "en" }, values = { "a Downloadlink started or stopped" })
+    String plugins_optional_JDLightTray_ballon_startstopdownloads2();
 
-    @Default(lngs = { "en" }, values = { "Show a Bubble when the Download started, stopped or has been paused " })
-    String plugins_optional_JDLightTray_ballon_startpausestop();
+    @Default(lngs = { "en" }, values = { "the Download started, stopped or has been paused " })
+    String plugins_optional_JDLightTray_ballon_startpausestop2();
 
     @Default(lngs = { "en" }, values = { "Sort Downloadorder on '%s1'" })
     String SortPackagesDownloadOrdnerOnColumn(String name);
@@ -3540,4 +3540,31 @@ public interface GuiTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Captchas solved by the 9kw.eu Captcha Exchange System" })
     String NinekwService_getDescription_tt_();
+
+    @Default(lngs = { "en" }, values = { "Always" })
+    String BubbleNotifyConfigPanel_BubbleNotifyConfigPanel_always();
+
+    @Default(lngs = { "en" }, values = { "Only if JDownloader is not the active application" })
+    String BubbleNotifyConfigPanel_BubbleNotifyConfigPanel_jdnotactive();
+
+    @Default(lngs = { "en" }, values = { "Only if JDownloader is minimized to tray or taskbar" })
+    String BubbleNotifyConfigPanel_BubbleNotifyConfigPanel_trayortask();
+
+    @Default(lngs = { "en" }, values = { "Only if JDownloader is minimized to taskbar" })
+    String BubbleNotifyConfigPanel_BubbleNotifyConfigPanel_taskbar();
+
+    @Default(lngs = { "en" }, values = { "Only if JDownloader is minimized to tray" })
+    String BubbleNotifyConfigPanel_BubbleNotifyConfigPanel_tray();
+
+    @Default(lngs = { "en" }, values = { "Never" })
+    String BubbleNotifyConfigPanel_BubbleNotifyConfigPanel_never();
+
+    @Default(lngs = { "en" }, values = { "Show Bubbles if..." })
+    String BubbleNotifyConfigPanel_BubbleNotifyConfigPanel_enabledstate();
+
+    @Default(lngs = { "en" }, values = { "and" })
+    String lit_and();
+
+    @Default(lngs = { "en" }, values = { "or" })
+    String lit_or();
 }

@@ -9,11 +9,11 @@ import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.settings.advanced.AdvancedConfigEntry;
 import org.jdownloader.settings.advanced.AdvancedConfigManager;
 
-public class AdvancedTableModel extends ExtTableModel<AdvancedConfigEntry> {
+public class AdvancedConfigTableModel extends ExtTableModel<AdvancedConfigEntry> {
     private static final long serialVersionUID = 1L;
     private String            text             = null;
 
-    public AdvancedTableModel(String id) {
+    public AdvancedConfigTableModel(String id) {
         super(id);
 
     }

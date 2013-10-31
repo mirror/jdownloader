@@ -10,6 +10,7 @@ import javax.swing.JList;
 import javax.swing.ListCellRenderer;
 
 import org.appwork.storage.config.ValidationException;
+import org.appwork.storage.config.annotations.EnumLabel;
 import org.appwork.storage.config.events.GenericConfigEventListener;
 import org.appwork.storage.config.handler.KeyHandler;
 
@@ -81,10 +82,23 @@ public class ComboBox<ContentType> extends JComboBox implements SettingsComponen
                 if (index == -1) index = getSelectedIndex();
                 if (index == -1) return orgRenderer.getListCellRendererComponent(list, null, index, isSelected, cellHasFocus);
                 Component ret;
-                renderComponent(ret = orgRenderer.getListCellRendererComponent(list, translations[index], index, isSelected, cellHasFocus), list, (ContentType) value, index, isSelected, cellHasFocus);
+
+                renderComponent(ret = orgRenderer.getListCellRendererComponent(list, getLabel(index, (ContentType) value), index, isSelected, cellHasFocus), list, (ContentType) value, index, isSelected, cellHasFocus);
                 return ret;
             }
         });
+    }
+
+    protected String getLabel(int index, ContentType value) {
+        if (translations == null) {
+            try {
+                return value.getClass().getDeclaredField(value.toString()).getAnnotation(EnumLabel.class).value();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            return value + "";
+        }
+        return translations[index];
     }
 
     protected void renderComponent(Component component, JList list, ContentType value, int index, boolean isSelected, boolean cellHasFocus) {
