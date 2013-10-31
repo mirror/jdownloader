@@ -135,5 +135,4 @@ public class MenuManagerLinkgrabberTabBottombar extends AbstractBottomBarMenuMan
         mr.add(quicksettings);
         return mr;
     }
-
 }

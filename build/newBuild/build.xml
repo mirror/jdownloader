@@ -57,7 +57,7 @@
 		
 		<javac srcdir="${dep.browser}/src" excludes="" debug="${debug}" verbose="false" destdir="${cls}" encoding="UTF-8" source="1.6" target="1.6" includeantruntime="false">
 			<classpath refid="classpath" />
-			
+			  <compilerarg line="-proc:none"/>
 
 		</javac>
 
@@ -72,6 +72,7 @@
 
 		<javac srcdir="src" debug="${debug}" verbose="false" excludes="jd/utils/dev/*,org/jdownloader/extensions/langfileeditor/**/*,org/jdownloader/extensions/neembuu/**/*,org/jdownloader/extensions/remoteserv/**/*" destdir="${cls}" encoding="UTF-8" source="1.6" target="1.6" includeantruntime="false">
 			<classpath refid="classpath" />
+			  <compilerarg line="-proc:only"/>
 
 		</javac>
 		<javac srcdir="${dep.jdupdateclient}/src" excludes="" debug="${debug}" destdir="${cls}" encoding="UTF-8" source="1.6" target="1.6" includeantruntime="false">
