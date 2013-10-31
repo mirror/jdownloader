@@ -44,6 +44,7 @@ public class ReconnectAction extends ToolBarAction {
                     @Override
                     public ModalityType getModalityType() {
                         return ModalityType.MODELESS;
+                        //
                     }
 
                 };
