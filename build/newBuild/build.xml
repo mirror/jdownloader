@@ -45,30 +45,30 @@
 
 		<!-- Build dependencies -->
 
-		<javac srcdir="${dep.awu}/src" excludes="**/test/**" verbose="true" debug="${debug}" destdir="${cls}" encoding="UTF-8" source="1.6" target="1.6" includeantruntime="false">
+		<javac srcdir="${dep.awu}/src" excludes="**/test/**" verbose="false" debug="${debug}" destdir="${cls}" encoding="UTF-8" source="1.6" target="1.6" includeantruntime="false">
 			<classpath refid="classpath" />
 
 		</javac>
 
-		<javac srcdir="${dep.myjd}/src" excludes="**/test/**" verbose="true" debug="${debug}" destdir="${cls}" encoding="UTF-8" source="1.6" target="1.6" includeantruntime="false">
+		<javac srcdir="${dep.myjd}/src" excludes="**/test/**" verbose="false" debug="${debug}" destdir="${cls}" encoding="UTF-8" source="1.6" target="1.6" includeantruntime="false">
 			<classpath refid="classpath" />
 
 		</javac>
 		
-		<javac srcdir="${dep.browser}/src" excludes="" debug="${debug}" verbose="true" destdir="${cls}" encoding="UTF-8" source="1.6" target="1.6" includeantruntime="false">
+		<javac srcdir="${dep.browser}/src" excludes="" debug="${debug}" verbose="false" destdir="${cls}" encoding="UTF-8" source="1.6" target="1.6" includeantruntime="false">
 			<classpath refid="classpath" />
 
 		</javac>
 
 
 
-		<javac srcdir="${dep.updateclient}/src" excludes="" verbose="true" debug="${debug}" destdir="${cls}" encoding="UTF-8" source="1.6" target="1.6" includeantruntime="false">
+		<javac srcdir="${dep.updateclient}/src" excludes="" verbose="false" debug="${debug}" destdir="${cls}" encoding="UTF-8" source="1.6" target="1.6" includeantruntime="false">
 			<classpath refid="classpath" />
 
 		</javac>
 
 
-		<javac srcdir="src" debug="${debug}" verbose="true" excludes="jd/utils/dev/*,org/jdownloader/extensions/langfileeditor/**/*,org/jdownloader/extensions/neembuu/**/*,org/jdownloader/extensions/remoteserv/**/*" destdir="${cls}" encoding="UTF-8" source="1.6" target="1.6" includeantruntime="false">
+		<javac srcdir="src" debug="${debug}" verbose="false" excludes="jd/utils/dev/*,org/jdownloader/extensions/langfileeditor/**/*,org/jdownloader/extensions/neembuu/**/*,org/jdownloader/extensions/remoteserv/**/*" destdir="${cls}" encoding="UTF-8" source="1.6" target="1.6" includeantruntime="false">
 			<classpath refid="classpath" />
 
 		</javac>
