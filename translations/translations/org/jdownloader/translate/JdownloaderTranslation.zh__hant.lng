@@ -26,6 +26,7 @@ LinkFilterSettings_DefaultFilterList_directhttp=直接 HTTP
 LinkFilterSettings_DefaultFilterList_getDefaultValue_=離線檔案
 LinkSource_CLIPBOARD=剪貼簿
 LinkSource_FLASHGOT=Flashgot
+LinkSource_MYJD=MyJDownloader
 LinkSource_PASTE_LINKS_ACTION=貼上連結操作
 LinkSource_START_PARAMETER=啟動參數
 LinkSource_TOOLBAR=工具列
