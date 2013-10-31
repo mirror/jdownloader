@@ -4,6 +4,7 @@ ValidateArchiveAction_ValidateArchiveAction_object_=驗證壓縮檔
 ValidateArchiveAction_actionPerformed_=壓縮檔有 %s1 個分割是完整的。
 ValidateArchiveAction_actionPerformed_bad=壓縮檔有 %s1 個分割是並不完整的。
 archivename=壓縮檔名稱
+ask_for_password=需要壓縮檔密碼！
 cannot_extract_incopmplete=無法解壓縮 %s1。壓縮檔不完整！
 close=關閉
 context_cleanup=解壓縮後清除

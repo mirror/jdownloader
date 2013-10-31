@@ -2,6 +2,7 @@ JDGui_windowClosing_try_answer_totaskbar=最小化到工作列
 JDGui_windowClosing_try_answer_tray=隱藏到系統匣
 JDGui_windowClosing_try_asnwer_close=離開 JDownloader
 JDGui_windowClosing_try_msg_2=請選擇\r\n    - 退出 JDownloader (取消所有正在執行的處理程序)\r\n    - 最小化到工作列 (繼續下載)\r\n    - 隱藏到系統匣 (在背景繼續下載)
+JDGui_windowClosing_try_title=正在關閉 JDownloader...
 OnCloseAction_exit=離開應用程式
 OnCloseAction_totaskbar=最小化到工作列
 OnCloseAction_totray=關閉到系統匣
