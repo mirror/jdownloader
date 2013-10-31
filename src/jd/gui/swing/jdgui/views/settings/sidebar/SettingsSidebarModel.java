@@ -14,7 +14,7 @@ import jd.gui.swing.jdgui.views.settings.panels.MyJDownloaderSettingsPanel;
 import jd.gui.swing.jdgui.views.settings.panels.ReconnectSettings;
 import jd.gui.swing.jdgui.views.settings.panels.accountmanager.AccountManagerSettings;
 import jd.gui.swing.jdgui.views.settings.panels.advanced.AdvancedSettings;
-import jd.gui.swing.jdgui.views.settings.panels.anticaptcha.AntiCaptchaConfigPanel;
+import jd.gui.swing.jdgui.views.settings.panels.anticaptcha.CaptchaConfigPanel;
 import jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter.Linkgrabber;
 import jd.gui.swing.jdgui.views.settings.panels.packagizer.Packagizer;
 import jd.gui.swing.jdgui.views.settings.panels.pluginsettings.PluginSettings;
@@ -56,7 +56,7 @@ public class SettingsSidebarModel extends DefaultListModel implements GenericCon
     private final JList                  list;
     protected MyJDownloaderSettingsPanel myJDownloader;
     protected BubbleNotifyConfigPanel    notifierPanel;
-    protected AntiCaptchaConfigPanel     ac;
+    protected CaptchaConfigPanel     ac;
 
     public SettingsSidebarModel(JList list) {
         super();
@@ -150,13 +150,13 @@ public class SettingsSidebarModel extends DefaultListModel implements GenericCon
         }.getReturnValue();
     }
 
-    private AntiCaptchaConfigPanel getAntiCaptchaConfigPanel() {
+    private CaptchaConfigPanel getAntiCaptchaConfigPanel() {
         if (ac != null) return ac;
 
-        return new EDTHelper<AntiCaptchaConfigPanel>() {
-            public AntiCaptchaConfigPanel edtRun() {
+        return new EDTHelper<CaptchaConfigPanel>() {
+            public CaptchaConfigPanel edtRun() {
                 if (ac != null) return ac;
-                ac = new AntiCaptchaConfigPanel();
+                ac = new CaptchaConfigPanel();
                 return ac;
             }
         }.getReturnValue();

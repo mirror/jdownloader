@@ -90,6 +90,11 @@ public class NinekwService implements CESService {
         return ret;
     }
 
+    @Override
+    public String getDescription() {
+        return _GUI._.NinekwService_getDescription_tt_();
+    }
+
     // http://www.9kw.eu/hilfe.html#jdownloader-tab
 
 }

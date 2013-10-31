@@ -26,7 +26,7 @@ public class MyJDownloaderService implements CESService {
 
     @Override
     public String getDisplayName() {
-        return "my.jdownloader.org";
+        return "My.JDownloader";
     }
 
     @Override
@@ -54,15 +54,21 @@ public class MyJDownloaderService implements CESService {
 
             @Override
             public void save() {
-
+                System.out.println(1);
             }
 
             @Override
             public void updateContents() {
+                System.out.println(2);
             }
 
         };
         return ret;
+    }
+
+    @Override
+    public String getDescription() {
+        return _GUI._.MyJDownloaderService_getDescription_tt_();
     }
 
     // http://www.9kw.eu/hilfe.html#jdownloader-tab

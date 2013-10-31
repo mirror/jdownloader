@@ -286,9 +286,9 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
 
     void setActivePluginConfigPanel(String name);
 
-    void setActiveCESConfigPanel(String name);
+    // void setActiveCESConfigPanel(String name);
 
-    String getActiveCESConfigPanel();
+    // String getActiveCESConfigPanel();
 
     void setBalloonNotificationEnabled(boolean b);
 

@@ -9,4 +9,6 @@ public interface CESService {
     public String getDisplayName();
 
     public CESGenericConfigPanel createPanel();
+
+    public String getDescription();
 }

@@ -2539,7 +2539,7 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Enable/Disable JAC - the JDownloader Auto Captcha Solver" })
     String JAntiCaptchaToogleAction_createTooltip_();
 
-    @Default(lngs = { "en" }, values = { "Enable/Disable Remote Anti Captcha (Like Mobile Apps, MyJDownloader,..." })
+    @Default(lngs = { "en" }, values = { "Enable/Disable Remote Anti Captcha (Like Mobile Apps, My.JDownloader,..." })
     String RemoteCaptchaToogleAction_createTooltip_();
 
     @Default(lngs = { "en" }, values = { "Enable/Disable Captcha Dialogs. (Check our SilentMode)" })
@@ -2581,10 +2581,10 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Auto Captcha Recognition" })
     String JAntiCaptchaToogleAction_getNameWhenEnabled_();
 
-    @Default(lngs = { "en" }, values = { "Captchas via MyJDownloader" })
+    @Default(lngs = { "en" }, values = { "Captchas via My.JDownloader" })
     String RemoteCaptchaToogleAction_getNameWhenDisabled_();
 
-    @Default(lngs = { "en" }, values = { "Captchas via MyJDownloader" })
+    @Default(lngs = { "en" }, values = { "Captchas via My.JDownloader" })
     String RemoteCaptchaToogleAction_getNameWhenEnabled_();
 
     @Default(lngs = { "en" }, values = { "Silent Mode" })
@@ -2695,7 +2695,7 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Predefined rule: %s1" })
     String FilterTableModel_initColumns_static_(String name);
 
-    @Default(lngs = { "en" }, values = { "My JDownloader" })
+    @Default(lngs = { "en" }, values = { "My.JDownloader" })
     String MyJDownloaderSettingsPanel_MyJDownloaderSettingsPanel_title_();
 
     @Default(lngs = { "en" }, values = { "Sign up for an account at my.jdownloader.org, and access a lot of premium features like a JDownloader Remotecontrol via a Webinterface for your Browser, or apps for Android, IPhone and WindowsPhone" })
@@ -2758,16 +2758,16 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "My Account" })
     String MyJDownloaderSettingsPanel_MyJDownloaderSettingsPanel_remote();
 
-    @Default(lngs = { "en" }, values = { "Information and configuration of your My JDownloader Account" })
+    @Default(lngs = { "en" }, values = { "Information and configuration of your My.JDownloader Account" })
     String MyJDownloaderSettingsPanel_MyJDownloaderSettingsPanel_remote_description();
 
-    @Default(lngs = { "en" }, values = { "Enter the device name of this JDownloader instance. You can manage different JDownloader instances in one My JDownloader Account." })
+    @Default(lngs = { "en" }, values = { "Enter the device name of this JDownloader instance. You can manage different JDownloader instances in one My.JDownloader Account." })
     String MyJDownloaderSettingsPanel_MyJDownloaderSettingsPanel_jd_name();
 
     @Default(lngs = { "en" }, values = { "Device Name" })
     String MyJDownloaderSettingsPanel_MyJDownloaderSettingsPanel_devicename_();
 
-    @Default(lngs = { "en" }, values = { "Enter your My JDownloader Logins below. If you do not have an account yet, click the Link above and register for an account. It's free!" })
+    @Default(lngs = { "en" }, values = { "Enter your My.JDownloader Logins below. If you do not have an account yet, click the Link above and register for an account. It's free!" })
     String MyJDownloaderSettingsPanel_MyJDownloaderSettingsPanel_jd_logins();
 
     @Default(lngs = { "en" }, values = { "%s1 - Updates available!" })
@@ -3531,4 +3531,13 @@ public interface GuiTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Unknown" })
     String SizeColumn_getSizeString_zero();
+
+    @Default(lngs = { "en" }, values = { "Captchas solved by the Captchabrotherhood Captcha Exchange System" })
+    String CaptchaBrotherhoodService_getDescription_tt_();
+
+    @Default(lngs = { "en" }, values = { "Captcha solved by My.JDownloader Remote Applications (Webinterface,Mobile Apps,...)" })
+    String MyJDownloaderService_getDescription_tt_();
+
+    @Default(lngs = { "en" }, values = { "Captchas solved by the 9kw.eu Captcha Exchange System" })
+    String NinekwService_getDescription_tt_();
 }

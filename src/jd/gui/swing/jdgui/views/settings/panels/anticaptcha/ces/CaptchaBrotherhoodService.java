@@ -79,4 +79,9 @@ public class CaptchaBrotherhoodService implements CESService {
         return ret;
     }
 
+    @Override
+    public String getDescription() {
+        return _GUI._.CaptchaBrotherhoodService_getDescription_tt_();
+    }
+
 }

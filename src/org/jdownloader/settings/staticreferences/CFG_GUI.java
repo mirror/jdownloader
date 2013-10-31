@@ -168,7 +168,6 @@ public class CFG_GUI {
      **/
     public static final IntegerKeyHandler                              CUSTOM_TABLE_ROW_HEIGHT                              = SH.getKeyHandler("CustomTableRowHeight", IntegerKeyHandler.class);
     // null
-    public static final StringKeyHandler                               ACTIVE_CESCONFIG_PANEL                               = SH.getKeyHandler("ActiveCESConfigPanel", StringKeyHandler.class);
     // FILENAME
     public static final EnumKeyHandler                                 SELECTED_LINKGRABBER_SEARCH_CATEGORY                 = SH.getKeyHandler("SelectedLinkgrabberSearchCategory", EnumKeyHandler.class);
     // false

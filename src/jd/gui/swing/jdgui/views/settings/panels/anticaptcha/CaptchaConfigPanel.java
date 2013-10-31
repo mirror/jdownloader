@@ -10,7 +10,7 @@ import org.jdownloader.images.NewTheme;
 import org.jdownloader.settings.staticreferences.CFG_CAPTCHA;
 import org.jdownloader.settings.staticreferences.CFG_SOUND;
 
-public class AntiCaptchaConfigPanel extends AbstractConfigPanel {
+public class CaptchaConfigPanel extends AbstractConfigPanel {
     private static final long serialVersionUID = 1L;
     private CESSettingsPanel  psp;
 
@@ -18,7 +18,7 @@ public class AntiCaptchaConfigPanel extends AbstractConfigPanel {
         return _GUI._.AntiCaptchaConfigPanel_getTitle();
     }
 
-    public AntiCaptchaConfigPanel() {
+    public CaptchaConfigPanel() {
         super();
         this.addHeader(getTitle(), NewTheme.I().getIcon("ocr", 32));
         this.addDescriptionPlain(_GUI._.AntiCaptchaConfigPanel_onShow_description());
