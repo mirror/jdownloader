@@ -47,7 +47,7 @@ public class ImgScriptDecrypt extends PluginForDecrypt {
      * Returns the annotations names array
      */
     public static String[] getAnnotationNames() {
-        return new String[] { "imagefolks.com", "imgrill.com", "pixup.us", "imgonion.com", "imgcandy.net", "imgmoney.com", "imagecorn.com", "imgcloud.co" };
+        return new String[] { "imagefolks.com", "imgrill.com", "pixup.us", "imgonion.com", "imgcandy.net", "imagecorn.com", "imgnext.com", "imgsavvy.com" };
     }
 
     /**

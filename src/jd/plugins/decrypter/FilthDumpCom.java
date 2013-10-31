@@ -35,7 +35,7 @@ public class FilthDumpCom extends PluginForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        br.setFollowRedirects(false);
+        br.setFollowRedirects(true);
         String parameter = param.toString();
         br.getPage(parameter);
         String filename = br.getRegex("<title>(.*?) :: Amateur Porn </title>").getMatch(0);

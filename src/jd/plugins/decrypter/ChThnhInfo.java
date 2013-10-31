@@ -75,9 +75,14 @@ public class ChThnhInfo extends PluginForDecrypt {
             if (fpName == null) fpName = br.getRegex("class=\"bold1\">Download anime(.*?)</span>").getMatch(0);
             String[] links = br.getRegex("<tr><td><a href=\"(/.*?)\"").getColumn(0);
             if (links == null || links.length == 0) links = br.getRegex("\"(/animeDownload/download/\\d+/.*?)\"").getColumn(0);
+            if (links == null || links.length == 0) links = br.getRegex("\\'\\.\\.(/download/[^<>\"]*?)\\'").getColumn(0);
             if (links == null || links.length == 0) return null;
             for (String finallink : links) {
-                finallink = "http://chauthanh.info" + Encoding.htmlDecode(finallink);
+                if (finallink.startsWith("/download/")) {
+                    finallink = "http://chauthanh.info/anime" + Encoding.htmlDecode(finallink);
+                } else {
+                    finallink = "http://chauthanh.info" + Encoding.htmlDecode(finallink);
+                }
                 decryptedLinks.add(createDownloadlink(finallink));
             }
         }
