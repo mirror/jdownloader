@@ -31,6 +31,9 @@ public class GUIEventSender extends Eventsender<GUIListener, GUIEvent> {
             listener.onGuiMainTabSwitch((View) event.getParameter(0), (View) event.getParameter(1));
             break;
         // fill
+        case KEY_MODIFIER:
+            listener.onKeyModifier((Integer) event.getParameter());
+            break;
         default:
             System.out.println("Unhandled Event: " + event);
         }

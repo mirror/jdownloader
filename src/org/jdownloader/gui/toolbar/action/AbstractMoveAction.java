@@ -25,6 +25,10 @@ public abstract class AbstractMoveAction extends AppAction implements AppActionL
     }
 
     @Override
+    public void onKeyModifier(int parameter) {
+    }
+
+    @Override
     public void actionPerformed(ActionEvent e) {
         delegate.actionPerformed(e);
     }

@@ -11,6 +11,7 @@ import jd.controlling.linkcollector.LinkCollector;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledPackage;
 import jd.gui.swing.jdgui.JDGui;
+import jd.gui.swing.jdgui.interfaces.View;
 
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.storage.config.annotations.EnumLabel;
@@ -34,13 +35,16 @@ import org.jdownloader.extensions.extraction.ExtractionExtension;
 import org.jdownloader.extensions.extraction.ValidateArchiveAction;
 import org.jdownloader.extensions.extraction.gui.DummyArchiveDialog;
 import org.jdownloader.gui.IconKey;
+import org.jdownloader.gui.KeyObserver;
+import org.jdownloader.gui.event.GUIEventSender;
+import org.jdownloader.gui.event.GUIListener;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.linkgrabber.LinkGrabberTableModel;
 import org.jdownloader.gui.views.linkgrabber.addlinksdialog.LinkgrabberSettings;
 import org.jdownloader.images.NewTheme;
 
-public class ConfirmAllContextmenuAction extends AbstractSelectionContextAction<CrawledPackage, CrawledLink> {
+public class ConfirmAllContextmenuAction extends AbstractSelectionContextAction<CrawledPackage, CrawledLink> implements GUIListener {
 
     /**
      * 
@@ -55,6 +59,23 @@ public class ConfirmAllContextmenuAction extends AbstractSelectionContextAction<
         @EnumLabel("Autostart: Automode (Quicksettings)")
         AUTO
 
+    }
+
+    private boolean metaCtrl = false;
+
+    @Override
+    public void onGuiMainTabSwitch(View oldView, View newView) {
+    }
+
+    @Override
+    public void onKeyModifier(int parameter) {
+        if (KeyObserver.getInstance().isControlDown() || KeyObserver.getInstance().isMetaDown()) {
+            metaCtrl = true;
+        } else {
+            metaCtrl = false;
+        }
+
+        updateLabelAndIcon();
     }
 
     private AutoStartOptions autoStart = AutoStartOptions.AUTO;
@@ -86,7 +107,11 @@ public class ConfirmAllContextmenuAction extends AbstractSelectionContextAction<
     }
 
     protected boolean doAutostart() {
-        return autoStart == AutoStartOptions.ENABLED || (autoStart == AutoStartOptions.AUTO && org.jdownloader.settings.staticreferences.CFG_LINKGRABBER.LINKGRABBER_AUTO_START_ENABLED.getValue());
+        boolean ret = autoStart == AutoStartOptions.ENABLED || (autoStart == AutoStartOptions.AUTO && org.jdownloader.settings.staticreferences.CFG_LINKGRABBER.LINKGRABBER_AUTO_START_ENABLED.getValue());
+        if (metaCtrl) {
+            ret = !ret;
+        }
+        return ret;
     }
 
     private boolean clearListAfterConfirm = false;
@@ -124,6 +149,8 @@ public class ConfirmAllContextmenuAction extends AbstractSelectionContextAction<
         setAutoStart(AutoStartOptions.AUTO);
         setItemVisibleForSelections(false);
         setItemVisibleForEmptySelection(true);
+        GUIEventSender.getInstance().addListener(this, true);
+        metaCtrl = KeyObserver.getInstance().isMetaDown() || KeyObserver.getInstance().isControlDown();
     }
 
     public void actionPerformed(ActionEvent e) {

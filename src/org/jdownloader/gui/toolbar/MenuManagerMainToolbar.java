@@ -16,7 +16,6 @@ import jd.gui.swing.jdgui.components.toolbar.actions.StartDownloadsAction;
 import jd.gui.swing.jdgui.components.toolbar.actions.StopDownloadsAction;
 import jd.gui.swing.jdgui.components.toolbar.actions.StopDownloadsButFinishRunningOnesAction;
 import jd.gui.swing.jdgui.components.toolbar.actions.UpdateAction;
-import jd.gui.swing.jdgui.interfaces.View;
 import jd.gui.swing.jdgui.menu.actions.KnowledgeAction;
 import jd.gui.swing.jdgui.menu.actions.LatestChangesAction;
 import jd.gui.swing.jdgui.menu.actions.RestartAction;
@@ -32,8 +31,6 @@ import org.jdownloader.controlling.contextmenu.MenuContainerRoot;
 import org.jdownloader.controlling.contextmenu.MenuItemData;
 import org.jdownloader.controlling.contextmenu.SeperatorData;
 import org.jdownloader.gui.IconKey;
-import org.jdownloader.gui.event.GUIEventSender;
-import org.jdownloader.gui.event.GUIListener;
 import org.jdownloader.gui.mainmenu.ChunksEditorLink;
 import org.jdownloader.gui.mainmenu.ParalellDownloadsEditorLink;
 import org.jdownloader.gui.mainmenu.ParallelDownloadsPerHostEditorLink;
@@ -59,7 +56,7 @@ import org.jdownloader.gui.views.downloads.action.MenuManagerAction;
 import org.jdownloader.gui.views.downloads.context.submenu.DeleteMenuContainer;
 import org.jdownloader.gui.views.linkgrabber.actions.AddContainerAction;
 
-public class MenuManagerMainToolbar extends ContextMenuManager<FilePackage, DownloadLink> implements GUIListener {
+public class MenuManagerMainToolbar extends ContextMenuManager<FilePackage, DownloadLink> {
 
     private static final MenuManagerMainToolbar INSTANCE = new MenuManagerMainToolbar();
 
@@ -96,8 +93,6 @@ public class MenuManagerMainToolbar extends ContextMenuManager<FilePackage, Down
 
     private MenuManagerMainToolbar() {
         super();
-
-        GUIEventSender.getInstance().addListener(this, true);
 
     }
 
@@ -211,12 +206,6 @@ public class MenuManagerMainToolbar extends ContextMenuManager<FilePackage, Down
     @Override
     public String getName() {
         return _GUI._.MainToolbarManager_getName();
-    }
-
-    @Override
-    public void onGuiMainTabSwitch(View oldView, View newView) {
-
-        // MainToolBar.getInstance().updateToolbar();
     }
 
     @Override

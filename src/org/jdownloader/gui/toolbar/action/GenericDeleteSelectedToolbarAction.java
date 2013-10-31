@@ -190,6 +190,10 @@ public class GenericDeleteSelectedToolbarAction extends SelectionBasedToolbarAct
     }
 
     @Override
+    public void onKeyModifier(int parameter) {
+    }
+
+    @Override
     protected String createTooltip() {
         return getName();
     }

@@ -8,4 +8,6 @@ public interface GUIListener extends EventListener {
 
     void onGuiMainTabSwitch(View oldView, View newView);
 
+    void onKeyModifier(int parameter);
+
 }

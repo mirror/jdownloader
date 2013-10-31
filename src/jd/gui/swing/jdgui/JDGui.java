@@ -109,6 +109,7 @@ import org.appwork.utils.swing.windowmanager.WindowManager.WindowExtendedState;
 import org.jdownloader.controlling.FileCreationManager;
 import org.jdownloader.crosssystem.idlegetter.IdleGetter;
 import org.jdownloader.gui.GuiUtils;
+import org.jdownloader.gui.KeyObserver;
 import org.jdownloader.gui.helpdialogs.HelpDialog;
 import org.jdownloader.gui.jdtrayicon.TrayExtension;
 import org.jdownloader.gui.notify.BubbleNotify;
@@ -244,6 +245,7 @@ public class JDGui implements UpdaterListener, OwnerFinder {
         });
 
         initSilentModeHooks();
+        KeyObserver.getInstance();
 
         // init tray
         tray = new TrayExtension();
@@ -798,8 +800,8 @@ public class JDGui implements UpdaterListener, OwnerFinder {
     }
 
     /**
-     * under Linux EDT and XAWT can cause deadlock when we call getDefaultConfiguration() inside EDT, so I moved this to work outside EDT and only put the
-     * mainframe stuff into EDT
+     * under Linux EDT and XAWT can cause deadlock when we call getDefaultConfiguration() inside EDT, so I moved this to work outside EDT
+     * and only put the mainframe stuff into EDT
      * 
      * restores the dimension and location to the window
      */
@@ -1438,8 +1440,8 @@ public class JDGui implements UpdaterListener, OwnerFinder {
     }
 
     /**
-     * Sets the window to tray or restores it. This method contains a lot of workarounds for individual system problems... Take care to avoid sideeffects when
-     * changing anything
+     * Sets the window to tray or restores it. This method contains a lot of workarounds for individual system problems... Take care to
+     * avoid sideeffects when changing anything
      * 
      * @param minimize
      */

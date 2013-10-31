@@ -1025,6 +1025,12 @@ public class Oceanus extends PluginForHost {
         @Override
         public void close() {
         }
+
+        @Override
+        @Deprecated
+        public boolean isResumable() {
+            return false;
+        }
     }
 
     @XmlAccessorType(XmlAccessType.FIELD)

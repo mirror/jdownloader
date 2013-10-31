@@ -53,6 +53,10 @@ public class StartDownloadsAction extends ToolBarAction implements DownloadWatch
         setAccelerator(KeyEvent.VK_S);
     }
 
+    @Override
+    public void onKeyModifier(int parameter) {
+    }
+
     public void actionPerformed(final ActionEvent e) {
         if (JDGui.getInstance().isCurrentPanel(Panels.LINKGRABBER)) {
             TaskQueue.getQueue().add(new QueueAction<Void, RuntimeException>() {

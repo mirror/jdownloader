@@ -301,6 +301,10 @@ public class LinkgrabberOverview extends MigPanel implements GenericConfigEventL
     }
 
     @Override
+    public void onKeyModifier(int parameter) {
+    }
+
+    @Override
     public void onLinkCrawlerAdded(LinkCollectorCrawler parameter) {
     }
 

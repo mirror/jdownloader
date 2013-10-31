@@ -29,6 +29,10 @@ public abstract class AbstractBottomBarMenuManager<PackageType extends AbstractP
 
     }
 
+    @Override
+    public void onKeyModifier(int parameter) {
+    }
+
     protected AbstractBottomBarMenuManager() {
         super();
         links = new ArrayList<CustomizeableActionBar>();

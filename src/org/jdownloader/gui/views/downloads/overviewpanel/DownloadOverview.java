@@ -76,6 +76,10 @@ public class DownloadOverview extends MigPanel implements DownloadControllerList
     private StateEventListener                  stateListener;
     private GenericConfigEventListener<Boolean> settingsListener;
 
+    @Override
+    public void onKeyModifier(int parameter) {
+    }
+
     public DownloadOverview(DownloadsTable table) {
         super("ins 0", "[][grow,fill][]", "[grow,fill]");
 

@@ -190,7 +190,7 @@ public class RemoteAPIIOHandlerWrapper implements UserIOHandlerInterface {
                 }
 
             } catch (InterruptedException e) {
-
+                dialog.setInterrupted();
                 // throw new DialogClosedException(Dialog.RETURN_INTERRUPT, e);
                 // throw new DialogClosedException(Dialog.RETURN_INTERRUPT);
             } catch (DialogClosedException e) {

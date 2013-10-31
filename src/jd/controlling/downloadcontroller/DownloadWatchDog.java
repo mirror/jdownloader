@@ -596,7 +596,8 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
 
                 if (DownloadWatchDog.this.stateMachine.isStartState() || DownloadWatchDog.this.stateMachine.isFinal()) {
                     /*
-                     * no downloads are running, so we will force only the selected links to get started by setting stopmark to first forced link
+                     * no downloads are running, so we will force only the selected links to get started by setting stopmark to first forced
+                     * link
                      */
 
                     // DownloadWatchDog.this.setStopMark(linksForce.get(0));
@@ -2571,8 +2572,8 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                                     waitedForNewActivationRequests += System.currentTimeMillis() - currentTimeStamp;
                                     if ((getSession().isActivationRequestsWaiting() == false && DownloadWatchDog.this.getActiveDownloads() == 0)) {
                                         /*
-                                         * it's important that this if statement gets checked after wait!, else we will loop through without waiting for new
-                                         * links/user interaction
+                                         * it's important that this if statement gets checked after wait!, else we will loop through without
+                                         * waiting for new links/user interaction
                                          */
                                         break;
                                     }
@@ -2841,6 +2842,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                         if (doAction == null || doAction == IfFileExistsAction.ASK_FOR_EACH_FILE) {
                             IfFileExistsDialogInterface io = new IfFileExistsDialog(downloadLink).show();
                             if (io.getCloseReason() == CloseReason.TIMEOUT) { throw new SkipReasonException(SkipReason.FILE_EXISTS); }
+                            if (io.getCloseReason() == CloseReason.INTERRUPT) { throw new InterruptedException("IFFileExistsDialog Interrupted"); }
                             if (io.getCloseReason() != CloseReason.OK) {
                                 doAction = IfFileExistsAction.SKIP_FILE;
                             } else {
