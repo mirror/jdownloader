@@ -2000,6 +2000,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                 ret.setMessage(_JDT._.plugins_errors_hosterproblem());
                 return ret;
             } else if (throwable instanceof InterruptedException) {
+                if (result.getController().isAborting()) { return new DownloadLinkCandidateResult(RESULT.STOPPED); }
                 pluginException = new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, _JDT._.plugins_errors_error() + "Interrupted");
             } else {
                 pluginException = new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, _JDT._.plugins_errors_error() + "Throwable");

@@ -79,7 +79,10 @@ public class PartColumn extends ExtTextColumn<AbstractNode> {
     @Override
     public String getStringValue(AbstractNode value) {
         PartInfo partInfo = getPartInfo(value);
-        if (partInfo != null) return partInfo.getPartID();
+        if (partInfo != null) {
+            int num = partInfo.getNum();
+            if (num >= 0) return String.valueOf(num);
+        }
         return null;
     }
 

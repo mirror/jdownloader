@@ -1,35 +1,39 @@
 package jd.plugins;
 
-import org.appwork.storage.Storable;
+import jd.controlling.packagecontroller.AbstractNode;
+import jd.parser.Regex;
 
-public class PartInfo implements Storable {
-
-    private String partID;
-
-    public String getPartID() {
-        return partID;
-    }
-
-    public void setPartID(String partID) {
-        this.partID = partID;
-    }
+public class PartInfo {
 
     public int getNum() {
         return num;
     }
 
-    public void setNum(int num) {
+    private final int num;
+
+    public PartInfo(/* storable */) {
+        this(-1);
+    }
+
+    public PartInfo(int num) {
+        this.num = Math.max(-1, num);
+    }
+
+    public PartInfo(AbstractNode node) {
+        int num = -1;
+        if (node != null) {
+            try {
+                String name = node.getName();
+                String partID = new Regex(name, "\\.r(\\d+)$").getMatch(0);
+                if (partID == null) partID = new Regex(name, "\\.pa?r?t?\\.?(\\d+).*?\\.rar$").getMatch(0);
+                if (partID != null) {
+                    num = Integer.parseInt(partID);
+                }
+            } catch (Exception e) {
+
+                e.printStackTrace();
+            }
+        }
         this.num = num;
     }
-
-    private int num;
-
-    private PartInfo(/* storable */) {
-    }
-
-    public PartInfo(String partId, int num) {
-        this.partID = partId;
-        this.num = num;
-    }
-
 }

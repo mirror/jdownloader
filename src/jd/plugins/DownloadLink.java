@@ -175,7 +175,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
     private transient UniqueAlltimeID                                   previousParent                      = null;
     private transient NullsafeAtomicReference<ExtractionStatus>         extractionStatus                    = null;
     private transient NullsafeAtomicReference<LinkStatus>               currentLinkStatus                   = new NullsafeAtomicReference<LinkStatus>(null);
-    private PartInfo                                                    partInfo;
+    private transient PartInfo                                          partInfo;
 
     /**
      * Erzeugt einen neuen DownloadLink
@@ -572,8 +572,14 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
     }
 
     public PartInfo getPartInfo() {
-
+        if (partInfo == null) {
+            partInfo = new PartInfo(this);
+        }
         return partInfo;
+    }
+
+    private void setPartInfo(PartInfo info) {
+        partInfo = info;
     }
 
     /**
@@ -885,7 +891,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
         }
         if (StringUtils.isEmpty(name)) name = UNKNOWN_FILE_NAME;
         this.name = name;
-        updatePartInfo();
+        setPartInfo(null);
         this.setIcon(null);
         if (hasNotificationListener()) {
             String newName = getName();
@@ -905,29 +911,12 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
             name = CrossSystem.alleviatePathParts(name);
             this.setProperty(PROPERTY_FORCEDFILENAME, name);
         }
+        setPartInfo(null);
         setIcon(null);
-        updatePartInfo();
         if (hasNotificationListener()) {
             String newName = getName();
             if (!oldName.equals(newName)) notifyChanges(AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, new DownloadLinkProperty(this, DownloadLinkProperty.Property.NAME, newName));
         }
-    }
-
-    private void updatePartInfo() {
-        partInfo = createPartInfo(getName());
-    }
-
-    public static PartInfo createPartInfo(String name) {
-        try {
-            int partIndex = name.indexOf(".part");
-            if (partIndex >= 0) {
-                String numString = name.substring(partIndex + 5, name.length() - 4);
-                int num = Integer.parseInt(numString);
-                return new PartInfo("part" + numString, num);
-            }
-        } catch (Exception e) {
-        }
-        return null;
     }
 
     private void setIcon(ImageIcon icon) {
@@ -976,8 +965,8 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
         } else {
             this.setProperty(PROPERTY_FINALFILENAME, Property.NULL);
         }
-        updatePartInfo();
         setIcon(null);
+        setPartInfo(null);
         if (hasNotificationListener()) {
             String newName = getName();
             if (!oldName.equals(newName)) notifyChanges(AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, new DownloadLinkProperty(this, DownloadLinkProperty.Property.NAME, newName));

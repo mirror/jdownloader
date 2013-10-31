@@ -256,15 +256,18 @@ public class CrawledLink implements AbstractPackageChildrenNode<CrawledPackage>,
         } else {
             this.name = name;
         }
-        updatePartInfo();
+        setPartInfo(null);
         if (hasNotificationListener()) nodeUpdated(this, AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, new CrawledLinkProperty(this, CrawledLinkProperty.Property.NAME, getName()));
     }
 
-    private void updatePartInfo() {
-        this.partInfo = DownloadLink.createPartInfo(getName());
+    private void setPartInfo(PartInfo info) {
+        this.partInfo = info;
     }
 
     public PartInfo getPartInfo() {
+        if (partInfo == null) {
+            partInfo = new PartInfo(this);
+        }
         return partInfo;
     }
 
