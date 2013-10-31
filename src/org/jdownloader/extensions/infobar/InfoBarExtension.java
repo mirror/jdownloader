@@ -21,6 +21,7 @@ import org.jdownloader.gui.mainmenu.MenuManagerMainmenu;
 import org.jdownloader.gui.mainmenu.container.ExtensionsMenuContainer;
 import org.jdownloader.gui.mainmenu.container.ExtensionsMenuWindowContainer;
 import org.jdownloader.gui.mainmenu.container.OptionalContainer;
+import org.jdownloader.gui.notify.gui.AbstractNotifyWindow;
 import org.jdownloader.gui.toolbar.MenuManagerMainToolbar;
 import org.jdownloader.logging.LogController;
 
@@ -73,7 +74,7 @@ public class InfoBarExtension extends AbstractExtension<InfoBarConfig, InfobarTr
             @Override
             public Object edtRun() {
                 try {
-                    com.sun.awt.AWTUtilities.setWindowOpacity(infoDialog, (float) (newValue / 100.0));
+                    AbstractNotifyWindow.setWindowOpacity(infoDialog, (float) (newValue / 100.0));
                 } catch (final Throwable e) {
                     e.printStackTrace();
                 }

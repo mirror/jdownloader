@@ -17,6 +17,7 @@ import java.awt.Rectangle;
 import java.awt.RenderingHints;
 import java.awt.Toolkit;
 import java.awt.Transparency;
+import java.awt.Window;
 import java.awt.event.AWTEventListener;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -97,10 +98,8 @@ public abstract class AbstractNotifyWindow<T extends JComponent> extends ExtJWin
         pack();
         round = 0;
         try {
-
-            com.sun.awt.AWTUtilities.setWindowOpaque(this, false);
-            round = 10;
-        } catch (Exception e) {
+            if (setWindowOpaque(this) == false) round = 10;
+        } catch (Throwable e) {
             e.printStackTrace();
         }
 
@@ -146,35 +145,60 @@ public abstract class AbstractNotifyWindow<T extends JComponent> extends ExtJWin
         return contentComponent;
     }
 
-    public static float getWindowOpacity(AbstractNotifyWindow owner) {
+    private static Boolean setWindowOpaqueSupported = null;
 
-        if (Application.getJavaVersion() >= Application.JAVA17) {
-            return owner.getOpacity();
-        } else {
-            return com.sun.awt.AWTUtilities.getWindowOpacity(owner);
+    public static boolean setWindowOpaque(Window owner) {
+        if (Boolean.FALSE.equals(setWindowOpaqueSupported)) return false;
+        try {
+            com.sun.awt.AWTUtilities.setWindowOpaque(owner, false);
+            setWindowOpaqueSupported = Boolean.TRUE;
+        } catch (Throwable e) {
+            e.printStackTrace();
         }
+        setWindowOpaqueSupported = Boolean.FALSE;
+        return false;
     }
 
-    public static void setWindowOpacity(AbstractNotifyWindow window, float f) {
+    private static Boolean getWindowOpacitySupported = null;
+
+    public static Float getWindowOpacity(Window owner) {
+        if (Boolean.FALSE.equals(getWindowOpacitySupported)) return null;
+        try {
+            Float ret = null;
+            if (Application.getJavaVersion() >= Application.JAVA17) {
+                ret = owner.getOpacity();
+            } else {
+                ret = com.sun.awt.AWTUtilities.getWindowOpacity(owner);
+            }
+            getWindowOpacitySupported = Boolean.TRUE;
+            return ret;
+        } catch (final Throwable e) {
+            e.printStackTrace();
+        }
+        getWindowOpacitySupported = Boolean.FALSE;
+        return null;
+    }
+
+    private static Boolean setWindowOpacitySupported = null;
+
+    public static void setWindowOpacity(Window window, float f) {
+        if (Boolean.FALSE.equals(setWindowOpacitySupported)) return;
         GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
         GraphicsDevice gd = ge.getDefaultScreenDevice();
         try {
-
             if (gd.isWindowTranslucencySupported(WindowTranslucency.TRANSLUCENT)) {
                 if (Application.getJavaVersion() >= Application.JAVA17) {
                     window.setOpacity(f);
-
-                    return;
                 } else {
                     com.sun.awt.AWTUtilities.setWindowOpacity(window, f);
-                    return;
                 }
+                setWindowOpacitySupported = Boolean.TRUE;
+                return;
             }
-        } catch (Exception e) {
-
-            // e.printStackTrace();
+        } catch (Throwable e) {
+            e.printStackTrace();
         }
-
+        setWindowOpacitySupported = Boolean.FALSE;
     }
 
     @Override

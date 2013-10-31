@@ -105,10 +105,11 @@ public class Fader implements ActionListener {
 
     protected void updateAlpha() {
         try {
-            srcAlpha = AbstractNotifyWindow.getWindowOpacity(owner);
-        } catch (Exception e1) {
+            Float ret = AbstractNotifyWindow.getWindowOpacity(owner);
+            if (ret == null) ret = destAlpha;
+            srcAlpha = ret;
+        } catch (Throwable e1) {
             srcAlpha = destAlpha;
-
         }
     }
 
