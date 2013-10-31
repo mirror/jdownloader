@@ -7,8 +7,8 @@ import org.appwork.storage.config.handler.KeyHandler;
 public class LinkgrabberBarConfirmAllButton extends ConfirmAllAction implements GenericConfigEventListener<Boolean> {
 
     public LinkgrabberBarConfirmAllButton() {
-        org.jdownloader.settings.staticreferences.CFG_LINKFILTER.LINKGRABBER_AUTO_START_ENABLED.getEventSender().addListener(this, true);
-        setAutoStart(org.jdownloader.settings.staticreferences.CFG_LINKFILTER.LINKGRABBER_AUTO_START_ENABLED.isEnabled());
+        org.jdownloader.settings.staticreferences.CFG_LINKGRABBER.LINKGRABBER_AUTO_START_ENABLED.getEventSender().addListener(this, true);
+        setAutoStart(org.jdownloader.settings.staticreferences.CFG_LINKGRABBER.LINKGRABBER_AUTO_START_ENABLED.isEnabled());
     }
 
     @Override

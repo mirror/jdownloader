@@ -89,7 +89,7 @@ public class ConfirmSelectionBarAction extends AppAction implements CachableInte
     }
 
     protected boolean doAutostart() {
-        return autoStart == AutoStartOptions.ENABLED || (autoStart == AutoStartOptions.AUTO && org.jdownloader.settings.staticreferences.CFG_LINKFILTER.LINKGRABBER_AUTO_START_ENABLED.getValue());
+        return autoStart == AutoStartOptions.ENABLED || (autoStart == AutoStartOptions.AUTO && org.jdownloader.settings.staticreferences.CFG_LINKGRABBER.LINKGRABBER_AUTO_START_ENABLED.getValue());
     }
 
     protected void switchToDownloadTab() {

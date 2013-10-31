@@ -212,7 +212,6 @@ public class CFG_GENERAL {
     /**
      * Add new Links on top of the downloadlist or at the bottom.
      **/
-    public static final BooleanKeyHandler               ADD_NEW_LINKS_ON_TOP                                             = SH.getKeyHandler("AddNewLinksOnTop", BooleanKeyHandler.class);
     // true
     /**
      * Disable this option if you do not want to see the filename in a captchadialog

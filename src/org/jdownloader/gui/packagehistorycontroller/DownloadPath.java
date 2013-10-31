@@ -24,7 +24,7 @@ public class DownloadPath implements Storable, HistoryEntry {
     }
 
     public int hashCode() {
-        return name.hashCode();
+        return name == null ? "".hashCode() : name.hashCode();
     }
 
     public void setName(String path) {

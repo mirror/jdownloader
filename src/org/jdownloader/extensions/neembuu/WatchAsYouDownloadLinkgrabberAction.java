@@ -61,7 +61,8 @@ public class WatchAsYouDownloadLinkgrabberAction extends AppAction {
         setSmallIcon(new ImageIcon(ImageProvider.merge(add, play, 0, 0, 9, 10)));
         this.autostart = true;
         /*
-         * } else { setName(_GUI._.ConfirmAction_ConfirmAction_context_add()); setSmallIcon(NewTheme.I().getIcon("add", 20)); this.autostart = false; }
+         * } else { setName(_GUI._.ConfirmAction_ConfirmAction_context_add()); setSmallIcon(NewTheme.I().getIcon("add", 20)); this.autostart
+         * = false; }
          */
         this.values = arrayList;
     }
@@ -72,7 +73,7 @@ public class WatchAsYouDownloadLinkgrabberAction extends AppAction {
 
             @Override
             protected Void run() throws RuntimeException {
-                boolean addTop = org.jdownloader.settings.staticreferences.CFG_LINKFILTER.LINKGRABBER_ADD_AT_TOP.getValue();
+                boolean addTop = org.jdownloader.settings.staticreferences.CFG_LINKGRABBER.LINKGRABBER_ADD_AT_TOP.getValue();
                 java.util.List<FilePackage> fpkgs = new ArrayList<FilePackage>();
                 java.util.List<CrawledLink> clinks = new ArrayList<CrawledLink>();
                 for (AbstractNode node : values) {

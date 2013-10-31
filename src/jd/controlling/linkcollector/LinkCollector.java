@@ -64,7 +64,6 @@ import org.appwork.utils.zip.ZipIOWriter;
 import org.jdownloader.controlling.FileCreationManager;
 import org.jdownloader.controlling.UniqueAlltimeID;
 import org.jdownloader.controlling.filter.LinkFilterController;
-import org.jdownloader.controlling.filter.LinkFilterSettings;
 import org.jdownloader.controlling.packagizer.PackagizerController;
 import org.jdownloader.extensions.extraction.BooleanStatus;
 import org.jdownloader.extensions.extraction.ExtractionExtension;
@@ -1000,7 +999,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
         synchronized (this) {
             if (linkChecker != null) return;
             setCrawlerFilter(LinkFilterController.getInstance());
-            restoreButtonEnabled = JsonConfig.create(LinkFilterSettings.class).isRestoreButtonEnabled();
+            restoreButtonEnabled = CFG_LINKGRABBER.RESTORE_BUTTON_ENABLED.isEnabled();
             setPackagizer(PackagizerController.getInstance());
             LinkChecker<CrawledLink> llinkChecker = new LinkChecker<CrawledLink>();
             llinkChecker.setLinkCheckHandler(this);
@@ -1611,7 +1610,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
         }
 
         /* convert all selected CrawledLinks to FilePackages */
-        boolean addTop = org.jdownloader.settings.staticreferences.CFG_LINKFILTER.LINKGRABBER_ADD_AT_TOP.getValue();
+        boolean addTop = org.jdownloader.settings.staticreferences.CFG_LINKGRABBER.LINKGRABBER_ADD_AT_TOP.getValue();
 
         /* add the converted FilePackages to DownloadController */
         /**

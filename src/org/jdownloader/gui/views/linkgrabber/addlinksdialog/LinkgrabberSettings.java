@@ -147,4 +147,30 @@ public interface LinkgrabberSettings extends ConfigInterface {
     String getSplitPackageNameFactoryPattern();
 
     void setSplitPackageNameFactoryPattern(String b);
+
+    @AboutConfig
+    @DefaultBooleanValue(false)
+    boolean isLinkgrabberAddAtTop();
+
+    void setLinkgrabberAddAtTop(boolean selected);
+
+    @AboutConfig
+    @DefaultBooleanValue(true)
+    boolean isLinkgrabberAutoStartEnabled();
+
+    void setLinkgrabberAutoStartEnabled(boolean selected);
+
+    @AboutConfig
+    @DefaultBooleanValue(false)
+    boolean isLinkgrabberAutoConfirmEnabled();
+
+    void setLinkgrabberAutoConfirmEnabled(boolean selected);
+
+    @DefaultBooleanValue(true)
+    @AboutConfig
+    @RequiresRestart("A JDownloader Restart is Required")
+    @org.appwork.storage.config.annotations.DescriptionForConfigEntry("show a restore button for filtered links")
+    boolean isRestoreButtonEnabled();
+
+    void setRestoreButtonEnabled(boolean b);
 }

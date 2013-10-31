@@ -200,10 +200,6 @@ public interface GeneralSettings extends ConfigInterface {
 
     void setKeepXOldLists(int x);
 
-    @DescriptionForConfigEntry("Add new Links on top of the downloadlist or at the bottom.")
-    @AboutConfig
-    boolean isAddNewLinksOnTop();
-
     @AboutConfig
     @DefaultBooleanValue(false)
     boolean isCopySingleRealURL();
@@ -262,8 +258,6 @@ public interface GeneralSettings extends ConfigInterface {
     boolean isAutoSortChildrenEnabled();
 
     void setAutoSortChildrenEnabled(boolean b);
-
-    void setAddNewLinksOnTop(boolean selected);
 
     void setAutoaddLinksAfterLinkcheck(boolean selected);
 

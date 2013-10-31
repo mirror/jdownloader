@@ -51,7 +51,7 @@ public class LinkGrabberSidebar extends MigPanel {
 
             public void onConfigValueModified(KeyHandler<Boolean> keyHandler, Boolean newValue) {
                 if (org.jdownloader.settings.staticreferences.CFG_GUI.LINKGRABBER_SIDEBAR_VISIBLE.getValue()) {
-                    org.jdownloader.settings.staticreferences.CFG_LINKFILTER.LINKGRABBER_AUTO_CONFIRM_ENABLED.setValue(org.jdownloader.settings.staticreferences.CFG_LINKFILTER.LINKGRABBER_AUTO_CONFIRM_ENABLED.getDefaultValue());
+                    org.jdownloader.settings.staticreferences.CFG_LINKGRABBER.LINKGRABBER_AUTO_CONFIRM_ENABLED.setValue(org.jdownloader.settings.staticreferences.CFG_LINKGRABBER.LINKGRABBER_AUTO_CONFIRM_ENABLED.getDefaultValue());
                 }
             }
         });

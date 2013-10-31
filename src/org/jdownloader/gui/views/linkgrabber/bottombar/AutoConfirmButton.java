@@ -40,7 +40,7 @@ import org.jdownloader.gui.views.linkgrabber.LinkGrabberTableModel;
 import org.jdownloader.gui.views.linkgrabber.contextmenu.ConfirmSelectionContextAction;
 import org.jdownloader.gui.views.linkgrabber.contextmenu.ConfirmSelectionContextAction.AutoStartOptions;
 import org.jdownloader.images.NewTheme;
-import org.jdownloader.settings.staticreferences.CFG_LINKFILTER;
+import org.jdownloader.settings.staticreferences.CFG_LINKGRABBER;
 
 public class AutoConfirmButton extends ExtButton implements ChangeListener, TableModelListener {
     /**
@@ -187,8 +187,8 @@ public class AutoConfirmButton extends ExtButton implements ChangeListener, Tabl
                             @Override
                             protected Void run() throws RuntimeException {
                                 java.util.List<AbstractNode> list = new ArrayList<AbstractNode>();
-                                boolean autoStart = org.jdownloader.settings.staticreferences.CFG_LINKFILTER.LINKGRABBER_AUTO_START_ENABLED.isEnabled();
-                                boolean autoConfirm = CFG_LINKFILTER.LINKGRABBER_AUTO_CONFIRM_ENABLED.isEnabled();
+                                boolean autoStart = org.jdownloader.settings.staticreferences.CFG_LINKGRABBER.LINKGRABBER_AUTO_START_ENABLED.isEnabled();
+                                boolean autoConfirm = CFG_LINKGRABBER.LINKGRABBER_AUTO_CONFIRM_ENABLED.isEnabled();
                                 for (CrawledLink l : LinkGrabberTableModel.getInstance().getAllChildrenNodes()) {
                                     if (l.getLinkState() == LinkState.OFFLINE) continue;
                                     if (l.isAutoConfirmEnabled() || autoConfirm) {

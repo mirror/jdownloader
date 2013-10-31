@@ -6,7 +6,6 @@ import org.appwork.storage.config.ConfigInterface;
 import org.appwork.storage.config.annotations.AboutConfig;
 import org.appwork.storage.config.annotations.DefaultBooleanValue;
 import org.appwork.storage.config.annotations.DefaultJsonObject;
-import org.appwork.storage.config.annotations.RequiresRestart;
 
 public interface LinkFilterSettings extends ConfigInterface {
 
@@ -22,31 +21,19 @@ public interface LinkFilterSettings extends ConfigInterface {
 
     void setLinkFilterEnabled(boolean b);
 
+    @AboutConfig
     @DefaultBooleanValue(true)
     boolean isLinkgrabberHosterQuickfilterEnabled();
 
     void setLinkgrabberHosterQuickfilterEnabled(boolean b);
 
+    @AboutConfig
     @DefaultBooleanValue(true)
     boolean isLinkgrabberFiletypeQuickfilterEnabled();
 
     void setLinkgrabberFiletypeQuickfilterEnabled(boolean b);
 
-    @DefaultBooleanValue(false)
-    boolean isLinkgrabberAddAtTop();
-
-    void setLinkgrabberAddAtTop(boolean selected);
-
-    @DefaultBooleanValue(true)
-    boolean isLinkgrabberAutoStartEnabled();
-
-    void setLinkgrabberAutoStartEnabled(boolean selected);
-
-    @DefaultBooleanValue(false)
-    boolean isLinkgrabberAutoConfirmEnabled();
-
-    void setLinkgrabberAutoConfirmEnabled(boolean selected);
-
+    @AboutConfig
     @DefaultBooleanValue(true)
     boolean isLinkgrabberExceptionsQuickfilterEnabled();
 
@@ -58,13 +45,5 @@ public interface LinkFilterSettings extends ConfigInterface {
     boolean isExceptionAsQuickfilterEnabled();
 
     void setExceptionAsQuickfilterEnabled(boolean b);
-
-    @DefaultBooleanValue(true)
-    @AboutConfig
-    @RequiresRestart("A JDownloader Restart is Required")
-    @org.appwork.storage.config.annotations.DescriptionForConfigEntry("show a restore button for filtered links")
-    boolean isRestoreButtonEnabled();
-
-    void setRestoreButtonEnabled(boolean b);
 
 }
