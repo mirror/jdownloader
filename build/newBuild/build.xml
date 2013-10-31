@@ -57,6 +57,7 @@
 		
 		<javac srcdir="${dep.browser}/src" excludes="" debug="${debug}" verbose="false" destdir="${cls}" encoding="UTF-8" source="1.6" target="1.6" includeantruntime="false">
 			<classpath refid="classpath" />
+			
 
 		</javac>
 
