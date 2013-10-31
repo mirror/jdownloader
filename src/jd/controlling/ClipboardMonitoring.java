@@ -340,7 +340,7 @@ public class ClipboardMonitoring {
 
     public static String getHTMLTransferData(final Transferable transferable) throws UnsupportedFlavorException, IOException {
         DataFlavor htmlFlavor = null;
-        final Class<?> preferClass = InputStream.class;
+        final Class<?> preferClass = byte[].class;
         /*
          * for our workaround for https://bugzilla.mozilla.org/show_bug.cgi?id=385421, it would be good if we have utf8 charset
          */
