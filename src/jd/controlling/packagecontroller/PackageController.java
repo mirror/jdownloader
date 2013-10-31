@@ -71,8 +71,8 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
                                               };
 
     /**
-     * add a Package at given position position in this PackageController. in case the Package is already controlled by this PackageController this function
-     * does move it to the given position
+     * add a Package at given position position in this PackageController. in case the Package is already controlled by this
+     * PackageController this function does move it to the given position
      * 
      * @param pkg
      * @param index
@@ -575,7 +575,8 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
     }
 
     /**
-     * remove the given children from the package. also removes the package from this PackageController in case it is empty after removal of the children
+     * remove the given children from the package. also removes the package from this PackageController in case it is empty after removal of
+     * the children
      * 
      * @param pkg
      * @param children
@@ -761,7 +762,24 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
                         for (PackageType pkg : packages) {
                             try {
                                 pkg.getModifyLock().writeLock();
-                                pkg.setCurrentSorter((PackageControllerComparator<ChildType>) comparator);
+                                pkg.setCurrentSorter(new PackageControllerComparator<ChildType>() {
+
+                                    @Override
+                                    public int compare(ChildType o1, ChildType o2) {
+                                        return comparator.compare(o1, o2);
+                                    }
+
+                                    @Override
+                                    public String getID() {
+                                        return comparator.getID();
+                                    }
+
+                                    @Override
+                                    public boolean isAsc() {
+                                        return comparator.isAsc();
+                                    }
+
+                                });
                                 for (ChildType child : pkg.getChildren()) {
                                     /* this resets getPreviousParentNodeID */
                                     child.setParentNode(pkg);
