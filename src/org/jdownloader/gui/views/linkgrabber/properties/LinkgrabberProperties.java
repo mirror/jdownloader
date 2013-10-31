@@ -21,12 +21,9 @@ public class LinkgrabberProperties extends MigPanel {
     public LinkgrabberProperties(LinkGrabberTable table) {
         super("ins 0", "[grow,fill]", "[grow,fill]");
         this.table = table;
-
         LAFOptions.getInstance().applyPanelBackground(this);
-
         pkgPanel = new PackagePropertiesPanel();
         linkPanel = new LinkPropertiesPanel();
-
         add(pkgPanel, "hidemode 3");
         add(linkPanel, "hidemode 3");
     }
@@ -42,7 +39,6 @@ public class LinkgrabberProperties extends MigPanel {
             linkPanel.setVisible(true);
             pkgPanel.setVisible(false);
             linkPanel.update(link);
-
         }
     }
 

@@ -32,6 +32,10 @@ public class StopDownloadsButFinishRunningOnesAction extends ToolBarAction imple
             public void execute(DownloadSession currentSession) {
                 currentSession.setStopMark(STOPMARK.RANDOM);
             }
+
+            @Override
+            public void interrupt() {
+            }
         });
     }
 

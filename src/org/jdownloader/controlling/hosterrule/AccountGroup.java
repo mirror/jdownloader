@@ -2,6 +2,7 @@ package org.jdownloader.controlling.hosterrule;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 import org.jdownloader.gui.translate._GUI;
 
@@ -21,9 +22,8 @@ public class AccountGroup {
         }
     }
 
-    private List<AccountReference> children;
-    private boolean                enabled;
-    private Rules                  rule = Rules.RANDOM;
+    private final List<AccountReference> children;
+    private Rules                        rule = Rules.RANDOM;
 
     public void setRule(Rules rule) {
         if (rule == null) rule = Rules.RANDOM;
@@ -40,17 +40,12 @@ public class AccountGroup {
         this.name = name;
     }
 
-    public boolean isEnabled() {
-        return enabled;
-    }
-
-    public void setEnabled(boolean enabled) {
-        this.enabled = enabled;
-    }
-
     public AccountGroup(List<AccountReference> childs) {
-        children = new ArrayList<AccountReference>(childs == null ? 1 : childs.size());
-        if (childs != null) children.addAll(childs);
+        if (childs != null) {
+            children = new CopyOnWriteArrayList<AccountReference>(childs);
+        } else {
+            children = new CopyOnWriteArrayList<AccountReference>();
+        }
 
     }
 

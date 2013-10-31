@@ -317,7 +317,7 @@ public class JDGui implements UpdaterListener, OwnerFinder {
                         if (state == ExtendedState.ICONIFIED.getId()) {
                             GuiUtils.flashWindow(mainFrame, true);
                         } else {
-                            GuiUtils.flashWindow(mainFrame, true);
+                            GuiUtils.flashWindow(mainFrame, false);
                         }
                     } catch (Exception e) {
                         logger.log(e);
@@ -798,8 +798,8 @@ public class JDGui implements UpdaterListener, OwnerFinder {
     }
 
     /**
-     * under Linux EDT and XAWT can cause deadlock when we call getDefaultConfiguration() inside EDT, so I moved this to work outside EDT
-     * and only put the mainframe stuff into EDT
+     * under Linux EDT and XAWT can cause deadlock when we call getDefaultConfiguration() inside EDT, so I moved this to work outside EDT and only put the
+     * mainframe stuff into EDT
      * 
      * restores the dimension and location to the window
      */
@@ -1438,8 +1438,8 @@ public class JDGui implements UpdaterListener, OwnerFinder {
     }
 
     /**
-     * Sets the window to tray or restores it. This method contains a lot of workarounds for individual system problems... Take care to
-     * avoid sideeffects when changing anything
+     * Sets the window to tray or restores it. This method contains a lot of workarounds for individual system problems... Take care to avoid sideeffects when
+     * changing anything
      * 
      * @param minimize
      */

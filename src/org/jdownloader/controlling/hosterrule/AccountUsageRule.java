@@ -2,6 +2,7 @@ package org.jdownloader.controlling.hosterrule;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 public class AccountUsageRule {
 
@@ -12,7 +13,7 @@ public class AccountUsageRule {
 
     public AccountUsageRule(String tld) {
         hoster = tld;
-        accounts = new ArrayList<AccountGroup>();
+        accounts = new CopyOnWriteArrayList<AccountGroup>();
     }
 
     public void setHoster(String hoster) {
@@ -20,8 +21,10 @@ public class AccountUsageRule {
     }
 
     public void setEnabled(boolean enabled) {
+        if (this.enabled == enabled) return;
         this.enabled = enabled;
-        if (owner != null) owner.fireUpdate();
+        HosterRuleController lowner = owner;
+        if (lowner != null) lowner.fireUpdate(this);
     }
 
     public boolean isEnabled() {
@@ -32,11 +35,6 @@ public class AccountUsageRule {
         return hoster;
     }
 
-    public void setAccounts(List<AccountGroup> list) {
-        accounts.clear();
-        accounts.addAll(list);
-    }
-
     public List<AccountGroup> getAccounts() {
         return accounts;
     }
@@ -45,4 +43,14 @@ public class AccountUsageRule {
         owner = controller;
     }
 
+    public void set(boolean enabledState, List<AccountGroup> list) {
+        if (list == null || list.isEmpty()) {
+            list = new ArrayList<AccountGroup>(1);
+            enabledState = false;
+        }
+        this.enabled = enabledState;
+        this.accounts = new CopyOnWriteArrayList<AccountGroup>(list);
+        HosterRuleController lowner = owner;
+        if (lowner != null) lowner.fireUpdate(this);
+    }
 }

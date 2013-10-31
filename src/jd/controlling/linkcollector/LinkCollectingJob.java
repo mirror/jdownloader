@@ -116,11 +116,11 @@ public class LinkCollectingJob {
         this.packageName = packageName;
     }
 
-    private Set<String> extractPasswords;
-    private File        outputFolder;
-    private String      packageName;
+    private Set<String>      extractPasswords;
+    private File             outputFolder;
+    private String           packageName;
 
-    private LinkOrigin  origin;
+    private final LinkOrigin origin;
 
     public LinkOrigin getOrigin() {
         return origin;

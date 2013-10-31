@@ -93,10 +93,8 @@ public class EditHosterRuleDialog extends AbstractDialog<Integer> {
 
     public AccountUsageRule getRule() {
         AccountUsageRule ret = new AccountUsageRule(rule.getHoster());
-        ret.setEnabled(rule.isEnabled());
         ret.setOwner(HosterRuleController.getInstance());
         ArrayList<AccountGroup> accounts = new ArrayList<AccountGroup>();
-
         for (AccountInterface ai : model.getTree()) {
             if (ai instanceof GroupWrapper) {
                 List<AccountReference> childs = new ArrayList<AccountReference>();
@@ -119,7 +117,7 @@ public class EditHosterRuleDialog extends AbstractDialog<Integer> {
                 accounts.add(group);
             }
         }
-        ret.setAccounts(accounts);
+        ret.set(rule.isEnabled(), accounts);
         return ret;
     }
 }

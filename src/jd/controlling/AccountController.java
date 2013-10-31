@@ -589,10 +589,11 @@ public class AccountController implements AccountControllerListener {
     public List<Account> getMultiHostAccounts(String host) {
         if (StringUtils.isEmpty(host)) return null;
         host = host.toLowerCase(Locale.ENGLISH);
+        ArrayList<Account> retList = new ArrayList<Account>();
         synchronized (MULTIHOSTER_ACCOUNTS) {
-            List<Account> ret = MULTIHOSTER_ACCOUNTS.get(host);
-            if (ret == null) return ret;
-            return new ArrayList<Account>(ret);
+            List<Account> list = MULTIHOSTER_ACCOUNTS.get(host);
+            if (list != null) retList.addAll(list);
+            return retList;
         }
     }
 

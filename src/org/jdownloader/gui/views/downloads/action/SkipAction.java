@@ -9,7 +9,6 @@ import jd.controlling.downloadcontroller.DownloadWatchDog;
 import jd.controlling.downloadcontroller.SingleDownloadController;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
-import jd.plugins.download.DownloadInterface;
 
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.ImageProvider.ImageProvider;
@@ -89,8 +88,7 @@ public class SkipAction extends AbstractSelectionContextAction<FilePackage, Down
                         for (DownloadLink a : getSelection().getChildren()) {
                             DownloadLink link = (DownloadLink) a;
                             SingleDownloadController slc = link.getDownloadLinkController();
-                            DownloadInterface dl = null;
-                            if (slc != null && (dl = slc.getDownloadInstance()) != null && !dl.isResumable()) {
+                            if (slc != null && slc.getDownloadInstance() != null && !link.isResumeable()) {
                                 count++;
                             }
                         }

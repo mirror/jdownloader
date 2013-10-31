@@ -6,7 +6,7 @@ public interface HosterRuleControllerListener extends EventListener {
 
     void onRuleAdded(AccountUsageRule parameter);
 
-    void onRuleDataUpdate();
+    void onRuleDataUpdate(AccountUsageRule parameter);
 
     void onRuleRemoved(AccountUsageRule parameter);
 

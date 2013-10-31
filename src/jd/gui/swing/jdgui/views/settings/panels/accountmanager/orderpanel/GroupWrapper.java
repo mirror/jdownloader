@@ -11,7 +11,6 @@ public class GroupWrapper implements AccountInterface {
 
     private AccountGroup                 group;
     private Rules                        rule = null;
-    private boolean                      enabled;
     private ArrayList<TreeNodeInterface> children;
     private String                       name = null;
 
@@ -21,7 +20,6 @@ public class GroupWrapper implements AccountInterface {
 
     public GroupWrapper(AccountGroup g) {
         this.group = g;
-        enabled = group.isEnabled();
         rule = group.getRule();
         name = g.getName();
         children = new ArrayList<TreeNodeInterface>();
@@ -34,12 +32,11 @@ public class GroupWrapper implements AccountInterface {
 
     @Override
     public boolean isEnabled() {
-        return enabled;
+        return true;
     }
 
     @Override
     public void setEnabled(boolean value) {
-        enabled = value;
     }
 
     @Override

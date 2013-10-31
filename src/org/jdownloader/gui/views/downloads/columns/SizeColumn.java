@@ -35,6 +35,7 @@ public class SizeColumn extends ExtColumn<AbstractNode> {
     private RenderLabel      countRenderer;
     private RendererMigPanel renderer;
     private boolean          fileCountVisible;
+    private final String     zeroString;
 
     public JPopupMenu createHeaderPopup() {
 
@@ -48,7 +49,7 @@ public class SizeColumn extends ExtColumn<AbstractNode> {
 
         this.sizeRenderer.setHorizontalAlignment(SwingConstants.RIGHT);
         this.countRenderer = new RenderLabel();
-
+        this.zeroString = _GUI._.SizeColumn_getSizeString_zero();
         this.countRenderer.setHorizontalAlignment(SwingConstants.LEFT);
         fileCountVisible = JsonConfig.create(GraphicalUserInterfaceSettings.class).isFileCountInSizeColumnVisible();
         this.renderer = new RendererMigPanel("ins 0,debug", "[]0[grow,fill]", "[grow,fill]");
@@ -161,7 +162,8 @@ public class SizeColumn extends ExtColumn<AbstractNode> {
         if (fileSize >= 1024 * 1024 * 1024l) { return this.formatter.format(fileSize / (1024 * 1024 * 1024.0)) + " GiB"; }
         if (fileSize >= 1024 * 1024l) { return this.formatter.format(fileSize / (1024 * 1024.0)) + " MiB"; }
         if (fileSize >= 1024l) { return this.formatter.format(fileSize / 1024.0) + " KiB"; }
-        if (fileSize <= 0) { return _GUI._.SizeColumn_getSizeString_zero(); }
+        if (fileSize == 0) { return "0 B"; }
+        if (fileSize < 0) { return zeroString; }
         return fileSize + " B";
     }
 

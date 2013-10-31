@@ -104,12 +104,9 @@ public class ChecksumColumn extends ExtTextColumn<AbstractNode> {
             } else if (value != null && value.length() == 40) {
                 dl.setSha1Hash(value);
             } else if (value == null || value.length() == 0) {
-
                 dl.setSha1Hash(null);
                 dl.setMD5Hash(null);
-
             }
-
         }
     }
 

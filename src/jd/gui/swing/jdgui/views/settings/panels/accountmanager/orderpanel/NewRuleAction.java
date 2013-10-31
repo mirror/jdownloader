@@ -78,7 +78,6 @@ public class NewRuleAction extends AbstractAddAction {
             DomainInfo di = list.get(d.getSelectedIndex());
             AccountUsageRule rule = new AccountUsageRule(di.getTld());
             rule.setEnabled(true);
-
             HosterRuleController.getInstance().add(rule);
         } catch (DialogClosedException e1) {
             e1.printStackTrace();

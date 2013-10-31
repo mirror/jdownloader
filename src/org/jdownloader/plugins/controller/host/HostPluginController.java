@@ -189,6 +189,10 @@ public class HostPluginController extends PluginController<PluginForHost> {
                                 public void execute(DownloadSession currentSession) {
                                     updatePluginInstance(node);
                                 }
+
+                                @Override
+                                public void interrupt() {
+                                }
                             });
                         } else {
                             updatePluginInstance(node);
@@ -196,6 +200,10 @@ public class HostPluginController extends PluginController<PluginForHost> {
                         return false;
                     }
                 });
+            }
+
+            @Override
+            public void interrupt() {
             }
         });
         return newList;

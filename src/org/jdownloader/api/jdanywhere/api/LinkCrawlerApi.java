@@ -119,7 +119,6 @@ public class LinkCrawlerApi implements ILinkCrawlerApi {
             LinkCollectingJob job = new LinkCollectingJob(LinkOrigin.MYJD, url);
             LinkCollector.getInstance().addCrawlerJob(job);
         } catch (Throwable e) {
-
         }
         return true;
     }

@@ -36,10 +36,6 @@ public class HosterOrderPanel extends SwitchPanel implements ActionListener, Acc
     private HosterRuleTableModel model;
     private HosterRuleTable      table;
     private MigPanel             tb;
-    private ExtButton            refreshButton;
-    private ExtButton            buyButton;
-    private ExtButton            newButton;
-    private ExtButton            removeButton;
 
     public HosterOrderPanel(final AccountManager accountManager) {
         super(new MigLayout("ins 0, wrap 1", "[grow,fill]", "[][grow,fill][]"));
@@ -65,14 +61,14 @@ public class HosterOrderPanel extends SwitchPanel implements ActionListener, Acc
         tb.setOpaque(false);
 
         NewRuleAction na;
-        tb.add(newButton = new ExtButton(na = new NewRuleAction()), "sg 1,height 26!");
+        tb.add(new ExtButton(na = new NewRuleAction()), "sg 1,height 26!");
         na.putValue(AbstractAction.SMALL_ICON, NewTheme.I().getIcon("add", 20));
         RemoveAction ra;
-        tb.add(removeButton = new ExtButton(ra = new RemoveAction(table)), "sg 1,height 26!");
+        tb.add(new ExtButton(ra = new RemoveAction(table)), "sg 1,height 26!");
         table.getSelectionModel().addListSelectionListener(new MinimumSelectionObserver(table, ra, 1));
 
-        tb.add(buyButton = new ExtButton(new BuyAction((PremiumAccountTable) null)), "sg 2,height 26!");
-        tb.add(refreshButton = new ExtButton(new RefreshAction()), "sg 2,height 26!");
+        tb.add(new ExtButton(new BuyAction((PremiumAccountTable) null)), "sg 2,height 26!");
+        tb.add(new ExtButton(new RefreshAction()), "sg 2,height 26!");
         add(txt, "gaptop 0,spanx,growx,pushx,gapbottom 5,wmin 10");
         add(new JScrollPane(table));
 
@@ -180,10 +176,9 @@ public class HosterOrderPanel extends SwitchPanel implements ActionListener, Acc
     }
 
     @Override
-    public void onRuleDataUpdate() {
+    public void onRuleDataUpdate(AccountUsageRule parameter) {
         if (isShown()) {
             table.repaint();
-
         }
     }
 

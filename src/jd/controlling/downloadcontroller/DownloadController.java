@@ -257,15 +257,15 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
                                     continue;
                                 } else {
                                     /* folder does not exist */
-                                    File folderParentFile = folderFile.getParentFile();
-                                    if (folderParentFile.exists() && folderParentFile.isDirectory()) {
+                                    File invalidDestination = DownloadWatchDog.getInstance().validateDestination(folderFile);
+                                    if (invalidDestination != null) {
+                                        logger.info("Not allowed to create folder: " + invalidDestination);
+                                    } else {
                                         if (folderFile.mkdirs()) {
-                                            logger.info("Create folder: " + folderFile + " because its parent exists");
+                                            logger.info("Create folder: " + folderFile);
                                         } else {
                                             logger.info("Could not create folder: " + folderFile);
                                         }
-                                    } else {
-                                        logger.info("Could not create folder: " + folderFile + " because its parent does not exist");
                                     }
                                 }
                             }

@@ -326,16 +326,9 @@ public class VeohCom extends PluginForHost {
                         } else {
                             downloadLink.setProperty("parts_finished", Long.valueOf(T[3]));
                         }
-                        boolean resumable = true;
-                        try {
-                            resumable = dl.isResumable();
-                        } catch (final Throwable e) {
-                        }
                         if (isExternalyAborted()) {
-                            if (resumable) {
-                                downloadLink.setProperty("bytes_loaded", Long.valueOf(BYTESLOADED));
-                                downloadLink.getLinkStatus().setStatus(LinkStatus.ERROR_DOWNLOAD_INCOMPLETE);
-                            }
+                            downloadLink.setProperty("bytes_loaded", Long.valueOf(BYTESLOADED));
+                            downloadLink.getLinkStatus().setStatus(LinkStatus.ERROR_DOWNLOAD_INCOMPLETE);
                             break;
                         }
                         baseUrl = templateUrl;

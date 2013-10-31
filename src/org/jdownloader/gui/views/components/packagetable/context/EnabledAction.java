@@ -11,7 +11,6 @@ import jd.controlling.downloadcontroller.SingleDownloadController;
 import jd.controlling.packagecontroller.AbstractPackageChildrenNode;
 import jd.controlling.packagecontroller.AbstractPackageNode;
 import jd.plugins.DownloadLink;
-import jd.plugins.download.DownloadInterface;
 
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.ImageProvider.ImageProvider;
@@ -96,8 +95,7 @@ public class EnabledAction<PackageType extends AbstractPackageNode<ChildrenType,
                             if (a instanceof DownloadLink) {
                                 DownloadLink link = (DownloadLink) a;
                                 SingleDownloadController slc = link.getDownloadLinkController();
-                                DownloadInterface dl = null;
-                                if (slc != null && (dl = slc.getDownloadInstance()) != null && !dl.isResumable()) {
+                                if (slc != null && slc.getDownloadInstance() != null && !link.isResumeable()) {
                                     count++;
                                 }
                             }

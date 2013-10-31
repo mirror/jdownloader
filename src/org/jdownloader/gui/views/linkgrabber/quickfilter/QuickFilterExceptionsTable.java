@@ -95,7 +95,6 @@ public class QuickFilterExceptionsTable extends FilterTable {
         }
         boolean readL = LinkCollector.getInstance().readLock();
         try {
-
             for (CrawledPackage pkg : LinkCollector.getInstance().getPackages()) {
                 synchronized (pkg) {
                     for (CrawledLink link : pkg.getChildren()) {

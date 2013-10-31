@@ -362,7 +362,6 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
     }
 
     private PropertiesScrollPane createPropertiesPanel() {
-
         final LinkgrabberProperties loverView = new LinkgrabberProperties(table);
         PropertiesScrollPane propertiesScrollPane = new PropertiesScrollPane(loverView, table);
 

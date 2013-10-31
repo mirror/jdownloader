@@ -175,7 +175,7 @@ public class LinkTreeUtils {
         }
     }
 
-    public static HashSet<String> getURLs(List<AbstractNode> links) {
+    public static HashSet<String> getURLs(List<? extends AbstractNode> links) {
         HashSet<String> urls = new HashSet<String>();
         if (links == null || links.size() == 0) return urls;
         String rawURL = null;

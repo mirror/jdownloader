@@ -58,9 +58,13 @@ public class MyJDownloaderController implements ShutdownVetoListener, GenericCon
     }
 
     protected void stop() {
-        MyJDownloaderConnectThread lThread = thread.getAndSet(null);
+        final MyJDownloaderConnectThread lThread = thread.getAndSet(null);
         if (lThread != null) {
-            lThread.disconnect();
+            new Thread("MyJDownloaderController:Stop") {
+                public void run() {
+                    lThread.disconnect();
+                };
+            }.start();
         }
     }
 

@@ -1,6 +1,8 @@
 package jd.controlling.downloadcontroller;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -22,6 +24,7 @@ import jd.utils.JDUtilities;
 import org.appwork.utils.NullsafeAtomicReference;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.controlling.UniqueAlltimeID;
+import org.jdownloader.controlling.hosterrule.HosterRuleController;
 import org.jdownloader.settings.IfFileExistsAction;
 
 public class DownloadSession {
@@ -294,7 +297,8 @@ public class DownloadSession {
         }
     }
 
-    public AccountCache getAccountCache(String host) {
+    public AccountCache getAccountCache(final DownloadLink link) {
+        String host = link.getHost();
         if (StringUtils.isEmpty(host)) return AccountCache.NA;
         host = host.toLowerCase(Locale.ENGLISH);
         AccountCache ret = null;
@@ -305,18 +309,38 @@ public class DownloadSession {
                 return ret;
             }
         }
-        ArrayList<CachedAccount> newCache = new ArrayList<CachedAccount>();
-        for (Account acc : AccountController.getInstance().list(host)) {
-            newCache.add(new CachedAccount(host, acc, ACCOUNTTYPE.ORIGINAL, getPlugin(host)));
-        }
-        List<Account> multiHosts = AccountController.getInstance().getMultiHostAccounts(host);
-        if (multiHosts != null) {
-            for (Account acc : multiHosts) {
-                newCache.add(new CachedAccount(host, acc, ACCOUNTTYPE.MULTI, getPlugin(acc.getHoster())));
+        ret = HosterRuleController.getInstance().getAccountCache(host, this);
+        if (ret == null) {
+            ArrayList<CachedAccount> newCache = new ArrayList<CachedAccount>();
+            for (Account acc : AccountController.getInstance().list(host)) {
+                newCache.add(new CachedAccount(host, acc, ACCOUNTTYPE.ORIGINAL, getPlugin(host)));
             }
+            List<Account> multiHosts = AccountController.getInstance().getMultiHostAccounts(host);
+            if (multiHosts != null) {
+                for (Account acc : multiHosts) {
+                    newCache.add(new CachedAccount(host, acc, ACCOUNTTYPE.MULTI, getPlugin(acc.getHoster())));
+                }
+            }
+            newCache.add(new CachedAccount(host, null, ACCOUNTTYPE.NONE, getPlugin(host)));
+            Collections.sort(newCache, new Comparator<CachedAccount>() {
+
+                private int compare(boolean x, boolean y) {
+                    return (x == y) ? 0 : (x ? 1 : -1);
+                }
+
+                @Override
+                public int compare(CachedAccount o1, CachedAccount o2) {
+                    /* 1ST SORT: ORIGINAL;MULTI;NONE */
+                    int ret = o1.getType().compareTo(o2.getType());
+                    if (ret == 0) {
+                        /* 2ND SORT: NO CAPTCHA;CAPTCHA */
+                        ret = compare(o1.hasCaptcha(link), o2.hasCaptcha(link));
+                    }
+                    return ret;
+                }
+            });
+            ret = new AccountCache(newCache);
         }
-        newCache.add(new CachedAccount(host, null, ACCOUNTTYPE.NONE, getPlugin(host)));
-        ret = new AccountCache(newCache);
         synchronized (accountCache) {
             if (!accountCache.containsKey(host)) {
                 accountCache.put(host, ret);

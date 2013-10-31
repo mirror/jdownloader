@@ -11,7 +11,7 @@ public class HosterRuleControllerEventSender extends Eventsender<HosterRuleContr
             listener.onRuleAdded((AccountUsageRule) event.getParameter());
             break;
         case DATA_UPDATE:
-            listener.onRuleDataUpdate();
+            listener.onRuleDataUpdate((AccountUsageRule) event.getParameter());
             break;
         case REMOVED:
             listener.onRuleRemoved((AccountUsageRule) event.getParameter());

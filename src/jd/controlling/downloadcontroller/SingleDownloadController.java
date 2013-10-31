@@ -48,16 +48,15 @@ public class SingleDownloadController extends BrowserSettingsThread {
     /**
      * signals that abort request has been received
      */
-    private AtomicBoolean                              abortFlag        = new AtomicBoolean(false);
+    private AtomicBoolean                          abortFlag        = new AtomicBoolean(false);
     /**
      * signals the activity of this SingleDownloadController
      */
-    private AtomicBoolean                              activityFlag     = new AtomicBoolean(true);
+    private AtomicBoolean                          activityFlag     = new AtomicBoolean(true);
     /**
      * signals the activity of the plugin in use
      */
-    private NullsafeAtomicReference<PluginForHost>     processingPlugin = new NullsafeAtomicReference<PluginForHost>(null);
-    private NullsafeAtomicReference<DownloadInterface> downloadInstance = new NullsafeAtomicReference<DownloadInterface>(null);
+    private NullsafeAtomicReference<PluginForHost> processingPlugin = new NullsafeAtomicReference<PluginForHost>(null);
 
     public static class WaitingQueueItem {
         public final AtomicLong                          lastStartTimestamp      = new AtomicLong(System.currentTimeMillis());
@@ -174,16 +173,20 @@ public class SingleDownloadController extends BrowserSettingsThread {
             /* this singleDownloadController is no longer active */
             return;
         }
-        if (abortFlag.getAndSet(true) == false) {
+        if (abortFlag.compareAndSet(false, true)) {
             /* this is our initial abort request */
             Thread abortThread = new Thread() {
 
                 @Override
                 public void run() {
                     while (activityFlag.get()) {
-                        DownloadInterface dli = getDownloadInstance();
-                        if (dli != null) {
-                            dli.stopDownload();
+                        try {
+                            DownloadInterface dli = getDownloadInstance();
+                            if (dli != null) {
+                                dli.stopDownload();
+                            }
+                        } catch (final Throwable e) {
+                            LogSource.exception(logger, e);
                         }
                         synchronized (activityFlag) {
                             if (activityFlag.get() == false) return;
@@ -244,7 +247,8 @@ public class SingleDownloadController extends BrowserSettingsThread {
                 processingPlugin.set(livePlugin);
                 livePlugin.init();
                 livePlugin.handle(downloadLink, account);
-                return new SingleDownloadReturnState(this, null, processingPlugin.get());
+                SingleDownloadReturnState ret = new SingleDownloadReturnState(this, null, processingPlugin.getAndSet(null));
+                return ret;
             } catch (BrowserException browserException) {
                 downloadLogger.log(browserException);
                 try {
@@ -264,10 +268,10 @@ public class SingleDownloadController extends BrowserSettingsThread {
                 validateChallenge = false;
             }
             downloadLogger.log(e);
-            return new SingleDownloadReturnState(this, e, processingPlugin.get());
+            SingleDownloadReturnState ret = new SingleDownloadReturnState(this, e, processingPlugin.getAndSet(null));
+            return ret;
         } finally {
             queueItem.queueLinks.remove(downloadLink);
-            processingPlugin.set(null);
             downloadLink.setLivePlugin(null);
             finalizeChallengeResponse(downloadLogger, originalPlugin, livePlugin, validateChallenge);
             downloadLink.getFilePackage().getView().requestUpdate();
@@ -322,7 +326,12 @@ public class SingleDownloadController extends BrowserSettingsThread {
             downloadLogger.setAllowTimeoutFlush(false);
             downloadLogger.info("Start Download of " + downloadLink.getDownloadURL());
             super.setLogger(downloadLogger);
-            watchDog.detach(this, download(downloadLogger));
+            SingleDownloadReturnState returnState = download(downloadLogger);
+            if (isAborting()) {
+                /* clear interrupted flag */
+                interrupted();
+            }
+            watchDog.detach(this, returnState);
         } finally {
             synchronized (activityFlag) {
                 activityFlag.set(false);

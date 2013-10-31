@@ -578,6 +578,10 @@ public class MainToolBar extends JToolBar implements MouseListener, DownloadWatc
                 };
 
             }
+
+            @Override
+            public void interrupt() {
+            }
         });
 
     }

@@ -93,6 +93,10 @@ public class Account extends Property {
         this.ac = ac;
     }
 
+    public AccountController getAccountController() {
+        return ac;
+    }
+
     /**
      * 
      * @param user

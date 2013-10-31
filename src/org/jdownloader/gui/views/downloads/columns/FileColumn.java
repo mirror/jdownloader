@@ -119,23 +119,18 @@ public class FileColumn extends ExtTextColumn<AbstractNode> implements GenericCo
             case OPEN_FILE:
                 if (CrossSystem.isOpenFileSupported()) {
                     new OpenFileAction(new File(((DownloadLink) contextObject).getFileOutput())).actionPerformed(null);
-
                 }
                 break;
             case OPEN_FOLDER:
                 if (CrossSystem.isOpenFileSupported()) {
-
                     new OpenFileAction(LinkTreeUtils.getDownloadDirectory(((DownloadLink) contextObject).getParentNode())).actionPerformed(null);
-
                 }
                 break;
             case RENAME:
                 startEditing(contextObject);
                 break;
             }
-
         } else if (contextObject instanceof CrawledLink) {
-
             switch (CFG_GUI.CFG.getLinkDoubleClickAction()) {
             case NOTHING:
                 java.awt.Toolkit.getDefaultToolkit().beep();
@@ -143,25 +138,20 @@ public class FileColumn extends ExtTextColumn<AbstractNode> implements GenericCo
             case OPEN_FILE:
                 if (CrossSystem.isOpenFileSupported()) {
                     new OpenFileAction(LinkTreeUtils.getDownloadDirectory(contextObject)).actionPerformed(null);
-
                 }
                 break;
             case OPEN_FOLDER:
                 if (CrossSystem.isOpenFileSupported()) {
-
                     new OpenFileAction(LinkTreeUtils.getDownloadDirectory(((CrawledLink) contextObject).getParentNode())).actionPerformed(null);
-
                 }
                 break;
             case RENAME:
                 startEditing(contextObject);
                 break;
             }
-        } else if (contextObject instanceof FilePackage || contextObject instanceof CrawledPackage) {
-
+        } else if (contextObject instanceof AbstractPackageNode) {
             switch (CFG_GUI.CFG.getPackageDoubleClickAction()) {
             case EXPAND_COLLAPSE_TOGGLE:
-
                 if (e.isControlDown() && !e.isShiftDown()) {
                     ((PackageControllerTableModel) getModel()).toggleFilePackageExpand((AbstractPackageNode) contextObject, TOGGLEMODE.BOTTOM);
                 } else if (e.isControlDown() && e.isShiftDown()) {
@@ -173,22 +163,16 @@ public class FileColumn extends ExtTextColumn<AbstractNode> implements GenericCo
             case NOTHING:
                 java.awt.Toolkit.getDefaultToolkit().beep();
                 break;
-
             case OPEN_FOLDER:
                 if (CrossSystem.isOpenFileSupported()) {
-
                     new OpenFileAction(LinkTreeUtils.getDownloadDirectory(contextObject)).actionPerformed(null);
-
                 }
                 break;
             case RENAME:
-
                 startEditing(contextObject);
                 break;
             }
-
         }
-
         return true;
     }
 

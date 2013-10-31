@@ -124,8 +124,6 @@ public class PollingAPIImpl implements PollingAPI {
         eventData.put("data", fpas);
         prs.setEventData(eventData);
 
-        prs.setEventData(eventData);
-
         return prs;
     }
 

@@ -215,7 +215,6 @@ public class ClipboardMonitoring {
                             if (firstRoundDone) {
                                 waitTimeout = minWaitTimeout;
                                 LinkCollectingJob job = new LinkCollectingJob(LinkOrigin.CLIPBOARD, handleThisRound);
-                                ;
                                 job.setExtractPasswords(PasswordUtils.getPasswords(handleThisRound));
                                 job.setCustomSourceUrl(lastBrowserUrl);
                                 LinkCollector.getInstance().addCrawlerJob(job);
@@ -438,7 +437,6 @@ public class ClipboardMonitoring {
             String content = sb.toString();
             if (!StringUtils.isEmpty(content)) {
                 LinkCollectingJob job = new LinkCollectingJob(LinkOrigin.CLIPBOARD, content);
-                ;
                 job.setCustomSourceUrl(browserUrl);
                 job.setExtractPasswords(PasswordUtils.getPasswords(content));
                 LinkCollector.getInstance().addCrawlerJob(job);

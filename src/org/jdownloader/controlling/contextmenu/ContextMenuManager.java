@@ -409,6 +409,7 @@ public abstract class ContextMenuManager<PackageType extends AbstractPackageNode
                 }
             });
         } else {
+            afterInitCallback = null;
             updateDelayer.resetAndStart();
         }
     }

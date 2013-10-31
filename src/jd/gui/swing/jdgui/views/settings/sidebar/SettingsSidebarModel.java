@@ -6,6 +6,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import javax.swing.DefaultListModel;
 import javax.swing.JList;
 
+import jd.SecondLevelLaunch;
 import jd.gui.swing.jdgui.JDGui;
 import jd.gui.swing.jdgui.views.settings.panels.BasicAuthentication;
 import jd.gui.swing.jdgui.views.settings.panels.GUISettings;
@@ -56,7 +57,7 @@ public class SettingsSidebarModel extends DefaultListModel implements GenericCon
     private final JList                  list;
     protected MyJDownloaderSettingsPanel myJDownloader;
     protected BubbleNotifyConfigPanel    notifierPanel;
-    protected CaptchaConfigPanel     ac;
+    protected CaptchaConfigPanel         ac;
 
     public SettingsSidebarModel(JList list) {
         super();
@@ -80,7 +81,7 @@ public class SettingsSidebarModel extends DefaultListModel implements GenericCon
         };
         org.jdownloader.settings.staticreferences.CFG_LINKFILTER.LINK_FILTER_ENABLED.getEventSender().addListener(listener);
         org.jdownloader.settings.staticreferences.CFG_PACKAGIZER.PACKAGIZER_ENABLED.getEventSender().addListener(listener);
-        ExtensionController.EXTENSIONS_COMPLETE.executeWhenReached(new Runnable() {
+        SecondLevelLaunch.EXTENSIONS_LOADED.executeWhenReached(new Runnable() {
 
             @Override
             public void run() {
@@ -276,7 +277,7 @@ public class SettingsSidebarModel extends DefaultListModel implements GenericCon
                 try {
                     synchronized (lock) {
                         boolean withExtensions = finalWithExtensions;
-                        if (ExtensionController.EXTENSIONS_COMPLETE.isReached()) withExtensions = true;
+                        if (SecondLevelLaunch.EXTENSIONS_LOADED.isReached()) withExtensions = true;
                         LazyExtension extract = null;
                         try {
                             if (withExtensions) extract = ExtensionController.getInstance().getExtension("org.jdownloader.extensions.extraction.ExtractionExtension");

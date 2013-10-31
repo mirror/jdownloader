@@ -52,13 +52,12 @@ public class AccountRuleStorable implements Storable {
 
     public AccountUsageRule restore(List<Account> availableAccounts) {
         AccountUsageRule ret = new AccountUsageRule(this.getHoster());
-        ret.setEnabled(isEnabled());
         ArrayList<AccountGroup> list = new ArrayList<AccountGroup>(accounts.size());
         for (AccountGroupStorable ags : accounts) {
             AccountGroup ag = ags.restore(getHoster(), availableAccounts);
             if (ag != null) list.add(ag);
         }
-        ret.setAccounts(list);
+        ret.set(isEnabled(), list);
         return ret;
     }
 

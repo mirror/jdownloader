@@ -1003,11 +1003,6 @@ public class Oceanus extends PluginForHost {
         }
 
         @Override
-        public boolean isResumable() {
-            return false;
-        }
-
-        @Override
         public URLConnectionAdapter getConnection() {
             throw new WTFException("Not implemented");
         }

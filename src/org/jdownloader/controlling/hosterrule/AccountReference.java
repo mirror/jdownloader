@@ -62,19 +62,27 @@ public class AccountReference {
     }
 
     public boolean isValid() {
-        return getAccount().isValid();
+        Account acc = getAccount();
+        if (acc != null) return acc.isValid();
+        return true;
     }
 
     public boolean isTempDisabled() {
-        return getAccount().isTempDisabled();
+        Account acc = getAccount();
+        if (acc != null) return acc.isTempDisabled();
+        return false;
     }
 
     public long getTmpDisabledTimeout() {
-        return getAccount().getTmpDisabledTimeout();
+        Account acc = getAccount();
+        if (acc != null) return acc.getTmpDisabledTimeout();
+        return -1;
     }
 
     public AccountInfo getAccountInfo() {
-        return getAccount().getAccountInfo();
+        Account acc = getAccount();
+        if (acc != null) return acc.getAccountInfo();
+        return null;
     }
 
 }

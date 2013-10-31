@@ -1,6 +1,5 @@
 package jd.controlling.downloadcontroller;
 
-
 public interface DownloadWatchDogJob {
 
     /**
@@ -10,4 +9,6 @@ public interface DownloadWatchDogJob {
      * @return
      */
     public void execute(DownloadSession currentSession);
+
+    public void interrupt();
 }

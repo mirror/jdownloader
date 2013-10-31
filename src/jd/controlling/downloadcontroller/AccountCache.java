@@ -1,6 +1,7 @@
 package jd.controlling.downloadcontroller;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Iterator;
 
 import jd.controlling.downloadcontroller.AccountCache.CachedAccount;
@@ -9,6 +10,8 @@ import jd.plugins.DownloadLink;
 import jd.plugins.PluginForHost;
 
 import org.appwork.utils.NullsafeAtomicReference;
+import org.jdownloader.controlling.hosterrule.AccountGroup;
+import org.jdownloader.controlling.hosterrule.AccountGroup.Rules;
 
 public class AccountCache implements Iterable<CachedAccount> {
 
@@ -30,7 +33,7 @@ public class AccountCache implements Iterable<CachedAccount> {
             return host;
         }
 
-        protected CachedAccount(String host, Account account, ACCOUNTTYPE type, PluginForHost plugin) {
+        public CachedAccount(String host, Account account, ACCOUNTTYPE type, PluginForHost plugin) {
             this.account = account;
             this.type = type;
             this.plugin = plugin;
@@ -114,6 +117,7 @@ public class AccountCache implements Iterable<CachedAccount> {
 
                                                             @Override
                                                             public void remove() {
+                                                                throw new UnsupportedOperationException();
                                                             }
 
                                                         };
@@ -122,20 +126,69 @@ public class AccountCache implements Iterable<CachedAccount> {
                                                 };
 
     protected final ArrayList<CachedAccount> cache;
+    protected final ArrayList<Rules>         rules;
 
-    protected AccountCache(ArrayList<CachedAccount> cache) {
+    public AccountCache(ArrayList<CachedAccount> cache) {
+        this(cache, null);
+    }
+
+    public AccountCache(ArrayList<CachedAccount> cache, ArrayList<AccountGroup.Rules> rules) {
         this.cache = cache;
+        if (rules != null) {
+            boolean nonOrder = false;
+            for (AccountGroup.Rules rule : rules) {
+                if (!AccountGroup.Rules.ORDER.equals(rule)) {
+                    nonOrder = true;
+                    break;
+                }
+            }
+            if (nonOrder == false) rules = null;
+        }
+        this.rules = rules;
+        if (rules != null && rules.size() < cache.size()) throw new IllegalArgumentException("rules must have at least <= length of cache!");
+    }
+
+    protected Iterator<CachedAccount> getCacheIterator() {
+        if (rules == null) return cache.iterator();
+        ArrayList<CachedAccount> orderedCache = new ArrayList<AccountCache.CachedAccount>(cache);
+        int startRandom = -1;
+        for (int index = 0; index < orderedCache.size(); index++) {
+            Rules rule = rules.get(index);
+            if (rule == null) {
+                if (startRandom >= 0) {
+                    Collections.shuffle(orderedCache.subList(startRandom, index));
+                    startRandom = -1;
+                }
+                continue;
+            }
+            switch (rule) {
+            case RANDOM:
+                if (startRandom < 0) startRandom = index;
+                break;
+            default:
+                if (startRandom >= 0 && index - startRandom > 1) {
+                    Collections.shuffle(orderedCache.subList(startRandom, index));
+                }
+                startRandom = -1;
+                break;
+            }
+        }
+        if (startRandom >= 0) {
+            Collections.shuffle(orderedCache.subList(startRandom, orderedCache.size()));
+        }
+        return orderedCache.iterator();
     }
 
     @Override
     public Iterator<CachedAccount> iterator() {
         return new Iterator<AccountCache.CachedAccount>() {
 
-            Iterator<CachedAccount>                it   = cache.iterator();
+            Iterator<CachedAccount>                it   = getCacheIterator();
             NullsafeAtomicReference<CachedAccount> next = new NullsafeAtomicReference<AccountCache.CachedAccount>(null);
 
             @Override
             public void remove() {
+                throw new UnsupportedOperationException();
             }
 
             @Override
@@ -154,6 +207,7 @@ public class AccountCache implements Iterable<CachedAccount> {
                 while (it.hasNext()) {
                     CachedAccount iNext = it.next();
                     if (iNext.getAccount() != null) {
+                        if (iNext.getAccount().getAccountController() == null) continue;
                         if (!iNext.getAccount().isEnabled()) continue;
                         if (!iNext.getAccount().isValid()) continue;
                         if (iNext.getAccount().isTempDisabled()) continue;

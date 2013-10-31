@@ -16,15 +16,24 @@
 
 package jd.config;
 
+import java.io.File;
 import java.io.Serializable;
 import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 
 import jd.utils.JDUtilities;
 
+import org.appwork.scheduler.DelayedRunnable;
+import org.appwork.shutdown.ShutdownController;
+import org.appwork.shutdown.ShutdownEvent;
+import org.appwork.shutdown.ShutdownRequest;
 import org.appwork.storage.JSonStorage;
-import org.appwork.storage.JsonKeyValueStorage;
-import org.appwork.storage.Storage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.Application;
 import org.jdownloader.logging.LogController;
 
 public class SubConfiguration extends Property implements Serializable {
@@ -32,69 +41,124 @@ public class SubConfiguration extends Property implements Serializable {
     private static final long                                   serialVersionUID = 7803718581558607222L;
     protected String                                            name;
     protected transient boolean                                 valid            = false;
-    protected transient Storage                                 json             = null;
+    protected transient final File                              file;
+
+    protected AtomicLong                                        setMark          = new AtomicLong(0);
+    protected AtomicLong                                        writeMark        = new AtomicLong(0);
     protected static volatile HashMap<String, SubConfiguration> SUB_CONFIGS      = new HashMap<String, SubConfiguration>();
     protected static final HashMap<String, AtomicInteger>       LOCKS            = new HashMap<String, AtomicInteger>();
+    protected static byte[]                                     KEY              = new byte[] { 0x01, 0x02, 0x11, 0x01, 0x01, 0x54, 0x01, 0x01, 0x01, 0x01, 0x12, 0x01, 0x01, 0x01, 0x22, 0x01 };
+    protected static DelayedRunnable                            saveDelayer      = new DelayedRunnable(5000, 30000) {
+
+                                                                                     @Override
+                                                                                     public void delayedrun() {
+                                                                                         saveAll();
+                                                                                     }
+                                                                                 };
+
+    {
+        ShutdownController.getInstance().addShutdownEvent(new ShutdownEvent() {
+
+            @Override
+            public void onShutdown(ShutdownRequest shutdownRequest) {
+                saveAll();
+            }
+        });
+    }
+
+    private static void saveAll() {
+        HashMap<String, SubConfiguration> localSubConfigs = SUB_CONFIGS;
+        Iterator<Entry<String, SubConfiguration>> it = localSubConfigs.entrySet().iterator();
+        while (it.hasNext()) {
+            it.next().getValue().save();
+        }
+    }
 
     public SubConfiguration() {
+        /* keep for serialization */
+        file = null;
+        valid = false;
     }
 
     public void reset() {
-        json.clear();
-        /* this avoids fresh conversions on next startup as we load the JSonStorage */
-        json.put("saveWorkaround", System.currentTimeMillis());
-        this.setProperties(((JsonKeyValueStorage) json).getInternalStorageMap());
+        this.setProperties(null);
     }
 
-    @SuppressWarnings("unchecked")
-    private SubConfiguration(final String name) {
-        valid = true;
+    private SubConfiguration(final String name, boolean importOnly) {
         this.name = name;
-        json = JSonStorage.getStorage("subconf_" + name);
-        this.setProperties(((JsonKeyValueStorage) json).getInternalStorageMap());
-        if (json.size() == 0) {
+        file = Application.getResource("cfg/subconf_" + name + ".ejs");
+        if (file.exists()) {
+            writeMark.set(0);
+            /* load existing file */
+            try {
+                final Map<String, Object> load = JSonStorage.restoreFrom(this.file, false, KEY, new TypeRef<HashMap<String, Object>>() {
+                }, new HashMap<String, Object>());
+                if (load != null) {
+                    load.remove("saveWorkaround");
+                }
+                setProperties(load);
+            } catch (final Throwable e) {
+                LogController.GL.log(e);
+            }
+        } else {
+            writeMark.set(-1);
+            /* import old DataBase if existing */
             try {
                 final Object props = JDUtilities.getDatabaseConnector().getData(name);
-                if (props != null && props instanceof HashMap) {
-                    HashMap<String, Object> tmp = (HashMap<String, Object>) props;
+                if (props != null && props instanceof Map) {
+                    Map<String, Object> tmp = (Map<String, Object>) props;
                     /* remove obsolet variables from old stable (09581) */
                     tmp.remove("USE_PLUGIN");
                     tmp.remove("AGB_CHECKED");
-                    /* Workaround to make sure the internal HashMap of JSonStorage is set to Property HashMap */
-                    ((JsonKeyValueStorage) json).getInternalStorageMap().put("addWorkaround", true);
-                    this.setProperties(((JsonKeyValueStorage) json).getInternalStorageMap());
-                    ((JsonKeyValueStorage) json).getInternalStorageMap().remove("addWorkaround");
-                    getProperties().putAll(tmp);
-                } else {
-                    if (props != null) {
-                        valid = false;
-                        LogController.CL().severe("Invalid Config Entry for " + name);
-                    }
+                    setProperties(tmp);
                 }
-                /* this avoids fresh conversions on next startup as we load the JSonStorage */
-                json.put("saveWorkaround", System.currentTimeMillis());
-            } catch (final NoOldJDDataBaseFoundException e) {
+            } catch (final Throwable e) {
+                LogController.GL.log(e);
+            }
+        }
+        valid = !importOnly;
+    }
+
+    public void save() {
+        if (valid && file != null) {
+            long lastSetMark = setMark.get();
+            if (writeMark.getAndSet(lastSetMark) != lastSetMark) {
+                try {
+                    LogController.GL.info("Save Name:" + getName() + "|SetMark:" + lastSetMark + "|File:" + file);
+                    final String jsonString = JSonStorage.getMapper().objectToString(getProperties());
+                    JSonStorage.saveTo(this.file, false, KEY, jsonString);
+                } catch (final Throwable e) {
+                    LogController.GL.log(e);
+                }
             }
         }
     }
 
-    public void save() {
-        if (valid) {
-            ((JsonKeyValueStorage) json).getInternalStorageMap().putAll(getProperties());
-            json.save();
-        }
+    public String getName() {
+        return name;
     }
 
     @Override
     public void setProperty(final String key, final Object value) {
         super.setProperty(key, value);
-        /* this changes changeFlag in JSonStorage to signal that it must be saved */
-        json.put("saveWorkaround", System.currentTimeMillis());
+        if (valid) {
+            setMark.incrementAndGet();
+            saveDelayer.run();
+        }
+    }
+
+    @Override
+    public void setProperties(Map<String, Object> properties) {
+        super.setProperties(properties);
+        if (valid) {
+            setMark.incrementAndGet();
+            saveDelayer.run();
+        }
     }
 
     @Override
     public String toString() {
-        return name;
+        return "SubConfig: " + name + "->" + super.toString();
     }
 
     private static synchronized Object requestLock(String name) {
@@ -116,7 +180,7 @@ public class SubConfiguration extends Property implements Serializable {
         }
     }
 
-    public static SubConfiguration getConfig(final String name, boolean ImportOnly) {
+    public static SubConfiguration getConfig(final String name, boolean importOnly) {
         SubConfiguration ret = SUB_CONFIGS.get(name);
         if (ret != null) {
             return ret;
@@ -127,21 +191,12 @@ public class SubConfiguration extends Property implements Serializable {
                     /* shared lock to allow parallel creation of new SubConfigurations */
                     ret = SUB_CONFIGS.get(name);
                     if (ret != null) return ret;
-                    final SubConfiguration cfg = new SubConfiguration(name);
+                    final SubConfiguration cfg = new SubConfiguration(name, importOnly);
                     synchronized (LOCKS) {
                         /* global lock to replace the SUB_CONFIGS */
                         HashMap<String, SubConfiguration> newSUB_CONFIGS = new HashMap<String, SubConfiguration>(SUB_CONFIGS);
                         newSUB_CONFIGS.put(name, cfg);
                         SUB_CONFIGS = newSUB_CONFIGS;
-                    }
-                    if (ImportOnly) {
-                        /* importOnly dont get saved */
-                        /* used to convert old hsqldb to json */
-                        /* never save any data */
-                        JSonStorage.removeStorage(cfg.json);
-                        cfg.json.close();
-                    } else {
-                        cfg.save();
                     }
                     return cfg;
                 }

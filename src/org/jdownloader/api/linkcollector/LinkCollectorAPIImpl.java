@@ -239,7 +239,6 @@ public class LinkCollectorAPIImpl implements LinkCollectorAPI {
         LinkCollector lc = LinkCollector.getInstance();
 
         LinkCollectingJob lcj = new LinkCollectingJob(LinkOrigin.MYJD, links);
-        ;
         lcj.setAutoStart(autostart);
         if (autostart) lcj.setPriority(Priority.HIGHEST);
 

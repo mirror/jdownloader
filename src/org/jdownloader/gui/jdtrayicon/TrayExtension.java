@@ -549,7 +549,6 @@ public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTransla
                 return;
             case TO_TRAY:
                 // let's hope that this does not flicker. works fine for win7
-
                 JDGui.getInstance().setWindowToTray(true);
                 JDGui.getInstance().getMainFrame().setExtendedState(JFrame.NORMAL);
 

@@ -49,13 +49,14 @@ public class CrawledLinkStorable implements Storable {
 
     public String getOrigin() {
         if (link.getOrigin() == null) return null;
-        return link.getOrigin().toString();
+        return link.getOrigin().name();
     }
 
     public void setOrigin(String str) {
         try {
             link.setOrigin(LinkOrigin.valueOf(str));
-        } catch (Exception e) {
+        } catch (Throwable e) {
+            link.setOrigin(null);
         }
     }
 

@@ -11,13 +11,24 @@ import com.sun.jna.platform.win32.WinDef.HWND;
 
 public class GuiUtils {
 
+    private static final User32 lib;
+    static {
+        User32 loadedLib = null;
+        try {
+            if (CrossSystem.isWindows()) {
+                loadedLib = (User32) Native.loadLibrary("user32", User32.class);
+            } else {
+                loadedLib = null;
+            }
+        } catch (final Throwable e) {
+            e.printStackTrace();
+        }
+        lib = loadedLib;
+    }
+
     public static void flashWindow(final Window window, boolean flashTray) {
-        if (CrossSystem.isWindows()) {
+        if (CrossSystem.isWindows() && lib != null) {
             System.out.println("Flash: " + flashTray);
-
-            User32 lib = null;
-
-            lib = (User32) Native.loadLibrary("user32", User32.class);
             User32.FLASHWINFO flash = new User32.FLASHWINFO();
             HWND hwnd = new HWND();
             hwnd.setPointer(Native.getComponentPointer(window));
@@ -28,18 +39,12 @@ public class GuiUtils {
                 flash.dwFlags = User32.FLASHW_TIMERNOFG | User32.FLASHW_ALL;
             } else {
                 flash.dwFlags = User32.FLASHW_STOP;
-                return;
             }
-
             flash.cbSize = flash.size();
             lib.FlashWindowEx(flash);
         } else if (CrossSystem.isMac()) {
-
             final com.apple.eawt.Application application = com.apple.eawt.Application.getApplication();
-            application.requestUserAttention(true);
-
-        } else {
-            System.err.println("Flashing not supported on your System");
+            if (application != null) application.requestUserAttention(flashTray);
         }
     }
 

@@ -54,12 +54,10 @@ public class MyJDownloaderService implements CESService {
 
             @Override
             public void save() {
-                System.out.println(1);
             }
 
             @Override
             public void updateContents() {
-                System.out.println(2);
             }
 
         };

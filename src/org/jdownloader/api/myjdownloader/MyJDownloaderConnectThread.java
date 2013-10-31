@@ -654,6 +654,7 @@ public class MyJDownloaderConnectThread extends Thread {
     }
 
     public void setDeviceName(String deviceName) {
+        if (StringUtils.isEmpty(deviceName)) deviceName = "JDownloader";
         this.deviceName = deviceName;
     }
 

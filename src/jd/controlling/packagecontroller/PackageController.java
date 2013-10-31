@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.ListIterator;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
 import org.appwork.utils.event.queue.Queue;
@@ -70,8 +71,8 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
                                               };
 
     /**
-     * add a Package at given position position in this PackageController. in case the Package is already controlled by this
-     * PackageController this function does move it to the given position
+     * add a Package at given position position in this PackageController. in case the Package is already controlled by this PackageController this function
+     * does move it to the given position
      * 
      * @param pkg
      * @param index
@@ -91,7 +92,21 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
      * @TODO: Needs optimization!
      */
     public int getChildrenCount() {
-        return getChildrenByFilter(null).size();
+        final AtomicInteger count = new AtomicInteger(0);
+        getChildrenByFilter(new AbstractPackageChildrenNodeFilter<ChildType>() {
+
+            @Override
+            public boolean acceptNode(ChildType node) {
+                count.incrementAndGet();
+                return false;
+            }
+
+            @Override
+            public int returnMaxResults() {
+                return 0;
+            }
+        });
+        return count.get();
     }
 
     public void sortPackageChildren(final PackageType pkg, final PackageControllerComparator<ChildType> comparator) {
@@ -204,7 +219,12 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
     }
 
     public int size() {
-        return packages.size();
+        boolean readL = readLock();
+        try {
+            return packages.size();
+        } finally {
+            readUnlock(readL);
+        }
     }
 
     private List<PackageControllerModifyVetoListener<PackageType, ChildType>> vetoListener = new ArrayList<PackageControllerModifyVetoListener<PackageType, ChildType>>();
@@ -555,8 +575,7 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
     }
 
     /**
-     * remove the given children from the package. also removes the package from this PackageController in case it is empty after removal of
-     * the children
+     * remove the given children from the package. also removes the package from this PackageController in case it is empty after removal of the children
      * 
      * @param pkg
      * @param children
@@ -728,27 +747,40 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
 
             @Override
             protected Void run() throws RuntimeException {
+                writeLock();
+                try {
+                    Collections.sort(packages, comparator);
+                } finally {
+                    writeUnlock();
+                }
 
-                Collections.sort(packages, comparator);
                 if (sortPackages) {
-                    for (PackageType pkg : packages) {
-                        try {
-                            pkg.getModifyLock().writeLock();
-                            pkg.setCurrentSorter((PackageControllerComparator<ChildType>) comparator);
-                            for (ChildType child : pkg.getChildren()) {
-                                /* this resets getPreviousParentNodeID */
-                                child.setParentNode(pkg);
+                    boolean readL = readLock();
+                    ArrayList<PackageType> informChanges = new ArrayList<PackageType>();
+                    try {
+                        for (PackageType pkg : packages) {
+                            try {
+                                pkg.getModifyLock().writeLock();
+                                pkg.setCurrentSorter((PackageControllerComparator<ChildType>) comparator);
+                                for (ChildType child : pkg.getChildren()) {
+                                    /* this resets getPreviousParentNodeID */
+                                    child.setParentNode(pkg);
+                                }
+                                Collections.sort(pkg.getChildren(), comparator);
+                            } finally {
+                                pkg.getModifyLock().writeUnlock();
                             }
-                            Collections.sort(pkg.getChildren(), comparator);
-                        } finally {
-                            pkg.getModifyLock().writeUnlock();
+                            structureChanged.incrementAndGet();
+                            informChanges.add(pkg);
                         }
-                        structureChanged.incrementAndGet();
+                    } finally {
+                        readUnlock(readL);
+                    }
+                    for (PackageType pkg : informChanges) {
                         _controllerPackageNodeStructureChanged(pkg, this.getQueuePrio());
                     }
                 }
                 structureChanged.incrementAndGet();
-
                 _controllerStructureChanged(this.getQueuePrio());
                 return null;
             }

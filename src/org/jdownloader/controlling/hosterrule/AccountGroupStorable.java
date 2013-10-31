@@ -22,12 +22,16 @@ public class AccountGroupStorable implements Storable {
         this.name = name;
     }
 
-    public Rules getRule() {
-        return rule;
+    public String getRule() {
+        return rule.name();
     }
 
-    public void setRule(Rules rule) {
-        this.rule = rule;
+    public void setRule(String rule) {
+        try {
+            this.rule = Rules.valueOf(rule);
+        } catch (final Throwable e) {
+            this.rule = Rules.ORDER;
+        }
     }
 
     private AccountGroupStorable(/* Storable */) {

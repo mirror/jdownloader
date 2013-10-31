@@ -52,6 +52,10 @@ public class StopsignAction extends AbstractSelectionContextAction<FilePackage, 
             public void execute(DownloadSession currentSession) {
                 currentSession.toggleStopMark(context);
             }
+
+            @Override
+            public void interrupt() {
+            }
         });
         DownloadsTableModel.getInstance().setStopSignColumnVisible(true);
 
