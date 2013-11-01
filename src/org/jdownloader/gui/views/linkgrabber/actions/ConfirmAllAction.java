@@ -31,16 +31,30 @@ public class ConfirmAllAction extends AppAction implements CachableInterface, GU
     /**
      * 
      */
-    private static final long  serialVersionUID = 4794612717641894527L;
+    private static final long serialVersionUID  = 4794612717641894527L;
 
-    private boolean            autoStart;
+    private boolean           autoStart;
 
-    private boolean            metaCtrl;
-    public static final String AUTO_START       = "autoStart";
+    private boolean           metaCtrl;
+
+    private boolean           ctrlToggleEnabled = false;
+
+    public void setCtrlToggleEnabled(boolean ctrlToggleEnabled) {
+        this.ctrlToggleEnabled = ctrlToggleEnabled;
+    }
+
+    public static final String AUTO_START = "autoStart";
+
+    @Customizer(name = "CTRL/CMD Toggle Enabled")
+    public boolean isCtrlToggleEnabled() {
+        return ctrlToggleEnabled;
+    }
 
     @Customizer(name = "Start Downloads automatically")
     public boolean isAutoStart() {
-        if (!metaCtrl) return !autoStart;
+        if (isCtrlToggleEnabled()) {
+            if (!metaCtrl) return !autoStart;
+        }
         return autoStart;
     }
 
