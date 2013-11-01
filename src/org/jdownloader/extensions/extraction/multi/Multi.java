@@ -530,6 +530,10 @@ public class Multi extends IExtraction {
             }
         } finally {
             try {
+                raropener.close();
+            } catch (final Throwable e) {
+            }
+            try {
                 multiopener.close();
             } catch (final Throwable e) {
             }
