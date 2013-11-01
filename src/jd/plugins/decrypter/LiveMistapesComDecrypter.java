@@ -81,13 +81,13 @@ public class LiveMistapesComDecrypter extends PluginForDecrypt {
             filename = fileInfo.getMatch(0);
             filesize = fileInfo.getMatch(1);
             if (filename == null || filesize == null) {
-                mainlink.getLinkStatus().setStatusText(ONLYREGISTEREDUSERTEXT);
+                // mainlink.getLinkStatus().setStatusText(ONLYREGISTEREDUSERTEXT);
                 mainlink.setAvailable(true);
             }
         } else {
             final String timeRemaining = br.getRegex("TimeRemaining = (\\d+);").getMatch(0);
             if (timeRemaining != null) {
-                mainlink.getLinkStatus().setStatusText("Not yet released, cannot download");
+                // mainlink.getLinkStatus().setStatusText("Not yet released, cannot download");
                 mainlink.setName(Encoding.htmlDecode(br.getRegex("<title>([^<>\"]*?)</title>").getMatch(0)));
                 mainlink.setAvailable(true);
                 decryptedLinks.add(mainlink);

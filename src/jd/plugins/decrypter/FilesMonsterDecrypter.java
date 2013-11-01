@@ -27,7 +27,6 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
-import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
@@ -119,7 +118,6 @@ public class FilesMonsterDecrypter extends PluginForDecrypt {
             thebigone.setDownloadSize(SizeFormatter.getSize(fsize));
             thebigone.setAvailable(true);
         }
-        thebigone.getLinkStatus().setStatusText(JDL.L("plugins.hoster.filesmonstercom.only4premium", "Only downloadable via premium"));
         thebigone.setProperty("PREMIUMONLY", "true");
         decryptedLinks.add(thebigone);
         /** All those links belong to the same file so lets make a package */

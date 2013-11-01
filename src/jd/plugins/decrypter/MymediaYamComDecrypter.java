@@ -115,7 +115,8 @@ public class MymediaYamComDecrypter extends PluginForDecrypt {
                 dl.setName(Encoding.htmlDecode(filename.trim()) + ".mp3");
                 dl.setAvailable(true);
             }
-            if (br.containsHTML("type=\"password\" id=\"passwd\" name=\"passwd\"")) dl.getLinkStatus().setStatusText("Password protected links aren't supported yet. Please contact our support!");
+            // if (br.containsHTML("type=\"password\" id=\"passwd\" name=\"passwd\""))
+            // dl.getLinkStatus().setStatusText("Password protected links aren't supported yet. Please contact our support!");
             decryptedLinks.add(dl);
         }
 
