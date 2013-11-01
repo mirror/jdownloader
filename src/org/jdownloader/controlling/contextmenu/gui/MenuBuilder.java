@@ -80,7 +80,7 @@ public class MenuBuilder {
             try {
                 final MenuItemData inst = i;
                 if (inst._getValidateException() != null) continue;
-
+                //
                 int count = root.getComponentCount();
                 if (root instanceof JMenu) {
                     count = ((JMenu) root).getMenuComponentCount() + root.getComponentCount();
