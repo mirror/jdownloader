@@ -16,13 +16,18 @@
 
 package jd.gui.swing.jdgui.views.settings;
 
+import java.awt.Dimension;
+import java.awt.Rectangle;
 import java.util.ArrayList;
 import java.util.HashSet;
 
+import javax.swing.BorderFactory;
 import javax.swing.Icon;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JSeparator;
+import javax.swing.Scrollable;
+import javax.swing.SwingConstants;
 
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -35,6 +40,7 @@ import jd.gui.swing.jdgui.interfaces.SwitchPanel;
 import net.miginfocom.swing.MigLayout;
 
 import org.appwork.shutdown.ShutdownController;
+import org.appwork.swing.MigPanel;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.updatev2.RestartController;
@@ -52,11 +58,41 @@ public abstract class ConfigPanel extends SwitchPanel {
 
     private ConfigGroup                    currentGroup;
 
+    public class ScrollablePanel extends MigPanel implements Scrollable {
+
+        public ScrollablePanel() {
+            super("ins 0, wrap 2", "[fill,grow 10]10[fill,grow]", "[]");
+
+        }
+
+        public Dimension getPreferredScrollableViewportSize() {
+            return getPreferredSize();
+        }
+
+        public int getScrollableUnitIncrement(Rectangle visibleRect, int orientation, int direction) {
+            return 16;
+        }
+
+        public int getScrollableBlockIncrement(Rectangle visibleRect, int orientation, int direction) {
+            return ((orientation == SwingConstants.VERTICAL) ? visibleRect.height : visibleRect.width) - 10;
+        }
+
+        public boolean getScrollableTracksViewportWidth() {
+            return true;
+        }
+
+        public boolean getScrollableTracksViewportHeight() {
+            return false;
+        }
+
+    }
+
     public ConfigPanel() {
         this.setLayout(new MigLayout("ins 0", "[fill,grow]", "[fill,grow]"));
         // this.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
         setOpaque(false);
-        panel = new JPanel(new MigLayout("ins 0, wrap 2", "[fill,grow 10]10[fill,grow]"));
+        panel = new ScrollablePanel();
+
         panel.setOpaque(false);
     }
 
@@ -70,7 +106,9 @@ public abstract class ConfigPanel extends SwitchPanel {
             scroll.setBorder(null);
             scroll.setOpaque(false);
             scroll.getViewport().setOpaque(false);
+            scroll.setViewportBorder(BorderFactory.createEmptyBorder(0, 0, 0, 5));
             this.add(scroll);
+
         } else {
             add(panel);
         }
