@@ -2510,11 +2510,11 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                             }
                         }
                     }, true);
-                    while (waitedForNewActivationRequests < maxWaitTimeout && DownloadWatchDog.this.stateMachine.isState(DownloadWatchDog.RUNNING_STATE, DownloadWatchDog.PAUSE_STATE)) {
+                    while (DownloadWatchDog.this.stateMachine.isState(DownloadWatchDog.RUNNING_STATE, DownloadWatchDog.PAUSE_STATE)) {
 
                         long currentStructure = DownloadController.getInstance().getPackageControllerChanges();
                         long currentActivatorRequestRebuild = getSession().getActivatorRebuildRequest();
-                        if (currentStructure != lastStructureChange.get() || lastActivatorRequestRebuild.get() != currentActivatorRequestRebuild) {
+                        if (lastStructureChange.getAndSet(currentStructure) != currentStructure || lastActivatorRequestRebuild.getAndSet(currentActivatorRequestRebuild) != currentActivatorRequestRebuild) {
                             final AtomicInteger skippedLinksCounterTmp = new AtomicInteger(0);
                             List<DownloadLink> links = DownloadController.getInstance().getChildrenByFilter(new AbstractPackageChildrenNodeFilter<DownloadLink>() {
 
@@ -2537,8 +2537,6 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                                 }
                             });
                             getSession().setSkipCounter(skippedLinksCounterTmp.get());
-                            lastStructureChange.set(currentStructure);
-                            lastActivatorRequestRebuild.set(currentActivatorRequestRebuild);
                             getSession().setActivationRequests(new CopyOnWriteArrayList<DownloadLink>(sortActivationRequests(links)));
                             eventSender.fireEvent(new DownloadWatchdogEvent(this, DownloadWatchdogEvent.Type.DATA_UPDATE));
                         }
@@ -2553,13 +2551,18 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                                     return null;
                                 }
                             });
-                            if (newDLStartAllowed(getSession())) DownloadWatchDog.this.activateDownloads();
+                            if (newDLStartAllowed(getSession())) {
+                                DownloadWatchDog.this.activateDownloads();
+                            }
                             if (getSession().getControllers().size() == 0 && getSession().isStopMarkReached()) {
                                 logger.info("Wait at least " + Math.max(0, (maxWaitTimeout - waitedForNewActivationRequests)) + " for new change in StopMark(reached)");
                             } else if (getSession().getControllers().size() > 0 || lastActivatorRequestRebuild.get() != getSession().getActivatorRebuildRequest() || lastStructureChange.get() != DownloadController.getInstance().getPackageControllerChanges() || getSession().isActivationRequestsWaiting()) {
                                 waitedForNewActivationRequests = 0;
                             } else {
                                 logger.info("Wait at least " + Math.max(0, (maxWaitTimeout - waitedForNewActivationRequests)) + " for new ActivationRequests");
+                            }
+                            if (waitedForNewActivationRequests > maxWaitTimeout) {
+                                logger.info("Waited " + waitedForNewActivationRequests + " but no new ActivationRequests are available->Stop DownloadWatchDog");
                             }
                         } catch (final Exception e) {
                             logger.log(e);
@@ -2581,6 +2584,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                                 }
                             }
                         } catch (final InterruptedException e) {
+                            logger.log(e);
                         }
                     }
                     enqueueJob(new DownloadWatchDogJob() {

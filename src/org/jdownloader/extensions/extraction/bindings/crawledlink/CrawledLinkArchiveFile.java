@@ -51,11 +51,11 @@ public class CrawledLinkArchiveFile implements ArchiveFile {
     public boolean isComplete() {
         for (CrawledLink downloadLink : links) {
             switch (downloadLink.getLinkState()) {
-            case OFFLINE:
-                return false;
+            case ONLINE:
+                return true;
             }
         }
-        return true;
+        return false;
     }
 
     public String toString() {
