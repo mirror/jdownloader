@@ -2563,6 +2563,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                             }
                             if (waitedForNewActivationRequests > maxWaitTimeout) {
                                 logger.info("Waited " + waitedForNewActivationRequests + " but no new ActivationRequests are available->Stop DownloadWatchDog");
+                                break;
                             }
                         } catch (final Exception e) {
                             logger.log(e);

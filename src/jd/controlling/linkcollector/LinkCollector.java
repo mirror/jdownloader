@@ -383,7 +383,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
 
     @Override
     protected void _controllerParentlessLinks(List<CrawledLink> links, QueuePriority priority) {
-        eventsender.fireEvent(new LinkCollectorEvent(LinkCollector.this, LinkCollectorEvent.TYPE.REMOVE_CONTENT, links, priority));
+        eventsender.fireEvent(new LinkCollectorEvent(LinkCollector.this, LinkCollectorEvent.TYPE.REMOVE_CONTENT, new ArrayList<CrawledLink>(links), priority));
         cleanupMaps(links);
     }
 
