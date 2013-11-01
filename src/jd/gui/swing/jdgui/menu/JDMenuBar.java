@@ -12,11 +12,8 @@ import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.KeyStroke;
 
-import jd.SecondLevelLaunch;
-
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging2.LogSource;
-import org.appwork.utils.swing.EDTRunner;
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.controlling.contextmenu.MenuContainer;
 import org.jdownloader.controlling.contextmenu.MenuItemData;
@@ -46,26 +43,8 @@ public class JDMenuBar extends JMenuBar implements MouseListener {
      */
     private JDMenuBar() {
         super();
-        // updateLayout();
-        SecondLevelLaunch.GUI_COMPLETE.executeWhenReached(new Runnable() {
-
-            public void run() {
-
-                new EDTRunner() {
-
-                    @Override
-                    protected void runInEDT() {
-                        updateLayout();
-                        // add(new FileMenu());
-                        // // add(new EditMenu());
-                        // add(new SettingsMenu());
-                        // add(AddonsMenu.getInstance());
-                        //
-                        // add(new AboutMenu());
-                    }
-                };
-            }
-        });
+        updateLayout();
+        // MenuManagerMainmenu.getInstance().refresh();
 
         this.addMouseListener(this);
         logger = LogController.getInstance().getLogger(JDMenuBar.class.getName());

@@ -380,6 +380,7 @@ public abstract class ContextMenuManager<PackageType extends AbstractPackageNode
             menuData = null;
 
         }
+        delayUpdate();
 
     }
 
