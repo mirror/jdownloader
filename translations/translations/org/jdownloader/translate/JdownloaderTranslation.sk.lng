@@ -102,7 +102,6 @@ gui_warning_reconnectSuccess=Znovu-pripojenie bolo úspešné
 gui_warning_reconnect_running=prebieha...
 gui_warning_reconnectunknown=Neznáme znovu-pripojenie
 image_description=Obrázkové súbory: jpg, png, gif,...
-jd_controlling_SingleDownloadController_askexists=Súbor '%s1' z balíku %s2 už existuje. Čo chcete urobiť?
 jd_controlling_SingleDownloadController_askexists_title=Súbor už existuje
 jd_plugins_PluginUtils_askPassword=Prosím zadajte heslo pre %s1
 literally_offline=Offline
