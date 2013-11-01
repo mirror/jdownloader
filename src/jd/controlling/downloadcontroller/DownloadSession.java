@@ -403,7 +403,7 @@ public class DownloadSession {
     }
 
     public IfFileExistsAction getOnFileExistsAction(FilePackage filePackage) {
-        return fileExistsActions.get(filePackage.getUniqueID().toString());
+        return fileExistsActions.get(filePackage.getUniqueID());
     }
 
     public void setOnFileExistsAction(FilePackage filePackage, IfFileExistsAction doAction) {
