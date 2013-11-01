@@ -1589,7 +1589,9 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
 
         for (CrawledPackage cp : selection.getAllPackages()) {
             List<CrawledLink> links;
-            java.util.List<FilePackage> convertedLinks = LinkCollector.getInstance().convert(links = selection.getSelectedLinksByPackage(cp), true);
+            //
+            links = selection.getSelectedLinksByPackage(cp);
+            java.util.List<FilePackage> convertedLinks = LinkCollector.getInstance().convert(links, true);
             for (CrawledLink cl : links) {
                 autostart |= cl.isAutoStartEnabled();
                 if (cl.isForcedAutoStartEnabled()) {
@@ -1602,12 +1604,6 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
             }
 
         }
-        if (autostart) {
-            DownloadWatchDog.getInstance().startDownloads();
-        }
-        if (force.size() > 0) {
-            DownloadWatchDog.getInstance().forceDownload(force);
-        }
 
         /* convert all selected CrawledLinks to FilePackages */
         boolean addTop = org.jdownloader.settings.staticreferences.CFG_LINKGRABBER.LINKGRABBER_ADD_AT_TOP.getValue();
@@ -1619,6 +1615,12 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
          * addBottom = negative number -> add at the end
          */
         DownloadController.getInstance().addAllAt(filePackagesToAdd, addTop ? 0 : -(filePackagesToAdd.size() + 10));
+        if (autostart) {
+            DownloadWatchDog.getInstance().startDownloads();
+        }
+        if (force.size() > 0) {
+            DownloadWatchDog.getInstance().forceDownload(force);
+        }
 
     }
 

@@ -167,10 +167,12 @@ public class SelectionInfo<PackageType extends AbstractPackageNode<ChildrenType,
                     // add allTODO
                     boolean readL = ((PackageType) node).getModifyLock().readLock();
                     try {
+                        List<ChildrenType> childs = ((PackageType) node).getChildren();
                         if (filters == null) {
-                            ret.addAll(((PackageType) node).getChildren());
+
+                            ret.addAll(childs);
                         } else {
-                            for (ChildrenType l : ((PackageType) node).getChildren()) {
+                            for (ChildrenType l : childs) {
 
                                 boolean filtered = false;
                                 for (PackageControllerTableModelFilter<PackageType, ChildrenType> filter : filters) {
@@ -179,15 +181,22 @@ public class SelectionInfo<PackageType extends AbstractPackageNode<ChildrenType,
                                         break;
                                     }
                                 }
-                                if (!filtered) ret.add(l);
+                                if (!filtered) {
+                                    //
+                                    ret.add(l);
+                                }
 
                             }
 
                         }
+                        if (ret.size() == childs.size()) {
+                            fullPkg.add((PackageType) node);
+                        } else {
+                            incompleteSelectecPackages.put((PackageType) node, new ArrayList<ChildrenType>(ret));
+                        }
                     } finally {
                         ((PackageType) node).getModifyLock().readUnlock(readL);
                     }
-                    fullPkg.add((PackageType) node);
 
                 } else {
                     boolean readL = ((PackageType) node).getModifyLock().readLock();
@@ -227,6 +236,8 @@ public class SelectionInfo<PackageType extends AbstractPackageNode<ChildrenType,
                                 ret.addAll(unFiltered);
                                 if (unFiltered.size() == childs.size()) {
                                     fullPkg.add((PackageType) node);
+                                } else {
+                                    incompleteSelectecPackages.put((PackageType) node, unFiltered);
                                 }
                             }
                         } else if (containsAll) {
