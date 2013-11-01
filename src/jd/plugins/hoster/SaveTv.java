@@ -26,6 +26,9 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Random;
 
+import javax.swing.JOptionPane;
+import javax.swing.SwingUtilities;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -113,8 +116,10 @@ public class SaveTv extends PluginForHost {
         final Account aa = AccountController.getInstance().getValidAccount(this);
         if (aa == null) {
             link.getLinkStatus().setStatusText("Kann Links ohne gültigen Account nicht überprüfen");
+            checkAccountNeededDialog();
             return AvailableStatus.UNCHECKABLE;
         }
+        checkFeatureDialog();
         br.setFollowRedirects(true);
         login(this.br, aa, false);
         final boolean preferMobileVids = getPluginConfig().getBooleanProperty(PREFERH264MOBILE);
@@ -199,28 +204,32 @@ public class SaveTv extends PluginForHost {
                 if (episodename != null && episodename.contains("Originaltitel")) {
                     episodename = seriesInfo.getMatch(3);
                 }
-                String data = seriesInfo.getMatch(3);
-                if (data != null) {
-                    final String[] dataArray = data.split(" ");
-                    genre = dataArray[0];
-                    // Maybe the series was produced over multiple years
-                    produceyear = new Regex(data, "(\\d{4} / \\d{4})").getMatch(0);
+                String seriesdata = seriesInfo.getMatch(3);
+                if (seriesdata != null) {
+                    final String[] dataArray = seriesdata.split(" ");
                     if (dataArray != null) {
-                        if (dataArray.length >= 3) {
-                            producecountry = dataArray[1];
-                            if (produceyear == null) produceyear = dataArray[2];
-                        } else if (dataArray.length == 2) {
-                            producecountry = dataArray[1];
+                        genre = dataArray[0];
+                        // Maybe the series was produced over multiple years
+                        produceyear = new Regex(seriesdata, "(\\d{4} / \\d{4})").getMatch(0);
+                        producecountry = new Regex(seriesdata, genre + " ([A-Za-z/]+)").getMatch(0);
+                        if (dataArray != null) {
+                            if (dataArray.length >= 3) {
+                                if (producecountry == null) producecountry = dataArray[1];
+                                if (produceyear == null) produceyear = dataArray[2];
+                            } else if (dataArray.length == 2) {
+                                if (producecountry == null) producecountry = dataArray[1];
+                            }
                         }
+
                     }
                 }
             } else if (br.containsHTML("src=\"/STV/IMG/global/TVCategorie/kat1\\.jpg\"") || br.containsHTML(CATEGORY_INFO)) {
                 // For movies
                 final Regex movieInfo = br.getRegex(INFOREGEX);
-                String data = movieInfo.getMatch(3);
-                if (data == null) data = movieInfo.getMatch(1);
-                if (data != null) {
-                    final String[] dataArray = data.split(" ");
+                String moviedata = movieInfo.getMatch(3);
+                if (moviedata == null) moviedata = movieInfo.getMatch(1);
+                if (moviedata != null) {
+                    final String[] dataArray = moviedata.split(" ");
                     genre = dataArray[0];
                     if (dataArray != null) {
                         if (dataArray.length == 3) {
@@ -505,6 +514,8 @@ public class SaveTv extends PluginForHost {
         String ext = downloadLink.getStringProperty("type", null);
         if (ext == null) ext = ".mp4";
         final String genre = downloadLink.getStringProperty("genre", null);
+        final String producecountry = downloadLink.getStringProperty("producecountry", null);
+        final String produceyear = downloadLink.getStringProperty("produceyear", null);
 
         final long date = downloadLink.getLongProperty("originaldate", 0);
         String formattedDate = null;
@@ -524,11 +535,10 @@ public class SaveTv extends PluginForHost {
         String formattedFilename = null;
         if (downloadLink.getLongProperty("category", 0) == 1) {
             final String title = downloadLink.getStringProperty("plainfilename", null);
-            final String producecountry = downloadLink.getStringProperty("producecountry", null);
-            final String produceyear = downloadLink.getStringProperty("produceyear", null);
             // For all other links
             formattedFilename = cfg.getStringProperty(CUSTOM_FILENAME2, defaultCustomFilename);
             if (formattedFilename == null || formattedFilename.equals("")) formattedFilename = defaultCustomFilename;
+            formattedFilename = formattedFilename.toLowerCase();
             if (!formattedFilename.contains("*videotitel*") || !formattedFilename.contains("*endung*")) formattedFilename = defaultCustomFilename;
 
             formattedFilename = formattedFilename.replace("*zufallszahl*", df.format(new Random().nextInt(10000)));
@@ -551,6 +561,7 @@ public class SaveTv extends PluginForHost {
             // For series
             formattedFilename = cfg.getStringProperty(CUSTOM_FILENAME_SERIES2, defaultCustomSeriesFilename);
             if (formattedFilename == null || formattedFilename.equals("")) formattedFilename = defaultCustomFilename;
+            formattedFilename = formattedFilename.toLowerCase();
             if (!formattedFilename.contains("*endung*") || (!formattedFilename.contains("*serientitel*") && !formattedFilename.contains("*episodenname*") && !formattedFilename.contains("*episodennummer*"))) formattedFilename = defaultCustomFilename;
 
             final String seriestitle = downloadLink.getStringProperty("seriestitle", null);
@@ -559,6 +570,11 @@ public class SaveTv extends PluginForHost {
 
             formattedFilename = formattedFilename.replace("*zufallszahl*", df.format(new Random().nextInt(10000)));
             formattedFilename = formattedFilename.replace("*datum*", formattedDate);
+            if (produceyear != null) {
+                formattedFilename = formattedFilename.replace("*produktionsjahr*", produceyear);
+            } else {
+                formattedFilename = formattedFilename.replace("*produktionsjahr*", "-");
+            }
             if (episodenumber == 0) {
                 formattedFilename = formattedFilename.replace("*episodennummer*", "-");
             } else {
@@ -570,12 +586,33 @@ public class SaveTv extends PluginForHost {
             } else {
                 formattedFilename = formattedFilename.replace("*genre*", "-");
             }
+            if (producecountry != null) {
+                formattedFilename = formattedFilename.replace("*produktionsland*", producecountry);
+            } else {
+                formattedFilename = formattedFilename.replace("*produktionsland*", "-");
+            }
             // Insert actual filename at the end to prevent errors with tags
             formattedFilename = formattedFilename.replace("*serientitel*", seriestitle);
             formattedFilename = formattedFilename.replace("*episodenname*", episodename);
         }
+        formattedFilename = encodeUnicode(formattedFilename);
 
         return formattedFilename;
+    }
+
+    private String encodeUnicode(final String input) {
+        String output = input;
+        output = output.replace(":", ";");
+        output = output.replace("|", "¦");
+        output = output.replace("<", "[");
+        output = output.replace(">", "]");
+        output = output.replace("/", "⁄");
+        output = output.replace("\\", "∖");
+        output = output.replace("*", "#");
+        output = output.replace("?", "¿");
+        output = output.replace("!", "¡");
+        output = output.replace("\"", "'");
+        return output;
     }
 
     @Override
@@ -599,15 +636,15 @@ public class SaveTv extends PluginForHost {
         final ConfigEntry useMobileAPI = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), SaveTv.USEAPI, JDL.L("plugins.hoster.SaveTv.UseMobileAPI", "Mobile API verwenden (BETA! Benutzerdefinierte Dateinamen werden deaktiviert!)")).setDefaultValue(false);
         getConfig().addEntry(useMobileAPI);
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
-        final ConfigEntry grabArchives = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), SaveTv.GRABARCHIVE, JDL.L("plugins.hoster.SaveTv.grabArchive", "[Kommt bald!] Komplettes Archiv beim Hinzufügen folgender Adresse im Linkgrabber zeigen:\r\n'save.tv/STV/M/obj/user/usShowVideoArchive.cfm'?")).setDefaultValue(false).setEnabled(false);
+        final ConfigEntry grabArchives = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), SaveTv.GRABARCHIVE, JDL.L("plugins.hoster.SaveTv.grabArchive", "Komplettes Archiv beim Hinzufügen folgender Adresse im Linkgrabber zeigen:\r\n'save.tv/STV/M/obj/user/usShowVideoArchive.cfm'?")).setDefaultValue(false);
         getConfig().addEntry(grabArchives);
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), SaveTv.GRABARCHIVE_FASTER, JDL.L("plugins.hoster.SaveTv.grabArchiveFaster", "Aktiviere schnellen Linkcheck für Archiv-Parser (Dateinamen werden erst beim Download korrekt angezeigt)")).setDefaultValue(false).setEnabledCondidtion(grabArchives, true));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), SaveTv.GRABARCHIVE_FASTER, JDL.L("plugins.hoster.SaveTv.grabArchiveFaster", "Aktiviere schnellen Linkcheck für Archiv-Parser\r\n[Dateinamen werden erst beim Download korrekt angezeigt]")).setDefaultValue(false).setEnabledCondidtion(grabArchives, true));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         final ConfigEntry origName = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), SaveTv.USEORIGINALFILENAME, JDL.L("plugins.hoster.SaveTv.UseOriginalFilename", "Original Dateinamen verwenden (erst beim Download sichtbar)")).setDefaultValue(false).setEnabledCondidtion(useMobileAPI, false);
         getConfig().addEntry(origName);
         final ConfigEntry preferAdsFree = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), SaveTv.PREFERADSFREE, JDL.L("plugins.hoster.SaveTv.PreferAdFreeVideos", "Aufnahmen mit angewandter Schnittliste bevorzugen")).setDefaultValue(true);
         getConfig().addEntry(preferAdsFree);
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), SaveTv.DOWNLOADONLYADSFREE, JDL.L("plugins.hoster.SaveTv.downloadOnlyAdsFree", "Nur Aufnahmen mit angewandter Schnittliste laden (zur Nutzung bitte auch die Option\r\n'Aufnahmen mit angewandter Schnittliste bevorzugen' aktivieren)")).setDefaultValue(false).setEnabledCondidtion(preferAdsFree, true));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), SaveTv.DOWNLOADONLYADSFREE, JDL.L("plugins.hoster.SaveTv.downloadOnlyAdsFree", "Nur Aufnahmen mit angewandter Schnittliste laden (zur Nutzung muss die Option\r\n'Aufnahmen mit angewandter Schnittliste bevorzugen' aktiviert sein)")).setDefaultValue(false).setEnabledCondidtion(preferAdsFree, true));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), SaveTv.PREFERH264MOBILE, JDL.L("plugins.hoster.SaveTv.PreferH264MobileVideos", PREFERH264MOBILETEXT)).setDefaultValue(false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
@@ -618,12 +655,12 @@ public class SaveTv extends PluginForHost {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), CUSTOM_FILENAME2, JDL.L("plugins.hoster.savetv.customfilename", "Eigener Dateiname für Filme:")).setDefaultValue(defaultCustomFilename).setEnabledCondidtion(origName, false));
         final StringBuilder sb = new StringBuilder();
         sb.append("Erklärung der verfügbaren Tags:\r\n");
-        sb.append("*datum* = Datum der Ausstrahlung der aufgenommenen Sendung - erscheint im oben definierten Format\r\n");
+        sb.append("*datum* = Datum der Ausstrahlung der aufgenommenen Sendung\r\n[Erscheint im oben definierten Format]\r\n");
         sb.append("*genre* = Das Genre\r\n");
-        sb.append("*videotitel* = Name des Videos ohne Dateiendung\r\n");
         sb.append("*produktionsland* = Name des Produktionslandes\r\n");
         sb.append("*produktionsjahr* = Produktionsjahr\r\n");
-        sb.append("*zufallszahl* = Eine vierstellige Zufallszahl - nützlich um Dateinamenkollisionen zu vermeiden\r\n");
+        sb.append("*videotitel* = Name des Videos ohne Dateiendung\r\n");
+        sb.append("*zufallszahl* = Eine vierstellige Zufallszahl\r\n[Nützlich um Dateinamenkollisionen zu vermeiden]\r\n");
         sb.append("*endung* = Die Dateiendung, in diesem Fall '.mp4'");
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, sb.toString()).setEnabledCondidtion(origName, false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
@@ -631,8 +668,10 @@ public class SaveTv extends PluginForHost {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), CUSTOM_FILENAME_SERIES2, JDL.L("plugins.hoster.savetv.customseriesfilename", "Eigener Dateiname für Serien:")).setDefaultValue(defaultCustomSeriesFilename).setEnabledCondidtion(origName, false));
         final StringBuilder sbseries = new StringBuilder();
         sbseries.append("Erklärung der verfügbaren Tags:\r\n");
-        sbseries.append("*datum* = Datum der Ausstrahlung der aufgenommenen Sendung - erscheint im oben definierten Format\r\n");
+        sbseries.append("*datum* = Datum der Ausstrahlung der aufgenommenen Sendung\r\n[Erscheint im oben definierten Format]\r\n");
         sbseries.append("*genre* = Das Genre\r\n");
+        sbseries.append("*produktionsland* = Name des Produktionslandes\r\n");
+        sbseries.append("*produktionsjahr* = Produktionsjahr\r\n");
         sbseries.append("*serientitel* = Name der Serie\r\n");
         sbseries.append("*episodenname* = Name der Episode\r\n");
         sbseries.append("*episodennummer* = Episodennummer - falls nicht gegeben entspricht das '-' (Bindestrich)\r\n");
@@ -640,58 +679,127 @@ public class SaveTv extends PluginForHost {
         sbseries.append("*endung* = Die Dateiendung, in diesem Fall '.mp4'");
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, sbseries.toString()).setEnabledCondidtion(origName, false));
     }
-    // private void checkFeatureDialog() {
-    // SubConfiguration config = null;
-    // try {
-    // config = getPluginConfig();
-    // if (config.getBooleanProperty("ftDialogShown", Boolean.FALSE) == false) {
-    // if (config.getProperty("ftDialogShown2") == null) {
-    // showFeatureDialog();
-    // } else {
-    // config = null;
-    // }
-    // } else {
-    // config = null;
-    // }
-    // } catch (final Throwable e) {
-    // } finally {
-    // if (config != null) {
-    // config.setProperty("ftDialogShown", Boolean.TRUE);
-    // config.setProperty("ftDialogShown2", "shown");
-    // config.save();
-    // }
-    // }
-    // }
-    //
-    // private static void showFeatureDialog() {
-    // try {
-    // SwingUtilities.invokeAndWait(new Runnable() {
-    //
-    // @Override
-    // public void run() {
-    // try {
-    // String message = null;
-    // String title = null;
-    // title = "save.tv - neue Features";
-    // message = "Hallo liebe save.tv User.\r\n";
-    // message = "Ab sofort gibt es Neue Features (Plugineinstellungen):\r\n";
-    // message = "- Die Dateinamen lassen sich individualisieren \r\n";
-    // message = "- 'Aufnahmen mit angewandter Schnittliste bevorzugen' ist nun als Option verfügbar\r\n";
-    // message = "- Verbesserungen an Dateinamen, die über die API kommen\r\n";
-    // message = "- Weitere Features (Download des kompletten Videoarchives über einen Klick) werden bis zum 10.11.13 folgen :)\r\n";
-    // message = "\r\n";
-    // message = "In JDownloader 0.9.581 findet ihr die Plugin Einstellungen unter:\r\n";
-    // message = "Einstellungen -> Hoster -> save.tv -> Doppelklick oder anklicken und links unten auf 'Einstellungen'\r\n";
-    // message = "In der JDownloader 2 BETA findet ihr sie unter Einstellungen -> Plugin Einstellungen -> save.tv\r\n";
-    // message = "- Das JDownloader Team wünscht weiterhin viel Spaß mit JDownloader! -\r\n";
-    // message = "- Bugs bitte unter board.jdownloader.org melden, danke :)\r\n";
-    // JOptionPane.showConfirmDialog(jd.gui.swing.jdgui.JDGui.getInstance().getMainFrame(), message, title, JOptionPane.YES_NO_OPTION,
-    // JOptionPane.INFORMATION_MESSAGE, null);
-    // } catch (Throwable e) {
-    // }
-    // }
-    // });
-    // } catch (Throwable e) {
-    // }
-    // }
+
+    private void checkFeatureDialog() {
+        SubConfiguration config = null;
+        try {
+            config = getPluginConfig();
+            if (config.getBooleanProperty("featuredialogShown", Boolean.FALSE) == false) {
+                if (config.getProperty("featuredialogShown2") == null) {
+                    showFeatureDialog();
+                } else {
+                    config = null;
+                }
+            } else {
+                config = null;
+            }
+        } catch (final Throwable e) {
+        } finally {
+            if (config != null) {
+                config.setProperty("featuredialogShown", Boolean.TRUE);
+                config.setProperty("featuredialogShown2", "shown");
+                config.save();
+            }
+        }
+    }
+
+    private static void showFeatureDialog() {
+        try {
+            SwingUtilities.invokeAndWait(new Runnable() {
+
+                @Override
+                public void run() {
+                    try {
+                        String message = "";
+                        String title = null;
+                        title = "Save.tv - neue Features";
+                        message += "Hallo lieber save.tv Nutzer.\r\n";
+                        message += "Ab sofort gibt es folgende neue Features für das save.tv Plugin:\r\n";
+                        message += "- Die Dateinamen lassen sich individualisieren \r\n";
+                        message += "- Hinzufügen des kompletten Videoarchives über einen Klick\r\n  [Muss in den Einstellungen erst aktiviert werden!]\r\n";
+                        message += "- Neue Option 'Aufnahmen mit angewandter Schnittliste bevorzugen'\r\n";
+                        message += "--> Um diese Option nutzen zu können, muss die Option über dieser aktiviert sein.\r\n";
+                        message += "--> Ist sie aktiviert, wird JDownloader nur noch Videos laden, auf die die Schnittliste angewandt wurde.\r\n";
+                        message += "--> Alle anderen bekommen einen Warte-Status und werden nur geladen, falls die Schnittliste\r\n    nach der Wartezeit angewandt wurde.\r\n";
+                        message += "\r\n";
+                        message += "In JDownloader 0.9.581 findest du die Plugin Einstellungen unter:\r\n";
+                        message += "Einstellungen -> Anbieter -> save.tv -> Doppelklick oder anklicken und links unten auf 'Einstellungen'\r\n";
+                        message += "\r\n";
+                        message += "In der JDownloader 2 BETA findest du sie unter Einstellungen -> Plugin Einstellungen -> save.tv\r\n";
+                        message += "\r\n";
+                        message += "Bedenke bitte, das gewisse Einstellungen dafür sorgen, dass die eigenen\r\nDateinamen erst zum Downloadstart und nicht direkt im Linkgrabber angezeigt werden.\r\n";
+                        message += "Dies steht im Normalfall bei den entsprechenden Einstellungen dabei und ist kein Bug.\r\n";
+                        message += "Sollte es dennoch vorkommen, dass eigene Dateinamen bei bestimmten Links nicht funktionieren,\r\nkönnte es sich um einen Bug handeln.\r\n";
+                        message += "\r\n";
+                        message += "Falls du Bugs findest oder fragen hast, melde dich gerne jederzeit bei uns: board.jdownloader.org.\r\n";
+                        message += "\r\n";
+                        message += "Uns ist bereits bekannt, dass die Eingabefelder der Einstellungen\r\nteilweise abgeschnitten sind und wir arbeiten daran!\r\n";
+                        message += "\r\n";
+                        message += "- Das JDownloader Team wünscht weiterhin viel Spaß mit JDownloader und save.tv! -";
+                        JOptionPane.showConfirmDialog(jd.gui.swing.jdgui.JDGui.getInstance().getMainFrame(), message, title, JOptionPane.PLAIN_MESSAGE, JOptionPane.INFORMATION_MESSAGE, null);
+                    } catch (Throwable e) {
+                    }
+                }
+            });
+        } catch (Throwable e) {
+        }
+    }
+
+    private void checkAccountNeededDialog() {
+        SubConfiguration config = null;
+        try {
+            config = getPluginConfig();
+            if (config.getBooleanProperty("accNeededShown", Boolean.FALSE) == false) {
+                if (config.getProperty("accNeededShown2") == null) {
+                    showAccNeededDialog();
+                } else {
+                    config = null;
+                }
+            } else {
+                config = null;
+            }
+        } catch (final Throwable e) {
+        } finally {
+            if (config != null) {
+                config.setProperty("accNeededShown", Boolean.TRUE);
+                config.setProperty("accNeededShown2", "shown");
+                config.save();
+            }
+        }
+    }
+
+    private static void showAccNeededDialog() {
+        try {
+            SwingUtilities.invokeAndWait(new Runnable() {
+
+                @Override
+                public void run() {
+                    try {
+                        String message = "";
+                        String title = null;
+                        title = "Save.tv - Account benötigt";
+                        message += "Hallo lieber save.tv Nutzer.\r\n";
+                        message += "Um über JDownloader Videos aus deinem save.tv Archiv herunterladen zu können musst du\r\nzunächst deinen save.tv Account in JDownloader eintragen.";
+                        message += "\r\n";
+                        message += "In JDownloader 0.9.581 geht das unter:\r\n";
+                        message += "Einstellungen -> Anbieter -> -> Premium -> Account hinzufügen save.tv\r\n";
+                        message += "\r\n";
+                        message += "In der JDownloader 2 BETA geht das unter:\r\n";
+                        message += "Einstellungen -> Accountverwaltung -> Hinzufügen -> save.tv\r\n";
+                        message += "\r\n";
+                        message += "Sobald du deinen Account eingetragen hast kannst du aus deinem save.tv Archiv\r\n";
+                        message += "Links dieses Formats in JDownloader einfügen und herunterladen:\r\n";
+                        message += "save.tv/STV/M/obj/user/usShowVideoArchiveDetail.cfm?TelecastID=XXXXXXX\r\n";
+                        message += "\r\n";
+                        message += "Falls du Bugs findest oder fragen hast, melde dich gerne jederzeit bei uns: board.jdownloader.org.\r\n";
+                        message += "\r\n";
+                        message += "- Das JDownloader Team wünscht weiterhin viel Spaß mit JDownloader und save.tv! -";
+                        JOptionPane.showConfirmDialog(jd.gui.swing.jdgui.JDGui.getInstance().getMainFrame(), message, title, JOptionPane.PLAIN_MESSAGE, JOptionPane.INFORMATION_MESSAGE, null);
+                    } catch (Throwable e) {
+                    }
+                }
+            });
+        } catch (Throwable e) {
+        }
+    }
 }

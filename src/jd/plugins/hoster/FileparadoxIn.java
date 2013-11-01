@@ -123,7 +123,7 @@ public class FileparadoxIn extends PluginForHost {
         } else {
             // non account
             chunks = 1;
-            resumes = true;
+            resumes = false;
             acctype = "Non Account";
             directlinkproperty = "freelink";
         }
@@ -1459,7 +1459,7 @@ public class FileparadoxIn extends PluginForHost {
      * @param controlSlot
      *            (+1|-1)
      * */
-   private void controlSlot(final int num, final Account account) {
+    private void controlSlot(final int num, final Account account) {
         synchronized (CTRLLOCK) {
             if (account == null) {
                 int was = maxFree.get();

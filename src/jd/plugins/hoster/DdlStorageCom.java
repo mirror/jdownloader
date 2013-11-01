@@ -105,7 +105,8 @@ public class DdlStorageCom extends PluginForHost {
     // XfileShare Version 3.0.8.4
     // last XfileSharingProBasic compare :: 2.6.2.1
     // captchatype: recaptcha
-    // mods: country blocked stuff, this is done at the firewall based && and when users do bad things to httpd based on logs.
+    // mods: country blocked stuff, this is done at the firewall based && and when users do bad things to httpd based on logs., modified
+    // fixFilename as a workaround for bad serverside filenames
     // mods: premium storage account.
     // other: no redirects
 
@@ -1350,6 +1351,8 @@ public class DdlStorageCom extends PluginForHost {
             FFN = orgName + servExt;
         else
             FFN = orgNameExt;
+        // Workaround for serverside wrong filename
+        if (FFN.endsWith("'")) FFN = FFN.substring(0, FFN.length() - 1);
         downloadLink.setFinalFileName(FFN);
     }
 

@@ -24,6 +24,7 @@ import jd.PluginWrapper;
 import jd.config.SubConfiguration;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
+import jd.http.Browser.BrowserException;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.Account;
 import jd.plugins.CryptedLink;
@@ -47,6 +48,7 @@ public class SaveTvDecrypter extends PluginForDecrypt {
 
     private final String        CONTAINSPAGE       = "https?://(www\\.)?save\\.tv/STV/M/obj/user/usShowVideoArchive\\.cfm\\?iPageNumber=\\d+";
 
+    // TODO: Find a better solution than "param3=string:984899" -> Maybe try to use API if it has a function to get the whole archive
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
@@ -76,13 +78,10 @@ public class SaveTvDecrypter extends PluginForDecrypt {
         final String one = df.format(new Random().nextInt(10000));
         final String two = df2.format(new Random().nextInt(1000000000));
         for (int i = 1; i <= maxPage; i++) {
+            logger.info("Decrypting page " + i + " of " + maxPage);
+            int addedlinksnum = 0;
             if (i > 1) {
                 br.getPage("https://www.save.tv/STV/M/obj/user/usShowVideoArchive.cfm?iPageNumber=" + i + "&bLoadLast=1");
-            }
-            final String[][] dlInfo = br.getRegex("data\\-rownumber=\"(\\d+)\", data\\-title=\"([^<>\"]*?)\"").getMatches();
-            if (dlInfo == null || dlInfo.length == 0) {
-                logger.warning("Decrypter broken for link: " + parameter);
-                return null;
             }
             final String[][] directSeriesLinks = br.getRegex("(\\d+)\" class=\"child\">([^<>\"]*?)</a>[\t\n\r ]+\\-(.*?)(\r|\t|\n]+)").getMatches();
             if (directSeriesLinks != null && directSeriesLinks.length != 0) {
@@ -103,6 +102,7 @@ public class SaveTvDecrypter extends PluginForDecrypt {
                         // Not available in old 0.9.581 Stable
                     }
                     decryptedLinks.add(dl);
+                    addedlinksnum++;
                 }
             }
 
@@ -125,37 +125,55 @@ public class SaveTvDecrypter extends PluginForDecrypt {
                         // Not available in old 0.9.581 Stable
                     }
                     decryptedLinks.add(dl);
+                    addedlinksnum++;
                 }
             }
-            for (final String[] dInfo : dlInfo) {
-                final String dlid = dInfo[0];
-                final String dlname = dInfo[1];
-                final FilePackage fp = FilePackage.getInstance();
-                fp.setName(Encoding.htmlDecode(dlname));
-                fp.addLinks(decryptedLinks);
-                br.postPage("https://www.save.tv/STV/M/obj/user/usShowVideoArchiveLoadEntries.cfm?null.GetVideoEntries", "ajax=true&clientAuthenticationKey=&callCount=1&c0-scriptName=null&c0-methodName=GetVideoEntries&c0-id=" + one + "_" + two + "&c0-param0=string:1&c0-param1=string:&c0-param2=string:1&c0-param3=string:&c0-param4=string:1&c0-param5=string:0&c0-param6=string:1&c0-param7=string:0&c0-param8=string:1&c0-param9=string:&c0-param10=string:" + Encoding.urlEncode(dlname) + "&c0-param11=string:" + dlid + "&c0-param12=string:toggleSerial&xml=true&extend=function (object) for (property in object) { this[property] = object[property]; } return this;}&");
-                br.getRequest().setHtmlCode(br.toString().replace("\\", ""));
-                final String[][] epinfos = br.getRegex("TelecastID=(\\d+)\" class=\"normal\">([^<>\"]*?)</a> \\- ([^<>\"]*?)</td>").getMatches();
-                if (epinfos == null || epinfos.length == 0) {
-                    logger.warning("Decrypter broken for link: " + parameter);
-                    return null;
-                }
-                for (final String[] episodeinfo : epinfos) {
-                    final String telecastID = episodeinfo[0];
-                    final String seriesName = Encoding.htmlDecode(episodeinfo[1].trim());
-                    final String episodeTitle = Encoding.htmlDecode(episodeinfo[2].trim());
-                    final DownloadLink dl = createDownloadlink("https://www.save.tv/STV/M/obj/user/usShowVideoArchiveDetail.cfm?TelecastID=" + telecastID);
-                    dl.setFinalFileName(seriesName + " - " + episodeTitle + ".mp4");
-                    dl._setFilePackage(fp);
-                    if (fastLinkcheck) dl.setAvailable(true);
+            final String[][] dlInfo = br.getRegex("data\\-rownumber=\"(\\d+)\", data\\-title=\"([^<>\"]*?)\"").getMatches();
+            if (dlInfo != null && dlInfo.length != 0) {
+                for (final String[] dInfo : dlInfo) {
+                    final String dlid = dInfo[0];
+                    final String dlname = dInfo[1];
+                    final FilePackage fp = FilePackage.getInstance();
+                    fp.setName(Encoding.htmlDecode(dlname));
+                    fp.addLinks(decryptedLinks);
                     try {
-                        distribute(dl);
-                    } catch (final Throwable e) {
-                        // Not available in old 0.9.581 Stable
+                        br.postPage("https://www.save.tv/STV/M/obj/user/usShowVideoArchiveLoadEntries.cfm?null.GetVideoEntries", "ajax=true&clientAuthenticationKey=&callCount=1&c0-scriptName=null&c0-methodName=GetVideoEntries&c0-id=" + one + "_" + two + "&c0-param0=string:1&c0-param1=string:&c0-param2=string:1&c0-param3=string:984899&c0-param4=string:1&c0-param5=string:0&c0-param6=string:1&c0-param7=string:0&c0-param8=string:1&c0-param9=string:&c0-param10=string:" + Encoding.urlEncode(dlname) + "&c0-param11=string:" + dlid + "&c0-param12=string:toggleSerial&xml=true&extend=function (object) for (property in object) { this[property] = object[property]; } return this;}&");
+                    } catch (final BrowserException e) {
+                        logger.warning("Plugin broken for link: " + parameter);
+                        return null;
                     }
-                    decryptedLinks.add(dl);
+                    br.getRequest().setHtmlCode(br.toString().replace("\\", ""));
+                    final String[][] epinfos = br.getRegex("TelecastID=(\\d+)\" class=\"normal\">([^<>\"]*?)</a> \\- ([^<>\"]*?)</td>").getMatches();
+                    if (epinfos == null || epinfos.length == 0) {
+                        logger.warning("Decrypter broken for link: " + parameter);
+                        return null;
+                    }
+                    for (final String[] episodeinfo : epinfos) {
+                        final String telecastID = episodeinfo[0];
+                        final String seriesName = Encoding.htmlDecode(episodeinfo[1].trim());
+                        final String episodeTitle = Encoding.htmlDecode(episodeinfo[2].trim());
+                        final DownloadLink dl = createDownloadlink("https://www.save.tv/STV/M/obj/user/usShowVideoArchiveDetail.cfm?TelecastID=" + telecastID);
+                        dl.setFinalFileName(seriesName + " - " + episodeTitle + ".mp4");
+                        dl._setFilePackage(fp);
+                        if (fastLinkcheck) dl.setAvailable(true);
+                        try {
+                            distribute(dl);
+                        } catch (final Throwable e) {
+                            // Not available in old 0.9.581 Stable
+                        }
+                        decryptedLinks.add(dl);
+                        addedlinksnum++;
+                    }
                 }
             }
+            if (addedlinksnum == 0 && decryptedLinks.size() == 0) {
+                logger.warning("Plugin broken for link: " + parameter);
+                return null;
+            } else if (addedlinksnum == 0) {
+                logger.info("Can't find more links, stopping at page: " + i + " of " + maxPage);
+                break;
+            }
+            logger.info("Found " + addedlinksnum + " links on page " + i + " of " + maxPage);
         }
 
         return decryptedLinks;

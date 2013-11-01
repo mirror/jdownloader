@@ -29,8 +29,6 @@ import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
-import jd.plugins.LinkStatus;
-import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rom-freaks.net" }, urls = { "http://(www\\.)?rom\\-freaks\\.net/(download\\-[0-9]+\\-file\\-.+|link\\-[0-9]\\-[0-9]+\\-file\\-.+|.+desc\\-name.+)\\.html" }, flags = { 0 })
@@ -54,6 +52,10 @@ public class RmFrksNt extends PluginForDecrypt {
                 decryptedLinks.add(createDownloadlink("http://www.rom-freaks.net/" + link));
             }
         } else {
+            if (br.containsHTML("onClick=\"DL\\(this\\);")) {
+                logger.info("Link is broken or offline: " + parameter);
+                return decryptedLinks;
+            }
             String fpName = br.getRegex("<title>Download - NDS ROMs \\- \\d+(.*?)</title>").getMatch(0);
             if (fpName == null) fpName = br.getRegex("<td width=\"100%\" class=\"aligncenter\" colspan=\"2\">[\t\n\r ]+\\d+ \\- (.*?)</td>").getMatch(0);
             String fastWay = br.getRegex("<p align=\"center\"><b><a href=\"(.*?)\"").getMatch(0);
@@ -65,10 +67,17 @@ public class RmFrksNt extends PluginForDecrypt {
                     logger.warning("finallink is null, tried to go the fastWay, link: " + parameter);
                     return null;
                 }
+                if (finallink.equals("http://www.rom-freaks.net/")) {
+                    logger.info("Link is broken or offline: " + parameter);
+                    return decryptedLinks;
+                }
                 decryptedLinks.add(createDownloadlink(finallink));
             } else {
                 String dlink = br.getRegex("\"(gotodownload\\-\\d+\\.html)\"").getMatch(0);
-                if (dlink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                if (dlink == null) {
+                    logger.warning("Decrypter broken for link: " + parameter);
+                    return null;
+                }
                 dlink = "http://www.rom-freaks.net/" + dlink;
                 br.getPage(dlink);
                 /* captcha handling */
