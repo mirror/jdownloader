@@ -28,7 +28,6 @@ import org.appwork.storage.config.events.GenericConfigEventListener;
 import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.swing.MigPanel;
 import org.appwork.utils.event.queue.QueueAction;
-import org.appwork.utils.swing.EDTHelper;
 import org.appwork.utils.swing.EDTRunner;
 import org.jdownloader.controlling.AggregatedCrawlerNumbers;
 import org.jdownloader.gui.event.GUIEventSender;
@@ -159,14 +158,7 @@ public class LinkgrabberOverview extends MigPanel implements GenericConfigEventL
                     final AggregatedCrawlerNumbers filtered = (CFG_GUI.OVERVIEW_PANEL_VISIBLE_ONLY_INFO_VISIBLE.isEnabled() || CFG_GUI.OVERVIEW_PANEL_SMART_INFO_VISIBLE.isEnabled()) ? new AggregatedCrawlerNumbers(new SelectionInfo<CrawledPackage, CrawledLink>(null, table.getModel().getAllChildrenNodes(), null, null, null, table)) : null;
                     final AggregatedCrawlerNumbers selected;
                     if ((CFG_GUI.OVERVIEW_PANEL_SELECTED_INFO_VISIBLE.isEnabled() || CFG_GUI.OVERVIEW_PANEL_SMART_INFO_VISIBLE.isEnabled())) {
-                        List<AbstractNode> selectedObjects = new EDTHelper<List<AbstractNode>>() {
-
-                            @Override
-                            public List<AbstractNode> edtRun() {
-                                return table.getModel().getSelectedObjects();
-                            }
-
-                        }.getReturnValue();
+                        List<AbstractNode> selectedObjects = table.getModel().getSelectedObjects();
                         selected = new AggregatedCrawlerNumbers(new SelectionInfo<CrawledPackage, CrawledLink>(null, selectedObjects, null, null, null, table));
                     } else {
                         selected = null;
