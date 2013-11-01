@@ -284,7 +284,6 @@ public class SaveTv extends PluginForHost {
             // Add series information
             if (episodenumber != null) link.setProperty("episodenumber", Integer.parseInt(episodenumber));
             link.setProperty("seriestitle", seriestitle);
-            episodename = episodename.replace("/", getPluginConfig().getStringProperty(CUSTOM_FILENAME_SERIES2_EPISODENAME_SEPERATION_MARK, defaultCustomSeperationMark));
             link.setProperty("episodename", episodename);
             // Add movie information
             if (produceyear != null) {
@@ -304,7 +303,7 @@ public class SaveTv extends PluginForHost {
             link.setProperty("originaldate", datemilliseconds);
 
             final String formattedFilename = getFormattedFilename(link);
-            link.setName(formattedFilename);
+            link.setFinalFileName(formattedFilename);
         }
         return AvailableStatus.TRUE;
     }
@@ -565,7 +564,8 @@ public class SaveTv extends PluginForHost {
             if (!formattedFilename.contains("*endung*") || (!formattedFilename.contains("*serientitel*") && !formattedFilename.contains("*episodenname*") && !formattedFilename.contains("*episodennummer*"))) formattedFilename = defaultCustomFilename;
 
             final String seriestitle = downloadLink.getStringProperty("seriestitle", null);
-            final String episodename = downloadLink.getStringProperty("episodename", null);
+            String episodename = downloadLink.getStringProperty("episodename", null);
+            episodename = episodename.replace("/", getPluginConfig().getStringProperty(CUSTOM_FILENAME_SERIES2_EPISODENAME_SEPERATION_MARK, defaultCustomSeperationMark));
             final long episodenumber = downloadLink.getLongProperty("episodenumber", 0);
 
             formattedFilename = formattedFilename.replace("*zufallszahl*", df.format(new Random().nextInt(10000)));

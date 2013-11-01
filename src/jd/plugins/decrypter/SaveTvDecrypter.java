@@ -131,6 +131,14 @@ public class SaveTvDecrypter extends PluginForDecrypt {
             final String[][] dlInfo = br.getRegex("data\\-rownumber=\"(\\d+)\", data\\-title=\"([^<>\"]*?)\"").getMatches();
             if (dlInfo != null && dlInfo.length != 0) {
                 for (final String[] dInfo : dlInfo) {
+                    try {
+                        if (this.isAbort()) {
+                            logger.info("Decrypt process aborted by user: " + parameter);
+                            return decryptedLinks;
+                        }
+                    } catch (final Throwable e) {
+                        // Not available in old 0.9.581 Stable
+                    }
                     final String dlid = dInfo[0];
                     final String dlname = dInfo[1];
                     final FilePackage fp = FilePackage.getInstance();
@@ -140,12 +148,14 @@ public class SaveTvDecrypter extends PluginForDecrypt {
                         br.postPage("https://www.save.tv/STV/M/obj/user/usShowVideoArchiveLoadEntries.cfm?null.GetVideoEntries", "ajax=true&clientAuthenticationKey=&callCount=1&c0-scriptName=null&c0-methodName=GetVideoEntries&c0-id=" + one + "_" + two + "&c0-param0=string:1&c0-param1=string:&c0-param2=string:1&c0-param3=string:984899&c0-param4=string:1&c0-param5=string:0&c0-param6=string:1&c0-param7=string:0&c0-param8=string:1&c0-param9=string:&c0-param10=string:" + Encoding.urlEncode(dlname) + "&c0-param11=string:" + dlid + "&c0-param12=string:toggleSerial&xml=true&extend=function (object) for (property in object) { this[property] = object[property]; } return this;}&");
                     } catch (final BrowserException e) {
                         logger.warning("Plugin broken for link: " + parameter);
+                        logger.warning("Stopped at page " + i + " of " + maxPage);
                         return null;
                     }
                     br.getRequest().setHtmlCode(br.toString().replace("\\", ""));
                     final String[][] epinfos = br.getRegex("TelecastID=(\\d+)\" class=\"normal\">([^<>\"]*?)</a> \\- ([^<>\"]*?)</td>").getMatches();
                     if (epinfos == null || epinfos.length == 0) {
                         logger.warning("Decrypter broken for link: " + parameter);
+                        logger.warning("Stopped at page " + i + " of " + maxPage);
                         return null;
                     }
                     for (final String[] episodeinfo : epinfos) {
