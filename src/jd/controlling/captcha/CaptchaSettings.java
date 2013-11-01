@@ -97,7 +97,7 @@ public interface CaptchaSettings extends ConfigInterface {
     void setCaptchaDialogResolutorCaptchaTimeout(int ms);
 
     @AboutConfig
-    @DescriptionForConfigEntry("Disable Captcha Exchangeservices like 9kw or Captchabrotherhood")
+    @DescriptionForConfigEntry("Enable Captcha Exchangeservices like 9kw or Captchabrotherhood")
     @DefaultBooleanValue(true)
     boolean isCaptchaExchangeServicesEnabled();
 
