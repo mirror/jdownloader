@@ -80,7 +80,12 @@ public class MenuBuilder {
             try {
                 final MenuItemData inst = i;
                 if (inst._getValidateException() != null) continue;
-                if (root.getComponentCount() == 0 && inst instanceof SeperatorData) continue;
+
+                int count = root.getComponentCount();
+                if (root instanceof JMenu) {
+                    count = ((JMenu) root).getMenuComponentCount() + root.getComponentCount();
+                }
+                if (count == 0 && inst instanceof SeperatorData) continue;
 
                 switch (inst.getType()) {
                 case ACTION:
