@@ -1,9 +1,11 @@
 package org.jdownloader.gui.views.downloads.columns;
 
+import java.awt.FontMetrics;
 import java.awt.Point;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
+import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -37,10 +39,15 @@ public class ProgressColumn extends ExtProgressColumn<AbstractNode> {
      * 
      */
     private static final long serialVersionUID = 1L;
+    private int               big;
+    private int               medium;
 
     public ProgressColumn() {
         super(_GUI._.ProgressColumn_ProgressColumn());
+        FontMetrics fm = determinatedRenderer.getFontMetrics(determinatedRenderer.getFont());
 
+        big = fm.stringWidth(df.format(123.45d) + "%");
+        medium = fm.stringWidth(df.format(123.45d));
     }
 
     public JPopupMenu createHeaderPopup() {
@@ -156,7 +163,7 @@ public class ProgressColumn extends ExtProgressColumn<AbstractNode> {
     @Override
     protected String getString(AbstractNode value, long current, long total) {
         if (value instanceof FilePackage) {
-            return String.valueOf(getPercentString(current, total));
+            return format(getPercentString(current, total));
         } else {
             DownloadLink dLink = (DownloadLink) value;
             PluginProgress progress;
@@ -165,7 +172,22 @@ public class ProgressColumn extends ExtProgressColumn<AbstractNode> {
             } else if ((progress = dLink.getPluginProgress()) != null && !(progress.getProgressSource() instanceof PluginForHost)) { return progress.getMessage(this); }
         }
         if (total < 0) return "~";
-        return String.valueOf(getPercentString(current, total));
+        return format(getPercentString(current, total));
+    }
+
+    private NumberFormat df = NumberFormat.getInstance();
+
+    private String format(double percentString) {
+        if (getWidth() < big) {
+            if (getWidth() < medium) {
+                return "";
+            } else {
+                return df.format(percentString);
+            }
+        } else {
+            return df.format(percentString) + "%";
+        }
+
     }
 
     @Override
