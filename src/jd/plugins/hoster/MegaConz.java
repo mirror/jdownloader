@@ -101,6 +101,7 @@ public class MegaConz extends PluginForHost {
             }
         } catch (final Throwable e) {
         }
+        link.setProperty("ALLOW_HASHCHECK", false);
         return AvailableStatus.TRUE;
     }
 
