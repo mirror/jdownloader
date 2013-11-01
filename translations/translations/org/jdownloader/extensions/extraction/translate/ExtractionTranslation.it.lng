@@ -3,6 +3,7 @@ ValidateArchiveAction_ValidateArchiveAction_multi=Validazione archivi
 ValidateArchiveAction_ValidateArchiveAction_object_=Convalida archivio(i)
 ValidateArchiveAction_actionPerformed_=L'archivio ha %s1 parte(i) ed è completo.
 ValidateArchiveAction_actionPerformed_bad=L'archivio ha %s1 parte(i) ed è incompleto.
+and=e al massimo
 archivename=Nome archivio
 ask_for_password=Richiesta password per l'archivio
 cannot_extract_incopmplete=Impossibile estrarre %s1. L'archivio è incompleto!
