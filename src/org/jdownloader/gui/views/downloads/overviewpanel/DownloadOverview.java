@@ -39,7 +39,6 @@ import org.appwork.storage.config.events.GenericConfigEventListener;
 import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.swing.MigPanel;
 import org.appwork.utils.event.queue.QueueAction;
-import org.appwork.utils.swing.EDTHelper;
 import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.SwingUtils;
 import org.jdownloader.controlling.AggregatedNumbers;
@@ -220,14 +219,7 @@ public class DownloadOverview extends MigPanel implements DownloadControllerList
                     final AggregatedNumbers selected;
 
                     if ((CFG_GUI.OVERVIEW_PANEL_SELECTED_INFO_VISIBLE.isEnabled() || CFG_GUI.OVERVIEW_PANEL_SMART_INFO_VISIBLE.isEnabled())) {
-                        List<AbstractNode> selectedObjects = new EDTHelper<List<AbstractNode>>() {
-
-                            @Override
-                            public List<AbstractNode> edtRun() {
-                                return DownloadsTableModel.getInstance().getSelectedObjects();
-                            }
-
-                        }.getReturnValue();
+                        List<AbstractNode> selectedObjects = DownloadsTableModel.getInstance().getSelectedObjects();
                         selected = new AggregatedNumbers(new SelectionInfo<FilePackage, DownloadLink>(null, selectedObjects, null, null, null, DownloadsTableModel.getInstance().getTable()));
                     } else {
                         selected = null;
