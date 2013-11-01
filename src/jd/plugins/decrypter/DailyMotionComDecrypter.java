@@ -47,15 +47,15 @@ public class DailyMotionComDecrypter extends PluginForDecrypt {
 
     private String                          VIDEOSOURCE    = null;
     /**
-     * @ 1hd1080URL or stream_h264_hd1080_url
+     * @ 1hd1080URL or stream_h264_hd1080_url [1920x1080]
      * 
-     * @ 2 hd720URL or stream_h264_hd_url
+     * @ 2 hd720URL or stream_h264_hd_url [1280x720]
      * 
-     * @ 3 hqURL
+     * @ 3 hqURL or stream_h264_hq_url [848x480]
      * 
-     * @ 4 sdURL or stream_h264_hq_url [848p]
+     * @ 4 sdURL or stream_h264_url [512x384]
      * 
-     * @ 5 ldURL or stream_h264_ld_url [320p]
+     * @ 5 ldURL or stream_h264_ld_url [320x240]
      * 
      * @ 6 video_url or rtmp
      * 
@@ -280,7 +280,7 @@ public class DailyMotionComDecrypter extends PluginForDecrypt {
             videosource = br.getRegex("var info = \\{(.*?)\\},").getMatch(0);
             if (videosource != null) {
                 videosource = Encoding.htmlDecode(videosource).replace("\\", "");
-                final String[][] embedQualities = { { "stream_h264_ld_url", "5" }, { "stream_h264_hq_url", "4" }, { "stream_h264_hd_url", "2" }, { "stream_h264_hd1080_url", "1" } };
+                final String[][] embedQualities = { { "stream_h264_ld_url", "5" }, { "stream_h264_url", "4" }, { "stream_h264_hq_url", "3" }, { "stream_h264_hd_url", "2" }, { "stream_h264_hd1080_url", "1" } };
                 for (final String quality[] : embedQualities) {
                     final String qualityName = quality[0];
                     final String qualityNumber = quality[1];

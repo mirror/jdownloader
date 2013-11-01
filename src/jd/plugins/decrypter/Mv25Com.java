@@ -101,7 +101,7 @@ public class Mv25Com extends PluginForDecrypt {
     }
 
     private DownloadLink decryptSingleLink() throws IOException {
-        final String finallink = br.getRegex("location\\.href=\\\\\\'(http[^<>\"]*?)\\'\\\\\"").getMatch(0);
+        final String finallink = br.getRegex("location\\.href=(\\\\\\'|\\')(http[^<>\"]*?)(\\'\\\\\"|\\')").getMatch(1);
         if (finallink == null) return null;
         return createDownloadlink(finallink);
     }

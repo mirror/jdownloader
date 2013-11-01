@@ -73,6 +73,7 @@ public class MovReelCom extends PluginForHost {
             logger.warning("file is 99,99% offline, throwing \"file not found\" now...");
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
+        final Regex fInfo = new Regex(BRBEFORE, "<h3>([^<>\"]*?)<small><sup>([^<>\"]*?)</sup>");
         String filename = new Regex(BRBEFORE, "You have requested.*?http://(www\\.)?" + COOKIE_HOST.replace("http://", "") + "/[a-z0-9]{12}/(.*?)</font>").getMatch(1);
         if (filename == null) {
             filename = new Regex(BRBEFORE, "fname\"( type=\"hidden\")? value=\"(.*?)\"").getMatch(1);
@@ -84,6 +85,9 @@ public class MovReelCom extends PluginForHost {
                         filename = new Regex(BRBEFORE, "Filename.*?nowrap.*?>(.*?)</td").getMatch(0);
                         if (filename == null) {
                             filename = new Regex(BRBEFORE, "File Name.*?nowrap>(.*?)</td").getMatch(0);
+                            if (filename == null) {
+                                filename = fInfo.getMatch(0);
+                            }
                         }
                     }
                 }
@@ -94,6 +98,9 @@ public class MovReelCom extends PluginForHost {
             filesize = new Regex(BRBEFORE, "<small>\\((.*?)\\)</small>").getMatch(0);
             if (filesize == null) {
                 filesize = new Regex(BRBEFORE, "</font>[ ]+\\((.*?)\\)(.*?)</font>").getMatch(0);
+                if (filesize == null) {
+                    filesize = fInfo.getMatch(1);
+                }
             }
         }
         if (filename == null || filename.equals("")) {

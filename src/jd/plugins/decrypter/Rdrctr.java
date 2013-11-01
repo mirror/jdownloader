@@ -103,6 +103,8 @@ public class Rdrctr extends PluginForDecrypt {
                 offline = true;
             } else if (parameter.contains("bit.ly/") && br.containsHTML(">Something\\'s wrong here|>Uh oh, bitly couldn\\'t find a link for the|Page Not Found")) {
                 offline = true;
+            } else if (parameter.contains("yep.it") && br.containsHTML(">Put your URL here<")) {
+                offline = true;
             }
             if (offline) {
                 logger.info("Link offline or invalid: " + parameter);
