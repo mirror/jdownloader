@@ -267,13 +267,22 @@ public class SecondLevelLaunch {
         }
         long maxHeap = Runtime.getRuntime().maxMemory();
         SecondLevelLaunch.LOG.info("Xmx Parameter=" + maxHeap + "bytes (" + (maxHeap / (1024 * 1024)) + "Megabytes)");
+        if (CrossSystem.isMac() && maxHeap < 100 * 1024 * 1024) {
+            try {
+                File file = Application.getResource("../../Info.plist");
+                if (file.exists()) {
+                    String str;
 
-        File file = Application.getResource("../../Info.plist");
-        SecondLevelLaunch.LOG.info(file.getAbsolutePath() + " - " + file.exists());
-        try {
-            SecondLevelLaunch.LOG.info(file.getCanonicalPath() + " - " + file.exists());
-        } catch (IOException e) {
-            SecondLevelLaunch.LOG.log(e);
+                    str = IO.readFileToString(file);
+
+                    str.replace("<string>-Xms64m</string>", "<string>-Xms64m -Xmx128m</string>");
+                    IO.copyFile(file, new File(file.getCanonicalPath() + ".backup_1"));
+                    IO.writeStringToFile(file, str);
+
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
         }
         SecondLevelLaunch.LOG.info("JDownloader");
 
