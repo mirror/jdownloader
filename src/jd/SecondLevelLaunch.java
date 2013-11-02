@@ -255,7 +255,17 @@ public class SecondLevelLaunch {
             final String key = it.toString();
             SecondLevelLaunch.LOG.finer(key + "=" + pr.get(key));
         }
-        SecondLevelLaunch.LOG.info("Xmx=" + Runtime.getRuntime().maxMemory() + "bytes (" + (Runtime.getRuntime().maxMemory() / (1024 * 1024)) + "Megabytes)");
+        try {
+            java.lang.management.RuntimeMXBean runtimeMxBean = java.lang.management.ManagementFactory.getRuntimeMXBean();
+            List<String> arguments = runtimeMxBean.getInputArguments();
+            if (arguments != null) {
+                SecondLevelLaunch.LOG.finer("VMArgs: " + arguments.toString());
+            }
+        } catch (final Throwable e) {
+            SecondLevelLaunch.LOG.log(e);
+        }
+        long maxHeap = Runtime.getRuntime().maxMemory();
+        SecondLevelLaunch.LOG.info("Xmx=" + maxHeap + "bytes (" + (maxHeap / (1024 * 1024)) + "Megabytes)");
 
         SecondLevelLaunch.LOG.info("JDownloader");
 
