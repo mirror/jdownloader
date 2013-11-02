@@ -27,6 +27,7 @@ import java.lang.Thread.UncaughtExceptionHandler;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -116,6 +117,7 @@ import org.jdownloader.settings.staticreferences.CFG_GENERAL;
 import org.jdownloader.settings.staticreferences.CFG_SILENTMODE;
 import org.jdownloader.statistics.StatsManager;
 import org.jdownloader.translate._JDT;
+import org.jdownloader.updatev2.ForcedRestartRequest;
 import org.jdownloader.updatev2.InternetConnectionSettings;
 import org.jdownloader.updatev2.RestartController;
 
@@ -269,7 +271,58 @@ public class SecondLevelLaunch {
         long maxHeap = Runtime.getRuntime().maxMemory();
         SecondLevelLaunch.LOG.info("MaxMemory=" + maxHeap + "bytes (" + (maxHeap / (1024 * 1024)) + "Megabytes)");
         vmOptionsWorkaround(maxHeap);
-        SecondLevelLaunch.LOG.info("JDownloader");
+        SecondLevelLaunch.LOG.info("Xmx Parameter=" + maxHeap + "bytes (" + (maxHeap / (1024 * 1024)) + " Megabytes)");
+        if (CrossSystem.isMac() && maxHeap < 100 * 1024 * 1024 && false) {
+            try {
+                File file = Application.getResource("../../Info.plist");
+                if (file.exists()) {
+                    String str;
+
+                    str = IO.readFileToString(file);
+                    if (str.contains("<string>-Xms64m</string>")) {
+                        str.replace("<string>-Xms64m</string>", "<string>-Xms128m -Xmx256m</string>");
+                        int i = 1;
+                        File backup = new File(file.getCanonicalPath() + ".backup_" + i);
+                        while (backup.exists()) {
+                            i++;
+                            backup = new File(file.getCanonicalPath() + ".backup_" + i);
+
+                        }
+                        IO.copyFile(file, backup);
+                        IO.writeStringToFile(file, str);
+                        //
+                        ArrayList<String> l = new ArrayList<String>();
+                        for (String s : args) {
+                            l.add(s);
+                        }
+                        if (!l.contains("-xmx")) {
+                            l.add("-xmx");
+                            RestartController.getInstance().directRestart(new ForcedRestartRequest(l.toArray(new String[] {})));
+                        }
+                    }
+                }
+            } catch (Exception e) {
+                SecondLevelLaunch.LOG.log(e);
+            }
+        } else {
+            //
+            SecondLevelLaunch.LOG.info("DoTest 1");
+            ArrayList<String> l = new ArrayList<String>();
+            for (String s : args) {
+                l.add(s);
+            }
+            SecondLevelLaunch.LOG.info("DoTest 2 " + l);
+            if (l.contains("-tester")) {
+                SecondLevelLaunch.LOG.info("Doit");
+                if (!l.contains("-xmx")) {
+                    l.add("-xmx");
+                    SecondLevelLaunch.LOG.info("Doit - " + l);
+                    RestartController.getInstance().directRestart(new ForcedRestartRequest(l.toArray(new String[] {})));
+                }
+            }
+        }
+
+        SecondLevelLaunch.LOG.info("JDownloader2");
 
         // checkSessionInstallLog();
 
