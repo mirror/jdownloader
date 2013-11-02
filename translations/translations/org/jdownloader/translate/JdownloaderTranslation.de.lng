@@ -112,7 +112,6 @@ gui_settings_downloadpath_description=Standarddownloadordner setzen. Eine Änder
 gui_settings_extensions_show_now=%s1 jetzt anzeigen?\r\n%s1 kann jederzeit über Hauptmenü -> Fenster angezeigt werden.
 gui_settings_filewriting_description=Über den automatischen Hashcheck kann JDownloader die geladenen Dateien automatisch auf Korrektheit überprüfen.
 gui_settings_general_title=Allgemein
-gui_settings_linkgrabber_filter_description=Der Linkfilter filtert Links. Benutze ihn, um Adressen, URLs oder Dateien anhand der jeweiligen Einstellungen zu ignorieren. Füge Ausnahmen hinzu, um bestimmte Links nicht zu ignorieren. Ausnahmen werden als benutzerdefinierte Sicht in der Linkgrabber-Seitenleiste vorhanden sein.
 gui_settings_linkgrabber_packagizer_description=Die Packagizer-Regeln stellen automatisch anhand deiner Datei-Einstellungen die Download-Einstellungen ein.
 gui_settings_linkgrabber_title=Linksammler-Filter
 gui_settings_plugins_description=JDownloader benutzt "Plugins" für %s1 Webseiten um den Download zu automatisieren, der ohne JDownloader sehr lange dauern würde. Einige dieser Plugins haben Einstellungen, um ihr Verhalten regeln zu können.
@@ -128,7 +127,6 @@ gui_warning_reconnectSuccess=Reconnect erfolgreich
 gui_warning_reconnect_running=läuft...
 gui_warning_reconnectunknown=Reconnect unbekannt
 image_description=Bilddateien: jpg, png, gif, ...
-jd_controlling_SingleDownloadController_askexists=Die Datei '%s1' im Paket %s2 existiert bereits. Was möchtest du tun ?
 jd_controlling_SingleDownloadController_askexists_title=Datei ist vorhanden
 jd_controlling_reconnect_Reconnector_progress_failed2=Reconnect ist zu oft fehlgeschlagen! Autoreconnect ist nun deaktiviert! Bitte überprüfe deine Reconnect Einstellungen!
 jd_controlling_reconnect_plugins_DummyRouterPlugin_getGUI2=<b><u>Kein Reconnect ausgewählt</u></b><br/><p>Reconnection ist eine fortgeschrittene Methode, lange Wartezeiten, die manche Hoster an Free-User verhängen, zu überspringen. <br>Beim Benutzen eines Premium-Accounts hilft diese Methode nicht.</p><p>Lies mehr über Reconnect <a href='http://support.jdownloader.org/index.php?/Knowledgebase/Article/View/1/0/why-should-i-set-up-my-reconnect'>hier</a></p>
