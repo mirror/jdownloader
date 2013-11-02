@@ -38,12 +38,18 @@ public class RmFrksNt extends PluginForDecrypt {
         super(wrapper);
     }
 
+    private static final String INVALIDLINKS = "http://(www\\.)?rom\\-freaks\\.net/notactiveyet\\.html";
+
     @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
         br.setFollowRedirects(true);
         parameter = parameter.replaceAll("(/download-|/link-1-)", "/download-");
+        if (parameter.matches(INVALIDLINKS)) {
+            logger.info("Link invalid: " + parameter);
+            return decryptedLinks;
+        }
         br.getPage(parameter);
         if (parameter.contains("desc-name")) {
             String[] thelinks = br.getRegex("\"(link-[0-9]+-[0-9]+-file-.*?\\.html)\"").getColumn(0);
@@ -62,6 +68,10 @@ public class RmFrksNt extends PluginForDecrypt {
             if (fastWay == null) fastWay = br.getRegex("<p align=\"center\"><b><a href=\"(.*?)\"").getMatch(0);
             if (fastWay != null) {
                 br.getPage("http://www.rom-freaks.net/" + fastWay);
+                if (br.containsHTML("url=google\\.com\"")) {
+                    logger.info("Link is broken or offline: " + parameter);
+                    return decryptedLinks;
+                }
                 String finallink = br.getRegex("http-equiv=\"refresh\" content=\"\\d+ url=(http://.*?)\">").getMatch(0);
                 if (finallink == null) {
                     logger.warning("finallink is null, tried to go the fastWay, link: " + parameter);

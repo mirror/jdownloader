@@ -137,17 +137,17 @@ public class SoundcloudCom extends PluginForHost {
         }
         br.getPage("https://api.sndcdn.com/resolve?url=" + Encoding.urlEncode(parameter.getDownloadURL()) + "&_status_code_map%5B302%5D=200&_status_format=json&client_id=" + CLIENTID);
         if (br.containsHTML("\"404 \\- Not Found\"")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        final AvailableStatus status = checkStatus(parameter, this.br.toString());
+        final AvailableStatus status = checkStatus(parameter, this.br.toString(), true);
         if (status.equals(AvailableStatus.FALSE)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (url == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         checkDirectLink(parameter, url);
         return AvailableStatus.TRUE;
     }
 
-    public AvailableStatus checkStatus(final DownloadLink parameter, final String source) throws ParseException {
+    public AvailableStatus checkStatus(final DownloadLink parameter, final String source, final boolean fromHostplugin) throws ParseException {
         String filename = getXML("title", source);
         if (filename == null) {
-            parameter.getLinkStatus().setStatusText(JDL.L("plugins.hoster.SoundCloudCom.status.pluginBroken", "The host plugin is broken!"));
+            if (fromHostplugin) parameter.getLinkStatus().setStatusText(JDL.L("plugins.hoster.SoundCloudCom.status.pluginBroken", "The host plugin is broken!"));
             return AvailableStatus.FALSE;
         }
         filename = Encoding.htmlDecode(filename.trim().replace("\"", "'"));
@@ -167,13 +167,13 @@ public class SoundcloudCom extends PluginForHost {
         username = Encoding.htmlDecode(username.trim());
         url = getXML("download-url", source);
         if (url != null) {
-            parameter.getLinkStatus().setStatusText(JDL.L("plugins.hoster.SoundCloudCom.status.downloadavailable", "Original file is downloadable"));
+            if (fromHostplugin) parameter.getLinkStatus().setStatusText(JDL.L("plugins.hoster.SoundCloudCom.status.downloadavailable", "Original file is downloadable"));
         } else {
             url = getXML("stream-url", source);
-            parameter.getLinkStatus().setStatusText(JDL.L("plugins.hoster.SoundCloudCom.status.previewavailable", "Preview (Stream) is downloadable"));
+            if (fromHostplugin) parameter.getLinkStatus().setStatusText(JDL.L("plugins.hoster.SoundCloudCom.status.previewavailable", "Preview (Stream) is downloadable"));
         }
         if (url == null) {
-            parameter.getLinkStatus().setStatusText(JDL.L("plugins.hoster.SoundCloudCom.status.pluginBroken", "The host plugin is broken!"));
+            if (fromHostplugin) parameter.getLinkStatus().setStatusText(JDL.L("plugins.hoster.SoundCloudCom.status.pluginBroken", "The host plugin is broken!"));
             return AvailableStatus.FALSE;
         }
 

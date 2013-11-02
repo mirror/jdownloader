@@ -167,7 +167,7 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
                         return null;
                     }
                     final DownloadLink dl = createDownloadlink("https://soundclouddecrypted.com/" + usernameOfSet + "/" + permalink);
-                    final AvailableStatus status = ((jd.plugins.hoster.SoundcloudCom) HOSTPLUGIN).checkStatus(dl, item);
+                    final AvailableStatus status = ((jd.plugins.hoster.SoundcloudCom) HOSTPLUGIN).checkStatus(dl, item, false);
                     dl.setAvailableStatus(status);
                     decryptedLinks.add(dl);
                     if (decryptThumb) {
@@ -221,7 +221,7 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
                     } else {
                         dl = createDownloadlink(parameter.replace("soundcloud.com/", "soundclouddecrypted.com/") + "/" + url);
                     }
-                    final AvailableStatus status = ((jd.plugins.hoster.SoundcloudCom) HOSTPLUGIN).checkStatus(dl, item);
+                    final AvailableStatus status = ((jd.plugins.hoster.SoundcloudCom) HOSTPLUGIN).checkStatus(dl, item, false);
                     dl.setAvailableStatus(status);
                     if (decryptThumb) {
                         try {
@@ -260,7 +260,7 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
                     br.getPage("https://api.sndcdn.com/resolve?url=" + Encoding.urlEncode(parameter) + "&_status_code_map%5B302%5D=200&_status_format=json&client_id=" + CLIENTID);
                     // Add soundcloud link
                     final DownloadLink dl = createDownloadlink(parameter.replace("soundcloud", "soundclouddecrypted"));
-                    final AvailableStatus status = ((jd.plugins.hoster.SoundcloudCom) HOSTPLUGIN).checkStatus(dl, this.br.toString());
+                    final AvailableStatus status = ((jd.plugins.hoster.SoundcloudCom) HOSTPLUGIN).checkStatus(dl, this.br.toString(), false);
                     dl.setAvailableStatus(status);
                     decryptedLinks.add(dl);
 

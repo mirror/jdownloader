@@ -171,6 +171,13 @@ public class DailyMotionComDecrypter extends PluginForDecrypt {
             dl.setAvailable(false);
             decryptedLinks.add(dl);
             return decryptedLinks;
+        } else if (new Regex(VIDEOSOURCE, "\"encodingMessage\":\"Encoding in progress\\.\\.\\.\"").matches()) {
+            final DownloadLink dl = createDownloadlink(PARAMETER.replace("dailymotion.com/", "dailymotiondecrypted.com/"));
+            dl.setFinalFileName(FILENAME + ".mp4");
+            dl.setProperty("offline", true);
+            dl.setAvailable(false);
+            decryptedLinks.add(dl);
+            return decryptedLinks;
         }
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(FILENAME);

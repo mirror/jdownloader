@@ -59,7 +59,7 @@ public class YourUploadCom extends PluginForHost {
         correctDownloadLink(link);
         br.getPage(link.getDownloadURL());
         if (link.getDownloadURL().matches(".+(/embed_ext/|embed\\.yourupload\\.com/).+")) {
-            if (br.containsHTML("<h1>Error</h1>") || br.containsHTML("Embed\\+entry\\+doesnt\\+exist")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            if (br.containsHTML("<h1>Error</h1>") || br.containsHTML("Embed\\+entry\\+doesnt\\+exist") || br.containsHTML("No htmlCode read")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             String filename = br.getRegex("<title>(.*?)</title>").getMatch(0);
             if (filename == null) filename = br.getRegex("<meta name=\"description\" content=\"(.*?)\" />").getMatch(0);
             dllink = br.getRegex("'file':\\s+'(https?://.*?)'").getMatch(0);

@@ -20,6 +20,7 @@ import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -56,9 +57,12 @@ public class VideoFourtyFourNet extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws Exception {
+    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
         this.setBrowserExclusive();
+        // Nice filenames also for offline links
+        downloadLink.setName(new Regex(downloadLink.getDownloadURL(), "video44\\.net/(.+)").getMatch(0));
         br.getPage(downloadLink.getDownloadURL());
+        if (br.containsHTML("The file does not exist")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         // made up links still valid all the way to the finallink!
         dllink = br.getRegex("file:\\s*\"(http[^\"]+)").getMatch(0);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

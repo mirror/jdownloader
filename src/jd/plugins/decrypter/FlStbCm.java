@@ -67,6 +67,10 @@ public class FlStbCm extends PluginForDecrypt {
             logger.info("Link offline or unsupported: " + parameter);
             return decryptedLinks;
         }
+        if (br.containsHTML("Results <span>1")) {
+            logger.info("Search links are not supported: " + parameter);
+            return decryptedLinks;
+        }
         if (parameter.contains("/go.html")) {
             if (br.containsHTML("\\- File no longer available<")) {
                 logger.info("Link offline: " + parameter);
