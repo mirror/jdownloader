@@ -280,7 +280,7 @@ public class SecondLevelLaunch {
                     IO.writeStringToFile(file, str);
 
                 }
-            } catch (IOException e) {
+            } catch (Exception e) {
                 e.printStackTrace();
             }
         }
