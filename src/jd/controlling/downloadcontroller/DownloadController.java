@@ -245,6 +245,7 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
                 @Override
                 protected Void run() throws RuntimeException {
                     int counter = index;
+                    logger.info("QUEUED AddAll At : " + index + " - " + fps);
                     boolean createFolder = CFG_GENERAL.CREATE_FOLDER_TRIGGER.getValue() == CreateFolderTrigger.ON_LINKS_ADDED;
                     HashSet<String> created = new HashSet<String>();
                     for (FilePackage fp : fps) {
