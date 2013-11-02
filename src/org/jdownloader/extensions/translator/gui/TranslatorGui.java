@@ -444,156 +444,162 @@ public class TranslatorGui extends AddonPanel<TranslatorExtension> implements Li
             @Override
             public void actionPerformed(ActionEvent e) {
                 isWizard = true;
-                try {
 
-                    while (true) {
-                        boolean nothingtoDo = true;
+                new Thread("Translator Wizard") {
+                    public void run() {
                         try {
 
-                            for (final TranslateEntry value : getExtension().getTranslationEntries()) {
-                                if (value.isOK()) continue;
-                                nothingtoDo = false;
-                                if (stopEditing) break;
-                                String ret = "<style>td.a{font-style:italic;}</style><table valign=top>";
-                                ret += "<tr><td class=a>Key:</td><td>" + value.getCategory() + "." + value.getKey() + "</td></tr>";
-
-                                ret += "<tr><td class=a>Location:</td><td>" + value.getFullKey() + "</td></tr>";
-
-                                ret += "<tr><td class=a>Original:</td><td><b>" + Encoding.cdataEncode(value.getDirect()) + "</b></td></tr>";
-                                if (value.isMissing()) {
-                                    ret += "<tr><td class=a><font color='#ff0000' >Error:</font></td><td class=a><font color='#ff0000' >Not translated yet</font></td></tr>";
-
-                                }
-                                if (value.isDefault()) {
-                                    ret += "<tr><td class=a><font color='#339900' >Warning:</font></td><td class=a><font color='#339900' >The translation equals the english default language.</font></td></tr>";
-                                }
-
-                                if (value.isParameterInvalid()) {
-                                    ret += "<tr><td class=a><font color='#ff0000' >Error:</font></td><td class=a><font color='#ff0000' >Parameter Wildcards (%s*) do not match.</font></td></tr>";
-                                }
-
-                                Type[] parameters = value.getParameters();
-                                ret += "<tr><td class=a>Parameters:</td>";
-                                if (parameters.length == 0) {
-                                    ret += "<td>none</td></tr>";
-                                } else {
-                                    ret += "<td>";
-                                    int i = 1;
-                                    for (Type t : parameters) {
-                                        ret += "   %s" + i + " (" + t + ")<br>";
-                                        i++;
-                                    }
-                                    ret += "</td>";
-                                    ret += "</tr>";
-                                }
-
-                                ret += "</table>";
-
-                                // ConfirmDialog d = new
-                                // ConfirmDialog(Dialog.STYLE_HTML, "", ret, null, null,
-                                // null);
+                            while (true) {
+                                boolean nothingtoDo = true;
                                 try {
-                                    while (true) {
 
-                                        if (value.getDescription() != null) {
-                                            Dialog.I().showMessageDialog("IMPORTANT!!!\r\n\r\n" + value.getCategory() + "." + value.getKey() + "\r\n" + value.getDescription());
+                                    for (final TranslateEntry value : getExtension().getTranslationEntries()) {
+                                        if (value.isOK()) continue;
+
+                                        if (stopEditing) break;
+                                        String ret = "<style>td.a{font-style:italic;}</style><table valign=top>";
+                                        ret += "<tr><td class=a>Key:</td><td>" + value.getCategory() + "." + value.getKey() + "</td></tr>";
+
+                                        ret += "<tr><td class=a>Location:</td><td>" + value.getFullKey() + "</td></tr>";
+
+                                        ret += "<tr><td class=a>Original:</td><td><b>" + Encoding.cdataEncode(value.getDirect()) + "</b></td></tr>";
+                                        if (value.isMissing()) {
+                                            ret += "<tr><td class=a><font color='#ff0000' >Error:</font></td><td class=a><font color='#ff0000' >Not translated yet</font></td></tr>";
+
                                         }
-                                        final InputDialog d = new InputDialog(Dialog.STYLE_HTML, "Progress " + getExtension().getPercent() + "%", ret, null, null, "Next", "Cancel") {
-                                            protected TextComponentInterface getSmallInputComponent() {
+                                        if (value.isDefault()) {
+                                            ret += "<tr><td class=a><font color='#339900' >Warning:</font></td><td class=a><font color='#339900' >The translation equals the english default language.</font></td></tr>";
+                                        }
 
-                                                final ExtTextField ttx = new ExtTextField();
+                                        if (value.isParameterInvalid()) {
+                                            ret += "<tr><td class=a><font color='#ff0000' >Error:</font></td><td class=a><font color='#ff0000' >Parameter Wildcards (%s*) do not match.</font></td></tr>";
+                                        }
 
-                                                // private static final String
-                                                // TEXT_SUBMIT = "text-submit";
-                                                // private static final String
-                                                // INSERT_BREAK = "insert-break";
+                                        Type[] parameters = value.getParameters();
+                                        ret += "<tr><td class=a>Parameters:</td>";
+                                        if (parameters.length == 0) {
+                                            ret += "<td>none</td></tr>";
+                                        } else {
+                                            ret += "<td>";
+                                            int i = 1;
+                                            for (Type t : parameters) {
+                                                ret += "   %s" + i + " (" + t + ")<br>";
+                                                i++;
+                                            }
+                                            ret += "</td>";
+                                            ret += "</tr>";
+                                        }
 
-                                                InputMap input = ttx.getInputMap();
-                                                KeyStroke enter = KeyStroke.getKeyStroke("ENTER");
-                                                KeyStroke shiftEnter = KeyStroke.getKeyStroke("shift ENTER");
-                                                input.put(shiftEnter, "INSERT_BREAK"); // input.get(enter))
-                                                                                       // =
-                                                                                       // "insert-break"
-                                                input.put(enter, "TEXT_SUBMIT");
+                                        ret += "</table>";
 
-                                                ActionMap actions = ttx.getActionMap();
-                                                actions.put("TEXT_SUBMIT", new AbstractAction() {
+                                        // ConfirmDialog d = new
+                                        // ConfirmDialog(Dialog.STYLE_HTML, "", ret, null, null,
+                                        // null);
+                                        try {
+                                            while (true) {
+
+                                                if (value.getDescription() != null) {
+                                                    Dialog.I().showMessageDialog("IMPORTANT!!!\r\n\r\n" + value.getCategory() + "." + value.getKey() + "\r\n" + value.getDescription());
+                                                }
+                                                final InputDialog d = new InputDialog(Dialog.STYLE_HTML, "Progress " + getExtension().getPercent() + "%", ret, null, null, "Next", "Cancel") {
+                                                    protected TextComponentInterface getSmallInputComponent() {
+
+                                                        final ExtTextField ttx = new ExtTextField();
+
+                                                        // private static final String
+                                                        // TEXT_SUBMIT = "text-submit";
+                                                        // private static final String
+                                                        // INSERT_BREAK = "insert-break";
+
+                                                        InputMap input = ttx.getInputMap();
+                                                        KeyStroke enter = KeyStroke.getKeyStroke("ENTER");
+                                                        KeyStroke shiftEnter = KeyStroke.getKeyStroke("shift ENTER");
+                                                        input.put(shiftEnter, "INSERT_BREAK"); // input.get(enter))
+                                                                                               // =
+                                                                                               // "insert-break"
+                                                        input.put(enter, "TEXT_SUBMIT");
+
+                                                        ActionMap actions = ttx.getActionMap();
+                                                        actions.put("TEXT_SUBMIT", new AbstractAction() {
+                                                            @Override
+                                                            public void actionPerformed(ActionEvent e) {
+                                                                System.out.println("INSRT");
+                                                                try {
+                                                                    Point point = ttx.getCaret().getMagicCaretPosition();
+                                                                    SwingUtilities.convertPointToScreen(point, ttx);
+
+                                                                    ttx.getDocument().insertString(ttx.getCaretPosition(), "\\r\\n", null);
+                                                                    HelpDialog.show(point, "TRANSLETOR_USE_NEWLINE", Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, "NewLine", "Press <Enter> to insert a Newline (\\r\\n). Press <CTRL ENTER> to Confirm  translation. Press <TAB> to confirm and move to next line.", NewTheme.I().getIcon("help", 32));
+
+                                                                } catch (BadLocationException e1) {
+                                                                    e1.printStackTrace();
+                                                                }
+                                                            }
+                                                        });
+
+                                                        ttx.setClearHelpTextOnFocus(false);
+                                                        ttx.addKeyListener(this);
+                                                        ttx.addMouseListener(this);
+                                                        ttx.setHelpText("Please translate: " + value.getDirect());
+                                                        ttx.addActionListener(new ActionListener() {
+
+                                                            @Override
+                                                            public void actionPerformed(ActionEvent e) {
+                                                                setReturnmask(true);
+                                                            }
+                                                        });
+                                                        return ttx;
+
+                                                    }
+
+                                                    @Override
+                                                    protected int getPreferredWidth() {
+                                                        return JDGui.getInstance().getMainFrame().getWidth();
+                                                    }
+
+                                                };
+                                                d.setLeftActions(new AppAction() {
+                                                    {
+                                                        setName("Skip");
+                                                    }
+
                                                     @Override
                                                     public void actionPerformed(ActionEvent e) {
-                                                        System.out.println("INSRT");
-                                                        try {
-                                                            Point point = ttx.getCaret().getMagicCaretPosition();
-                                                            SwingUtilities.convertPointToScreen(point, ttx);
-
-                                                            ttx.getDocument().insertString(ttx.getCaretPosition(), "\\r\\n", null);
-                                                            HelpDialog.show(point, "TRANSLETOR_USE_NEWLINE", Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, "NewLine", "Press <Enter> to insert a Newline (\\r\\n). Press <CTRL ENTER> to Confirm  translation. Press <TAB> to confirm and move to next line.", NewTheme.I().getIcon("help", 32));
-
-                                                        } catch (BadLocationException e1) {
-                                                            e1.printStackTrace();
-                                                        }
+                                                        d.dispose();
                                                     }
+
                                                 });
+                                                nothingtoDo = false;
+                                                String newTranslation = Dialog.getInstance().showDialog(d);
 
-                                                ttx.setClearHelpTextOnFocus(false);
-                                                ttx.addKeyListener(this);
-                                                ttx.addMouseListener(this);
-                                                ttx.setHelpText("Please translate: " + value.getDirect());
-                                                ttx.addActionListener(new ActionListener() {
-
-                                                    @Override
-                                                    public void actionPerformed(ActionEvent e) {
-                                                        setReturnmask(true);
-                                                    }
-                                                });
-                                                return ttx;
+                                                if (newTranslation == null) {
+                                                    // Skip
+                                                    break;
+                                                }
+                                                value.setTranslation(newTranslation);
+                                                if (value.isOK() || value.isDefault()) break;
 
                                             }
+                                        } catch (DialogClosedException e1) {
+                                            e1.printStackTrace();
 
-                                            @Override
-                                            protected int getPreferredWidth() {
-                                                return JDGui.getInstance().getMainFrame().getWidth();
-                                            }
-
-                                        };
-                                        d.setLeftActions(new AppAction() {
-                                            {
-                                                setName("Skip");
-                                            }
-
-                                            @Override
-                                            public void actionPerformed(ActionEvent e) {
-                                                d.dispose();
-                                            }
-
-                                        });
-
-                                        String newTranslation = Dialog.getInstance().showDialog(d);
-
-                                        if (newTranslation == null) {
-                                            // Skip
-                                            break;
+                                        } catch (DialogCanceledException e1) {
+                                            return;
                                         }
-                                        value.setTranslation(newTranslation);
-                                        if (value.isOK() || value.isDefault()) break;
 
                                     }
-                                } catch (DialogClosedException e1) {
-                                    e1.printStackTrace();
-
-                                } catch (DialogCanceledException e1) {
-                                    return;
+                                } finally {
+                                    isWizard = false;
                                 }
-
+                                if (nothingtoDo && !stopEditing) break;
                             }
                         } finally {
-                            isWizard = false;
-                        }
-                        if (nothingtoDo && !stopEditing) break;
-                    }
-                } finally {
 
-                    Dialog.getInstance().showMessageDialog("Wizard ended");
-                }
+                            Dialog.getInstance().showMessageDialog("Wizard ended");
+                        }
+                    }
+                }.start();
+
             }
         }));
         menuPanel.add(Box.createHorizontalGlue(), "growx,pushx");
@@ -780,8 +786,8 @@ public class TranslatorGui extends AddonPanel<TranslatorExtension> implements Li
     }
 
     /**
-     * Is called if gui is visible now, and has not been visible before. For example, user starte the extension, opened the view, or switched form a different
-     * tab to this one
+     * Is called if gui is visible now, and has not been visible before. For example, user starte the extension, opened the view, or
+     * switched form a different tab to this one
      */
     @Override
     protected void onShow() {
@@ -835,7 +841,8 @@ public class TranslatorGui extends AddonPanel<TranslatorExtension> implements Li
     }
 
     /**
-     * gets called of the extensiongui is not visible any more. for example because it has been closed or user switched to a different tab/view
+     * gets called of the extensiongui is not visible any more. for example because it has been closed or user switched to a different
+     * tab/view
      */
     @Override
     protected void onHide() {
