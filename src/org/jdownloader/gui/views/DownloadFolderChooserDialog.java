@@ -76,6 +76,7 @@ public class DownloadFolderChooserDialog extends ExtFileChooserDialog {
     protected File[] createReturnValue() {
 
         JsonConfig.create(GraphicalUserInterfaceSettings.class).setFileChooserView(getView());
+
         if (isMultiSelection()) {
             File[] files = fc.getSelectedFiles();
             return files;
@@ -96,11 +97,14 @@ public class DownloadFolderChooserDialog extends ExtFileChooserDialog {
             }
             if (cbPackage != null && cbPackage.isSelected()) {
                 if (cbPackage.isSelected() && f.getAbsolutePath().endsWith(PACKAGETAG)) {
+
                     return new File[] { f };
                 } else {
+
                     return new File[] { new File(f, PACKAGETAG) };
                 }
             } else {
+
                 return new File[] { f };
             }
 
