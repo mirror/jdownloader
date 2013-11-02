@@ -470,6 +470,12 @@ public class JDGui implements UpdaterListener, OwnerFinder {
                         if (JsonConfig.create(GraphicalUserInterfaceSettings.class).isLogViewVisible()) {
                             // this.mainTabbedPane.addTab(LogView.getInstance());
                         }
+
+                        if (Runtime.getRuntime().maxMemory() < (100 * 1024 * 1024)) {
+                            Dialog.getInstance().showMessageDialog("It seems that there is a memory Problem with your JDownloader installation.\r\nPlease Download the latest JDownloader 2 Installer, or visit our supportchat to ask for help.");
+                            CrossSystem.openURL("http://jdownloader.org/download/offline");
+                            CrossSystem.openURL("http://jdownloader.org/knowledge/chat");
+                        }
                     }
 
                 };

@@ -255,6 +255,8 @@ public class SecondLevelLaunch {
             final String key = it.toString();
             SecondLevelLaunch.LOG.finer(key + "=" + pr.get(key));
         }
+        SecondLevelLaunch.LOG.info("Xmx=" + Runtime.getRuntime().maxMemory() + "bytes (" + (Runtime.getRuntime().maxMemory() / (1024 * 1024)) + "Megabytes)");
+
         SecondLevelLaunch.LOG.info("JDownloader");
 
         // checkSessionInstallLog();

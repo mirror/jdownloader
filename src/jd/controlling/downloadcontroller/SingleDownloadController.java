@@ -91,6 +91,11 @@ public class SingleDownloadController extends BrowserSettingsThread {
         return jobsAfterDetach;
     }
 
+    @Override
+    public synchronized void start() {
+        super.start();
+    }
+
     public HashResult getHashResult() {
         return hashResult;
     }
