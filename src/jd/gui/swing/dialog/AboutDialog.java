@@ -16,12 +16,15 @@
 
 package jd.gui.swing.dialog;
 
-import java.awt.Component;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import java.io.File;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.HashMap;
+import java.util.List;
 
 import javax.swing.JButton;
 import javax.swing.JComponent;
@@ -42,6 +45,7 @@ import org.appwork.uio.UIOManager;
 import org.appwork.utils.Application;
 import org.appwork.utils.IO;
 import org.appwork.utils.logging.Log;
+import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.swing.dialog.AbstractDialog;
 import org.appwork.utils.swing.dialog.ConfirmDialog;
 import org.appwork.utils.swing.dialog.Dialog;
@@ -148,8 +152,24 @@ public class AboutDialog extends AbstractDialog<Integer> {
 
         }
         stats.add(new JLabel("Java:"), "");
-        stats.add(disable(System.getProperty("java.vendor") + " - " + System.getProperty("java.version")));
+        JComponent comp;
+        stats.add(comp = disable(System.getProperty("java.vendor") + " - " + System.getProperty("java.version")));
+        comp.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                CrossSystem.showInExplorer(new File(CrossSystem.getJavaBinary()));
+            }
+        });
 
+        try {
+            java.lang.management.RuntimeMXBean runtimeMxBean = java.lang.management.ManagementFactory.getRuntimeMXBean();
+            List<String> arguments = runtimeMxBean.getInputArguments();
+            if (arguments != null) {
+                comp.setToolTipText(arguments.toString());
+            }
+        } catch (final Throwable e) {
+
+        }
         contentpane.add(new JLabel(_GUI._.jd_gui_swing_components_AboutDialog_synthetica("(#289416475)")), "gaptop 10, spanx");
         contentpane.add(new JLabel("© AppWork GmbH 2007-2013"), "spanx");
         contentpane.add(links, "gaptop 15, growx, pushx, spanx");
@@ -158,7 +178,7 @@ public class AboutDialog extends AbstractDialog<Integer> {
         return contentpane;
     }
 
-    private Component disable(Object object) {
+    private JComponent disable(Object object) {
         JLabel ret = new JLabel(object + "");
         ret.setEnabled(false);
         return ret;
