@@ -766,6 +766,10 @@ public class LinkPropertiesPanel extends MigPanel implements LinkCollectorListen
     }
 
     protected void updateInEDT(final CrawledLink link, final CrawledPackage pkg) {
+        if (pkg == null) {
+            // may happen when we remove links
+            return;
+        }
         if (link != null && !filename.hasFocus()) {
             filename.setText(link.getName());
         }
