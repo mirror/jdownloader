@@ -1366,7 +1366,8 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                         logger.info("Pause disabled: Switch back to old downloadspeed");
                         config.setDownloadSpeedLimit(currentSession.getSpeedLimitBeforePause());
                     }
-                    config.setDownloadSpeedLimitEnabled(currentSession.isSpeedWasLimitedBeforePauseEnabled());
+                    Boolean beforeEnabled = currentSession.isSpeedWasLimitedBeforePauseEnabled();
+                    if (beforeEnabled != null) config.setDownloadSpeedLimitEnabled(beforeEnabled);
                     if (stateMachine.isState(DownloadWatchDog.PAUSE_STATE)) {
                         /* we revert pause to running state */
                         stateMachine.setStatus(RUNNING_STATE);
