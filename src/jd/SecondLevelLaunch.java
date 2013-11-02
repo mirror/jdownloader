@@ -266,7 +266,7 @@ public class SecondLevelLaunch {
             SecondLevelLaunch.LOG.log(e);
         }
         long maxHeap = Runtime.getRuntime().maxMemory();
-        SecondLevelLaunch.LOG.info("Xmx=" + maxHeap + "bytes (" + (maxHeap / (1024 * 1024)) + "Megabytes)");
+        SecondLevelLaunch.LOG.info("Xmx Parameter=" + maxHeap + "bytes (" + (maxHeap / (1024 * 1024)) + "Megabytes)");
 
         File file = Application.getResource("../../Info.plist");
         SecondLevelLaunch.LOG.info(file.getAbsolutePath() + " - " + file.exists());
