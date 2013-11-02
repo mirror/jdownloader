@@ -223,6 +223,7 @@ public class SecondLevelLaunch {
         if (CrossSystem.isMac()) {
             // Set MacApplicationName
             // Must be in Main
+
             System.setProperty("com.apple.mrj.application.apple.menu.about.name", "JDownloader");
             SecondLevelLaunch.initMACProperties();
         }
@@ -267,6 +268,13 @@ public class SecondLevelLaunch {
         long maxHeap = Runtime.getRuntime().maxMemory();
         SecondLevelLaunch.LOG.info("Xmx=" + maxHeap + "bytes (" + (maxHeap / (1024 * 1024)) + "Megabytes)");
 
+        File file = Application.getResource("../../info.plist");
+        SecondLevelLaunch.LOG.info(file.getAbsolutePath() + " - " + file.exists());
+        try {
+            SecondLevelLaunch.LOG.info(file.getCanonicalPath() + " - " + file.exists());
+        } catch (IOException e) {
+            SecondLevelLaunch.LOG.log(e);
+        }
         SecondLevelLaunch.LOG.info("JDownloader");
 
         // checkSessionInstallLog();
