@@ -370,7 +370,7 @@ public class RealDebridCom extends PluginForHost {
                 Thread.sleep(1000);
             }
         }
-        String expire = br.getRegex("<expiration\\-txt>([^<]+)").getMatch(0);
+        String expire = br.getRegex("<expiration-txt>([^<]+)").getMatch(0);
         if (expire != null) {
             ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "dd/MM/yyyy hh:mm:ss", null));
         }
@@ -421,6 +421,21 @@ public class RealDebridCom extends PluginForHost {
                 }
                 if (!supportedHosts.contains("uploaded.to")) {
                     supportedHosts.add("uploaded.to");
+                }
+            }
+            // workaround for keep2share.cc, as they keep changing hosts..
+            if (supportedHosts.contains("keep2share.cc") || supportedHosts.contains("k2s.cc") || supportedHosts.contains("keep2s.cc") || supportedHosts.contains("keep2.cc")) {
+                if (!supportedHosts.contains("keep2share.cc")) {
+                    supportedHosts.add("keep2share.cc");
+                }
+                if (!supportedHosts.contains("k2s.cc")) {
+                    supportedHosts.add("k2s.cc");
+                }
+                if (!supportedHosts.contains("keep2s.cc")) {
+                    supportedHosts.add("keep2s.cc");
+                }
+                if (!supportedHosts.contains("keep2.cc")) {
+                    supportedHosts.add("keep2.cc");
                 }
             }
             ai.setProperty("multiHostSupport", supportedHosts);
