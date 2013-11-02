@@ -267,7 +267,7 @@ public class SecondLevelLaunch {
         }
         long maxHeap = Runtime.getRuntime().maxMemory();
         SecondLevelLaunch.LOG.info("Xmx Parameter=" + maxHeap + "bytes (" + (maxHeap / (1024 * 1024)) + "Megabytes)");
-        if (CrossSystem.isMac() && maxHeap < 100 * 1024 * 1024) {
+        if (CrossSystem.isMac() && maxHeap < 100 * 1024 * 1024 && false) {
             try {
                 File file = Application.getResource("../../Info.plist");
                 if (file.exists()) {
