@@ -204,7 +204,10 @@ public class RealDebridCom extends PluginForHost {
         Object supportedHosts = acc.getAccountInfo().getProperty("multiHostSupport", null);
         if (supportedHosts != null && supportedHosts instanceof List) {
             ArrayList<String> newList = new ArrayList<String>((List<String>) supportedHosts);
-            newList.remove(link.getHost());
+            // final String linkHost = new Regex(link.getDownloadURL(), "https?://(www\\.)?([^:/]+)/").getMatch(1);
+            // if (linkHost != null) newList.remove(linkHost);
+            final String pluginHost = link.getHost();
+            newList.remove(pluginHost);
             acc.getAccountInfo().setProperty("multiHostSupport", newList);
             throw new PluginException(LinkStatus.ERROR_RETRY);
         }
@@ -273,6 +276,11 @@ public class RealDebridCom extends PluginForHost {
                 logger.info("You have run out of download quota for this hoster");
                 removeHostFromMultiHost(link, acc);
                 throw new PluginException(LinkStatus.ERROR_RETRY);
+            } else if (br.containsHTML("error\":7,")) {
+                // {"error":7,"message":"F\u00fcr den Hoster ist kein Server vorhanden."}
+                // Für den Hoster ist kein Server vorhanden.
+                removeHostFromMultiHost(link, acc);
+                throw new PluginException(LinkStatus.ERROR_RETRY);
             } else if (br.containsHTML("error\":10,")) {
                 logger.info("File's hoster is in maintenance. Try again later");
                 removeHostFromMultiHost(link, acc);
@@ -302,7 +310,7 @@ public class RealDebridCom extends PluginForHost {
                  */
                 if (link.getLinkStatus().getRetryCount() == 3) {
                     removeHostFromMultiHost(link, acc);
-                    /* reset retrycounter */
+                    /* reset retry counter */
                     link.getLinkStatus().setRetryCount(0);
                     throw new PluginException(LinkStatus.ERROR_RETRY);
                 }
