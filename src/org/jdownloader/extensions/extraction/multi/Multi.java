@@ -19,7 +19,6 @@ package org.jdownloader.extensions.extraction.multi;
 import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
-import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -776,17 +775,7 @@ public class Multi extends IExtraction {
             }
             path = sb.toString();
         }
-        String lastTryFilename = controller.getExtractToFolder().getAbsoluteFile() + File.separator + path;
-        String filename = lastTryFilename;
-        try {
-            logger.info("Filename(before native): " + filename);
-            /* getBytes wanted as we interact with native code and need native charset here */
-            filename = new String(filename.getBytes(), Charset.defaultCharset());
-            logger.info("Filename(after native): " + filename);
-        } catch (Exception e) {
-            logger.log(e);
-            logger.warning("Encoding " + Charset.defaultCharset().toString() + " not supported. Using default filename.");
-        }
+        String filename = controller.getExtractToFolder().getAbsoluteFile() + File.separator + path;
 
         File extractTo = new File(filename);
         logger.info("Extract " + filename);
@@ -826,10 +815,10 @@ public class Multi extends IExtraction {
                 logger.log(e);
                 if (fixedFilename == null) {
                     /* first try, we try again with lastTryFilename */
-                    fixedFilename = lastTryFilename;
+                    fixedFilename = filename;
                     extractTo = new File(fixedFilename);
                     continue;
-                } else if (fixedFilename == lastTryFilename) {
+                } else if (fixedFilename == filename) {
                     /* second try, we try with modified filename */
                     /* Invalid Chars could have occured, try to remove them */
                     logger.severe("Invalid Chars could have occured, try to remove them");
