@@ -238,14 +238,12 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
      * @return
      */
     public void addAllAt(final java.util.List<FilePackage> fps, final int index) {
-        logger.info("AddAll At : " + index + " - " + fps);
         if (fps != null && fps.size() > 0) {
             QUEUE.add(new QueueAction<Void, RuntimeException>() {
 
                 @Override
                 protected Void run() throws RuntimeException {
                     int counter = index;
-                    logger.info("QUEUED AddAll At : " + index + " - " + fps);
                     boolean createFolder = CFG_GENERAL.CREATE_FOLDER_TRIGGER.getValue() == CreateFolderTrigger.ON_LINKS_ADDED;
                     HashSet<String> created = new HashSet<String>();
                     for (FilePackage fp : fps) {
@@ -256,7 +254,7 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
                                 if (folderFile.exists()) {
                                     /* folder already exists */
                                     logger.info("Skip folder creation: " + folderFile + " already exists");
-                                    continue;
+
                                 } else {
                                     /* folder does not exist */
                                     File invalidDestination = DownloadWatchDog.getInstance().validateDestination(folderFile);

@@ -237,7 +237,6 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                 return "save linkcollector...";
             }
         });
-
         asyncSaving = new DelayedRunnable(TIMINGQUEUE, 5000l, 60000l) {
 
             @Override
@@ -1587,13 +1586,11 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
 
         boolean autostart = false;
         List<DownloadLink> force = new ArrayList<DownloadLink>();
-        logger.info("Move Links: " + selection.getChildren().size());
 
         for (CrawledPackage cp : selection.getAllPackages()) {
             List<CrawledLink> links;
             //
             links = selection.getSelectedLinksByPackage(cp);
-            logger.info("Convert: " + cp + " - " + links);
             java.util.List<FilePackage> convertedLinks = LinkCollector.getInstance().convert(links, true);
             for (CrawledLink cl : links) {
                 autostart |= cl.isAutoStartEnabled();
@@ -1617,7 +1614,6 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
          * 
          * addBottom = negative number -> add at the end
          */
-
         DownloadController.getInstance().addAllAt(filePackagesToAdd, addTop ? 0 : -(filePackagesToAdd.size() + 10));
         if (autostart) {
             DownloadWatchDog.getInstance().startDownloads();
