@@ -99,8 +99,8 @@ public class DownloadMe extends PluginForHost {
         } catch (final Throwable e) {
             // not available in old Stable 0.9.581
         }
+        ac.setTrafficLeft(Long.parseLong(getJson("trafficleft")));
         ac.setStatus("Premium User");
-        ac.setUnlimitedTraffic();
         // now let's get a list of all supported hosts:
         br.getPage("https://www.download.me/dlapi/hosters");
         final String hostArrayText = br.getRegex("\"data\":\\[(.*?)\\]").getMatch(0);
@@ -167,6 +167,10 @@ public class DownloadMe extends PluginForHost {
             logger.info("Trying to find link, try " + i + " / 120");
             br.getPage("https://www.download.me/dlapi/file?id=" + id);
             final String data = br.getRegex("\"data\":\\{(.*?)\\}\\}").getMatch(0);
+            // Account expired
+            if ("1001".equals(getJson("errcode", data))) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+            // No traffic left
+            if ("1006".equals(getJson("errcode", data))) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
             final String status = getJson("status", data);
             if ("0".equals(status)) {
                 logger.info("Received status 0, link generation failed!");
