@@ -44,9 +44,13 @@ public class PremiumAccountTable extends BasicJDTable<AccountEntry> {
 
     @Override
     protected ExtTooltip createToolTip(ExtColumn<AccountEntry> col, int row, Point position, AccountEntry elementAt) {
-
-        LinkedList<ServiceCollection<?>> services = ServicePanel.getInstance().groupServices(PremiumStatusBarDisplay.GROUP_BY_ACCOUNT_TYPE, false, elementAt.getAccount().getHoster());
-        if (services.size() > 0) { return services.get(0).createTooltip(null); }
+        if (elementAt == null || elementAt.getAccount() == null) return null;
+        try {
+            LinkedList<ServiceCollection<?>> services = ServicePanel.getInstance().groupServices(PremiumStatusBarDisplay.GROUP_BY_ACCOUNT_TYPE, false, elementAt.getAccount().getHoster());
+            if (services.size() > 0) { return services.get(0).createTooltip(null); }
+        } catch (Exception e) {
+            // bad sync creates nullpointers..
+        }
         return null;
     }
 
