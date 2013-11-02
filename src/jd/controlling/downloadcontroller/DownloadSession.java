@@ -54,8 +54,8 @@ public class DownloadSession {
     private final HashMap<UniqueAlltimeID, IfFileExistsAction>        fileExistsActions       = new HashMap<UniqueAlltimeID, IfFileExistsAction>();
     private final AtomicInteger                                       downloadsStarted        = new AtomicInteger(0);
     private final AtomicInteger                                       skipCounter             = new AtomicInteger(0);
-    private final AtomicInteger                                       speedLimitBeforePause   = new AtomicInteger(-1);
-    private final AtomicBoolean                                       speedLimitedBeforePause = new AtomicBoolean(false);
+    private final NullsafeAtomicReference<Integer>                    speedLimitBeforePause   = new NullsafeAtomicReference<Integer>(null);
+    private final NullsafeAtomicReference<Boolean>                    speedLimitedBeforePause = new NullsafeAtomicReference<Boolean>(null);
     private volatile List<DownloadLink>                               forcedLinks             = new CopyOnWriteArrayList<DownloadLink>();
     private volatile List<DownloadLink>                               activationRequests      = new CopyOnWriteArrayList<DownloadLink>();
     private final HashMap<String, PluginForHost>                      activationPluginCache   = new HashMap<String, PluginForHost>();
@@ -128,10 +128,12 @@ public class DownloadSession {
     }
 
     public int getSpeedLimitBeforePause() {
-        return Math.max(-1, speedLimitBeforePause.get());
+        Integer ret = speedLimitBeforePause.get();
+        if (ret == null) return -1;
+        return Math.max(-1, ret);
     }
 
-    public boolean isSpeedWasLimitedBeforePauseEnabled() {
+    public Boolean isSpeedWasLimitedBeforePauseEnabled() {
         return speedLimitedBeforePause.get();
     }
 
