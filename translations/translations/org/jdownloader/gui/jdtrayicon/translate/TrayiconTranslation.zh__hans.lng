@@ -1,7 +1,6 @@
 JDGui_windowClosing_try_answer_totaskbar=最小化到任务栏
 JDGui_windowClosing_try_answer_tray=隐藏到托盘
 JDGui_windowClosing_try_asnwer_close=退出 JDownloader
-JDGui_windowClosing_try_title_=关闭到托盘
 OnCloseAction_exit=退出程序
 OnCloseAction_totaskbar=最小化到任务栏
 OnCloseAction_totray=关闭到托盘
