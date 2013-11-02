@@ -21,6 +21,7 @@ import java.awt.AWTEvent;
 import java.awt.Toolkit;
 import java.awt.Window;
 import java.io.File;
+import java.io.FileFilter;
 import java.io.IOException;
 import java.lang.Thread.UncaughtExceptionHandler;
 import java.security.AccessController;
@@ -266,32 +267,9 @@ public class SecondLevelLaunch {
             SecondLevelLaunch.LOG.log(e);
         }
         long maxHeap = Runtime.getRuntime().maxMemory();
-        SecondLevelLaunch.LOG.info("Xmx Parameter=" + maxHeap + "bytes (" + (maxHeap / (1024 * 1024)) + "Megabytes)");
-        if (CrossSystem.isMac() && maxHeap < 100 * 1024 * 1024) {
-            try {
-                File file = Application.getResource("../../Info.plist");
-                if (file.exists()) {
-                    String str;
 
-                    str = IO.readFileToString(file);
-
-                    str.replace("<string>-Xms64m</string>", "<string>-Xms64m -Xmx128m</string>");
-                    int i = 1;
-                    File backup = new File(file.getCanonicalPath() + ".backup_" + i);
-                    while (backup.exists()) {
-                        i++;
-                        backup = new File(file.getCanonicalPath() + ".backup_" + i);
-
-                    }
-                    IO.copyFile(file, backup);
-                    IO.writeStringToFile(file, str);
-                    //
-
-                }
-            } catch (Exception e) {
-                SecondLevelLaunch.LOG.log(e);
-            }
-        }
+        SecondLevelLaunch.LOG.info("MaxMemory=" + maxHeap + "bytes (" + (maxHeap / (1024 * 1024)) + "Megabytes)");
+        vmOptionsWorkaround(maxHeap);
         SecondLevelLaunch.LOG.info("JDownloader");
 
         // checkSessionInstallLog();
@@ -306,6 +284,57 @@ public class SecondLevelLaunch {
         }
         SecondLevelLaunch.preInitChecks();
         SecondLevelLaunch.start(args);
+    }
+
+    private static void vmOptionsWorkaround(long maxHeap) {
+        try {
+            if (maxHeap <= 100 * 1024 * 1024) {
+                SecondLevelLaunch.LOG.warning("WARNING: MaxMemory detected! MaxMemory=" + maxHeap + " bytes");
+                if (CrossSystem.isWindows()) {
+                    File[] vmOptions = Application.getResource(".").listFiles(new FileFilter() {
+
+                        @Override
+                        public boolean accept(File arg0) {
+                            return arg0.getName().endsWith(".vmoptions");
+                        }
+                    });
+                    if (vmOptions != null) {
+                        for (File vmOption : vmOptions) {
+                            byte[] bytes = IO.readFile(vmOption, 1024 * 50);
+                            if (new String(bytes, "UTF-8").contains("-Xmx")) {
+                                SecondLevelLaunch.LOG.info("Rename " + vmOption + " because it contains too low Xmx VM arg!");
+                                int i = 1;
+                                File backup = new File(vmOption.getAbsolutePath() + ".backup_" + i);
+                                while (backup.exists()) {
+                                    i++;
+                                    backup = new File(vmOption.getAbsolutePath() + ".backup_" + i);
+                                }
+                                vmOption.renameTo(backup);
+                            }
+                        }
+                    }
+                } else if (CrossSystem.isMac()) {
+                    File file = Application.getResource("../../Info.plist");
+                    if (file.exists()) {
+                        String str = IO.readFileToString(file);
+                        if (str.contains("<string>-Xmx64m</string>")) {
+                            SecondLevelLaunch.LOG.info("Rename " + file + " because it contains too low Xmx VM arg!");
+                            str.replace("<string>-Xmx64m</string>", "<string>-Xms64m</string>");
+                            int i = 1;
+                            File backup = new File(file.getCanonicalPath() + ".backup_" + i);
+                            while (backup.exists()) {
+                                i++;
+                                backup = new File(file.getCanonicalPath() + ".backup_" + i);
+                            }
+                            IO.copyFile(file, backup);
+                            IO.writeStringToFile(file, str);
+                        }
+                    }
+                }
+            }
+        } catch (final Throwable e) {
+            SecondLevelLaunch.LOG.log(e);
+        }
     }
 
     // private static void checkSessionInstallLog() {

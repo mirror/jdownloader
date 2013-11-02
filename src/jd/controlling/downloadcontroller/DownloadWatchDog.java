@@ -1551,6 +1551,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
     private void resumeLink(DownloadLink link, DownloadSession session) {
         if (link.getDownloadLinkController() != null) throw new IllegalStateException("Link is in progress! cannot resume!");
         if (link.isSkipped()) link.setSkipReason(null);
+        if (FinalLinkState.CheckFailed(link.getFinalLinkState())) link.setFinalLinkState(null);
         if (!link.isEnabled()) link.setEnabled(true);
     }
 

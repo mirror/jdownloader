@@ -23,6 +23,7 @@ import jd.plugins.PluginForHost;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.logging2.LogSource;
 import org.jdownloader.logging.LogController;
+import org.jdownloader.plugins.FinalLinkState;
 import org.jdownloader.plugins.controller.PluginClassLoader;
 import org.jdownloader.plugins.controller.PluginClassLoader.PluginClassLoaderChild;
 import org.jdownloader.plugins.controller.host.HostPluginController;
@@ -250,7 +251,8 @@ public class LinkChecker<E extends CheckableLink> {
                                                         }
                                                     }
                                                     /*
-                                                     * just clear the map to allow fast adding of new links to the given linkChecker instance
+                                                     * just clear the map to allow fast adding of new links to the given linkChecker
+                                                     * instance
                                                      */
                                                     map2.clear();
                                                 }
@@ -474,6 +476,7 @@ public class LinkChecker<E extends CheckableLink> {
                 logger.flush();
                 break;
             case TRUE:
+                if (FinalLinkState.OFFLINE.equals(link.getFinalLinkState())) link.setFinalLinkState(null);
             case FALSE:
             default:
                 logger.clear();
