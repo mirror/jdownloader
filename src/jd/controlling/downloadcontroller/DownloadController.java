@@ -238,6 +238,7 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
      * @return
      */
     public void addAllAt(final java.util.List<FilePackage> fps, final int index) {
+        logger.info("AddAll At : " + index + " - " + fps);
         if (fps != null && fps.size() > 0) {
             QUEUE.add(new QueueAction<Void, RuntimeException>() {
 
