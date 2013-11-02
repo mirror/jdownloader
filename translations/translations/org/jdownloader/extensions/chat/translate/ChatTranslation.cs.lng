@@ -1,3 +1,7 @@
+ChatExtensionGuiToggleAction_deselected=Otevřít chat
+ChatExtensionGuiToggleAction_deselected_tt=Otevřít záložku chatu
+ChatExtensionGuiToggleAction_selected=Zavřít chat
+ChatExtensionGuiToggleAction_selected_tt=Zavřít záložku chatu
 description=Kontaktovat vývojáře a podporovatele JDownloaderu
 gui_tab_title=%s1 kanál
 jd_plugins_optional_jdchat_JDChatView_title=Chat JD podpory
@@ -10,5 +14,6 @@ plugins_optional_jdchat_enternick=Vložte vaši přezdívku
 settings_enabled_userlist_colors=Povolit barevný seznam uživatelů
 settings_nick=Vaše jméno
 settings_perform=Provést tyto akce po připojení se k chatu:
+settings_userlist_position=Pozice seznamu uživatelů
 settings_userlist_position_left=Pravá strana
 settings_userlist_position_right=Pravá strana

@@ -1,2 +1,6 @@
 Translator=Překladač
+TranslatorExtensionGuiToggleAction_deselected=Otevřít Překladač
+TranslatorExtensionGuiToggleAction_deselected_tt=Otevřít záložku Překladač
+TranslatorExtensionGuiToggleAction_selected=Zavřít Překladač
+TranslatorExtensionGuiToggleAction_selected_tt=Zavřít záložku Překladač
 description=Toto rozšíření je možné použít pro úpravy překladů JDownloaderu, je však nutné mít developerský účet.
