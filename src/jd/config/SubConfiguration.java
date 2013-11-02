@@ -112,6 +112,7 @@ public class SubConfiguration extends Property implements Serializable {
                     tmp.remove("AGB_CHECKED");
                     setProperties(tmp);
                 }
+            } catch (final NoOldJDDataBaseFoundException e) {
             } catch (final Throwable e) {
                 LogController.GL.log(e);
             }

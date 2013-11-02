@@ -267,7 +267,6 @@ public class SecondLevelLaunch {
             SecondLevelLaunch.LOG.log(e);
         }
         long maxHeap = Runtime.getRuntime().maxMemory();
-
         SecondLevelLaunch.LOG.info("MaxMemory=" + maxHeap + "bytes (" + (maxHeap / (1024 * 1024)) + "Megabytes)");
         vmOptionsWorkaround(maxHeap);
         SecondLevelLaunch.LOG.info("JDownloader");
