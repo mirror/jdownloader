@@ -92,6 +92,7 @@ settings_passwords=Popis lozinki
 settings_remove_after_extract=Obriši arhive nakon uspješnog raspakiranja
 settings_remove_after_extract_downloadlink=Obriši linkove preuzimanja arhiva nakon uspješnog raspakiranja
 settings_subpath=Primjer podmape
+settings_subpath_minnum3=... samo ako korijen arhive sadrži najmanje
 settings_subpath_no_folder2=... samo ako ovdje nisu korijenske mape
 settings_subpath_no_folder_tt=Ne koristite podmape, ako su sve datoteke u arhivi već pakirane u mape.
 settings_use_subpath=Stvori podmapu
