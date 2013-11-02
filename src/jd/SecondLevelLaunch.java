@@ -278,6 +278,7 @@ public class SecondLevelLaunch {
                     str.replace("<string>-Xms64m</string>", "<string>-Xms64m -Xmx128m</string>");
                     IO.copyFile(file, new File(file.getCanonicalPath() + ".backup_1"));
                     IO.writeStringToFile(file, str);
+                    //
 
                 }
             } catch (Exception e) {
