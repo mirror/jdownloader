@@ -254,7 +254,6 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
                                 if (folderFile.exists()) {
                                     /* folder already exists */
                                     logger.info("Skip folder creation: " + folderFile + " already exists");
-
                                 } else {
                                     /* folder does not exist */
                                     File invalidDestination = DownloadWatchDog.getInstance().validateDestination(folderFile);

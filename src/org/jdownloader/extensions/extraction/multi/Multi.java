@@ -781,7 +781,7 @@ public class Multi extends IExtraction {
         try {
             logger.info("Filename(before native): " + filename);
             /* getBytes wanted as we interact with native code and need native charset here */
-            filename = new String(filename.getBytes("UTF-8"), Charset.defaultCharset());
+            filename = new String(filename.getBytes(), Charset.defaultCharset());
             logger.info("Filename(after native): " + filename);
         } catch (Exception e) {
             logger.log(e);

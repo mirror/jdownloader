@@ -163,7 +163,7 @@ public interface GeneralSettings extends ConfigInterface {
 
     @AboutConfig
     @DescriptionForConfigEntry("How many downloads more than getMaxSimultaneDownloads should JDownloader download at once when forced?")
-    @SpinnerValidator(min = 1, max = 20)
+    @SpinnerValidator(min = 1, max = 40)
     @DefaultIntValue(5)
     int getMaxForcedDownloads();
 

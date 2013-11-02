@@ -19,6 +19,7 @@ import org.jdownloader.extensions.extraction.ExtractionController;
 import org.jdownloader.extensions.extraction.ExtractionProgress;
 import org.jdownloader.extensions.extraction.ExtractionStatus;
 import org.jdownloader.plugins.FinalLinkState;
+import org.jdownloader.plugins.SkipReason;
 import org.jdownloader.settings.staticreferences.CFG_GENERAL;
 
 public class DownloadLinkArchiveFile implements ArchiveFile {
@@ -60,7 +61,7 @@ public class DownloadLinkArchiveFile implements ArchiveFile {
     @Override
     public boolean isComplete() {
         for (DownloadLink downloadLink : downloadLinks) {
-            if (FinalLinkState.CheckFinished(downloadLink.getFinalLinkState()) && new File(filePath).exists()) return true;
+            if ((SkipReason.FILE_EXISTS.equals(downloadLink.getSkipReason()) || FinalLinkState.FAILED_EXISTS.equals(downloadLink.getFinalLinkState()) || FinalLinkState.CheckFinished(downloadLink.getFinalLinkState())) && new File(filePath).exists()) return true;
         }
         return false;
     }
