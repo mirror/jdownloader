@@ -310,6 +310,19 @@ public class SecondLevelLaunch {
                                     backup = new File(vmOption.getAbsolutePath() + ".backup_" + i);
                                 }
                                 vmOption.renameTo(backup);
+                            } else {
+                                SecondLevelLaunch.LOG.info("Modify " + vmOption + " because the exe launcher contains too low Xmx VM arg!");
+                                int i = 1;
+                                File backup = new File(vmOption.getAbsolutePath() + ".backup_" + i);
+                                while (backup.exists()) {
+                                    i++;
+                                    backup = new File(vmOption.getAbsolutePath() + ".backup_" + i);
+                                }
+                                vmOption.renameTo(backup);
+                                StringBuilder sb = new StringBuilder();
+                                sb.append("-Xmx256m\r\n");
+                                sb.append("-Dsun.java2d.d3d=false\r\n");
+                                IO.writeStringToFile(vmOption, sb.toString());
                             }
                         }
                     }
@@ -328,6 +341,8 @@ public class SecondLevelLaunch {
                             }
                             IO.copyFile(file, backup);
                             IO.writeStringToFile(file, str);
+                        } else {
+                            SecondLevelLaunch.LOG.info("User needs to modify Pinfo.list to specify higher Xmx vm arg!");
                         }
                     }
                 }
