@@ -22,6 +22,7 @@ LinkCollector_archiv=%s1
 LinkCollector_onShutdownRequest_=Linksammler ist noch aktiv!
 LinkCollector_onShutdownRequest_msg=Möchtest du den Linksammler wirklich anhalten?
 LinkFilterSettings_DefaultFilterList_getDefaultValue_=Offline Dateien
+LinkSource_FLASHGOT=Flashgot
 LinkgrabberFilterRule_duplicate=%s1 (kopieren)
 Main_run_autostart_=Beginne mit den Downloads
 Main_run_autostart_msg=Die Downloads starten in ein paar Sekunden...
