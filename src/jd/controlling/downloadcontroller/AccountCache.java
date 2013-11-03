@@ -3,9 +3,11 @@ package jd.controlling.downloadcontroller;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
+import java.util.List;
 
 import jd.controlling.downloadcontroller.AccountCache.CachedAccount;
 import jd.plugins.Account;
+import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForHost;
 
@@ -78,7 +80,18 @@ public class AccountCache implements Iterable<CachedAccount> {
 
         public boolean canHandle(DownloadLink link) {
             if (plugin == null) return false;
-            return plugin.canHandle(link, account) && plugin.enoughTrafficFor(link, account);
+            boolean canHandle = plugin.canHandle(link, account) && plugin.enoughTrafficFor(link, account);
+            if (ACCOUNTTYPE.MULTI.equals(getType()) && getAccount() != null) {
+                AccountInfo ai = getAccount().getAccountInfo();
+                /* verify again because plugins can modify list on runtime */
+                if (ai != null) {
+                    Object multiHostSupport = ai.getProperty("multiHostSupport", null);
+                    if (multiHostSupport != null && multiHostSupport instanceof List) {
+                        canHandle = canHandle && ((List<Object>) multiHostSupport).contains(link.getHost());
+                    }
+                }
+            }
+            return canHandle;
         }
 
         @Override

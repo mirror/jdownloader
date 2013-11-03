@@ -75,6 +75,8 @@ import org.appwork.txtresource.TranslationFactory;
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.Application;
 import org.appwork.utils.IO;
+import org.appwork.utils.IOErrorHandler;
+import org.appwork.utils.StringUtils;
 import org.appwork.utils.event.DefaultEventListener;
 import org.appwork.utils.event.queue.QueueAction;
 import org.appwork.utils.logging.Log;
@@ -99,6 +101,7 @@ import org.jdownloader.captcha.v2.solver.jac.JACSolver;
 import org.jdownloader.captcha.v2.solver.solver9kw.Captcha9kwSolver;
 import org.jdownloader.captcha.v2.solver.solver9kw.Captcha9kwSolverClick;
 import org.jdownloader.controlling.FileCreationManager;
+import org.jdownloader.controlling.packagizer.PackagizerController;
 import org.jdownloader.dynamic.Dynamic;
 import org.jdownloader.extensions.ExtensionController;
 import org.jdownloader.extensions.extraction.ArchiveController;
@@ -257,20 +260,20 @@ public class SecondLevelLaunch {
             final String key = it.toString();
             SecondLevelLaunch.LOG.finer(key + "=" + pr.get(key));
         }
+        long maxHeap = -1;
         try {
             java.lang.management.RuntimeMXBean runtimeMxBean = java.lang.management.ManagementFactory.getRuntimeMXBean();
             List<String> arguments = runtimeMxBean.getInputArguments();
             if (arguments != null) {
                 SecondLevelLaunch.LOG.finer("VMArgs: " + arguments.toString());
             }
+            java.lang.management.MemoryUsage memory = java.lang.management.ManagementFactory.getMemoryMXBean().getHeapMemoryUsage();
+            maxHeap = memory.getMax();
         } catch (final Throwable e) {
             SecondLevelLaunch.LOG.log(e);
         }
-        long maxHeap = Runtime.getRuntime().maxMemory();
         SecondLevelLaunch.LOG.info("MaxMemory=" + maxHeap + "bytes (" + (maxHeap / (1024 * 1024)) + "Megabytes)");
         vmOptionsWorkaround(maxHeap);
-        SecondLevelLaunch.LOG.info("Xmx Parameter=" + maxHeap + "bytes (" + (maxHeap / (1024 * 1024)) + " Megabytes)");
-
         SecondLevelLaunch.LOG.info("JDownloader2");
 
         // checkSessionInstallLog();
@@ -288,8 +291,10 @@ public class SecondLevelLaunch {
     }
 
     private static void vmOptionsWorkaround(long maxHeap) {
+        final IOErrorHandler errorHandler = IO.getErrorHandler();
         try {
-            if (maxHeap <= 100 * 1024 * 1024) {
+            IO.setErrorHandler(null);
+            if (maxHeap > 0 && maxHeap <= 100 * 1024 * 1024) {
                 SecondLevelLaunch.LOG.warning("WARNING: MaxMemory detected! MaxMemory=" + maxHeap + " bytes");
                 if (CrossSystem.isWindows()) {
                     File[] vmOptions = Application.getResource(".").listFiles(new FileFilter() {
@@ -306,25 +311,38 @@ public class SecondLevelLaunch {
                                 SecondLevelLaunch.LOG.info("Rename " + vmOption + " because it contains too low Xmx VM arg!");
                                 int i = 1;
                                 File backup = new File(vmOption.getAbsolutePath() + ".backup_" + i);
-                                while (backup.exists()) {
+                                while (backup.exists() || i == 10) {
                                     i++;
                                     backup = new File(vmOption.getAbsolutePath() + ".backup_" + i);
                                 }
+                                if (backup.exists()) backup.delete();
                                 vmOption.renameTo(backup);
                             } else {
                                 SecondLevelLaunch.LOG.info("Modify " + vmOption + " because the exe launcher contains too low Xmx VM arg!");
                                 int i = 1;
                                 File backup = new File(vmOption.getAbsolutePath() + ".backup_" + i);
-                                while (backup.exists()) {
+                                while (backup.exists() || i == 10) {
                                     i++;
                                     backup = new File(vmOption.getAbsolutePath() + ".backup_" + i);
                                 }
-                                vmOption.renameTo(backup);
-                                StringBuilder sb = new StringBuilder();
-                                sb.append("-Xmx256m\r\n");
-                                sb.append("-Dsun.java2d.d3d=false\r\n");
-                                IO.writeStringToFile(vmOption, sb.toString());
+                                if (backup.exists()) backup.delete();
+                                if (vmOption.renameTo(backup)) {
+                                    StringBuilder sb = new StringBuilder();
+                                    sb.append("-Xmx256m\r\n");
+                                    sb.append("-Dsun.java2d.d3d=false\r\n");
+                                    if (vmOption.exists() == false) IO.writeStringToFile(vmOption, sb.toString());
+                                }
                             }
+                        }
+                    } else {
+                        String launcher = System.getProperty("exe4j.launchName");
+                        if (StringUtils.isNotEmpty(launcher)) {
+                            launcher = launcher.replaceFirst("\\.exe$", ".vmoptions");
+                            File vmOption = new File(launcher);
+                            StringBuilder sb = new StringBuilder();
+                            sb.append("-Xmx256m\r\n");
+                            sb.append("-Dsun.java2d.d3d=false\r\n");
+                            if (vmOption.exists() == false) IO.writeStringToFile(vmOption, sb.toString());
                         }
                     }
                 } else if (CrossSystem.isMac()) {
@@ -336,13 +354,13 @@ public class SecondLevelLaunch {
                             str.replace("<string>-Xmx64m</string>", "<string>-Xms64m</string>");
                             int i = 1;
                             File backup = new File(file.getCanonicalPath() + ".backup_" + i);
-                            while (backup.exists()) {
+                            while (backup.exists() || i == 10) {
                                 i++;
                                 backup = new File(file.getCanonicalPath() + ".backup_" + i);
                             }
-
-                            file.renameTo(backup);
-                            IO.writeStringToFile(file, str);
+                            if (backup.exists()) backup.delete();
+                            IO.copyFile(file, backup);
+                            if (file.exists() == false || file.delete()) IO.writeStringToFile(file, str);
                         } else {
                             SecondLevelLaunch.LOG.info("User needs to modify Pinfo.list to specify higher Xmx vm arg!");
                         }
@@ -351,6 +369,8 @@ public class SecondLevelLaunch {
             }
         } catch (final Throwable e) {
             SecondLevelLaunch.LOG.log(e);
+        } finally {
+            IO.setErrorHandler(errorHandler);
         }
     }
 
@@ -638,6 +658,7 @@ public class SecondLevelLaunch {
                             }
                             HostPluginController.getInstance().ensureLoaded();
                             HOST_PLUGINS_COMPLETE.setReached();
+                            PackagizerController.getInstance();
                             /* load links */
                             Thread.currentThread().setName("ExecuteWhenGuiReachedThread: Init DownloadLinks");
                             DownloadController.getInstance().initDownloadLinks();

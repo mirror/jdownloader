@@ -47,6 +47,7 @@ import org.appwork.swing.components.ExtButton;
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.Application;
 import org.appwork.utils.IO;
+import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.logging.Log;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.swing.dialog.AbstractDialog;
@@ -57,6 +58,7 @@ import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
+import org.jdownloader.logging.LogController;
 
 public class AboutDialog extends AbstractDialog<Integer> {
 
@@ -155,45 +157,51 @@ public class AboutDialog extends AbstractDialog<Integer> {
             Log.exception(t);
 
         }
-        stats.add(new JLabel("Java:"), "");
-        ExtButton comp;
-        stats.add(comp = disable(System.getProperty("java.vendor") + " - " + System.getProperty("java.version") + " (" + (Runtime.getRuntime().maxMemory() / (1024 * 1024)) + "MB)"));
-        comp.addActionListener(new ActionListener() {
-
-            @Override
-            public void actionPerformed(ActionEvent e) {
-
-                CrossSystem.showInExplorer(new File(CrossSystem.getJavaBinary()));
-                try {
-                    java.lang.management.RuntimeMXBean runtimeMxBean = java.lang.management.ManagementFactory.getRuntimeMXBean();
-                    List<String> arguments = runtimeMxBean.getInputArguments();
-                    StringBuilder sb = new StringBuilder();
-                    for (String s : arguments) {
-                        if (sb.length() > 0) sb.append(" ");
-                        sb.append(s);
-                    }
-
-                    StringSelection selection = new StringSelection(sb.toString());
-                    Clipboard clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
-                    clipboard.setContents(selection, selection);
-                } catch (final Throwable e1) {
-
-                }
-            }
-        });
         try {
-            java.lang.management.RuntimeMXBean runtimeMxBean = java.lang.management.ManagementFactory.getRuntimeMXBean();
-            List<String> arguments = runtimeMxBean.getInputArguments();
-            StringBuilder sb = new StringBuilder();
-            for (String s : arguments) {
-                if (sb.length() > 0) sb.append("\r\n");
-                sb.append(s);
+            stats.add(new JLabel("Java:"), "");
+            java.lang.management.MemoryUsage memory = java.lang.management.ManagementFactory.getMemoryMXBean().getHeapMemoryUsage();
+            ExtButton comp;
+            stats.add(comp = disable(System.getProperty("java.vendor") + " - " + System.getProperty("java.version") + " (" + SizeFormatter.formatBytes(memory.getUsed()) + "/" + SizeFormatter.formatBytes(memory.getCommitted()) + "/" + SizeFormatter.formatBytes(memory.getMax()) + ")"));
+            comp.addActionListener(new ActionListener() {
+
+                @Override
+                public void actionPerformed(ActionEvent e) {
+
+                    CrossSystem.showInExplorer(new File(CrossSystem.getJavaBinary()));
+                    try {
+                        java.lang.management.RuntimeMXBean runtimeMxBean = java.lang.management.ManagementFactory.getRuntimeMXBean();
+                        List<String> arguments = runtimeMxBean.getInputArguments();
+                        StringBuilder sb = new StringBuilder();
+                        for (String s : arguments) {
+                            if (sb.length() > 0) sb.append(" ");
+                            sb.append(s);
+                        }
+
+                        StringSelection selection = new StringSelection(sb.toString());
+                        Clipboard clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
+                        clipboard.setContents(selection, selection);
+                    } catch (final Throwable e1) {
+
+                    }
+                }
+            });
+            try {
+                java.lang.management.RuntimeMXBean runtimeMxBean = java.lang.management.ManagementFactory.getRuntimeMXBean();
+                List<String> arguments = runtimeMxBean.getInputArguments();
+                StringBuilder sb = new StringBuilder();
+                for (String s : arguments) {
+                    if (sb.length() > 0) sb.append("\r\n");
+                    sb.append(s);
+                }
+
+                comp.setToolTipText(sb.toString());
+            } catch (final Throwable e1) {
+                LogController.GL.log(e1);
             }
-
-            comp.setToolTipText(sb.toString());
-        } catch (final Throwable e1) {
-
+        } catch (final Throwable e) {
+            LogController.GL.log(e);
         }
+
         contentpane.add(new JLabel(_GUI._.jd_gui_swing_components_AboutDialog_synthetica("(#289416475)")), "gaptop 10, spanx");
         contentpane.add(new JLabel("© AppWork GmbH 2007-2013"), "spanx");
         contentpane.add(links, "gaptop 15, growx, pushx, spanx");

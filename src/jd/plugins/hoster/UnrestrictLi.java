@@ -26,7 +26,6 @@ import java.util.Map;
 
 import jd.PluginWrapper;
 import jd.config.Property;
-import jd.gui.UserIO;
 import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
@@ -285,7 +284,7 @@ public class UnrestrictLi extends PluginForHost {
     }
 
     private void MessageDialog(String title, String text, boolean report) {
-        UserIO.getInstance().requestMessageDialog(0, title, text);
+        // UserIO.getInstance().requestMessageDialog(0, title, text);
         // To do: Reporting errors
         /*
          * if(report && UserIO.getInstance().requestConfirmDialog(0, "Error", "Do you want to report this error?") == 2){

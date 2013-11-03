@@ -477,8 +477,13 @@ public class JDGui implements UpdaterListener, OwnerFinder {
                         if (JsonConfig.create(GraphicalUserInterfaceSettings.class).isLogViewVisible()) {
                             // this.mainTabbedPane.addTab(LogView.getInstance());
                         }
-
-                        if (Runtime.getRuntime().maxMemory() < (100 * 1024 * 1024)) {
+                        long maxHeap = -1;
+                        try {
+                            java.lang.management.MemoryUsage memory = java.lang.management.ManagementFactory.getMemoryMXBean().getHeapMemoryUsage();
+                            maxHeap = memory.getMax();
+                        } catch (final Throwable e) {
+                        }
+                        if (maxHeap > 0 && maxHeap < (100 * 1024 * 1024)) {
                             new Thread("AskForRestart") {
                                 public void run() {
                                     ConfirmDialog d = new ConfirmDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN | UIOManager.LOGIC_DONT_SHOW_AGAIN_IGNORES_OK, _GUI._.MEMORY_RESTART_TITLE(), _GUI._.MEMORY_RESTART_MSG(), NewTheme.I().getIcon("restart", 32), _GUI._.lit_restart(), null) {

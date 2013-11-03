@@ -800,6 +800,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
             }
             DownloadLinkCandidate finalCandidate = findFinalCandidate(selector, possibleCandidates);
             if (finalCandidate != null) {
+                selector.setExcluded(finalCandidate.getLink());
                 MirrorLoading condition = new MirrorLoading(finalCandidate.getLink());
                 for (DownloadLink mirror : findDownloadLinkMirrors(finalCandidate.getLink())) {
                     selector.setExcluded(mirror);
