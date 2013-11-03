@@ -55,7 +55,7 @@ public class DailyMotionComDecrypter extends PluginForDecrypt {
      * 
      * @ 4 sdURL or stream_h264_url [512x384]
      * 
-     * @ 5 ldURL or stream_h264_ld_url [320x240]
+     * @ 5 ldURL or video_url or stream_h264_ld_url [320x240]
      * 
      * @ 6 video_url or rtmp
      * 
@@ -255,7 +255,7 @@ public class DailyMotionComDecrypter extends PluginForDecrypt {
 
     public LinkedHashMap<String, String[]> findVideoQualities(String videosource) throws IOException {
         LinkedHashMap<String, String[]> QUALITIES = new LinkedHashMap<String, String[]>();
-        final String[][] qualities = { { "hd1080URL", "1" }, { "hd720URL", "2" }, { "hqURL", "3" }, { "sdURL", "4" }, { "ldURL", "5" }, { "video_url", "6" } };
+        final String[][] qualities = { { "hd1080URL", "1" }, { "hd720URL", "2" }, { "hqURL", "3" }, { "sdURL", "4" }, { "ldURL", "5" }, { "video_url", "5" } };
         for (final String quality[] : qualities) {
             final String qualityName = quality[0];
             final String qualityNumber = quality[1];

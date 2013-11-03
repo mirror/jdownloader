@@ -54,7 +54,7 @@ import jd.utils.locale.JDL;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "hulkshare.com" }, urls = { "http://(www\\.)?((hulkshare\\.com|hu\\.lk)/dl/|hulksharedecrypted\\.com/)[a-z0-9]{12}" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "hulkshare.com" }, urls = { "http://(www\\.)?(((hulkshare\\.com|hu\\.lk)/dl/|hulksharedecrypted\\.com/)|old\\.hulkshare\\.com/dl/)[a-z0-9]{12}" }, flags = { 2 })
 public class HulkShareCom extends PluginForHost {
 
     private String              BRBEFORE            = "";
@@ -154,7 +154,7 @@ public class HulkShareCom extends PluginForHost {
         if (filesize == null) filesize = br.getRegex("\\(([0-9]+ bytes)\\)").getMatch(0);
         if (filesize == null) filesize = br.getRegex("</font>[ ]+\\((.*?)\\)(.*?)</font>").getMatch(0);
         if (filesize == null) filesize = br.getRegex("<b>Size:</b> (.*?)<br />").getMatch(0);
-        if (filesize == null) filesize = br.getRegex("class=\"tsSize\">(.*?)</sp").getMatch(0);
+        if (filesize == null) filesize = br.getRegex("class=\"tsSize\">(.*?)<").getMatch(0);
 
         if (filename == null) {
             logger.warning("The filename equals null, throwing \"file not found\" now...");

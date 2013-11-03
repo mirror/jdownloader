@@ -201,7 +201,9 @@ public class UltraMegaBitCom extends PluginForHost {
             acctype = "Registered (free) User";
             account.setProperty("free", true);
         } else if (expire != null) {
-            ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "h:mma dd/MM/yyyy", Locale.ENGLISH));
+            // Workaround for accounts without expire date
+            final long expired = System.currentTimeMillis() - TimeFormatter.getMilliSeconds(expire, "h:mma dd/MM/yyyy", Locale.ENGLISH);
+            if (expired < 0) ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "h:mma dd/MM/yyyy", Locale.ENGLISH));
             account.setProperty("free", false);
         } else {
             account.setProperty("free", false);

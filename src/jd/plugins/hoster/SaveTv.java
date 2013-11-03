@@ -625,7 +625,7 @@ public class SaveTv extends PluginForHost {
 
     @Override
     public String getDescription() {
-        return "JDownloader's Save.tv Plugin helps downloading Videoclips from Save.tv. Save.tv provides different settings for its downloads.";
+        return "JDownloader's Save.tv Plugin helps downloading videoclips from Save.tv. Save.tv provides different settings for its downloads.";
     }
 
     private final static String defaultCustomFilename       = "*videotitel**zufallszahl**endung*";

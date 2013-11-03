@@ -75,6 +75,8 @@ public class AnyapInfo extends PluginForHost {
             dlform.remove("ctl00%24ContentPlaceHolder1%24SoundInfo1%24AudioPlayer1%24btnStream");
             dlform.remove("ctl00%24ContentPlaceHolder1%24SoundInfo1%24AudioPlayer1%24btnLoadPlayer");
             dlform.remove("ctl00%24Header1%24VideoConvertingBox1%24btnConvertMp3");
+            dlform.remove("ctl00%24Header1%24VideoConvertingBox1%24txtUrl");
+            dlform.remove("ctl00%24Header1%24VideoConvertingBox1%24btnConvertMp3_2");
             dlform.put("__EVENTTARGET", Encoding.urlEncode("ctl00$ContentPlaceHolder1$SoundInfo1$btnExtract2"));
         }
         Browser br2 = br.cloneBrowser();

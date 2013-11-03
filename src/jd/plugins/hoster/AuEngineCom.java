@@ -16,10 +16,13 @@
 
 package jd.plugins.hoster;
 
+import java.net.UnknownHostException;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -49,15 +52,10 @@ public class AuEngineCom extends PluginForHost {
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception {
-        requestFileInformation(downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
-        dl.startDownload();
-    }
-
-    @Override
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws Exception {
+    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
         this.setBrowserExclusive();
+        // Offline links should also have nice filenames
+        downloadLink.setName(new Regex(downloadLink.getDownloadURL(), "auengine\\.com/embed\\.php\\?file=(.+)").getMatch(0));
         br.getPage(downloadLink.getDownloadURL());
         String filename = br.getRegex("<title>(.*?)</title>").getMatch(0);
         dllink = br.getRegex("url: '(http[^']+auengine\\.com%2Fvideos[^']+)").getMatch(0);
@@ -68,7 +66,11 @@ public class AuEngineCom extends PluginForHost {
         br2.setFollowRedirects(true);
         URLConnectionAdapter con = null;
         try {
-            con = br2.openGetConnection(dllink);
+            try {
+                con = br2.openGetConnection(dllink);
+            } catch (final UnknownHostException e) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             // only way to check for made up links... or offline is here
             if (con.getResponseCode() == 404) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             if (!con.getContentType().contains("html")) {
@@ -83,6 +85,13 @@ public class AuEngineCom extends PluginForHost {
             } catch (Throwable e) {
             }
         }
+    }
+
+    @Override
+    public void handleFree(final DownloadLink downloadLink) throws Exception {
+        requestFileInformation(downloadLink);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
+        dl.startDownload();
     }
 
     @Override

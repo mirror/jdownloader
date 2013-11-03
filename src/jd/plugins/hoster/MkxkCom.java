@@ -59,10 +59,11 @@ public class MkxkCom extends PluginForHost {
         requestFileInformation(downloadLink);
         // player, download not possible without an account.. best I could do..
         br.getPage("/play/flash.php?id=" + fuid);
-        final String m4a = br.getRegex("\"(https?://[\\w\\d]+\\.mkxk\\.com/?/\\d+/m4a/[^\"]+)").getMatch(0);
+        final String m4a = br.getRegex("\"(https?://[\\w\\d]+\\.mkxk\\.com[^\"<>]+\\.m4a)\"").getMatch(0);
         if (m4a == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, m4a, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
+            if (dl.getConnection().getResponseCode() == 404) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 30 * 60 * 1000l);
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }

@@ -23,6 +23,8 @@ import java.util.Locale;
 import java.util.Map;
 
 import jd.PluginWrapper;
+import jd.config.ConfigContainer;
+import jd.config.ConfigEntry;
 import jd.config.Property;
 import jd.http.Browser;
 import jd.http.Cookie;
@@ -47,15 +49,18 @@ import org.appwork.utils.formatter.TimeFormatter;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filesmonster.com" }, urls = { "https?://[\\w\\.\\d]*?filesmonsterdecrypted\\.com/(download.php\\?id=|dl/.*?/free/2/).+" }, flags = { 2 })
 public class FilesMonsterCom extends PluginForHost {
 
-    private static final String POSTTHATREGEX        = "\"(https?://filesmonster\\.com/dl/.*?/free/.*?)\"";
-    private static final String POSTTHATREGEX2       = "(https?://(www\\.)?filesmonster\\.com/dl/.*?/free/.+)";
-    private static final String TEMPORARYUNAVAILABLE = "Download not available at the moment";
-    private static final String REDIRECTFNF          = "DL_FileNotFound";
-    private static final String PREMIUMONLYUSERTEXT  = "Only downloadable via premium";
-    private static Object       LOCK                 = new Object();
+    private static final String POSTTHATREGEX            = "\"(https?://filesmonster\\.com/dl/.*?/free/.*?)\"";
+    private static final String POSTTHATREGEX2           = "(https?://(www\\.)?filesmonster\\.com/dl/.*?/free/.+)";
+    private static final String TEMPORARYUNAVAILABLE     = "Download not available at the moment";
+    private static final String REDIRECTFNF              = "DL_FileNotFound";
+    private static final String PREMIUMONLYUSERTEXT      = "Only downloadable via premium";
+    private static Object       LOCK                     = new Object();
+
+    private static final String ADDLINKSACCOUNTDEPENDANT = "ADDLINKSACCOUNTDEPENDANT";
 
     public FilesMonsterCom(PluginWrapper wrapper) {
         super(wrapper);
+        this.setConfigElements();
         this.enablePremium("http://filesmonster.com/service.php");
     }
 
@@ -173,7 +178,14 @@ public class FilesMonsterCom extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        if (downloadLink.getBooleanProperty("PREMIUMONLY")) throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.filesmonstercom.only4premium", PREMIUMONLYUSERTEXT));
+        if (downloadLink.getBooleanProperty("PREMIUMONLY")) {
+            try {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+            } catch (final Throwable e) {
+                if (e instanceof PluginException) throw (PluginException) e;
+            }
+            throw new PluginException(LinkStatus.ERROR_FATAL, PREMIUMONLYUSERTEXT);
+        }
         handleErrors();
         br.setFollowRedirects(true);
         String postThat = br.getRegex(POSTTHATREGEX).getMatch(0);
@@ -186,7 +198,12 @@ public class FilesMonsterCom extends PluginForHost {
             br.postPage(postThat, "");
             if (br.containsHTML("Free download links:")) {
                 downloadLink.setProperty("PREMIUMONLY", true);
-                throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.filesmonstercom.only4premium", PREMIUMONLYUSERTEXT));
+                try {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+                } catch (final Throwable e) {
+                    if (e instanceof PluginException) throw (PluginException) e;
+                }
+                throw new PluginException(LinkStatus.ERROR_FATAL, PREMIUMONLYUSERTEXT);
             }
         } else {
             downloadLink.getLinkStatus().setStatusText("Waiting for ticket...");
@@ -456,6 +473,25 @@ public class FilesMonsterCom extends PluginForHost {
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
         return -1;
+    }
+
+    @Override
+    public String getDescription() {
+        return "JDownloader's Filesmonster.com Plugin helps downloading files from Filesmonster.com.";
+    }
+
+    private void setConfigElements() {
+        final StringBuilder sbinfo = new StringBuilder();
+        sbinfo.append("Filesmonster provides a link which can only be downloaded by premium users\r\n");
+        sbinfo.append("and multiple links which can only be downloaded by free users.\r\n");
+        sbinfo.append("Whenever you add a filesmonster link, JDownloader will show both links in the linkgrabber via default.\r\n");
+        sbinfo.append("The setting below will make this behaviour more intelligent.\r\n");
+        sbinfo.append("\r\n");
+        sbinfo.append("NOTE: If you enable this feature and add links before setting up your filesmonster premium\r\n");
+        sbinfo.append("account in JD you will have to add these links again after adding the account to get the premium links!\r\n");
+        sbinfo.append("Do NOT enable this setting if you're not familiar with JDownloader!\r\n");
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, sbinfo.toString()));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), FilesMonsterCom.ADDLINKSACCOUNTDEPENDANT, JDL.L("plugins.hoster.filesmonstercom.AddLinksDependingOnAvailableAccounts", "Add only premium-only links whenever a premium account is available\r\n and add only free-only-links whenever no premium account is available?")).setDefaultValue(false));
     }
 
     // do not add @Override here to keep 0.* compatibility

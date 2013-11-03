@@ -71,7 +71,7 @@ import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.os.CrossSystem;
 
-@HostPlugin(revision = "$Revision: 19496 $", interfaceVersion = 2, names = { "anafile.com" }, urls = { "https?://(www\\.)?anafile\\.com/((vid)?embed-)?[a-z0-9]{12}" }, flags = { 0 })
+@HostPlugin(revision = "$Revision: 19496 $", interfaceVersion = 2, names = { "anafile.com" }, urls = { "https?://(www\\.)?anafile\\.com/((vid)?embed-)?[a-z0-9]{12}" }, flags = { 2 })
 @SuppressWarnings("deprecation")
 public class AnaFileCom extends PluginForHost {
 
@@ -166,7 +166,7 @@ public class AnaFileCom extends PluginForHost {
     public AnaFileCom(PluginWrapper wrapper) {
         super(wrapper);
         setConfigElements();
-        // this.enablePremium(COOKIE_HOST + "/premium.html");
+        this.enablePremium(COOKIE_HOST + "/premium.html");
     }
 
     /**
@@ -1459,7 +1459,7 @@ public class AnaFileCom extends PluginForHost {
      * @param controlSlot
      *            (+1|-1)
      * */
-   private void controlSlot(final int num, final Account account) {
+    private void controlSlot(final int num, final Account account) {
         synchronized (CTRLLOCK) {
             if (account == null) {
                 int was = maxFree.get();

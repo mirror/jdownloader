@@ -694,6 +694,7 @@ public class FileFactory extends PluginForHost {
                 if (fileName == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
                 downloadLink.setName(Encoding.htmlDecode(fileName.trim()));
                 if (fileSize != null) downloadLink.setDownloadSize(SizeFormatter.getSize(fileSize));
+                downloadLink.setAvailable(true);
             }
 
         }
