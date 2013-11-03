@@ -297,6 +297,15 @@ public class SecondLevelLaunch {
             if (maxHeap > 0 && maxHeap <= 100 * 1024 * 1024) {
                 SecondLevelLaunch.LOG.warning("WARNING: MaxMemory detected! MaxMemory=" + maxHeap + " bytes");
                 if (CrossSystem.isWindows()) {
+                    java.lang.management.RuntimeMXBean runtimeMxBean = java.lang.management.ManagementFactory.getRuntimeMXBean();
+                    List<String> arguments = runtimeMxBean.getInputArguments();
+                    boolean xmxArgFound = false;
+                    for (String arg : arguments) {
+                        if (arg != null && arg.startsWith("-Xmx")) {
+                            xmxArgFound = true;
+                            break;
+                        }
+                    }
                     File[] vmOptions = Application.getResource(".").listFiles(new FileFilter() {
 
                         @Override
@@ -334,7 +343,8 @@ public class SecondLevelLaunch {
                                 }
                             }
                         }
-                    } else {
+                    }
+                    if (xmxArgFound) {
                         String launcher = System.getProperty("exe4j.launchName");
                         SecondLevelLaunch.LOG.info("Create .vmoptions for " + launcher + " because the exe launcher contains too low Xmx VM arg!");
                         if (StringUtils.isNotEmpty(launcher)) {
