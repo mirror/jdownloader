@@ -352,7 +352,7 @@ public class SecondLevelLaunch {
                         String str = IO.readFileToString(file);
                         if (str.contains("<string>-Xmx64m</string>")) {
                             SecondLevelLaunch.LOG.info("Rename " + file + " because it contains too low Xmx VM arg!");
-                            str.replace("<string>-Xmx64m</string>", "<string>-Xms64m</string>");
+                            str = str.replace("<string>-Xmx64m</string>", "<string>-Xms64m</string>");
                             int i = 1;
                             File backup = new File(file.getCanonicalPath() + ".backup_" + i);
                             while (backup.exists() || i == 10) {
