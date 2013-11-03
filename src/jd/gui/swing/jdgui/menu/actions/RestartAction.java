@@ -32,6 +32,7 @@ public class RestartAction extends AppAction implements CachableInterface {
     private static final long serialVersionUID = 1333126351380171619L;
 
     public RestartAction() {
+        //
         setTooltipText(_GUI._.action_restart_tooltip());
         setName(_GUI._.action_restart());
         setIconKey("restart");
