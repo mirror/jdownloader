@@ -339,7 +339,7 @@ public class SecondLevelLaunch {
                                     StringBuilder sb = new StringBuilder();
                                     sb.append("-Xmx256m\r\n");
                                     sb.append("-Dsun.java2d.d3d=false\r\n");
-                                    if (vmOption.exists() == false) IO.writeStringToFile(vmOption, sb.toString());
+                                    if (vmOption.exists() == false || vmOption.delete()) IO.writeStringToFile(vmOption, sb.toString());
                                 }
                             }
                         }
@@ -353,7 +353,7 @@ public class SecondLevelLaunch {
                             StringBuilder sb = new StringBuilder();
                             sb.append("-Xmx256m\r\n");
                             sb.append("-Dsun.java2d.d3d=false\r\n");
-                            if (vmOption.exists() == false) IO.writeStringToFile(vmOption, sb.toString());
+                            if (vmOption.exists() == false || vmOption.delete()) IO.writeStringToFile(vmOption, sb.toString());
                         }
                     }
                 } else if (CrossSystem.isMac()) {
