@@ -336,6 +336,7 @@ public class SecondLevelLaunch {
                         }
                     } else {
                         String launcher = System.getProperty("exe4j.launchName");
+                        SecondLevelLaunch.LOG.info("Create .vmoptions for " + launcher + " because the exe launcher contains too low Xmx VM arg!");
                         if (StringUtils.isNotEmpty(launcher)) {
                             launcher = launcher.replaceFirst("\\.exe$", ".vmoptions");
                             File vmOption = new File(launcher);
