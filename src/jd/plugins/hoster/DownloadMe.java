@@ -71,12 +71,16 @@ public class DownloadMe extends PluginForHost {
         // check if account is valid
         br.getPage("https://www.download.me/dlapi/user?mail=" + username + "&passwd=" + pass);
         final String userCookie = br.getCookie("http://download.me/", "user");
+        final String lang = System.getProperty("user.language");
         // "Invalid login" / "Banned" / "Valid login"
         final String status = getJson("status");
         if ("0".equals(status)) {
-            ac.setStatus("Username or password wrong!");
             account.setValid(false);
-            return ac;
+            if ("de".equalsIgnoreCase(lang)) {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+            }
         } else if ("1".equals(status)) {
             account.setValid(true);
         } else if (userCookie == null) {

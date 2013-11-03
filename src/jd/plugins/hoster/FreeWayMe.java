@@ -112,20 +112,33 @@ public class FreeWayMe extends PluginForHost {
         ac.setProperty("multiHostSupport", Property.NULL);
         // check if account is valid
         br.getPage("https://www.free-way.me/ajax/jd.php?id=1&user=" + username + "&pass=" + pass + ((betaEncoding) ? "&encoded" : ""));
+        final String lang = System.getProperty("user.language");
         // "Invalid login" / "Banned" / "Valid login"
         if (br.toString().equalsIgnoreCase("Valid login")) {
             account.setValid(true);
         } else if (br.toString().equalsIgnoreCase("Invalid login")) {
             account.setValid(false);
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nFalscher Benutzername/Passwort!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+            if ("de".equalsIgnoreCase(lang)) {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+            }
         } else if (br.toString().equalsIgnoreCase("Banned")) {
             account.setValid(false);
             account.setEnabled(false);
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nAccount banned!\r\nAccount gesperrt!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+            if ("de".equalsIgnoreCase(lang)) {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "Account gesperrt!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "Account banned!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+            }
         } else {
             // unknown error
             account.setValid(false);
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUnknown account status (deactivated)!\r\nUnbekannter Accountstatus (deaktiviert)!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+            if ("de".equalsIgnoreCase(lang)) {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "Unbekannter Accountstatus (deaktiviert)!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "Unknown account status (deactivated)!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+            }
         }
         // account should be valid now, let's get account information:
         br.getPage("https://www.free-way.me/ajax/jd.php?id=4&user=" + username + "&pass=" + pass + ((betaEncoding) ? "&encoded" : ""));
