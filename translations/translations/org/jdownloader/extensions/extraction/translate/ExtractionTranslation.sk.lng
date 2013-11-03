@@ -40,6 +40,7 @@ offline=Súbor je offline alebo chýba
 online=Odkaz je k dispozícii
 online_tt=Odkaz je k dispozícii
 packagename=Názov balíčka
+plugins_optional_extraction_askForPassword2=Ak chcete rozbaliť archív, musíte zadať heslo!
 plugins_optional_extraction_crcerrorin=Rozbalovanie: zlyhalo (CRC v %s1)
 plugins_optional_extraction_error_extrfailedcrc=Rozbalovanie: zlyhalo (CRC neznámého súboru)
 plugins_optional_extraction_filefilter=Všetky podporované formáty
