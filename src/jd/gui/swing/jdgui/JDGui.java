@@ -17,6 +17,7 @@
 package jd.gui.swing.jdgui;
 
 import java.awt.Cursor;
+import java.awt.Dialog.ModalityType;
 import java.awt.Dimension;
 import java.awt.Frame;
 import java.awt.GraphicsDevice;
@@ -77,7 +78,10 @@ import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.events.GenericConfigEventListener;
 import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.swing.ExtJFrame;
+import org.appwork.swing.components.ExtButton;
 import org.appwork.swing.components.tooltips.ToolTipController;
+import org.appwork.uio.UIOManager;
+import org.appwork.uio.UserIODefinition.CloseReason;
 import org.appwork.utils.Application;
 import org.appwork.utils.BinaryLogic;
 import org.appwork.utils.Files;
@@ -91,6 +95,7 @@ import org.appwork.utils.swing.EDTHelper;
 import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.dialog.AbstractDialog;
 import org.appwork.utils.swing.dialog.ConfirmDialog;
+import org.appwork.utils.swing.dialog.DefaultButtonPanel;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
@@ -106,6 +111,7 @@ import org.appwork.utils.swing.locator.AbstractLocator;
 import org.appwork.utils.swing.windowmanager.WindowManager;
 import org.appwork.utils.swing.windowmanager.WindowManager.FrameState;
 import org.appwork.utils.swing.windowmanager.WindowManager.WindowExtendedState;
+import org.jdownloader.actions.AppAction;
 import org.jdownloader.controlling.FileCreationManager;
 import org.jdownloader.crosssystem.idlegetter.IdleGetter;
 import org.jdownloader.gui.GuiUtils;
@@ -129,6 +135,7 @@ import org.jdownloader.statistics.StatsManager;
 import org.jdownloader.updatev2.InstallLog;
 import org.jdownloader.updatev2.RestartController;
 import org.jdownloader.updatev2.SmartRlyExitRequest;
+import org.jdownloader.updatev2.SmartRlyRestartRequest;
 import org.jdownloader.updatev2.UpdateController;
 import org.jdownloader.updatev2.UpdaterListener;
 
@@ -472,6 +479,40 @@ public class JDGui implements UpdaterListener, OwnerFinder {
                         }
 
                         if (Runtime.getRuntime().maxMemory() < (100 * 1024 * 1024)) {
+                            new Thread("AskForRestart") {
+                                public void run() {
+                                    ConfirmDialog d = new ConfirmDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN | UIOManager.LOGIC_DONT_SHOW_AGAIN_IGNORES_OK, _GUI._.MEMORY_RESTART_TITLE(), _GUI._.MEMORY_RESTART_MSG(), NewTheme.I().getIcon("restart", 32), _GUI._.lit_restart(), null) {
+                                        @Override
+                                        public ModalityType getModalityType() {
+                                            return ModalityType.MODELESS;
+                                        }
+
+                                        @Override
+                                        protected DefaultButtonPanel getDefaultButtonPanel() {
+                                            DefaultButtonPanel ret = super.getDefaultButtonPanel();
+
+                                            ret.add(new ExtButton(new AppAction() {
+                                                {
+                                                    setName(_GUI._.memory_chat());
+                                                }
+
+                                                @Override
+                                                public void actionPerformed(ActionEvent e) {
+                                                    CrossSystem.openURL("http://jdownloader.org/knowledge/chat");
+                                                }
+                                            }));
+
+                                            return ret;
+                                        }
+                                    };
+                                    UIOManager.I().show(null, d);
+                                    if (d.getCloseReason() == CloseReason.OK) {
+                                        RestartController.getInstance().asyncRestart(new SmartRlyRestartRequest(true));
+                                    }
+
+                                };
+                            }.start();
+
                             // Dialog.getInstance().showMessageDialog("It seems that there is a memory Problem with your JDownloader installation.\r\nPlease Download the latest JDownloader 2 Installer, or visit our supportchat to ask for help.");
                             // CrossSystem.openURL("http://jdownloader.org/download/offline");
                             // CrossSystem.openURL("http://jdownloader.org/knowledge/chat");

@@ -290,15 +290,7 @@ public class SecondLevelLaunch {
                         }
                         IO.copyFile(file, backup);
                         IO.writeStringToFile(file, str);
-                        //
-                        ArrayList<String> l = new ArrayList<String>();
-                        for (String s : args) {
-                            l.add(s);
-                        }
-                        if (!l.contains("-xmx")) {
-                            l.add("-xmx");
-                            RestartController.getInstance().directRestart(new ForcedRestartRequest(l.toArray(new String[] {})));
-                        }
+
                     }
                 }
             } catch (Exception e) {

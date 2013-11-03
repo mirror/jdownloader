@@ -16,10 +16,12 @@
 
 package jd.gui.swing.dialog;
 
+import java.awt.Dimension;
+import java.awt.Toolkit;
+import java.awt.datatransfer.Clipboard;
+import java.awt.datatransfer.StringSelection;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
 import java.io.File;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -41,6 +43,7 @@ import net.miginfocom.swing.MigLayout;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.swing.MigPanel;
+import org.appwork.swing.components.ExtButton;
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.Application;
 import org.appwork.utils.IO;
@@ -51,6 +54,7 @@ import org.appwork.utils.swing.dialog.ConfirmDialog;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
+import org.jdownloader.actions.AppAction;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
 
@@ -152,22 +156,42 @@ public class AboutDialog extends AbstractDialog<Integer> {
 
         }
         stats.add(new JLabel("Java:"), "");
-        JComponent comp;
-        stats.add(comp = disable(System.getProperty("java.vendor") + " - " + System.getProperty("java.version")));
-        comp.addMouseListener(new MouseAdapter() {
+        ExtButton comp;
+        stats.add(comp = disable(System.getProperty("java.vendor") + " - " + System.getProperty("java.version") + " (" + (Runtime.getRuntime().maxMemory() / (1024 * 1024)) + "MB)"));
+        comp.addActionListener(new ActionListener() {
+
             @Override
-            public void mouseClicked(MouseEvent e) {
+            public void actionPerformed(ActionEvent e) {
+
                 CrossSystem.showInExplorer(new File(CrossSystem.getJavaBinary()));
+                try {
+                    java.lang.management.RuntimeMXBean runtimeMxBean = java.lang.management.ManagementFactory.getRuntimeMXBean();
+                    List<String> arguments = runtimeMxBean.getInputArguments();
+                    StringBuilder sb = new StringBuilder();
+                    for (String s : arguments) {
+                        if (sb.length() > 0) sb.append(" ");
+                        sb.append(s);
+                    }
+
+                    StringSelection selection = new StringSelection(sb.toString());
+                    Clipboard clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
+                    clipboard.setContents(selection, selection);
+                } catch (final Throwable e1) {
+
+                }
             }
         });
-
         try {
             java.lang.management.RuntimeMXBean runtimeMxBean = java.lang.management.ManagementFactory.getRuntimeMXBean();
             List<String> arguments = runtimeMxBean.getInputArguments();
-            if (arguments != null) {
-                comp.setToolTipText(arguments.toString());
+            StringBuilder sb = new StringBuilder();
+            for (String s : arguments) {
+                if (sb.length() > 0) sb.append("\r\n");
+                sb.append(s);
             }
-        } catch (final Throwable e) {
+
+            comp.setToolTipText(sb.toString());
+        } catch (final Throwable e1) {
 
         }
         contentpane.add(new JLabel(_GUI._.jd_gui_swing_components_AboutDialog_synthetica("(#289416475)")), "gaptop 10, spanx");
@@ -178,9 +202,21 @@ public class AboutDialog extends AbstractDialog<Integer> {
         return contentpane;
     }
 
-    private JComponent disable(Object object) {
-        JLabel ret = new JLabel(object + "");
-        ret.setEnabled(false);
+    private ExtButton disable(final Object object) {
+
+        ExtButton ret = new ExtButton(new AppAction() {
+            {
+                setName(object + "");
+            }
+
+            @Override
+            public void actionPerformed(ActionEvent e) {
+            }
+        });
+        ret.setBorderPainted(false);
+        ret.setContentAreaFilled(false);
+        ret.setEnabled(true);
+        ret.setPreferredSize(new Dimension(ret.getPreferredSize().width, 20));
         return ret;
     }
 

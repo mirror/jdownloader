@@ -38,6 +38,7 @@ public class RestartAction extends AppAction implements CachableInterface {
 
     @Override
     public void actionPerformed(ActionEvent e) {
+
         RestartController.getInstance().asyncRestart(new SmartRlyRestartRequest(false));
     }
 
