@@ -3571,7 +3571,7 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Memory Problem detected!" })
     String MEMORY_RESTART_TITLE();
 
-    @Default(lngs = { "en" }, values = { "I seems that there is a memory Problem. A Restart of JDownloader is required to fix this problem.\r\nIf a Restart does not fix it, please visit our support chat." })
+    @Default(lngs = { "en" }, values = { "I seems that there is a memory Problem. A Restart of JDownloader is required to fix this problem.\r\nIf even 2 restarts do not fix it, please visit our support chat." })
     String MEMORY_RESTART_MSG();
 
     @Default(lngs = { "en" }, values = { "Restart" })
