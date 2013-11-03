@@ -523,6 +523,7 @@ linkgrabber_onlinestatus_offline=offline
 linkgrabber_onlinestatus_online=Online
 linkgrabber_onlinestatus_uncheckable=Dočasně nezkontrolovatelný
 linkgrabber_onlinestatus_unchecked=Nezkontrolováno
+lit_save=Uložit
 literall_are_you_sure=Jste si jistí?
 literall_error=Chyba
 literall_no=Ne

@@ -1,0 +1,10 @@
+LogAction_actionPerformed_wait_=Čekejte...
+LogAction_actionPerformed_zip_title_=Vytváření balíčku protokolu
+LogAction_getString_uploading_=Příprava vašich protokolů
+LogModel_getStringValue_between_=Mezi %s1 a %s2
+LogModel_initColumns_time_=Čas
+LogModel_initColumns_x_=Zkontrolovat
+LogTable_onContextMenu_disable_=Zrušit výběr
+LogTable_onContextMenu_enable_=Vybrat
+SendLogDialog_SendLogDialog_title_=Odeslat chybové hlášení
+SendLogDialog_layoutDialogContent_desc_=Kdy se problém vyskytnul? Zkontrolujte všechny položky, které můžou stát za zvážení!

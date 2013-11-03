@@ -23,6 +23,7 @@ easycaptcha_loadcaptchas_loaddirect=Pokud je to možné, načíst přímo (mnohe
 easycaptcha_loadcaptchas_threaded=vícevláknové načítání obrázků (velmi rychlé)
 easycaptcha_loadcaptchas_title=Načíst CAPTCHA
 easycaptcha_mask=Maska:
+easycaptcha_needCaptchas=Nejdříve potřebujete Captchas!
 easycaptcha_openCaptchaFolder=Otevřít složku s Captcha
 easycaptcha_orginal=Originál:
 easycaptcha_remove=Odebrat:
