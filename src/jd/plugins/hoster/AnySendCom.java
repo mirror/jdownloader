@@ -20,6 +20,9 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Random;
 
+import javax.script.ScriptEngine;
+import javax.script.ScriptEngineManager;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -123,6 +126,7 @@ public class AnySendCom extends PluginForHost {
             final String key = new Regex(br.getURL(), "\\?key=([A-Z0-9]+)\\&").getMatch(0);
             if (v == null || key == null || a == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             String code = br.getRegex("var dlcode=md5\\('([A-Za-z0-9]+)'").getMatch(0);
+            if (code == null) code = jsUnCrush();
             if (code == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             Browser XMLBR = br.cloneBrowser();
             prepXML(XMLBR);
@@ -131,15 +135,21 @@ public class AnySendCom extends PluginForHost {
             XMLBR.getPage("http://im.anysend.com/check_file.php?key=" + key + "&callback=jQuery" + random + "_" + systime + "&_=" + (systime - 1));
             final String ip = XMLBR.getRegex("\\d+\\(\"([0-9\\.]*?)\"\\);").getMatch(0);
             if (ip == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-            final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
-            rc.findID();
-            rc.load();
-            final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-            final String c = getCaptchaCode(cf, downloadLink);
             XMLBR = br.cloneBrowser();
             prepXML(XMLBR);
-            XMLBR.getPage("http://download.anysend.com/download/getcode.php?a=" + a + "&v=" + v + "&key=" + key + "&code=" + JDHash.getMD5(code + rc.getChallenge() + c).toUpperCase() + "&challenge=" + rc.getChallenge() + "&response=" + Encoding.urlEncode(c));
+
+            try {
+                final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
+                final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
+                rc.findID();
+                rc.load();
+                final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
+                final String c = getCaptchaCode(cf, downloadLink);
+                XMLBR.getPage("http://download.anysend.com/download/getcode.php?a=" + a + "&v=" + v + "&key=" + key + "&code=" + JDHash.getMD5(code + rc.getChallenge() + c).toUpperCase() + "&challenge=" + rc.getChallenge() + "&response=" + Encoding.urlEncode(c));
+            } catch (Throwable e) {
+                XMLBR.getPage("http://download.anysend.com/download/getcode.php?a=" + a + "&v=" + v + "&key=" + key + "&code=" + code);
+            }
+
             if ("true".equalsIgnoreCase(getResult(XMLBR, "isRecaptchaError")) && "Incorrect response".equalsIgnoreCase(getResult(XMLBR, "recaptchaMessage")))
                 throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             else if ("true".equalsIgnoreCase(getResult(XMLBR, "isError")) && "Not authorized".equalsIgnoreCase(getResult(XMLBR, "error"))) throw new PluginException(LinkStatus.ERROR_RETRY);
@@ -185,6 +195,40 @@ public class AnySendCom extends PluginForHost {
 
     private String getFID(final DownloadLink dl) {
         return new Regex(dl.getDownloadURL(), "([A-Z0-9]{32})$").getMatch(0);
+    }
+
+    private String jsUnCrush() {
+        /* compressed with JSCrush */
+        String code[] = br.getRegex("code:eval\\((.*?)\\)(\\(.*?\\))").getRow(0);
+        if (code == null || code.length < 2) return null;
+        Object result = new Object();
+        final ScriptEngineManager manager = new ScriptEngineManager();
+        final ScriptEngine engine = manager.getEngineByName("javascript");
+        try {
+            result = engine.eval(code[0]);
+            engine.put("arguments", code[1]);
+            for (int i = 0; i <= 10; i++) {
+                result = new Regex(result, "\\(function\\(\\)\\{(.*?)\\}\\(\\)\\)$").getMatch(0);
+                if (result.toString().endsWith("return function(){return f.apply(this,arguments)};")) {
+                    result = result.toString().replace("return eval", "return ");
+                } else {
+                    result = result.toString().replace("return eval", "");
+                }
+                result = result.toString().replaceAll("return function\\(\\)\\{return .\\.apply\\(this,arguments\\)\\};?", "");
+                result = result.toString().replace("for(Y in $", "for(Y=0;$");
+                result = result.toString().replace("))with(_.split($[Y]))", ")[Y++];)with(_.split($))");
+                result = engine.eval(result.toString());
+                if (result == null) {
+                    result = engine.get("f");
+                    engine.put("f", null);
+                    if (result == null) result = engine.eval("a" + code[1]);
+                }
+            }
+        } catch (final Throwable e) {
+            e.printStackTrace();
+            return null;
+        }
+        return result.toString();
     }
 
     @Override
