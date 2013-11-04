@@ -156,7 +156,7 @@ public class LinkGrabberTable extends PackageControllerTable<CrawledPackage, Cra
                             // clicked on a selected row. let's confirm them all
                             List<AbstractNode> selection = getModel().getSelectedObjects();
 
-                            new ConfirmSelectionContextAction(new SelectionInfo<CrawledPackage, CrawledLink>(obj, selection, e, null, null, this)) {
+                            new ConfirmSelectionContextAction(getSelectionInfo(true, true).derive(obj, e, null, null, col)) {
 
                                 protected void switchToDownloadTab() {
 
@@ -317,7 +317,7 @@ public class LinkGrabberTable extends PackageControllerTable<CrawledPackage, Cra
                 final Action action = (binding == null) ? null : am.get(binding);
                 if (action != null && action instanceof AbstractSelectionContextAction) {
 
-                    ((AbstractSelectionContextAction) action).setSelection(getModel().createSelectionInfo());
+                    ((AbstractSelectionContextAction) action).setSelection(getSelectionInfo(true, true));
 
                     if (!action.isEnabled()) {
 
@@ -431,4 +431,5 @@ public class LinkGrabberTable extends PackageControllerTable<CrawledPackage, Cra
             }
         }
     }
+
 }

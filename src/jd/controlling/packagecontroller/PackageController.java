@@ -141,10 +141,10 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
 
                 @Override
                 protected Void run() throws RuntimeException {
-                    logger.info("AddMovePackage " + pkg + " links: " + pkg.getChildren().size() + " - " + index + " - " + allowEmpty);
+
                     if (allowEmpty == false && pkg.getChildren().size() == 0) {
                         /* we dont want empty packages here */
-                        logger.info("Return");
+
                         return null;
                     }
                     boolean isNew = true;
@@ -182,7 +182,7 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
                                 /*
                                  * current element is pkg and index is correct, nothing to do
                                  */
-                                logger.info("Return2");
+
                                 return null;
                             } else if (currentIndex == index) {
                                 /*
@@ -201,10 +201,10 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
                             currentIndex++;
                         }
                         if (!done || addLast) {
-                            logger.info("Add");
+
                             packages.add(pkg);
                         } else {
-                            logger.info("Return " + done + " - " + addLast);
+
                         }
                         pkg.setControlledBy(PackageController.this);
                     } finally {
@@ -212,7 +212,7 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
                     }
                     structureChanged.incrementAndGet();
                     if (isNew) {
-                        logger.info("isnew");
+
                         if (pkg.getChildren().size() > 0) childrenChanged.incrementAndGet();
                         _controllerPackageNodeAdded(pkg, this.getQueuePrio());
                     } else {

@@ -12,7 +12,6 @@ import javax.swing.JFrame;
 
 import org.appwork.app.gui.ActiveDialogException;
 import org.appwork.scheduler.DelayedRunnable;
-import org.appwork.storage.JSonStorage;
 import org.appwork.swing.ExtJFrame;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging2.LogSource;
@@ -45,7 +44,7 @@ public class JDownloaderMainFrame extends ExtJFrame {
                 FrameStatus newState = FrameStatus.create(JDownloaderMainFrame.this, latestFrameStatus);
                 if (newState.isLocationSet()) {
                     latestFrameStatus = newState;
-                    System.out.println("new State " + JSonStorage.toString(latestFrameStatus));
+                    // System.out.println("new State " + JSonStorage.toString(latestFrameStatus));
                 }
             }
 
@@ -54,7 +53,7 @@ public class JDownloaderMainFrame extends ExtJFrame {
 
             @Override
             public void componentShown(ComponentEvent e) {
-                System.out.println(e);
+                // System.out.println(e);
             }
 
             @Override
@@ -69,7 +68,7 @@ public class JDownloaderMainFrame extends ExtJFrame {
 
             @Override
             public void componentHidden(ComponentEvent e) {
-                System.out.println(e);
+                // System.out.println(e);
             }
         });
         addWindowStateListener(new WindowStateListener() {

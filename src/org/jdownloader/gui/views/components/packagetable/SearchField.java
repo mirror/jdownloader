@@ -83,7 +83,7 @@ public class SearchField<SearchCat extends SearchCatInterface, PackageType exten
 
             @Override
             public void delayedrun() {
-                System.out.println("update filter");
+                // System.out.println("update filter");
                 updateFilter();
             }
 

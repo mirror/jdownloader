@@ -9,7 +9,6 @@ import jd.controlling.linkcollector.LinkCollector;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledPackage;
 import jd.controlling.linkcrawler.CrawledPackage.TYPE;
-import jd.controlling.packagecontroller.AbstractNode;
 import jd.plugins.DownloadLink.AvailableStatus;
 
 import org.appwork.uio.UIOManager;
@@ -43,7 +42,6 @@ public class GenericDeleteFromLinkgrabberContextAction extends AbstractSelection
     public static final String DELETE_ALL          = "deleteAll";
     public static final String DELETE_DISABLED     = "deleteDisabled";
     public static final String DELETE_OFFLINE      = "deleteOffline";
-    private List<AbstractNode> currentSelection;
 
     private boolean            deleteDisabled      = false;
     private boolean            onlySelectedItems   = false;
@@ -183,25 +181,24 @@ public class GenericDeleteFromLinkgrabberContextAction extends AbstractSelection
     }
 
     private void update() {
-
+        SelectionInfo<CrawledPackage, CrawledLink> si = null;
         if (this.isOnlySelectedItems()) {
             if (hasSelection()) {
-                this.currentSelection = new ArrayList<AbstractNode>(getSelection().getChildren());
+                si = getSelection();
             }
         } else {
             if (this.isIgnoreFiltered()) {
-                this.currentSelection = getTable().getModel().getElements();
-            } else {
 
-                this.currentSelection = new ArrayList<AbstractNode>(getTable().getModel().getController().getAllChildren());
+                si = getTable().getSelectionInfo(false, false);
+            } else {
+                si = getTable().getSelectionInfo(false, true);
+
             }
 
         }
         this.filteredCrawledLinks = null;
 
-        if (this.currentSelection != null && this.currentSelection.size() > 0) {
-
-            final SelectionInfo<CrawledPackage, CrawledLink> si = new SelectionInfo<CrawledPackage, CrawledLink>(null, this.currentSelection, null, null, null, getTable());
+        if (si != null && !si.isEmpty()) {
 
             List<CrawledLink> filtered = new ArrayList<CrawledLink>();
             for (CrawledLink cl : si.getChildren()) {

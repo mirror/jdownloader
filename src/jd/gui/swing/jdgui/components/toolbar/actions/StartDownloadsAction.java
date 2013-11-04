@@ -8,8 +8,6 @@ import jd.controlling.TaskQueue;
 import jd.controlling.downloadcontroller.DownloadWatchDog;
 import jd.controlling.downloadcontroller.SingleDownloadController;
 import jd.controlling.downloadcontroller.event.DownloadWatchdogListener;
-import jd.controlling.linkcrawler.CrawledLink;
-import jd.controlling.linkcrawler.CrawledPackage;
 import jd.controlling.packagecontroller.AbstractNode;
 import jd.gui.swing.jdgui.JDGui;
 import jd.gui.swing.jdgui.JDGui.Panels;
@@ -25,7 +23,6 @@ import org.jdownloader.controlling.contextmenu.Customizer;
 import org.jdownloader.gui.event.GUIEventSender;
 import org.jdownloader.gui.event.GUIListener;
 import org.jdownloader.gui.toolbar.action.ToolBarAction;
-import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.linkgrabber.LinkGrabberTableModel;
 import org.jdownloader.gui.views.linkgrabber.LinkGrabberView;
 import org.jdownloader.gui.views.linkgrabber.contextmenu.ConfirmSelectionContextAction;
@@ -66,7 +63,8 @@ public class StartDownloadsAction extends ToolBarAction implements DownloadWatch
                     switch (CFG_GUI.CFG.getStartButtonActionInLinkgrabberContext()) {
                     case ADD_ALL_LINKS_AND_START_DOWNLOADS:
                         java.util.List<AbstractNode> packages = new ArrayList<AbstractNode>(LinkGrabberTableModel.getInstance().getAllPackageNodes());
-                        ConfirmSelectionContextAction ca = new ConfirmSelectionContextAction(new SelectionInfo<CrawledPackage, CrawledLink>(null, packages, null, null, e, LinkGrabberTableModel.getInstance().getTable()));
+                        ;
+                        ConfirmSelectionContextAction ca = new ConfirmSelectionContextAction(LinkGrabberTableModel.getInstance().getTable().getSelectionInfo(false, true).derive(null, null, null, e, null));
                         ca.setAutoStart(AutoStartOptions.ENABLED);
                         ca.actionPerformed(null);
                         break;

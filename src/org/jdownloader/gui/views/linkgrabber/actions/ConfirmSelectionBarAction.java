@@ -126,7 +126,7 @@ public class ConfirmSelectionBarAction extends AppAction implements CachableInte
             Toolkit.getDefaultToolkit().beep();
             return;
         }
-        final SelectionInfo<CrawledPackage, CrawledLink> selection = LinkGrabberTableModel.getInstance().createSelectionInfo();
+        final SelectionInfo<CrawledPackage, CrawledLink> selection = LinkGrabberTableModel.getInstance().getTable().getSelectionInfo(true, true);
         if (selection == null || selection.isEmpty()) {
             Toolkit.getDefaultToolkit().beep();
             return;

@@ -95,9 +95,9 @@ public class SelectionInfo<PackageType extends AbstractPackageNode<ChildrenType,
 
         // System.out.println(kEvent);
 
-        this.mouseEvent = event;
-        this.keyEvent = kEvent;
-        this.actionEvent = actionEvent;
+        setMouseEvent(event);
+        setKeyEvent(kEvent);
+        setActionEvent(actionEvent);
         this.table = table;
         if (table != null) {
             PackageControllerTableModel<PackageType, ChildrenType> tableModel = table.getModel();
@@ -108,12 +108,24 @@ public class SelectionInfo<PackageType extends AbstractPackageNode<ChildrenType,
         // System.out.println(isShiftDown());
         agregate();
 
-        if (keyEvent != null && keyEvent.isShiftDown()) {
-            shiftDown = true;
-        }
+    }
+
+    protected void setActionEvent(ActionEvent actionEvent) {
+        this.actionEvent = actionEvent;
         if (actionEvent != null && BinaryLogic.containsSome(actionEvent.getModifiers(), ActionEvent.SHIFT_MASK)) {
             shiftDown = true;
         }
+    }
+
+    protected void setKeyEvent(KeyEvent kEvent) {
+        this.keyEvent = kEvent;
+        if (keyEvent != null && keyEvent.isShiftDown()) {
+            shiftDown = true;
+        }
+    }
+
+    protected void setMouseEvent(MouseEvent event) {
+        this.mouseEvent = event;
         if (mouseEvent != null && mouseEvent.isShiftDown()) shiftDown = true;
     }
 
@@ -122,6 +134,9 @@ public class SelectionInfo<PackageType extends AbstractPackageNode<ChildrenType,
     // this(null, selection, null);
     //
     // }
+
+    private SelectionInfo() {
+    }
 
     @SuppressWarnings("unchecked")
     public void agregate() {
@@ -168,6 +183,7 @@ public class SelectionInfo<PackageType extends AbstractPackageNode<ChildrenType,
                     boolean readL = ((PackageType) node).getModifyLock().readLock();
                     try {
                         List<ChildrenType> childs = ((PackageType) node).getChildren();
+                        java.util.List<ChildrenType> unFiltered = new ArrayList<ChildrenType>();
                         if (filters == null) {
 
                             ret.addAll(childs);
@@ -182,17 +198,19 @@ public class SelectionInfo<PackageType extends AbstractPackageNode<ChildrenType,
                                     }
                                 }
                                 if (!filtered) {
-                                    //
-                                    ret.add(l);
+
+                                    unFiltered.add(l);
                                 }
 
                             }
 
                         }
-                        if (ret.size() == childs.size()) {
+                        ret.addAll(unFiltered);
+                        if (unFiltered.size() == childs.size()) {
                             fullPkg.add((PackageType) node);
+
                         } else {
-                            incompleteSelectecPackages.put((PackageType) node, new ArrayList<ChildrenType>(ret));
+                            incompleteSelectecPackages.put((PackageType) node, new ArrayList<ChildrenType>(unFiltered));
                         }
                     } finally {
                         ((PackageType) node).getModifyLock().readUnlock(readL);
@@ -479,10 +497,6 @@ public class SelectionInfo<PackageType extends AbstractPackageNode<ChildrenType,
         return false;
     }
 
-    public void setContextColumn(ExtColumn<AbstractNode> column) {
-        contextColumn = column;
-    }
-
     public ExtColumn<AbstractNode> getContextColumn() {
         return contextColumn;
     }
@@ -517,5 +531,46 @@ public class SelectionInfo<PackageType extends AbstractPackageNode<ChildrenType,
         if (mouseEvent != null && mouseEvent.isAltDown()) { return true; }
         ;
         return false;
+    }
+
+    public SelectionInfo<PackageType, ChildrenType> derive(AbstractNode contextObject2, MouseEvent event, KeyEvent kEvent, ActionEvent actionEvent, ExtColumn<AbstractNode> column) {
+        SelectionInfo<PackageType, ChildrenType> ret = new SelectionInfo<PackageType, ChildrenType>();
+        ret.actionEvent = this.actionEvent;
+        ret.mouseEvent = mouseEvent;
+        ret.allPackages = allPackages;
+        ret.children = children;
+        ret.contextColumn = this.contextColumn;
+        ret.contextObject = this.contextObject;
+        ret.filters = filters;
+        ret.fullPackages = fullPackages;
+        ret.incompletePackages = incompletePackages;
+        ret.incompleteSelectecPackages = incompleteSelectecPackages;
+        ret.keyEvent = this.keyEvent;
+        ret.mouseEvent = mouseEvent;
+        ret.rawMap = rawMap;
+        ret.rawSelection = rawSelection;
+        ret.shiftDown = shiftDown;
+        ret.table = table;
+
+        if (contextObject2 != null) {
+
+            ret.contextObject = contextObject2;
+        }
+        if (event != null) {
+            ret.setMouseEvent(event);
+
+        }
+        if (actionEvent != null) {
+            ret.setActionEvent(actionEvent);
+
+        }
+        if (kEvent != null) {
+            ret.setKeyEvent(kEvent);
+        }
+        if (column != null) {
+
+            ret.contextColumn = column;
+        }
+        return ret;
     }
 }

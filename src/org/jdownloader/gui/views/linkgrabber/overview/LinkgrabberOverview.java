@@ -1,6 +1,5 @@
 package org.jdownloader.gui.views.linkgrabber.overview;
 
-import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.swing.Box;
@@ -17,8 +16,6 @@ import jd.controlling.linkcollector.LinkCollectorCrawler;
 import jd.controlling.linkcollector.LinkCollectorEvent;
 import jd.controlling.linkcollector.LinkCollectorListener;
 import jd.controlling.linkcrawler.CrawledLink;
-import jd.controlling.linkcrawler.CrawledPackage;
-import jd.controlling.packagecontroller.AbstractNode;
 import jd.gui.swing.jdgui.JDGui;
 import jd.gui.swing.jdgui.JDGui.Panels;
 import jd.gui.swing.jdgui.interfaces.View;
@@ -33,7 +30,6 @@ import org.jdownloader.controlling.AggregatedCrawlerNumbers;
 import org.jdownloader.gui.event.GUIEventSender;
 import org.jdownloader.gui.event.GUIListener;
 import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.downloads.overviewpanel.DataEntry;
 import org.jdownloader.gui.views.linkgrabber.LinkGrabberTable;
 import org.jdownloader.gui.views.linkgrabber.LinkGrabberTableModel;
@@ -154,12 +150,12 @@ public class LinkgrabberOverview extends MigPanel implements GenericConfigEventL
                         updating.set(false);
                         return null;
                     }
-                    final AggregatedCrawlerNumbers total = CFG_GUI.OVERVIEW_PANEL_TOTAL_INFO_VISIBLE.isEnabled() ? new AggregatedCrawlerNumbers(new SelectionInfo<CrawledPackage, CrawledLink>(null, LinkCollector.getInstance().getAllChildren(), null, null, null, null)) : null;
-                    final AggregatedCrawlerNumbers filtered = (CFG_GUI.OVERVIEW_PANEL_VISIBLE_ONLY_INFO_VISIBLE.isEnabled() || CFG_GUI.OVERVIEW_PANEL_SMART_INFO_VISIBLE.isEnabled()) ? new AggregatedCrawlerNumbers(new SelectionInfo<CrawledPackage, CrawledLink>(null, table.getModel().getAllChildrenNodes(), null, null, null, table)) : null;
+                    final AggregatedCrawlerNumbers total = CFG_GUI.OVERVIEW_PANEL_TOTAL_INFO_VISIBLE.isEnabled() ? new AggregatedCrawlerNumbers(table.getSelectionInfo(false, false)) : null;
+                    final AggregatedCrawlerNumbers filtered = (CFG_GUI.OVERVIEW_PANEL_VISIBLE_ONLY_INFO_VISIBLE.isEnabled() || CFG_GUI.OVERVIEW_PANEL_SMART_INFO_VISIBLE.isEnabled()) ? new AggregatedCrawlerNumbers(table.getSelectionInfo(false, true)) : null;
                     final AggregatedCrawlerNumbers selected;
                     if ((CFG_GUI.OVERVIEW_PANEL_SELECTED_INFO_VISIBLE.isEnabled() || CFG_GUI.OVERVIEW_PANEL_SMART_INFO_VISIBLE.isEnabled())) {
-                        List<AbstractNode> selectedObjects = table.getModel().getSelectedObjects();
-                        selected = new AggregatedCrawlerNumbers(new SelectionInfo<CrawledPackage, CrawledLink>(null, selectedObjects, null, null, null, table));
+
+                        selected = new AggregatedCrawlerNumbers(table.getSelectionInfo(true, true));
                     } else {
                         selected = null;
                     }

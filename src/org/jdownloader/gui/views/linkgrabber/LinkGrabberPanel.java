@@ -102,7 +102,7 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
                 if (!CFG_GUI.LINKGRABBER_TAB_PROPERTIES_PANEL_VISIBLE.isEnabled() && e.getValueIsAdjusting()) return;
                 if (table.getSelectedRowCount() > 0) {
                     setPropertiesPanelVisible(true);
-                    System.out.println(e);
+
                     propertiesPanel.update(table.getModel().getObjectbyRow(table.getSelectionModel().getLeadSelectionIndex()));
 
                 } else {
@@ -167,7 +167,7 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
 
         rightBar = new CustomizeableActionBar(MenuManagerLinkgrabberTabBottombar.getInstance()) {
             protected SelectionInfo<?, ?> getCurrentSelection() {
-                return tableModel.createSelectionInfo();
+                return table.getSelectionInfo(true, true);
 
             }
 
@@ -196,7 +196,7 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
 
         leftBar = new CustomizeableActionBar(MenuManagerLinkgrabberTabBottombar.getInstance()) {
             protected SelectionInfo<?, ?> getCurrentSelection() {
-                return tableModel.createSelectionInfo();
+                return table.getSelectionInfo(true, true);
 
             }
 

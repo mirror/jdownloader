@@ -88,7 +88,7 @@ public class MyJDownloaderAPI extends AbstractMyJDClient {
                 ret = br.postPage(new URL(this.getServerRoot() + query), object == null ? "" : object);
                 con = br.getConnection();
             }
-            System.out.println(con);
+            // System.out.println(con);
             if (con != null && con.getResponseCode() > 0 && con.getResponseCode() != 200) { throw new ExceptionResponse(ret, con.getResponseCode()); }
             return ret;
         } catch (final ExceptionResponse e) {

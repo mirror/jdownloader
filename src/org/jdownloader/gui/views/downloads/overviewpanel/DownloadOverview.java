@@ -4,7 +4,6 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.HierarchyEvent;
 import java.awt.event.HierarchyListener;
-import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.swing.Box;
@@ -21,7 +20,6 @@ import jd.controlling.downloadcontroller.DownloadController;
 import jd.controlling.downloadcontroller.DownloadControllerEvent;
 import jd.controlling.downloadcontroller.DownloadControllerListener;
 import jd.controlling.downloadcontroller.DownloadWatchDog;
-import jd.controlling.packagecontroller.AbstractNode;
 import jd.gui.swing.jdgui.JDGui;
 import jd.gui.swing.jdgui.JDGui.Panels;
 import jd.gui.swing.jdgui.interfaces.View;
@@ -29,8 +27,6 @@ import jd.gui.swing.jdgui.menu.ChunksEditor;
 import jd.gui.swing.jdgui.menu.ParalellDownloadsEditor;
 import jd.gui.swing.jdgui.menu.ParallelDownloadsPerHostEditor;
 import jd.gui.swing.jdgui.menu.SpeedlimitEditor;
-import jd.plugins.DownloadLink;
-import jd.plugins.FilePackage;
 
 import org.appwork.controlling.StateEvent;
 import org.appwork.controlling.StateEventListener;
@@ -45,7 +41,6 @@ import org.jdownloader.controlling.AggregatedNumbers;
 import org.jdownloader.gui.event.GUIEventSender;
 import org.jdownloader.gui.event.GUIListener;
 import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.downloads.DownloadsView;
 import org.jdownloader.gui.views.downloads.table.DownloadsTable;
 import org.jdownloader.gui.views.downloads.table.DownloadsTableModel;
@@ -214,13 +209,14 @@ public class DownloadOverview extends MigPanel implements DownloadControllerList
                         updating.set(false);
                         return null;
                     }
-                    final AggregatedNumbers total = CFG_GUI.OVERVIEW_PANEL_TOTAL_INFO_VISIBLE.isEnabled() ? new AggregatedNumbers(new SelectionInfo<FilePackage, DownloadLink>(null, DownloadController.getInstance().getAllChildren(), null, null, null, null)) : null;
-                    final AggregatedNumbers filtered = (CFG_GUI.OVERVIEW_PANEL_VISIBLE_ONLY_INFO_VISIBLE.isEnabled() || CFG_GUI.OVERVIEW_PANEL_SMART_INFO_VISIBLE.isEnabled()) ? new AggregatedNumbers(new SelectionInfo<FilePackage, DownloadLink>(null, DownloadsTableModel.getInstance().getAllChildrenNodes(), null, null, null, DownloadsTableModel.getInstance().getTable())) : null;
+
+                    final AggregatedNumbers total = CFG_GUI.OVERVIEW_PANEL_TOTAL_INFO_VISIBLE.isEnabled() ? new AggregatedNumbers(DownloadsTableModel.getInstance().getTable().getSelectionInfo(false, false)) : null;
+                    final AggregatedNumbers filtered = (CFG_GUI.OVERVIEW_PANEL_VISIBLE_ONLY_INFO_VISIBLE.isEnabled() || CFG_GUI.OVERVIEW_PANEL_SMART_INFO_VISIBLE.isEnabled()) ? new AggregatedNumbers(DownloadsTableModel.getInstance().getTable().getSelectionInfo(false, true)) : null;
                     final AggregatedNumbers selected;
 
                     if ((CFG_GUI.OVERVIEW_PANEL_SELECTED_INFO_VISIBLE.isEnabled() || CFG_GUI.OVERVIEW_PANEL_SMART_INFO_VISIBLE.isEnabled())) {
-                        List<AbstractNode> selectedObjects = DownloadsTableModel.getInstance().getSelectedObjects();
-                        selected = new AggregatedNumbers(new SelectionInfo<FilePackage, DownloadLink>(null, selectedObjects, null, null, null, DownloadsTableModel.getInstance().getTable()));
+
+                        selected = new AggregatedNumbers(DownloadsTableModel.getInstance().getTable().getSelectionInfo(true, true));
                     } else {
                         selected = null;
                     }

@@ -284,7 +284,7 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
 
             for (Archive archive : archives) {
                 if (archive.contains(link)) {
-                    logger.info("Found Archive: " + archive);
+                    // logger.info("Found Archive: " + archive);
                     return archive;
 
                 }
@@ -298,9 +298,9 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
         Archive archive = extrctor.buildArchive(link);
         if (archive != null) {
             link.onArchiveFinished(archive);
-            logger.info("Created Archive: " + archive);
+            // logger.info("Created Archive: " + archive);
             // Log.L.info("Created Archive: " + archive);
-            logger.info("Files: " + archive.getArchiveFiles());
+            // logger.info("Files: " + archive.getArchiveFiles());
         }
         return archive;
     }

@@ -37,8 +37,8 @@ public class DownloadTableContextMenuFactory {
 
     public JPopupMenu create(DownloadsTable downloadsTable, JPopupMenu popup, AbstractNode contextObject, java.util.List<AbstractNode> selection, ExtColumn<AbstractNode> column, MouseEvent ev) {
 
-        SelectionInfo<FilePackage, DownloadLink> si = new SelectionInfo<FilePackage, DownloadLink>(contextObject, selection, ev, null, null, downloadsTable);
-        si.setContextColumn(column);
+        SelectionInfo<FilePackage, DownloadLink> si = downloadsTable.getSelectionInfo(true, true).derive(contextObject, ev, null, null, column);
+
         /* Properties */
 
         return manager.build(si);

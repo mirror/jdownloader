@@ -247,7 +247,7 @@ public class DownloadsTable extends PackageControllerTable<FilePackage, Download
                 final Action action = (binding == null) ? null : am.get(binding);
                 if (action != null && action instanceof AbstractSelectionContextAction) {
 
-                    ((AbstractSelectionContextAction) action).setSelection(getModel().createSelectionInfo());
+                    ((AbstractSelectionContextAction) action).setSelection(getSelectionInfo(true, true));
 
                     if (!action.isEnabled()) {
 

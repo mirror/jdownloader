@@ -127,7 +127,8 @@ public class ConfirmAllContextmenuAction extends AbstractSelectionContextAction<
     }
 
     public void setSelection(SelectionInfo<CrawledPackage, CrawledLink> selection) {
-        SelectionInfo<CrawledPackage, CrawledLink> sel = new SelectionInfo<CrawledPackage, CrawledLink>(null, LinkGrabberTableModel.getInstance().getAllChildrenNodes(), null, null, null, LinkGrabberTableModel.getInstance().getTable());
+
+        SelectionInfo<CrawledPackage, CrawledLink> sel = LinkGrabberTableModel.getInstance().getTable().getSelectionInfo(false, true);
         super.setSelection(sel);
         if (!isItemVisibleForEmptySelection() && !(selection == null || selection.isEmpty())) {
             setVisible(false);

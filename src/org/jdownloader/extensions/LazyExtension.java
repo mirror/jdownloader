@@ -37,17 +37,14 @@ public class LazyExtension implements Storable, CheckBoxedEntry {
     private boolean                        quickToggle;
 
     public static LazyExtension create(String id, Class<AbstractExtension<?, ?>> cls) throws StartException, InstantiationException, IllegalAccessException, IOException {
-        System.out.println(id);
 
         LazyExtension ret = new LazyExtension();
         long t = System.currentTimeMillis();
         AbstractExtension<?, ?> plg = (AbstractExtension<?, ?>) cls.newInstance();
-        System.out.println("New Instance: " + (System.currentTimeMillis() - t));
 
         ret.description = plg.getDescription();
         FileOutputStream fos = null;
 
-        System.out.println("Icon Update: " + (System.currentTimeMillis() - t));
         ret.iconPath = plg.getIconKey();
         ret.linuxRunnable = plg.isLinuxRunnable();
         ret.macRunnable = plg.isMacRunnable();
@@ -62,9 +59,7 @@ public class LazyExtension implements Storable, CheckBoxedEntry {
 
         ret.quickToggle = plg.isQuickToggleEnabled();
 
-        System.out.println("Setup: " + (System.currentTimeMillis() - t));
         plg.init();
-        System.out.println("Init: " + (System.currentTimeMillis() - t));
 
         //
         //

@@ -31,6 +31,7 @@ import org.appwork.utils.logging.Log;
 import org.appwork.utils.os.CrossSystem;
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.components.packagetable.PackageControllerTableModel.TOGGLEMODE;
 import org.jdownloader.gui.views.components.packagetable.actions.SortPackagesDownloadOrdnerOnColumn;
 import org.jdownloader.images.NewTheme;
@@ -85,6 +86,28 @@ public abstract class PackageControllerTable<ParentType extends AbstractPackageN
 
             });
         }
+
+    }
+
+    public SelectionInfo<ParentType, ChildrenType> getSelectionInfo(boolean selectionOnly, boolean filtered) {
+        if (selectionOnly) {
+            ListSelectionModel sm = getSelectionModel();
+            if (sm.isSelectionEmpty()) return new SelectionInfo<ParentType, ChildrenType>(null, null, null, null, null, this);
+            if (!filtered) { throw new WTFException("Not implemented");
+
+            }
+
+            return new SelectionInfo<ParentType, ChildrenType>(getModel().getObjectbyRow(sm.getLeadSelectionIndex()), getModel().getSelectedObjects(), null, null, null, this);
+
+        } else {
+            if (filtered) {
+
+                return new SelectionInfo<ParentType, ChildrenType>(null, getModel().getController().getAllChildren(), null, null, null, this);
+            } else {
+                return new SelectionInfo<ParentType, ChildrenType>(null, getModel().getElements(), null, null, null, this);
+            }
+        }
+
     }
 
     @SuppressWarnings("unchecked")

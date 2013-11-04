@@ -15,8 +15,8 @@ import org.jdownloader.gui.views.linkgrabber.LinkGrabberTable;
 
 public class ContextMenuFactory {
 
-    private LinkGrabberTable              table;
-    private LinkGrabberPanel              panel;
+    private LinkGrabberTable                   table;
+    private LinkGrabberPanel                   panel;
     private MenuManagerLinkgrabberTableContext manager;
 
     public ContextMenuFactory(LinkGrabberTable linkGrabberTable, LinkGrabberPanel linkGrabberPanel) {
@@ -27,8 +27,7 @@ public class ContextMenuFactory {
 
     public JPopupMenu createPopup(AbstractNode context, java.util.List<AbstractNode> selection, ExtColumn<AbstractNode> column, MouseEvent event) {
 
-        SelectionInfo<CrawledPackage, CrawledLink> si = new SelectionInfo<CrawledPackage, CrawledLink>(context, selection, event, null, null, table);
-        si.setContextColumn(column);
+        SelectionInfo<CrawledPackage, CrawledLink> si = table.getSelectionInfo(true, true).derive(context, event, null, null, column);
 
         return manager.build(si);
 

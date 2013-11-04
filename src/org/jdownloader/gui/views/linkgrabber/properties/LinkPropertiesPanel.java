@@ -27,6 +27,7 @@ import jd.controlling.linkcollector.LinkCollectorEvent;
 import jd.controlling.linkcollector.LinkCollectorListener;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledPackage;
+import jd.controlling.packagecontroller.AbstractNode;
 import jd.gui.swing.jdgui.views.settings.panels.packagizer.VariableAction;
 import net.miginfocom.swing.MigLayout;
 
@@ -82,6 +83,7 @@ public class LinkPropertiesPanel extends MigPanel implements LinkCollectorListen
     protected ExtTextField                        filename;
     private ExtTextField                          downloadpassword;
     private ExtTextField                          checksum;
+    private DelayedRunnable                       updateDelayer;
 
     public LinkPropertiesPanel() {
         super("ins 0,debug", "[grow,fill]", "[grow,fill]");
@@ -105,7 +107,19 @@ public class LinkPropertiesPanel extends MigPanel implements LinkCollectorListen
             }
 
         };
+        updateDelayer = new DelayedRunnable(1000l, 2000l) {
 
+            @Override
+            public String getID() {
+                return "updateDelayer";
+            }
+
+            @Override
+            public void delayedrun() {
+
+            }
+
+        };
         destination = new PathChooser("ADDLinks", true) {
             protected void onChanged(ExtTextField txt2) {
 
@@ -160,7 +174,7 @@ public class LinkPropertiesPanel extends MigPanel implements LinkCollectorListen
                         return o1.getName().compareTo(o2.getName());
                     }
                 });
-                System.out.println(found);
+
             }
 
             @Override
@@ -598,16 +612,18 @@ public class LinkPropertiesPanel extends MigPanel implements LinkCollectorListen
     protected Archive     currentArchive;
     protected boolean     setting;
     protected CrawledLink currentLink;
+    private AbstractNode  current;
 
     public void update(final CrawledPackage pkg) {
         if (!isVisible()) return;
         if (saving) return;
-
+        if (current == pkg) return;
+        current = pkg;
         new EDTRunner() {
 
             @Override
             protected void runInEDT() {
-                System.out.println("LOAD");
+
                 setting = true;
                 try {
                     updateInEDT(null, pkg);
@@ -650,12 +666,14 @@ public class LinkPropertiesPanel extends MigPanel implements LinkCollectorListen
     public void update(final CrawledLink link) {
         if (!isVisible()) return;
         if (saving) return;
+        if (current == link) return;
+        current = link;
         final CrawledPackage pkg = link.getParentNode();
         new EDTRunner() {
 
             @Override
             protected void runInEDT() {
-                System.out.println("LOAD");
+
                 setting = true;
                 try {
                     updateInEDT(link, pkg);

@@ -64,7 +64,7 @@ public class DownloadsPanel extends SwitchPanel implements DownloadControllerLis
         bottomBar = new CustomizeableActionBar(MenuManagerDownloadTabBottomBar.getInstance()) {
             protected SelectionInfo<?, ?> getCurrentSelection() {
 
-                return tableModel.createSelectionInfo();
+                return table.getSelectionInfo(true, true);
 
             }
 

@@ -266,7 +266,7 @@ public abstract class ContextMenuManager<PackageType extends AbstractPackageNode
 
             }
             ret.validate();
-            System.out.println("Set menu Data");
+
             menuData = ret;
             System.out.println(System.currentTimeMillis() - t);
             return ret;

@@ -33,6 +33,7 @@ public class DeleteDisabledSelectedLinks extends AbstractDeleteSelectionFromDown
                 nodesToDelete.add(dl);
             }
         }
+
         DownloadTabActionUtils.deleteLinksRequest(new SelectionInfo<FilePackage, DownloadLink>(null, nodesToDelete, null, null, e, DownloadsTableModel.getInstance().getTable()), _GUI._.DeleteDisabledLinksFromListAndDiskAction_actionPerformed_object_());
     }
 
