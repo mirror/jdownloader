@@ -76,6 +76,7 @@ import org.appwork.uio.UIOManager;
 import org.appwork.utils.Application;
 import org.appwork.utils.IO;
 import org.appwork.utils.IOErrorHandler;
+import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.event.DefaultEventListener;
 import org.appwork.utils.event.queue.QueueAction;
@@ -83,6 +84,7 @@ import org.appwork.utils.logging.Log;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.net.httpconnection.HTTPProxy;
 import org.appwork.utils.os.CrossSystem;
+import org.appwork.utils.processes.ProcessBuilderFactory;
 import org.appwork.utils.swing.EDTHelper;
 import org.appwork.utils.swing.dialog.ConfirmDialog;
 import org.appwork.utils.swing.dialog.Dialog;
@@ -153,7 +155,31 @@ public class SecondLevelLaunch {
 
         // Use ScreenMenu in every LAF
         System.setProperty("apple.laf.useScreenMenuBar", "true");
+        try {
+            File file = Application.getResource("../../Info.plist");
+            // file = new File("/Users/<username>/Desktop/JDownloader.app/Contents/Info.plist");
+            if (file.exists()) {
+                String cFBundleIdentifier;
 
+                cFBundleIdentifier = new Regex(IO.readFileToString(file), "<key>CFBundleIdentifier</key>.*?<string>(.+?)</string>").getMatch(0);
+                LOG.info("MAC Bundle Identifier: " + cFBundleIdentifier);
+                if (StringUtils.isNotEmpty(cFBundleIdentifier)) {
+                    ProcessBuilder p = ProcessBuilderFactory.create("defaults", "write", cFBundleIdentifier, "NSAppSleepDisabled", "-bool", "YES");
+
+                    Process process = p.start();
+                    String ret = IO.readInputStreamToString(process.getInputStream());
+                    LOG.info("Disable App Nap");
+                    p = ProcessBuilderFactory.create("defaults", "read", cFBundleIdentifier);
+
+                    process = p.start();
+                    ret = IO.readInputStreamToString(process.getInputStream());
+                    LOG.info("App Defaults: \r\n" + ret);
+                }
+
+            }
+        } catch (Exception e) {
+            LOG.log(e);
+        }
         // native Mac just if User Choose Aqua as Skin
         // if (LookAndFeelController.getInstance().getPlaf().getName().equals("Apple Aqua")) {
         // // Mac Java from 1.3
