@@ -1,11 +1,9 @@
 package org.jdownloader.gui.toolbar.action;
 
-import java.awt.Toolkit;
-import java.awt.event.KeyEvent;
-
 import jd.gui.swing.jdgui.interfaces.View;
 
 import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.gui.views.components.packagetable.PackageControllerTable;
 import org.jdownloader.gui.views.downloads.DownloadsView;
 import org.jdownloader.gui.views.downloads.table.DownloadsTable;
 import org.jdownloader.gui.views.downloads.table.DownloadsTableModel;
@@ -18,7 +16,8 @@ public class MoveUpAction extends AbstractMoveAction {
     public MoveUpAction() {
         setName(_GUI._.MoveUpAction_MoveUpAction());
         setIconKey("go-up");
-        setAccelerator(KeyEvent.VK_UP, Toolkit.getDefaultToolkit().getMenuShortcutKeyMask());
+
+        setAccelerator(PackageControllerTable.KEY_STROKE_ALT_UP);
 
     }
 

@@ -88,7 +88,7 @@
 	<classpathentry kind="lib" path="ressourcen/libs/sevenzipjbindingMac.jar"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/MyJDownloaderClient"/>
 	<classpathentry kind="lib" path="ressourcen/libs/jna_platform.jar"/>
-	<classpathentry kind="lib" path="ressourcen/libs/UPNP/cling-core.jar">
+	<classpathentry kind="lib" path="ressourcen/libs/UPNP/cling-core.jar" sourcepath="dev/cling-core-2.0-SNAPSHOT-sources.jar">
 		<attributes>
 			<attribute name="source_encoding" value="UTF-8"/>
 		</attributes>

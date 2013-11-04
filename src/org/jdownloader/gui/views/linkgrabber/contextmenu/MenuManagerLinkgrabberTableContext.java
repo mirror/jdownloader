@@ -99,7 +99,7 @@ public class MenuManagerLinkgrabberTableContext extends ContextMenuManager<Crawl
         mr.add(EnabledAction.class);
 
         mr.add(new SeperatorData());
-        mr.add(new ActionData(OpenUrlAction.class));
+        mr.add(new ActionData(OpenInBrowserAction.class));
         mr.add(new SeperatorData());
 
         mr.add(createOthersMenu());

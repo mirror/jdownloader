@@ -1,11 +1,9 @@
 package org.jdownloader.gui.toolbar.action;
 
-import java.awt.Toolkit;
-import java.awt.event.KeyEvent;
-
 import jd.gui.swing.jdgui.interfaces.View;
 
 import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.gui.views.components.packagetable.PackageControllerTable;
 import org.jdownloader.gui.views.downloads.DownloadsView;
 import org.jdownloader.gui.views.downloads.table.DownloadsTable;
 import org.jdownloader.gui.views.downloads.table.DownloadsTableModel;
@@ -19,7 +17,7 @@ public class MoveDownAction extends AbstractMoveAction {
         setName(_GUI._.MoveDownAction_MoveDownAction());
         setIconKey("go-down");
 
-        setAccelerator(KeyEvent.VK_DOWN, Toolkit.getDefaultToolkit().getMenuShortcutKeyMask());
+        setAccelerator(PackageControllerTable.KEY_STROKE_ALT_DOWN);
 
     }
 
