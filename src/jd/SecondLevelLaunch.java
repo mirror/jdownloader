@@ -155,31 +155,46 @@ public class SecondLevelLaunch {
 
         // Use ScreenMenu in every LAF
         System.setProperty("apple.laf.useScreenMenuBar", "true");
-        try {
-            File file = Application.getResource("../../Info.plist");
-            // file = new File("/Users/<username>/Desktop/JDownloader.app/Contents/Info.plist");
-            if (file.exists()) {
-                String cFBundleIdentifier;
 
-                cFBundleIdentifier = new Regex(IO.readFileToString(file), "<key>CFBundleIdentifier</key>.*?<string>(.+?)</string>").getMatch(0);
-                LOG.info("MAC Bundle Identifier: " + cFBundleIdentifier);
-                if (StringUtils.isNotEmpty(cFBundleIdentifier)) {
-                    ProcessBuilder p = ProcessBuilderFactory.create("defaults", "write", cFBundleIdentifier, "NSAppSleepDisabled", "-bool", "YES");
-
-                    Process process = p.start();
-                    String ret = IO.readInputStreamToString(process.getInputStream());
-                    LOG.info("Disable App Nap");
-                    p = ProcessBuilderFactory.create("defaults", "read", cFBundleIdentifier);
-
-                    process = p.start();
-                    ret = IO.readInputStreamToString(process.getInputStream());
-                    LOG.info("App Defaults: \r\n" + ret);
+        new Thread() {
+            public void run() {
+                try {
+                    File file = Application.getResource("../../Info.plist");
+                    if (file.exists()) {
+                        String cFBundleIdentifier = new Regex(IO.readFileToString(file), "<key>CFBundleIdentifier</key>.*?<string>(.+?)</string>").getMatch(0);
+                        LOG.info("MAC Bundle Identifier: " + cFBundleIdentifier);
+                        if (StringUtils.isNotEmpty(cFBundleIdentifier)) {
+                            ProcessBuilder p = ProcessBuilderFactory.create("defaults", "write", cFBundleIdentifier, "NSAppSleepDisabled", "-bool", "YES");
+                            Process process = null;
+                            try {
+                                process = p.start();
+                                String ret = IO.readInputStreamToString(process.getInputStream());
+                                LOG.info("Disable App Nap");
+                            } finally {
+                                try {
+                                    if (process != null) process.destroy();
+                                } catch (final Throwable e) {
+                                }
+                            }
+                            p = ProcessBuilderFactory.create("defaults", "read", cFBundleIdentifier);
+                            try {
+                                process = p.start();
+                                String ret = IO.readInputStreamToString(process.getInputStream());
+                                LOG.info("App Defaults: \r\n" + ret);
+                            } finally {
+                                try {
+                                    if (process != null) process.destroy();
+                                } catch (final Throwable e) {
+                                }
+                            }
+                        }
+                    }
+                } catch (Throwable e) {
+                    LOG.log(e);
                 }
+            };
+        }.start();
 
-            }
-        } catch (Exception e) {
-            LOG.log(e);
-        }
         // native Mac just if User Choose Aqua as Skin
         // if (LookAndFeelController.getInstance().getPlaf().getName().equals("Apple Aqua")) {
         // // Mac Java from 1.3
@@ -311,7 +326,7 @@ public class SecondLevelLaunch {
             IO.setErrorHandler(null);
             if (maxHeap > 0 && maxHeap <= 100 * 1024 * 1024) {
                 SecondLevelLaunch.LOG.warning("WARNING: MaxMemory detected! MaxMemory=" + maxHeap + " bytes");
-                if (CrossSystem.isWindows()) {
+                if (CrossSystem.isWindows() || CrossSystem.isLinux()) {
                     java.lang.management.RuntimeMXBean runtimeMxBean = java.lang.management.ManagementFactory.getRuntimeMXBean();
                     List<String> arguments = runtimeMxBean.getInputArguments();
                     boolean xmxArgFound = false;
@@ -353,7 +368,7 @@ public class SecondLevelLaunch {
                                 if (vmOption.renameTo(backup)) {
                                     StringBuilder sb = new StringBuilder();
                                     sb.append("-Xmx256m\r\n");
-                                    sb.append("-Dsun.java2d.d3d=false\r\n");
+                                    if (CrossSystem.isWindows()) sb.append("-Dsun.java2d.d3d=false\r\n");
                                     if (vmOption.exists() == false || vmOption.delete()) IO.writeStringToFile(vmOption, sb.toString());
                                 }
                             }
@@ -364,11 +379,15 @@ public class SecondLevelLaunch {
                         if (StringUtils.isEmpty(launcher)) launcher = System.getProperty("exe4j.moduleName");
                         SecondLevelLaunch.LOG.info("Create .vmoptions for " + launcher + " because the exe launcher contains too low Xmx VM arg!");
                         if (StringUtils.isNotEmpty(launcher)) {
-                            launcher = launcher.replaceFirst("\\.exe$", ".vmoptions");
+                            if (CrossSystem.isWindows()) {
+                                launcher = launcher.replaceFirst("\\.exe$", ".vmoptions");
+                            } else {
+                                launcher = launcher + ".vmoptions";
+                            }
                             File vmOption = new File(launcher);
                             StringBuilder sb = new StringBuilder();
                             sb.append("-Xmx256m\r\n");
-                            sb.append("-Dsun.java2d.d3d=false\r\n");
+                            if (CrossSystem.isWindows()) sb.append("-Dsun.java2d.d3d=false\r\n");
                             if (vmOption.exists() == false || vmOption.delete()) IO.writeStringToFile(vmOption, sb.toString());
                         }
                     }

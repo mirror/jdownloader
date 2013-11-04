@@ -789,12 +789,11 @@ public class PackagizerFilterRuleDialog extends ConditionDialog<PackagizerRule> 
 
     private static final HashMap<PackagizerRule, PackagizerFilterRuleDialog> ACTIVE_DIALOGS = new HashMap<PackagizerRule, PackagizerFilterRuleDialog>();
 
-    public static void showDialog(final PackagizerRule rule) throws DialogClosedException, DialogCanceledException {
+    public static void showDialog(final PackagizerRule rule, final Runnable doAfterShow) {
         new Thread("ShowRuleDialogThread:" + rule) {
             public void run() {
                 PackagizerFilterRuleDialog d = null;
                 synchronized (ACTIVE_DIALOGS) {
-
                     d = ACTIVE_DIALOGS.get(rule);
                     if (d == null || !d.isVisible()) {
                         d = new PackagizerFilterRuleDialog(rule);
@@ -804,15 +803,12 @@ public class PackagizerFilterRuleDialog extends ConditionDialog<PackagizerRule> 
                 if (d.isVisible()) {
                     WindowManager.getInstance().setZState(d.getDialog(), FrameState.TO_FRONT);
                 } else {
-                    UIOManager.I().show(null, d);
-                    // try {
-                    // d.throwCloseExceptions();
-                    // } catch (DialogClosedException e) {
-                    // e.printStackTrace();
-                    // } catch (DialogCanceledException e) {
-                    // e.printStackTrace();
-                    // }
-
+                    try {
+                        CloseReason closeReason = UIOManager.I().show(null, d).getCloseReason();
+                        if (CloseReason.OK.equals(closeReason) && doAfterShow != null) doAfterShow.run();
+                    } catch (final Throwable e) {
+                        e.printStackTrace();
+                    }
                 }
             }
         }.start();

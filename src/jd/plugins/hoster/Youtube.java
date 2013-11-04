@@ -371,9 +371,17 @@ public class Youtube extends PluginForHost {
                     }
 
                     stepform = br.getForm(0);
-                    stepform.remove("nojssubmit");
-                    br.submitForm(stepform);
-                    br.getPage(preferHTTPS("http://www.youtube.com/signin?action_handle_signin=true"));
+                    if (stepform != null) {
+                        stepform.remove("nojssubmit");
+                        br.submitForm(stepform);
+                        br.getPage(preferHTTPS("http://www.youtube.com/signin?action_handle_signin=true"));
+                    } else {
+                        String url = br.getRegex("\"(https?://www\\.youtube\\.com/signin\\?action_handle_signin.*?)\"").getMatch(0);
+                        if (url != null) {
+                            url = unescape(url);
+                            br.getPage(url);
+                        }
+                    }
                 } else if (br.containsHTML("class=\"gaia captchahtml desc\"")) {
                     if (true) {
                         account.setValid(false);

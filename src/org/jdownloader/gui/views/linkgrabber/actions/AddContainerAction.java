@@ -49,14 +49,11 @@ public class AddContainerAction extends AppAction implements CachableInterface {
             if (filterFiles == null) return;
 
             final StringBuilder sb = new StringBuilder();
-            final StringBuilder list = new StringBuilder();
             for (File r : filterFiles) {
                 if (sb.length() > 0) {
                     sb.append("\r\n");
-                    list.append("\r\n");
                 }
                 sb.append("file://");
-                list.append(r.getAbsolutePath());
                 sb.append(r.getAbsolutePath());
             }
             LinkCollector.getInstance().addCrawlerJob(new LinkCollectingJob(LinkOrigin.ADD_CONTAINER_ACTION, sb.toString()));
