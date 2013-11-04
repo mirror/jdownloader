@@ -97,7 +97,7 @@ public class YourUploadCom extends PluginForHost {
         if (filename.contains(".")) ext = filename.substring(filename.lastIndexOf("."));
         if (ext != null && ext.length() > 5) ext = null;
         if (br.containsHTML("<td>video/mp4</td>") && ext == null) ext = ".mp4";
-        if (ext != null) {
+        if (ext != null && !filename.endsWith(ext)) {
             link.setFinalFileName(filename + ext);
         } else {
             link.setName(filename);
