@@ -104,10 +104,11 @@ public class MxCloudCom extends PluginForDecrypt {
         br.getPage(playerUrl);
         String playInfoUrl = br.getRegex("playinfo: ?\'(.*?)\'").getMatch(0);
         String playModuleSwfUrl = br.getRegex("playerModuleSwfUrl: ?\'(.*?)\'").getMatch(0);
-        if (playModuleSwfUrl == null) { return null; }
+        if (playInfoUrl == null || playModuleSwfUrl == null) return null;
         if (!playModuleSwfUrl.startsWith("http:")) playModuleSwfUrl = "http:" + playModuleSwfUrl;
+        if (!playInfoUrl.startsWith("http:")) playInfoUrl = "http:" + playInfoUrl;
 
-        playInfoUrl = playInfoUrl + "?key=" + playResource + "&module=" + playModuleSwfUrl + "&page=" + playerUrl;
+        playInfoUrl += "?key=" + playResource + "&module=" + playModuleSwfUrl + "&page=" + playerUrl;
 
         // TODO: Check this
         // String playInfoUrl = "http://www.mixcloud.com/player/play_info/?key="
@@ -157,8 +158,7 @@ public class MxCloudCom extends PluginForDecrypt {
         String result = null;
         try {
             /*
-             * CHECK: we should always use new String (bytes,charset) to avoid
-             * issues with system charset and utf-8
+             * CHECK: we should always use new String (bytes,charset) to avoid issues with system charset and utf-8
              */
             result = new String(AESdecrypt(enc, key, iv)).substring(16);
         } catch (final InvalidKeyException e) {
