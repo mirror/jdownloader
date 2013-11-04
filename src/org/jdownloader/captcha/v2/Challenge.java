@@ -4,6 +4,7 @@ import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 
 import jd.controlling.captcha.SkipRequest;
+import jd.controlling.downloadcontroller.PrePluginCheckDummyChallenge;
 import jd.plugins.DownloadLink;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForHost;
@@ -90,17 +91,21 @@ public abstract class Challenge<T> {
     public static String getHost(Challenge<?> challenge) {
         if (challenge instanceof ImageCaptchaChallenge) { return ((ImageCaptchaChallenge) challenge).getPlugin().getHost(); }
         if (challenge instanceof ClickCaptchaChallenge) { return ((ClickCaptchaChallenge) challenge).getPlugin().getHost(); }
+        if (challenge instanceof PrePluginCheckDummyChallenge) { return ((PrePluginCheckDummyChallenge) challenge).getCandidate().getLink().getHost(); }
         return null;
     }
 
     public static DownloadLink getDownloadLink(Challenge<?> challenge) {
+        if (challenge instanceof PrePluginCheckDummyChallenge) { return ((PrePluginCheckDummyChallenge) challenge).getCandidate().getLink(); }
         Plugin plugin = getPlugin(challenge);
         if (plugin == null) return null;
         if (plugin instanceof PluginForHost) { return ((PluginForHost) plugin).getDownloadLink(); }
+
         return null;
     }
 
     public static DomainInfo getDomainInfo(Challenge<?> challenge) {
+        if (challenge instanceof PrePluginCheckDummyChallenge) { return ((PrePluginCheckDummyChallenge) challenge).getCandidate().getLink().getDomainInfo(); }
         Plugin plugin = getPlugin(challenge);
         if (plugin == null) throw new WTFException("no plugin for this challenge!?");
         DomainInfo ret = null;
@@ -116,6 +121,7 @@ public abstract class Challenge<T> {
     private static Plugin getPlugin(Challenge<?> challenge) {
         if (challenge instanceof ImageCaptchaChallenge) { return ((ImageCaptchaChallenge) challenge).getPlugin(); }
         if (challenge instanceof ClickCaptchaChallenge) { return ((ClickCaptchaChallenge) challenge).getPlugin(); }
+        if (challenge instanceof PrePluginCheckDummyChallenge) { return ((PrePluginCheckDummyChallenge) challenge).getCandidate().getCachedAccount().getPlugin(); }
         return null;
     }
 }

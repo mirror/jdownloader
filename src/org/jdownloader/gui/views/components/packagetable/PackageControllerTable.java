@@ -100,7 +100,7 @@ public abstract class PackageControllerTable<ParentType extends AbstractPackageN
             return new SelectionInfo<ParentType, ChildrenType>(getModel().getObjectbyRow(sm.getLeadSelectionIndex()), getModel().getSelectedObjects(), null, null, null, this);
 
         } else {
-            if (filtered) {
+            if (!filtered) {
 
                 return new SelectionInfo<ParentType, ChildrenType>(null, getModel().getController().getAllChildren(), null, null, null, this);
             } else {

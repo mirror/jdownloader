@@ -26,7 +26,7 @@ public class CrawlerBlackListEntry implements BlacklistEntry {
             Plugin plugin = ((ImageCaptchaChallenge) c).getPlugin();
             if (plugin instanceof PluginForDecrypt) { return ((PluginForDecrypt) plugin).getCrawler() == crawler; }
         }
-        return true;
+        return false;
     }
 
 }

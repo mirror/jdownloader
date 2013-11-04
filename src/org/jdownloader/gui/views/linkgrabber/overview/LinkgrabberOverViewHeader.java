@@ -31,7 +31,7 @@ public class LinkgrabberOverViewHeader extends MigPanel {
     private ExtButton options;
 
     public LinkgrabberOverViewHeader() {
-        super("ins 0 0 1 0", "[]2[][][grow,fill][]0", "[grow,fill]");
+        super("ins 0 0 1 0,debug", "[]2[][grow,fill][][]0", "[grow,fill]");
 
         // setBackground(Color.RED);
         // setOpaque(true);
@@ -72,8 +72,9 @@ public class LinkgrabberOverViewHeader extends MigPanel {
             }
         });
         options.setRolloverEffectEnabled(true);
-        add(options, "height 17!,width 24!");
         add(Box.createHorizontalGlue());
+        add(options, "height 17!,width 24!");
+
         setOpaque(true);
         SwingUtils.setOpaque(lbl, false);
         setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, (LAFOptions.getInstance().getColorForPanelHeaderLine())));

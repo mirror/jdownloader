@@ -86,19 +86,11 @@ public class DownloadLinkCandidateSelector {
 
     public DownloadLinkCandidateSelector(DownloadSession session) {
         this.session = session;
-        avoidCaptchas = session.isAvoidCaptchas();
+
     }
 
     public int getMaxNumberOfDownloadLinkCandidatesResults(DownloadLinkCandidate candidate) {
         return -1;
-    }
-
-    public boolean isAvoidCaptchas() {
-        return avoidCaptchas;
-    }
-
-    public void setAvoidCaptchas(boolean avoidCaptchas) {
-        this.avoidCaptchas = avoidCaptchas;
     }
 
     public boolean isDownloadLinkCandidateAllowed(DownloadLinkCandidate candidate) {
@@ -244,7 +236,6 @@ public class DownloadLinkCandidateSelector {
         return ret;
     }
 
-    private boolean avoidCaptchas = false;
-    private boolean forcedOnly    = false;
+    private boolean forcedOnly = false;
 
 }

@@ -77,7 +77,6 @@ public class DownloadSession {
     private final NullsafeAtomicReference<Object> stopMark                      = new NullsafeAtomicReference<Object>(STOPMARK.NONE);
     private final AtomicBoolean                   useAccounts                   = new AtomicBoolean(true);
     private final AtomicBoolean                   mirrorManagement              = new AtomicBoolean(true);
-    private final AtomicBoolean                   avoidCaptchas                 = new AtomicBoolean(false);
 
     public boolean isCandidatesRefreshRequired() {
         return refreshCandidates.get();
@@ -109,14 +108,6 @@ public class DownloadSession {
         } else {
             maxConcurrentDownloadsPerHost.set(max);
         }
-    }
-
-    public boolean isAvoidCaptchas() {
-        return avoidCaptchas.get();
-    }
-
-    public void setAvoidCaptchas(boolean b) {
-        avoidCaptchas.set(b);
     }
 
     public boolean isForcedOnlyModeEnabled() {
@@ -263,7 +254,6 @@ public class DownloadSession {
             setMaxConcurrentDownloadsPerHost(previousSession.getMaxConcurrentDownloadsPerHost());
             setUseAccountsEnabled(previousSession.isUseAccountsEnabled());
             setMirrorManagementEnabled(previousSession.isMirrorManagementEnabled());
-            setAvoidCaptchas(previousSession.isAvoidCaptchas());
 
         }
     }

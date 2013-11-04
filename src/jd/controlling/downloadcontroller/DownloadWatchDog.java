@@ -101,6 +101,7 @@ import org.appwork.utils.net.httpconnection.HTTPProxy;
 import org.appwork.utils.net.httpconnection.ProxyAuthException;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.swing.dialog.Dialog;
+import org.jdownloader.captcha.blacklist.CaptchaBlackList;
 import org.jdownloader.controlling.DownloadLinkWalker;
 import org.jdownloader.controlling.FileCreationEvent;
 import org.jdownloader.controlling.FileCreationListener;
@@ -121,10 +122,8 @@ import org.jdownloader.plugins.WaitingSkipReason;
 import org.jdownloader.plugins.WaitingSkipReason.CAUSE;
 import org.jdownloader.settings.GeneralSettings;
 import org.jdownloader.settings.IfFileExistsAction;
-import org.jdownloader.settings.SilentModeSettings.CaptchaDuringSilentModeAction;
 import org.jdownloader.settings.staticreferences.CFG_GENERAL;
 import org.jdownloader.settings.staticreferences.CFG_RECONNECT;
-import org.jdownloader.settings.staticreferences.CFG_SILENTMODE;
 import org.jdownloader.translate._JDT;
 import org.jdownloader.updatev2.UpdateController;
 import org.jdownloader.utils.JDFileUtils;
@@ -767,7 +766,8 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                 }
             }
             for (DownloadLinkCandidate candidate : allCandidates) {
-                if (selector.isAvoidCaptchas() && candidate.getCachedAccount().hasCaptcha(candidate.getLink())) {
+
+                if (candidate.getCachedAccount().hasCaptcha(candidate.getLink()) && CaptchaBlackList.getInstance().matches(new PrePluginCheckDummyChallenge(candidate))) {
                     selector.addExcluded(candidate, new DownloadLinkCandidateResult(SkipReason.CAPTCHA));
                 } else {
                     List<ProxyInfo> proxies = null;
@@ -1692,7 +1692,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
         DownloadSession session = getSession();
         DownloadLinkCandidateSelector selector = new DownloadLinkCandidateSelector(session);
         /* avoid captchas or not ? */
-        selector.setAvoidCaptchas(getSession().isAvoidCaptchas() || CaptchaDuringSilentModeAction.SKIP_LINK == CFG_SILENTMODE.CFG.getOnCaptchaDuringSilentModeAction());
+
         finalizeConditionalSkipReasons(session);
         int maxConcurrentNormal = Math.max(1, config.getMaxSimultaneDownloads());
         int maxConcurrentForced = maxConcurrentNormal + Math.max(0, config.getMaxForcedDownloads());
