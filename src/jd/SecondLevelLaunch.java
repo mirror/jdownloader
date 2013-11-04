@@ -189,7 +189,7 @@ public class SecondLevelLaunch {
         }
         if (Application.isOutdatedJavaVersion(true)) {
             try {
-                if (CrossSystem.isMac() && Application.getJavaVersion() == 17005000l) {
+                if (CrossSystem.isMac() && Application.getJavaVersion() >= 17005000l && Application.getJavaVersion() <= 17006000l) {
                     /* TODO: remove me after we've upgraded mac installer */
                     return;
                 }
@@ -248,6 +248,7 @@ public class SecondLevelLaunch {
             final String key = it.toString();
             SecondLevelLaunch.LOG.finer(key + "=" + pr.get(key));
         }
+        SecondLevelLaunch.LOG.info("JavaVersion=" + Application.getJavaVersion());
         long maxHeap = -1;
         try {
             java.lang.management.RuntimeMXBean runtimeMxBean = java.lang.management.ManagementFactory.getRuntimeMXBean();
@@ -349,9 +350,23 @@ public class SecondLevelLaunch {
                     File file = Application.getResource("../../Info.plist");
                     if (file.exists()) {
                         String str = IO.readFileToString(file);
-                        if (str.contains("<string>-Xmx64m</string>")) {
-                            SecondLevelLaunch.LOG.info("Rename " + file + " because it contains too low Xmx VM arg!");
+                        boolean writeChanges = false;
+                        if (Application.getJavaVersion() >= 17005000l && Application.getJavaVersion() <= 17006000l) {
+                            /* in 1.7 update 5, Xms does not work, we need to specify Xmx */
+                            if (str.contains("<string>-Xmx64m</string>")) {
+                                str = str.replace("<string>-Xmx64m</string>", "<string>-Xmx256m</string>");
+                                writeChanges = true;
+                            } else if (str.contains("<string>-Xms64m</string>")) {
+                                str = str.replace("<string>-Xms64m</string>", "<string>-Xmx256m</string>");
+                                writeChanges = true;
+                            }
+                            if (writeChanges) SecondLevelLaunch.LOG.info("Workaround for buggy Java 1.7 update 5");
+                        } else if (str.contains("<string>-Xmx64m</string>")) {
                             str = str.replace("<string>-Xmx64m</string>", "<string>-Xms64m</string>");
+                            writeChanges = true;
+                        }
+                        if (writeChanges) {
+                            SecondLevelLaunch.LOG.info("Modify " + file + " because it contains too low Xmx VM arg!");
                             int i = 1;
                             File backup = new File(file.getCanonicalPath() + ".backup_" + i);
                             while (backup.exists() || i == 10) {
