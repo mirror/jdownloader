@@ -158,17 +158,19 @@ public class CtDiskComFolder extends PluginForDecrypt {
      * 
      * @author raztoki
      * */
-    private boolean getPage(final Browser ibr, final String url) throws Exception {
+    private boolean getPage(Browser ibr, final String url) throws Exception {
         if (ibr == null || url == null) return false;
+        final Browser obr = ibr.cloneBrowser();
         boolean failed = false;
         int repeat = 4;
         for (int i = 0; i <= repeat; i++) {
-            long meep = 0;
-            while (meep == 0)
-                meep = new Random().nextInt(4) * 1371;
             if (failed) {
+                long meep = 0;
+                while (meep == 0)
+                    meep = new Random().nextInt(4) * 1371;
                 Thread.sleep(meep);
                 failed = false;
+                ibr = obr.cloneBrowser();
             }
             try {
                 ibr.getPage(url);
