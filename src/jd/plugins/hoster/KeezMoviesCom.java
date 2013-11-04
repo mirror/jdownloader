@@ -81,11 +81,10 @@ public class KeezMoviesCom extends PluginForHost {
             br.setCookie("http://www.keezmovies.com/", "age_verified", "1");
             br.getPage(downloadLink.getDownloadURL());
             if (br.getRedirectLocation() != null) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
-            if (br.containsHTML(">This video has been removed<")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+            if (br.containsHTML(">This video has been removed<") || br.containsHTML("class=\"removed_video\"")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             filename = br.getRegex("<span class=\"fn\" style=\"display:none\">([^<>\"]*?)</span>").getMatch(0);
-            if (filename == null) {
-                filename = br.getRegex("<title>(.*?) \\- KeezMovies\\.com</title>").getMatch(0);
-            }
+            if (filename == null) filename = br.getRegex("<title>(.*?) \\- KeezMovies\\.com</title>").getMatch(0);
+            if (filename == null) filename = br.getRegex("<h1 class=\"title_video_page\">([^<>\"]*?)</h1>").getMatch(0);
             FLASHVARS = br.getRegex("<param name=\"flashvars\" value=\"(.*?)\"").getMatch(0);
             if (FLASHVARS == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
 
@@ -127,8 +126,7 @@ public class KeezMoviesCom extends PluginForHost {
     }
 
     /**
-     * AES CTR(Counter) Mode for Java ported from AES-CTR-Mode implementation in
-     * JavaScript by Chris Veness
+     * AES CTR(Counter) Mode for Java ported from AES-CTR-Mode implementation in JavaScript by Chris Veness
      * 
      * @see <a
      *      href="http://csrc.nist.gov/publications/nistpubs/800-38a/sp800-38a.pdf">"Recommendation for Block Cipher Modes of Operation - Methods and Techniques"</a>
@@ -140,8 +138,7 @@ public class KeezMoviesCom extends PluginForHost {
         nBits = nBits / 8;
         byte[] data = Base64.decode(cipherText.toCharArray());
         /*
-         * CHECK: we should always use getBytes("UTF-8") or with wanted charset,
-         * never system charset!
+         * CHECK: we should always use getBytes("UTF-8") or with wanted charset, never system charset!
          */
         byte[] k = Arrays.copyOf(key.getBytes(), nBits);
 
@@ -151,8 +148,7 @@ public class KeezMoviesCom extends PluginForHost {
         IvParameterSpec nonce = new IvParameterSpec(nonceBytes);
         cipher.init(Cipher.ENCRYPT_MODE, secretKey, nonce);
         /*
-         * CHECK: we should always use new String (bytes,charset) to avoid
-         * issues with system charset and utf-8
+         * CHECK: we should always use new String (bytes,charset) to avoid issues with system charset and utf-8
          */
         res = new String(cipher.doFinal(data, 8, data.length - 8));
         return res;
@@ -184,8 +180,7 @@ public class KeezMoviesCom extends PluginForHost {
             nBits = nBits / 8;
             byte[] data = Base64.decode(cipherText.toCharArray());
             /*
-             * CHECK: we should always use getBytes("UTF-8") or with wanted
-             * charset, never system charset!
+             * CHECK: we should always use getBytes("UTF-8") or with wanted charset, never system charset!
              */
             byte[] k = Arrays.copyOf(key.getBytes(), nBits);
             /* AES/CTR/NoPadding (SIC == CTR) */
@@ -200,8 +195,7 @@ public class KeezMoviesCom extends PluginForHost {
             int decLength = cipher.processBytes(data, 8, data.length - 8, decrypted, 0);
             cipher.doFinal(decrypted, decLength);
             /*
-             * CHECK: we should always use new String (bytes,charset) to avoid
-             * issues with system charset and utf-8
+             * CHECK: we should always use new String (bytes,charset) to avoid issues with system charset and utf-8
              */
             return new String(decrypted);
         }

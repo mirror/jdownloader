@@ -88,8 +88,6 @@ public class SaveTv extends PluginForHost {
 
     private boolean             FORCE_ORIGINAL_FILENAME                             = false;
 
-    // TODO general: Add setting "ausgefallene Sendungen nicht herunterladen"
-
     public SaveTv(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("https://www.save.tv/stv/s/obj/registration/RegPage1.cfm");
@@ -420,6 +418,7 @@ public class SaveTv extends PluginForHost {
 
     public void login(final Browser br, final Account account, final boolean force) throws Exception {
         this.setBrowserExclusive();
+        prepBrowser(br);
         br.setFollowRedirects(true);
         final boolean useAPI = getPluginConfig().getBooleanProperty(USEAPI);
         if (useAPI) {
@@ -489,7 +488,7 @@ public class SaveTv extends PluginForHost {
         }
     }
 
-    public void prepBrowser(final Browser br) {
+    private void prepBrowser(final Browser br) {
         br.setReadTimeout(3 * 60 * 1000);
         br.setConnectTimeout(3 * 60 * 1000);
     }
@@ -732,8 +731,6 @@ public class SaveTv extends PluginForHost {
                         message += "Sollte es dennoch vorkommen, dass eigene Dateinamen bei bestimmten Links nicht funktionieren,\r\nkönnte es sich um einen Bug handeln.\r\n";
                         message += "\r\n";
                         message += "Falls du Bugs findest oder fragen hast, melde dich gerne jederzeit bei uns: board.jdownloader.org.\r\n";
-                        message += "\r\n";
-                        message += "Uns ist bereits bekannt, dass die Eingabefelder der Einstellungen\r\nteilweise abgeschnitten sind und wir arbeiten daran!\r\n";
                         message += "\r\n";
                         message += "- Das JDownloader Team wünscht weiterhin viel Spaß mit JDownloader und save.tv! -";
                         JOptionPane.showConfirmDialog(jd.gui.swing.jdgui.JDGui.getInstance().getMainFrame(), message, title, JOptionPane.PLAIN_MESSAGE, JOptionPane.INFORMATION_MESSAGE, null);

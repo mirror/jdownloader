@@ -152,8 +152,12 @@ public class SaveTvDecrypter extends PluginForDecrypt {
                         return null;
                     }
                     br.getRequest().setHtmlCode(br.toString().replace("\\", ""));
-                    final String[][] epinfos = br.getRegex("TelecastID=(\\d+)\" class=\"normal\">([^<>\"]*?)</a> \\- ([^<>\"]*?)</td>").getMatches();
-                    if (epinfos == null || epinfos.length == 0) {
+                    String[][] epinfos = br.getRegex("TelecastID=(\\d+)\" class=\"normal\">([^<>\"]*?)</a> \\- ([^<>\"]*?)</td>").getMatches();
+                    if (epinfos == null || epinfos.length == 0) epinfos = br.getRegex("TelecastID=(\\d+)\" class=\"normal\">([^<>\"]*?)</a>").getMatches();
+                    if ((epinfos == null || epinfos.length == 0) && addedlinksnum == 0) {
+                        logger.info("Can't find more links, stopping at page: " + i + " of " + maxPage);
+                        return decryptedLinks;
+                    } else if (epinfos == null || epinfos.length == 0) {
                         logger.warning("Decrypter broken for link: " + parameter);
                         logger.warning("Stopped at page " + i + " of " + maxPage);
                         return null;
@@ -161,9 +165,13 @@ public class SaveTvDecrypter extends PluginForDecrypt {
                     for (final String[] episodeinfo : epinfos) {
                         final String telecastID = episodeinfo[0];
                         final String seriesName = Encoding.htmlDecode(episodeinfo[1].trim());
-                        final String episodeTitle = Encoding.htmlDecode(episodeinfo[2].trim());
                         final DownloadLink dl = createDownloadlink("https://www.save.tv/STV/M/obj/user/usShowVideoArchiveDetail.cfm?TelecastID=" + telecastID);
-                        dl.setFinalFileName(seriesName + " - " + episodeTitle + ".mp4");
+                        if (episodeinfo.length == 3) {
+                            final String episodeTitle = Encoding.htmlDecode(episodeinfo[2].trim());
+                            dl.setFinalFileName(seriesName + " - " + episodeTitle + ".mp4");
+                        } else {
+                            dl.setFinalFileName(seriesName + ".mp4");
+                        }
                         dl._setFilePackage(fp);
                         if (fastLinkcheck) dl.setAvailable(true);
                         try {

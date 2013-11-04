@@ -139,16 +139,16 @@ public class FilesMonsterDecrypter extends PluginForDecrypt {
                     finalOne.setProperty("mainlink", parameter);
                     decryptedLinks.add(finalOne);
                 }
+                if (decryptedStuff == null || decryptedStuff.length == 0) {
+                    logger.warning("Decrypter broken for link: " + parameter);
+                    return null;
+                }
             } else {
                 logger.info("Failed to get free links because: " + FAILED);
             }
-            if (decryptedStuff == null || decryptedStuff.length == 0) {
-                logger.warning("Decrypter broken for link: " + parameter);
-                return null;
-            }
         }
 
-        if (addPremium) {
+        if (addPremium || FAILED != null) {
             final DownloadLink thebigone = createDownloadlink(parameter.replace("filesmonster.com", "filesmonsterdecrypted.com"));
             if (fname != null && fsize != null) {
                 thebigone.setFinalFileName(Encoding.htmlDecode(fname.trim()));

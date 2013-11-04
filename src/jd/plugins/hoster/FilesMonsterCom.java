@@ -486,6 +486,8 @@ public class FilesMonsterCom extends PluginForHost {
         sbinfo.append("and multiple links which can only be downloaded by free users.\r\n");
         sbinfo.append("Whenever you add a filesmonster link, JDownloader will show both links in the linkgrabber via default.\r\n");
         sbinfo.append("The setting below will make this behaviour more intelligent.\r\n");
+        sbinfo.append("Note that if a complete link is only available to premium members, it's premium-only\r\n");
+        sbinfo.append("link will always show up in the linkgrabber!\r\n");
         sbinfo.append("\r\n");
         sbinfo.append("NOTE: If you enable this feature and add links before setting up your filesmonster premium\r\n");
         sbinfo.append("account in JD you will have to add these links again after adding the account to get the premium links!\r\n");

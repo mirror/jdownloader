@@ -159,8 +159,17 @@ public class DownMastersCom extends PluginForHost {
         final int status = Integer.parseInt(getJson("status"));
         switch (status) {
         case 0:
-            logger.info("Multi-Host API reports that link is offline!");
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            // This case isn't always clear so we should retry first
+            int timesFailed = link.getIntegerProperty("timesfaileddownmasters", 0);
+            if (timesFailed <= 2) {
+                timesFailed++;
+                link.setProperty("timesfailedpremiumize", timesFailed);
+                throw new PluginException(LinkStatus.ERROR_RETRY, "Server error");
+            } else {
+                link.setProperty("timesfailedpremiumize", Property.NULL);
+                logger.info("Multi-Host API reports that link is offline!");
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
         case 2:
             logger.info("Bandwidth limit for the host is reached, retrying later...");
             tempUnavailableHoster(acc, link, 2 * 60 * 60 * 1000l);

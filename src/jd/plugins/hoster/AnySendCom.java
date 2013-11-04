@@ -83,6 +83,7 @@ public class AnySendCom extends PluginForHost {
         this.setBrowserExclusive();
         prepBrowser(br);
         br.getPage(link.getDownloadURL());
+        if (br.containsHTML("<title>Removed download \\| AnySend</title>")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         Browser XMLBR = br.cloneBrowser();
         prepXML(XMLBR);
         String visitorid = br.getCookie("http://www.anysend.com/", "PAPVisitorId");
