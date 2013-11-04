@@ -102,7 +102,6 @@ import org.jdownloader.captcha.v2.solver.solver9kw.Captcha9kwSolver;
 import org.jdownloader.captcha.v2.solver.solver9kw.Captcha9kwSolverClick;
 import org.jdownloader.controlling.FileCreationManager;
 import org.jdownloader.controlling.packagizer.PackagizerController;
-import org.jdownloader.dynamic.Dynamic;
 import org.jdownloader.extensions.ExtensionController;
 import org.jdownloader.extensions.extraction.ArchiveController;
 import org.jdownloader.gui.views.downloads.contextmenumanager.MenuManagerDownloadTableContext;
@@ -177,11 +176,6 @@ public class SecondLevelLaunch {
     }
 
     public static void statics() {
-        try {
-            Dynamic.runPreStatic();
-        } catch (Throwable e) {
-            e.printStackTrace();
-        }
 
     }
 
@@ -214,12 +208,6 @@ public class SecondLevelLaunch {
      */
 
     public static void mainStart(final String args[]) {
-
-        try {
-            Dynamic.runMain(args);
-        } catch (Throwable e) {
-            e.printStackTrace();
-        }
 
         SecondLevelLaunch.LOG = LogController.GL;
 
@@ -346,6 +334,7 @@ public class SecondLevelLaunch {
                     }
                     if (xmxArgFound) {
                         String launcher = System.getProperty("exe4j.launchName");
+                        if (StringUtils.isEmpty(launcher)) launcher = System.getProperty("exe4j.moduleName");
                         SecondLevelLaunch.LOG.info("Create .vmoptions for " + launcher + " because the exe launcher contains too low Xmx VM arg!");
                         if (StringUtils.isNotEmpty(launcher)) {
                             launcher = launcher.replaceFirst("\\.exe$", ".vmoptions");
