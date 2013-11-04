@@ -202,34 +202,35 @@ public class AnySendCom extends PluginForHost {
         /* compressed with JSCrush */
         String code[] = br.getRegex("code:eval\\((.*?)\\)(\\(.*?\\))").getRow(0);
         if (code == null || code.length < 2) return null;
-        Object result = new Object();
+        String result = null;
         final ScriptEngineManager manager = new ScriptEngineManager();
         final ScriptEngine engine = manager.getEngineByName("javascript");
         try {
-            result = engine.eval(code[0]);
+            result = (String) engine.eval(code[0]);
             engine.put("arguments", code[1]);
-            for (int i = 0; i <= 10; i++) {
+            for (int i = 0; i < 11; i++) {
                 result = new Regex(result, "\\(function\\(\\)\\{(.*?)\\}\\(\\)\\)$").getMatch(0);
-                if (result.toString().endsWith("return function(){return f.apply(this,arguments)};")) {
-                    result = result.toString().replace("return eval", "return ");
+                if (result.endsWith("return function(){return f.apply(this,arguments)};")) {
+                    result = result.replace("return eval", "return ");
                 } else {
-                    result = result.toString().replace("return eval", "");
+                    result = result.replace("return eval", "");
                 }
-                result = result.toString().replaceAll("return function\\(\\)\\{return .\\.apply\\(this,arguments\\)\\};?", "");
-                result = result.toString().replace("for(Y in $", "for(Y=0;$");
-                result = result.toString().replace("))with(_.split($[Y]))", ")[Y++];)with(_.split($))");
-                result = engine.eval(result.toString());
+                result = result.replaceAll("return function\\(\\)\\{return .\\.apply\\(this,arguments\\)\\};?", "");
+                result = result.replace("for(Y in $", "for(Y=0;$");
+                result = result.replace("))with(_.split($[Y]))", ")[Y++];)with(_.split($))");
+                result = (String) engine.eval(result);
                 if (result == null) {
-                    result = engine.get("f");
+                    result = (String) engine.get("f");
                     engine.put("f", null);
-                    if (result == null) result = engine.eval("a" + code[1]);
+                    if (result == null) result = (String) engine.eval("a" + code[1]);
                 }
             }
         } catch (final Throwable e) {
             e.printStackTrace();
             return null;
         }
-        return result.toString();
+        if (result == null || result.trim().length() == 0 || !result.matches("[0-9a-f]+")) return null;
+        return result;
     }
 
     @Override
