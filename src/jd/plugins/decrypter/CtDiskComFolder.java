@@ -18,17 +18,21 @@ package jd.plugins.decrypter;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Random;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
-import jd.nutils.encoding.HTMLEntities;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
+import jd.plugins.PluginForHost;
+import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
@@ -37,81 +41,165 @@ public class CtDiskComFolder extends PluginForDecrypt {
 
     // DEV NOTES
     // protocol: no https.
-    // t00y doesn't seem to work as alais but ill addd it anyway.
+    // t00y doesn't seem to work as alias but ill add it anyway.
 
     private static final String domains = "(ctdisk|400gb|pipipan|t00y)\\.com";
+    // user unique id
+    private String              uuid    = null;
+    // folder unique id
+    private String              fuid    = null;
+    private static String       agent   = null;
+    private static Object       LOCK    = new Object();
 
     public CtDiskComFolder(PluginWrapper wrapper) {
         super(wrapper);
     }
 
+    private Browser prepBrowser(Browser prepBr) {
+        Browser.setRequestIntervalLimitGlobal(this.getHost(), 1000);
+        prepBr.setCookiesExclusive(true);
+        prepBr.setConnectTimeout(3 * 60 * 1000);
+        prepBr.setReadTimeout(3 * 60 * 1000);
+        if (agent == null) {
+            /* we first have to load the plugin, before we can reference it */
+            JDUtilities.getPluginForHost("mediafire.com");
+            agent = jd.plugins.hoster.MediafireCom.stringUserAgent();
+        }
+        br.getHeaders().put("User-Agent", agent);
+        return prepBr;
+    }
+
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString().replace("https://", "http://").replaceAll(domains + "/", "400gb.com/");
-        br.setCookiesExclusive(true);
-        Browser.setRequestIntervalLimitGlobal(this.getHost(), 1000);
-        br.getPage(parameter);
-        String id = new Regex(parameter, domains + "/u/(\\d+)").getMatch(1);
-        if (br.containsHTML("(Due to the limitaion of local laws, this url has been disabled\\!<|该用户还未打开完全共享\\。|您目前无法访问他的资源列表\\。)")) {
-            logger.info("Invalid URL: " + parameter);
+        prepBrowser(br);
+        // lock to one thread!
+        synchronized (LOCK) {
+            getPage(br, parameter);
+            uuid = new Regex(parameter, domains + "/u/(\\d+)").getMatch(1);
+            fuid = new Regex(parameter, domains + "/u/\\d+/(\\d+)").getMatch(1);
+            if (fuid == null) fuid = "0";
+            if (br.containsHTML("(Due to the limitaion of local laws, this url has been disabled!<|该用户还未打开完全共享\\。|您目前无法访问他的资源列表\\。)")) {
+                logger.info("Invalid URL: " + parameter);
+                return decryptedLinks;
+            }
+
+            String fpName = null;
+            if (!"0".equals(fuid)) {
+                // covers sub directories. /u/uuid/fuid/
+                fpName = br.getRegex("href=\"/u/" + uuid + "/" + fuid + "\">(.*?)</a>").getMatch(0);
+                // fail over
+                if (fpName == null && uuid != null) fpName = "User " + uuid + " - Sub Directory " + fuid;
+            }
+            // covers base /u/\d+ directories,
+            // no fpName for these as results of base directory returns subdirectories.
+
+            parsePage(decryptedLinks, parameter);
+
+            if (fpName != null) {
+                FilePackage fp = FilePackage.getInstance();
+                fp.setName(fpName.trim());
+                fp.addLinks(decryptedLinks);
+            }
             return decryptedLinks;
         }
-
-        // Set package name and prevent null from creating 100s of packages
-        // covers 'all shares'
-        String fpName = br.getRegex("</a> / (.*?)</h2>").getMatch(0);
-        if (fpName == null) fpName = br.getRegex(">当前位置：(.*?) /").getMatch(0);
-        // covers sub directories.
-        if (fpName != null) {
-            String folder = br.getRegex(fpName + " /([^\r\n]*?)</span>").getMatch(0);
-            if (folder != null) fpName = folder;
-        }
-        // prevents error in fpName handling from breaking plugin.
-        if (fpName == null) fpName = "Untitled";
-
-        parsePage(decryptedLinks, parameter, id);
-
-        if (fpName != null) {
-            FilePackage fp = FilePackage.getInstance();
-            fp.setName(fpName.trim());
-            fp.addLinks(decryptedLinks);
-        }
-        return decryptedLinks;
     }
 
-    private void parsePage(ArrayList<DownloadLink> ret, String parameter, String id) throws IOException {
-        String results[][] = br.getRegex("(<tr ?>.*?(https?://(www\\.)?" + domains + "/file/\\d+)[^>]+>(.*?)<.*?>(\\d+(\\.\\d+)? ?(KB|MB|GB))?<.*?</tr>)").getMatches();
-        if (results == null || results.length == 0) {
-            logger.warning("Can not find 'results' : " + parameter);
+    private Browser prepAjax(Browser prepBr) {
+        prepBr.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
+        prepBr.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+        prepBr.getHeaders().put("Accept-Charset", null);
+        return prepBr;
+    }
+
+    private void parsePage(ArrayList<DownloadLink> ret, String parameter) throws Exception {
+        String ajaxSource = br.getRegex("\"sAjaxSource\": \"(/iajax_guest\\.php\\?item=file_act&action=file_list&folder_id=" + fuid + "&uid=" + uuid + "&task=file_list&t=\\d+&k=[a-f0-9]{32})\"").getMatch(0);
+        if (ajaxSource == null) {
+            logger.warning("Can not find 'ajax source' : " + parameter);
             return;
         }
-        for (String[] args : results) {
-            DownloadLink dl = createDownloadlink(args[1]);
-            if (args[4] != null) {
-                dl.setName(HTMLEntities.unhtmlentities(args[4]));
-                if (args[5] != null) dl.setDownloadSize(SizeFormatter.getSize(args[5]));
-                dl.setAvailable(true);
+        Browser ajax = br.cloneBrowser();
+        prepAjax(ajax);
+        getPage(ajax, ajaxSource);
+        ajax.getHttpConnection().getRequest().setHtmlCode(ajax.toString().replaceAll("\\\\/", "/").replaceAll("\\\\\"", "\""));
+        if (!"0".equals(fuid)) {
+            String[][] results = ajax.getRegex("(href=\"([^\"]+/file/\\d+)\">(.*?)</a>(\\\\t){1,}\",\"([\\d\\.]+ [KMGT]?B)\")").getMatches();
+            if (results == null || results.length == 0) {
+                logger.warning("Can not find 'results' : " + parameter);
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            ret.add(dl);
-        }
-        // export folders back into decrypter again.
-        // some reason we can no longer search 'results' or 'results.toString' as source.
-        String[] folders = new Regex(br, "<a href=\"(/u/" + id + "/\\d+)\">").getColumn(0);
-        if (folders != null && folders.length != 0) {
-            for (String folder : folders) {
-                ret.add(createDownloadlink(new Regex(parameter, "(https?://(www\\.)?" + domains + ")").getMatch(0) + folder));
+            for (String[] args : results) {
+                DownloadLink dl = createDownloadlink(args[1]);
+                if (args[1] != null) {
+                    dl.setName(unescape(args[2]));
+                    if (args[4] != null) dl.setDownloadSize(SizeFormatter.getSize(args[4]));
+                    dl.setAvailable(true);
+                }
+                ret.add(dl);
+            }
+        } else {
+            // export folders back into decrypter again.
+            String[] folders = ajax.getRegex("<a href=\"(/u/" + uuid + "/\\d+)\">").getColumn(0);
+            if (folders != null && folders.length != 0) {
+                final String host = new Regex(br.getURL(), "(https?://(www\\.)?" + domains + ")").getMatch(0);
+                if (host == null) {
+                    logger.info("Could not determine Host :: " + parameter);
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                for (String folder : folders) {
+                    ret.add(createDownloadlink(host + folder));
+                }
             }
         }
-        String nextPage = br.getRegex("<a href=\"(/u/" + id + "/\\d+(/\\d+)?)\" class=\"p_redirect\">\\&#8250;</a>").getMatch(0);
-        if (nextPage != null) {
-            br.getPage(nextPage);
-            parsePage(ret, parameter, id);
+    }
+
+    /**
+     * site has really bad connective issues, this method helps retry over throwing exception at the first try
+     * 
+     * @author raztoki
+     * */
+    private boolean getPage(final Browser ibr, final String url) throws Exception {
+        if (ibr == null || url == null) return false;
+        boolean failed = false;
+        int repeat = 4;
+        for (int i = 0; i <= repeat; i++) {
+            long meep = 0;
+            while (meep == 0)
+                meep = new Random().nextInt(4) * 1371;
+            if (failed) {
+                Thread.sleep(meep);
+                failed = false;
+            }
+            try {
+                ibr.getPage(url);
+                break;
+            } catch (IOException e) {
+                if (i == (repeat - 1)) {
+                    logger.warning("Exausted retry getPage count");
+                    throw e;
+                }
+                failed = true;
+                continue;
+            }
         }
+        return true;
     }
 
     /* NO OVERRIDE!! */
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return false;
+    }
+
+    private static boolean pluginloaded = false;
+
+    private static synchronized String unescape(final String s) {
+        /* we have to make sure the youtube plugin is loaded */
+        if (pluginloaded == false) {
+            final PluginForHost plugin = JDUtilities.getPluginForHost("youtube.com");
+            if (plugin == null) throw new IllegalStateException("youtube plugin not found!");
+            pluginloaded = true;
+        }
+        return jd.plugins.hoster.Youtube.unescape(s);
     }
 
 }
