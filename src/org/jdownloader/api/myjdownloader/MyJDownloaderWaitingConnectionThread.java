@@ -130,12 +130,8 @@ public class MyJDownloaderWaitingConnectionThread extends Thread {
                     }
                     synchronized (connectionRequest) {
                         MyJDownloaderConnectionResponse response = new MyJDownloaderConnectionResponse(this, request.getConnectionHelper(), connectionStatus, connectionSocket, e);
-                        if (running.get() == false || connectThread.putResponse(response) == false) {
-                            if (running.get() == false) {
-                                logger.info("got closed/interrupted, do not putResponse");
-                            } else {
-                                logger.info("putResponse failed, maybe connectThread is closed/interrupted.");
-                            }
+                        if (connectThread.putResponse(response) == false) {
+                            logger.info("putResponse failed, maybe connectThread is closed/interrupted.");
                             try {
                                 connectionSocket.close();
                             } catch (final Throwable ignore) {
