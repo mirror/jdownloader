@@ -9,6 +9,7 @@ import javax.swing.Timer;
 public class Fader implements ActionListener {
 
     private static final int     FPS = 25;
+
     private AbstractNotifyWindow owner;
     private Timer                faderTimer;
     private long                 start;
@@ -91,12 +92,12 @@ public class Fader implements ActionListener {
     }
 
     public void fadeIn(int i) {
-        if (destAlpha == 1.0f) return;
+        if (destAlpha == owner.getFinalTransparency()) return;
 
         udpateLocation();
         updateAlpha();
 
-        destAlpha = 1.0f;
+        destAlpha = owner.getFinalTransparency();
         if (srcAlpha == destAlpha) return;
 
         updateTimer(i);

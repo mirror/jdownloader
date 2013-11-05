@@ -9,6 +9,7 @@ import org.appwork.storage.config.annotations.DefaultLongValue;
 import org.appwork.storage.config.annotations.DefaultStringValue;
 import org.appwork.storage.config.annotations.DescriptionForConfigEntry;
 import org.appwork.storage.config.annotations.EnumLabel;
+import org.appwork.storage.config.annotations.SpinnerValidator;
 
 public interface BubbleNotifyConfig extends ConfigInterface {
 
@@ -171,4 +172,12 @@ public interface BubbleNotifyConfig extends ConfigInterface {
     public long getDownloadStartEndNotifyDelay();
 
     public void setDownloadStartEndNotifyDelay(long ms);
+
+    @AboutConfig
+    @DefaultIntValue(100)
+    @DescriptionForConfigEntry("Transparency of the Bubbles. 0 = invisible 100= no Transparency")
+    @SpinnerValidator(min = 1, max = 100, step = 1)
+    public int getTransparency();
+
+    public void setTransparency(int percent);
 }

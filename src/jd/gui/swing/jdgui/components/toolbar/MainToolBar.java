@@ -26,6 +26,7 @@ import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
+import java.lang.reflect.InvocationTargetException;
 import java.util.List;
 
 import javax.swing.AbstractAction;
@@ -70,6 +71,7 @@ import org.jdownloader.controlling.contextmenu.MenuLink;
 import org.jdownloader.controlling.contextmenu.SeperatorData;
 import org.jdownloader.controlling.contextmenu.gui.ExtPopupMenu;
 import org.jdownloader.controlling.contextmenu.gui.MenuBuilder;
+import org.jdownloader.extensions.ExtensionNotLoadedException;
 import org.jdownloader.gui.toolbar.MenuManagerMainToolbar;
 import org.jdownloader.gui.toolbar.action.ToolBarAction;
 import org.jdownloader.gui.views.downloads.QuickSettingsPopup;
@@ -241,13 +243,78 @@ public class MainToolBar extends JToolBar implements MouseListener, DownloadWatc
                         }
 
                         @Override
-                        public void actionPerformed(ActionEvent e) {
+                        public void actionPerformed(final ActionEvent e) {
                             ExtPopupMenu lroot = root;
                             if (lroot != null && lroot.isShowing()) { return; }
                             Object src = e.getSource();
                             if (e.getSource() instanceof Component) {
                                 lroot = new ExtPopupMenu();
-                                new MenuBuilder(MenuManagerMainToolbar.getInstance(), lroot, null, (MenuContainer) menudata).run();
+                                final ExtPopupMenu finalMenu = lroot;
+                                final MouseListener ml = new MouseListener() {
+
+                                    private Timer timer;
+
+                                    {
+                                        final MouseListener ml = this;
+                                        timer = new Timer(1000, new ActionListener() {
+
+                                            @Override
+                                            public void actionPerformed(ActionEvent e2) {
+                                                finalMenu.setVisible(false);
+                                                ((JComponent) e.getSource()).removeMouseListener(ml);
+
+                                            }
+                                        });
+                                        timer.setRepeats(false);
+                                    }
+
+                                    @Override
+                                    public void mouseClicked(MouseEvent e) {
+                                    }
+
+                                    @Override
+                                    public void mousePressed(MouseEvent e) {
+                                    }
+
+                                    @Override
+                                    public void mouseReleased(MouseEvent e) {
+                                    }
+
+                                    @Override
+                                    public void mouseEntered(MouseEvent e) {
+                                        timer.stop();
+
+                                    }
+
+                                    @Override
+                                    public void mouseExited(MouseEvent e) {
+                                        timer.stop();
+                                        timer.start();
+
+                                    }
+
+                                };
+                                ((JComponent) e.getSource()).addMouseListener(ml);
+                                new MenuBuilder(MenuManagerMainToolbar.getInstance(), lroot, null, (MenuContainer) menudata) {
+                                    @Override
+                                    protected void addContainer(JComponent root, MenuItemData inst) throws InstantiationException, IllegalAccessException, InvocationTargetException, ClassNotFoundException, NoSuchMethodException, ExtensionNotLoadedException {
+                                        final JMenu submenu = (JMenu) inst.addTo(root, selection);
+                                        if (submenu == null) return;
+                                        submenu.addMouseListener(ml);
+                                        createLayer(submenu, (MenuContainer) inst);
+
+                                        if (submenu.getMenuComponentCount() == 0) {
+                                            root.remove(submenu);
+                                        }
+                                    }
+
+                                    @Override
+                                    protected void addAction(JComponent root, MenuItemData inst) throws InstantiationException, IllegalAccessException, InvocationTargetException, ClassNotFoundException, NoSuchMethodException, ExtensionNotLoadedException {
+                                        JComponent ret = inst.addTo(root, selection);
+                                        ret.addMouseListener(ml);
+
+                                    }
+                                }.run();
                                 Component button = (Component) e.getSource();
                                 Dimension prefSize = lroot.getPreferredSize();
                                 int[] insets = LAFOptions.getInstance().getPopupBorderInsets();

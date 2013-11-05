@@ -507,4 +507,8 @@ public abstract class AbstractNotifyWindow<T extends JComponent> extends ExtJWin
         this.controller = balloner;
     }
 
+    public float getFinalTransparency() {
+        return CFG_BUBBLE.CFG.getTransparency() / 100f;
+    }
+
 }
