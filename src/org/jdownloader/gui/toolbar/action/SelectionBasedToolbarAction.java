@@ -37,8 +37,10 @@ public abstract class SelectionBasedToolbarAction extends ToolBarAction implemen
 
             if (newView instanceof LinkGrabberView) {
                 table = LinkGrabberTableModel.getInstance().getTable();
+                setEnabled(true);
             } else if (newView instanceof DownloadsView) {
                 table = DownloadsTableModel.getInstance().getTable();
+                setEnabled(true);
             } else {
                 table = null;
                 setEnabled(false);

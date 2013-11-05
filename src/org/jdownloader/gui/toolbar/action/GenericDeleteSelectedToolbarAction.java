@@ -88,6 +88,11 @@ public class GenericDeleteSelectedToolbarAction extends SelectionBasedToolbarAct
     }
 
     @Override
+    public void setEnabled(boolean newValue) {
+        super.setEnabled(newValue);
+    }
+
+    @Override
     public void actionPerformed(ActionEvent e) {
         update();
         List<AbstractNode> lcurrentSelection = currentSelection;
