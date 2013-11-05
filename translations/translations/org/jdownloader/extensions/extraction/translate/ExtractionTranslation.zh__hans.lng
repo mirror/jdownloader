@@ -3,6 +3,7 @@ ValidateArchiveAction_ValidateArchiveAction_multi=确认压缩文档
 ValidateArchiveAction_ValidateArchiveAction_object_=确认多个压缩文档
 ValidateArchiveAction_actionPerformed_=压缩文档有 %s1 个部分并且是完整的
 ValidateArchiveAction_actionPerformed_bad=压缩文档有 %s1 个部分并且是不完整。
+and=并且至少
 archivename=压缩文档名称
 cannot_extract_incopmplete=不能提取 %s1。压缩文档是不完整的!
 close=关闭

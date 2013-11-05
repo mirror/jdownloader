@@ -22,6 +22,7 @@ LinkCollector_onShutdownRequest_msg=您是否想停止链接收集器?
 LinkFilterSettings_DefaultFilterList_getDefaultValue_=离线文件
 LinkSource_ADD_CONTAINER_ACTION=添加容器动作
 LinkSource_ADD_LINKS_DIALOG=添加链接动作
+LinkSource_CLIPBOARD=剪切板
 LinkgrabberFilterRule_duplicate=%s1 (复制)
 Main_run_autostart_=正在开始下载
 Main_run_autostart_msg=下载将会在几秒后开始...
