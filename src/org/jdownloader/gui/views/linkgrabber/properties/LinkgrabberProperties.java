@@ -1,5 +1,7 @@
 package org.jdownloader.gui.views.linkgrabber.properties;
 
+import javax.swing.JPopupMenu;
+
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledPackage;
 import jd.controlling.packagecontroller.AbstractNode;
@@ -26,6 +28,7 @@ public class LinkgrabberProperties extends MigPanel {
         linkPanel = new LinkPropertiesPanel();
         add(pkgPanel, "hidemode 3");
         add(linkPanel, "hidemode 3");
+
     }
 
     public void update(AbstractNode objectbyRow) {
@@ -39,6 +42,15 @@ public class LinkgrabberProperties extends MigPanel {
             linkPanel.setVisible(true);
             pkgPanel.setVisible(false);
             linkPanel.update(link);
+        }
+    }
+
+    public void fillPopup(JPopupMenu pu) {
+
+        if (linkPanel.isVisible()) {
+            linkPanel.fillPopup(pu);
+        } else {
+            pkgPanel.fillPopup(pu);
         }
     }
 

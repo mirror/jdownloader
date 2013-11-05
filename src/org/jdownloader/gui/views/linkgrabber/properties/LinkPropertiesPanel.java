@@ -6,6 +6,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.FocusEvent;
 import java.awt.event.FocusListener;
+import java.awt.event.KeyEvent;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -14,12 +15,18 @@ import java.util.HashSet;
 import java.util.List;
 
 import javax.swing.AbstractAction;
+import javax.swing.Action;
+import javax.swing.ActionMap;
 import javax.swing.BorderFactory;
 import javax.swing.Icon;
+import javax.swing.InputMap;
 import javax.swing.JLabel;
 import javax.swing.JPopupMenu;
 import javax.swing.JTextField;
+import javax.swing.KeyStroke;
 import javax.swing.Timer;
+import javax.swing.text.DefaultEditorKit.CopyAction;
+import javax.swing.text.TextAction;
 
 import jd.controlling.linkcollector.LinkCollector;
 import jd.controlling.linkcollector.LinkCollectorCrawler;
@@ -29,12 +36,16 @@ import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledPackage;
 import jd.controlling.packagecontroller.AbstractNode;
 import jd.gui.swing.jdgui.views.settings.panels.packagizer.VariableAction;
+import jd.plugins.DownloadLink;
 import net.miginfocom.swing.MigLayout;
 
 import org.appwork.scheduler.DelayedRunnable;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.storage.config.JsonConfig;
+import org.appwork.storage.config.ValidationException;
+import org.appwork.storage.config.events.GenericConfigEventListener;
+import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.swing.MigPanel;
 import org.appwork.swing.components.ExtTextField;
 import org.appwork.swing.components.pathchooser.PathChooser;
@@ -51,6 +62,7 @@ import org.jdownloader.extensions.extraction.Archive;
 import org.jdownloader.extensions.extraction.BooleanStatus;
 import org.jdownloader.extensions.extraction.contextmenu.downloadlist.ArchiveValidator;
 import org.jdownloader.gui.IconKey;
+import org.jdownloader.gui.components.CheckboxMenuItem;
 import org.jdownloader.gui.packagehistorycontroller.DownloadPathHistoryManager;
 import org.jdownloader.gui.packagehistorycontroller.PackageHistoryEntry;
 import org.jdownloader.gui.packagehistorycontroller.PackageHistoryManager;
@@ -62,10 +74,11 @@ import org.jdownloader.gui.views.components.packagetable.LinkTreeUtils;
 import org.jdownloader.gui.views.linkgrabber.addlinksdialog.LinkgrabberSettings;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.settings.GeneralSettings;
+import org.jdownloader.settings.staticreferences.CFG_GUI;
 import org.jdownloader.settings.staticreferences.CFG_LINKGRABBER;
 import org.jdownloader.updatev2.gui.LAFOptions;
 
-public class LinkPropertiesPanel extends MigPanel implements LinkCollectorListener, ActionListener {
+public class LinkPropertiesPanel extends MigPanel implements LinkCollectorListener, ActionListener, GenericConfigEventListener<Boolean> {
 
     protected PathChooser                         destination;
     protected SearchComboBox<PackageHistoryEntry> packagename;
@@ -84,6 +97,7 @@ public class LinkPropertiesPanel extends MigPanel implements LinkCollectorListen
     private ExtTextField                          downloadpassword;
     private ExtTextField                          checksum;
     private DelayedRunnable                       updateDelayer;
+    private ExtTextField                          downloadFrom;
 
     public LinkPropertiesPanel() {
         super("ins 0,debug", "[grow,fill]", "[grow,fill]");
@@ -239,6 +253,48 @@ public class LinkPropertiesPanel extends MigPanel implements LinkCollectorListen
 
         downloadpassword.setBorder(BorderFactory.createCompoundBorder(downloadpassword.getBorder(), BorderFactory.createEmptyBorder(2, 6, 1, 6)));
 
+        downloadFrom = new ExtTextField() {
+
+            @Override
+            public void onChanged() {
+                // delayedSave();
+            }
+
+            protected boolean processKeyBinding(KeyStroke ks, KeyEvent e, int condition, boolean pressed) {
+                InputMap map = getInputMap(condition);
+                ActionMap am = getActionMap();
+
+                if (map != null && am != null && isEnabled()) {
+                    Object binding = map.get(ks);
+                    Action action = (binding == null) ? null : am.get(binding);
+
+                    if (action != null) {
+
+                        if (action instanceof CopyAction) { return super.processKeyBinding(ks, e, condition, pressed); }
+                        if ("select-all".equals(binding)) return super.processKeyBinding(ks, e, condition, pressed);
+                        if (action instanceof TextAction) { return false; }
+
+                    }
+
+                }
+                return super.processKeyBinding(ks, e, condition, pressed);
+            }
+        };
+        // downloadFrom.setEditable(false);
+
+        downloadFrom.addFocusListener(new FocusListener() {
+
+            @Override
+            public void focusLost(FocusEvent e) {
+            }
+
+            @Override
+            public void focusGained(FocusEvent e) {
+                downloadFrom.selectAll();
+            }
+        });
+
+        downloadFrom.setBorder(BorderFactory.createCompoundBorder(downloadFrom.getBorder(), BorderFactory.createEmptyBorder(2, 6, 1, 6)));
         checksum = new ExtTextField() {
 
             @Override
@@ -435,20 +491,7 @@ public class LinkPropertiesPanel extends MigPanel implements LinkCollectorListen
             }
         };
         autoExtract.setPopDown(true);
-        int height = Math.max(24, (int) (comment.getPreferredSize().height * 0.9));
 
-        MigPanel p = this;
-        p.setLayout(new MigLayout("ins 0 0 0 0,wrap 3", "[][grow,fill]2[]", "2[]0"));
-        addSaveTo(height, p);
-        addFilename(height, p);
-        addPackagename(height, p);
-
-        addDownloadPassword(height, p);
-        addChecksum(height, p);
-        addCommentLine(height, p);
-        addArchiveLine(height, p);
-        autoExtract.setEnabled(false);
-        password.setEnabled(false);
         // p.add(createIconLabel("downloadpassword", _GUI._.propertiespanel_downloadpassword(),
         // _GUI._.AddLinksDialog_layoutDialogContent_downloadpassword_tt()), "alignx right,aligny center,height " + height + "!");
 
@@ -457,47 +500,85 @@ public class LinkPropertiesPanel extends MigPanel implements LinkCollectorListen
         // this.getDialog().setLocation(new Point((int) (screenSize.getWidth() -
         // this.getDialog().getWidth()) / 2, (int) (screenSize.getHeight() -
         // this.getDialog().getHeight()) / 2));
+        CFG_GUI.LINK_PROPERTIES_PANEL_SAVE_TO_VISIBLE.getEventSender().addListener(this, true);
+        CFG_GUI.LINK_PROPERTIES_PANEL_FILENAME_VISIBLE.getEventSender().addListener(this, true);
+        CFG_GUI.LINK_PROPERTIES_PANEL_PACKAGENAME_VISIBLE.getEventSender().addListener(this, true);
+        CFG_GUI.LINK_PROPERTIES_PANEL_DOWNLOAD_FROM_VISIBLE.getEventSender().addListener(this, true);
+        CFG_GUI.LINK_PROPERTIES_PANEL_DOWNLOAD_PASSWORD_VISIBLE.getEventSender().addListener(this, true);
+        CFG_GUI.LINK_PROPERTIES_PANEL_CHECKSUM_VISIBLE.getEventSender().addListener(this, true);
+        CFG_GUI.LINK_PROPERTIES_PANEL_COMMENT_VISIBLE.getEventSender().addListener(this, true);
+        CFG_GUI.LINK_PROPERTIES_PANEL_ARCHIVEPASSWORD_VISIBLE.getEventSender().addListener(this, true);
+        update();
+        autoExtract.setEnabled(false);
+        password.setEnabled(false);
+
+    }
+
+    private void update() {
+        int height = Math.max(24, (int) (comment.getPreferredSize().height * 0.9));
+        MigPanel p = this;
+        p.removeAll();
+        p.setLayout(new MigLayout("ins 0 0 0 0,wrap 3", "[][]2[]", "2[]0"));
+        if (CFG_GUI.LINK_PROPERTIES_PANEL_SAVE_TO_VISIBLE.isEnabled()) addSaveTo(height, p);
+        if (CFG_GUI.LINK_PROPERTIES_PANEL_FILENAME_VISIBLE.isEnabled()) addFilename(height, p);
+        if (CFG_GUI.LINK_PROPERTIES_PANEL_PACKAGENAME_VISIBLE.isEnabled()) addPackagename(height, p);
+        if (CFG_GUI.LINK_PROPERTIES_PANEL_DOWNLOAD_FROM_VISIBLE.isEnabled()) addDownloadFrom(height, p);
+        //
+        if (CFG_GUI.LINK_PROPERTIES_PANEL_DOWNLOAD_PASSWORD_VISIBLE.isEnabled()) addDownloadPassword(height, p);
+        if (CFG_GUI.LINK_PROPERTIES_PANEL_CHECKSUM_VISIBLE.isEnabled()) addChecksum(height, p);
+        if (CFG_GUI.LINK_PROPERTIES_PANEL_COMMENT_VISIBLE.isEnabled()) addCommentLine(height, p);
+        if (CFG_GUI.LINK_PROPERTIES_PANEL_ARCHIVEPASSWORD_VISIBLE.isEnabled()) addArchiveLine(height, p);
+
+        revalidate();
+
+    }
+
+    protected void addDownloadFrom(int height, MigPanel p) {
+        p.add(createIconLabel(IconKey.ICON_URL, _GUI._.propertiespanel_downloadfrom(), _GUI._.AddLinksDialog_layoutDialogContent_downloadfrom_tt()), "aligny center,alignx right,height " + height + "!");
+        p.add(downloadFrom, "spanx,height " + height + "!,growx,width 10:10:n");
+
+        // "gaptop 0,spanx,growx,pushx,gapleft 37,gapbottom 5"
 
     }
 
     protected void addArchiveLine(int height, MigPanel p) {
         p.add(createIconLabel("archivepassword", _GUI._.propertiespanel_archivepassword(), _GUI._.AddLinksDialog_layoutDialogContent_downloadpassword_tt()), "aligny center,alignx right,height " + height + "!");
 
-        p.add(password, "pushx,growx,height " + height + "!");
+        p.add(password, "pushx,growx,height " + height + "!,growx,width 10:10:n");
 
         p.add(autoExtract, "sg right,height " + height + "!");
     }
 
     protected void addCommentLine(int height, MigPanel p) {
         p.add(createIconLabel("document", _GUI._.propertiespanel_comment(), _GUI._.AddLinksDialog_layoutDialogContent_comment_tt()), "alignx right,aligny center,height " + height + "!");
-        p.add(comment, "height " + height + "!");
+        p.add(comment, "height " + height + "!,growx,width 10:10:n");
         p.add(priority, "sg right,height " + height + "!");
     }
 
     protected void addPackagename(int height, MigPanel p) {
         p.add(createIconLabel("package_open", _GUI._.propertiespanel_packagename(), _GUI._.AddLinksDialog_layoutDialogContent_package_tt()), "aligny center,alignx right,height " + height + "!");
-        p.add(packagename, "spanx,height " + height + "!");
+        p.add(packagename, "spanx,height " + height + "!,growx,width 10:10:n");
     }
 
     protected void addChecksum(int height, MigPanel p) {
         p.add(createIconLabel("package_open", _GUI._.propertiespanel_checksum(), _GUI._.AddLinksDialog_layoutDialogContent_checksum_tt()), "aligny center,alignx right,height " + height + "!");
-        p.add(checksum, "spanx,height " + height + "!");
+        p.add(checksum, "spanx,height " + height + "!,growx,width 10:10:n");
     }
 
     protected void addDownloadPassword(int height, MigPanel p) {
         p.add(createIconLabel("password", _GUI._.propertiespanel_passwod(), _GUI._.AddLinksDialog_layoutDialogContent_password_tt()), "aligny center,alignx right,height " + height + "!");
-        p.add(downloadpassword, "spanx,height " + height + "!");
+        p.add(downloadpassword, "spanx,height " + height + "!,growx,width 10:10:n");
     }
 
     protected void addFilename(int height, MigPanel p) {
         p.add(createIconLabel("package_open", _GUI._.propertiespanel_filename(), _GUI._.AddLinksDialog_layoutDialogContent_filename_tt()), "aligny center,alignx right,height " + height + "!");
-        p.add(filename, "spanx,height " + height + "!");
+        p.add(filename, "spanx,height " + height + "!,growx,width 10:10:n");
     }
 
     protected void addSaveTo(int height, MigPanel p) {
         p.add(createIconLabel("save", _GUI._.propertiespanel_downloadpath(), _GUI._.AddLinksDialog_layoutDialogContent_save_tt()), "aligny center,alignx right,height " + height + "!");
 
-        p.add(destination.getDestination(), "height " + height + "!");
+        p.add(destination.getDestination(), "height " + height + "!,growx,width 10:10:n");
         p.add(destination.getButton(), "sg right,height " + height + "! ");
     }
 
@@ -534,47 +615,60 @@ public class LinkPropertiesPanel extends MigPanel implements LinkCollectorListen
 
     protected void saveInEDT() {
         if (currentPackage != null) {
-
-            Priority priop = priority.getSelectedItem();
-            currentLink.setPriority(priop);
-            currentLink.getDownloadLink().setComment(comment.getText());
-            currentLink.setName(filename.getText());
-            currentLink.getDownloadLink().setDownloadPassword(downloadpassword.getText());
-            String cs = checksum.getText();
-            cs = cs.replaceAll("\\[.*?\\]", "").trim();
-            if (cs.length() == 32) {
-                currentLink.getDownloadLink().setMD5Hash(cs);
-            } else if (cs.length() == 40) {
-                currentLink.getDownloadLink().setSha1Hash(cs);
-            } else {
-                currentLink.getDownloadLink().setMD5Hash(null);
-                currentLink.getDownloadLink().setSha1Hash(null);
+            if (priority.isShowing()) {
+                Priority priop = priority.getSelectedItem();
+                currentLink.setPriority(priop);
             }
-            if (!currentPackage.getName().equals(packagename.getText())) {
-                currentPackage.setName(packagename.getText());
-                PackageHistoryManager.getInstance().add(packagename.getText());
+            if (comment.isShowing()) {
+                currentLink.getDownloadLink().setComment(comment.getText());
             }
-
-            if (currentArchive != null) {
-                System.out.println("SAVE");
-                ArrayList<String> passwords = null;
-                String txt = password.getText().trim();
-                if (txt.startsWith("[") && txt.endsWith("]")) {
-                    passwords = JSonStorage.restoreFromString(password.getText(), new TypeRef<ArrayList<String>>() {
-                    }, null);
-                }
-                if (passwords != null && passwords.size() > 0) {
-                    currentArchive.getSettings().setPasswords(new HashSet<String>(passwords));
+            if (filename.isShowing()) {
+                currentLink.setName(filename.getText());
+            }
+            if (downloadpassword.isShowing()) {
+                currentLink.getDownloadLink().setDownloadPassword(downloadpassword.getText());
+            }
+            if (checksum.isShowing()) {
+                String cs = checksum.getText();
+                cs = cs.replaceAll("\\[.*?\\]", "").trim();
+                if (cs.length() == 32) {
+                    currentLink.getDownloadLink().setMD5Hash(cs);
+                } else if (cs.length() == 40) {
+                    currentLink.getDownloadLink().setSha1Hash(cs);
                 } else {
-                    HashSet<String> hs = new HashSet<String>();
-                    if (StringUtils.isNotEmpty(password.getText())) hs.add(password.getText().trim());
-                    currentArchive.getSettings().setPasswords(hs);
+                    currentLink.getDownloadLink().setMD5Hash(null);
+                    currentLink.getDownloadLink().setSha1Hash(null);
                 }
-                currentArchive.getSettings().setAutoExtract(autoExtract.getSelectedItem());
+            }
+            if (packagename.isShowing()) {
+                if (!currentPackage.getName().equals(packagename.getText())) {
+                    currentPackage.setName(packagename.getText());
+                    PackageHistoryManager.getInstance().add(packagename.getText());
+                }
+            }
 
-                if (!LinkTreeUtils.getRawDownloadDirectory(currentPackage).equals(new File(destination.getPath()))) {
-                    currentPackage.setDownloadFolder(destination.getPath());
-                    DownloadPathHistoryManager.getInstance().add(destination.getPath());
+            if (password.isShowing()) {
+                if (currentArchive != null) {
+                    System.out.println("SAVE");
+                    ArrayList<String> passwords = null;
+                    String txt = password.getText().trim();
+                    if (txt.startsWith("[") && txt.endsWith("]")) {
+                        passwords = JSonStorage.restoreFromString(password.getText(), new TypeRef<ArrayList<String>>() {
+                        }, null);
+                    }
+                    if (passwords != null && passwords.size() > 0) {
+                        currentArchive.getSettings().setPasswords(new HashSet<String>(passwords));
+                    } else {
+                        HashSet<String> hs = new HashSet<String>();
+                        if (StringUtils.isNotEmpty(password.getText())) hs.add(password.getText().trim());
+                        currentArchive.getSettings().setPasswords(hs);
+                    }
+                    currentArchive.getSettings().setAutoExtract(autoExtract.getSelectedItem());
+
+                    if (!LinkTreeUtils.getRawDownloadDirectory(currentPackage).equals(new File(destination.getPath()))) {
+                        currentPackage.setDownloadFolder(destination.getPath());
+                        DownloadPathHistoryManager.getInstance().add(destination.getPath());
+                    }
                 }
             }
 
@@ -623,14 +717,14 @@ public class LinkPropertiesPanel extends MigPanel implements LinkCollectorListen
 
             @Override
             protected void runInEDT() {
-
+                boolean ld = setting;
                 setting = true;
                 try {
                     updateInEDT(null, pkg);
                     currentLink = null;
                     currentPackage = pkg;
                 } finally {
-                    setting = false;
+                    setting = ld;
                 }
                 // extractToggle.setSelected(true);
 
@@ -788,6 +882,9 @@ public class LinkPropertiesPanel extends MigPanel implements LinkCollectorListen
             // may happen when we remove links
             return;
         }
+
+        updateDownloadFrom(link);
+
         if (link != null && !filename.hasFocus()) {
             filename.setText(link.getName());
         }
@@ -829,6 +926,29 @@ public class LinkPropertiesPanel extends MigPanel implements LinkCollectorListen
 
     }
 
+    protected void updateDownloadFrom(final CrawledLink link) {
+        boolean ld = setting;
+        setting = true;
+        try {
+
+            DownloadLink dlLink = link.getDownloadLink();
+            if (dlLink.getLinkType() == DownloadLink.LINKTYPE_CONTAINER) {
+                if (dlLink.gotBrowserUrl()) {
+                    downloadFrom.setText(dlLink.getBrowserUrl());
+                } else {
+                    downloadFrom.setText("*******************************");
+                }
+
+            } else {
+                downloadFrom.setText(dlLink.getBrowserUrl());
+            }
+            downloadFrom.repaint();
+        } finally {
+            setting = ld;
+        }
+
+    }
+
     protected void updateArchiveInEDT(final Archive archive) {
         currentArchive = archive;
         if (!password.hasFocus()) {
@@ -844,4 +964,31 @@ public class LinkPropertiesPanel extends MigPanel implements LinkCollectorListen
         autoExtract.setSelectedItem(currentArchive.getSettings().getAutoExtract());
     }
 
+    @Override
+    public void onConfigValidatorError(KeyHandler<Boolean> keyHandler, Boolean invalidValue, ValidationException validateException) {
+    }
+
+    @Override
+    public void onConfigValueModified(KeyHandler<Boolean> keyHandler, Boolean newValue) {
+        new EDTRunner() {
+
+            @Override
+            protected void runInEDT() {
+                update();
+
+            }
+
+        };
+    }
+
+    public void fillPopup(JPopupMenu pu) {
+        pu.add(new CheckboxMenuItem(_GUI._.LinkgrabberPropertiesHeader_saveto(), CFG_GUI.LINK_PROPERTIES_PANEL_SAVE_TO_VISIBLE));
+        pu.add(new CheckboxMenuItem(_GUI._.LinkgrabberPropertiesHeader_filename(), CFG_GUI.LINK_PROPERTIES_PANEL_FILENAME_VISIBLE));
+        pu.add(new CheckboxMenuItem(_GUI._.LinkgrabberPropertiesHeader_packagename(), CFG_GUI.LINK_PROPERTIES_PANEL_PACKAGENAME_VISIBLE));
+        pu.add(new CheckboxMenuItem(_GUI._.LinkgrabberPropertiesHeader_downloadfrom(), CFG_GUI.LINK_PROPERTIES_PANEL_DOWNLOAD_FROM_VISIBLE));
+        pu.add(new CheckboxMenuItem(_GUI._.LinkgrabberPropertiesHeader_downloadpassword(), CFG_GUI.LINK_PROPERTIES_PANEL_DOWNLOAD_PASSWORD_VISIBLE));
+        pu.add(new CheckboxMenuItem(_GUI._.LinkgrabberPropertiesHeader_checksum(), CFG_GUI.LINK_PROPERTIES_PANEL_CHECKSUM_VISIBLE));
+        pu.add(new CheckboxMenuItem(_GUI._.LinkgrabberPropertiesHeader_comment(), CFG_GUI.LINK_PROPERTIES_PANEL_COMMENT_VISIBLE));
+        pu.add(new CheckboxMenuItem(_GUI._.LinkgrabberPropertiesHeader_archivepassword(), CFG_GUI.LINK_PROPERTIES_PANEL_ARCHIVEPASSWORD_VISIBLE));
+    }
 }

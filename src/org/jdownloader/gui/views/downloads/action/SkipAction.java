@@ -16,6 +16,7 @@ import org.appwork.utils.event.queue.QueueAction;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.jdownloader.actions.AbstractSelectionContextAction;
+import org.jdownloader.captcha.blacklist.CaptchaBlackList;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.images.NewTheme;
@@ -104,6 +105,10 @@ public class SkipAction extends AbstractSelectionContextAction<FilePackage, Down
                             a.setSkipReason(SkipReason.MANUAL);
                         }
                     } else {
+
+                        if (a.getSkipReason() == SkipReason.CAPTCHA) {
+                            CaptchaBlackList.getInstance().addWhitelist(a);
+                        }
                         a.setSkipReason(null);
                     }
                 }

@@ -116,12 +116,38 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
         private LinkCollectingInformation collectingInfo;
         private LinkCollector             linkCollector;
 
-        public JobLinkCrawler(LinkCollector linkCollector, LinkCollectingJob job) {
+        public JobLinkCrawler(final LinkCollector linkCollector, LinkCollectingJob job) {
             this.job = job;
             collectingInfo = new LinkCollectingInformation(this, linkCollector.getLinkChecker());
             this.linkCollector = linkCollector;
             setFilter(linkCollector.getCrawlerFilter());
-            setHandler(linkCollector);
+            final LinkCrawlerHandler defaultHandler = defaulHandlerFactory();
+            setHandler(new LinkCrawlerHandler() {
+
+                @Override
+                public void handleUnHandledLink(CrawledLink link) {
+                    linkCollector.handleUnHandledLink(link);
+                    defaultHandler.handleUnHandledLink(link);
+                }
+
+                @Override
+                public void handleFinalLink(CrawledLink link) {
+                    linkCollector.handleFinalLink(link);
+                    defaultHandler.handleFinalLink(link);
+                }
+
+                @Override
+                public void handleFilteredLink(CrawledLink link) {
+                    linkCollector.handleFilteredLink(link);
+                    defaultHandler.handleFilteredLink(link);
+                }
+
+                @Override
+                public void handleBrokenLink(CrawledLink link) {
+                    linkCollector.handleBrokenLink(link);
+                    defaultHandler.handleBrokenLink(link);
+                }
+            });
         }
 
         public LinkCollectingJob getJob() {

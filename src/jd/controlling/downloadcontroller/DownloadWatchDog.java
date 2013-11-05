@@ -590,7 +590,9 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                      */
                 }
                 for (DownloadLink l : linksForce) {
+                    CaptchaBlackList.getInstance().addWhitelist(l);
                     l.setSkipReason(null);
+
                 }
 
                 if (DownloadWatchDog.this.stateMachine.isStartState() || DownloadWatchDog.this.stateMachine.isFinal()) {
@@ -767,7 +769,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
             }
             for (DownloadLinkCandidate candidate : allCandidates) {
 
-                if (candidate.getCachedAccount().hasCaptcha(candidate.getLink()) && CaptchaBlackList.getInstance().matches(new PrePluginCheckDummyChallenge(candidate))) {
+                if (candidate.getCachedAccount().hasCaptcha(candidate.getLink()) && CaptchaBlackList.getInstance().matches(new PrePluginCheckDummyChallenge(candidate.getLink()))) {
                     selector.addExcluded(candidate, new DownloadLinkCandidateResult(SkipReason.CAPTCHA));
                 } else {
                     List<ProxyInfo> proxies = null;
@@ -1560,6 +1562,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
         if (link.getDownloadLinkController() != null) throw new IllegalStateException("Link is in progress! cannot reset!");
         session.removeHistory(link);
         deleteFile(link, DeleteTo.NULL);
+        CaptchaBlackList.getInstance().addWhitelist(link);
         link.reset();
     }
 

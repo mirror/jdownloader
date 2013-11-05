@@ -18,10 +18,8 @@ import jd.controlling.linkcollector.LinkCollectorEvent;
 import jd.controlling.linkcollector.LinkCollectorListener;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.reconnect.Reconnecter;
-import jd.controlling.reconnect.Reconnecter.ReconnectResult;
 import jd.controlling.reconnect.ReconnecterEvent;
 import jd.controlling.reconnect.ReconnecterListener;
-import jd.controlling.reconnect.ipcheck.IPController;
 import jd.gui.swing.dialog.AbstractCaptchaDialog;
 import jd.gui.swing.jdgui.JDGui;
 import jd.gui.swing.jdgui.components.toolbar.actions.UpdateAction;
@@ -303,33 +301,14 @@ public class BubbleNotify implements UpdaterListener, ReconnecterListener, Chall
         new EDTRunner() {
             @Override
             protected void runInEDT() {
-                BasicNotify no = new BasicNotify(_GUI._.balloon_reconnect(), _GUI._.balloon_reconnect_start_msg(), NewTheme.I().getIcon("reconnect", 32));
-                show(no);
+                show(new ReconnectBubble());
             }
         };
     }
 
     @Override
     public void onAfterReconnect(final ReconnecterEvent event) {
-        if (!CFG_BUBBLE.BUBBLE_NOTIFY_ON_RECONNECT_END_ENABLED.isEnabled()) return;
-        new EDTRunner() {
 
-            @Override
-            protected void runInEDT() {
-                BasicNotify no = null;
-                ReconnectResult result = event.getResult();
-                if (result == null) result = ReconnectResult.FAILED;
-                switch (result) {
-                case SUCCESSFUL:
-                    no = new BasicNotify(_GUI._.balloon_reconnect(), _GUI._.balloon_reconnect_end_msg(IPController.getInstance().getIP()), NewTheme.I().getIcon("ok", 32));
-                    break;
-                case FAILED:
-                    no = new BasicNotify(_GUI._.balloon_reconnect(), _GUI._.balloon_reconnect_end_msg_failed(IPController.getInstance().getIP()), NewTheme.I().getIcon("error", 32));
-                    break;
-                }
-                show(no);
-            }
-        };
     }
 
     public void hide(final AbstractNotifyWindow notify) {

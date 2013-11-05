@@ -1,51 +1,139 @@
 package org.jdownloader.gui.notify;
 
-import java.awt.Component;
+import java.util.HashSet;
+import java.util.List;
 
-import jd.gui.swing.jdgui.components.IconedProcessIndicator;
+import jd.controlling.linkcollector.LinkCollector;
+import jd.controlling.linkcollector.LinkCollector.JobLinkCrawler;
+import jd.controlling.linkcollector.LinkCollectorCrawler;
+import jd.controlling.linkcrawler.CrawledLink;
+import jd.controlling.linkcrawler.CrawledPackage;
+import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 
-import org.appwork.swing.MigPanel;
-import org.appwork.swing.components.ExtTextArea;
-import org.appwork.utils.swing.SwingUtils;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.images.NewTheme;
 
-public class LinkCrawlerBubbleContent extends MigPanel {
+public class LinkCrawlerBubbleContent extends AbstractBubbleContentPanel {
 
-    private IconedProcessIndicator linkGrabberIndicator;
-    private ExtTextArea            ret;
+    private Pair duration;
+    private Pair links;
+
+    private Pair offline;
+    private Pair status;
+
+    private int  joblessCount;
+    private int  offlineCount;
+    private int  linksCount;
+    private long lastChange;
+    private int  onlineCount;
+    private Pair packages;
+    private Pair online;
 
     public LinkCrawlerBubbleContent() {
 
-        super("ins 0,wrap 2", "[][grow,fill]", "[grow,fill]");
+        super("linkgrabber");
+        duration = addPair(_GUI._.ReconnectDialog_layoutDialogContent_duration(), IconKey.ICON_WAIT);
 
-        linkGrabberIndicator = new IconedProcessIndicator(NewTheme.I().getIcon("linkgrabber", 20));
+        links = addPair(_GUI._.LinkCrawlerBubbleContent_LinkCrawlerBubbleContent_foundlink(), IconKey.ICON_FILE);
 
-        linkGrabberIndicator.setTitle(_GUI._.StatusBarImpl_initGUI_linkgrabber());
+        packages = addPair(_GUI._.LinkCrawlerBubbleContent_LinkCrawlerBubbleContent_foundpackages(), IconKey.ICON_PACKAGE_NEW);
 
-        linkGrabberIndicator.setIndeterminate(true);
-        linkGrabberIndicator.setEnabled(false);
-        add(linkGrabberIndicator, "width 32!,height 32!,pushx,growx,pushy,growy");
-        add(getMessage(""));
-        SwingUtils.setOpaque(this, false);
+        offline = addPair(_GUI._.LinkCrawlerBubbleContent_LinkCrawlerBubbleContent_foundoffline(), IconKey.ICON_ERROR);
+
+        online = addPair(_GUI._.LinkCrawlerBubbleContent_LinkCrawlerBubbleContent_foundonline(), IconKey.ICON_OK);
+
+        status = addPair(_GUI._.LinkCrawlerBubbleContent_LinkCrawlerBubbleContent_status(), IconKey.ICON_RUN);
+        offline.setVisible(false);
+
     }
 
-    public void setText(String text) {
-        ret.setText(text);
+    public void update() {
+        duration.setText(TimeFormatter.formatMilliSeconds(System.currentTimeMillis() - startTime, 0));
     }
 
-    private Component getMessage(String text) {
-        ret = new ExtTextArea();
-        SwingUtils.setOpaque(ret, false);
-        ret.setText(text);
-        ret.setLabelMode(true);
-        return ret;
+    public void update(JobLinkCrawler jlc) {
+        update();
+
+        if (jlc.getCrawledLinksFoundCounter() < 500000) {
+
+            List<CrawledLink> linklist = jlc.getCrawledLinks();
+
+            HashSet<CrawledPackage> dupe = new HashSet<CrawledPackage>();
+            int offlineCnt = 0;
+            int onlineCnt = 0;
+            int jobless = 0;
+            synchronized (linklist) {
+                for (CrawledLink cl : linklist) {
+                    dupe.add(cl.getParentNode());
+                    if (cl.getSourceJob() != jlc.getJob()) {
+                        jobless++;
+
+                    }
+
+                    DownloadLink dl = cl.getDownloadLink();
+                    if (dl != null) {
+                        AvailableStatus status = dl.getAvailableStatus();
+
+                        switch (status) {
+                        case FALSE:
+                            offlineCnt++;
+                            break;
+                        case TRUE:
+                            onlineCnt++;
+                            break;
+                        }
+                    }
+                }
+            }
+
+            boolean changes = false;
+            changes |= onlineCount != onlineCnt;
+            changes |= offlineCount != offlineCnt;
+            changes |= joblessCount != jobless;
+            changes |= linksCount != jlc.getCrawledLinksFoundCounter();
+
+            if (changes) {
+                lastChange = System.currentTimeMillis();
+            }
+            System.out.println(jobless);
+            offline.setText(offlineCnt + "");
+            online.setText(onlineCnt + "");
+            if (offlineCnt > 0) {
+                offline.setVisible(true);
+            }
+            this.offlineCount = offlineCnt;
+            this.onlineCount = offlineCnt;
+            this.joblessCount = jobless;
+            this.linksCount = jlc.getCrawledLinksFoundCounter();
+            links.setText(jlc.getCrawledLinksFoundCounter() + "");
+            packages.setText(dupe.size() + "");
+        } else {
+
+            links.setText(jlc.getCrawledLinksFoundCounter() + "");
+        }
+
+        if (jlc.isRunning()) {
+            status.setText(_GUI._.LinkCrawlerBubbleContent_update_runnning());
+
+        } else {
+            if (LinkCollector.getInstance().getLinkChecker().isRunning()) {
+                status.setText(_GUI._.LinkCrawlerBubbleContent_update_online());
+            } else {
+                status.setText(_GUI._.LinkCrawlerBubbleContent_update_finished());
+            }
+        }
     }
 
-    public void crawlerStopped() {
-        linkGrabberIndicator.setIndeterminate(false);
-        linkGrabberIndicator.setMaximum(100);
-        linkGrabberIndicator.setValue(100);
-    }
+    public boolean askForClose(LinkCollectorCrawler caller) {
+        if (caller instanceof JobLinkCrawler) {
+            // if (true) return false;
+            if (caller.isRunning()) return false;
+            if (!caller.isRunning() && !LinkCollector.getInstance().getLinkChecker().isRunning()) return true;
+            return System.currentTimeMillis() - lastChange > 10000;
 
+        }
+        return true;
+    }
 }

@@ -1,9 +1,7 @@
 package org.jdownloader.gui.notify;
 
-import java.awt.Component;
 import java.io.File;
 
-import javax.swing.ImageIcon;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.SwingConstants;
@@ -14,7 +12,6 @@ import jd.plugins.Account;
 import jd.plugins.DownloadLink;
 
 import org.appwork.swing.MigPanel;
-import org.appwork.swing.components.ExtTextArea;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.swing.SwingUtils;
 import org.jdownloader.DomainInfo;
@@ -56,20 +53,6 @@ public class DownloadStartedContentPanel extends MigPanel {
         lbl.setEnabled(false);
         lbl.setHorizontalAlignment(SwingConstants.RIGHT);
         return lbl;
-    }
-
-    private Component getMessage(String text) {
-        ExtTextArea ret = new ExtTextArea();
-        SwingUtils.setOpaque(ret, false);
-        ret.setText(text);
-        ret.setLabelMode(true);
-        return ret;
-    }
-
-    private Component getIconPanel(ImageIcon icon) {
-        JLabel ret = new JLabel(icon);
-        SwingUtils.setOpaque(ret, false);
-        return ret;
     }
 
     public void onClicked() {

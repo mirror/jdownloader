@@ -1,21 +1,22 @@
 package jd.controlling.downloadcontroller;
 
 import jd.controlling.captcha.SkipRequest;
+import jd.plugins.DownloadLink;
 
 import org.jdownloader.captcha.v2.Challenge;
 import org.jdownloader.captcha.v2.ChallengeSolver;
 
 public class PrePluginCheckDummyChallenge extends Challenge<Object> {
 
-    private DownloadLinkCandidate candidate;
+    private DownloadLink link;
 
-    public PrePluginCheckDummyChallenge(DownloadLinkCandidate candidate) {
+    public PrePluginCheckDummyChallenge(DownloadLink link) {
         super("", "");
-        this.candidate = candidate;
+        this.link = link;
     }
 
-    public DownloadLinkCandidate getCandidate() {
-        return candidate;
+    public DownloadLink getLink() {
+        return link;
     }
 
     @Override

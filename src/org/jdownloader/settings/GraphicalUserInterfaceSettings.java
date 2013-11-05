@@ -643,4 +643,51 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
 
     void setLinkDoubleClickAction(LinkDoubleClickAction action);
 
+    @AboutConfig
+    @DefaultBooleanValue(true)
+    boolean isLinkPropertiesPanelCommentVisible();
+
+    void setLinkPropertiesPanelCommentVisible(boolean v);
+
+    @AboutConfig
+    @DefaultBooleanValue(true)
+    boolean isLinkPropertiesPanelFilenameVisible();
+
+    void setLinkPropertiesPanelFilenameVisible(boolean v);
+
+    @AboutConfig
+    @DefaultBooleanValue(true)
+    boolean isLinkPropertiesPanelPackagenameVisible();
+
+    void setLinkPropertiesPanelPackagenameVisible(boolean v);
+
+    @AboutConfig
+    @DefaultBooleanValue(true)
+    boolean isLinkPropertiesPanelDownloadPasswordVisible();
+
+    void setLinkPropertiesPanelDownloadPasswordVisible(boolean v);
+
+    @AboutConfig
+    @DefaultBooleanValue(true)
+    boolean isLinkPropertiesPanelChecksumVisible();
+
+    void setLinkPropertiesPanelChecksumVisible(boolean v);
+
+    @AboutConfig
+    @DefaultBooleanValue(true)
+    boolean isLinkPropertiesPanelArchivepasswordVisible();
+
+    void setLinkPropertiesPanelArchivepasswordVisible(boolean v);
+
+    @AboutConfig
+    @DefaultBooleanValue(true)
+    boolean isLinkPropertiesPanelSaveToVisible();
+
+    void setLinkPropertiesPanelSaveToVisible(boolean v);
+
+    @AboutConfig
+    @DefaultBooleanValue(false)
+    boolean isLinkPropertiesPanelDownloadFromVisible();
+
+    void setLinkPropertiesPanelDownloadFromVisible(boolean v);
 }

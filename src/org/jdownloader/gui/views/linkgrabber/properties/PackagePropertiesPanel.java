@@ -5,6 +5,8 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 
+import javax.swing.JPopupMenu;
+
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledPackage;
 
@@ -13,17 +15,38 @@ import org.appwork.storage.TypeRef;
 import org.appwork.swing.MigPanel;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.controlling.Priority;
+import org.jdownloader.gui.components.CheckboxMenuItem;
 import org.jdownloader.gui.packagehistorycontroller.DownloadPathHistoryManager;
 import org.jdownloader.gui.packagehistorycontroller.PackageHistoryEntry;
 import org.jdownloader.gui.packagehistorycontroller.PackageHistoryManager;
+import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.components.packagetable.LinkTreeUtils;
 import org.jdownloader.settings.GeneralSettings;
+import org.jdownloader.settings.staticreferences.CFG_GUI;
 
 public class PackagePropertiesPanel extends LinkPropertiesPanel {
 
     @Override
     protected void addFilename(int height, MigPanel p) {
 
+    }
+
+    @Override
+    protected void addDownloadFrom(int height, MigPanel p) {
+
+    }
+
+    public void fillPopup(JPopupMenu pu) {
+        pu.add(new CheckboxMenuItem(_GUI._.LinkgrabberPropertiesHeader_saveto(), CFG_GUI.LINK_PROPERTIES_PANEL_SAVE_TO_VISIBLE));
+        // pu.add(new CheckboxMenuItem(_GUI._.LinkgrabberPropertiesHeader_filename(), CFG_GUI.LINK_PROPERTIES_PANEL_FILENAME_VISIBLE));
+        pu.add(new CheckboxMenuItem(_GUI._.LinkgrabberPropertiesHeader_packagename(), CFG_GUI.LINK_PROPERTIES_PANEL_PACKAGENAME_VISIBLE));
+        // pu.add(new CheckboxMenuItem(_GUI._.LinkgrabberPropertiesHeader_downloadfrom(),
+        // CFG_GUI.LINK_PROPERTIES_PANEL_DOWNLOAD_FROM_VISIBLE));
+        // pu.add(new CheckboxMenuItem(_GUI._.LinkgrabberPropertiesHeader_downloadpassword(),
+        // CFG_GUI.LINK_PROPERTIES_PANEL_DOWNLOAD_PASSWORD_VISIBLE));
+        // pu.add(new CheckboxMenuItem(_GUI._.LinkgrabberPropertiesHeader_checksum(), CFG_GUI.LINK_PROPERTIES_PANEL_CHECKSUM_VISIBLE));
+        pu.add(new CheckboxMenuItem(_GUI._.LinkgrabberPropertiesHeader_comment(), CFG_GUI.LINK_PROPERTIES_PANEL_COMMENT_VISIBLE));
+        pu.add(new CheckboxMenuItem(_GUI._.LinkgrabberPropertiesHeader_archivepassword(), CFG_GUI.LINK_PROPERTIES_PANEL_ARCHIVEPASSWORD_VISIBLE));
     }
 
     @Override

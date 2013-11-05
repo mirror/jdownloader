@@ -2947,14 +2947,11 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Bubble Notify" })
     String plugins_optional_JDLightTray_ballon();
 
-    @Default(lngs = { "en" }, values = { "a new Package is in the Linkgrabber" })
-    String plugins_optional_JDLightTray_ballon_newPackages2();
-
     @Default(lngs = { "en" }, values = { "Bubble Notifications are tiny messages that notify you when special events occur. " })
     String plugins_optional_JDLightTray_ballon_desc();
 
-    @Default(lngs = { "en" }, values = { "new Links were grabbed" })
-    String plugins_optional_JDLightTray_ballon_newlinks2();
+    @Default(lngs = { "en" }, values = { "during Linkcrawling and Onlinecheck" })
+    String plugins_optional_JDLightTray_ballon_newlinks3();
 
     @Default(lngs = { "en" }, values = { "an Update is ready for installation" })
     String plugins_optional_JDLightTray_ballon_updates2();
@@ -2974,11 +2971,8 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Reconnect successful!\r\nYour new IP is %s1" })
     String balloon_reconnect_end_msg(IP ip);
 
-    @Default(lngs = { "en" }, values = { "before a Reconnect" })
-    String plugins_optional_JDLightTray_ballon_reconnectstart2();
-
-    @Default(lngs = { "en" }, values = { "after a Reconnect" })
-    String plugins_optional_JDLightTray_ballon_reconnectend2();
+    @Default(lngs = { "en" }, values = { "during a Reconnect" })
+    String plugins_optional_JDLightTray_ballon_reconnectstart3();
 
     @Default(lngs = { "en" }, values = { "JDownloader Reconnect" })
     String balloon_reconnect();
@@ -3579,4 +3573,65 @@ public interface GuiTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Support Chat" })
     String memory_chat();
+
+    @Default(lngs = { "en" }, values = { "Result:" })
+    String ReconnectBubbleContent_onResult_result();
+
+    @Default(lngs = { "en" }, values = { "Found Link(s)" })
+    String LinkCrawlerBubbleContent_LinkCrawlerBubbleContent_foundlink();
+
+    @Default(lngs = { "en" }, values = { "Found Package(s)" })
+    String LinkCrawlerBubbleContent_LinkCrawlerBubbleContent_foundpackages();
+
+    @Default(lngs = { "en" }, values = { "Offline" })
+    String LinkCrawlerBubbleContent_LinkCrawlerBubbleContent_foundoffline();
+
+    @Default(lngs = { "en" }, values = { "Status" })
+    String LinkCrawlerBubbleContent_LinkCrawlerBubbleContent_status();
+
+    @Default(lngs = { "en" }, values = { "Crawling..." })
+    String LinkCrawlerBubbleContent_update_runnning();
+
+    @Default(lngs = { "en" }, values = { "Done!" })
+    String LinkCrawlerBubbleContent_update_finished();
+
+    @Default(lngs = { "en" }, values = { "Onlinecheck..." })
+    String LinkCrawlerBubbleContent_update_online();
+
+    @Default(lngs = { "en" }, values = { "Online" })
+    String LinkCrawlerBubbleContent_LinkCrawlerBubbleContent_foundonline();
+
+    @Default(lngs = { "en" }, values = { "Click to open the Panel's Settings" })
+    String AbstractPanelHeader_AbstractPanelHeader_settings_tt();
+
+    @Default(lngs = { "en" }, values = { "Show Download folder" })
+    String LinkgrabberPropertiesHeader_saveto();
+
+    @Default(lngs = { "en" }, values = { "Show Filename" })
+    String LinkgrabberPropertiesHeader_filename();
+
+    @Default(lngs = { "en" }, values = { "Show Packagename" })
+    String LinkgrabberPropertiesHeader_packagename();
+
+    @Default(lngs = { "en" }, values = { "Show Download Password" })
+    String LinkgrabberPropertiesHeader_downloadpassword();
+
+    @Default(lngs = { "en" }, values = { "Show Checksum (MD5/SHA1)" })
+    String LinkgrabberPropertiesHeader_checksum();
+
+    @Default(lngs = { "en" }, values = { "Show Comment" })
+    String LinkgrabberPropertiesHeader_comment();
+
+    @Default(lngs = { "en" }, values = { "Show Archive Password" })
+    String LinkgrabberPropertiesHeader_archivepassword();
+
+    @Default(lngs = { "en" }, values = { "Show Download from" })
+    String LinkgrabberPropertiesHeader_downloadfrom();
+
+    @Default(lngs = { "en" }, values = { "Download from" })
+    String propertiespanel_downloadfrom();
+
+    @Default(lngs = { "en" }, values = { "The address behind the selected entry" })
+    String AddLinksDialog_layoutDialogContent_downloadfrom_tt();
+
 }

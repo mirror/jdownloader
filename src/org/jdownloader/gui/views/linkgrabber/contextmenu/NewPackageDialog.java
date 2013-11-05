@@ -74,7 +74,7 @@ public class NewPackageDialog extends AbstractDialog<Object> {
             File path = LinkTreeUtils.getRawDownloadDirectory(selection.getFirstPackage());
             fc.setText(path.getAbsolutePath());
         }
-        p.add(fc);
+        p.add(fc, "pushx,growx");
         return p;
     }
 

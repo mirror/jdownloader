@@ -33,7 +33,7 @@ import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.components.HeaderScrollPane;
 import org.jdownloader.gui.views.downloads.bottombar.CustomizeableActionBar;
 import org.jdownloader.gui.views.downloads.overviewpanel.DownloadOverview;
-import org.jdownloader.gui.views.downloads.overviewpanel.OverViewHeader;
+import org.jdownloader.gui.views.downloads.overviewpanel.DownloadOverViewHeader;
 import org.jdownloader.gui.views.downloads.table.DownloadsTable;
 import org.jdownloader.gui.views.downloads.table.DownloadsTableModel;
 import org.jdownloader.gui.views.downloads.table.HorizontalScrollbarAction;
@@ -229,7 +229,7 @@ public class DownloadsPanel extends SwitchPanel implements DownloadControllerLis
             ret = new OverviewHeaderScrollPane(overView);
             final HeaderScrollPane finalRet = ret;
             LAFOptions.getInstance().applyPanelBackground(ret);
-            ret.setColumnHeaderView(new OverViewHeader() {
+            ret.setColumnHeaderView(new DownloadOverViewHeader() {
 
                 @Override
                 protected void onCloseAction() {

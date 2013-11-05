@@ -19,7 +19,6 @@ import jd.gui.swing.jdgui.views.settings.ConfigurationView;
 
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.windowmanager.WindowManager.FrameState;
 import org.jdownloader.gui.notify.gui.AbstractNotifyWindow;
@@ -46,7 +45,7 @@ public class LinkCrawlerBubble extends AbstractNotifyWindow<LinkCrawlerBubbleCon
     }
 
     private LinkCollectorCrawler crawler;
-    protected long               createdTime;
+
     private boolean              registered = false;
 
     public LinkCrawlerBubble(LinkCollectorCrawler parameter) {
@@ -87,12 +86,7 @@ public class LinkCrawlerBubble extends AbstractNotifyWindow<LinkCrawlerBubbleCon
             } else {
                 setHeaderText(_GUI._.LinkCrawlerBubble_update_header());
             }
-            if (jlc.isRunning()) {
-
-                panel.setText(_GUI._.LinkCrawlerBubble_update_running_linkcrawler(jlc.getCrawledLinksFoundCounter(), TimeFormatter.formatMilliSeconds(System.currentTimeMillis() - createdTime, 0)));
-            } else {
-                panel.setText(_GUI._.LinkCrawlerBubble_update_stopped_linkcrawler(jlc.getCrawledLinksFoundCounter(), TimeFormatter.formatMilliSeconds(System.currentTimeMillis() - createdTime, 0)));
-            }
+            getContentComponent().update(jlc);
 
             pack();
             BubbleNotify.getInstance().relayout();
@@ -118,20 +112,22 @@ public class LinkCrawlerBubble extends AbstractNotifyWindow<LinkCrawlerBubbleCon
                 if (!isVisible() && !isClosed()) {
 
                     BubbleNotify.getInstance().show(LinkCrawlerBubble.this);
-                    createdTime = System.currentTimeMillis();
+
                     final Timer t = new Timer(1000, new ActionListener() {
 
                         @Override
                         public void actionPerformed(ActionEvent e) {
                             if (!isVisible() || isClosed()) {
-                                getContentComponent().crawlerStopped();
+                                getContentComponent().stop();
                                 ((Timer) e.getSource()).stop();
                                 return;
 
                             }
                             update();
-                            if (!caller.isRunning()) {
-                                getContentComponent().crawlerStopped();
+
+                            if (getContentComponent().askForClose(caller)) {
+
+                                getContentComponent().stop();
                                 ((Timer) e.getSource()).stop();
                                 startTimeout(LinkCrawlerBubble.super.getTimeout());
 

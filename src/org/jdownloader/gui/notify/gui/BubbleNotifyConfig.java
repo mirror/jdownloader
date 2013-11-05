@@ -76,14 +76,6 @@ public interface BubbleNotifyConfig extends ConfigInterface {
 
     @DefaultBooleanValue(true)
     @AboutConfig
-    public boolean isBubbleNotifyOnNewLinkgrabberPackageEnabled();
-
-    @DefaultBooleanValue(true)
-    @AboutConfig
-    public boolean isBubbleNotifyOnReconnectEndEnabled();
-
-    @DefaultBooleanValue(true)
-    @AboutConfig
     public boolean isBubbleNotifyOnReconnectStartEnabled();
 
     @DefaultBooleanValue(true)
@@ -97,10 +89,6 @@ public interface BubbleNotifyConfig extends ConfigInterface {
     public void setFinalPositionY(int i);
 
     public void setBubbleNotifyOnNewLinkgrabberLinksEnabled(boolean b);
-
-    public void setBubbleNotifyOnNewLinkgrabberPackageEnabled(boolean b);
-
-    public void setBubbleNotifyOnReconnectEndEnabled(boolean b);
 
     public void setBubbleNotifyOnReconnectStartEnabled(boolean b);
 

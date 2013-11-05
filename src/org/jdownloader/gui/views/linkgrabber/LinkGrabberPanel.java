@@ -366,7 +366,7 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
         PropertiesScrollPane propertiesScrollPane = new PropertiesScrollPane(loverView, table);
 
         LAFOptions.getInstance().applyPanelBackground(propertiesScrollPane);
-        propertiesScrollPane.setColumnHeaderView(new LinkgrabberPropertiesHeader() {
+        propertiesScrollPane.setColumnHeaderView(new LinkgrabberPropertiesHeader(loverView) {
 
             @Override
             protected void onCloseAction() {
