@@ -105,8 +105,8 @@ public class DdlStorageCom extends PluginForHost {
     // XfileShare Version 3.0.8.4
     // last XfileSharingProBasic compare :: 2.6.2.1
     // captchatype: recaptcha
-    // mods: country blocked stuff, this is done at the firewall based && and when users do bad things to httpd based on logs., modified
-    // fixFilename as a workaround for bad serverside filenames
+    // mods: country blocked stuff, this is done at the firewall based && and when users do bad things to httpd based on logs.
+    // mods: handleDl (some of my new code), stripping of trailing ' character if filename doesn't end with ' .
     // mods: premium storage account.
     // other: no redirects
 
@@ -455,61 +455,7 @@ public class DdlStorageCom extends PluginForHost {
                 }
             }
         }
-        if (!inValidate(passCode)) downloadLink.setProperty("pass", passCode);
-        // Process usedHost within hostMap. We do it here so that we can probe if slots are already used before openDownload.
-        controlHost(account, downloadLink, true);
-        logger.info("Final downloadlink = " + dllink + " starting the download...");
-        try {
-            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumes, chunks);
-        } catch (UnknownHostException e) {
-            // Try catch required otherwise plugin logic wont work as intended. Also prevents infinite loops when dns record is missing.
-
-            // dump the saved host from directlinkproperty
-            downloadLink.setProperty(directlinkproperty, Property.NULL);
-            // remove usedHost slot from hostMap
-            controlHost(account, downloadLink, false);
-            logger.warning("DNS issue has occured!");
-            e.printStackTrace();
-            // int value of plugin property, as core error in current JD2 prevents proper retry handling.
-            // TODO: remove when retry issues are resolved!
-            int retry = downloadLink.getIntegerProperty("retry", 0);
-            if (retry == 3) {
-                downloadLink.setProperty("retry", Property.NULL);
-                throw new PluginException(LinkStatus.ERROR_FATAL, "DNS issue cannot be resolved!");
-            } else {
-                retry++;
-                downloadLink.setProperty("retry", retry);
-                throw new PluginException(LinkStatus.ERROR_RETRY, 15000);
-            }
-        }
-        if (dl.getConnection().getContentType().contains("html")) {
-            if (dl.getConnection().getResponseCode() == 503 && dl.getConnection().getHeaderFields("server").contains("nginx")) {
-                controlSimHost(account);
-                controlHost(account, downloadLink, false);
-            } else {
-                logger.warning("The final dllink seems not to be a file!");
-                br.followConnection();
-                correctBR();
-                checkServerErrors();
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-        } else {
-            // we can not 'rename' filename once the download started, could be problematic!
-            if (downloadLink.getDownloadCurrent() == 0) {
-                fixFilename(downloadLink);
-            }
-            try {
-                // add a download slot
-                controlSlot(+1, account);
-                // start the dl
-                dl.startDownload();
-            } finally {
-                // remove usedHost slot from hostMap
-                controlHost(account, downloadLink, false);
-                // remove download slot
-                controlSlot(-1, account);
-            }
-        }
+        handleDl(downloadLink, account);
     }
 
     /**
@@ -941,61 +887,7 @@ public class DdlStorageCom extends PluginForHost {
                 }
             }
         }
-
-        if (!inValidate(passCode)) downloadLink.setProperty("pass", passCode);
-        // Process usedHost within hostMap. We do it here so that we can probe if slots are already used before openDownload.
-        controlHost(account, downloadLink, true);
-        logger.info("Final downloadlink = " + dllink + " starting the download...");
-        // Try catch required otherwise plugin logic wont work as intended. Also prevents infinite loops when dns record is missing.
-        try {
-            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumes, chunks);
-        } catch (UnknownHostException e) {
-            // dump the saved host from directlinkproperty
-            downloadLink.setProperty(directlinkproperty, Property.NULL);
-            // remove usedHost slot from hostMap
-            controlHost(account, downloadLink, false);
-            logger.warning("DNS issue has occured!");
-            e.printStackTrace();
-            // int value of plugin property, as core error in current JD2 prevents proper retry handling.
-            // TODO: remove when retry issues are resolved!
-            int retry = downloadLink.getIntegerProperty("retry", 0);
-            if (retry == 3) {
-                downloadLink.setProperty("retry", Property.NULL);
-                throw new PluginException(LinkStatus.ERROR_FATAL, "DNS issue cannot be resolved!");
-            } else {
-                retry++;
-                downloadLink.setProperty("retry", retry);
-                throw new PluginException(LinkStatus.ERROR_RETRY, 15000);
-            }
-        }
-        if (dl.getConnection().getContentType().contains("html")) {
-            if (dl.getConnection().getResponseCode() == 503 && dl.getConnection().getHeaderFields("server").contains("nginx")) {
-                controlSimHost(account);
-                controlHost(account, downloadLink, false);
-            } else {
-                logger.warning("The final dllink seems not to be a file!");
-                br.followConnection();
-                correctBR();
-                checkServerErrors();
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-        } else {
-            // we can not 'rename' filename once the download started, could be problematic!
-            if (downloadLink.getDownloadCurrent() == 0) {
-                fixFilename(downloadLink);
-            }
-            try {
-                // add a download slot
-                controlSlot(+1, account);
-                // start the dl
-                dl.startDownload();
-            } finally {
-                // remove usedHost slot from hostMap
-                controlHost(account, downloadLink, false);
-                // remove download slot
-                controlSlot(-1, account);
-            }
-        }
+        handleDl(downloadLink, account);
     }
 
     private static AtomicBoolean useAPI  = new AtomicBoolean(false);
@@ -1186,6 +1078,75 @@ public class DdlStorageCom extends PluginForHost {
         downloadLink.setProperty("requiresPremiumAccount", Property.NULL);
     }
 
+    /**
+     * Shared download method components.
+     * */
+    private void handleDl(final DownloadLink downloadLink, final Account account) throws Exception {
+        // non JD2 will probably still have http parser issue!
+        if (!inValidate(dllink) && dllink.endsWith("%27") && !downloadLink.getName().endsWith("'")) dllink = dllink.substring(0, dllink.length() - 3);
+        if (!inValidate(passCode)) downloadLink.setProperty("pass", passCode);
+        // Process usedHost within hostMap. We do it here so that we can probe if slots are already used before openDownload.
+        controlHost(account, downloadLink, true);
+        logger.info("Final downloadlink = " + dllink + " starting the download...");
+        // Try catch required otherwise plugin logic wont work as intended. Also prevents infinite loops when dns record is missing.
+        try {
+            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumes, chunks);
+        } catch (UnknownHostException e) {
+            // dump the saved host from directlinkproperty
+            downloadLink.setProperty(directlinkproperty, Property.NULL);
+            // remove usedHost slot from hostMap
+            controlHost(account, downloadLink, false);
+            logger.warning("DNS issue has occured!");
+            e.printStackTrace();
+            // int value of plugin property, as core error in current JD2 prevents proper retry handling.
+            // TODO: remove when retry issues are resolved!
+            int retry = downloadLink.getIntegerProperty("retry", 0);
+            if (retry == 3) {
+                downloadLink.setProperty("retry", Property.NULL);
+                throw new PluginException(LinkStatus.ERROR_FATAL, "DNS issue cannot be resolved!");
+            } else {
+                retry++;
+                downloadLink.setProperty("retry", retry);
+                throw new PluginException(LinkStatus.ERROR_RETRY, 15000);
+            }
+        }
+        if (dl.getConnection().getContentType().contains("html")) {
+            try {
+                if (dl.getConnection().getResponseCode() == 503 && dl.getConnection().getHeaderFields("server").contains("nginx")) {
+                    // set upper limit
+                    logger.warning("Connection upper limit reached!");
+                    controlSimHost(account);
+                    throw new PluginException(LinkStatus.ERROR_RETRY, 15000);
+                } else {
+                    logger.warning("The final dllink seems not to be a file!");
+                    br.followConnection();
+                    correctBR();
+                    checkServerErrors();
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+            } finally {
+                // remove usedHost slot from hostMap
+                controlHost(account, downloadLink, false);
+            }
+        } else {
+            // we can not 'rename' filename once the download started, could be problematic!
+            if (downloadLink.getDownloadCurrent() == 0) {
+                fixFilename(downloadLink);
+            }
+            try {
+                // add a download slot
+                controlSlot(+1, account);
+                // start the dl
+                dl.startDownload();
+            } finally {
+                // remove usedHost slot from hostMap
+                controlHost(account, downloadLink, false);
+                // remove download slot
+                controlSlot(-1, account);
+            }
+        }
+    }
+
     private void ipBlock() throws PluginException {
         if (cbr.containsHTML("(Access from [^ ]+ is not allowed|DDLStorage temporarily unavailable from your region)")) {
             logger.warning("Country/IP Block issued by " + COOKIE_HOST);
@@ -1351,8 +1312,6 @@ public class DdlStorageCom extends PluginForHost {
             FFN = orgName + servExt;
         else
             FFN = orgNameExt;
-        // Workaround for serverside wrong filename
-        if (FFN.endsWith("'")) FFN = FFN.substring(0, FFN.length() - 1);
         downloadLink.setFinalFileName(FFN);
     }
 
