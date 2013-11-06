@@ -784,12 +784,12 @@ public abstract class AbstractNodePropertiesPanel extends MigPanel implements Ac
                 }
                 saveAutoExtract(autoExtract.getSelectedItem());
 
-                if (!loadSaveTo().equals(new File(destination.getPath()))) {
-                    saveSaveTo(destination.getPath());
-
-                    DownloadPathHistoryManager.getInstance().add(destination.getPath());
-                }
             }
+        }
+        if (destination.getDestination().isShowing() && !loadSaveTo().equals(new File(destination.getPath()))) {
+            saveSaveTo(destination.getPath());
+
+            DownloadPathHistoryManager.getInstance().add(destination.getPath());
         }
 
     }
@@ -858,7 +858,7 @@ public abstract class AbstractNodePropertiesPanel extends MigPanel implements Ac
 
         }
 
-        if ((!destination.getDestination().hasFocus() || newData) && destination.isShowing()) {
+        if ((!destination.getDestination().hasFocus() || newData) && destination.getDestination().isShowing()) {
             String saveto = null;
             List<String> pathlist = DownloadPathHistoryManager.getInstance().listPathes(saveto = loadSaveTo(), org.appwork.storage.config.JsonConfig.create(GeneralSettings.class).getDefaultDownloadFolder());
 

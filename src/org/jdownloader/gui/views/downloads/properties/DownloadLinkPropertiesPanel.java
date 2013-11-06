@@ -308,7 +308,7 @@ public class DownloadLinkPropertiesPanel extends AbstractNodePropertiesPanel imp
 
     @Override
     protected void saveSaveTo(final String stringpath) {
-
+        System.out.println(1);
         new SetDownloadFolderInDownloadTableAction(new SelectionInfo<FilePackage, DownloadLink>(currentLink, null, null, null, null, null)) {
             protected java.io.File dialog(java.io.File path) throws org.appwork.utils.swing.dialog.DialogClosedException, org.appwork.utils.swing.dialog.DialogCanceledException {
 

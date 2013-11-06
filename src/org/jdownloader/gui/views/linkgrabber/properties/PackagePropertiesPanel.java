@@ -1,13 +1,19 @@
 package org.jdownloader.gui.views.linkgrabber.properties;
 
+import java.io.File;
+
 import javax.swing.JPopupMenu;
 
 import jd.controlling.linkcrawler.CrawledLink;
+import jd.controlling.linkcrawler.CrawledPackage;
 
 import org.appwork.swing.MigPanel;
 import org.jdownloader.controlling.Priority;
 import org.jdownloader.gui.components.CheckboxMenuItem;
 import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.gui.views.SelectionInfo;
+import org.jdownloader.gui.views.linkgrabber.LinkGrabberTableModel;
+import org.jdownloader.gui.views.linkgrabber.contextmenu.SetDownloadFolderInLinkgrabberAction;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
 
 public class PackagePropertiesPanel extends LinkPropertiesPanel {
@@ -45,6 +51,17 @@ public class PackagePropertiesPanel extends LinkPropertiesPanel {
         } else {
             return p;
         }
+
+    }
+
+    @Override
+    protected void saveSaveTo(final String str) {
+        new SetDownloadFolderInLinkgrabberAction(new SelectionInfo<CrawledPackage, CrawledLink>(currentPackage, null, null, null, null, LinkGrabberTableModel.getInstance().getTable())) {
+            protected java.io.File dialog(java.io.File path) throws org.appwork.utils.swing.dialog.DialogClosedException, org.appwork.utils.swing.dialog.DialogCanceledException {
+
+                return new File(str);
+            };
+        }.actionPerformed(null);
 
     }
 

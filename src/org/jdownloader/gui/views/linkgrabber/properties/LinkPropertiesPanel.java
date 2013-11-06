@@ -1,6 +1,7 @@
 package org.jdownloader.gui.views.linkgrabber.properties;
 
 import java.awt.event.ActionEvent;
+import java.io.File;
 import java.util.HashSet;
 import java.util.List;
 
@@ -27,11 +28,13 @@ import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.components.packagetable.LinkTreeUtils;
 import org.jdownloader.gui.views.downloads.properties.AbstractNodePropertiesPanel;
+import org.jdownloader.gui.views.linkgrabber.LinkGrabberTableModel;
+import org.jdownloader.gui.views.linkgrabber.contextmenu.SetDownloadFolderInLinkgrabberAction;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
 
 public class LinkPropertiesPanel extends AbstractNodePropertiesPanel implements LinkCollectorListener {
 
-    protected CrawledLink    currentLink;
+    protected CrawledLink currentLink;
 
     //
     // protected void saveInEDT() {
@@ -95,6 +98,16 @@ public class LinkPropertiesPanel extends AbstractNodePropertiesPanel implements 
     //
     // }
     // }
+    @Override
+    protected void saveSaveTo(final String str) {
+        new SetDownloadFolderInLinkgrabberAction(new SelectionInfo<CrawledPackage, CrawledLink>(currentLink, null, null, null, null, LinkGrabberTableModel.getInstance().getTable())) {
+            protected java.io.File dialog(java.io.File path) throws org.appwork.utils.swing.dialog.DialogClosedException, org.appwork.utils.swing.dialog.DialogCanceledException {
+
+                return new File(str);
+            };
+        }.actionPerformed(null);
+
+    }
 
     protected CrawledPackage currentPackage;
 
@@ -327,12 +340,6 @@ public class LinkPropertiesPanel extends AbstractNodePropertiesPanel implements 
     @Override
     protected void savePriority(Priority priop) {
         currentLink.setPriority(priop);
-    }
-
-    @Override
-    protected void saveSaveTo(String path) {
-
-        currentPackage.setDownloadFolder(destination.getPath());
     }
 
     @Override
