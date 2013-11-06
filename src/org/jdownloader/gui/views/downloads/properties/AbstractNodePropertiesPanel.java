@@ -208,14 +208,7 @@ public abstract class AbstractNodePropertiesPanel extends MigPanel implements Ac
         comment.setHelpText(_GUI._.AddLinksDialog_layoutDialogContent_comment_help());
         comment.setBorder(BorderFactory.createCompoundBorder(comment.getBorder(), BorderFactory.createEmptyBorder(2, 6, 1, 6)));
         setListeners(comment);
-        filename = new ExtTextField() {
-
-            @Override
-            public void onChanged() {
-                // delayedSave();
-            }
-
-        };
+        filename = createFileNameTextField();
         setListeners(filename);
 
         filename.setBorder(BorderFactory.createCompoundBorder(filename.getBorder(), BorderFactory.createEmptyBorder(2, 6, 1, 6)));
@@ -496,6 +489,17 @@ public abstract class AbstractNodePropertiesPanel extends MigPanel implements Ac
         autoExtract.setEnabled(false);
         password.setEnabled(false);
 
+    }
+
+    protected ExtTextField createFileNameTextField() {
+        return new ExtTextField() {
+
+            @Override
+            public void onChanged() {
+                // delayedSave();
+            }
+
+        };
     }
 
     @Override

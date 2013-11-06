@@ -1,12 +1,19 @@
 package org.jdownloader.gui.views.downloads.properties;
 
 import java.awt.event.ActionListener;
+import java.awt.event.KeyEvent;
 import java.io.File;
 import java.util.HashSet;
 import java.util.List;
 
+import javax.swing.Action;
+import javax.swing.ActionMap;
 import javax.swing.Icon;
+import javax.swing.InputMap;
 import javax.swing.JPopupMenu;
+import javax.swing.KeyStroke;
+import javax.swing.text.DefaultEditorKit.CopyAction;
+import javax.swing.text.TextAction;
 
 import jd.controlling.downloadcontroller.DownloadController;
 import jd.controlling.packagecontroller.AbstractNode;
@@ -17,6 +24,7 @@ import jd.plugins.FilePackageProperty;
 import jd.plugins.LinkStatusProperty;
 
 import org.appwork.storage.config.events.GenericConfigEventListener;
+import org.appwork.swing.components.ExtTextField;
 import org.appwork.utils.ImageProvider.ImageProvider;
 import org.appwork.utils.swing.EDTRunner;
 import org.jdownloader.controlling.Priority;
@@ -50,6 +58,37 @@ public class DownloadLinkPropertiesPanel extends AbstractNodePropertiesPanel imp
         CFG_GUI.DOWNLOADS_PROPERTIES_PANEL_COMMENT_VISIBLE.getEventSender().addListener(this, true);
         CFG_GUI.DOWNLOADS_PROPERTIES_PANEL_ARCHIVEPASSWORD_VISIBLE.getEventSender().addListener(this, true);
 
+    }
+
+    @Override
+    protected ExtTextField createFileNameTextField() {
+        return new ExtTextField() {
+
+            @Override
+            public void onChanged() {
+                // delayedSave();
+            }
+
+            protected boolean processKeyBinding(KeyStroke ks, KeyEvent e, int condition, boolean pressed) {
+                InputMap map = getInputMap(condition);
+                ActionMap am = getActionMap();
+
+                if (map != null && am != null && isEnabled()) {
+                    Object binding = map.get(ks);
+                    Action action = (binding == null) ? null : am.get(binding);
+
+                    if (action != null) {
+
+                        if (action instanceof CopyAction) { return super.processKeyBinding(ks, e, condition, pressed); }
+                        if ("select-all".equals(binding)) return super.processKeyBinding(ks, e, condition, pressed);
+                        if (action instanceof TextAction) { return false; }
+
+                    }
+
+                }
+                return super.processKeyBinding(ks, e, condition, pressed);
+            }
+        };
     }
 
     public void fillPopup(JPopupMenu pu) {

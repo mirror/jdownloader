@@ -707,7 +707,7 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
     void setDownloadsPropertiesPanelCommentVisible(boolean v);
 
     @AboutConfig
-    @DefaultBooleanValue(true)
+    @DefaultBooleanValue(false)
     boolean isDownloadsPropertiesPanelFilenameVisible();
 
     void setDownloadsPropertiesPanelFilenameVisible(boolean v);
