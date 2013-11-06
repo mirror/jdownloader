@@ -45,6 +45,7 @@ import org.jdownloader.gui.views.linkgrabber.overview.LinkgrabberOverViewHeader;
 import org.jdownloader.gui.views.linkgrabber.overview.LinkgrabberOverview;
 import org.jdownloader.gui.views.linkgrabber.properties.LinkgrabberProperties;
 import org.jdownloader.gui.views.linkgrabber.properties.LinkgrabberPropertiesHeader;
+import org.jdownloader.gui.views.linkgrabber.properties.PropertiesScrollPane;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings.NewLinksInLinkgrabberAction;
 import org.jdownloader.settings.staticreferences.CFG_GUI;

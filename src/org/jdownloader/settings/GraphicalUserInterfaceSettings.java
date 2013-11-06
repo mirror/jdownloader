@@ -187,6 +187,13 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
     void setLinkgrabberTabPropertiesPanelVisible(boolean b);
 
     @AboutConfig
+    @DescriptionForConfigEntry("Enable/Disable the Downloads properties panel ")
+    @DefaultBooleanValue(true)
+    boolean isDownloadsTabPropertiesPanelVisible();
+
+    void setDownloadsTabPropertiesPanelVisible(boolean b);
+
+    @AboutConfig
     @DefaultBooleanValue(true)
     boolean isOverviewPanelTotalInfoVisible();
 
@@ -690,4 +697,54 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
     boolean isLinkPropertiesPanelDownloadFromVisible();
 
     void setLinkPropertiesPanelDownloadFromVisible(boolean v);
+
+    //
+
+    @AboutConfig
+    @DefaultBooleanValue(true)
+    boolean isDownloadsPropertiesPanelCommentVisible();
+
+    void setDownloadsPropertiesPanelCommentVisible(boolean v);
+
+    @AboutConfig
+    @DefaultBooleanValue(true)
+    boolean isDownloadsPropertiesPanelFilenameVisible();
+
+    void setDownloadsPropertiesPanelFilenameVisible(boolean v);
+
+    @AboutConfig
+    @DefaultBooleanValue(true)
+    boolean isDownloadsPropertiesPanelPackagenameVisible();
+
+    void setDownloadsPropertiesPanelPackagenameVisible(boolean v);
+
+    @AboutConfig
+    @DefaultBooleanValue(true)
+    boolean isDownloadsPropertiesPanelDownloadPasswordVisible();
+
+    void setDownloadsPropertiesPanelDownloadPasswordVisible(boolean v);
+
+    @AboutConfig
+    @DefaultBooleanValue(true)
+    boolean isDownloadsPropertiesPanelChecksumVisible();
+
+    void setDownloadsPropertiesPanelChecksumVisible(boolean v);
+
+    @AboutConfig
+    @DefaultBooleanValue(true)
+    boolean isDownloadsPropertiesPanelArchivepasswordVisible();
+
+    void setDownloadsPropertiesPanelArchivepasswordVisible(boolean v);
+
+    @AboutConfig
+    @DefaultBooleanValue(true)
+    boolean isDownloadsPropertiesPanelSaveToVisible();
+
+    void setDownloadsPropertiesPanelSaveToVisible(boolean v);
+
+    @AboutConfig
+    @DefaultBooleanValue(false)
+    boolean isDownloadsPropertiesPanelDownloadFromVisible();
+
+    void setDownloadsPropertiesPanelDownloadFromVisible(boolean v);
 }

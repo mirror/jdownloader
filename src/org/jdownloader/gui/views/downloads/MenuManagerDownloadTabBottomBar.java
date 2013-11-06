@@ -87,7 +87,9 @@ public class MenuManagerDownloadTabBottomBar extends AbstractBottomBarMenuManage
         //
         quicksettings.add(new SpeedlimitEditorLink());
         quicksettings.add(new SeperatorData());
+        quicksettings.add(DownloadsPropertiesToggleAction.class);
         quicksettings.add(DownloadsOverviewPanelToggleAction.class);
+
         quicksettings.add(new SeperatorData());
         quicksettings.add(BottomBarMenuManagerAction.class);
 

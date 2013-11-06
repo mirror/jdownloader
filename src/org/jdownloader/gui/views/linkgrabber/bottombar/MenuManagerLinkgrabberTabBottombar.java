@@ -126,8 +126,8 @@ public class MenuManagerLinkgrabberTabBottombar extends AbstractBottomBarMenuMan
         quicksettings.add(setOptional(LinkFilterToggleAction.class));
 
         quicksettings.add(new SeperatorData());
-        quicksettings.add((LinkgrabberOverviewPanelToggleAction.class));
         quicksettings.add((LinkgrabberPropertiesToggleAction.class));
+        quicksettings.add((LinkgrabberOverviewPanelToggleAction.class));
 
         quicksettings.add((LinkgrabberSidebarToggleAction.class));
         quicksettings.add(new SeperatorData());

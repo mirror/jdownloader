@@ -4,6 +4,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.HierarchyEvent;
 import java.awt.event.HierarchyListener;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.swing.Box;
@@ -17,9 +18,8 @@ import javax.swing.event.TableModelListener;
 import jd.SecondLevelLaunch;
 import jd.controlling.TaskQueue;
 import jd.controlling.downloadcontroller.DownloadController;
-import jd.controlling.downloadcontroller.DownloadControllerEvent;
-import jd.controlling.downloadcontroller.DownloadControllerListener;
 import jd.controlling.downloadcontroller.DownloadWatchDog;
+import jd.controlling.packagecontroller.AbstractNode;
 import jd.gui.swing.jdgui.JDGui;
 import jd.gui.swing.jdgui.JDGui.Panels;
 import jd.gui.swing.jdgui.interfaces.View;
@@ -27,6 +27,11 @@ import jd.gui.swing.jdgui.menu.ChunksEditor;
 import jd.gui.swing.jdgui.menu.ParalellDownloadsEditor;
 import jd.gui.swing.jdgui.menu.ParallelDownloadsPerHostEditor;
 import jd.gui.swing.jdgui.menu.SpeedlimitEditor;
+import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLinkProperty;
+import jd.plugins.FilePackage;
+import jd.plugins.FilePackageProperty;
+import jd.plugins.LinkStatusProperty;
 
 import org.appwork.controlling.StateEvent;
 import org.appwork.controlling.StateEventListener;
@@ -38,6 +43,7 @@ import org.appwork.utils.event.queue.QueueAction;
 import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.SwingUtils;
 import org.jdownloader.controlling.AggregatedNumbers;
+import org.jdownloader.controlling.download.DownloadControllerListener;
 import org.jdownloader.gui.event.GUIEventSender;
 import org.jdownloader.gui.event.GUIListener;
 import org.jdownloader.gui.translate._GUI;
@@ -270,15 +276,6 @@ public class DownloadOverview extends MigPanel implements DownloadControllerList
     }
 
     @Override
-    public void onDownloadControllerEvent(final DownloadControllerEvent event) {
-        switch (event.getType()) {
-        case REFRESH_STRUCTURE:
-        case REFRESH_CONTENT:
-            update();
-        }
-    }
-
-    @Override
     public void hierarchyChanged(HierarchyEvent e) {
         /**
          * Disable/Enable the updatetimer if the panel gets enabled/disabled
@@ -365,5 +362,47 @@ public class DownloadOverview extends MigPanel implements DownloadControllerList
             }
         };
 
+    }
+
+    @Override
+    public void onDownloadControllerAddedPackage(FilePackage pkg) {
+    }
+
+    @Override
+    public void onDownloadControllerStructureRefresh(FilePackage pkg) {
+        update();
+    }
+
+    @Override
+    public void onDownloadControllerStructureRefresh() {
+        update();
+    }
+
+    @Override
+    public void onDownloadControllerStructureRefresh(AbstractNode node, Object param) {
+        update();
+    }
+
+    @Override
+    public void onDownloadControllerRemovedPackage(FilePackage pkg) {
+    }
+
+    @Override
+    public void onDownloadControllerRemovedLinklist(List<DownloadLink> list) {
+    }
+
+    @Override
+    public void onDownloadControllerUpdatedData(DownloadLink downloadlink, DownloadLinkProperty property) {
+        update();
+    }
+
+    @Override
+    public void onDownloadControllerUpdatedData(FilePackage pkg, FilePackageProperty property) {
+        update();
+    }
+
+    @Override
+    public void onDownloadControllerUpdatedData(DownloadLink downloadlink, LinkStatusProperty property) {
+        update();
     }
 }

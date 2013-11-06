@@ -1,20 +1,27 @@
 package org.jdownloader.gui.views.downloads;
 
 import java.awt.Component;
-import java.awt.Dimension;
 import java.awt.Point;
+import java.util.List;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
+import javax.swing.BorderFactory;
 import javax.swing.Box;
 import javax.swing.JProgressBar;
 import javax.swing.JScrollPane;
+import javax.swing.event.ListSelectionEvent;
+import javax.swing.event.ListSelectionListener;
 
 import jd.SecondLevelLaunch;
 import jd.controlling.downloadcontroller.DownloadController;
-import jd.controlling.downloadcontroller.DownloadControllerEvent;
-import jd.controlling.downloadcontroller.DownloadControllerListener;
+import jd.controlling.packagecontroller.AbstractNode;
 import jd.gui.swing.jdgui.interfaces.SwitchPanel;
+import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLinkProperty;
+import jd.plugins.FilePackage;
+import jd.plugins.FilePackageProperty;
+import jd.plugins.LinkStatusProperty;
 import net.miginfocom.swing.MigLayout;
 
 import org.appwork.storage.config.ValidationException;
@@ -26,14 +33,18 @@ import org.appwork.swing.components.circlebar.ImagePainter;
 import org.appwork.utils.NullsafeAtomicReference;
 import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.dialog.Dialog;
+import org.jdownloader.controlling.download.DownloadControllerListener;
 import org.jdownloader.gui.components.OverviewHeaderScrollPane;
 import org.jdownloader.gui.helpdialogs.HelpDialog;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.components.HeaderScrollPane;
 import org.jdownloader.gui.views.downloads.bottombar.CustomizeableActionBar;
-import org.jdownloader.gui.views.downloads.overviewpanel.DownloadOverview;
 import org.jdownloader.gui.views.downloads.overviewpanel.DownloadOverViewHeader;
+import org.jdownloader.gui.views.downloads.overviewpanel.DownloadOverview;
+import org.jdownloader.gui.views.downloads.properties.DownloadPropertiesBasePanel;
+import org.jdownloader.gui.views.downloads.properties.DownloadPropertiesHeader;
+import org.jdownloader.gui.views.downloads.properties.PropertiesScrollPane;
 import org.jdownloader.gui.views.downloads.table.DownloadsTable;
 import org.jdownloader.gui.views.downloads.table.DownloadsTableModel;
 import org.jdownloader.gui.views.downloads.table.HorizontalScrollbarAction;
@@ -53,6 +64,44 @@ public class DownloadsPanel extends SwitchPanel implements DownloadControllerLis
     private ScheduledFuture<?>                        timer             = null;
     private CustomizeableActionBar                    bottomBar;
     private NullsafeAtomicReference<HeaderScrollPane> overViewScrollBar = new NullsafeAtomicReference<HeaderScrollPane>(null);
+    private PropertiesScrollPane                      propertiesPanel;
+
+    private PropertiesScrollPane createPropertiesPanel() {
+        final DownloadPropertiesBasePanel loverView = new DownloadPropertiesBasePanel(table);
+        PropertiesScrollPane propertiesScrollPane = new PropertiesScrollPane(loverView, table);
+
+        LAFOptions.getInstance().applyPanelBackground(propertiesScrollPane);
+        propertiesScrollPane.setColumnHeaderView(new DownloadPropertiesHeader(loverView) {
+
+            @Override
+            protected void onCloseAction() {
+                CFG_GUI.DOWNLOADS_TAB_PROPERTIES_PANEL_VISIBLE.setValue(false);
+                CustomizeableActionBar iconComp = bottomBar;
+                Point loc = iconComp.getLocationOnScreen();
+                HelpDialog.show(false, false, new Point(loc.x + iconComp.getWidth() - iconComp.getHeight() / 2, loc.y + iconComp.getHeight() / 2), "propertiesclosed", Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI._.DownloadsPanel_onCloseAction(), _GUI._.Linkgrabber_properties_onCloseAction_help(), NewTheme.I().getIcon("bottombar", 32));
+
+            }
+        });
+        propertiesScrollPane.setVisible(false);
+        propertiesScrollPane.setBorder(BorderFactory.createCompoundBorder(BorderFactory.createEmptyBorder(2, 0, 0, 0), propertiesScrollPane.getBorder()));
+        return propertiesScrollPane;
+    }
+
+    public void setPropertiesPanelVisible(final boolean propertiesPanelVisible) {
+        // if (propertiesPanelVisible == this.propertiesPanelVisible) return;
+
+        new EDTRunner() {
+
+            @Override
+            protected void runInEDT() {
+
+                propertiesPanel.setVisible(propertiesPanelVisible);
+                revalidate();
+
+            }
+        };
+
+    }
 
     public DownloadsPanel() {
         super(new MigLayout("ins 0, wrap 2", "[grow,fill]2[fill]", "[grow, fill]2[]2[]"));
@@ -75,6 +124,25 @@ public class DownloadsPanel extends SwitchPanel implements DownloadControllerLis
             }
 
         };
+        propertiesPanel = createPropertiesPanel();
+
+        table.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
+
+            @Override
+            public void valueChanged(ListSelectionEvent e) {
+                if (!CFG_GUI.DOWNLOADS_TAB_PROPERTIES_PANEL_VISIBLE.isEnabled() && e.getValueIsAdjusting()) return;
+                if (table.getSelectedRowCount() > 0) {
+                    setPropertiesPanelVisible(true);
+
+                    propertiesPanel.update(table.getModel().getObjectbyRow(table.getSelectionModel().getLeadSelectionIndex()));
+
+                } else {
+                    setPropertiesPanelVisible(false);
+
+                }
+
+            }
+        });
         DownloadController.DOWNLOADLIST_LOADED.executeWhen(new Runnable() {
 
             @Override
@@ -103,7 +171,7 @@ public class DownloadsPanel extends SwitchPanel implements DownloadControllerLis
             }
         });
 
-        CFG_GUI.DOWNLOAD_TAB_OVERVIEW_VISIBLE.getEventSender().addListener(new GenericConfigEventListener<Boolean>() {
+        GenericConfigEventListener<Boolean> relayoutListener = new GenericConfigEventListener<Boolean>() {
 
             @Override
             public void onConfigValidatorError(KeyHandler<Boolean> keyHandler, Boolean invalidValue, ValidationException validateException) {
@@ -124,8 +192,9 @@ public class DownloadsPanel extends SwitchPanel implements DownloadControllerLis
                     }
                 };
             }
-        });
-
+        };
+        CFG_GUI.DOWNLOAD_TAB_OVERVIEW_VISIBLE.getEventSender().addListener(relayoutListener);
+        CFG_GUI.DOWNLOADS_TAB_PROPERTIES_PANEL_VISIBLE.getEventSender().addListener(relayoutListener);
         // org.jdownloader.settings.statics.GUI.DOWNLOAD_VIEW_SIDEBAR_ENABLED.getEventSender().addListener(this);
         //
         // org.jdownloader.settings.statics.GUI.DOWNLOAD_VIEW_SIDEBAR_TOGGLE_BUTTON_ENABLED.getEventSender().addListener(this);
@@ -198,16 +267,37 @@ public class DownloadsPanel extends SwitchPanel implements DownloadControllerLis
             add(new JScrollPane(loader), "alignx center,aligny 20%");
         } else {
             if (CFG_GUI.DOWNLOAD_TAB_OVERVIEW_VISIBLE.isEnabled()) {
-                setLayout(new MigLayout("ins 0, wrap 1", "[grow,fill]", "[grow,fill]2[]2[]"));
-                this.add(tableScrollPane, "");
-                Dimension p = tableScrollPane.getPreferredSize();
+
+                // Dimension p = tableScrollPane.getPreferredSize();
                 // add(Box.createHorizontalGlue());
-                add(getOverView(), "");
-                add(bottomBar, "height 24!");
+                if (CFG_GUI.DOWNLOADS_TAB_PROPERTIES_PANEL_VISIBLE.isEnabled()) {
+                    setLayout(new MigLayout("ins 0, wrap 1", "[grow,fill]", "[grow,fill]0[]2[]2[]"));
+
+                    this.add(tableScrollPane, "");
+                    add(propertiesPanel, "hidemode 2");
+                    add(getOverView(), "");
+                    add(bottomBar, "height 24!");
+                } else {
+                    setLayout(new MigLayout("ins 0, wrap 1", "[grow,fill]", "[grow,fill]2[]2[]"));
+
+                    this.add(tableScrollPane, "");
+                    add(getOverView(), "");
+                    add(bottomBar, "height 24!");
+                }
+
             } else {
-                setLayout(new MigLayout("ins 0, wrap 1", "[grow,fill]", "[grow, fill]2[]"));
-                this.add(tableScrollPane, "");
-                add(bottomBar, "height 24!");
+                if (CFG_GUI.DOWNLOADS_TAB_PROPERTIES_PANEL_VISIBLE.isEnabled()) {
+
+                    setLayout(new MigLayout("ins 0, wrap 1", "[grow,fill]", "[grow, fill]0[]2[]"));
+
+                    this.add(tableScrollPane, "");
+                    add(propertiesPanel, "hidemode 2");
+                    add(bottomBar, "height 24!");
+                } else {
+                    setLayout(new MigLayout("ins 0, wrap 1", "[grow,fill]", "[grow, fill]2[]"));
+                    this.add(tableScrollPane, "");
+                    add(bottomBar, "height 24!");
+                }
             }
 
         }
@@ -357,21 +447,52 @@ public class DownloadsPanel extends SwitchPanel implements DownloadControllerLis
         DownloadController.getInstance().removeListener(this);
     }
 
-    public void onDownloadControllerEvent(DownloadControllerEvent event) {
-        switch (event.getType()) {
-        case REFRESH_STRUCTURE:
-        case REMOVE_CONTENT:
-            tableModel.recreateModel();
-            break;
-        case REFRESH_CONTENT:
-            tableModel.refreshModel();
-            break;
-        }
-    }
-
     public void onConfigValidatorError(KeyHandler<Boolean> keyHandler, Boolean invalidValue, ValidationException validateException) {
     }
 
     public void onConfigValueModified(KeyHandler<Boolean> keyHandler, Boolean newValue) {
+    }
+
+    @Override
+    public void onDownloadControllerAddedPackage(FilePackage pkg) {
+    }
+
+    @Override
+    public void onDownloadControllerStructureRefresh(FilePackage pkg) {
+        tableModel.recreateModel();
+    }
+
+    @Override
+    public void onDownloadControllerStructureRefresh() {
+        tableModel.recreateModel();
+    }
+
+    @Override
+    public void onDownloadControllerStructureRefresh(AbstractNode node, Object param) {
+        tableModel.recreateModel();
+    }
+
+    @Override
+    public void onDownloadControllerRemovedPackage(FilePackage pkg) {
+        tableModel.recreateModel();
+    }
+
+    @Override
+    public void onDownloadControllerRemovedLinklist(List<DownloadLink> list) {
+    }
+
+    @Override
+    public void onDownloadControllerUpdatedData(DownloadLink downloadlink, DownloadLinkProperty property) {
+        tableModel.refreshModel();
+    }
+
+    @Override
+    public void onDownloadControllerUpdatedData(FilePackage pkg, FilePackageProperty property) {
+        tableModel.refreshModel();
+    }
+
+    @Override
+    public void onDownloadControllerUpdatedData(DownloadLink downloadlink, LinkStatusProperty property) {
+        tableModel.refreshModel();
     }
 }

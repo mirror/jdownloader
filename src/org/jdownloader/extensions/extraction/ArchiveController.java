@@ -5,9 +5,6 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map.Entry;
 
-import jd.controlling.downloadcontroller.DownloadController;
-import jd.controlling.downloadcontroller.DownloadControllerEvent;
-import jd.controlling.downloadcontroller.DownloadControllerListener;
 import jd.controlling.linkcollector.LinkCollector;
 import jd.controlling.linkcollector.LinkCollectorCrawler;
 import jd.controlling.linkcollector.LinkCollectorEvent;
@@ -27,7 +24,7 @@ import org.jdownloader.controlling.FileCreationManager;
 import org.jdownloader.extensions.extraction.bindings.downloadlink.DownloadLinkArchiveFactory;
 import org.jdownloader.logging.LogController;
 
-public class ArchiveController implements DownloadControllerListener, LinkCollectorListener {
+public class ArchiveController implements LinkCollectorListener {
     private static final ArchiveController INSTANCE = new ArchiveController();
 
     /**
@@ -64,7 +61,7 @@ public class ArchiveController implements DownloadControllerListener, LinkCollec
                 save();
             }
         });
-        DownloadController.getInstance().addListener(this);
+        // DownloadController.getInstance().addListener(this);
         LinkCollector.getInstance().getEventsender().addListener(this);
     }
 
@@ -124,11 +121,6 @@ public class ArchiveController implements DownloadControllerListener, LinkCollec
 
     public void update(ArchiveSettings archiveSettings) {
         // we could start some kind of asynch saver delayer here.
-
-    }
-
-    @Override
-    public void onDownloadControllerEvent(DownloadControllerEvent event) {
 
     }
 

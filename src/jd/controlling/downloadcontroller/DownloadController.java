@@ -40,6 +40,8 @@ import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLinkProperty;
 import jd.plugins.FilePackage;
+import jd.plugins.FilePackageProperty;
+import jd.plugins.LinkStatusProperty;
 import jd.utils.JDUtilities;
 
 import org.appwork.controlling.SingleReachableState;
@@ -65,6 +67,14 @@ import org.appwork.utils.zip.ZipIOWriter;
 import org.jdownloader.controlling.DownloadLinkAggregator;
 import org.jdownloader.controlling.DownloadLinkWalker;
 import org.jdownloader.controlling.FileCreationManager;
+import org.jdownloader.controlling.download.DownloadControllerEvent;
+import org.jdownloader.controlling.download.DownloadControllerEventAddedPackage;
+import org.jdownloader.controlling.download.DownloadControllerEventDataUpdate;
+import org.jdownloader.controlling.download.DownloadControllerEventRemovedLinkList;
+import org.jdownloader.controlling.download.DownloadControllerEventRemovedPackage;
+import org.jdownloader.controlling.download.DownloadControllerEventSender;
+import org.jdownloader.controlling.download.DownloadControllerEventStructureRefresh;
+import org.jdownloader.controlling.download.DownloadControllerListener;
 import org.jdownloader.gui.views.components.packagetable.LinkTreeUtils;
 import org.jdownloader.plugins.FinalLinkState;
 import org.jdownloader.plugins.controller.host.PluginFinder;
@@ -75,25 +85,19 @@ import org.jdownloader.settings.staticreferences.CFG_GENERAL;
 
 public class DownloadController extends PackageController<FilePackage, DownloadLink> {
 
-    private transient Eventsender<DownloadControllerListener, DownloadControllerEvent> broadcaster         = new Eventsender<DownloadControllerListener, DownloadControllerEvent>() {
+    private transient DownloadControllerEventSender eventSender         = new DownloadControllerEventSender();
 
-                                                                                                               @Override
-                                                                                                               protected void fireEvent(final DownloadControllerListener listener, final DownloadControllerEvent event) {
-                                                                                                                   listener.onDownloadControllerEvent(event);
-                                                                                                               };
-                                                                                                           };
+    private final DelayedRunnable                   downloadSaver;
+    private final DelayedRunnable                   changesSaver;
+    private final CopyOnWriteArrayList<File>        downloadLists       = new CopyOnWriteArrayList<File>();
 
-    private final DelayedRunnable                                                      downloadSaver;
-    private final DelayedRunnable                                                      changesSaver;
-    private final CopyOnWriteArrayList<File>                                           downloadLists       = new CopyOnWriteArrayList<File>();
+    public final ScheduledExecutorService           TIMINGQUEUE         = DelayedRunnable.getNewScheduledExecutorService();
 
-    public final ScheduledExecutorService                                              TIMINGQUEUE         = DelayedRunnable.getNewScheduledExecutorService();
+    public static SingleReachableState              DOWNLOADLIST_LOADED = new SingleReachableState("DOWNLOADLIST_COMPLETE");
 
-    public static SingleReachableState                                                 DOWNLOADLIST_LOADED = new SingleReachableState("DOWNLOADLIST_COMPLETE");
+    private static DownloadController               INSTANCE            = new DownloadController();
 
-    private static DownloadController                                                  INSTANCE            = new DownloadController();
-
-    private static Object                                                              SAVELOADLOCK        = new Object();
+    private static Object                           SAVELOADLOCK        = new Object();
 
     /**
      * darf erst nachdem der JDController init wurde, aufgerufen werden
@@ -172,9 +176,50 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
             }
 
         };
-        this.broadcaster.addListener(new DownloadControllerListener() {
+        this.eventSender.addListener(new DownloadControllerListener() {
 
-            public void onDownloadControllerEvent(DownloadControllerEvent event) {
+            @Override
+            public void onDownloadControllerAddedPackage(FilePackage pkg) {
+                changesSaver.run();
+            }
+
+            @Override
+            public void onDownloadControllerStructureRefresh(FilePackage pkg) {
+                changesSaver.run();
+            }
+
+            @Override
+            public void onDownloadControllerStructureRefresh() {
+                changesSaver.run();
+            }
+
+            @Override
+            public void onDownloadControllerStructureRefresh(AbstractNode node, Object param) {
+                changesSaver.run();
+            }
+
+            @Override
+            public void onDownloadControllerRemovedPackage(FilePackage pkg) {
+                changesSaver.run();
+            }
+
+            @Override
+            public void onDownloadControllerRemovedLinklist(List<DownloadLink> list) {
+                changesSaver.run();
+            }
+
+            @Override
+            public void onDownloadControllerUpdatedData(DownloadLink downloadlink, DownloadLinkProperty property) {
+                changesSaver.run();
+            }
+
+            @Override
+            public void onDownloadControllerUpdatedData(FilePackage pkg, FilePackageProperty property) {
+                changesSaver.run();
+            }
+
+            @Override
+            public void onDownloadControllerUpdatedData(DownloadLink downloadlink, LinkStatusProperty property) {
                 changesSaver.run();
             }
         });
@@ -186,18 +231,22 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
 
     @Override
     protected void _controllerPackageNodeAdded(FilePackage pkg, QueuePriority priority) {
-        broadcaster.fireEvent(new DownloadControllerEvent(this, DownloadControllerEvent.TYPE.REFRESH_STRUCTURE));
-        broadcaster.fireEvent(new DownloadControllerEvent(this, DownloadControllerEvent.TYPE.ADD_CONTENT, pkg));
+        eventSender.fireEvent(new DownloadControllerEventStructureRefresh());
+        eventSender.fireEvent(new DownloadControllerEventAddedPackage(pkg));
+    }
+
+    public Eventsender<DownloadControllerListener, DownloadControllerEvent> getEventSender() {
+        return eventSender;
     }
 
     @Override
     protected void _controllerPackageNodeRemoved(FilePackage pkg, QueuePriority priority) {
-        broadcaster.fireEvent(new DownloadControllerEvent(DownloadController.this, DownloadControllerEvent.TYPE.REMOVE_CONTENT, pkg));
+        eventSender.fireEvent(new DownloadControllerEventRemovedPackage(pkg));
     }
 
     @Override
     protected void _controllerParentlessLinks(final List<DownloadLink> links, QueuePriority priority) {
-        broadcaster.fireEvent(new DownloadControllerEvent(DownloadController.this, DownloadControllerEvent.TYPE.REMOVE_CONTENT, new ArrayList<DownloadLink>(links)));
+        eventSender.fireEvent(new DownloadControllerEventRemovedLinkList(new ArrayList<DownloadLink>(links)));
     }
 
     @Override
@@ -217,7 +266,7 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
 
     @Override
     protected void _controllerStructureChanged(QueuePriority priority) {
-        broadcaster.fireEvent(new DownloadControllerEvent(this, DownloadControllerEvent.TYPE.REFRESH_STRUCTURE));
+        eventSender.fireEvent(new DownloadControllerEventStructureRefresh());
     }
 
     /**
@@ -278,11 +327,11 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
     }
 
     public void addListener(final DownloadControllerListener l) {
-        broadcaster.addListener(l);
+        eventSender.addListener(l);
     }
 
     public void addListener(final DownloadControllerListener l, boolean weak) {
-        broadcaster.addListener(l, weak);
+        eventSender.addListener(l, weak);
     }
 
     public ArrayList<FilePackage> getPackages() {
@@ -384,7 +433,7 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
                     } finally {
                         writeUnlock();
                     }
-                    broadcaster.fireEvent(new DownloadControllerEvent(DownloadController.this, DownloadControllerEvent.TYPE.REFRESH_STRUCTURE));
+                    eventSender.fireEvent(new DownloadControllerEventStructureRefresh());
                 } finally {
                     DOWNLOADLIST_LOADED.setReached();
                 }
@@ -575,7 +624,7 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
     }
 
     public void removeListener(final DownloadControllerListener l) {
-        broadcaster.removeListener(l);
+        eventSender.removeListener(l);
     }
 
     /**
@@ -705,10 +754,11 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
                     break;
                 }
             }
-            broadcaster.fireEvent(new DownloadControllerEvent(this, DownloadControllerEvent.TYPE.REFRESH_CONTENT, new Object[] { source, param }));
+            //
+            eventSender.fireEvent(new DownloadControllerEventDataUpdate(source, param));
             break;
         case STRUCTURE_CHANCE:
-            broadcaster.fireEvent(new DownloadControllerEvent(this, DownloadControllerEvent.TYPE.REFRESH_STRUCTURE, new Object[] { source, param }));
+            eventSender.fireEvent(new DownloadControllerEventStructureRefresh(source, param));
             break;
         }
 
@@ -716,7 +766,7 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
 
     @Override
     protected void _controllerPackageNodeStructureChanged(FilePackage pkg, QueuePriority priority) {
-        broadcaster.fireEvent(new DownloadControllerEvent(this, DownloadControllerEvent.TYPE.REFRESH_STRUCTURE, pkg));
+        eventSender.fireEvent(new DownloadControllerEventStructureRefresh(pkg));
     }
 
     public void set(final DownloadLinkWalker filter) {

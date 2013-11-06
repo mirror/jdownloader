@@ -53,6 +53,7 @@ import jd.controlling.downloadcontroller.event.DownloadWatchdogListener;
 import jd.controlling.linkcollector.LinkCollectingJob;
 import jd.controlling.linkcollector.LinkCollector;
 import jd.controlling.linkcollector.LinkOrigin;
+import jd.controlling.packagecontroller.AbstractNode;
 import jd.controlling.packagecontroller.AbstractPackageChildrenNodeFilter;
 import jd.controlling.proxy.ProxyController;
 import jd.controlling.proxy.ProxyInfo;
@@ -70,7 +71,9 @@ import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.DownloadLinkProperty;
 import jd.plugins.FilePackage;
+import jd.plugins.FilePackageProperty;
 import jd.plugins.LinkStatus;
+import jd.plugins.LinkStatusProperty;
 import jd.plugins.PluginException;
 import jd.plugins.download.DownloadInterface;
 import jd.plugins.download.raf.HashResult;
@@ -106,6 +109,7 @@ import org.jdownloader.controlling.DownloadLinkWalker;
 import org.jdownloader.controlling.FileCreationEvent;
 import org.jdownloader.controlling.FileCreationListener;
 import org.jdownloader.controlling.FileCreationManager;
+import org.jdownloader.controlling.download.DownloadControllerListener;
 import org.jdownloader.controlling.hosterrule.AccountUsageRule;
 import org.jdownloader.controlling.hosterrule.HosterRuleController;
 import org.jdownloader.controlling.hosterrule.HosterRuleControllerListener;
@@ -1293,45 +1297,6 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
         return true;
     }
 
-    /**
-     * this keeps track of stopmark in case the link/package got removed from downloadlist
-     */
-    public void onDownloadControllerEvent(final DownloadControllerEvent event) {
-        DownloadSession session = getSession();
-        if (session.isStopMarkSet() == false) return;
-        if (session.getStopMark() == STOPMARK.HIDDEN) return;
-        enqueueJob(new DownloadWatchDogJob() {
-
-            @Override
-            public void execute(DownloadSession currentSession) {
-                if (currentSession.isStopMarkSet() == false) return;
-                Object stopMark = currentSession.getStopMark();
-                if (stopMark == STOPMARK.HIDDEN) return;
-                switch (event.getType()) {
-                case REMOVE_CONTENT:
-                    if (stopMark == event.getParameter()) {
-                        /* now the stopmark is hidden */
-                        currentSession.setStopMark(STOPMARK.HIDDEN);
-                        return;
-                    } else if (event.getParameter() != null && event.getParameter() instanceof List) {
-                        List<?> list = (List<?>) event.getParameter();
-                        for (Object l : list) {
-                            if (stopMark == l) {
-                                currentSession.setStopMark(STOPMARK.HIDDEN);
-                                return;
-                            }
-                        }
-                    }
-                }
-            }
-
-            @Override
-            public void interrupt() {
-            }
-        });
-
-    }
-
     protected void setTempWatchDogJobThread(Thread thread) {
         tempWatchDogJobThread.set(thread);
     }
@@ -2401,119 +2366,142 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                     DownloadController.getInstance().addListener(listener = new DownloadControllerListener() {
 
                         @Override
-                        public void onDownloadControllerEvent(DownloadControllerEvent event) {
+                        public void onDownloadControllerAddedPackage(FilePackage pkg) {
                             lastStructureChange.set(-1l);
-                            switch (event.getType()) {
-                            case REMOVE_CONTENT:
-                                if (event.getParameter() != null) {
-                                    if (event.getParameter() instanceof FilePackage) {
-                                        final FilePackage fp = (FilePackage) event.getParameter();
-                                        enqueueJob(new DownloadWatchDogJob() {
-                                            @Override
-                                            public void execute(DownloadSession currentSession) {
-                                                currentSession.setOnFileExistsAction(fp, null);
-                                            }
+                        }
 
-                                            @Override
-                                            public void interrupt() {
-                                            }
-                                        });
-                                    } else if (event.getParameter() instanceof List) {
-                                        final List<?> list = (List<?>) event.getParameter();
-                                        enqueueJob(new DownloadWatchDogJob() {
-                                            @Override
-                                            public void execute(DownloadSession currentSession) {
-                                                for (Object item : list) {
-                                                    if (item instanceof DownloadLink) {
-                                                        removeLink((DownloadLink) item, currentSession);
-                                                    }
-                                                }
-                                            }
+                        @Override
+                        public void onDownloadControllerStructureRefresh(FilePackage pkg) {
+                            lastStructureChange.set(-1l);
+                        }
 
-                                            @Override
-                                            public void interrupt() {
-                                            }
-                                        });
-                                    }
+                        @Override
+                        public void onDownloadControllerStructureRefresh() {
+                            lastStructureChange.set(-1l);
+                        }
+
+                        @Override
+                        public void onDownloadControllerStructureRefresh(AbstractNode node, Object param) {
+                            lastStructureChange.set(-1l);
+                        }
+
+                        @Override
+                        public void onDownloadControllerRemovedPackage(final FilePackage fp) {
+                            lastStructureChange.set(-1l);
+                            enqueueJob(new DownloadWatchDogJob() {
+                                @Override
+                                public void execute(DownloadSession currentSession) {
+                                    currentSession.setOnFileExistsAction(fp, null);
                                 }
-                                break;
-                            case REFRESH_CONTENT:
-                                if (event.getParameter() instanceof DownloadLink) {
-                                    DownloadLink dl = (DownloadLink) event.getParameter();
-                                    if (dl != null) {
-                                        Object property = event.getParameter(1);
-                                        if (property instanceof DownloadLinkProperty) {
-                                            final DownloadLinkProperty dlProperty = (DownloadLinkProperty) property;
-                                            final DownloadLink link = dlProperty.getDownloadLink();
-                                            switch (dlProperty.getProperty()) {
-                                            case PRIORITY:
-                                                enqueueJob(new DownloadWatchDogJob() {
-                                                    @Override
-                                                    public void execute(DownloadSession currentSession) {
-                                                        if (link.isEnabled()) {
-                                                            currentSession.incrementActivatorRebuildRequest();
-                                                        }
-                                                    }
 
-                                                    @Override
-                                                    public void interrupt() {
-                                                    }
-                                                });
-                                                break;
-                                            case ENABLED:
-                                                enqueueJob(new DownloadWatchDogJob() {
-                                                    @Override
-                                                    public void execute(DownloadSession currentSession) {
-                                                        if (!link.isEnabled()) {
-                                                            removeLink(link, currentSession);
-                                                        } else {
-                                                            currentSession.incrementActivatorRebuildRequest();
-                                                        }
-                                                    }
+                                @Override
+                                public void interrupt() {
+                                }
+                            });
+                        }
 
-                                                    @Override
-                                                    public void interrupt() {
-                                                    }
-                                                });
-                                                break;
-                                            case SKIPPED:
-                                                enqueueJob(new DownloadWatchDogJob() {
-                                                    @Override
-                                                    public void execute(DownloadSession currentSession) {
-                                                        if (link.getSkipReason() != null) {
-                                                            removeLink(link, currentSession);
-                                                        } else {
-                                                            currentSession.incrementActivatorRebuildRequest();
-                                                        }
-                                                    }
-
-                                                    @Override
-                                                    public void interrupt() {
-                                                    }
-                                                });
-                                                break;
-                                            case FINAL_STATE:
-                                                enqueueJob(new DownloadWatchDogJob() {
-                                                    @Override
-                                                    public void execute(DownloadSession currentSession) {
-                                                        if (link.getFinalLinkState() != null) {
-                                                            removeLink(link, currentSession);
-                                                        } else {
-                                                            currentSession.incrementActivatorRebuildRequest();
-                                                        }
-                                                    }
-
-                                                    @Override
-                                                    public void interrupt() {
-                                                    }
-                                                });
-                                                break;
-                                            }
+                        @Override
+                        public void onDownloadControllerRemovedLinklist(final List<DownloadLink> list) {
+                            lastStructureChange.set(-1l);
+                            enqueueJob(new DownloadWatchDogJob() {
+                                @Override
+                                public void execute(DownloadSession currentSession) {
+                                    for (DownloadLink item : list) {
+                                        if (item instanceof DownloadLink) {
+                                            removeLink((DownloadLink) item, currentSession);
                                         }
                                     }
                                 }
-                                break;
+
+                                @Override
+                                public void interrupt() {
+                                }
+                            });
+                        }
+
+                        @Override
+                        public void onDownloadControllerUpdatedData(DownloadLink dl, DownloadLinkProperty dlProperty) {
+                            lastStructureChange.set(-1l);
+
+                            if (dl != null) {
+
+                                final DownloadLink link = dlProperty.getDownloadLink();
+                                switch (dlProperty.getProperty()) {
+                                case PRIORITY:
+                                    enqueueJob(new DownloadWatchDogJob() {
+                                        @Override
+                                        public void execute(DownloadSession currentSession) {
+                                            if (link.isEnabled()) {
+                                                currentSession.incrementActivatorRebuildRequest();
+                                            }
+                                        }
+
+                                        @Override
+                                        public void interrupt() {
+                                        }
+                                    });
+                                    break;
+                                case ENABLED:
+                                    enqueueJob(new DownloadWatchDogJob() {
+                                        @Override
+                                        public void execute(DownloadSession currentSession) {
+                                            if (!link.isEnabled()) {
+                                                removeLink(link, currentSession);
+                                            } else {
+                                                currentSession.incrementActivatorRebuildRequest();
+                                            }
+                                        }
+
+                                        @Override
+                                        public void interrupt() {
+                                        }
+                                    });
+                                    break;
+                                case SKIPPED:
+                                    enqueueJob(new DownloadWatchDogJob() {
+                                        @Override
+                                        public void execute(DownloadSession currentSession) {
+                                            if (link.getSkipReason() != null) {
+                                                removeLink(link, currentSession);
+                                            } else {
+                                                currentSession.incrementActivatorRebuildRequest();
+                                            }
+                                        }
+
+                                        @Override
+                                        public void interrupt() {
+                                        }
+                                    });
+                                    break;
+                                case FINAL_STATE:
+                                    enqueueJob(new DownloadWatchDogJob() {
+                                        @Override
+                                        public void execute(DownloadSession currentSession) {
+                                            if (link.getFinalLinkState() != null) {
+                                                removeLink(link, currentSession);
+                                            } else {
+                                                currentSession.incrementActivatorRebuildRequest();
+                                            }
+                                        }
+
+                                        @Override
+                                        public void interrupt() {
+                                        }
+                                    });
+                                    break;
+                                }
                             }
+
+                        }
+
+                        @Override
+                        public void onDownloadControllerUpdatedData(FilePackage pkg, FilePackageProperty property) {
+                            lastStructureChange.set(-1l);
+                        }
+
+                        @Override
+                        public void onDownloadControllerUpdatedData(DownloadLink downloadlink, LinkStatusProperty property) {
+                            lastStructureChange.set(-1l);
                         }
                     }, true);
                     while (DownloadWatchDog.this.stateMachine.isState(DownloadWatchDog.RUNNING_STATE, DownloadWatchDog.PAUSE_STATE)) {
@@ -3058,6 +3046,89 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
 
     @Override
     public void onShutdownVeto(ShutdownRequest request) {
+    }
+
+    @Override
+    public void onDownloadControllerAddedPackage(FilePackage pkg) {
+
+    }
+
+    @Override
+    public void onDownloadControllerStructureRefresh(FilePackage pkg) {
+    }
+
+    @Override
+    public void onDownloadControllerStructureRefresh() {
+    }
+
+    @Override
+    public void onDownloadControllerStructureRefresh(AbstractNode node, Object param) {
+    }
+
+    @Override
+    public void onDownloadControllerRemovedPackage(final FilePackage pkg) {
+        DownloadSession session = getSession();
+        if (session.isStopMarkSet() == false) return;
+        if (session.getStopMark() == STOPMARK.HIDDEN) return;
+        enqueueJob(new DownloadWatchDogJob() {
+
+            @Override
+            public void execute(DownloadSession currentSession) {
+                if (currentSession.isStopMarkSet() == false) return;
+                Object stopMark = currentSession.getStopMark();
+                if (stopMark == STOPMARK.HIDDEN) return;
+
+                if (stopMark == pkg) {
+                    /* now the stopmark is hidden */
+                    currentSession.setStopMark(STOPMARK.HIDDEN);
+                    return;
+                }
+            }
+
+            @Override
+            public void interrupt() {
+            }
+        });
+    }
+
+    @Override
+    public void onDownloadControllerRemovedLinklist(final List<DownloadLink> list) {
+        DownloadSession session = getSession();
+        if (session.isStopMarkSet() == false) return;
+        if (session.getStopMark() == STOPMARK.HIDDEN) return;
+        enqueueJob(new DownloadWatchDogJob() {
+
+            @Override
+            public void execute(DownloadSession currentSession) {
+                if (currentSession.isStopMarkSet() == false) return;
+                Object stopMark = currentSession.getStopMark();
+                if (stopMark == STOPMARK.HIDDEN) return;
+
+                for (DownloadLink l : list) {
+                    if (stopMark == l) {
+                        currentSession.setStopMark(STOPMARK.HIDDEN);
+                        return;
+                    }
+                }
+
+            }
+
+            @Override
+            public void interrupt() {
+            }
+        });
+    }
+
+    @Override
+    public void onDownloadControllerUpdatedData(DownloadLink downloadlink, DownloadLinkProperty property) {
+    }
+
+    @Override
+    public void onDownloadControllerUpdatedData(FilePackage pkg, FilePackageProperty property) {
+    }
+
+    @Override
+    public void onDownloadControllerUpdatedData(DownloadLink downloadlink, LinkStatusProperty property) {
     }
 
 }

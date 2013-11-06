@@ -1,10 +1,9 @@
-package org.jdownloader.gui.views.linkgrabber;
+package org.jdownloader.gui.views.linkgrabber.properties;
 
 import jd.controlling.packagecontroller.AbstractNode;
 
 import org.jdownloader.gui.components.OverviewHeaderScrollPane;
-import org.jdownloader.gui.views.linkgrabber.properties.LinkgrabberProperties;
-import org.jdownloader.gui.views.linkgrabber.properties.LinkgrabberPropertiesHeader;
+import org.jdownloader.gui.views.linkgrabber.LinkGrabberTable;
 
 public class PropertiesScrollPane extends OverviewHeaderScrollPane {
 

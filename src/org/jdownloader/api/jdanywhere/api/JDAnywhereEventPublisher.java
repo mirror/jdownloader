@@ -6,8 +6,6 @@ import java.util.List;
 import java.util.concurrent.CopyOnWriteArraySet;
 
 import jd.controlling.downloadcontroller.DownloadController;
-import jd.controlling.downloadcontroller.DownloadControllerEvent;
-import jd.controlling.downloadcontroller.DownloadControllerListener;
 import jd.controlling.downloadcontroller.DownloadWatchDog;
 import jd.controlling.downloadcontroller.SingleDownloadController;
 import jd.controlling.downloadcontroller.event.DownloadWatchdogListener;
@@ -19,11 +17,13 @@ import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledLinkProperty;
 import jd.controlling.linkcrawler.CrawledPackage;
 import jd.controlling.linkcrawler.CrawledPackageProperty;
+import jd.controlling.packagecontroller.AbstractNode;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLinkProperty;
 import jd.plugins.DownloadLinkProperty.Property;
 import jd.plugins.FilePackage;
 import jd.plugins.FilePackageProperty;
+import jd.plugins.LinkStatusProperty;
 
 import org.appwork.controlling.StateEvent;
 import org.appwork.controlling.StateEventListener;
@@ -40,6 +40,7 @@ import org.jdownloader.captcha.v2.ChallengeResponseController;
 import org.jdownloader.captcha.v2.ChallengeSolver;
 import org.jdownloader.captcha.v2.challenge.stringcaptcha.ImageCaptchaChallenge;
 import org.jdownloader.captcha.v2.solverjob.SolverJob;
+import org.jdownloader.controlling.download.DownloadControllerListener;
 import org.jdownloader.plugins.FinalLinkState;
 import org.jdownloader.settings.staticreferences.CFG_GENERAL;
 import org.jdownloader.settings.staticreferences.CFG_RECONNECT;
@@ -220,128 +221,6 @@ public class JDAnywhereEventPublisher implements EventPublisher, DownloadWatchdo
         SimpleEventObject eventObject = new SimpleEventObject(this, eventID.name(), data);
         for (EventsSender eventSender : eventSenders) {
             eventSender.publishEvent(eventObject, null);
-        }
-    }
-
-    @SuppressWarnings("incomplete-switch")
-    @Override
-    public void onDownloadControllerEvent(DownloadControllerEvent event) {
-        switch (event.getType()) {
-        case REFRESH_CONTENT:
-        case REFRESH_STRUCTURE:
-            if (event.getParameter() instanceof DownloadLink) {
-                DownloadLink dl = (DownloadLink) event.getParameter();
-                if (dl != null) {
-                    HashMap<String, Object> data = new HashMap<String, Object>();
-                    Object param = event.getParameter(1);
-                    if (param instanceof DownloadLinkProperty) {
-
-                        if (((DownloadLinkProperty) param).getProperty() == Property.RESET) {
-                            data.put("linkID", dl.getUniqueID().getID());
-                            data.put("packageID", dl.getFilePackage().getUniqueID().toString());
-                            data.put("action", "Reset");
-                            publishEvent(EVENTID.LINKCHANGED, data, "DOWNLOADLINK_RESET_" + dl.getUniqueID().getID());
-                        } else if (((DownloadLinkProperty) param).getProperty() == Property.PLUGIN_PROGRESS || ((DownloadLinkProperty) param).getProperty() == Property.CONDITIONAL_SKIPPED || ((DownloadLinkProperty) param).getProperty() == Property.SKIPPED) {
-                            String lastMessage = linkStatusMessages.get(dl.getUniqueID().getID());
-                            if (lastMessage == null) {
-                                lastMessage = "";
-                            }
-                            String newMessage = Helper.getMessage(dl);
-                            if (newMessage == null) {
-                                newMessage = "";
-                            }
-                            if (!lastMessage.equals(newMessage)) {
-                                linkStatusMessages.remove(dl.getUniqueID().getID());
-                                linkStatusMessages.put(dl.getUniqueID().getID(), newMessage);
-                                data.put("action", "MessageChanged");
-                                data.put("linkID", dl.getUniqueID().getID());
-
-                                data.put("NewValue", newMessage);
-                                publishEvent(EVENTID.LINKSTATUSCHANGED, data, "DOWNLOADLINK_MESSAGE_AVAILABILITY" + dl.getUniqueID().getID());
-                            }
-                        } else if (((DownloadLinkProperty) param).getProperty() == Property.FINAL_STATE) {
-                            if (FinalLinkState.CheckFinished(dl.getFinalLinkState())) {
-                                data.put("linkID", dl.getUniqueID().getID());
-                                data.put("packageID", dl.getFilePackage().getUniqueID().toString());
-                                data.put("action", "Finished");
-                                publishEvent(EVENTID.LINKCHANGED, data);
-                                if (dl.getFilePackage().getFinishedDate() > 0) {
-                                    data = new HashMap<String, Object>();
-                                    data.put("packageID", dl.getFilePackage().getUniqueID().toString());
-                                    data.put("action", "PackageFinished");
-                                    publishEvent(EVENTID.PACKAGEFINISHED, data);
-                                }
-                            } else {
-
-                            }
-                        } else {
-                            data.put("linkID", dl.getUniqueID().getID());
-                            data.put("packageID", dl.getFilePackage().getUniqueID().toString());
-                            data.put("NewValue", ((DownloadLinkProperty) param).getValue());
-                            switch (((DownloadLinkProperty) param).getProperty()) {
-                            case NAME:
-                                data.put("action", "NameChanged");
-                                publishEvent(EVENTID.LINKSTATUSCHANGED, data, "DOWNLOADLINK_NAME_" + dl.getUniqueID().getID());
-                                break;
-                            case PRIORITY:
-                                data.put("action", "PriorityChanged");
-                                publishEvent(EVENTID.LINKSTATUSCHANGED, data, "DOWNLOADLINK_PRIORITY_" + dl.getUniqueID().getID());
-                                break;
-                            case ENABLED:
-                                data.put("action", "EnabledChanged");
-                                data.put("packageValue", GetFilePackageEnbled(dl.getFilePackage()));
-                                publishEvent(EVENTID.LINKENABLEDCHANGED, data, "DOWNLOADLINK_ENABLED_" + dl.getUniqueID().getID());
-                                break;
-                            case AVAILABILITY:
-                                data.put("action", "AvailabilityChanged");
-                                publishEvent(EVENTID.LINKSTATUSCHANGED, data, "DOWNLOADLINK_RESET_AVAILABILITY" + dl.getUniqueID().getID());
-                                break;
-                            }
-
-                        }
-                    } else {
-
-                    }
-                }
-
-            } else if (event.getParameter() instanceof FilePackage) {
-                FilePackage dl = (FilePackage) event.getParameter();
-                if (dl != null) {
-                    HashMap<String, Object> data = new HashMap<String, Object>();
-                    Object param = event.getParameter(1);
-                    if (param instanceof FilePackageProperty) {
-                        data.put("packageID", dl.getUniqueID().toString());
-                        data.put("NewValue", ((FilePackageProperty) param).getValue());
-                        switch (((FilePackageProperty) param).getProperty()) {
-                        case NAME:
-                            data.put("action", "NameChanged");
-                            publishEvent(EVENTID.FILEPACKAGESTATUSCHANGED, data, "FILEPACKAGE_NAME_" + dl.getUniqueID().toString());
-                            break;
-                        case FOLDER:
-                            data.put("action", "FolderChanged");
-                            publishEvent(EVENTID.FILEPACKAGESTATUSCHANGED, data, "FILEPACKAGE_FOLDER_" + dl.getUniqueID().toString());
-                            break;
-                        }
-                    }
-                }
-            }
-            break;
-        case REMOVE_CONTENT:
-            if (event.getParameters() != null) {
-                for (Object link : (Object[]) event.getParameters()) {
-                    if (link instanceof DownloadLink) downloadApiLinkRemoved((DownloadLink) link);
-                    if (link instanceof FilePackage) downloadApiPackageRemoved((FilePackage) link);
-                }
-            }
-            break;
-        case ADD_CONTENT:
-            if (event.getParameters() != null) {
-                for (Object link : (Object[]) event.getParameters()) {
-                    if (link instanceof DownloadLink) downloadApiLinkAdded((DownloadLink) link);
-                    if (link instanceof FilePackage) downloadApiPackageAdded((FilePackage) link);
-                }
-            }
-            break;
         }
     }
 
@@ -710,6 +589,145 @@ public class JDAnywhereEventPublisher implements EventPublisher, DownloadWatchdo
 
     @Override
     public void onDownloadControllerStopped(SingleDownloadController downloadController) {
+    }
+
+    @Override
+    public void onDownloadControllerAddedPackage(FilePackage pkg) {
+        downloadApiPackageAdded(pkg);
+
+    }
+
+    @Override
+    public void onDownloadControllerStructureRefresh(FilePackage pkg) {
+    }
+
+    @Override
+    public void onDownloadControllerStructureRefresh() {
+    }
+
+    @Override
+    public void onDownloadControllerStructureRefresh(final AbstractNode node, Object param) {
+        if (node instanceof DownloadLink) {
+            DownloadLink dl = (DownloadLink) node;
+            if (dl != null) {
+                HashMap<String, Object> data = new HashMap<String, Object>();
+
+                if (param instanceof DownloadLinkProperty) {
+
+                    if (((DownloadLinkProperty) param).getProperty() == Property.RESET) {
+                        data.put("linkID", dl.getUniqueID().getID());
+                        data.put("packageID", dl.getFilePackage().getUniqueID().toString());
+                        data.put("action", "Reset");
+                        publishEvent(EVENTID.LINKCHANGED, data, "DOWNLOADLINK_RESET_" + dl.getUniqueID().getID());
+                    } else if (((DownloadLinkProperty) param).getProperty() == Property.PLUGIN_PROGRESS || ((DownloadLinkProperty) param).getProperty() == Property.CONDITIONAL_SKIPPED || ((DownloadLinkProperty) param).getProperty() == Property.SKIPPED) {
+                        String lastMessage = linkStatusMessages.get(dl.getUniqueID().getID());
+                        if (lastMessage == null) {
+                            lastMessage = "";
+                        }
+                        String newMessage = Helper.getMessage(dl);
+                        if (newMessage == null) {
+                            newMessage = "";
+                        }
+                        if (!lastMessage.equals(newMessage)) {
+                            linkStatusMessages.remove(dl.getUniqueID().getID());
+                            linkStatusMessages.put(dl.getUniqueID().getID(), newMessage);
+                            data.put("action", "MessageChanged");
+                            data.put("linkID", dl.getUniqueID().getID());
+
+                            data.put("NewValue", newMessage);
+                            publishEvent(EVENTID.LINKSTATUSCHANGED, data, "DOWNLOADLINK_MESSAGE_AVAILABILITY" + dl.getUniqueID().getID());
+                        }
+                    } else if (((DownloadLinkProperty) param).getProperty() == Property.FINAL_STATE) {
+                        if (FinalLinkState.CheckFinished(dl.getFinalLinkState())) {
+                            data.put("linkID", dl.getUniqueID().getID());
+                            data.put("packageID", dl.getFilePackage().getUniqueID().toString());
+                            data.put("action", "Finished");
+                            publishEvent(EVENTID.LINKCHANGED, data);
+                            if (dl.getFilePackage().getFinishedDate() > 0) {
+                                data = new HashMap<String, Object>();
+                                data.put("packageID", dl.getFilePackage().getUniqueID().toString());
+                                data.put("action", "PackageFinished");
+                                publishEvent(EVENTID.PACKAGEFINISHED, data);
+                            }
+                        } else {
+
+                        }
+                    } else {
+                        data.put("linkID", dl.getUniqueID().getID());
+                        data.put("packageID", dl.getFilePackage().getUniqueID().toString());
+                        data.put("NewValue", ((DownloadLinkProperty) param).getValue());
+                        switch (((DownloadLinkProperty) param).getProperty()) {
+                        case NAME:
+                            data.put("action", "NameChanged");
+                            publishEvent(EVENTID.LINKSTATUSCHANGED, data, "DOWNLOADLINK_NAME_" + dl.getUniqueID().getID());
+                            break;
+                        case PRIORITY:
+                            data.put("action", "PriorityChanged");
+                            publishEvent(EVENTID.LINKSTATUSCHANGED, data, "DOWNLOADLINK_PRIORITY_" + dl.getUniqueID().getID());
+                            break;
+                        case ENABLED:
+                            data.put("action", "EnabledChanged");
+                            data.put("packageValue", GetFilePackageEnbled(dl.getFilePackage()));
+                            publishEvent(EVENTID.LINKENABLEDCHANGED, data, "DOWNLOADLINK_ENABLED_" + dl.getUniqueID().getID());
+                            break;
+                        case AVAILABILITY:
+                            data.put("action", "AvailabilityChanged");
+                            publishEvent(EVENTID.LINKSTATUSCHANGED, data, "DOWNLOADLINK_RESET_AVAILABILITY" + dl.getUniqueID().getID());
+                            break;
+                        }
+
+                    }
+                } else {
+
+                }
+            }
+
+        } else if (node instanceof FilePackage) {
+            FilePackage dl = (FilePackage) node;
+            if (dl != null) {
+                HashMap<String, Object> data = new HashMap<String, Object>();
+
+                if (param instanceof FilePackageProperty) {
+                    data.put("packageID", dl.getUniqueID().toString());
+                    data.put("NewValue", ((FilePackageProperty) param).getValue());
+                    switch (((FilePackageProperty) param).getProperty()) {
+                    case NAME:
+                        data.put("action", "NameChanged");
+                        publishEvent(EVENTID.FILEPACKAGESTATUSCHANGED, data, "FILEPACKAGE_NAME_" + dl.getUniqueID().toString());
+                        break;
+                    case FOLDER:
+                        data.put("action", "FolderChanged");
+                        publishEvent(EVENTID.FILEPACKAGESTATUSCHANGED, data, "FILEPACKAGE_FOLDER_" + dl.getUniqueID().toString());
+                        break;
+                    }
+                }
+            }
+        }
+    }
+
+    @Override
+    public void onDownloadControllerRemovedPackage(FilePackage pkg) {
+        downloadApiPackageRemoved(pkg);
+    }
+
+    @Override
+    public void onDownloadControllerRemovedLinklist(List<DownloadLink> list) {
+        for (DownloadLink link : list) {
+            downloadApiLinkRemoved(link);
+
+        }
+    }
+
+    @Override
+    public void onDownloadControllerUpdatedData(DownloadLink downloadlink, DownloadLinkProperty property) {
+    }
+
+    @Override
+    public void onDownloadControllerUpdatedData(FilePackage pkg, FilePackageProperty property) {
+    }
+
+    @Override
+    public void onDownloadControllerUpdatedData(DownloadLink downloadlink, LinkStatusProperty property) {
     }
 
 }

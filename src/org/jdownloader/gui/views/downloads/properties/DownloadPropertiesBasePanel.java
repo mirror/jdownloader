@@ -1,0 +1,57 @@
+package org.jdownloader.gui.views.downloads.properties;
+
+import javax.swing.JPopupMenu;
+
+import jd.controlling.packagecontroller.AbstractNode;
+import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
+
+import org.appwork.swing.MigPanel;
+import org.jdownloader.gui.views.downloads.table.DownloadsTable;
+import org.jdownloader.updatev2.gui.LAFOptions;
+
+public class DownloadPropertiesBasePanel extends MigPanel {
+
+    /**
+     * 
+     */
+    private static final long           serialVersionUID = -195024600818162517L;
+    private DownloadsTable              table;
+    private DownloadLinkPropertiesPanel pkgPanel;
+    private DownloadLinkPropertiesPanel linkPanel;
+
+    public DownloadPropertiesBasePanel(DownloadsTable table2) {
+        super("ins 0", "[grow,fill]", "[grow,fill]");
+        this.table = table2;
+        LAFOptions.getInstance().applyPanelBackground(this);
+        pkgPanel = new FilePackagePropertiesPanel();
+        linkPanel = new DownloadLinkPropertiesPanel();
+        add(pkgPanel, "hidemode 3");
+        add(linkPanel, "hidemode 3");
+
+    }
+
+    public void update(AbstractNode objectbyRow) {
+        if (objectbyRow instanceof FilePackage) {
+            FilePackage pkg = (FilePackage) objectbyRow;
+            linkPanel.setVisible(false);
+            pkgPanel.setVisible(true);
+            pkgPanel.update(pkg);
+        } else if (objectbyRow instanceof DownloadLink) {
+            DownloadLink link = (DownloadLink) objectbyRow;
+            linkPanel.setVisible(true);
+            pkgPanel.setVisible(false);
+            linkPanel.update(link);
+        }
+    }
+
+    public void fillPopup(JPopupMenu pu) {
+
+        if (linkPanel.isVisible()) {
+            linkPanel.fillPopup(pu);
+        } else {
+            pkgPanel.fillPopup(pu);
+        }
+    }
+
+}
