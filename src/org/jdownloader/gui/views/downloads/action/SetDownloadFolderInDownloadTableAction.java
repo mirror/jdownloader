@@ -24,6 +24,8 @@ public class SetDownloadFolderInDownloadTableAction extends SetDownloadFolderAct
 
     @Override
     protected void move(FilePackage pkg, List<DownloadLink> selectedLinksByPackage) {
+        FilePackage source = getSelection().getAllPackages().get(0);
+
         DownloadController.getInstance().moveOrAddAt(pkg, selectedLinksByPackage, -1);
     }
 

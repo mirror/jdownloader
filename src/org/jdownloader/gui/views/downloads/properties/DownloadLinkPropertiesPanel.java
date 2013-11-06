@@ -1,6 +1,7 @@
 package org.jdownloader.gui.views.downloads.properties;
 
 import java.awt.event.ActionListener;
+import java.io.File;
 import java.util.HashSet;
 import java.util.List;
 
@@ -20,7 +21,6 @@ import org.appwork.utils.ImageProvider.ImageProvider;
 import org.appwork.utils.swing.EDTRunner;
 import org.jdownloader.controlling.Priority;
 import org.jdownloader.controlling.download.DownloadControllerListener;
-import org.jdownloader.controlling.packagizer.PackagizerController;
 import org.jdownloader.extensions.extraction.Archive;
 import org.jdownloader.extensions.extraction.BooleanStatus;
 import org.jdownloader.extensions.extraction.contextmenu.downloadlist.ArchiveValidator;
@@ -28,6 +28,7 @@ import org.jdownloader.gui.components.CheckboxMenuItem;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.components.packagetable.LinkTreeUtils;
+import org.jdownloader.gui.views.downloads.action.SetDownloadFolderInDownloadTableAction;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
 
 public class DownloadLinkPropertiesPanel extends AbstractNodePropertiesPanel implements ActionListener, GenericConfigEventListener<Boolean>, DownloadControllerListener {
@@ -267,8 +268,16 @@ public class DownloadLinkPropertiesPanel extends AbstractNodePropertiesPanel imp
     }
 
     @Override
-    protected void saveSaveTo(String path) {
-        currentPackage.setDownloadDirectory(PackagizerController.replaceDynamicTags(destination.getPath(), currentPackage.getName()));
+    protected void saveSaveTo(final String stringpath) {
+
+        new SetDownloadFolderInDownloadTableAction(new SelectionInfo<FilePackage, DownloadLink>(currentLink, null, null, null, null, null)) {
+            protected java.io.File dialog(java.io.File path) throws org.appwork.utils.swing.dialog.DialogClosedException, org.appwork.utils.swing.dialog.DialogCanceledException {
+
+                return new File(stringpath);
+            };
+        }.actionPerformed(null);
+
+        // currentPackage.setDownloadDirectory(PackagizerController.replaceDynamicTags(destination.getPath(), currentPackage.getName()));
     }
 
     @Override
