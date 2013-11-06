@@ -569,7 +569,7 @@ public class PackagizerFilterRuleDialog extends ConditionDialog<PackagizerRule> 
         ret.add(cbStart);
         ret.add(lblAutostart, "spanx 2");
         ret.add(cobAutostart, "spanx,growx,pushx");
-
+        link(cbStart, lblAutostart, cobAutostart);
         ret.add(cbForce);
         ret.add(lblForce, "spanx 2");
         ret.add(cobForce, "spanx,growx,pushx");

@@ -303,14 +303,14 @@ public abstract class AbstractNodePropertiesPanel extends MigPanel implements Ac
 
         checksum.setBorder(BorderFactory.createCompoundBorder(checksum.getBorder(), BorderFactory.createEmptyBorder(2, 6, 1, 6)));
 
-        String latest = config.getLatestDownloadDestinationFolder();
-        if (latest == null || !config.isUseLastDownloadDestinationAsDefault()) {
-            destination.setFile(new File(org.appwork.storage.config.JsonConfig.create(GeneralSettings.class).getDefaultDownloadFolder()));
-
-        } else {
-            destination.setFile(new File(latest));
-
-        }
+        // String latest = config.getLatestDownloadDestinationFolder();
+        // if (latest == null || !config.isUseLastDownloadDestinationAsDefault()) {
+        // destination.setFile(new File(org.appwork.storage.config.JsonConfig.create(GeneralSettings.class).getDefaultDownloadFolder()));
+        //
+        // } else {
+        // destination.setFile(new File(latest));
+        //
+        // }
 
         password = new ExtTextField() {
 
