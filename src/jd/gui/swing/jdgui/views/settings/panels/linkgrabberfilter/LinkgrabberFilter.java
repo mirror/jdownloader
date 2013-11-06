@@ -146,6 +146,7 @@ public class LinkgrabberFilter extends JPanel implements SettingsComponent {
 
         exceptionsTable.getSelectionModel().addListSelectionListener(new MinimumSelectionObserver(exceptionsTable, btRemove.getAction(), 1) {
             public void valueChanged(final ListSelectionEvent e) {
+                if (e == null || e.getValueIsAdjusting()) return;
                 boolean en = true;
                 for (LinkgrabberFilterRule rule : LinkgrabberFilter.this.exceptionsTable.getModel().getSelectedObjects()) {
                     en &= !rule.isStaticRule();
@@ -166,6 +167,7 @@ public class LinkgrabberFilter extends JPanel implements SettingsComponent {
         });
         filterTable.getSelectionModel().addListSelectionListener(new MinimumSelectionObserver(filterTable, btRemove.getAction(), 1) {
             public void valueChanged(final ListSelectionEvent e) {
+                if (e == null || e.getValueIsAdjusting()) return;
                 boolean en = true;
                 for (LinkgrabberFilterRule rule : LinkgrabberFilter.this.filterTable.getModel().getSelectedObjects()) {
                     en &= !rule.isStaticRule();

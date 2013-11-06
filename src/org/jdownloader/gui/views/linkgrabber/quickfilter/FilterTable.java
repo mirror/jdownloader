@@ -197,18 +197,19 @@ public abstract class FilterTable extends BasicJDTable<Filter> implements Packag
     private void updateSelection() {
 
         // clear selection in other filter tables if we switched to a new one
-        if (this.hasFocus()) {
-            // org.jdownloader.settings.statics.LINKFILTER.CFG
-            if (org.jdownloader.settings.staticreferences.CFG_LINKGRABBER.QUICK_VIEW_SELECTION_ENABLED.getValue()) {
-                java.util.List<Filter> selection = getSelectedFilters();
-                java.util.List<AbstractNode> newSelection = getMatches(selection);
-                List<CrawledPackage> expands = getPackagesToExpand(selection);
-                for (CrawledPackage pkg : expands) {
-                    LinkGrabberTableModel.getInstance().setFilePackageExpand(pkg, true);
-                }
-                getLinkgrabberTable().getModel().setSelectedObjects(newSelection);
+
+        // org.jdownloader.settings.statics.LINKFILTER.CFG
+        if (org.jdownloader.settings.staticreferences.CFG_LINKGRABBER.QUICK_VIEW_SELECTION_ENABLED.getValue()) {
+            java.util.List<Filter> selection = getSelectedFilters();
+            java.util.List<AbstractNode> newSelection = getMatches(selection);
+            List<CrawledPackage> expands = getPackagesToExpand(selection);
+            for (CrawledPackage pkg : expands) {
+                LinkGrabberTableModel.getInstance().setFilePackageExpand(pkg, true);
             }
+            System.out.println("refresh");
+            getLinkgrabberTable().getModel().setSelectedObjects(newSelection);
         }
+
     }
 
     private java.util.List<Filter> getSelectedFilters() {
@@ -219,7 +220,6 @@ public abstract class FilterTable extends BasicJDTable<Filter> implements Packag
                 ret.addAll(((FilterTable) f).getModel().getSelectedObjects());
             }
         }
-
         return ret;
     }
 
@@ -452,14 +452,12 @@ public abstract class FilterTable extends BasicJDTable<Filter> implements Packag
     abstract java.util.List<Filter> getAllFilters();
 
     public boolean isFiltered(CrawledPackage v) {
-
         return false;
     }
 
     public void reset() {
         java.util.List<Filter> lfilters = filters;
         for (Filter filter : lfilters) {
-
             filter.setCounter(0);
         }
     }

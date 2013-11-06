@@ -221,73 +221,78 @@ public class CrawlerPluginController extends PluginController<PluginForDecrypt> 
                         //
                         throw new WTFException("names.length=0");
                     }
-                    for (int i = 0; i < names.length; i++) {
-                        PluginClassLoaderChild classLoader = null;
-                        LazyCrawlerPlugin l = null;
-                        try {
-                            String displayName = new String(names[i]);
-                            LinkedList<AbstractCrawlerPlugin> existingPlugin = ret.get(displayName);
-                            /* we use new String() here to dereference the Annotation and it's loaded class */
-                            AbstractCrawlerPlugin ap = new AbstractCrawlerPlugin(new String(c.getClazz().getSimpleName()));
-                            ap.setCacheVersion(AbstractCrawlerPlugin.CACHEVERSION);
-                            ap.setDisplayName(displayName);
-                            ap.setPattern(new String(patterns[i]));
-                            ap.setVersion(revision);
-                            ap.setInterfaceVersion(a.interfaceVersion());
-                            /* information to speed up rescan */
-                            ap.setMainClassSHA256(c.getMainClassSHA256());
-                            ap.setMainClassLastModified(c.getMainClassLastModified());
-                            ap.setMainClassFilename(c.getFile().getName());
-                            classLoader = (PluginClassLoaderChild) c.getClazz().getClassLoader();
-                            /* during init we dont want dummy libs being created */
-                            classLoader.setCreateDummyLibs(false);
-                            l = new LazyCrawlerPlugin(ap, null, classLoader);
-                            if (existingPlugin == null) {
-                                existingPlugin = new LinkedList<AbstractCrawlerPlugin>();
-                                ret.put(displayName, existingPlugin);
-                            }
-                            boolean added = false;
-                            ListIterator<AbstractCrawlerPlugin> it = existingPlugin.listIterator();
-                            /* plugins with higher interfaceVersion will be sorted in list */
-                            while (it.hasNext()) {
-                                AbstractCrawlerPlugin next = it.next();
-                                if (a.interfaceVersion() > next.getInterfaceVersion()) {
-                                    it.add(ap);
-                                    added = true;
-                                    break;
+                    ClassLoader oldCL = null;
+                    try {
+                        PluginClassLoaderChild classLoader = (PluginClassLoaderChild) c.getClazz().getClassLoader();
+                        /* during init we dont want dummy libs being created */
+                        classLoader.setCreateDummyLibs(false);
+                        Thread.currentThread().setContextClassLoader(classLoader);
+                        for (int i = 0; i < names.length; i++) {
+                            LazyCrawlerPlugin l = null;
+                            try {
+                                String displayName = new String(names[i]);
+                                LinkedList<AbstractCrawlerPlugin> existingPlugin = ret.get(displayName);
+                                /* we use new String() here to dereference the Annotation and it's loaded class */
+                                AbstractCrawlerPlugin ap = new AbstractCrawlerPlugin(new String(c.getClazz().getSimpleName()));
+                                ap.setCacheVersion(AbstractCrawlerPlugin.CACHEVERSION);
+                                ap.setDisplayName(displayName);
+                                ap.setPattern(new String(patterns[i]));
+                                ap.setVersion(revision);
+                                ap.setInterfaceVersion(a.interfaceVersion());
+                                /* information to speed up rescan */
+                                ap.setMainClassSHA256(c.getMainClassSHA256());
+                                ap.setMainClassLastModified(c.getMainClassLastModified());
+                                ap.setMainClassFilename(c.getFile().getName());
+                                l = new LazyCrawlerPlugin(ap, null, classLoader);
+                                if (existingPlugin == null) {
+                                    existingPlugin = new LinkedList<AbstractCrawlerPlugin>();
+                                    ret.put(displayName, existingPlugin);
+                                }
+                                boolean added = false;
+                                ListIterator<AbstractCrawlerPlugin> it = existingPlugin.listIterator();
+                                /* plugins with higher interfaceVersion will be sorted in list */
+                                while (it.hasNext()) {
+                                    AbstractCrawlerPlugin next = it.next();
+                                    if (a.interfaceVersion() > next.getInterfaceVersion()) {
+                                        it.add(ap);
+                                        added = true;
+                                        break;
+                                    }
+                                }
+                                if (added == false) {
+                                    /* add plugin at the end of list */
+                                    existingPlugin.add(ap);
+                                }
+                                try {
+                                    /* check for stable compatibility */
+                                    classLoader.setPluginClass(new String(c.getClazz().getName()));
+                                    classLoader.setCheckStableCompatibility(a.interfaceVersion() == 2);
+                                    PluginForDecrypt plg = l.newInstance(classLoader);
+                                    ap.setHasConfig(plg.hasConfig());
+                                    ap.setMaxConcurrentInstances(plg.getMaxConcurrentProcessingInstances());
+                                    l.setMaxConcurrentInstances(ap.getMaxConcurrentInstances());
+                                    l.setHasConfig(plg.hasConfig());
+                                } catch (UpdateRequiredClassNotFoundException e) {
+                                    logger.finest("@CrawlerPlugin incomplete:" + simpleName + " " + new String(names[i]) + " " + e.getMessage() + " " + revision);
+                                    throw e;
+                                }
+                                if (existingPlugin.size() > 1) {
+                                    logger.finest("@CrawlerPlugin multiple crawler:" + displayName + "->" + simpleName + " " + revision);
+                                }
+                                ret2.put(ap.getDisplayName() + ap.getPattern(), l);
+                                logger.finest("@CrawlerPlugin ok:" + simpleName + " " + new String(names[i]) + " " + revision);
+                            } catch (Throwable e) {
+                                logger.severe("@CrawlerPlugin failed:" + simpleName + " " + new String(names[i]) + " " + revision);
+                                logger.log(e);
+                            } finally {
+                                if (l != null) {
+                                    l.setPluginClass(null);
+                                    l.setClassLoader(null);
                                 }
                             }
-                            if (added == false) {
-                                /* add plugin at the end of list */
-                                existingPlugin.add(ap);
-                            }
-                            try {
-                                /* check for stable compatibility */
-                                classLoader.setPluginClass(c.getClazz().getName());
-                                classLoader.setCheckStableCompatibility(a.interfaceVersion() == 2);
-                                PluginForDecrypt plg = l.newInstance(classLoader);
-                                ap.setHasConfig(plg.hasConfig());
-                                ap.setMaxConcurrentInstances(plg.getMaxConcurrentProcessingInstances());
-                                l.setMaxConcurrentInstances(ap.getMaxConcurrentInstances());
-                                l.setHasConfig(plg.hasConfig());
-                            } catch (UpdateRequiredClassNotFoundException e) {
-                                logger.finest("@CrawlerPlugin incomplete:" + simpleName + " " + new String(names[i]) + " " + e.getMessage() + " " + revision);
-                                throw e;
-                            }
-                            if (existingPlugin.size() > 1) {
-                                logger.finest("@CrawlerPlugin multiple crawler:" + displayName + "->" + simpleName + " " + revision);
-                            }
-                            ret2.put(ap.getDisplayName() + ap.getPattern(), l);
-                            logger.finest("@CrawlerPlugin ok:" + simpleName + " " + new String(names[i]) + " " + revision);
-                        } catch (Throwable e) {
-                            logger.severe("@CrawlerPlugin failed:" + simpleName + " " + new String(names[i]) + " " + revision);
-                            logger.log(e);
-                        } finally {
-                            if (l != null) {
-                                l.setPluginClass(null);
-                                l.setClassLoader(null);
-                            }
                         }
+                    } finally {
+                        Thread.currentThread().setContextClassLoader(oldCL);
                     }
                 } catch (final Throwable e) {
                     logger.severe("@CrawlerPlugin failed:" + simpleName);

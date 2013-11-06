@@ -228,17 +228,17 @@ public class Property implements Serializable {
      * @param key
      * @param value
      */
-    public void setProperty(final String key, final Object value) {
+    public boolean setProperty(final String key, final Object value) {
         if (key == null) { throw new WTFException("key ==null is forbidden!"); }
         ConcurrentHashMap<String, Object> lthreadSafeproperties = threadSafeproperties.get();
         if (value == NULL || value == null) {
             /* null values are not allowed in concurrentHashMaps */
-            if (lthreadSafeproperties != null) {
-                lthreadSafeproperties.remove(key);
-            }
-            return;
+            if (lthreadSafeproperties != null) { return lthreadSafeproperties.remove(key) != null; }
+            return false;
         }
-        threadSafeCreateProperties().put(key, value);
+        Object old = threadSafeCreateProperties().put(key, value);
+        if (old == null && value != null) return true;
+        return !old.equals(value);
     }
 
     /**

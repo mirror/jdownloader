@@ -189,19 +189,25 @@ public class DownloadOverview extends MigPanel implements DownloadControllerList
     }
 
     public void removeListeners() {
-        stopUpdateTimer();
-        GUIEventSender.getInstance().removeListener(this);
-        CFG_GUI.OVERVIEW_PANEL_TOTAL_INFO_VISIBLE.getEventSender().removeListener(this);
-        CFG_GUI.OVERVIEW_PANEL_SELECTED_INFO_VISIBLE.getEventSender().removeListener(this);
-        CFG_GUI.OVERVIEW_PANEL_VISIBLE_ONLY_INFO_VISIBLE.getEventSender().removeListener(this);
-        CFG_GUI.OVERVIEW_PANEL_SMART_INFO_VISIBLE.getEventSender().removeListener(this);
-        CFG_GUI.DOWNLOAD_PANEL_OVERVIEW_SETTINGS_VISIBLE.getEventSender().removeListener(settingsListener);
-        CFG_GUI.DOWNLOAD_TAB_OVERVIEW_VISIBLE.getEventSender().removeListener(this);
-        removeHierarchyListener(this);
-        DownloadController.getInstance().removeListener(this);
-        DownloadsTableModel.getInstance().removeTableModelListener(tableListener);
-        DownloadsTableModel.getInstance().getTable().getSelectionModel().removeListSelectionListener(listSelection);
-        DownloadWatchDog.getInstance().getStateMachine().removeListener(stateListener);
+        new EDTRunner() {
+
+            @Override
+            protected void runInEDT() {
+                stopUpdateTimer();
+                GUIEventSender.getInstance().removeListener(DownloadOverview.this);
+                CFG_GUI.OVERVIEW_PANEL_TOTAL_INFO_VISIBLE.getEventSender().removeListener(DownloadOverview.this);
+                CFG_GUI.OVERVIEW_PANEL_SELECTED_INFO_VISIBLE.getEventSender().removeListener(DownloadOverview.this);
+                CFG_GUI.OVERVIEW_PANEL_VISIBLE_ONLY_INFO_VISIBLE.getEventSender().removeListener(DownloadOverview.this);
+                CFG_GUI.OVERVIEW_PANEL_SMART_INFO_VISIBLE.getEventSender().removeListener(DownloadOverview.this);
+                CFG_GUI.DOWNLOAD_PANEL_OVERVIEW_SETTINGS_VISIBLE.getEventSender().removeListener(settingsListener);
+                CFG_GUI.DOWNLOAD_TAB_OVERVIEW_VISIBLE.getEventSender().removeListener(DownloadOverview.this);
+                removeHierarchyListener(DownloadOverview.this);
+                DownloadController.getInstance().removeListener(DownloadOverview.this);
+                DownloadsTableModel.getInstance().removeTableModelListener(tableListener);
+                DownloadsTableModel.getInstance().getTable().getSelectionModel().removeListSelectionListener(listSelection);
+                DownloadWatchDog.getInstance().getStateMachine().removeListener(stateListener);
+            }
+        };
     }
 
     protected void update() {

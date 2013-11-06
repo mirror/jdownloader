@@ -41,8 +41,7 @@ public class ArchiveController implements LinkCollectorListener {
     private LogSource                        logger;
 
     /**
-     * Create a new instance of ArchiveController. This is a singleton class. Access the only existing instance by using
-     * {@link #getInstance()}.
+     * Create a new instance of ArchiveController. This is a singleton class. Access the only existing instance by using {@link #getInstance()}.
      */
     private ArchiveController() {
         map = new HashMap<String, ArchiveSettings>();
@@ -94,7 +93,7 @@ public class ArchiveController implements LinkCollectorListener {
             ArchiveSettings ret = map.get(id);
             if (ret != null) return ret;
             ret = createSettingsObject(id);
-            if (ret.getAutoExtract() == null || BooleanStatus.UNSET.equals(ret.getAutoExtract())) {
+            if (BooleanStatus.UNSET.equals(ret.getAutoExtract()) && !ret.getAutoExtract().equals(defaultAutoExtract)) {
                 /* only set AutoExtract value when it is UNSET */
                 ret.setAutoExtract(defaultAutoExtract);
             }

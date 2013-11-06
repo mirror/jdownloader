@@ -79,10 +79,13 @@ public class FilePackageStorable implements Storable {
     public void setLinks(java.util.List<DownloadLinkStorable> links) {
         if (links != null) {
             this.links = links;
-            synchronized (filePackage) {
+            filePackage.getModifyLock().writeLock();
+            try {
                 for (DownloadLinkStorable link : links) {
                     filePackage.add(link._getDownloadLink());
                 }
+            } finally {
+                filePackage.getModifyLock().writeUnlock();
             }
         }
     }

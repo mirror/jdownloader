@@ -61,9 +61,10 @@ public class CrawledPackageStorable implements Storable {
     }
 
     public String getSorterId() {
-        if (pkg.getCurrentSorter() == null) return null;
-        boolean asc = pkg.getCurrentSorter().isAsc();
-        return ((asc ? "ASC" : "DSC") + "." + pkg.getCurrentSorter().getID());
+        PackageControllerComparator<CrawledLink> lSorter = pkg.getCurrentSorter();
+        if (lSorter == null) return null;
+        boolean asc = lSorter.isAsc();
+        return ((asc ? "ASC" : "DSC") + "." + lSorter.getID());
     }
 
     public void setSorterId(String id) {

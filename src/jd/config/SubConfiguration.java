@@ -140,12 +140,13 @@ public class SubConfiguration extends Property implements Serializable {
     }
 
     @Override
-    public void setProperty(final String key, final Object value) {
-        super.setProperty(key, value);
-        if (valid) {
+    public boolean setProperty(final String key, final Object value) {
+        boolean change = super.setProperty(key, value);
+        if (valid && change) {
             setMark.incrementAndGet();
             saveDelayer.run();
         }
+        return change;
     }
 
     @Override

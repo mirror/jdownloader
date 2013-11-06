@@ -7,6 +7,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
 import org.appwork.utils.event.queue.Queue;
+import org.appwork.utils.event.queue.QueueAction;
 import org.jdownloader.controlling.packagizer.PackagizerController;
 import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.components.packagetable.context.SetDownloadFolderAction;
@@ -23,10 +24,18 @@ public class SetDownloadFolderInDownloadTableAction extends SetDownloadFolderAct
     }
 
     @Override
-    protected void move(FilePackage pkg, List<DownloadLink> selectedLinksByPackage) {
-        FilePackage source = getSelection().getAllPackages().get(0);
+    protected void move(final FilePackage pkg, final List<DownloadLink> selectedLinksByPackage) {
+        final FilePackage source = getSelection().getAllPackages().get(0);
+        DownloadController.getInstance().getQueue().add(new QueueAction<Void, RuntimeException>() {
 
-        DownloadController.getInstance().moveOrAddAt(pkg, selectedLinksByPackage, -1);
+            @Override
+            protected Void run() throws RuntimeException {
+                int index = DownloadController.getInstance().indexOf(source);
+                DownloadController.getInstance().moveOrAddAt(pkg, selectedLinksByPackage, -1, index);
+                return null;
+            }
+        });
+
     }
 
     @Override
@@ -37,7 +46,6 @@ public class SetDownloadFolderInDownloadTableAction extends SetDownloadFolderAct
         pkg.setName(entry.getName());
         pkg.setComment(entry.getComment());
         pkg.getProperties().putAll(entry.getProperties());
-
         return pkg;
     }
 

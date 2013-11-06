@@ -212,7 +212,7 @@ public class CrawledLinkFactory extends CrawledLinkArchiveFile implements Archiv
             if (af instanceof CrawledLinkArchiveFile) {
                 for (CrawledLink link : ((CrawledLinkArchiveFile) af).getLinks()) {
                     link.getDownloadLink().setArchiveID(id);
-                    pws.addAll(link.getArchiveInfo().getExtractionPasswords());
+                    if (link.hasArchiveInfo()) pws.addAll(link.getArchiveInfo().getExtractionPasswords());
                 }
             }
         }
@@ -232,7 +232,9 @@ public class CrawledLinkFactory extends CrawledLinkArchiveFile implements Archiv
 
     @Override
     public BooleanStatus getDefaultAutoExtract() {
-        return getLinks().get(0).getArchiveInfo().getAutoExtract();
+        CrawledLink first = getLinks().get(0);
+        if (first.hasArchiveInfo()) return first.getArchiveInfo().getAutoExtract();
+        return BooleanStatus.UNSET;
     }
 
 }

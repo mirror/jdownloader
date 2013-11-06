@@ -71,8 +71,8 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
                                               };
 
     /**
-     * add a Package at given position position in this PackageController. in case the Package is already controlled by this
-     * PackageController this function does move it to the given position
+     * add a Package at given position position in this PackageController. in case the Package is already controlled by this PackageController this function
+     * does move it to the given position
      * 
      * @param pkg
      * @param index
@@ -443,7 +443,12 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
         });
     }
 
-    public void moveOrAddAt(final PackageType pkg, final List<ChildType> movechildren, final int index) {
+    public void moveOrAddAt(final PackageType pkg, final List<ChildType> movechildren, final int moveChildrenindex) {
+        moveOrAddAt(pkg, movechildren, moveChildrenindex, -1);
+    }
+
+    public void moveOrAddAt(final PackageType pkg, final List<ChildType> movechildren, final int moveChildrenindex, final int pkgIndex) {
+
         if (pkg != null && movechildren != null && movechildren.size() > 0) {
             QUEUE.add(new QueueAction<Void, RuntimeException>() {
                 /**
@@ -489,7 +494,7 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
                         /*
                          * package not yet under control of this PackageController so lets add it
                          */
-                        PackageController.this.addmovePackageAt(pkg, -1, true);
+                        PackageController.this.addmovePackageAt(pkg, pkgIndex, true);
                     }
                     /* build map for removal of children links */
                     boolean newChildren = false;
@@ -527,7 +532,7 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
                     try {
                         pkg.getModifyLock().writeLock();
 
-                        int destIndex = index;
+                        int destIndex = moveChildrenindex;
                         List<ChildType> pkgchildren = pkg.getChildren();
                         for (ChildType child : pkgchildren) {
                             /* this resets getPreviousParentNodeID */
@@ -582,8 +587,7 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
     }
 
     /**
-     * remove the given children from the package. also removes the package from this PackageController in case it is empty after removal of
-     * the children
+     * remove the given children from the package. also removes the package from this PackageController in case it is empty after removal of the children
      * 
      * @param pkg
      * @param children

@@ -37,9 +37,12 @@ import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 
 import org.appwork.utils.Exceptions;
+import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging2.LogSource;
+import org.jdownloader.captcha.blacklist.BlockAllCrawlerCaptchasEntry;
+import org.jdownloader.captcha.blacklist.BlockCrawlerCaptchasByHost;
+import org.jdownloader.captcha.blacklist.BlockCrawlerCaptchasByPackage;
 import org.jdownloader.captcha.blacklist.CaptchaBlackList;
-import org.jdownloader.captcha.blacklist.CrawlerBlackListEntry;
 import org.jdownloader.captcha.v2.AbstractResponse;
 import org.jdownloader.captcha.v2.Challenge;
 import org.jdownloader.captcha.v2.ChallengeResponseController;
@@ -154,8 +157,8 @@ public abstract class PluginForDecrypt extends Plugin {
     public abstract ArrayList<DownloadLink> decryptIt(CryptedLink parameter, ProgressController progress) throws Exception;
 
     /**
-     * Die Methode entschlüsselt einen einzelnen Link. Alle steps werden durchlaufen. Der letzte step muss als parameter einen
-     * Vector<String> mit den decoded Links setzen
+     * Die Methode entschlüsselt einen einzelnen Link. Alle steps werden durchlaufen. Der letzte step muss als parameter einen Vector<String> mit den decoded
+     * Links setzen
      * 
      * @param cryptedLink
      *            Ein einzelner verschlüsselter Link
@@ -399,16 +402,25 @@ public abstract class PluginForDecrypt extends Plugin {
      * @throws DecrypterException
      */
     protected String getCaptchaCode(String method, File file, int flag, final CryptedLink link, String defaultValue, String explain) throws DecrypterException {
-
         String orgCaptchaImage = link.getStringProperty("orgCaptchaFile", null);
-
         if (orgCaptchaImage != null && new File(orgCaptchaImage).exists()) {
             file = new File(orgCaptchaImage);
         }
-
+        final LinkCrawler currentCrawler = getCrawler();
+        final CrawledLink currentOrigin = getCurrentLink().getOriginLink();
         BasicCaptchaChallenge c = new BasicCaptchaChallenge(method, file, defaultValue, explain, this, flag) {
             @Override
             public boolean canBeSkippedBy(SkipRequest skipRequest, ChallengeSolver<?> solver, Challenge<?> challenge) {
+                Plugin challengePlugin = Challenge.getPlugin(challenge);
+                if (challengePlugin != null && !(challengePlugin instanceof PluginForDecrypt)) {
+                    /* we only want block PluginForDecrypt captcha here */
+                    return false;
+                }
+                PluginForDecrypt decrypt = (PluginForDecrypt) challengePlugin;
+                if (currentCrawler != decrypt.getCrawler()) {
+                    /* we have a different crawler source */
+                    return false;
+                }
                 switch (skipRequest) {
                 case STOP_CURRENT_ACTION:
                     /* user wants to stop current action (eg crawling) */
@@ -418,9 +430,10 @@ public abstract class PluginForDecrypt extends Plugin {
                     return true;
                 case BLOCK_HOSTER:
                     /* user wants to block captchas from specific hoster */
-                    return PluginForDecrypt.this.getHost().equals(Challenge.getHost(challenge));
-                case REFRESH:
-                case SINGLE:
+                    return StringUtils.equals(PluginForDecrypt.this.getHost(), Challenge.getHost(challenge));
+                case BLOCK_PACKAGE:
+                    CrawledLink crawledLink = decrypt.getCurrentLink();
+                    return crawledLink != null && crawledLink.getOriginLink() == currentOrigin;
                 default:
                     return false;
                 }
@@ -441,12 +454,13 @@ public abstract class PluginForDecrypt extends Plugin {
         } catch (SkipException e) {
             switch (e.getSkipRequest()) {
             case BLOCK_ALL_CAPTCHAS:
-                CaptchaBlackList.getInstance().add(new CrawlerBlackListEntry(getCrawler()));
+                CaptchaBlackList.getInstance().add(new BlockAllCrawlerCaptchasEntry(getCrawler()));
                 break;
             case BLOCK_HOSTER:
+                CaptchaBlackList.getInstance().add(new BlockCrawlerCaptchasByHost(getCrawler(), getHost()));
+                break;
             case BLOCK_PACKAGE:
-            case SINGLE:
-            case TIMEOUT:
+                CaptchaBlackList.getInstance().add(new BlockCrawlerCaptchasByPackage(getCrawler(), getCurrentLink()));
                 break;
             case REFRESH:
                 // refresh is not supported from the pluginsystem right now.
@@ -454,8 +468,10 @@ public abstract class PluginForDecrypt extends Plugin {
             case STOP_CURRENT_ACTION:
                 LinkCollector.getInstance().abort();
                 // Just to be sure
-                CaptchaBlackList.getInstance().add(new CrawlerBlackListEntry(getCrawler()));
-                throw new DecrypterException(DecrypterException.CAPTCHA);
+                CaptchaBlackList.getInstance().add(new BlockAllCrawlerCaptchasEntry(getCrawler()));
+                break;
+            default:
+                break;
             }
             throw new DecrypterException(DecrypterException.CAPTCHA);
         }
@@ -516,6 +532,7 @@ public abstract class PluginForDecrypt extends Plugin {
 
     public LinkCrawler getCrawler() {
         if (Thread.currentThread() instanceof LinkCrawlerThread) {
+            /* not sure why we have this here? */
             LinkCrawler ret = ((LinkCrawlerThread) Thread.currentThread()).getCurrentLinkCrawler();
             if (ret != null) return ret;
         }

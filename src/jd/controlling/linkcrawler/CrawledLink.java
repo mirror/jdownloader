@@ -196,7 +196,7 @@ public class CrawledLink implements AbstractPackageChildrenNode<CrawledPackage>,
 
     private volatile ArchiveInfo archiveInfo;
     private UniqueAlltimeID      previousParent = null;
-    private PartInfo             partInfo;              ;
+    private PartInfo             partInfo;
 
     public CrawledLink(DownloadLink dlLink) {
         this.dlLink = dlLink;

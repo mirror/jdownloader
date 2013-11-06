@@ -27,6 +27,7 @@ import javax.swing.SwingConstants;
 import javax.swing.SwingUtilities;
 
 import jd.controlling.ClipboardMonitoring;
+import jd.controlling.ClipboardMonitoring.ClipboardContent;
 import jd.controlling.linkcollector.LinkCollectingJob;
 import jd.controlling.linkcollector.LinkOrigin;
 import jd.gui.swing.jdgui.JDGui;
@@ -382,8 +383,13 @@ public class AddLinksDialog extends AbstractDialog<LinkCollectingJob> {
                     public void run() {
                         inform();
                         String newText = config.getPresetDebugLinks();
+                        String browserURL = null;
                         if (StringUtils.isEmpty(newText)) {
-                            newText = ClipboardMonitoring.getINSTANCE().getCurrentContent();
+                            ClipboardContent content = ClipboardMonitoring.getINSTANCE().getCurrentContent();
+                            if (content != null) {
+                                newText = content.getContent();
+                                browserURL = content.getBrowserURL();
+                            }
                         }
                         if (config.isAddLinksPreParserEnabled()) {
                             if (!StringUtils.isEmpty(newText)) {
@@ -394,7 +400,7 @@ public class AddLinksDialog extends AbstractDialog<LinkCollectingJob> {
                                     };
                                 };
                                 parse(newText);
-                                newText = (list(HTMLParser.getHttpLinks(newText)));
+                                newText = (list(HTMLParser.getHttpLinks(newText, browserURL)));
                             }
                         }
                         final String txt = newText;

@@ -42,11 +42,7 @@ public class AdvancedConfigManagerAPIImpl implements AdvancedConfigManagerAPI {
         };
 
         try {
-            Object v;
-            synchronized (JSonStorage.LOCK) {
-                v = JSonStorage.getMapper().stringToObject(json, type);
-            }
-
+            Object v = JSonStorage.stringToObject(json, type, null);
             kh.setValue(v);
         } catch (Exception e) {
             return false;

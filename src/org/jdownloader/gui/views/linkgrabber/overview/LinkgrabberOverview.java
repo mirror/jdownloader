@@ -111,8 +111,7 @@ public class LinkgrabberOverview extends MigPanel implements GenericConfigEventL
 
             @Override
             public void valueChanged(ListSelectionEvent e) {
-                if (e.getValueIsAdjusting()) { return; }
-
+                if (e == null || e.getValueIsAdjusting()) return;
                 update();
                 onConfigValueModified(null, null);
             }
@@ -128,15 +127,21 @@ public class LinkgrabberOverview extends MigPanel implements GenericConfigEventL
     }
 
     public void removeListeners() {
-        CFG_GUI.OVERVIEW_PANEL_TOTAL_INFO_VISIBLE.getEventSender().removeListener(this);
-        CFG_GUI.OVERVIEW_PANEL_SELECTED_INFO_VISIBLE.getEventSender().removeListener(this);
-        CFG_GUI.OVERVIEW_PANEL_VISIBLE_ONLY_INFO_VISIBLE.getEventSender().removeListener(this);
-        CFG_GUI.OVERVIEW_PANEL_SMART_INFO_VISIBLE.getEventSender().removeListener(this);
-        CFG_GUI.LINKGRABBER_TAB_OVERVIEW_VISIBLE.getEventSender().removeListener(this);
-        LinkCollector.getInstance().getEventsender().removeListener(this);
-        LinkGrabberTableModel.getInstance().removeTableModelListener(tableListener);
-        table.getSelectionModel().removeListSelectionListener(selectionListener);
-        GUIEventSender.getInstance().removeListener(this);
+        new EDTRunner() {
+
+            @Override
+            protected void runInEDT() {
+                CFG_GUI.OVERVIEW_PANEL_TOTAL_INFO_VISIBLE.getEventSender().removeListener(LinkgrabberOverview.this);
+                CFG_GUI.OVERVIEW_PANEL_SELECTED_INFO_VISIBLE.getEventSender().removeListener(LinkgrabberOverview.this);
+                CFG_GUI.OVERVIEW_PANEL_VISIBLE_ONLY_INFO_VISIBLE.getEventSender().removeListener(LinkgrabberOverview.this);
+                CFG_GUI.OVERVIEW_PANEL_SMART_INFO_VISIBLE.getEventSender().removeListener(LinkgrabberOverview.this);
+                CFG_GUI.LINKGRABBER_TAB_OVERVIEW_VISIBLE.getEventSender().removeListener(LinkgrabberOverview.this);
+                LinkCollector.getInstance().getEventsender().removeListener(LinkgrabberOverview.this);
+                LinkGrabberTableModel.getInstance().removeTableModelListener(tableListener);
+                table.getSelectionModel().removeListSelectionListener(selectionListener);
+                GUIEventSender.getInstance().removeListener(LinkgrabberOverview.this);
+            }
+        };
     }
 
     protected void update() {
@@ -154,7 +159,6 @@ public class LinkgrabberOverview extends MigPanel implements GenericConfigEventL
                     final AggregatedCrawlerNumbers filtered = (CFG_GUI.OVERVIEW_PANEL_VISIBLE_ONLY_INFO_VISIBLE.isEnabled() || CFG_GUI.OVERVIEW_PANEL_SMART_INFO_VISIBLE.isEnabled()) ? new AggregatedCrawlerNumbers(table.getSelectionInfo(false, true)) : null;
                     final AggregatedCrawlerNumbers selected;
                     if ((CFG_GUI.OVERVIEW_PANEL_SELECTED_INFO_VISIBLE.isEnabled() || CFG_GUI.OVERVIEW_PANEL_SMART_INFO_VISIBLE.isEnabled())) {
-
                         selected = new AggregatedCrawlerNumbers(table.getSelectionInfo(true, true));
                     } else {
                         selected = null;

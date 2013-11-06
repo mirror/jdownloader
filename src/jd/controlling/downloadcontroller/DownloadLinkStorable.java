@@ -101,8 +101,6 @@ public class DownloadLinkStorable implements Storable {
         if (status != null) {
             try {
                 int linkStatus = Integer.parseInt(status.get("status"));
-                String errormsg = status.get("errormsg");
-                String statustxt = status.get("statustxt");
                 if (linkStatus == LinkStatus.FINISHED || hasStatus(linkStatus, LinkStatus.FINISHED)) {
                     link.setFinalLinkState(FinalLinkState.FINISHED);
                 } else if (linkStatus == LinkStatus.ERROR_FILE_NOT_FOUND || hasStatus(linkStatus, LinkStatus.ERROR_FILE_NOT_FOUND)) {

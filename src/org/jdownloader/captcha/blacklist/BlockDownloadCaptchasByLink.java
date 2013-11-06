@@ -20,11 +20,8 @@ public class BlockDownloadCaptchasByLink implements SessionBlackListEntry<Object
 
     @Override
     public boolean matches(Challenge<Object> c) {
-
         DownloadLink link = Challenge.getDownloadLink(c);
-        if (link == null) return false;
-        if (link == downloadLink) return true;
-        return false;
+        return downloadLink == link;
     }
 
 }

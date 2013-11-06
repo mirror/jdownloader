@@ -55,9 +55,7 @@ public class GenericDeleteFromLinkgrabberAction extends AppAction implements Cac
     @Override
     public void actionPerformed(final ActionEvent e) {
         this.update();
-
         final List<CrawledLink> lfilteredCrawledLinks = this.filteredCrawledLinks;
-
         if (lfilteredCrawledLinks != null && lfilteredCrawledLinks.size() > 0) {
             try {
                 boolean containsOnline = false;
@@ -68,9 +66,7 @@ public class GenericDeleteFromLinkgrabberAction extends AppAction implements Cac
                         containsOnline = true;
                         break;
                     }
-
                 }
-
                 if (containsOnline) {
                     // only ask for online links
                     Dialog.getInstance().showConfirmDialog(0, _GUI._.literally_are_you_sure(), _GUI._.GenericDeleteFromDownloadlistAction_actionPerformed_ask_(this.createName()), null, _GUI._.literally_yes(), _GUI._.literall_no());

@@ -34,11 +34,8 @@ public abstract class PluginWrapper {
 
     @Deprecated
     public static PluginWrapper getWrapper(String name) {
-        for (LazyHostPlugin p : HostPluginController.getInstance().list()) {
-            if ("DirectHTTP".equals(p.getDisplayName())) { return new PluginWrapper((LazyPlugin<?>) p) {
-
-            }; }
-        }
+        LazyHostPlugin ret = HostPluginController.getInstance().get("DirectHTTP");
+        if (ret != null) return ret.getPluginWrapper();
         return null;
     }
 

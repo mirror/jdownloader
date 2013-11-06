@@ -47,7 +47,7 @@ import org.appwork.utils.swing.dialog.ExtFileChooserDialog;
 import org.appwork.utils.swing.dialog.FileChooserSelectionMode;
 import org.appwork.utils.swing.dialog.FileChooserType;
 import org.jdownloader.captcha.blacklist.CaptchaBlackList;
-import org.jdownloader.captcha.blacklist.CrawlerBlackListEntry;
+import org.jdownloader.captcha.blacklist.BlockAllCrawlerCaptchasEntry;
 import org.jdownloader.captcha.v2.Challenge;
 import org.jdownloader.captcha.v2.ChallengeResponseController;
 import org.jdownloader.captcha.v2.ChallengeSolver;
@@ -318,7 +318,7 @@ public class UserIO {
             } catch (SkipException e) {
                 switch (e.getSkipRequest()) {
                 case BLOCK_ALL_CAPTCHAS:
-                    CaptchaBlackList.getInstance().add(new CrawlerBlackListEntry(plugin.getCrawler()));
+                    CaptchaBlackList.getInstance().add(new BlockAllCrawlerCaptchasEntry(plugin.getCrawler()));
                     break;
                 case BLOCK_HOSTER:
                 case BLOCK_PACKAGE:
@@ -331,7 +331,7 @@ public class UserIO {
                 case STOP_CURRENT_ACTION:
                     LinkCollector.getInstance().abort();
                     // Just to be sure
-                    CaptchaBlackList.getInstance().add(new CrawlerBlackListEntry(plugin.getCrawler()));
+                    CaptchaBlackList.getInstance().add(new BlockAllCrawlerCaptchasEntry(plugin.getCrawler()));
                     throw new RuntimeDecrypterException(new DecrypterException(DecrypterException.CAPTCHA));
                 }
                 throw new RuntimeDecrypterException(new DecrypterException(DecrypterException.CAPTCHA));

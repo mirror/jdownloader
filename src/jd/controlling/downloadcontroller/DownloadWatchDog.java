@@ -601,8 +601,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
 
                 if (DownloadWatchDog.this.stateMachine.isStartState() || DownloadWatchDog.this.stateMachine.isFinal()) {
                     /*
-                     * no downloads are running, so we will force only the selected links to get started by setting stopmark to first forced
-                     * link
+                     * no downloads are running, so we will force only the selected links to get started by setting stopmark to first forced link
                      */
 
                     // DownloadWatchDog.this.setStopMark(linksForce.get(0));
@@ -772,7 +771,6 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                 }
             }
             for (DownloadLinkCandidate candidate : allCandidates) {
-
                 if (candidate.getCachedAccount().hasCaptcha(candidate.getLink()) && CaptchaBlackList.getInstance().matches(new PrePluginCheckDummyChallenge(candidate.getLink()))) {
                     selector.addExcluded(candidate, new DownloadLinkCandidateResult(SkipReason.CAPTCHA));
                 } else {
@@ -1480,8 +1478,12 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                         resetLink(link, currentSession);
                     } else {
                         /* link has a running singleDownloadController, abort it and reset it after */
-                        con.abort();
-                        enqueueJob(new DownloadWatchDogJob() {
+                        con.getJobsAfterDetach().add(new DownloadWatchDogJob() {
+
+                            @Override
+                            public void interrupt() {
+                            }
+
                             @Override
                             public void execute(DownloadSession currentSession) {
                                 if (currentSession != null) {
@@ -1500,11 +1502,8 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                                 }
                                 return;
                             }
-
-                            @Override
-                            public void interrupt() {
-                            }
                         });
+                        con.abort();
                     }
                 }
                 return;
@@ -1520,6 +1519,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
         if (link.getDownloadLinkController() != null) throw new IllegalStateException("Link is in progress! cannot resume!");
         if (link.isSkipped()) link.setSkipReason(null);
         if (FinalLinkState.CheckFailed(link.getFinalLinkState())) link.setFinalLinkState(null);
+        CaptchaBlackList.getInstance().addWhitelist(link);
         if (!link.isEnabled()) link.setEnabled(true);
     }
 
@@ -2581,8 +2581,8 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                                     waitedForNewActivationRequests += System.currentTimeMillis() - currentTimeStamp;
                                     if ((getSession().isActivationRequestsWaiting() == false && DownloadWatchDog.this.getActiveDownloads() == 0)) {
                                         /*
-                                         * it's important that this if statement gets checked after wait!, else we will loop through without
-                                         * waiting for new links/user interaction
+                                         * it's important that this if statement gets checked after wait!, else we will loop through without waiting for new
+                                         * links/user interaction
                                          */
                                         break;
                                     }

@@ -25,14 +25,14 @@ public class PluginController<T extends Plugin> {
             logger.setAllowTimeoutFlush(false);
         }
         final java.util.List<PluginInfo<T>> ret = new ArrayList<PluginInfo<T>>();
+        ClassLoader oldCL = null;
         try {
             File path = null;
             PluginClassLoaderChild cl = null;
-
             path = Application.getRootByClass(jd.SecondLevelLaunch.class, hosterpath);
-
             cl = PluginClassLoader.getInstance().getChild();
-
+            oldCL = Thread.currentThread().getContextClassLoader();
+            Thread.currentThread().setContextClassLoader(cl);
             final File[] files = path.listFiles(new FilenameFilter() {
                 public boolean accept(final File dir, final String name) {
                     return name.endsWith(".class") && !name.contains("$");
@@ -78,6 +78,7 @@ public class PluginController<T extends Plugin> {
             if (errorFree && ownLogger) logger.clear();
         } finally {
             if (ownLogger) logger.close();
+            Thread.currentThread().setContextClassLoader(oldCL);
         }
         return ret;
 

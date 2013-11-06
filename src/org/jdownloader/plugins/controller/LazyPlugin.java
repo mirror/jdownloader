@@ -17,10 +17,11 @@ import jd.plugins.Plugin;
 
 import org.appwork.exceptions.WTFException;
 import org.appwork.storage.config.MinTimeWeakReference;
+import org.appwork.storage.config.MinTimeWeakReferenceCleanup;
 import org.appwork.utils.Application;
 import org.jdownloader.plugins.controller.PluginClassLoader.PluginClassLoaderChild;
 
-public abstract class LazyPlugin<T extends Plugin> {
+public abstract class LazyPlugin<T extends Plugin> implements MinTimeWeakReferenceCleanup {
 
     private class ConstructorInfo<T extends Plugin> {
         protected Constructor<T> constructor;
@@ -55,6 +56,8 @@ public abstract class LazyPlugin<T extends Plugin> {
     private String                                            displayName;
     protected volatile WeakReference<Class<T>>                pluginClass;
     protected String                                          mainClassFilename       = null;
+    private final Object[]                                    CONSTRUCTOR;
+    private final PluginWrapper                               pluginWrapper;
 
     public String getMainClassFilename() {
         return mainClassFilename;
@@ -84,6 +87,10 @@ public abstract class LazyPlugin<T extends Plugin> {
     /* PluginClassLoaderChild used to load this Class */
     private volatile WeakReference<PluginClassLoaderChild> classLoader;
 
+    public PluginWrapper getPluginWrapper() {
+        return pluginWrapper;
+    }
+
     public LazyPlugin(String patternString, String className, String displayName, long version, Class<T> class1, PluginClassLoaderChild classLoader) {
         pattern = patternString;
         if (class1 != null) {
@@ -99,6 +106,10 @@ public abstract class LazyPlugin<T extends Plugin> {
         if (classLoader != null) {
             this.classLoader = new WeakReference<PluginClassLoaderChild>(classLoader);
         }
+        pluginWrapper = new PluginWrapper(this) {
+            /* workaround for old plugin system */
+        };
+        CONSTRUCTOR = new Object[] { pluginWrapper };
     }
 
     public long getVersion() {
@@ -245,16 +256,14 @@ public abstract class LazyPlugin<T extends Plugin> {
     private ConstructorInfo<T> getConstructor(Class<T> clazz) throws UpdateRequiredClassNotFoundException {
         ConstructorInfo<T> ret = new ConstructorInfo<T>();
         try {
-            ret.constructor = clazz.getConstructor(new Class[] {});
-            ret.constructorParameters = EMPTY;
+            ret.constructor = clazz.getConstructor(new Class[] { PluginWrapper.class });
+            ret.constructorParameters = CONSTRUCTOR;
             return ret;
         } catch (Throwable e) {
             handleUpdateRequiredClassNotFoundException(e, false);
             try {
-                ret.constructor = clazz.getConstructor(new Class[] { PluginWrapper.class });
-                ret.constructorParameters = new Object[] { new PluginWrapper(this) {
-                    /* workaround for old plugin system */
-                } };
+                ret.constructor = clazz.getConstructor(new Class[] {});
+                ret.constructorParameters = EMPTY;
                 return ret;
             } catch (final Throwable e2) {
                 handleUpdateRequiredClassNotFoundException(e, true);
@@ -316,8 +325,17 @@ public abstract class LazyPlugin<T extends Plugin> {
         Pattern ret = null;
         MinTimeWeakReference<Pattern> lCompiledPattern = compiledPattern;
         if (lCompiledPattern != null && (ret = lCompiledPattern.get()) != null) return ret;
-        compiledPattern = new MinTimeWeakReference<Pattern>(ret = Pattern.compile(pattern, Pattern.CASE_INSENSITIVE), 60 * 1000l, displayName);
+        compiledPattern = new MinTimeWeakReference<Pattern>(ret = Pattern.compile(pattern, Pattern.CASE_INSENSITIVE), 60 * 1000l, displayName, this);
         return ret;
+    }
+
+    @Override
+    public synchronized void onMinTimeWeakReferenceCleanup(MinTimeWeakReference<?> minTimeWeakReference) {
+        if (minTimeWeakReference == compiledPattern) {
+            compiledPattern = null;
+        } else if (minTimeWeakReference == classLoader) {
+            classLoader = null;
+        }
     }
 
     /**

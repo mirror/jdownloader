@@ -277,101 +277,108 @@ public class HostPluginController extends PluginController<PluginForHost> {
                         //
                         throw new WTFException("names.length=0");
                     }
-                    for (int i = 0; i < names.length; i++) {
+                    ClassLoader oldCL = null;
+                    try {
+                        oldCL = Thread.currentThread().getContextClassLoader();
                         classLoader = (PluginClassLoaderChild) c.getClazz().getClassLoader();
                         /* during init we dont want dummy libs being created */
                         classLoader.setCreateDummyLibs(false);
-                        LazyHostPlugin l = null;
-                        try {
-                            String displayName = new String(names[i]);
-                            /*
-                             * HostPlugins: multiple use of displayName is not possible because it is used to find the correct plugin for each downloadLink
-                             */
-                            AbstractHostPlugin existingPlugin = ret.get(displayName);
-                            if (existingPlugin != null && existingPlugin.getInterfaceVersion() > a.interfaceVersion()) {
-                                /* we already loaded a plugin with higher interfaceVersion, so skip older one */
-                                continue;
-                            }
-                            /* we use new String() here to dereference the Annotation and it's loaded class */
-                            AbstractHostPlugin ap = new AbstractHostPlugin(new String(c.getClazz().getSimpleName()));
-                            ap.setCacheVersion(AbstractHostPlugin.CACHEVERSION);
-                            ap.setDisplayName(displayName);
-                            ap.setPattern(new String(patterns[i]));
-                            ap.setVersion(revision);
-                            ap.setInterfaceVersion(a.interfaceVersion());
-                            /* information to speed up rescan */
-                            ap.setMainClassSHA256(c.getMainClassSHA256());
-                            ap.setMainClassLastModified(c.getMainClassLastModified());
-                            ap.setMainClassFilename(c.getFile().getName());
-                            l = new LazyHostPlugin(ap, null, classLoader);
+                        Thread.currentThread().setContextClassLoader(classLoader);
+                        for (int i = 0; i < names.length; i++) {
+                            LazyHostPlugin l = null;
                             try {
-                                /* check for stable compatibility */
-                                classLoader.setPluginClass(c.getClazz().getName());
-                                classLoader.setCheckStableCompatibility(a.interfaceVersion() == 2);
-                                PluginForHost plg = l.newInstance(classLoader);
-
-                                /* set premium */
-                                ap.setPremium(plg.isPremiumEnabled());
-                                l.setPremium(plg.isPremiumEnabled());
-
-                                /* set premiumUrl */
-                                String purl = plg.getBuyPremiumUrl();
-                                if (purl != null) purl = new String(purl);
-                                l.setPremiumUrl(purl);
-                                ap.setPremiumUrl(purl);
-
-                                /* set hasConfig */
-                                ap.setHasConfig(plg.hasConfig());
-                                l.setHasConfig(plg.hasConfig());
-
-                                /* set hasAccountRewrite */
-                                boolean hasAccountRewrite = false;
-                                try {
-                                    if (plg.rewriteHost((Account) null) != null) {
-                                        hasAccountRewrite = true;
-                                    }
-                                } catch (Throwable e) {
+                                String displayName = new String(names[i]);
+                                /*
+                                 * HostPlugins: multiple use of displayName is not possible because it is used to find the correct plugin for each downloadLink
+                                 */
+                                AbstractHostPlugin existingPlugin = ret.get(displayName);
+                                if (existingPlugin != null && existingPlugin.getInterfaceVersion() > a.interfaceVersion()) {
+                                    /* we already loaded a plugin with higher interfaceVersion, so skip older one */
+                                    continue;
                                 }
-                                ap.setHasAccountRewrite(hasAccountRewrite);
-                                l.setHasAccountRewrite(hasAccountRewrite);
-
-                                /* set hasLinkRewrite */
-                                boolean hasLinkRewrite = false;
+                                /* we use new String() here to dereference the Annotation and it's loaded class */
+                                AbstractHostPlugin ap = new AbstractHostPlugin(new String(c.getClazz().getSimpleName()));
+                                ap.setCacheVersion(AbstractHostPlugin.CACHEVERSION);
+                                ap.setDisplayName(displayName);
+                                ap.setPattern(new String(patterns[i]));
+                                ap.setVersion(revision);
+                                ap.setInterfaceVersion(a.interfaceVersion());
+                                /* information to speed up rescan */
+                                ap.setMainClassSHA256(c.getMainClassSHA256());
+                                ap.setMainClassLastModified(c.getMainClassLastModified());
+                                ap.setMainClassFilename(c.getFile().getName());
+                                l = new LazyHostPlugin(ap, null, classLoader);
                                 try {
-                                    if (plg.rewriteHost((DownloadLink) null) != null) {
-                                        hasLinkRewrite = true;
+                                    /* check for stable compatibility */
+                                    classLoader.setPluginClass(new String(c.getClazz().getName()));
+                                    classLoader.setCheckStableCompatibility(a.interfaceVersion() == 2);
+                                    PluginForHost plg = l.newInstance(classLoader);
+
+                                    /* set premium */
+                                    ap.setPremium(plg.isPremiumEnabled());
+                                    l.setPremium(plg.isPremiumEnabled());
+
+                                    /* set premiumUrl */
+                                    String purl = plg.getBuyPremiumUrl();
+                                    if (purl != null) purl = new String(purl);
+                                    l.setPremiumUrl(purl);
+                                    ap.setPremiumUrl(purl);
+
+                                    /* set hasConfig */
+                                    ap.setHasConfig(plg.hasConfig());
+                                    l.setHasConfig(plg.hasConfig());
+
+                                    /* set hasAccountRewrite */
+                                    boolean hasAccountRewrite = false;
+                                    try {
+                                        if (plg.rewriteHost((Account) null) != null) {
+                                            hasAccountRewrite = true;
+                                        }
+                                    } catch (Throwable e) {
                                     }
+                                    ap.setHasAccountRewrite(hasAccountRewrite);
+                                    l.setHasAccountRewrite(hasAccountRewrite);
+
+                                    /* set hasLinkRewrite */
+                                    boolean hasLinkRewrite = false;
+                                    try {
+                                        if (plg.rewriteHost((DownloadLink) null) != null) {
+                                            hasLinkRewrite = true;
+                                        }
+                                    } catch (Throwable e) {
+                                    }
+                                    ap.setHasLinkRewrite(hasLinkRewrite);
+                                    l.setHasLinkRewrite(hasLinkRewrite);
                                 } catch (Throwable e) {
+                                    if (e instanceof UpdateRequiredClassNotFoundException) {
+                                        logger.finest("@HostPlugin incomplete:" + simpleName + " " + new String(names[i]) + " " + e.getMessage() + " " + revision);
+                                    } else
+                                        throw e;
                                 }
-                                ap.setHasLinkRewrite(hasLinkRewrite);
-                                l.setHasLinkRewrite(hasLinkRewrite);
+                                if ("UpdateRequired".equalsIgnoreCase(displayName)) {
+                                    /* we do not add fallBackPlugin to returned plugin list */
+                                    fallBackPlugin = l;
+                                } else {
+                                    ret2.put(ap.getDisplayName(), l);
+                                }
+                                existingPlugin = ret.put(ap.getDisplayName(), ap);
+                                if (existingPlugin != null) {
+                                    logger.finest("@HostPlugin replaced:" + simpleName + " " + new String(names[i]) + " " + revision);
+                                }
+                                logger.finer("@HostPlugin ok:" + simpleName + " " + new String(names[i]) + " " + revision);
                             } catch (Throwable e) {
-                                if (e instanceof UpdateRequiredClassNotFoundException) {
-                                    logger.finest("@HostPlugin incomplete:" + simpleName + " " + new String(names[i]) + " " + e.getMessage() + " " + revision);
-                                } else
-                                    throw e;
-                            }
-                            if ("UpdateRequired".equalsIgnoreCase(displayName)) {
-                                /* we do not add fallBackPlugin to returned plugin list */
-                                fallBackPlugin = l;
-                            } else {
-                                ret2.put(ap.getDisplayName(), l);
-                            }
-                            existingPlugin = ret.put(ap.getDisplayName(), ap);
-                            if (existingPlugin != null) {
-                                logger.finest("@HostPlugin replaced:" + simpleName + " " + new String(names[i]) + " " + revision);
-                            }
-                            logger.finer("@HostPlugin ok:" + simpleName + " " + new String(names[i]) + " " + revision);
-                        } catch (Throwable e) {
-                            logger.severe("@HostPlugin failed:" + simpleName + " " + new String(names[i]) + " " + revision);
-                            logger.log(e);
-                        } finally {
-                            /* now the pluginClassLoad may create dummy libraries */
-                            if (l != null) {
-                                l.setClassLoader(null);
-                                l.setPluginClass(null);
+                                logger.severe("@HostPlugin failed:" + simpleName + " " + new String(names[i]) + " " + revision);
+                                logger.log(e);
+                            } finally {
+                                /* now the pluginClassLoad may create dummy libraries */
+                                if (l != null) {
+                                    l.setClassLoader(null);
+                                    l.setPluginClass(null);
+                                }
                             }
                         }
+                    } finally {
+                        Thread.currentThread().setContextClassLoader(oldCL);
                     }
                 } catch (final Throwable e) {
                     logger.severe("@HostPlugin failed:" + simpleName);

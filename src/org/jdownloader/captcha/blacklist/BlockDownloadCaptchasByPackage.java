@@ -23,8 +23,7 @@ public class BlockDownloadCaptchasByPackage implements SessionBlackListEntry<Obj
         DownloadLink link = Challenge.getDownloadLink(c);
         if (link == null) return false;
         FilePackage parent = link.getParentNode();
-        if (parent == null) return false;
-        return parent == blockedPackage;
+        return blockedPackage == parent;
 
     }
 

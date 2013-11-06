@@ -3,6 +3,7 @@ package org.jdownloader.gui.views.linkgrabber.bottombar;
 import java.awt.event.ActionEvent;
 
 import jd.controlling.ClipboardMonitoring;
+import jd.controlling.ClipboardMonitoring.ClipboardContent;
 import jd.controlling.linkcollector.LinkCollectingJob;
 import jd.controlling.linkcollector.LinkCollector;
 import jd.controlling.linkcollector.LinkOrigin;
@@ -54,8 +55,9 @@ public class PasteLinksAction extends AppAction implements CachableInterface {
 
     @Override
     public void actionPerformed(ActionEvent e) {
-
-        final LinkCollectingJob crawljob = new LinkCollectingJob(LinkOrigin.PASTE_LINKS_ACTION, ClipboardMonitoring.getINSTANCE().getCurrentContent());
+        ClipboardContent content = ClipboardMonitoring.getINSTANCE().getCurrentContent();
+        final LinkCollectingJob crawljob = new LinkCollectingJob(LinkOrigin.PASTE_LINKS_ACTION, content != null ? content.getContent() : null);
+        if (content != null) crawljob.setCustomSourceUrl(content.getBrowserURL());
         crawljob.setDeepAnalyse(isDeepDecryptEnabled());
         AddLinksProgress d = new AddLinksProgress(crawljob);
         if (d.isHiddenByDontShowAgain()) {

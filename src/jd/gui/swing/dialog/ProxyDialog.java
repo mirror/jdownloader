@@ -13,6 +13,7 @@ import javax.swing.event.CaretEvent;
 import javax.swing.event.CaretListener;
 
 import jd.controlling.ClipboardMonitoring;
+import jd.controlling.ClipboardMonitoring.ClipboardContent;
 import net.miginfocom.swing.MigLayout;
 
 import org.appwork.scheduler.DelayedRunnable;
@@ -104,7 +105,10 @@ public class ProxyDialog extends AbstractDialog<HTTPProxy> implements CaretListe
         panel.add(lblPass = new JLabel(_GUI._.jd_gui_swing_dialog_ProxyDialog_password()));
         panel.add(txtPass = new JTextField(), "spanx");
         this.okButton.setEnabled(false);
-        set(ClipboardMonitoring.getINSTANCE().getCurrentContent());
+        ClipboardContent content = ClipboardMonitoring.getINSTANCE().getCurrentContent();
+        String clipboardTxt = "";
+        if (content != null) clipboardTxt = content.getContent();
+        set(clipboardTxt);
 
         return panel;
     }
@@ -118,6 +122,7 @@ public class ProxyDialog extends AbstractDialog<HTTPProxy> implements CaretListe
 
         int carPos = txtHost.getCaretPosition();
         String myText = text;
+        if (myText == null) myText = "";
         if (myText.endsWith(":")) return;
         for (int i = 0; i < 2; i++) {
             try {

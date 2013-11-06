@@ -3,6 +3,7 @@ package org.jdownloader.extensions.infobar;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.ConfigGroup;
+import jd.config.SubConfiguration;
 import jd.plugins.AddonPanel;
 
 import org.appwork.utils.Application;
@@ -42,6 +43,8 @@ public class InfoBarExtension extends AbstractExtension<InfoBarConfig, InfobarTr
 
     private ExtensionConfigPanel<InfoBarExtension> configPanel;
 
+    private final SubConfiguration                 subConfig;
+
     public ExtensionConfigPanel<InfoBarExtension> getConfigPanel() {
         return configPanel;
     }
@@ -51,9 +54,8 @@ public class InfoBarExtension extends AbstractExtension<InfoBarConfig, InfobarTr
     }
 
     public InfoBarExtension() throws StartException {
-
         setTitle(T._.jd_plugins_optional_infobar_jdinfobar());
-
+        subConfig = SubConfiguration.getConfig("infobarextension");
     }
 
     public Class<EnableInfoBarGuiAction> getShowGuiAction() {
@@ -65,7 +67,7 @@ public class InfoBarExtension extends AbstractExtension<InfoBarConfig, InfobarTr
         if (infoDialog == null) return;
         final int newValue;
         if (value == null) {
-            newValue = getPropertyConfig().getIntegerProperty(PROPERTY_OPACITY, 100);
+            newValue = subConfig.getIntegerProperty(PROPERTY_OPACITY, 100);
         } else {
             newValue = Integer.parseInt(value.toString());
         }
@@ -88,8 +90,8 @@ public class InfoBarExtension extends AbstractExtension<InfoBarConfig, InfobarTr
         if (b) {
             if (infoDialog == null) {
                 infoDialog = new InfoDialog(this);
-                infoDialog.setEnableDropLocation(getPropertyConfig().getBooleanProperty(PROPERTY_DROPLOCATION, true));
-                infoDialog.setEnableDocking(getPropertyConfig().getBooleanProperty(PROPERTY_DOCKING, true));
+                infoDialog.setEnableDropLocation(subConfig.getBooleanProperty(PROPERTY_DROPLOCATION, true));
+                infoDialog.setEnableDocking(subConfig.getBooleanProperty(PROPERTY_DOCKING, true));
                 if (Application.getJavaVersion() >= Application.JAVA16) updateOpacity(null);
             }
             infoDialog.showDialog();
@@ -149,7 +151,7 @@ public class InfoBarExtension extends AbstractExtension<InfoBarConfig, InfobarTr
     protected void initSettings(ConfigContainer config) {
         config.setGroup(new ConfigGroup(getName(), getIconKey()));
         if (Application.getJavaVersion() >= Application.JAVA16) {
-            ConfigEntry ce = new ConfigEntry(ConfigContainer.TYPE_SPINNER, getPropertyConfig(), PROPERTY_OPACITY, T._.jd_plugins_optional_infobar_opacity(), 1, 100, 10) {
+            ConfigEntry ce = new ConfigEntry(ConfigContainer.TYPE_SPINNER, subConfig, PROPERTY_OPACITY, T._.jd_plugins_optional_infobar_opacity(), 1, 100, 10) {
                 private static final long serialVersionUID = 1L;
 
                 @Override
@@ -162,7 +164,7 @@ public class InfoBarExtension extends AbstractExtension<InfoBarConfig, InfobarTr
             config.addEntry(ce);
             config.addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         }
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPropertyConfig(), PROPERTY_DROPLOCATION, T._.jd_plugins_optional_infobar_dropLocation2()) {
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, PROPERTY_DROPLOCATION, T._.jd_plugins_optional_infobar_dropLocation2()) {
 
             private static final long serialVersionUID = 1L;
 
@@ -172,7 +174,7 @@ public class InfoBarExtension extends AbstractExtension<InfoBarConfig, InfobarTr
                 super.valueChanged(newValue);
             }
         }.setDefaultValue(true));
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPropertyConfig(), PROPERTY_DOCKING, T._.jd_plugins_optional_infobar_docking()) {
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, PROPERTY_DOCKING, T._.jd_plugins_optional_infobar_docking()) {
 
             private static final long serialVersionUID = 1L;
 

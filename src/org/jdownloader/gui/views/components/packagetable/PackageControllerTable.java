@@ -12,6 +12,8 @@ import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
+import java.util.concurrent.atomic.AtomicLong;
 
 import javax.swing.KeyStroke;
 import javax.swing.ListSelectionModel;
@@ -24,11 +26,15 @@ import jd.controlling.packagecontroller.PackageController;
 import jd.gui.swing.jdgui.BasicJDTable;
 
 import org.appwork.exceptions.WTFException;
+import org.appwork.scheduler.DelayedRunnable;
 import org.appwork.swing.exttable.ExtColumn;
 import org.appwork.swing.exttable.ExtComponentRowHighlighter;
+import org.appwork.utils.NullsafeAtomicReference;
 import org.appwork.utils.event.queue.QueueAction;
 import org.appwork.utils.logging.Log;
 import org.appwork.utils.os.CrossSystem;
+import org.appwork.utils.swing.EDTHelper;
+import org.appwork.utils.swing.EDTRunner;
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo;
@@ -40,6 +46,25 @@ import org.jdownloader.settings.staticreferences.CFG_GUI;
 import org.jdownloader.updatev2.gui.LAFOptions;
 
 public abstract class PackageControllerTable<ParentType extends AbstractPackageNode<ChildrenType, ParentType>, ChildrenType extends AbstractPackageChildrenNode<ParentType>> extends BasicJDTable<AbstractNode> {
+
+    protected class SelectionInfoCache {
+        private final long tableDataVersion;
+
+        public long getTableDataVersion() {
+            return tableDataVersion;
+        }
+
+        protected volatile SelectionInfo<ParentType, ChildrenType> all;
+        protected volatile SelectionInfo<ParentType, ChildrenType> all_filtered;
+        protected volatile SelectionInfo<ParentType, ChildrenType> selection;
+        protected volatile SelectionInfo<ParentType, ChildrenType> selection_filtered;
+        protected final AtomicLong                                 selectionVersion = new AtomicLong(-1);
+
+        protected SelectionInfoCache(long tableDataVersion) {
+            this.tableDataVersion = tableDataVersion;
+        }
+
+    }
 
     public static final KeyStroke                                 KEY_STROKE_ALT_END  = KeyStroke.getKeyStroke(KeyEvent.VK_END, InputEvent.ALT_MASK);
     public static final KeyStroke                                 KEY_STROKE_ALT_HOME = KeyStroke.getKeyStroke(KeyEvent.VK_HOME, InputEvent.ALT_MASK);
@@ -60,6 +85,9 @@ public abstract class PackageControllerTable<ParentType extends AbstractPackageN
     private AppAction                                             moveUpAction        = null;
     private AppAction                                             moveDownAction      = null;
     private AppAction                                             moveBottomAction    = null;
+    private NullsafeAtomicReference<SelectionInfoCache>           selectionInfoCache  = new NullsafeAtomicReference<SelectionInfoCache>(null);
+    private AtomicLong                                            selectionVersion    = new AtomicLong(0);
+    private final DelayedRunnable                                 selectionDelayedUpdate;
 
     public PackageControllerTable(PackageControllerTableModel<ParentType, ChildrenType> pctm) {
         super(pctm);
@@ -87,27 +115,65 @@ public abstract class PackageControllerTable<ParentType extends AbstractPackageN
             });
         }
 
+        selectionDelayedUpdate = new DelayedRunnable(500, 5000) {
+
+            @Override
+            public void delayedrun() {
+                updateMoveActions();
+            }
+        };
     }
 
-    public SelectionInfo<ParentType, ChildrenType> getSelectionInfo(boolean selectionOnly, boolean filtered) {
-        if (selectionOnly) {
-            ListSelectionModel sm = getSelectionModel();
-            if (sm.isSelectionEmpty()) return new SelectionInfo<ParentType, ChildrenType>(null, null, null, null, null, this);
-            if (!filtered) { throw new WTFException("Not implemented");
+    public SelectionInfo<ParentType, ChildrenType> getSelectionInfo(final boolean selectionOnly, final boolean filtered) {
+        return new EDTHelper<SelectionInfo<ParentType, ChildrenType>>() {
 
+            @Override
+            public SelectionInfo<ParentType, ChildrenType> edtRun() {
+                SelectionInfoCache cachedSelectionInfo = selectionInfoCache.get();
+                if (cachedSelectionInfo == null || cachedSelectionInfo.getTableDataVersion() != tableModel.getTableDataVersion()) {
+                    cachedSelectionInfo = new SelectionInfoCache(tableModel.getTableDataVersion());
+                    selectionInfoCache.set(cachedSelectionInfo);
+                }
+                if (selectionOnly == false) {
+                    if (filtered == false) {
+                        if (cachedSelectionInfo.all == null) {
+                            cachedSelectionInfo.all = new SelectionInfo<ParentType, ChildrenType>(null, getModel().getController().getAllChildren(), null, null, null, PackageControllerTable.this);
+                        }
+                        return cachedSelectionInfo.all;
+                    } else {
+                        if (cachedSelectionInfo.all_filtered == null) {
+                            cachedSelectionInfo.all_filtered = new SelectionInfo<ParentType, ChildrenType>(null, getModel().getElements(), null, null, null, PackageControllerTable.this);
+                        }
+                        return cachedSelectionInfo.all_filtered;
+                    }
+                } else {
+                    if (cachedSelectionInfo.selectionVersion.getAndSet(selectionVersion.get()) != selectionVersion.get()) {
+                        cachedSelectionInfo.selection = null;
+                        cachedSelectionInfo.selection_filtered = null;
+                    }
+                    ListSelectionModel sm = getSelectionModel();
+                    if (filtered == false) {
+                        if (cachedSelectionInfo.selection == null) {
+                            if (sm.isSelectionEmpty()) {
+                                cachedSelectionInfo.selection = new SelectionInfo<ParentType, ChildrenType>(null, null, null, null, null, PackageControllerTable.this);
+                            } else {
+                                throw new WTFException("You really want an unfiltered filtered view?!");
+                            }
+                        }
+                        return cachedSelectionInfo.selection;
+                    } else {
+                        if (cachedSelectionInfo.selection_filtered == null) {
+                            if (sm.isSelectionEmpty()) {
+                                cachedSelectionInfo.selection_filtered = new SelectionInfo<ParentType, ChildrenType>(null, null, null, null, null, PackageControllerTable.this);
+                            } else {
+                                cachedSelectionInfo.selection_filtered = new SelectionInfo<ParentType, ChildrenType>(getModel().getObjectbyRow(sm.getLeadSelectionIndex()), getModel().getSelectedObjects(), null, null, null, PackageControllerTable.this);
+                            }
+                        }
+                        return cachedSelectionInfo.selection_filtered;
+                    }
+                }
             }
-
-            return new SelectionInfo<ParentType, ChildrenType>(getModel().getObjectbyRow(sm.getLeadSelectionIndex()), getModel().getSelectedObjects(), null, null, null, this);
-
-        } else {
-            if (!filtered) {
-
-                return new SelectionInfo<ParentType, ChildrenType>(null, getModel().getController().getAllChildren(), null, null, null, this);
-            } else {
-                return new SelectionInfo<ParentType, ChildrenType>(null, getModel().getElements(), null, null, null, this);
-            }
-        }
-
+        }.getReturnValue();
     }
 
     @SuppressWarnings("unchecked")
@@ -145,23 +211,136 @@ public abstract class PackageControllerTable<ParentType extends AbstractPackageN
 
     @Override
     protected void onSelectionChanged() {
+        selectionVersion.incrementAndGet();
         super.onSelectionChanged();
-        if (tableModel.countSelectedObjects() == 0 || !updateMoveButtonEnabledStatus()) {
+        if (tableModel.isTableStructureChanging() == false && tableModel.hasSelectedObjects() == false || !updateMoveButtonEnabledStatus()) {
             // disable move buttons
             moveDownAction.setEnabled(false);
             moveBottomAction.setEnabled(false);
             moveTopAction.setEnabled(false);
             moveUpAction.setEnabled(false);
         } else {
-            java.util.List<ParentType> selectedPkgs = getSelectedPackages();
-            java.util.List<ChildrenType> selectedChld = getSelectedChildren();
-            boolean moveUpPossible = moveUpPossible(selectedPkgs, selectedChld);
-            boolean moveDownPossibe = moveDownPossible(selectedPkgs, selectedChld);
-            moveTopAction.setEnabled(moveUpPossible);
-            moveUpAction.setEnabled(moveUpPossible);
-            moveDownAction.setEnabled(moveDownPossibe);
-            moveBottomAction.setEnabled(moveDownPossibe);
+            selectionDelayedUpdate.run();
         }
+    }
+
+    protected void updateMoveActions() {
+        final java.util.List<ParentType> selectedPkgs = new ArrayList<ParentType>();
+        final java.util.List<ChildrenType> selectedChld = new ArrayList<ChildrenType>();
+        new EDTRunner() {
+
+            @Override
+            protected void runInEDT() {
+                getSelected(selectedPkgs, selectedChld);
+            }
+        }.waitForEDT();
+        final boolean[] movePossible = movePossible(selectedPkgs, selectedChld);
+        new EDTRunner() {
+
+            @Override
+            protected void runInEDT() {
+                moveTopAction.setEnabled(movePossible[0]);
+                moveUpAction.setEnabled(movePossible[0]);
+                moveDownAction.setEnabled(movePossible[1]);
+                moveBottomAction.setEnabled(movePossible[1]);
+            }
+        };
+    }
+
+    protected void getSelected(List<ParentType> selectedPkgs, List<ChildrenType> selectedChld) {
+        final int[] rows = this.getSelectedRows();
+        for (final int row : rows) {
+            final AbstractNode node = getModel().getObjectbyRow(row);
+            if (node != null) {
+                if (node instanceof AbstractPackageNode<?, ?>) {
+                    if (selectedPkgs != null) selectedPkgs.add((ParentType) node);
+                } else if (node instanceof AbstractPackageChildrenNode<?>) {
+                    if (selectedChld != null) selectedChld.add((ChildrenType) node);
+                }
+            }
+        }
+    }
+
+    protected boolean[] movePossible(List<ParentType> pkgs, List<ChildrenType> selectedChld) {
+        boolean onlyFullPackagesSelected = true;
+        HashSet<ChildrenType> allInPackages = new HashSet<ChildrenType>();
+        for (ParentType pkg : pkgs) {
+            boolean lock = false;
+            try {
+                lock = pkg.getModifyLock().readLock();
+                if (pkg.isExpanded()) allInPackages.addAll(pkg.getChildren());
+            } finally {
+                pkg.getModifyLock().readUnlock(lock);
+            }
+        }
+
+        for (ChildrenType ch : selectedChld) {
+            if (!allInPackages.remove(ch)) {
+                onlyFullPackagesSelected = false;
+                break;
+            }
+        }
+        onlyFullPackagesSelected &= allInPackages.size() == 0;
+        if (pkgs.size() > 0 && selectedChld.size() > 0 && !onlyFullPackagesSelected) {
+            /* we don't allow moving of packages/children at the same time */
+            return new boolean[] { false, false };
+        }
+        ParentType sameParent = null;
+        for (ChildrenType child : selectedChld) {
+            if (sameParent == null) {
+                sameParent = child.getParentNode();
+            } else if (sameParent != child.getParentNode()) { return new boolean[] { false, false }; }
+        }
+        /* move up check */
+        boolean moveUp = false;
+        PackageController<ParentType, ChildrenType> pc = this.getController();
+        int index = 0;
+        for (ParentType parent : pkgs) {
+            if (pc.indexOf(parent) != index++) {
+                moveUp = true;
+                break;
+            }
+        }
+        if (sameParent != null) {
+            boolean readL = sameParent.getModifyLock().readLock();
+            try {
+                index = 0;
+                for (ChildrenType child : selectedChld) {
+                    if (sameParent.indexOf(child) != index++) {
+                        moveUp = true;
+                        break;
+                    }
+                }
+            } finally {
+                sameParent.getModifyLock().readUnlock(readL);
+            }
+        }
+        /* move down check */
+        boolean moveDown = false;
+        index = pc.size() - 1;
+        for (int i = pkgs.size() - 1; i >= 0; i--) {
+            ParentType parent = pkgs.get(i);
+            if (pc.indexOf(parent) != index--) {
+                moveDown = true;
+                break;
+            }
+        }
+        if (sameParent != null) {
+            boolean readL = sameParent.getModifyLock().readLock();
+            try {
+                index = sameParent.getChildren().size() - 1;
+                for (int i = selectedChld.size() - 1; i >= 0; i--) {
+                    ChildrenType child = selectedChld.get(i);
+                    if (sameParent.indexOf(child) != index--) {
+                        moveDown = true;
+                        break;
+                    }
+                }
+            } finally {
+                sameParent.getModifyLock().readUnlock(readL);
+            }
+        }
+        return new boolean[] { moveUp, moveDown };
     }
 
     protected boolean updateMoveButtonEnabledStatus() {
@@ -207,9 +386,14 @@ public abstract class PackageControllerTable<ParentType extends AbstractPackageN
             if (pc.indexOf(parent) != index++) return true;
         }
         if (sameParent != null) {
-            index = 0;
-            for (ChildrenType child : selectedChld) {
-                if (sameParent.indexOf(child) != index++) return true;
+            boolean readL = sameParent.getModifyLock().readLock();
+            try {
+                index = 0;
+                for (ChildrenType child : selectedChld) {
+                    if (sameParent.indexOf(child) != index++) return true;
+                }
+            } finally {
+                sameParent.getModifyLock().readUnlock(readL);
             }
         }
         return false;
@@ -566,7 +750,6 @@ public abstract class PackageControllerTable<ParentType extends AbstractPackageN
     }
 
     public boolean isOriginalOrder() {
-
         return getModel().getSortColumn() == null;
     }
 

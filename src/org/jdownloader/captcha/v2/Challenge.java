@@ -100,7 +100,6 @@ public abstract class Challenge<T> {
         Plugin plugin = getPlugin(challenge);
         if (plugin == null) return null;
         if (plugin instanceof PluginForHost) { return ((PluginForHost) plugin).getDownloadLink(); }
-
         return null;
     }
 
@@ -118,10 +117,10 @@ public abstract class Challenge<T> {
         throw new WTFException("no domaininfo for this challenge!?");
     }
 
-    private static Plugin getPlugin(Challenge<?> challenge) {
+    public static Plugin getPlugin(Challenge<?> challenge) {
         if (challenge instanceof ImageCaptchaChallenge) { return ((ImageCaptchaChallenge) challenge).getPlugin(); }
         if (challenge instanceof ClickCaptchaChallenge) { return ((ClickCaptchaChallenge) challenge).getPlugin(); }
-
+        if (challenge instanceof PrePluginCheckDummyChallenge) { return ((PrePluginCheckDummyChallenge) challenge).getLink().getDefaultPlugin(); }
         return null;
     }
 }

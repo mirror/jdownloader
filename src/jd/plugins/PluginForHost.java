@@ -34,6 +34,7 @@ import javax.swing.JComponent;
 import jd.PluginWrapper;
 import jd.captcha.JACMethod;
 import jd.config.SubConfiguration;
+import jd.controlling.accountchecker.AccountCheckerThread;
 import jd.controlling.captcha.CaptchaSettings;
 import jd.controlling.captcha.SkipException;
 import jd.controlling.captcha.SkipRequest;
@@ -86,8 +87,7 @@ import org.jdownloader.translate._JDT;
 public abstract class PluginForHost extends Plugin {
     private static Pattern[]            PATTERNS              = new Pattern[] {
                                                               /**
-                                                               * these patterns should split filename and fileextension (extension must
-                                                               * include the point)
+                                                               * these patterns should split filename and fileextension (extension must include the point)
                                                                */
                                                               // multipart rar archives
             Pattern.compile("(.*)(\\.pa?r?t?\\.?[0-9]+.*?\\.rar$)", Pattern.CASE_INSENSITIVE),
@@ -259,27 +259,32 @@ public abstract class PluginForHost extends Plugin {
                 file = new File(orgCaptchaImage);
             }
             if (this.getDownloadLink() == null) this.setDownloadLink(link);
+            final boolean insideAccountChecker = Thread.currentThread() instanceof AccountCheckerThread;
             BasicCaptchaChallenge c = new BasicCaptchaChallenge(method, file, defaultValue, explain, this, flag) {
 
                 @Override
                 public boolean canBeSkippedBy(SkipRequest skipRequest, ChallengeSolver<?> solver, Challenge<?> challenge) {
-                    boolean ret;
+                    if (insideAccountChecker) {
+                        /* we don't want to skip login captcha inside fetchAccountInfo(Thread is AccountCheckerThread) */
+                        return false;
+                    }
+                    Plugin challengePlugin = Challenge.getPlugin(challenge);
+                    if (challengePlugin != null && !(challengePlugin instanceof PluginForHost)) {
+                        /* we only want block PluginForHost captcha here */
+                        return false;
+                    }
                     switch (skipRequest) {
                     case BLOCK_ALL_CAPTCHAS:
                         /* user wants to block all captchas (current session) */
                         return true;
                     case BLOCK_HOSTER:
                         /* user wants to block captchas from specific hoster */
-                        return PluginForHost.this.getHost().equals(Challenge.getHost(challenge));
+                        return StringUtils.equals(link.getHost(), Challenge.getHost(challenge));
                     case BLOCK_PACKAGE:
                         /* user wants to block captchas from current FilePackage */
                         DownloadLink lLink = Challenge.getDownloadLink(challenge);
                         if (lLink == null || lLink.getDefaultPlugin() == null) return false;
-                        ret = link.getFilePackage() == lLink.getFilePackage();
-                        ret &= ((PluginForHost) link.getDefaultPlugin()).hasCaptcha(link, null);
-                        return ret;
-                    case REFRESH:
-                    case SINGLE:
+                        return link.getFilePackage() == lLink.getFilePackage();
                     default:
                         return false;
                     }
@@ -304,7 +309,6 @@ public abstract class PluginForHost extends Plugin {
         } catch (SkipException e) {
             if (getDownloadLink() != null) {
                 switch (e.getSkipRequest()) {
-
                 case BLOCK_ALL_CAPTCHAS:
                     CaptchaBlackList.getInstance().add(new BlockAllDownloadCaptchasEntry());
                     HelpDialog.show(false, true, MouseInfo.getPointerInfo().getLocation(), "SKIPPEDHOSTER", Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI._.ChallengeDialogHandler_viaGUI_skipped_help_title(), _GUI._.ChallengeDialogHandler_viaGUI_skipped_help_msg(), NewTheme.I().getIcon("skipped", 32));
@@ -316,14 +320,10 @@ public abstract class PluginForHost extends Plugin {
 
                 case BLOCK_PACKAGE:
                     CaptchaBlackList.getInstance().add(new BlockDownloadCaptchasByPackage(getDownloadLink().getParentNode()));
-
                     HelpDialog.show(false, true, MouseInfo.getPointerInfo().getLocation(), "SKIPPEDHOSTER", Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI._.ChallengeDialogHandler_viaGUI_skipped_help_title(), _GUI._.ChallengeDialogHandler_viaGUI_skipped_help_msg(), NewTheme.I().getIcon("skipped", 32));
-
                     break;
-
                 case SINGLE:
                     CaptchaBlackList.getInstance().add(new BlockDownloadCaptchasByLink(getDownloadLink()));
-
                     HelpDialog.show(false, true, MouseInfo.getPointerInfo().getLocation(), "SKIPPEDHOSTER", Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI._.ChallengeDialogHandler_viaGUI_skipped_help_title(), _GUI._.ChallengeDialogHandler_viaGUI_skipped_help_msg(), NewTheme.I().getIcon("skipped", 32));
                     break;
                 case TIMEOUT:
@@ -443,8 +443,7 @@ public abstract class PluginForHost extends Plugin {
     }
 
     /**
-     * Hier werden Treffer fuer Downloadlinks dieses Anbieters in diesem Text gesucht. Gefundene Links werden dann in einem ArrayList
-     * zurueckgeliefert
+     * Hier werden Treffer fuer Downloadlinks dieses Anbieters in diesem Text gesucht. Gefundene Links werden dann in einem ArrayList zurueckgeliefert
      * 
      * @param data
      *            Ein Text mit beliebig vielen Downloadlinks dieses Anbieters
@@ -491,8 +490,7 @@ public abstract class PluginForHost extends Plugin {
     }
 
     /*
-     * OVERRIDE this function if you need to modify the link, ATTENTION: you have to use new browser instances, this plugin might not have
-     * one!
+     * OVERRIDE this function if you need to modify the link, ATTENTION: you have to use new browser instances, this plugin might not have one!
      */
     public void correctDownloadLink(final DownloadLink link) throws Exception {
     }
@@ -624,6 +622,7 @@ public abstract class PluginForHost extends Plugin {
         try {
             waitForNextStartAllowed(downloadLink);
             if (false) {
+                if (true) throw new PluginException(LinkStatus.ERROR_FATAL, "Custom errormessage");
                 if (false) {
                     throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 5 * 60 * 1000l);
                 } else if (getHost().contains("share")) {
@@ -663,8 +662,8 @@ public abstract class PluginForHost extends Plugin {
          * 
          * in fetchAccountInfo we don't have to synchronize because we create a new instance of AccountInfo and fill it
          * 
-         * if you need customizable maxDownloads, please use getMaxSimultanDownload to handle this you are in multihost when account host
-         * does not equal link host!
+         * if you need customizable maxDownloads, please use getMaxSimultanDownload to handle this you are in multihost when account host does not equal link
+         * host!
          * 
          * 
          * 
@@ -943,8 +942,8 @@ public abstract class PluginForHost extends Plugin {
     }
 
     /**
-     * Some hosters have bad filenames. Rapidshare for example replaces all special chars and spaces with _. Plugins can try to autocorrect
-     * this based on other downloadlinks
+     * Some hosters have bad filenames. Rapidshare for example replaces all special chars and spaces with _. Plugins can try to autocorrect this based on other
+     * downloadlinks
      * 
      * @param cache
      *            TODO
@@ -1040,8 +1039,7 @@ public abstract class PluginForHost extends Plugin {
                     /* no prototypesplit available yet, create new one */
                     if (pattern != null) {
                         /*
-                         * a pattern does exist, we must use the same one to make sure the *filetypes* match (eg . part01.rar and .r01 with
-                         * same filename
+                         * a pattern does exist, we must use the same one to make sure the *filetypes* match (eg . part01.rar and .r01 with same filename
                          */
                         prototypesplit = new Regex(prototypeName, pattern).getMatch(0);
                     } else {

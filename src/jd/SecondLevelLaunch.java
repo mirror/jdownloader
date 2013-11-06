@@ -24,6 +24,7 @@ import java.io.File;
 import java.io.FileFilter;
 import java.io.IOException;
 import java.lang.Thread.UncaughtExceptionHandler;
+import java.lang.reflect.Field;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.text.SimpleDateFormat;
@@ -86,6 +87,7 @@ import org.appwork.utils.net.httpconnection.HTTPProxy;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.processes.ProcessBuilderFactory;
 import org.appwork.utils.swing.EDTHelper;
+import org.appwork.utils.swing.SlowEDTDetector;
 import org.appwork.utils.swing.dialog.ConfirmDialog;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogNoAnswerException;
@@ -256,9 +258,19 @@ public class SecondLevelLaunch {
         if (CrossSystem.isMac()) {
             // Set MacApplicationName
             // Must be in Main
-
             System.setProperty("com.apple.mrj.application.apple.menu.about.name", "JDownloader");
             SecondLevelLaunch.initMACProperties();
+        } else if (CrossSystem.isLinux()) {
+            // set WM Class explicitly
+            try {
+                // patch by Vampire
+                Toolkit toolkit = Toolkit.getDefaultToolkit();
+                final Field awtAppClassName = Toolkit.getDefaultToolkit().getClass().getDeclaredField("awtAppClassName");
+                awtAppClassName.setAccessible(true);
+                awtAppClassName.set(toolkit, "JDownloader");
+            } catch (final Throwable e) {
+                e.printStackTrace();
+            }
         }
 
         /* hack for ftp plugin to use new ftp style */
@@ -597,11 +609,15 @@ public class SecondLevelLaunch {
         } catch (final Throwable e) {
             LOG.log(e);
         }
+        LogSource edtLogger = LogController.getInstance().getLogger("BlockingEDT");
+        edtLogger.setInstantFlush(true);
+        new SlowEDTDetector(2000l, edtLogger);
         /* these can be initiated without a gui */
         final Thread thread = new Thread() {
             @Override
             public void run() {
                 try {
+
                     CFG_GENERAL.BROWSER_COMMAND_LINE.getEventSender().addListener(new GenericConfigEventListener<String[]>() {
 
                         @Override

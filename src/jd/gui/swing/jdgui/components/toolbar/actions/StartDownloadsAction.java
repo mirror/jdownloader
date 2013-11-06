@@ -2,13 +2,11 @@ package jd.gui.swing.jdgui.components.toolbar.actions;
 
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
-import java.util.ArrayList;
 
 import jd.controlling.TaskQueue;
 import jd.controlling.downloadcontroller.DownloadWatchDog;
 import jd.controlling.downloadcontroller.SingleDownloadController;
 import jd.controlling.downloadcontroller.event.DownloadWatchdogListener;
-import jd.controlling.packagecontroller.AbstractNode;
 import jd.gui.swing.jdgui.JDGui;
 import jd.gui.swing.jdgui.JDGui.Panels;
 import jd.gui.swing.jdgui.MainTabbedPane;
@@ -34,8 +32,7 @@ import org.jdownloader.translate._JDT;
 public class StartDownloadsAction extends ToolBarAction implements DownloadWatchdogListener, GUIListener, GenericConfigEventListener<Enum> {
 
     /**
-     * Create a new instance of StartDownloadsAction. This is a singleton class. Access the only existing instance by using
-     * {@link #getInstance()}.
+     * Create a new instance of StartDownloadsAction. This is a singleton class. Access the only existing instance by using {@link #getInstance()}.
      */
     public StartDownloadsAction() {
 
@@ -62,8 +59,6 @@ public class StartDownloadsAction extends ToolBarAction implements DownloadWatch
                 protected Void run() throws RuntimeException {
                     switch (CFG_GUI.CFG.getStartButtonActionInLinkgrabberContext()) {
                     case ADD_ALL_LINKS_AND_START_DOWNLOADS:
-                        java.util.List<AbstractNode> packages = new ArrayList<AbstractNode>(LinkGrabberTableModel.getInstance().getAllPackageNodes());
-                        ;
                         ConfirmSelectionContextAction ca = new ConfirmSelectionContextAction(LinkGrabberTableModel.getInstance().getTable().getSelectionInfo(false, true).derive(null, null, null, e, null));
                         ca.setAutoStart(AutoStartOptions.ENABLED);
                         ca.actionPerformed(null);

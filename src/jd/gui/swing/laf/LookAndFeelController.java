@@ -15,9 +15,7 @@
 
 package jd.gui.swing.laf;
 
-import java.awt.Toolkit;
 import java.io.File;
-import java.lang.reflect.Field;
 import java.net.URL;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
@@ -36,7 +34,6 @@ import org.appwork.swing.synthetica.SyntheticaHelper;
 import org.appwork.utils.Application;
 import org.appwork.utils.IO;
 import org.appwork.utils.logging2.LogSource;
-import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.LAFManagerInterface;
 import org.appwork.utils.swing.windowmanager.WindowManager;
@@ -78,20 +75,6 @@ public class LookAndFeelController implements LAFManagerInterface {
      * Config parameter to store the users laf selection
      */
 
-    private static void initLinux() {
-        // set WM Class explicitly
-        try {
-            // patch by Vampire
-            Toolkit toolkit = Toolkit.getDefaultToolkit();
-            final Field awtAppClassName = Toolkit.getDefaultToolkit().getClass().getDeclaredField("awtAppClassName");
-            awtAppClassName.setAccessible(true);
-            awtAppClassName.set(toolkit, "JDownloader");
-        } catch (final Exception e) {
-            e.printStackTrace();
-            // it seems we are not in X, nothing to do for now
-        }
-    }
-
     public static final String DEFAULT_PREFIX = "LAF_CFG";
     private static boolean     uiInitated     = false;
 
@@ -102,7 +85,6 @@ public class LookAndFeelController implements LAFManagerInterface {
         if (uiInitated) return;
         uiInitated = true;
         initWindowManager();
-        if (CrossSystem.isLinux()) initLinux();
         long t = System.currentTimeMillis();
         try {
             // de.javasoft.plaf.synthetica.SyntheticaLookAndFeel.setLookAndFeel("de.javasoft.plaf.synthetica.SyntheticaStandardLookAndFeel");

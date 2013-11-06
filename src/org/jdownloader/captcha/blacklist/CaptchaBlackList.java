@@ -25,23 +25,17 @@ public class CaptchaBlackList implements DownloadWatchdogListener {
     }
 
     public void add(BlacklistEntry entry) {
-
         synchronized (entries) {
             entries.add(entry);
         }
-
         synchronized (whitelist) {
-
             ArrayList<DownloadLink> rem = new ArrayList<DownloadLink>();
             for (DownloadLink link : whitelist) {
-
                 if (entry.matches(new PrePluginCheckDummyChallenge(link))) {
                     rem.add(link);
                 }
             }
-
             whitelist.removeAll(rem);
-
         }
     }
 
@@ -67,14 +61,9 @@ public class CaptchaBlackList implements DownloadWatchdogListener {
                         cleanups.add(e);
                         continue;
                     }
-                    if (e.matches(c)) {
-                        //
-                        return true;
-                    }
+                    if (e.matches(c)) { return true; }
                 }
             } finally {
-                // cleanup is not perfect. if we have a match, following entries will not be cleaned up.. but I think this is better than
-                // running throw all entries for every call.
                 entries.removeAll(cleanups);
             }
 
@@ -104,19 +93,12 @@ public class CaptchaBlackList implements DownloadWatchdogListener {
             ArrayList<BlacklistEntry> cleanups = new ArrayList<BlacklistEntry>();
             try {
                 for (BlacklistEntry e : entries) {
-                    if (e.canCleanUp()) {
+                    if (e.canCleanUp() || e instanceof SessionBlackListEntry) {
                         cleanups.add(e);
                         continue;
                     }
-                    if (e instanceof SessionBlackListEntry) {
-                        cleanups.add(e);
-                        continue;
-                    }
-
                 }
             } finally {
-                // cleanup is not perfect. if we have a match, following entries will not be cleaned up.. but I think this is better than
-                // running throw all entries for every call.
                 entries.removeAll(cleanups);
             }
 

@@ -319,11 +319,12 @@ public class Account extends Property {
     }
 
     @Override
-    public void setProperty(String key, Object value) {
+    public boolean setProperty(String key, Object value) {
         if (IS_MULTI_HOSTER_ACCOUNT.equalsIgnoreCase(key)) {
             isMulti = value != null && Boolean.TRUE.equals(value);
+            return false;
         } else {
-            super.setProperty(key, value);
+            return super.setProperty(key, value);
         }
 
     }

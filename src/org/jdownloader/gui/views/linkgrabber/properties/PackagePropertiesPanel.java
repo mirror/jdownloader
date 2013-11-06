@@ -23,7 +23,6 @@ public class PackagePropertiesPanel extends LinkPropertiesPanel {
 
     }
 
-    @Override
     protected void addDownloadFrom(int height, MigPanel p) {
 
     }

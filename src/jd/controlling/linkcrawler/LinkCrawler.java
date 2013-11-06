@@ -927,7 +927,8 @@ public class LinkCrawler {
             dest.setDesiredPackageInfo(source.getDesiredPackageInfo());
         }
 
-        ArchiveInfo d = dest.getArchiveInfo();
+        ArchiveInfo d = null;
+        if (dest.hasArchiveInfo()) d = dest.getArchiveInfo();
         if (source.hasArchiveInfo()) {
             if (d == null) {
                 dest.setArchiveInfo(new ArchiveInfo().migrate(source.getArchiveInfo()));

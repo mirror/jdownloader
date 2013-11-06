@@ -73,6 +73,24 @@ public class ClipboardMonitoring {
         }
     }
 
+    public static class ClipboardContent {
+        private final String content;
+        private final String browserURL;
+
+        public String getContent() {
+            return content;
+        }
+
+        public String getBrowserURL() {
+            return browserURL;
+        }
+
+        private ClipboardContent(String content, String browserURL) {
+            this.content = content;
+            this.browserURL = browserURL;
+        }
+    }
+
     private static ClipboardMonitoring  INSTANCE            = new ClipboardMonitoring();
     private static DataFlavor           urlFlavor           = null;
     private static DataFlavor           uriListFlavor       = null;
@@ -234,14 +252,14 @@ public class ClipboardMonitoring {
         monitoringThread.start();
     }
 
-    public synchronized String getCurrentContent() {
+    public synchronized ClipboardContent getCurrentContent() {
         Transferable currentContent = null;
         try {
             currentContent = clipboard.getContents(null);
         } catch (final Throwable e) {
-            return "";
+            return null;
         }
-        if (currentContent == null) return "";
+        if (currentContent == null) return null;
         String stringContent = null;
         try {
             stringContent = getStringTransferData(currentContent);
@@ -253,9 +271,6 @@ public class ClipboardMonitoring {
             /* lets fetch fresh HTML Content if available */
             htmlContent = getHTMLTransferData(currentContent);
             if (htmlContent != null) browserUrl = getCurrentBrowserURL(currentContent);
-            if (browserUrl != null) {
-                htmlContent = "<base href=\"" + browserUrl + "\">\r\n" + htmlContent;
-            }
         } catch (final Throwable e) {
             e.printStackTrace();
         }
@@ -263,7 +278,7 @@ public class ClipboardMonitoring {
         if (stringContent != null) sb.append(stringContent);
         if (sb.length() > 0) sb.append("\r\n");
         if (htmlContent != null) sb.append(htmlContent);
-        return sb.toString();
+        return new ClipboardContent(sb.toString(), browserUrl);
     }
 
     public synchronized void setCurrentContent(String string) {

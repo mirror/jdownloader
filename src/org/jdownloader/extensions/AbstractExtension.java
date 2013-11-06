@@ -22,7 +22,6 @@ import java.net.URL;
 import javax.swing.Icon;
 
 import jd.config.ConfigContainer;
-import jd.config.Property;
 import jd.gui.swing.jdgui.views.settings.sidebar.AddonConfig;
 import jd.plugins.AddonPanel;
 import jd.plugins.ExtensionConfigInterface;
@@ -125,8 +124,7 @@ public abstract class AbstractExtension<ConfigType extends ExtensionConfigInterf
     }
 
     /**
-     * Returns the internal storage. Most of the configvalues are for internal use only. This config only contains values which are valid
-     * for all extensions
+     * Returns the internal storage. Most of the configvalues are for internal use only. This config only contains values which are valid for all extensions
      * 
      * @return
      */
@@ -148,19 +146,17 @@ public abstract class AbstractExtension<ConfigType extends ExtensionConfigInterf
      */
     protected abstract void start() throws StartException;
 
-    private String            name;
+    private String         name;
 
-    private int               version        = -1;
+    private int            version = -1;
 
-    private ConfigType        store;
+    private ConfigType     store;
     /**
      * The Translationobject. Extent me if you need further Entries
      */
-    public TranslationType    _;
+    public TranslationType _;
 
-    private volatile Property propertyConfig = null;
-
-    protected LogSource       logger;
+    protected LogSource    logger;
 
     public LogSource getLogger() {
         return logger;
@@ -178,8 +174,7 @@ public abstract class AbstractExtension<ConfigType extends ExtensionConfigInterf
      * 
      * @param translationInterface
      * @param contentType
-     *            name of this plugin. Until JD 2.* we should use null here to use the old defaultname. we used to sue this localized name
-     *            as config key.
+     *            name of this plugin. Until JD 2.* we should use null here to use the old defaultname. we used to sue this localized name as config key.
      * @throws
      * @throws StartException
      */
@@ -190,44 +185,6 @@ public abstract class AbstractExtension<ConfigType extends ExtensionConfigInterf
         AdvancedConfigManager.getInstance().register(store);
         logger = LogController.getInstance().getLogger(name);
         initTranslation();
-    }
-
-    /*
-     * Dirty workaround for old Extensions to save primitive data inside the new ConfigSystem
-     */
-    /* Those Plugins should be rewritten to use new ConfigSystem correct! */
-    @Deprecated
-    protected Property getPropertyConfig() {
-        if (propertyConfig != null) return propertyConfig;
-        synchronized (this) {
-            if (propertyConfig != null) return propertyConfig;
-            propertyConfig = new Property() {
-                /**
-                 * 
-                 */
-                private static final long serialVersionUID = -7487373530144101894L;
-
-                {
-                    /*
-                     * Workaround to make sure the internal HashMap of JSonStorage is set to Property HashMap
-                     */
-                    store._getStorageHandler().getPrimitiveStorage().getInternalStorageMap().put("addWorkaround", true);
-                    this.setProperties(store._getStorageHandler().getPrimitiveStorage().getInternalStorageMap());
-                    store._getStorageHandler().getPrimitiveStorage().getInternalStorageMap().remove("addWorkaround");
-                }
-
-                @Override
-                public void setProperty(String key, Object value) {
-                    super.setProperty(key, value);
-                    /*
-                     * this changes changeFlag in JSonStorage to signal that it must be saved
-                     */
-                    store._getStorageHandler().getPrimitiveStorage().put("saveWorkaround", System.currentTimeMillis());
-                }
-
-            };
-        }
-        return propertyConfig;
     }
 
     private void initTranslation() {
