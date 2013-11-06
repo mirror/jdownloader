@@ -1604,8 +1604,8 @@ public class TbCm extends PluginForDecrypt {
                             message += "Das Streamingverfahren heißt 'DASH' und falls jemand weiß, wie man dieses bei den obigen Qualitätsstufen\r\n";
                             message += "deaktivieren kann, meldet euch bitte unter support@jdownloader.org oder bei uns im Supportforum.\r\n";
                             message += "\r\n";
-                            message += "Ok = bestehenden JDownloader Supportforum Thread im Browser öffnen und Fenster schließen\r\n";
-                            message += "Abbrechen = Fenster schließen\r\n";
+                            message += "Ja = bestehenden JDownloader Supportforum Thread im Browser öffnen und Fenster schließen\r\n";
+                            message += "Nein = Fenster schließen\r\n";
                             message += "\r\n";
                             message += "Euer JDownloader Team\r\n";
                             if (CrossSystem.isOpenBrowserSupported()) {
@@ -1625,8 +1625,8 @@ public class TbCm extends PluginForDecrypt {
                             message += "Their new streaming technique is called 'DASH' so if anyone knows how to deactivate it\r\n";
                             message += "please contact us via support@jdownloader.org or through our support forum.\r\n";
                             message += "\r\n";
-                            message += "Ok = open the existing thread about this bug in your browser and close this window\r\n";
-                            message += "Cancel = Close this window\r\n";
+                            message += "Yes = open the existing thread about this bug in your browser and close this window\r\n";
+                            message += "No = Close this window\r\n";
                             message += "\r\n";
                             message += "Your JDownloader Team\r\n";
                             if (CrossSystem.isOpenBrowserSupported()) {
