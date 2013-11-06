@@ -51,6 +51,7 @@ public class PutIO extends PluginForHost {
         return true;
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
@@ -84,6 +85,7 @@ public class PutIO extends PluginForHost {
         return "";
     }
 
+    @SuppressWarnings("unchecked")
     private AvailableStatus requestFileInformation_intern(DownloadLink link, Account account) throws Exception {
         String fileID = getFileID(link);
         br.getPage("https://api.put.io/v2/files/" + fileID + "?oauth_token=" + account.getPass());

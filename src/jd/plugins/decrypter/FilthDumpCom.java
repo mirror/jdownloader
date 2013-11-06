@@ -114,6 +114,10 @@ public class FilthDumpCom extends PluginForDecrypt {
             decryptedLinks.add(dl);
             return decryptedLinks;
         }
+        if (br.containsHTML("\"http://(www\\.)?videos\\.cdn\\.filthmedia\\.net/hackedgfvideosf\\.php\"")) {
+            logger.info("Link offline: " + parameter);
+            return decryptedLinks;
+        }
         logger.warning("Decrypter or link broken: " + parameter);
         return null;
     }

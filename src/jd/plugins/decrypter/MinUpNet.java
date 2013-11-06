@@ -36,9 +36,10 @@ public class MinUpNet extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
-        br.setFollowRedirects(false);
+        br.setFollowRedirects(true);
         br.getPage(parameter);
-        if (br.containsHTML(">No files found\\!<")) {
+        br.setFollowRedirects(false);
+        if (br.containsHTML(">No files found\\!<|>The file has been removed because of") || br.getURL().contains("/404.php")) {
             logger.info("Link offline: " + parameter);
             return decryptedLinks;
         }
@@ -58,6 +59,10 @@ public class MinUpNet extends PluginForDecrypt {
         }
         for (final String singleLink : links) {
             br.getPage(singleLink);
+            if (br.containsHTML("No htmlCode read")) {
+                logger.info("Found single offline link: " + singleLink);
+                continue;
+            }
             final String finallink = br.getRedirectLocation();
             if (finallink == null) {
                 logger.warning("Decrypter broken for link: " + parameter);

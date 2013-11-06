@@ -163,10 +163,10 @@ public class DownMastersCom extends PluginForHost {
             int timesFailed = link.getIntegerProperty("timesfaileddownmasters", 0);
             if (timesFailed <= 2) {
                 timesFailed++;
-                link.setProperty("timesfailedpremiumize", timesFailed);
+                link.setProperty("timesfaileddownmasters", timesFailed);
                 throw new PluginException(LinkStatus.ERROR_RETRY, "Server error");
             } else {
-                link.setProperty("timesfailedpremiumize", Property.NULL);
+                link.setProperty("timesfaileddownmasters", Property.NULL);
                 logger.info("Multi-Host API reports that link is offline!");
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }

@@ -60,7 +60,9 @@ public class FilestoreTo extends PluginForHost {
         return 2000;
     }
 
-    final String KK = "LC";
+    // Hm da stehts drinne: http://filestore.to/script/241013.js
+    final String KK  = "LDC";
+    final String KK2 = "LC";
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
@@ -103,7 +105,7 @@ public class FilestoreTo extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        String pwnage = br.getRegex("id=\"" + KK + "\" style=\"display:none\" wert=\"([^<>\"]*?)\"").getMatch(0);
+        String pwnage = br.getRegex("id=\"" + KK2 + "\" style=\"display:none\" wert=\"([^<>\"]*?)\"").getMatch(0);
         if (pwnage == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         final String waittime = br.getRegex("Bitte warte (\\d+) Sekunden und starte dann").getMatch(0);
         final String dlink = "http://filestore.to/ajax/download.php?" + KK + "=";

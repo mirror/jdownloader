@@ -132,8 +132,7 @@ public class CrockoCom extends PluginForHost {
             if (longwait == null) longwait.set(false);
             if (waittime > 90 && longwait.get() == false) {
                 /*
-                 * only request reconnect if we dont have to wait long on every
-                 * download
+                 * only request reconnect if we dont have to wait long on every download
                  */
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, waittime * 1000l);
             } else {
@@ -178,8 +177,7 @@ public class CrockoCom extends PluginForHost {
             }
             if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             /*
-             * another as default cause current stable has easy-captcha method
-             * that does not work
+             * another as default cause current stable has easy-captcha method that does not work
              */
             String code = getCaptchaCode("recaptcha", cf, downloadLink);
             form.put("recaptcha_challenge_field", challenge);
@@ -246,8 +244,7 @@ public class CrockoCom extends PluginForHost {
         if (acc == null && prem == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
         if (acc != null && prem == null) {
             /*
-             * buggy easyshare server, login does not work always, it needs
-             * PREMIUM cookie
+             * buggy easyshare server, login does not work always, it needs PREMIUM cookie
              */
             br.setCookie(MAINPAGE, "PREMIUM", acc);
         }
@@ -272,7 +269,7 @@ public class CrockoCom extends PluginForHost {
             }
         }
         // Offline links
-        if (br.containsHTML("<title>Crocko\\.com 404</title>|>Requested file is deleted")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("<title>Crocko\\.com 404</title>|>Requested file is deleted|>Searching for file")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         // Invalid links
         if (br.containsHTML(">you have no permission")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex(">Download: +<strong>(.*?)</strong>").getMatch(0);

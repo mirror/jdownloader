@@ -71,7 +71,7 @@ import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.os.CrossSystem;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "hulkfile.com" }, urls = { "https?://(w(ww)?\\.)?hulkfile\\.(com|eu)/((vid)?embed\\-)?[a-z0-9]{12}" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "hulkfile.com" }, urls = { "https?://(w(ww)?\\.)?hulkfile\\.(com|eu)/((vid)?embed\\-)?[a-z0-9]{12}" }, flags = { 2 })
 @SuppressWarnings("deprecation")
 public class HulkFileCom extends PluginForHost {
 
@@ -116,7 +116,7 @@ public class HulkFileCom extends PluginForHost {
             directlinkproperty = "freelink2";
         } else if (account != null && !account.getBooleanProperty("free")) {
             // prem account
-            chunks = 0;
+            chunks = 1;
             resumes = true;
             acctype = "Premium Account";
             directlinkproperty = "premlink";
@@ -166,7 +166,7 @@ public class HulkFileCom extends PluginForHost {
     public HulkFileCom(PluginWrapper wrapper) {
         super(wrapper);
         setConfigElements();
-        // this.enablePremium(COOKIE_HOST + "/premium.html");
+        this.enablePremium(COOKIE_HOST + "/premium.html");
     }
 
     /**
@@ -240,7 +240,7 @@ public class HulkFileCom extends PluginForHost {
             }
         }
 
-        if (cbr.containsHTML("(No such file|>File Not Found<|>The file was removed by|Reason for deletion:\n|<li>The file (expired|deleted by (its owner|administration))|window\\.location = \"https?://(w(ww)?\\.)?" + DOMAINS + "/a-z0-9]{12}\\.html\")")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (cbr.containsHTML("(\\$\\(\\'#not\\-found\\'\\)|No such file|>File Not Found<|>The file was removed by|Reason for deletion:\n|<li>The file (expired|deleted by (its owner|administration))|window\\.location = \"https?://(w(ww)?\\.)?" + DOMAINS + "/a-z0-9]{12}\\.html\")")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (cbr.containsHTML(MAINTENANCE)) {
             downloadLink.getLinkStatus().setStatusText(MAINTENANCEUSERTEXT);
             return AvailableStatus.TRUE;
@@ -781,7 +781,7 @@ public class HulkFileCom extends PluginForHost {
             } else {
                 expire = expireD;
             }
-            account.setProperty("totalMaxSim", 20);
+            account.setProperty("totalMaxSim", 10);
             ai.setValidUntil(expire);
             ai.setStatus("Premium User");
         }
@@ -1470,7 +1470,7 @@ public class HulkFileCom extends PluginForHost {
      * @param controlSlot
      *            (+1|-1)
      * */
-   private void controlSlot(final int num, final Account account) {
+    private void controlSlot(final int num, final Account account) {
         synchronized (CTRLLOCK) {
             if (account == null) {
                 int was = maxFree.get();

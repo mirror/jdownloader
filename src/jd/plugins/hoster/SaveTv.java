@@ -85,8 +85,10 @@ public class SaveTv extends PluginForHost {
     private static final String CUSTOM_FILENAME_SERIES2_EPISODENAME_SEPERATION_MARK = "CUSTOM_FILENAME_SERIES2_EPISODENAME_SEPERATION_MARK";
     private static final String GRABARCHIVE                                         = "GRABARCHIVE";
     private static final String GRABARCHIVE_FASTER                                  = "GRABARCHIVE_FASTER";
+    private static final String DISABLE_LINKCHECK                                   = "DISABLE_LINKCHECK";
 
     private boolean             FORCE_ORIGINAL_FILENAME                             = false;
+    private boolean             FORCE_LINKCHECK                                     = false;
 
     public SaveTv(PluginWrapper wrapper) {
         super(wrapper);
@@ -110,7 +112,7 @@ public class SaveTv extends PluginForHost {
         prepBrowser(br);
         br.setFollowRedirects(true);
         // Show id in case it is offline or plugin is broken
-        if (link.getName() != null && link.getName().contains(getTelecastId(link)) && !link.getName().endsWith(".mp4")) link.setName(getTelecastId(link) + ".mp4");
+        if (link.getName() != null && (link.getName().contains(getTelecastId(link)) && !link.getName().endsWith(".mp4") || link.getName().contains("usShowVideoArchiveDetail.cfm"))) link.setName(getTelecastId(link) + ".mp4");
         final Account aa = AccountController.getInstance().getValidAccount(this);
         if (aa == null) {
             link.getLinkStatus().setStatusText("Kann Links ohne gültigen Account nicht überprüfen");
@@ -118,6 +120,11 @@ public class SaveTv extends PluginForHost {
             return AvailableStatus.UNCHECKABLE;
         }
         checkFeatureDialog();
+        checkFeatureDialog2();
+        if (this.getPluginConfig().getBooleanProperty(DISABLE_LINKCHECK, false) && !FORCE_LINKCHECK) {
+            link.getLinkStatus().setStatusText("Linkcheck deaktiviert - korrekter Dateiname erscheint erst beim Downloadstart");
+            return AvailableStatus.TRUE;
+        }
         br.setFollowRedirects(true);
         login(this.br, aa, false);
         final boolean preferMobileVids = getPluginConfig().getBooleanProperty(PREFERH264MOBILE);
@@ -354,6 +361,7 @@ public class SaveTv extends PluginForHost {
 
     @Override
     public void handlePremium(final DownloadLink downloadLink, final Account account) throws Exception {
+        FORCE_LINKCHECK = true;
         requestFileInformation(downloadLink);
         login(this.br, account, false);
         String dllink = null;
@@ -403,13 +411,22 @@ public class SaveTv extends PluginForHost {
         } else {
             downloadLink.setFinalFileName(getFormattedFilename(downloadLink));
         }
-        if (!this.dl.startDownload()) {
-            try {
-                if (dl.externalDownloadStop()) return;
-            } catch (final Throwable e) {
+        try {
+            if (!this.dl.startDownload()) {
+                try {
+                    if (dl.externalDownloadStop()) return;
+                } catch (final Throwable e) {
+                }
+                /* unknown error, we disable multiple chunks */
+                if (downloadLink.getBooleanProperty(SaveTv.NOCHUNKS, false) == false) {
+                    downloadLink.setProperty(SaveTv.NOCHUNKS, Boolean.valueOf(true));
+                    throw new PluginException(LinkStatus.ERROR_RETRY);
+                }
             }
+        } catch (final PluginException e) {
+            // New V2 errorhandling
             /* unknown error, we disable multiple chunks */
-            if (downloadLink.getBooleanProperty(SaveTv.NOCHUNKS, false) == false) {
+            if (e.getLinkStatus() != LinkStatus.ERROR_RETRY && downloadLink.getBooleanProperty(SaveTv.NOCHUNKS, false) == false) {
                 downloadLink.setProperty(SaveTv.NOCHUNKS, Boolean.valueOf(true));
                 throw new PluginException(LinkStatus.ERROR_RETRY);
             }
@@ -635,6 +652,8 @@ public class SaveTv extends PluginForHost {
         final ConfigEntry useMobileAPI = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), SaveTv.USEAPI, JDL.L("plugins.hoster.SaveTv.UseMobileAPI", "Mobile API verwenden (BETA! Benutzerdefinierte Dateinamen werden deaktiviert!)")).setDefaultValue(false);
         getConfig().addEntry(useMobileAPI);
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), SaveTv.DISABLE_LINKCHECK, JDL.L("plugins.hoster.SaveTv.DisableLinkcheck", "Linkcheck deaktivieren\r\n[Korrekte Dateinamen werden erst zum Downloadstart angezeigt\r\nKann helfen, Links schneller zu sammeln,\r\nwenn die Seite langsam oder offline ist.]")).setDefaultValue(false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         final ConfigEntry grabArchives = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), SaveTv.GRABARCHIVE, JDL.L("plugins.hoster.SaveTv.grabArchive", "Komplettes Archiv beim Hinzufügen folgender Adresse im Linkgrabber zeigen:\r\n'save.tv/STV/M/obj/user/usShowVideoArchive.cfm'?")).setDefaultValue(false);
         getConfig().addEntry(grabArchives);
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), SaveTv.GRABARCHIVE_FASTER, JDL.L("plugins.hoster.SaveTv.grabArchiveFaster", "Aktiviere schnellen Linkcheck für Archiv-Parser\r\n[Dateinamen werden erst beim Download korrekt angezeigt]")).setDefaultValue(false).setEnabledCondidtion(grabArchives, true));
@@ -720,6 +739,70 @@ public class SaveTv extends PluginForHost {
                         message += "--> Um diese Option nutzen zu können, muss die Option über dieser aktiviert sein.\r\n";
                         message += "--> Ist sie aktiviert, wird JDownloader nur noch Videos laden, auf die die Schnittliste angewandt wurde.\r\n";
                         message += "--> Alle anderen bekommen einen Warte-Status und werden nur geladen, falls die Schnittliste\r\n    nach der Wartezeit angewandt wurde.\r\n";
+                        message += "\r\n";
+                        message += "In JDownloader 0.9.581 findest du die Plugin Einstellungen unter:\r\n";
+                        message += "Einstellungen -> Anbieter -> save.tv -> Doppelklick oder anklicken und links unten auf 'Einstellungen'\r\n";
+                        message += "\r\n";
+                        message += "In der JDownloader 2 BETA findest du sie unter Einstellungen -> Plugin Einstellungen -> save.tv\r\n";
+                        message += "\r\n";
+                        message += "Bedenke bitte, das gewisse Einstellungen dafür sorgen, dass die eigenen\r\nDateinamen erst zum Downloadstart und nicht direkt im Linkgrabber angezeigt werden.\r\n";
+                        message += "Dies steht im Normalfall bei den entsprechenden Einstellungen dabei und ist kein Bug.\r\n";
+                        message += "Sollte es dennoch vorkommen, dass eigene Dateinamen bei bestimmten Links nicht funktionieren,\r\nkönnte es sich um einen Bug handeln.\r\n";
+                        message += "\r\n";
+                        message += "Falls du Bugs findest oder fragen hast, melde dich gerne jederzeit bei uns: board.jdownloader.org.\r\n";
+                        message += "\r\n";
+                        message += "- Das JDownloader Team wünscht weiterhin viel Spaß mit JDownloader und save.tv! -";
+                        JOptionPane.showConfirmDialog(jd.gui.swing.jdgui.JDGui.getInstance().getMainFrame(), message, title, JOptionPane.PLAIN_MESSAGE, JOptionPane.INFORMATION_MESSAGE, null);
+                    } catch (Throwable e) {
+                    }
+                }
+            });
+        } catch (Throwable e) {
+        }
+    }
+
+    private void checkFeatureDialog2() {
+        SubConfiguration config = null;
+        try {
+            config = getPluginConfig();
+            if (config.getBooleanProperty("featuredialog2Shown", Boolean.FALSE) == false) {
+                if (config.getProperty("featuredialog2Shown2") == null) {
+                    showFeatureDialog2();
+                } else {
+                    config = null;
+                }
+            } else {
+                config = null;
+            }
+        } catch (final Throwable e) {
+        } finally {
+            if (config != null) {
+                config.setProperty("featuredialog2Shown", Boolean.TRUE);
+                config.setProperty("featuredialog2Shown2", "shown");
+                config.save();
+            }
+        }
+    }
+
+    private static void showFeatureDialog2() {
+        try {
+            SwingUtilities.invokeAndWait(new Runnable() {
+
+                @Override
+                public void run() {
+                    try {
+                        String message = "";
+                        String title = null;
+                        title = "Save.tv - neue Features";
+                        message += "Hallo lieber save.tv Nutzer.\r\n";
+                        message += "Ab sofort gibt es folgende neue Features für das save.tv Plugin:\r\n";
+                        message += "- JDownloader sollte ab sofort das komplette Save.tv Archiv (bei aktivierter Einstellung) korrekt erkennen\r\n";
+                        message += "- Die Plugin Einstellung 'Linkcheck deaktivieren':\r\n";
+                        message += "--> Ist diese aktiviert, werden im Linkgrabber zunächst keine korrekten Dateinamen angezeigt.\r\n";
+                        message += "--> Dafür kannst du Links schneller hinzufügen bzw. auch, wenn die save.tv Seite sehr langsam oder sogar nicht erreichbar ist.\r\n";
+                        message += "--> Sobald du den Download startest, werden die korrekten Dateinamen angezeigt.\r\n";
+                        message += "--> Fügt man das komplette Save.tv Archiv per JDownloader hinzu, werden trotz aktivierter Einstellung\r\n";
+                        message += "    schönere Dateinamen angezeigt, die sich beim Downloadstart jedoch auch zu den gewünschten Dateinamen ändern.\r\n";
                         message += "\r\n";
                         message += "In JDownloader 0.9.581 findest du die Plugin Einstellungen unter:\r\n";
                         message += "Einstellungen -> Anbieter -> save.tv -> Doppelklick oder anklicken und links unten auf 'Einstellungen'\r\n";

@@ -69,7 +69,7 @@ public class UnlimitZoneCom extends PluginForHost {
 
     // DEV NOTES
     // XfileSharingProBasic Version 2.6.2.6
-    // mods:
+    // mods: one other filesize regex
     // non account: 1 * 1
     // free account: chunks * maxdls
     // premium account: chunks * maxdls
@@ -185,7 +185,7 @@ public class UnlimitZoneCom extends PluginForHost {
         if (fileInfo[1] == null) {
             fileInfo[1] = new Regex(correctedBR, "\\(([0-9]+ bytes)\\)").getMatch(0);
             if (fileInfo[1] == null) {
-                fileInfo[1] = new Regex(correctedBR, "</font>[ ]+\\(([^<>\"\\'/]+)\\)(.*?)</font>").getMatch(0);
+                fileInfo[1] = new Regex(correctedBR, "<b>File Size:</b>([^<>\"]*?)</td>").getMatch(0);
                 if (fileInfo[1] == null) {
                     fileInfo[1] = new Regex(correctedBR, "(\\d+(\\.\\d+)? ?(KB|MB|GB))").getMatch(0);
                 }

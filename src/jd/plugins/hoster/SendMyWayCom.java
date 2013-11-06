@@ -60,6 +60,7 @@ public class SendMyWayCom extends PluginForHost {
     // premium: only allows 10 connections for premium
     // free: only allows 1 connection, seems to have resume support
     // protocol: doesn't have https
+    // mods: modified fnf text
     // captchatype: has recaptcha
 
     private String               correctedBR         = "";
@@ -110,7 +111,7 @@ public class SendMyWayCom extends PluginForHost {
         br.setCookie(COOKIE_HOST, "lang", "english");
         br.getPage(link.getDownloadURL());
         correctBR();
-        if (new Regex(correctedBR, Pattern.compile("(The file you were looking for could not be found|Reason (of|for) deletion:\n)", Pattern.CASE_INSENSITIVE)).matches()) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (new Regex(correctedBR, Pattern.compile("(The file you were looking for could not be found|Reason (of|for) deletion:\n|>The file was removed by administrator<)", Pattern.CASE_INSENSITIVE)).matches()) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (correctedBR.contains(MAINTENANCE)) {
             link.getLinkStatus().setStatusText(JDL.L("plugins.hoster.xfilesharingprobasic.undermaintenance", MAINTENANCEUSERTEXT));
             return AvailableStatus.TRUE;
