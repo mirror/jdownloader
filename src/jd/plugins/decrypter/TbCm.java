@@ -21,6 +21,7 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.net.URL;
 import java.net.URLEncoder;
 import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
@@ -36,6 +37,9 @@ import java.util.Random;
 import java.util.Scanner;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.regex.Pattern;
+
+import javax.swing.JOptionPane;
+import javax.swing.SwingUtilities;
 
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
@@ -60,6 +64,9 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
+
+import org.appwork.utils.os.CrossSystem;
+
 import de.savemytube.flv.FLV;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "youtube.com" }, urls = { "https?://([a-z]+\\.)?youtube\\.com/(embed/|.*?watch.*?v(%3D|=)|view_play_list\\?p=|playlist\\?(p|list)=|.*?g/c/|.*?grid/user/|v/|user/|course\\?list=)[A-Za-z0-9\\-_]+(.*?page=\\d+)?(.*?list=[A-Za-z0-9\\-_]+)?" }, flags = { 0 })
@@ -392,6 +399,7 @@ public class TbCm extends PluginForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, final ProgressController progress) throws Exception {
         canHandle();
+        checkNewsDialog();
         this.possibleconverts = new HashMap<DestinationFormat, ArrayList<Info>>();
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         if (PLUGIN_DISABLED.get() == true) return decryptedLinks;
@@ -1548,6 +1556,90 @@ public class TbCm extends PluginForDecrypt {
             return false;
         }
         return true;
+    }
+
+    private void checkNewsDialog() {
+        SubConfiguration config = null;
+        try {
+            config = getPluginConfig();
+            if (config.getBooleanProperty("checkNewsDialog", Boolean.FALSE) == false) {
+                if (config.getProperty("checkNewsDialog2") == null) {
+                    showFreeDialog();
+                } else {
+                    config = null;
+                }
+            } else {
+                config = null;
+            }
+        } catch (final Throwable e) {
+        } finally {
+            if (config != null) {
+                config.setProperty("checkNewsDialog", Boolean.TRUE);
+                config.setProperty("checkNewsDialog2", "shown");
+                config.save();
+            }
+        }
+    }
+
+    private static void showFreeDialog() {
+        try {
+            SwingUtilities.invokeAndWait(new Runnable() {
+
+                @Override
+                public void run() {
+                    try {
+                        String lng = System.getProperty("user.language");
+                        String message = null;
+                        String title = null;
+                        if ("de".equalsIgnoreCase(lng)) {
+                            title = "youtube.com - Probleme";
+                            message = "Folgende youtube Probleme sind momentan bekannt:\r\n";
+                            message += "-480p Versionen können nicht geladen werden\r\n";
+                            message += "-1080p Versionen können nicht geladen werden\r\n";
+                            message += "\r\n";
+                            message += "Die Probleme sind NICHT durch neue JD Updates entstanden sondern, weil youtube\r\n";
+                            message += "für die obigen Qualitätsstufen ein neues Streamingverfahren verwendet, das JD noch nicht kann.\r\n";
+                            message += "Wir bitten euch, diese Probleme nicht weiter zu melden, da wir bereits bescheid wissen.\r\n";
+                            message += "\r\n";
+                            message += "Das Streamingverfahren heißt 'DASH' und falls jemand weiß, wie man dieses bei den obigen Qualitätsstufen\r\n";
+                            message += "deaktivieren kann, meldet euch bitte unter support@jdownloader.org oder bei uns im Supportforum.\r\n";
+                            message += "\r\n";
+                            message += "Ok = bestehenden JDownloader Supportforum Thread im Browser öffnen und Fenster schließen\r\n";
+                            message += "Abbrechen = Fenster schließen\r\n";
+                            message += "\r\n";
+                            message += "Euer JDownloader Team\r\n";
+                            if (CrossSystem.isOpenBrowserSupported()) {
+                                int result = JOptionPane.showConfirmDialog(jd.gui.swing.jdgui.JDGui.getInstance().getMainFrame(), message, title, JOptionPane.YES_NO_OPTION, JOptionPane.INFORMATION_MESSAGE, null);
+                                if (JOptionPane.OK_OPTION == result) CrossSystem.openURL(new URL("http://board.jdownloader.org/showthread.php?t=51500"));
+                            }
+                        } else {
+                            title = "youtube.com - problems";
+                            message = "The following youtube.com problems are known at the moment:\r\n";
+                            message += "-480p versions can't be downloaded\r\n";
+                            message += "-1080p versions can't be downloaded\r\n";
+                            message += "\r\n";
+                            message += "The problems are NOT caused by one of our recent updates - they're caused by a recent youtube update.\r\n";
+                            message += "Youtube is using a new streaming technique for the previously mentioned qualities which JD cannot handle yet.\r\n";
+                            message += "Please stop reporting these issues as we already know about them.\r\n";
+                            message += "\r\n";
+                            message += "Their new streaming technique is called 'DASH' so if anyone knows how to deactivate it\r\n";
+                            message += "please contact us via support@jdownloader.org or through our support forum.\r\n";
+                            message += "\r\n";
+                            message += "Ok = open the existing thread about this bug in your browser and close this window\r\n";
+                            message += "Cancel = Close this window\r\n";
+                            message += "\r\n";
+                            message += "Your JDownloader Team\r\n";
+                            if (CrossSystem.isOpenBrowserSupported()) {
+                                int result = JOptionPane.showConfirmDialog(jd.gui.swing.jdgui.JDGui.getInstance().getMainFrame(), message, title, JOptionPane.YES_NO_OPTION, JOptionPane.INFORMATION_MESSAGE, null);
+                                if (JOptionPane.OK_OPTION == result) CrossSystem.openURL(new URL("http://board.jdownloader.org/showthread.php?t=48894"));
+                            }
+                        }
+                    } catch (Throwable e) {
+                    }
+                }
+            });
+        } catch (Throwable e) {
+        }
     }
 
     /* NO OVERRIDE!! */
