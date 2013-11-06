@@ -100,7 +100,7 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
 
             @Override
             public void valueChanged(ListSelectionEvent e) {
-                if (!CFG_GUI.LINKGRABBER_TAB_PROPERTIES_PANEL_VISIBLE.isEnabled() && e.getValueIsAdjusting()) return;
+                if (!CFG_GUI.LINKGRABBER_TAB_PROPERTIES_PANEL_VISIBLE.isEnabled() || e.getValueIsAdjusting()) return;
                 if (table.getSelectedRowCount() > 0) {
                     setPropertiesPanelVisible(true);
 
@@ -442,6 +442,7 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
         tableModel.recreateModel(false);
         LinkCollector.getInstance().getEventsender().addListener(this);
         table.requestFocusInWindow();
+        if (propertiesPanel != null) propertiesPanel.refreshAfterTabSwitch();
     }
 
     @Override

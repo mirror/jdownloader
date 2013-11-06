@@ -36,12 +36,12 @@ public class LinkgrabberProperties extends MigPanel {
             CrawledPackage pkg = (CrawledPackage) objectbyRow;
             linkPanel.setVisible(false);
             pkgPanel.setVisible(true);
-            pkgPanel.update(pkg);
+            pkgPanel.setSelectedItem(pkg);
         } else if (objectbyRow instanceof CrawledLink) {
             CrawledLink link = (CrawledLink) objectbyRow;
             linkPanel.setVisible(true);
             pkgPanel.setVisible(false);
-            linkPanel.update(link);
+            linkPanel.setSelectedItem(link);
         }
     }
 
@@ -52,6 +52,11 @@ public class LinkgrabberProperties extends MigPanel {
         } else {
             pkgPanel.fillPopup(pu);
         }
+    }
+
+    public void refreshAfterTabSwitch() {
+        linkPanel.refresh();
+        pkgPanel.refresh();
     }
 
 }

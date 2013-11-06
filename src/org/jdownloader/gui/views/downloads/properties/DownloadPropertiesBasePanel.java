@@ -36,12 +36,12 @@ public class DownloadPropertiesBasePanel extends MigPanel {
             FilePackage pkg = (FilePackage) objectbyRow;
             linkPanel.setVisible(false);
             pkgPanel.setVisible(true);
-            pkgPanel.update(pkg);
+            pkgPanel.setSelectedItem(pkg);
         } else if (objectbyRow instanceof DownloadLink) {
             DownloadLink link = (DownloadLink) objectbyRow;
             linkPanel.setVisible(true);
             pkgPanel.setVisible(false);
-            linkPanel.update(link);
+            linkPanel.setSelectedItem(link);
         }
     }
 
@@ -52,6 +52,11 @@ public class DownloadPropertiesBasePanel extends MigPanel {
         } else {
             pkgPanel.fillPopup(pu);
         }
+    }
+
+    public void refreshAfterTabSwitch() {
+        pkgPanel.refresh();
+        linkPanel.refresh();
     }
 
 }

@@ -405,4 +405,14 @@ public class DownloadOverview extends MigPanel implements DownloadControllerList
     public void onDownloadControllerUpdatedData(DownloadLink downloadlink, LinkStatusProperty property) {
         update();
     }
+
+    @Override
+    public void onDownloadControllerUpdatedData(DownloadLink downloadlink) {
+        update();
+    }
+
+    @Override
+    public void onDownloadControllerUpdatedData(FilePackage pkg) {
+        update();
+    }
 }

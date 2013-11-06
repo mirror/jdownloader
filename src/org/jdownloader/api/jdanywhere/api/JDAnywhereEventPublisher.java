@@ -730,4 +730,12 @@ public class JDAnywhereEventPublisher implements EventPublisher, DownloadWatchdo
     public void onDownloadControllerUpdatedData(DownloadLink downloadlink, LinkStatusProperty property) {
     }
 
+    @Override
+    public void onDownloadControllerUpdatedData(DownloadLink downloadlink) {
+    }
+
+    @Override
+    public void onDownloadControllerUpdatedData(FilePackage pkg) {
+    }
+
 }

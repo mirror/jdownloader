@@ -26,4 +26,11 @@ public class PropertiesScrollPane extends OverviewHeaderScrollPane {
         panel.update(objectbyRow);
     }
 
+    public void refresh() {
+    }
+
+    public void refreshAfterTabSwitch() {
+        panel.refreshAfterTabSwitch();
+    }
+
 }

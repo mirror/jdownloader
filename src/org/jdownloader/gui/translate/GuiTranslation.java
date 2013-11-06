@@ -3619,11 +3619,11 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Show Checksum (MD5/SHA1)" })
     String LinkgrabberPropertiesHeader_checksum();
 
-    @Default(lngs = { "en" }, values = { "Show Comment" })
-    String LinkgrabberPropertiesHeader_comment();
+    @Default(lngs = { "en" }, values = { "Show Comment & Priority" })
+    String LinkgrabberPropertiesHeader_comment_and_priority();
 
-    @Default(lngs = { "en" }, values = { "Show Archive Password" })
-    String LinkgrabberPropertiesHeader_archivepassword();
+    @Default(lngs = { "en" }, values = { "Show Archive Information" })
+    String LinkgrabberPropertiesHeader_archiveline();
 
     @Default(lngs = { "en" }, values = { "Show Download from" })
     String LinkgrabberPropertiesHeader_downloadfrom();

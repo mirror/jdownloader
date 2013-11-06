@@ -130,7 +130,7 @@ public class DownloadsPanel extends SwitchPanel implements DownloadControllerLis
 
             @Override
             public void valueChanged(ListSelectionEvent e) {
-                if (!CFG_GUI.DOWNLOADS_TAB_PROPERTIES_PANEL_VISIBLE.isEnabled() && e.getValueIsAdjusting()) return;
+                if (!CFG_GUI.DOWNLOADS_TAB_PROPERTIES_PANEL_VISIBLE.isEnabled() || e.getValueIsAdjusting()) return;
                 if (table.getSelectedRowCount() > 0) {
                     setPropertiesPanelVisible(true);
 
@@ -434,6 +434,7 @@ public class DownloadsPanel extends SwitchPanel implements DownloadControllerLis
         }
         DownloadController.getInstance().addListener(this);
         table.requestFocusInWindow();
+        if (propertiesPanel != null) propertiesPanel.refreshAfterTabSwitch();
     }
 
     @Override
@@ -493,6 +494,16 @@ public class DownloadsPanel extends SwitchPanel implements DownloadControllerLis
 
     @Override
     public void onDownloadControllerUpdatedData(DownloadLink downloadlink, LinkStatusProperty property) {
+        tableModel.refreshModel();
+    }
+
+    @Override
+    public void onDownloadControllerUpdatedData(DownloadLink downloadlink) {
+        tableModel.refreshModel();
+    }
+
+    @Override
+    public void onDownloadControllerUpdatedData(FilePackage pkg) {
         tableModel.refreshModel();
     }
 }

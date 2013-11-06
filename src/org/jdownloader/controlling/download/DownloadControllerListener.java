@@ -30,4 +30,8 @@ public interface DownloadControllerListener extends EventListener {
 
     void onDownloadControllerUpdatedData(DownloadLink downloadlink, LinkStatusProperty property);
 
+    void onDownloadControllerUpdatedData(DownloadLink downloadlink);
+
+    void onDownloadControllerUpdatedData(FilePackage pkg);
+
 }

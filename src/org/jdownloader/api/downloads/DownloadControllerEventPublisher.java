@@ -136,4 +136,20 @@ public class DownloadControllerEventPublisher implements EventPublisher, Downloa
         }
     }
 
+    @Override
+    public void onDownloadControllerUpdatedData(DownloadLink downloadlink) {
+        SimpleEventObject eventObject = new SimpleEventObject(this, DownloadControllerEvent.TYPE.REFRESH_CONTENT.name(), null);
+        for (EventsSender eventSender : eventSenders) {
+            eventSender.publishEvent(eventObject, null);
+        }
+    }
+
+    @Override
+    public void onDownloadControllerUpdatedData(FilePackage pkg) {
+        SimpleEventObject eventObject = new SimpleEventObject(this, DownloadControllerEvent.TYPE.REFRESH_CONTENT.name(), null);
+        for (EventsSender eventSender : eventSenders) {
+            eventSender.publishEvent(eventObject, null);
+        }
+    }
+
 }

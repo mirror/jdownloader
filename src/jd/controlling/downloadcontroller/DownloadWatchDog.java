@@ -2503,6 +2503,16 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                         public void onDownloadControllerUpdatedData(DownloadLink downloadlink, LinkStatusProperty property) {
                             lastStructureChange.set(-1l);
                         }
+
+                        @Override
+                        public void onDownloadControllerUpdatedData(DownloadLink downloadlink) {
+                            lastStructureChange.set(-1l);
+                        }
+
+                        @Override
+                        public void onDownloadControllerUpdatedData(FilePackage pkg) {
+                            lastStructureChange.set(-1l);
+                        }
                     }, true);
                     while (DownloadWatchDog.this.stateMachine.isState(DownloadWatchDog.RUNNING_STATE, DownloadWatchDog.PAUSE_STATE)) {
 
@@ -3129,6 +3139,14 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
 
     @Override
     public void onDownloadControllerUpdatedData(DownloadLink downloadlink, LinkStatusProperty property) {
+    }
+
+    @Override
+    public void onDownloadControllerUpdatedData(DownloadLink downloadlink) {
+    }
+
+    @Override
+    public void onDownloadControllerUpdatedData(FilePackage pkg) {
     }
 
 }

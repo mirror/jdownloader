@@ -24,6 +24,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.regex.Matcher;
@@ -69,6 +70,10 @@ import org.jdownloader.extensions.extraction.content.PackedFile;
  * 
  */
 public class Multi extends IExtraction {
+
+    private static final String      REGEX_ZIP_PART_REPLACE                                      = "(?i)\\.(z\\d+|zip)$";
+
+    private static final String      REGEX_MULTI_ZIP_PART                                        = "(?i).*(\\.z\\d+|zip)$";
 
     private static final String      Z_D_$                                                       = "(\\.z)(\\d+)$";
 
@@ -158,10 +163,22 @@ public class Multi extends IExtraction {
             pattern = "^" + Regex.escape(file.replaceAll("(?i)\\.7z$", "")) + _7Z$;
             archive.setArchiveFiles(link.createPartFileList(file, pattern));
             canBeSingleType = true;
-        } else if (file.matches(REGEX_ZIP$)) {
-            pattern = "^" + Regex.escape(file.replaceAll("(?i)\\.zip$", "")) + ZIP$;
-            archive.setArchiveFiles(link.createPartFileList(file, pattern));
-            canBeSingleType = true;
+
+        } else if (file.matches(REGEX_MULTI_ZIP_PART)) {
+            pattern = "^" + Regex.escape(file.replaceAll(REGEX_ZIP_PART_REPLACE, "")) + "(\\.z\\d+$|\\.zip)";
+            List<ArchiveFile> files = link.createPartFileList(file, pattern);
+            if (files.size() == 1 && files.get(0).getName().matches(REGEX_ZIP$)) {
+                // single zip
+
+                archive.setArchiveFiles(files);
+                canBeSingleType = true;
+
+            } else {
+                // multizip
+                archive.setArchiveFiles(files);
+                canBeSingleType = false;
+            }
+
         } else if (file.matches(REGEX_ANY_7ZIP_PART)) {
             /* MUST BE LAST ONE! */
             /* multipart 7zip */
@@ -225,6 +242,14 @@ public class Multi extends IExtraction {
                         }
                     }
                     break;
+                } else if ((archive.getType() == null || ArchiveType.MULTI == archive.getType()) && l.getFilePath().matches(REGEX_ZIP$)) {
+                    archive.setType(ArchiveType.MULTI_RAR);
+                    archive.setFirstArchiveFile(l);
+                    if (l.isComplete() == false) {
+                        /* this should help finding the link that got downloaded */
+                        continue;
+                    }
+                    break;
                 }
                 // TODO several multipart archive types are missing in this loop
             }
@@ -252,6 +277,15 @@ public class Multi extends IExtraction {
                         }
                         break;
                     } else if (l.getFilePath().matches(REGEX_ANY_DOT_R19_FILE)) {
+                        archive.setType(ArchiveType.MULTI_RAR);
+                        if (l.isComplete() == false) {
+                            /*
+                             * this should help finding the link that got downloaded
+                             */
+                            continue;
+                        }
+                        break;
+                    } else if (l.getFilePath().matches(REGEX_MULTI_ZIP_PART)) {
                         archive.setType(ArchiveType.MULTI_RAR);
                         if (l.isComplete() == false) {
                             /*
@@ -474,6 +508,36 @@ public class Multi extends IExtraction {
                             }
                         }
                         break;
+                    } else if (af.getFilePath().matches(REGEX_MULTI_ZIP_PART)) {
+                        start = 0;
+                        getpartid = Z_D_$;
+                        //
+                        System.out.println(1);
+                        format = archive.getArchiveFiles().get(0).getName().replace("%", "\\%").replace("$", "\\$");
+                        format = format.replaceAll(REGEX_ZIP_PART_REPLACE, "%s");
+                        for (ArchiveFile af1 : archive.getArchiveFiles()) {
+                            String lenthstring = new Regex(af1.getName(), Z_D_$).getMatch(1);
+                            if (lenthstring != null) {
+                                length = lenthstring.length();
+                                break;
+                            }
+                        }
+                        if (length <= 0) length = 2;
+                        // Just get partnumbers to speed up the checking.
+
+                        for (ArchiveFile l : archive.getArchiveFiles()) {
+                            String e = "";
+                            // String name = l.getName();
+                            if ((e = new Regex(l.getFilePath(), getpartid).getMatch(1)) != null) {
+                                int p = Integer.parseInt(e);
+                                if (p > last) last = p;
+                                if (p < start) start = p;
+                                erg.put(p, l);
+                            } else {
+                                erg.put(0, l);
+                            }
+                        }
+                        break;
                     }
 
                 }
@@ -491,11 +555,24 @@ public class Multi extends IExtraction {
                     // available file
                     ret.add(new DummyArchiveFile(af));
                 } else {
+                    missing++;
+                    if (Z_D_$ == getpartid) {
+                        if (i == 0) {
+                            // .zip is missing
+                            String part = String.format(format, ".zip");
+                            ret.add(new DummyArchiveFile(part, archive.getFolder()));
+                            continue;
+                        } else {
+                            String part = String.format(format, ".z" + StringFormatter.fillString(i + "", "0", "", length));
+                            ret.add(new DummyArchiveFile(part, archive.getFolder()));
+                            continue;
+                        }
+                    }
                     if (i == 0) {
                         ZEROZEROZEROMissing = true;
                         continue;
                     }
-                    missing++;
+
                     // missing file
                     String part = String.format(format, StringFormatter.fillString(i + "", "0", "", length));
                     ret.add(new DummyArchiveFile(part, archive.getFolder()));

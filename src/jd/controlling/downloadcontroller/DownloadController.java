@@ -222,6 +222,16 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
             public void onDownloadControllerUpdatedData(DownloadLink downloadlink, LinkStatusProperty property) {
                 changesSaver.run();
             }
+
+            @Override
+            public void onDownloadControllerUpdatedData(DownloadLink downloadlink) {
+                changesSaver.run();
+            }
+
+            @Override
+            public void onDownloadControllerUpdatedData(FilePackage pkg) {
+                changesSaver.run();
+            }
         });
     }
 
