@@ -95,7 +95,7 @@ public class AccountController implements AccountControllerListener {
 
             @Override
             public String toString() {
-                return "save accounts...";
+                return "ShutdownEvent: Save AccountController";
             }
         });
         ACCOUNTS = loadAccounts();

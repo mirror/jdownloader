@@ -499,12 +499,15 @@ public class SecondLevelLaunch {
     }
 
     private static void exitCheck() {
+
         if (CrossSystem.isMac()) {
             // we need to check this on mac. use complain that it does not work. warning even if the exit via quit
 
             return;
         }
+
         FILE = Application.getResource("tmp/exitcheck");
+
         try {
             if (FILE.exists()) {
 
@@ -524,6 +527,10 @@ public class SecondLevelLaunch {
         }
         FILE.deleteOnExit();
         ShutdownController.getInstance().addShutdownEvent(new ShutdownEvent() {
+            @Override
+            public String toString() {
+                return "ShutdownEvent: Delete " + FILE;
+            }
 
             @Override
             public void setHookPriority(int priority) {

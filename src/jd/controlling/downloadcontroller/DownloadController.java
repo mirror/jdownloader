@@ -135,7 +135,7 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
 
             @Override
             public String toString() {
-                return "save downloadlist...";
+                return "ShutdownEvent: Save Downloadlist";
             }
         });
         changesSaver = new DelayedRunnable(TIMINGQUEUE, 5000l, 60000l) {

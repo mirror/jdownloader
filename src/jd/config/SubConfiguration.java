@@ -58,6 +58,10 @@ public class SubConfiguration extends Property implements Serializable {
 
     {
         ShutdownController.getInstance().addShutdownEvent(new ShutdownEvent() {
+            @Override
+            public String toString() {
+                return "ShutdownEvent: SaveAllSubconfigurations";
+            }
 
             @Override
             public void onShutdown(ShutdownRequest shutdownRequest) {

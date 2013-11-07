@@ -105,6 +105,10 @@ public class FavIcons {
             FAILED_LIST = new ArrayList<String>();
         }
         ShutdownController.getInstance().addShutdownEvent(new ShutdownEvent() {
+            @Override
+            public String toString() {
+                return "ShutdownEvent: Save Favicons";
+            }
 
             @Override
             public void onShutdown(final ShutdownRequest shutdownRequest) {
@@ -112,10 +116,6 @@ public class FavIcons {
                 CONFIG.setFailedHosts(FAILED_LIST);
             }
 
-            @Override
-            public String toString() {
-                return "Saving FavIcons Infos";
-            }
         });
 
     }

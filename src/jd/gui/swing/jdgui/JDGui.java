@@ -114,6 +114,8 @@ import org.appwork.utils.swing.windowmanager.WindowManager.WindowExtendedState;
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.controlling.FileCreationManager;
 import org.jdownloader.crosssystem.idlegetter.IdleGetter;
+import org.jdownloader.extensions.StartException;
+import org.jdownloader.extensions.StopException;
 import org.jdownloader.gui.GuiUtils;
 import org.jdownloader.gui.KeyObserver;
 import org.jdownloader.gui.helpdialogs.HelpDialog;
@@ -1152,12 +1154,21 @@ public class JDGui implements UpdaterListener, OwnerFinder {
                     @Override
                     public Object edtRun() {
 
+                        try {
+                            // kill TrayIcon
+                            tray._setEnabled(false);
+                        } catch (StartException e) {
+                            e.printStackTrace();
+                        } catch (StopException e) {
+                            e.printStackTrace();
+                        }
                         JDGui.this.mainTabbedPane.onClose();
 
                         JsonConfig.create(GraphicalUserInterfaceSettings.class).setLastFrameStatus(FrameStatus.create(mainFrame, JsonConfig.create(GraphicalUserInterfaceSettings.class).getLastFrameStatus()));
 
                         WindowManager.getInstance().setVisible(JDGui.this.getMainFrame(), false, FrameState.OS_DEFAULT);
-                        JDGui.this.getMainFrame().dispose();
+                        // Do not dispose. On Windows shutdown, windows kills the jvm as soon as the window get's disposed.
+                        // JDGui.this.getMainFrame().dispose();
 
                         return null;
 

@@ -41,7 +41,8 @@ public class ArchiveController implements LinkCollectorListener {
     private LogSource                        logger;
 
     /**
-     * Create a new instance of ArchiveController. This is a singleton class. Access the only existing instance by using {@link #getInstance()}.
+     * Create a new instance of ArchiveController. This is a singleton class. Access the only existing instance by using
+     * {@link #getInstance()}.
      */
     private ArchiveController() {
         map = new HashMap<String, ArchiveSettings>();
@@ -58,6 +59,11 @@ public class ArchiveController implements LinkCollectorListener {
             @Override
             public void onShutdown(ShutdownRequest shutdownRequest) {
                 save();
+            }
+
+            @Override
+            public String toString() {
+                return "ShutdownEvent: Save ArchiveController";
             }
         });
         // DownloadController.getInstance().addListener(this);
