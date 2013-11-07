@@ -103,9 +103,9 @@ public class ExLoadCom extends PluginForHost {
     // DEV NOTES
     // XfileShare Version 3.0.8.4
     // last XfileSharingProBasic compare :: 2.6.2.1
-    // captchatype: 4dignum
+    // captchatype: reCaptcha
     // other: no redirects
-    // mods:
+    // mods: checkErrors: Added another premiumonly String (String "pr")
 
     private void setConstants(final Account account) {
         if (account != null && account.getBooleanProperty("free")) {
@@ -640,7 +640,7 @@ public class ExLoadCom extends PluginForHost {
         // these errors imply an account been used already. So we assume (Free Account), which is the case for most sites.
         final String fa = "(Upgrade your account to download (bigger|larger) files)";
         // these errors imply (Premium Required) from the outset.
-        final String pr = "(Please Buy Premium To download this file<|>This file is available for Premium Users only\\.<)";
+        final String pr = "(Please Buy Premium To download this file<|>This file is available for Premium Users only\\.<|>This file is available for Premium Users only<)";
         // let the fun begin!
         if (cbr.containsHTML(an + "|" + fa + "|" + pr)) {
             String msg = null;
@@ -1459,7 +1459,7 @@ public class ExLoadCom extends PluginForHost {
      * @param controlSlot
      *            (+1|-1)
      * */
-   private void controlSlot(final int num, final Account account) {
+    private void controlSlot(final int num, final Account account) {
         synchronized (CTRLLOCK) {
             if (account == null) {
                 int was = maxFree.get();

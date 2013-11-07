@@ -17,6 +17,7 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.net.UnknownHostException;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -64,7 +65,11 @@ public class Dump1Com extends PluginForHost {
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.getPage("http://www.dump1.com/flv_player/data/playerConfig/" + new Regex(downloadLink.getDownloadURL(), "dump1\\.com/media/(\\d+)/").getMatch(0) + ".xml");
+        try {
+            br.getPage("http://www.dump1.com/flv_player/data/playerConfig/" + new Regex(downloadLink.getDownloadURL(), "dump1\\.com/media/(\\d+)/").getMatch(0) + ".xml");
+        } catch (final UnknownHostException e) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         if (br.containsHTML("(<title></title>|<bookmark title=\"\")")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("<bookmark title=\"(.*?)\"").getMatch(0);
         if (filename == null) {

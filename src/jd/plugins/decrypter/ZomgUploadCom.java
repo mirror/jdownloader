@@ -76,6 +76,10 @@ public class ZomgUploadCom extends PluginForDecrypt {
 
         logger.info("Submitted DLForm");
         br.submitForm(dlForm);
+        if (br.containsHTML("value=\"not authorized\"")) {
+            logger.info("Link offline (server error): " + parameter);
+            return decryptedLinks;
+        }
         String dl = br.getRegex("<a href=\"(http[^\"]+)\"><img[^>]+/images/free_dl\\.png").getMatch(0);
         if (dl != null)
             decryptedLinks.add(createDownloadlink(dl));

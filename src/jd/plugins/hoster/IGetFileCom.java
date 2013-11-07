@@ -104,7 +104,7 @@ public class IGetFileCom extends PluginForHost {
     // DEV NOTES
     // XfileShare Version 3.0.8.4
     // last XfileSharingProBasic compare :: 2.6.2.1
-    // captchatype: recaptcha
+    // captchatype: null
     // other: no redirects, when dl reached they do not show filename..
     // mods: scanInfo, dllinkRegex, disabled doFree
 
@@ -1472,7 +1472,7 @@ public class IGetFileCom extends PluginForHost {
      * @param controlSlot
      *            (+1|-1)
      * */
-   private void controlSlot(final int num, final Account account) {
+    private void controlSlot(final int num, final Account account) {
         synchronized (CTRLLOCK) {
             if (account == null) {
                 int was = maxFree.get();

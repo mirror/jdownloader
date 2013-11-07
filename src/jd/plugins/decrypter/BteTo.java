@@ -21,58 +21,43 @@ import java.util.ArrayList;
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
-import jd.parser.html.HTMLParser;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "flacforthemasses.com" }, urls = { "https://?flacforthemasses\\.com/node/\\d+" }, flags = { 0 })
-public class FlacForTheMassesCom extends PluginForDecrypt {
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "byte.to" }, urls = { "http://(www\\.)?byte\\.to/category/[A-Za-z0-9\\-]+/[A-Za-z0-9\\-]+\\.html" }, flags = { 0 })
+public class BteTo extends PluginForDecrypt {
 
-    public FlacForTheMassesCom(PluginWrapper wrapper) {
+    public BteTo(PluginWrapper wrapper) {
         super(wrapper);
     }
 
+    // This is a modified CMS site
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
         br.getPage(parameter);
-        if (br.containsHTML("file not found\\!")) {
+        if (br.containsHTML(">Es existiert kein Eintrag mit der ID")) {
             logger.info("Link offline: " + parameter);
             return decryptedLinks;
         }
-        final String artist = br.getRegex("class=\"tags\\-artists\">([^<>\"]*?)</a>").getMatch(0);
-        final String year = br.getRegex("<title>.*? \\((\\d{4})\\)").getMatch(0);
-        final String title = br.getRegex("class=\"album\">([^<>\"]*?)<").getMatch(0);
-        final String linktext = br.getRegex("<pre class=\"download\\-link\\-pre jDownloader\"(.*?)</pre>").getMatch(0);
-        if (linktext == null || artist == null || title == null) {
-            logger.warning("Decrypter broken for link: " + parameter);
-            return null;
-        }
-        String fpName;
-        if (year != null)
-            fpName = Encoding.htmlDecode(artist.trim()) + " - " + year + " " + Encoding.htmlDecode(title.trim());
-        else
-            fpName = Encoding.htmlDecode(artist.trim()) + " - " + Encoding.htmlDecode(title.trim());
-        final String[] links = HTMLParser.getHttpLinks(linktext, null);
+        final String fpName = br.getRegex("<title>Byte\\.to \\-([^<>\"]*?)</title>").getMatch(0);
+        final String[] links = br.getRegex("<P STYLE=\"overflow: hidden; width: 583px;\"><A HREF=\"(http[^<>\"]*?)\"").getColumn(0);
         if (links == null || links.length == 0) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
-        for (String singleLink : links)
+        for (final String singleLink : links)
             decryptedLinks.add(createDownloadlink(singleLink));
 
-        final FilePackage fp = FilePackage.getInstance();
-        fp.setName(fpName);
-        fp.addLinks(decryptedLinks);
+        if (fpName != null) {
+            final FilePackage fp = FilePackage.getInstance();
+            fp.setName(Encoding.htmlDecode(fpName.trim()));
+            fp.addLinks(decryptedLinks);
+        }
         return decryptedLinks;
-    }
-
-    /* NO OVERRIDE!! */
-    public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
-        return false;
     }
 
 }

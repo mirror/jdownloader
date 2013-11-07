@@ -29,7 +29,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pornbanana.com" }, urls = { "http://(www\\.)?pornbanana\\.com/video\\.aspx\\?(\\&)?id=\\d+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pornbanana.com" }, urls = { "http://(www\\.)?pornbanana\\.com/video(LP)?\\.aspx\\?(\\&)?id=\\d+" }, flags = { 0 })
 public class PornBananaCom extends PluginForHost {
 
     private String DLLINK = null;

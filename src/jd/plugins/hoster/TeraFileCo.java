@@ -103,7 +103,7 @@ public class TeraFileCo extends PluginForHost {
     // DEV NOTES
     // XfileShare Version 3.0.8.4
     // last XfileSharingProBasic compare :: 2.6.2.1
-    // captchatype: null
+    // captchatype: reCaptcha
     // other: no redirects
     // mods: recaptcha is javascript inserted into dlform, hacked up captchaForm.
     // notes: they have pre download wait times after captcha event, also not normal.
