@@ -96,6 +96,21 @@ public class VimeoComDecrypter extends PluginForDecrypt {
             decryptedLinks.add(link);
             return decryptedLinks;
         }
+        try {
+            final Browser br2 = br.cloneBrowser();
+            br2.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+            br2.getHeaders().put("X-Request", "JSON");
+            br2.getPage(br.getURL() + "?action=status");
+            if (br2.containsHTML("state\":\"transcode_failed\"")) {
+                final DownloadLink link = createDownloadlink(parameter.replace("http://", "decryptedforVimeoHosterPlugin1" + "://"));
+                link.setAvailable(false);
+                link.setProperty("offline", true);
+                decryptedLinks.add(link);
+                return decryptedLinks;
+            }
+        } catch (final Throwable e) {
+
+        }
 
         handlePW(param, br);
 
@@ -311,7 +326,7 @@ public class VimeoComDecrypter extends PluginForDecrypt {
                 try {
                     br.submitForm(pwForm);
                 } catch (Throwable e) {
-                    if (br.getHttpConnection().getResponseCode() == 401) {
+                    if (br.getHttpConnection().getResponseCode() == 401 || br.getHttpConnection().getResponseCode() == 418) {
                         logger.warning("vimeo.com: Wrong password for Link: " + param.toString());
                         if (i < 2) br.getPage(param.toString());
                         xsrft = br.getRegex("xsrft: '(.*?)'").getMatch(0);
@@ -324,7 +339,7 @@ public class VimeoComDecrypter extends PluginForDecrypt {
                 getPluginConfig().save();
                 break;
             }
-            if (br.getHttpConnection().getResponseCode() == 401) throw new DecrypterException(DecrypterException.PASSWORD);
+            if (br.getHttpConnection().getResponseCode() == 401 || br.getHttpConnection().getResponseCode() == 418) throw new DecrypterException(DecrypterException.PASSWORD);
         }
     }
 

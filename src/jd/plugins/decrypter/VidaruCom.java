@@ -60,22 +60,6 @@ public class VidaruCom extends PluginForDecrypt {
             decryptedLinks.add(dl);
             return decryptedLinks;
         }
-        externID = br.getRegex("vidivodo\\.com/VideoPlayerShare\\.swf\\?u=([^<>\"]*?)\\'").getMatch(0);
-        if (externID != null) {
-            br.getPage("http://en.vidivodo.com/player/getxml?mediaid=" + externID + "&publisherid=vidivodoEmbed&type=");
-            externID = br.getRegex("<pagelink>(http://[^<>\"]*?)</pagelink>").getMatch(0);
-            if (externID == null && br.containsHTML("<\\?xml version=\"1\\.0\" encoding=\"UTF\\-8\" \\?>")) {
-                logger.info("Link offline: " + parameter);
-                return decryptedLinks;
-            }
-            if (externID == null) {
-                logger.warning("Decrypter broken for link: " + parameter);
-                return null;
-            }
-            final DownloadLink dl = createDownloadlink(externID);
-            decryptedLinks.add(dl);
-            return decryptedLinks;
-        }
         externID = br.getRegex("name=\\'movie\\' value=\\'http://(www\\.)?dailymotion\\.com/swf/video/([a-z0-9\\-_]+)\\'").getMatch(1);
         if (externID != null) {
             final DownloadLink dl = createDownloadlink("http://www.dailymotion.com/video/" + externID + "_" + System.currentTimeMillis());
@@ -83,6 +67,11 @@ public class VidaruCom extends PluginForDecrypt {
             return decryptedLinks;
         }
         externID = br.getRegex("property=\"og:video\" content=\"(http://(www\\.)?youtube\\.com/[^<>\"]*?)\"").getMatch(0);
+        if (externID != null) {
+            decryptedLinks.add(createDownloadlink(externID));
+            return decryptedLinks;
+        }
+        externID = br.getRegex("\\'(http://(www\\.)?vidivodo\\.com/VideoPlayerShare\\.swf\\?u=[A-Za-z0-9=]+)\\'").getMatch(0);
         if (externID != null) {
             decryptedLinks.add(createDownloadlink(externID));
             return decryptedLinks;
