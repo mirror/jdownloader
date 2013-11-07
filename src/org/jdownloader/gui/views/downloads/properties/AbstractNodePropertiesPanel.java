@@ -26,7 +26,6 @@ import javax.swing.JLabel;
 import javax.swing.JPopupMenu;
 import javax.swing.JTextField;
 import javax.swing.KeyStroke;
-import javax.swing.Timer;
 import javax.swing.text.DefaultEditorKit.CopyAction;
 import javax.swing.text.TextAction;
 
@@ -87,8 +86,6 @@ public abstract class AbstractNodePropertiesPanel extends MigPanel implements Ac
 
     protected boolean                             setting;
 
-    private Timer                                 timer;
-
     private DelayedRunnable                       updateDelayer;
 
     @Override
@@ -124,10 +121,6 @@ public abstract class AbstractNodePropertiesPanel extends MigPanel implements Ac
         });
         LAFOptions.getInstance().applyPanelBackground(this);
         config = JsonConfig.create(LinkgrabberSettings.class);
-
-        // some properties like archive password have not listener support
-        timer = new Timer(5000, this);
-        timer.setRepeats(true);
 
         saveDelayer = new DelayedRunnable(500l, 2000l) {
 
@@ -523,11 +516,11 @@ public abstract class AbstractNodePropertiesPanel extends MigPanel implements Ac
     }
 
     protected void onHidden() {
-        timer.stop();
+
     }
 
     protected void onShowing() {
-        // timer.start();
+        refresh(true);
     }
 
     protected ExtTextField createFileNameTextField() {
@@ -642,7 +635,7 @@ public abstract class AbstractNodePropertiesPanel extends MigPanel implements Ac
         if (isCheckSumEnabled()) addChecksum(height, p);
         if (isCommentAndPriorityEnabled()) addCommentLine(height, p);
         if (isArchiveLineEnabled()) addArchiveLine(height, p);
-        refresh();
+        refresh(true);
         revalidate();
 
     }
