@@ -3334,8 +3334,8 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Hoster:" })
     String IfFileExistsDialog_layoutDialogContent_hoster();
 
-    @Default(lngs = { "en" }, values = { "Filesize:" })
-    String IfFileExistsDialog_layoutDialogContent_filesize();
+    @Default(lngs = { "en" }, values = { "New File's size:" })
+    String IfFileExistsDialog_layoutDialogContent_filesize2();
 
     @Default(lngs = { "en" }, values = { "Archivename:" })
     String ExtractionListenerList_layoutDialogContent_archivename();
@@ -3633,5 +3633,8 @@ public interface GuiTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "The address behind the selected entry" })
     String AddLinksDialog_layoutDialogContent_downloadfrom_tt();
+
+    @Default(lngs = { "en" }, values = { "Exiting File's size:" + "" })
+    String IfFileExistsDialog_layoutDialogContent_filesize_existing();
 
 }

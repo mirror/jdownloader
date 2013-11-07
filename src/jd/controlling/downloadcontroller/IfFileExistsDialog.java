@@ -96,8 +96,11 @@ public class IfFileExistsDialog extends AbstractDialog<IfFileExistsAction> imple
         p.add(SwingUtils.toBold(new JLabel(_GUI._.IfFileExistsDialog_layoutDialogContent_filename())), "split 2,sg 1");
         p.add(new JLabel(new File(path).getName()));
 
-        p.add(SwingUtils.toBold(new JLabel(_GUI._.IfFileExistsDialog_layoutDialogContent_filesize())), "split 2,sg 1");
+        p.add(SwingUtils.toBold(new JLabel(_GUI._.IfFileExistsDialog_layoutDialogContent_filesize2())), "split 2,sg 1");
         p.add(new JLabel(SizeFormatter.formatBytes(downloadLink.getDownloadSize())));
+
+        p.add(SwingUtils.toBold(new JLabel(_GUI._.IfFileExistsDialog_layoutDialogContent_filesize_existing())), "split 2,sg 1");
+        p.add(new JLabel(SizeFormatter.formatBytes(localFile.length())));
 
         p.add(SwingUtils.toBold(new JLabel(_GUI._.IfFileExistsDialog_layoutDialogContent_package())), "split 2,sg 1");
         p.add(new JLabel(packagename));

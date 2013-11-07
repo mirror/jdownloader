@@ -181,7 +181,7 @@ public class ExtractionListenerList implements ExtractionListener {
                                 p.add(leftLabel(controller.getArchiv().getName()));
                                 p.add(SwingUtils.toBold(new JLabel(_GUI._.ExtractionListenerList_layoutDialogContent_filename())), "split 2,sizegroup left,alignx left");
                                 p.add(leftLabel(new File(downloadLink.getFileOutput()).getName()));
-                                p.add(SwingUtils.toBold(new JLabel(_GUI._.IfFileExistsDialog_layoutDialogContent_filesize())), "split 2,sizegroup left,alignx left");
+                                p.add(SwingUtils.toBold(new JLabel(_GUI._.IfFileExistsDialog_layoutDialogContent_filesize2())), "split 2,sizegroup left,alignx left");
                                 long bytes = 0;
                                 for (ArchiveFile af : controller.getArchiv().getArchiveFiles()) {
                                     bytes += af.getFileSize();
