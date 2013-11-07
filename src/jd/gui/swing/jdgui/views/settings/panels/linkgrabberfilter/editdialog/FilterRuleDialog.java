@@ -107,6 +107,7 @@ public class FilterRuleDialog extends ConditionDialog<LinkgrabberFilterRule> {
 
     private void save(LinkgrabberFilterRule rule) {
         rule.setFilenameFilter(getFilenameFilter());
+        rule.setPackagenameFilter(getPackagenameFilter());
         rule.setHosterURLFilter(getHosterFilter());
         rule.setName(getName());
         rule.setFilesizeFilter(getFilersizeFilter());
@@ -125,6 +126,8 @@ public class FilterRuleDialog extends ConditionDialog<LinkgrabberFilterRule> {
 
         setIconKey(rule.getIconKey());
         setFilenameFilter(rule.getFilenameFilter());
+        setPackagenameFilter(rule.getPackagenameFilter());
+
         setHosterFilter(rule.getHosterURLFilter());
         setName(rule.getName());
         setOriginFilter(rule.getOriginFilter());

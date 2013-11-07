@@ -44,17 +44,18 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
     private java.util.List<PackagizerRuleWrapper> fileFilter;
     private java.util.List<PackagizerRuleWrapper> urlFilter;
 
-    public static final String                    ORGFILENAME  = "orgfilename";
-    public static final String                    ORGFILETYPE  = "orgfiletype";
-    public static final String                    HOSTER       = "hoster";
-    public static final String                    SOURCE       = "source";
+    public static final String                    ORGFILENAME    = "orgfilename";
+    public static final String                    ORGFILETYPE    = "orgfiletype";
+    public static final String                    HOSTER         = "hoster";
+    public static final String                    SOURCE         = "source";
 
-    public static final String                    PACKAGENAME  = "packagename";
-    public static final String                    SIMPLEDATE   = "simpledate";
+    public static final String                    PACKAGENAME    = "packagename";
+    public static final String                    SIMPLEDATE     = "simpledate";
 
-    private static final PackagizerController     INSTANCE     = new PackagizerController(false);
-    private HashMap<String, PackagizerReplacer>   replacers    = new HashMap<String, PackagizerReplacer>();
-    private boolean                               testInstance = false;
+    private static final PackagizerController     INSTANCE       = new PackagizerController(false);
+    public static final String                    ORGPACKAGENAME = "orgpackagename";
+    private HashMap<String, PackagizerReplacer>   replacers      = new HashMap<String, PackagizerReplacer>();
+    private boolean                               testInstance   = false;
 
     public static PackagizerController getInstance() {
         return INSTANCE;
@@ -80,37 +81,38 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
             }
         }
         if (list == null) list = new ArrayList<PackagizerRule>();
+        if (!isTestInstance()) {
+            ArrayList<PackagizerRule> newList = new ArrayList<PackagizerRule>();
+            boolean subfolderFound = false;
+            boolean revFileRule = false;
+            for (PackagizerRule rule : list) {
 
-        ArrayList<PackagizerRule> newList = new ArrayList<PackagizerRule>();
-        boolean subfolderFound = false;
-        boolean revFileRule = false;
-        for (PackagizerRule rule : list) {
+                if (SubFolderByPackageRule.ID.equals(rule.getId())) {
+                    SubFolderByPackageRule r;
+                    newList.add(r = new SubFolderByPackageRule());
+                    r.setEnabled(rule.isEnabled());
+                    subfolderFound = true;
+                    continue;
 
-            if (SubFolderByPackageRule.ID.equals(rule.getId())) {
-                SubFolderByPackageRule r;
-                newList.add(r = new SubFolderByPackageRule());
-                r.setEnabled(rule.isEnabled());
-                subfolderFound = true;
-                continue;
+                }
+                if (DisableRevFilesPackageRule.ID.equals(rule.getId())) {
+                    DisableRevFilesPackageRule r;
+                    newList.add(r = new DisableRevFilesPackageRule());
+                    r.setEnabled(rule.isEnabled());
+                    revFileRule = true;
+                    continue;
 
+                }
+                newList.add(rule);
             }
-            if (DisableRevFilesPackageRule.ID.equals(rule.getId())) {
-                DisableRevFilesPackageRule r;
-                newList.add(r = new DisableRevFilesPackageRule());
-                r.setEnabled(rule.isEnabled());
-                revFileRule = true;
-                continue;
-
+            if (!subfolderFound) {
+                newList.add(new SubFolderByPackageRule());
             }
-            newList.add(rule);
+            if (!revFileRule) {
+                newList.add(new DisableRevFilesPackageRule());
+            }
+            list = newList;
         }
-        if (!subfolderFound) {
-            newList.add(new SubFolderByPackageRule());
-        }
-        if (!revFileRule) {
-            newList.add(new DisableRevFilesPackageRule());
-        }
-        list = newList;
         update();
 
         if (!isTestInstance()) {
@@ -182,7 +184,33 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
             }
 
         });
+        addReplacer(new PackagizerReplacer() {
 
+            private Pattern pat = Pattern.compile("<jd:" + ORGPACKAGENAME + "/?>");
+
+            public String replace(String modifiers, CrawledLink link, String input, PackagizerRuleWrapper lgr) {
+                String packagename = null;
+                if (link != null && link.getParentNode() != null) {
+                    packagename = link.getParentNode().getName();
+                }
+                if (StringUtils.isEmpty(packagename) && link != null && link.getDesiredPackageInfo() != null) {
+                    packagename = link.getDesiredPackageInfo().getName();
+                }
+                if (StringUtils.isEmpty(packagename)) return input;
+                if (modifiers != null) {
+                    Pattern patt = lgr.getPackageNameRule().getPattern();
+                    String[] matches = new Regex(packagename, patt).getRow(0);
+                    return Pattern.compile("<jd:" + ORGPACKAGENAME + ":" + modifiers + "/?>").matcher(input).replaceAll(matches[Integer.parseInt(modifiers) - 1]);
+                    //
+                }
+                return pat.matcher(input).replaceAll(packagename);
+            }
+
+            public String getID() {
+                return ORGPACKAGENAME;
+            }
+
+        });
         addReplacer(new PackagizerReplacer() {
 
             private Pattern pat = Pattern.compile("<jd:orgfiletype/?>");
@@ -327,11 +355,14 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
                 } catch (NoDownloadLinkException e) {
                     throw new WTFException();
                 }
+
                 if (!lgr.checkOrigin(link)) continue;
                 if (!lgr.checkSource(link)) continue;
+                if (!lgr.checkPackageName(link)) continue;
                 if (lgr.isRequiresLinkcheck()) {
                     if (!lgr.checkOnlineStatus(link)) continue;
                     if (!lgr.checkFileName(link)) continue;
+
                     if (!lgr.checkFileSize(link)) continue;
                     if (!lgr.checkFileType(link)) continue;
                 }
@@ -513,9 +544,11 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
                     }
                     if (!lgr.checkOrigin(link)) continue;
                     if (!lgr.checkSource(link)) continue;
+                    if (!lgr.checkPackageName(link)) continue;
                     if (lgr.isRequiresLinkcheck()) {
                         if (!lgr.checkOnlineStatus(link)) continue;
                         if (!lgr.checkFileName(link)) continue;
+
                         if (!lgr.checkFileSize(link)) continue;
                         if (!lgr.checkFileType(link)) continue;
                     }

@@ -198,6 +198,7 @@ public class QuickFilterExceptionsTable extends FilterTable {
                         if (!rule.checkOnlineStatus(link)) return false;
 
                         if (!rule.checkFileName(link)) return false;
+                        if (!rule.checkPackageName(link)) return false;
                         if (!rule.checkFileSize(link)) return false;
                         if (!rule.checkFileType(link)) return false;
 

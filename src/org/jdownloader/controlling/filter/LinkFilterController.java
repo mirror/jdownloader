@@ -340,6 +340,7 @@ public class LinkFilterController implements LinkCrawlerFilter {
                 if (!lgr.checkOnlineStatus(link)) continue;
 
                 if (!lgr.checkFileName(link)) continue;
+                if (!lgr.checkPackageName(link)) continue;
                 if (!lgr.checkFileSize(link)) continue;
                 if (!lgr.checkFileType(link)) continue;
 

@@ -6,6 +6,7 @@ import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledLink.LinkState;
 
 import org.appwork.utils.Files;
+import org.appwork.utils.StringUtils;
 
 public class RuleWrapper<T extends FilterRule> {
 
@@ -14,6 +15,7 @@ public class RuleWrapper<T extends FilterRule> {
     private CompiledPluginStatusFiler pluginStatusFilter;
     private BooleanFilter             alwaysFilter;
     private CompiledOriginFilter      originFilter;
+    private CompiledRegexFilter       packageNameRule;
 
     public CompiledPluginStatusFiler getPluginStatusFilter() {
         return pluginStatusFilter;
@@ -36,7 +38,10 @@ public class RuleWrapper<T extends FilterRule> {
             fileNameRule = new CompiledRegexFilter(rule.getFilenameFilter());
             requiresLinkcheck = true;
         }
-
+        if (rule.getPackagenameFilter().isEnabled()) {
+            packageNameRule = new CompiledRegexFilter(rule.getPackagenameFilter());
+            // requiresLinkcheck = true;
+        }
         if (rule.getFilesizeFilter().isEnabled()) {
             filesizeRule = new CompiledFilesizeFilter(rule.getFilesizeFilter());
             requiresLinkcheck = true;
@@ -76,6 +81,10 @@ public class RuleWrapper<T extends FilterRule> {
 
     public CompiledRegexFilter getFileNameRule() {
         return fileNameRule;
+    }
+
+    public CompiledRegexFilter getPackageNameRule() {
+        return packageNameRule;
     }
 
     public boolean isRequiresLinkcheck() {
@@ -180,6 +189,23 @@ public class RuleWrapper<T extends FilterRule> {
         return true;
     }
 
+    public boolean checkPackageName(CrawledLink link) {
+
+        if (getPackageNameRule() != null) {
+            String packagename = null;
+            if (link != null && link.getParentNode() != null) {
+                packagename = link.getParentNode().getName();
+            }
+            if (StringUtils.isEmpty(packagename) && link != null && link.getDesiredPackageInfo() != null) {
+                packagename = link.getDesiredPackageInfo().getName();
+            }
+            if (StringUtils.isEmpty(packagename)) return false;
+
+            return getPackageNameRule().matches(packagename);
+        }
+        return true;
+    }
+
     public boolean checkFileName(CrawledLink link) {
 
         if (getFileNameRule() != null) {
@@ -216,8 +242,11 @@ public class RuleWrapper<T extends FilterRule> {
     }
 
     public boolean checkOrigin(CrawledLink link) {
-        if (link == null || link.getOrigin() == null) return false;
-        if (getOriginFilter() != null) { return getOriginFilter().matches(link.getOrigin()); }
+
+        if (getOriginFilter() != null) {
+            if (link == null || link.getOrigin() == null) return false;
+            return getOriginFilter().matches(link.getOrigin());
+        }
         return true;
     }
 

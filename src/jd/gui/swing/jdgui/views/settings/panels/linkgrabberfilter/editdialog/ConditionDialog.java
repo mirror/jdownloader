@@ -108,8 +108,20 @@ public abstract class ConditionDialog<T> extends AbstractDialog<T> {
         cbRegFilename.setSelected(filter.isUseRegex());
     }
 
+    public void setPackagenameFilter(RegexFilter filter) {
+        if (filter == null) return;
+        cbPackage.setSelected(filter.isEnabled());
+        cobPackage.setSelectedIndex(filter.getMatchType().ordinal());
+        txtPackage.setText(filter.getRegex());
+        cbRegPackage.setSelected(filter.isUseRegex());
+    }
+
     public RegexFilter getFilenameFilter() {
         return new RegexFilter(cbFilename.isSelected(), MatchType.values()[cobFilename.getSelectedIndex()], txtFilename.getText(), cbRegFilename.isSelected());
+    }
+
+    public RegexFilter getPackagenameFilter() {
+        return new RegexFilter(cbPackage.isSelected(), MatchType.values()[cobPackage.getSelectedIndex()], txtPackage.getText(), cbRegPackage.isSelected());
     }
 
     protected void _init() {
@@ -297,6 +309,14 @@ public abstract class ConditionDialog<T> extends AbstractDialog<T> {
 
     private PseudoMultiCombo<FileType>   cbTypeSelection;
 
+    private JToggleButton                cbRegPackage;
+
+    private JComboBox                    cobPackage;
+
+    private ExtTextField                 txtPackage;
+
+    private ExtCheckBox                  cbPackage;
+
     public String getIconKey() {
         return iconKey;
     }
@@ -363,6 +383,7 @@ public abstract class ConditionDialog<T> extends AbstractDialog<T> {
 
         };
         txtName.setHelpText(_GUI._.FilterRuleDialog_layoutDialogContent_ht_name());
+
         btnIcon = new JButton(new AppAction() {
             {
                 setSmallIcon(NewTheme.I().getIcon("help", 16));
@@ -468,6 +489,55 @@ public abstract class ConditionDialog<T> extends AbstractDialog<T> {
         panel.add(cobFilename);
         panel.add(txtFilename, "spanx,pushx,growx,split 2");
         panel.add(cbRegFilename, "height 22!,width 22!");
+        // package
+        cbRegPackage = createToggle();
+        cobPackage = new JComboBox(new String[] { _GUI._.FilterRuleDialog_layoutDialogContent_contains(), _GUI._.FilterRuleDialog_layoutDialogContent_equals(), _GUI._.FilterRuleDialog_layoutDialogContent_contains_not(), _GUI._.FilterRuleDialog_layoutDialogContent_equals_not() });
+        txtPackage = new ExtTextField() {
+
+            @Override
+            public JPopupMenu getPopupMenu(AbstractAction cutAction, AbstractAction copyAction, AbstractAction pasteAction, AbstractAction deleteAction, AbstractAction selectAction) {
+                JPopupMenu menu = new JPopupMenu();
+                menu.add(new TestAction(getPackagenameFilter(), _GUI._.ConditionDialog_getPopupMenu_Package_()));
+                menu.add(new JSeparator());
+                menu.add(cutAction);
+                menu.add(copyAction);
+                menu.add(pasteAction);
+                menu.add(deleteAction);
+                menu.add(selectAction);
+                return menu;
+            }
+
+        };
+        txtPackage.setHelpText(_GUI._.FilterRuleDialog_layoutDialogContent_ht_Package());
+
+        JLabel lblPackage = getLabel(_GUI._.FilterRuleDialog_layoutDialogContent_lbl_Package());
+        cbPackage = new ExtCheckBox(cobPackage, txtPackage, cbRegPackage) {
+
+            @Override
+            public void updateDependencies() {
+                super.updateDependencies();
+
+            }
+
+        };
+        ml = new MouseAdapter() {
+
+            @Override
+            public void mousePressed(MouseEvent e) {
+                cbPackage.setSelected(true);
+
+            }
+
+        };
+        txtPackage.addMouseListener(ml);
+        cobPackage.addMouseListener(ml);
+        cbRegPackage.addMouseListener(ml);
+        panel.add(cbPackage);
+        panel.add(lblPackage);
+        panel.add(cobPackage);
+        panel.add(txtPackage, "spanx,pushx,growx,split 2");
+        panel.add(cbRegPackage, "height 22!,width 22!");
+        //
 
         size = createSizeFilter();
         cobSize = new JComboBox(new String[] { _GUI._.FilterRuleDialog_layoutDialogContent_is_between(), _GUI._.FilterRuleDialog_layoutDialogContent_is_not_between() });

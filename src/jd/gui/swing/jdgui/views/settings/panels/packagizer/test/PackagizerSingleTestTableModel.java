@@ -289,7 +289,7 @@ public class PackagizerSingleTestTableModel extends ExtTableModel<CrawledLink> {
 
             @Override
             public String getStringValue(CrawledLink value) {
-
+                if (value == null || value.getDesiredPackageInfo() == null) return null;
                 return value.getDesiredPackageInfo().getDestinationFolder();
             }
         });
@@ -306,6 +306,7 @@ public class PackagizerSingleTestTableModel extends ExtTableModel<CrawledLink> {
 
             @Override
             public String getStringValue(CrawledLink value) {
+                if (value == null || value.getDesiredPackageInfo() == null) return null;
                 return value.getDesiredPackageInfo().getName();
             }
         });

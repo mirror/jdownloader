@@ -3,17 +3,22 @@ package org.jdownloader.extensions;
 import java.awt.Dimension;
 import java.awt.Rectangle;
 
-import javax.swing.JPanel;
 import javax.swing.Scrollable;
 
 import net.miginfocom.swing.MigLayout;
 
-public class VerticalScrollPanel extends JPanel implements Scrollable {
+import org.appwork.swing.MigPanel;
+
+public class VerticalScrollPanel extends MigPanel implements Scrollable {
 
     /**
      * 
      */
     private static final long serialVersionUID = 1L;
+
+    public VerticalScrollPanel(String constraints, String cols, String rows) {
+        this(new MigLayout(constraints, cols, rows));
+    }
 
     public VerticalScrollPanel(MigLayout migLayout) {
         super(migLayout);

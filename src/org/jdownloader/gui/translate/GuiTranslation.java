@@ -952,8 +952,14 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Filename %s1" })
     String FilterRule_toString_name(String string);
 
+    @Default(lngs = { "en" }, values = { "Packagename %s1" })
+    String FilterRule_toString_packagename(String string);
+
     @Default(lngs = { "en" }, values = { "\r\n%s1 %s2" })
     String FilterRule_toString_name2(String name, String string);
+
+    @Default(lngs = { "en" }, values = { "\r\n%s1 %s2" })
+    String FilterRule_toString_package2(String name, String string);
 
     @Default(lngs = { "en" }, values = { "Hoster URL %s1" })
     String FilterRule_toString_hoster(String string);
@@ -3636,5 +3642,17 @@ public interface GuiTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Exiting File's size:" + "" })
     String IfFileExistsDialog_layoutDialogContent_filesize_existing();
+
+    @Default(lngs = { "en" }, values = { "Enter predefined package name matcher... (Use * as Wildcard)" })
+    String FilterRuleDialog_layoutDialogContent_ht_Package();
+
+    @Default(lngs = { "en" }, values = { "Package Name" })
+    String FilterRuleDialog_layoutDialogContent_lbl_Package();
+
+    @Default(lngs = { "en" }, values = { "Package Name" })
+    String ConditionDialog_getPopupMenu_Package_();
+
+    @Default(lngs = { "en" }, values = { "Package Name Wildcard(*) #%s1" })
+    String PackagizerFilterRuleDialog_createVariablesMenu_package(int i);
 
 }

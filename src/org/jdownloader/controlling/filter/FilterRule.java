@@ -110,7 +110,7 @@ public abstract class FilterRule implements Storable {
      * @return
      */
     public boolean isValid() {
-        return getMatchAlwaysFilter().isEnabled() || getFilenameFilter().isEnabled() || getFilesizeFilter().isEnabled() || getFiletypeFilter().isEnabled() || getHosterURLFilter().isEnabled() || getSourceURLFilter().isEnabled() || getOriginFilter().isEnabled() || getOnlineStatusFilter().isEnabled() || getPluginStatusFilter().isEnabled();
+        return getPackagenameFilter().isEnabled() || getMatchAlwaysFilter().isEnabled() || getFilenameFilter().isEnabled() || getFilesizeFilter().isEnabled() || getFiletypeFilter().isEnabled() || getHosterURLFilter().isEnabled() || getSourceURLFilter().isEnabled() || getOriginFilter().isEnabled() || getOnlineStatusFilter().isEnabled() || getPluginStatusFilter().isEnabled();
     }
 
     public String toString(CrawledLink link) {
@@ -134,6 +134,14 @@ public abstract class FilterRule implements Storable {
                     cond.add(_GUI._.FilterRule_toString_name2(link.getName(), filenameFilter.toString()));
                 } else {
                     cond.add(_GUI._.FilterRule_toString_name(filenameFilter.toString()));
+                }
+
+            }
+            if (getPackagenameFilter().isEnabled()) {
+                if (link != null && link.getParentNode() != null && link.getParentNode().getName() != null) {
+                    cond.add(_GUI._.FilterRule_toString_package2(link.getParentNode().getName(), packagenameFilter.toString()));
+                } else {
+                    cond.add(_GUI._.FilterRule_toString_packagename(packagenameFilter.toString()));
                 }
 
             }
@@ -244,10 +252,20 @@ public abstract class FilterRule implements Storable {
 
     private FiletypeFilter filetypeFilter;
     private RegexFilter    filenameFilter;
+    private RegexFilter    packagenameFilter;
 
-    private boolean        enabled;
+    public RegexFilter getPackagenameFilter() {
+        if (packagenameFilter == null) packagenameFilter = new RegexFilter();
+        return packagenameFilter;
+    }
 
-    private String         name;
+    public void setPackagenameFilter(RegexFilter packagenameFilter) {
+        this.packagenameFilter = packagenameFilter;
+    }
+
+    private boolean enabled;
+
+    private String  name;
 
     public String getName() {
         return name;

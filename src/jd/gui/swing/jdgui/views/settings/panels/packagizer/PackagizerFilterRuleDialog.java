@@ -211,6 +211,7 @@ public class PackagizerFilterRuleDialog extends ConditionDialog<PackagizerRule> 
 
     private void save(PackagizerRule rule) {
         rule.setFilenameFilter(getFilenameFilter());
+        rule.setPackagenameFilter(getPackagenameFilter());
         rule.setHosterURLFilter(getHosterFilter());
         rule.setName(getName());
         rule.setFilesizeFilter(getFilersizeFilter());
@@ -255,6 +256,7 @@ public class PackagizerFilterRuleDialog extends ConditionDialog<PackagizerRule> 
 
         setIconKey(rule.getIconKey());
         setFilenameFilter(rule.getFilenameFilter());
+        setPackagenameFilter(rule.getPackagenameFilter());
         setHosterFilter(rule.getHosterURLFilter());
         setName(rule.getName());
         setFilesizeFilter(rule.getFilesizeFilter());
@@ -720,6 +722,12 @@ public class PackagizerFilterRuleDialog extends ConditionDialog<PackagizerRule> 
 
         for (int i = 0; i < num; i++) {
             ret.add(new VariableAction(txtPackagename2, _GUI._.PackagizerFilterRuleDialog_createVariablesMenu_filename((i + 1)), "<jd:" + PackagizerController.ORGFILENAME + ":" + (i + 1) + ">"));
+        }
+
+        if (getPackagenameFilter().isEnabled()) {
+            for (int i = 0; i < getPackagenameFilter().calcPlaceholderCount(); i++) {
+                ret.add(new VariableAction(txtPackagename2, _GUI._.PackagizerFilterRuleDialog_createVariablesMenu_package((i + 1)), "<jd:" + PackagizerController.ORGPACKAGENAME + ":" + (i + 1) + ">"));
+            }
         }
         if (getHosterFilter().isEnabled()) {
             for (int i = 0; i < getHosterFilter().calcPlaceholderCount(); i++) {
