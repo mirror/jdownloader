@@ -1058,6 +1058,13 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
         }
     }
 
+    public void firePropertyChanged(DownloadLinkProperty.Property property, Object param) {
+        if (hasNotificationListener()) {
+            notifyChanges(AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, new DownloadLinkProperty(this, property, param));
+        }
+
+    }
+
     public String getMD5Hash() {
         return getStringProperty(PROPERTY_MD5, (String) null);
     }

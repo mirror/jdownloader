@@ -5,6 +5,7 @@ import java.io.File;
 import java.util.ArrayList;
 
 import jd.controlling.linkcrawler.CrawledLink;
+import jd.controlling.linkcrawler.CrawledLinkProperty;
 import jd.plugins.DownloadLink.AvailableStatus;
 
 import org.jdownloader.extensions.extraction.Archive;
@@ -137,5 +138,14 @@ public class CrawledLinkArchiveFile implements ArchiveFile {
     @Override
     public boolean exists() {
         return new File(LinkTreeUtils.getDownloadDirectory(links.get(0)), name).exists();
+    }
+
+    @Override
+    public void notifyChanges(Object type) {
+
+        for (CrawledLink link : getLinks()) {
+            link.firePropertyChanged(CrawledLinkProperty.Property.ARCHIVE, type);
+        }
+
     }
 }

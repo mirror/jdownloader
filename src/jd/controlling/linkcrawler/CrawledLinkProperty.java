@@ -1,12 +1,12 @@
 package jd.controlling.linkcrawler;
 
-
 public class CrawledLinkProperty {
     public static enum Property {
         NAME,
         PRIORITY,
         ENABLED,
-        AVAILABILITY
+        AVAILABILITY,
+        ARCHIVE
     }
 
     private final Object      value;

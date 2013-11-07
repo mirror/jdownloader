@@ -4,6 +4,8 @@ import java.awt.Component;
 import java.awt.KeyboardFocusManager;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.ComponentEvent;
+import java.awt.event.ComponentListener;
 import java.awt.event.FocusEvent;
 import java.awt.event.FocusListener;
 import java.awt.event.KeyEvent;
@@ -89,16 +91,44 @@ public abstract class AbstractNodePropertiesPanel extends MigPanel implements Ac
 
     private DelayedRunnable                       updateDelayer;
 
+    @Override
+    public void setVisible(boolean aFlag) {
+        super.setVisible(aFlag);
+
+    }
+
     public AbstractNodePropertiesPanel() {
         super("ins 0,debug", "[grow,fill]", "[grow,fill]");
+        addComponentListener(new ComponentListener() {
 
+            @Override
+            public void componentShown(ComponentEvent e) {
+
+                onShowing();
+
+            }
+
+            @Override
+            public void componentResized(ComponentEvent e) {
+            }
+
+            @Override
+            public void componentMoved(ComponentEvent e) {
+            }
+
+            @Override
+            public void componentHidden(ComponentEvent e) {
+
+                onHidden();
+            }
+        });
         LAFOptions.getInstance().applyPanelBackground(this);
         config = JsonConfig.create(LinkgrabberSettings.class);
 
         // some properties like archive password have not listener support
         timer = new Timer(5000, this);
         timer.setRepeats(true);
-        // timer.start();
+
         saveDelayer = new DelayedRunnable(500l, 2000l) {
 
             @Override
@@ -116,7 +146,7 @@ public abstract class AbstractNodePropertiesPanel extends MigPanel implements Ac
 
             @Override
             public void delayedrun() {
-
+                internalRefresh(false);
             }
 
             @Override
@@ -488,7 +518,16 @@ public abstract class AbstractNodePropertiesPanel extends MigPanel implements Ac
         layoutComponents();
         autoExtract.setEnabled(false);
         password.setEnabled(false);
+        onHidden();
 
+    }
+
+    protected void onHidden() {
+        timer.stop();
+    }
+
+    protected void onShowing() {
+        // timer.start();
     }
 
     protected ExtTextField createFileNameTextField() {
@@ -650,14 +689,23 @@ public abstract class AbstractNodePropertiesPanel extends MigPanel implements Ac
     }
 
     public void refresh(final boolean newData) {
+        if (newData) {
+            internalRefresh(newData);
+        } else {
+            updateDelayer.resetAndStart();
+        }
+    }
+
+    private void internalRefresh(final boolean newData) {
 
         new EDTRunner() {
 
             @Override
             protected void runInEDT() {
                 if (!isShowing()) return;
-                if (saving) return;
 
+                if (saving) return;
+                System.out.println("REFRESH PANEL! " + newData + " +" + this);
                 currentArchive = null;
                 new Thread("PropertiesPanelUpdater") {
                     public void run() {

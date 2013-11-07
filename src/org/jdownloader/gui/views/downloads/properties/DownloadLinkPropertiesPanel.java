@@ -47,17 +47,6 @@ public class DownloadLinkPropertiesPanel extends AbstractNodePropertiesPanel imp
     public DownloadLinkPropertiesPanel() {
         super();
 
-        DownloadController.getInstance().getEventSender().addListener(this, true);
-
-        CFG_GUI.DOWNLOADS_PROPERTIES_PANEL_SAVE_TO_VISIBLE.getEventSender().addListener(this, true);
-        CFG_GUI.DOWNLOADS_PROPERTIES_PANEL_FILENAME_VISIBLE.getEventSender().addListener(this, true);
-        CFG_GUI.DOWNLOADS_PROPERTIES_PANEL_PACKAGENAME_VISIBLE.getEventSender().addListener(this, true);
-        CFG_GUI.DOWNLOADS_PROPERTIES_PANEL_DOWNLOAD_FROM_VISIBLE.getEventSender().addListener(this, true);
-        CFG_GUI.DOWNLOADS_PROPERTIES_PANEL_DOWNLOAD_PASSWORD_VISIBLE.getEventSender().addListener(this, true);
-        CFG_GUI.DOWNLOADS_PROPERTIES_PANEL_CHECKSUM_VISIBLE.getEventSender().addListener(this, true);
-        CFG_GUI.DOWNLOADS_PROPERTIES_PANEL_COMMENT_VISIBLE.getEventSender().addListener(this, true);
-        CFG_GUI.DOWNLOADS_PROPERTIES_PANEL_ARCHIVEPASSWORD_VISIBLE.getEventSender().addListener(this, true);
-
     }
 
     @Override
@@ -231,9 +220,7 @@ public class DownloadLinkPropertiesPanel extends AbstractNodePropertiesPanel imp
 
     @Override
     public void onDownloadControllerUpdatedData(DownloadLink downloadlink) {
-        if (currentLink == downloadlink) {
-            refresh();
-        }
+        refreshOnLinkUpdate(downloadlink);
     }
 
     @Override
@@ -262,6 +249,10 @@ public class DownloadLinkPropertiesPanel extends AbstractNodePropertiesPanel imp
 
     protected void refreshOnLinkUpdate(DownloadLink downloadlink) {
         if (downloadlink != null && currentLink != null && (currentLink == downloadlink || downloadlink.getFilePackage() == currentLink.getFilePackage())) {
+            refresh();
+        } else if (downloadlink != null && downloadlink.getParentNode() == currentPackage) {
+            // example:package is selected,and we change the archive password. this fires events on the packages links
+
             refresh();
         }
     }
@@ -347,5 +338,39 @@ public class DownloadLinkPropertiesPanel extends AbstractNodePropertiesPanel imp
             }
         };
 
+    }
+
+    @Override
+    protected void onHidden() {
+        super.onHidden();
+        System.out.println("Hidden " + this);
+        DownloadController.getInstance().getEventSender().removeListener(this);
+
+        CFG_GUI.DOWNLOADS_PROPERTIES_PANEL_SAVE_TO_VISIBLE.getEventSender().removeListener(this);
+        CFG_GUI.DOWNLOADS_PROPERTIES_PANEL_FILENAME_VISIBLE.getEventSender().removeListener(this);
+        CFG_GUI.DOWNLOADS_PROPERTIES_PANEL_PACKAGENAME_VISIBLE.getEventSender().removeListener(this);
+        CFG_GUI.DOWNLOADS_PROPERTIES_PANEL_DOWNLOAD_FROM_VISIBLE.getEventSender().removeListener(this);
+        CFG_GUI.DOWNLOADS_PROPERTIES_PANEL_DOWNLOAD_PASSWORD_VISIBLE.getEventSender().removeListener(this);
+        CFG_GUI.DOWNLOADS_PROPERTIES_PANEL_CHECKSUM_VISIBLE.getEventSender().removeListener(this);
+        CFG_GUI.DOWNLOADS_PROPERTIES_PANEL_COMMENT_VISIBLE.getEventSender().removeListener(this);
+        CFG_GUI.DOWNLOADS_PROPERTIES_PANEL_ARCHIVEPASSWORD_VISIBLE.getEventSender().removeListener(this);
+    }
+
+    @Override
+    protected void onShowing() {
+        super.onShowing();
+        // remove listeners to avoid dupes
+        onHidden();
+        System.out.println("Showing " + this);
+        DownloadController.getInstance().getEventSender().addListener(this, true);
+
+        CFG_GUI.DOWNLOADS_PROPERTIES_PANEL_SAVE_TO_VISIBLE.getEventSender().addListener(this, true);
+        CFG_GUI.DOWNLOADS_PROPERTIES_PANEL_FILENAME_VISIBLE.getEventSender().addListener(this, true);
+        CFG_GUI.DOWNLOADS_PROPERTIES_PANEL_PACKAGENAME_VISIBLE.getEventSender().addListener(this, true);
+        CFG_GUI.DOWNLOADS_PROPERTIES_PANEL_DOWNLOAD_FROM_VISIBLE.getEventSender().addListener(this, true);
+        CFG_GUI.DOWNLOADS_PROPERTIES_PANEL_DOWNLOAD_PASSWORD_VISIBLE.getEventSender().addListener(this, true);
+        CFG_GUI.DOWNLOADS_PROPERTIES_PANEL_CHECKSUM_VISIBLE.getEventSender().addListener(this, true);
+        CFG_GUI.DOWNLOADS_PROPERTIES_PANEL_COMMENT_VISIBLE.getEventSender().addListener(this, true);
+        CFG_GUI.DOWNLOADS_PROPERTIES_PANEL_ARCHIVEPASSWORD_VISIBLE.getEventSender().addListener(this, true);
     }
 }

@@ -49,7 +49,7 @@ public class AutoExtractEnabledToggleAction<PackageType extends AbstractPackageN
     public void actionPerformed(ActionEvent e) {
         if (!isEnabled()) return;
         for (Archive archive : archives) {
-            archive.getSettings().setAutoExtract(isSelected() ? BooleanStatus.TRUE : BooleanStatus.FALSE);
+            archive.setAutoExtract(isSelected() ? BooleanStatus.TRUE : BooleanStatus.FALSE);
         }
         Dialog.getInstance().showMessageDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, isSelected() ? org.jdownloader.extensions.extraction.translate.T._.set_autoextract_true() : org.jdownloader.extensions.extraction.translate.T._.set_autoextract_false());
     }

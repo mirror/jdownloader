@@ -10,7 +10,8 @@ public class DownloadLinkProperty {
         FINAL_STATE,
         SKIPPED,
         PLUGIN_PROGRESS,
-        CONDITIONAL_SKIPPED;
+        CONDITIONAL_SKIPPED,
+        ARCHIVE;
     }
 
     private final Object       value;

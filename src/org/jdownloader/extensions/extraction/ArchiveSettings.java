@@ -19,6 +19,8 @@ public class ArchiveSettings implements Storable {
     private BooleanStatus          removeDownloadLinksAfterExtraction = BooleanStatus.UNSET;
     private BooleanStatus          removeFilesAfterExtraction         = BooleanStatus.UNSET;
     private boolean                needsSaving                        = false;
+    public static final String     PASSWORD                           = "PASSWORD";
+    public static final String     AUTO_EXTRACT                       = "AUTO_EXTRACT";
 
     public ArchiveSettings(/* Storable */) {
 

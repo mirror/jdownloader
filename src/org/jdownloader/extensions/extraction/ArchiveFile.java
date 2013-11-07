@@ -28,4 +28,6 @@ public interface ArchiveFile {
 
     public void setArchive(Archive archive);
 
+    public void notifyChanges(Object type);
+
 }

@@ -93,4 +93,8 @@ public class FileArchiveFile implements ArchiveFile {
         return file.exists();
     }
 
+    @Override
+    public void notifyChanges(Object type) {
+    }
+
 }

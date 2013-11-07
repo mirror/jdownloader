@@ -60,7 +60,8 @@ public class SetExtractPasswordAction<PackageType extends AbstractPackageNode<Ch
 
                 list.add(pw);
                 for (Archive archive : archives) {
-                    archive.getSettings().setPasswords(list);
+                    archive.setPasswords(list);
+
                 }
             }
 

@@ -1,7 +1,6 @@
 package org.jdownloader.extensions.extraction;
 
 import java.awt.event.ActionEvent;
-import java.io.File;
 import java.util.ArrayList;
 
 import javax.swing.ImageIcon;
@@ -72,21 +71,21 @@ public class ValidateArchiveAction<PackageType extends AbstractPackageNode<Child
                     // }
                 }
             } else if (l instanceof DownloadLink) {
-                if (((DownloadLink) l).isAvailable() || new File(((DownloadLink) l).getFileOutput()).exists()) {
-                    DownloadLinkArchiveFactory clf = new DownloadLinkArchiveFactory(((DownloadLink) l));
-                    if (extractor.isLinkSupported(clf)) {
+                // if (((DownloadLink) l).isAvailable() || new File(((DownloadLink) l).getFileOutput()).exists()) {
+                DownloadLinkArchiveFactory clf = new DownloadLinkArchiveFactory(((DownloadLink) l));
+                if (extractor.isLinkSupported(clf)) {
 
-                        for (Archive a : archives) {
-                            if (a.contains(clf)) continue nextLink;
-                        }
-
-                        Archive archive = extractor.getArchiveByFactory(clf);
-                        if (archive != null) {
-                            archives.add(archive);
-                        }
-
+                    for (Archive a : archives) {
+                        if (a.contains(clf)) continue nextLink;
                     }
+
+                    Archive archive = extractor.getArchiveByFactory(clf);
+                    if (archive != null) {
+                        archives.add(archive);
+                    }
+
                 }
+                // }
 
             }
         }

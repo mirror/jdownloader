@@ -19,6 +19,7 @@ package org.jdownloader.extensions.extraction;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 
 import org.appwork.utils.Application;
 import org.jdownloader.extensions.extraction.content.ContentView;
@@ -48,8 +49,8 @@ public class Archive {
     }
 
     /**
-     * do not use this setter. if you feel like setting a password outside the extracting internals, use getSettings().setPasswords.. this setter is used to set
-     * the CORRECT password in the password finding algorithm only
+     * do not use this setter. if you feel like setting a password outside the extracting internals, use getSettings().setPasswords.. this
+     * setter is used to set the CORRECT password in the password finding algorithm only
      * 
      * @param password
      */
@@ -181,8 +182,8 @@ public class Archive {
     }
 
     /**
-     * Returns how much bytes got extracted. this is NOT getSize() after extracting in some cases. Because files may be filtered, or not extracted due to
-     * overwrite rules. user {@link ExtractionController#getProgress()} to get the extraction progress
+     * Returns how much bytes got extracted. this is NOT getSize() after extracting in some cases. Because files may be filtered, or not
+     * extracted due to overwrite rules. user {@link ExtractionController#getProgress()} to get the extraction progress
      * 
      * @return
      */
@@ -295,6 +296,25 @@ public class Archive {
 
     public static File getArchiveLogFileById(String id) {
         return Application.getResource("logs/extracting/" + id + ".txt");
+    }
+
+    public void setPasswords(HashSet<String> list) {
+        getSettings().setPasswords(list);
+        notifyChanges(ArchiveSettings.PASSWORD);
+    }
+
+    private void notifyChanges(Object identifier) {
+        for (ArchiveFile af : getArchiveFiles()) {
+            af.notifyChanges(identifier);
+
+        }
+    }
+
+    public void setAutoExtract(BooleanStatus booleanStatus) {
+        if (getSettings().getAutoExtract() == booleanStatus) return;
+
+        getSettings().setAutoExtract(booleanStatus);
+        notifyChanges(ArchiveSettings.AUTO_EXTRACT);
     }
 
 }

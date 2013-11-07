@@ -9,6 +9,7 @@ import jd.controlling.downloadcontroller.DownloadController;
 import jd.controlling.downloadcontroller.DownloadWatchDog;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
+import jd.plugins.DownloadLinkProperty;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginProgress;
 
@@ -231,6 +232,15 @@ public class DownloadLinkArchiveFile implements ArchiveFile {
     @Override
     public boolean exists() {
         return new File(filePath).exists();
+    }
+
+    @Override
+    public void notifyChanges(Object type) {
+
+        for (DownloadLink link : getDownloadLinks()) {
+            link.firePropertyChanged(DownloadLinkProperty.Property.ARCHIVE, type);
+        }
+
     }
 
 }

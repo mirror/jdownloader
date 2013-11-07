@@ -15,7 +15,6 @@ import jd.controlling.linkcollector.LinkCollectorListener;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledPackage;
 import jd.plugins.DownloadLink;
-import jd.plugins.FilePackage;
 
 import org.appwork.utils.ImageProvider.ImageProvider;
 import org.appwork.utils.swing.EDTRunner;
@@ -113,16 +112,6 @@ public class LinkPropertiesPanel extends AbstractNodePropertiesPanel implements 
 
     public LinkPropertiesPanel() {
         super();
-        LinkCollector.getInstance().getEventsender().addListener(this, true);
-
-        CFG_GUI.LINK_PROPERTIES_PANEL_SAVE_TO_VISIBLE.getEventSender().addListener(this, true);
-        CFG_GUI.LINK_PROPERTIES_PANEL_FILENAME_VISIBLE.getEventSender().addListener(this, true);
-        CFG_GUI.LINK_PROPERTIES_PANEL_PACKAGENAME_VISIBLE.getEventSender().addListener(this, true);
-        CFG_GUI.LINK_PROPERTIES_PANEL_DOWNLOAD_FROM_VISIBLE.getEventSender().addListener(this, true);
-        CFG_GUI.LINK_PROPERTIES_PANEL_DOWNLOAD_PASSWORD_VISIBLE.getEventSender().addListener(this, true);
-        CFG_GUI.LINK_PROPERTIES_PANEL_CHECKSUM_VISIBLE.getEventSender().addListener(this, true);
-        CFG_GUI.LINK_PROPERTIES_PANEL_COMMENT_VISIBLE.getEventSender().addListener(this, true);
-        CFG_GUI.LINK_PROPERTIES_PANEL_ARCHIVEPASSWORD_VISIBLE.getEventSender().addListener(this, true);
 
     }
 
@@ -189,7 +178,7 @@ public class LinkPropertiesPanel extends AbstractNodePropertiesPanel implements 
 
     @Override
     protected List<Archive> loadArchives() {
-        return ArchiveValidator.validate(new SelectionInfo<FilePackage, DownloadLink>(currentLink, null, null, null, null, null)).getArchives();
+        return ArchiveValidator.validate(new SelectionInfo<CrawledPackage, CrawledLink>(currentLink, null, null, null, null, null)).getArchives();
 
     }
 
@@ -266,7 +255,11 @@ public class LinkPropertiesPanel extends AbstractNodePropertiesPanel implements 
         //
         if (event.getParameter() == currentPackage || event.getParameter() == currentLink) {
             refresh();
+        } else if (event.getParameter() instanceof CrawledLink && ((CrawledLink) event.getParameter()).getParentNode() == currentPackage) {
+            // example:package is selected,and we change the archive password. this fires events on the packages links
+            refresh();
         }
+        ;
     }
 
     @Override
@@ -370,5 +363,37 @@ public class LinkPropertiesPanel extends AbstractNodePropertiesPanel implements 
             }
         };
 
+    }
+
+    @Override
+    protected void onHidden() {
+        super.onHidden();
+        LinkCollector.getInstance().getEventsender().removeListener(this);
+
+        CFG_GUI.LINK_PROPERTIES_PANEL_SAVE_TO_VISIBLE.getEventSender().removeListener(this);
+        CFG_GUI.LINK_PROPERTIES_PANEL_FILENAME_VISIBLE.getEventSender().removeListener(this);
+        CFG_GUI.LINK_PROPERTIES_PANEL_PACKAGENAME_VISIBLE.getEventSender().removeListener(this);
+        CFG_GUI.LINK_PROPERTIES_PANEL_DOWNLOAD_FROM_VISIBLE.getEventSender().removeListener(this);
+        CFG_GUI.LINK_PROPERTIES_PANEL_DOWNLOAD_PASSWORD_VISIBLE.getEventSender().removeListener(this);
+        CFG_GUI.LINK_PROPERTIES_PANEL_CHECKSUM_VISIBLE.getEventSender().removeListener(this);
+        CFG_GUI.LINK_PROPERTIES_PANEL_COMMENT_VISIBLE.getEventSender().removeListener(this);
+        CFG_GUI.LINK_PROPERTIES_PANEL_ARCHIVEPASSWORD_VISIBLE.getEventSender().removeListener(this);
+    }
+
+    @Override
+    protected void onShowing() {
+        super.onShowing();
+        // remove Listeners to avoid dupes
+        onHidden();
+        LinkCollector.getInstance().getEventsender().addListener(this, true);
+
+        CFG_GUI.LINK_PROPERTIES_PANEL_SAVE_TO_VISIBLE.getEventSender().addListener(this, true);
+        CFG_GUI.LINK_PROPERTIES_PANEL_FILENAME_VISIBLE.getEventSender().addListener(this, true);
+        CFG_GUI.LINK_PROPERTIES_PANEL_PACKAGENAME_VISIBLE.getEventSender().addListener(this, true);
+        CFG_GUI.LINK_PROPERTIES_PANEL_DOWNLOAD_FROM_VISIBLE.getEventSender().addListener(this, true);
+        CFG_GUI.LINK_PROPERTIES_PANEL_DOWNLOAD_PASSWORD_VISIBLE.getEventSender().addListener(this, true);
+        CFG_GUI.LINK_PROPERTIES_PANEL_CHECKSUM_VISIBLE.getEventSender().addListener(this, true);
+        CFG_GUI.LINK_PROPERTIES_PANEL_COMMENT_VISIBLE.getEventSender().addListener(this, true);
+        CFG_GUI.LINK_PROPERTIES_PANEL_ARCHIVEPASSWORD_VISIBLE.getEventSender().addListener(this, true);
     }
 }

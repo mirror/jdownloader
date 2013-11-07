@@ -1,6 +1,7 @@
 package org.jdownloader.gui.views.downloads.properties;
 
 import java.io.File;
+import java.util.List;
 
 import javax.swing.JPopupMenu;
 
@@ -9,6 +10,8 @@ import jd.plugins.FilePackage;
 
 import org.appwork.swing.MigPanel;
 import org.jdownloader.controlling.Priority;
+import org.jdownloader.extensions.extraction.Archive;
+import org.jdownloader.extensions.extraction.contextmenu.downloadlist.ArchiveValidator;
 import org.jdownloader.gui.components.CheckboxMenuItem;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo;
@@ -24,6 +27,12 @@ public class FilePackagePropertiesPanel extends DownloadLinkPropertiesPanel {
 
     @Override
     protected void addDownloadFrom(int height, MigPanel p) {
+
+    }
+
+    @Override
+    protected List<Archive> loadArchives() {
+        return ArchiveValidator.validate(new SelectionInfo<FilePackage, DownloadLink>(currentPackage, null, null, null, null, null)).getArchives();
 
     }
 
