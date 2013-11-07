@@ -432,6 +432,20 @@ public class GrooveShark extends PluginForHost {
         if (!getFileVersion(br)) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
 
         String url = downloadLink.getDownloadURL();
+
+        try {
+            gsProxy(true);
+        } catch (Throwable e) {
+            /* does not exist in 09581 */
+        }
+        br.getPage(LISTEN + "preload.php?hash=" + Encoding.urlEncode(url.replace(LISTEN, "")) + "&" + System.currentTimeMillis());
+        try {
+            gsProxy(false);
+        } catch (Throwable e) {
+            /* does not exist in 09581 */
+        }
+        if (isGermanyBlocked()) { throw new PluginException(LinkStatus.ERROR_FATAL, BLOCKEDGERMANY); }
+
         SID = br.getCookie(LISTEN, "PHPSESSID");
         if (SID == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "PHPSESSID is null!");
         if (url.matches(LISTEN + "songXXX/\\d+")) {
