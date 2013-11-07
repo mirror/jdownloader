@@ -118,4 +118,10 @@ public interface TrayiconTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Tray Icon Manager" })
     String TrayMenuManager_getName();
 
+    @Default(lngs = { "en" }, values = { "Install latest Update" })
+    String popup_update_install();
+
+    @Default(lngs = { "en" }, values = { "There are updates waiting for installation. Click to install them now!" })
+    String popup_update_install_tt();
+
 }

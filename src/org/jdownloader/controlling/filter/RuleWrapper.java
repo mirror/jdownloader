@@ -228,6 +228,7 @@ public class RuleWrapper<T extends FilterRule> {
         CrawledLink p = link;
         if (getSourceRule() != null) {
             do {
+
                 if (getSourceRule().matches(p.getURL())) { return true; }
             } while ((p = p.getSourceLink()) != null);
             return false;
