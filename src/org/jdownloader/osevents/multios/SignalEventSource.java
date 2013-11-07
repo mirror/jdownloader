@@ -24,7 +24,7 @@ public abstract class SignalEventSource implements sun.misc.SignalHandler {
             sun.misc.Signal diagSignal = new sun.misc.Signal(signal);
             oldHandlers.put(signal, sun.misc.Signal.handle(diagSignal, this));
             logger.info("Can handle: " + signal);
-        } catch (Exception e) {
+        } catch (Throwable e) {
             logger.info("Cannot handle: " + signal);
         }
 

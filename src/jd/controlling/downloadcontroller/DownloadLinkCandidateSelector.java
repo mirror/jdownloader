@@ -96,13 +96,6 @@ public class DownloadLinkCandidateSelector {
     public boolean isDownloadLinkCandidateAllowed(DownloadLinkCandidate candidate) {
         if (candidate.isForced()) return true;
         String host = candidate.getLink().getHost();
-        CachedAccount cachedAccount = candidate.getCachedAccount();
-        if (cachedAccount != null) {
-            Account acc = cachedAccount.getAccount();
-            if (acc != null) {
-                host = acc.getHoster();
-            }
-        }
         return session.getActiveDownloadsFromHost(host) < session.getMaxConcurrentDownloadsPerHost();
 
     }

@@ -189,8 +189,6 @@ public class DownloadSession {
             if (con.isActive()) {
                 if (con.getDownloadLink().getHost().equals(host)) {
                     ret++;
-                } else if (con.getAccount() != null && con.getAccount().getHoster().equals(host)) {
-                    ret++;
                 }
             }
         }
