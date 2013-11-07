@@ -1614,21 +1614,20 @@ public class TbCm extends PluginForDecrypt {
                             }
                         } else {
                             title = "youtube.com - problems";
-                            message = "The following youtube.com problems are known at the moment:\r\n";
+                            message = "The following youtube.com problems are known:\r\n";
                             message += "-480p versions can't be downloaded\r\n";
                             message += "-1080p versions can't be downloaded\r\n";
                             message += "\r\n";
-                            message += "The problems are NOT caused by one of our recent updates - they're caused by a recent youtube update.\r\n";
-                            message += "Youtube is using a new streaming technique for the previously mentioned qualities which JD cannot handle yet.\r\n";
-                            message += "Please stop reporting these issues as we already know about them.\r\n";
+                            message += "This isn't caused by JDownloader recient plugin updates, it's caused by a recent change Youtube platform.\r\n";
+                            message += "Youtube using a new streaming technique 'DASH', which JD cannot handle yet.\r\n";
+                            message += "As we are aware of the aforementioned issues, their is no need to report it to us.\r\n";
                             message += "\r\n";
-                            message += "Their new streaming technique is called 'DASH' so if anyone knows how to deactivate it\r\n";
-                            message += "please contact us via support@jdownloader.org or through our support forum.\r\n";
+                            message += "If anyone knows how to deactivate it, please contact us via support@jdownloader.org or through our support forum.\r\n";
                             message += "\r\n";
-                            message += "Yes = open the existing thread about this bug in your browser and close this window\r\n";
-                            message += "No = Close this window\r\n";
+                            message += "Yes = Open's our support forum thread for 'Youtube Issues', and this dialog window closes\r\n";
+                            message += "No = Closes this dialog window.\r\n";
                             message += "\r\n";
-                            message += "Your JDownloader Team\r\n";
+                            message += "Your JDownloader Development Team\r\n";
                             if (CrossSystem.isOpenBrowserSupported()) {
                                 int result = JOptionPane.showConfirmDialog(jd.gui.swing.jdgui.JDGui.getInstance().getMainFrame(), message, title, JOptionPane.YES_NO_OPTION, JOptionPane.INFORMATION_MESSAGE, null);
                                 if (JOptionPane.OK_OPTION == result) CrossSystem.openURL(new URL("http://board.jdownloader.org/showthread.php?t=48894"));
