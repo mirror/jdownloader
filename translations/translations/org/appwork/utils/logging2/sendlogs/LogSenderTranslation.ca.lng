@@ -3,4 +3,4 @@ LogModel_getStringValue_between_=Entre %s1 i %s2
 LogModel_initColumns_time_=Temps
 LogTable_onContextMenu_disable_=Elimina la selecció
 LogTable_onContextMenu_enable_=Selecciona
-SendLogDialog_SendLogDialog_title_=Enviar registre d'incidències
+SendLogDialog_SendLogDialog_title_=Envia un registre d'incidències

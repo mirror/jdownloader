@@ -102,7 +102,6 @@ gui_settings_downloadpath_description=Estableix la ruta de descàrregua aquí. C
 gui_settings_extensions_show_now=Voleu mostrar %s1 ara?\nPodeu obrir-lo després anant a Menú principal -> Finestra
 gui_settings_filewriting_description=Utilitzant l'opció de comprovació de hash, JDownloader comprovarà la integritat de les descàrregues en finalitzar-les.
 gui_settings_general_title=General
-gui_settings_linkgrabber_filter_description=El filtre d'enllaços s'utilitza per filtrar enllaços. Useu-lo per ignorar enllaços, adreces, URLs\r\no fitxers a partir de les seves propietats. Afegiu excepcions per acceptar enllaços en particular.\r\nLes excepcións es veuran a la vista Personalitzada a la barra lateral del Capturador d'enllaços.
 gui_settings_linkgrabber_packagizer_description=L'empaquetador li permet autoasignar opcions de descàrrega als arxius segons les seves propietats.
 gui_settings_linkgrabber_title=Filtre del Capturador d'enllaços
 gui_settings_plugins_description=JDownloader utilitza 'Plugins' per %s1 llocs per automatitzar descàrregues que d'altra manera ens portaria molt més temps si descareguem sense JDownloader. Alguns d'aquests Plugins contenen opcions per personalitzar el seu comportament.
@@ -118,7 +117,6 @@ gui_warning_reconnectSuccess=Reconnexió completada correctament
 gui_warning_reconnect_running=executant...
 gui_warning_reconnectunknown=Reconnexió desconeguda
 image_description=Fitxers d'imatge: jpg, png, gif, ...
-jd_controlling_SingleDownloadController_askexists=El fitxer '%s1' del paquet %s2 ja existeix. Que voleu fer?
 jd_controlling_SingleDownloadController_askexists_title=L'arxiu existeix
 jd_controlling_reconnect_Reconnector_progress_failed2=La reconnexió ha fallat molts cops i ha estat desactivada. Si us plau, revisa la teva configuració!
 jd_controlling_reconnect_plugins_DummyRouterPlugin_getGUI2=<b><u>S'ha triat no reconnectar</u></b><br/><p>La Reconnexió és un mètode per evitar els temps d'espera que imposen alguns servidors als seus serveis gratuïts. No serveix de res en comptes Premium.</p><p>Més informació sobre la reconnexió <a href='http://support.jdownloader.org/index.php?_m=knowledgebase&_a=viewarticle&kbarticleid=1'>aquí</a>.</p>
