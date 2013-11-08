@@ -1,6 +1,6 @@
 package org.jdownloader.gui.views.downloads.bottombar;
 
-import java.util.ArrayList;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 import javax.swing.JPopupMenu;
 
@@ -19,7 +19,7 @@ import org.jdownloader.gui.views.downloads.action.MenuManagerAction;
 
 public abstract class AbstractBottomBarMenuManager<PackageType extends AbstractPackageNode<ChildrenType, PackageType>, ChildrenType extends AbstractPackageChildrenNode<PackageType>> extends ContextMenuManager<PackageType, ChildrenType> implements GUIListener {
 
-    private ArrayList<CustomizeableActionBar> links;
+    private CopyOnWriteArrayList<CustomizeableActionBar> links;
 
     @Override
     public void setMenuData(MenuContainerRoot root) {
@@ -35,7 +35,7 @@ public abstract class AbstractBottomBarMenuManager<PackageType extends AbstractP
 
     protected AbstractBottomBarMenuManager() {
         super();
-        links = new ArrayList<CustomizeableActionBar>();
+        links = new CopyOnWriteArrayList<CustomizeableActionBar>();
         GUIEventSender.getInstance().addListener(this, true);
 
     }
@@ -62,28 +62,19 @@ public abstract class AbstractBottomBarMenuManager<PackageType extends AbstractP
 
     @Override
     protected void updateGui() {
+        for (final CustomizeableActionBar link : links) {
+            new EDTRunner() {
 
-        synchronized (links) {
-
-            for (final CustomizeableActionBar link : links) {
-                new EDTRunner() {
-
-                    @Override
-                    protected void runInEDT() {
-                        link.updateGui();
-                    }
-                };
-            }
+                @Override
+                protected void runInEDT() {
+                    link.updateGui();
+                }
+            };
         }
-
     }
 
     public void addLink(CustomizeableActionBar bottomBar) {
-        synchronized (links) {
-            links.add(bottomBar);
-
-        }
-
+        links.add(bottomBar);
     }
 
 }

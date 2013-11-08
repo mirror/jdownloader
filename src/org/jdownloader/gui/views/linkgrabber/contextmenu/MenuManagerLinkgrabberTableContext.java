@@ -75,7 +75,7 @@ public class MenuManagerLinkgrabberTableContext extends ContextMenuManager<Crawl
     }
 
     @Override
-    public synchronized MenuContainerRoot getMenuData() {
+    public MenuContainerRoot getMenuData() {
         return super.getMenuData();
     }
 

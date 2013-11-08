@@ -8,6 +8,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map.Entry;
+import java.util.concurrent.CopyOnWriteArraySet;
 
 import javax.swing.JPopupMenu;
 import javax.swing.KeyStroke;
@@ -25,6 +26,7 @@ import org.appwork.utils.Application;
 import org.appwork.utils.IO;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging2.LogSource;
+import org.appwork.utils.swing.EDTHelper;
 import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.windowmanager.WindowManager;
 import org.appwork.utils.swing.windowmanager.WindowManager.FrameState;
@@ -128,9 +130,9 @@ public abstract class ContextMenuManager<PackageType extends AbstractPackageNode
         return logger;
     }
 
-    MenuContainerRoot          menuData;
-    ContextMenuConfigInterface config;
-    LogSource                  logger;
+    private volatile MenuContainerRoot menuData;
+    ContextMenuConfigInterface         config;
+    LogSource                          logger;
 
     public List<ActionData> list() {
 
@@ -144,8 +146,8 @@ public abstract class ContextMenuManager<PackageType extends AbstractPackageNode
         return ret;
     }
 
-    ArrayList<MenuExtenderHandler> extender = new ArrayList<MenuExtenderHandler>();
-    private Runnable               afterInitCallback;
+    CopyOnWriteArraySet<MenuExtenderHandler> extender = new CopyOnWriteArraySet<MenuExtenderHandler>();
+    private Runnable                         afterInitCallback;
 
     // public void addExtensionAction(MenuContainerRoot parent, int index, MenuExtenderHandler extender, ExtensionContextMenuItem
     // archiveSubMenu) {
@@ -159,130 +161,136 @@ public abstract class ContextMenuManager<PackageType extends AbstractPackageNode
     //
     // }
 
-    public synchronized MenuContainerRoot getMenuData() {
-        long t = System.currentTimeMillis();
-        if (menuData != null) return menuData;
-        try {
-            convertOldFiles();
-            MenuContainerRoot ret = config.getMenu();
+    public MenuContainerRoot getMenuData() {
+        return new EDTHelper<MenuContainerRoot>() {
 
-            MenuContainerRoot defaultMenu = setupDefaultStructure();
-            if (ret == null) {
-                // no customizer ever used
-                ret = defaultMenu;
+            @Override
+            public MenuContainerRoot edtRun() {
+                long t = System.currentTimeMillis();
+                if (menuData != null) return menuData;
+                try {
+                    convertOldFiles();
+                    MenuContainerRoot ret = config.getMenu();
 
-            } else {
-                ret.validate();
+                    MenuContainerRoot defaultMenu = setupDefaultStructure();
+                    if (ret == null) {
+                        // no customizer ever used
+                        ret = defaultMenu;
 
-                List<MenuItemData> allItemsInMenu = ret.list();
-                List<MenuItemData> allItemsInDefaultMenu = defaultMenu.list();
-                HashMap<String, MenuItemData> itemsIdsInMenu = new HashMap<String, MenuItemData>();
-                HashMap<String, MenuItemData> itemsInDefaultMenu = new HashMap<String, MenuItemData>();
+                    } else {
+                        ret.validate();
 
-                for (MenuItemData d : allItemsInDefaultMenu) {
+                        List<MenuItemData> allItemsInMenu = ret.list();
+                        List<MenuItemData> allItemsInDefaultMenu = defaultMenu.list();
+                        HashMap<String, MenuItemData> itemsIdsInMenu = new HashMap<String, MenuItemData>();
+                        HashMap<String, MenuItemData> itemsInDefaultMenu = new HashMap<String, MenuItemData>();
 
-                    itemsInDefaultMenu.put(d._getIdentifier(), d);
+                        for (MenuItemData d : allItemsInDefaultMenu) {
 
-                }
-                for (MenuItemData d : allItemsInMenu) {
+                            itemsInDefaultMenu.put(d._getIdentifier(), d);
 
-                    itemsIdsInMenu.put(d._getIdentifier(), d);
+                        }
+                        for (MenuItemData d : allItemsInMenu) {
 
-                }
-                ArrayList<String> unused = config.getUnusedItems();
-                if (unused == null) {
-                    unused = new ArrayList<String>();
-                }
+                            itemsIdsInMenu.put(d._getIdentifier(), d);
 
-                ArrayList<MenuItemData> newActions = new ArrayList<MenuItemData>();
-                HashSet<String> idsInUnusedList = new HashSet<String>(unused);
-
-                // find new or updated actions
-
-                for (Entry<String, MenuItemData> e : itemsInDefaultMenu.entrySet()) {
-
-                    if (!idsInUnusedList.contains(e.getKey())) {
-                        // not in unused list
-                        if (!itemsIdsInMenu.containsKey(e.getKey())) {
-                            // not in menu itself
-                            // this is a new action
-                            newActions.add(e.getValue());
+                        }
+                        ArrayList<String> unused = config.getUnusedItems();
+                        if (unused == null) {
+                            unused = new ArrayList<String>();
                         }
 
-                    }
-                }
+                        ArrayList<MenuItemData> newActions = new ArrayList<MenuItemData>();
+                        HashSet<String> idsInUnusedList = new HashSet<String>(unused);
 
-                if (newActions.size() > 0) {
+                        // find new or updated actions
 
-                    List<List<MenuItemData>> pathes = defaultMenu.listPathes();
-                    // HashSet<Class<?>> actionClassesInDefaultTree = new HashSet<Class<?>>();
-                    // // HashMap<MenuItemData,> actionClassesInDefaultTree = new HashSet<Class<?>>();
-                    //
-                    // System.out.println(pathes);
-                    // for (List<MenuItemData> path : pathes) {
-                    //
-                    // MenuItemData d = path.get(path.size() - 1);
-                    // if (d.getActionData() != null) {
-                    // if (d.getActionData().getClazzName() != null) {
-                    // try {
-                    // actionClassesInDefaultTree.add(d.getActionData()._getClazz());
-                    // } catch (Exception e1) {
-                    // logger.log(e1);
-                    // }
-                    // }
-                    // }
-                    // }
-                    HashSet<String> itemsInSubmenuItems = new HashSet<String>();
+                        for (Entry<String, MenuItemData> e : itemsInDefaultMenu.entrySet()) {
 
-                    for (MenuItemData ad : newActions) {
-                        if (ad.getItems() != null) {
-                            for (MenuItemData mid : ad.list()) {
-                                if (mid == ad) continue;
-                                // newActions.remove(mid);
-                                itemsInSubmenuItems.add(mid._getIdentifier());
+                            if (!idsInUnusedList.contains(e.getKey())) {
+                                // not in unused list
+                                if (!itemsIdsInMenu.containsKey(e.getKey())) {
+                                    // not in menu itself
+                                    // this is a new action
+                                    newActions.add(e.getValue());
+                                }
+
                             }
                         }
 
-                    }
-                    for (MenuItemData ad : newActions) {
-                        if (itemsInSubmenuItems.contains(ad._getIdentifier())) continue;
-                        for (List<MenuItemData> path : pathes) {
-                            if (StringUtils.equals(path.get(path.size() - 1)._getIdentifier(), ad._getIdentifier())) {
-                                try {
-                                    ret.add(path);
-                                } catch (Throwable e) {
-                                    logger.log(e);
+                        if (newActions.size() > 0) {
+
+                            List<List<MenuItemData>> pathes = defaultMenu.listPathes();
+                            // HashSet<Class<?>> actionClassesInDefaultTree = new HashSet<Class<?>>();
+                            // // HashMap<MenuItemData,> actionClassesInDefaultTree = new HashSet<Class<?>>();
+                            //
+                            // System.out.println(pathes);
+                            // for (List<MenuItemData> path : pathes) {
+                            //
+                            // MenuItemData d = path.get(path.size() - 1);
+                            // if (d.getActionData() != null) {
+                            // if (d.getActionData().getClazzName() != null) {
+                            // try {
+                            // actionClassesInDefaultTree.add(d.getActionData()._getClazz());
+                            // } catch (Exception e1) {
+                            // logger.log(e1);
+                            // }
+                            // }
+                            // }
+                            // }
+                            HashSet<String> itemsInSubmenuItems = new HashSet<String>();
+
+                            for (MenuItemData ad : newActions) {
+                                if (ad.getItems() != null) {
+                                    for (MenuItemData mid : ad.list()) {
+                                        if (mid == ad) continue;
+                                        // newActions.remove(mid);
+                                        itemsInSubmenuItems.add(mid._getIdentifier());
+                                    }
+                                }
+
+                            }
+                            for (MenuItemData ad : newActions) {
+                                if (itemsInSubmenuItems.contains(ad._getIdentifier())) continue;
+                                for (List<MenuItemData> path : pathes) {
+                                    if (StringUtils.equals(path.get(path.size() - 1)._getIdentifier(), ad._getIdentifier())) {
+                                        try {
+                                            ret.add(path);
+                                        } catch (Throwable e) {
+                                            logger.log(e);
+
+                                        }
+                                    }
 
                                 }
+
                             }
+                            // neworUpdate.add(new SeparatorData());
+                            // neworUpdate.add(new MenuItemData(new ActionData(0,MenuManagerAction.class)));
 
                         }
 
                     }
-                    // neworUpdate.add(new SeparatorData());
-                    // neworUpdate.add(new MenuItemData(new ActionData(0,MenuManagerAction.class)));
+                    ret.validate();
 
+                    menuData = ret;
+                    System.out.println(System.currentTimeMillis() - t);
+                    return ret;
+                } catch (Exception e) {
+                    logger.log(e);
+                    try {
+                        menuData = setupDefaultStructure();
+                        menuData.validate();
+                        return menuData;
+                    } catch (Exception e1) {
+                        logger.log(e1);
+                        menuData = new MenuContainerRoot();
+                        menuData.validate();
+                        return menuData;
+                    }
                 }
-
             }
-            ret.validate();
-
-            menuData = ret;
-            System.out.println(System.currentTimeMillis() - t);
-            return ret;
-        } catch (Exception e) {
-            logger.log(e);
-            try {
-                menuData = setupDefaultStructure();
-                menuData.validate();
-                return menuData;
-            } catch (Exception e1) {
-                logger.log(e1);
-                menuData = new MenuContainerRoot();
-                menuData.validate();
-                return menuData;
-            }
-        }
+        }.getReturnValue();
 
     }
 
@@ -303,13 +311,9 @@ public abstract class ContextMenuManager<PackageType extends AbstractPackageNode
 
     public MenuContainerRoot setupDefaultStructure() {
         MenuContainerRoot ret = createDefaultStructure();
-
-        synchronized (extender) {
-            for (MenuExtenderHandler exHandler : extender) {
-                MenuItemData r = exHandler.updateMenuModel(this, ret);
-                if (r != null) ret.addBranch(ret, r);
-            }
-
+        for (MenuExtenderHandler exHandler : extender) {
+            MenuItemData r = exHandler.updateMenuModel(this, ret);
+            if (r != null) ret.addBranch(ret, r);
         }
         return ret;
     }
@@ -372,16 +376,11 @@ public abstract class ContextMenuManager<PackageType extends AbstractPackageNode
         });
     }
 
-    public synchronized void registerExtender(MenuExtenderHandler handler) {
-        synchronized (extender) {
-            extender.remove(handler);
-            extender.add(handler);
-
+    public void registerExtender(MenuExtenderHandler handler) {
+        if (extender.add(handler)) {
             menuData = null;
-
+            delayUpdate();
         }
-        delayUpdate();
-
     }
 
     public void refresh() {
@@ -389,13 +388,10 @@ public abstract class ContextMenuManager<PackageType extends AbstractPackageNode
     }
 
     public void unregisterExtender(MenuExtenderHandler handler) {
-        synchronized (extender) {
-            extender.remove(handler);
-
+        if (extender.remove(handler)) {
             menuData = null;
-
+            delayUpdate();
         }
-        delayUpdate();
     }
 
     private void delayUpdate() {
@@ -416,9 +412,7 @@ public abstract class ContextMenuManager<PackageType extends AbstractPackageNode
     }
 
     public ArrayList<MenuExtenderHandler> listExtender() {
-        synchronized (extender) {
-            return new ArrayList<MenuExtenderHandler>(extender);
-        }
+        return new ArrayList<MenuExtenderHandler>(extender);
     }
 
     public List<MenuItemData> listSpecialItems() {
