@@ -1,7 +1,7 @@
 ChatExtensionGuiToggleAction_deselected=Otevřít chat
 ChatExtensionGuiToggleAction_deselected_tt=Otevřít záložku chatu
 ChatExtensionGuiToggleAction_selected=Zavřít chat
-ChatExtensionGuiToggleAction_selected_tt=Zavřít záložku chatu
+ChatExtensionGuiToggleAction_selected_tt=Zavřít záložku Chat
 description=Kontaktovat vývojáře a podporovatele JDownloaderu
 gui_tab_title=%s1 kanál
 jd_plugins_optional_jdchat_JDChatView_title=Chat JD podpory
