@@ -1617,6 +1617,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
             List<CrawledLink> links;
             //
             links = selection.getSelectedLinksByPackage(cp);
+            System.out.println(1);
             java.util.List<FilePackage> convertedLinks = LinkCollector.getInstance().convert(links, true);
             for (CrawledLink cl : links) {
                 autostart |= cl.isAutoStartEnabled();

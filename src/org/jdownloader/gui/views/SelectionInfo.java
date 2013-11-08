@@ -145,6 +145,15 @@ public class SelectionInfo<PackageType extends AbstractPackageNode<ChildrenType,
     }
 
     public static class AggregatedPackageList<T extends AbstractPackageNode> extends ArrayList<T> {
+        public AggregatedPackageList() {
+            super();
+        }
+
+        public AggregatedPackageList(AggregatedPackageList<T> allPackages) {
+            super();
+            addAll(allPackages);
+        }
+
         public boolean add(T e) {
             aggregate(e);
             return super.add(e);
@@ -229,7 +238,7 @@ public class SelectionInfo<PackageType extends AbstractPackageNode<ChildrenType,
     }
 
     @SuppressWarnings("unchecked")
-    public void agregate() {
+    protected void agregate() {
         java.util.List<AbstractNode> raw = new ArrayList<AbstractNode>(rawSelection);
         LinkedHashSet<AbstractNode> has = rawSelection == null ? new LinkedHashSet<AbstractNode>() : new LinkedHashSet<AbstractNode>(rawSelection);
         // LinkedHashSet<AbstractNode> notSelectedParents = new LinkedHashSet<AbstractNode>();
@@ -274,6 +283,9 @@ public class SelectionInfo<PackageType extends AbstractPackageNode<ChildrenType,
                         if (filters == null) {
 
                             children.addAll(childs);
+
+                            fullPackages.add((PackageType) node);
+
                         } else {
                             for (ChildrenType l : childs) {
 
@@ -290,15 +302,15 @@ public class SelectionInfo<PackageType extends AbstractPackageNode<ChildrenType,
                                 }
 
                             }
+                            children.addAll(unFiltered);
+                            if (unFiltered.size() == childs.size()) {
+                                fullPackages.add((PackageType) node);
 
+                            } else {
+                                incompleteSelectecPackages.put((PackageType) node, unFiltered);
+                            }
                         }
-                        children.addAll(unFiltered);
-                        if (unFiltered.size() == childs.size()) {
-                            fullPackages.add((PackageType) node);
 
-                        } else {
-                            incompleteSelectecPackages.put((PackageType) node, unFiltered);
-                        }
                     } finally {
                         ((PackageType) node).getModifyLock().readUnlock(readL);
                     }
@@ -655,4 +667,5 @@ public class SelectionInfo<PackageType extends AbstractPackageNode<ChildrenType,
         }
         return ret;
     }
+
 }

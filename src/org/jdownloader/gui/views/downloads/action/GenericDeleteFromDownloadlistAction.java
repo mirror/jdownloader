@@ -89,28 +89,30 @@ public class GenericDeleteFromDownloadlistAction extends AppAction implements Ca
                     }
 
                 }
-                ;
 
                 if (isDeleteAll() && !selection.isEmpty()) {
                     setEnabled(true);
                     return;
 
                 }
-                if (isDeleteDisabled() && selection.getChildren().getDisabledCnt() > 0) {
-                    setEnabled(true);
-                    return;
-                }
-                if (isDeleteFailed() && selection.getChildren().getFailedCnt() > 0) {
-                    setEnabled(true);
-                    return;
-                }
-                if (isDeleteFinished() && selection.getChildren().getFinishedCnt() > 0) {
-                    setEnabled(true);
-                    return;
-                }
-                if (isDeleteOffline() && selection.getChildren().getOfflineCnt() > 0) {
-                    setEnabled(true);
-                    return;
+                for (DownloadLink link : selection.getChildren()) {
+                    if (isDeleteDisabled() && !link.isEnabled()) {
+
+                        setEnabled(true);
+                        return;
+                    }
+                    if (isDeleteFailed() && FinalLinkState.CheckFailed(link.getFinalLinkState())) {
+                        setEnabled(true);
+                        return;
+                    }
+                    if (isDeleteFinished() && FinalLinkState.CheckFinished(link.getFinalLinkState())) {
+                        setEnabled(true);
+                        return;
+                    }
+                    if (isDeleteOffline() && link.getFinalLinkState() == FinalLinkState.OFFLINE) {
+                        setEnabled(true);
+                        return;
+                    }
                 }
                 setEnabled(false);
             }
@@ -121,7 +123,7 @@ public class GenericDeleteFromDownloadlistAction extends AppAction implements Ca
     @Override
     public void setEnabled(boolean newValue) {
 
-        super.setEnabled(true);
+        super.setEnabled(newValue);
     }
 
     @Override
@@ -328,14 +330,17 @@ public class GenericDeleteFromDownloadlistAction extends AppAction implements Ca
 
     @Override
     public void onDownloadControllerStructureRefresh(FilePackage pkg) {
+        delayer.resetAndStart();
     }
 
     @Override
     public void onDownloadControllerStructureRefresh() {
+        delayer.resetAndStart();
     }
 
     @Override
     public void onDownloadControllerStructureRefresh(AbstractNode node, Object param) {
+        delayer.resetAndStart();
     }
 
     @Override
@@ -344,10 +349,12 @@ public class GenericDeleteFromDownloadlistAction extends AppAction implements Ca
 
     @Override
     public void onDownloadControllerRemovedLinklist(List<DownloadLink> list) {
+        delayer.resetAndStart();
     }
 
     @Override
     public void onDownloadControllerUpdatedData(DownloadLink downloadlink, DownloadLinkProperty property) {
+        delayer.resetAndStart();
     }
 
     @Override
@@ -356,10 +363,12 @@ public class GenericDeleteFromDownloadlistAction extends AppAction implements Ca
 
     @Override
     public void onDownloadControllerUpdatedData(DownloadLink downloadlink, LinkStatusProperty property) {
+        delayer.resetAndStart();
     }
 
     @Override
     public void onDownloadControllerUpdatedData(DownloadLink downloadlink) {
+        delayer.resetAndStart();
     }
 
     @Override
