@@ -139,6 +139,7 @@ public interface GeneralSettings extends ConfigInterface {
 
     @AboutConfig
     @DefaultBooleanValue(true)
+    @DescriptionForConfigEntry("Allow cleanup of existing files")
     boolean getCleanupFileExists();
 
     void setCleanupFileExists(boolean b);
