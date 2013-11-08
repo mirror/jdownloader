@@ -138,6 +138,12 @@ public interface GeneralSettings extends ConfigInterface {
     IfFileExistsAction getIfFileExistsAction();
 
     @AboutConfig
+    @DefaultBooleanValue(true)
+    boolean getCleanupFileExists();
+
+    void setCleanupFileExists(boolean b);
+
+    @AboutConfig
     @DescriptionForConfigEntry("max buffer size for write operations in kb")
     @SpinnerValidator(min = 100, max = 50240)
     @DefaultIntValue(500)

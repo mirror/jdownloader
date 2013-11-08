@@ -603,6 +603,7 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
         FilePackage fp;
         PluginFinder pluginFinder = new PluginFinder();
         boolean cleanupStartup = allowCleanup && CleanAfterDownloadAction.CLEANUP_ONCE_AT_STARTUP.equals(org.jdownloader.settings.staticreferences.CFG_GENERAL.CFG.getCleanupAfterDownloadAction());
+        boolean cleanupFileExists = JsonConfig.create(GeneralSettings.class).getCleanupFileExists();
         while (iterator.hasNext()) {
             fp = iterator.next();
             if (fp.getChildren() != null) {
@@ -610,10 +611,16 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
                 it = fp.getChildren().iterator();
                 while (it.hasNext()) {
                     localLink = it.next();
-                    if (cleanupStartup && FinalLinkState.CheckFinished(localLink.getFinalLinkState())) {
-                        logger.info("Remove " + localLink.getName() + " because Finished and CleanupOnStartup!");
-                        removeList.add(localLink);
-                        continue;
+                    if (cleanupStartup) {
+                        if (FinalLinkState.CheckFinished(localLink.getFinalLinkState())) {
+                            logger.info("Remove " + localLink.getName() + " because Finished and CleanupOnStartup!");
+                            removeList.add(localLink);
+                            continue;
+                        } else if (cleanupFileExists && FinalLinkState.FAILED_EXISTS.equals(localLink.getFinalLinkState())) {
+                            logger.info("Remove " + localLink.getName() + " because FileExists and CleanupOnStartup!");
+                            removeList.add(localLink);
+                            continue;
+                        }
                     }
                     /*
                      * reset not if already exist, offline or finished. plugin errors will be reset here because plugin can be fixed again

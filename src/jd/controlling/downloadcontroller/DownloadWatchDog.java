@@ -124,6 +124,7 @@ import org.jdownloader.plugins.SkipReasonException;
 import org.jdownloader.plugins.ValidatableConditionalSkipReason;
 import org.jdownloader.plugins.WaitingSkipReason;
 import org.jdownloader.plugins.WaitingSkipReason.CAUSE;
+import org.jdownloader.settings.CleanAfterDownloadAction;
 import org.jdownloader.settings.GeneralSettings;
 import org.jdownloader.settings.IfFileExistsAction;
 import org.jdownloader.settings.staticreferences.CFG_GENERAL;
@@ -1876,6 +1877,10 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                                 return null;
                             }
                         });
+                    } else if (FinalLinkState.FAILED_EXISTS.equals(link.getFinalLinkState()) && JsonConfig.create(GeneralSettings.class).getCleanupFileExists() && CleanAfterDownloadAction.CLEANUP_IMMEDIATELY.equals(org.jdownloader.settings.staticreferences.CFG_GENERAL.CFG.getCleanupAfterDownloadAction())) {
+                        ArrayList<DownloadLink> list = new ArrayList<DownloadLink>();
+                        list.add(link);
+                        DownloadController.getInstance().removeChildren(list);
                     }
                     singleDownloadController.getDownloadLink().getFilePackage().getView().requestUpdate();
                     eventSender.fireEvent(new DownloadWatchdogEvent(this, DownloadWatchdogEvent.Type.LINK_STOPPED, singleDownloadController));
