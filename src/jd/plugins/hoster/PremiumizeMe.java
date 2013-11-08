@@ -164,7 +164,7 @@ public class PremiumizeMe extends PluginForHost {
         if (link.getBooleanProperty(PremiumizeMe.NOCHUNKS, false) == true) {
             maxConnections = 1;
         }
-
+        br.setCurrentURL(null);
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resume, maxConnections);
         if (dl.getConnection().isContentDisposition()) {
             /* contentdisposition, lets download it */
