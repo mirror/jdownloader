@@ -21,6 +21,7 @@ import org.jdownloader.controlling.Priority;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.downloads.columns.AvailabilityColumn;
 import org.jdownloader.plugins.ConditionalSkipReason;
+import org.jdownloader.plugins.MirrorLoading;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings;
 
 public class FilePackageView extends ChildrenView<DownloadLink> {
@@ -272,6 +273,16 @@ public class FilePackageView extends ChildrenView<DownloadLink> {
         return commonSourceUrl;
     }
 
+    private ConditionalSkipReason getConditionalSkipReason(DownloadLink link) {
+        ConditionalSkipReason conditionalSkipReason = link.getConditionalSkipReason();
+        if (conditionalSkipReason == null || conditionalSkipReason.isConditionReached()) return null;
+        if (conditionalSkipReason instanceof MirrorLoading) {
+            /* we dont have to handle this, as another link is already downloading */
+            return null;
+        }
+        return conditionalSkipReason;
+    }
+
     protected void addLinkToTemp(Temp tmp, DownloadLink link) {
         if (link.getPriorityEnum().ordinal() < tmp.priorityLowset.ordinal()) {
             tmp.priorityLowset = link.getPriorityEnum();
@@ -307,8 +318,8 @@ public class FilePackageView extends ChildrenView<DownloadLink> {
                 }
             }
         }
-        ConditionalSkipReason conditionalSkipReason = link.getConditionalSkipReason();
-        if (conditionalSkipReason != null && !conditionalSkipReason.isConditionReached()) {
+        ConditionalSkipReason conditionalSkipReason = getConditionalSkipReason(link);
+        if (conditionalSkipReason != null) {
             String id = conditionalSkipReason.getClass().getName() + link.getHost();
             if (!tmp.pluginStates.containsKey(id)) {
                 PluginState ps = PluginState.create(conditionalSkipReason.getMessage(this, link) + " (" + link.getHost() + ")", new FavitIcon(conditionalSkipReason.getIcon(this, link), link.getDomainInfo()));
