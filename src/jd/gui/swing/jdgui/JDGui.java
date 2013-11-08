@@ -1152,14 +1152,7 @@ public class JDGui implements UpdaterListener, OwnerFinder {
                     @Override
                     public Object edtRun() {
 
-                        // try {
-                        // // kill TrayIcon
-                        // tray._setEnabled(false);
-                        // } catch (StartException e) {
-                        // e.printStackTrace();
-                        // } catch (StopException e) {
-                        // e.printStackTrace();
-                        // }
+                        tray.dispose();
                         JDGui.this.mainTabbedPane.onClose();
 
                         JsonConfig.create(GraphicalUserInterfaceSettings.class).setLastFrameStatus(FrameStatus.create(mainFrame, JsonConfig.create(GraphicalUserInterfaceSettings.class).getLastFrameStatus()));
