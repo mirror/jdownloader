@@ -35,3 +35,5 @@ popup_premiumtoggle=Premium abilitato
 popup_reconnect=Riconnetti Ora
 popup_reconnecttoggle=Auto Riconnessione abilitata
 popup_update=Controllo aggiornamenti
+popup_update_install=Installa ultimo aggiornamento
+popup_update_install_tt=Sono presenti aggiornamenti pronti per l'installazione. Clicca su Installa per applicarli ora!
