@@ -11,6 +11,7 @@ public class DownloadLinkCandidate {
     private final ProxyInfo     proxy;
 
     public ProxyInfo getProxy() {
+        //
         return proxy;
     }
 
