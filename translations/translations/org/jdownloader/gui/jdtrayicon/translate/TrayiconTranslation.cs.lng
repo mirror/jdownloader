@@ -6,5 +6,6 @@ plugins_optional_trayIcon_dl_finished=Dokončeno:
 plugins_optional_trayIcon_dl_running=Spuštěno...
 plugins_optional_trayIcon_downloads=Stahování:
 plugins_optional_trayIcon_eta=Zbývá:
+plugins_optional_trayIcon_progress=Průběh
 popup_exit=Ukončit JDownloader
 popup_reconnecttoggle=Automatické znovupřipojení povoleno

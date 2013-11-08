@@ -1,3 +1,7 @@
+RestartController_confirmToExit_=Opravdu ukončit?
+RestartController_confirmToExit_msg=Opravdu chcete ukončit JDownloader?
+RestartController_confirmTorestart_msg=Opravdu chcete restartovat JDownloader?
+RestartController_confirmTorestart_title=Opravdu restartovat?
 confirmdialog_new_update_available_answer_later=Později
 confirmdialog_new_update_available_answer_later_install=Později
 confirmdialog_new_update_available_answer_now=Stáhnout nyní
@@ -5,4 +9,5 @@ confirmdialog_new_update_available_frametitle_extensions=Spravovat rozšíření
 installframe_statusmsg_extracting=Rozbalování balíčku aktualizací - čekejte...
 lit_cancel_install=Přeskočit onstalaci
 rlyexit=Opravdu chcete ukončit?
+rlyexit_title=Opravdu ukončit?
 update_dialog_later=Zeptat se mě později
