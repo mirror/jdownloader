@@ -6,7 +6,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
 
-import javax.swing.ImageIcon;
+import javax.swing.Icon;
 
 import jd.controlling.downloadcontroller.DownloadWatchDog;
 import jd.controlling.downloadcontroller.SingleDownloadController;
@@ -171,23 +171,23 @@ public class FilePackageView extends ChildrenView<DownloadLink> {
 
     public static class PluginState {
 
-        private String    description;
-        private ImageIcon icon;
+        private String description;
+        private Icon   icon;
 
         public String getDescription() {
             return description;
         }
 
-        public ImageIcon getIcon() {
+        public Icon getIcon() {
             return icon;
         }
 
-        private PluginState(String message, ImageIcon icon2) {
+        private PluginState(String message, Icon icon2) {
             this.description = message;
             this.icon = icon2;
         }
 
-        public static PluginState create(String message, ImageIcon icon) {
+        public static PluginState create(String message, Icon icon) {
             if (StringUtils.isEmpty(message) && icon == null) return null;
             return new PluginState(message, icon);
         }
@@ -299,18 +299,18 @@ public class FilePackageView extends ChildrenView<DownloadLink> {
         PluginProgress prog = link.getPluginProgress();
         if (prog != null) {
             if (!pluginStates.contains(prog.getClass())) {
-                PluginState ps = PluginState.create(prog.getMessage(FilePackageView.this), prog.getIcon());
+                PluginState ps = PluginState.create(prog.getMessage(FilePackageView.this) + " (" + link.getHost() + ")", new FavitIcon(prog.getIcon(), link.getDomainInfo()));
                 if (ps != null) {
-                    tmp.pluginStates.put(prog.getClass(), ps);
+                    tmp.pluginStates.put(prog.getClass().getName() + link.getHost(), ps);
                 }
             }
         }
         ConditionalSkipReason conditionalSkipReason = link.getConditionalSkipReason();
         if (conditionalSkipReason != null && !conditionalSkipReason.isConditionReached()) {
             if (!pluginStates.contains(conditionalSkipReason.getClass())) {
-                PluginState ps = PluginState.create(conditionalSkipReason.getMessage(this, link), conditionalSkipReason.getIcon(this, link));
+                PluginState ps = PluginState.create(conditionalSkipReason.getMessage(this, link) + " (" + link.getHost() + ")", new FavitIcon(conditionalSkipReason.getIcon(this, link), link.getDomainInfo()));
                 if (ps != null) {
-                    tmp.pluginStates.put(conditionalSkipReason.getClass(), ps);
+                    tmp.pluginStates.put(conditionalSkipReason.getClass().getName() + link.getHost(), ps);
                 }
             }
         }
