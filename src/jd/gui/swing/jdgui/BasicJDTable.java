@@ -53,63 +53,6 @@ public class BasicJDTable<T> extends ExtTable<T> implements GenericConfigEventLi
         });
 
         if (CFG_GUI.TABLE_MOUSE_OVER_HIGHLIGHT_ENABLED.isEnabled()) {
-            addMouseMotionListener(new MouseMotionListener() {
-
-                @Override
-                public void mouseMoved(MouseEvent e) {
-
-                    int newRow = getRowIndexByPoint(e.getPoint());
-                    int oldRow = -1;
-                    if (newRow != mouseOverRow) {
-                        oldRow = mouseOverRow;
-                        mouseOverRow = newRow;
-
-                        if (oldRow >= 0) repaintRow(oldRow);
-                        if (mouseOverRow >= 0) repaintRow(mouseOverRow);
-                    }
-
-                }
-
-                protected void repaintRow(int newRow) {
-                    Rectangle rect = getCellRect(newRow, 0, true);
-                    rect.width = getWidth();
-                    repaint(rect.x, rect.y, rect.width, rect.height);
-                }
-
-                @Override
-                public void mouseDragged(MouseEvent e) {
-                }
-            });
-
-            addMouseListener(new MouseAdapter() {
-
-                protected void repaintRow(int newRow) {
-                    Rectangle rect = getCellRect(newRow, 0, true);
-                    rect.width = getWidth();
-                    repaint(rect.x, rect.y, rect.width, rect.height);
-                }
-
-                @Override
-                public void mouseExited(MouseEvent e) {
-                    int newRow = -1;
-                    int oldRow = -1;
-
-                    oldRow = mouseOverRow;
-                    mouseOverRow = newRow;
-
-                    if (oldRow >= 0) repaintRow(oldRow);
-
-                }
-            });
-            // addRowHighlighter(new ExtOverlayRowHighlighter(null, Colors.getColor(f2, 5)) {
-            //
-            // @Override
-            // public boolean doHighlight(final ExtTable<?> extTable, final int row) {
-            //
-            // return mouseOverRow == row;
-            // }
-            // });
-            //
 
             initMouseOverRowHighlighter();
         }
@@ -117,14 +60,65 @@ public class BasicJDTable<T> extends ExtTable<T> implements GenericConfigEventLi
         // this.addRowHighlighter(new AlternateHighlighter(null, ColorUtils.getAlphaInstance(new JLabel().getForeground(), 6)));
 
         this.setIntercellSpacing(new Dimension(0, 0));
+        initAlternateRowHighlighter();
+
+    }
+
+    protected void initAlternateRowHighlighter() {
         if (CFG_GUI.TABLE_ALTERNATE_ROW_HIGHLIGHT_ENABLED.isEnabled()) {
 
             this.getModel().addExtComponentRowHighlighter(new AlternateHighlighter<T>((LAFOptions.getInstance().getColorForTableAlternateRowForeground()), (LAFOptions.getInstance().getColorForTableAlternateRowBackground()), null));
         }
-
     }
 
     protected void initMouseOverRowHighlighter() {
+        addMouseMotionListener(new MouseMotionListener() {
+
+            @Override
+            public void mouseMoved(MouseEvent e) {
+
+                int newRow = getRowIndexByPoint(e.getPoint());
+                int oldRow = -1;
+                if (newRow != mouseOverRow) {
+                    oldRow = mouseOverRow;
+                    mouseOverRow = newRow;
+
+                    if (oldRow >= 0) repaintRow(oldRow);
+                    if (mouseOverRow >= 0) repaintRow(mouseOverRow);
+                }
+
+            }
+
+            protected void repaintRow(int newRow) {
+                Rectangle rect = getCellRect(newRow, 0, true);
+                rect.width = getWidth();
+                repaint(rect.x, rect.y, rect.width, rect.height);
+            }
+
+            @Override
+            public void mouseDragged(MouseEvent e) {
+            }
+        });
+        addMouseListener(new MouseAdapter() {
+
+            protected void repaintRow(int newRow) {
+                Rectangle rect = getCellRect(newRow, 0, true);
+                rect.width = getWidth();
+                repaint(rect.x, rect.y, rect.width, rect.height);
+            }
+
+            @Override
+            public void mouseExited(MouseEvent e) {
+                int newRow = -1;
+                int oldRow = -1;
+
+                oldRow = mouseOverRow;
+                mouseOverRow = newRow;
+
+                if (oldRow >= 0) repaintRow(oldRow);
+
+            }
+        });
         Color f = (LAFOptions.getInstance().getColorForTableMouseOverRowForeground());
         Color b = (LAFOptions.getInstance().getColorForTableMouseOverRowBackground());
         this.getModel().addExtComponentRowHighlighter(new ExtComponentRowHighlighter<T>(f, b, null) {

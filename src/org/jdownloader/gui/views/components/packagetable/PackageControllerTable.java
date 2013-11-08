@@ -89,18 +89,13 @@ public abstract class PackageControllerTable<ParentType extends AbstractPackageN
     private AtomicLong                                            selectionVersion    = new AtomicLong(0);
     private final DelayedRunnable                                 selectionDelayedUpdate;
 
-    public PackageControllerTable(PackageControllerTableModel<ParentType, ChildrenType> pctm) {
-        super(pctm);
-        tableModel = pctm;
-        this.setShowVerticalLines(false);
-        this.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
-
-        sortNotifyColor = CFG_GUI.SORT_COLUMN_HIGHLIGHT_ENABLED.getValue() ? (LAFOptions.getInstance().getColorForTableSortedColumnView()) : null;
-        filterNotifyColor = CFG_GUI.CFG.isFilterHighlightEnabled() ? (LAFOptions.getInstance().getColorForTableFilteredView()) : null;
-        initAppActions();
+    @Override
+    protected void initAlternateRowHighlighter() {
+        super.initAlternateRowHighlighter();
         if (CFG_GUI.PACKAGES_BACKGROUND_HIGHLIGHT_ENABLED.isEnabled()) {
             Color tableFG = (LAFOptions.getInstance().getColorForTablePackageRowForeground());
             Color tableBG = (LAFOptions.getInstance().getColorForTablePackageRowBackground());
+            // tableBG = Color.red;
             this.getModel().addExtComponentRowHighlighter(new ExtComponentRowHighlighter<AbstractNode>(tableFG, tableBG, null) {
                 public int getPriority() {
                     return 0;
@@ -114,6 +109,18 @@ public abstract class PackageControllerTable<ParentType extends AbstractPackageN
 
             });
         }
+
+    }
+
+    public PackageControllerTable(PackageControllerTableModel<ParentType, ChildrenType> pctm) {
+        super(pctm);
+        tableModel = pctm;
+        this.setShowVerticalLines(false);
+        this.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
+
+        sortNotifyColor = CFG_GUI.SORT_COLUMN_HIGHLIGHT_ENABLED.getValue() ? (LAFOptions.getInstance().getColorForTableSortedColumnView()) : null;
+        filterNotifyColor = CFG_GUI.CFG.isFilterHighlightEnabled() ? (LAFOptions.getInstance().getColorForTableFilteredView()) : null;
+        initAppActions();
 
         selectionDelayedUpdate = new DelayedRunnable(500, 5000) {
 

@@ -17,7 +17,7 @@ public class AlternateHighlighter<T> extends ExtComponentRowHighlighter<T> {
     }
 
     protected Color getBackground(final Color current) {
-        return super.getBackground();
+        return super.getBackground(current);
     }
 
     @Override
