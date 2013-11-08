@@ -22,7 +22,6 @@ import java.net.SocketException;
 import java.net.SocketTimeoutException;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -109,6 +108,7 @@ import org.jdownloader.controlling.DownloadLinkWalker;
 import org.jdownloader.controlling.FileCreationEvent;
 import org.jdownloader.controlling.FileCreationListener;
 import org.jdownloader.controlling.FileCreationManager;
+import org.jdownloader.controlling.Priority;
 import org.jdownloader.controlling.download.DownloadControllerListener;
 import org.jdownloader.controlling.hosterrule.AccountUsageRule;
 import org.jdownloader.controlling.hosterrule.HosterRuleController;
@@ -602,7 +602,8 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
 
                 if (DownloadWatchDog.this.stateMachine.isStartState() || DownloadWatchDog.this.stateMachine.isFinal()) {
                     /*
-                     * no downloads are running, so we will force only the selected links to get started by setting stopmark to first forced link
+                     * no downloads are running, so we will force only the selected links to get started by setting stopmark to first forced
+                     * link
                      */
 
                     // DownloadWatchDog.this.setStopMark(linksForce.get(0));
@@ -641,24 +642,22 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
         });
     }
 
-    private List<DownloadLink> sortActivationRequests(Iterable<DownloadLink> in) {
-        HashMap<Long, java.util.List<DownloadLink>> optimizedList = new HashMap<Long, java.util.List<DownloadLink>>();
-        for (DownloadLink forcedLink : in) {
-            long prio = forcedLink.getPriority();
+    private List<DownloadLink> sortActivationRequests(Iterable<DownloadLink> links) {
+        HashMap<Priority, java.util.List<DownloadLink>> optimizedList = new HashMap<Priority, java.util.List<DownloadLink>>();
+        int count = 0;
+        for (DownloadLink link : links) {
+            count++;
+            Priority prio = link.getPriorityEnum();
             java.util.List<DownloadLink> list = optimizedList.get(prio);
             if (list == null) {
                 list = new ArrayList<DownloadLink>();
                 optimizedList.put(prio, list);
             }
-            list.add(forcedLink);
+            list.add(link);
         }
-        List<DownloadLink> newList = new ArrayList<DownloadLink>();
-        while (!optimizedList.isEmpty()) {
-            /*
-             * find next highest priority and add the links
-             */
-            Long highest = Collections.max(optimizedList.keySet());
-            java.util.List<DownloadLink> ret = optimizedList.remove(highest);
+        List<DownloadLink> newList = new ArrayList<DownloadLink>(count);
+        for (Priority prio : Priority.values()) {
+            java.util.List<DownloadLink> ret = optimizedList.remove(prio);
             if (ret != null) newList.addAll(ret);
         }
         return newList;
@@ -2579,8 +2578,8 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                                     waitedForNewActivationRequests += System.currentTimeMillis() - currentTimeStamp;
                                     if ((getSession().isActivationRequestsWaiting() == false && DownloadWatchDog.this.getActiveDownloads() == 0)) {
                                         /*
-                                         * it's important that this if statement gets checked after wait!, else we will loop through without waiting for new
-                                         * links/user interaction
+                                         * it's important that this if statement gets checked after wait!, else we will loop through without
+                                         * waiting for new links/user interaction
                                          */
                                         break;
                                     }
