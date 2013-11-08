@@ -200,7 +200,13 @@ public class DLCFactory extends D {
         java.util.List<CrawledLink> filter = new ArrayList<CrawledLink>();
         // filter
         for (CrawledLink l : links) {
-            String url = l.getDownloadLink().getBrowserUrl();
+            String url = null;
+            if (l.getDownloadLink().getLinkType() == DownloadLink.LINKTYPE_CONTAINER) {
+                if (l.getDownloadLink().gotBrowserUrl()) url = l.getDownloadLink().getBrowserUrl();
+            } else {
+                url = l.getDownloadLink().getDownloadURL();
+            }
+            if (url == null) continue;
             if (!map.containsKey(url)) {
                 filter.add(l);
             }
@@ -286,10 +292,13 @@ public class DLCFactory extends D {
                     Element url = content.createElement("url");
                     Element filename = content.createElement("filename");
                     Element size = content.createElement("size");
-                    String link = tmpLinks.get(x).getDownloadLink().getBrowserUrl();
-                    String encode = Encoding.Base64Encode(link);
+                    DownloadLink link = tmpLinks.get(x).getDownloadLink();
+                    if (link.getLinkType() == DownloadLink.LINKTYPE_CONTAINER) {
+                        url.appendChild(content.createTextNode(Encoding.Base64Encode(link.getBrowserUrl())));
+                    } else {
+                        url.appendChild(content.createTextNode(Encoding.Base64Encode(link.getDownloadURL())));
+                    }
                     // String decoded=JDUtilities.Base64Decode(encode);
-                    url.appendChild(content.createTextNode(encode));
 
                     // url.appendChild(content.createTextNode(JDUtilities.
                     // Base64Encode(tmpLinks.get(x).getDownloadURL())));

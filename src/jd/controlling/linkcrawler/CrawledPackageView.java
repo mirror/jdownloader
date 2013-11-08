@@ -56,8 +56,12 @@ public class CrawledPackageView extends ChildrenView<CrawledLink> {
             for (CrawledLink item : litems) {
 
                 DownloadLink dlLink = ((CrawledLink) item).getDownloadLink();
-                String sourceUrl = dlLink.getBrowserUrl();
-
+                String sourceUrl = null;
+                if (dlLink.getLinkType() == DownloadLink.LINKTYPE_CONTAINER) {
+                    if (dlLink.gotBrowserUrl()) sourceUrl = dlLink.getBrowserUrl();
+                } else {
+                    sourceUrl = dlLink.getBrowserUrl();
+                }
                 if (sourceUrl != null) {
                     sameSource = StringUtils.getCommonalities(sameSource, sourceUrl);
                     sameSourceFullUrl = sameSourceFullUrl && sameSource.equals(sourceUrl);
@@ -130,7 +134,12 @@ public class CrawledPackageView extends ChildrenView<CrawledLink> {
             for (CrawledLink item : updatedItems) {
 
                 DownloadLink dlLink = ((CrawledLink) item).getDownloadLink();
-                String sourceUrl = dlLink.getBrowserUrl();
+                String sourceUrl = null;
+                if (dlLink.getLinkType() == DownloadLink.LINKTYPE_CONTAINER) {
+                    if (dlLink.gotBrowserUrl()) sourceUrl = dlLink.getBrowserUrl();
+                } else {
+                    sourceUrl = dlLink.getBrowserUrl();
+                }
                 if (sourceUrl != null) {
                     sameSource = StringUtils.getCommonalities(sameSource, sourceUrl);
                     sameSourceFullUrl = sameSourceFullUrl && sameSource.equals(sourceUrl);

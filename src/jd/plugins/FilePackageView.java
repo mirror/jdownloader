@@ -13,6 +13,7 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.download.DownloadInterface;
 
 import org.appwork.storage.config.JsonConfig;
+import org.appwork.utils.StringUtils;
 import org.jdownloader.DomainInfo;
 import org.jdownloader.controlling.Priority;
 import org.jdownloader.gui.translate._GUI;
@@ -36,7 +37,7 @@ public class FilePackageView extends ChildrenView<DownloadLink> {
     private long                         updatesDone              = -1;
     private String                       availabilityColumnString = null;
     private ChildrenAvailablility        availability             = ChildrenAvailablility.UNKNOWN;
-
+    private String                       commonSourceUrl;
     private java.util.List<DownloadLink> items                    = new ArrayList<DownloadLink>();
 
     protected static final long          GUIUPDATETIMEOUT         = JsonConfig.create(GraphicalUserInterfaceSettings.class).getDownloadViewRefresh();
@@ -139,26 +140,28 @@ public class FilePackageView extends ChildrenView<DownloadLink> {
     }
 
     private class Temp {
-        private long                           newSize         = 0;
-        private long                           newDone         = 0;
-        private long                           newFinishedDate = -1;
-        private int                            newOffline      = 0;
-        private int                            newOnline       = 0;
-        private int                            newEnabledCount = 0;
-        private int                            children        = 0;
-        private long                           fpETA           = -1;
-        private long                           fpTODO          = 0;
-        private Priority                       priorityLowset  = Priority.HIGHEST;
-        private Priority                       priorityHighest = Priority.LOWER;
-        private long                           fpSPEED         = 0;
-        private boolean                        sizeKnown       = false;
-        private boolean                        fpRunning       = false;
-        private HashMap<String, Long>          downloadSizes   = new HashMap<String, Long>();
-        private HashMap<String, Long>          downloadDone    = new HashMap<String, Long>();
-        private HashSet<String>                eta             = new HashSet<String>();
-        private HashSet<DomainInfo>            newInfos        = new HashSet<DomainInfo>();
-        private boolean                        allFinished     = true;
-        private HashSet<ConditionalSkipReason> skipReasons     = new HashSet<ConditionalSkipReason>();
+        private long                           newSize           = 0;
+        private long                           newDone           = 0;
+        private long                           newFinishedDate   = -1;
+        private int                            newOffline        = 0;
+        private int                            newOnline         = 0;
+        private int                            newEnabledCount   = 0;
+        private int                            children          = 0;
+        private long                           fpETA             = -1;
+        private long                           fpTODO            = 0;
+        private Priority                       priorityLowset    = Priority.HIGHEST;
+        private Priority                       priorityHighest   = Priority.LOWER;
+        private long                           fpSPEED           = 0;
+        private boolean                        sizeKnown         = false;
+        private boolean                        fpRunning         = false;
+        private HashMap<String, Long>          downloadSizes     = new HashMap<String, Long>();
+        private HashMap<String, Long>          downloadDone      = new HashMap<String, Long>();
+        private HashSet<String>                eta               = new HashSet<String>();
+        private HashSet<DomainInfo>            newInfos          = new HashSet<DomainInfo>();
+        private boolean                        allFinished       = true;
+        private HashSet<ConditionalSkipReason> skipReasons       = new HashSet<ConditionalSkipReason>();
+        private String                         sameSource        = null;
+        private boolean                        sameSourceFullUrl = true;
     }
 
     @Override
@@ -198,6 +201,10 @@ public class FilePackageView extends ChildrenView<DownloadLink> {
     protected void writeTempToFields(Temp tmp) {
         size = tmp.newSize;
         done = tmp.newDone;
+        this.commonSourceUrl = tmp.sameSource;
+        if (!tmp.sameSourceFullUrl) {
+            commonSourceUrl += "[...]";
+        }
         this.enabledCount = tmp.newEnabledCount;
         if (tmp.allFinished) {
             /* all links have reached finished state */
@@ -229,6 +236,17 @@ public class FilePackageView extends ChildrenView<DownloadLink> {
     }
 
     protected void addLinkToTemp(Temp tmp, DownloadLink link) {
+        String sourceUrl = null;
+        if (link.getLinkType() == DownloadLink.LINKTYPE_CONTAINER) {
+            if (link.gotBrowserUrl()) sourceUrl = link.getBrowserUrl();
+        } else {
+            sourceUrl = link.getBrowserUrl();
+        }
+        if (sourceUrl != null) {
+            tmp.sameSource = StringUtils.getCommonalities(tmp.sameSource, sourceUrl);
+            tmp.sameSourceFullUrl = tmp.sameSourceFullUrl && tmp.sameSource.equals(sourceUrl);
+        }
+
         if (link.getPriorityEnum().ordinal() < tmp.priorityLowset.ordinal()) {
             tmp.priorityLowset = link.getPriorityEnum();
         }
@@ -325,6 +343,10 @@ public class FilePackageView extends ChildrenView<DownloadLink> {
              */
             tmp.newFinishedDate = link.getFinishedDate();
         }
+    }
+
+    public String getCommonSourceUrl() {
+        return commonSourceUrl;
     }
 
     @Override

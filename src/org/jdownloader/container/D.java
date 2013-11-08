@@ -677,13 +677,12 @@ public class D extends PluginsC {
         NodeList ps = node.getChildNodes();
         String pns = "";
         String cs = "";
-        PackageInfo dpi = new PackageInfo();
         String cmts = "";
         for (int pgs = 0; pgs < ps.getLength(); pgs++) {
             if (!ps.item(pgs).getNodeName().equals("package")) {
                 continue;
             }
-
+            PackageInfo dpi = new PackageInfo();
             String pn = Encoding.Base64Decode(ps.item(pgs).getAttributes().getNamedItem("name").getNodeValue());
             String oos = ps.item(pgs).getAttributes().getNamedItem("passwords") == null ? null : Encoding.Base64Decode(ps.item(pgs).getAttributes().getNamedItem("passwords").getNodeValue());
             String cs2 = ps.item(pgs).getAttributes().getNamedItem("comment") == null ? null : Encoding.Base64Decode(ps.item(pgs).getAttributes().getNamedItem("comment").getNodeValue());
@@ -937,7 +936,13 @@ public class D extends PluginsC {
         java.util.List<DownloadLink> filter = new ArrayList<DownloadLink>();
         // filter
         for (DownloadLink l : links) {
-            String url = l.getBrowserUrl();
+            String url = null;
+            if (l.getLinkType() == DownloadLink.LINKTYPE_CONTAINER) {
+                if (l.gotBrowserUrl()) url = l.getBrowserUrl();
+            } else {
+                url = l.getDownloadURL();
+            }
+            if (url == null) continue;
             if (!map.containsKey(url)) {
                 filter.add(l);
             }
@@ -1015,10 +1020,12 @@ public class D extends PluginsC {
                     Element url = content.createElement("url");
                     Element filename = content.createElement("filename");
                     Element size = content.createElement("size");
-                    String link = tmpLinks.get(x).getBrowserUrl();
-                    String encode = Encoding.Base64Encode(link);
-                    // String decoded=JDUtilities.Base64Decode(encode);
-                    url.appendChild(content.createTextNode(encode));
+                    DownloadLink link = tmpLinks.get(x);
+                    if (link.getLinkType() == DownloadLink.LINKTYPE_CONTAINER) {
+                        url.appendChild(content.createTextNode(Encoding.Base64Encode(link.getBrowserUrl())));
+                    } else {
+                        url.appendChild(content.createTextNode(Encoding.Base64Encode(link.getDownloadURL())));
+                    }
 
                     // url.appendChild(content.createTextNode(JDUtilities.
                     // Base64Encode(tmpLinks.get(x).getDownloadURL())));
