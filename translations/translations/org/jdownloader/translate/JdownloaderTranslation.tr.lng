@@ -112,7 +112,6 @@ gui_settings_downloadpath_description=Varsayılan indirme dizinini buradan ayarl
 gui_settings_extensions_show_now=%s1 modülü hemen gösterilsin mi?\nDaha sonra Ana menü->Araçlar->Pencereler'den açabilirsiniz
 gui_settings_filewriting_description=JDownloader yapısallık kontrolü seçeneğini kullanarak indirmeden sonra doğruluk için indirmelerinizi doğrulayacak.
 gui_settings_general_title=Genel
-gui_settings_linkgrabber_filter_description=Bağlantı süzgeci bağlantıları süzmek için kullanılır. Özelliklerine dayanarak bağlantıları, adresleri, url'leri veya dosyaları yoksaymak için kullanın. Özel bağlantıları kabul etmek için istisnaları kullanın. İstisnalar, Bağlantı Yakalayıcı Kenar Çubuğunda Özel Görünüm olarak mevcut olacaktır.
 gui_settings_linkgrabber_packagizer_description=Paketleyici kuralları, dosyaların özelliklerine dayanarak İndirme Ayarlarını otomatik ayarlamanıza izin verir.
 gui_settings_linkgrabber_title=Bağlantı Yakalayıcı Süzgeci
 gui_settings_plugins_description=JDownloader, onsuz çok fazla zaman alacak olan indirmeleri otomatikleştirerek %s1 web sitesi için 'Eklentiler' kullanır. Bu Eklentilerin bazıları davranışlarını özelleştirmek için ayarlara sahiptir.
@@ -128,7 +127,6 @@ gui_warning_reconnectSuccess=Yeniden bağlanma başarılı
 gui_warning_reconnect_running=yürütülüyor...
 gui_warning_reconnectunknown=Yeniden bağlanma bilinmiyor
 image_description=Resim Dosyaları: jpg, png, gif,...
-jd_controlling_SingleDownloadController_askexists=%s2 paketindeki '%s1' dosyası zaten mevcut. Ne yapmak istiyorsunuz?
 jd_controlling_SingleDownloadController_askexists_title=Dosya mevcut
 jd_controlling_reconnect_Reconnector_progress_failed2=Yeniden bağlanma çok sık başarısız oldu! Otomatik yeniden bağlanma etkisizleştirildi! Lütfen yeniden bağlanma Ayarlarınızı kontrol edin!
 jd_controlling_reconnect_plugins_DummyRouterPlugin_getGUI2=<b><u>Yeniden Bağlanma Kapalı seçildi</u></b><br/><p>Yeniden bağlanma ücretsiz kullanıcıları uzun bekleyişlere zorlayan barındırıcıları atlatmak için gelişmiş bir yaklaşımdır. <br>Premium hesap kullanırken faydalı değildir.</p><p>Yeniden Bağlanma hakkında <a href='http://support.jdownloader.org/index.php?_m=knowledgebase&_a=viewarticle&kbarticleid=1'>buradan</a> daha fazlasını okuyun</p>

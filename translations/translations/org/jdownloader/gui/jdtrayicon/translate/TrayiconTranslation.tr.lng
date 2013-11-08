@@ -2,7 +2,6 @@ JDGui_windowClosing_try_answer_totaskbar=Görev Çubuğuna Küçült
 JDGui_windowClosing_try_answer_tray=Tepsiye Gizle
 JDGui_windowClosing_try_asnwer_close=JDownloader'dan Çık
 JDGui_windowClosing_try_msg_2=Lütfen birini seçin \n   - JDownloader'dan Çık (Tüm yürütülen işlemleri iptal eder)\n   - Görev Çubuğuna Küçült (İndirmeler devam edecek)\n   - Tepsiye Gizle (İndirmeler arka planda devam edecek)
-JDGui_windowClosing_try_title_=Tepsiye Kapat
 OnCloseAction_exit=Uygulamadan Çık
 OnCloseAction_totaskbar=Görev Çubuğuna Küçült
 OnCloseAction_totray=Tepsiye Kapat
