@@ -1,4 +1,4 @@
 interaction_externreconnect_command=Příkaz (použijte úplnou cestu)
 interaction_externreconnect_dummybat=Použít speciální spouštěč pro Windows
 interaction_externreconnect_parameter=Parametr (jeden na řádek)
-jd_controlling_reconnect_plugins_extern_ExternReconnectPlugin_getName=Reconnect pomocí externího nástroje
+jd_controlling_reconnect_plugins_extern_ExternReconnectPlugin_getName=Znovupřipojení pomocí externího nástroje

@@ -1,1 +1,7 @@
+JDGui_windowClosing_try_asnwer_close=Ukončit JDownloader
+OnCloseAction_exit=Ukončit aplikaci
+OnMinimizeAction_ask=Zeptat se mě
+plugins_optional_JDLightTray_startMinimized=Spustit minimalizovaně
 plugins_optional_trayIcon_dl_finished=Dokončeno:
+popup_exit=Ukončit JDownloader
+popup_reconnecttoggle=Automatické znovupřipojení povoleno

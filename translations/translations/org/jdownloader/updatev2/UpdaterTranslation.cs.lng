@@ -1,1 +1,6 @@
+confirmdialog_new_update_available_answer_now=Stáhnout nyní
+confirmdialog_new_update_available_frametitle_extensions=Spravovat rozšíření
+installframe_statusmsg_extracting=Rozbalování balíčku aktualizací - čekejte...
 lit_cancel_install=Přeskočit onstalaci
+rlyexit=Opravdu chcete ukončit?
+update_dialog_later=Zeptat se mě později
