@@ -73,7 +73,7 @@ public class PornerBrosCom extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML("(<title>404 \\- Not Found</title>|This Video Was Not Found On Our Servers</div>|This Video Has Been Removed<)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("(<title>404 \\- Not Found</title>|This Video Was Not Found On Our Servers</div>|This Video Has Been Removed<|>Page not found<)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (br.getURL().equals("http://www.pornerbros.com/")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("<title>(.*?)(\\.)?</title>").getMatch(0);
         if (filename == null) filename = br.getRegex("<h1>(.*?)(\\.)?</h1>").getMatch(0);

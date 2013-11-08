@@ -231,7 +231,9 @@ public class SaveTv extends PluginForHost {
                 if (seriestitle == null || episodename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 seriestitle = Encoding.htmlDecode(seriestitle.trim());
                 episodename = Encoding.htmlDecode(episodename.trim());
-                if (episodename.matches(SERIESINFORMATION)) episodename = "-";
+                if (episodename.matches(SERIESINFORMATION))
+                    episodename = "-";
+                else if (episodename.contains("Für diese Sendung stehen leider keine weiteren Informationen zur Verfügung")) episodename = "-";
                 originalfilename = seriestitle + " - " + episodename;
                 String seriesdata = seriesInfo.getMatch(3);
                 if (seriesdata != null) {
@@ -701,9 +703,25 @@ public class SaveTv extends PluginForHost {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), SaveTv.PREFERH264MOBILE, JDL.L("plugins.hoster.SaveTv.PreferH264MobileVideos", PREFERH264MOBILETEXT)).setDefaultValue(false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "Dateiname Einstellungen:"));
-        final ConfigEntry origName = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), SaveTv.USEORIGINALFILENAME, JDL.L("plugins.hoster.SaveTv.UseOriginalFilename", "Original Dateinamen verwenden (erst beim Download sichtbar)")).setDefaultValue(false).setEnabledCondidtion(useMobileAPI, false);
+        final ConfigEntry origName = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), SaveTv.USEORIGINALFILENAME, JDL.L("plugins.hoster.SaveTv.UseOriginalFilename", "Original (Server) Dateinamen verwenden [erst beim Download sichtbar]")).setDefaultValue(false).setEnabledCondidtion(useMobileAPI, false);
         getConfig().addEntry(origName);
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), CUSTOM_DATE, JDL.L("plugins.hoster.savetv.customdate", "Setze das Datumsformat:\r\nWichtige Information dazu:\r\nDas Datum erscheint im angegebenen Format im Dateinamen, allerdings nur,\r\nwenn man das *datum* Tag auch verwendet (siehe Benutzerdefinierte Dateinamen für Filme und Serien unten)")).setDefaultValue("dd.MM.yyyy").setEnabledCondidtion(origName, false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
+        final StringBuilder sbinfo = new StringBuilder();
+        sbinfo.append("Erklärung zur Nutzung eigener Dateinamen:\r\n");
+        sbinfo.append("Eigene Dateinamen lassen sich unten über ein Tag-System (siehe weiter unten) nutzen.\r\n");
+        sbinfo.append("Das bedeutet, dass man die Struktur seiner gewünschten Dateinamen definieren kann.\r\n");
+        sbinfo.append("Dabei hat man Tags wie z.B. *telecastid*, die dann durch Daten ersetzt werden.\r\n");
+        sbinfo.append("Wichtig dabei ist, dass Tags immer mit einem Stern starten und enden.\r\n");
+        sbinfo.append("Man darf nichts zwischen ein Tag schreiben z.B. *-telecastid-*, da das\r\n");
+        sbinfo.append("zu unschönen Dateinamen führt und das Tag nicht die Daten ersetzt werden kann.\r\n");
+        sbinfo.append("Wenn man die Tags trennen will muss man die anderen Zeichen zwischen Tags\r\n");
+        sbinfo.append("z.B. '-*telecastid*-*endung*' -> Der Dateiname würde dann in etwa so aussehen: '-7573789-.mp4' (ohne die '')\r\n");
+        sbinfo.append("WICHTIG: Tags, zu denen die Daten fehlen , werden durch '-' (Bindestrich) ersetzt!\r\n");
+        sbinfo.append("Fehlen z.B. die Daten zu *genre*, steht statt statt dem Genre dann ein Bindestrich ('-') an dieser Stelle im Dateinamen.");
+        sbinfo.append("Bedenke, dass es für Filme und Serien unterschiedliche Tags gibt.\r\n");
+        sbinfo.append("Kaputtmachen kannst du damit prinzipiell nichts also probiere es aus ;)");
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, sbinfo.toString()).setEnabledCondidtion(origName, false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), CUSTOM_FILENAME2, JDL.L("plugins.hoster.savetv.customfilenamemovies", "Eigener Dateiname für Filme:")).setDefaultValue(defaultCustomFilename).setEnabledCondidtion(origName, false));
         final StringBuilder sb = new StringBuilder();
@@ -792,7 +810,9 @@ public class SaveTv extends PluginForHost {
                         message += "Dies steht im Normalfall bei den entsprechenden Einstellungen dabei und ist kein Bug.\r\n";
                         message += "Sollte es dennoch vorkommen, dass eigene Dateinamen bei bestimmten Links nicht funktionieren,\r\nkönnte es sich um einen Bug handeln.\r\n";
                         message += "\r\n";
-                        message += "Falls du Bugs findest oder fragen hast, melde dich gerne jederzeit bei uns: board.jdownloader.org.\r\n";
+                        message += "Falls du Fehler findest oder Fragen hast, melde dich gerne jederzeit bei uns: board.jdownloader.org.\r\n";
+                        message += "\r\n";
+                        message += "Dieses Fenster wird nur einmal angezeigt.\r\nAlle wichtigen Informationen stehen auch in den save.tv Plugin Einstellungen.\r\n";
                         message += "\r\n";
                         message += "- Das JDownloader Team wünscht weiterhin viel Spaß mit JDownloader und save.tv! -";
                         JOptionPane.showConfirmDialog(jd.gui.swing.jdgui.JDGui.getInstance().getMainFrame(), message, title, JOptionPane.PLAIN_MESSAGE, JOptionPane.INFORMATION_MESSAGE, null);
@@ -836,7 +856,7 @@ public class SaveTv extends PluginForHost {
                     try {
                         String message = "";
                         String title = null;
-                        title = "Save.tv - neue Features";
+                        title = "Save.tv - neue Features 2";
                         message += "Hallo lieber save.tv Nutzer.\r\n";
                         message += "Ab sofort gibt es folgende neue Features für das save.tv Plugin:\r\n";
                         message += "- JDownloader sollte ab sofort das komplette Save.tv Archiv (bei aktivierter Einstellung) korrekt erkennen\r\n";
@@ -856,7 +876,9 @@ public class SaveTv extends PluginForHost {
                         message += "Dies steht im Normalfall bei den entsprechenden Einstellungen dabei und ist kein Bug.\r\n";
                         message += "Sollte es dennoch vorkommen, dass eigene Dateinamen bei bestimmten Links nicht funktionieren,\r\nkönnte es sich um einen Bug handeln.\r\n";
                         message += "\r\n";
-                        message += "Falls du Bugs findest oder fragen hast, melde dich gerne jederzeit bei uns: board.jdownloader.org.\r\n";
+                        message += "Falls du Fehler findest oder Fragen hast, melde dich gerne jederzeit bei uns: board.jdownloader.org.\r\n";
+                        message += "\r\n";
+                        message += "Dieses Fenster wird nur einmal angezeigt.\r\nAlle wichtigen Informationen stehen auch in den save.tv Plugin Einstellungen.\r\n";
                         message += "\r\n";
                         message += "- Das JDownloader Team wünscht weiterhin viel Spaß mit JDownloader und save.tv! -";
                         JOptionPane.showConfirmDialog(jd.gui.swing.jdgui.JDGui.getInstance().getMainFrame(), message, title, JOptionPane.PLAIN_MESSAGE, JOptionPane.INFORMATION_MESSAGE, null);
@@ -914,7 +936,9 @@ public class SaveTv extends PluginForHost {
                         message += "Links dieses Formats in JDownloader einfügen und herunterladen:\r\n";
                         message += "save.tv/STV/M/obj/user/usShowVideoArchiveDetail.cfm?TelecastID=XXXXXXX\r\n";
                         message += "\r\n";
-                        message += "Falls du Bugs findest oder fragen hast, melde dich gerne jederzeit bei uns: board.jdownloader.org.\r\n";
+                        message += "Falls du Fehler findest oder Fragen hast, melde dich gerne jederzeit bei uns: board.jdownloader.org.\r\n";
+                        message += "\r\n";
+                        message += "Dieses Fenster wird nur einmal angezeigt.\r\nAlle wichtigen Informationen stehen auch in den save.tv Plugin Einstellungen.\r\n";
                         message += "\r\n";
                         message += "- Das JDownloader Team wünscht weiterhin viel Spaß mit JDownloader und save.tv! -";
                         JOptionPane.showConfirmDialog(jd.gui.swing.jdgui.JDGui.getInstance().getMainFrame(), message, title, JOptionPane.PLAIN_MESSAGE, JOptionPane.INFORMATION_MESSAGE, null);
