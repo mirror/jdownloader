@@ -142,7 +142,7 @@ public class CustomizeableActionBar extends MigPanel implements PropertyChangeLi
 
     private void addAction(MenuItemData menudata) throws ClassNotFoundException, NoSuchMethodException, SecurityException, InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException, ExtensionNotLoadedException {
         AppAction action = menudata.createAction(null);
-        action.setEnabled(true);
+        // action.setEnabled(true);
         action.removePropertyChangeListener(this);
         action.addPropertyChangeListener(this);
         if (!action.isVisible()) return;
@@ -157,6 +157,7 @@ public class CustomizeableActionBar extends MigPanel implements PropertyChangeLi
 
             bt = new ExtButton(action);
         }
+        bt.setEnabled(action.isEnabled());
         if (menudata instanceof SelfLayoutInterface) {
             add(bt, ((SelfLayoutInterface) menudata).getConstraints());
         } else {

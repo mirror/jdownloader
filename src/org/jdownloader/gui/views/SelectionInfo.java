@@ -4,6 +4,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -11,12 +12,14 @@ import java.util.List;
 import jd.controlling.packagecontroller.AbstractNode;
 import jd.controlling.packagecontroller.AbstractPackageChildrenNode;
 import jd.controlling.packagecontroller.AbstractPackageNode;
+import jd.plugins.DownloadLink;
 
 import org.appwork.swing.exttable.ExtColumn;
 import org.appwork.utils.BinaryLogic;
 import org.jdownloader.gui.views.components.packagetable.PackageControllerTable;
 import org.jdownloader.gui.views.components.packagetable.PackageControllerTableModel;
 import org.jdownloader.gui.views.components.packagetable.PackageControllerTableModelFilter;
+import org.jdownloader.plugins.FinalLinkState;
 
 public class SelectionInfo<PackageType extends AbstractPackageNode<ChildrenType, PackageType>, ChildrenType extends AbstractPackageChildrenNode<PackageType>> {
 
@@ -26,18 +29,18 @@ public class SelectionInfo<PackageType extends AbstractPackageNode<ChildrenType,
         return ret;
     }
 
-    private List<PackageType>                                                  allPackages;
+    private AggregatedPackageList<PackageType>                                 allPackages;
     private AbstractNode                                                       contextObject;
-    private List<PackageType>                                                  fullPackages;
-    private List<PackageType>                                                  incompletePackages;
-    private HashMap<PackageType, List<ChildrenType>>                           incompleteSelectecPackages;
+    private AggregatedPackageList<PackageType>                                 fullPackages;
+    private AggregatedPackageList<PackageType>                                 incompletePackages;
+    private HashMap<PackageType, AggregatedLinkList<ChildrenType>>             incompleteSelectecPackages;
     private KeyEvent                                                           keyEvent;
     private MouseEvent                                                         mouseEvent;
     private LinkedHashSet<AbstractNode>                                        rawMap;
 
     private List<? extends AbstractNode>                                       rawSelection;
 
-    private List<ChildrenType>                                                 children;
+    private AggregatedLinkList<ChildrenType>                                   children;
 
     private PackageControllerTable<PackageType, ChildrenType>                  table;
     private ExtColumn<AbstractNode>                                            contextColumn;
@@ -71,6 +74,94 @@ public class SelectionInfo<PackageType extends AbstractPackageNode<ChildrenType,
     //
     // this(contextObject, selection, event, kEvent, null);
     // }
+    public static class AggregatedLinkList<T extends AbstractNode> extends ArrayList<T> {
+        private int enabledCnt;
+
+        public int getEnabledCnt() {
+            return enabledCnt;
+        }
+
+        public int getFailedCnt() {
+            return failedCnt;
+        }
+
+        public int getFinishedCnt() {
+            return finishedCnt;
+        }
+
+        public int getOfflineCnt() {
+            return offlineCnt;
+        }
+
+        private int failedCnt;
+        private int finishedCnt;
+        private int offlineCnt;
+
+        public AggregatedLinkList() {
+            super();
+            enabledCnt = 0;
+            failedCnt = 0;
+            finishedCnt = 0;
+            offlineCnt = 0;
+        }
+
+        public AggregatedLinkList(List<T> children) {
+            super();
+            addAll(children);
+        }
+
+        public boolean add(T e) {
+            aggregate(e);
+
+            return super.add(e);
+
+        };
+
+        private void aggregate(T e) {
+            if (e.isEnabled()) enabledCnt++;
+            if (e instanceof DownloadLink) {
+                DownloadLink link = (DownloadLink) e;
+                if (FinalLinkState.CheckFailed(link.getFinalLinkState())) failedCnt++;
+                if (FinalLinkState.CheckFinished(link.getFinalLinkState())) finishedCnt++;
+
+                if (link.getFinalLinkState() == FinalLinkState.OFFLINE) offlineCnt++;
+            }
+
+        }
+
+        @Override
+        public boolean addAll(Collection<? extends T> c) {
+            for (T t : c) {
+                aggregate(t);
+            }
+
+            return super.addAll(c);
+        }
+
+        public int getDisabledCnt() {
+            return size() - enabledCnt;
+        }
+
+    }
+
+    public static class AggregatedPackageList<T extends AbstractPackageNode> extends ArrayList<T> {
+        public boolean add(T e) {
+            aggregate(e);
+            return super.add(e);
+        };
+
+        private void aggregate(T e) {
+        }
+
+        @Override
+        public boolean addAll(Collection<? extends T> c) {
+            for (T t : c) {
+                aggregate(t);
+            }
+
+            return super.addAll(c);
+        }
+    }
 
     public SelectionInfo(AbstractNode contextObject, List<? extends AbstractNode> selection, MouseEvent event, KeyEvent kEvent, ActionEvent actionEvent, PackageControllerTable<PackageType, ChildrenType> table) {
         this.contextObject = contextObject;
@@ -84,11 +175,11 @@ public class SelectionInfo<PackageType extends AbstractPackageNode<ChildrenType,
             rawSelection = selection;
         }
 
-        children = new ArrayList<ChildrenType>();
-        allPackages = new ArrayList<PackageType>();
-        fullPackages = new ArrayList<PackageType>();
-        incompletePackages = new ArrayList<PackageType>();
-        incompleteSelectecPackages = new HashMap<PackageType, List<ChildrenType>>();
+        children = new AggregatedLinkList<ChildrenType>();
+        allPackages = new AggregatedPackageList<PackageType>();
+        fullPackages = new AggregatedPackageList<PackageType>();
+        incompletePackages = new AggregatedPackageList<PackageType>();
+        incompleteSelectecPackages = new HashMap<PackageType, AggregatedLinkList<ChildrenType>>();
 
         rawMap = new LinkedHashSet<AbstractNode>();
 
@@ -158,15 +249,12 @@ public class SelectionInfo<PackageType extends AbstractPackageNode<ChildrenType,
             }
         }
 
-        LinkedHashSet<ChildrenType> ret = new LinkedHashSet<ChildrenType>();
-        LinkedHashSet<PackageType> allPkg = new LinkedHashSet<PackageType>();
-        LinkedHashSet<PackageType> fullPkg = new LinkedHashSet<PackageType>();
-        LinkedHashSet<PackageType> incPkg = new LinkedHashSet<PackageType>();
         for (AbstractNode node : raw) {
             if (node == null) continue;
             if (node instanceof AbstractPackageChildrenNode) {
-                ret.add((ChildrenType) node);
-                allPkg.add(((ChildrenType) node).getParentNode());
+                children.add((ChildrenType) node);
+
+                allPackages.add(((ChildrenType) node).getParentNode());
             } else {
 
                 // if we selected a package, and ALL it's links, we want all
@@ -176,16 +264,16 @@ public class SelectionInfo<PackageType extends AbstractPackageNode<ChildrenType,
                 // if we selected a package, and it is NOT expanded, we want
                 // all
                 // links
-                allPkg.add((PackageType) node);
+                allPackages.add((PackageType) node);
                 if (!((PackageType) node).isExpanded()) {
                     // add allTODO
                     boolean readL = ((PackageType) node).getModifyLock().readLock();
                     try {
                         List<ChildrenType> childs = ((PackageType) node).getChildren();
-                        java.util.List<ChildrenType> unFiltered = new ArrayList<ChildrenType>();
+                        AggregatedLinkList<ChildrenType> unFiltered = new AggregatedLinkList<ChildrenType>();
                         if (filters == null) {
 
-                            ret.addAll(childs);
+                            children.addAll(childs);
                         } else {
                             for (ChildrenType l : childs) {
 
@@ -204,12 +292,12 @@ public class SelectionInfo<PackageType extends AbstractPackageNode<ChildrenType,
                             }
 
                         }
-                        ret.addAll(unFiltered);
+                        children.addAll(unFiltered);
                         if (unFiltered.size() == childs.size()) {
-                            fullPkg.add((PackageType) node);
+                            fullPackages.add((PackageType) node);
 
                         } else {
-                            incompleteSelectecPackages.put((PackageType) node, new ArrayList<ChildrenType>(unFiltered));
+                            incompleteSelectecPackages.put((PackageType) node, unFiltered);
                         }
                     } finally {
                         ((PackageType) node).getModifyLock().readUnlock(readL);
@@ -221,8 +309,8 @@ public class SelectionInfo<PackageType extends AbstractPackageNode<ChildrenType,
                         List<ChildrenType> childs = ((PackageType) node).getChildren();
                         boolean containsNone = true;
                         boolean containsAll = true;
-                        java.util.List<ChildrenType> selected = new ArrayList<ChildrenType>();
-                        java.util.List<ChildrenType> unFiltered = new ArrayList<ChildrenType>();
+                        AggregatedLinkList<ChildrenType> selected = new AggregatedLinkList<ChildrenType>();
+                        AggregatedLinkList<ChildrenType> unFiltered = new AggregatedLinkList<ChildrenType>();
                         for (ChildrenType l : childs) {
                             if (has.contains(l)) {
                                 selected.add(l);
@@ -247,22 +335,22 @@ public class SelectionInfo<PackageType extends AbstractPackageNode<ChildrenType,
                             // this is a special case. if the user selected only the package, we cannot simply add all children. We need to
                             // check if he works on a filtered view.
                             if (filters == null) {
-                                ret.addAll(childs);
-                                fullPkg.add((PackageType) node);
+                                children.addAll(childs);
+                                fullPackages.add((PackageType) node);
                             } else {
-                                ret.addAll(unFiltered);
+                                children.addAll(unFiltered);
                                 if (unFiltered.size() == childs.size()) {
-                                    fullPkg.add((PackageType) node);
+                                    fullPackages.add((PackageType) node);
                                 } else {
                                     incompleteSelectecPackages.put((PackageType) node, unFiltered);
                                 }
                             }
                         } else if (containsAll) {
 
-                            ret.addAll(childs);
-                            fullPkg.add((PackageType) node);
+                            children.addAll(childs);
+                            fullPackages.add((PackageType) node);
                         } else {
-                            if (incPkg.add((PackageType) node)) {
+                            if (incompletePackages.add((PackageType) node)) {
                                 incompleteSelectecPackages.put((PackageType) node, selected);
                             }
 
@@ -273,11 +361,6 @@ public class SelectionInfo<PackageType extends AbstractPackageNode<ChildrenType,
                 }
             }
         }
-
-        children.addAll(ret);
-        allPackages.addAll(allPkg);
-        fullPackages.addAll(fullPkg);
-        incompletePackages.addAll(incPkg);
 
     }
 
@@ -399,7 +482,8 @@ public class SelectionInfo<PackageType extends AbstractPackageNode<ChildrenType,
     }
 
     /**
-     * Returns a List of the rawselection. Contains packages and links as they were selected in the table. USe {@link #getChildren()} instead
+     * Returns a List of the rawselection. Contains packages and links as they were selected in the table. USe {@link #getChildren()}
+     * instead
      * 
      * @return
      */
@@ -412,23 +496,23 @@ public class SelectionInfo<PackageType extends AbstractPackageNode<ChildrenType,
      * 
      * @return
      */
-    public List<ChildrenType> getChildren() {
+    public AggregatedLinkList<ChildrenType> getChildren() {
         return children;
     }
 
     /**
-     * Not all links of a package may have been selected @see ( {@link #getIncompletePackages()}. to get a list of all selected links for a certain package, use
-     * this method
+     * Not all links of a package may have been selected @see ( {@link #getIncompletePackages()}. to get a list of all selected links for a
+     * certain package, use this method
      * 
      * @param pkg
      * @return
      */
-    public List<ChildrenType> getSelectedLinksByPackage(PackageType pkg) {
-        List<ChildrenType> ret = incompleteSelectecPackages.get(pkg);
+    public AggregatedLinkList<ChildrenType> getSelectedLinksByPackage(PackageType pkg) {
+        AggregatedLinkList<ChildrenType> ret = incompleteSelectecPackages.get(pkg);
         if (ret != null) return ret;
         boolean readL = pkg.getModifyLock().readLock();
         try {
-            return new ArrayList<ChildrenType>(pkg.getChildren());
+            return new AggregatedLinkList<ChildrenType>(pkg.getChildren());
         } finally {
             pkg.getModifyLock().readUnlock(readL);
         }

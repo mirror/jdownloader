@@ -53,6 +53,7 @@ public class MenuContainerRoot extends MenuContainer implements Storable {
                             if (lr.getActionData() != null) {
                                 lr.createAction(null);
                             }
+
                         } catch (ClassCurrentlyNotAvailableException e) {
                             // extension not loaded or anything like this.
                             mid._setValidateException(e);

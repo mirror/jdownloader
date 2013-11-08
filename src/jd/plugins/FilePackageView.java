@@ -298,7 +298,7 @@ public class FilePackageView extends ChildrenView<DownloadLink> {
         }
         PluginProgress prog = link.getPluginProgress();
         if (prog != null) {
-            if (!pluginStates.contains(prog.getClass())) {
+            if (!tmp.pluginStates.containsKey(prog.getClass().getName() + link.getHost())) {
                 PluginState ps = PluginState.create(prog.getMessage(FilePackageView.this) + " (" + link.getHost() + ")", new FavitIcon(prog.getIcon(), link.getDomainInfo()));
                 if (ps != null) {
                     tmp.pluginStates.put(prog.getClass().getName() + link.getHost(), ps);
@@ -307,7 +307,7 @@ public class FilePackageView extends ChildrenView<DownloadLink> {
         }
         ConditionalSkipReason conditionalSkipReason = link.getConditionalSkipReason();
         if (conditionalSkipReason != null && !conditionalSkipReason.isConditionReached()) {
-            if (!pluginStates.contains(conditionalSkipReason.getClass())) {
+            if (!tmp.pluginStates.containsKey(prog.getClass().getName() + link.getHost())) {
                 PluginState ps = PluginState.create(conditionalSkipReason.getMessage(this, link) + " (" + link.getHost() + ")", new FavitIcon(conditionalSkipReason.getIcon(this, link), link.getDomainInfo()));
                 if (ps != null) {
                     tmp.pluginStates.put(conditionalSkipReason.getClass().getName() + link.getHost(), ps);
