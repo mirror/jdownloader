@@ -13,6 +13,7 @@ import org.appwork.uio.UIOManager;
 import org.appwork.utils.swing.dialog.ConfirmDialog;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
+import org.jdownloader.settings.staticreferences.CFG_GUI;
 
 public class ConfirmDeleteLinksDialog extends ConfirmDialog implements ConfirmDeleteLinksDialogInterface {
 
@@ -62,10 +63,37 @@ public class ConfirmDeleteLinksDialog extends ConfirmDialog implements ConfirmDe
         ret.setBorder(BorderFactory.createEmptyBorder(0, image.getWidth(null), 0, 0));
         ret.setOpaque(false);
         if (isRecycleSupported()) {
+
             toRecycleCb = new JComboBox(new String[] { _GUI._.ConfirmDeleteLinksDialog_layoutDialogContent_no_filedelete2(), _GUI._.ConfirmDeleteLinksDialog_layoutDialogContent_Recycle_2(), _GUI._.ConfirmDeleteLinksDialog_layoutDialogContent_delete_2() });
+
+            switch (CFG_GUI.CFG.getDeleteDialogDefaultSelection()) {
+            case REMOVE_LINKS_ONLY:
+                toRecycleCb.setSelectedIndex(0);
+                break;
+            case REMOVE_LINKS_AND_DELETE_FILES:
+                toRecycleCb.setSelectedIndex(2);
+                break;
+
+            case REMOVE_LINKS_AND_RECYCLE_FILES:
+                toRecycleCb.setSelectedIndex(1);
+                break;
+
+            }
         } else {
             toRecycleCb = new JComboBox(new String[] { _GUI._.ConfirmDeleteLinksDialog_layoutDialogContent_no_filedelete2(), _GUI._.ConfirmDeleteLinksDialog_layoutDialogContent_delete_2() });
+            switch (CFG_GUI.CFG.getDeleteDialogDefaultSelection()) {
+            case REMOVE_LINKS_ONLY:
+                toRecycleCb.setSelectedIndex(0);
+                break;
+            case REMOVE_LINKS_AND_DELETE_FILES:
+                toRecycleCb.setSelectedIndex(1);
+                break;
 
+            case REMOVE_LINKS_AND_RECYCLE_FILES:
+                toRecycleCb.setSelectedIndex(1);
+                break;
+
+            }
         }
 
         if (bytes > 0) {

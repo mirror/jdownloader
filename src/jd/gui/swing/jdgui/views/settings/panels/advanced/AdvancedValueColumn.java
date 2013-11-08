@@ -21,6 +21,7 @@ import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.storage.config.annotations.EnumLabel;
 import org.appwork.storage.config.annotations.HexColorString;
+import org.appwork.storage.config.annotations.LabelInterface;
 import org.appwork.swing.exttable.ExtColumn;
 import org.appwork.swing.exttable.columns.ExtCheckColumn;
 import org.appwork.swing.exttable.columns.ExtCompoundColumn;
@@ -31,7 +32,9 @@ import org.appwork.utils.reflection.Clazz;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.controlling.contextmenu.gui.ExtPopupMenu;
+import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.gui.views.components.CheckBoxIcon;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.settings.advanced.AdvancedConfigEntry;
 import org.jdownloader.settings.advanced.RangeValidator;
@@ -333,7 +336,8 @@ public class AdvancedValueColumn extends ExtCompoundColumn<AdvancedConfigEntry> 
             @Override
             public void configureRendererComponent(final AdvancedConfigEntry value, final boolean isSelected, final boolean hasFocus, final int row, final int column) {
 
-                this.rendererIcon.setIcon(this.getIcon(value));
+                Icon icon;
+                this.rendererIcon.setIcon(icon = this.getIcon(value));
                 String str = this.getStringValue(value);
                 if (str == null) {
                     // under substance, setting setText(null) somehow sets the label
@@ -342,7 +346,7 @@ public class AdvancedValueColumn extends ExtCompoundColumn<AdvancedConfigEntry> 
                 }
 
                 if (this.getTableColumn() != null) {
-                    this.rendererField.setText(SwingUtilities2.clipStringIfNecessary(this.rendererField, this.rendererField.getFontMetrics(this.rendererField.getFont()), str, this.getTableColumn().getWidth() - 18 - 5));
+                    this.rendererField.setText(SwingUtilities2.clipStringIfNecessary(this.rendererField, this.rendererField.getFontMetrics(this.rendererField.getFont()), str, this.getTableColumn().getWidth() - 18 - (icon != null ? icon.getIconWidth() : 0)));
                 } else {
                     this.rendererField.setText(str);
                 }
@@ -362,10 +366,18 @@ public class AdvancedValueColumn extends ExtCompoundColumn<AdvancedConfigEntry> 
                                 if (lbl != null) {
                                     setName(lbl.value());
                                 } else {
-                                    setName(o.toString());
+
+                                    if (o instanceof LabelInterface) {
+
+                                        setName(((LabelInterface) o).getLabel());
+                                    } else {
+                                        setName(o.toString());
+                                    }
                                 }
                                 if (value.getValue() == o) {
-                                    setIconKey("enabled");
+                                    setSmallIcon(new CheckBoxIcon(true));
+                                } else {
+                                    setSmallIcon(new CheckBoxIcon(false));
                                 }
 
                             }
@@ -415,7 +427,7 @@ public class AdvancedValueColumn extends ExtCompoundColumn<AdvancedConfigEntry> 
             }
 
             protected Icon getIcon(final AdvancedConfigEntry value) {
-                return NewTheme.I().getIcon("popdownButton", -1);
+                return NewTheme.I().getIcon(IconKey.ICON_POPUPDOWN, -1);
             }
 
             @Override
@@ -427,6 +439,10 @@ public class AdvancedValueColumn extends ExtCompoundColumn<AdvancedConfigEntry> 
                     if (lbl != null) {
 
                     return lbl.value(); }
+
+                    if (value.getValue() instanceof LabelInterface) { return ((LabelInterface) value.getValue()).getLabel(); }
+
+                    if (value instanceof LabelInterface) { return ((LabelInterface) value).getLabel(); }
                 } catch (Exception e) {
 
                 }

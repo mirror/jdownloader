@@ -11,6 +11,7 @@ import javax.swing.ListCellRenderer;
 
 import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.annotations.EnumLabel;
+import org.appwork.storage.config.annotations.LabelInterface;
 import org.appwork.storage.config.events.GenericConfigEventListener;
 import org.appwork.storage.config.handler.KeyHandler;
 
@@ -96,6 +97,8 @@ public class ComboBox<ContentType> extends JComboBox implements SettingsComponen
             } catch (Exception e) {
                 e.printStackTrace();
             }
+
+            if (value instanceof LabelInterface) { return ((LabelInterface) value).getLabel(); }
             return value + "";
         }
         return translations[index];

@@ -9,6 +9,7 @@ import javax.swing.JComboBox;
 import javax.swing.JLabel;
 
 import org.appwork.storage.config.annotations.EnumLabel;
+import org.appwork.storage.config.annotations.LabelInterface;
 import org.appwork.swing.MigPanel;
 import org.appwork.swing.components.ExtTextField;
 import org.appwork.utils.GetterSetter;
@@ -82,6 +83,9 @@ public class CustomPanel extends MigPanel {
                     EnumLabel lbl = ((Class) gs.getType()).getDeclaredField(values[i].toString()).getAnnotation(EnumLabel.class);
                     if (lbl != null) {
                         strings[i] = lbl.value();
+                    } else if (values[i] instanceof LabelInterface) {
+                        strings[i] = ((LabelInterface) values[i]).getLabel();
+
                     }
                 }
                 final JComboBox cb = new JComboBox(strings);

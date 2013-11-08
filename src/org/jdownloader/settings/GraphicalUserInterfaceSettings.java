@@ -14,6 +14,7 @@ import org.appwork.storage.config.annotations.DefaultLongValue;
 import org.appwork.storage.config.annotations.DefaultStringValue;
 import org.appwork.storage.config.annotations.DescriptionForConfigEntry;
 import org.appwork.storage.config.annotations.EnumLabel;
+import org.appwork.storage.config.annotations.LabelInterface;
 import org.appwork.storage.config.annotations.LookUpKeys;
 import org.appwork.storage.config.annotations.RequiresRestart;
 import org.appwork.storage.config.annotations.SpinnerValidator;
@@ -750,4 +751,41 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
     boolean isDownloadsPropertiesPanelDownloadFromVisible();
 
     void setDownloadsPropertiesPanelDownloadFromVisible(boolean v);
+
+    public static enum DeleteFileOptions implements LabelInterface {
+
+        REMOVE_LINKS_ONLY() {
+            @Override
+            public String getLabel() {
+                return org.jdownloader.gui.translate._GUI._.ConfirmDeleteLinksDialog_layoutDialogContent_no_filedelete2();
+            }
+        },
+
+        REMOVE_LINKS_AND_RECYCLE_FILES() {
+            @Override
+            public String getLabel() {
+                return org.jdownloader.gui.translate._GUI._.ConfirmDeleteLinksDialog_layoutDialogContent_Recycle_2();
+            }
+        },
+
+        REMOVE_LINKS_AND_DELETE_FILES() {
+            @Override
+            public String getLabel() {
+                return org.jdownloader.gui.translate._GUI._.ConfirmDeleteLinksDialog_layoutDialogContent_delete_2();
+            }
+        };
+
+        @Override
+        public String getLabel() {
+            return null;
+        }
+
+    }
+
+    @DefaultEnumValue("REMOVE_LINKS_ONLY")
+    @AboutConfig
+    DeleteFileOptions getDeleteDialogDefaultSelection();
+
+    void setDeleteDialogDefaultSelection(DeleteFileOptions option);
+
 }
