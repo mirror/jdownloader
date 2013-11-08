@@ -1486,21 +1486,8 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
 
                             @Override
                             public void execute(DownloadSession currentSession) {
-                                if (currentSession != null) {
-                                    currentSession.getActivationRequests().remove(link);
-                                    currentSession.getForcedLinks().remove(link);
-                                }
-                                SingleDownloadController con = link.getDownloadLinkController();
-                                if (con != null) {
-                                    /* link still has a running singleDownloadController, abort it and delete it after */
-                                    con.abort();
-                                    /* enqueue again */
-                                    enqueueJob(this);
-                                } else {
-                                    /* now we can reset the link */
-                                    resetLink(link, currentSession);
-                                }
-                                return;
+                                /* now we can reset the link */
+                                resetLink(link, currentSession);
                             }
                         });
                         con.abort();
@@ -1526,6 +1513,12 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
     private void resetLink(DownloadLink link, DownloadSession session) {
         if (link.getDownloadLinkController() != null) throw new IllegalStateException("Link is in progress! cannot reset!");
         session.removeHistory(link);
+        List<WaitingSkipReasonContainer> list = session.getProxyInfoHistory().list(link.getHost());
+        if (list != null) {
+            for (WaitingSkipReasonContainer container : list) {
+                container.invalidate();
+            }
+        }
         deleteFile(link, DeleteTo.NULL);
         CaptchaBlackList.getInstance().addWhitelist(link);
         link.reset();

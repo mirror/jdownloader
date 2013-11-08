@@ -394,11 +394,13 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
 
     }
 
+    public static String PACKAGETAG = "<jd:" + PackagizerController.PACKAGENAME + ">";
+    public static String DATETAG    = "<jd:" + PackagizerController.SIMPLEDATE + ":";
+
     public static String replaceDynamicTags(String input, String packageName) {
         String ret = input;
         if (StringUtils.isEmpty(ret)) return ret;
-        String PACKAGETAG = "<jd:" + PackagizerController.PACKAGENAME + ">";
-        String DATETAG = "<jd:" + PackagizerController.SIMPLEDATE + ":";
+        if (!ret.contains("<jd:")) return ret;
         if (ret.contains(PACKAGETAG)) {
             if (StringUtils.isEmpty(packageName)) {
                 ret = ret.replace(PACKAGETAG, "");

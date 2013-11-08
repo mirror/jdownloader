@@ -176,8 +176,9 @@ public class Lnksvn extends PluginForDecrypt {
         progress.decrease(progress.getMax());
         // alle verschlüsseleten Links in einem Rutsch entschlüsseln
         final class LsDirektLinkTH extends Thread {
-            Browser browser;
-            String  result;
+            Browser          browser;
+            String           result;
+            volatile boolean done = false;
 
             public LsDirektLinkTH(final Browser browser) {
                 this.browser = browser;
@@ -189,9 +190,11 @@ public class Lnksvn extends PluginForDecrypt {
                     result = getDirektLink(browser);
                 } catch (final IOException e) {
                     e.printStackTrace();
-                }
-                synchronized (this) {
-                    notifyAll();
+                } finally {
+                    synchronized (this) {
+                        done = true;
+                        notifyAll();
+                    }
                 }
             }
         }
@@ -206,7 +209,7 @@ public class Lnksvn extends PluginForDecrypt {
             logger.info("Link " + i + " von " + dlinks.length);
         }
         for (final LsDirektLinkTH lsDirektLinkTH : dlinks) {
-            while (lsDirektLinkTH.isAlive()) {
+            while (lsDirektLinkTH.isAlive() || lsDirektLinkTH.done) {
                 synchronized (lsDirektLinkTH) {
                     try {
                         lsDirektLinkTH.wait(5000);

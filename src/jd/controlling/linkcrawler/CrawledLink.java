@@ -114,12 +114,11 @@ public class CrawledLink implements AbstractPackageChildrenNode<CrawledPackage>,
     }
 
     /**
-     * Linkid should be unique for a certain link. in most cases, this is the url itself, but somtimes (youtube e.g.) the id contains info
-     * about how to prozess the file afterwards.
+     * Linkid should be unique for a certain link. in most cases, this is the url itself, but somtimes (youtube e.g.) the id contains info about how to prozess
+     * the file afterwards.
      * 
      * example:<br>
-     * 2 youtube links may have the same url, but the one will be converted into mp3, and the other stays flv. url is the same, but linkID
-     * different.
+     * 2 youtube links may have the same url, but the one will be converted into mp3, and the other stays flv. url is the same, but linkID different.
      * 
      * @return
      */
@@ -198,6 +197,7 @@ public class CrawledLink implements AbstractPackageChildrenNode<CrawledPackage>,
     private volatile ArchiveInfo archiveInfo;
     private UniqueAlltimeID      previousParent = null;
     private PartInfo             partInfo;
+    private transient ImageIcon  icon           = null;
 
     public CrawledLink(DownloadLink dlLink) {
         this.dlLink = dlLink;
@@ -248,9 +248,10 @@ public class CrawledLink implements AbstractPackageChildrenNode<CrawledPackage>,
     }
 
     public void setName(String name) {
+        if (StringUtils.equals(name, this.name)) return;
         if (name != null) {
             name = CrossSystem.alleviatePathParts(name);
-            if (name.equals(this.name)) return;
+            if (StringUtils.equals(name, this.name)) return;
         }
         if (StringUtils.isEmpty(name)) {
             this.name = null;
@@ -258,11 +259,16 @@ public class CrawledLink implements AbstractPackageChildrenNode<CrawledPackage>,
             this.name = name;
         }
         setPartInfo(null);
+        setIcon(null);
         if (hasNotificationListener()) nodeUpdated(this, AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, new CrawledLinkProperty(this, CrawledLinkProperty.Property.NAME, getName()));
     }
 
     private void setPartInfo(PartInfo info) {
         this.partInfo = info;
+    }
+
+    private void setIcon(ImageIcon icon) {
+        this.icon = icon;
     }
 
     public PartInfo getPartInfo() {
@@ -287,8 +293,10 @@ public class CrawledLink implements AbstractPackageChildrenNode<CrawledPackage>,
     }
 
     public ImageIcon getIcon() {
-        if (dlLink != null) return dlLink.getIcon();
-        return null;
+        if (icon == null) {
+            icon = DownloadLink.getIcon(getName());
+        }
+        return icon;
     }
 
     public String getURL() {
@@ -361,8 +369,9 @@ public class CrawledLink implements AbstractPackageChildrenNode<CrawledPackage>,
     }
 
     public CrawledLink getOriginLink() {
-        if (sourceLink == null) return this;
-        return sourceLink.getOriginLink();
+        CrawledLink lsourceLink = getSourceLink();
+        if (lsourceLink == null) return this;
+        return lsourceLink.getOriginLink();
     }
 
     public void setSourceLink(CrawledLink parent) {
@@ -481,8 +490,10 @@ public class CrawledLink implements AbstractPackageChildrenNode<CrawledPackage>,
      * @return the collectingInfo
      */
     public LinkCollectingInformation getCollectingInfo() {
-        if (collectingInfo != null || sourceLink == null) return collectingInfo;
-        return sourceLink.getCollectingInfo();
+        LinkCollectingInformation lcollectingInfo = collectingInfo;
+        CrawledLink lsourceLink = getSourceLink();
+        if (lcollectingInfo != null || lsourceLink == null) return lcollectingInfo;
+        return lsourceLink.getCollectingInfo();
     }
 
     public ArchiveInfo getArchiveInfo() {
@@ -521,11 +532,17 @@ public class CrawledLink implements AbstractPackageChildrenNode<CrawledPackage>,
                     nodeUpdated(this, AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, new CrawledLinkProperty(this, CrawledLinkProperty.Property.AVAILABILITY, propertyEvent.getValue()));
                     return;
                 case ENABLED:
-                    nodeUpdated(this, AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, new CrawledLinkProperty(this, CrawledLinkProperty.Property.ENABLED, propertyEvent.getValue()));
+                    /* not needed to forward at the moment */
+                    // nodeUpdated(this, AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, new CrawledLinkProperty(this, CrawledLinkProperty.Property.ENABLED,
+                    // propertyEvent.getValue()));
                     return;
                 case NAME:
-                    nodeUpdated(this, AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, new CrawledLinkProperty(this, CrawledLinkProperty.Property.NAME, propertyEvent.getValue()));
-                    return;
+                    if (!isNameSet()) {
+                        /* we use the name from downloadLink */
+                        this.setIcon(null);
+                        nodeUpdated(this, AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, new CrawledLinkProperty(this, CrawledLinkProperty.Property.NAME, propertyEvent.getValue()));
+                        return;
+                    }
                 case PRIORITY:
                     nodeUpdated(this, AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, new CrawledLinkProperty(this, CrawledLinkProperty.Property.PRIORITY, propertyEvent.getValue()));
                     return;

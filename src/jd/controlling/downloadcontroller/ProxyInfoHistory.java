@@ -15,6 +15,7 @@ import jd.controlling.downloadcontroller.DownloadLinkCandidateResult.RESULT;
 import jd.controlling.proxy.ProxyInfo;
 import jd.plugins.Account;
 
+import org.appwork.utils.StringUtils;
 import org.jdownloader.plugins.ConditionalSkipReason;
 import org.jdownloader.plugins.WaitWhileWaitingSkipReasonIsSet;
 import org.jdownloader.plugins.WaitingSkipReason;
@@ -27,11 +28,13 @@ public class ProxyInfoHistory {
         private WaitWhileWaitingSkipReasonIsSet waitWhile = null;
         private final String                    host;
         private final ProxyInfo                 proxyInfo;
+        private final Account                   account;
 
         private WaitingSkipReasonContainer(WaitingSkipReason skipReason, DownloadLinkCandidate candidate) {
             this.skipReason = skipReason;
             this.host = candidate.getCachedAccount().getPlugin().getHost();
             this.proxyInfo = candidate.getProxy();
+            this.account = candidate.getCachedAccount().getAccount();
         }
 
         public final void invalidate() {
@@ -48,6 +51,13 @@ public class ProxyInfoHistory {
 
         public final ProxyInfo getProxyInfo() {
             return proxyInfo;
+        }
+
+        /**
+         * @return the account
+         */
+        public Account getAccount() {
+            return account;
         }
     }
 
@@ -127,6 +137,23 @@ public class ProxyInfoHistory {
             return map.get(proxyInfo);
         }
         return null;
+    }
+
+    public List<WaitingSkipReasonContainer> list(String host) {
+        if (StringUtils.isEmpty(host)) return null;
+        ArrayList<WaitingSkipReasonContainer> ret = new ArrayList<WaitingSkipReasonContainer>();
+        Iterator<Entry<ProxyInfo, Map<String, Map<Account, List<WaitingSkipReasonContainer>>>>> it = history.entrySet().iterator();
+        while (it.hasNext()) {
+            Entry<ProxyInfo, Map<String, Map<Account, List<WaitingSkipReasonContainer>>>> next = it.next();
+            Map<String, Map<Account, List<WaitingSkipReasonContainer>>> map = next.getValue();
+            Map<Account, List<WaitingSkipReasonContainer>> map2 = map.get(host);
+            if (map2 != null) {
+                for (List<WaitingSkipReasonContainer> list : map2.values()) {
+                    ret.addAll(list);
+                }
+            }
+        }
+        return ret;
     }
 
     public DownloadLinkCandidateResult getBlockingHistory(DownloadLinkCandidate candidate) {
@@ -240,6 +267,5 @@ public class ProxyInfoHistory {
         } else {
             return false;
         }
-
     }
 }
