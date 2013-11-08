@@ -3655,4 +3655,10 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Package Name Wildcard(*) #%s1" })
     String PackagizerFilterRuleDialog_createVariablesMenu_package(int i);
 
+    @Default(lngs = { "en" }, values = { "Unknown" })
+    String lit_unknown();
+
+    @Default(lngs = { "en" }, values = { "Starting..." })
+    String TaskColumn_fillColumnHelper_starting();
+
 }

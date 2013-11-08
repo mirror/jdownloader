@@ -6,6 +6,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
 
+import javax.swing.ImageIcon;
+
 import jd.controlling.downloadcontroller.DownloadWatchDog;
 import jd.controlling.downloadcontroller.SingleDownloadController;
 import jd.controlling.packagecontroller.ChildrenView;
@@ -37,7 +39,7 @@ public class FilePackageView extends ChildrenView<DownloadLink> {
     private long                         updatesDone              = -1;
     private String                       availabilityColumnString = null;
     private ChildrenAvailablility        availability             = ChildrenAvailablility.UNKNOWN;
-    private String                       commonSourceUrl;
+
     private java.util.List<DownloadLink> items                    = new ArrayList<DownloadLink>();
 
     protected static final long          GUIUPDATETIMEOUT         = JsonConfig.create(GraphicalUserInterfaceSettings.class).getDownloadViewRefresh();
@@ -55,20 +57,20 @@ public class FilePackageView extends ChildrenView<DownloadLink> {
         this.fp = fp;
     }
 
-    private DomainInfo[]                   infos = new DomainInfo[0];
-    private long                           size  = 0;
-    private long                           done  = 0;
+    private DomainInfo[]          infos = new DomainInfo[0];
+    private long                  size  = 0;
+    private long                  done  = 0;
 
-    private int                            enabledCount;
+    private int                   enabledCount;
 
-    private Priority                       lowestPriority;
+    private Priority              lowestPriority;
 
-    private Priority                       highestPriority;
+    private Priority              highestPriority;
 
-    private HashSet<ConditionalSkipReason> skipReasons;
+    private PluginStateCollection pluginStates;
 
-    public HashSet<ConditionalSkipReason> getSkipReasons() {
-        return skipReasons;
+    public PluginStateCollection getPluginStates() {
+        return pluginStates;
     }
 
     public DomainInfo[] getDomainInfos() {
@@ -98,6 +100,8 @@ public class FilePackageView extends ChildrenView<DownloadLink> {
     public long getFinishedDate() {
         return finishedDate;
     }
+
+    private String commonSourceUrl;
 
     @Override
     public void aggregate() {
@@ -140,28 +144,54 @@ public class FilePackageView extends ChildrenView<DownloadLink> {
     }
 
     private class Temp {
-        private long                           newSize           = 0;
-        private long                           newDone           = 0;
-        private long                           newFinishedDate   = -1;
-        private int                            newOffline        = 0;
-        private int                            newOnline         = 0;
-        private int                            newEnabledCount   = 0;
-        private int                            children          = 0;
-        private long                           fpETA             = -1;
-        private long                           fpTODO            = 0;
-        private Priority                       priorityLowset    = Priority.HIGHEST;
-        private Priority                       priorityHighest   = Priority.LOWER;
-        private long                           fpSPEED           = 0;
-        private boolean                        sizeKnown         = false;
-        private boolean                        fpRunning         = false;
-        private HashMap<String, Long>          downloadSizes     = new HashMap<String, Long>();
-        private HashMap<String, Long>          downloadDone      = new HashMap<String, Long>();
-        private HashSet<String>                eta               = new HashSet<String>();
-        private HashSet<DomainInfo>            newInfos          = new HashSet<DomainInfo>();
-        private boolean                        allFinished       = true;
-        private HashSet<ConditionalSkipReason> skipReasons       = new HashSet<ConditionalSkipReason>();
-        private String                         sameSource        = null;
-        private boolean                        sameSourceFullUrl = true;
+        private long                         newSize           = 0;
+        private long                         newDone           = 0;
+        private long                         newFinishedDate   = -1;
+        private int                          newOffline        = 0;
+        private int                          newOnline         = 0;
+        private int                          newEnabledCount   = 0;
+        private int                          children          = 0;
+        private long                         fpETA             = -1;
+        private long                         fpTODO            = 0;
+        private Priority                     priorityLowset    = Priority.HIGHEST;
+        private Priority                     priorityHighest   = Priority.LOWER;
+        private long                         fpSPEED           = 0;
+        private boolean                      sizeKnown         = false;
+        private boolean                      fpRunning         = false;
+        private HashMap<String, Long>        downloadSizes     = new HashMap<String, Long>();
+        private HashMap<String, Long>        downloadDone      = new HashMap<String, Long>();
+        private HashSet<String>              eta               = new HashSet<String>();
+        private HashSet<DomainInfo>          newInfos          = new HashSet<DomainInfo>();
+        private boolean                      allFinished       = true;
+        private String                       sameSource        = null;
+        private boolean                      sameSourceFullUrl = true;
+
+        private HashMap<Object, PluginState> pluginStates      = new HashMap<Object, PluginState>();
+    }
+
+    public static class PluginState {
+
+        private String    description;
+        private ImageIcon icon;
+
+        public String getDescription() {
+            return description;
+        }
+
+        public ImageIcon getIcon() {
+            return icon;
+        }
+
+        private PluginState(String message, ImageIcon icon2) {
+            this.description = message;
+            this.icon = icon2;
+        }
+
+        public static PluginState create(String message, ImageIcon icon) {
+            if (StringUtils.isEmpty(message) && icon == null) return null;
+            return new PluginState(message, icon);
+        }
+
     }
 
     @Override
@@ -201,10 +231,6 @@ public class FilePackageView extends ChildrenView<DownloadLink> {
     protected void writeTempToFields(Temp tmp) {
         size = tmp.newSize;
         done = tmp.newDone;
-        this.commonSourceUrl = tmp.sameSource;
-        if (!tmp.sameSourceFullUrl) {
-            commonSourceUrl += "[...]";
-        }
         this.enabledCount = tmp.newEnabledCount;
         if (tmp.allFinished) {
             /* all links have reached finished state */
@@ -226,6 +252,13 @@ public class FilePackageView extends ChildrenView<DownloadLink> {
             /* no download running */
             estimatedETA = -1;
         }
+        if (!tmp.sameSourceFullUrl) {
+            tmp.sameSource += "[...]";
+        }
+        this.commonSourceUrl = tmp.sameSource;
+
+        this.pluginStates = new PluginStateCollection(tmp.pluginStates.values());
+
         offline = tmp.newOffline;
         online = tmp.newOnline;
         updateAvailability(tmp);
@@ -235,7 +268,17 @@ public class FilePackageView extends ChildrenView<DownloadLink> {
         availabilityColumnString = _GUI._.AvailabilityColumn_getStringValue_object_(tmp.newOnline, tmp.children);
     }
 
+    public String getCommonSourceUrl() {
+        return commonSourceUrl;
+    }
+
     protected void addLinkToTemp(Temp tmp, DownloadLink link) {
+        if (link.getPriorityEnum().ordinal() < tmp.priorityLowset.ordinal()) {
+            tmp.priorityLowset = link.getPriorityEnum();
+        }
+        if (link.getPriorityEnum().ordinal() > tmp.priorityHighest.ordinal()) {
+            tmp.priorityHighest = link.getPriorityEnum();
+        }
         String sourceUrl = null;
         if (link.getLinkType() == DownloadLink.LINKTYPE_CONTAINER) {
             if (link.gotBrowserUrl()) sourceUrl = link.getBrowserUrl();
@@ -246,14 +289,6 @@ public class FilePackageView extends ChildrenView<DownloadLink> {
             tmp.sameSource = StringUtils.getCommonalities(tmp.sameSource, sourceUrl);
             tmp.sameSourceFullUrl = tmp.sameSourceFullUrl && tmp.sameSource.equals(sourceUrl);
         }
-
-        if (link.getPriorityEnum().ordinal() < tmp.priorityLowset.ordinal()) {
-            tmp.priorityLowset = link.getPriorityEnum();
-        }
-        if (link.getPriorityEnum().ordinal() > tmp.priorityHighest.ordinal()) {
-            tmp.priorityHighest = link.getPriorityEnum();
-        }
-
         if (AvailableStatus.FALSE == link.getAvailableStatus()) {
             // offline
             tmp.newOffline++;
@@ -261,10 +296,23 @@ public class FilePackageView extends ChildrenView<DownloadLink> {
             // online
             tmp.newOnline++;
         }
-
+        PluginProgress prog = link.getPluginProgress();
+        if (prog != null) {
+            if (!pluginStates.contains(prog.getClass())) {
+                PluginState ps = PluginState.create(prog.getMessage(FilePackageView.this), prog.getIcon());
+                if (ps != null) {
+                    tmp.pluginStates.put(prog.getClass(), ps);
+                }
+            }
+        }
         ConditionalSkipReason conditionalSkipReason = link.getConditionalSkipReason();
         if (conditionalSkipReason != null && !conditionalSkipReason.isConditionReached()) {
-            tmp.skipReasons.add(conditionalSkipReason);
+            if (!pluginStates.contains(conditionalSkipReason.getClass())) {
+                PluginState ps = PluginState.create(conditionalSkipReason.getMessage(this, link), conditionalSkipReason.getIcon(this, link));
+                if (ps != null) {
+                    tmp.pluginStates.put(conditionalSkipReason.getClass(), ps);
+                }
+            }
         }
         if (link.isEnabled()) {
             /*
@@ -343,10 +391,6 @@ public class FilePackageView extends ChildrenView<DownloadLink> {
              */
             tmp.newFinishedDate = link.getFinishedDate();
         }
-    }
-
-    public String getCommonSourceUrl() {
-        return commonSourceUrl;
     }
 
     @Override

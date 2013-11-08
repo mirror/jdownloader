@@ -5,7 +5,9 @@ import javax.swing.ImageIcon;
 import jd.controlling.packagecontroller.AbstractNode;
 import jd.nutils.Formatter;
 import jd.plugins.DownloadLink;
+import jd.plugins.FilePackageView;
 
+import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.views.downloads.columns.ETAColumn;
 import org.jdownloader.gui.views.downloads.columns.TaskColumn;
 import org.jdownloader.images.NewTheme;
@@ -64,7 +66,7 @@ public class WaitingSkipReason implements ConditionalSkipReason, TimeOutConditio
             icon = NewTheme.I().getIcon("warning_red", 16);
             break;
         case IP_BLOCKED:
-            icon = NewTheme.I().getIcon("reconnect", 16);
+            icon = NewTheme.I().getIcon(IconKey.ICON_AUTO_RECONNECT, 16);
             break;
         default:
             icon = NewTheme.I().getIcon("wait", 16);
@@ -109,6 +111,7 @@ public class WaitingSkipReason implements ConditionalSkipReason, TimeOutConditio
         long left = getTimeOutLeft();
         if (left > 0) {
             if (requestor instanceof TaskColumn) { return getMessage(); }
+            if (requestor instanceof FilePackageView) { return getMessage(); }
             if (requestor instanceof ETAColumn) { return Formatter.formatSeconds(left / 1000); }
         }
         return null;

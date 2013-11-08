@@ -235,14 +235,17 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
     public boolean isPasswordProtectionEnabled();
 
     @AboutConfig
+    @DefaultBooleanValue(true)
     @DescriptionForConfigEntry("If true, ETAColumn will show Premium Alerts in Free Download mode if JD thinks Premium would be better currently.")
     boolean isPremiumAlertETAColumnEnabled();
 
     @AboutConfig
+    @DefaultBooleanValue(true)
     @DescriptionForConfigEntry("If true, SpeedColumn will show Premium Alerts in Free Download mode if JD thinks Premium would be better currently.")
     boolean isPremiumAlertSpeedColumnEnabled();
 
     @AboutConfig
+    @DefaultBooleanValue(true)
     @DescriptionForConfigEntry("If true, TaskColumn will show Premium Alerts in Free Download mode if JD thinks Premium would be better currently.")
     boolean isPremiumAlertTaskColumnEnabled();
 

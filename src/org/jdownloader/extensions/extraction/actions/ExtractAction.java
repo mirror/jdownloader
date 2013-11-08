@@ -191,7 +191,7 @@ public class ExtractAction<PackageType extends AbstractPackageNode<ChildrenType,
                                 public String getString() {
 
                                     if (controller != null) {
-                                        return T._.extractprogress_label(format.format(controller.getProgress() / 100d), controller.getArchiv().getExtractedFiles().size() + "");
+                                        return T._.extractprogress_label(format.format(controller.getProgress()), controller.getArchiv().getExtractedFiles().size() + "");
                                     } else {
                                         return format.format(0d);
                                     }
@@ -200,7 +200,7 @@ public class ExtractAction<PackageType extends AbstractPackageNode<ChildrenType,
                                 @Override
                                 public int getProgress() {
                                     if (controller == null) return 0;
-                                    int ret = (int) (controller.getProgress());
+                                    int ret = (int) (controller.getProgress() * 100);
 
                                     return Math.min(99, ret);
                                 }

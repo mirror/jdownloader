@@ -441,17 +441,18 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> {
     }
 
     /**
-     * Sets the extraction progress in %
+     * Sets the extraction progress in % 0d-1d
      * 
      * @param d
      */
     public void setProgress(double d) {
+
         this.progress = d;
 
     }
 
     /**
-     * Get the extraction progress in %
+     * Get the extraction progress in % 0d-1d
      * 
      * @return
      */

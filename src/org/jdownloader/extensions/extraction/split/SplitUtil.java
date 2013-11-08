@@ -203,7 +203,7 @@ class SplitUtil {
             archive.addExtractedFiles(file);
             fos = new FileOutputStream(file);
             bos = new BufferedOutputStream(fos, Math.max(maxbuffersize, 10240));
-            byte[] buffer = new byte[10240];
+            byte[] buffer = new byte[32767];
             for (int i = 0; i < files.size(); i++) {
                 File source = new File(files.get(i));
                 FileInputStream in = null;
@@ -221,7 +221,7 @@ class SplitUtil {
                         }
                         bos.write(buffer, 0, l);
                         progressInBytes += l;
-                        controller.setProgress(progressInBytes / size);
+                        controller.setProgress(progressInBytes / (double) size);
                         if (controller.gotKilled()) throw new IOException("Extraction has been aborted!");
                         if (priority != null && !CPUPriority.HIGH.equals(priority)) {
                             try {
@@ -247,7 +247,7 @@ class SplitUtil {
             archive.setExitCode(ExtractionControllerConstants.EXIT_CODE_WRITE_ERROR);
             return false;
         } finally {
-            controller.setProgress(100.0d);
+            controller.setProgress(1.0d);
             try {
                 bos.flush();
             } catch (Throwable e) {

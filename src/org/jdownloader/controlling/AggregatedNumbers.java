@@ -8,6 +8,7 @@ import jd.plugins.download.DownloadInterface;
 
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.plugins.FinalLinkState;
 
@@ -16,6 +17,7 @@ public class AggregatedNumbers {
     private long totalBytes;
 
     public String getTotalBytesString() {
+        if (totalBytes < 0) { return _GUI._.lit_unknown(); }
         return SizeFormatter.formatBytes(totalBytes);
     }
 

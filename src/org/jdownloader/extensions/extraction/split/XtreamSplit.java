@@ -215,7 +215,7 @@ public class XtreamSplit extends IExtraction {
             archive.setExitCode(ExtractionControllerConstants.EXIT_CODE_FATAL_ERROR);
             return;
         } finally {
-            controller.setProgress(100.0d);
+            controller.setProgress(1d);
             try {
                 out.flush();
             } catch (Throwable e) {

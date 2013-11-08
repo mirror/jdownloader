@@ -17,7 +17,6 @@
 package jd.plugins;
 
 import java.awt.MouseInfo;
-import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.net.URISyntaxException;
@@ -28,7 +27,6 @@ import java.util.Map.Entry;
 import java.util.Random;
 import java.util.regex.Pattern;
 
-import javax.swing.ImageIcon;
 import javax.swing.JComponent;
 
 import jd.PluginWrapper;
@@ -51,8 +49,6 @@ import org.appwork.utils.Exceptions;
 import org.appwork.utils.IO;
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
-import org.appwork.utils.ImageProvider.ImageProvider;
-import org.appwork.utils.images.IconIO;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.swing.dialog.AbstractDialog;
@@ -87,7 +83,8 @@ import org.jdownloader.translate._JDT;
 public abstract class PluginForHost extends Plugin {
     private static Pattern[]            PATTERNS              = new Pattern[] {
                                                               /**
-                                                               * these patterns should split filename and fileextension (extension must include the point)
+                                                               * these patterns should split filename and fileextension (extension must
+                                                               * include the point)
                                                                */
                                                               // multipart rar archives
             Pattern.compile("(.*)(\\.pa?r?t?\\.?[0-9]+.*?\\.rar$)", Pattern.CASE_INSENSITIVE),
@@ -238,21 +235,16 @@ public abstract class PluginForHost extends Plugin {
 
     protected String getCaptchaCode(final String method, File file, final int flag, final DownloadLink link, final String defaultValue, final String explain) throws PluginException {
 
-        PluginProgress progress = new PluginProgress(0, 1, null) {
-            @Override
-            public String getMessage(Object requestor) {
-                return _JDT._.gui_downloadview_statustext_jac();
-            }
-        };
+        CaptchaStepProgress progress = new CaptchaStepProgress(0, 1, null);
         progress.setProgressSource(this);
         this.hasCaptchas = true;
         try {
-            try {
-                final BufferedImage img = ImageProvider.read(file);
-                progress.setIcon(new ImageIcon(IconIO.getScaledInstance(img, 16, 16)));
-            } catch (Throwable e) {
-                e.printStackTrace();
-            }
+            // try {
+            // final BufferedImage img = ImageProvider.read(file);
+            // progress.setIcon(new ImageIcon(IconIO.getScaledInstance(img, 16, 16)));
+            // } catch (Throwable e) {
+            // e.printStackTrace();
+            // }
             link.setPluginProgress(progress);
             String orgCaptchaImage = link.getStringProperty("orgCaptchaFile", null);
             if (orgCaptchaImage != null && new File(orgCaptchaImage).exists()) {
@@ -443,7 +435,8 @@ public abstract class PluginForHost extends Plugin {
     }
 
     /**
-     * Hier werden Treffer fuer Downloadlinks dieses Anbieters in diesem Text gesucht. Gefundene Links werden dann in einem ArrayList zurueckgeliefert
+     * Hier werden Treffer fuer Downloadlinks dieses Anbieters in diesem Text gesucht. Gefundene Links werden dann in einem ArrayList
+     * zurueckgeliefert
      * 
      * @param data
      *            Ein Text mit beliebig vielen Downloadlinks dieses Anbieters
@@ -490,7 +483,8 @@ public abstract class PluginForHost extends Plugin {
     }
 
     /*
-     * OVERRIDE this function if you need to modify the link, ATTENTION: you have to use new browser instances, this plugin might not have one!
+     * OVERRIDE this function if you need to modify the link, ATTENTION: you have to use new browser instances, this plugin might not have
+     * one!
      */
     public void correctDownloadLink(final DownloadLink link) throws Exception {
     }
@@ -662,8 +656,8 @@ public abstract class PluginForHost extends Plugin {
          * 
          * in fetchAccountInfo we don't have to synchronize because we create a new instance of AccountInfo and fill it
          * 
-         * if you need customizable maxDownloads, please use getMaxSimultanDownload to handle this you are in multihost when account host does not equal link
-         * host!
+         * if you need customizable maxDownloads, please use getMaxSimultanDownload to handle this you are in multihost when account host
+         * does not equal link host!
          * 
          * 
          * 
@@ -942,8 +936,8 @@ public abstract class PluginForHost extends Plugin {
     }
 
     /**
-     * Some hosters have bad filenames. Rapidshare for example replaces all special chars and spaces with _. Plugins can try to autocorrect this based on other
-     * downloadlinks
+     * Some hosters have bad filenames. Rapidshare for example replaces all special chars and spaces with _. Plugins can try to autocorrect
+     * this based on other downloadlinks
      * 
      * @param cache
      *            TODO
@@ -1039,7 +1033,8 @@ public abstract class PluginForHost extends Plugin {
                     /* no prototypesplit available yet, create new one */
                     if (pattern != null) {
                         /*
-                         * a pattern does exist, we must use the same one to make sure the *filetypes* match (eg . part01.rar and .r01 with same filename
+                         * a pattern does exist, we must use the same one to make sure the *filetypes* match (eg . part01.rar and .r01 with
+                         * same filename
                          */
                         prototypesplit = new Regex(prototypeName, pattern).getMatch(0);
                     } else {

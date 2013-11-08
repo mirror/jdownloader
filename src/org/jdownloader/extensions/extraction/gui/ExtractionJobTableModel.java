@@ -356,7 +356,7 @@ public class ExtractionJobTableModel extends ExtTableModel<ExtractionController>
             @Override
             public String getStringValue(ExtractionController value) {
 
-                return format.format(value.getProgress() / 100.0);
+                return format.format(value.getProgress());
 
             }
         });

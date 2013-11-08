@@ -4,6 +4,7 @@ import java.awt.Color;
 
 import jd.nutils.Formatter;
 import jd.plugins.DownloadLink;
+import jd.plugins.FilePackageView;
 import jd.plugins.PluginProgress;
 
 import org.jdownloader.api.jdanywhere.api.Helper;
@@ -41,7 +42,7 @@ public class DownloadPluginProgress extends PluginProgress {
 
     @Override
     public String getMessage(Object requestor) {
-        if (requestor instanceof TaskColumn || requestor == Helper.REQUESTOR) { return normal; }
+        if (requestor instanceof TaskColumn || requestor == Helper.REQUESTOR || requestor instanceof FilePackageView) { return normal; }
         long total = getTotal();
         if (requestor instanceof ProgressColumn) {
             if (total > 0) {

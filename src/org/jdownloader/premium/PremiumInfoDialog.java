@@ -17,6 +17,7 @@ import org.appwork.swing.components.ExtTextArea;
 import org.appwork.utils.logging.Log;
 import org.appwork.utils.swing.SwingUtils;
 import org.appwork.utils.swing.dialog.AbstractDialog;
+import org.appwork.utils.swing.dialog.Dialog;
 import org.jdownloader.DomainInfo;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
@@ -29,7 +30,7 @@ public class PremiumInfoDialog extends AbstractDialog<Object> {
     private String     id;
 
     public PremiumInfoDialog(DomainInfo hosterInfo, String title, String id) {
-        super(0, title, null, _GUI._.PremiumInfoDialog_layoutDialogContent_interested(), _GUI._.literall_no_thanks());
+        super(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, title, null, _GUI._.PremiumInfoDialog_layoutDialogContent_interested(), _GUI._.literall_no_thanks());
         info = hosterInfo;
         this.id = id;
     }
