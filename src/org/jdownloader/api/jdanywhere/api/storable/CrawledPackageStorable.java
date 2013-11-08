@@ -39,7 +39,7 @@ public class CrawledPackageStorable implements Storable {
     public long getSize() {
         long size = 0;
         for (CrawledLink link : pkg.getChildren()) {
-            size += link.getSize();
+            size += Math.max(0, link.getSize());
         }
         return size;
     }

@@ -68,10 +68,11 @@ public class AggregatedCrawlerNumbers {
         linkCount = selection.getChildren().size();
         for (CrawledLink cl : selection.getChildren()) {
             if (cl == null) continue;
+            long itemSize = Math.max(0, cl.getSize());
             if (cl.isEnabled()) {
-                totalBytes += cl.getSize();
+                totalBytes += itemSize;
             } else {
-                disabledTotalBytes += cl.getSize();
+                disabledTotalBytes += itemSize;
 
             }
             DownloadLink dl = cl.getDownloadLink();

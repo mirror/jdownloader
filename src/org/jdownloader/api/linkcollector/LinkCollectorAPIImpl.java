@@ -64,10 +64,6 @@ public class LinkCollectorAPIImpl implements LinkCollectorAPI {
                     infomap.put("saveTo", pkg.getRawDownloadFolder());
                 }
                 if (queryParams._getQueryParam("size", Boolean.class, false)) {
-                    long size = 0;
-                    for (CrawledLink cl : pkg.getChildren()) {
-                        size = size + cl.getSize();
-                    }
                     infomap.put("size", view.getFileSize());
                 }
                 if (queryParams._getQueryParam("childCount", Boolean.class, false)) {

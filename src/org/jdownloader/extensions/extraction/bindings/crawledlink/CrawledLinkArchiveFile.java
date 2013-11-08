@@ -26,7 +26,7 @@ public class CrawledLinkArchiveFile implements ArchiveFile {
         links = new ArrayList<CrawledLink>();
         links.add(l);
         name = l.getName();
-        size = l.getSize();
+        size = Math.max(0, l.getSize());
     }
 
     public java.util.List<CrawledLink> getLinks() {
@@ -90,7 +90,7 @@ public class CrawledLinkArchiveFile implements ArchiveFile {
 
     public void addMirror(CrawledLink link) {
         links.add(link);
-        size = Math.max(link.getSize(), size);
+        size = Math.max(Math.max(0, link.getSize()), size);
     }
 
     @Override

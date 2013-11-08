@@ -304,7 +304,7 @@ public class DLCFactory extends D {
                     // Base64Encode(tmpLinks.get(x).getDownloadURL())));
                     filename.appendChild(content.createTextNode(Encoding.Base64Encode(tmpLinks.get(x).getName())));
 
-                    size.appendChild(content.createTextNode(Encoding.Base64Encode(tmpLinks.get(x).getSize() + "")));
+                    size.appendChild(content.createTextNode(Encoding.Base64Encode(Math.max(0, tmpLinks.get(x).getSize()) + "")));
 
                     pkg.getLastChild().appendChild(url);
                     pkg.getLastChild().appendChild(filename);

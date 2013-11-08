@@ -84,13 +84,14 @@ public class CrawledPackageView extends ChildrenView<CrawledLink> {
                 String name = item.getName();
                 Long size = names.get(name);
                 /* we use the largest filesize */
+                long itemSize = Math.max(0, item.getSize());
                 if (size == null) {
-                    names.put(name, item.getSize());
-                    newFileSize += item.getSize();
-                } else if (size < item.getSize()) {
+                    names.put(name, itemSize);
+                    newFileSize += itemSize;
+                } else if (size < itemSize) {
                     newFileSize -= size;
-                    names.put(name, item.getSize());
-                    newFileSize += item.getSize();
+                    names.put(name, itemSize);
+                    newFileSize += itemSize;
                 }
             }
             this.commonSourceUrl = sameSource;
@@ -164,13 +165,14 @@ public class CrawledPackageView extends ChildrenView<CrawledLink> {
                 String name = item.getName();
                 Long size = names.get(name);
                 /* we use the largest filesize */
+                long itemSize = Math.max(0, item.getSize());
                 if (size == null) {
-                    names.put(name, item.getSize());
-                    newFileSize += item.getSize();
-                } else if (size < item.getSize()) {
+                    names.put(name, itemSize);
+                    newFileSize += itemSize;
+                } else if (size < itemSize) {
                     newFileSize -= size;
-                    names.put(name, item.getSize());
-                    newFileSize += item.getSize();
+                    names.put(name, itemSize);
+                    newFileSize += itemSize;
                 }
             }
             this.commonSourceUrl = sameSource;
