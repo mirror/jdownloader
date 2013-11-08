@@ -98,10 +98,9 @@ public class MyJDownloaderWaitingConnectionThread extends Thread {
             while (running.get()) {
                 MyJDownloaderConnectionRequest request = null;
                 synchronized (connectionRequest) {
-                    if (running.get() == false) return;
                     if ((request = connectionRequest.getAndSet(null)) == null) {
-                        connectionRequest.wait();
                         if (running.get() == false) return;
+                        connectionRequest.wait();
                         request = connectionRequest.getAndSet(null);
                     }
                 }
@@ -128,14 +127,12 @@ public class MyJDownloaderWaitingConnectionThread extends Thread {
                         }
                         e = throwable;
                     }
-                    synchronized (connectionRequest) {
-                        MyJDownloaderConnectionResponse response = new MyJDownloaderConnectionResponse(this, request.getConnectionHelper(), connectionStatus, connectionSocket, e);
-                        if (connectThread.putResponse(response) == false) {
-                            logger.info("putResponse failed, maybe connectThread is closed/interrupted.");
-                            try {
-                                connectionSocket.close();
-                            } catch (final Throwable ignore) {
-                            }
+                    MyJDownloaderConnectionResponse response = new MyJDownloaderConnectionResponse(this, request.getConnectionHelper(), connectionStatus, connectionSocket, e);
+                    if (connectThread.putResponse(response) == false) {
+                        logger.info("putResponse failed, maybe connectThread is closed/interrupted.");
+                        try {
+                            connectionSocket.close();
+                        } catch (final Throwable ignore) {
                         }
                     }
                 }

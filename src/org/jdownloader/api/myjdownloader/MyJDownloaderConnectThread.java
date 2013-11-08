@@ -149,10 +149,10 @@ public class MyJDownloaderConnectThread extends Thread {
     }
 
     public boolean putResponse(MyJDownloaderConnectionResponse response) {
+        synchronized (waitingConnections) {
+            if (waitingConnections.size() == 0) return false;
+        }
         synchronized (responses) {
-            synchronized (waitingConnections) {
-                if (waitingConnections.size() == 0) return false;
-            }
             responses.add(response);
             responses.notify();
         }
@@ -518,38 +518,36 @@ public class MyJDownloaderConnectThread extends Thread {
     }
 
     public void disconnect() {
-        synchronized (this) {
-            MyJDownloaderAPI lapi = api;
-            api = null;
-            terminateWaitingConnections();
-            try {
-                interrupt();
-            } catch (final Throwable e) {
-            }
-            try {
-                lapi.disconnect();
-            } catch (final Throwable e) {
-            }
-            synchronized (openConnections) {
-                Iterator<Entry<Thread, Socket>> it = openConnections.entrySet().iterator();
-                while (it.hasNext()) {
-                    Entry<Thread, Socket> next = it.next();
-                    try {
-                        next.getValue().close();
-                    } catch (final Throwable e) {
-                    }
-                    try {
-                        next.getKey().interrupt();
-                    } catch (final Throwable e) {
-                    }
+        MyJDownloaderAPI lapi = api;
+        api = null;
+        terminateWaitingConnections();
+        try {
+            interrupt();
+        } catch (final Throwable e) {
+        }
+        try {
+            lapi.disconnect();
+        } catch (final Throwable e) {
+        }
+        synchronized (openConnections) {
+            Iterator<Entry<Thread, Socket>> it = openConnections.entrySet().iterator();
+            while (it.hasNext()) {
+                Entry<Thread, Socket> next = it.next();
+                try {
+                    next.getValue().close();
+                } catch (final Throwable e) {
+                }
+                try {
+                    next.getKey().interrupt();
+                } catch (final Throwable e) {
                 }
             }
-            setConnected(MyJDownloaderConnectionStatus.UNCONNECTED);
-            ScheduledExecutorService lTHREADQUEUE = THREADQUEUE;
-            THREADQUEUE = null;
-            if (lTHREADQUEUE != null) lTHREADQUEUE.shutdownNow();
-            notifyInterests = new HashSet<NotificationRequestMessage.TYPE>();
         }
+        setConnected(MyJDownloaderConnectionStatus.UNCONNECTED);
+        ScheduledExecutorService lTHREADQUEUE = THREADQUEUE;
+        THREADQUEUE = null;
+        if (lTHREADQUEUE != null) lTHREADQUEUE.shutdownNow();
+        notifyInterests = new HashSet<NotificationRequestMessage.TYPE>();
     }
 
     private void startWaitingConnections(boolean minimumORmaximum) {
