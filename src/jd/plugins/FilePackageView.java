@@ -296,6 +296,7 @@ public class FilePackageView extends ChildrenView<DownloadLink> {
             // online
             tmp.newOnline++;
         }
+        //
         PluginProgress prog = link.getPluginProgress();
         if (prog != null) {
             if (!tmp.pluginStates.containsKey(prog.getClass().getName() + link.getHost())) {
