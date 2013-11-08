@@ -197,17 +197,19 @@ public abstract class FilterTable extends BasicJDTable<Filter> implements Packag
     private void updateSelection() {
 
         // clear selection in other filter tables if we switched to a new one
-
-        // org.jdownloader.settings.statics.LINKFILTER.CFG
-        if (org.jdownloader.settings.staticreferences.CFG_LINKGRABBER.QUICK_VIEW_SELECTION_ENABLED.getValue()) {
-            java.util.List<Filter> selection = getSelectedFilters();
-            java.util.List<AbstractNode> newSelection = getMatches(selection);
-            List<CrawledPackage> expands = getPackagesToExpand(selection);
-            for (CrawledPackage pkg : expands) {
-                LinkGrabberTableModel.getInstance().setFilePackageExpand(pkg, true);
+        if (this.hasFocus()) {
+            /* quick and dirty solution */
+            // org.jdownloader.settings.statics.LINKFILTER.CFG
+            if (org.jdownloader.settings.staticreferences.CFG_LINKGRABBER.QUICK_VIEW_SELECTION_ENABLED.getValue()) {
+                java.util.List<Filter> selection = getSelectedFilters();
+                java.util.List<AbstractNode> newSelection = getMatches(selection);
+                List<CrawledPackage> expands = getPackagesToExpand(selection);
+                for (CrawledPackage pkg : expands) {
+                    LinkGrabberTableModel.getInstance().setFilePackageExpand(pkg, true);
+                }
+                System.out.println("refresh");
+                getLinkgrabberTable().getModel().setSelectedObjects(newSelection);
             }
-            System.out.println("refresh");
-            getLinkgrabberTable().getModel().setSelectedObjects(newSelection);
         }
 
     }
