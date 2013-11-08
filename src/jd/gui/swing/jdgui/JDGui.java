@@ -121,7 +121,9 @@ import org.jdownloader.gui.jdtrayicon.TrayExtension;
 import org.jdownloader.gui.notify.BubbleNotify;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.downloads.DownloadsView;
+import org.jdownloader.gui.views.downloads.contextmenumanager.MenuManagerDownloadTableContext;
 import org.jdownloader.gui.views.linkgrabber.LinkGrabberView;
+import org.jdownloader.gui.views.linkgrabber.contextmenu.MenuManagerLinkgrabberTableContext;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.settings.FrameStatus;
@@ -525,7 +527,15 @@ public class JDGui implements UpdaterListener, OwnerFinder {
                     }
 
                 };
+
+                new Thread("Load Context Menus") {
+                    public void run() {
+                        MenuManagerDownloadTableContext.getInstance().getMenuData();
+                        MenuManagerLinkgrabberTableContext.getInstance().getMenuData();
+                    }
+                }.start();
             }
+
         });
 
         this.mainTabbedPane.setSelectedComponent(this.downloadView);

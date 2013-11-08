@@ -187,6 +187,7 @@ public class GenericDeleteFromLinkgrabberContextAction extends AbstractSelection
                 si = getSelection();
             }
         } else {
+
             if (this.isIgnoreFiltered()) {
 
                 si = getTable().getSelectionInfo(false, false);

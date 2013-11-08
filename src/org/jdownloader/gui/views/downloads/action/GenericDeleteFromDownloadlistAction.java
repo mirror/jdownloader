@@ -120,8 +120,8 @@ public class GenericDeleteFromDownloadlistAction extends AppAction implements Ca
 
     @Override
     public void setEnabled(boolean newValue) {
-        System.out.println(newValue);
-        super.setEnabled(newValue);
+
+        super.setEnabled(true);
     }
 
     @Override
