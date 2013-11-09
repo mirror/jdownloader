@@ -77,13 +77,24 @@ public class SaveTvDecrypter extends PluginForDecrypt {
         final DecimalFormat df2 = new DecimalFormat("0000000000000");
         final String one = df.format(new Random().nextInt(10000));
         final String two = df2.format(new Random().nextInt(1000000000));
+        final ArrayList<String> addedIDs = new ArrayList<String>();
         for (int i = 1; i <= maxPage; i++) {
+            try {
+                if (this.isAbort()) {
+                    logger.info("Decrypt process aborted by user: " + parameter);
+                    return decryptedLinks;
+                }
+            } catch (final Throwable e) {
+                // Not available in old 0.9.581 Stable
+            }
             logger.info("Decrypting page " + i + " of " + maxPage);
             int addedlinksnum = 0;
             if (i > 1) {
                 br.getPage("https://www.save.tv/STV/M/obj/user/usShowVideoArchive.cfm?iPageNumber=" + i + "&bLoadLast=1");
             }
+            // Find series links
             final String[][] directSeriesLinks = br.getRegex("(\\d+)\" class=\"child\">([^<>\"]*?)</a>[\t\n\r ]+\\-(.*?)(\r|\t|\n]+)").getMatches();
+            final String[][] directSeriesLinks2 = br.getRegex("TelecastID=(\\d+)\" class=\"normal\">([^<>\"]*?)</a>").getMatches();
             if (directSeriesLinks != null && directSeriesLinks.length != 0) {
                 for (final String[] directserieslinkinfo : directSeriesLinks) {
                     final String telecastID = directserieslinkinfo[0];
@@ -102,21 +113,47 @@ public class SaveTvDecrypter extends PluginForDecrypt {
                         // Not available in old 0.9.581 Stable
                     }
                     decryptedLinks.add(dl);
+                    addedIDs.add(telecastID);
                     addedlinksnum++;
                 }
             }
+            if (directSeriesLinks2 != null && directSeriesLinks2.length != 0) {
+                for (final String[] directserieslinkinfo : directSeriesLinks2) {
+                    final String telecastID = directserieslinkinfo[0];
+                    if (!addedIDs.contains(telecastID)) {
+                        final String seriesName = Encoding.htmlDecode(directserieslinkinfo[1].trim());
+                        final DownloadLink dl = createDownloadlink("https://www.save.tv/STV/M/obj/user/usShowVideoArchiveDetail.cfm?TelecastID=" + telecastID);
+                        final FilePackage fp = FilePackage.getInstance();
+                        fp.setName(Encoding.htmlDecode(seriesName));
+                        fp.addLinks(decryptedLinks);
+                        dl.setFinalFileName(seriesName + ".mp4");
+                        dl._setFilePackage(fp);
+                        if (fastLinkcheck) dl.setAvailable(true);
+                        try {
+                            distribute(dl);
+                        } catch (final Throwable e) {
+                            // Not available in old 0.9.581 Stable
+                        }
+                        decryptedLinks.add(dl);
+                        addedIDs.add(telecastID);
+                        addedlinksnum++;
+                    }
+                }
+            }
 
+            // Find movie links
             final String[][] directMovieLinks = br.getRegex("(\\d+)\" class=\"normal\">([^<>\"]*?)</a>[\t\n\r ]+\\-(.*?)(\r|\t|\n]+)").getMatches();
+            final String[][] directMovieLinks2 = br.getRegex("(\\d+)\" class=\"normal\">([^<>\"]*?)</a>").getMatches();
             if (directMovieLinks != null && directMovieLinks.length != 0) {
                 for (final String[] directmovieslinkinfo : directMovieLinks) {
                     final String telecastID = directmovieslinkinfo[0];
-                    final String seriesName = Encoding.htmlDecode(directmovieslinkinfo[1].trim());
+                    final String movieName = Encoding.htmlDecode(directmovieslinkinfo[1].trim());
                     final String episodeTitle = Encoding.htmlDecode(directmovieslinkinfo[2].trim());
                     final DownloadLink dl = createDownloadlink("https://www.save.tv/STV/M/obj/user/usShowVideoArchiveDetail.cfm?TelecastID=" + telecastID);
                     final FilePackage fp = FilePackage.getInstance();
-                    fp.setName(Encoding.htmlDecode(seriesName));
+                    fp.setName(Encoding.htmlDecode(movieName));
                     fp.addLinks(decryptedLinks);
-                    dl.setFinalFileName(seriesName + " - " + episodeTitle + ".mp4");
+                    dl.setFinalFileName(movieName + " - " + episodeTitle + ".mp4");
                     dl._setFilePackage(fp);
                     if (fastLinkcheck) dl.setAvailable(true);
                     try {
@@ -125,9 +162,34 @@ public class SaveTvDecrypter extends PluginForDecrypt {
                         // Not available in old 0.9.581 Stable
                     }
                     decryptedLinks.add(dl);
+                    addedIDs.add(telecastID);
                     addedlinksnum++;
                 }
             }
+            if (directMovieLinks2 != null && directMovieLinks2.length != 0) {
+                for (final String[] directmovieslinkinfo : directMovieLinks2) {
+                    final String telecastID = directmovieslinkinfo[0];
+                    if (!addedIDs.contains(telecastID)) {
+                        final String movieName = Encoding.htmlDecode(directmovieslinkinfo[1].trim());
+                        final DownloadLink dl = createDownloadlink("https://www.save.tv/STV/M/obj/user/usShowVideoArchiveDetail.cfm?TelecastID=" + telecastID);
+                        final FilePackage fp = FilePackage.getInstance();
+                        fp.setName(Encoding.htmlDecode(movieName));
+                        fp.addLinks(decryptedLinks);
+                        dl.setFinalFileName(movieName + ".mp4");
+                        dl._setFilePackage(fp);
+                        if (fastLinkcheck) dl.setAvailable(true);
+                        try {
+                            distribute(dl);
+                        } catch (final Throwable e) {
+                            // Not available in old 0.9.581 Stable
+                        }
+                        decryptedLinks.add(dl);
+                        addedIDs.add(telecastID);
+                        addedlinksnum++;
+                    }
+                }
+            }
+            // Find all the stuff which has to be parsed via ajax
             final String[][] dlInfo = br.getRegex("data\\-rownumber=\"(\\d+)\", data\\-title=\"([^<>\"]*?)\"").getMatches();
             if (dlInfo != null && dlInfo.length != 0) {
                 for (final String[] dInfo : dlInfo) {
@@ -152,36 +214,61 @@ public class SaveTvDecrypter extends PluginForDecrypt {
                         return null;
                     }
                     br.getRequest().setHtmlCode(br.toString().replace("\\", ""));
-                    String[][] epinfos = br.getRegex("TelecastID=(\\d+)\" class=\"normal\">([^<>\"]*?)</a> \\- ([^<>\"]*?)</td>").getMatches();
-                    if (epinfos == null || epinfos.length == 0) epinfos = br.getRegex("TelecastID=(\\d+)\" class=\"normal\">([^<>\"]*?)</a>").getMatches();
-                    if ((epinfos == null || epinfos.length == 0) && addedlinksnum == 0) {
+                    final String[][] epinfos = br.getRegex("TelecastID=(\\d+)\" class=\"normal\">([^<>\"]*?)</a> \\- ([^<>\"]*?)</td>").getMatches();
+                    final String[][] epinfos2 = br.getRegex("TelecastID=(\\d+)\" class=\"normal\">([^<>\"]*?)</a>").getMatches();
+                    if (((epinfos == null || epinfos.length == 0) && (epinfos2 == null || epinfos2.length == 0)) && addedlinksnum == 0) {
                         logger.info("Can't find more links, stopping at page: " + i + " of " + maxPage);
                         return decryptedLinks;
-                    } else if (epinfos == null || epinfos.length == 0) {
+                    } else if (((epinfos == null || epinfos.length == 0) && (epinfos2 == null || epinfos2.length == 0)) && decryptedLinks.size() == 0) {
                         logger.warning("Decrypter broken for link: " + parameter);
                         logger.warning("Stopped at page " + i + " of " + maxPage);
                         return null;
                     }
-                    for (final String[] episodeinfo : epinfos) {
-                        final String telecastID = episodeinfo[0];
-                        final String seriesName = Encoding.htmlDecode(episodeinfo[1].trim());
-                        final DownloadLink dl = createDownloadlink("https://www.save.tv/STV/M/obj/user/usShowVideoArchiveDetail.cfm?TelecastID=" + telecastID);
-                        if (episodeinfo.length == 3) {
+                    String[] allEntrys = br.getRegex("(<tr name=\"archive\\-list\\-row\\-\\d+\")").getColumn(0);
+                    if (allEntrys != null && allEntrys.length > epinfos2.length) {
+                        logger.warning("frhzijthjztkbuahhhh");
+                    }
+                    if (epinfos != null && epinfos.length != 0) {
+                        for (final String[] episodeinfo : epinfos) {
+                            final String telecastID = episodeinfo[0];
+                            final String seriesName = Encoding.htmlDecode(episodeinfo[1].trim());
+                            final DownloadLink dl = createDownloadlink("https://www.save.tv/STV/M/obj/user/usShowVideoArchiveDetail.cfm?TelecastID=" + telecastID);
                             final String episodeTitle = Encoding.htmlDecode(episodeinfo[2].trim());
                             dl.setFinalFileName(seriesName + " - " + episodeTitle + ".mp4");
-                        } else {
-                            dl.setFinalFileName(seriesName + ".mp4");
+                            dl._setFilePackage(fp);
+                            if (fastLinkcheck) dl.setAvailable(true);
+                            try {
+                                distribute(dl);
+                            } catch (final Throwable e) {
+                                // Not available in old 0.9.581 Stable
+                            }
+                            decryptedLinks.add(dl);
+                            addedIDs.add(telecastID);
+                            addedlinksnum++;
                         }
-                        dl._setFilePackage(fp);
-                        if (fastLinkcheck) dl.setAvailable(true);
-                        try {
-                            distribute(dl);
-                        } catch (final Throwable e) {
-                            // Not available in old 0.9.581 Stable
-                        }
-                        decryptedLinks.add(dl);
-                        addedlinksnum++;
                     }
+
+                    if (epinfos2 != null && epinfos2.length != 0) {
+                        for (final String[] episodeinfo : epinfos2) {
+                            final String telecastID = episodeinfo[0];
+                            if (!addedIDs.contains(telecastID)) {
+                                final String seriesName = Encoding.htmlDecode(episodeinfo[1].trim());
+                                final DownloadLink dl = createDownloadlink("https://www.save.tv/STV/M/obj/user/usShowVideoArchiveDetail.cfm?TelecastID=" + telecastID);
+                                dl.setFinalFileName(seriesName + ".mp4");
+                                dl._setFilePackage(fp);
+                                if (fastLinkcheck) dl.setAvailable(true);
+                                try {
+                                    distribute(dl);
+                                } catch (final Throwable e) {
+                                    // Not available in old 0.9.581 Stable
+                                }
+                                decryptedLinks.add(dl);
+                                addedIDs.add(telecastID);
+                                addedlinksnum++;
+                            }
+                        }
+                    }
+
                 }
             }
             if (addedlinksnum == 0 && decryptedLinks.size() == 0) {
@@ -193,6 +280,7 @@ public class SaveTvDecrypter extends PluginForDecrypt {
             }
             logger.info("Found " + addedlinksnum + " links on page " + i + " of " + maxPage);
         }
+        // TODO: Add message if decrypt was successful
 
         return decryptedLinks;
     }

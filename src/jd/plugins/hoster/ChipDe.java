@@ -52,45 +52,6 @@ public class ChipDe extends PluginForHost {
         return -1;
     }
 
-    @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
-        requestFileInformation(downloadLink);
-        String step1 = br.getRegex("class=\"dl\\-btn\"><a href=\"(http.*?)\"").getMatch(0);
-        if (step1 == null) {
-            step1 = br.getRegex("<h2 class=\"item hProduct\"><a href=\"(http.*?)\"").getMatch(0);
-            if (step1 == null) {
-                step1 = br.getRegex("\"(http://www\\.chip\\.de/downloads/.*?downloads_auswahl_\\d+\\.html.*?)\"").getMatch(0);
-                if (step1 == null) step1 = br.getRegex("\"(/.{2}/download_getfile_.*?)\"").getMatch(0);
-            }
-        }
-        if (step1 == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        if (downloadLink.getDownloadURL().contains("download.chip.") && !step1.contains("download.chip.")) step1 = new Regex(downloadLink.getDownloadURL(), "(http://download\\.chip\\..*?)/.{2}/").getMatch(0) + step1;
-        br.getPage(step1);
-        String dllink = br.getRegex("<div id=\"start_download_v1\">.{10,500}<a href=\"(http://.*?)\"").getMatch(0);
-        if (dllink == null) {
-            String step2 = br.getRegex("<div class=\"dl\\-faktbox\\-row( bottom)?\">.*?<a href=\"(http.*?)\"").getMatch(1);
-            if (step2 == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            br.getPage(step2);
-            dllink = br.getRegex("Falls der Download nicht beginnt,\\&nbsp;<a class=\"b\" href=\"(http.*?)\"").getMatch(0);
-            if (dllink == null) {
-                dllink = br.getRegex("class=\"dl\\-btn\"><a href=\"(http.*?)\"").getMatch(0);
-                if (dllink == null) {
-                    dllink = br.getRegex("</span></a></div><a href=\"(http.*?)\"").getMatch(0);
-                    if (dllink == null) {
-                        dllink = br.getRegex("\"(http://dl\\.cdn\\.chip\\.de/downloads/\\d+/.*?)\"").getMatch(0);
-                    }
-                }
-            }
-        }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        downloadLink.setFinalFileName(Encoding.htmlDecode(getFileNameFromHeader(dl.getConnection())));
-        dl.startDownload();
-    }
-
     // Links sind Sprachen zugeordnet. Leider kann man diese nicht alle auf eine
     // Sprache abändern. Somit muss man alle Sprachen manuell einbauen oder
     // bessere Regexes finden, die überall funktionieren
@@ -130,10 +91,52 @@ public class ChipDe extends PluginForHost {
         link.setName(filename.trim());
         String filesize = br.getRegex(">Dateigr\\&ouml;\\&szlig;e:</p>[\t\n\r ]+<p class=\"col2\">([^<>\"]*?)<meta itemprop=\"fileSize\"").getMatch(0);
         if (filesize == null) filesize = br.getRegex("<dt>(File size:|Размер файла:|Dimensioni:|Dateigröße:|Velikost:|Fájlméret:|Bestandsgrootte:|Rozmiar pliku:|Mărime fişier:|Dosya boyu:|文件大小：)<br /></dt>[\t\n\r ]+<dd>(.*?)<br /></dd>").getMatch(1);
-        if (filesize != null) link.setDownloadSize(SizeFormatter.getSize(filesize));
+        if (filesize != null) {
+            filesize = filesize.replace("GByte", "GB");
+            link.setDownloadSize(SizeFormatter.getSize(filesize));
+        }
         String md5 = br.getRegex("<dt>(Контрольная сумма \\(MD 5\\):|Checksum:|Prüfsumme:|Kontrolní součet:|Szumma:|Suma kontrolna|Checksum|Kontrol toplamı:|校验码：)<br /></dt>[\t\n\r ]+<dd>(.*?)<br /></dd>").getMatch(1);
         if (md5 != null) link.setMD5Hash(md5);
         return AvailableStatus.TRUE;
+    }
+
+    @Override
+    public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
+        requestFileInformation(downloadLink);
+        String step1 = br.getRegex("class=\"dl\\-btn\"><a href=\"(http.*?)\"").getMatch(0);
+        if (step1 == null) {
+            step1 = br.getRegex("<h2 class=\"item hProduct\"><a href=\"(http.*?)\"").getMatch(0);
+            if (step1 == null) {
+                step1 = br.getRegex("\"(http://www\\.chip\\.de/downloads/.*?downloads_auswahl_\\d+\\.html.*?)\"").getMatch(0);
+                if (step1 == null) step1 = br.getRegex("\"(/.{2}/download_getfile_.*?)\"").getMatch(0);
+            }
+        }
+        if (step1 == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (downloadLink.getDownloadURL().contains("download.chip.") && !step1.contains("download.chip.")) step1 = new Regex(downloadLink.getDownloadURL(), "(http://download\\.chip\\..*?)/.{2}/").getMatch(0) + step1;
+        br.getPage(step1);
+        String dllink = br.getRegex("<div id=\"start_download_v1\">.{10,500}<a href=\"(http://.*?)\"").getMatch(0);
+        if (dllink == null) {
+            String step2 = br.getRegex("<div class=\"dl\\-faktbox\\-row( bottom)?\">.*?<a href=\"(http.*?)\"").getMatch(1);
+            if (step2 == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            br.getPage(step2);
+            dllink = br.getRegex("Falls der Download nicht beginnt,\\&nbsp;<a class=\"b\" href=\"(http.*?)\"").getMatch(0);
+            if (dllink == null) {
+                dllink = br.getRegex("class=\"dl\\-btn\"><a href=\"(http.*?)\"").getMatch(0);
+                if (dllink == null) {
+                    dllink = br.getRegex("</span></a></div><a href=\"(http.*?)\"").getMatch(0);
+                    if (dllink == null) {
+                        dllink = br.getRegex("\"(http://dl\\.cdn\\.chip\\.de/downloads/\\d+/.*?)\"").getMatch(0);
+                    }
+                }
+            }
+        }
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
+        if (dl.getConnection().getContentType().contains("html")) {
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        downloadLink.setFinalFileName(Encoding.htmlDecode(getFileNameFromHeader(dl.getConnection())));
+        dl.startDownload();
     }
 
     @Override
