@@ -35,3 +35,5 @@ popup_premiumtoggle=Premium etkinleştirildi
 popup_reconnect=Şimdi Yeniden Bağlan
 popup_reconnecttoggle=Otomatik Yeniden Bağlanma etkinleştirildi
 popup_update=Güncellemeleri Kontrol Et
+popup_update_install=En Son Güncellemeyi Yükle
+popup_update_install_tt=Kurulumu bekleyen güncellemeler var. Şimdi yüklemek için tıklayın!
