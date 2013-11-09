@@ -10,7 +10,7 @@ gui_config_jdshutdown_mode=Režim:
 gui_config_jdshutdown_shutdown=Vypnutí
 gui_config_jdshutdown_standby=Spánek (ne ve všech OS)
 install_force=Nainstalovat Vynucené vypnutí
-install_msg=Chcete připravit Váš systém pro Vynucené vypnutí?
+install_msg=Chcete připravit váš systém pro funkci vynuceného vypnutí?
 install_title=Nainstalovat Vynucené vypnutí
 interaction_shutdown_dialog_msg_closejd=<h2><font color="red">JDownloader se zavře!</font></h2>
 interaction_shutdown_dialog_msg_hibernate=<h2><font color="red">Systém se přepne do Režimu spánku!</font></h2>
