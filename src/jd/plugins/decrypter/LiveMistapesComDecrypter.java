@@ -100,9 +100,10 @@ public class LiveMistapesComDecrypter extends PluginForDecrypt {
         }
         if (filename == null || filesize == null) {
             mainlink.setAvailable(false);
+        } else {
+            mainlink.setFinalFileName(Encoding.htmlDecode(filename.trim()));
+            mainlink.setDownloadSize(SizeFormatter.getSize(filesize));
         }
-        mainlink.setFinalFileName(Encoding.htmlDecode(filename.trim()));
-        mainlink.setDownloadSize(SizeFormatter.getSize(filesize));
         decryptedLinks.add(mainlink);
 
         return decryptedLinks;

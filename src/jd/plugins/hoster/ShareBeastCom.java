@@ -52,7 +52,7 @@ import jd.utils.locale.JDL;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sharebeast.com" }, urls = { "http://(www\\.)?sharebeast\\.com/[a-z0-9]{12}" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sharebeast.com" }, urls = { "http://(www\\.)?sharebeast\\.com/(mp3embed\\-)?[a-z0-9]{12}" }, flags = { 2 })
 public class ShareBeastCom extends PluginForHost {
 
     private String               correctedBR                  = "";
@@ -83,7 +83,7 @@ public class ShareBeastCom extends PluginForHost {
 
     @Override
     public void correctDownloadLink(DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replace("https://", "http://"));
+        link.setUrlDownload("http://sharebeast.com/" + new Regex(link.getDownloadURL(), "([a-z0-9]{12})$").getMatch(0));
     }
 
     public ShareBeastCom(PluginWrapper wrapper) {

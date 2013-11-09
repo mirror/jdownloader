@@ -132,13 +132,13 @@ public class GameFrontCom extends PluginForHost {
         this.sleep(wait * 1001l, downloadLink);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, finallink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
+            if (dl.getConnection().getResponseCode() == 403) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 5 * 60 * 1000l);
             br.followConnection();
             if (br.containsHTML("(<title>404 - Not Found</title>|<h1>404 - Not Found</h1>)")) {
                 // downloadLink.setProperty("specialstuff", true);
                 // throw new PluginException(LinkStatus.ERROR_RETRY);
                 // throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 60 * 60 * 1000l);
             }
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
 

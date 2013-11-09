@@ -117,6 +117,7 @@ public class NmLdsrg extends PluginForDecrypt {
             // they check if you hit up this step or not!!
             // <iframe id="ad" scrolling="auto" src="http://www.anime-loads.org/redirect/animemanga/69e398ca6a4cfb2fa46771f6b75ac3f6"
             String ad_redirect = br2.getRegex("<iframe id=\"[A-Za-z0-9]+\" scrolling=\"auto\" src=\"(http://(www\\.)?anime\\-loads\\.org/redirect/[a-z0-9]+/[a-z0-9]+)\"").getMatch(0);
+            if (ad_redirect == null) ad_redirect = br2.getRegex("scrolling=\"auto\" src=\"(http[^<>\"]*?)\"").getMatch(0);
             if (ad_redirect == null) {
                 logger.warning("Could not find 'ad_redirect' : " + br.getURL());
             } else {

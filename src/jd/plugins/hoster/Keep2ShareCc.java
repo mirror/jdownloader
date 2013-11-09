@@ -466,22 +466,29 @@ public class Keep2ShareCc extends PluginForHost {
         } else {
             br.setFollowRedirects(false);
             br.getPage(link.getDownloadURL());
-            if (br.containsHTML(">Login<")) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            // final String oldDomain = new Regex(link.getDownloadURL(), "([a-z0-9]+\\.cc)/file/").getMatch(0);
-            // Direct download
+            // Set cookies for other domain if it is changed via redirect
+            String currentDomain = MAINPAGE.replace("http://", "");
+            String newDomain = null;
             String dllink = br.getRedirectLocation();
-            logger.info("dllink = " + dllink);
-            // if (dllink != null && !dllink.contains(oldDomain)) {
-            // br.getPage(br.getRedirectLocation());
-            // dllink = br.getRedirectLocation();
-            // }
-            // Or no direct download
             if (dllink == null) dllink = br.getRegex("(\\'|\")(/file/url\\.html\\?file=[a-z0-9]+)(\\'|\")").getMatch(1);
+            if (dllink != null && !dllink.contains(currentDomain))
+                newDomain = new Regex(dllink, "https?://([^<>\"/]*?)/").getMatch(0);
+            else if (!br.getURL().contains(currentDomain)) {
+                newDomain = new Regex(br.getURL(), "https?://([^<>\"/]*?)/").getMatch(0);
+            }
+            if (newDomain != null) {
+                resetCookies(account, currentDomain, newDomain);
+                br.getPage(link.getDownloadURL().replace(currentDomain, newDomain));
+                dllink = br.getRedirectLocation();
+                if (dllink == null) dllink = br.getRegex("(\\'|\")(/file/url\\.html\\?file=[a-z0-9]+)(\\'|\")").getMatch(1);
+            }
+            if (newDomain != null) currentDomain = newDomain;
             if (dllink == null) {
                 if (br.containsHTML("Traffic limit exceed\\!<")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
                 synchronized (LOCK) {
-                    if (cookies == account.getProperty("cookies", null)) {
+                    if (cookies == account.getProperty("cookies", null) && !account.getBooleanProperty("retried_once", false)) {
                         account.setProperty("cookies", Property.NULL);
+                        account.setProperty("retried_once", true);
                         throw new PluginException(LinkStatus.ERROR_RETRY);
                     }
                 }
@@ -490,8 +497,9 @@ public class Keep2ShareCc extends PluginForHost {
             }
             dllink = Encoding.htmlDecode(dllink);
             if (!dllink.startsWith("http")) {
-                dllink = MAINPAGE + dllink;
+                dllink = "http://" + currentDomain + dllink;
             }
+            logger.info("dllink = " + dllink);
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
             if (dl.getConnection().getContentType().contains("html")) {
                 logger.warning("The final dllink seems not to be a file!");
@@ -500,6 +508,21 @@ public class Keep2ShareCc extends PluginForHost {
             }
             dl.startDownload();
         }
+    }
+
+    @SuppressWarnings("unchecked")
+    private boolean resetCookies(final Account account, String oldDomain, String newDomain) {
+        oldDomain = "http://" + oldDomain;
+        newDomain = "http://" + newDomain;
+        br.clearCookies(oldDomain);
+        final Object ret = account.getProperty("cookies", null);
+        final HashMap<String, String> cookies = (HashMap<String, String>) ret;
+        for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
+            final String key = cookieEntry.getKey();
+            final String value = cookieEntry.getValue();
+            this.br.setCookie(newDomain, key, value);
+        }
+        return true;
     }
 
     @Override

@@ -43,11 +43,6 @@ public class MinUpNet extends PluginForDecrypt {
             logger.info("Link offline: " + parameter);
             return decryptedLinks;
         }
-        final String[] links = br.getRegex("\"(http://minup.net/redirect/[A-Za-z0-9]+/\\d+)\"").getColumn(0);
-        if (links == null || links.length == 0) {
-            logger.warning("Decrypter broken for link: " + parameter);
-            return null;
-        }
         if (br.containsHTML("for=\"direct_link\">Direct Link :</label>")) {
             try {
                 br.getPage("http://minup.net/dfile.php?createlink=" + new Regex(parameter, "([A-Za-z0-9]+)$").getMatch(0));
@@ -57,18 +52,25 @@ public class MinUpNet extends PluginForDecrypt {
                 // Prevent the decrypter from failing here
             }
         }
-        for (final String singleLink : links) {
-            br.getPage(singleLink);
-            if (br.containsHTML("No htmlCode read")) {
-                logger.info("Found single offline link: " + singleLink);
-                continue;
+        final String[] links = br.getRegex("\"(http://minup.net/redirect/[A-Za-z0-9]+/\\d+)\"").getColumn(0);
+        if (links != null && links.length != 0) {
+            for (final String singleLink : links) {
+                br.getPage(singleLink);
+                if (br.containsHTML("No htmlCode read")) {
+                    logger.info("Found single offline link: " + singleLink);
+                    continue;
+                }
+                final String finallink = br.getRedirectLocation();
+                if (finallink == null) {
+                    logger.warning("Decrypter broken for link: " + parameter);
+                    return null;
+                }
+                decryptedLinks.add(createDownloadlink(finallink));
             }
-            final String finallink = br.getRedirectLocation();
-            if (finallink == null) {
-                logger.warning("Decrypter broken for link: " + parameter);
-                return null;
-            }
-            decryptedLinks.add(createDownloadlink(finallink));
+        }
+        if (decryptedLinks.size() == 0) {
+            logger.warning("Decrypter broken for link: " + parameter);
+            return null;
         }
         return decryptedLinks;
     }

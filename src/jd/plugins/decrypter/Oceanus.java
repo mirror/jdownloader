@@ -17,12 +17,17 @@ import org.appwork.utils.StringUtils;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "oceanus.ch" }, urls = { "http://oceanus.ch/u/[0-9a-zA-Z\\-]*/[0-9a-zA-Z\\-]*" }, flags = { 0 })
 public class Oceanus extends PluginForDecrypt {
-    private final String ENCODING_DICTIONARY = "ABCDEFGHJKLMNOPQRSTUVWXYZabcdefghjkmnopqrstuvwxyz023456789";
-    private final int    ENCODING_SIZE_64    = (int) Math.ceil(64 / (Math.log(ENCODING_DICTIONARY.length()) / Math.log(2))); // 11
+    private final String         ENCODING_DICTIONARY = "ABCDEFGHJKLMNOPQRSTUVWXYZabcdefghjkmnopqrstuvwxyz023456789";
+    private final int            ENCODING_SIZE_64    = (int) Math.ceil(64 / (Math.log(ENCODING_DICTIONARY.length()) / Math.log(2))); // 11
+    private static final boolean OCEANUSDEACTIVATED  = true;
 
     @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink parameter, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+        if (OCEANUSDEACTIVATED) {
+            logger.info("oceanus.ch is currently undergoing maintenance...");
+            return ret;
+        }
         PluginForHost oceanus = JDUtilities.getNewPluginForHostInstance("oceanus.ch");
         oceanus.setLogger(getLogger());
         oceanus.setBrowser(getBrowser());

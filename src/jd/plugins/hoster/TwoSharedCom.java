@@ -62,7 +62,7 @@ public class TwoSharedCom extends PluginForHost {
         br.setCookiesExclusive(true);
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML("The file link that you requested is not valid")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("The file link that you requested is not valid") || br.containsHTML("var msg = \\'")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         Form pwform = br.getForm(0);
         if (pwform != null && pwform.containsHTML("password") && !pwform.getAction().contains("paypal")) {
             String passCode = downloadLink.getStringProperty("pass", null);

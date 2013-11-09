@@ -733,10 +733,7 @@ public class SaveTv extends PluginForHost {
         sb.append("*videotitel* = Name des Videos ohne Dateiendung\r\n");
         sb.append("*zufallszahl* = Eine vierstellige Zufallszahl\r\n[Nützlich um Dateinamenkollisionen zu vermeiden]\r\n");
         sb.append("*telecastid* = Die id, die in jedem save.tv Link steht: TelecastID=XXXXXXX\r\n[Nützlich um Dateinamenkollisionen zu vermeiden]\r\n");
-        sb.append("*endung* = Die Dateiendung, in diesem Fall '.mp4'\r\n");
-        sb.append("\r\n");
-        sb.append("WICHTIG: Tags, zu denen die Daten fehlen , werden durch '-' (Bindestrich) ersetzt!\r\n");
-        sb.append("Fehlt z.B. das Produktionsland, steht statt diesem dann ein Bindestrich im Dateinamen.");
+        sb.append("*endung* = Die Dateiendung, in diesem Fall '.mp4'");
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, sb.toString()).setEnabledCondidtion(origName, false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), CUSTOM_FILENAME_SERIES2_EPISODENAME_SEPERATION_MARK, JDL.L("plugins.hoster.savetv.customseriesfilenameSeperationmark", "Trennzeichen für Episodennamen\r\nNötig, da save.tv hier oft '/' nutzt (ungültig in Dateinamen):")).setDefaultValue(defaultCustomSeperationMark).setEnabledCondidtion(origName, false));
@@ -752,10 +749,7 @@ public class SaveTv extends PluginForHost {
         sbseries.append("*episodennummer* = Episodennummer - falls nicht gegeben entspricht das '-' (Bindestrich)\r\n");
         sbseries.append("*zufallszahl* = Eine vierstellige Zufallszahl - nützlich um Dateinamenkollisionen zu vermeiden\r\n");
         sbseries.append("*telecastid* = Die id, die in jedem save.tv Link steht: TelecastID=XXXXXXX\r\n[Nützlich um Dateinamenkollisionen zu vermeiden]\r\n");
-        sbseries.append("*endung* = Die Dateiendung, in diesem Fall '.mp4'\r\n");
-        sbseries.append("\r\n");
-        sbseries.append("WICHTIG: Tags, zu denen die Daten fehlen , werden durch '-' (Bindestrich) ersetzt!\r\n");
-        sbseries.append("Fehlt z.B. das Produktionsland, steht statt diesem dann ein Bindestrich im Dateinamen.");
+        sbseries.append("*endung* = Die Dateiendung, in diesem Fall '.mp4'");
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, sbseries.toString()).setEnabledCondidtion(origName, false));
     }
 

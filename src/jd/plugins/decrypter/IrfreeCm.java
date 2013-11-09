@@ -22,6 +22,7 @@ import java.util.regex.Pattern;
 import jd.PluginWrapper;
 import jd.controlling.DistributeData;
 import jd.controlling.ProgressController;
+import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.HTMLParser;
 import jd.plugins.CryptedLink;
@@ -36,7 +37,7 @@ public class IrfreeCm extends PluginForDecrypt {
         super(wrapper);
     }
 
-    private static final String INVALIDLINKS = "http://(www\\.)?irfree\\.(com|eu)//?(templates|applications|engine|user|tutorials|images|tv\\-shows).+";
+    private static final String INVALIDLINKS = "http://(www\\.)?irfree\\.(com|eu)//?(templates|engine|user|tutorials|images|tv\\-shows).+";
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
@@ -53,9 +54,11 @@ public class IrfreeCm extends PluginForDecrypt {
             return decryptedLinks;
         }
         passwords = HTMLParser.findPasswords(br.toString());
-        String[] links = new Regex(br.toString(), "<a href=\"(http://.*?)\"", Pattern.CASE_INSENSITIVE).getColumn(0);
+        String[] links = new Regex(br.toString(), "href=\"(http://.*?)\"", Pattern.CASE_INSENSITIVE).getColumn(0);
         if (links == null || links.length == 0) return null;
         for (String link : links) {
+            final String crypted = new Regex(link, "irfree\\.com/engine/go\\.php\\?url=([^<>\"]*?)\"").getMatch(0);
+            if (crypted != null) link = Encoding.Base64Decode(Encoding.htmlDecode(crypted));
             if (!new Regex(link, this.getSupportedLinks()).matches() && DistributeData.hasPluginFor(link, true)) {
                 DownloadLink dLink = createDownloadlink(link);
                 if (passwords != null && passwords.size() > 0) dLink.setSourcePluginPasswordList(passwords);
