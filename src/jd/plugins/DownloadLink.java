@@ -322,6 +322,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
     /**
      * @deprecated Use #setPriorityEnum instead
      * @param pr
+     * 
      */
     public void setPriority(int pr) {
         int oldPrio = getPriority();
@@ -1236,7 +1237,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
     }
 
     public void setPriorityEnum(Priority priority) {
-        setPriority(priority.ordinal() - 1);
+        setPriority(priority.getId());
     }
 
     public String getArchiveID() {
