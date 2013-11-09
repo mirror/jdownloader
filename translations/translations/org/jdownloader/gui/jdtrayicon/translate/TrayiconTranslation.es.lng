@@ -35,3 +35,5 @@ popup_premiumtoggle=Habilitar Cuentas Premium
 popup_reconnect=Reconectar Ahora
 popup_reconnecttoggle=Habilitar Reconexión Automática
 popup_update=Comprobar si hay Actualizaciones
+popup_update_install=Instalar las últimas Actualizaciones
+popup_update_install_tt=Hay actualizaciones esperando su instalación. Click para instalarlas ahora!
