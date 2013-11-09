@@ -55,7 +55,8 @@ import org.jdownloader.plugins.FinalLinkState;
 import org.jdownloader.plugins.SkipReason;
 
 /**
- * Hier werden alle notwendigen Informationen zu einem einzelnen Download festgehalten. Die Informationen werden dann in einer Tabelle dargestellt
+ * Hier werden alle notwendigen Informationen zu einem einzelnen Download festgehalten. Die Informationen werden dann in einer Tabelle
+ * dargestellt
  * 
  * @author astaldo
  */
@@ -276,7 +277,11 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
     }
 
     public Priority getPriorityEnum() {
-        return Priority.values()[getPriority() + 1];
+        try {
+            return Priority.getPriority(getPriority());
+        } catch (final Throwable e) {
+            return Priority.DEFAULT;
+        }
     }
 
     @Deprecated
@@ -546,8 +551,8 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
      * 
      * 2.) finalFileName (eg set by plugin where the final is 100% safe, eg API)
      * 
-     * 3.) unsafeFileName (eg set by plugin when no api is available, or no filename provided) ======= Liefert den Datei Namen dieses Downloads zurueck. Wurde
-     * der Name mit setfinalFileName(String) festgelegt wird dieser Name zurueckgegeben >>>>>>> .r21593
+     * 3.) unsafeFileName (eg set by plugin when no api is available, or no filename provided) ======= Liefert den Datei Namen dieses
+     * Downloads zurueck. Wurde der Name mit setfinalFileName(String) festgelegt wird dieser Name zurueckgegeben >>>>>>> .r21593
      * 
      * @param ignoreUnsafe
      * @return
@@ -618,7 +623,8 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
     }
 
     /**
-     * Gibt den Finalen Downloadnamen zurueck. Wird null zurueckgegeben, so wird der dateiname von den jeweiligen plugins automatisch ermittelt.
+     * Gibt den Finalen Downloadnamen zurueck. Wird null zurueckgegeben, so wird der dateiname von den jeweiligen plugins automatisch
+     * ermittelt.
      * 
      * @return Statischer Dateiname
      */
@@ -656,8 +662,8 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
     }
 
     /*
-     * Gibt zurueck ob Dieser Link schon auf verfuegbarkeit getestet wurde.+ Diese FUnktion fuehrt keinen!! Check durch. Sie prueft nur ob schon geprueft worden
-     * ist. anschiessend kann mit isAvailable() die verfuegbarkeit ueberprueft werden
+     * Gibt zurueck ob Dieser Link schon auf verfuegbarkeit getestet wurde.+ Diese FUnktion fuehrt keinen!! Check durch. Sie prueft nur ob
+     * schon geprueft worden ist. anschiessend kann mit isAvailable() die verfuegbarkeit ueberprueft werden
      * 
      * @return Link wurde schon getestet (true) nicht getestet(false)
      */
@@ -953,10 +959,10 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
     }
 
     /**
-     * Setzt den Statischen Dateinamen. Ist dieser wert != null, so wird er zum Speichern der Datei verwendet. ist er == null, so wird der dateiName im Plugin
-     * automatisch ermittelt. ACHTUNG: Der angegebene Dateiname ist endgueltig. Diese Funktion sollte nach Moeglichkeit nicht von Plugins verwendet werden. Sie
-     * gibt der Gui die Moeglichkeit unabhaengig von den Plugins einen Downloadnamen festzulegen. Userinputs>Automatische Erkennung - Plugins sollten
-     * {@link #setName(String)} verwenden um den Speichernamen anzugeben.
+     * Setzt den Statischen Dateinamen. Ist dieser wert != null, so wird er zum Speichern der Datei verwendet. ist er == null, so wird der
+     * dateiName im Plugin automatisch ermittelt. ACHTUNG: Der angegebene Dateiname ist endgueltig. Diese Funktion sollte nach Moeglichkeit
+     * nicht von Plugins verwendet werden. Sie gibt der Gui die Moeglichkeit unabhaengig von den Plugins einen Downloadnamen festzulegen.
+     * Userinputs>Automatische Erkennung - Plugins sollten {@link #setName(String)} verwenden um den Speichernamen anzugeben.
      */
     public void setFinalFileName(String newfinalFileName) {
         String oldName = getName();
@@ -1002,7 +1008,8 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
     }
 
     /**
-     * Diese Methhode fragt das eigene Plugin welche Informationen ueber die File bereit gestellt werden. Der String eignet Sich zur Darstellung in der UI
+     * Diese Methhode fragt das eigene Plugin welche Informationen ueber die File bereit gestellt werden. Der String eignet Sich zur
+     * Darstellung in der UI
      */
     @Override
     public String toString() {
