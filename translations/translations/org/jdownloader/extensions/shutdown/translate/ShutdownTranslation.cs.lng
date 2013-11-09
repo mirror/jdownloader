@@ -1,7 +1,7 @@
 action_tooltip=Povolte tuto volbu pro vypnutí systému po dokončení všech stahování
 addons_jdshutdown_statusmessage_disabled=Systém se NEVYPNE pomocí JD
 addons_jdshutdown_statusmessage_enabled=JD vypne systém po dokončení stahování
-config_active_by_default=Ponechat Vypnutí povoleno
+config_active_by_default=Ponechat vypnutí povoleno
 config_toolbarbutton=Zobrazit tlačítko na Nástrojové liště
 gui_config_jdshutdown_close=Zavřít JDownloader
 gui_config_jdshutdown_forceshutdown=Vynutit vypnutí (Ne pro všechny OS)
