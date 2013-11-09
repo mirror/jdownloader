@@ -20,7 +20,10 @@ import java.io.File;
 import java.io.IOException;
 
 import jd.PluginWrapper;
+import jd.config.ConfigContainer;
+import jd.config.ConfigEntry;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
@@ -35,14 +38,16 @@ import jd.utils.locale.JDL;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filesflash.com" }, urls = { "http://(www\\.)?(filesflash\\.(com|net)|173\\.231\\.61\\.130)(:\\d+)?/[a-z0-9]+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filesflash.com" }, urls = { "http://(www\\.)?(filesflash\\.(com|net)|173\\.231\\.61\\.130)(:8001)?/[a-z0-9]+" }, flags = { 2 })
 public class FilesFlashCom extends PluginForHost {
 
-    private static final String IPBLOCKED = "(>Your IP address is already downloading another link|Please wait for that download to finish\\.|Free users may only download one file at a time\\.)";
-    private static String       MAINPAGE  = "http://filesflash.com/";
+    private static final String IPBLOCKED  = "(>Your IP address is already downloading another link|Please wait for that download to finish\\.|Free users may only download one file at a time\\.)";
+    private static String       MAINPAGE   = "http://filesflash.com/";
+    private static String       USE_DOMAIN = "filesflash.com";
 
     public FilesFlashCom(PluginWrapper wrapper) {
         super(wrapper);
+        setConfigElements();
         this.enablePremium("http://filesflash.com/premium.php");
     }
 
@@ -55,18 +60,19 @@ public class FilesFlashCom extends PluginForHost {
     // }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
+        setConfiguredDomain();
         br.setFollowRedirects(true);
-        br.getPage(link.getDownloadURL());
+        br.getPage(this.getCorrectedLink(link.getDownloadURL()));
         // Link offline
         if (br.containsHTML("(>That is not a valid url\\.<|>That file is not available for download\\.<|>That file has been banned from this website|>That file was deleted due to inactivity<|>That file has been deleted|>That file was deleted due to inactivity)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         // Invalid link
         if (br.containsHTML(">403 Forbidden<")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex(">Filename: (.*?)<br").getMatch(0);
-        String filesize = br.getRegex("Size: (.*?)</td>").getMatch(0);
+        final String filename = br.getRegex(">Filename: (.*?)<br").getMatch(0);
+        final String filesize = br.getRegex("Size: (.*?)</td>").getMatch(0);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        link.setName(filename.trim());
+        link.setName(Encoding.htmlDecode(filename.trim()));
         link.setDownloadSize(SizeFormatter.getSize(filesize));
         return AvailableStatus.TRUE;
     }
@@ -75,12 +81,13 @@ public class FilesFlashCom extends PluginForHost {
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
         try {
+            setConfiguredDomain();
             login(account);
         } catch (final PluginException e) {
             account.setValid(false);
             throw e;
         }
-        br.getPage("http://filesflash.com/index.php");
+        br.getPage("http://" + USE_DOMAIN + "/index.php");
         ai.setUnlimitedTraffic();
         String expire = br.getRegex("Premium: (\\d{4}\\-\\d{2}\\-\\d{2} \\d{2}:\\d{2}:\\d{2}) UTC").getMatch(0);
         if (expire == null) {
@@ -115,26 +122,19 @@ public class FilesFlashCom extends PluginForHost {
 
     /* NO OVERRIDE!! */
     public boolean hasCaptcha(DownloadLink link, Account acc) {
-
         if (acc == null) {
             /* no account, yes we can expect captcha */
             return true;
         }
-
         return false;
     }
 
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        if (downloadLink.getDownloadURL().contains("filesflash.net")) MAINPAGE = "http://filesflash.net/";
-        String MAINIP = br.getRegex("(http://filesflash\\.com:8001/)").getMatch(0);
-        if (MAINIP == null) MAINIP = br.getRegex("(http://173\\.231\\.61\\.130:8001/)").getMatch(0);
-        if (MAINIP == null) MAINIP = br.getRegex("(http://173\\.231\\.61\\.130/)").getMatch(0);
-        if (MAINIP != null) MAINPAGE = MAINIP;
         final String token = br.getRegex("<input type=\"hidden\" name=\"token\" value=\"(.*?)\"/>").getMatch(0);
         if (token == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        br.postPage(MAINPAGE + "freedownload.php", "token=" + token + "&freedl=+Start+free+download+");
+        br.postPage("http://" + FilesFlashCom.USE_DOMAIN + "/freedownload.php", "token=" + token + "&freedl=+Start+free+download+");
         if (br.containsHTML(IPBLOCKED)) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "IP already downloading", 10 * 60 * 1000l);
         if (br.containsHTML("(>That file is too big for free downloading.| Max allowed size for free downloads is)")) throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.filesflashcom.only4premium", "Only downloadable for premium users"));
         final String rcID = br.getRegex("google\\.com/recaptcha/api/challenge\\?\\?rand=\\d+\\&amp;k=([^<>\"]*?)\"").getMatch(0);
@@ -145,7 +145,7 @@ public class FilesFlashCom extends PluginForHost {
         rc.load();
         final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
         final String c = getCaptchaCode(cf, downloadLink);
-        br.postPage(MAINPAGE + "freedownload.php", "token=" + token + "&submit=Submit&recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + Encoding.urlEncode(c));
+        br.postPage("http://" + FilesFlashCom.USE_DOMAIN + "/freedownload.php", "token=" + token + "&submit=Submit&recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + Encoding.urlEncode(c));
         if (br.containsHTML("google.com/recaptcha")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         // Should never happen
         if (br.containsHTML(">Your link has expired")) throw new PluginException(LinkStatus.ERROR_FATAL, "Server error (link expired)");
@@ -169,12 +169,12 @@ public class FilesFlashCom extends PluginForHost {
     }
 
     @Override
-    public void handlePremium(DownloadLink link, Account account) throws Exception {
+    public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         requestFileInformation(link);
         login(account);
         br.setFollowRedirects(false);
-        br.getPage(link.getDownloadURL());
-        String dllink = br.getRedirectLocation();
+        br.getPage(this.getCorrectedLink(link.getDownloadURL()));
+        final String dllink = br.getRedirectLocation();
         if (dllink == null) {
             logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -188,10 +188,15 @@ public class FilesFlashCom extends PluginForHost {
         dl.startDownload();
     }
 
-    private void login(Account account) throws Exception {
+    private String getCorrectedLink(final String input) {
+        final String output = "http://" + FilesFlashCom.USE_DOMAIN + "/" + new Regex(input, "([a-z0-9]+)$").getMatch(0);
+        return output;
+    }
+
+    private void login(final Account account) throws Exception {
         this.setBrowserExclusive();
-        br.postPage("http://filesflash.com/login.php", "email=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&submit=Login");
-        if (br.getCookie(MAINPAGE, "userid") == null || br.getCookie(MAINPAGE, "password") == null || br.containsHTML(">Invalid email address or password")) {
+        br.postPage("http://" + USE_DOMAIN + "/login.php", "email=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&submit=Login");
+        if (br.getCookie("http://" + USE_DOMAIN, "userid") == null || br.getCookie("http://" + USE_DOMAIN, "password") == null || br.containsHTML(">Invalid email address or password")) {
             final String lang = System.getProperty("user.language");
             if ("de".equalsIgnoreCase(lang)) {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -199,6 +204,20 @@ public class FilesFlashCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
             }
         }
+    }
+
+    private void setConfiguredDomain() {
+        final int chosenDomain = getPluginConfig().getIntegerProperty(domain, 0);
+        FilesFlashCom.USE_DOMAIN = this.allDomains[chosenDomain];
+    }
+
+    private final String   domain     = "domain";
+
+    /** The list of server values displayed to the user */
+    private final String[] allDomains = new String[] { "filesflash.com", "filesflash.net", "173.231.61.130" };
+
+    private void setConfigElements() {
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX_INDEX, getPluginConfig(), domain, allDomains, JDL.L("plugins.host.FilesFlashCom.preferredDomain", "Use this domain for download and login:")).setDefaultValue(0));
     }
 
     @Override
