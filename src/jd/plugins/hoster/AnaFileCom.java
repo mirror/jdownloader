@@ -423,6 +423,8 @@ public class AnaFileCom extends PluginForHost {
                 logger.info("Submitted DLForm");
                 checkErrors(downloadLink, account, true);
                 getDllink();
+                if (inValidate(dllink)) dllink = cbr.getRegex("var download_url = \'([^<>\']+)\';").getMatch(0);
+                if (inValidate(dllink)) dllink = cbr.getRegex("href=\"(http://s\\d+\\.fileana\\.biz(:\\d+)?/d/[^<>]+/[^<>]+)\"").getMatch(0);
                 if (inValidate(dllink) && (getFormByKey(cbr, "op", "download2") == null || i == repeat)) {
                     if (i == repeat)
                         logger.warning("Exausted repeat count, after 'dllink == null'");
