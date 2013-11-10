@@ -149,12 +149,15 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
                 }
                 for (int i = 0; i < 2; i++) {
                     for (String[] ss : new Regex(vsr, strRegex).getMatches()) {
-                        String l = new Regex(ss[0], "(\\d)").getMatch(0);
-                        if (l != null) {
-                            if (i == 0) {
-                                if (Integer.parseInt(l) != languageVersion) continue;
-                            } else {
-                                languageVersion = Integer.parseInt(l);
+                        if (!cfg.getBooleanProperty(HBBTV, true)) {
+                            String l = new Regex(ss[1], "\"versionCode\":\"(VO|VF)").getMatch(0);
+                            if (l != null) {
+                                l = "VO".equals(l) ? "1" : "2";
+                                if (i == 0) {
+                                    if (Integer.parseInt(l) != languageVersion) continue;
+                                } else {
+                                    languageVersion = Integer.parseInt(l);
+                                }
                             }
                         }
                         streamValue = new HashMap<String, String>();
