@@ -35,3 +35,5 @@ popup_premiumtoggle=Omogućen Premium
 popup_reconnect=Rekonektiraj sada
 popup_reconnecttoggle=Omogućena autom. rekonekcija
 popup_update=Provjeri ažuriranja
+popup_update_install=Instaliraj zadnje ažuriranje
+popup_update_install_tt=Ažuriranja čekaju na instalaciju. Kliknite za instaliranje sada!
