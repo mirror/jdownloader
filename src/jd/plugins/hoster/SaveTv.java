@@ -36,6 +36,7 @@ import jd.config.Property;
 import jd.config.SubConfiguration;
 import jd.controlling.AccountController;
 import jd.http.Browser;
+import jd.http.Browser.BrowserException;
 import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.nutils.encoding.Encoding;
@@ -95,6 +96,7 @@ public class SaveTv extends PluginForHost {
     private String              SESSIONID                                           = null;
     private static final String NOCHUNKS                                            = "NOCHUNKS";
 
+    @SuppressWarnings("deprecation")
     public SaveTv(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("https://www.save.tv/stv/s/obj/registration/RegPage1.cfm");
@@ -333,35 +335,6 @@ public class SaveTv extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
-    public void extendedLogin(String accessSite, String postPage, String user, String password) throws Exception {
-        br.getPage(accessSite);
-        String postData = "sUsername=" + Encoding.urlEncode_light(user) + "&sPassword=" + Encoding.urlEncode_light(password) + "&image.x=" + new Random().nextInt(100) + "&image.y=" + new Random().nextInt(100) + "&image=Login&bAutoLoginActivate=1";
-        br.postPage(postPage, postData);
-    }
-
-    private void getPageSafe(final String url, final Account acc) throws Exception {
-        br.getPage(url);
-        if (br.getURL().contains("Token=MSG_LOGOUT_B")) {
-            logger.info("Link redirected to login page, logging in again to retry this: " + url);
-            login(this.br, acc, true);
-        }
-    }
-
-    @Override
-    public AccountInfo fetchAccountInfo(Account account) throws Exception {
-        AccountInfo ai = new AccountInfo();
-        try {
-            login(this.br, account, true);
-        } catch (PluginException e) {
-            account.setValid(false);
-            return ai;
-        }
-        ai.setStatus("Premium save.tv User");
-        ai.setUnlimitedTraffic();
-        account.setValid(true);
-        return ai;
-    }
-
     @Override
     public String getAGBLink() {
         return "http://free.save.tv/STV/S/misc/miscShowTermsConditionsInMainFrame.cfm";
@@ -451,6 +424,23 @@ public class SaveTv extends PluginForHost {
         }
     }
 
+    @Override
+    public AccountInfo fetchAccountInfo(Account account) throws Exception {
+        AccountInfo ai = new AccountInfo();
+        try {
+            login(this.br, account, true);
+        } catch (final PluginException e) {
+            logger.info("save.tv Account ist ungültig!");
+            account.setValid(false);
+            return ai;
+        }
+        ai.setStatus("Premium save.tv User");
+        ai.setUnlimitedTraffic();
+        account.setValid(true);
+        return ai;
+    }
+
+    @SuppressWarnings({ "unchecked", "deprecation" })
     public void login(final Browser br, final Account account, final boolean force) throws Exception {
         this.setBrowserExclusive();
         prepBrowser(br);
@@ -503,8 +493,13 @@ public class SaveTv extends PluginForHost {
                             return;
                         }
                     }
-                    br.getPage("http://www.save.tv/STV/S/misc/home.cfm");
-                    extendedLogin("http://www.save.tv/STV/S/misc/home.cfm?", PREMIUMPOSTPAGE, Encoding.urlEncode(account.getUser()), Encoding.urlEncode(account.getPass()));
+                    try {
+                        br.getPage("http://www.save.tv/STV/S/misc/home.cfm");
+                        extendedLogin("http://www.save.tv/STV/S/misc/home.cfm?", PREMIUMPOSTPAGE, Encoding.urlEncode(account.getUser()), Encoding.urlEncode(account.getPass()));
+                    } catch (final BrowserException e) {
+                        logger.warning("save.tv Login wegen einem Serverfehler fehlgeschlagen!");
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    }
                     if (!br.containsHTML("/STV/M/obj/user/usEdit.cfm") || br.containsHTML("Bitte verifizieren Sie Ihre Logindaten")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                     /** Save cookies */
                     final HashMap<String, String> cookies = new HashMap<String, String>();
@@ -520,6 +515,20 @@ public class SaveTv extends PluginForHost {
                     throw e;
                 }
             }
+        }
+    }
+
+    public void extendedLogin(String accessSite, String postPage, String user, String password) throws Exception {
+        br.getPage(accessSite);
+        String postData = "sUsername=" + Encoding.urlEncode_light(user) + "&sPassword=" + Encoding.urlEncode_light(password) + "&image.x=" + new Random().nextInt(100) + "&image.y=" + new Random().nextInt(100) + "&image=Login&bAutoLoginActivate=1";
+        br.postPage(postPage, postData);
+    }
+
+    private void getPageSafe(final String url, final Account acc) throws Exception {
+        br.getPage(url);
+        if (br.getURL().contains("Token=MSG_LOGOUT_B")) {
+            logger.info("Link redirected to login page, logging in again to retry this: " + url);
+            login(this.br, acc, true);
         }
     }
 
