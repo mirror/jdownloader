@@ -54,16 +54,20 @@ public class VeevrCom extends PluginForHost {
         return -1;
     }
 
-    @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception {
-        requestFileInformation(downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
-        dl.startDownload();
-    }
+    private static final boolean HDS = true;
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws Exception {
+    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
         this.setBrowserExclusive();
+        if (HDS) {
+            br.getPage(downloadLink.getDownloadURL().replace("/embed/", "/videos/"));
+            if (br.containsHTML(">This video has been removed for violating the terms of use\\.<")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            final String filename = br.getRegex("property=\"og:title\" content=\"([^<>\"]*?)\"").getMatch(0);
+            if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            downloadLink.getLinkStatus().setStatusText("HDS streaming isn't supported by JD yet");
+            downloadLink.setFinalFileName(Encoding.htmlDecode(filename.trim()) + ".flv");
+            return AvailableStatus.TRUE;
+        }
         br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML(">This video has been removed for violating the terms of use\\.<")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         dllink = br.getRegex("url:\\s*'(http[^']+/videos/download/[^']+)").getMatch(0);
@@ -96,6 +100,14 @@ public class VeevrCom extends PluginForHost {
             } catch (Throwable e) {
             }
         }
+    }
+
+    @Override
+    public void handleFree(final DownloadLink downloadLink) throws Exception {
+        requestFileInformation(downloadLink);
+        if (HDS) { throw new PluginException(LinkStatus.ERROR_FATAL, "HDS streaming isn't supported by JD yet"); }
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
+        dl.startDownload();
     }
 
     @Override

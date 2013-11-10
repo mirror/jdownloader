@@ -117,6 +117,12 @@ public class TumblrComDecrypter extends PluginForDecrypt {
                 decryptedLinks.add(dl);
                 return decryptedLinks;
             }
+            externID = br.getRegex("class=\"vine\\-embed\" src=\"(https?://vine\\.co/[^<>\"]*?)\"").getMatch(0);
+            if (externID != null) {
+                final DownloadLink dl = createDownloadlink(externID);
+                decryptedLinks.add(dl);
+                return decryptedLinks;
+            }
             externID = br.getRegex("\\\\x3csource src=\\\\x22(http://[^<>\"]*?)\\\\x22").getMatch(0);
             if (externID != null) {
                 if (externID.matches(".+tumblr\\.com/video_file/.+")) {

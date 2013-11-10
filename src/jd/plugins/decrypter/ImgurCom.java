@@ -27,18 +27,20 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "imgur.com" }, urls = { "https?://((www|i)\\.)?imgur\\.com(/gallery|/a|/download)?/(?!register|contact|removalrequest|stats|https)[A-Za-z0-9]{5,}" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "imgur.com" }, urls = { "https?://((www|i)\\.)?imgur\\.com(/gallery|/a|/download)?/(?!register|contact|removalrequest|stats|https|gallery)[A-Za-z0-9]{5,}" }, flags = { 0 })
 public class ImgurCom extends PluginForDecrypt {
 
     public ImgurCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
+    private static final String TYPE_GALLERY = "https?://((www|i)\\.)?imgur\\.com(/gallery|/a)/[A-Za-z0-9]{5,}";
+
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString().replace("https://", "http://").replace("/all$", "");
 
-        if (parameter.contains("imgur.com/a/")) {
+        if (parameter.matches(TYPE_GALLERY)) {
             final String albumID = new Regex(parameter, "([A-Za-z0-9]+)$").getMatch(0);
             br.getPage("http://api.imgur.com/2/album/" + albumID + "/images");
             if (br.containsHTML("<message>Album not found</message>")) {

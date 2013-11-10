@@ -41,7 +41,7 @@ public class GeneralFilesCom extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         br.setFollowRedirects(true);
-        final String parameter = param.toString().replaceAll("(general\\-files\\.com|generalfiles\\.org|generalfiles\\.me)/", "general-files.org/");
+        final String parameter = param.toString().replaceAll("(general\\-files\\.com|generalfiles\\.org|generalfiles\\.me|general\\-files\\.org)/", "general-files.biz/");
         br.getPage(parameter);
 
         if (br.containsHTML(">File was removed from filehosting<|>The file no longer exists at this location")) {

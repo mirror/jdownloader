@@ -69,6 +69,7 @@ public class VKontakteRu extends PluginForDecrypt {
     private static final String VKWALL_GRAB_PHOTOS                 = "VKWALL_GRAB_PHOTOS";
     private static final String VKWALL_GRAB_AUDIO                  = "VKWALL_GRAB_AUDIO";
     private static final String VKWALL_GRAB_VIDEO                  = "VKWALL_GRAB_VIDEO";
+    private static final String VKVIDEO_USEIDASPACKAGENAME         = "VKVIDEO_USEIDASPACKAGENAME";
 
     private static final String FILEOFFLINE                        = "(id=\"msg_back_button\">Wr\\&#243;\\&#263;</button|B\\&#322;\\&#261;d dost\\&#281;pu)";
     private static final String DOMAIN                             = "http://vk.com";
@@ -409,7 +410,9 @@ public class VKontakteRu extends PluginForDecrypt {
             }
             // Find rutube.ru link if it exists
             embeddedVideo = new Regex(correctedBR, "url: \\'(https?://video\\.rutube\\.ru/[a-z0-9]+)\\'").getMatch(0);
+            if (embeddedVideo == null) embeddedVideo = new Regex(correctedBR, "\"(//rutube\\.ru/video/embed/\\d+)\" ").getMatch(0);
             if (embeddedVideo != null) {
+                if (embeddedVideo.startsWith("//")) embeddedVideo = "http:" + embeddedVideo;
                 foundVideolinks.add(createDownloadlink(embeddedVideo));
                 return foundVideolinks;
             }
@@ -495,7 +498,11 @@ public class VKontakteRu extends PluginForDecrypt {
             return null;
         }
         filename = Encoding.htmlDecode(filename.trim());
-        fp.setName(filename);
+        if (cfg.getBooleanProperty(VKVIDEO_USEIDASPACKAGENAME, false)) {
+            fp.setName("video" + oid + "_" + id);
+        } else {
+            fp.setName(filename);
+        }
         /** Decrypt qualities, selected by the user */
         final ArrayList<String> selectedQualities = new ArrayList<String>();
         boolean fastLinkcheck = cfg.getBooleanProperty(FASTLINKCHECK, false);

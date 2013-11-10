@@ -69,7 +69,7 @@ public class MyDiscNet extends PluginForHost {
 
     // DEV NOTES
     // XfileSharingProBasic Version 2.6.2.5
-    // mods:
+    // mods: getDllink
     // non account: 1 * ??
     // free account: chunks * maxdls
     // premium account: chunks * maxdls
@@ -442,6 +442,14 @@ public class MyDiscNet extends PluginForHost {
                     }
                 }
             }
+        }
+        if (dllink != null) {
+            logger.info("Successfully removed ad-link from dllink...");
+            // Remove adstuff
+            final String realDllink = new Regex(dllink, "(https?://[a-z0-9\\.]+mydisc\\.net[^<>\"]*?)\\&reffer").getMatch(0);
+            if (realDllink != null) dllink = realDllink;
+        } else {
+            logger.info("Couldn't remove ad-link from dllink, maybe there is none...");
         }
         return dllink;
     }

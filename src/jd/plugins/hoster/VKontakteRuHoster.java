@@ -47,28 +47,29 @@ import jd.utils.locale.JDL;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vkontakte.ru" }, urls = { "http://(vkontaktedecrypted\\.ru/(picturelink/(\\-)?\\d+_\\d+(\\?tag=\\d+)?|audiolink/\\d+|videolink/\\d+)|vk\\.com/doc\\d+_\\d+\\?hash=[a-z0-9]+)" }, flags = { 2 })
 public class VKontakteRuHoster extends PluginForHost {
 
-    private static final String DOMAIN               = "http://vk.com";
-    private static Object       LOCK                 = new Object();
-    private String              FINALLINK            = null;
-    private static final String AUDIOLINK            = "http://vkontaktedecrypted\\.ru/audiolink/\\d+";
-    private static final String VIDEOLINK            = "http://vkontaktedecrypted\\.ru/videolink/\\d+";
-    private static final String DOCLINK              = "http://vk\\.com/doc\\d+_\\d+\\?hash=[a-z0-9]+";
-    private int                 MAXCHUNKS            = 1;
-    private static final String TEMPORARILYBLOCKED   = "You tried to load the same page more than once in one second|Sie haben versucht die Seite mehrfach innerhalb einer Sekunde zu laden";
+    private static final String DOMAIN                     = "http://vk.com";
+    private static Object       LOCK                       = new Object();
+    private String              FINALLINK                  = null;
+    private static final String AUDIOLINK                  = "http://vkontaktedecrypted\\.ru/audiolink/\\d+";
+    private static final String VIDEOLINK                  = "http://vkontaktedecrypted\\.ru/videolink/\\d+";
+    private static final String DOCLINK                    = "http://vk\\.com/doc\\d+_\\d+\\?hash=[a-z0-9]+";
+    private int                 MAXCHUNKS                  = 1;
+    private static final String TEMPORARILYBLOCKED         = "You tried to load the same page more than once in one second|Sie haben versucht die Seite mehrfach innerhalb einer Sekunde zu laden";
     /** Settings stuff */
-    private final String        USECOOKIELOGIN       = "USECOOKIELOGIN";
-    private final String        FASTLINKCHECK        = "FASTLINKCHECK";
-    private final String        FASTPICTURELINKCHECK = "FASTPICTURELINKCHECK";
-    private final String        FASTAUDIOLINKCHECK   = "FASTAUDIOLINKCHECK";
-    private static final String ALLOW_BEST           = "ALLOW_BEST";
-    private static final String ALLOW_240P           = "ALLOW_240P";
-    private static final String ALLOW_360P           = "ALLOW_360P";
-    private static final String ALLOW_480P           = "ALLOW_480P";
-    private static final String ALLOW_720P           = "ALLOW_720P";
-    private static final String VKWALL_GRAB_ALBUMS   = "VKWALL_GRAB_ALBUMS";
-    private static final String VKWALL_GRAB_PHOTOS   = "VKWALL_GRAB_PHOTOS";
-    private static final String VKWALL_GRAB_AUDIO    = "VKWALL_GRAB_AUDIO";
-    private static final String VKWALL_GRAB_VIDEO    = "VKWALL_GRAB_VIDEO";
+    private final String        USECOOKIELOGIN             = "USECOOKIELOGIN";
+    private final String        FASTLINKCHECK              = "FASTLINKCHECK";
+    private final String        FASTPICTURELINKCHECK       = "FASTPICTURELINKCHECK";
+    private final String        FASTAUDIOLINKCHECK         = "FASTAUDIOLINKCHECK";
+    private static final String ALLOW_BEST                 = "ALLOW_BEST";
+    private static final String ALLOW_240P                 = "ALLOW_240P";
+    private static final String ALLOW_360P                 = "ALLOW_360P";
+    private static final String ALLOW_480P                 = "ALLOW_480P";
+    private static final String ALLOW_720P                 = "ALLOW_720P";
+    private static final String VKWALL_GRAB_ALBUMS         = "VKWALL_GRAB_ALBUMS";
+    private static final String VKWALL_GRAB_PHOTOS         = "VKWALL_GRAB_PHOTOS";
+    private static final String VKWALL_GRAB_AUDIO          = "VKWALL_GRAB_AUDIO";
+    private static final String VKWALL_GRAB_VIDEO          = "VKWALL_GRAB_VIDEO";
+    private static final String VKVIDEO_USEIDASPACKAGENAME = "VKVIDEO_USEIDASPACKAGENAME";
 
     public VKontakteRuHoster(PluginWrapper wrapper) {
         super(wrapper);
@@ -465,7 +466,9 @@ public class VKontakteRuHoster extends PluginForHost {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), VKWALL_GRAB_PHOTOS, JDL.L("plugins.hoster.vkontakteruhoster.wallcheckphotos", "Grab photo links ('vk.com/photo')?")).setDefaultValue(true));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), VKWALL_GRAB_AUDIO, JDL.L("plugins.hoster.vkontakteruhoster.wallcheckaudio", "Grab audio links (.mp3 directlinks)?")).setDefaultValue(true));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), VKWALL_GRAB_VIDEO, JDL.L("plugins.hoster.vkontakteruhoster.wallcheckvideo", "Grab video links ('vk.com/video')?")).setDefaultValue(true));
-
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "Settings for 'vk.com/video' links: "));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), VKVIDEO_USEIDASPACKAGENAME, JDL.L("plugins.hoster.vkontakteruhoster.videoUseIdAsPackagename", "Use video-ID as packagename ('videoXXXX_XXXX' or 'video-XXXX_XXXX')")).setDefaultValue(false));
     }
 
     @Override

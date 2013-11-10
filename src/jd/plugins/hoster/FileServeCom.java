@@ -609,6 +609,10 @@ public class FileServeCom extends PluginForHost {
         if (this.checkLinks(new DownloadLink[] { link }) == false) {
             /* linkcheck broken */
             br.getPage(link.getDownloadURL());
+            if (br.getRedirectLocation() != null && br.getRedirectLocation().contains("fileserve.com/maintenance.html")) {
+                link.getLinkStatus().setStatusText("This host is currently under maintenance");
+                link.setAvailableStatus(AvailableStatus.UNCHECKABLE);
+            }
             this.handleErrors(br);
             String filename = br.getRegex("down_arrow.*?h1>(.*?)<").getMatch(0);
             String filesize = br.getRegex("down_arrow.*?span.*?strong>.*?([0-9\\. GBMK]+)").getMatch(0);
