@@ -198,7 +198,10 @@ public class SaveTv extends PluginForHost {
             if (site_title == null) site_title = br.getRegex("id=\"telecast-detail\">.*?<h3>(.*?)</h2>").getMatch(0);
             filesize = br.getRegex(">Download</a>[ \t\n\r]+\\(ca\\.[ ]+([0-9\\.]+ [A-Za-z]{1,5})\\)[ \t\n\r]+</p>").getMatch(0);
             if (preferMobileVids) filesize = br.getRegex("title=\"H\\.264 Mobile\"( )?/>[\t\n\r ]+</a>[\t\n\r ]+<p>[\t\n\r ]+<a class=\"archive\\-detail\\-link\" href=\"javascript:STV\\.Archive\\.Download\\.openWindow\\(\\d+, \\d+, \\d+, \\d+\\);\">Download</a>[\t\n\r ]+\\(ca\\.[ ]+(.*?)\\)").getMatch(1);
-            if (site_title == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (site_title == null) {
+                logger.warning("Save.tv: Availablecheck failed!");
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
             site_title = correctSiteTitle(site_title);
 
             // Find custom filename stuff
@@ -230,7 +233,10 @@ public class SaveTv extends PluginForHost {
                 if (episodename != null && episodename.contains("Originaltitel")) {
                     episodename = seriesInfo.getMatch(3);
                 }
-                if (seriestitle == null || episodename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                if (seriestitle == null || episodename == null) {
+                    logger.warning("Save.tv: Availablecheck failed!");
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
                 seriestitle = Encoding.htmlDecode(seriestitle.trim());
                 episodename = Encoding.htmlDecode(episodename.trim());
                 if (episodename.matches(SERIESINFORMATION))
@@ -394,6 +400,7 @@ public class SaveTv extends PluginForHost {
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, maxChunks);
         if (dl.getConnection().getContentType().contains("html")) {
+            logger.warning("Save.tv: Received HTML code instead of the file!");
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
