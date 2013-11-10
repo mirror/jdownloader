@@ -58,7 +58,7 @@ import org.appwork.utils.formatter.TimeFormatter;
 public class SaveTv extends PluginForHost {
 
     /** Static information */
-    private final String        INFOREGEX                                           = "<h3>([^<>\"]*?)</h2>[\t\n\r ]+<p>([^<>\"]*?)</p>([\t\n\r ]+<p>([^<>\"]*?)</p>)?";
+    private final String        INFOREGEX                                           = "<h3>([^<>\"]*?)</h2>[\t\n\r ]+<p>([^<>]*?)</p>([\t\n\r ]+<p>([^<>]*?)</p>)?";
     private final String        CATEGORY_INFO                                       = "Kategorie:</label>[\t\n\r ]+Info.*?";
     private final String        SERIESINFORMATION                                   = "[A-Za-z]+ [A-Za-z]+ (\\d{4} / \\d{4}|\\d{4})";
     private final String        APIKEY                                              = "Q0FFQjZDQ0YtMDdFNC00MDQ4LTkyMDQtOUU5QjMxOEU3OUIz";
@@ -541,7 +541,7 @@ public class SaveTv extends PluginForHost {
                     logger.info("Try " + i2 + " of 1");
                     try {
                         login(this.br, acc, true);
-                    } catch (final PluginException e) {
+                    } catch (final BrowserException e) {
                         logger.info("Login " + i + "of 1 failed, re-trying...");
                         continue;
                     }
