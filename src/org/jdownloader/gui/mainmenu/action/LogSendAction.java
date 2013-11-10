@@ -4,12 +4,12 @@ import java.awt.event.ActionEvent;
 
 import jd.gui.swing.jdgui.menu.actions.sendlogs.LogAction;
 
+import org.jdownloader.controlling.contextmenu.CustomizableAppAction;
 import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.gui.views.SelectionInfo;
 
-public class LogSendAction extends AbstractMainMenuAction {
+public class LogSendAction extends CustomizableAppAction {
 
-    public LogSendAction(SelectionInfo<?, ?> selection) {
+    public LogSendAction() {
         setName(_GUI._.LogAction());
         setIconKey("log");
         setTooltipText(_GUI._.LogAction_tooltip());

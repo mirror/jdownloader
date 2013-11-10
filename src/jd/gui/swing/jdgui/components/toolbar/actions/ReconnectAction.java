@@ -17,14 +17,14 @@ import org.appwork.utils.swing.dialog.ConfirmDialog;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
-import org.jdownloader.gui.toolbar.action.ToolBarAction;
+import org.jdownloader.gui.toolbar.action.AbstractToolBarAction;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.images.NewTheme;
 
-public class ReconnectAction extends ToolBarAction {
+public class ReconnectAction extends AbstractToolBarAction {
 
-    public ReconnectAction(SelectionInfo<?, ?> selection) {
+    public ReconnectAction() {
 
         setIconKey("reconnect");
         setAccelerator(KeyEvent.VK_R);

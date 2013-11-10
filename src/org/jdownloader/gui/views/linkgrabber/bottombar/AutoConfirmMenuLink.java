@@ -9,7 +9,6 @@ import org.jdownloader.controlling.contextmenu.MenuItemData;
 import org.jdownloader.controlling.contextmenu.MenuLink;
 import org.jdownloader.extensions.ExtensionNotLoadedException;
 import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.downloads.bottombar.SelfLayoutInterface;
 
 public class AutoConfirmMenuLink extends MenuItemData implements MenuLink, SelfLayoutInterface {
@@ -17,7 +16,7 @@ public class AutoConfirmMenuLink extends MenuItemData implements MenuLink, SelfL
     protected static AutoConfirmButton INSTANCE;
 
     @Override
-    public JComponent createItem(SelectionInfo<?, ?> selection) throws InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException, ClassNotFoundException, NoSuchMethodException, SecurityException, ExtensionNotLoadedException {
+    public JComponent createItem() throws InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException, ClassNotFoundException, NoSuchMethodException, SecurityException, ExtensionNotLoadedException {
         if (INSTANCE != null) return INSTANCE;
         new EDTRunner() {
 
@@ -42,7 +41,7 @@ public class AutoConfirmMenuLink extends MenuItemData implements MenuLink, SelfL
     }
 
     @Override
-    public String getConstraints() {
+    public String createConstraints() {
         return "height 24!,width 24!,hidemode 3,gapright 3";
     }
 

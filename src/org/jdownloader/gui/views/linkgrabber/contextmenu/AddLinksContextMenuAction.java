@@ -6,18 +6,18 @@ import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledPackage;
 import jd.gui.swing.jdgui.menu.actions.AddContainerAction;
 
-import org.jdownloader.actions.AbstractSelectionContextAction;
+import org.jdownloader.controlling.contextmenu.CustomizableSelectionAppAction;
+import org.jdownloader.controlling.contextmenu.TableContext;
 import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.gui.views.SelectionInfo;
 
-public class AddLinksContextMenuAction extends AbstractSelectionContextAction<CrawledPackage, CrawledLink> {
+public class AddLinksContextMenuAction extends CustomizableSelectionAppAction<CrawledPackage, CrawledLink> {
 
     private static final long serialVersionUID = 1901008532686173167L;
 
-    public AddLinksContextMenuAction(final SelectionInfo<CrawledPackage, CrawledLink> si) {
-        super(si);
-        setItemVisibleForEmptySelection(true);
-        setItemVisibleForSelections(false);
+    public AddLinksContextMenuAction() {
+
+        addContextSetup(new TableContext(true, false));
+
         setName(_GUI._.action_addcontainer());
         setTooltipText(_GUI._.action_addcontainer_tooltip());
         setIconKey("load");

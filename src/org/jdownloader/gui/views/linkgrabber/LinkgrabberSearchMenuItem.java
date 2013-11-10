@@ -22,11 +22,11 @@ public class LinkgrabberSearchMenuItem extends MenuItemData implements MenuLink,
     }
 
     @Override
-    public String getConstraints() {
+    public String createConstraints() {
         return "height 24!,aligny top,gapleft 2,pushx,growx";
     }
 
-    public JComponent createItem(SelectionInfo<?, ?> selection) throws InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException, ClassNotFoundException, NoSuchMethodException, SecurityException, ExtensionNotLoadedException {
+    public JComponent createItem() throws InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException, ClassNotFoundException, NoSuchMethodException, SecurityException, ExtensionNotLoadedException {
 
         return LinkgrabberSearchField.getInstance();
     }

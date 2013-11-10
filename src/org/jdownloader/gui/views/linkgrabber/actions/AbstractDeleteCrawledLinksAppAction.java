@@ -3,13 +3,14 @@ package org.jdownloader.gui.views.linkgrabber.actions;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledPackage;
 
-import org.jdownloader.actions.AbstractSelectionContextAction;
+import org.jdownloader.controlling.contextmenu.CustomizableSelectionAppAction;
+import org.jdownloader.gui.KeyObserver;
 import org.jdownloader.gui.views.SelectionInfo;
 
-public abstract class AbstractDeleteCrawledLinksAppAction extends AbstractSelectionContextAction<CrawledPackage, CrawledLink> {
+public abstract class AbstractDeleteCrawledLinksAppAction extends CustomizableSelectionAppAction<CrawledPackage, CrawledLink> {
 
-    public AbstractDeleteCrawledLinksAppAction(SelectionInfo<CrawledPackage, CrawledLink> si) {
-        super(si);
+    public AbstractDeleteCrawledLinksAppAction() {
+
     }
 
     /**
@@ -18,16 +19,20 @@ public abstract class AbstractDeleteCrawledLinksAppAction extends AbstractSelect
     private static final long serialVersionUID = 1117751339878672160L;
 
     public void deleteLinksRequest(final SelectionInfo<CrawledPackage, CrawledLink> si, final String msg) {
-        System.out.println("Delete " + si + " msg");
+
     }
 
     @Override
-    public boolean isEnabled() {
-        SelectionInfo<CrawledPackage, CrawledLink> si = getSelection();
-        if (si != null && si.getChildren().size() > 0) {
-            if (si.isAltDown() || si.isAltGraphDown()) return false;
-            return true;
+    public void requestUpdate(Object requestor) {
+        super.requestUpdate(requestor);
+        if (hasSelection()) {
+            if (KeyObserver.getInstance().isAltOrAltGraphDown()) {
+                setEnabled(false);
+            } else {
+                setEnabled(true);
+            }
+        } else {
+            setEnabled(false);
         }
-        return false;
     }
 }

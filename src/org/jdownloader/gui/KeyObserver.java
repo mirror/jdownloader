@@ -78,4 +78,8 @@ public class KeyObserver implements AWTEventListener {
         }
 
     }
+
+    public boolean isAltOrAltGraphDown() {
+        return isAltDown() || isAltGraphDown();
+    }
 }

@@ -26,7 +26,8 @@ import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.appwork.utils.swing.dialog.DialogNoAnswerException;
 import org.jdownloader.actions.AppAction;
-import org.jdownloader.actions.CachableInterface;
+import org.jdownloader.controlling.contextmenu.ActionContext;
+import org.jdownloader.controlling.contextmenu.CustomizableAppAction;
 import org.jdownloader.controlling.contextmenu.Customizer;
 import org.jdownloader.extensions.ExtensionController;
 import org.jdownloader.extensions.extraction.Archive;
@@ -41,7 +42,7 @@ import org.jdownloader.gui.views.linkgrabber.LinkGrabberTableModel;
 import org.jdownloader.gui.views.linkgrabber.addlinksdialog.LinkgrabberSettings;
 import org.jdownloader.images.NewTheme;
 
-public class ConfirmSelectionBarAction extends AppAction implements CachableInterface {
+public class ConfirmSelectionBarAction extends CustomizableAppAction implements ActionContext {
 
     /**
      * 
@@ -117,8 +118,14 @@ public class ConfirmSelectionBarAction extends AppAction implements CachableInte
     }
 
     public ConfirmSelectionBarAction() {
-        setAutoStart(AutoStartOptions.AUTO);
 
+        addContextSetup(this);
+
+    }
+
+    @Override
+    protected void initContextDefaults() {
+        setAutoStart(AutoStartOptions.AUTO);
     }
 
     public void actionPerformed(ActionEvent e) {
@@ -206,7 +213,4 @@ public class ConfirmSelectionBarAction extends AppAction implements CachableInte
 
     }
 
-    @Override
-    public void setData(String data) {
-    }
 }

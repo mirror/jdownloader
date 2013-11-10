@@ -284,7 +284,7 @@ public class BubbleNotify implements UpdaterListener, ReconnecterListener, Chall
                     no.setActionListener(new ActionListener() {
 
                         public void actionPerformed(ActionEvent e) {
-                            new UpdateAction(null).actionPerformed(e);
+                            new UpdateAction().actionPerformed(e);
                         }
                     });
                     show(no);

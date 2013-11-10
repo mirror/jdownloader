@@ -24,8 +24,13 @@ public class SetDownloadFolderInLinkgrabberAction extends SetDownloadFolderActio
      */
     private static final long serialVersionUID = -6632019767606316873L;
 
-    public SetDownloadFolderInLinkgrabberAction(SelectionInfo<CrawledPackage, CrawledLink> si) {
-        super(si);
+    public SetDownloadFolderInLinkgrabberAction() {
+
+    }
+
+    public SetDownloadFolderInLinkgrabberAction(SelectionInfo<CrawledPackage, CrawledLink> selectionInfo) {
+        this();
+        selection = selectionInfo;
 
     }
 

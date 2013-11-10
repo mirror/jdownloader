@@ -1,12 +1,11 @@
 package org.jdownloader.gui.views.components.packagetable.context;
 
 import org.jdownloader.controlling.Priority;
-import org.jdownloader.gui.views.SelectionInfo;
 
-public class PriorityHigherAction extends PriorityActionEntry {
+public class PriorityHigherAction extends AbstractPriorityActionEntry {
 
-    public PriorityHigherAction(SelectionInfo si) {
-        super(Priority.HIGHER, si);
+    public PriorityHigherAction() {
+        super(Priority.HIGHER);
     }
 
 }

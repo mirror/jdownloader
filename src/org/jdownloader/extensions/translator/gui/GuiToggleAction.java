@@ -7,7 +7,7 @@ import org.jdownloader.gui.views.SelectionInfo;
 
 public class GuiToggleAction extends AbstractExtensionGuiEnableAction<TranslatorExtension> {
 
-    public GuiToggleAction(SelectionInfo<?, ?> selection) {
+    public GuiToggleAction() {
         super(CFG_TRANSLATOR.GUI_ENABLED);
         setName(_getExtension().getTranslation().Translator());
         setIconKey(_getExtension().getIconKey());

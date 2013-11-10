@@ -9,18 +9,17 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
 import org.appwork.utils.os.CrossSystem;
-import org.jdownloader.actions.AbstractSelectionContextAction;
+import org.jdownloader.controlling.contextmenu.CustomizableSelectionAppAction;
 import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.gui.views.SelectionInfo;
 
-public class OpenFileAction extends AbstractSelectionContextAction<FilePackage, DownloadLink> {
+public class OpenFileAction extends CustomizableSelectionAppAction<FilePackage, DownloadLink> {
 
     private static final long serialVersionUID = 1901008532686173167L;
 
     private File              file;
 
-    public OpenFileAction(final SelectionInfo<FilePackage, DownloadLink> si) {
-        super(si);
+    public OpenFileAction() {
+
         ImageIcon img;
 
         setIconKey("file");
@@ -29,8 +28,8 @@ public class OpenFileAction extends AbstractSelectionContextAction<FilePackage, 
     }
 
     @Override
-    public void setSelection(SelectionInfo<FilePackage, DownloadLink> selection) {
-        super.setSelection(selection);
+    public void requestUpdate(Object requestor) {
+        super.requestUpdate(requestor);
         if (hasSelection()) {
             if (getSelection().isLinkContext()) {
                 this.file = getSelection() == null ? null : new File(getSelection().getContextLink().getFileOutput());
@@ -42,11 +41,10 @@ public class OpenFileAction extends AbstractSelectionContextAction<FilePackage, 
             }
 
         }
-
     }
 
     public OpenFileAction(File file) {
-        super(null);
+        super();
         this.file = file;
     }
 

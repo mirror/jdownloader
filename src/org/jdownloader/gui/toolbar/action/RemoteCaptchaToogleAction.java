@@ -6,7 +6,7 @@ import org.jdownloader.settings.staticreferences.CFG_CAPTCHA;
 
 public class RemoteCaptchaToogleAction extends AbstractToolbarToggleAction {
 
-    public RemoteCaptchaToogleAction(SelectionInfo<?, ?> selection) {
+    public RemoteCaptchaToogleAction() {
         super(CFG_CAPTCHA.REMOTE_CAPTCHA_ENABLED);
         setIconKey("remoteOCR");
 

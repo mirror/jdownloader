@@ -6,16 +6,15 @@ import jd.gui.UserIO;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
-import org.jdownloader.actions.AbstractSelectionContextAction;
+import org.jdownloader.controlling.contextmenu.CustomizableSelectionAppAction;
 import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.gui.views.SelectionInfo;
 
-public class PackageNameAction extends AbstractSelectionContextAction<FilePackage, DownloadLink> {
+public class PackageNameAction extends CustomizableSelectionAppAction<FilePackage, DownloadLink> {
 
     private static final long serialVersionUID = -5155537516674035401L;
 
-    public PackageNameAction(SelectionInfo<FilePackage, DownloadLink> si) {
-        super(si);
+    public PackageNameAction() {
+
         setName(_GUI._.gui_table_contextmenu_editpackagename());
         setIconKey("edit");
     }

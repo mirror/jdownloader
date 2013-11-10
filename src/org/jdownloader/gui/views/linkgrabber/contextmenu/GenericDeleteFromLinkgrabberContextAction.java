@@ -1,6 +1,5 @@
 package org.jdownloader.gui.views.linkgrabber.contextmenu;
 
-import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
 import java.util.ArrayList;
 import java.util.List;
@@ -11,26 +10,30 @@ import jd.controlling.linkcrawler.CrawledPackage;
 import jd.controlling.linkcrawler.CrawledPackage.TYPE;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-import org.appwork.uio.UIOManager;
 import org.appwork.utils.swing.EDTRunner;
-import org.appwork.utils.swing.dialog.ConfirmDialog;
-import org.appwork.utils.swing.dialog.Dialog;
-import org.appwork.utils.swing.dialog.DialogNoAnswerException;
-import org.jdownloader.actions.AbstractSelectionContextAction;
+import org.jdownloader.controlling.contextmenu.ActionContext;
+import org.jdownloader.controlling.contextmenu.CustomizableSelectionAppAction;
 import org.jdownloader.controlling.contextmenu.Customizer;
+import org.jdownloader.controlling.contextmenu.TableContext;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.linkgrabber.LinkGrabberTable;
 import org.jdownloader.gui.views.linkgrabber.LinkGrabberTableModel;
 
-public class GenericDeleteFromLinkgrabberContextAction extends AbstractSelectionContextAction<CrawledPackage, CrawledLink> {
+public class GenericDeleteFromLinkgrabberContextAction extends CustomizableSelectionAppAction<CrawledPackage, CrawledLink> implements ActionContext {
 
-    public GenericDeleteFromLinkgrabberContextAction(SelectionInfo<CrawledPackage, CrawledLink> si) {
-        super(si);
+    private TableContext tableContext;
+
+    public GenericDeleteFromLinkgrabberContextAction() {
+
         this.setIconKey(IconKey.ICON_DELETE);
-        setItemVisibleForSelections(true);
-        setItemVisibleForEmptySelection(false);
+
+        addContextSetup(tableContext = new TableContext(false, true));
+
+    }
+
+    @Override
+    protected void initContextDefaults() {
         setOnlySelectedItems(true);
     }
 
@@ -52,74 +55,31 @@ public class GenericDeleteFromLinkgrabberContextAction extends AbstractSelection
 
     private boolean            deleteOffline       = false;
 
-    private List<CrawledLink>  filteredCrawledLinks;
-
-    public void setSelection(SelectionInfo<CrawledPackage, CrawledLink> selection) {
-        super.setSelection(selection);
+    @Override
+    public void requestUpdate(Object requestor) {
+        super.requestUpdate(requestor);
         update();
-
-        this.selection = selection;
-
-        setVisible(true);
-        setEnabled(true);
-        if (!isItemVisibleForEmptySelection() && !hasSelection()) {
-            setVisible(false);
-            setEnabled(false);
-        } else if (!isItemVisibleForSelections() && hasSelection()) {
-            setVisible(false);
-            setEnabled(false);
-        }
-
-        if (filteredCrawledLinks == null || filteredCrawledLinks.size() == 0) {
-            setEnabled(false);
-        }
 
     }
 
     @Override
     public void actionPerformed(final ActionEvent e) {
 
-        this.update();
-        if (!isEnabled()) {
-            Toolkit.getDefaultToolkit().beep();
-            return;
-        }
-        final List<CrawledLink> lfilteredCrawledLinks = this.filteredCrawledLinks;
+        final List<CrawledLink> nodesToDelete = new ArrayList<CrawledLink>();
+        boolean containsOnline = false;
+        for (final CrawledLink dl : selection.getChildren()) {
+            if (checkLink(dl)) {
+                nodesToDelete.add(dl);
 
-        if (lfilteredCrawledLinks != null && lfilteredCrawledLinks.size() > 0) {
-            try {
-                boolean containsOnline = false;
-                for (CrawledLink cl : lfilteredCrawledLinks) {
-                    if (TYPE.OFFLINE == cl.getParentNode().getType()) continue;
-                    if (TYPE.POFFLINE == cl.getParentNode().getType()) continue;
-                    if (cl.getDownloadLink().getAvailableStatus() != AvailableStatus.FALSE) {
-                        containsOnline = true;
-                        break;
-                    }
-
+                if (TYPE.OFFLINE == dl.getParentNode().getType()) continue;
+                if (TYPE.POFFLINE == dl.getParentNode().getType()) continue;
+                if (dl.getDownloadLink().getAvailableStatus() != AvailableStatus.FALSE) {
+                    containsOnline = true;
+                    break;
                 }
-
-                if (containsOnline) {
-                    // only ask for online links
-
-                    Dialog.getInstance().showDialog(new ConfirmDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN | UIOManager.LOGIC_DONT_SHOW_AGAIN_IGNORES_CANCEL, _GUI._.literally_are_you_sure(), _GUI._.GenericDeleteFromLinkgrabberContextAction_actionPerformed_ask_(this.createName(), lfilteredCrawledLinks.size()), null, _GUI._.literally_yes(), _GUI._.literall_no()) {
-
-                        @Override
-                        public String getDontShowAgainKey() {
-
-                            return "Delete-Linkgrabber-" + createName();
-                        }
-
-                    });
-                }
-                LinkCollector.getInstance().removeChildren(lfilteredCrawledLinks);
-
-            } catch (DialogNoAnswerException e1) {
             }
-            return;
         }
-        Toolkit.getDefaultToolkit().beep();
-        Dialog.getInstance().showErrorDialog(_GUI._.GenericDeleteSelectedToolbarAction_actionPerformed_nothing_to_delete_());
+        LinkCollector.requestDeleteLinks(nodesToDelete, containsOnline, createName());
     }
 
     private LinkGrabberTable getTable() {
@@ -141,11 +101,6 @@ public class GenericDeleteFromLinkgrabberContextAction extends AbstractSelection
         return this.deleteOffline;
     }
 
-    @Override
-    public boolean isEnabled() {
-        return this.enabled;
-    }
-
     @Customizer(name = "Exclude filtered Links")
     public boolean isIgnoreFiltered() {
         return this.ignoreFiltered;
@@ -159,67 +114,88 @@ public class GenericDeleteFromLinkgrabberContextAction extends AbstractSelection
 
     public void setDeleteAll(final boolean deleteIdle) {
         this.deleteAll = deleteIdle;
-        this.updateName();
+
     }
 
     public void setDeleteDisabled(final boolean deleteDisabled) {
         this.deleteDisabled = deleteDisabled;
-        this.updateName();
+
     }
 
     public void setDeleteOffline(final boolean deleteOffline) {
         this.deleteOffline = deleteOffline;
-        this.updateName();
+
     }
 
     public void setIgnoreFiltered(final boolean ignoreFiltered) {
         this.ignoreFiltered = ignoreFiltered;
+
     }
 
     public void setOnlySelectedItems(final boolean onlySelectedItems) {
         this.onlySelectedItems = onlySelectedItems;
+
+    }
+
+    private CrawledLink lastLink;
+
+    public boolean checkLink(CrawledLink cl) {
+        if (isDeleteAll()) return true;
+        if (isDeleteDisabled() && !cl.isEnabled()) {
+
+        return true; }
+
+        if (isDeleteOffline() && cl.getDownloadLink().isAvailabilityStatusChecked() && cl.getDownloadLink().getAvailableStatus() == AvailableStatus.FALSE) {
+
+        return true; }
+        return false;
     }
 
     private void update() {
-        SelectionInfo<CrawledPackage, CrawledLink> si = null;
+        this.updateName();
         if (this.isOnlySelectedItems()) {
             if (hasSelection()) {
-                si = getSelection();
+                selection = getSelection();
             }
         } else {
 
             if (this.isIgnoreFiltered()) {
 
-                si = getTable().getSelectionInfo(false, false);
+                selection = getTable().getSelectionInfo(false, false);
             } else {
-                si = getTable().getSelectionInfo(false, true);
+                selection = getTable().getSelectionInfo(false, true);
 
             }
 
         }
-        this.filteredCrawledLinks = null;
-
-        if (si != null && !si.isEmpty()) {
-
-            List<CrawledLink> filtered = new ArrayList<CrawledLink>();
-            for (CrawledLink cl : si.getChildren()) {
-                if (isDeleteAll()) {
-                    filtered.add(cl);
-                    continue;
-                }
-                if (isDeleteDisabled() && !cl.isEnabled()) {
-                    filtered.add(cl);
-                    continue;
-                }
-
-                if (isDeleteOffline() && cl.getDownloadLink().isAvailabilityStatusChecked() && cl.getDownloadLink().getAvailableStatus() == AvailableStatus.FALSE) {
-                    filtered.add(cl);
-                    continue;
-                }
-            }
-            filteredCrawledLinks = filtered;
-
+        setVisible(true);
+        if (!tableContext.isItemVisibleForEmptySelection() && !hasSelection()) {
+            setVisible(false);
+            setEnabled(false);
+            return;
         }
+        if (!tableContext.isItemVisibleForSelections() && hasSelection()) {
+            setVisible(false);
+            setEnabled(false);
+            return;
+        }
+        // we remember the last link and try it first
+        if (lastLink != null && selection.contains(lastLink)) {
+            if (checkLink(lastLink)) {
+
+                setEnabled(true);
+                return;
+            }
+        }
+
+        for (CrawledLink link : selection.getChildren()) {
+            if (checkLink(link)) {
+                setEnabled(true);
+                lastLink = link;
+                return;
+            }
+        }
+        setEnabled(false);
 
     }
 

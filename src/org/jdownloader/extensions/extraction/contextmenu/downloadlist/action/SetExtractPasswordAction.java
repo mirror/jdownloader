@@ -3,9 +3,6 @@ package org.jdownloader.extensions.extraction.contextmenu.downloadlist.action;
 import java.awt.event.ActionEvent;
 import java.util.HashSet;
 
-import jd.controlling.packagecontroller.AbstractPackageChildrenNode;
-import jd.controlling.packagecontroller.AbstractPackageNode;
-
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
@@ -13,13 +10,12 @@ import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.jdownloader.extensions.extraction.Archive;
 import org.jdownloader.extensions.extraction.contextmenu.downloadlist.AbstractExtractionAction;
 import org.jdownloader.gui.IconKey;
-import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.images.NewTheme;
 
-public class SetExtractPasswordAction<PackageType extends AbstractPackageNode<ChildrenType, PackageType>, ChildrenType extends AbstractPackageChildrenNode<PackageType>> extends AbstractExtractionAction<PackageType, ChildrenType> {
+public class SetExtractPasswordAction extends AbstractExtractionAction {
 
-    public SetExtractPasswordAction(final SelectionInfo<PackageType, ChildrenType> selection) {
-        super(selection);
+    public SetExtractPasswordAction() {
+        super();
         setName(org.jdownloader.extensions.extraction.translate.T._.contextmenu_password());
         setIconKey(IconKey.ICON_PASSWORD);
 

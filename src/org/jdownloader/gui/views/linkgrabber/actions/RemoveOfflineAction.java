@@ -21,7 +21,7 @@ public class RemoveOfflineAction extends AbstractDeleteCrawledLinksAppAction {
     private static final long serialVersionUID = -6341297356888158708L;
 
     public RemoveOfflineAction() {
-        super(null);
+
         setName(_GUI._.RemoveOfflineAction_RemoveOfflineAction_object_());
         setIconKey("remove_offline");
     }

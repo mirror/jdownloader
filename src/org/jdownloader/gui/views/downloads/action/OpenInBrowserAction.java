@@ -13,30 +13,37 @@ import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.appwork.utils.swing.dialog.ProgressDialog;
 import org.appwork.utils.swing.dialog.ProgressDialog.ProgressGetter;
-import org.jdownloader.actions.AbstractSelectionContextAction;
+import org.jdownloader.controlling.contextmenu.CustomizableSelectionAppAction;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.components.packagetable.LinkTreeUtils;
 import org.jdownloader.images.NewTheme;
 
-public class OpenInBrowserAction extends AbstractSelectionContextAction<FilePackage, DownloadLink> {
+public class OpenInBrowserAction extends CustomizableSelectionAppAction<FilePackage, DownloadLink> {
 
-    private static final long serialVersionUID = 7911375550836173693L;
+    private static final long                        serialVersionUID = 7911375550836173693L;
+    private SelectionInfo<FilePackage, DownloadLink> selection;
 
-    public OpenInBrowserAction(SelectionInfo<FilePackage, DownloadLink> si) {
-        super(si);
+    public OpenInBrowserAction() {
+
         setIconKey("browse");
         setName(_GUI._.gui_table_contextmenu_browselink());
+    }
+
+    @Override
+    public void requestUpdate(Object requestor) {
+        super.requestUpdate(requestor);
+        selection = getSelection();
     }
 
     @Override
     public boolean isEnabled() {
         if (!super.isEnabled()) return false;
         if (!CrossSystem.isOpenBrowserSupported()) return false;
-        SelectionInfo<FilePackage, DownloadLink> lselection = getSelection();
-        if (lselection == null) return false;
-        List<DownloadLink> links = lselection.getChildren();
+
+        if (!hasSelection(selection)) return false;
+        List<DownloadLink> links = selection.getChildren();
         if (links.size() > 50) return false;
         for (DownloadLink link : links) {
             if (link.getLinkType() == DownloadLink.LINKTYPE_NORMAL || link.gotBrowserUrl()) return true;
@@ -46,9 +53,9 @@ public class OpenInBrowserAction extends AbstractSelectionContextAction<FilePack
 
     public void actionPerformed(ActionEvent e) {
         if (!isEnabled()) return;
-        SelectionInfo<FilePackage, DownloadLink> lselection = getSelection();
-        if (lselection == null) return;
-        final List<DownloadLink> links = lselection.getChildren();
+
+        if (!hasSelection(selection)) return;
+        final List<DownloadLink> links = selection.getChildren();
         new Thread("OpenInBrowserAction") {
             public void run() {
                 final HashSet<String> urls = LinkTreeUtils.getURLs(links);

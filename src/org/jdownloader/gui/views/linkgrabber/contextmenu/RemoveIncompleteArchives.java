@@ -13,7 +13,7 @@ import org.appwork.utils.logging.Log;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogNoAnswerException;
-import org.jdownloader.actions.AbstractSelectionContextAction;
+import org.jdownloader.controlling.contextmenu.CustomizableSelectionAppAction;
 import org.jdownloader.extensions.ExtensionController;
 import org.jdownloader.extensions.extraction.Archive;
 import org.jdownloader.extensions.extraction.ArchiveFile;
@@ -22,17 +22,16 @@ import org.jdownloader.extensions.extraction.ExtractionExtension;
 import org.jdownloader.extensions.extraction.ValidateArchiveAction;
 import org.jdownloader.extensions.extraction.bindings.crawledlink.CrawledLinkArchiveFile;
 import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.gui.views.SelectionInfo;
 
-public class RemoveIncompleteArchives extends AbstractSelectionContextAction<CrawledPackage, CrawledLink> {
+public class RemoveIncompleteArchives extends CustomizableSelectionAppAction<CrawledPackage, CrawledLink> {
 
     /**
      * 
      */
     private static final long serialVersionUID = 2816227528827363428L;
 
-    public RemoveIncompleteArchives(SelectionInfo<CrawledPackage, CrawledLink> si) {
-        super(si);
+    public RemoveIncompleteArchives() {
+
         setName(_GUI._.RemoveIncompleteArchives_RemoveIncompleteArchives_object_());
         setIconKey("unpack");
 

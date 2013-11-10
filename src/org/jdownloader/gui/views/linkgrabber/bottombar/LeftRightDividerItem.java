@@ -25,7 +25,7 @@ public class LeftRightDividerItem extends MenuItemData implements MenuLink {
         return true;
     }
 
-    public JComponent createItem(SelectionInfo<?, ?> selection) throws InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException, ClassNotFoundException, NoSuchMethodException, SecurityException, ExtensionNotLoadedException {
+    public JComponent createItem() throws InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException, ClassNotFoundException, NoSuchMethodException, SecurityException, ExtensionNotLoadedException {
 
         return new MigPanel("ins 0", "[]", "[]");
     }

@@ -2,20 +2,16 @@ package org.jdownloader.extensions.extraction.contextmenu.downloadlist.action;
 
 import java.awt.event.ActionEvent;
 
-import jd.controlling.packagecontroller.AbstractPackageChildrenNode;
-import jd.controlling.packagecontroller.AbstractPackageNode;
-
 import org.appwork.utils.swing.dialog.Dialog;
 import org.jdownloader.extensions.extraction.Archive;
 import org.jdownloader.extensions.extraction.BooleanStatus;
 import org.jdownloader.extensions.extraction.contextmenu.downloadlist.AbstractExtractionAction;
 import org.jdownloader.gui.IconKey;
-import org.jdownloader.gui.views.SelectionInfo;
 
-public class CleanupAutoDeleteFilesEnabledToggleAction<PackageType extends AbstractPackageNode<ChildrenType, PackageType>, ChildrenType extends AbstractPackageChildrenNode<PackageType>> extends AbstractExtractionAction<PackageType, ChildrenType> {
+public class CleanupAutoDeleteFilesEnabledToggleAction extends AbstractExtractionAction {
 
-    public CleanupAutoDeleteFilesEnabledToggleAction(final SelectionInfo<PackageType, ChildrenType> selection) {
-        super(selection);
+    public CleanupAutoDeleteFilesEnabledToggleAction() {
+        super();
         setName(org.jdownloader.extensions.extraction.translate.T._.contextmenu_autodeletefiles());
         setIconKey(IconKey.ICON_FILE);
         setSelected(false);

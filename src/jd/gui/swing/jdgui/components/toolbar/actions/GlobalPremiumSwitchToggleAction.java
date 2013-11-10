@@ -6,7 +6,7 @@ import org.jdownloader.gui.views.SelectionInfo;
 
 public class GlobalPremiumSwitchToggleAction extends AbstractToolbarToggleAction {
 
-    public GlobalPremiumSwitchToggleAction(SelectionInfo<?, ?> selection) {
+    public GlobalPremiumSwitchToggleAction() {
         super(org.jdownloader.settings.staticreferences.CFG_GENERAL.USE_AVAILABLE_ACCOUNTS);
         setIconKey("premium");
     }

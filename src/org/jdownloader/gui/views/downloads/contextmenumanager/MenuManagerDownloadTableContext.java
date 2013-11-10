@@ -9,6 +9,7 @@ import org.jdownloader.controlling.contextmenu.ContextMenuManager;
 import org.jdownloader.controlling.contextmenu.MenuContainerRoot;
 import org.jdownloader.controlling.contextmenu.MenuItemData;
 import org.jdownloader.controlling.contextmenu.SeperatorData;
+import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.components.packagetable.context.CheckStatusAction;
 import org.jdownloader.gui.views.components.packagetable.context.EnabledAction;
@@ -23,12 +24,9 @@ import org.jdownloader.gui.views.components.packagetable.context.URLEditorAction
 import org.jdownloader.gui.views.downloads.action.AddContainerContextMenuAction;
 import org.jdownloader.gui.views.downloads.action.AddLinksContextMenuAction;
 import org.jdownloader.gui.views.downloads.action.CreateDLCAction;
-import org.jdownloader.gui.views.downloads.action.DeleteDisabledSelectedLinks;
-import org.jdownloader.gui.views.downloads.action.DeleteQuickAction;
-import org.jdownloader.gui.views.downloads.action.DeleteSelectedAndFailedLinksAction;
-import org.jdownloader.gui.views.downloads.action.DeleteSelectedFinishedLinksAction;
-import org.jdownloader.gui.views.downloads.action.DeleteSelectedOfflineLinksAction;
 import org.jdownloader.gui.views.downloads.action.ForceDownloadAction;
+import org.jdownloader.gui.views.downloads.action.GenericDeleteFromDownloadlistAction;
+import org.jdownloader.gui.views.downloads.action.GenericDeleteFromDownloadlistContextAction;
 import org.jdownloader.gui.views.downloads.action.MenuManagerAction;
 import org.jdownloader.gui.views.downloads.action.NewPackageAction;
 import org.jdownloader.gui.views.downloads.action.OpenDirectoryAction;
@@ -100,7 +98,8 @@ public class MenuManagerDownloadTableContext extends ContextMenuManager<FilePack
         mr.add(createMoreMenu());
 
         mr.add(new SeperatorData());
-        mr.add(new MenuItemData(new ActionData(DeleteQuickAction.class)));
+        mr.add(setName(setIconKey(new ActionData(GenericDeleteFromDownloadlistContextAction.class).putSetup(GenericDeleteFromDownloadlistAction.DELETE_ALL, true), IconKey.ICON_DELETE), _GUI._.DeleteQuickAction_DeleteQuickAction_object_()));
+
         mr.add(createDeleteMenu());
 
         mr.add(new SeperatorData());
@@ -113,10 +112,11 @@ public class MenuManagerDownloadTableContext extends ContextMenuManager<FilePack
     private MenuItemData createDeleteMenu() {
         DeleteMenuContainer delete = new DeleteMenuContainer();
 
-        delete.add(new MenuItemData(new ActionData(DeleteDisabledSelectedLinks.class)));
-        delete.add(new MenuItemData(new ActionData(DeleteSelectedAndFailedLinksAction.class)));
-        delete.add(new MenuItemData(new ActionData(DeleteSelectedFinishedLinksAction.class)));
-        delete.add(new MenuItemData(new ActionData(DeleteSelectedOfflineLinksAction.class)));
+        delete.add(setIconKey(new ActionData(GenericDeleteFromDownloadlistContextAction.class).putSetup(GenericDeleteFromDownloadlistAction.DELETE_DISABLED, true), IconKey.ICON_REMOVE_DISABLED));
+        delete.add(setIconKey(new ActionData(GenericDeleteFromDownloadlistContextAction.class).putSetup(GenericDeleteFromDownloadlistAction.DELETE_FAILED, true), IconKey.ICON_REMOVE_FAILED));
+        delete.add(setIconKey(new ActionData(GenericDeleteFromDownloadlistContextAction.class).putSetup(GenericDeleteFromDownloadlistAction.DELETE_FINISHED, true), IconKey.ICON_REMOVE_OK));
+        delete.add(setIconKey(new ActionData(GenericDeleteFromDownloadlistContextAction.class).putSetup(GenericDeleteFromDownloadlistAction.DELETE_OFFLINE, true), IconKey.ICON_REMOVE_OFFLINE));
+
         return delete;
     }
 

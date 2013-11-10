@@ -7,7 +7,7 @@ import org.appwork.storage.config.events.GenericConfigEventListener;
 import org.appwork.storage.config.handler.BooleanKeyHandler;
 import org.appwork.storage.config.handler.KeyHandler;
 
-public abstract class AbstractToolbarToggleAction extends ToolBarAction implements GenericConfigEventListener<Boolean> {
+public abstract class AbstractToolbarToggleAction extends AbstractToolBarAction implements GenericConfigEventListener<Boolean> {
 
     private BooleanKeyHandler keyHandler;
 

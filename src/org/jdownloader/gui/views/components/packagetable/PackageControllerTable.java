@@ -5,6 +5,8 @@ import java.awt.Color;
 import java.awt.Composite;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
+import java.awt.MouseInfo;
+import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.event.ActionEvent;
 import java.awt.event.InputEvent;
@@ -17,6 +19,7 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import javax.swing.KeyStroke;
 import javax.swing.ListSelectionModel;
+import javax.swing.SwingUtilities;
 import javax.swing.table.TableModel;
 
 import jd.controlling.packagecontroller.AbstractNode;
@@ -89,6 +92,12 @@ public abstract class PackageControllerTable<ParentType extends AbstractPackageN
     private AtomicLong                                            selectionVersion    = new AtomicLong(0);
     private final DelayedRunnable                                 selectionDelayedUpdate;
 
+    public ExtColumn<AbstractNode> getMouseOverColumn() {
+        Point mp = MouseInfo.getPointerInfo().getLocation();
+        SwingUtilities.convertPointFromScreen(mp, this);
+        return getExtColumnAtPoint(mp);
+    }
+
     @Override
     protected void initAlternateRowHighlighter() {
         super.initAlternateRowHighlighter();
@@ -129,6 +138,10 @@ public abstract class PackageControllerTable<ParentType extends AbstractPackageN
                 updateMoveActions();
             }
         };
+    }
+
+    public SelectionInfo<ParentType, ChildrenType> getSelectionInfo() {
+        return getSelectionInfo(true, true);
     }
 
     public SelectionInfo<ParentType, ChildrenType> getSelectionInfo(final boolean selectionOnly, final boolean filtered) {

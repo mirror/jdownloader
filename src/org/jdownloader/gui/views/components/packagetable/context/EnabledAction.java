@@ -8,8 +8,7 @@ import javax.swing.ImageIcon;
 import jd.controlling.TaskQueue;
 import jd.controlling.downloadcontroller.DownloadWatchDog;
 import jd.controlling.downloadcontroller.SingleDownloadController;
-import jd.controlling.packagecontroller.AbstractPackageChildrenNode;
-import jd.controlling.packagecontroller.AbstractPackageNode;
+import jd.controlling.packagecontroller.AbstractNode;
 import jd.plugins.DownloadLink;
 
 import org.appwork.uio.UIOManager;
@@ -18,12 +17,12 @@ import org.appwork.utils.event.queue.QueueAction;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.dialog.Dialog;
-import org.jdownloader.actions.AbstractSelectionContextAction;
+import org.jdownloader.controlling.contextmenu.CustomizableSelectionAppAction;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.images.NewTheme;
 
-public class EnabledAction<PackageType extends AbstractPackageNode<ChildrenType, PackageType>, ChildrenType extends AbstractPackageChildrenNode<PackageType>> extends AbstractSelectionContextAction<PackageType, ChildrenType> {
+public class EnabledAction extends CustomizableSelectionAppAction {
     /**
      * 
      */
@@ -35,12 +34,14 @@ public class EnabledAction<PackageType extends AbstractPackageNode<ChildrenType,
         MIXED;
     }
 
-    private State state = State.MIXED;
+    private State               state = State.MIXED;
+    private SelectionInfo<?, ?> selection;
 
     @Override
-    public void setSelection(SelectionInfo<PackageType, ChildrenType> selection) {
-        super.setSelection(selection);
-        if (getSelection() != null) {
+    public void requestUpdate(Object requestor) {
+        super.requestUpdate(requestor);
+        selection = getSelection();
+        if (selection != null) {
 
             switch (state = getState()) {
             case MIXED:
@@ -60,22 +61,23 @@ public class EnabledAction<PackageType extends AbstractPackageNode<ChildrenType,
             setSmallIcon(new ImageIcon(ImageProvider.merge(NewTheme.I().getImage("select", 18), NewTheme.I().getImage("disabled", 14), 0, 0, 9, 8)));
             setName(_GUI._.EnabledAction_EnabledAction_empty());
         }
-
     }
 
-    public EnabledAction(SelectionInfo<PackageType, ChildrenType> si) {
-        super(si);
+    public EnabledAction() {
+        super();
 
     }
 
     private State getState() {
         if (getSelection().isEmpty()) return State.ALL_DISABLED;
         Boolean first = null;
-        for (ChildrenType a : getSelection().getChildren()) {
-
-            /* check a child */
-            if (first == null) first = a.isEnabled();
-            if (a.isEnabled() != first) { return State.MIXED; }
+        for (Object a : selection.getChildren()) {
+            AbstractNode node = (AbstractNode) a;
+            /*
+             * c1 heck a child
+             */
+            if (first == null) first = node.isEnabled();
+            if (node.isEnabled() != first) { return State.MIXED; }
 
         }
         return first ? State.ALL_ENABLED : State.ALL_DISABLED;
@@ -91,7 +93,7 @@ public class EnabledAction<PackageType extends AbstractPackageNode<ChildrenType,
                 if (!enable) {
                     int count = 0;
                     if (DownloadWatchDog.getInstance().isRunning()) {
-                        for (ChildrenType a : getSelection().getChildren()) {
+                        for (Object a : selection.getChildren()) {
                             if (a instanceof DownloadLink) {
                                 DownloadLink link = (DownloadLink) a;
                                 SingleDownloadController slc = link.getDownloadLinkController();
@@ -120,14 +122,14 @@ public class EnabledAction<PackageType extends AbstractPackageNode<ChildrenType,
         });
     }
 
-    private void setEnabled(final boolean b, final List<ChildrenType> children) {
-        if (children != null && children.size() > 0) {
+    private void setEnabled(final boolean b, final List<?> aggregatedLinkList) {
+        if (aggregatedLinkList != null && aggregatedLinkList.size() > 0) {
             TaskQueue.getQueue().add(new QueueAction<Void, RuntimeException>() {
 
                 @Override
                 protected Void run() throws RuntimeException {
-                    for (ChildrenType a : children) {
-                        a.setEnabled(b);
+                    for (Object a : aggregatedLinkList) {
+                        ((AbstractNode) a).setEnabled(b);
                     }
                     return null;
                 }

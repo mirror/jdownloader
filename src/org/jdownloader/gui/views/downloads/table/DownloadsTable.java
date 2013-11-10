@@ -38,7 +38,6 @@ import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.dialog.Dialog;
-import org.jdownloader.actions.AbstractSelectionContextAction;
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.controlling.contextmenu.MenuContainer;
 import org.jdownloader.controlling.contextmenu.MenuItemData;
@@ -46,10 +45,9 @@ import org.jdownloader.controlling.contextmenu.MenuLink;
 import org.jdownloader.controlling.contextmenu.SeperatorData;
 import org.jdownloader.gui.helpdialogs.HelpDialog;
 import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.components.packagetable.PackageControllerTable;
 import org.jdownloader.gui.views.downloads.MenuManagerDownloadTabBottomBar;
-import org.jdownloader.gui.views.downloads.action.DeleteSelectionAction;
+import org.jdownloader.gui.views.downloads.action.DownloadTabActionUtils;
 import org.jdownloader.gui.views.downloads.contextmenumanager.MenuManagerDownloadTableContext;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.logging.LogController;
@@ -60,9 +58,11 @@ public class DownloadsTable extends PackageControllerTable<FilePackage, Download
     private static final long          serialVersionUID = 8843600834248098174L;
     private HashMap<KeyStroke, Action> shortCutActions;
     private LogSource                  logger;
+    private static DownloadsTable      INSTANCE         = null;
 
     public DownloadsTable(final DownloadsTableModel tableModel) {
         super(tableModel);
+        INSTANCE = this;
         this.addRowHighlighter(new DropHighlighter(null, new Color(27, 164, 191, 75)));
         this.setTransferHandler(new DownloadsTableTransferHandler(this));
         this.setDragEnabled(true);
@@ -168,8 +168,7 @@ public class DownloadsTable extends PackageControllerTable<FilePackage, Download
 
     @Override
     protected boolean onShortcutDelete(final java.util.List<AbstractNode> selectedObjects, final KeyEvent evt, final boolean direct) {
-
-        new DeleteSelectionAction(new SelectionInfo<FilePackage, DownloadLink>(null, selectedObjects, null, evt, null, this)).actionPerformed(null);
+        DownloadTabActionUtils.deleteLinksRequest(getSelectionInfo(), _GUI._.RemoveSelectionAction_actionPerformed_());
         return true;
     }
 
@@ -245,9 +244,7 @@ public class DownloadsTable extends PackageControllerTable<FilePackage, Download
             if (map != null && am != null && isEnabled()) {
                 final Object binding = map.get(stroke);
                 final Action action = (binding == null) ? null : am.get(binding);
-                if (action != null && action instanceof AbstractSelectionContextAction) {
-
-                    ((AbstractSelectionContextAction) action).setSelection(getSelectionInfo(true, true));
+                if (action != null) {
 
                     if (!action.isEnabled()) {
 
@@ -314,7 +311,7 @@ public class DownloadsTable extends PackageControllerTable<FilePackage, Download
                 AppAction action;
                 try {
                     if (mi.getActionData() == null) continue;
-                    action = mi.createAction(null);
+                    action = mi.createAction();
                     KeyStroke keystroke;
                     if (StringUtils.isNotEmpty(mi.getShortcut())) {
                         keystroke = KeyStroke.getKeyStroke(mi.getShortcut());
@@ -366,4 +363,9 @@ public class DownloadsTable extends PackageControllerTable<FilePackage, Download
             }
         }
     }
+
+    public static DownloadsTable getInstance() {
+        return INSTANCE;
+    }
+
 }

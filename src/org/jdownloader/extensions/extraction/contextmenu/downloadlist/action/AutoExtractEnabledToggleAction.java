@@ -2,21 +2,17 @@ package org.jdownloader.extensions.extraction.contextmenu.downloadlist.action;
 
 import java.awt.event.ActionEvent;
 
-import jd.controlling.packagecontroller.AbstractPackageChildrenNode;
-import jd.controlling.packagecontroller.AbstractPackageNode;
-
 import org.appwork.utils.Application;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.jdownloader.extensions.extraction.Archive;
 import org.jdownloader.extensions.extraction.BooleanStatus;
 import org.jdownloader.extensions.extraction.contextmenu.downloadlist.AbstractExtractionAction;
 import org.jdownloader.gui.IconKey;
-import org.jdownloader.gui.views.SelectionInfo;
 
-public class AutoExtractEnabledToggleAction<PackageType extends AbstractPackageNode<ChildrenType, PackageType>, ChildrenType extends AbstractPackageChildrenNode<PackageType>> extends AbstractExtractionAction<PackageType, ChildrenType> {
+public class AutoExtractEnabledToggleAction extends AbstractExtractionAction {
 
-    public AutoExtractEnabledToggleAction(final SelectionInfo<PackageType, ChildrenType> selection) {
-        super(selection);
+    public AutoExtractEnabledToggleAction() {
+        super();
         setName(org.jdownloader.extensions.extraction.translate.T._.contextmenu_autoextract());
         setIconKey(IconKey.ICON_ARCHIVE_REFRESH);
         setSelected(false);

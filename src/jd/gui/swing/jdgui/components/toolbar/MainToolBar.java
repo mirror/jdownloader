@@ -65,6 +65,7 @@ import org.appwork.utils.StringUtils;
 import org.appwork.utils.ImageProvider.ImageProvider;
 import org.appwork.utils.swing.EDTRunner;
 import org.jdownloader.actions.AppAction;
+import org.jdownloader.controlling.contextmenu.CustomizableAppAction;
 import org.jdownloader.controlling.contextmenu.MenuContainer;
 import org.jdownloader.controlling.contextmenu.MenuItemData;
 import org.jdownloader.controlling.contextmenu.MenuLink;
@@ -73,7 +74,7 @@ import org.jdownloader.controlling.contextmenu.gui.ExtPopupMenu;
 import org.jdownloader.controlling.contextmenu.gui.MenuBuilder;
 import org.jdownloader.extensions.ExtensionNotLoadedException;
 import org.jdownloader.gui.toolbar.MenuManagerMainToolbar;
-import org.jdownloader.gui.toolbar.action.ToolBarAction;
+import org.jdownloader.gui.toolbar.action.AbstractToolBarAction;
 import org.jdownloader.gui.views.downloads.QuickSettingsPopup;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
@@ -218,7 +219,7 @@ public class MainToolBar extends JToolBar implements MouseListener, DownloadWatc
         for (final MenuItemData menudata : list) {
 
             AbstractButton bt = null;
-            AppAction action;
+            CustomizableAppAction action;
             try {
                 if (!menudata.isVisible()) continue;
                 if (menudata instanceof SeperatorData) {
@@ -295,10 +296,10 @@ public class MainToolBar extends JToolBar implements MouseListener, DownloadWatc
 
                                 };
                                 ((JComponent) e.getSource()).addMouseListener(ml);
-                                new MenuBuilder(MenuManagerMainToolbar.getInstance(), lroot, null, (MenuContainer) menudata) {
+                                new MenuBuilder(MenuManagerMainToolbar.getInstance(), lroot, (MenuContainer) menudata) {
                                     @Override
                                     protected void addContainer(JComponent root, MenuItemData inst) throws InstantiationException, IllegalAccessException, InvocationTargetException, ClassNotFoundException, NoSuchMethodException, ExtensionNotLoadedException {
-                                        final JMenu submenu = (JMenu) inst.addTo(root, selection);
+                                        final JMenu submenu = (JMenu) inst.addTo(root);
                                         if (submenu == null) return;
                                         submenu.addMouseListener(ml);
                                         createLayer(submenu, (MenuContainer) inst);
@@ -310,7 +311,7 @@ public class MainToolBar extends JToolBar implements MouseListener, DownloadWatc
 
                                     @Override
                                     protected void addAction(JComponent root, MenuItemData inst) throws InstantiationException, IllegalAccessException, InvocationTargetException, ClassNotFoundException, NoSuchMethodException, ExtensionNotLoadedException {
-                                        JComponent ret = inst.addTo(root, selection);
+                                        JComponent ret = inst.addTo(root);
                                         ret.addMouseListener(ml);
 
                                     }
@@ -393,20 +394,22 @@ public class MainToolBar extends JToolBar implements MouseListener, DownloadWatc
                     continue;
                 } else if (menudata.getActionData() != null) {
 
-                    action = menudata.createAction(null);
+                    action = menudata.createAction();
 
                     if (StringUtils.isNotEmpty(menudata.getShortcut()) && KeyStroke.getKeyStroke(menudata.getShortcut()) != null) {
                         action.setAccelerator(KeyStroke.getKeyStroke(menudata.getShortcut()));
                     }
                     bt = null;
-                    if (action instanceof ToolBarAction) {
-                        bt = ((ToolBarAction) action).createButton();
+                    if (action instanceof AbstractToolBarAction) {
+                        action.requestUpdate(MainToolBar.this);
+                        bt = ((AbstractToolBarAction) action).createButton();
                         if (bt != null) {
                             add(bt, "width 32!,height 32!,hidemode 3");
                         }
                     }
                     if (bt == null) {
                         if (action.isToggle()) {
+                            action.requestUpdate(MainToolBar.this);
                             bt = new JToggleButton(action);
                             ImageIcon icon;
 
@@ -417,6 +420,7 @@ public class MainToolBar extends JToolBar implements MouseListener, DownloadWatc
                             add(bt, "width 32!,height 32!,hidemode 3");
                             bt.setHideActionText(true);
                         } else {
+                            action.requestUpdate(MainToolBar.this);
                             bt = new ExtButton(action);
 
                             bt.setIcon(NewTheme.I().getIcon(action.getIconKey(), 24));
@@ -458,7 +462,7 @@ public class MainToolBar extends JToolBar implements MouseListener, DownloadWatc
                     //
                     // }
                 } else if (menudata instanceof MenuLink) {
-                    final JComponent item = menudata.createItem(null);
+                    final JComponent item = menudata.createItem();
                     if (StringUtils.isNotEmpty(menudata.getIconKey())) {
                         if (item instanceof AbstractButton) {
                             ((AbstractButton) item).setIcon(NewTheme.I().getIcon(menudata.getIconKey(), 24));

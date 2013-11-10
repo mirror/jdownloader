@@ -9,7 +9,6 @@ import org.appwork.exceptions.WTFException;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.controlling.contextmenu.gui.ExtMenuImpl;
-import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.images.NewTheme;
 
 public class MenuContainer extends MenuItemData {
@@ -39,7 +38,7 @@ public class MenuContainer extends MenuItemData {
     }
 
     @Override
-    public JMenu createItem(SelectionInfo<?, ?> selection) {
+    public JMenu createItem() {
 
         JMenu subMenu = new ExtMenuImpl(getName());
         if (StringUtils.isNotEmpty(_getDescription())) {

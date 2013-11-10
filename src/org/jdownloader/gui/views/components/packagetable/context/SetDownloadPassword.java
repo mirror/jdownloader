@@ -13,20 +13,19 @@ import jd.plugins.DownloadLink;
 import org.appwork.utils.event.queue.QueueAction;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogNoAnswerException;
-import org.jdownloader.actions.AbstractSelectionContextAction;
+import org.jdownloader.controlling.contextmenu.CustomizableSelectionAppAction;
 import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.images.NewTheme;
 
-public class SetDownloadPassword<PackageType extends AbstractPackageNode<ChildrenType, PackageType>, ChildrenType extends AbstractPackageChildrenNode<PackageType>> extends AbstractSelectionContextAction<PackageType, ChildrenType> {
+public class SetDownloadPassword<PackageType extends AbstractPackageNode<ChildrenType, PackageType>, ChildrenType extends AbstractPackageChildrenNode<PackageType>> extends CustomizableSelectionAppAction<PackageType, ChildrenType> {
 
     /**
      * 
      */
     private static final long serialVersionUID = -8280535886054721277L;
 
-    public SetDownloadPassword(SelectionInfo<PackageType, ChildrenType> si) {
-        super(si);
+    public SetDownloadPassword() {
+        super();
         setName(_GUI._.SetDownloadPassword_SetDownloadPassword_());
         setIconKey("password");
     }

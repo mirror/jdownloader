@@ -11,17 +11,16 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
 import org.appwork.utils.ImageProvider.ImageProvider;
-import org.jdownloader.actions.AbstractSelectionContextAction;
+import org.jdownloader.controlling.contextmenu.CustomizableSelectionAppAction;
 import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.images.NewTheme;
 
-public class ForceDownloadAction extends AbstractSelectionContextAction<FilePackage, DownloadLink> {
+public class ForceDownloadAction extends CustomizableSelectionAppAction<FilePackage, DownloadLink> {
 
     private static final long serialVersionUID = 7107840091963427544L;
 
-    public ForceDownloadAction(final SelectionInfo<FilePackage, DownloadLink> si) {
-        super(si);
+    public ForceDownloadAction() {
+        super();
         Image add = NewTheme.I().getImage("media-playback-start", 20);
         Image play = NewTheme.I().getImage("prio_3", 14);
         setSmallIcon(new ImageIcon(ImageProvider.merge(add, play, -4, 0, 6, 10)));

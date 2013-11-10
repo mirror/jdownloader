@@ -9,15 +9,16 @@ import jd.gui.swing.jdgui.views.settings.panels.proxy.SaveAsProxyProfileAction;
 
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.swing.dialog.Dialog;
-import org.jdownloader.actions.AppAction;
-import org.jdownloader.actions.CachableInterface;
+import org.jdownloader.controlling.contextmenu.ActionContext;
+import org.jdownloader.controlling.contextmenu.CustomizableAppAction;
 import org.jdownloader.controlling.contextmenu.Customizer;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
 
-public class SetProxySetupAction extends AppAction implements CachableInterface {
+public class SetProxySetupAction extends CustomizableAppAction implements ActionContext {
 
     public SetProxySetupAction() {
+        addContextSetup(this);
         setName(_GUI._.SetProxySetupAction_SetProxySetupAction_());
         setIconKey(IconKey.ICON_PROXY);
     }
@@ -64,10 +65,6 @@ public class SetProxySetupAction extends AppAction implements CachableInterface 
         } finally {
             updateIcon(getPath());
         }
-    }
-
-    @Override
-    public void setData(String data) {
     }
 
 }

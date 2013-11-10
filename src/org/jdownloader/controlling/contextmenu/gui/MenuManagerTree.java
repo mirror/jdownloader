@@ -33,6 +33,15 @@ public class MenuManagerTree extends JTree {
         }
     }
 
+    // public int getScrollableBlockIncrement(Rectangle visibleRect, int orientation, int direction) {
+    // return super.getScrollableBlockIncrement(visibleRect, orientation, direction);
+    // }
+    //
+    // public int getScrollableUnitIncrement(Rectangle visibleRect, int orientation, int direction) {
+    //
+    // return 10;
+    // }
+
     private ManagerTreeModel  model;
     private MenuManagerDialog managerFrame;
 

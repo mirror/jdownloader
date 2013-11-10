@@ -5,10 +5,10 @@ import java.awt.event.ActionEvent;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.notify.BasicNotify;
 import org.jdownloader.gui.notify.BubbleNotify;
-import org.jdownloader.gui.toolbar.action.ToolBarAction;
+import org.jdownloader.gui.toolbar.action.AbstractToolBarAction;
 import org.jdownloader.images.NewTheme;
 
-public class DoAnyThingForADeveloperAction extends ToolBarAction {
+public class DoAnyThingForADeveloperAction extends AbstractToolBarAction {
     private static int ID = 0;
 
     public DoAnyThingForADeveloperAction() {

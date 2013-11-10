@@ -638,7 +638,7 @@ public class ShutdownExtension extends AbstractExtension<ShutdownConfig, Shutdow
                 boolean val = mid._isValidated();
                 try {
                     mid._setValidated(true);
-                    if (mid.createAction(null).isToggle()) {
+                    if (mid.createAction().isToggle()) {
 
                         mr.getItems().add(i + 1, new MenuItemData(new ActionData(ShutdownToggleAction.class)));
                         return null;

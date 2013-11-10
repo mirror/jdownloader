@@ -8,11 +8,10 @@ import jd.controlling.linkcollector.LinkCollector;
 import org.appwork.utils.event.queue.QueueAction;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogNoAnswerException;
-import org.jdownloader.actions.AppAction;
-import org.jdownloader.actions.CachableInterface;
+import org.jdownloader.controlling.contextmenu.CustomizableAppAction;
 import org.jdownloader.gui.translate._GUI;
 
-public class ClearFilteredLinksAction extends AppAction implements CachableInterface {
+public class ClearFilteredLinksAction extends CustomizableAppAction {
 
     /**
      * 
@@ -43,10 +42,6 @@ public class ClearFilteredLinksAction extends AppAction implements CachableInter
             });
         } catch (DialogNoAnswerException e1) {
         }
-    }
-
-    @Override
-    public void setData(String data) {
     }
 
 }

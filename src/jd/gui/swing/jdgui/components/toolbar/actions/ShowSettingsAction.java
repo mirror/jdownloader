@@ -7,19 +7,19 @@ import jd.gui.swing.jdgui.views.settings.ConfigurationView;
 
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.swing.EDTRunner;
-import org.jdownloader.gui.toolbar.action.ToolBarAction;
+import org.jdownloader.gui.toolbar.action.AbstractToolBarAction;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings;
 
-public class ShowSettingsAction extends ToolBarAction {
+public class ShowSettingsAction extends AbstractToolBarAction {
 
     /**
      * 
      */
     private static final long serialVersionUID = 1L;
 
-    public ShowSettingsAction(SelectionInfo<?, ?> selection) {
+    public ShowSettingsAction() {
 
         setIconKey("settings");
 

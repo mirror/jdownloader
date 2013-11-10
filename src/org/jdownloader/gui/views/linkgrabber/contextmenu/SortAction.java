@@ -6,16 +6,22 @@ import jd.controlling.packagecontroller.AbstractNode;
 import jd.controlling.packagecontroller.AbstractPackageChildrenNode;
 import jd.controlling.packagecontroller.AbstractPackageNode;
 import jd.controlling.packagecontroller.PackageControllerComparator;
+import jd.gui.swing.jdgui.MainTabbedPane;
+import jd.gui.swing.jdgui.interfaces.View;
 
 import org.appwork.swing.exttable.ExtColumn;
 import org.appwork.utils.event.queue.Queue.QueuePriority;
 import org.appwork.utils.event.queue.QueueAction;
-import org.jdownloader.actions.AbstractSelectionContextAction;
+import org.jdownloader.controlling.contextmenu.CustomizableSelectionAppAction;
+import org.jdownloader.controlling.contextmenu.TableContext;
 import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.components.packagetable.PackageControllerTableModel;
+import org.jdownloader.gui.views.downloads.DownloadsView;
+import org.jdownloader.gui.views.downloads.table.DownloadsTable;
+import org.jdownloader.gui.views.linkgrabber.LinkGrabberTable;
+import org.jdownloader.gui.views.linkgrabber.LinkGrabberView;
 
-public class SortAction<PackageType extends AbstractPackageNode<ChildrenType, PackageType>, ChildrenType extends AbstractPackageChildrenNode<PackageType>> extends AbstractSelectionContextAction<PackageType, ChildrenType> {
+public class SortAction<PackageType extends AbstractPackageNode<ChildrenType, PackageType>, ChildrenType extends AbstractPackageChildrenNode<PackageType>> extends CustomizableSelectionAppAction<PackageType, ChildrenType> {
 
     /**
      * 
@@ -24,10 +30,19 @@ public class SortAction<PackageType extends AbstractPackageNode<ChildrenType, Pa
     private ExtColumn<AbstractNode> column;
 
     @Override
-    public void setSelection(SelectionInfo<PackageType, ChildrenType> selection) {
-        super.setSelection(selection);
+    public void requestUpdate(Object requestor) {
+        super.requestUpdate(requestor);
+
+        View view = MainTabbedPane.getInstance().getSelectedView();
+
+        if (view instanceof DownloadsView) {
+
+            this.column = DownloadsTable.getInstance().getMouseOverColumn();
+        } else if (view instanceof LinkGrabberView) {
+            this.column = LinkGrabberTable.getInstance().getMouseOverColumn();
+        }
+
         if (getSelection() != null) {
-            this.column = getSelection().getContextColumn();
 
             setIconKey("sort");
             setName(_GUI._.SortAction_SortAction_object_(column.getName()));
@@ -35,11 +50,11 @@ public class SortAction<PackageType extends AbstractPackageNode<ChildrenType, Pa
             setIconKey("sort");
             setName(_GUI._.SortAction_SortAction_object_empty());
         }
-        setItemVisibleForEmptySelection(true);
+
     }
 
-    public SortAction(SelectionInfo<PackageType, ChildrenType> si) {
-        super(si);
+    public SortAction() {
+        addContextSetup(new TableContext(true, true));
 
     }
 

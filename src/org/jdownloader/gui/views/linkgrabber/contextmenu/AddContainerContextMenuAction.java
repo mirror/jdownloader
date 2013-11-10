@@ -5,19 +5,19 @@ import java.awt.event.ActionEvent;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledPackage;
 
-import org.jdownloader.actions.AbstractSelectionContextAction;
+import org.jdownloader.controlling.contextmenu.CustomizableSelectionAppAction;
+import org.jdownloader.controlling.contextmenu.TableContext;
 import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.linkgrabber.actions.AddLinksAction;
 
-public class AddContainerContextMenuAction extends AbstractSelectionContextAction<CrawledPackage, CrawledLink> {
+public class AddContainerContextMenuAction extends CustomizableSelectionAppAction<CrawledPackage, CrawledLink> {
 
     private static final long serialVersionUID = 1901008532686173167L;
 
-    public AddContainerContextMenuAction(final SelectionInfo<CrawledPackage, CrawledLink> si) {
-        super(si);
-        setItemVisibleForEmptySelection(true);
-        setItemVisibleForSelections(false);
+    public AddContainerContextMenuAction() {
+        super();
+        addContextSetup(new TableContext(true, false));
+
         setName(_GUI._.AddLinksToLinkgrabberAction());
         setIconKey("add");
         setTooltipText(_GUI._.AddLinksAction_AddLinksAction_tt());

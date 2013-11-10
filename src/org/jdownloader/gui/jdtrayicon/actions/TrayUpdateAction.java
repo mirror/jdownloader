@@ -3,15 +3,14 @@ package org.jdownloader.gui.jdtrayicon.actions;
 import jd.gui.swing.jdgui.components.toolbar.actions.UpdateAction;
 
 import org.jdownloader.gui.jdtrayicon.translate._TRAY;
-import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.updatev2.InstallLog;
 import org.jdownloader.updatev2.UpdateController;
 import org.jdownloader.updatev2.UpdaterListener;
 
 public class TrayUpdateAction extends UpdateAction implements UpdaterListener {
 
-    public TrayUpdateAction(SelectionInfo<?, ?> selection) {
-        super(selection);
+    public TrayUpdateAction() {
+        super();
         updateName();
 
         UpdateController.getInstance().getEventSender().addListener(this, true);

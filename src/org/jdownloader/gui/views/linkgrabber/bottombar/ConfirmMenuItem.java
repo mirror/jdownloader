@@ -12,7 +12,7 @@ public class ConfirmMenuItem extends MenuItemData implements SelfLayoutInterface
     }
 
     @Override
-    public String getConstraints() {
+    public String createConstraints() {
         return "height 24!,pushx,growx";
     }
 }

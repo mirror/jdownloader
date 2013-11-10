@@ -8,21 +8,18 @@ import jd.controlling.TaskQueue;
 import jd.controlling.linkchecker.LinkChecker;
 import jd.controlling.linkcrawler.CheckableLink;
 import jd.controlling.linkcrawler.CrawledLink;
-import jd.controlling.packagecontroller.AbstractPackageChildrenNode;
-import jd.controlling.packagecontroller.AbstractPackageNode;
 import jd.plugins.DownloadLink;
 
 import org.appwork.utils.event.queue.QueueAction;
-import org.jdownloader.actions.AbstractSelectionContextAction;
+import org.jdownloader.controlling.contextmenu.CustomizableSelectionAppAction;
 import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.gui.views.SelectionInfo;
 
-public class CheckStatusAction<PackageType extends AbstractPackageNode<ChildrenType, PackageType>, ChildrenType extends AbstractPackageChildrenNode<PackageType>> extends AbstractSelectionContextAction<PackageType, ChildrenType> {
+public class CheckStatusAction extends CustomizableSelectionAppAction {
 
     private static final long serialVersionUID = 6821943398259956694L;
 
-    public CheckStatusAction(SelectionInfo<PackageType, ChildrenType> si) {
-        super(si);
+    public CheckStatusAction() {
+        super();
         setIconKey("ok");
         setName(_GUI._.gui_table_contextmenu_check());
 
@@ -34,9 +31,9 @@ public class CheckStatusAction<PackageType extends AbstractPackageNode<ChildrenT
 
             @Override
             protected Void run() throws RuntimeException {
-                List<ChildrenType> children = getSelection().getChildren();
+                List<?> children = getSelection().getChildren();
                 java.util.List<CheckableLink> checkableLinks = new ArrayList<CheckableLink>(children.size());
-                for (AbstractPackageChildrenNode l : children) {
+                for (Object l : children) {
                     if (l instanceof DownloadLink || l instanceof CrawledLink) {
                         checkableLinks.add(((CheckableLink) l));
                     }

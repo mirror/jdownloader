@@ -1,6 +1,7 @@
 package org.jdownloader.controlling.contextmenu.gui;
 
 import java.awt.Component;
+import java.awt.Dimension;
 import java.awt.Rectangle;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -10,6 +11,7 @@ import java.io.File;
 import java.io.FilenameFilter;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.util.List;
 
 import javax.swing.Icon;
 import javax.swing.JButton;
@@ -22,6 +24,7 @@ import javax.swing.JSeparator;
 import javax.swing.KeyStroke;
 import javax.swing.ListCellRenderer;
 import javax.swing.ListSelectionModel;
+import javax.swing.Scrollable;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 
@@ -35,6 +38,8 @@ import org.appwork.utils.StringUtils;
 import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.SwingUtils;
 import org.jdownloader.actions.AppAction;
+import org.jdownloader.controlling.contextmenu.ActionContext;
+import org.jdownloader.controlling.contextmenu.CustomizableAppAction;
 import org.jdownloader.controlling.contextmenu.Customizer;
 import org.jdownloader.controlling.contextmenu.MenuContainer;
 import org.jdownloader.controlling.contextmenu.MenuItemData;
@@ -43,7 +48,28 @@ import org.jdownloader.controlling.contextmenu.SeperatorData;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
 
-public class InfoPanel extends MigPanel implements ActionListener {
+public class InfoPanel extends MigPanel implements ActionListener, Scrollable {
+    public Dimension getPreferredScrollableViewportSize() {
+
+        return this.getPreferredSize();
+    }
+
+    public int getScrollableBlockIncrement(final Rectangle visibleRect, final int orientation, final int direction) {
+        return Math.max(visibleRect.height * 9 / 10, 1);
+    }
+
+    public boolean getScrollableTracksViewportHeight() {
+
+        return false;
+    }
+
+    public boolean getScrollableTracksViewportWidth() {
+        return true;
+    }
+
+    public int getScrollableUnitIncrement(final Rectangle visibleRect, final int orientation, final int direction) {
+        return Math.max(visibleRect.height / 10, 1);
+    }
 
     private JLabel            label;
 
@@ -252,7 +278,7 @@ public class InfoPanel extends MigPanel implements ActionListener {
 
         add(new JSeparator(), "spanx");
         customPanel = new CustomPanel(managerFrame);
-        add(customPanel, "spanx,growx");
+        add(customPanel, "spanx,growx,pushx");
     }
 
     private JLabel label(String infoPanel_InfoPanel_hideIfDisabled) {
@@ -304,15 +330,21 @@ public class InfoPanel extends MigPanel implements ActionListener {
         updateHeaderLabel(mid);
         customPanel.removeAll();
 
-        AppAction action;
+        CustomizableAppAction action;
         try {
             if (mid.getActionData() != null) {
-                action = mid.createAction(null);
-                for (GetterSetter gs : ReflectionUtils.getGettersSetteres(action.getClass())) {
+                action = mid.createAction();
+                List<ActionContext> sos = action.getSetupObjects();
+                if (sos != null) {
+                    for (ActionContext so : sos) {
+                        System.out.println(so);
+                        for (GetterSetter gs : ReflectionUtils.getGettersSetteres(so.getClass())) {
 
-                    if (gs.hasGetter() && gs.hasSetter()) {
-                        if (gs.hasAnnotation(Customizer.class)) {
-                            customPanel.add(mid.getActionData(), action, gs);
+                            if (gs.hasGetter() && gs.hasSetter()) {
+                                if (gs.hasAnnotation(Customizer.class)) {
+                                    customPanel.add(mid.getActionData(), action, so, gs);
+                                }
+                            }
                         }
                     }
                 }
@@ -350,7 +382,7 @@ public class InfoPanel extends MigPanel implements ActionListener {
             } else {
                 if (mid._isValidated()) {
                     try {
-                        AppAction action = mid.createAction(null);
+                        AppAction action = mid.createAction();
 
                         if (StringUtils.isEmpty(name)) {
                             name = action.getName();

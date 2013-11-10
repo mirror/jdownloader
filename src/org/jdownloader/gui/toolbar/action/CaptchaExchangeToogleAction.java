@@ -6,7 +6,7 @@ import org.jdownloader.settings.staticreferences.CFG_CAPTCHA;
 
 public class CaptchaExchangeToogleAction extends AbstractToolbarToggleAction {
 
-    public CaptchaExchangeToogleAction(SelectionInfo<?, ?> selection) {
+    public CaptchaExchangeToogleAction() {
         super(CFG_CAPTCHA.CAPTCHA_EXCHANGE_SERVICES_ENABLED);
         setIconKey("ces");
 

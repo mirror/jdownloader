@@ -11,7 +11,7 @@ import org.jdownloader.settings.staticreferences.CFG_RECONNECT;
 
 public class AutoReconnectToggleAction extends AbstractToolbarToggleAction {
 
-    public AutoReconnectToggleAction(SelectionInfo<?, ?> selection) {
+    public AutoReconnectToggleAction() {
         super(CFG_RECONNECT.AUTO_RECONNECT_ENABLED);
         setIconKey("auto-reconnect");
         org.jdownloader.settings.staticreferences.CFG_RECONNECT.ACTIVE_PLUGIN_ID.getEventSender().addListener(new GenericConfigEventListener<String>() {

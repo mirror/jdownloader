@@ -14,36 +14,50 @@ import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.appwork.utils.swing.dialog.ProgressDialog;
 import org.appwork.utils.swing.dialog.ProgressDialog.ProgressGetter;
-import org.jdownloader.actions.AbstractSelectionContextAction;
+import org.jdownloader.controlling.contextmenu.CustomizableSelectionAppAction;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.components.packagetable.LinkTreeUtils;
 import org.jdownloader.images.NewTheme;
 
-public class OpenInBrowserAction extends AbstractSelectionContextAction<CrawledPackage, CrawledLink> {
+public class OpenInBrowserAction extends CustomizableSelectionAppAction<CrawledPackage, CrawledLink> {
 
     private static final long serialVersionUID = 7911375550836173693L;
 
-    public OpenInBrowserAction(SelectionInfo<CrawledPackage, CrawledLink> si) {
-        super(si);
+    public OpenInBrowserAction() {
+
         setIconKey("browse");
         setName(_GUI._.gui_table_contextmenu_browselink());
     }
 
     @Override
-    public boolean isEnabled() {
-        if (!super.isEnabled()) return false;
-        if (!CrossSystem.isOpenBrowserSupported()) return false;
+    public void requestUpdate(Object requestor) {
+        super.requestUpdate(requestor);
+        if (!CrossSystem.isOpenBrowserSupported()) {
+            setEnabled(false);
+            return;
+        }
         SelectionInfo<CrawledPackage, CrawledLink> lselection = getSelection();
-        if (lselection == null) return false;
+        if (lselection == null) {
+            setEnabled(false);
+            return;
+        }
         List<CrawledLink> links = lselection.getChildren();
-        if (links.size() > 50) return false;
+        if (links.size() > 50) {
+            setEnabled(false);
+            return;
+        }
         for (CrawledLink cl : links) {
             DownloadLink link = cl.getDownloadLink();
-            if (link.getLinkType() == DownloadLink.LINKTYPE_NORMAL || link.gotBrowserUrl()) return true;
+            if (link.getLinkType() == DownloadLink.LINKTYPE_NORMAL || link.gotBrowserUrl()) {
+                setEnabled(true);
+                return;
+            }
         }
-        return false;
+
+        setEnabled(false);
+
     }
 
     public void actionPerformed(ActionEvent e) {

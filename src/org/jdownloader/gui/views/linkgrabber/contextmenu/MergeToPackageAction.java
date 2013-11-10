@@ -9,19 +9,18 @@ import jd.controlling.linkcrawler.CrawledPackage;
 import org.appwork.utils.event.queue.QueueAction;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogNoAnswerException;
-import org.jdownloader.actions.AbstractSelectionContextAction;
+import org.jdownloader.controlling.contextmenu.CustomizableSelectionAppAction;
 import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.gui.views.SelectionInfo;
 
-public class MergeToPackageAction extends AbstractSelectionContextAction<CrawledPackage, CrawledLink> {
+public class MergeToPackageAction extends CustomizableSelectionAppAction<CrawledPackage, CrawledLink> {
 
     /**
      * 
      */
     private static final long serialVersionUID = -4468197802870765463L;
 
-    public MergeToPackageAction(SelectionInfo<CrawledPackage, CrawledLink> si) {
-        super(si);
+    public MergeToPackageAction() {
+
         setName(_GUI._.MergeToPackageAction_MergeToPackageAction_());
         setIconKey("package_new");
 

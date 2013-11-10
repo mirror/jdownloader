@@ -7,9 +7,6 @@ import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.TreeModel;
 import javax.swing.tree.TreePath;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.swing.EDTRunner;
 import org.jdownloader.controlling.contextmenu.MenuContainerRoot;
 import org.jdownloader.controlling.contextmenu.MenuItemData;
 import org.jdownloader.controlling.contextmenu.MenuItemData.Type;
@@ -19,33 +16,15 @@ public class ManagerTreeModel extends DefaultTreeModel implements TreeModel {
     private MenuContainerRoot data;
     private MenuManagerTree   tree;
 
-    public ManagerTreeModel(MenuContainerRoot menuContainerRoot) {
+    public ManagerTreeModel() {
         super(null, false);
-
-        set(menuContainerRoot);
 
     }
 
     public void set(final MenuContainerRoot menuContainerRoot) {
-        new Thread("LoadMenuContainerRoor") {
-
-            public void run() {
-                MenuContainerRoot menuContainerRoot2 = JSonStorage.restoreFromString(JSonStorage.serializeToJson(menuContainerRoot), new TypeRef<MenuContainerRoot>() {
-                });
-                menuContainerRoot2.validateFull();
-
-                new EDTRunner() {
-
-                    @Override
-                    protected void runInEDT() {
-                        data = menuContainerRoot;
-                        fireTreeStructureChanged(this, new Object[] { data }, null, null);
-
-                    }
-                };
-            }
-        }.start();
-        // create a copy
+        final MenuContainerRoot data = menuContainerRoot.clone();
+        ManagerTreeModel.this.data = data;
+        fireTreeStructureChanged(this, new Object[] { data }, null, null);
 
     }
 

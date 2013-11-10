@@ -6,7 +6,6 @@ import javax.swing.JComponent;
 
 import org.jdownloader.controlling.contextmenu.MenuItemData;
 import org.jdownloader.controlling.contextmenu.MenuLink;
-import org.jdownloader.gui.views.SelectionInfo;
 
 import sun.reflect.generics.reflectiveObjects.ParameterizedTypeImpl;
 
@@ -27,13 +26,13 @@ public abstract class AbstractExtensionContextMenuLink<T extends AbstractExtensi
     }
 
     @Override
-    public JComponent addTo(JComponent root, SelectionInfo<?, ?> selection) throws InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException {
+    public JComponent addTo(JComponent root) throws InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException {
         T ext = _getExtension();
         if (ext == null || !ext.isEnabled()) return null;
-        link(root, selection, ext);
+        link(root, ext);
         return null;
     }
 
-    abstract protected void link(JComponent root, SelectionInfo<?, ?> selection, T extension);
+    abstract protected void link(JComponent root, T extension);
 
 }

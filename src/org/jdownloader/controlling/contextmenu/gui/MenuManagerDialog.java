@@ -269,8 +269,7 @@ public class MenuManagerDialog extends AbstractDialog<Object> implements TreeSel
 
             @Override
             public void actionPerformed(ActionEvent e) {
-                MenuContainerRoot data = (MenuContainerRoot) model.getRoot();
-
+                MenuContainerRoot data = ((MenuContainerRoot) model.getRoot()).clone();
                 manager.setMenuData(data);
                 setReturnmask(true);
 
@@ -302,21 +301,20 @@ public class MenuManagerDialog extends AbstractDialog<Object> implements TreeSel
 
             @Override
             public void actionPerformed(ActionEvent e) {
-                MenuContainerRoot data = (MenuContainerRoot) model.getRoot();
+                MenuContainerRoot data = ((MenuContainerRoot) model.getRoot()).clone();
                 manager.setMenuData(data);
 
                 data = manager.getMenuData();
-                data.validateFull();
 
-                // tree.getSelectionModel().removeTreeSelectionListener(MenuManagerDialog.this);
-                TreePath[] sel = tree.getSelectionPaths();
-
+                int[] rows = tree.getSelectionRows();
                 // tree.getSelectionModel().addTreeSelectionListener(MenuManagerDialog.this);
                 model.set(data);
-                if (sel != null) {
-                    tree.setSelectionPaths(sel);
+                if (rows != null && rows.length > 0) {
+                    tree.setSelectionRows(rows);
                 } else {
-                    if (tree.getRowCount() > 0) tree.setSelectionRow(0);
+                    if (tree.getRowCount() > 0) {
+                        tree.setSelectionRow(0);
+                    }
                 }
 
             }
@@ -362,7 +360,7 @@ public class MenuManagerDialog extends AbstractDialog<Object> implements TreeSel
         LAFOptions.getInstance().applyPanelBackground((JComponent) getDialog().getContentPane());
         LAFOptions.getInstance().applyPanelBackground(panel);
 
-        model = new ManagerTreeModel(manager.getMenuData());
+        model = new ManagerTreeModel();
         tree = new MenuManagerTree(this);
 
         tree.getSelectionModel().addTreeSelectionListener(this);
@@ -442,6 +440,7 @@ public class MenuManagerDialog extends AbstractDialog<Object> implements TreeSel
         md.validateFull();
         System.out.println("Validate: " + (System.currentTimeMillis() - t));
         model.set(md);
+        if (tree.getRowCount() > 0) tree.setSelectionRow(0);
 
     }
 

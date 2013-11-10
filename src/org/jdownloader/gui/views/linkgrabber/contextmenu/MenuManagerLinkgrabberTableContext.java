@@ -7,12 +7,12 @@ import javax.swing.KeyStroke;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledPackage;
 
-import org.jdownloader.actions.AbstractContextMenuAction;
 import org.jdownloader.controlling.contextmenu.ActionData;
 import org.jdownloader.controlling.contextmenu.ContextMenuManager;
 import org.jdownloader.controlling.contextmenu.MenuContainerRoot;
 import org.jdownloader.controlling.contextmenu.MenuItemData;
 import org.jdownloader.controlling.contextmenu.SeperatorData;
+import org.jdownloader.controlling.contextmenu.TableContext;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.components.packagetable.context.CheckStatusAction;
@@ -35,8 +35,8 @@ import org.jdownloader.gui.views.linkgrabber.LinkGrabberTable;
 import org.jdownloader.gui.views.linkgrabber.LinkGrabberTableModel;
 import org.jdownloader.gui.views.linkgrabber.actions.AddContainerAction;
 import org.jdownloader.gui.views.linkgrabber.actions.AddLinksAction;
-import org.jdownloader.gui.views.linkgrabber.actions.GenericDeleteFromLinkgrabberAction;
 import org.jdownloader.gui.views.linkgrabber.actions.ResetAction;
+import org.jdownloader.gui.views.linkgrabber.bottombar.GenericDeleteFromLinkgrabberBarAction;
 
 public class MenuManagerLinkgrabberTableContext extends ContextMenuManager<CrawledPackage, CrawledLink> {
 
@@ -108,7 +108,7 @@ public class MenuManagerLinkgrabberTableContext extends ContextMenuManager<Crawl
         mr.add(new SeperatorData());
         /* remove menu */
 
-        mr.add(setShortcut(new MenuItemData(setIconKey(new ActionData(GenericDeleteFromLinkgrabberContextAction.class).putSetup(GenericDeleteFromLinkgrabberContextAction.DELETE_ALL, true).putSetup(GenericDeleteFromLinkgrabberAction.ONLY_SELECTED_ITEMS, true).putSetup(AbstractContextMenuAction.ITEM_VISIBLE_FOR_EMPTY_SELECTION, false), IconKey.ICON_DELETE), true), KeyStroke.getKeyStroke(KeyEvent.VK_DELETE, 0)));
+        mr.add(setShortcut(new MenuItemData(setIconKey(new ActionData(GenericDeleteFromLinkgrabberContextAction.class).putSetup(GenericDeleteFromLinkgrabberContextAction.DELETE_ALL, true).putSetup(GenericDeleteFromLinkgrabberBarAction.ONLY_SELECTED_ITEMS, true).putSetup(TableContext.ITEM_VISIBLE_FOR_EMPTY_SELECTION, false), IconKey.ICON_DELETE), true), KeyStroke.getKeyStroke(KeyEvent.VK_DELETE, 0)));
 
         mr.add(createCleanupMenu());
         mr.add(new SeperatorData());
@@ -127,10 +127,10 @@ public class MenuManagerLinkgrabberTableContext extends ContextMenuManager<Crawl
     private LinkgrabberCleanUpSubMenu createCleanupMenu() {
         LinkgrabberCleanUpSubMenu cleanup = new LinkgrabberCleanUpSubMenu();
 
-        cleanup.add((new MenuItemData(setIconKey(new ActionData(GenericDeleteFromLinkgrabberContextAction.class).putSetup(GenericDeleteFromLinkgrabberContextAction.DELETE_ALL, true).putSetup(GenericDeleteFromLinkgrabberAction.ONLY_SELECTED_ITEMS, false).putSetup(AbstractContextMenuAction.ITEM_VISIBLE_FOR_EMPTY_SELECTION, true), IconKey.ICON_RESET), true)));
-        cleanup.add((new MenuItemData(setIconKey(new ActionData(GenericDeleteFromLinkgrabberContextAction.class).putSetup(GenericDeleteFromLinkgrabberContextAction.DELETE_DISABLED, true).putSetup(GenericDeleteFromLinkgrabberAction.ONLY_SELECTED_ITEMS, false).putSetup(AbstractContextMenuAction.ITEM_VISIBLE_FOR_EMPTY_SELECTION, true), IconKey.ICON_REMOVE_DISABLED), true)));
+        cleanup.add((new MenuItemData(setIconKey(new ActionData(GenericDeleteFromLinkgrabberContextAction.class).putSetup(GenericDeleteFromLinkgrabberContextAction.DELETE_ALL, true).putSetup(GenericDeleteFromLinkgrabberBarAction.ONLY_SELECTED_ITEMS, false).putSetup(TableContext.ITEM_VISIBLE_FOR_EMPTY_SELECTION, true), IconKey.ICON_RESET), true)));
+        cleanup.add((new MenuItemData(setIconKey(new ActionData(GenericDeleteFromLinkgrabberContextAction.class).putSetup(GenericDeleteFromLinkgrabberContextAction.DELETE_DISABLED, true).putSetup(GenericDeleteFromLinkgrabberBarAction.ONLY_SELECTED_ITEMS, false).putSetup(TableContext.ITEM_VISIBLE_FOR_EMPTY_SELECTION, true), IconKey.ICON_REMOVE_DISABLED), true)));
 
-        cleanup.add((new MenuItemData(setIconKey(new ActionData(GenericDeleteFromLinkgrabberContextAction.class).putSetup(GenericDeleteFromLinkgrabberContextAction.DELETE_OFFLINE, true).putSetup(GenericDeleteFromLinkgrabberAction.ONLY_SELECTED_ITEMS, false).putSetup(AbstractContextMenuAction.ITEM_VISIBLE_FOR_EMPTY_SELECTION, true), IconKey.ICON_REMOVE_OFFLINE), true)));
+        cleanup.add((new MenuItemData(setIconKey(new ActionData(GenericDeleteFromLinkgrabberContextAction.class).putSetup(GenericDeleteFromLinkgrabberContextAction.DELETE_OFFLINE, true).putSetup(GenericDeleteFromLinkgrabberBarAction.ONLY_SELECTED_ITEMS, false).putSetup(TableContext.ITEM_VISIBLE_FOR_EMPTY_SELECTION, true), IconKey.ICON_REMOVE_OFFLINE), true)));
 
         cleanup.add(RemoveNonSelectedContextAction.class);
 

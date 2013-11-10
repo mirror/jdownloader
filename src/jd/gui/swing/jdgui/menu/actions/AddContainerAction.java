@@ -26,12 +26,11 @@ import jd.controlling.linkcollector.LinkOrigin;
 import jd.gui.UserIO;
 import jd.nutils.io.JDFileFilter;
 
-import org.jdownloader.actions.AppAction;
-import org.jdownloader.actions.CachableInterface;
+import org.jdownloader.controlling.contextmenu.CustomizableAppAction;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.plugins.controller.container.ContainerPluginController;
 
-public class AddContainerAction extends AppAction implements CachableInterface {
+public class AddContainerAction extends CustomizableAppAction {
 
     private static final long serialVersionUID = 4713690050852393405L;
 
@@ -53,10 +52,6 @@ public class AddContainerAction extends AppAction implements CachableInterface {
             sb.append(r.getAbsolutePath());
         }
         LinkCollector.getInstance().addCrawlerJob(new LinkCollectingJob(LinkOrigin.ADD_CONTAINER_ACTION, sb.toString()));
-    }
-
-    @Override
-    public void setData(String data) {
     }
 
 }

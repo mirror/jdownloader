@@ -2,20 +2,18 @@ package org.jdownloader.gui.views.linkgrabber.contextmenu;
 
 import java.awt.event.ActionEvent;
 
-import jd.controlling.linkcrawler.CrawledLink;
-import jd.controlling.linkcrawler.CrawledPackage;
-
-import org.jdownloader.actions.AbstractSelectionContextAction;
+import org.jdownloader.controlling.contextmenu.CustomizableAppAction;
+import org.jdownloader.controlling.contextmenu.TableContext;
 import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.gui.views.SelectionInfo;
 
-public class LGMenuManagerAction extends AbstractSelectionContextAction<CrawledPackage, CrawledLink> {
+public class LGMenuManagerAction extends CustomizableAppAction {
 
-    public LGMenuManagerAction(SelectionInfo<CrawledPackage, CrawledLink> si) {
-        super(si);
+    public LGMenuManagerAction() {
+
         setName(_GUI._.MenuManagerAction_MenuManagerAction());
         setIconKey("menu");
-        setItemVisibleForEmptySelection(true);
+        addContextSetup(new TableContext(true, true));
+
     }
 
     @Override

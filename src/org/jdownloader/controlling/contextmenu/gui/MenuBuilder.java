@@ -15,20 +15,19 @@ import org.jdownloader.controlling.contextmenu.MenuContainer;
 import org.jdownloader.controlling.contextmenu.MenuItemData;
 import org.jdownloader.controlling.contextmenu.SeperatorData;
 import org.jdownloader.extensions.ExtensionNotLoadedException;
-import org.jdownloader.gui.views.SelectionInfo;
 
 public class MenuBuilder {
 
     private JComponent                            root;
-    protected SelectionInfo<?, ?>                 selection;
+
     private MenuContainer                         menuData;
     private ContextMenuManager<?, ?>              menuManager;
     private LogSource                             logger;
     private HashMap<JComponent, HashSet<Integer>> mnemonics;
 
-    public MenuBuilder(ContextMenuManager<?, ?> menuManager, JComponent root, SelectionInfo<?, ?> si, MenuContainer md) {
+    public MenuBuilder(ContextMenuManager<?, ?> menuManager, JComponent root, MenuContainer md) {
         this.root = root;
-        selection = si;
+
         this.menuManager = menuManager;
         menuData = md;
         logger = menuManager.getLogger();
@@ -113,7 +112,7 @@ public class MenuBuilder {
     }
 
     protected void addContainer(final JComponent root, final MenuItemData inst) throws InstantiationException, IllegalAccessException, InvocationTargetException, ClassNotFoundException, NoSuchMethodException, ExtensionNotLoadedException {
-        final JMenu submenu = (JMenu) inst.addTo(root, selection);
+        final JMenu submenu = (JMenu) inst.addTo(root);
         if (submenu == null) return;
         createLayer(submenu, (MenuContainer) inst);
 
@@ -123,7 +122,7 @@ public class MenuBuilder {
     }
 
     protected void addAction(final JComponent root, final MenuItemData inst) throws InstantiationException, IllegalAccessException, InvocationTargetException, ClassNotFoundException, NoSuchMethodException, ExtensionNotLoadedException {
-        inst.addTo(root, selection);
+        inst.addTo(root);
     }
 
     public void run() {

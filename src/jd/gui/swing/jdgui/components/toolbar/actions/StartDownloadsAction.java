@@ -17,22 +17,22 @@ import org.appwork.storage.config.events.GenericConfigEventListener;
 import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.utils.event.queue.QueueAction;
 import org.appwork.utils.swing.EDTRunner;
+import org.jdownloader.controlling.contextmenu.ActionContext;
 import org.jdownloader.controlling.contextmenu.Customizer;
 import org.jdownloader.gui.event.GUIEventSender;
 import org.jdownloader.gui.event.GUIListener;
-import org.jdownloader.gui.toolbar.action.ToolBarAction;
-import org.jdownloader.gui.views.linkgrabber.LinkGrabberTableModel;
+import org.jdownloader.gui.toolbar.action.AbstractToolBarAction;
 import org.jdownloader.gui.views.linkgrabber.LinkGrabberView;
-import org.jdownloader.gui.views.linkgrabber.contextmenu.ConfirmSelectionContextAction;
-import org.jdownloader.gui.views.linkgrabber.contextmenu.ConfirmSelectionContextAction.AutoStartOptions;
+import org.jdownloader.gui.views.linkgrabber.actions.ConfirmAllAction;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings.StartButtonAction;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
 import org.jdownloader.translate._JDT;
 
-public class StartDownloadsAction extends ToolBarAction implements DownloadWatchdogListener, GUIListener, GenericConfigEventListener<Enum> {
+public class StartDownloadsAction extends AbstractToolBarAction implements DownloadWatchdogListener, GUIListener, GenericConfigEventListener<Enum>, ActionContext {
 
     /**
-     * Create a new instance of StartDownloadsAction. This is a singleton class. Access the only existing instance by using {@link #getInstance()}.
+     * Create a new instance of StartDownloadsAction. This is a singleton class. Access the only existing instance by using
+     * {@link #getInstance()}.
      */
     public StartDownloadsAction() {
 
@@ -43,8 +43,15 @@ public class StartDownloadsAction extends ToolBarAction implements DownloadWatch
         CFG_GUI.START_BUTTON_ACTION_IN_LINKGRABBER_CONTEXT.getEventSender().addListener(this, true);
         GUIEventSender.getInstance().addListener(this, true);
         onGuiMainTabSwitch(null, MainTabbedPane.getInstance().getSelectedView());
-        setHideIfDownloadsAreRunning(false);
+
         setAccelerator(KeyEvent.VK_S);
+
+    }
+
+    @Override
+    protected void initContextDefaults() {
+        setHideIfDownloadsAreRunning(false);
+
     }
 
     @Override
@@ -59,8 +66,8 @@ public class StartDownloadsAction extends ToolBarAction implements DownloadWatch
                 protected Void run() throws RuntimeException {
                     switch (CFG_GUI.CFG.getStartButtonActionInLinkgrabberContext()) {
                     case ADD_ALL_LINKS_AND_START_DOWNLOADS:
-                        ConfirmSelectionContextAction ca = new ConfirmSelectionContextAction(LinkGrabberTableModel.getInstance().getTable().getSelectionInfo(false, true).derive(null, null, null, e, null));
-                        ca.setAutoStart(AutoStartOptions.ENABLED);
+                        ConfirmAllAction ca = new ConfirmAllAction();
+                        ca.setAutoStart(true);
                         ca.actionPerformed(null);
                         break;
                     case START_DOWNLOADS_ONLY:

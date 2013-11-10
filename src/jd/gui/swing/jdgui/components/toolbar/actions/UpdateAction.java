@@ -10,23 +10,22 @@ import javax.swing.Timer;
 
 import org.appwork.swing.components.ExtButton;
 import org.appwork.utils.swing.EDTRunner;
-import org.jdownloader.gui.toolbar.action.ToolBarAction;
+import org.jdownloader.gui.toolbar.action.AbstractToolBarAction;
 import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
 import org.jdownloader.updatev2.InstallLog;
 import org.jdownloader.updatev2.UpdateController;
 import org.jdownloader.updatev2.UpdaterListener;
 
-public class UpdateAction extends ToolBarAction {
+public class UpdateAction extends AbstractToolBarAction {
 
     /**
      * 
      */
     private static final long serialVersionUID = 1L;
 
-    public UpdateAction(SelectionInfo<?, ?> selection) {
+    public UpdateAction() {
         setIconKey("update");
         setEnabled(true);
         setAccelerator(KeyEvent.VK_U);
@@ -129,6 +128,7 @@ public class UpdateAction extends ToolBarAction {
     }
 
     public AbstractButton createButton() {
+
         Button bt = new Button();
 
         return bt;

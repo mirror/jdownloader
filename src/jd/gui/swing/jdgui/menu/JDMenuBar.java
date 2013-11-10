@@ -14,7 +14,7 @@ import javax.swing.KeyStroke;
 
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging2.LogSource;
-import org.jdownloader.actions.AppAction;
+import org.jdownloader.controlling.contextmenu.CustomizableAppAction;
 import org.jdownloader.controlling.contextmenu.MenuContainer;
 import org.jdownloader.controlling.contextmenu.MenuItemData;
 import org.jdownloader.controlling.contextmenu.gui.MenuBuilder;
@@ -60,12 +60,12 @@ public class JDMenuBar extends JMenuBar implements MouseListener {
 
         removeAll();
 
-        new MenuBuilder(MenuManagerMainmenu.getInstance(), this, null, MenuManagerMainmenu.getInstance().getMenuData()) {
+        new MenuBuilder(MenuManagerMainmenu.getInstance(), this, MenuManagerMainmenu.getInstance().getMenuData()) {
 
             @Override
             protected void addContainer(JComponent root, MenuItemData inst) throws InstantiationException, IllegalAccessException, InvocationTargetException, ClassNotFoundException, NoSuchMethodException, ExtensionNotLoadedException {
                 if (!inst.isVisible()) return;
-                final JMenu submenu = (JMenu) inst.addTo(root, selection);
+                final JMenu submenu = (JMenu) inst.addTo(root);
 
                 if (submenu != null) {
                     applyMnemonic(root, submenu);
@@ -78,7 +78,7 @@ public class JDMenuBar extends JMenuBar implements MouseListener {
             protected void addAction(JComponent root, MenuItemData inst) throws InstantiationException, IllegalAccessException, InvocationTargetException, ClassNotFoundException, NoSuchMethodException, ExtensionNotLoadedException {
                 if (!inst.isVisible()) return;
                 if (root instanceof JMenu) {
-                    JComponent comp = inst.addTo(root, selection);
+                    JComponent comp = inst.addTo(root);
                     if (comp == null) return;
                     if (comp instanceof AbstractButton) {
                         applyMnemonic(root, (AbstractButton) comp);
@@ -88,7 +88,7 @@ public class JDMenuBar extends JMenuBar implements MouseListener {
                     // WAHHHHHH this is an ugly gui hack!
                     // this peace of code loads the synthetica MenuPainter given in the LAFOptions and paints a JMenu Mouseover Background
                     // to a JButton or a jToggleBUtton
-                    AppAction action = inst.createAction(selection);
+                    CustomizableAppAction action = inst.createAction();
 
                     if (StringUtils.isNotEmpty(inst.getShortcut()) && KeyStroke.getKeyStroke(inst.getShortcut()) != null) {
                         action.setAccelerator(KeyStroke.getKeyStroke(inst.getShortcut()));
@@ -96,6 +96,7 @@ public class JDMenuBar extends JMenuBar implements MouseListener {
 
                     AbstractButton ret;
                     if (action.isToggle()) {
+                        action.requestUpdate(JDMenuBar.this);
                         ret = new MenuJToggleButton(action);
                         ImageIcon icon;
 
@@ -105,6 +106,7 @@ public class JDMenuBar extends JMenuBar implements MouseListener {
                         ret.setRolloverSelectedIcon(icon);
 
                     } else {
+                        action.requestUpdate(JDMenuBar.this);
                         ret = new ExtMenuButton(action);
 
                         ret.setIcon(NewTheme.I().getIcon(action.getIconKey(), 18));
@@ -158,18 +160,18 @@ public class JDMenuBar extends JMenuBar implements MouseListener {
 
         if (getMenuCount() == 0) {
 
-            new MenuBuilder(MenuManagerMainmenu.getInstance(), this, null, MenuManagerMainmenu.getInstance().createDefaultStructure()) {
+            new MenuBuilder(MenuManagerMainmenu.getInstance(), this, MenuManagerMainmenu.getInstance().createDefaultStructure()) {
 
                 @Override
                 protected void addContainer(JComponent root, MenuItemData inst) throws InstantiationException, IllegalAccessException, InvocationTargetException, ClassNotFoundException, NoSuchMethodException, ExtensionNotLoadedException {
-                    final JMenu submenu = (JMenu) inst.addTo(root, selection);
+                    final JMenu submenu = (JMenu) inst.addTo(root);
                     if (root == JDMenuBar.this) submenu.setIcon(null);
                     createLayer(submenu, (MenuContainer) inst);
                 }
 
                 @Override
                 protected void addAction(JComponent root, MenuItemData inst) throws InstantiationException, IllegalAccessException, InvocationTargetException, ClassNotFoundException, NoSuchMethodException, ExtensionNotLoadedException {
-                    inst.addTo(root, selection);
+                    inst.addTo(root);
                 }
 
             }.run();

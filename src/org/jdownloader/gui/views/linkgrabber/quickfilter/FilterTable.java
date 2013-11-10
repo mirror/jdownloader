@@ -284,12 +284,37 @@ public abstract class FilterTable extends BasicJDTable<Filter> implements Packag
         // if
         // (org.jdownloader.settings.statics.LINKGRABBER.QUICK_VIEW_SELECTION_ENABLED.getValue())
         // {
-        SelectionInfo<CrawledPackage, CrawledLink> matches = new SelectionInfo<CrawledPackage, CrawledLink>(null, getMatches(getSelectedFilters()), mouseEvent, null, null, null);
-        popup.add(new ConfirmSelectionContextAction(matches));
-        popup.add(new MergeToPackageAction(matches));
-        popup.add(new CreateDLCAction(matches));
-        popup.add(new RemoveNonSelectedContextAction(matches));
-        popup.add(new RemoveSelectionLinkgrabberAction(matches));
+        final SelectionInfo<CrawledPackage, CrawledLink> matches = new SelectionInfo<CrawledPackage, CrawledLink>(null, getMatches(getSelectedFilters()), mouseEvent, null, null, null);
+        popup.add(new ConfirmSelectionContextAction() {
+            @Override
+            protected SelectionInfo<CrawledPackage, CrawledLink> getSelection() {
+                return matches;
+            }
+        });
+        popup.add(new MergeToPackageAction() {
+            @Override
+            protected SelectionInfo<CrawledPackage, CrawledLink> getSelection() {
+                return matches;
+            }
+        });
+        popup.add(new CreateDLCAction() {
+            @Override
+            protected SelectionInfo<CrawledPackage, CrawledLink> getSelection() {
+                return matches;
+            }
+        });
+        popup.add(new RemoveNonSelectedContextAction() {
+            @Override
+            protected SelectionInfo<CrawledPackage, CrawledLink> getSelection() {
+                return matches;
+            }
+        });
+        popup.add(new RemoveSelectionLinkgrabberAction() {
+            @Override
+            protected SelectionInfo<CrawledPackage, CrawledLink> getSelection() {
+                return matches;
+            }
+        });
         // popup.add(new
         // RemoveIncompleteArchives(matches));
 

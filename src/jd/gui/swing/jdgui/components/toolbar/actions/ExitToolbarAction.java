@@ -6,15 +6,15 @@ import java.awt.event.KeyEvent;
 
 import javax.swing.KeyStroke;
 
-import org.jdownloader.gui.toolbar.action.ToolBarAction;
+import org.jdownloader.gui.toolbar.action.AbstractToolBarAction;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.updatev2.RestartController;
 import org.jdownloader.updatev2.SmartRlyExitRequest;
 
-public class ExitToolbarAction extends ToolBarAction {
+public class ExitToolbarAction extends AbstractToolBarAction {
 
-    public ExitToolbarAction(SelectionInfo<?, ?> selection) {
+    public ExitToolbarAction() {
 
         setIconKey("exit");
         setName(_GUI._.action_exit());

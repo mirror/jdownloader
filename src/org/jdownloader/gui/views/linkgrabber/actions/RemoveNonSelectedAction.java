@@ -7,12 +7,10 @@ import java.util.List;
 import jd.controlling.downloadcontroller.DownloadController;
 import jd.controlling.linkcollector.LinkCollector;
 import jd.controlling.linkcrawler.CrawledLink;
-import jd.controlling.linkcrawler.CrawledPackage;
 import jd.controlling.packagecontroller.AbstractPackageChildrenNodeFilter;
 
 import org.appwork.utils.event.queue.QueueAction;
 import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.gui.views.SelectionInfo;
 
 public class RemoveNonSelectedAction extends AbstractDeleteCrawledLinksAppAction {
 
@@ -21,8 +19,7 @@ public class RemoveNonSelectedAction extends AbstractDeleteCrawledLinksAppAction
      */
     private static final long serialVersionUID = 6855083561629297363L;
 
-    public RemoveNonSelectedAction(SelectionInfo<CrawledPackage, CrawledLink> si) {
-        super(si);
+    public RemoveNonSelectedAction() {
 
         setName(_GUI._.RemoveNonSelectedAction_RemoveNonSelectedAction_object_());
         setIconKey("ok");

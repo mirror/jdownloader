@@ -14,18 +14,12 @@ import javax.swing.KeyStroke;
 
 import org.appwork.exceptions.WTFException;
 import org.appwork.storage.Storable;
-import org.appwork.utils.GetterSetter;
-import org.appwork.utils.ReflectionUtils;
 import org.appwork.utils.StringUtils;
-import org.appwork.utils.reflection.Clazz;
-import org.jdownloader.actions.AbstractSelectionContextAction;
 import org.jdownloader.actions.AppAction;
-import org.jdownloader.actions.CachableInterface;
 import org.jdownloader.actions.ComponentProviderInterface;
 import org.jdownloader.extensions.AbstractExtension;
 import org.jdownloader.extensions.ExtensionController;
 import org.jdownloader.extensions.ExtensionNotLoadedException;
-import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.images.NewTheme;
 
 public class MenuItemData implements Storable {
@@ -81,20 +75,20 @@ public class MenuItemData implements Storable {
         CONTAINER;
     }
 
-    private Type              type    = Type.ACTION;
+    private Type                  type    = Type.ACTION;
 
-    private boolean           validated;
+    private boolean               validated;
 
-    private Exception         validateException;
+    private Exception             validateException;
 
-    private MenuContainerRoot root;
+    private MenuContainerRoot     root;
 
-    private String            mnemonic;
+    private String                mnemonic;
 
-    private String            shortcut;
+    private String                shortcut;
 
-    private AppAction         action;
-    private boolean           visible = true;
+    private CustomizableAppAction action;
+    private boolean               visible = true;
 
     public void setMnemonic(String mnemonic) {
         this.mnemonic = mnemonic;
@@ -198,18 +192,19 @@ public class MenuItemData implements Storable {
 
     }
 
-    public JComponent createItem(SelectionInfo<?, ?> selection) throws InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException, ClassNotFoundException, NoSuchMethodException, SecurityException, ExtensionNotLoadedException {
+    public JComponent createItem() throws InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException, ClassNotFoundException, NoSuchMethodException, SecurityException, ExtensionNotLoadedException {
 
         if (actionData == null) {
             //
             throw new WTFException("No ACTION");
         }
-        AppAction action = createAction(selection);
+        CustomizableAppAction action = createAction();
         if (!isVisible()) return null;
         if (!action.isVisible()) return null;
         if (StringUtils.isNotEmpty(getShortcut())) {
             action.setAccelerator(KeyStroke.getKeyStroke(getShortcut()));
         }
+        action.requestUpdate(this);
         if (action instanceof ComponentProviderInterface) { return ((ComponentProviderInterface) action).createComponent(this); }
         JMenuItem ret = action.isToggle() ? new JCheckBoxMenuItem(action) : new JMenuItem(action);
 
@@ -226,7 +221,7 @@ public class MenuItemData implements Storable {
     }
 
     @SuppressWarnings("unchecked")
-    public AppAction createAction(SelectionInfo<?, ?> selection) throws ClassNotFoundException, NoSuchMethodException, SecurityException, InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException, ExtensionNotLoadedException {
+    public CustomizableAppAction createAction() throws ClassNotFoundException, NoSuchMethodException, SecurityException, InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException, ExtensionNotLoadedException {
         if (!validated) {
             //
             throw new WTFException();
@@ -235,112 +230,52 @@ public class MenuItemData implements Storable {
             //
             throw new WTFException("No ACTION");
         }
-        if (action != null && action instanceof AbstractSelectionContextAction) {
-            ((AbstractSelectionContextAction) action).setSelection(selection);
-            if (action instanceof CachableInterface) {
-                if (StringUtils.isNotEmpty(actionData.getData())) {
-                    ((CachableInterface) action).setData(actionData.getData());
-                }
-            }
-            fill(action.getClass(), action);
-            return customize(action);
-        } else if (action != null && action instanceof CachableInterface) {
-            // no need to set selection. action does not need any selection
-
-            if (StringUtils.isNotEmpty(actionData.getData())) {
-                ((CachableInterface) action).setData(actionData.getData());
-            }
-            fill(action.getClass(), action);
-            return customize(action);
-        } else if (action != null) {
-            System.out.println("Please Update Action " + action.getClass().getName());
-        }
+        if (action != null) { return action; }
+        // if (action != null && action instanceof AbstractSelectionContextAction) {
+        // ((AbstractSelectionContextAction) action).setSelection(selection);
+        // if (action instanceof CachableInterface) {
+        // if (StringUtils.isNotEmpty(actionData.getData())) {
+        // ((CachableInterface) action).setData(actionData.getData());
+        // }
+        // }
+        // fill(action.getClass(), action);
+        // return customize(action);
+        // } else if (action != null && action instanceof CachableInterface) {
+        // // no need to set selection. action does not need any selection
+        //
+        // if (StringUtils.isNotEmpty(actionData.getData())) {
+        // ((CachableInterface) action).setData(actionData.getData());
+        // }
+        // fill(action.getClass(), action);
+        // return customize(action);
+        // } else if (action != null) {
+        // System.out.println("Please Update Action " + action.getClass().getName());
+        // }
 
         Class<?> clazz = actionData._getClazz();
 
-        if (StringUtils.isNotEmpty(actionData.getData())) {
+        try {
+            Constructor<?> c = clazz.getConstructor(new Class[] { MenuItemData.class });
+            action = (CustomizableAppAction) c.newInstance(new Object[] { this });
 
-            Constructor<?> c = clazz.getConstructor(new Class[] { SelectionInfo.class, String.class });
-            action = (AppAction) c.newInstance(new Object[] { selection, actionData.getData() });
+        } catch (NoSuchMethodException e) {
+            Constructor<?> c = clazz.getConstructor(new Class[] {});
+            action = (CustomizableAppAction) c.newInstance(new Object[] {});
+            action.setMenuItemData(this);
 
-        } else {
-            try {
-                Constructor<?> c = clazz.getConstructor(new Class[] { SelectionInfo.class });
-                action = (AppAction) c.newInstance(new Object[] { selection });
-            } catch (NoSuchMethodException e) {
-                Constructor<?> c = clazz.getConstructor(new Class[] {});
-                action = (AppAction) c.newInstance(new Object[] {});
-            }
         }
-        fill(clazz, action);
-        return customize(action);
+        action.initContextDefaults();
+        action.loadContextSetups();
+
+        return (action);
 
     }
 
-    protected void fill(Class<?> clazz, AppAction action) throws IllegalAccessException {
-
-        for (GetterSetter f : ReflectionUtils.getGettersSetteres(clazz)) {
-
-            Customizer an = f.getAnnotation(Customizer.class);
-            if (an != null) {
-                try {
-
-                    Object v = actionData.fetchSetup(f.getKey());
-                    if (v == null) continue;
-                    if (Clazz.isEnum(f.getType())) {
-
-                        v = ReflectionUtils.getEnumValueOf((Class<? extends Enum>) f.getType(), v.toString());
-                        if (v == null) continue;
-                    }
-                    f.set(action, v);
-
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-            }
-        }
-
-    }
-
-    private AppAction customize(AppAction action) {
-        if (StringUtils.isNotEmpty(actionData.getIconKey())) {
-            action.setIconKey(actionData.getIconKey());
-        }
-        if (StringUtils.isNotEmpty(getIconKey())) {
-            action.setIconKey(getIconKey());
-            // actionData.setIconKey(getIconKey());
-        }
-
-        if (StringUtils.isNotEmpty(actionData.getName())) {
-            if (StringUtils.isEmpty(action.getTooltipText()) && (StringUtils.isEmpty(actionData.getName()) || MenuItemData.EMPTY_NAME.equals(actionData.getName()))) {
-                // set old name as tooltip
-                action.setTooltipText(action.getName());
-            }
-            action.setName(actionData.getName());
-            // actionData.setName(getName());
-        }
-        if (StringUtils.isNotEmpty(getName())) {
-            if (StringUtils.isEmpty(action.getTooltipText()) && (StringUtils.isEmpty(getName()) || MenuItemData.EMPTY_NAME.equals(getName()))) {
-                // set old name as tooltip
-                action.setTooltipText(action.getName());
-            }
-
-            action.setName(getName());
-            // actionData.setName(getName());
-        }
-        if (MenuItemData.EMPTY_NAME.equals(action.getName())) {
-
-            action.setName("");
-        }
-
-        return action;
-    }
-
-    public JComponent addTo(JComponent root, SelectionInfo<?, ?> selection) throws InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException, ClassNotFoundException, NoSuchMethodException, SecurityException, ExtensionNotLoadedException {
+    public JComponent addTo(JComponent root) throws InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException, ClassNotFoundException, NoSuchMethodException, SecurityException, ExtensionNotLoadedException {
 
         JComponent it;
 
-        it = createItem(selection);
+        it = createItem();
         if (it == null) return null;
         root.add(it);
         return it;
@@ -384,7 +319,7 @@ public class MenuItemData implements Storable {
     public String _getDescription() {
         if (getActionData() != null) {
             try {
-                return createAction(null).getTooltipText();
+                return createAction().getTooltipText();
             } catch (Exception e) {
 
             }

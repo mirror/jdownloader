@@ -10,17 +10,16 @@ import jd.plugins.FilePackage;
 
 import org.appwork.utils.event.queue.QueueAction;
 import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.actions.AbstractSelectionContextAction;
 import org.jdownloader.controlling.DownloadLinkAggregator;
+import org.jdownloader.controlling.contextmenu.CustomizableSelectionAppAction;
 import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.gui.views.SelectionInfo;
 
-public class ResetAction extends AbstractSelectionContextAction<FilePackage, DownloadLink> {
+public class ResetAction extends CustomizableSelectionAppAction<FilePackage, DownloadLink> {
 
     private static final long serialVersionUID = -5583373118359478729L;
 
-    public ResetAction(SelectionInfo<FilePackage, DownloadLink> si) {
-        super(si);
+    public ResetAction() {
+
         setIconKey("undo");
         setName(_GUI._.gui_table_contextmenu_reset());
     }

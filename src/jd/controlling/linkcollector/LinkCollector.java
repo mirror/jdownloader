@@ -1,5 +1,6 @@
 package jd.controlling.linkcollector;
 
+import java.awt.Toolkit;
 import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
@@ -59,6 +60,8 @@ import org.appwork.utils.event.queue.Queue.QueuePriority;
 import org.appwork.utils.event.queue.QueueAction;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.swing.dialog.Dialog;
+import org.appwork.utils.swing.dialog.DialogCanceledException;
+import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.appwork.utils.zip.ZipIOReader;
 import org.appwork.utils.zip.ZipIOWriter;
 import org.jdownloader.controlling.FileCreationManager;
@@ -1649,6 +1652,30 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
             DownloadWatchDog.getInstance().forceDownload(force);
         }
 
+    }
+
+    public static void requestDeleteLinks(List<CrawledLink> nodesToDelete, boolean containsOnline, String string) {
+        if (nodesToDelete.size() > 0) {
+
+            if (containsOnline) {
+                // only ask for online links
+                try {
+                    Dialog.getInstance().showConfirmDialog(0, _GUI._.literally_are_you_sure(), _GUI._.GenericDeleteFromDownloadlistAction_actionPerformed_ask_(string), null, _GUI._.literally_yes(), _GUI._.literall_no());
+                    LinkCollector.getInstance().removeChildren(nodesToDelete);
+                } catch (DialogClosedException e1) {
+                    e1.printStackTrace();
+                } catch (DialogCanceledException e1) {
+                    e1.printStackTrace();
+                }
+
+            } else {
+                LinkCollector.getInstance().removeChildren(nodesToDelete);
+            }
+            return;
+
+        }
+        Toolkit.getDefaultToolkit().beep();
+        Dialog.getInstance().showErrorDialog(_GUI._.GenericDeleteSelectedToolbarAction_actionPerformed_nothing_to_delete_());
     }
 
 }

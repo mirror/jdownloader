@@ -15,14 +15,14 @@ import org.appwork.utils.ImageProvider.ImageProvider;
 import org.appwork.utils.event.queue.QueueAction;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.swing.dialog.Dialog;
-import org.jdownloader.actions.AbstractSelectionContextAction;
 import org.jdownloader.captcha.blacklist.CaptchaBlackList;
+import org.jdownloader.controlling.contextmenu.CustomizableSelectionAppAction;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.plugins.SkipReason;
 
-public class SkipAction extends AbstractSelectionContextAction<FilePackage, DownloadLink> {
+public class SkipAction extends CustomizableSelectionAppAction<FilePackage, DownloadLink> {
 
     enum State {
         ALL_SKIPPED,
@@ -30,14 +30,17 @@ public class SkipAction extends AbstractSelectionContextAction<FilePackage, Down
         MIXED;
     }
 
-    private State             state            = State.MIXED;
+    private State                                    state            = State.MIXED;
 
-    private static final long serialVersionUID = 7107840091963427544L;
+    private SelectionInfo<FilePackage, DownloadLink> selection;
+
+    private static final long                        serialVersionUID = 7107840091963427544L;
 
     @Override
-    public void setSelection(SelectionInfo<FilePackage, DownloadLink> selection) {
-        super.setSelection(selection);
-        if (getSelection() != null) {
+    public void requestUpdate(Object requestor) {
+        super.requestUpdate(requestor);
+        selection = getSelection();
+        if (hasSelection(selection)) {
             switch (state = getState()) {
             case MIXED:
                 setSmallIcon(new ImageIcon(ImageProvider.merge(NewTheme.I().getImage("skipped", 18), NewTheme.I().getImage("checkbox_undefined", 14), 0, 0, 9, 8)));
@@ -58,15 +61,14 @@ public class SkipAction extends AbstractSelectionContextAction<FilePackage, Down
         }
     }
 
-    public SkipAction(final SelectionInfo<FilePackage, DownloadLink> si) {
-        super(si);
+    public SkipAction() {
 
     }
 
     private State getState() {
-        if (getSelection().isEmpty()) return State.ALL_UNSKIPPED;
+        if (!hasSelection(selection)) return State.ALL_UNSKIPPED;
         Boolean first = null;
-        for (DownloadLink a : getSelection().getChildren()) {
+        for (DownloadLink a : selection.getChildren()) {
 
             /* check a child */
             if (first == null) first = a.isSkipped();
@@ -86,7 +88,7 @@ public class SkipAction extends AbstractSelectionContextAction<FilePackage, Down
                 if (enable) {
                     int count = 0;
                     if (DownloadWatchDog.getInstance().isRunning()) {
-                        for (DownloadLink a : getSelection().getChildren()) {
+                        for (DownloadLink a : selection.getChildren()) {
                             DownloadLink link = (DownloadLink) a;
                             SingleDownloadController slc = link.getDownloadLinkController();
                             if (slc != null && slc.getDownloadInstance() != null && !link.isResumeable()) {
@@ -98,7 +100,7 @@ public class SkipAction extends AbstractSelectionContextAction<FilePackage, Down
                         if (!UIOManager.I().showConfirmDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI._.lit_are_you_sure(), _GUI._.SkipAction_run_msg_(SizeFormatter.formatBytes(DownloadWatchDog.getInstance().getNonResumableBytes()), count), NewTheme.I().getIcon("skipped", 32), _GUI._.lit_yes(), _GUI._.lit_no())) { return null; }
                     }
                 }
-                for (DownloadLink a : getSelection().getChildren()) {
+                for (DownloadLink a : selection.getChildren()) {
                     // keep skipreason if a reason is set
                     if (enable) {
                         if (!a.isSkipped()) {

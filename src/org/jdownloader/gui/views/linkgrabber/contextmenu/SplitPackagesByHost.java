@@ -14,21 +14,20 @@ import jd.controlling.packagecontroller.AbstractNode;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.event.queue.QueueAction;
-import org.jdownloader.actions.AbstractSelectionContextAction;
+import org.jdownloader.controlling.contextmenu.CustomizableSelectionAppAction;
 import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.linkgrabber.addlinksdialog.LinkgrabberSettings;
 import org.jdownloader.translate._JDT;
 
-public class SplitPackagesByHost extends AbstractSelectionContextAction<CrawledPackage, CrawledLink> {
+public class SplitPackagesByHost extends CustomizableSelectionAppAction<CrawledPackage, CrawledLink> {
 
     /**
      * 
      */
     private static final long serialVersionUID = 2636706677433058054L;
 
-    public SplitPackagesByHost(SelectionInfo<CrawledPackage, CrawledLink> si) {
-        super(si);
+    public SplitPackagesByHost() {
+
         setName(_GUI._.SplitPackagesByHost_SplitPackagesByHost_object_());
         setIconKey("split_packages");
     }

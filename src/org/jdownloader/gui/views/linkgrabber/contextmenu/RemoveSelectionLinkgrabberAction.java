@@ -14,19 +14,18 @@ import org.appwork.uio.UIOManager;
 import org.appwork.utils.event.queue.QueueAction;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogNoAnswerException;
-import org.jdownloader.actions.AbstractSelectionContextAction;
+import org.jdownloader.controlling.contextmenu.CustomizableSelectionAppAction;
 import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.gui.views.SelectionInfo;
 
-public class RemoveSelectionLinkgrabberAction extends AbstractSelectionContextAction<CrawledPackage, CrawledLink> {
+public class RemoveSelectionLinkgrabberAction extends CustomizableSelectionAppAction<CrawledPackage, CrawledLink> {
 
     /**
      * 
      */
     private static final long serialVersionUID = -3008851305036758872L;
 
-    public RemoveSelectionLinkgrabberAction(SelectionInfo<CrawledPackage, CrawledLink> si) {
-        super(si);
+    public RemoveSelectionLinkgrabberAction() {
+        super();
         setIconKey("remove");
         setName(_GUI._.RemoveSelectionLinkgrabberAction_RemoveSelectionLinkgrabberAction_object_());
         setAccelerator(KeyEvent.VK_DELETE);

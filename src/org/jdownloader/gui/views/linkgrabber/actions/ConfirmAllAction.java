@@ -6,27 +6,24 @@ import java.awt.event.ActionEvent;
 import javax.swing.ImageIcon;
 
 import jd.controlling.TaskQueue;
-import jd.controlling.linkcrawler.CrawledLink;
-import jd.controlling.linkcrawler.CrawledPackage;
 import jd.gui.swing.jdgui.interfaces.View;
 
 import org.appwork.utils.ImageProvider.ImageProvider;
 import org.appwork.utils.event.queue.Queue.QueuePriority;
 import org.appwork.utils.event.queue.QueueAction;
-import org.jdownloader.actions.AppAction;
-import org.jdownloader.actions.CachableInterface;
+import org.jdownloader.controlling.contextmenu.ActionContext;
+import org.jdownloader.controlling.contextmenu.CustomizableAppAction;
 import org.jdownloader.controlling.contextmenu.Customizer;
 import org.jdownloader.gui.KeyObserver;
 import org.jdownloader.gui.event.GUIEventSender;
 import org.jdownloader.gui.event.GUIListener;
 import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.gui.views.SelectionInfo;
-import org.jdownloader.gui.views.linkgrabber.LinkGrabberTableModel;
+import org.jdownloader.gui.views.linkgrabber.LinkGrabberTable;
 import org.jdownloader.gui.views.linkgrabber.contextmenu.ConfirmSelectionContextAction;
 import org.jdownloader.gui.views.linkgrabber.contextmenu.ConfirmSelectionContextAction.AutoStartOptions;
 import org.jdownloader.images.NewTheme;
 
-public class ConfirmAllAction extends AppAction implements CachableInterface, GUIListener {
+public class ConfirmAllAction extends CustomizableAppAction implements GUIListener, ActionContext {
 
     /**
      * 
@@ -74,9 +71,9 @@ public class ConfirmAllAction extends AppAction implements CachableInterface, GU
     }
 
     public ConfirmAllAction(boolean autostart) {
+
+        this();
         setAutoStart(autostart);
-        GUIEventSender.getInstance().addListener(this, true);
-        metaCtrl = KeyObserver.getInstance().isMetaDown() || KeyObserver.getInstance().isControlDown();
 
     }
 
@@ -110,7 +107,16 @@ public class ConfirmAllAction extends AppAction implements CachableInterface, GU
     }
 
     public ConfirmAllAction() {
-        this(false);
+
+        addContextSetup(this);
+        GUIEventSender.getInstance().addListener(this, true);
+        metaCtrl = KeyObserver.getInstance().isMetaDown() || KeyObserver.getInstance().isControlDown();
+    }
+
+    @Override
+    protected void initContextDefaults() {
+        setAutoStart(false);
+        setCtrlToggleEnabled(false);
     }
 
     public void actionPerformed(final ActionEvent e) {
@@ -118,17 +124,12 @@ public class ConfirmAllAction extends AppAction implements CachableInterface, GU
 
             @Override
             protected Void run() throws RuntimeException {
-                final SelectionInfo<CrawledPackage, CrawledLink> si = new SelectionInfo<CrawledPackage, CrawledLink>(null, LinkGrabberTableModel.getInstance().getAllPackageNodes(), null, null, e, LinkGrabberTableModel.getInstance().getTable());
-                ConfirmSelectionContextAction ca = new ConfirmSelectionContextAction(si);
+                ConfirmSelectionContextAction ca = new ConfirmSelectionContextAction(LinkGrabberTable.getInstance().getSelectionInfo(false, true));
                 ca.setAutoStart(isAutoStart() ? AutoStartOptions.ENABLED : AutoStartOptions.DISABLED);
                 ca.actionPerformed(null);
                 return null;
             }
         });
-    }
-
-    @Override
-    public void setData(String data) {
     }
 
 }

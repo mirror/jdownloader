@@ -10,13 +10,12 @@ import jd.controlling.packagecontroller.AbstractPackageNode;
 import jd.plugins.DownloadLink;
 
 import org.appwork.utils.event.queue.QueueAction;
-import org.jdownloader.actions.AbstractSelectionContextAction;
 import org.jdownloader.controlling.Priority;
-import org.jdownloader.gui.views.SelectionInfo;
+import org.jdownloader.controlling.contextmenu.CustomizableSelectionAppAction;
 import org.jdownloader.gui.views.downloads.table.DownloadsTableModel;
 import org.jdownloader.gui.views.linkgrabber.LinkGrabberTableModel;
 
-public class PriorityActionEntry<PackageType extends AbstractPackageNode<ChildrenType, PackageType>, ChildrenType extends AbstractPackageChildrenNode<PackageType>> extends AbstractSelectionContextAction<PackageType, ChildrenType> {
+public abstract class AbstractPriorityActionEntry<PackageType extends AbstractPackageNode<ChildrenType, PackageType>, ChildrenType extends AbstractPackageChildrenNode<PackageType>> extends CustomizableSelectionAppAction<PackageType, ChildrenType> {
 
     /**
      * 
@@ -24,8 +23,8 @@ public class PriorityActionEntry<PackageType extends AbstractPackageNode<Childre
     private static final long serialVersionUID = 1L;
     private Priority          priority;
 
-    public PriorityActionEntry(Priority priority, SelectionInfo<PackageType, ChildrenType> si) {
-        super(si);
+    public AbstractPriorityActionEntry(Priority priority) {
+        super();
         setName(priority._());
         setSmallIcon(priority.loadIcon(18));
         this.priority = priority;

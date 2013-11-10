@@ -42,7 +42,12 @@ public class HeaderScrollPane extends JScrollPane {
         // setBorder(new JTextField().getBorder());
         headerlineColor = (LAFOptions.getInstance().getColorForPanelHeaderLine());
 
-        setVerticalScrollBar(new JScrollBar() {
+        JScrollBar sb;
+        setVerticalScrollBar(sb = new JScrollBar() {
+            {
+                putClientProperty("JScrollBar.fastWheelScrolling", Boolean.TRUE);
+            }
+
             public void setBounds(Rectangle rec) {
 
                 // workaround for synthetica rounded borders. without this
@@ -60,6 +65,7 @@ public class HeaderScrollPane extends JScrollPane {
 
             }
         });
+
         this.getVerticalScrollBar().setBlockIncrement(15);
     }
 

@@ -18,7 +18,7 @@ public class DeleteDisabledSelectedLinks extends AbstractDeleteCrawledLinksAppAc
     private static final long serialVersionUID = 5081124258090555549L;
 
     public DeleteDisabledSelectedLinks(SelectionInfo<CrawledPackage, CrawledLink> si) {
-        super(si);
+
         setName(_GUI._.DeleteDisabledLinks_DeleteDisabledLinks_object_());
         setIconKey("remove_disabled");
     }

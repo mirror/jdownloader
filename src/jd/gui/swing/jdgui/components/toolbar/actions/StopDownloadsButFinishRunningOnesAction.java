@@ -10,18 +10,25 @@ import jd.controlling.downloadcontroller.SingleDownloadController;
 import jd.controlling.downloadcontroller.event.DownloadWatchdogListener;
 
 import org.appwork.utils.swing.EDTRunner;
+import org.jdownloader.controlling.contextmenu.ActionContext;
 import org.jdownloader.controlling.contextmenu.Customizer;
-import org.jdownloader.gui.toolbar.action.ToolBarAction;
+import org.jdownloader.gui.toolbar.action.AbstractToolBarAction;
 import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.gui.views.SelectionInfo;
 
-public class StopDownloadsButFinishRunningOnesAction extends ToolBarAction implements DownloadWatchdogListener {
+public class StopDownloadsButFinishRunningOnesAction extends AbstractToolBarAction implements DownloadWatchdogListener, ActionContext {
 
-    public StopDownloadsButFinishRunningOnesAction(SelectionInfo<?, ?> selection) {
+    public StopDownloadsButFinishRunningOnesAction() {
         setIconKey("stop_conditional");
         setEnabled(false);
         DownloadWatchDog.getInstance().getEventSender().addListener(this, true);
         DownloadWatchDog.getInstance().notifyCurrentState(this);
+
+        addContextSetup(this);
+    }
+
+    @Override
+    protected void initContextDefaults() {
+
         setHideIfDownloadsAreStopped(false);
     }
 

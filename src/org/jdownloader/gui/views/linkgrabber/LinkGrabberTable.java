@@ -8,6 +8,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map.Entry;
@@ -29,7 +30,9 @@ import javax.swing.TransferHandler;
 import jd.controlling.linkcollector.LinkCollector;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledPackage;
+import jd.controlling.linkcrawler.CrawledPackage.TYPE;
 import jd.controlling.packagecontroller.AbstractNode;
+import jd.plugins.DownloadLink.AvailableStatus;
 import net.miginfocom.swing.MigLayout;
 
 import org.appwork.swing.MigPanel;
@@ -44,7 +47,6 @@ import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.dialog.Dialog;
-import org.jdownloader.actions.AbstractSelectionContextAction;
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.controlling.contextmenu.MenuContainer;
 import org.jdownloader.controlling.contextmenu.MenuItemData;
@@ -58,7 +60,6 @@ import org.jdownloader.gui.views.linkgrabber.bottombar.MenuManagerLinkgrabberTab
 import org.jdownloader.gui.views.linkgrabber.contextmenu.ConfirmSelectionContextAction;
 import org.jdownloader.gui.views.linkgrabber.contextmenu.ContextMenuFactory;
 import org.jdownloader.gui.views.linkgrabber.contextmenu.MenuManagerLinkgrabberTableContext;
-import org.jdownloader.gui.views.linkgrabber.contextmenu.RemoveSelectionLinkgrabberAction;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
@@ -70,10 +71,11 @@ public class LinkGrabberTable extends PackageControllerTable<CrawledPackage, Cra
     private ContextMenuFactory         contextMenuFactory;
     private HashMap<KeyStroke, Action> shortCutActions;
     private LogSource                  logger;
+    private static LinkGrabberTable    INSTANCE;
 
     public LinkGrabberTable(LinkGrabberPanel linkGrabberPanel, final LinkGrabberTableModel tableModel) {
         super(tableModel);
-
+        INSTANCE = this;
         this.addRowHighlighter(new DropHighlighter(null, new Color(27, 164, 191, 75)));
         this.setTransferHandler(new LinkGrabberTableTransferHandler(this));
         this.setDragEnabled(true);
@@ -154,26 +156,13 @@ public class LinkGrabberTable extends PackageControllerTable<CrawledPackage, Cra
                         //
                         if (LinkGrabberTable.this.isRowSelected(row)) {
                             // clicked on a selected row. let's confirm them all
-                            List<AbstractNode> selection = getModel().getSelectedObjects();
 
-                            new ConfirmSelectionContextAction(getSelectionInfo(true, true).derive(obj, e, null, null, col)) {
-
-                                protected void switchToDownloadTab() {
-
-                                }
-
-                            }.actionPerformed(null);
+                            ConfirmSelectionContextAction.confirmSelection(getSelectionInfo(true, true).derive(obj, e, null, null, col), org.jdownloader.settings.staticreferences.CFG_LINKGRABBER.LINKGRABBER_AUTO_START_ENABLED.getValue(), false, false);
                         } else {
                             // clicked on a not-selected row. only add the context item
-                            List<AbstractNode> selection = getModel().getSelectedObjects();
 
-                            new ConfirmSelectionContextAction(new SelectionInfo<CrawledPackage, CrawledLink>(obj, null, e, null, null, this)) {
+                            ConfirmSelectionContextAction.confirmSelection(new SelectionInfo<CrawledPackage, CrawledLink>(obj, null, e, null, null, this), org.jdownloader.settings.staticreferences.CFG_LINKGRABBER.LINKGRABBER_AUTO_START_ENABLED.getValue(), false, false);
 
-                                protected void switchToDownloadTab() {
-
-                                }
-
-                            }.actionPerformed(null);
                         }
 
                     }
@@ -270,7 +259,21 @@ public class LinkGrabberTable extends PackageControllerTable<CrawledPackage, Cra
     @Override
     protected boolean onShortcutDelete(final java.util.List<AbstractNode> selectedObjects, final KeyEvent evt, final boolean direct) {
         if (evt.isAltDown() || evt.isMetaDown() || evt.isAltGraphDown() || evt.isShiftDown() || evt.isControlDown()) return false;
-        new RemoveSelectionLinkgrabberAction(new SelectionInfo<CrawledPackage, CrawledLink>(null, selectedObjects, null, evt, null, this)).actionPerformed(null);
+        final List<CrawledLink> nodesToDelete = new ArrayList<CrawledLink>();
+        boolean containsOnline = false;
+        for (final CrawledLink dl : getSelectionInfo().getChildren()) {
+
+            nodesToDelete.add(dl);
+
+            if (TYPE.OFFLINE == dl.getParentNode().getType()) continue;
+            if (TYPE.POFFLINE == dl.getParentNode().getType()) continue;
+            if (dl.getDownloadLink().getAvailableStatus() != AvailableStatus.FALSE) {
+                containsOnline = true;
+                break;
+            }
+
+        }
+        LinkCollector.requestDeleteLinks(nodesToDelete, containsOnline, _GUI._.GenericDeleteSelectedToolbarAction_updateName_object_selected_all());
         return true;
     }
 
@@ -315,9 +318,7 @@ public class LinkGrabberTable extends PackageControllerTable<CrawledPackage, Cra
             if (map != null && am != null && isEnabled()) {
                 final Object binding = map.get(stroke);
                 final Action action = (binding == null) ? null : am.get(binding);
-                if (action != null && action instanceof AbstractSelectionContextAction) {
-
-                    ((AbstractSelectionContextAction) action).setSelection(getSelectionInfo(true, true));
+                if (action != null) {
 
                     if (!action.isEnabled()) {
 
@@ -379,7 +380,7 @@ public class LinkGrabberTable extends PackageControllerTable<CrawledPackage, Cra
                 AppAction action;
                 try {
                     if (mi.getActionData() == null) continue;
-                    action = mi.createAction(null);
+                    action = mi.createAction();
                     KeyStroke keystroke;
                     if (StringUtils.isNotEmpty(mi.getShortcut())) {
                         keystroke = KeyStroke.getKeyStroke(mi.getShortcut());
@@ -430,6 +431,10 @@ public class LinkGrabberTable extends PackageControllerTable<CrawledPackage, Cra
 
             }
         }
+    }
+
+    public static LinkGrabberTable getInstance() {
+        return INSTANCE;
     }
 
 }

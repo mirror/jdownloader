@@ -18,8 +18,8 @@ import org.appwork.swing.exttable.ExtTableEvent;
 import org.appwork.swing.exttable.ExtTableListener;
 import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.dialog.Dialog;
-import org.jdownloader.actions.AppAction;
-import org.jdownloader.actions.CachableInterface;
+import org.jdownloader.controlling.contextmenu.ActionContext;
+import org.jdownloader.controlling.contextmenu.CustomizableAppAction;
 import org.jdownloader.controlling.contextmenu.Customizer;
 import org.jdownloader.controlling.download.DownloadControllerListener;
 import org.jdownloader.gui.IconKey;
@@ -29,7 +29,8 @@ import org.jdownloader.gui.views.downloads.table.DownloadsTable;
 import org.jdownloader.gui.views.downloads.table.DownloadsTableModel;
 import org.jdownloader.plugins.FinalLinkState;
 
-public class GenericDeleteFromDownloadlistAction extends AppAction implements CachableInterface, ExtTableListener, DownloadControllerListener {
+public class GenericDeleteFromDownloadlistAction extends CustomizableAppAction implements ExtTableListener, ActionContext, DownloadControllerListener {
+
     /**
      * 
      */
@@ -56,9 +57,94 @@ public class GenericDeleteFromDownloadlistAction extends AppAction implements Ca
     private SelectionInfo<FilePackage, DownloadLink> selection;
     private DelayedRunnable                          delayer;
 
+    @Customizer(name = "Include All Links")
+    public boolean isDeleteAll() {
+        return deleteAll;
+    }
+
+    @Customizer(name = "Include disabled Links")
+    public boolean isDeleteDisabled() {
+        return deleteDisabled;
+    }
+
+    @Customizer(name = "Include failed")
+    public boolean isDeleteFailed() {
+        return deleteFailed;
+    }
+
+    @Customizer(name = "Include finished Links")
+    public boolean isDeleteFinished() {
+        return deleteFinished;
+    }
+
+    @Customizer(name = "Include Offline Links")
+    public boolean isDeleteOffline() {
+        return deleteOffline;
+    }
+
+    @Customizer(name = "Exclude filtered Links")
+    public boolean isIgnoreFiltered() {
+        return ignoreFiltered;
+    }
+
+    @Customizer(name = "Only Selected Links")
+    public boolean isOnlySelectedItems() {
+        return onlySelectedItems;
+    }
+
+    public void setDeleteAll(final boolean deleteIdle) {
+        GenericDeleteFromDownloadlistAction.this.deleteAll = deleteIdle;
+        updateName();
+        delayer.resetAndStart();
+    }
+
+    public void setDeleteDisabled(final boolean deleteDisabled) {
+        GenericDeleteFromDownloadlistAction.this.deleteDisabled = deleteDisabled;
+        updateName();
+        delayer.resetAndStart();
+    }
+
+    public void setDeleteFailed(final boolean deleteFailed) {
+        GenericDeleteFromDownloadlistAction.this.deleteFailed = deleteFailed;
+        updateName();
+        delayer.resetAndStart();
+    }
+
+    public void setDeleteFinished(final boolean deleteFinished) {
+        GenericDeleteFromDownloadlistAction.this.deleteFinished = deleteFinished;
+        updateName();
+        delayer.resetAndStart();
+    }
+
+    public void setDeleteOffline(final boolean deleteOffline) {
+        GenericDeleteFromDownloadlistAction.this.deleteOffline = deleteOffline;
+        updateName();
+        delayer.resetAndStart();
+    }
+
+    public void setIgnoreFiltered(final boolean ignoreFiltered) {
+        GenericDeleteFromDownloadlistAction.this.ignoreFiltered = ignoreFiltered;
+        updateName();
+        delayer.resetAndStart();
+    }
+
+    public void setOnlySelectedItems(final boolean onlySelectedItems) {
+        GenericDeleteFromDownloadlistAction.this.onlySelectedItems = onlySelectedItems;
+        if (onlySelectedItems) {
+            getTable().getEventSender().addListener(GenericDeleteFromDownloadlistAction.this, true);
+            DownloadController.getInstance().getEventSender().removeListener(GenericDeleteFromDownloadlistAction.this);
+        } else {
+            getTable().getEventSender().removeListener(GenericDeleteFromDownloadlistAction.this);
+            DownloadController.getInstance().getEventSender().addListener(GenericDeleteFromDownloadlistAction.this, true);
+        }
+        updateName();
+        if (delayer != null) delayer.resetAndStart();
+    }
+
     public GenericDeleteFromDownloadlistAction() {
         super();
-        this.setIconKey(IconKey.ICON_DELETE);
+
+        setIconKey(IconKey.ICON_DELETE);
         delayer = new DelayedRunnable(200, 500) {
 
             @Override
@@ -70,6 +156,14 @@ public class GenericDeleteFromDownloadlistAction extends AppAction implements Ca
         update();
 
     }
+
+    @Override
+    public void requestUpdate(Object requestor) {
+        super.requestUpdate(requestor);
+        update();
+    }
+
+    private DownloadLink lastLink;
 
     protected void update() {
         new EDTRunner() {
@@ -89,33 +183,34 @@ public class GenericDeleteFromDownloadlistAction extends AppAction implements Ca
                     }
 
                 }
-
+                // we remember the last link and try it first
+                if (lastLink != null && selection.contains(lastLink)) {
+                    if (checkLink(lastLink)) {
+                        //
+                        setEnabled(true);
+                        return;
+                    }
+                }
                 if (isDeleteAll() && !selection.isEmpty()) {
                     setEnabled(true);
                     return;
 
                 }
                 for (DownloadLink link : selection.getChildren()) {
-                    if (isDeleteDisabled() && !link.isEnabled()) {
-
-                        setEnabled(true);
-                        return;
-                    }
-                    if (isDeleteFailed() && FinalLinkState.CheckFailed(link.getFinalLinkState())) {
-                        setEnabled(true);
-                        return;
-                    }
-                    if (isDeleteFinished() && FinalLinkState.CheckFinished(link.getFinalLinkState())) {
-                        setEnabled(true);
-                        return;
-                    }
-                    if (isDeleteOffline() && link.getFinalLinkState() == FinalLinkState.OFFLINE) {
+                    if (checkLink(link)) {
+                        lastLink = link;
                         setEnabled(true);
                         return;
                     }
                 }
                 setEnabled(false);
             }
+
+            /**
+             * @param link
+             * @return
+             */
+
         };
 
     }
@@ -130,31 +225,14 @@ public class GenericDeleteFromDownloadlistAction extends AppAction implements Ca
     public void actionPerformed(final ActionEvent e) {
         final List<DownloadLink> nodesToDelete = new ArrayList<DownloadLink>();
         for (final DownloadLink dl : selection.getChildren()) {
-            if (this.isDeleteAll()) {
+            if (checkLink(dl)) {
                 nodesToDelete.add(dl);
-                continue;
-            }
-            if (this.isDeleteDisabled() && !dl.isEnabled()) {
-                nodesToDelete.add(dl);
-                continue;
-            }
-            if (this.isDeleteFailed() && FinalLinkState.CheckFailed(dl.getFinalLinkState())) {
-                nodesToDelete.add(dl);
-                continue;
-            }
-            if (this.isDeleteFinished() && FinalLinkState.CheckFinished(dl.getFinalLinkState())) {
-                nodesToDelete.add(dl);
-                continue;
-            }
-            if (this.isDeleteOffline() && dl.getFinalLinkState() == FinalLinkState.OFFLINE) {
-                nodesToDelete.add(dl);
-                continue;
             }
         }
         if (nodesToDelete.size() > 0) {
             final SelectionInfo<FilePackage, DownloadLink> si = new SelectionInfo<FilePackage, DownloadLink>(null, nodesToDelete, null, null, e, getTable());
             if (si.getChildren().size() > 0) {
-                DownloadTabActionUtils.deleteLinksRequest(si, _GUI._.GenericDeleteFromDownloadlistAction_actionPerformed_ask_(this.createName()));
+                DownloadTabActionUtils.deleteLinksRequest(si, _GUI._.GenericDeleteFromDownloadlistAction_actionPerformed_ask_(createName()));
                 return;
             }
         }
@@ -167,88 +245,27 @@ public class GenericDeleteFromDownloadlistAction extends AppAction implements Ca
         return (DownloadsTable) DownloadsTableModel.getInstance().getTable();
     }
 
-    @Customizer(name = "Include All Links")
-    public boolean isDeleteAll() {
-        return this.deleteAll;
-    }
+    public boolean checkLink(DownloadLink link) {
+        if (isDeleteAll()) { return true; }
 
-    @Customizer(name = "Include disabled Links")
-    public boolean isDeleteDisabled() {
-        return this.deleteDisabled;
-    }
+        if (isDeleteDisabled() && !link.isEnabled()) {
 
-    @Customizer(name = "Include failed")
-    public boolean isDeleteFailed() {
-        return this.deleteFailed;
-    }
+        return true; }
+        if (isDeleteFailed() && FinalLinkState.CheckFailed(link.getFinalLinkState())) {
 
-    @Customizer(name = "Include finished Links")
-    public boolean isDeleteFinished() {
-        return this.deleteFinished;
-    }
+        return true; }
+        if (isDeleteFinished() && FinalLinkState.CheckFinished(link.getFinalLinkState())) {
 
-    @Customizer(name = "Include Offline Links")
-    public boolean isDeleteOffline() {
-        return this.deleteOffline;
+        return true; }
+        if (isDeleteOffline() && link.getFinalLinkState() == FinalLinkState.OFFLINE) {
+
+        return true; }
+        return false;
     }
 
     @Override
     public boolean isEnabled() {
         return super.isEnabled();
-    }
-
-    @Customizer(name = "Exclude filtered Links")
-    public boolean isIgnoreFiltered() {
-        return this.ignoreFiltered;
-    }
-
-    @Customizer(name = "Only Selected Links")
-    public boolean isOnlySelectedItems() {
-        return this.onlySelectedItems;
-    }
-
-    @Override
-    public void setData(final String data) {
-    }
-
-    public void setDeleteAll(final boolean deleteIdle) {
-        this.deleteAll = deleteIdle;
-        this.updateName();
-    }
-
-    public void setDeleteDisabled(final boolean deleteDisabled) {
-        this.deleteDisabled = deleteDisabled;
-        this.updateName();
-    }
-
-    public void setDeleteFailed(final boolean deleteFailed) {
-        this.deleteFailed = deleteFailed;
-        this.updateName();
-    }
-
-    public void setDeleteFinished(final boolean deleteFinished) {
-        this.deleteFinished = deleteFinished;
-        this.updateName();
-    }
-
-    public void setDeleteOffline(final boolean deleteOffline) {
-        this.deleteOffline = deleteOffline;
-        this.updateName();
-    }
-
-    public void setIgnoreFiltered(final boolean ignoreFiltered) {
-        this.ignoreFiltered = ignoreFiltered;
-    }
-
-    public void setOnlySelectedItems(final boolean onlySelectedItems) {
-        this.onlySelectedItems = onlySelectedItems;
-        if (onlySelectedItems) {
-            getTable().getEventSender().addListener(this, true);
-            DownloadController.getInstance().getEventSender().removeListener(this);
-        } else {
-            getTable().getEventSender().removeListener(this);
-            DownloadController.getInstance().getEventSender().addListener(this, true);
-        }
     }
 
     private void updateName() {
@@ -271,42 +288,42 @@ public class GenericDeleteFromDownloadlistAction extends AppAction implements Ca
     private String createName() {
         final StringBuilder sb = new StringBuilder();
 
-        if (this.isDeleteAll()) {
-            if (this.isOnlySelectedItems()) {
+        if (isDeleteAll()) {
+            if (isOnlySelectedItems()) {
                 sb.append(_GUI._.GenericDeleteSelectedToolbarAction_updateName_object_selected_all());
             } else {
                 sb.append(_GUI._.GenericDeleteSelectedToolbarAction_updateName_object_all());
             }
         } else {
-            if (this.isOnlySelectedItems()) {
+            if (isOnlySelectedItems()) {
                 sb.append(_GUI._.GenericDeleteSelectedToolbarAction_updateName_object_selected());
             } else {
                 sb.append(_GUI._.GenericDeleteSelectedToolbarAction_updateName_object());
             }
             boolean first = true;
 
-            if (this.isDeleteDisabled()) {
+            if (isDeleteDisabled()) {
                 if (!first) {
                     sb.append(" & ");
                 }
                 sb.append(_GUI._.lit_disabled());
                 first = false;
             }
-            if (this.isDeleteFailed()) {
+            if (isDeleteFailed()) {
                 if (!first) {
                     sb.append(" & ");
                 }
                 first = false;
                 sb.append(_GUI._.lit_failed());
             }
-            if (this.isDeleteFinished()) {
+            if (isDeleteFinished()) {
                 if (!first) {
                     sb.append(" & ");
                 }
                 first = false;
                 sb.append(_GUI._.lit_finished());
             }
-            if (this.isDeleteOffline()) {
+            if (isDeleteOffline()) {
                 if (!first) {
                     sb.append(" & ");
                 }
@@ -320,7 +337,7 @@ public class GenericDeleteFromDownloadlistAction extends AppAction implements Ca
     @Override
     public void onExtTableEvent(ExtTableEvent<?> event) {
         if (event.getType() == ExtTableEvent.Types.SELECTION_CHANGED) {
-            delayer.resetAndStart();
+            update();
         }
     }
 

@@ -32,6 +32,7 @@ import org.appwork.swing.components.ExtButton;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.swing.EDTRunner;
 import org.jdownloader.actions.AppAction;
+import org.jdownloader.controlling.contextmenu.CustomizableAppAction;
 import org.jdownloader.controlling.contextmenu.MenuContainer;
 import org.jdownloader.controlling.contextmenu.MenuContainerRoot;
 import org.jdownloader.controlling.contextmenu.MenuItemData;
@@ -131,9 +132,9 @@ public class CustomizeableActionBar extends MigPanel implements PropertyChangeLi
     }
 
     private void addLink(MenuItemData menudata) throws InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException, ClassNotFoundException, NoSuchMethodException, SecurityException, ExtensionNotLoadedException {
-        final JComponent item = menudata.createItem(null);
+        final JComponent item = menudata.createItem();
         if (menudata instanceof SelfLayoutInterface) {
-            add(item, ((SelfLayoutInterface) menudata).getConstraints());
+            add(item, ((SelfLayoutInterface) menudata).createConstraints());
         } else {
             add(item, "height 24!");
         }
@@ -141,7 +142,7 @@ public class CustomizeableActionBar extends MigPanel implements PropertyChangeLi
     }
 
     private void addAction(MenuItemData menudata) throws ClassNotFoundException, NoSuchMethodException, SecurityException, InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException, ExtensionNotLoadedException {
-        AppAction action = menudata.createAction(null);
+        CustomizableAppAction action = menudata.createAction();
         // action.setEnabled(true);
         action.removePropertyChangeListener(this);
         action.addPropertyChangeListener(this);
@@ -152,14 +153,15 @@ public class CustomizeableActionBar extends MigPanel implements PropertyChangeLi
 
         AbstractButton bt = null;
         if (action.isToggle()) {
+            action.requestUpdate(this);
             bt = new JToggleButton(action);
         } else {
-
+            action.requestUpdate(this);
             bt = new ExtButton(action);
         }
         bt.setEnabled(action.isEnabled());
         if (menudata instanceof SelfLayoutInterface) {
-            add(bt, ((SelfLayoutInterface) menudata).getConstraints());
+            add(bt, ((SelfLayoutInterface) menudata).createConstraints());
         } else {
             if (StringUtils.isEmpty(action.getName())) {
 
@@ -187,6 +189,7 @@ public class CustomizeableActionBar extends MigPanel implements PropertyChangeLi
             add(bt, "height 24!,width 12!,aligny top");
         } else {
             AppAction action = createPopupAction(menudata, null);
+
             ExtButton bt = new ExtButton(action);
             if (StringUtils.isEmpty(menudata.getName())) {
                 add(bt, "height 24!,width " + (Math.max(24, action.getSmallIcon().getIconWidth() + 6)) + "!,aligny top");
@@ -261,7 +264,7 @@ public class CustomizeableActionBar extends MigPanel implements PropertyChangeLi
                     };
                 };
 
-                new MenuBuilder(manager, popup, getCurrentSelection(), (MenuContainer) menudata) {
+                new MenuBuilder(manager, popup, (MenuContainer) menudata) {
                     protected void addAction(final JComponent root, final MenuItemData inst) throws InstantiationException, IllegalAccessException, InvocationTargetException, ClassNotFoundException, NoSuchMethodException, ExtensionNotLoadedException {
 
                         super.addAction(root, inst);

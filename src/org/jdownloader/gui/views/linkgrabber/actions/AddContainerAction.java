@@ -14,12 +14,11 @@ import org.appwork.utils.swing.dialog.DialogNoAnswerException;
 import org.appwork.utils.swing.dialog.ExtFileChooserDialog;
 import org.appwork.utils.swing.dialog.FileChooserSelectionMode;
 import org.appwork.utils.swing.dialog.FileChooserType;
-import org.jdownloader.actions.AppAction;
-import org.jdownloader.actions.CachableInterface;
+import org.jdownloader.controlling.contextmenu.CustomizableAppAction;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.plugins.controller.container.ContainerPluginController;
 
-public class AddContainerAction extends AppAction implements CachableInterface {
+public class AddContainerAction extends CustomizableAppAction {
     /**
      * @param selection
      *            TODO
@@ -59,10 +58,6 @@ public class AddContainerAction extends AppAction implements CachableInterface {
             LinkCollector.getInstance().addCrawlerJob(new LinkCollectingJob(LinkOrigin.ADD_CONTAINER_ACTION, sb.toString()));
         } catch (DialogNoAnswerException e1) {
         }
-    }
-
-    @Override
-    public void setData(String data) {
     }
 
 }

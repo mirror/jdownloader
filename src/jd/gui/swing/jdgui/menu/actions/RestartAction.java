@@ -21,13 +21,12 @@ import java.awt.event.ActionEvent;
 import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
 
-import org.jdownloader.actions.AppAction;
-import org.jdownloader.actions.CachableInterface;
+import org.jdownloader.controlling.contextmenu.CustomizableAppAction;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.updatev2.RestartController;
 import org.jdownloader.updatev2.SmartRlyRestartRequest;
 
-public class RestartAction extends AppAction implements CachableInterface {
+public class RestartAction extends CustomizableAppAction {
 
     private static final long serialVersionUID = 1333126351380171619L;
 
@@ -43,10 +42,6 @@ public class RestartAction extends AppAction implements CachableInterface {
     public void actionPerformed(ActionEvent e) {
 
         RestartController.getInstance().asyncRestart(new SmartRlyRestartRequest(false));
-    }
-
-    @Override
-    public void setData(String data) {
     }
 
 }

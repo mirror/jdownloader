@@ -2,12 +2,11 @@ package org.jdownloader.gui.views.downloads.action;
 
 import java.awt.event.ActionEvent;
 
-import org.jdownloader.actions.AppAction;
-import org.jdownloader.actions.CachableInterface;
+import org.jdownloader.controlling.contextmenu.CustomizableAppAction;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.downloads.contextmenumanager.MenuManagerDownloadTableContext;
 
-public class MenuManagerAction extends AppAction implements CachableInterface {
+public class MenuManagerAction extends CustomizableAppAction {
 
     public MenuManagerAction() {
 
@@ -19,10 +18,6 @@ public class MenuManagerAction extends AppAction implements CachableInterface {
     public void actionPerformed(ActionEvent e) {
         MenuManagerDownloadTableContext.getInstance().openGui();
 
-    }
-
-    @Override
-    public void setData(String data) {
     }
 
 }

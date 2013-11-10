@@ -91,7 +91,7 @@ public abstract class ContextMenuManager<PackageType extends AbstractPackageNode
         long t = System.currentTimeMillis();
         ExtPopupMenu root = new ExtPopupMenu();
         MenuContainerRoot md = getMenuData();
-        new MenuBuilder(this, root, si, md).run();
+        new MenuBuilder(this, root, md).run();
         // createLayer(root, md);
 
         return root;
@@ -141,6 +141,8 @@ public abstract class ContextMenuManager<PackageType extends AbstractPackageNode
         for (MenuItemData mid : setupDefaultStructure().list()) {
             if (mid.getActionData() != null && unique.add(mid.getActionData().getClazzName())) {
                 ret.add(mid.getActionData());
+            } else if (mid.getActionData() != null) {
+                System.out.println(1);
             }
         }
         return ret;

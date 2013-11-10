@@ -13,19 +13,18 @@ import org.appwork.uio.UIOManager;
 import org.appwork.utils.event.queue.QueueAction;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogNoAnswerException;
-import org.jdownloader.actions.AbstractSelectionContextAction;
+import org.jdownloader.controlling.contextmenu.CustomizableSelectionAppAction;
 import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.gui.views.SelectionInfo;
 
-public class RemoveNonSelectedContextAction extends AbstractSelectionContextAction<CrawledPackage, CrawledLink> {
+public class RemoveNonSelectedContextAction extends CustomizableSelectionAppAction<CrawledPackage, CrawledLink> {
 
     /**
      * 
      */
     private static final long serialVersionUID = 6855083561629297363L;
 
-    public RemoveNonSelectedContextAction(SelectionInfo<CrawledPackage, CrawledLink> si) {
-        super(si);
+    public RemoveNonSelectedContextAction() {
+
         setName(_GUI._.RemoveNonSelectedAction_RemoveNonSelectedAction_object_());
         setIconKey("ok");
     }
@@ -57,11 +56,6 @@ public class RemoveNonSelectedContextAction extends AbstractSelectionContextActi
             });
         } catch (DialogNoAnswerException e1) {
         }
-    }
-
-    @Override
-    public boolean isEnabled() {
-        return getSelection() != null;
     }
 
 }

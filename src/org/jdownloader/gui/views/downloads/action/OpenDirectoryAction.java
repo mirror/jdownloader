@@ -7,11 +7,10 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
 import org.appwork.utils.os.CrossSystem;
-import org.jdownloader.actions.AbstractSelectionContextAction;
+import org.jdownloader.controlling.contextmenu.CustomizableSelectionAppAction;
 import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.gui.views.SelectionInfo;
 
-public class OpenDirectoryAction extends AbstractSelectionContextAction<FilePackage, DownloadLink> {
+public class OpenDirectoryAction extends CustomizableSelectionAppAction<FilePackage, DownloadLink> {
 
     private static final long serialVersionUID = 3656369075540437063L;
 
@@ -19,8 +18,8 @@ public class OpenDirectoryAction extends AbstractSelectionContextAction<FilePack
 
     private File              file             = null;
 
-    public OpenDirectoryAction(SelectionInfo<FilePackage, DownloadLink> si) {
-        super(si);
+    public OpenDirectoryAction() {
+        super();
 
         setIconKey("package_open");
         setName(_GUI._.gui_table_contextmenu_downloaddir());
@@ -28,8 +27,8 @@ public class OpenDirectoryAction extends AbstractSelectionContextAction<FilePack
     }
 
     @Override
-    public void setSelection(SelectionInfo<FilePackage, DownloadLink> selection) {
-        super.setSelection(selection);
+    public void requestUpdate(Object requestor) {
+        super.requestUpdate(requestor);
         file = null;
         directory = null;
         if (hasSelection()) {

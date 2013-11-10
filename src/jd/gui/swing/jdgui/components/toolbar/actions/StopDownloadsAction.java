@@ -11,21 +11,27 @@ import org.appwork.uio.UIOManager;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.dialog.Dialog;
+import org.jdownloader.controlling.contextmenu.ActionContext;
 import org.jdownloader.controlling.contextmenu.Customizer;
-import org.jdownloader.gui.toolbar.action.ToolBarAction;
+import org.jdownloader.gui.toolbar.action.AbstractToolBarAction;
 import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.images.NewTheme;
 
-public class StopDownloadsAction extends ToolBarAction implements DownloadWatchdogListener {
+public class StopDownloadsAction extends AbstractToolBarAction implements DownloadWatchdogListener, ActionContext {
 
-    public StopDownloadsAction(SelectionInfo<?, ?> selection) {
+    public StopDownloadsAction() {
         setIconKey("media-playback-stop");
         setEnabled(false);
         DownloadWatchDog.getInstance().getEventSender().addListener(this, true);
         DownloadWatchDog.getInstance().notifyCurrentState(this);
-        setHideIfDownloadsAreStopped(false);
+
         setAccelerator(KeyEvent.VK_S);
+
+    }
+
+    @Override
+    protected void initContextDefaults() {
+        setHideIfDownloadsAreStopped(false);
     }
 
     public void actionPerformed(ActionEvent e) {

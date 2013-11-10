@@ -8,15 +8,13 @@ import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.events.GenericConfigEventListener;
 import org.appwork.storage.config.handler.BooleanKeyHandler;
 import org.appwork.storage.config.handler.KeyHandler;
-import org.jdownloader.actions.AppAction;
-import org.jdownloader.actions.CachableInterface;
+import org.jdownloader.controlling.contextmenu.CustomizableAppAction;
 import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.gui.views.SelectionInfo;
 
-public class ExtensionQuickToggleAction extends AppAction implements GenericConfigEventListener<Boolean>, CachableInterface {
+public class ExtensionQuickToggleAction extends CustomizableAppAction implements GenericConfigEventListener<Boolean> {
     private LazyExtension extension;
 
-    public ExtensionQuickToggleAction(SelectionInfo<?, ?> selection, String data) {
+    public ExtensionQuickToggleAction(String data) {
 
         setData(data);
 

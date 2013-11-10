@@ -4,16 +4,11 @@ import java.awt.event.ActionEvent;
 
 import javax.swing.KeyStroke;
 
-import jd.controlling.packagecontroller.AbstractPackageChildrenNode;
-import jd.controlling.packagecontroller.AbstractPackageNode;
 import jd.gui.swing.jdgui.MainTabbedPane;
 import jd.gui.swing.jdgui.interfaces.View;
-import jd.plugins.DownloadLink;
-import jd.plugins.FilePackage;
 
-import org.jdownloader.actions.AbstractSelectionContextAction;
+import org.jdownloader.controlling.contextmenu.CustomizableSelectionAppAction;
 import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.downloads.DownloadsPanel;
 import org.jdownloader.gui.views.downloads.DownloadsView;
 import org.jdownloader.gui.views.downloads.columns.FileColumn;
@@ -22,10 +17,11 @@ import org.jdownloader.gui.views.linkgrabber.LinkGrabberPanel;
 import org.jdownloader.gui.views.linkgrabber.LinkGrabberTable;
 import org.jdownloader.gui.views.linkgrabber.LinkGrabberView;
 
-public class RenameAction<PackageType extends AbstractPackageNode<ChildrenType, PackageType>, ChildrenType extends AbstractPackageChildrenNode<PackageType>> extends AbstractSelectionContextAction<FilePackage, DownloadLink> {
+public class RenameAction extends CustomizableSelectionAppAction {
 
-    public RenameAction(SelectionInfo<FilePackage, DownloadLink> si) {
-        super(si);
+    public RenameAction() {
+
+        super();
         setName(_GUI._.RenameAction_RenameAction());
         setTooltipText(_GUI._.RenameAction_RenameAction_tt());
         setIconKey("edit");
@@ -58,4 +54,5 @@ public class RenameAction<PackageType extends AbstractPackageNode<ChildrenType, 
         }
 
     }
+
 }

@@ -15,6 +15,7 @@ import org.appwork.utils.swing.IconDialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.jdownloader.controlling.DownloadLinkAggregator;
+import org.jdownloader.gui.KeyObserver;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.images.NewTheme;
@@ -28,8 +29,9 @@ public class DownloadTabActionUtils {
         agg.setMirrorHandlingEnabled(false);
         agg.setLocalFileUsageEnabled(true);
         agg.update(si.getChildren());
+
         new EDTRunner() {
-    
+
             @Override
             protected void runInEDT() {
                 if (agg.getTotalCount() == 0) {
@@ -38,17 +40,17 @@ public class DownloadTabActionUtils {
                 }
                 ConfirmDeleteLinksDialog dialog = new ConfirmDeleteLinksDialog(msg + "\r\n" + _GUI._.DeleteSelectionAction_actionPerformed_affected2(agg.getTotalCount(), SizeFormatter.formatBytes(agg.getBytesLoaded()), DownloadController.getInstance().getChildrenCount() - agg.getTotalCount(), agg.getLocalFileCount()), agg.getBytesLoaded());
                 dialog.setRecycleSupported(JDFileUtils.isTrashSupported());
-                dialog.setDeleteFilesFromDiskEnabled(si.isShiftDown());
+                dialog.setDeleteFilesFromDiskEnabled(KeyObserver.getInstance().isShiftDown());
                 boolean byPassDialog = false;
                 switch (JsonConfig.create(GraphicalUserInterfaceSettings.class).getShowDeleteLinksDialogOption()) {
                 case HIDE_ALWAYS_AND_NEVER_DELETE_ANY_LINKS_FROM_HARDDISK:
                     byPassDialog = true;
                     break;
                 case HIDE_IF_CTRL_IS_NOT_PRESSED_AND_NEVER_DELETE_ANY_LINKS_FROM_HARDDISK:
-                    byPassDialog = !si.isAvoidRlyEnabled();
+                    byPassDialog = !KeyObserver.getInstance().isControlDown();
                     break;
                 case HIDE_IF_CTRL_IS_PRESSED_AND_NEVER_DELETE_ANY_LINKS_FROM_HARDDISK:
-                    byPassDialog = si.isAvoidRlyEnabled();
+                    byPassDialog = KeyObserver.getInstance().isControlDown();
                     break;
                 }
                 ConfirmDeleteLinksDialogInterface ret = null;
@@ -56,52 +58,52 @@ public class DownloadTabActionUtils {
                     ret = dialog.show();
                 } else {
                     ret = new ConfirmDeleteLinksDialogInterface() {
-    
+
                         @Override
                         public String getMessage() {
                             return null;
                         }
-    
+
                         @Override
                         public String getTitle() {
                             return null;
                         }
-    
+
                         @Override
                         public CloseReason getCloseReason() {
                             return CloseReason.OK;
                         }
-    
+
                         @Override
                         public boolean isDeleteFilesFromDiskEnabled() {
                             // Fehlerhafte zurücksetzen
-                            return si.isShiftDown();
+                            return KeyObserver.getInstance().isShiftDown();
                         }
-    
+
                         @Override
                         public boolean isDeleteFilesToRecycle() {
                             return false;
                         }
-    
+
                         @Override
                         public boolean isRecycleSupported() {
                             return false;
                         }
-    
+
                         @Override
                         public void throwCloseExceptions() throws DialogClosedException, DialogCanceledException {
                         }
-    
+
                         @Override
                         public boolean isDontShowAgainSelected() {
                             return false;
                         }
-    
+
                         @Override
                         public int getFlags() {
                             return 0;
                         }
-    
+
                     };
                 }
                 if (ret.getCloseReason() == CloseReason.OK) {

@@ -5,19 +5,15 @@ import java.util.ArrayList;
 import java.util.List;
 
 import jd.controlling.linkcrawler.CrawledLink;
-import jd.controlling.linkcrawler.CrawledPackage;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 
 import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.gui.views.SelectionInfo;
 
 public class DeleteSelectedOfflineLinksAction extends AbstractDeleteCrawledLinksAppAction {
 
-    private SelectionInfo<CrawledPackage, CrawledLink> si;
+    public DeleteSelectedOfflineLinksAction() {
 
-    public DeleteSelectedOfflineLinksAction(SelectionInfo<CrawledPackage, CrawledLink> si) {
-        super(si);
         setName(_GUI._.DeleteOfflineAction_DeleteOfflineAction_object_());
         setIconKey("remove_offline");
     }

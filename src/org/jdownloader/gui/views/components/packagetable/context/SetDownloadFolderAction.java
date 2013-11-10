@@ -13,37 +13,35 @@ import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.appwork.utils.swing.dialog.DialogNoAnswerException;
-import org.jdownloader.actions.AbstractSelectionContextAction;
+import org.jdownloader.controlling.contextmenu.CustomizableSelectionAppAction;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.DownloadFolderChooserDialog;
 import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.components.packagetable.LinkTreeUtils;
 import org.jdownloader.translate._JDT;
 
-public abstract class SetDownloadFolderAction<PackageType extends AbstractPackageNode<ChildrenType, PackageType>, ChildrenType extends AbstractPackageChildrenNode<PackageType>> extends AbstractSelectionContextAction<PackageType, ChildrenType> {
+public abstract class SetDownloadFolderAction<PackageType extends AbstractPackageNode<ChildrenType, PackageType>, ChildrenType extends AbstractPackageChildrenNode<PackageType>> extends CustomizableSelectionAppAction<PackageType, ChildrenType> {
 
-    private File path;
+    private File                                       path;
+    protected SelectionInfo<PackageType, ChildrenType> selection;
 
-    public SetDownloadFolderAction(SelectionInfo<PackageType, ChildrenType> si) {
-        super(si);
+    public SetDownloadFolderAction() {
+        super();
         setName(_GUI._.SetDownloadFolderAction_SetDownloadFolderAction_());
         setIconKey("save");
     }
 
     @Override
-    public void setSelection(SelectionInfo<PackageType, ChildrenType> selection) {
-        super.setSelection(selection);
-        if (hasSelection()) {
+    public void requestUpdate(Object requestor) {
+        super.requestUpdate(requestor);
+        selection = getSelection();
+        if (hasSelection(selection)) {
             path = LinkTreeUtils.getRawDownloadDirectory(getSelection().getContextPackage());
             if (path.getName().equals(getSelection().getContextPackage().getName())) {
                 path = new File(path.getParentFile(), DownloadFolderChooserDialog.PACKAGETAG);
             }
         }
-    }
 
-    @Override
-    public boolean isEnabled() {
-        return hasSelection();
     }
 
     /**

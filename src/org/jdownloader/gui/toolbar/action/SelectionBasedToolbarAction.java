@@ -19,7 +19,7 @@ import org.jdownloader.gui.views.linkgrabber.LinkGrabberTable;
 import org.jdownloader.gui.views.linkgrabber.LinkGrabberTableModel;
 import org.jdownloader.gui.views.linkgrabber.LinkGrabberView;
 
-public abstract class SelectionBasedToolbarAction extends ToolBarAction implements GUIListener, ExtTableListener {
+public abstract class SelectionBasedToolbarAction extends AbstractToolBarAction implements GUIListener, ExtTableListener {
 
     private PackageControllerTable<?, ?> table;
 

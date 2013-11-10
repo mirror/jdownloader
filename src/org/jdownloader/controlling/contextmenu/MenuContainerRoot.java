@@ -6,7 +6,9 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 
+import org.appwork.storage.JSonStorage;
 import org.appwork.storage.Storable;
+import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.extensions.ExtensionNotLoadedException;
 
@@ -22,6 +24,14 @@ public class MenuContainerRoot extends MenuContainer implements Storable {
 
     public void validate() {
         validate(this, false);
+    }
+
+    @Override
+    public MenuContainerRoot clone() {
+        final MenuContainerRoot menuContainerRoot2 = JSonStorage.restoreFromString(JSonStorage.serializeToJson(this), new TypeRef<MenuContainerRoot>() {
+        });
+        menuContainerRoot2.validateFull();
+        return menuContainerRoot2;
     }
 
     /**
@@ -51,7 +61,7 @@ public class MenuContainerRoot extends MenuContainer implements Storable {
                             lr = mid.createValidatedItem();
                             if (!lr.isVisible() && !full) continue;
                             if (lr.getActionData() != null) {
-                                lr.createAction(null);
+                                lr.createAction();
                             }
 
                         } catch (ClassCurrentlyNotAvailableException e) {

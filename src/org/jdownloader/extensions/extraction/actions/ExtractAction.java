@@ -7,8 +7,6 @@ import java.text.DecimalFormat;
 
 import javax.swing.filechooser.FileFilter;
 
-import jd.controlling.packagecontroller.AbstractPackageChildrenNode;
-import jd.controlling.packagecontroller.AbstractPackageNode;
 import jd.gui.UserIO;
 
 import org.appwork.storage.config.annotations.EnumLabel;
@@ -19,6 +17,7 @@ import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.appwork.utils.swing.dialog.ProgressDialog;
 import org.appwork.utils.swing.dialog.ProgressDialog.ProgressGetter;
 import org.jdownloader.controlling.contextmenu.Customizer;
+import org.jdownloader.controlling.contextmenu.TableContext;
 import org.jdownloader.extensions.extraction.Archive;
 import org.jdownloader.extensions.extraction.ExtractionController;
 import org.jdownloader.extensions.extraction.ExtractionEvent;
@@ -33,12 +32,29 @@ import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.views.DownloadFolderChooserDialog;
 import org.jdownloader.images.NewTheme;
 
-public class ExtractAction<PackageType extends AbstractPackageNode<ChildrenType, PackageType>, ChildrenType extends AbstractPackageChildrenNode<PackageType>> extends AbstractExtractionAction<PackageType, ChildrenType> {
+public class ExtractAction extends AbstractExtractionAction {
 
     /**
      * 
      */
     private static final long serialVersionUID = 1612595219577059496L;
+
+    private final class ExtractActionSetup extends TableContext {
+        private ExtractToPathLogic extractToPathLogic = ExtractToPathLogic.EXTRACT_TO_ARCHIVE_PARENT;
+
+        private ExtractActionSetup(boolean setItemVisibleForEmptySelection, boolean setItemVisibleForSelections) {
+            super(setItemVisibleForEmptySelection, setItemVisibleForSelections);
+        }
+
+        @Customizer(name = "Extract path logic")
+        public ExtractToPathLogic getExtractToPathLogic() {
+            return extractToPathLogic;
+        }
+
+        public void setExtractToPathLogic(ExtractToPathLogic extractToPathLogic) {
+            this.extractToPathLogic = extractToPathLogic;
+        }
+    }
 
     public static enum ExtractToPathLogic {
         @EnumLabel("Ask for every archive")
@@ -51,21 +67,13 @@ public class ExtractAction<PackageType extends AbstractPackageNode<ChildrenType,
         USE_CUSTOMEXTRACTIONPATH
     }
 
-    private ExtractToPathLogic extractToPathLogic = ExtractToPathLogic.EXTRACT_TO_ARCHIVE_PARENT;
-
-    public void setExtractToPathLogic(ExtractToPathLogic extractToPathLogic) {
-        this.extractToPathLogic = extractToPathLogic;
-    }
-
-    @Customizer(name = "Extract path logic")
-    public ExtractToPathLogic getExtractToPathLogic() {
-        return extractToPathLogic;
-    }
+    private ExtractActionSetup setup;
 
     public ExtractAction() {
-        super(null);
-        setItemVisibleForEmptySelection(true);
-        setItemVisibleForSelections(true);
+        super();
+        setup = new ExtractActionSetup(true, true);
+        addContextSetup(setup);
+
         setName(T._.menu_tools_extract_files());
         setIconKey("unpack");
 
@@ -101,7 +109,7 @@ public class ExtractAction<PackageType extends AbstractPackageNode<ChildrenType,
                 if (files == null || files.length == 0) return;
                 try {
                     File extractTo = null;
-                    if (getExtractToPathLogic() == ExtractToPathLogic.ASK_ONCE) {
+                    if (setup.getExtractToPathLogic() == ExtractToPathLogic.ASK_ONCE) {
 
                         extractTo = DownloadFolderChooserDialog.open(null, false, "Extract To");
 
@@ -111,7 +119,7 @@ public class ExtractAction<PackageType extends AbstractPackageNode<ChildrenType,
                         try {
                             final Archive archive = _getExtension().buildArchive(new FileArchiveFactory(archiveStartFile));
 
-                            switch (getExtractToPathLogic()) {
+                            switch (setup.getExtractToPathLogic()) {
 
                             case USE_CUSTOMEXTRACTIONPATH:
                                 archive.getSettings().setExtractPath(_getExtension().getSettings().getCustomExtractionPath());

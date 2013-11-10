@@ -2,18 +2,18 @@ package org.jdownloader.gui.toolbar.action;
 
 import javax.swing.AbstractButton;
 
-import org.jdownloader.actions.AppAction;
-import org.jdownloader.actions.CachableInterface;
+import org.jdownloader.controlling.contextmenu.CustomizableAppAction;
 import org.jdownloader.images.NewTheme;
 
-public abstract class ToolBarAction extends AppAction implements CachableInterface {
+public abstract class AbstractToolBarAction extends CustomizableAppAction {
+
+    public AbstractToolBarAction() {
+        super();
+        addContextSetup(new ToolbarContext());
+    }
 
     protected String createMnemonic() {
         return "-";
-    }
-
-    public void setData(String data) {
-
     }
 
     public Object getValue(String key) {

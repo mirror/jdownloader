@@ -6,22 +6,18 @@ import java.beans.PropertyChangeEvent;
 import jd.gui.swing.jdgui.MainTabbedPane;
 
 import org.jdownloader.actions.AppAction;
-import org.jdownloader.actions.CachableInterface;
 import org.jdownloader.actions.event.AppActionListener;
+import org.jdownloader.controlling.contextmenu.CustomizableAppAction;
 import org.jdownloader.gui.event.GUIEventSender;
 import org.jdownloader.gui.event.GUIListener;
 
-public abstract class AbstractMoveAction extends AppAction implements AppActionListener, GUIListener, CachableInterface {
+public abstract class AbstractMoveAction extends CustomizableAppAction implements AppActionListener, GUIListener {
 
     protected AppAction delegate;
 
     public AbstractMoveAction() {
         GUIEventSender.getInstance().addListener(this, true);
         onGuiMainTabSwitch(null, MainTabbedPane.getInstance().getSelectedView());
-    }
-
-    @Override
-    public void setData(String data) {
     }
 
     @Override

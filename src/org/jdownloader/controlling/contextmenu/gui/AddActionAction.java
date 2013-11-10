@@ -77,7 +77,7 @@ public class AddActionAction extends AppAction {
                         if (value == null) return (JLabel) orgRenderer.getListCellRendererComponent(list, _GUI._.AddActionAction_getListCellRendererComponent_no_action_(), index, isSelected, cellHasFocus);
                         AppAction mi;
                         try {
-                            mi = new MenuItemData(((ActionData) value)).createValidatedItem().createAction(null);
+                            mi = new MenuItemData(((ActionData) value)).createValidatedItem().createAction();
 
                             String name = mi.getName();
 
@@ -117,7 +117,7 @@ public class AddActionAction extends AppAction {
     protected String getName(ActionData value) {
         AppAction mi;
         try {
-            mi = new MenuItemData(((ActionData) value)).createValidatedItem().createAction(null);
+            mi = new MenuItemData(((ActionData) value)).createValidatedItem().createAction();
 
             String name = mi.getName();
 

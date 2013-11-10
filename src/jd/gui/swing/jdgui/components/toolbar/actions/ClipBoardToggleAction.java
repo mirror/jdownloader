@@ -6,7 +6,7 @@ import org.jdownloader.gui.views.SelectionInfo;
 
 public class ClipBoardToggleAction extends AbstractToolbarToggleAction {
 
-    public ClipBoardToggleAction(SelectionInfo<?, ?> selection) {
+    public ClipBoardToggleAction() {
         super(org.jdownloader.settings.staticreferences.CFG_GUI.CLIPBOARD_MONITORED);
         setIconKey("clipboard");
     }

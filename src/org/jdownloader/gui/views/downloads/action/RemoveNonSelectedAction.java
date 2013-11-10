@@ -21,8 +21,7 @@ public class RemoveNonSelectedAction extends AbstractDeleteSelectionFromDownload
      */
     private static final long serialVersionUID = 6855083561629297363L;
 
-    public RemoveNonSelectedAction(SelectionInfo<FilePackage, DownloadLink> si) {
-        super(si);
+    public RemoveNonSelectedAction() {
 
         setName(_GUI._.RemoveNonSelectedAction_RemoveNonSelectedAction_object_());
         setIconKey("ok");

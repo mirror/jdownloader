@@ -6,7 +6,7 @@ import org.jdownloader.settings.staticreferences.CFG_CAPTCHA;
 
 public class CaptchaDialogsToogleAction extends AbstractToolbarToggleAction {
 
-    public CaptchaDialogsToogleAction(SelectionInfo<?, ?> selection) {
+    public CaptchaDialogsToogleAction() {
         super(CFG_CAPTCHA.CAPTCHA_DIALOGS_ENABLED);
         setIconKey("dialogOCR");
 

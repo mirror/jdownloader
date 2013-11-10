@@ -25,8 +25,9 @@ import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.appwork.utils.swing.dialog.DialogNoAnswerException;
-import org.jdownloader.actions.AbstractSelectionContextAction;
 import org.jdownloader.actions.AppAction;
+import org.jdownloader.controlling.contextmenu.ActionContext;
+import org.jdownloader.controlling.contextmenu.CustomizableSelectionAppAction;
 import org.jdownloader.controlling.contextmenu.Customizer;
 import org.jdownloader.extensions.ExtensionController;
 import org.jdownloader.extensions.extraction.Archive;
@@ -43,7 +44,7 @@ import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.linkgrabber.addlinksdialog.LinkgrabberSettings;
 import org.jdownloader.images.NewTheme;
 
-public class ConfirmSelectionContextAction extends AbstractSelectionContextAction<CrawledPackage, CrawledLink> implements GUIListener {
+public class ConfirmSelectionContextAction extends CustomizableSelectionAppAction<CrawledPackage, CrawledLink> implements GUIListener, ActionContext {
 
     /**
      * 
@@ -98,16 +99,16 @@ public class ConfirmSelectionContextAction extends AbstractSelectionContextActio
         return ret;
     }
 
-    protected void switchToDownloadTab() {
-        if (JsonConfig.create(LinkgrabberSettings.class).isAutoSwitchToDownloadTableOnConfirmDefaultEnabled()) {
-            new EDTRunner() {
+    protected static void switchToDownloadTab() {
 
-                @Override
-                protected void runInEDT() {
-                    JDGui.getInstance().requestPanel(JDGui.Panels.DOWNLOADLIST);
-                }
-            };
-        }
+        new EDTRunner() {
+
+            @Override
+            protected void runInEDT() {
+                JDGui.getInstance().requestPanel(JDGui.Panels.DOWNLOADLIST);
+            }
+        };
+
     }
 
     private boolean clearListAfterConfirm = false;
@@ -123,29 +124,43 @@ public class ConfirmSelectionContextAction extends AbstractSelectionContextActio
         this.clearListAfterConfirm = clearListAfterConfirm;
     }
 
-    public ConfirmSelectionContextAction(SelectionInfo<CrawledPackage, CrawledLink> selectionInfo) {
-        super(selectionInfo);
-        setAutoStart(AutoStartOptions.AUTO);
+    public ConfirmSelectionContextAction() {
+        super();
+
         GUIEventSender.getInstance().addListener(this, true);
         metaCtrl = KeyObserver.getInstance().isMetaDown() || KeyObserver.getInstance().isControlDown();
 
     }
 
-    public void setSelection(SelectionInfo<CrawledPackage, CrawledLink> selection) {
-        super.setSelection(selection);
+    @Override
+    protected void initContextDefaults() {
+        setAutoStart(AutoStartOptions.AUTO);
+    }
 
+    public ConfirmSelectionContextAction(SelectionInfo<CrawledPackage, CrawledLink> selectionInfo) {
+        this();
+        selection = selectionInfo;
+    }
+
+    @Override
+    public void requestUpdate(Object requestor) {
+        super.requestUpdate(requestor);
         updateLabelAndIcon();
-
     }
 
     public void actionPerformed(ActionEvent e) {
         if (!isEnabled()) return;
+        confirmSelection(getSelection(), doAutostart(), isClearListAfterConfirm(), JsonConfig.create(LinkgrabberSettings.class).isAutoSwitchToDownloadTableOnConfirmDefaultEnabled());
+
+    }
+
+    public static void confirmSelection(final SelectionInfo<CrawledPackage, CrawledLink> selection, final boolean autoStart, final boolean clearLinkgrabber, final boolean doTabSwitch) {
         Thread thread = new Thread() {
 
             public void run() {
                 try {
                     // this validation step also copies the passwords from the CRawledlinks in the archive settings
-                    ValidateArchiveAction<CrawledPackage, CrawledLink> va = new ValidateArchiveAction<CrawledPackage, CrawledLink>((ExtractionExtension) ExtensionController.getInstance().getExtension(ExtractionExtension.class)._getExtension(), getSelection());
+                    ValidateArchiveAction<CrawledPackage, CrawledLink> va = new ValidateArchiveAction<CrawledPackage, CrawledLink>((ExtractionExtension) ExtensionController.getInstance().getExtension(ExtractionExtension.class)._getExtension(), selection);
                     for (Archive a : va.getArchives()) {
                         final DummyArchive da = va.createDummyArchive(a);
                         if (!da.isComplete()) {
@@ -187,13 +202,13 @@ public class ConfirmSelectionContextAction extends AbstractSelectionContextActio
                     Log.exception(e);
                 }
 
-                LinkCollector.getInstance().moveLinksToDownloadList(getSelection());
-                if (doAutostart()) {
+                LinkCollector.getInstance().moveLinksToDownloadList(selection);
+                if (autoStart) {
                     DownloadWatchDog.getInstance().startDownloads();
                 }
-                switchToDownloadTab();
+                if (doTabSwitch) switchToDownloadTab();
 
-                if (isClearListAfterConfirm()) {
+                if (clearLinkgrabber) {
                     LinkCollector.getInstance().getQueue().add(new QueueAction<Void, RuntimeException>() {
 
                         @Override
@@ -208,9 +223,8 @@ public class ConfirmSelectionContextAction extends AbstractSelectionContextActio
         };
         thread.setDaemon(true);
         thread.setPriority(Thread.MIN_PRIORITY);
-        thread.setName(getClass().getName());
+        thread.setName(ConfirmSelectionContextAction.class.getName());
         thread.start();
-
     }
 
     @Override

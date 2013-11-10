@@ -6,7 +6,7 @@ import org.jdownloader.settings.staticreferences.CFG_CAPTCHA;
 
 public class JAntiCaptchaToogleAction extends AbstractToolbarToggleAction {
 
-    public JAntiCaptchaToogleAction(SelectionInfo<?, ?> selection) {
+    public JAntiCaptchaToogleAction() {
         super(CFG_CAPTCHA.JANTI_CAPTCHA_ENABLED);
         setIconKey("ocr");
 

@@ -2,18 +2,18 @@ package org.jdownloader.gui.mainmenu.action;
 
 import java.awt.event.ActionEvent;
 
+import org.jdownloader.controlling.contextmenu.CustomizableAppAction;
 import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.linkgrabber.actions.AddLinksAction;
 
-public class AddLinksMenuAction extends AbstractMainMenuAction {
+public class AddLinksMenuAction extends CustomizableAppAction {
 
     /**
      * 
      */
     private static final long serialVersionUID = 1L;
 
-    public AddLinksMenuAction(SelectionInfo<?, ?> selection) {
+    public AddLinksMenuAction() {
         setName(_GUI._.AddOptionsAction_actionPerformed_addlinks());
         setIconKey("add");
 
@@ -22,10 +22,6 @@ public class AddLinksMenuAction extends AbstractMainMenuAction {
     @Override
     public void actionPerformed(ActionEvent e) {
         new AddLinksAction().actionPerformed(e);
-    }
-
-    @Override
-    public void setData(String data) {
     }
 
 }

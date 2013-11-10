@@ -23,20 +23,33 @@ import java.awt.event.KeyEvent;
 import javax.swing.KeyStroke;
 
 import org.appwork.utils.os.CrossSystem;
-import org.jdownloader.actions.AppAction;
-import org.jdownloader.actions.CachableInterface;
+import org.jdownloader.controlling.contextmenu.ActionContext;
+import org.jdownloader.controlling.contextmenu.CustomizableAppAction;
 import org.jdownloader.controlling.contextmenu.Customizer;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.updatev2.RestartController;
 import org.jdownloader.updatev2.SmartRlyExitRequest;
 
-public class ExitAction extends AppAction implements CachableInterface {
+public class ExitAction extends CustomizableAppAction {
 
     public static final String HIDE_ON_MAC      = "HideOnMac";
     private static final long  serialVersionUID = -1428029294638573437L;
 
     public ExitAction() {
 
+        addContextSetup(new ActionContext() {
+            @Customizer(name = "Hide Action on MAC OS")
+            public boolean isHideOnMac() {
+
+                return hideOnMac;
+            }
+
+            public void setHideOnMac(boolean hideOnMac) {
+                ExitAction.this.hideOnMac = hideOnMac;
+                if (hideOnMac && CrossSystem.isMac()) setVisible(false);
+            }
+
+        });
         setIconKey("exit");
         setName(_GUI._.action_exit());
         setTooltipText(_GUI._.action_exit_tooltip());
@@ -46,24 +59,9 @@ public class ExitAction extends AppAction implements CachableInterface {
 
     private boolean hideOnMac = false;
 
-    @Customizer(name = "Hide Action on MAC OS")
-    public boolean isHideOnMac() {
-
-        return hideOnMac;
-    }
-
-    public void setHideOnMac(boolean hideOnMac) {
-        this.hideOnMac = hideOnMac;
-        if (hideOnMac && CrossSystem.isMac()) setVisible(false);
-    }
-
     @Override
     public void actionPerformed(ActionEvent e) {
         RestartController.getInstance().exitAsynch(new SmartRlyExitRequest());
-    }
-
-    @Override
-    public void setData(String data) {
     }
 
 }

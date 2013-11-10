@@ -10,14 +10,14 @@ import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.events.GenericConfigEventListener;
 import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.utils.swing.EDTRunner;
+import org.jdownloader.controlling.contextmenu.ActionContext;
 import org.jdownloader.controlling.contextmenu.Customizer;
-import org.jdownloader.gui.toolbar.action.ToolBarAction;
+import org.jdownloader.gui.toolbar.action.AbstractToolBarAction;
 import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.gui.views.SelectionInfo;
 
-public class PauseDownloadsAction extends ToolBarAction implements DownloadWatchdogListener, GenericConfigEventListener<Integer> {
+public class PauseDownloadsAction extends AbstractToolBarAction implements DownloadWatchdogListener, GenericConfigEventListener<Integer>, ActionContext {
 
-    public PauseDownloadsAction(SelectionInfo<?, ?> selection) {
+    public PauseDownloadsAction() {
         setIconKey("media-playback-pause");
         setSelected(false);
         setEnabled(false);
@@ -27,7 +27,14 @@ public class PauseDownloadsAction extends ToolBarAction implements DownloadWatch
 
         org.jdownloader.settings.staticreferences.CFG_GENERAL.PAUSE_SPEED.getEventSender().addListener(this, true);
         DownloadWatchDog.getInstance().notifyCurrentState(this);
-        setHideIfDownloadsAreStopped(false);
+
+    }
+
+    protected void initContextDefaults(ActionContext actionContext) {
+        if (actionContext == this) {
+            setHideIfDownloadsAreStopped(false);
+        }
+
     }
 
     public void actionPerformed(ActionEvent e) {

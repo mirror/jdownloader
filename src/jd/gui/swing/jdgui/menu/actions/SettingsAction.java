@@ -23,12 +23,11 @@ import jd.gui.swing.jdgui.JDGui;
 import jd.gui.swing.jdgui.views.settings.ConfigurationView;
 
 import org.appwork.storage.config.JsonConfig;
-import org.jdownloader.actions.AppAction;
-import org.jdownloader.actions.CachableInterface;
+import org.jdownloader.controlling.contextmenu.CustomizableAppAction;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings;
 
-public class SettingsAction extends AppAction implements CachableInterface {
+public class SettingsAction extends CustomizableAppAction {
 
     private static final long serialVersionUID = 2547991585530678706L;
 
@@ -44,10 +43,6 @@ public class SettingsAction extends AppAction implements CachableInterface {
     public void actionPerformed(ActionEvent e) {
         JsonConfig.create(GraphicalUserInterfaceSettings.class).setConfigViewVisible(true);
         JDGui.getInstance().setContent(ConfigurationView.getInstance(), true);
-    }
-
-    @Override
-    public void setData(String data) {
     }
 
 }

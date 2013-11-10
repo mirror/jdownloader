@@ -42,7 +42,7 @@ import org.jdownloader.gui.mainmenu.container.OptionalContainer;
 import org.jdownloader.gui.mainmenu.container.SettingsMenuContainer;
 import org.jdownloader.gui.toolbar.action.CaptchaDialogsToogleAction;
 import org.jdownloader.gui.toolbar.action.CaptchaExchangeToogleAction;
-import org.jdownloader.gui.toolbar.action.GenericDeleteSelectedToolbarAction;
+import org.jdownloader.gui.toolbar.action.GenericDeleteFromTableToolbarAction;
 import org.jdownloader.gui.toolbar.action.JAntiCaptchaToogleAction;
 import org.jdownloader.gui.toolbar.action.MoveDownAction;
 import org.jdownloader.gui.toolbar.action.MoveToBottomAction;
@@ -182,11 +182,12 @@ public class MenuManagerMainToolbar extends ContextMenuManager<FilePackage, Down
     private MenuItemData createDeleteMenu() {
         DeleteMenuContainer delete = new DeleteMenuContainer();
         delete.setVisible(false);
-        delete.add(setIconKey(new ActionData(GenericDeleteSelectedToolbarAction.class).putSetup(GenericDeleteSelectedToolbarAction.DELETE_ALL, true), IconKey.ICON_RESET));
-        delete.add(setIconKey(new ActionData(GenericDeleteSelectedToolbarAction.class).putSetup(GenericDeleteSelectedToolbarAction.DELETE_DISABLED, true), IconKey.ICON_REMOVE_DISABLED));
-        delete.add(setIconKey(new ActionData(GenericDeleteSelectedToolbarAction.class).putSetup(GenericDeleteSelectedToolbarAction.DELETE_FAILED, true), IconKey.ICON_REMOVE_FAILED));
-        delete.add(setIconKey(new ActionData(GenericDeleteSelectedToolbarAction.class).putSetup(GenericDeleteSelectedToolbarAction.DELETE_FINISHED, true), IconKey.ICON_REMOVE_OK));
-        delete.add(setIconKey(new ActionData(GenericDeleteSelectedToolbarAction.class).putSetup(GenericDeleteSelectedToolbarAction.DELETE_OFFLINE, true), IconKey.ICON_REMOVE_OFFLINE));
+        delete.add(setIconKey(new ActionData(GenericDeleteFromTableToolbarAction.class).putSetup(GenericDeleteFromTableToolbarAction.DELETE_ALL, true), IconKey.ICON_RESET));
+        delete.add(setIconKey(new ActionData(GenericDeleteFromTableToolbarAction.class).putSetup(GenericDeleteFromTableToolbarAction.DELETE_DISABLED, true), IconKey.ICON_REMOVE_DISABLED));
+        delete.add(setIconKey(new ActionData(GenericDeleteFromTableToolbarAction.class).putSetup(GenericDeleteFromTableToolbarAction.DELETE_FAILED, true), IconKey.ICON_REMOVE_FAILED));
+        delete.add(setIconKey(new ActionData(GenericDeleteFromTableToolbarAction.class).putSetup(GenericDeleteFromTableToolbarAction.DELETE_FINISHED, true), IconKey.ICON_REMOVE_OK));
+        delete.add(setIconKey(new ActionData(GenericDeleteFromTableToolbarAction.class).putSetup(GenericDeleteFromTableToolbarAction.DELETE_OFFLINE, true), IconKey.ICON_REMOVE_OFFLINE));
+
         // delete.add(new MenuItemData(new ActionData(DeleteSelectedAndFailedLinksAction.class)));
         // delete.add(new MenuItemData(new ActionData(DeleteSelectedFinishedLinksAction.class)));
         // delete.add(new MenuItemData(new ActionData(DeleteSelectedOfflineLinksAction.class)));

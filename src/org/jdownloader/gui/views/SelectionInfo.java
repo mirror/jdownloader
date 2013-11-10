@@ -6,47 +6,45 @@ import java.awt.event.MouseEvent;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.LinkedHashSet;
+import java.util.HashSet;
 import java.util.List;
 
 import jd.controlling.packagecontroller.AbstractNode;
 import jd.controlling.packagecontroller.AbstractPackageChildrenNode;
 import jd.controlling.packagecontroller.AbstractPackageNode;
-import jd.plugins.DownloadLink;
 
 import org.appwork.swing.exttable.ExtColumn;
 import org.appwork.utils.BinaryLogic;
 import org.jdownloader.gui.views.components.packagetable.PackageControllerTable;
 import org.jdownloader.gui.views.components.packagetable.PackageControllerTableModel;
 import org.jdownloader.gui.views.components.packagetable.PackageControllerTableModelFilter;
-import org.jdownloader.plugins.FinalLinkState;
 
 public class SelectionInfo<PackageType extends AbstractPackageNode<ChildrenType, PackageType>, ChildrenType extends AbstractPackageChildrenNode<PackageType>> {
 
     private static List<AbstractNode> pack(AbstractNode clicked) {
-        java.util.List<AbstractNode> ret = new ArrayList<AbstractNode>();
+        java.util.List<AbstractNode> ret = new ArraySet<AbstractNode>();
         ret.add(clicked);
         return ret;
     }
 
-    private AggregatedPackageList<PackageType>                                 allPackages;
+    private ArraySet<PackageType>                                              allPackages;
     private AbstractNode                                                       contextObject;
-    private AggregatedPackageList<PackageType>                                 fullPackages;
-    private AggregatedPackageList<PackageType>                                 incompletePackages;
-    private HashMap<PackageType, AggregatedLinkList<ChildrenType>>             incompleteSelectecPackages;
+    private ArraySet<PackageType>                                              fullPackages;
+    private ArraySet<PackageType>                                              incompletePackages;
+    private HashMap<PackageType, ArraySet<ChildrenType>>                       incompleteSelectecPackages;
     private KeyEvent                                                           keyEvent;
     private MouseEvent                                                         mouseEvent;
-    private LinkedHashSet<AbstractNode>                                        rawMap;
 
     private List<? extends AbstractNode>                                       rawSelection;
 
-    private AggregatedLinkList<ChildrenType>                                   children;
+    private ArraySet<ChildrenType>                                             children;
 
     private PackageControllerTable<PackageType, ChildrenType>                  table;
     private ExtColumn<AbstractNode>                                            contextColumn;
     private boolean                                                            shiftDown = false;
     private List<PackageControllerTableModelFilter<PackageType, ChildrenType>> filters;
     private ActionEvent                                                        actionEvent;
+    private ArraySet<AbstractNode>                                             raw;
 
     public SelectionInfo<PackageType, ChildrenType> setShiftDown(boolean shiftDown) {
         this.shiftDown = shiftDown;
@@ -57,126 +55,11 @@ public class SelectionInfo<PackageType extends AbstractPackageNode<ChildrenType,
         return table;
     }
 
-    // public SelectionInfo(AbstractNode clicked) {
-    // this(clicked, pack(clicked));
-    // }
-    //
-    // public SelectionInfo(AbstractNode contextObject, List<? extends AbstractNode> selection) {
-    // this(contextObject, selection, null);
-    //
-    // }
-    //
-    // public SelectionInfo(AbstractNode contextObject, List<? extends AbstractNode> selection, MouseEvent event) {
-    // this(contextObject, selection, event, null);
-    // }
-    //
-    // public SelectionInfo(AbstractNode contextObject, List<? extends AbstractNode> selection, MouseEvent event, KeyEvent kEvent) {
-    //
-    // this(contextObject, selection, event, kEvent, null);
-    // }
-    public static class AggregatedLinkList<T extends AbstractNode> extends ArrayList<T> {
-        private int enabledCnt;
-
-        public int getEnabledCnt() {
-            return enabledCnt;
-        }
-
-        public int getFailedCnt() {
-            return failedCnt;
-        }
-
-        public int getFinishedCnt() {
-            return finishedCnt;
-        }
-
-        public int getOfflineCnt() {
-            return offlineCnt;
-        }
-
-        private int failedCnt;
-        private int finishedCnt;
-        private int offlineCnt;
-
-        public AggregatedLinkList() {
-            super();
-            enabledCnt = 0;
-            failedCnt = 0;
-            finishedCnt = 0;
-            offlineCnt = 0;
-        }
-
-        public AggregatedLinkList(List<T> children) {
-            super();
-            addAll(children);
-        }
-
-        public boolean add(T e) {
-            aggregate(e);
-
-            return super.add(e);
-
-        };
-
-        private void aggregate(T e) {
-            if (e.isEnabled()) enabledCnt++;
-            if (e instanceof DownloadLink) {
-                DownloadLink link = (DownloadLink) e;
-                if (FinalLinkState.CheckFailed(link.getFinalLinkState())) failedCnt++;
-                if (FinalLinkState.CheckFinished(link.getFinalLinkState())) finishedCnt++;
-
-                if (link.getFinalLinkState() == FinalLinkState.OFFLINE) offlineCnt++;
-            }
-
-        }
-
-        @Override
-        public boolean addAll(Collection<? extends T> c) {
-            for (T t : c) {
-                aggregate(t);
-            }
-
-            return super.addAll(c);
-        }
-
-        public int getDisabledCnt() {
-            return size() - enabledCnt;
-        }
-
-    }
-
-    public static class AggregatedPackageList<T extends AbstractPackageNode> extends ArrayList<T> {
-        public AggregatedPackageList() {
-            super();
-        }
-
-        public AggregatedPackageList(AggregatedPackageList<T> allPackages) {
-            super();
-            addAll(allPackages);
-        }
-
-        public boolean add(T e) {
-            aggregate(e);
-            return super.add(e);
-        };
-
-        private void aggregate(T e) {
-        }
-
-        @Override
-        public boolean addAll(Collection<? extends T> c) {
-            for (T t : c) {
-                aggregate(t);
-            }
-
-            return super.addAll(c);
-        }
-    }
-
     public SelectionInfo(AbstractNode contextObject, List<? extends AbstractNode> selection, MouseEvent event, KeyEvent kEvent, ActionEvent actionEvent, PackageControllerTable<PackageType, ChildrenType> table) {
         this.contextObject = contextObject;
         if (selection == null || selection.size() == 0) {
             if (contextObject == null) {
-                rawSelection = new ArrayList<AbstractNode>();
+                rawSelection = new ArraySet<AbstractNode>();
             } else {
                 rawSelection = pack(contextObject);
             }
@@ -184,13 +67,11 @@ public class SelectionInfo<PackageType extends AbstractPackageNode<ChildrenType,
             rawSelection = selection;
         }
 
-        children = new AggregatedLinkList<ChildrenType>();
-        allPackages = new AggregatedPackageList<PackageType>();
-        fullPackages = new AggregatedPackageList<PackageType>();
-        incompletePackages = new AggregatedPackageList<PackageType>();
-        incompleteSelectecPackages = new HashMap<PackageType, AggregatedLinkList<ChildrenType>>();
-
-        rawMap = new LinkedHashSet<AbstractNode>();
+        children = new ArraySet<ChildrenType>();
+        allPackages = new ArraySet<PackageType>();
+        fullPackages = new ArraySet<PackageType>();
+        incompletePackages = new ArraySet<PackageType>();
+        incompleteSelectecPackages = new HashMap<PackageType, ArraySet<ChildrenType>>();
 
         // System.out.println(kEvent);
 
@@ -206,6 +87,17 @@ public class SelectionInfo<PackageType extends AbstractPackageNode<ChildrenType,
 
         // System.out.println(isShiftDown());
         agregate();
+
+    }
+
+    public boolean contains(AbstractPackageNode<?, ?> child) {
+
+        return allPackages.contains(child);
+    }
+
+    public boolean contains(AbstractPackageChildrenNode<?> child) {
+
+        return children.contains(child);
 
     }
 
@@ -239,17 +131,16 @@ public class SelectionInfo<PackageType extends AbstractPackageNode<ChildrenType,
 
     @SuppressWarnings("unchecked")
     protected void agregate() {
-        java.util.List<AbstractNode> raw = new ArrayList<AbstractNode>(rawSelection);
-        LinkedHashSet<AbstractNode> has = rawSelection == null ? new LinkedHashSet<AbstractNode>() : new LinkedHashSet<AbstractNode>(rawSelection);
+        raw = new ArraySet<AbstractNode>(rawSelection);
         // LinkedHashSet<AbstractNode> notSelectedParents = new LinkedHashSet<AbstractNode>();
         // if we selected a link, and not its parent, this parent will not be agregated. That's why we add them here.
         for (AbstractNode node : rawSelection) {
             if (node == null) continue;
-            rawMap.add(node);
+
             if (node instanceof AbstractPackageChildrenNode) {
                 // if (!has.contains(((AbstractPackageChildrenNode) node).getParentNode())) {
                 PackageType pkg = (PackageType) ((AbstractPackageChildrenNode) node).getParentNode();
-                if (pkg != null && pkg.isExpanded() && has.add(pkg)) {
+                if (pkg != null && pkg.isExpanded()) {
                     raw.add(pkg);
 
                 }
@@ -279,7 +170,7 @@ public class SelectionInfo<PackageType extends AbstractPackageNode<ChildrenType,
                     boolean readL = ((PackageType) node).getModifyLock().readLock();
                     try {
                         List<ChildrenType> childs = ((PackageType) node).getChildren();
-                        AggregatedLinkList<ChildrenType> unFiltered = new AggregatedLinkList<ChildrenType>();
+                        ArraySet<ChildrenType> unFiltered = new ArraySet<ChildrenType>();
                         if (filters == null) {
 
                             children.addAll(childs);
@@ -321,10 +212,10 @@ public class SelectionInfo<PackageType extends AbstractPackageNode<ChildrenType,
                         List<ChildrenType> childs = ((PackageType) node).getChildren();
                         boolean containsNone = true;
                         boolean containsAll = true;
-                        AggregatedLinkList<ChildrenType> selected = new AggregatedLinkList<ChildrenType>();
-                        AggregatedLinkList<ChildrenType> unFiltered = new AggregatedLinkList<ChildrenType>();
+                        ArraySet<ChildrenType> selected = new ArraySet<ChildrenType>();
+                        ArraySet<ChildrenType> unFiltered = new ArraySet<ChildrenType>();
                         for (ChildrenType l : childs) {
-                            if (has.contains(l)) {
+                            if (raw.contains(l)) {
                                 selected.add(l);
                                 containsNone = false;
                             } else {
@@ -508,8 +399,56 @@ public class SelectionInfo<PackageType extends AbstractPackageNode<ChildrenType,
      * 
      * @return
      */
-    public AggregatedLinkList<ChildrenType> getChildren() {
+    public ArraySet<ChildrenType> getChildren() {
         return children;
+    }
+
+    public static class ArraySet<T> extends ArrayList<T> {
+        private HashSet<T> set;
+
+        public ArraySet(Collection<? extends T> rawSelection) {
+            this();
+            addAll(rawSelection);
+        }
+
+        public ArraySet() {
+            set = new HashSet<T>();
+        }
+
+        @Override
+        public boolean contains(Object o) {
+            return set.contains(o);
+        }
+
+        @Override
+        public boolean add(T e) {
+            if (set.add(e)) {
+                //
+                return super.add(e);
+            }
+            return false;
+        }
+
+        @Override
+        public void add(int index, T element) {
+            if (set.add(element)) {
+                super.add(index, element);
+            }
+        }
+
+        @Override
+        public boolean addAll(Collection<? extends T> c) {
+            boolean modded = false;
+            for (T t : c) {
+                if (add(t)) {
+
+                    modded = true;
+                }
+            }
+            return modded;
+
+        }
+
     }
 
     /**
@@ -519,12 +458,12 @@ public class SelectionInfo<PackageType extends AbstractPackageNode<ChildrenType,
      * @param pkg
      * @return
      */
-    public AggregatedLinkList<ChildrenType> getSelectedLinksByPackage(PackageType pkg) {
-        AggregatedLinkList<ChildrenType> ret = incompleteSelectecPackages.get(pkg);
+    public ArraySet<ChildrenType> getSelectedLinksByPackage(PackageType pkg) {
+        ArraySet<ChildrenType> ret = incompleteSelectecPackages.get(pkg);
         if (ret != null) return ret;
         boolean readL = pkg.getModifyLock().readLock();
         try {
-            return new AggregatedLinkList<ChildrenType>(pkg.getChildren());
+            return new ArraySet<ChildrenType>(pkg.getChildren());
         } finally {
             pkg.getModifyLock().readUnlock(readL);
         }
@@ -558,74 +497,64 @@ public class SelectionInfo<PackageType extends AbstractPackageNode<ChildrenType,
         return contextObject != null && contextObject instanceof AbstractPackageNode;
     }
 
-    /**
-     * returns true if the shift key has been pressed when generating this instance
-     * 
-     * @return
-     */
-    public boolean isShiftDown() {
+    // /**
+    // * returns true if the shift key has been pressed when generating this instance
+    // *
+    // * @return
+    // */
+    // public boolean isShiftDown() {
+    //
+    // return shiftDown;
+    // }
 
-        return shiftDown;
-    }
+    // /** is true if ctrl+D is pressed */
+    // public boolean isAvoidRlyEnabled() {
+    //
+    // if (keyEvent != null) {
+    // if (keyEvent.isControlDown()) {
+    // return true;
+    // } else {
+    // return false;
+    // }
+    // }
+    // return false;
+    // }
 
-    /**
-     * Returns true if the {@link #getRawSelection()} contains l
-     * 
-     * @param l
-     * @return
-     */
-    public boolean rawContains(AbstractNode l) {
-        return rawMap.contains(l);
-    }
+    // public ExtColumn<AbstractNode> getContextColumn() {
+    // return contextColumn;
+    // }
 
-    /** is true if ctrl+D is pressed */
-    public boolean isAvoidRlyEnabled() {
+    // public boolean isCtrlDown() {
+    //
+    // if (keyEvent != null && keyEvent.isControlDown()) { return true; }
+    // if (mouseEvent != null && mouseEvent.isControlDown()) { return true; }
+    // ;
+    // return false;
+    // }
 
-        if (keyEvent != null) {
-            if (keyEvent.isControlDown()) {
-                return true;
-            } else {
-                return false;
-            }
-        }
-        return false;
-    }
+    // public boolean isMetaDown() {
+    //
+    // if (keyEvent != null && keyEvent.isMetaDown()) { return true; }
+    // if (mouseEvent != null && mouseEvent.isMetaDown()) { return true; }
+    // ;
+    // return false;
+    // }
 
-    public ExtColumn<AbstractNode> getContextColumn() {
-        return contextColumn;
-    }
+    // public boolean isAltGraphDown() {
+    //
+    // if (keyEvent != null && keyEvent.isAltGraphDown()) { return true; }
+    // if (mouseEvent != null && mouseEvent.isAltGraphDown()) { return true; }
+    // ;
+    // return false;
+    // }
 
-    public boolean isCtrlDown() {
-
-        if (keyEvent != null && keyEvent.isControlDown()) { return true; }
-        if (mouseEvent != null && mouseEvent.isControlDown()) { return true; }
-        ;
-        return false;
-    }
-
-    public boolean isMetaDown() {
-
-        if (keyEvent != null && keyEvent.isMetaDown()) { return true; }
-        if (mouseEvent != null && mouseEvent.isMetaDown()) { return true; }
-        ;
-        return false;
-    }
-
-    public boolean isAltGraphDown() {
-
-        if (keyEvent != null && keyEvent.isAltGraphDown()) { return true; }
-        if (mouseEvent != null && mouseEvent.isAltGraphDown()) { return true; }
-        ;
-        return false;
-    }
-
-    public boolean isAltDown() {
-
-        if (keyEvent != null && keyEvent.isAltDown()) { return true; }
-        if (mouseEvent != null && mouseEvent.isAltDown()) { return true; }
-        ;
-        return false;
-    }
+    // public boolean isAltDown() {
+    //
+    // if (keyEvent != null && keyEvent.isAltDown()) { return true; }
+    // if (mouseEvent != null && mouseEvent.isAltDown()) { return true; }
+    // ;
+    // return false;
+    // }
 
     public SelectionInfo<PackageType, ChildrenType> derive(AbstractNode contextObject2, MouseEvent event, KeyEvent kEvent, ActionEvent actionEvent, ExtColumn<AbstractNode> column) {
         SelectionInfo<PackageType, ChildrenType> ret = new SelectionInfo<PackageType, ChildrenType>();
@@ -641,7 +570,7 @@ public class SelectionInfo<PackageType extends AbstractPackageNode<ChildrenType,
         ret.incompleteSelectecPackages = incompleteSelectecPackages;
         ret.keyEvent = this.keyEvent;
         ret.mouseEvent = mouseEvent;
-        ret.rawMap = rawMap;
+        ret.raw = raw;
         ret.rawSelection = rawSelection;
         ret.shiftDown = shiftDown;
         ret.table = table;

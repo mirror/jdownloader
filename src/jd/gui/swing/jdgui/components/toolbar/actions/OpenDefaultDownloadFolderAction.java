@@ -5,14 +5,14 @@ import java.io.File;
 
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.os.CrossSystem;
-import org.jdownloader.gui.toolbar.action.ToolBarAction;
+import org.jdownloader.gui.toolbar.action.AbstractToolBarAction;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.settings.GeneralSettings;
 
-public class OpenDefaultDownloadFolderAction extends ToolBarAction {
+public class OpenDefaultDownloadFolderAction extends AbstractToolBarAction {
 
-    public OpenDefaultDownloadFolderAction(SelectionInfo<?, ?> selection) {
+    public OpenDefaultDownloadFolderAction() {
         setIconKey("save");
     }
 

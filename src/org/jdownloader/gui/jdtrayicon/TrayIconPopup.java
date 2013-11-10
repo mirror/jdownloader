@@ -176,9 +176,9 @@ public final class TrayIconPopup extends ExtJFrame implements MouseListener {
                             if (root != null && root.isShowing()) return;
                             root = new ExtPopupMenu();
 
-                            new MenuBuilder(MenuManagerMainToolbar.getInstance(), root, null, (MenuContainer) menudata) {
+                            new MenuBuilder(MenuManagerMainToolbar.getInstance(), root, (MenuContainer) menudata) {
                                 protected void addAction(final JComponent root, final MenuItemData inst) throws InstantiationException, IllegalAccessException, InvocationTargetException, ClassNotFoundException, NoSuchMethodException, ExtensionNotLoadedException {
-                                    final JComponent ret = inst.addTo(root, selection);
+                                    final JComponent ret = inst.addTo(root);
                                     if (ret instanceof AbstractButton) {
                                         ((AbstractButton) ret).addActionListener(new ActionListener() {
                                             public void actionPerformed(ActionEvent evt) {
@@ -289,7 +289,7 @@ public final class TrayIconPopup extends ExtJFrame implements MouseListener {
                     continue;
                 } else if (menudata.getActionData() != null) {
 
-                    action = menudata.createAction(null);
+                    action = menudata.createAction();
                     if (!action.isVisible()) continue;
                     if (StringUtils.isNotEmpty(menudata.getShortcut()) && KeyStroke.getKeyStroke(menudata.getShortcut()) != null) {
                         action.setAccelerator(KeyStroke.getKeyStroke(menudata.getShortcut()));
@@ -298,7 +298,7 @@ public final class TrayIconPopup extends ExtJFrame implements MouseListener {
                     last = menudata;
 
                 } else if (menudata instanceof MenuLink) {
-                    final JComponent item = menudata.createItem(null);
+                    final JComponent item = menudata.createItem();
                     if (StringUtils.isNotEmpty(menudata.getIconKey())) {
                         if (item instanceof AbstractButton) {
                             ((AbstractButton) item).setIcon(NewTheme.I().getIcon(menudata.getIconKey(), ICON_SIZE));

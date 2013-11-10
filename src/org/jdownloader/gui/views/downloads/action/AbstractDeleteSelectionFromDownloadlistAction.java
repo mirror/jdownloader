@@ -3,13 +3,13 @@ package org.jdownloader.gui.views.downloads.action;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
-import org.jdownloader.actions.AbstractSelectionContextAction;
-import org.jdownloader.gui.views.SelectionInfo;
+import org.jdownloader.controlling.contextmenu.CustomizableSelectionAppAction;
+import org.jdownloader.gui.KeyObserver;
 
-public abstract class AbstractDeleteSelectionFromDownloadlistAction extends AbstractSelectionContextAction<FilePackage, DownloadLink> {
+public abstract class AbstractDeleteSelectionFromDownloadlistAction extends CustomizableSelectionAppAction<FilePackage, DownloadLink> {
 
-    public AbstractDeleteSelectionFromDownloadlistAction(SelectionInfo<FilePackage, DownloadLink> si) {
-        super(si);
+    public AbstractDeleteSelectionFromDownloadlistAction() {
+        super();
     }
 
     /**
@@ -18,12 +18,18 @@ public abstract class AbstractDeleteSelectionFromDownloadlistAction extends Abst
     private static final long serialVersionUID = 1117751339878672160L;
 
     @Override
-    public boolean isEnabled() {
-        SelectionInfo<FilePackage, DownloadLink> si = getSelection();
-        if (si != null && si.getChildren().size() > 0) {
-            if (si.isAltDown() || si.isAltGraphDown()) return false;
-            return true;
+    public void requestUpdate(Object requestor) {
+        super.requestUpdate(requestor);
+        if (hasSelection()) {
+
+            if (KeyObserver.getInstance().isAltDown() || KeyObserver.getInstance().isAltGraphDown()) {
+                setEnabled(false);
+            } else {
+                setEnabled(true);
+            }
+        } else {
+            setEnabled(false);
         }
-        return false;
     }
+
 }

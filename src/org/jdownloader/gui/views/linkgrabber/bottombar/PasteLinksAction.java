@@ -12,14 +12,14 @@ import jd.controlling.linkcrawler.LinkCrawler;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
-import org.jdownloader.actions.AppAction;
-import org.jdownloader.actions.CachableInterface;
+import org.jdownloader.controlling.contextmenu.ActionContext;
+import org.jdownloader.controlling.contextmenu.CustomizableAppAction;
 import org.jdownloader.controlling.contextmenu.Customizer;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.linkgrabber.actions.AddLinksProgress;
 
-public class PasteLinksAction extends AppAction implements CachableInterface {
+public class PasteLinksAction extends CustomizableAppAction implements ActionContext {
 
     public static final String DEEP_DECRYPT_ENABLED = "deepDecryptEnabled";
     private boolean            deepDecryptEnabled   = false;
@@ -98,10 +98,6 @@ public class PasteLinksAction extends AppAction implements CachableInterface {
                 e1.printStackTrace();
             }
         }
-    }
-
-    @Override
-    public void setData(String data) {
     }
 
 }

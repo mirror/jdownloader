@@ -96,7 +96,7 @@ public class Renderer implements TreeCellRenderer {
             } else {
                 if (mid._isValidated()) {
                     try {
-                        AppAction action = mid.createAction(null);
+                        AppAction action = mid.createAction();
 
                         if (StringUtils.isEmpty(name)) {
                             name = action.getName();
@@ -127,7 +127,7 @@ public class Renderer implements TreeCellRenderer {
                 if (name.equals(MenuItemData.EMPTY_NAME)) {
                     name = mid.getActionData().getClazzName();
                     name = name.substring(name.lastIndexOf(".") + 1);
-                    name += "(" + MenuItemData.EMPTY_NAME + ")";
+                    name = MenuItemData.EMPTY_NAME + "(" + name + ")";
                 }
 
             }
@@ -138,7 +138,11 @@ public class Renderer implements TreeCellRenderer {
             name += " (Description: " + tt + ")";
         }
         if (StringUtils.isNotEmpty(type)) {
-            renderer.setText(_GUI._.InfoPanel_updateInfo_header_actionlabel(name, type));
+            if (StringUtils.equals(_GUI._.InfoPanel_update_action(), type)) {
+                renderer.setText(name);
+            } else {
+                renderer.setText(_GUI._.InfoPanel_updateInfo_header_actionlabel(name, type));
+            }
         } else {
             renderer.setText(name);
         }

@@ -1,14 +1,11 @@
-package org.jdownloader.actions;
+package org.jdownloader.controlling.contextmenu;
 
-import org.jdownloader.controlling.contextmenu.Customizer;
+public class TableContext implements ActionContext {
+    public static final String ITEM_VISIBLE_FOR_SELECTIONS      = "itemVisibleForSelections";
+    public static final String ITEM_VISIBLE_FOR_EMPTY_SELECTION = "itemVisibleForEmptySelection";
 
-
-public abstract class AbstractContextMenuAction extends AppAction implements CachableInterface {
-
-    public static final String                         ITEM_VISIBLE_FOR_SELECTIONS      = "itemVisibleForSelections";
-    public static final String                         ITEM_VISIBLE_FOR_EMPTY_SELECTION = "itemVisibleForEmptySelection";
-    private boolean itemVisibleForSelections = true;
-    private boolean itemVisibleForEmptySelection = false;
+    private boolean            itemVisibleForSelections         = true;
+    private boolean            itemVisibleForEmptySelection     = false;
 
     @Customizer(name = "Item is visible for selected Links")
     public boolean isItemVisibleForSelections() {
@@ -20,10 +17,6 @@ public abstract class AbstractContextMenuAction extends AppAction implements Cac
         this.itemVisibleForSelections = clearListAfterConfirm;
     }
 
-    @Override
-    public void setData(String data) {
-    }
-
     @Customizer(name = "Item is visible for empty selections")
     public boolean isItemVisibleForEmptySelection() {
         return itemVisibleForEmptySelection;
@@ -32,6 +25,12 @@ public abstract class AbstractContextMenuAction extends AppAction implements Cac
     @Customizer(name = "Item is visible for empty selections")
     public void setItemVisibleForEmptySelection(boolean clearListAfterConfirm) {
         this.itemVisibleForEmptySelection = clearListAfterConfirm;
+    }
+
+    public TableContext(boolean setItemVisibleForEmptySelection, boolean setItemVisibleForSelections) {
+
+        setItemVisibleForEmptySelection(setItemVisibleForEmptySelection);
+        setItemVisibleForSelections(setItemVisibleForSelections);
     }
 
 }

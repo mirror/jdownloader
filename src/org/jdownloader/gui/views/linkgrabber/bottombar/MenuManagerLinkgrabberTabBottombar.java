@@ -1,11 +1,11 @@
 package org.jdownloader.gui.views.linkgrabber.bottombar;
 
-import org.jdownloader.actions.AbstractContextMenuAction;
 import org.jdownloader.controlling.contextmenu.ActionData;
 import org.jdownloader.controlling.contextmenu.MenuContainer;
 import org.jdownloader.controlling.contextmenu.MenuContainerRoot;
 import org.jdownloader.controlling.contextmenu.MenuItemData;
 import org.jdownloader.controlling.contextmenu.SeperatorData;
+import org.jdownloader.controlling.contextmenu.TableContext;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.downloads.MenuManagerDownloadTabBottomBar;
@@ -17,10 +17,8 @@ import org.jdownloader.gui.views.linkgrabber.LinkgrabberOverviewPanelToggleActio
 import org.jdownloader.gui.views.linkgrabber.LinkgrabberPropertiesToggleAction;
 import org.jdownloader.gui.views.linkgrabber.LinkgrabberSearchMenuItem;
 import org.jdownloader.gui.views.linkgrabber.LinkgrabberSidebarToggleAction;
-import org.jdownloader.gui.views.linkgrabber.actions.ClearLinkgrabberAction;
 import org.jdownloader.gui.views.linkgrabber.actions.ConfirmAllAction;
 import org.jdownloader.gui.views.linkgrabber.actions.ConfirmSelectionBarAction;
-import org.jdownloader.gui.views.linkgrabber.actions.GenericDeleteFromLinkgrabberAction;
 import org.jdownloader.gui.views.linkgrabber.actions.ResetAction;
 import org.jdownloader.gui.views.linkgrabber.contextmenu.ClearFilteredLinksAction;
 import org.jdownloader.gui.views.linkgrabber.contextmenu.ConfirmSelectionContextAction.AutoStartOptions;
@@ -65,13 +63,14 @@ public class MenuManagerLinkgrabberTabBottombar extends AbstractBottomBarMenuMan
         //
 
         mr.add(setOptional(new MenuItemData(new ActionData(ResetAction.class))));
-        mr.add((new MenuItemData(new ActionData(ClearLinkgrabberAction.class))));
+
+        mr.add(setName(setIconKey(new ActionData(GenericDeleteFromLinkgrabberBarAction.class).putSetup(GenericDeleteFromLinkgrabberBarAction.DELETE_ALL, true), IconKey.ICON_DELETE), null));
 
         DeleteContainer delete = new DeleteContainer();
 
-        delete.add(setIconKey(new ActionData(GenericDeleteFromLinkgrabberAction.class).putSetup(GenericDeleteFromLinkgrabberAction.DELETE_DISABLED, true), IconKey.ICON_REMOVE_DISABLED));
+        delete.add(setIconKey(new ActionData(GenericDeleteFromLinkgrabberBarAction.class).putSetup(GenericDeleteFromLinkgrabberBarAction.DELETE_DISABLED, true), IconKey.ICON_REMOVE_DISABLED));
 
-        delete.add(setIconKey(new ActionData(GenericDeleteFromLinkgrabberAction.class).putSetup(GenericDeleteFromLinkgrabberAction.DELETE_OFFLINE, true), IconKey.ICON_REMOVE_OFFLINE));
+        delete.add(setIconKey(new ActionData(GenericDeleteFromLinkgrabberBarAction.class).putSetup(GenericDeleteFromLinkgrabberBarAction.DELETE_OFFLINE, true), IconKey.ICON_REMOVE_OFFLINE));
 
         //
 
@@ -88,7 +87,7 @@ public class MenuManagerLinkgrabberTabBottombar extends AbstractBottomBarMenuMan
         // IconKey.ICON_REMOVE_OFFLINE));
         delete.add(org.jdownloader.gui.views.linkgrabber.actions.RemoveNonSelectedAction.class);
         delete.add(new SeperatorData());
-        delete.add(new ActionData(RemoveIncompleteArchives.class).putSetup(AbstractContextMenuAction.ITEM_VISIBLE_FOR_EMPTY_SELECTION, true));
+        delete.add(new ActionData(RemoveIncompleteArchives.class).putSetup(TableContext.ITEM_VISIBLE_FOR_EMPTY_SELECTION, true));
 
         delete.add(new ActionData(ClearFilteredLinksAction.class));
         delete.add(new SeperatorData());

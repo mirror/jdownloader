@@ -4,7 +4,6 @@ import javax.swing.JComponent;
 import javax.swing.JSeparator;
 
 import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.gui.views.SelectionInfo;
 
 public class SeperatorData extends MenuItemData {
 
@@ -13,7 +12,7 @@ public class SeperatorData extends MenuItemData {
     }
 
     @Override
-    public JComponent createItem(SelectionInfo<?, ?> selection) {
+    public JComponent createItem() {
         return new JSeparator();
     }
 

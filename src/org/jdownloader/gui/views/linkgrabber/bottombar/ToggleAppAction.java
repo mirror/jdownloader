@@ -11,14 +11,14 @@ import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.swing.exttable.ExtCheckBoxMenuItem;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.swing.EDTRunner;
-import org.jdownloader.actions.AppAction;
-import org.jdownloader.actions.CachableInterface;
 import org.jdownloader.actions.ComponentProviderInterface;
+import org.jdownloader.controlling.contextmenu.ActionContext;
+import org.jdownloader.controlling.contextmenu.CustomizableAppAction;
 import org.jdownloader.controlling.contextmenu.Customizer;
 import org.jdownloader.controlling.contextmenu.MenuItemData;
 import org.jdownloader.images.NewTheme;
 
-public class ToggleAppAction extends AppAction implements CachableInterface, ComponentProviderInterface, GenericConfigEventListener<Boolean> {
+public class ToggleAppAction extends CustomizableAppAction implements ComponentProviderInterface, GenericConfigEventListener<Boolean>, ActionContext {
 
     private BooleanKeyHandler handler;
     private boolean           hidePopupOnClick = false;
@@ -33,6 +33,7 @@ public class ToggleAppAction extends AppAction implements CachableInterface, Com
     }
 
     public ToggleAppAction(BooleanKeyHandler handler, String name, String tt) {
+
         this.handler = handler;
 
         setName(name);
@@ -59,10 +60,6 @@ public class ToggleAppAction extends AppAction implements CachableInterface, Com
     @Override
     public void actionPerformed(ActionEvent e) {
         handler.toggle();
-    }
-
-    @Override
-    public void setData(String data) {
     }
 
     @Override

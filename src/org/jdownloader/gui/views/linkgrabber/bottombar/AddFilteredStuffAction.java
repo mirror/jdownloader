@@ -10,12 +10,12 @@ import jd.controlling.linkcrawler.CrawledLink;
 
 import org.appwork.utils.event.queue.QueueAction;
 import org.appwork.utils.swing.EDTRunner;
-import org.jdownloader.actions.AppAction;
-import org.jdownloader.actions.CachableInterface;
+import org.jdownloader.controlling.contextmenu.ActionContext;
+import org.jdownloader.controlling.contextmenu.CustomizableAppAction;
 import org.jdownloader.controlling.contextmenu.Customizer;
 import org.jdownloader.gui.translate._GUI;
 
-public class AddFilteredStuffAction extends AppAction implements CachableInterface, LinkCollectorListener {
+public class AddFilteredStuffAction extends CustomizableAppAction implements LinkCollectorListener, ActionContext {
 
     private boolean onlyVisibleIfThereIsFilteredStuff = true;
 
@@ -23,6 +23,12 @@ public class AddFilteredStuffAction extends AppAction implements CachableInterfa
         setIconKey("filter");
 
         LinkCollector.getInstance().getEventsender().addListener(this, true);
+        setFilteredAvailable(LinkCollector.getInstance().getfilteredStuffSize());
+    }
+
+    @Override
+    public void requestUpdate(Object requestor) {
+        super.requestUpdate(requestor);
         setFilteredAvailable(LinkCollector.getInstance().getfilteredStuffSize());
     }
 
@@ -78,11 +84,6 @@ public class AddFilteredStuffAction extends AppAction implements CachableInterfa
                 }
             };
         }
-    }
-
-    @Override
-    public void setData(String data) {
-        setFilteredAvailable(LinkCollector.getInstance().getfilteredStuffSize());
     }
 
     @Override

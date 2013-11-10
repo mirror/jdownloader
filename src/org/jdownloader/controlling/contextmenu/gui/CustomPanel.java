@@ -16,8 +16,9 @@ import org.appwork.utils.GetterSetter;
 import org.appwork.utils.ReflectionUtils;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.reflection.Clazz;
-import org.jdownloader.actions.AppAction;
+import org.jdownloader.controlling.contextmenu.ActionContext;
 import org.jdownloader.controlling.contextmenu.ActionData;
+import org.jdownloader.controlling.contextmenu.CustomizableAppAction;
 import org.jdownloader.controlling.contextmenu.Customizer;
 
 public class CustomPanel extends MigPanel {
@@ -32,7 +33,7 @@ public class CustomPanel extends MigPanel {
         setOpaque(false);
     }
 
-    public void add(final ActionData actionData, AppAction actionClass, final GetterSetter gs) {
+    public void add(final ActionData actionData, final CustomizableAppAction action, final ActionContext actionClass, final GetterSetter gs) {
         try {
             if (Clazz.isBoolean(gs.getType())) {
                 add(new JLabel(gs.getAnnotation(Customizer.class).name()), "pushx");
@@ -56,6 +57,7 @@ public class CustomPanel extends MigPanel {
                     @Override
                     public void actionPerformed(ActionEvent e) {
                         actionData.putSetup(gs.getKey(), jb.isSelected());
+                        action.requestUpdate(null);
                         managerFrame.repaint();
 
                     }
@@ -95,6 +97,7 @@ public class CustomPanel extends MigPanel {
                     @Override
                     public void actionPerformed(ActionEvent e) {
                         actionData.putSetup(gs.getKey(), values[cb.getSelectedIndex()].toString());
+                        action.requestUpdate(null);
                         managerFrame.repaint();
                     }
                 });
@@ -113,6 +116,7 @@ public class CustomPanel extends MigPanel {
                     @Override
                     public void onChanged() {
                         actionData.putSetup(gs.getKey(), getText());
+                        action.requestUpdate(null);
                         managerFrame.repaint();
                     }
 

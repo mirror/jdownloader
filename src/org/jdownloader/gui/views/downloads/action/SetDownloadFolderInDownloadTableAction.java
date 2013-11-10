@@ -18,9 +18,12 @@ public class SetDownloadFolderInDownloadTableAction extends SetDownloadFolderAct
      * 
      */
 
-    public SetDownloadFolderInDownloadTableAction(SelectionInfo<FilePackage, DownloadLink> si) {
-        super(si);
+    public SetDownloadFolderInDownloadTableAction() {
 
+    }
+
+    public SetDownloadFolderInDownloadTableAction(SelectionInfo<FilePackage, DownloadLink> selectionInfo) {
+        selection = selectionInfo;
     }
 
     @Override

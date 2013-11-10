@@ -9,7 +9,7 @@ import org.appwork.utils.swing.EDTRunner;
 import org.jdownloader.controlling.contextmenu.MenuContainer;
 import org.jdownloader.extensions.ExtensionNotLoadedException;
 import org.jdownloader.extensions.extraction.Archive;
-import org.jdownloader.gui.views.SelectionInfo;
+import org.jdownloader.gui.views.downloads.table.DownloadsTable;
 
 public class CleanupSubMenu extends MenuContainer {
     public CleanupSubMenu() {
@@ -18,13 +18,13 @@ public class CleanupSubMenu extends MenuContainer {
     }
 
     @Override
-    public JComponent addTo(JComponent root, final SelectionInfo<?, ?> selection) throws InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException, ClassNotFoundException, NoSuchMethodException, SecurityException, ExtensionNotLoadedException {
+    public JComponent addTo(JComponent root) throws InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException, ClassNotFoundException, NoSuchMethodException, SecurityException, ExtensionNotLoadedException {
 
-        final JComponent ret = super.addTo(root, selection);
+        final JComponent ret = super.addTo(root);
         ret.setEnabled(false);
         Thread thread = new Thread() {
             public void run() {
-                List<Archive> archives = ArchiveValidator.validate((SelectionInfo<?, ?>) selection).getArchives();
+                List<Archive> archives = ArchiveValidator.validate(DownloadsTable.getInstance().getSelectionInfo(true, true)).getArchives();
                 if (archives != null && archives.size() > 0) {
                     new EDTRunner() {
 

@@ -25,9 +25,11 @@ import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.appwork.utils.swing.dialog.DialogNoAnswerException;
-import org.jdownloader.actions.AbstractSelectionContextAction;
 import org.jdownloader.actions.AppAction;
+import org.jdownloader.controlling.contextmenu.ActionContext;
+import org.jdownloader.controlling.contextmenu.CustomizableAppAction;
 import org.jdownloader.controlling.contextmenu.Customizer;
+import org.jdownloader.controlling.contextmenu.TableContext;
 import org.jdownloader.extensions.ExtensionController;
 import org.jdownloader.extensions.extraction.Archive;
 import org.jdownloader.extensions.extraction.DummyArchive;
@@ -44,7 +46,7 @@ import org.jdownloader.gui.views.linkgrabber.LinkGrabberTableModel;
 import org.jdownloader.gui.views.linkgrabber.addlinksdialog.LinkgrabberSettings;
 import org.jdownloader.images.NewTheme;
 
-public class ConfirmAllContextmenuAction extends AbstractSelectionContextAction<CrawledPackage, CrawledLink> implements GUIListener {
+public class ConfirmAllContextmenuAction extends CustomizableAppAction implements GUIListener, ActionContext {
 
     /**
      * 
@@ -114,7 +116,9 @@ public class ConfirmAllContextmenuAction extends AbstractSelectionContextAction<
         return ret;
     }
 
-    private boolean clearListAfterConfirm = false;
+    private boolean                                    clearListAfterConfirm = false;
+    private TableContext                               tableContext;
+    private SelectionInfo<CrawledPackage, CrawledLink> selection;
 
     @Customizer(name = "Clear Linkgrabber after adding links")
     public boolean isClearListAfterConfirm() {
@@ -126,14 +130,15 @@ public class ConfirmAllContextmenuAction extends AbstractSelectionContextAction<
         this.clearListAfterConfirm = clearListAfterConfirm;
     }
 
-    public void setSelection(SelectionInfo<CrawledPackage, CrawledLink> selection) {
+    @Override
+    public void requestUpdate(Object requestor) {
+        super.requestUpdate(requestor);
+        selection = LinkGrabberTableModel.getInstance().getTable().getSelectionInfo(false, true);
 
-        SelectionInfo<CrawledPackage, CrawledLink> sel = LinkGrabberTableModel.getInstance().getTable().getSelectionInfo(false, true);
-        super.setSelection(sel);
-        if (!isItemVisibleForEmptySelection() && !(selection == null || selection.isEmpty())) {
+        if (!tableContext.isItemVisibleForEmptySelection() && !(selection == null || selection.isEmpty())) {
             setVisible(false);
             setEnabled(false);
-        } else if (!isItemVisibleForSelections() && !(selection == null || selection.isEmpty())) {
+        } else if (!tableContext.isItemVisibleForSelections() && !(selection == null || selection.isEmpty())) {
             setVisible(false);
             setEnabled(false);
         } else {
@@ -141,15 +146,12 @@ public class ConfirmAllContextmenuAction extends AbstractSelectionContextAction<
             setEnabled(true);
         }
         updateLabelAndIcon();
-
     }
 
-    public ConfirmAllContextmenuAction(SelectionInfo<CrawledPackage, CrawledLink> selectionInfo) {
-        super(null);
-
+    public ConfirmAllContextmenuAction() {
         setAutoStart(AutoStartOptions.AUTO);
-        setItemVisibleForSelections(false);
-        setItemVisibleForEmptySelection(true);
+        addContextSetup(tableContext = new TableContext(true, false));
+        addContextSetup(this);
         GUIEventSender.getInstance().addListener(this, true);
         metaCtrl = KeyObserver.getInstance().isMetaDown() || KeyObserver.getInstance().isControlDown();
     }
@@ -238,8 +240,8 @@ public class ConfirmAllContextmenuAction extends AbstractSelectionContextAction<
 
     }
 
-    @Override
-    public boolean isEnabled() {
-        return hasSelection();
+    protected SelectionInfo<CrawledPackage, CrawledLink> getSelection() {
+        return selection;
     }
+
 }

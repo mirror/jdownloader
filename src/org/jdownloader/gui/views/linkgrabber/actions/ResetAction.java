@@ -9,14 +9,13 @@ import org.appwork.utils.event.queue.QueueAction;
 import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogNoAnswerException;
-import org.jdownloader.actions.AppAction;
-import org.jdownloader.actions.CachableInterface;
+import org.jdownloader.controlling.contextmenu.CustomizableAppAction;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.linkgrabber.LinkGrabberTable;
 import org.jdownloader.gui.views.linkgrabber.LinkgrabberSearchField;
 import org.jdownloader.gui.views.linkgrabber.contextmenu.MenuManagerLinkgrabberTableContext;
 
-public class ResetAction extends AppAction implements CachableInterface {
+public class ResetAction extends CustomizableAppAction {
     /**
      * 
      */
@@ -68,10 +67,6 @@ public class ResetAction extends AppAction implements CachableInterface {
         } catch (DialogNoAnswerException e1) {
             e1.printStackTrace();
         }
-    }
-
-    @Override
-    public void setData(String data) {
     }
 
 }

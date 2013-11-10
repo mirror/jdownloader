@@ -7,7 +7,7 @@ import org.jdownloader.settings.staticreferences.CFG_SILENTMODE;
 
 public class SilentModeToggleAction extends AbstractToolbarToggleAction {
 
-    public SilentModeToggleAction(SelectionInfo<?, ?> selection) {
+    public SilentModeToggleAction() {
         super(CFG_SILENTMODE.MANUAL_ENABLED);
         setIconKey("silentmode");
     }
