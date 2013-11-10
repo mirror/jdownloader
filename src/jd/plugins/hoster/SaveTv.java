@@ -533,6 +533,7 @@ public class SaveTv extends PluginForHost {
         // Limits made by me:
         // Max 6 logins possible
         // Max 3 accesses of the link possible
+        // -> Max 9 total requests
         for (int i = 0; i <= 2; i++) {
             br.getPage(url);
             if (br.getURL().contains("Token=MSG_LOGOUT_B")) {
@@ -542,10 +543,10 @@ public class SaveTv extends PluginForHost {
                     try {
                         login(this.br, acc, true);
                     } catch (final BrowserException e) {
-                        logger.info("Login " + i + "of 1 failed, re-trying...");
+                        logger.info("Login " + i2 + "of 1 failed, re-trying...");
                         continue;
                     }
-                    logger.info("Re-Login " + i + "of 1 successful...");
+                    logger.info("Re-Login " + i2 + "of 1 successful...");
                     break;
                 }
                 continue;
