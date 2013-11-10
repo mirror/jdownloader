@@ -398,10 +398,10 @@ public class TbCm extends PluginForDecrypt {
     private final LinkedHashSet<String> dupeList        = new LinkedHashSet<String>();
 
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, final ProgressController progress) throws Exception {
+        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         canHandle();
         checkNewsDialog();
         this.possibleconverts = new HashMap<DestinationFormat, ArrayList<Info>>();
-        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         if (PLUGIN_DISABLED.get() == true) return decryptedLinks;
         long startTime = System.currentTimeMillis();
         br.setFollowRedirects(true);
@@ -423,6 +423,15 @@ public class TbCm extends PluginForDecrypt {
         // cleanup video link, if it's not a list
         if (!containsList(parameter)) {
             parameter = getHost(parameter) + "/watch?v=" + vuid;
+        }
+
+        // Some Stable errorhandling
+        if (isJava7nJDStable()) {
+            logger.info("Youtube is currently broken in the Stable version of JDownloader!");
+            final DownloadLink offline = getOfflineLink();
+            offline.setName(getVideoID(parameter));
+            decryptedLinks.add(offline);
+            return decryptedLinks;
         }
 
         ArrayList<String[]> linkstodecrypt = new ArrayList<String[]>();
@@ -770,9 +779,7 @@ public class TbCm extends PluginForDecrypt {
                 if (LinksFound == null || LinksFound.isEmpty()) {
                     if (linkstodecrypt.size() == 1) {
                         if (verifyAge || this.br.getURL().toLowerCase().indexOf("youtube.com/get_video_info?") != -1 && !prem) { throw new DecrypterException(DecrypterException.ACCOUNT); }
-                        final DownloadLink offline = createDownloadlink("youtubeJD" + preferHTTPS("http") + "://r20---sn-4g57kner.c.youtube.com/videoplayback?sver=3&id=a3a288054be22ded&ipbits=8&itag=43&expire=1376781178&ratebypass=yes&fexp=927826%2C903903%2C920604%2C932237%2C927839%2C916626%2C931005%2C909546%2C906397%2C929117%2C929121%2C929906%2C929907%2C929922%2C929127%2C929129%2C929131%2C929930%2C925720%2C925722%2C925718%2C925714%2C929917%2C929919%2C929933%2C912521%2C932306%2C913428%2C920605%2C904830%2C919373%2C930803%2C904122%2C938701%2C919008%2C911423%2C909549%2C900816%2C912711%2C935802%2C904494%2C906001&ms=au&cp=U0hWS1dTT19MUkNONl9PTVNCOnozWXhMQzNfazJD&ip=87.160.200.202&key=yt1&mt=1376758530&sparams=cp%2Cid%2Cip%2Cipbits%2Citag%2Cratebypass%2Csource%2Cupn%2Cexpire&mv=m&upn=VoejVd34qx8&source=youtube&signature=7D265E3116EA58DFDE26BF4A210B5B33753FCD69." + new Random().nextInt(100000));
-                        offline.setAvailable(false);
-                        offline.setProperty("offline", true);
+                        final DownloadLink offline = getOfflineLink();
                         offline.setName(videoid);
                         decryptedLinks.add(offline);
                         logger.info("Video unavailable: " + currentVideoUrl);
@@ -1124,9 +1131,7 @@ public class TbCm extends PluginForDecrypt {
         // No links found -> Link is probably offline
         if (decryptedLinks == null || decryptedLinks.isEmpty()) {
             if (verifyAge || this.br.getURL().toLowerCase().indexOf("youtube.com/get_video_info?") != -1 && !prem) { throw new DecrypterException(DecrypterException.ACCOUNT); }
-            final DownloadLink offline = createDownloadlink("youtubeJD" + preferHTTPS("http") + "://r20---sn-4g57kner.c.youtube.com/videoplayback?sver=3&id=a3a288054be22ded&ipbits=8&itag=43&expire=1376781178&ratebypass=yes&fexp=927826%2C903903%2C920604%2C932237%2C927839%2C916626%2C931005%2C909546%2C906397%2C929117%2C929121%2C929906%2C929907%2C929922%2C929127%2C929129%2C929131%2C929930%2C925720%2C925722%2C925718%2C925714%2C929917%2C929919%2C929933%2C912521%2C932306%2C913428%2C920605%2C904830%2C919373%2C930803%2C904122%2C938701%2C919008%2C911423%2C909549%2C900816%2C912711%2C935802%2C904494%2C906001&ms=au&cp=U0hWS1dTT19MUkNONl9PTVNCOnozWXhMQzNfazJD&ip=33.33.333.666&key=yt1&mt=1376758530&sparams=cp%2Cid%2Cip%2Cipbits%2Citag%2Cratebypass%2Csource%2Cupn%2Cexpire&mv=m&upn=VoejVd34qx8&source=youtube&signature=7D265E3116EA58DFDE26BF4A210B5B33753FCD69." + new Random().nextInt(100000));
-            offline.setAvailable(false);
-            offline.setProperty("offline", true);
+            final DownloadLink offline = getOfflineLink();
             offline.setName(getVideoID(parameter));
             decryptedLinks.add(offline);
         }
@@ -1513,6 +1518,13 @@ public class TbCm extends PluginForDecrypt {
         return sb.toString();
     }
 
+    private DownloadLink getOfflineLink() {
+        final DownloadLink offline = createDownloadlink("youtubeJD" + preferHTTPS("http") + "://r20---sn-4g57kner.c.youtube.com/videoplayback?sver=3&id=a3a288054be22ded&ipbits=8&itag=43&expire=1376781178&ratebypass=yes&fexp=927826%2C903903%2C920604%2C932237%2C927839%2C916626%2C931005%2C909546%2C906397%2C929117%2C929121%2C929906%2C929907%2C929922%2C929127%2C929129%2C929131%2C929930%2C925720%2C925722%2C925718%2C925714%2C929917%2C929919%2C929933%2C912521%2C932306%2C913428%2C920605%2C904830%2C919373%2C930803%2C904122%2C938701%2C919008%2C911423%2C909549%2C900816%2C912711%2C935802%2C904494%2C906001&ms=au&cp=U0hWS1dTT19MUkNONl9PTVNCOnozWXhMQzNfazJD&ip=87.160.200.202&key=yt1&mt=1376758530&sparams=cp%2Cid%2Cip%2Cipbits%2Citag%2Cratebypass%2Csource%2Cupn%2Cexpire&mv=m&upn=VoejVd34qx8&source=youtube&signature=7D265E3116EA58DFDE26BF4A210B5B33753FCD69." + new Random().nextInt(100000));
+        offline.setAvailable(false);
+        offline.setProperty("offline", true);
+        return offline;
+    }
+
     private synchronized String unescape(final String s) {
         /* we have to make sure the youtube plugin is loaded */
         if (pluginloaded == false) {
@@ -1596,6 +1608,8 @@ public class TbCm extends PluginForDecrypt {
                             message = "Folgende youtube Probleme sind momentan bekannt:\r\n";
                             message += "-480p Versionen können nicht geladen werden\r\n";
                             message += "-1080p Versionen können nicht geladen werden\r\n";
+                            message += "-Das youtube Plugin ist in der JD Version 0.9.581 momentan gar nicht mehr funktionsfähig\r\n";
+                            message += "--> In dem Fall bitte auf die JDownloader 2 BETA ausweichen!\r\n";
                             message += "\r\n";
                             message += "Die Probleme sind NICHT durch neue JD Updates entstanden sondern, weil youtube\r\n";
                             message += "für die obigen Qualitätsstufen ein neues Streamingverfahren verwendet, das JD noch nicht kann.\r\n";
@@ -1617,6 +1631,8 @@ public class TbCm extends PluginForDecrypt {
                             message = "The following youtube.com problems are known:\r\n";
                             message += "-480p versions can't be downloaded\r\n";
                             message += "-1080p versions can't be downloaded\r\n";
+                            message += "-At the moment the youtube plugin is completely broken in JD version 0.9.581\r\n";
+                            message += "--> Use the JDownloader 2 BETA to be able to download from youtube again\r\n";
                             message += "\r\n";
                             message += "This isn't caused by JDownloader recient plugin updates, it's caused by a recent change Youtube platform.\r\n";
                             message += "Youtube using a new streaming technique 'DASH', which JD cannot handle yet.\r\n";
@@ -1639,6 +1655,13 @@ public class TbCm extends PluginForDecrypt {
             });
         } catch (Throwable e) {
         }
+    }
+
+    private boolean isJava7nJDStable() {
+        if (System.getProperty("jd.revision.jdownloaderrevision") == null && System.getProperty("java.version").matches("1\\.[7-9].+"))
+            return true;
+        else
+            return false;
     }
 
     /* NO OVERRIDE!! */
