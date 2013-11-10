@@ -378,7 +378,7 @@ public class SaveTv extends PluginForHost {
             preferMobileVideos = "c0-param1=number:0";
             if (preferMobileVids) preferMobileVideos = "c0-param1=number:1";
             br.postPage("http://www.save.tv/STV/M/obj/cRecordOrder/croGetDownloadUrl.cfm?null.GetDownloadUrl", "ajax=true&clientAuthenticationKey=&callCount=1&c0-scriptName=null&c0-methodName=GetDownloadUrl&c0-id=&c0-param0=number:" + telecastID + "&" + preferMobileVideos + "&c0-param2=boolean:" + downloadWithoutAds + "&xml=true&");
-            if (br.containsHTML("Die Aufnahme liegt nicht im gewünschten Format vor")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, PREFERREDFORMATNOTAVAILABLETEXT, 4 * 60 * 60 * 1000l); }
+            if (br.containsHTML("Die Aufnahme liegt nicht im gewünschten Format vor")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, PREFERREDFORMATNOTAVAILABLETEXT, 4 * 60 * 60 * 1000l);
             dllink = br.getRegex("\\'OK\\',\\'(http://[^<>\"\\']+)\\'").getMatch(0);
             if (dllink == null) dllink = br.getRegex("\\'(http://[^<>\"\\']+/\\?m=dl)\\'").getMatch(0);
         }
@@ -433,6 +433,16 @@ public class SaveTv extends PluginForHost {
             logger.info("save.tv Account ist ungültig!");
             account.setValid(false);
             return ai;
+        } catch (final BrowserException eb) {
+            for (int i = 1; i <= 3; i++) {
+                try {
+                    login(this.br, account, true);
+                } catch (final BrowserException ebr) {
+                    logger.info(i + "von 3: save.tv Login wegen Serverfehler (Timeout oder Serverfehler) fehlgeschlagen");
+                    continue;
+                }
+                break;
+            }
         }
         ai.setStatus("Premium save.tv User");
         ai.setUnlimitedTraffic();
@@ -493,13 +503,8 @@ public class SaveTv extends PluginForHost {
                             return;
                         }
                     }
-                    try {
-                        br.getPage("http://www.save.tv/STV/S/misc/home.cfm");
-                        extendedLogin("http://www.save.tv/STV/S/misc/home.cfm?", PREMIUMPOSTPAGE, Encoding.urlEncode(account.getUser()), Encoding.urlEncode(account.getPass()));
-                    } catch (final BrowserException e) {
-                        logger.warning("save.tv Login wegen einem Serverfehler fehlgeschlagen!");
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    }
+                    br.getPage("http://www.save.tv/STV/S/misc/home.cfm");
+                    extendedLogin("http://www.save.tv/STV/S/misc/home.cfm?", PREMIUMPOSTPAGE, Encoding.urlEncode(account.getUser()), Encoding.urlEncode(account.getPass()));
                     if (!br.containsHTML("/STV/M/obj/user/usEdit.cfm") || br.containsHTML("Bitte verifizieren Sie Ihre Logindaten")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                     /** Save cookies */
                     final HashMap<String, String> cookies = new HashMap<String, String>();
@@ -525,10 +530,27 @@ public class SaveTv extends PluginForHost {
     }
 
     private void getPageSafe(final String url, final Account acc) throws Exception {
-        br.getPage(url);
-        if (br.getURL().contains("Token=MSG_LOGOUT_B")) {
-            logger.info("Link redirected to login page, logging in again to retry this: " + url);
-            login(this.br, acc, true);
+        // Limits made by me:
+        // Max 6 logins possible
+        // Max 3 accesses of the link possible
+        for (int i = 0; i <= 2; i++) {
+            br.getPage(url);
+            if (br.getURL().contains("Token=MSG_LOGOUT_B")) {
+                for (int i2 = 0; i2 <= 1; i2++) {
+                    logger.info("Link redirected to login page, logging in again to retry this: " + url);
+                    logger.info("Try " + i2 + " of 1");
+                    try {
+                        login(this.br, acc, true);
+                    } catch (final PluginException e) {
+                        logger.info("Login " + i + "of 1 failed, re-trying...");
+                        continue;
+                    }
+                    logger.info("Re-Login " + i + "of 1 successful...");
+                    break;
+                }
+                continue;
+            }
+            break;
         }
     }
 
