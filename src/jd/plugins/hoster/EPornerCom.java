@@ -73,6 +73,7 @@ public class EPornerCom extends PluginForHost {
         br.getPage(Encoding.htmlDecode(continueLink).replaceAll("/player", "/config") + (continueLink.endsWith("/") ? "1920" : "/1920"));
         DLLINK = br.getRegex("<hd\\.file>(http://.*?)</hd\\.file>").getMatch(0);
         if (DLLINK == null) DLLINK = br.getRegex("<file>(http://.*?)</file>").getMatch(0);
+        if (DLLINK == null) DLLINK = br.getRegex("file: \"(https?://[^<>\"]*?)\"").getMatch(0);
         if (DLLINK == null || "http://download.eporner.com/na.flv".equalsIgnoreCase(DLLINK)) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         filename = filename.trim();
         downloadLink.setFinalFileName(filename + ".mp4");

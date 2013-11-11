@@ -47,6 +47,10 @@ public class FlashMirrorsCom extends PluginForDecrypt {
                 return decryptedLinks;
             }
         }
+        if (br.containsHTML(">Sorry, but there is no mirrors")) {
+            logger.info("Link offline: " + parameter);
+            return decryptedLinks;
+        }
         final String[] links = br.getRegex("\"link_data\":\"([^<>\"]*?)\"").getColumn(0);
         if (links == null || links.length == 0) {
             if (br.containsHTML("alt=\"Not Available\"")) {

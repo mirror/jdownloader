@@ -21,13 +21,15 @@ import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.nutils.encoding.Encoding;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.locale.JDL;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filefactory.com" }, urls = { "http://[\\w\\.]*?filefactory\\.com(/|//)f/[\\w]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filefactory.com" }, urls = { "http://[\\w\\.]*?filefactory\\.com/folder/[\\w]+" }, flags = { 0 })
 public class FlFctrFldr extends PluginForDecrypt {
 
     public FlFctrFldr(PluginWrapper wrapper) {
@@ -38,7 +40,7 @@ public class FlFctrFldr extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
-        br.getPage(parameter);
+        br.getPage(parameter + "/?sort=filename&order=ASC&show=100&page=1");
         if (br.getRedirectLocation() != null) {
             /* to follow domain redirects */
             br.getPage(br.getRedirectLocation());
@@ -50,24 +52,27 @@ public class FlFctrFldr extends PluginForDecrypt {
             return new ArrayList<DownloadLink>();
         }
 
-        String pages[] = br.getRegex(Pattern.compile("<a href=\"\\?page=(\\d+)\">", Pattern.CASE_INSENSITIVE)).getColumn(0);
-        progress.setRange(0);
-        add(decryptedLinks, progress);
-        if (pages.length > 1) {
-            for (int i = 2; i <= Integer.parseInt(pages[pages.length - 1]); i++) {
-                br.getPage(parameter + "/?page=" + i);
-                add(decryptedLinks, progress);
-            }
+        final String fpName = br.getRegex("<h1>Files in <span>\"([^<>\"]*?)\"</span>").getMatch(0);
+
+        int maxPagenum = 1;
+        final String maxPage = br.getRegex("data\\-paginator\\-totalPages=\"(\\d+)\"").getMatch(0);
+        if (maxPage != null) maxPagenum = Integer.parseInt(maxPage);
+        for (int i = 1; i <= maxPagenum; i++) {
+            if (i > 1) br.getPage(parameter + "/?sort=filename&order=ASC&show=100&page=" + i);
+            add(decryptedLinks);
+        }
+        if (fpName != null) {
+            final FilePackage fp = FilePackage.getInstance();
+            fp.setName(Encoding.htmlDecode(fpName.trim()));
+            fp.addLinks(decryptedLinks);
         }
         return decryptedLinks;
     }
 
-    private void add(ArrayList<DownloadLink> declinks, ProgressController progress) {
-        String links[] = br.getRegex(Pattern.compile("class=\"ffFileName\"><a href=\"(http://[^<>\"]*?)\"", Pattern.CASE_INSENSITIVE)).getColumn(0);
-        progress.increase(links.length);
+    private void add(ArrayList<DownloadLink> declinks) {
+        final String links[] = br.getRegex(Pattern.compile("\"(https?://(www\\.)?filefactory\\.com/file/[^<>\"]*?)\"", Pattern.CASE_INSENSITIVE)).getColumn(0);
         for (String element : links) {
-            declinks.add(createDownloadlink("http://www.filefactory.com" + element));
-            progress.increase(1);
+            declinks.add(createDownloadlink(element));
         }
     }
 

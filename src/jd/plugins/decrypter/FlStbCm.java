@@ -106,6 +106,7 @@ public class FlStbCm extends PluginForDecrypt {
                 return decryptedLinks;
             }
             externID = br.getRegex("xvideos\\.com/embedframe/(\\d+)\"").getMatch(0);
+            if (externID == null) externID = br.getRegex("\"http://(www\\.)?xvideos\\.com/sitevideos/flv_player_site.*?value=\"id_video=(\\d+)\"").getMatch(1);
             if (externID != null) {
                 decryptedLinks.add(createDownloadlink("http://www.xvideos.com/video" + externID));
                 return decryptedLinks;
@@ -155,7 +156,13 @@ public class FlStbCm extends PluginForDecrypt {
                 logger.info("filestube: Pornhub link is broken: " + parameter);
                 return decryptedLinks;
             }
-            externID = br.getRegex("tnaflix\\.com/embedding_player/player_[^<>\"]+\\.swf\".*?value=\"config=(embedding_feed\\.php\\?viewkey=[a-z0-9]+)\"").getMatch(0);
+            externID = br.getRegex("player\\.tnaflix\\.com/video/(\\d+)\"").getMatch(0);
+            if (externID != null) {
+                decryptedLinks.add(createDownloadlink("http://www.tnaflix.com/cum-videos/" + System.currentTimeMillis() + "/video" + externID));
+                return decryptedLinks;
+            }
+            // 2nd handling for tnaflix
+            externID = br.getRegex("tnaflix\\.com/embedding_player/player_[^<>\"]+\\.swf.*?config=(embedding_feed\\.php\\?viewkey=[a-z0-9]+)").getMatch(0);
             if (externID != null) {
                 br.getPage("http://www.tnaflix.com/embedding_player/" + externID);
                 externID = br.getRegex("start_thumb>http://static\\.tnaflix\\.com/thumbs/[a-z0-9\\-_]+/[a-z0-9]+_(\\d+)l\\.jpg<").getMatch(0);
@@ -206,7 +213,14 @@ public class FlStbCm extends PluginForDecrypt {
             }
             externID = br.getRegex("shufuni\\.com/Flash/.*?flashvars=\"VideoCode=(.*?)\"").getMatch(0);
             if (externID != null) {
-                DownloadLink dl = createDownloadlink("http://www.shufuni.com/handlers/FLVStreamingv2.ashx?videoCode=" + externID);
+                final DownloadLink dl = createDownloadlink("http://www.shufuni.com/handlers/FLVStreamingv2.ashx?videoCode=" + externID);
+                dl.setFinalFileName(Encoding.htmlDecode(filename.trim()));
+                decryptedLinks.add(dl);
+                return decryptedLinks;
+            }
+            externID = br.getRegex("\"(http://video\\.fc2\\.com/flv2\\.swf\\?i=[A-Za-z0-9\\-]+)\\&").getMatch(0);
+            if (externID != null) {
+                final DownloadLink dl = createDownloadlink(externID);
                 dl.setFinalFileName(Encoding.htmlDecode(filename.trim()));
                 decryptedLinks.add(dl);
                 return decryptedLinks;

@@ -16,6 +16,7 @@
 
 package jd.plugins.decrypter;
 
+import java.net.UnknownHostException;
 import java.util.ArrayList;
 
 import jd.PluginWrapper;
@@ -42,7 +43,12 @@ public class GeneralFilesCom extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         br.setFollowRedirects(true);
         final String parameter = param.toString().replaceAll("(general\\-files\\.com|generalfiles\\.org|generalfiles\\.me|general\\-files\\.org)/", "general-files.biz/");
-        br.getPage(parameter);
+        try {
+            br.getPage(parameter);
+        } catch (final UnknownHostException e) {
+            logger.info("Link offline (server error): " + parameter);
+            return decryptedLinks;
+        }
 
         if (br.containsHTML(">File was removed from filehosting<|>The file no longer exists at this location")) {
             logger.info("Link offline: " + parameter);

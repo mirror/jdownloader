@@ -59,9 +59,16 @@ public class VeevrCom extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
         this.setBrowserExclusive();
+        downloadLink.setFinalFileName(null);
+        downloadLink.setName(null);
+        downloadLink.setName(new Regex(downloadLink.getDownloadURL(), "([A-Za-z0-9_\\-]+)$").getMatch(0) + ".flv");
         if (HDS) {
             br.getPage(downloadLink.getDownloadURL().replace("/embed/", "/videos/"));
-            if (br.containsHTML(">This video has been removed for violating the terms of use\\.<")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            if (br.containsHTML(">This video has been removed for violating the terms of use\\.<|>Page not found|id=\"not_found_404_page\"|id=\"deleted\"")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            if (br.containsHTML(">This video is still being processed")) {
+                downloadLink.getLinkStatus().setStatusText("Can't download: This video is still being processed");
+                return AvailableStatus.TRUE;
+            }
             final String filename = br.getRegex("property=\"og:title\" content=\"([^<>\"]*?)\"").getMatch(0);
             if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             downloadLink.getLinkStatus().setStatusText("HDS streaming isn't supported by JD yet");
@@ -105,7 +112,8 @@ public class VeevrCom extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        if (HDS) { throw new PluginException(LinkStatus.ERROR_FATAL, "HDS streaming isn't supported by JD yet"); }
+        if (br.containsHTML(">This video is still being processed")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Can't download: This video is still being processed", 30 * 60 * 1000l);//
+        if (HDS) throw new PluginException(LinkStatus.ERROR_FATAL, "HDS streaming isn't supported by JD yet");
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
         dl.startDownload();
     }

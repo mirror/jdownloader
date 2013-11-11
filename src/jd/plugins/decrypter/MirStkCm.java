@@ -17,6 +17,7 @@
 package jd.plugins.decrypter;
 
 import java.io.IOException;
+import java.net.UnknownHostException;
 import java.util.ArrayList;
 
 import jd.PluginWrapper;
@@ -78,7 +79,12 @@ public class MirStkCm extends PluginForDecrypt {
         String parameter = param.toString();
         // Easier to set redirects on and off than to define every provider. It also creates less maintenance if provider changes things up.
         br.setFollowRedirects(true);
-        br.getPage(parameter);
+        try {
+            br.getPage(parameter);
+        } catch (final UnknownHostException e) {
+            logger.info("Server error: " + parameter);
+            return decryptedLinks;
+        }
         if (br.containsHTML(">(File )?Not Found</")) {
             logger.warning("Invalid URL, either removed or never existed :" + parameter);
             return decryptedLinks;

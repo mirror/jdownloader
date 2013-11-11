@@ -43,7 +43,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "video.fc2.com" }, urls = { "http://video\\.fc2\\.com(/[a-z]{2})?(/a)?/content(/.*?)?/\\w+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "video.fc2.com" }, urls = { "http://video\\.fc2\\.com(/flv2\\.swf\\?i=|(/[a-z]{2})?(/a)?/content/)\\w+" }, flags = { 2 })
 public class VideoFCTwoCom extends PluginForHost {
 
     private String        finalURL = null;
@@ -63,6 +63,10 @@ public class VideoFCTwoCom extends PluginForHost {
     @Override
     public int getMaxSimultanFreeDownloadNum() {
         return -1;
+    }
+
+    public void correctDownloadLink(final DownloadLink link) {
+        link.setUrlDownload("http://video.fc2.com/en/content/" + new Regex(link.getDownloadURL(), "([A-Za-z0-9]+)$").getMatch(0) + "/");
     }
 
     private void login(Account account, boolean force) throws Exception {

@@ -54,6 +54,10 @@ public class HulkShareComFolder extends PluginForDecrypt {
             // Not available in old 0.9.581 Stable
         }
         br.getPage(parameter);
+        if (br.getRequest().getHttpConnection().getContentType().equals("text/javascript") || br.getRequest().getHttpConnection().getContentType().equals("text/css")) {
+            logger.info("Invalid link: " + parameter);
+            return decryptedLinks;
+        }
         String argh = br.getRedirectLocation();
         if (br.containsHTML("class=\"bigDownloadBtn") || br.containsHTML(">The owner of this file doesn\\'t allow downloading") || argh != null) {
             logger.info("Link offline: " + parameter);
