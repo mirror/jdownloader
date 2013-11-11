@@ -41,7 +41,7 @@ public abstract class ContextMenuManager<PackageType extends AbstractPackageNode
     protected DelayedRunnable updateDelayer;
 
     public ContextMenuManager() {
-        config = JsonConfig.create(Application.getResource("cfg/menus/" + getStorageKey()), ContextMenuConfigInterface.class);
+        config = JsonConfig.create(Application.getResource("cfg/menus_v2/" + getStorageKey()), ContextMenuConfigInterface.class);
         logger = LogController.getInstance().getLogger(getClass().getName());
         updateDelayer = new DelayedRunnable(1000l, 2000) {
             @Override
