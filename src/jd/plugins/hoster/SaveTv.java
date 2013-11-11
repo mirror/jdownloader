@@ -66,7 +66,6 @@ public class SaveTv extends PluginForHost {
     private final String        APIPAGE                                             = "http://api.save.tv/v2/Api.svc?wsdl";
     private static Object       LOCK                                                = new Object();
     private final String        COOKIE_HOST                                         = "http://save.tv";
-    private final String        PREMIUMPOSTPAGE                                     = "https://www.save.tv/STV/M/Index.cfm?sk=PREMIUM";
 
     /** Settings stuff */
     private static final String USEORIGINALFILENAME                                 = "USEORIGINALFILENAME";
@@ -529,8 +528,8 @@ public class SaveTv extends PluginForHost {
                             return;
                         }
                     }
-                    br.getPage("http://www.save.tv/STV/S/misc/home.cfm");
-                    extendedLogin("http://www.save.tv/STV/S/misc/home.cfm?", PREMIUMPOSTPAGE, Encoding.urlEncode(account.getUser()), Encoding.urlEncode(account.getPass()));
+                    final String postData = "sUsername=" + Encoding.urlEncode_light(account.getUser()) + "&sPassword=" + Encoding.urlEncode_light(account.getPass()) + "&image.x=" + new Random().nextInt(100) + "&image.y=" + new Random().nextInt(100) + "&image=Login&bAutoLoginActivate=1";
+                    br.postPage("https://www.save.tv/STV/M/Index.cfm?sk=PREMIUM", postData);
                     if (!br.containsHTML("/STV/M/obj/user/usEdit.cfm") || br.containsHTML("Bitte verifizieren Sie Ihre Logindaten")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                     /** Save cookies */
                     final HashMap<String, String> cookies = new HashMap<String, String>();
