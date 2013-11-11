@@ -14,7 +14,11 @@ public class ModernWindowsJnaIdleGetter extends IdleGetter {
             User32.LASTINPUTINFO lastInputInfo = new User32.LASTINPUTINFO();
             User32.INSTANCE.GetLastInputInfo(lastInputInfo);
             return Kernel32.INSTANCE.GetTickCount() - lastInputInfo.dwTime;
-        } catch (Exception e) {
+        } catch (Error e) {
+            // ClassNOtFoundError
+            fallback = new BasicMousePointerIdleGetter();
+            return fallback.getIdleTimeSinceLastUserInput();
+        } catch (Throwable e) {
             fallback = new BasicMousePointerIdleGetter();
             return fallback.getIdleTimeSinceLastUserInput();
         }
