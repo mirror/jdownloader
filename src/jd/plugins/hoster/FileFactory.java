@@ -467,7 +467,7 @@ public class FileFactory extends PluginForHost {
                     }
                     if (waittime > 0) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, waittime); }
                 }
-                if (br.containsHTML("You are currently downloading too many files at once")) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 10 * 60 * 1000l); }
+                if (br.containsHTML("You are currently downloading too many files at once") || br.containsHTML(">You have recently started a download") || br.getURL().contains("code=275")) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 5 * 60 * 1000l); }
                 checkErrors(false);
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
