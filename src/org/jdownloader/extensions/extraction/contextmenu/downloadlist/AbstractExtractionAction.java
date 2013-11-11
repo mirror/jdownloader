@@ -18,7 +18,16 @@ public abstract class AbstractExtractionAction extends AbstractExtensionAction<E
 
     public AbstractExtractionAction() {
         super();
+
+    }
+
+    @Override
+    public void requestUpdate(Object requestor) {
+        super.requestUpdate(requestor);
+        setEnabled(false);
+
         if (getSelection() != null && !getSelection().isEmpty()) {
+            setVisible(true);
             Thread thread = new Thread() {
                 public void run() {
                     asynchInit();
@@ -34,6 +43,9 @@ public abstract class AbstractExtractionAction extends AbstractExtensionAction<E
             thread.setDaemon(true);
             thread.setName("SetEnabled: " + getClass().getName());
             thread.start();
+        } else {
+            setVisible(false);
+            setEnabled(false);
         }
     }
 

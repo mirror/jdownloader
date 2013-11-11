@@ -57,7 +57,7 @@ import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.components.packagetable.PackageControllerTable;
 import org.jdownloader.gui.views.downloads.table.HorizontalScrollbarAction;
 import org.jdownloader.gui.views.linkgrabber.bottombar.MenuManagerLinkgrabberTabBottombar;
-import org.jdownloader.gui.views.linkgrabber.contextmenu.ConfirmSelectionContextAction;
+import org.jdownloader.gui.views.linkgrabber.contextmenu.ConfirmLinksContextAction;
 import org.jdownloader.gui.views.linkgrabber.contextmenu.ContextMenuFactory;
 import org.jdownloader.gui.views.linkgrabber.contextmenu.MenuManagerLinkgrabberTableContext;
 import org.jdownloader.images.NewTheme;
@@ -157,11 +157,11 @@ public class LinkGrabberTable extends PackageControllerTable<CrawledPackage, Cra
                         if (LinkGrabberTable.this.isRowSelected(row)) {
                             // clicked on a selected row. let's confirm them all
 
-                            ConfirmSelectionContextAction.confirmSelection(getSelectionInfo(true, true).derive(obj, e, null, null, col), org.jdownloader.settings.staticreferences.CFG_LINKGRABBER.LINKGRABBER_AUTO_START_ENABLED.getValue(), false, false);
+                            ConfirmLinksContextAction.confirmSelection(getSelectionInfo(true, true).derive(obj, e, null, null, col), org.jdownloader.settings.staticreferences.CFG_LINKGRABBER.LINKGRABBER_AUTO_START_ENABLED.getValue(), false, false);
                         } else {
                             // clicked on a not-selected row. only add the context item
 
-                            ConfirmSelectionContextAction.confirmSelection(new SelectionInfo<CrawledPackage, CrawledLink>(obj, null, e, null, null, this), org.jdownloader.settings.staticreferences.CFG_LINKGRABBER.LINKGRABBER_AUTO_START_ENABLED.getValue(), false, false);
+                            ConfirmLinksContextAction.confirmSelection(new SelectionInfo<CrawledPackage, CrawledLink>(obj, null, e, null, null, this), org.jdownloader.settings.staticreferences.CFG_LINKGRABBER.LINKGRABBER_AUTO_START_ENABLED.getValue(), false, false);
 
                         }
 
@@ -269,7 +269,7 @@ public class LinkGrabberTable extends PackageControllerTable<CrawledPackage, Cra
             if (TYPE.POFFLINE == dl.getParentNode().getType()) continue;
             if (dl.getDownloadLink().getAvailableStatus() != AvailableStatus.FALSE) {
                 containsOnline = true;
-                break;
+
             }
 
         }

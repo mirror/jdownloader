@@ -4,16 +4,17 @@ import java.awt.Component;
 import java.awt.Graphics;
 
 import javax.swing.Icon;
-import javax.swing.ImageIcon;
 import javax.swing.JCheckBox;
 
 import org.appwork.utils.ImageProvider.ImageProvider;
 
 public final class CheckBoxIcon implements Icon {
     private JCheckBox cb;
-    private ImageIcon internalIcon;
+    private Icon      internalIcon;
+    private int       size;
 
-    public CheckBoxIcon(boolean selected) {
+    public CheckBoxIcon(boolean selected, boolean enabled) {
+
         cb = new JCheckBox() {
             {
                 setSelected(true);
@@ -34,22 +35,35 @@ public final class CheckBoxIcon implements Icon {
                 return true;
             }
         };
+
         ;
         cb.setSelected(selected);
         // we need this workaround.
         // if we would use cb.paint(g); for every paintIcon call, this might habe sideeffects on the LAF painter.
+        this.size = 14;
+
         internalIcon = ImageProvider.toImageIcon(this);
+
+        if (!enabled) {
+            internalIcon = ImageProvider.getDisabledIcon(internalIcon);
+        }
+
+    }
+
+    public CheckBoxIcon(boolean selected) {
+        this(selected, true);
     }
 
     @Override
     public void paintIcon(Component c, Graphics g, int x, int y) {
         if (internalIcon != null) {
-            g.drawImage(internalIcon.getImage(), x, y, null);
+            internalIcon.paintIcon(c, g, x, y);
+
             return;
         }
         // g.setColor(Color.RED);
         // g.drawRect(0, 0, 14, 14);
-        g = g.create(x, y, getIconWidth(), getIconHeight());
+        g = g.create(x, y, 14, 14);
         // g.translate(x, y);
         g.translate(-4, -4);
         cb.paint(g);
@@ -64,11 +78,11 @@ public final class CheckBoxIcon implements Icon {
 
     @Override
     public int getIconWidth() {
-        return 14;
+        return size;
     }
 
     @Override
     public int getIconHeight() {
-        return 14;
+        return size;
     }
 }

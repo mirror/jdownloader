@@ -6,10 +6,10 @@ import jd.controlling.downloadcontroller.DownloadWatchDog;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
-import org.jdownloader.controlling.contextmenu.CustomizableSelectionAppAction;
+import org.jdownloader.controlling.contextmenu.CustomizableTableContextAppAction;
 import org.jdownloader.gui.translate._GUI;
 
-public class ResumeAction extends CustomizableSelectionAppAction<FilePackage, DownloadLink> {
+public class ResumeAction extends CustomizableTableContextAppAction<FilePackage, DownloadLink> {
 
     private static final long serialVersionUID = 8087143123808363305L;
 

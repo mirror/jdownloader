@@ -3,8 +3,6 @@ package org.jdownloader.gui.views.components.packagetable.context;
 import java.awt.event.ActionEvent;
 import java.util.List;
 
-import javax.swing.ImageIcon;
-
 import jd.controlling.TaskQueue;
 import jd.controlling.downloadcontroller.DownloadWatchDog;
 import jd.controlling.downloadcontroller.SingleDownloadController;
@@ -12,17 +10,16 @@ import jd.controlling.packagecontroller.AbstractNode;
 import jd.plugins.DownloadLink;
 
 import org.appwork.uio.UIOManager;
-import org.appwork.utils.ImageProvider.ImageProvider;
 import org.appwork.utils.event.queue.QueueAction;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.dialog.Dialog;
-import org.jdownloader.controlling.contextmenu.CustomizableSelectionAppAction;
+import org.jdownloader.controlling.contextmenu.CustomizableTableContextAppAction;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.images.NewTheme;
 
-public class EnabledAction extends CustomizableSelectionAppAction {
+public class EnabledAction extends CustomizableTableContextAppAction {
     /**
      * 
      */
@@ -45,26 +42,28 @@ public class EnabledAction extends CustomizableSelectionAppAction {
 
             switch (state = getState()) {
             case MIXED:
-                setSmallIcon(new ImageIcon(ImageProvider.merge(NewTheme.I().getImage("select", 18), NewTheme.I().getImage("checkbox_undefined", 14), 0, 0, 9, 8)));
+                setSmallIcon(getCheckBoxedIcon("select", true, false));
                 setName(_GUI._.EnabledAction_EnabledAction_disable());
                 break;
             case ALL_DISABLED:
-                setSmallIcon(new ImageIcon(ImageProvider.merge(NewTheme.I().getImage("select", 18), NewTheme.I().getImage("disabled", 14), 0, 0, 9, 8)));
+                setSmallIcon(getCheckBoxedIcon("select", false, true));
                 setName(_GUI._.EnabledAction_EnabledAction_enable());
                 break;
             case ALL_ENABLED:
-                setSmallIcon(new ImageIcon(ImageProvider.merge(NewTheme.I().getImage("select", 18), NewTheme.I().getImage("enabled", 14), 0, 0, 9, 8)));
+                setSmallIcon(getCheckBoxedIcon("select", true, true));
                 setName(_GUI._.EnabledAction_EnabledAction_disable());
                 break;
             }
         } else {
-            setSmallIcon(new ImageIcon(ImageProvider.merge(NewTheme.I().getImage("select", 18), NewTheme.I().getImage("disabled", 14), 0, 0, 9, 8)));
+            setSmallIcon(getCheckBoxedIcon("select", false, true));
             setName(_GUI._.EnabledAction_EnabledAction_empty());
         }
     }
 
     public EnabledAction() {
         super();
+        setSmallIcon(getCheckBoxedIcon("select", true, true));
+        setName(_GUI._.EnabledAction_EnabledAction_disable());
 
     }
 

@@ -1,16 +1,21 @@
 package org.jdownloader.controlling.contextmenu;
 
+import java.awt.AlphaComposite;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 
 import javax.swing.Action;
+import javax.swing.ImageIcon;
 
 import org.appwork.utils.GetterSetter;
 import org.appwork.utils.ReflectionUtils;
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.ImageProvider.ImageProvider;
 import org.appwork.utils.reflection.Clazz;
 import org.jdownloader.actions.AppAction;
+import org.jdownloader.gui.views.components.CheckBoxIcon;
+import org.jdownloader.images.NewTheme;
 
 public abstract class CustomizableAppAction extends AppAction {
     private MenuItemData           menuItemData;
@@ -21,7 +26,15 @@ public abstract class CustomizableAppAction extends AppAction {
         return new ArrayList<ActionContext>(setupObjects);
     }
 
+    protected ImageIcon getCheckBoxedIcon(String string, boolean selected, boolean enabled) {
+        return new ImageIcon(ImageProvider.merge(NewTheme.I().getIcon(string, 18), new CheckBoxIcon(selected, enabled), -2, -2, 6, 6, null, AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.75f)));
+    }
+
     private long lastRequestUpdate;
+
+    public void removeContextSetup(ActionContext contextSetup) {
+        this.setupObjects.remove(contextSetup);
+    }
 
     public void addContextSetup(ActionContext contextSetup) {
         if (this.setupObjects == null) this.setupObjects = new HashSet<ActionContext>();

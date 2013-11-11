@@ -2,8 +2,6 @@ package org.jdownloader.gui.views.downloads.action;
 
 import java.awt.event.ActionEvent;
 
-import javax.swing.ImageIcon;
-
 import jd.controlling.TaskQueue;
 import jd.controlling.downloadcontroller.DownloadWatchDog;
 import jd.controlling.downloadcontroller.SingleDownloadController;
@@ -11,18 +9,17 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
 import org.appwork.uio.UIOManager;
-import org.appwork.utils.ImageProvider.ImageProvider;
 import org.appwork.utils.event.queue.QueueAction;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.jdownloader.captcha.blacklist.CaptchaBlackList;
-import org.jdownloader.controlling.contextmenu.CustomizableSelectionAppAction;
+import org.jdownloader.controlling.contextmenu.CustomizableTableContextAppAction;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.plugins.SkipReason;
 
-public class SkipAction extends CustomizableSelectionAppAction<FilePackage, DownloadLink> {
+public class SkipAction extends CustomizableTableContextAppAction<FilePackage, DownloadLink> {
 
     enum State {
         ALL_SKIPPED,
@@ -43,25 +40,28 @@ public class SkipAction extends CustomizableSelectionAppAction<FilePackage, Down
         if (hasSelection(selection)) {
             switch (state = getState()) {
             case MIXED:
-                setSmallIcon(new ImageIcon(ImageProvider.merge(NewTheme.I().getImage("skipped", 18), NewTheme.I().getImage("checkbox_undefined", 14), 0, 0, 9, 8)));
+                setSmallIcon(getCheckBoxedIcon("skipped", true, false));
                 setName(_GUI._.ForceDownloadAction_UnskipDownloadAction());
                 break;
             case ALL_UNSKIPPED:
-                setSmallIcon(new ImageIcon(ImageProvider.merge(NewTheme.I().getImage("skipped", 18), NewTheme.I().getImage("disabled", 14), 0, 0, 9, 8)));
+                setSmallIcon(getCheckBoxedIcon("skipped", false, true));
                 setName(_GUI._.ForceDownloadAction_SkipDownloadAction());
                 break;
             case ALL_SKIPPED:
-                setSmallIcon(new ImageIcon(ImageProvider.merge(NewTheme.I().getImage("skipped", 18), NewTheme.I().getImage("enabled", 14), 0, 0, 9, 8)));
+                setSmallIcon(getCheckBoxedIcon("skipped", true, true));
                 setName(_GUI._.ForceDownloadAction_UnskipDownloadAction());
                 break;
             }
         } else {
-            setSmallIcon(new ImageIcon(ImageProvider.merge(NewTheme.I().getImage("skipped", 18), NewTheme.I().getImage("disabled", 14), 0, 0, 9, 8)));
+            setSmallIcon(getCheckBoxedIcon("skipped", false, true));
             setName(_GUI._.ForceDownloadAction_SkipDownloadAction());
         }
     }
 
     public SkipAction() {
+
+        setSmallIcon(getCheckBoxedIcon("skipped", true, true));
+        setName(_GUI._.ForceDownloadAction_UnskipDownloadAction());
 
     }
 

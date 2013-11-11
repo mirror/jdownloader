@@ -9,10 +9,10 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
 import org.appwork.utils.os.CrossSystem;
-import org.jdownloader.controlling.contextmenu.CustomizableSelectionAppAction;
+import org.jdownloader.controlling.contextmenu.CustomizableTableContextAppAction;
 import org.jdownloader.gui.translate._GUI;
 
-public class OpenFileAction extends CustomizableSelectionAppAction<FilePackage, DownloadLink> {
+public class OpenFileAction extends CustomizableTableContextAppAction<FilePackage, DownloadLink> {
 
     private static final long serialVersionUID = 1901008532686173167L;
 

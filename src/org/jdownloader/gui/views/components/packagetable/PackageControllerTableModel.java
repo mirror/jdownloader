@@ -77,6 +77,7 @@ public abstract class PackageControllerTableModel<PackageType extends AbstractPa
     public PackageControllerTableModel(final PackageController<PackageType, ChildrenType> pc, String id) {
         super(id);
         resetSorting();
+
         this.pc = pc;
         asyncRefresh = new DelayedRunnable(queue, 150l, 500l) {
 

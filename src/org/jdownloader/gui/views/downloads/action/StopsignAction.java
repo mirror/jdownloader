@@ -10,12 +10,12 @@ import jd.gui.swing.jdgui.JDGui;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
-import org.jdownloader.controlling.contextmenu.CustomizableSelectionAppAction;
+import org.jdownloader.controlling.contextmenu.CustomizableTableContextAppAction;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.downloads.table.DownloadsTableModel;
 import org.jdownloader.images.NewTheme;
 
-public class StopsignAction extends CustomizableSelectionAppAction<FilePackage, DownloadLink> {
+public class StopsignAction extends CustomizableTableContextAppAction<FilePackage, DownloadLink> {
 
     private static final long serialVersionUID = 3332656936365114557L;
 

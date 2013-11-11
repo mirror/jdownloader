@@ -14,14 +14,14 @@ import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.appwork.utils.swing.dialog.ProgressDialog;
 import org.appwork.utils.swing.dialog.ProgressDialog.ProgressGetter;
-import org.jdownloader.controlling.contextmenu.CustomizableSelectionAppAction;
+import org.jdownloader.controlling.contextmenu.CustomizableTableContextAppAction;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.components.packagetable.LinkTreeUtils;
 import org.jdownloader.images.NewTheme;
 
-public class OpenInBrowserAction extends CustomizableSelectionAppAction<CrawledPackage, CrawledLink> {
+public class OpenInBrowserAction extends CustomizableTableContextAppAction<CrawledPackage, CrawledLink> {
 
     private static final long serialVersionUID = 7911375550836173693L;
 

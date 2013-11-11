@@ -56,6 +56,8 @@ public class ActionData implements Storable {
     private String                  iconKey;
     private HashMap<String, Object> setup;
 
+    private String                  tooltip;
+
     public ActionData(/* Storable */) {
 
     }
@@ -117,6 +119,14 @@ public class ActionData implements Storable {
         if (setup == null) return null;
 
         return setup.get(name2.toUpperCase(Locale.ENGLISH));
+    }
+
+    public void setTooltip(String tooltip) {
+        this.tooltip = tooltip;
+    }
+
+    public String getTooltip() {
+        return tooltip;
     }
 
 }

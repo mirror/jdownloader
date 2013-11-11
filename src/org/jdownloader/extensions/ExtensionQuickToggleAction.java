@@ -9,15 +9,20 @@ import org.appwork.storage.config.events.GenericConfigEventListener;
 import org.appwork.storage.config.handler.BooleanKeyHandler;
 import org.appwork.storage.config.handler.KeyHandler;
 import org.jdownloader.controlling.contextmenu.CustomizableAppAction;
+import org.jdownloader.controlling.contextmenu.MenuItemData;
 import org.jdownloader.gui.translate._GUI;
 
 public class ExtensionQuickToggleAction extends CustomizableAppAction implements GenericConfigEventListener<Boolean> {
     private LazyExtension extension;
 
-    public ExtensionQuickToggleAction(String data) {
+    public ExtensionQuickToggleAction() {
 
-        setData(data);
+    }
 
+    @Override
+    public void setMenuItemData(MenuItemData data) {
+        super.setMenuItemData(data);
+        setData(data.getActionData().getData());
     }
 
     public void setData(String data) {

@@ -9,10 +9,10 @@ import jd.controlling.linkcrawler.CrawledPackage;
 import org.appwork.utils.event.queue.QueueAction;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogNoAnswerException;
-import org.jdownloader.controlling.contextmenu.CustomizableSelectionAppAction;
+import org.jdownloader.controlling.contextmenu.CustomizableTableContextAppAction;
 import org.jdownloader.gui.translate._GUI;
 
-public class MergeToPackageAction extends CustomizableSelectionAppAction<CrawledPackage, CrawledLink> {
+public class MergeToPackageAction extends CustomizableTableContextAppAction<CrawledPackage, CrawledLink> {
 
     /**
      * 

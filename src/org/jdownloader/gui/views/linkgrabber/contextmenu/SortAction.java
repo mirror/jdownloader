@@ -12,8 +12,7 @@ import jd.gui.swing.jdgui.interfaces.View;
 import org.appwork.swing.exttable.ExtColumn;
 import org.appwork.utils.event.queue.Queue.QueuePriority;
 import org.appwork.utils.event.queue.QueueAction;
-import org.jdownloader.controlling.contextmenu.CustomizableSelectionAppAction;
-import org.jdownloader.controlling.contextmenu.TableContext;
+import org.jdownloader.controlling.contextmenu.CustomizableTableContextAppAction;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.components.packagetable.PackageControllerTableModel;
 import org.jdownloader.gui.views.downloads.DownloadsView;
@@ -21,7 +20,7 @@ import org.jdownloader.gui.views.downloads.table.DownloadsTable;
 import org.jdownloader.gui.views.linkgrabber.LinkGrabberTable;
 import org.jdownloader.gui.views.linkgrabber.LinkGrabberView;
 
-public class SortAction<PackageType extends AbstractPackageNode<ChildrenType, PackageType>, ChildrenType extends AbstractPackageChildrenNode<PackageType>> extends CustomizableSelectionAppAction<PackageType, ChildrenType> {
+public class SortAction<PackageType extends AbstractPackageNode<ChildrenType, PackageType>, ChildrenType extends AbstractPackageChildrenNode<PackageType>> extends CustomizableTableContextAppAction<PackageType, ChildrenType> {
 
     /**
      * 
@@ -53,8 +52,15 @@ public class SortAction<PackageType extends AbstractPackageNode<ChildrenType, Pa
 
     }
 
+    @Override
+    public void setEnabled(boolean newValue) {
+        super.setEnabled(true);
+    }
+
     public SortAction() {
-        addContextSetup(new TableContext(true, true));
+        super(true, true);
+        setIconKey("sort");
+        setName(_GUI._.SortAction_SortAction_object_empty());
 
     }
 

@@ -9,8 +9,9 @@ import jd.controlling.linkcollector.LinkCollectorCrawler;
 import jd.controlling.linkcollector.LinkCollectorEvent;
 import jd.controlling.linkcollector.LinkCollectorListener;
 import jd.controlling.linkcrawler.CrawledLink;
-import jd.controlling.linkcrawler.CrawledPackage;
 import jd.controlling.packagecontroller.AbstractNode;
+import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
 
 import org.appwork.swing.components.ExtButton;
 import org.appwork.utils.swing.EDTRunner;
@@ -44,12 +45,12 @@ public class DownloadPropertiesHeader extends AbstractPanelHeader implements Lin
             protected void runInEDT() {
                 current = objectbyRow;
                 String str = "";
-                if (objectbyRow instanceof CrawledPackage) {
-                    CrawledPackage pkg = (CrawledPackage) objectbyRow;
+                if (objectbyRow instanceof FilePackage) {
+                    FilePackage pkg = (FilePackage) objectbyRow;
                     setIcon(NewTheme.I().getIcon("package_open", 16));
                     str = (_GUI._.LinkgrabberPropertiesHeader_update_package(pkg.getName()));
-                } else if (objectbyRow instanceof CrawledLink) {
-                    CrawledLink link = (CrawledLink) objectbyRow;
+                } else if (objectbyRow instanceof DownloadLink) {
+                    DownloadLink link = (DownloadLink) objectbyRow;
                     setIcon(link.getIcon());
                     str = (_GUI._.LinkgrabberPropertiesHeader_update_link(link.getName()));
                 }

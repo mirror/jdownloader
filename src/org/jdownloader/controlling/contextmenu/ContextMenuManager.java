@@ -71,6 +71,12 @@ public abstract class ContextMenuManager<PackageType extends AbstractPackageNode
         return actionData;
     }
 
+    protected static ActionData setTooltip(ActionData actionData, String tooltip) {
+        if (StringUtils.isEmpty(tooltip)) tooltip = MenuItemData.EMPTY_NAME;
+        actionData.setTooltip(tooltip);
+        return actionData;
+    }
+
     protected static MenuItemData setOptional(Class<?> class1) {
         return setOptional(new MenuItemData(new ActionData(class1)));
     }

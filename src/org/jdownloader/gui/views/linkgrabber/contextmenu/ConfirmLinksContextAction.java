@@ -27,7 +27,7 @@ import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.appwork.utils.swing.dialog.DialogNoAnswerException;
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.controlling.contextmenu.ActionContext;
-import org.jdownloader.controlling.contextmenu.CustomizableSelectionAppAction;
+import org.jdownloader.controlling.contextmenu.CustomizableTableContextAppAction;
 import org.jdownloader.controlling.contextmenu.Customizer;
 import org.jdownloader.extensions.ExtensionController;
 import org.jdownloader.extensions.extraction.Archive;
@@ -41,118 +41,41 @@ import org.jdownloader.gui.event.GUIEventSender;
 import org.jdownloader.gui.event.GUIListener;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo;
+import org.jdownloader.gui.views.linkgrabber.LinkGrabberTable;
 import org.jdownloader.gui.views.linkgrabber.addlinksdialog.LinkgrabberSettings;
 import org.jdownloader.images.NewTheme;
 
-public class ConfirmSelectionContextAction extends CustomizableSelectionAppAction<CrawledPackage, CrawledLink> implements GUIListener, ActionContext {
+public class ConfirmLinksContextAction extends CustomizableTableContextAppAction<CrawledPackage, CrawledLink> implements GUIListener, ActionContext {
+
+    public static final String SELECTION_ONLY = "selectionOnly";
+
+    public static enum AutoStartOptions {
+        @EnumLabel("Autostart: Automode (Quicksettings)")
+        AUTO,
+        @EnumLabel("Autostart: Never start Downloads")
+        DISABLED,
+        @EnumLabel("Autostart: Always start Downloads")
+        ENABLED
+
+    }
+
+    private boolean ctrlToggle = true;
+
+    @Customizer(name = "CTRL Toggle Enabled")
+    public boolean isCtrlToggle() {
+        return ctrlToggle;
+    }
+
+    public void setCtrlToggle(boolean ctrlToggle) {
+        this.ctrlToggle = ctrlToggle;
+    }
+
+    public static final String AUTO_START       = "autoStart";
 
     /**
      * 
      */
-    private static final long serialVersionUID = -3937346180905569896L;
-
-    public static enum AutoStartOptions {
-        @EnumLabel("Autostart: Never start Downloads")
-        DISABLED,
-        @EnumLabel("Autostart: Always start Downloads")
-        ENABLED,
-        @EnumLabel("Autostart: Automode (Quicksettings)")
-        AUTO
-
-    }
-
-    private AutoStartOptions autoStart = AutoStartOptions.AUTO;
-
-    public AutoStartOptions getAutoStart() {
-        return autoStart;
-    }
-
-    public static final String AUTO_START = "autoStart";
-
-    @Customizer(name = "Autostart Downloads afterwards")
-    public ConfirmSelectionContextAction setAutoStart(AutoStartOptions autoStart) {
-        if (autoStart == null) autoStart = AutoStartOptions.AUTO;
-        this.autoStart = autoStart;
-
-        updateLabelAndIcon();
-        return this;
-    }
-
-    private void updateLabelAndIcon() {
-        if (doAutostart()) {
-            setName(_GUI._.ConfirmAction_ConfirmAction_context_add_and_start());
-            Image add = NewTheme.I().getImage("media-playback-start", 16);
-            Image play = NewTheme.I().getImage("add", 14);
-            setSmallIcon(new ImageIcon(ImageProvider.merge(add, play, 0, 0, 6, 6)));
-            setIconKey(null);
-        } else {
-            setName(_GUI._.ConfirmAction_ConfirmAction_context_add());
-            setSmallIcon(NewTheme.I().getIcon(IconKey.ICON_GO_NEXT, 20));
-        }
-    }
-
-    protected boolean doAutostart() {
-        boolean ret = autoStart == AutoStartOptions.ENABLED || (autoStart == AutoStartOptions.AUTO && org.jdownloader.settings.staticreferences.CFG_LINKGRABBER.LINKGRABBER_AUTO_START_ENABLED.getValue());
-        if (metaCtrl) {
-            ret = !ret;
-        }
-        return ret;
-    }
-
-    protected static void switchToDownloadTab() {
-
-        new EDTRunner() {
-
-            @Override
-            protected void runInEDT() {
-                JDGui.getInstance().requestPanel(JDGui.Panels.DOWNLOADLIST);
-            }
-        };
-
-    }
-
-    private boolean clearListAfterConfirm = false;
-    private boolean metaCtrl              = false;
-
-    @Customizer(name = "Clear Linkgrabber after adding links")
-    public boolean isClearListAfterConfirm() {
-        return clearListAfterConfirm;
-    }
-
-    @Customizer(name = "Clear Linkgrabber after adding links")
-    public void setClearListAfterConfirm(boolean clearListAfterConfirm) {
-        this.clearListAfterConfirm = clearListAfterConfirm;
-    }
-
-    public ConfirmSelectionContextAction() {
-        super();
-
-        GUIEventSender.getInstance().addListener(this, true);
-        metaCtrl = KeyObserver.getInstance().isMetaDown() || KeyObserver.getInstance().isControlDown();
-
-    }
-
-    @Override
-    protected void initContextDefaults() {
-        setAutoStart(AutoStartOptions.AUTO);
-    }
-
-    public ConfirmSelectionContextAction(SelectionInfo<CrawledPackage, CrawledLink> selectionInfo) {
-        this();
-        selection = selectionInfo;
-    }
-
-    @Override
-    public void requestUpdate(Object requestor) {
-        super.requestUpdate(requestor);
-        updateLabelAndIcon();
-    }
-
-    public void actionPerformed(ActionEvent e) {
-        if (!isEnabled()) return;
-        confirmSelection(getSelection(), doAutostart(), isClearListAfterConfirm(), JsonConfig.create(LinkgrabberSettings.class).isAutoSwitchToDownloadTableOnConfirmDefaultEnabled());
-
-    }
+    private static final long  serialVersionUID = -3937346180905569896L;
 
     public static void confirmSelection(final SelectionInfo<CrawledPackage, CrawledLink> selection, final boolean autoStart, final boolean clearLinkgrabber, final boolean doTabSwitch) {
         Thread thread = new Thread() {
@@ -223,13 +146,74 @@ public class ConfirmSelectionContextAction extends CustomizableSelectionAppActio
         };
         thread.setDaemon(true);
         thread.setPriority(Thread.MIN_PRIORITY);
-        thread.setName(ConfirmSelectionContextAction.class.getName());
+        thread.setName(ConfirmLinksContextAction.class.getName());
         thread.start();
     }
 
+    protected static void switchToDownloadTab() {
+
+        new EDTRunner() {
+
+            @Override
+            protected void runInEDT() {
+                JDGui.getInstance().requestPanel(JDGui.Panels.DOWNLOADLIST);
+            }
+        };
+
+    }
+
+    private AutoStartOptions autoStart             = AutoStartOptions.AUTO;
+
+    private boolean          clearListAfterConfirm = false;
+
+    private boolean          metaCtrl              = false;
+
+    private boolean          selectionOnly         = true;
+
+    public ConfirmLinksContextAction() {
+        super(false, true);
+        GUIEventSender.getInstance().addListener(this, true);
+        metaCtrl = KeyObserver.getInstance().isMetaDown() || KeyObserver.getInstance().isControlDown();
+
+    }
+
+    public ConfirmLinksContextAction(SelectionInfo<CrawledPackage, CrawledLink> selectionInfo) {
+        this();
+        selection = selectionInfo;
+    }
+
+    public void actionPerformed(ActionEvent e) {
+        if (!isEnabled()) return;
+        confirmSelection(getSelection(), doAutostart(), isClearListAfterConfirm(), JsonConfig.create(LinkgrabberSettings.class).isAutoSwitchToDownloadTableOnConfirmDefaultEnabled());
+
+    }
+
+    protected boolean doAutostart() {
+        boolean ret = autoStart == AutoStartOptions.ENABLED || (autoStart == AutoStartOptions.AUTO && org.jdownloader.settings.staticreferences.CFG_LINKGRABBER.LINKGRABBER_AUTO_START_ENABLED.getValue());
+        if (metaCtrl && isCtrlToggle()) {
+            ret = !ret;
+        }
+        return ret;
+    }
+
+    public AutoStartOptions getAutoStart() {
+        return autoStart;
+    }
+
     @Override
-    public boolean isEnabled() {
-        return hasSelection();
+    protected void initContextDefaults() {
+        setAutoStart(AutoStartOptions.AUTO);
+    }
+
+    @Customizer(name = "Clear Linkgrabber after adding links")
+    public boolean isClearListAfterConfirm() {
+        return clearListAfterConfirm;
+    }
+
+    @Customizer(name = "Add only selected Links")
+    public boolean isSelectionOnly() {
+        return selectionOnly;
+
     }
 
     @Override
@@ -246,4 +230,56 @@ public class ConfirmSelectionContextAction extends CustomizableSelectionAppActio
 
         updateLabelAndIcon();
     }
+
+    @Override
+    public void requestUpdate(Object requestor) {
+        super.requestUpdate(requestor);
+        if (!isSelectionOnly()) {
+            selection = LinkGrabberTable.getInstance().getSelectionInfo(false, true);
+        }
+        updateLabelAndIcon();
+    }
+
+    @Customizer(name = "Autostart Downloads afterwards")
+    public ConfirmLinksContextAction setAutoStart(AutoStartOptions autoStart) {
+        if (autoStart == null) autoStart = AutoStartOptions.AUTO;
+        this.autoStart = autoStart;
+        updateLabelAndIcon();
+        return this;
+    }
+
+    @Customizer(name = "Clear Linkgrabber after adding links")
+    public void setClearListAfterConfirm(boolean clearListAfterConfirm) {
+        this.clearListAfterConfirm = clearListAfterConfirm;
+    }
+
+    public void setSelectionOnly(boolean selectionOnly) {
+        this.selectionOnly = selectionOnly;
+        updateLabelAndIcon();
+    }
+
+    protected void updateLabelAndIcon() {
+
+        if (doAutostart()) {
+            if (isSelectionOnly()) {
+                setName(_GUI._.ConfirmAction_ConfirmAction_context_add_and_start());
+            } else {
+                setName(_GUI._.ConfirmAllContextmenuAction_context_add_and_start());
+            }
+
+            Image add = NewTheme.I().getImage("media-playback-start", 16);
+            Image play = NewTheme.I().getImage("add", 14);
+            setSmallIcon(new ImageIcon(ImageProvider.merge(add, play, 0, 0, 6, 6)));
+            setIconKey(null);
+        } else {
+            if (isSelectionOnly()) {
+                setName(_GUI._.ConfirmAction_ConfirmAction_context_add());
+            } else {
+                setName(_GUI._.ConfirmAllContextmenuAction_context_add());
+            }
+            setSmallIcon(NewTheme.I().getIcon(IconKey.ICON_GO_NEXT, 20));
+        }
+
+    }
+
 }

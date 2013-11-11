@@ -11,10 +11,10 @@ import jd.controlling.linkcrawler.CrawledLink;
 import jd.plugins.DownloadLink;
 
 import org.appwork.utils.event.queue.QueueAction;
-import org.jdownloader.controlling.contextmenu.CustomizableSelectionAppAction;
+import org.jdownloader.controlling.contextmenu.CustomizableTableContextAppAction;
 import org.jdownloader.gui.translate._GUI;
 
-public class CheckStatusAction extends CustomizableSelectionAppAction {
+public class CheckStatusAction extends CustomizableTableContextAppAction {
 
     private static final long serialVersionUID = 6821943398259956694L;
 

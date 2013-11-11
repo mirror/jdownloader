@@ -25,12 +25,18 @@ public class AddContainerAction extends CustomizableAppAction {
      * 
      */
     public AddContainerAction() {
+
         setIconKey("addContainer");
         setName(_GUI._.AddContainerAction());
         setAccelerator(KeyEvent.VK_O);
     }
 
     private static final long serialVersionUID = -1758454550263991986L;
+
+    @Override
+    public void setEnabled(boolean newValue) {
+        super.setEnabled(true);
+    }
 
     public void actionPerformed(ActionEvent e) {
 

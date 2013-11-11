@@ -6,10 +6,10 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
 import org.appwork.exceptions.WTFException;
-import org.jdownloader.controlling.contextmenu.CustomizableSelectionAppAction;
+import org.jdownloader.controlling.contextmenu.CustomizableTableContextAppAction;
 import org.jdownloader.gui.translate._GUI;
 
-public class NewPackageAction extends CustomizableSelectionAppAction<FilePackage, DownloadLink> {
+public class NewPackageAction extends CustomizableTableContextAppAction<FilePackage, DownloadLink> {
 
     private static final long serialVersionUID = -8544759375428602013L;
 

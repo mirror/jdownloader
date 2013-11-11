@@ -24,6 +24,7 @@ public class AddLinksAction extends CustomizableAppAction {
     private static final long serialVersionUID = -1824957567580275989L;
 
     public AddLinksAction(String string) {
+
         setName(string);
         setIconKey("add");
         setTooltipText(_GUI._.AddLinksAction_AddLinksAction_tt());
@@ -34,6 +35,11 @@ public class AddLinksAction extends CustomizableAppAction {
     public AddLinksAction() {
         this(_GUI._.AddLinksToLinkgrabberAction());
 
+    }
+
+    @Override
+    public void setEnabled(boolean newValue) {
+        super.setEnabled(true);
     }
 
     public void actionPerformed(ActionEvent e) {

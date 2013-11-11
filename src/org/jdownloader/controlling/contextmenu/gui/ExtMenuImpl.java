@@ -14,6 +14,7 @@ public class ExtMenuImpl extends JMenu implements ExtMenuInterface {
 
     public ExtMenuImpl(String name) {
         super(name);
+        setEnabled(false);
     }
 
     /**
@@ -28,7 +29,9 @@ public class ExtMenuImpl extends JMenu implements ExtMenuInterface {
     }
 
     public JMenuItem add(JMenuItem menuItem) {
-
+        if (menuItem.isEnabled()) {
+            setEnabled(true);
+        }
         return super.add(menuItem);
     }
 
@@ -37,7 +40,12 @@ public class ExtMenuImpl extends JMenu implements ExtMenuInterface {
         if (c instanceof JSeparator) {
             if (getMenuComponentCount() == 0) return c;
             if (getMenuComponentCount() > 0 && getMenuComponent(getMenuComponentCount() - 1) instanceof JSeparator) return c;
+        } else {
+            if (c.isEnabled()) {
+                setEnabled(true);
+            }
         }
+
         return super.add(c);
     }
 

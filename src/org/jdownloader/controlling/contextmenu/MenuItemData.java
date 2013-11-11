@@ -149,11 +149,6 @@ public class MenuItemData implements Storable {
         this(new ActionData(class1));
     }
 
-    public MenuItemData(ActionData actionData, boolean visible) {
-        this(actionData);
-        setVisible(visible);
-    }
-
     public MenuItemData createValidatedItem() throws InstantiationException, IllegalAccessException, ClassNotFoundException, ExtensionNotLoadedException {
 
         if (className == null || getClass().getName().equals(className)) {
@@ -182,7 +177,7 @@ public class MenuItemData implements Storable {
             ret = (MenuItemData) Class.forName(menuItemData.getClassName()).newInstance();
         }
         ret.setVisible(menuItemData.isVisible());
-        ret.setActionData(getActionData());
+        if (getActionData() != null) ret.setActionData(getActionData());
         ret.setIconKey(menuItemData.getIconKey());
         ret.setName(menuItemData.getName());
         ret.setItems(menuItemData.getItems());
@@ -199,12 +194,13 @@ public class MenuItemData implements Storable {
             throw new WTFException("No ACTION");
         }
         CustomizableAppAction action = createAction();
+        action.requestUpdate(this);
         if (!isVisible()) return null;
         if (!action.isVisible()) return null;
         if (StringUtils.isNotEmpty(getShortcut())) {
             action.setAccelerator(KeyStroke.getKeyStroke(getShortcut()));
         }
-        action.requestUpdate(this);
+
         if (action instanceof ComponentProviderInterface) { return ((ComponentProviderInterface) action).createComponent(this); }
         JMenuItem ret = action.isToggle() ? new JCheckBoxMenuItem(action) : new JMenuItem(action);
 

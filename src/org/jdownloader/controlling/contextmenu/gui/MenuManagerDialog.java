@@ -426,7 +426,7 @@ public class MenuManagerDialog extends AbstractDialog<Object> implements TreeSel
             if (tree.getRowCount() <= rows[0]) {
                 rows[0]--;
             }
-            if (rows[0] > 0) {
+            if (rows[0] >= 0) {
                 tree.setSelectionRows(rows);
             }
         }

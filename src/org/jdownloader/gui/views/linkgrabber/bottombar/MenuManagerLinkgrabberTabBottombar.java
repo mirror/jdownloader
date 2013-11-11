@@ -17,11 +17,10 @@ import org.jdownloader.gui.views.linkgrabber.LinkgrabberOverviewPanelToggleActio
 import org.jdownloader.gui.views.linkgrabber.LinkgrabberPropertiesToggleAction;
 import org.jdownloader.gui.views.linkgrabber.LinkgrabberSearchMenuItem;
 import org.jdownloader.gui.views.linkgrabber.LinkgrabberSidebarToggleAction;
-import org.jdownloader.gui.views.linkgrabber.actions.ConfirmAllAction;
 import org.jdownloader.gui.views.linkgrabber.actions.ConfirmSelectionBarAction;
 import org.jdownloader.gui.views.linkgrabber.actions.ResetAction;
 import org.jdownloader.gui.views.linkgrabber.contextmenu.ClearFilteredLinksAction;
-import org.jdownloader.gui.views.linkgrabber.contextmenu.ConfirmSelectionContextAction.AutoStartOptions;
+import org.jdownloader.gui.views.linkgrabber.contextmenu.ConfirmLinksContextAction.AutoStartOptions;
 import org.jdownloader.gui.views.linkgrabber.contextmenu.RemoveIncompleteArchives;
 
 public class MenuManagerLinkgrabberTabBottombar extends AbstractBottomBarMenuManager {
@@ -64,13 +63,13 @@ public class MenuManagerLinkgrabberTabBottombar extends AbstractBottomBarMenuMan
 
         mr.add(setOptional(new MenuItemData(new ActionData(ResetAction.class))));
 
-        mr.add(setName(setIconKey(new ActionData(GenericDeleteFromLinkgrabberBarAction.class).putSetup(GenericDeleteFromLinkgrabberBarAction.DELETE_ALL, true), IconKey.ICON_DELETE), null));
+        mr.add(setName(setIconKey(new ActionData(GenericDeleteFromLinkgrabberAction.class).putSetup(GenericDeleteFromLinkgrabberAction.DELETE_ALL, true), IconKey.ICON_DELETE), null));
 
         DeleteContainer delete = new DeleteContainer();
 
-        delete.add(setIconKey(new ActionData(GenericDeleteFromLinkgrabberBarAction.class).putSetup(GenericDeleteFromLinkgrabberBarAction.DELETE_DISABLED, true), IconKey.ICON_REMOVE_DISABLED));
+        delete.add(setIconKey(new ActionData(GenericDeleteFromLinkgrabberAction.class).putSetup(GenericDeleteFromLinkgrabberAction.DELETE_DISABLED, true), IconKey.ICON_REMOVE_DISABLED));
 
-        delete.add(setIconKey(new ActionData(GenericDeleteFromLinkgrabberBarAction.class).putSetup(GenericDeleteFromLinkgrabberBarAction.DELETE_OFFLINE, true), IconKey.ICON_REMOVE_OFFLINE));
+        delete.add(setIconKey(new ActionData(GenericDeleteFromLinkgrabberAction.class).putSetup(GenericDeleteFromLinkgrabberAction.DELETE_OFFLINE, true), IconKey.ICON_REMOVE_OFFLINE));
 
         //
 
@@ -106,8 +105,8 @@ public class MenuManagerLinkgrabberTabBottombar extends AbstractBottomBarMenuMan
         //
         MenuContainer all = new MenuContainer(_GUI._.ConfirmOptionsAction_actionPerformed_all(), "confirmAll");
         MenuContainer selected = new MenuContainer(_GUI._.ConfirmOptionsAction_actionPerformed_selected(), "confirmSelectedLinks");
-        all.add(new ActionData(ConfirmAllAction.class).putSetup(ConfirmAllAction.AUTO_START, false));
-        all.add(new ActionData(ConfirmAllAction.class).putSetup(ConfirmAllAction.AUTO_START, true));
+        all.add(new ActionData(ConfirmSelectionBarAction.class).putSetup(ConfirmSelectionBarAction.AUTO_START, AutoStartOptions.DISABLED.toString()).putSetup(ConfirmSelectionBarAction.SELECTION_ONLY, false));
+        all.add(new ActionData(ConfirmSelectionBarAction.class).putSetup(ConfirmSelectionBarAction.AUTO_START, AutoStartOptions.ENABLED.toString()).putSetup(ConfirmSelectionBarAction.SELECTION_ONLY, false));
 
         // KeyStroke.getKeyStroke(KeyEvent.VK_ENTER, InputEvent.CTRL_DOWN_MASK)
         selected.add(new ActionData(ConfirmSelectionBarAction.class).putSetup(ConfirmSelectionBarAction.AUTO_START, AutoStartOptions.DISABLED.toString()));

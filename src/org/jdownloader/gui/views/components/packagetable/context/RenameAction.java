@@ -7,7 +7,7 @@ import javax.swing.KeyStroke;
 import jd.gui.swing.jdgui.MainTabbedPane;
 import jd.gui.swing.jdgui.interfaces.View;
 
-import org.jdownloader.controlling.contextmenu.CustomizableSelectionAppAction;
+import org.jdownloader.controlling.contextmenu.CustomizableTableContextAppAction;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.downloads.DownloadsPanel;
 import org.jdownloader.gui.views.downloads.DownloadsView;
@@ -17,7 +17,7 @@ import org.jdownloader.gui.views.linkgrabber.LinkGrabberPanel;
 import org.jdownloader.gui.views.linkgrabber.LinkGrabberTable;
 import org.jdownloader.gui.views.linkgrabber.LinkGrabberView;
 
-public class RenameAction extends CustomizableSelectionAppAction {
+public class RenameAction extends CustomizableTableContextAppAction {
 
     public RenameAction() {
 

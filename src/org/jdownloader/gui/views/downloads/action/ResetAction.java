@@ -11,10 +11,10 @@ import jd.plugins.FilePackage;
 import org.appwork.utils.event.queue.QueueAction;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.jdownloader.controlling.DownloadLinkAggregator;
-import org.jdownloader.controlling.contextmenu.CustomizableSelectionAppAction;
+import org.jdownloader.controlling.contextmenu.CustomizableTableContextAppAction;
 import org.jdownloader.gui.translate._GUI;
 
-public class ResetAction extends CustomizableSelectionAppAction<FilePackage, DownloadLink> {
+public class ResetAction extends CustomizableTableContextAppAction<FilePackage, DownloadLink> {
 
     private static final long serialVersionUID = -5583373118359478729L;
 

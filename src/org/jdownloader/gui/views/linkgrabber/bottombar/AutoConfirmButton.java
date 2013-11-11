@@ -37,8 +37,8 @@ import org.appwork.utils.swing.dialog.Dialog;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.linkgrabber.LinkGrabberTableModel;
-import org.jdownloader.gui.views.linkgrabber.contextmenu.ConfirmSelectionContextAction;
-import org.jdownloader.gui.views.linkgrabber.contextmenu.ConfirmSelectionContextAction.AutoStartOptions;
+import org.jdownloader.gui.views.linkgrabber.contextmenu.ConfirmLinksContextAction;
+import org.jdownloader.gui.views.linkgrabber.contextmenu.ConfirmLinksContextAction.AutoStartOptions;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.settings.staticreferences.CFG_LINKGRABBER;
 
@@ -196,7 +196,7 @@ public class AutoConfirmButton extends ExtButton implements ChangeListener, Tabl
                                         if (l.isAutoStartEnabled()) autoStart = true;
                                     }
                                 }
-                                ConfirmSelectionContextAction ca = new ConfirmSelectionContextAction(new SelectionInfo<CrawledPackage, CrawledLink>(null, list, null, null, null, LinkGrabberTableModel.getInstance().getTable()));
+                                ConfirmLinksContextAction ca = new ConfirmLinksContextAction(new SelectionInfo<CrawledPackage, CrawledLink>(null, list, null, null, null, LinkGrabberTableModel.getInstance().getTable()));
                                 ca.setAutoStart(autoStart ? AutoStartOptions.ENABLED : AutoStartOptions.DISABLED);
                                 ca.actionPerformed(null);
                                 return null;

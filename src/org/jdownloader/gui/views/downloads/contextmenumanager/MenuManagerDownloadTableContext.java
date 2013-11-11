@@ -21,8 +21,6 @@ import org.jdownloader.gui.views.components.packagetable.context.PriorityLowerAc
 import org.jdownloader.gui.views.components.packagetable.context.RenameAction;
 import org.jdownloader.gui.views.components.packagetable.context.SetDownloadPassword;
 import org.jdownloader.gui.views.components.packagetable.context.URLEditorAction;
-import org.jdownloader.gui.views.downloads.action.AddContainerContextMenuAction;
-import org.jdownloader.gui.views.downloads.action.AddLinksContextMenuAction;
 import org.jdownloader.gui.views.downloads.action.CreateDLCAction;
 import org.jdownloader.gui.views.downloads.action.ForceDownloadAction;
 import org.jdownloader.gui.views.downloads.action.GenericDeleteFromDownloadlistAction;
@@ -33,6 +31,7 @@ import org.jdownloader.gui.views.downloads.action.OpenDirectoryAction;
 import org.jdownloader.gui.views.downloads.action.OpenFileAction;
 import org.jdownloader.gui.views.downloads.action.OpenInBrowserAction;
 import org.jdownloader.gui.views.downloads.action.PackageNameAction;
+import org.jdownloader.gui.views.downloads.action.PropertiesAction;
 import org.jdownloader.gui.views.downloads.action.ResetAction;
 import org.jdownloader.gui.views.downloads.action.ResumeAction;
 import org.jdownloader.gui.views.downloads.action.SetDownloadFolderInDownloadTableAction;
@@ -44,6 +43,8 @@ import org.jdownloader.gui.views.downloads.context.submenu.PriorityMenuContainer
 import org.jdownloader.gui.views.downloads.context.submenu.SettingsMenuContainer;
 import org.jdownloader.gui.views.downloads.table.DownloadsTable;
 import org.jdownloader.gui.views.downloads.table.DownloadsTableModel;
+import org.jdownloader.gui.views.linkgrabber.contextmenu.AddContainerContextMenuAction;
+import org.jdownloader.gui.views.linkgrabber.contextmenu.AddLinksContextMenuAction;
 import org.jdownloader.gui.views.linkgrabber.contextmenu.SortAction;
 
 public class MenuManagerDownloadTableContext extends ContextMenuManager<FilePackage, DownloadLink> {
@@ -75,7 +76,6 @@ public class MenuManagerDownloadTableContext extends ContextMenuManager<FilePack
 
     public MenuContainerRoot createDefaultStructure() {
         MenuContainerRoot mr = new MenuContainerRoot();
-
         mr.add(AddLinksContextMenuAction.class);
         mr.add(AddContainerContextMenuAction.class);
 
@@ -101,7 +101,8 @@ public class MenuManagerDownloadTableContext extends ContextMenuManager<FilePack
         mr.add(setName(setIconKey(new ActionData(GenericDeleteFromDownloadlistContextAction.class).putSetup(GenericDeleteFromDownloadlistAction.DELETE_ALL, true), IconKey.ICON_DELETE), _GUI._.DeleteQuickAction_DeleteQuickAction_object_()));
 
         mr.add(createDeleteMenu());
-
+        mr.add(new SeperatorData());
+        mr.add(PropertiesAction.class);
         mr.add(new SeperatorData());
 
         mr.add(new MenuItemData(new ActionData(MenuManagerAction.class)));
