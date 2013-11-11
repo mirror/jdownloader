@@ -16,6 +16,7 @@
 
 package jd.plugins.hoster;
 
+import java.io.IOException;
 import java.text.DecimalFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -287,11 +288,12 @@ public class SaveTv extends PluginForHost {
                 originalfilename = site_title;
             }
 
+            final Browser adsCheck = br.cloneBrowser();
             final DecimalFormat df = new DecimalFormat("0000");
-            br.postPage("https://www.save.tv/STV/M/obj/cRecordOrder/croGetAdFreeAvailable.cfm?null.GetAdFreeAvailable", "ajax=true&clientAuthenticationKey=&callCount=1&c0-scriptName=null&c0-methodName=GetAdFreeAvailable&c0-id=" + df.format(new Random().nextInt(1000)) + "_" + System.currentTimeMillis() + "&c0-param0=number:" + getTelecastId(link) + "&xml=true&extend=function (object) {for (property in object) {this[property] = object[property];}return this;}&");
-            if (br.containsHTML("= \\'3\\';")) {
+            adsCheck.postPage("https://www.save.tv/STV/M/obj/cRecordOrder/croGetAdFreeAvailable.cfm?null.GetAdFreeAvailable", "ajax=true&clientAuthenticationKey=&callCount=1&c0-scriptName=null&c0-methodName=GetAdFreeAvailable&c0-id=" + df.format(new Random().nextInt(1000)) + "_" + System.currentTimeMillis() + "&c0-param0=number:" + getTelecastId(link) + "&xml=true&extend=function (object) {for (property in object) {this[property] = object[property];}return this;}&");
+            if (adsCheck.containsHTML("= \\'3\\';")) {
                 link.getLinkStatus().setStatusText(JDL.L("plugins.hoster.SaveTv.NoCutListAvailable", NOCUTAVAILABLETEXT));
-            } else if (br.containsHTML("= \\'1\\';")) {
+            } else if (adsCheck.containsHTML("= \\'1\\';")) {
                 link.getLinkStatus().setStatusText(ADSFREEAVAILABLETEXT);
                 ISADSFREEAVAILABLE = true;
             } else {
@@ -380,11 +382,16 @@ public class SaveTv extends PluginForHost {
             // Example request streaming url: http://jdownloader.net:8081/pastebin/110483
             dllink = br.getRegex("<a:DownloadUrl>(http://[^<>\"]*?)</a").getMatch(0);
         } else {
-            br.getPage(downloadLink.getDownloadURL());
             preferMobileVideos = "c0-param1=number:0";
             if (preferMobileVids) preferMobileVideos = "c0-param1=number:1";
-            br.postPage("http://www.save.tv/STV/M/obj/cRecordOrder/croGetDownloadUrl.cfm?null.GetDownloadUrl", "ajax=true&clientAuthenticationKey=&callCount=1&c0-scriptName=null&c0-methodName=GetDownloadUrl&c0-id=&c0-param0=number:" + telecastID + "&" + preferMobileVideos + "&c0-param2=boolean:" + downloadWithoutAds + "&xml=true&");
+            postDownloadPage(downloadLink, preferMobileVideos, downloadWithoutAds);
             if (br.containsHTML("Die Aufnahme liegt nicht im gewünschten Format vor")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, PREFERREDFORMATNOTAVAILABLETEXT, 4 * 60 * 60 * 1000l);
+            // Ads-Free version not available - handle it
+            if (br.containsHTML("\\'Leider enthält Ihre Aufnahme nur Werbung\\.\\'") && preferAdsFree) {
+                this.ISADSFREEAVAILABLE = false;
+                if (this.getPluginConfig().getBooleanProperty(DOWNLOADONLYADSFREE, false) && !this.ISADSFREEAVAILABLE) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Dieses Video ist nicht mit angewandter Schnittliste verfügbar!", 12 * 60 * 60 * 1000l);
+                postDownloadPage(downloadLink, preferMobileVideos, "false");
+            }
             dllink = br.getRegex("\\'OK\\',\\'(http://[^<>\"\\']+)\\'").getMatch(0);
             if (dllink == null) dllink = br.getRegex("\\'(http://[^<>\"\\']+/\\?m=dl)\\'").getMatch(0);
         }
@@ -429,6 +436,18 @@ public class SaveTv extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_RETRY);
             }
         }
+    }
+
+    /**
+     * @param dl
+     *            DownloadLink
+     * @param preferMobileVideos
+     *            : Mobile Videos bevurzugen oder nicht
+     * @param downloadWithoutAds
+     *            : Videos mit angewandter Schnittliste bevorzugen oder nicht
+     */
+    private void postDownloadPage(final DownloadLink dl, final String preferMobileVideos, final String downloadWithoutAds) throws IOException {
+        br.postPage("https://www.save.tv/STV/M/obj/cRecordOrder/croGetDownloadUrl.cfm?null.GetDownloadUrl", "ajax=true&clientAuthenticationKey=&callCount=1&c0-scriptName=null&c0-methodName=GetDownloadUrl&c0-id=&c0-param0=number:" + this.getTelecastId(dl) + "&" + preferMobileVideos + "&c0-param2=boolean:" + downloadWithoutAds + "&xml=true&");
     }
 
     @Override
