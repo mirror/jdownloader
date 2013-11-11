@@ -77,11 +77,20 @@ public class DropBoxCom extends PluginForDecrypt {
         }
         br.getPage(parameter);
         // Handling for single links
-        if (br.containsHTML(new Regex(parameter, ".*?(\\.com/sh/[a-z0-9]+).+").getMatch(0) + "[^<>\"]+" + "dl=1\"")) {
+        if (br.containsHTML(new Regex(parameter, ".*?(\\.com/sh/[a-z0-9]+).+").getMatch(0) + "[^<>\"]+" + "dl=1([^<>\"]*?)\"")) {
             final DownloadLink dl = createDownloadlink(parameter.replace("dropbox.com/", "dropboxdecrypted.com/"));
             dl.setProperty("decrypted", true);
             decryptedLinks.add(dl);
             return decryptedLinks;
+        }
+        // Decrypt "Download as zip" link
+        final String zipLink = br.getRegex("data\\-dl\\-link=\"(https?://dl\\.[^<>\"]*?)\" onclick=\"FreshDropdown\\.hide_all\\(\\)\"><img src=\"[^<>\"]*?\" class=\"[a-z0-9\\-_ ]+\" />Download as \\.zip</a>").getMatch(0);
+        if (zipLink != null) {
+            final DownloadLink dl = createDownloadlink(parameter.replace("dropbox.com/", "dropboxdecrypted.com/"));
+            dl.setProperty("decrypted", true);
+            dl.setProperty("type", "zip");
+            dl.setProperty("directlink", Encoding.htmlDecode(zipLink));
+            decryptedLinks.add(dl);
         }
         // Decrypt file- and folderlinks
         String fpName = br.getRegex("content=\"([^<>/]*?)\" property=\"og:title\"").getMatch(0);

@@ -45,18 +45,26 @@ public class DropboxCom extends PluginForHost {
     private static Object                   LOCK            = new Object();
     private static HashMap<String, Cookies> accountMap      = new HashMap<String, Cookies>();
     private boolean                         TEMPUNAVAILABLE = false;
+    private String                          DLLINK          = null;
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         if (link.getBooleanProperty("decrypted")) {
             if (link.getBooleanProperty("offline", false)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            DLLINK = link.getStringProperty("directlink", null);
+            if (DLLINK == null) DLLINK = link.getDownloadURL();
             br.setCookie("http://dropbox.com", "locale", "en");
             URLConnectionAdapter con = null;
             try {
-                con = br.openGetConnection(link.getDownloadURL());
+                con = br.openGetConnection(DLLINK);
                 if (con.getResponseCode() == 509) {
                     link.getLinkStatus().setStatusText("Temporarily unavailable");
                     TEMPUNAVAILABLE = true;
+                    return AvailableStatus.TRUE;
+                }
+                if (!con.getContentType().contains("html")) {
+                    link.setDownloadSize(con.getLongContentLength());
+                    link.setFinalFileName(Encoding.htmlDecode(getFileNameFromHeader(con).trim()));
                     return AvailableStatus.TRUE;
                 }
                 br.followConnection();
@@ -120,7 +128,8 @@ public class DropboxCom extends PluginForHost {
         } else if (link.getBooleanProperty("decrypted")) {
             requestFileInformation(link);
             if (TEMPUNAVAILABLE) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 60 * 60 * 1000l);
-            dl = jd.plugins.BrowserAdapter.openDownload(br, link, link.getDownloadURL() + "?dl=1", true, 0);
+            if (link.getStringProperty("directlink", null) == null) DLLINK = link.getDownloadURL() + "?dl=1";
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, DLLINK, true, 0);
             if (dl.getConnection().getContentType().contains("html")) {
                 logger.warning("Directlink leads to HTML code...");
                 br.followConnection();

@@ -225,8 +225,16 @@ public class ZeveraCom extends PluginForHost {
         String dllink = br.getRedirectLocation();
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         if (dllink.contains("/member/systemmessage.aspx")) {
-            logger.info("Current host doesn't seem to work, deactivating it for 1 hour...");
-            tempUnavailableHoster(acc, link, 1 * 60 * 60 * 1000l);
+            int timesFailed = link.getIntegerProperty("timesfailedzeveracom", 0);
+            if (timesFailed <= 2) {
+                timesFailed++;
+                link.setProperty("timesfailedzeveracom", timesFailed);
+                throw new PluginException(LinkStatus.ERROR_RETRY, "Server error");
+            } else {
+                logger.info("Current host doesn't seem to work, deactivating it for 1 hour...");
+                link.setProperty("timesfailedzeveracom", Property.NULL);
+                tempUnavailableHoster(acc, link, 60 * 60 * 1000l);
+            }
         }
         showMessage(link, "Task 2: Download begins!");
         handleDL(link, dllink);

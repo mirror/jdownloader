@@ -709,6 +709,10 @@ public class NovaFileCom extends PluginForHost {
                 }
             }
             if (dllink == null) {
+                if (br.containsHTML("You\\'re not allowed to download for")) {
+                    logger.info("Accound temporarily disabled because of account sharing!");
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+                }
                 logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
