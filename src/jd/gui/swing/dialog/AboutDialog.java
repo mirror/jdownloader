@@ -33,6 +33,7 @@ import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 
+import jd.controlling.ClipboardMonitoring;
 import jd.gui.swing.Factory;
 import jd.gui.swing.components.linkbutton.JLink;
 import jd.gui.swing.jdgui.JDGui;
@@ -56,6 +57,9 @@ import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.jdownloader.actions.AppAction;
+import org.jdownloader.gui.IconKey;
+import org.jdownloader.gui.notify.BasicNotify;
+import org.jdownloader.gui.notify.BubbleNotify;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.logging.LogController;
@@ -79,7 +83,7 @@ public class AboutDialog extends AbstractDialog<Integer> {
     @Override
     public JComponent layoutDialogContent() {
         final JPanel contentpane = new JPanel();
-        JLabel lbl = new JLabel("JDownloader 2");
+        JLabel lbl = new JLabel("JDownloader® 2 BETA");
         lbl.setFont(lbl.getFont().deriveFont(lbl.getFont().getSize() * 2.0f));
 
         JPanel links = new JPanel(new MigLayout("ins 0", "[]push[]push[]push[]"));
@@ -125,38 +129,53 @@ public class AboutDialog extends AbstractDialog<Integer> {
         // this has been the branch label
         contentpane.add(new JLabel(""), "pushx,growx");
 
-        MigPanel stats = new MigPanel("ins 0,wrap 2", "[][grow,align right]", "[]");
+        MigPanel stats = new MigPanel("ins 0,wrap 2", "[][grow,align right]", "[]0");
 
         contentpane.add(stats, "pushx,growx,spanx");
         HashMap<String, Object> map = null;
         try {
             map = JSonStorage.restoreFromString(IO.readFileToString(Application.getResource("build.json")), new TypeRef<HashMap<String, Object>>() {
             });
-
+            stats.add(new JLabel(_GUI._.jd_gui_swing_components_AboutDialog_trademark()), "spanx,alignx center");
+            stats.add(new JLabel(_GUI._.jd_gui_swing_components_AboutDialog_beta()), "spanx,alignx center");
             // contentpane.add(btn, "aligny center, spany 3");
             stats.add(new JLabel(_GUI._.jd_gui_swing_components_AboutDialog_builddate()));
             stats.add(disable(map.get("buildDate")));
             stats.add(new JLabel(_GUI._.jd_gui_swing_components_AboutDialog_sourcerevisions()), "spanx");
-            stats.add(new JLabel("   " + _GUI._.jd_gui_swing_components_AboutDialog_core()), "");
+            stats.add(new JLabel(_GUI._.jd_gui_swing_components_AboutDialog_core()), "gapleft 10");
             stats.add(disable("#" + map.get("JDownloaderRevision")));
 
-            stats.add(new JLabel("   " + _GUI._.jd_gui_swing_components_AboutDialog_launcher()), "");
+            stats.add(new JLabel(_GUI._.jd_gui_swing_components_AboutDialog_launcher()), "gapleft 10");
             stats.add(disable("#" + map.get("JDownloaderUpdaterRevision")));
 
-            stats.add(new JLabel("   " + _GUI._.jd_gui_swing_components_AboutDialog_appworkutilities()), "");
+            stats.add(new JLabel(_GUI._.jd_gui_swing_components_AboutDialog_appworkutilities()), "gapleft 10");
 
             stats.add(disable("#" + map.get("AppWorkUtilsRevision")));
 
-            stats.add(new JLabel("   " + _GUI._.jd_gui_swing_components_AboutDialog_browser()), "");
+            stats.add(new JLabel(_GUI._.jd_gui_swing_components_AboutDialog_browser()), "gapleft 10");
 
             stats.add(disable("#" + map.get("JDBrowserRevision")));
-            stats.add(new JLabel("   " + _GUI._.jd_gui_swing_components_AboutDialog_updater()), "");
+            stats.add(new JLabel(_GUI._.jd_gui_swing_components_AboutDialog_updater()), "gapleft 10");
 
             stats.add(disable("#" + map.get("UpdateClientV2Revision")));
         } catch (Throwable t) {
             Log.exception(t);
 
         }
+
+        contentpane.add(new JLabel(_GUI._.jd_gui_swing_components_AboutDialog_mopdules()), "gaptop 10, spanx");
+
+        stats = new MigPanel("ins 0 10 0 0,wrap 2", "[][grow,align right]", "[]0");
+
+        contentpane.add(stats, "pushx,growx,spanx");
+
+        stats.add(new JLabel(_GUI._.jd_gui_swing_components_AboutDialog_core()), "");
+        stats.add(disable("Copyright \u00A9 2009-2013 AppWork GmbH"));
+        stats.add(new JLabel(_GUI._.jd_gui_swing_components_AboutDialog_plugins()), "");
+        stats.add(disable("Copyright \u00A9 2009-2013 JDownloader Community"));
+
+        stats.add(new JLabel(_GUI._.jd_gui_swing_components_AboutDialog_translations()), "");
+        stats.add(disable("Copyright \u00A9 2009-2013 JDownloader Community"));
         try {
             stats.add(new JLabel("Java:"), "");
             java.lang.management.MemoryUsage memory = java.lang.management.ManagementFactory.getMemoryMXBean().getHeapMemoryUsage();
@@ -202,9 +221,15 @@ public class AboutDialog extends AbstractDialog<Integer> {
             LogController.GL.log(e);
         }
 
-        contentpane.add(new JLabel(_GUI._.jd_gui_swing_components_AboutDialog_synthetica("(#289416475)")), "gaptop 10, spanx");
-        contentpane.add(new JLabel("© AppWork GmbH 2007-2013"), "spanx");
-        contentpane.add(links, "gaptop 15, growx, pushx, spanx");
+        stats.add(new JLabel("RTMP Support"), "");
+        stats.add(disable("RtmpDump (http://rtmpdump.mplayerhq.hu)"));
+        stats.add(new JLabel("UPNP"), "");
+        stats.add(disable("Cling (http://4thline.org/projects/cling)"));
+        stats.add(new JLabel("Extraction"), "");
+        stats.add(disable("7ZipJBindings (http://sevenzipjbind.sourceforge.net/)"));
+        stats.add(new JLabel(_GUI._.jd_gui_swing_components_AboutDialog_laf()), "");
+        stats.add(disable("Synthetica (http://www.jyloo.com/synthetica/)"));
+        stats.add(disable(_GUI._.jd_gui_swing_components_AboutDialog_synthetica2("(#289416475)")), "skip");
         this.registerEscape(contentpane);
 
         return contentpane;
@@ -219,6 +244,9 @@ public class AboutDialog extends AbstractDialog<Integer> {
 
             @Override
             public void actionPerformed(ActionEvent e) {
+                ClipboardMonitoring.getINSTANCE().setCurrentContent(getName());
+                BubbleNotify.getInstance().show(new BasicNotify(_GUI._.lit_clipboard(), _GUI._.AboutDialog_actionPerformed_clipboard_(getName()), NewTheme.I().getIcon(IconKey.ICON_CLIPBOARD, 24)));
+
             }
         });
         ret.setBorderPainted(false);

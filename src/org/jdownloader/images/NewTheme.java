@@ -1,11 +1,10 @@
 package org.jdownloader.images;
 
-import java.awt.Image;
-
 import javax.swing.ImageIcon;
 
 import org.appwork.resources.AWUTheme;
 import org.appwork.resources.Theme;
+import org.appwork.swing.components.CheckBoxIcon;
 import org.appwork.utils.ImageProvider.ImageProvider;
 
 /**
@@ -31,8 +30,7 @@ public class NewTheme extends Theme {
     }
 
     /**
-     * Create a new instance of NewTheme.I(). This is a singleton class. Access
-     * the only existing instance by using {@link #getInstance()}.
+     * Create a new instance of NewTheme.I(). This is a singleton class. Access the only existing instance by using {@link #getInstance()}.
      */
     private NewTheme() {
         super("org/jdownloader/");
@@ -52,10 +50,10 @@ public class NewTheme extends Theme {
         String key = this.getCacheKey(path, size, selected);
         ret = getCached(key);
         if (ret == null) {
-            Image back = getImage(path, size - 5, false);
-            Image checkBox = getImage("checkbox_" + selected, 16, false);
-            back = ImageProvider.merge(back, checkBox, 5, 0, 0, back.getHeight(null) - checkBox.getHeight(null) + 5);
-            ret = new ImageIcon(back);
+            ImageIcon back = getIcon(path, size - 5, false);
+            CheckBoxIcon checkBox = selected ? CheckBoxIcon.TRUE : CheckBoxIcon.FALSE;
+
+            ret = new ImageIcon(ImageProvider.merge(back, checkBox, 5, 0, 0, back.getIconHeight() - checkBox.getIconHeight() + 5));
             cache(ret, key);
         }
         return ret;

@@ -70,21 +70,8 @@ public class MenuManagerLinkgrabberTabBottombar extends AbstractBottomBarMenuMan
         delete.add(setIconKey(new ActionData(GenericDeleteFromLinkgrabberAction.class).putSetup(GenericDeleteFromLinkgrabberAction.DELETE_DISABLED, true), IconKey.ICON_REMOVE_DISABLED));
 
         delete.add(setIconKey(new ActionData(GenericDeleteFromLinkgrabberAction.class).putSetup(GenericDeleteFromLinkgrabberAction.DELETE_OFFLINE, true), IconKey.ICON_REMOVE_OFFLINE));
+        delete.add(setIconKey(new ActionData(GenericDeleteFromLinkgrabberAction.class).putSetup(GenericDeleteFromLinkgrabberAction.DELETE_ALL, true).putSetup(GenericDeleteFromLinkgrabberAction.INCLUDE_UNSELECTED_LINKS, true).putSetup(GenericDeleteFromLinkgrabberAction.INCLUDE_SELECTED_LINKS, false), IconKey.ICON_OK));
 
-        //
-
-        // delete.add(RemoveAllVisibleCrawledLinksAction.class);
-        // delete.add(ToolbarDeleteAction.class);
-        // delete.add(setIconKey(new
-        // ActionData(GenericDeleteSelectedToolbarAction.class).putSetup(GenericDeleteSelectedToolbarAction.DELETE_DISABLED, true),
-        // IconKey.ICON_REMOVE_DISABLED));
-        // delete.add(setIconKey(new
-        // ActionData(GenericDeleteSelectedToolbarAction.class).putSetup(GenericDeleteSelectedToolbarAction.DELETE_FAILED, true),
-        // IconKey.ICON_REMOVE_FAILED));
-        // delete.add(setIconKey(new
-        // ActionData(GenericDeleteSelectedToolbarAction.class).putSetup(GenericDeleteSelectedToolbarAction.DELETE_OFFLINE, true),
-        // IconKey.ICON_REMOVE_OFFLINE));
-        delete.add(org.jdownloader.gui.views.linkgrabber.actions.RemoveNonSelectedAction.class);
         delete.add(new SeperatorData());
         delete.add(new ActionData(RemoveIncompleteArchives.class).putSetup(TableContext.ITEM_VISIBLE_FOR_EMPTY_SELECTION, true));
 

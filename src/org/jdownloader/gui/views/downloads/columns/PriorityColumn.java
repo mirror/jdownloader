@@ -1,7 +1,6 @@
 package org.jdownloader.gui.views.downloads.columns;
 
 import java.awt.Component;
-import java.awt.Image;
 import java.awt.event.ActionEvent;
 import java.awt.event.MouseEvent;
 import java.awt.image.BufferedImage;
@@ -22,8 +21,8 @@ import jd.controlling.packagecontroller.AbstractNode;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
-import org.appwork.resources.AWUTheme;
 import org.appwork.swing.action.BasicAction;
+import org.appwork.swing.components.CheckBoxIcon;
 import org.appwork.swing.exttable.ExtColumn;
 import org.appwork.swing.exttable.ExtDefaultRowSorter;
 import org.appwork.swing.exttable.ExtTableHeaderRenderer;
@@ -140,8 +139,8 @@ public class PriorityColumn extends ExtComboColumn<AbstractNode, Priority> {
                 ImageIcon ico = getIconByPriority(o);
 
                 if (selected) {
-                    Image checkBox = AWUTheme.I().getImage("enable", 16);
-                    BufferedImage back = ImageProvider.merge(ico.getImage(), checkBox, 5, 0, 0, ico.getImage().getHeight(null) - checkBox.getHeight(null) + 5);
+                    CheckBoxIcon checkBox = CheckBoxIcon.TRUE;
+                    BufferedImage back = ImageProvider.merge(ico, checkBox, 5, 0, 0, ico.getImage().getHeight(null) - checkBox.getIconHeight() + 5);
 
                     setSmallIcon(new ImageIcon(back));
                 } else {

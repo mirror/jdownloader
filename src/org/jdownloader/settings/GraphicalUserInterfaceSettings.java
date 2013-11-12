@@ -788,4 +788,11 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
 
     void setDeleteDialogDefaultSelection(DeleteFileOptions option);
 
+    @DescriptionForConfigEntry("Placeholders: |#TITLE|, | - #SPEED/s|, | - #UPDATENOTIFY|")
+    @DefaultStringValue("|#TITLE|| - #SPEED/s|| - #UPDATENOTIFY|")
+    @AboutConfig
+    public String getTitlePattern();
+
+    public void setTitlePattern(String pattern);
+
 }

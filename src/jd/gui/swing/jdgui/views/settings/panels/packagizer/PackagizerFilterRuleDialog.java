@@ -34,6 +34,7 @@ import jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter.test.TestWaitD
 import jd.gui.swing.jdgui.views.settings.panels.packagizer.test.PackagizerSingleTestTableModel;
 
 import org.appwork.swing.MigPanel;
+import org.appwork.swing.components.CheckBoxIcon;
 import org.appwork.swing.components.ExtCheckBox;
 import org.appwork.swing.components.ExtSpinner;
 import org.appwork.swing.components.ExtTextField;
@@ -57,7 +58,6 @@ import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.packagehistorycontroller.DownloadPathHistoryManager;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.DownloadFolderChooserDialog;
-import org.jdownloader.gui.views.components.CheckBoxIcon;
 import org.jdownloader.images.NewTheme;
 
 public class PackagizerFilterRuleDialog extends ConditionDialog<PackagizerRule> {
@@ -333,9 +333,9 @@ public class PackagizerFilterRuleDialog extends ConditionDialog<PackagizerRule> 
             public Component getListCellRendererComponent(JList list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
                 JLabel r = (JLabel) org.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
                 if (index < 0) {
-                    r.setIcon(ret.getSelectedIndex() == 1 ? new CheckBoxIcon(false) : new CheckBoxIcon(true));
+                    r.setIcon(ret.getSelectedIndex() == 1 ? CheckBoxIcon.FALSE : CheckBoxIcon.TRUE);
                 } else {
-                    r.setIcon(index == 1 ? new CheckBoxIcon(false) : new CheckBoxIcon(true));
+                    r.setIcon(index == 1 ? CheckBoxIcon.FALSE : CheckBoxIcon.TRUE);
                 }
                 if (!ret.isEnabled()) {
                     r.setIcon(ImageProvider.getDisabledIcon(r.getIcon()));

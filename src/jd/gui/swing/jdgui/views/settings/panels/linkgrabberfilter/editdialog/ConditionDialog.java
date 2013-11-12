@@ -43,6 +43,7 @@ import jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter.editdialog.Plu
 import jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter.editdialog.PluginStatusFilter.PluginStatusMatchtype;
 
 import org.appwork.swing.MigPanel;
+import org.appwork.swing.components.CheckBoxIcon;
 import org.appwork.swing.components.ExtButton;
 import org.appwork.swing.components.ExtCheckBox;
 import org.appwork.swing.components.ExtTextField;
@@ -62,7 +63,6 @@ import org.jdownloader.controlling.filter.RegexFilter;
 import org.jdownloader.controlling.filter.RegexFilter.MatchType;
 import org.jdownloader.controlling.filter.RuleWrapper;
 import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.gui.views.components.CheckBoxIcon;
 import org.jdownloader.gui.views.components.MergedIcon;
 import org.jdownloader.gui.views.components.PseudoMultiCombo;
 import org.jdownloader.images.NewTheme;
@@ -875,9 +875,9 @@ public abstract class ConditionDialog<T> extends AbstractDialog<T> {
         });
         Image back = NewTheme.I().getImage("regexStar", 18);
 
-        ret.setIcon(new ImageIcon(ImageProvider.merge(back, ImageProvider.scaleImageIcon(ImageProvider.toImageIcon(new CheckBoxIcon(false)), 10, 10).getImage(), 3, -2, 1, back.getHeight(null) - 12 + 2)));
-        // ret.setIcon(ImageProvider.toImageIcon(new CheckBoxIcon(false)));
-        ret.setSelectedIcon(new ImageIcon(ImageProvider.merge(back, ImageProvider.scaleImageIcon(ImageProvider.toImageIcon(new CheckBoxIcon(true)), 10, 10).getImage(), 3, -2, 1, back.getHeight(null) - 12 + 2)));
+        ret.setIcon(new ImageIcon(ImageProvider.merge(back, ImageProvider.scaleImageIcon(ImageProvider.toImageIcon(CheckBoxIcon.FALSE), 10, 10).getImage(), 3, -2, 1, back.getHeight(null) - 12 + 2)));
+        // ret.setIcon(ImageProvider.toImageIcon(CheckBoxIcon.FALSE));
+        ret.setSelectedIcon(new ImageIcon(ImageProvider.merge(back, ImageProvider.scaleImageIcon(ImageProvider.toImageIcon(CheckBoxIcon.TRUE), 10, 10).getImage(), 3, -2, 1, back.getHeight(null) - 12 + 2)));
 
         return ret;
 

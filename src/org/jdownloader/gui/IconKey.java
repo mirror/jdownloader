@@ -78,9 +78,7 @@ public class IconKey {
     public static final String ICON_CBH                          = "cbh";
     public static final String ICON_CES                          = "ces";
     public static final String ICON_CHAT                         = "chat";
-    public static final String ICON_CHECKBOX_FALSE               = "checkbox_false";
-    public static final String ICON_CHECKBOX_TRUE                = "checkbox_true";
-    public static final String ICON_CHECKBOX_UNDEFINED           = "checkbox_undefined";
+
     public static final String ICON_CHUNKS                       = "chunks";
     public static final String ICON_CLEAR                        = "clear";
     public static final String ICON_CLIPBOARD                    = "clipboard";
@@ -106,8 +104,7 @@ public class IconKey {
     public static final String ICON_DIALOG_LOGIN                 = "dialog/login";
     public static final String ICON_DIALOG_WARNING               = "dialog/warning";
     public static final String ICON_DIALOGOCR                    = "dialogOCR";
-    public static final String ICON_DISABLE                      = "disable";
-    public static final String ICON_DISABLED                     = "disabled";
+
     public static final String ICON_DLC                          = "dlc";
     public static final String ICON_DOCUMENT                     = "document";
     public static final String ICON_DOWNLOAD                     = "download";
@@ -115,8 +112,7 @@ public class IconKey {
     public static final String ICON_DOWNLOADPASSWORD             = "downloadpassword";
     public static final String ICON_DOWNLOADPATH                 = "downloadpath";
     public static final String ICON_EDIT                         = "edit";
-    public static final String ICON_ENABLE                       = "enable";
-    public static final String ICON_ENABLED                      = "enabled";
+
     public static final String ICON_ERROR                        = "error";
     public static final String ICON_EVENT                        = "event";
     public static final String ICON_EXIT                         = "exit";

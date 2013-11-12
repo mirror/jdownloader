@@ -22,6 +22,7 @@ import javax.swing.plaf.TreeUI;
 import javax.swing.tree.TreePath;
 import javax.swing.tree.TreeSelectionModel;
 
+import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.jdownloader.controlling.contextmenu.MenuItemData;
 import org.jdownloader.controlling.contextmenu.SeperatorData;
@@ -101,7 +102,8 @@ public class MenuManagerTree extends JTree {
 
             @Override
             public void keyReleased(KeyEvent e) {
-                if (e.getKeyCode() == KeyEvent.VK_DELETE) {
+
+                if (CrossSystem.isDeleteSelectionTrigger(e)) {
                     new RemoveAction(managerFrame).actionPerformed(null);
                 }
             }

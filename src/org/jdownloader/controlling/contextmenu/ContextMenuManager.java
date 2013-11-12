@@ -34,7 +34,6 @@ import org.jdownloader.controlling.contextmenu.gui.ExtPopupMenu;
 import org.jdownloader.controlling.contextmenu.gui.MenuBuilder;
 import org.jdownloader.controlling.contextmenu.gui.MenuManagerDialog;
 import org.jdownloader.controlling.contextmenu.gui.MenuManagerDialogInterface;
-import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.logging.LogController;
 
 public abstract class ContextMenuManager<PackageType extends AbstractPackageNode<ChildrenType, PackageType>, ChildrenType extends AbstractPackageChildrenNode<PackageType>> {
@@ -93,7 +92,7 @@ public abstract class ContextMenuManager<PackageType extends AbstractPackageNode
 
     protected abstract void updateGui();
 
-    public JPopupMenu build(SelectionInfo<PackageType, ChildrenType> si) {
+    public JPopupMenu build() {
         long t = System.currentTimeMillis();
         ExtPopupMenu root = new ExtPopupMenu();
         MenuContainerRoot md = getMenuData();

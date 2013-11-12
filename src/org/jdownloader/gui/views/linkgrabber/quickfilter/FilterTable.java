@@ -33,16 +33,12 @@ import org.appwork.swing.exttable.columns.ExtCheckColumn;
 import org.appwork.utils.event.queue.Queue;
 import org.appwork.utils.event.queue.QueueAction;
 import org.appwork.utils.swing.EDTRunner;
-import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.components.packagetable.PackageControllerTableModel;
 import org.jdownloader.gui.views.components.packagetable.PackageControllerTableModelFilter;
+import org.jdownloader.gui.views.components.packagetable.context.EnabledAction;
 import org.jdownloader.gui.views.linkgrabber.LinkGrabberTable;
 import org.jdownloader.gui.views.linkgrabber.LinkGrabberTableModel;
-import org.jdownloader.gui.views.linkgrabber.contextmenu.ConfirmLinksContextAction;
-import org.jdownloader.gui.views.linkgrabber.contextmenu.CreateDLCAction;
-import org.jdownloader.gui.views.linkgrabber.contextmenu.MergeToPackageAction;
-import org.jdownloader.gui.views.linkgrabber.contextmenu.RemoveNonSelectedContextAction;
-import org.jdownloader.gui.views.linkgrabber.contextmenu.RemoveSelectionLinkgrabberAction;
+import org.jdownloader.gui.views.linkgrabber.contextmenu.MenuManagerLinkgrabberTableContext;
 import org.jdownloader.updatev2.gui.LAFOptions;
 
 public abstract class FilterTable extends BasicJDTable<Filter> implements PackageControllerTableModelFilter<CrawledPackage, CrawledLink> {
@@ -270,57 +266,7 @@ public abstract class FilterTable extends BasicJDTable<Filter> implements Packag
 
     protected JPopupMenu onContextMenu(final JPopupMenu popup, final Filter contextObject, final java.util.List<Filter> selection, final ExtColumn<Filter> column, final MouseEvent mouseEvent) {
 
-        java.util.List<String> ret = new ArrayList<String>();
-        for (Filter f : selection) {
-            ret.add(f.getName());
-        }
-
-        popup.add(new EnabledAllAction(getModel().getSelectedObjects()));
-        java.util.List<Filter> nonSel = new ArrayList<Filter>(getModel().getTableData());
-        for (Filter f : getModel().getSelectedObjects()) {
-            nonSel.remove(f);
-        }
-
-        // if
-        // (org.jdownloader.settings.statics.LINKGRABBER.QUICK_VIEW_SELECTION_ENABLED.getValue())
-        // {
-        final SelectionInfo<CrawledPackage, CrawledLink> matches = new SelectionInfo<CrawledPackage, CrawledLink>(null, getMatches(getSelectedFilters()), mouseEvent, null, null, null);
-        popup.add(new ConfirmLinksContextAction() {
-            @Override
-            protected SelectionInfo<CrawledPackage, CrawledLink> getSelection() {
-                return matches;
-            }
-        });
-        popup.add(new MergeToPackageAction() {
-            @Override
-            protected SelectionInfo<CrawledPackage, CrawledLink> getSelection() {
-                return matches;
-            }
-        });
-        popup.add(new CreateDLCAction() {
-            @Override
-            protected SelectionInfo<CrawledPackage, CrawledLink> getSelection() {
-                return matches;
-            }
-        });
-        popup.add(new RemoveNonSelectedContextAction() {
-            @Override
-            protected SelectionInfo<CrawledPackage, CrawledLink> getSelection() {
-                return matches;
-            }
-        });
-        popup.add(new RemoveSelectionLinkgrabberAction() {
-            @Override
-            protected SelectionInfo<CrawledPackage, CrawledLink> getSelection() {
-                return matches;
-            }
-        });
-        // popup.add(new
-        // RemoveIncompleteArchives(matches));
-
-        // }
-
-        return popup;
+        return MenuManagerLinkgrabberTableContext.getInstance().build();
     }
 
     protected void processMouseEvent(final MouseEvent e) {
@@ -366,7 +312,9 @@ public abstract class FilterTable extends BasicJDTable<Filter> implements Packag
         case KeyEvent.VK_ENTER:
         case KeyEvent.VK_BACK_SPACE:
         case KeyEvent.VK_DELETE:
-            new EnabledAllAction(getModel().getSelectedObjects()).actionPerformed(null);
+            EnabledAction action = new EnabledAction();
+            action.requestUpdate(null);
+            action.actionPerformed(null);
             return true;
         case KeyEvent.VK_X:
         case KeyEvent.VK_V:

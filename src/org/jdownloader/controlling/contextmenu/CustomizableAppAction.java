@@ -8,13 +8,13 @@ import java.util.List;
 import javax.swing.Action;
 import javax.swing.ImageIcon;
 
+import org.appwork.swing.components.CheckBoxIcon;
 import org.appwork.utils.GetterSetter;
 import org.appwork.utils.ReflectionUtils;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.ImageProvider.ImageProvider;
 import org.appwork.utils.reflection.Clazz;
 import org.jdownloader.actions.AppAction;
-import org.jdownloader.gui.views.components.CheckBoxIcon;
 import org.jdownloader.images.NewTheme;
 
 public abstract class CustomizableAppAction extends AppAction {

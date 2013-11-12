@@ -1,12 +1,11 @@
 package org.jdownloader.gui.views.linkgrabber.contextmenu;
 
-import java.awt.event.KeyEvent;
-
 import javax.swing.KeyStroke;
 
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledPackage;
 
+import org.appwork.utils.os.CrossSystem;
 import org.jdownloader.controlling.contextmenu.ActionData;
 import org.jdownloader.controlling.contextmenu.ContextMenuManager;
 import org.jdownloader.controlling.contextmenu.MenuContainerRoot;
@@ -106,7 +105,7 @@ public class MenuManagerLinkgrabberTableContext extends ContextMenuManager<Crawl
         ad.putSetup(GenericDeleteFromLinkgrabberContextAction.DELETE_ALL, true);
         ad.putSetup(GenericDeleteFromLinkgrabberContextAction.ONLY_SELECTED_ITEMS, true);
         ad.putSetup(TableContext.ITEM_VISIBLE_FOR_EMPTY_SELECTION, false);
-        mr.add(setShortcut(new MenuItemData(setIconKey(ad, IconKey.ICON_DELETE)), KeyStroke.getKeyStroke(KeyEvent.VK_DELETE, 0)));
+        mr.add(setShortcut(new MenuItemData(setIconKey(ad, IconKey.ICON_DELETE)), CrossSystem.getDeleteShortcut()));
 
         mr.add(createCleanupMenu());
         mr.add(new SeperatorData());
@@ -130,7 +129,7 @@ public class MenuManagerLinkgrabberTableContext extends ContextMenuManager<Crawl
 
         cleanup.add((new MenuItemData(setIconKey(new ActionData(GenericDeleteFromLinkgrabberContextAction.class).putSetup(GenericDeleteFromLinkgrabberContextAction.DELETE_OFFLINE, true), IconKey.ICON_REMOVE_OFFLINE))));
 
-        cleanup.add(RemoveNonSelectedContextAction.class);
+        cleanup.add(setIconKey(new ActionData(GenericDeleteFromLinkgrabberContextAction.class).putSetup(GenericDeleteFromLinkgrabberContextAction.DELETE_ALL, true).putSetup(GenericDeleteFromLinkgrabberContextAction.INCLUDE_UNSELECTED_LINKS, true).putSetup(GenericDeleteFromLinkgrabberContextAction.INCLUDE_SELECTED_LINKS, false), IconKey.ICON_OK));
 
         cleanup.add(RemoveIncompleteArchives.class);
         cleanup.add(new SeperatorData());

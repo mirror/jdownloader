@@ -39,12 +39,26 @@ public class GenericDeleteFromLinkgrabberContextAction extends GenericDeleteFrom
                     }
 
                 } else {
-                    if (tableContext.isItemVisibleForEmptySelection() && !isOnlySelectedItems()) {
-                        setVisible(true);
-                        setEnabled(true);
-                    } else {
+                    switch (getSelectionType()) {
+                    case SELECTED:
+                        if (tableContext.isItemVisibleForEmptySelection()) {
+                            setVisible(true);
+                            setEnabled(true);
+                        } else {
+                            setVisible(false);
+                            setEnabled(false);
+                        }
+                        break;
+
+                    case UNSELECTED:
                         setVisible(false);
                         setEnabled(false);
+                        break;
+
+                    default:
+                        setVisible(false);
+                        setEnabled(false);
+
                     }
 
                 }
@@ -60,7 +74,8 @@ public class GenericDeleteFromLinkgrabberContextAction extends GenericDeleteFrom
 
     @Override
     protected void initContextDefaults() {
-        setOnlySelectedItems(true);
+        setIncludeSelectedLinks(true);
+        setIncludeUnselectedLinks(false);
     }
 
 }

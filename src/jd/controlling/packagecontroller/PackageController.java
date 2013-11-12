@@ -71,8 +71,8 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
                                               };
 
     /**
-     * add a Package at given position position in this PackageController. in case the Package is already controlled by this PackageController this function
-     * does move it to the given position
+     * add a Package at given position position in this PackageController. in case the Package is already controlled by this
+     * PackageController this function does move it to the given position
      * 
      * @param pkg
      * @param index
@@ -380,6 +380,7 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
         boolean readL = readLock();
         try {
             for (PackageType pkg : packages) {
+
                 boolean readL2 = pkg.getModifyLock().readLock();
                 try {
                     for (ChildType child : pkg.getChildren()) {
@@ -587,7 +588,8 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
     }
 
     /**
-     * remove the given children from the package. also removes the package from this PackageController in case it is empty after removal of the children
+     * remove the given children from the package. also removes the package from this PackageController in case it is empty after removal of
+     * the children
      * 
      * @param pkg
      * @param children

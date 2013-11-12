@@ -11,6 +11,8 @@ import javax.swing.AbstractAction;
 import javax.swing.Icon;
 import javax.swing.JMenuItem;
 
+import org.appwork.swing.components.CheckBoxIcon;
+
 /**
  * This is an extended JCheckBoxMenuItem
  */
@@ -41,8 +43,8 @@ public class ExtRealCheckBoxMenuItem extends JMenuItem {
         // if (isSelected()) {
 
         // } else {
-        selIcon = new CheckBoxIcon(true);
-        unselIcon = new CheckBoxIcon(false);
+        selIcon = CheckBoxIcon.TRUE;
+        unselIcon = CheckBoxIcon.FALSE;
 
         setIcon(unselIcon);
         setSelected(action.getValue(AbstractAction.SELECTED_KEY) == Boolean.TRUE);

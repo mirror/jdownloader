@@ -4,6 +4,7 @@ import javax.swing.Icon;
 
 import jd.controlling.linkcrawler.CrawledLink;
 
+import org.appwork.swing.components.CheckBoxIcon;
 import org.appwork.swing.exttable.ExtTableModel;
 import org.appwork.swing.exttable.columns.ExtFileSizeColumn;
 import org.appwork.swing.exttable.columns.ExtTextColumn;
@@ -122,11 +123,11 @@ public class ViewTestResultTableModel extends ExtTableModel<CrawledLink> {
 
                 switch (value.getLinkState()) {
                 case OFFLINE:
-                    return NewTheme.getInstance().getIcon("checkbox_false", 16);
+                    return CheckBoxIcon.FALSE;
                 case ONLINE:
-                    return NewTheme.getInstance().getIcon("checkbox_true", 16);
+                    return CheckBoxIcon.TRUE;
                 case TEMP_UNKNOWN:
-                    return NewTheme.getInstance().getIcon("checkbox_undefined", 16);
+                    return CheckBoxIcon.UNDEFINED;
 
                 }
                 return null;

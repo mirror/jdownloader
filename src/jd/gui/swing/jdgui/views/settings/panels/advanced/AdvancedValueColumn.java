@@ -22,6 +22,7 @@ import org.appwork.storage.TypeRef;
 import org.appwork.storage.config.annotations.EnumLabel;
 import org.appwork.storage.config.annotations.HexColorString;
 import org.appwork.storage.config.annotations.LabelInterface;
+import org.appwork.swing.components.CheckBoxIcon;
 import org.appwork.swing.exttable.ExtColumn;
 import org.appwork.swing.exttable.columns.ExtCheckColumn;
 import org.appwork.swing.exttable.columns.ExtCompoundColumn;
@@ -34,7 +35,6 @@ import org.jdownloader.actions.AppAction;
 import org.jdownloader.controlling.contextmenu.gui.ExtPopupMenu;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.gui.views.components.CheckBoxIcon;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.settings.advanced.AdvancedConfigEntry;
 import org.jdownloader.settings.advanced.RangeValidator;
@@ -375,9 +375,9 @@ public class AdvancedValueColumn extends ExtCompoundColumn<AdvancedConfigEntry> 
                                     }
                                 }
                                 if (value.getValue() == o) {
-                                    setSmallIcon(new CheckBoxIcon(true));
+                                    setSmallIcon(CheckBoxIcon.TRUE);
                                 } else {
-                                    setSmallIcon(new CheckBoxIcon(false));
+                                    setSmallIcon(CheckBoxIcon.FALSE);
                                 }
 
                             }

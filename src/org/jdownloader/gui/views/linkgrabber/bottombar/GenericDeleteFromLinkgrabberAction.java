@@ -8,6 +8,7 @@ import jd.controlling.linkcollector.LinkCollector;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledPackage;
 import jd.controlling.linkcrawler.CrawledPackage.TYPE;
+import jd.controlling.packagecontroller.AbstractPackageChildrenNodeFilter;
 import jd.plugins.DownloadLink.AvailableStatus;
 
 import org.appwork.scheduler.DelayedRunnable;
@@ -21,32 +22,33 @@ import org.jdownloader.controlling.contextmenu.Customizer;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo;
+import org.jdownloader.gui.views.components.packagetable.PackageControllerTableModelFilter;
 import org.jdownloader.gui.views.linkgrabber.LinkGrabberTable;
 import org.jdownloader.gui.views.linkgrabber.LinkGrabberTableModel;
 
 public class GenericDeleteFromLinkgrabberAction extends CustomizableAppAction implements ExtTableListener, ActionContext, ExtTableModelListener {
 
-    public static final String                           ONLY_SELECTED_ITEMS = "onlySelectedItems";
-    public static final String                           DELETE_ALL          = "deleteAll";
-    public static final String                           DELETE_DISABLED     = "deleteDisabled";
-    public static final String                           DELETE_OFFLINE      = "deleteOffline";
+    public static final String                           INCLUDE_UNSELECTED_LINKS = "includeUnselectedLinks";
+    public static final String                           INCLUDE_SELECTED_LINKS   = "includeSelectedLinks";
+    public static final String                           ONLY_SELECTED_ITEMS      = "onlySelectedItems";
+    public static final String                           DELETE_ALL               = "deleteAll";
+    public static final String                           DELETE_DISABLED          = "deleteDisabled";
+    public static final String                           DELETE_OFFLINE           = "deleteOffline";
     /**
      * 
      */
-    private static final long                            serialVersionUID    = 1L;
+    private static final long                            serialVersionUID         = 1L;
 
     private DelayedRunnable                              delayer;
-    private boolean                                      deleteAll           = false;
+    private boolean                                      deleteAll                = false;
 
-    private boolean                                      deleteDisabled      = false;
+    private boolean                                      deleteDisabled           = false;
 
-    private boolean                                      deleteOffline       = false;
+    private boolean                                      deleteOffline            = false;
 
-    private boolean                                      ignoreFiltered      = true;
+    private boolean                                      ignoreFiltered           = true;
 
     private CrawledLink                                  lastLink;
-
-    private boolean                                      onlySelectedItems   = false;
 
     protected SelectionInfo<CrawledPackage, CrawledLink> selection;
 
@@ -68,18 +70,49 @@ public class GenericDeleteFromLinkgrabberAction extends CustomizableAppAction im
     public void actionPerformed(final ActionEvent e) {
         final List<CrawledLink> nodesToDelete = new ArrayList<CrawledLink>();
         boolean containsOnline = false;
-        for (final CrawledLink dl : selection.getChildren()) {
-            if (checkLink(dl)) {
-                nodesToDelete.add(dl);
+        switch (getSelectionType()) {
+        case NONE:
+            break;
+        case UNSELECTED:
+            final List<PackageControllerTableModelFilter<CrawledPackage, CrawledLink>> filters = LinkGrabberTableModel.getInstance().getTableFilters();
 
-                if (TYPE.OFFLINE == dl.getParentNode().getType()) continue;
-                if (TYPE.POFFLINE == dl.getParentNode().getType()) continue;
-                if (dl.getDownloadLink().getAvailableStatus() != AvailableStatus.FALSE) {
-                    containsOnline = true;
+            LinkCollector.getInstance().getChildrenByFilter(new AbstractPackageChildrenNodeFilter<CrawledLink>() {
 
+                @Override
+                public int returnMaxResults() {
+                    return 0;
+                }
+
+                @Override
+                public boolean acceptNode(CrawledLink node) {
+                    if (!selection.contains(node)) {
+
+                        if (isIgnoreFiltered()) {
+                            for (PackageControllerTableModelFilter<CrawledPackage, CrawledLink> filter : filters) {
+                                if (filter.isFiltered(node)) { return false; }
+                            }
+                        }
+                        nodesToDelete.add(node);
+                    }
+                    return false;
+                }
+            });
+            break;
+        default:
+            for (final CrawledLink dl : selection.getChildren()) {
+                if (checkLink(dl)) {
+                    nodesToDelete.add(dl);
+
+                    if (TYPE.OFFLINE == dl.getParentNode().getType()) continue;
+                    if (TYPE.POFFLINE == dl.getParentNode().getType()) continue;
+                    if (dl.getDownloadLink().getAvailableStatus() != AvailableStatus.FALSE) {
+                        containsOnline = true;
+
+                    }
                 }
             }
         }
+
         LinkCollector.requestDeleteLinks(nodesToDelete, containsOnline, createName());
 
     }
@@ -100,23 +133,45 @@ public class GenericDeleteFromLinkgrabberAction extends CustomizableAppAction im
         final StringBuilder sb = new StringBuilder();
 
         if (this.isDeleteAll()) {
-            if (this.isOnlySelectedItems()) {
-                sb.append(_GUI._.GenericDeleteSelectedToolbarAction_updateName_object_selected_all());
-            } else {
+            switch (getSelectionType()) {
+            case ALL:
                 sb.append(_GUI._.GenericDeleteFromLinkgrabberAction_createName_updateName_object_all());
+                break;
+            case SELECTED:
+                sb.append(_GUI._.GenericDeleteSelectedToolbarAction_updateName_object_selected_all());
+                break;
+            case UNSELECTED:
+                sb.append(_GUI._.GenericDeleteSelectedToolbarAction_updateName_object_keep_selected_all());
+                break;
+
+            case NONE:
+                sb.append("Bad Action Setup");
             }
+
         } else {
-            if (this.isOnlySelectedItems()) {
-                sb.append(_GUI._.GenericDeleteSelectedToolbarAction_updateName_object_selected());
-            } else {
+
+            switch (getSelectionType()) {
+            case ALL:
                 sb.append(_GUI._.GenericDeleteSelectedToolbarAction_updateName_object());
+                break;
+            case SELECTED:
+                sb.append(_GUI._.GenericDeleteSelectedToolbarAction_updateName_object_selected());
+                break;
+            case UNSELECTED:
+                sb.append(_GUI._.GenericDeleteSelectedToolbarAction_updateName_object_keep_selected_selected());
+                break;
+
+            case NONE:
+                sb.append("Bad Action Setup");
             }
+
             boolean first = true;
 
             if (this.isDeleteDisabled()) {
                 if (!first) {
                     sb.append(" & ");
                 }
+
                 sb.append(_GUI._.lit_disabled());
                 first = false;
             }
@@ -130,6 +185,20 @@ public class GenericDeleteFromLinkgrabberAction extends CustomizableAppAction im
             }
         }
         return sb.toString();
+    }
+
+    public enum SelectionType {
+        SELECTED,
+        UNSELECTED,
+        ALL,
+        NONE;
+    }
+
+    protected SelectionType getSelectionType() {
+        if (isIncludeSelectedLinks() && isIncludeUnselectedLinks()) return SelectionType.ALL;
+        if (isIncludeSelectedLinks()) return SelectionType.SELECTED;
+        if (isIncludeUnselectedLinks()) return SelectionType.UNSELECTED;
+        return SelectionType.NONE;
     }
 
     @Customizer(name = "Include All Links")
@@ -155,11 +224,6 @@ public class GenericDeleteFromLinkgrabberAction extends CustomizableAppAction im
     @Customizer(name = "Exclude filtered Links")
     public boolean isIgnoreFiltered() {
         return ignoreFiltered;
-    }
-
-    @Customizer(name = "Only Selected Links")
-    public boolean isOnlySelectedItems() {
-        return onlySelectedItems;
     }
 
     @Override
@@ -199,21 +263,53 @@ public class GenericDeleteFromLinkgrabberAction extends CustomizableAppAction im
 
     }
 
-    public void setOnlySelectedItems(final boolean onlySelectedItems) {
-        GenericDeleteFromLinkgrabberAction.this.onlySelectedItems = onlySelectedItems;
+    private boolean includeSelectedLinks = true; ;
+
+    @Customizer(name = "Include Selected Links")
+    public boolean isIncludeSelectedLinks() {
+        return includeSelectedLinks;
+    }
+
+    public void setIncludeSelectedLinks(boolean includeSelectedLinks) {
+
+        this.includeSelectedLinks = includeSelectedLinks;
         updateListeners();
         updateName();
     }
 
+    @Customizer(name = "Include Unselected Links")
+    public boolean isIncludeUnselectedLinks() {
+        return includeUnselectedLinks;
+    }
+
+    public void setIncludeUnselectedLinks(boolean includeUnselectedLinks) {
+
+        this.includeUnselectedLinks = includeUnselectedLinks;
+        updateListeners();
+        updateName();
+    }
+
+    private boolean includeUnselectedLinks = false;
+
     protected void updateListeners() {
-        if (isOnlySelectedItems()) {
+
+        switch (getSelectionType()) {
+        case ALL:
+            LinkGrabberTable.getInstance().getEventSender().removeListener(GenericDeleteFromLinkgrabberAction.this);
+            LinkGrabberTableModel.getInstance().getEventSender().addListener(GenericDeleteFromLinkgrabberAction.this, true);
+            break;
+        case SELECTED:
+        case UNSELECTED:
             LinkGrabberTable.getInstance().getEventSender().addListener(GenericDeleteFromLinkgrabberAction.this, true);
 
             LinkGrabberTableModel.getInstance().getEventSender().removeListener(GenericDeleteFromLinkgrabberAction.this);
-        } else {
+            break;
+
+        case NONE:
             LinkGrabberTable.getInstance().getEventSender().removeListener(GenericDeleteFromLinkgrabberAction.this);
-            LinkGrabberTableModel.getInstance().getEventSender().addListener(GenericDeleteFromLinkgrabberAction.this, true);
+            LinkGrabberTableModel.getInstance().getEventSender().removeListener(GenericDeleteFromLinkgrabberAction.this);
         }
+
     }
 
     protected void update() {
@@ -222,11 +318,65 @@ public class GenericDeleteFromLinkgrabberAction extends CustomizableAppAction im
             @Override
             protected void runInEDT() {
 
-                if (isOnlySelectedItems()) {
+                switch (getSelectionType()) {
+
+                case SELECTED:
+                    selection = LinkGrabberTable.getInstance().getSelectionInfo();
+                    break;
+                case UNSELECTED:
                     selection = LinkGrabberTable.getInstance().getSelectionInfo();
 
-                } else {
+                    setVisible(true);
 
+                    if (lastLink != null && !selection.contains(lastLink)) {
+                        if (checkLink(lastLink)) {
+
+                            setEnabled(true);
+                            return;
+                        }
+                    }
+
+                    final List<PackageControllerTableModelFilter<CrawledPackage, CrawledLink>> filters = LinkGrabberTableModel.getInstance().getTableFilters();
+
+                    boolean read = LinkCollector.getInstance().readLock();
+                    try {
+                        for (CrawledPackage pkg : LinkCollector.getInstance().getPackages()) {
+                            if (selection.getFullPackages().contains(pkg)) {
+                                continue;
+                            }
+                            boolean readL2 = pkg.getModifyLock().readLock();
+                            try {
+                                childs: for (CrawledLink child : pkg.getChildren()) {
+                                    if (selection.contains(child)) {
+                                        continue;
+                                    }
+                                    if (isIgnoreFiltered()) {
+
+                                        for (PackageControllerTableModelFilter<CrawledPackage, CrawledLink> filter : filters) {
+                                            if (filter.isFiltered((CrawledLink) child)) {
+                                                continue childs;
+                                            }
+                                        }
+                                    }
+                                    if (checkLink(child)) {
+                                        setEnabled(true);
+                                        lastLink = child;
+                                        return;
+                                    }
+                                }
+                            } finally {
+                                pkg.getModifyLock().readUnlock(readL2);
+                            }
+                        }
+                    } finally {
+                        LinkCollector.getInstance().readUnlock(read);
+                    }
+
+                    setEnabled(false);
+
+                    return;
+
+                default:
                     if (isIgnoreFiltered()) {
 
                         selection = LinkGrabberTable.getInstance().getSelectionInfo(false, false);
@@ -234,9 +384,8 @@ public class GenericDeleteFromLinkgrabberAction extends CustomizableAppAction im
                         selection = LinkGrabberTable.getInstance().getSelectionInfo(false, true);
 
                     }
-
+                    break;
                 }
-                setVisible(true);
                 // if (!tableContext.isItemVisibleForEmptySelection() && !hasSelection()) {
                 // setVisible(false);
                 // setEnabled(false);
@@ -248,6 +397,8 @@ public class GenericDeleteFromLinkgrabberAction extends CustomizableAppAction im
                 // return;
                 // }
                 // we remember the last link and try it first
+                setVisible(true);
+
                 if (lastLink != null && selection.contains(lastLink)) {
                     if (checkLink(lastLink)) {
 

@@ -5,11 +5,8 @@ import java.awt.event.MouseEvent;
 import javax.swing.JPopupMenu;
 
 import jd.controlling.packagecontroller.AbstractNode;
-import jd.plugins.DownloadLink;
-import jd.plugins.FilePackage;
 
 import org.appwork.swing.exttable.ExtColumn;
-import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.downloads.contextmenumanager.MenuManagerDownloadTableContext;
 
 public class DownloadTableContextMenuFactory {
@@ -37,11 +34,9 @@ public class DownloadTableContextMenuFactory {
 
     public JPopupMenu create(DownloadsTable downloadsTable, JPopupMenu popup, AbstractNode contextObject, java.util.List<AbstractNode> selection, ExtColumn<AbstractNode> column, MouseEvent ev) {
 
-        SelectionInfo<FilePackage, DownloadLink> si = downloadsTable.getSelectionInfo(true, true).derive(contextObject, ev, null, null, column);
-
         /* Properties */
 
-        return manager.build(si);
+        return manager.build();
 
         // if (si.isPackageContext()) {
         // Image back = (si.getFirstPackage().isExpanded() ? NewTheme.I().getImage("tree_package_open", 32) :

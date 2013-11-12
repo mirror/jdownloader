@@ -1624,39 +1624,61 @@ public class JDGui implements UpdaterListener, OwnerFinder {
     }
 
     protected void updateTitle() {
-        String title = "JDownloader";
+        String title = "JDownloader 2 BETA";
+        title = generateTitle(title);
 
-        try {
-            switch (CFG_GUI.CFG.getSpeedInWindowTitle()) {
+        getMainFrame().setTitle(title);
+    }
 
-            case ALWAYS:
+    private String generateTitle(String title) {
+        String speedpattern = "\\|(.*?)\\#SPEED(.*?)\\|";
+        String titlepattern = "\\|(.*?)\\#TITLE(.*?)\\|";
+        String updatepattern = "\\|(.*?)\\#UPDATENOTIFY(.*?)\\|";
+        String pattern = CFG_GUI.CFG.getTitlePattern();
+        pattern = pattern.replaceAll(titlepattern, "$1" + title + "$2");
 
-                int speed = DownloadWatchDog.getInstance().getDownloadSpeedManager().getSpeed();
+        switch (CFG_GUI.CFG.getSpeedInWindowTitle()) {
+
+        case ALWAYS:
+
+            int speed = DownloadWatchDog.getInstance().getDownloadSpeedManager().getSpeed();
+            if (DownloadWatchDog.getInstance().isRunning()) {
+
+                pattern = pattern.replaceAll(speedpattern, "$1" + SizeFormatter.formatBytes(Math.max(0, speed)) + "$2");
+            } else {
+                pattern = pattern.replaceAll(speedpattern, "");
+            }
+            break;
+
+        case WHEN_WINDOW_IS_MINIMIZED:
+            if (WindowManager.getInstance().getExtendedState(getMainFrame()) == WindowExtendedState.ICONIFIED) {
+
                 if (DownloadWatchDog.getInstance().isRunning()) {
-                    title = _GUI._.JDGui_updateTitle_speed_(title, SizeFormatter.formatBytes(Math.max(0, speed)));
-                }
-                break;
-
-            case WHEN_WINDOW_IS_MINIMIZED:
-                if (WindowManager.getInstance().getExtendedState(getMainFrame()) == WindowExtendedState.ICONIFIED) {
                     speed = DownloadWatchDog.getInstance().getDownloadSpeedManager().getSpeed();
-                    if (DownloadWatchDog.getInstance().isRunning()) {
-                        title = _GUI._.JDGui_updateTitle_speed_(title, SizeFormatter.formatBytes(Math.max(0, speed)));
-                    }
+                    pattern = pattern.replaceAll(speedpattern, "$1" + SizeFormatter.formatBytes(Math.max(0, speed)) + "$2");
+                } else {
+                    pattern = pattern.replaceAll(speedpattern, "");
                 }
-                break;
-
-            default:
-                break;
+            } else {
+                pattern = pattern.replaceAll(speedpattern, "");
             }
+            break;
 
-            if (UpdateController.getInstance().hasPendingUpdates()) {
-                title = _GUI._.JDGui_updateTitle_updates_available(title);
-            }
-        } catch (Exception e) {
+        default:
+            pattern = pattern.replaceAll(speedpattern, "");
+            break;
+        }
+
+        if (UpdateController.getInstance().hasPendingUpdates()) {
+
+            pattern = pattern.replaceAll(updatepattern, "$1" + _GUI._.JDGui_updateTitle_updates_available2() + "$2");
+
+        } else {
+            pattern = pattern.replaceAll(updatepattern, "");
 
         }
-        getMainFrame().setTitle(title);
+
+        return pattern;
     }
 
     public static void init() {

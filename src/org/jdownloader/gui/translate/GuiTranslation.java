@@ -1912,8 +1912,8 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Updater:" })
     String jd_gui_swing_components_AboutDialog_updater();
 
-    @Default(lngs = { "en" }, values = { "Synthetica License Registration Number %s1" })
-    String jd_gui_swing_components_AboutDialog_synthetica(String string);
+    @Default(lngs = { "en" }, values = { "License Registration Number %s1" })
+    String jd_gui_swing_components_AboutDialog_synthetica2(String string);
 
     @Default(lngs = { "en" }, values = { "Filter" })
     String LinkgrabberFilter_initComponents_filter__title();
@@ -2776,8 +2776,8 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Enter your My.JDownloader Logins below. If you do not have an account yet, click the Link above and register for an account. It's free!" })
     String MyJDownloaderSettingsPanel_MyJDownloaderSettingsPanel_jd_logins();
 
-    @Default(lngs = { "en" }, values = { "%s1 - Updates available!" })
-    String JDGui_updateTitle_updates_available(String string);
+    @Default(lngs = { "en" }, values = { "Updates available!" })
+    String JDGui_updateTitle_updates_available2();
 
     @Default(lngs = { "en" }, values = { "Lock all Columns" })
     String LockAllColumnsAction_LockAllColumnsAction_lockall_columns_();
@@ -3660,5 +3660,41 @@ public interface GuiTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Starting..." })
     String TaskColumn_fillColumnHelper_starting();
+
+    @Default(lngs = { "en" }, values = { "Keep only selected Links" })
+    String GenericDeleteSelectedToolbarAction_updateName_object_keep_selected_all();
+
+    @Default(lngs = { "en" }, values = { "Delete Links: Unselected & " })
+    String GenericDeleteSelectedToolbarAction_updateName_object_keep_selected_selected();
+
+    @Default(lngs = { "en" }, values = { "Beta Release! Use for testing purposes only!" })
+    String jd_gui_swing_components_AboutDialog_beta();
+
+    @Default(lngs = { "en" }, values = { "Contained Modules:" })
+    String jd_gui_swing_components_AboutDialog_mopdules();
+
+    @Default(lngs = { "en" }, values = { "Look And Feel:" })
+    String jd_gui_swing_components_AboutDialog_laf();
+
+    @Default(lngs = { "en" }, values = { "Plugins (Supported Websites):" })
+    String jd_gui_swing_components_AboutDialog_plugins();
+
+    @Default(lngs = { "en" }, values = { "JDownloader Community" })
+    String jd_gui_swing_components_AboutDialog_plugins_right();
+
+    @Default(lngs = { "en" }, values = { "AppWork GmbH" })
+    String jd_gui_swing_components_AboutDialog_core_right();
+
+    @Default(lngs = { "en" }, values = { "Clipboard" })
+    String lit_clipboard();
+
+    @Default(lngs = { "en" }, values = { "Copied Information to Clipboard:\r\n%s1" })
+    String AboutDialog_actionPerformed_clipboard_(String s);
+
+    @Default(lngs = { "en" }, values = { "'JDownloader' is an international Trademark of AppWork GmbH" })
+    String jd_gui_swing_components_AboutDialog_trademark();
+
+    @Default(lngs = { "en" }, values = { "Translation:" })
+    String jd_gui_swing_components_AboutDialog_translations();
 
 }
