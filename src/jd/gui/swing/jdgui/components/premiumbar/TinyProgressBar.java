@@ -52,6 +52,12 @@ public class TinyProgressBar extends MigPanel {
             }
 
             @Override
+            public boolean isTooltipDisabledUntilNextRefocus() {
+
+                return false;
+            }
+
+            @Override
             public ExtTooltip createExtTooltip(Point mousePosition) {
                 return serviceCollection.createTooltip(TinyProgressBar.this.owner);
 

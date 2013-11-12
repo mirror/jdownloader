@@ -3697,4 +3697,22 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Translation:" })
     String jd_gui_swing_components_AboutDialog_translations();
 
+    @Default(lngs = { "en" }, values = { "Average time to solve:" })
+    String ServicePanel9kwTooltip_runInEDT_avgsolvetime();
+
+    @Default(lngs = { "en" }, values = { "Queues:" })
+    String ServicePanel9kwTooltip_runInEDT_queue();
+
+    @Default(lngs = { "en" }, values = { "Worker:" })
+    String ServicePanel9kwTooltip_runInEDT_worker();
+
+    @Default(lngs = { "en" }, values = { "Worker Mouse:" })
+    String ServicePanel9kwTooltip_runInEDT_worker_mouse();
+
+    @Default(lngs = { "en" }, values = { "Worker Confirm:" })
+    String ServicePanel9kwTooltip_runInEDT_worker_confirm();
+
+    @Default(lngs = { "en" }, values = { "In Work:" })
+    String ServicePanel9kwTooltip_runInEDT_inwork();
+
 }

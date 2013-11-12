@@ -301,16 +301,30 @@ public class Captcha9kwSolver extends ChallengeSolver<String> implements Challen
         credits = br.getPage(getAPIROOT() + "index.cgi?action=usercaptchaguthaben&apikey=" + Encoding.urlEncode(config.getApiKey()));
 
         try {
-
             ret.setCreditBalance(Integer.parseInt(credits.trim()));
             String userhistory1 = br.getPage(getAPIROOT() + "index.cgi?action=userhistory&apikey=" + Encoding.urlEncode(config.getApiKey()));
             String userhistory2 = br.getPage(getAPIROOT() + "index.cgi?action=userhistory2&apikey=" + Encoding.urlEncode(config.getApiKey()));
+
             ret.setAnswered(Integer.parseInt(Regex.getLines(userhistory2)[0]));
             ret.setSolved(Integer.parseInt(Regex.getLines(userhistory1)[0]));
+
         } catch (NumberFormatException e) {
             ret.setError(credits);
         }
+        try {
+            String servercheck = br.getPage(getAPIROOT() + "index.cgi?action=userservercheck");
+            ret.setWorker(Integer.parseInt(new Regex(servercheck, "worker=(\\d+)").getMatch(0)));
+            ret.setAvgSolvtime(Integer.parseInt(new Regex(servercheck, "avg1h=(\\d+)").getMatch(0)));
+            ret.setQueue(Integer.parseInt(new Regex(servercheck, "queue=(\\d+)").getMatch(0)));
+            ret.setQueue1(Integer.parseInt(new Regex(servercheck, "queue1=(\\d+)").getMatch(0)));
+            ret.setQueue2(Integer.parseInt(new Regex(servercheck, "queue2=(\\d+)").getMatch(0)));
+            ret.setInWork(Integer.parseInt(new Regex(servercheck, "inwork=(\\d+)").getMatch(0)));
+            ret.setWorkerMouse(Integer.parseInt(new Regex(servercheck, "workermouse=(\\d+)").getMatch(0)));
+            ret.setWorkerConfirm(Integer.parseInt(new Regex(servercheck, "workerconfirm=(\\d+)").getMatch(0)));
 
+        } catch (NumberFormatException e) {
+            ret.setError("API Error!");
+        }
         return ret;
 
     }
