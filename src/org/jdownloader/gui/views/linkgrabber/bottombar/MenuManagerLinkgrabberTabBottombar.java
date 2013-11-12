@@ -63,13 +63,13 @@ public class MenuManagerLinkgrabberTabBottombar extends AbstractBottomBarMenuMan
 
         mr.add(setOptional(new MenuItemData(new ActionData(ResetAction.class))));
 
-        mr.add(setName(setIconKey(new ActionData(GenericDeleteFromLinkgrabberAction.class).putSetup(GenericDeleteFromLinkgrabberAction.DELETE_ALL, true), IconKey.ICON_DELETE), null));
+        mr.add(setName(setIconKey(new ActionData(GenericDeleteFromLinkgrabberAction.class).putSetup(GenericDeleteFromLinkgrabberAction.DELETE_ALL, true).putSetup(GenericDeleteFromLinkgrabberAction.INCLUDE_UNSELECTED_LINKS, true).putSetup(GenericDeleteFromLinkgrabberAction.INCLUDE_SELECTED_LINKS, true), IconKey.ICON_DELETE), null));
 
         DeleteContainer delete = new DeleteContainer();
 
-        delete.add(setIconKey(new ActionData(GenericDeleteFromLinkgrabberAction.class).putSetup(GenericDeleteFromLinkgrabberAction.DELETE_DISABLED, true), IconKey.ICON_REMOVE_DISABLED));
+        delete.add(setIconKey(new ActionData(GenericDeleteFromLinkgrabberAction.class).putSetup(GenericDeleteFromLinkgrabberAction.DELETE_DISABLED, true).putSetup(GenericDeleteFromLinkgrabberAction.INCLUDE_UNSELECTED_LINKS, true).putSetup(GenericDeleteFromLinkgrabberAction.INCLUDE_SELECTED_LINKS, true), IconKey.ICON_REMOVE_DISABLED));
 
-        delete.add(setIconKey(new ActionData(GenericDeleteFromLinkgrabberAction.class).putSetup(GenericDeleteFromLinkgrabberAction.DELETE_OFFLINE, true), IconKey.ICON_REMOVE_OFFLINE));
+        delete.add(setIconKey(new ActionData(GenericDeleteFromLinkgrabberAction.class).putSetup(GenericDeleteFromLinkgrabberAction.DELETE_OFFLINE, true).putSetup(GenericDeleteFromLinkgrabberAction.INCLUDE_UNSELECTED_LINKS, true).putSetup(GenericDeleteFromLinkgrabberAction.INCLUDE_SELECTED_LINKS, true), IconKey.ICON_REMOVE_OFFLINE));
         delete.add(setIconKey(new ActionData(GenericDeleteFromLinkgrabberAction.class).putSetup(GenericDeleteFromLinkgrabberAction.DELETE_ALL, true).putSetup(GenericDeleteFromLinkgrabberAction.INCLUDE_UNSELECTED_LINKS, true).putSetup(GenericDeleteFromLinkgrabberAction.INCLUDE_SELECTED_LINKS, false), IconKey.ICON_OK));
 
         delete.add(new SeperatorData());

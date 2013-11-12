@@ -71,6 +71,7 @@ public class GenericDeleteFromLinkgrabberAction extends CustomizableAppAction im
     public void actionPerformed(final ActionEvent e) {
         final List<CrawledLink> nodesToDelete = new ArrayList<CrawledLink>();
         boolean containsOnline = false;
+
         switch (getSelectionType()) {
         case NONE:
             break;
@@ -202,17 +203,17 @@ public class GenericDeleteFromLinkgrabberAction extends CustomizableAppAction im
         return SelectionType.NONE;
     }
 
-    @Customizer(name = "Include All Links")
+    @Customizer(name = "Delete all")
     public boolean isDeleteAll() {
         return deleteAll;
     }
 
-    @Customizer(name = "Include disabled Links")
+    @Customizer(name = "Delete disabled")
     public boolean isDeleteDisabled() {
         return deleteDisabled;
     }
 
-    @Customizer(name = "Include Offline Links")
+    @Customizer(name = "Delete Offline")
     public boolean isDeleteOffline() {
         return deleteOffline;
     }
