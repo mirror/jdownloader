@@ -184,8 +184,12 @@ public class ConfirmLinksContextAction extends CustomizableTableContextAppAction
 
     public void actionPerformed(ActionEvent e) {
         if (!isEnabled()) return;
-        confirmSelection(getSelection(), doAutostart(), isClearListAfterConfirm(), JsonConfig.create(LinkgrabberSettings.class).isAutoSwitchToDownloadTableOnConfirmDefaultEnabled());
+        if (isSelectionOnly()) {
+            confirmSelection(getSelection(), doAutostart(), isClearListAfterConfirm(), JsonConfig.create(LinkgrabberSettings.class).isAutoSwitchToDownloadTableOnConfirmDefaultEnabled());
 
+        } else {
+            confirmSelection(LinkGrabberTable.getInstance().getSelectionInfo(false, true), doAutostart(), isClearListAfterConfirm(), JsonConfig.create(LinkgrabberSettings.class).isAutoSwitchToDownloadTableOnConfirmDefaultEnabled());
+        }
     }
 
     protected boolean doAutostart() {
