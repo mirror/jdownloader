@@ -154,6 +154,7 @@ settings_sidebar_tooltip_enable_extension=Povolit/Zakázat toto rozšíření
 system_download_doCRC2=Probíhá kontrola CRC (%s1)
 system_download_doCRC2_failed=Kontrola CRC selhala (%s1)
 system_download_doCRC2_success=Kontrola CRC v pořádku (%s1)
+system_download_errors_couldnotdelete=Nelze odstranit existující část souboru
 system_download_errors_couldnotoverwrite=Nelze přepsat existující soubor
 system_download_errors_couldnotrename=Nelze přejmenovat dočasný soubor
 system_download_errors_invalidoutputfile=Neplatný výstupní soubor
