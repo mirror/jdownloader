@@ -54,12 +54,14 @@ public class FaceBookComGallery extends PluginForDecrypt {
     private int                 DIALOGRETURN           = -1;
     private static final String FASTLINKCHECK_PICTURES = "FASTLINKCHECK_PICTURES";
     private static final String SET_LINK_PHOTO         = "http(s)?://(www\\.)?facebook\\.com/(media/set/\\?set=|[^<>\"/]*?/media_set\\?set=)a\\.\\d+\\.\\d+\\.\\d+";
-    private static final String SET_LINK_VIDEO         = "https://(www\\.)?facebook\\.com/media/set/\\?set=vb\\.\\d+";
+    private static final String SET_LINK_VIDEO         = "https?://(www\\.)?facebook\\.com/media/set/\\?set=vb\\.\\d+";
     private static final String ALBUMS_LINK            = "https?://(www\\.)?facebook\\.com/[a-z0-9\\.]+/photos_albums";
     private static final String PHOTOS_OF_LINK         = "https?://(www\\.)?facebook\\.com/[a-z0-9\\.]+/photos_of";
     private static final String PHOTOS_LINK            = "https?://(www\\.)?facebook\\.com/[a-z0-9\\.]+/photos";
 
     private String              MAINPAGE               = "http://www.facebook.com";
+
+    private static final String CONTENTUNAVAILABLE     = ">Dieser Inhalt ist derzeit nicht verfügbar|>This content is currently unavailable<";
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         synchronized (LOCK) {
@@ -82,7 +84,7 @@ public class FaceBookComGallery extends PluginForDecrypt {
             } else if (parameter.matches(SINGLEPHOTO)) {
                 br.setFollowRedirects(true);
                 br.getPage(parameter);
-                if (br.containsHTML(">Dieser Inhalt ist derzeit nicht verfügbar")) {
+                if (br.containsHTML(CONTENTUNAVAILABLE)) {
                     logger.info("Link offline: " + parameter);
                     return decryptedLinks;
                 }
@@ -426,6 +428,10 @@ public class FaceBookComGallery extends PluginForDecrypt {
                     logger.info("Decrypting photo album without login: " + parameter);
                 }
                 getpagefirsttime(parameter);
+                if (br.containsHTML(CONTENTUNAVAILABLE)) {
+                    logger.info("Link offline: " + parameter);
+                    return decryptedLinks;
+                }
                 String fpName = br.getRegex("<title id=\"pageTitle\">([^<>\"]*?)videos }}| Facebook</title>").getMatch(0);
 
                 final String[] links = br.getRegex("uiVideoLinkMedium\" href=\"(https?://(www\\.)?facebook\\.com/photo\\.php\\?v=\\d+)").getColumn(0);

@@ -25,6 +25,7 @@ import java.util.Set;
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
+import jd.http.Browser.BrowserException;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
@@ -317,8 +318,13 @@ public class DecrypterForRedirectServicesWithoutDirectRedirects extends PluginFo
             dh = true;
         } else if (parameter.contains("mixconnect.com/")) {
             final String fid = new Regex(parameter, "mixconnect\\.com/listen/.*?\\-mid(\\d+)").getMatch(0);
-            br.getPage("http://mixconnect.com/download/mixtape/id/" + fid);
-            finallink = br.getRedirectLocation();
+            try {
+                br.getPage("http://mixconnect.com/download/mixtape/id/" + fid);
+            } catch (final BrowserException e) {
+                logger.info("Link offline: " + parameter);
+                return decryptedLinks;
+            }
+            if (!offline) finallink = br.getRedirectLocation();
             if (finallink == null) {
                 br.getPage(parameter);
                 finallink = br.getRegex("mp3:\"(http://mixconnect\\.com/[^<>\"]*?)\"").getMatch(0);

@@ -105,7 +105,7 @@ public class RedLoadNet extends PluginForHost {
     // last XfileSharingProBasic compare :: 2.6.2.1
     // captchatype: 4dignum
     // other: no redirects
-    // mods:
+    // mods: added a premiumonly text, fixed download1 form
 
     private void setConstants(final Account account) {
         if (account != null && account.getBooleanProperty("free")) {
@@ -391,6 +391,7 @@ public class RedLoadNet extends PluginForHost {
                 download1 = cleanForm(download1);
                 // end of backward compatibility
                 download1.remove("method_premium");
+                download1.put("method_free", "Free Download");
                 sendForm(download1);
                 checkErrors(downloadLink, account, false);
                 getDllink();
@@ -640,7 +641,7 @@ public class RedLoadNet extends PluginForHost {
         // these errors imply an account been used already. So we assume (Free Account), which is the case for most sites.
         final String fa = "(Upgrade your account to download (bigger|larger) files)";
         // these errors imply (Premium Required) from the outset.
-        final String pr = "(Please Buy Premium To download this file<|>This file is available for Premium Users only\\.<)";
+        final String pr = "(Please Buy Premium To download this file<|>This file is available for Premium Users only\\.<|>This file reached max downloads limit<)";
         // let the fun begin!
         if (cbr.containsHTML(an + "|" + fa + "|" + pr)) {
             String msg = null;
@@ -1459,7 +1460,7 @@ public class RedLoadNet extends PluginForHost {
      * @param controlSlot
      *            (+1|-1)
      * */
-   private void controlSlot(final int num, final Account account) {
+    private void controlSlot(final int num, final Account account) {
         synchronized (CTRLLOCK) {
             if (account == null) {
                 int was = maxFree.get();

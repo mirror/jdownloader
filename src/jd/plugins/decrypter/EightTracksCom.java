@@ -73,6 +73,10 @@ public class EightTracksCom extends PluginForDecrypt {
             logger.info("Link offline: " + parameter);
             return decryptedLinks;
         }
+        if (br.getURL().contains("/explore/all")) {
+            logger.info("Link offline: " + parameter);
+            return decryptedLinks;
+        }
         if (br.containsHTML(">The mix you're looking for is currently in private mode")) {
             logger.info("Link offline (this is a private link): " + parameter);
             return decryptedLinks;

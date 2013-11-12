@@ -1106,9 +1106,9 @@ public class Uploadedto extends PluginForHost {
         try {
             br.getHeaders().put("X-Prototype-Version", "1.6.1");
             br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-            br.postPage(getProtocol() + "uploaded.net/io/login", "id=" + Encoding.urlEncode(account.getUser()) + "&pw=" + Encoding.urlEncode(account.getPass()) + "&_=");
+            postPageSafe(getProtocol() + "uploaded.net/io/login", "id=" + Encoding.urlEncode(account.getUser()) + "&pw=" + Encoding.urlEncode(account.getPass()) + "&_=");
             if (br.containsHTML("User and password do not match")) {
-                AccountInfo ai = account.getAccountInfo();
+                final AccountInfo ai = account.getAccountInfo();
                 if (ai != null) ai.setStatus("User and password do not match");
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
             }
@@ -1120,6 +1120,30 @@ public class Uploadedto extends PluginForHost {
         } finally {
             br.getHeaders().put("X-Prototype-Version", null);
             br.getHeaders().put("X-Requested-With", null);
+        }
+    }
+
+    private void postPageSafe(final String page, final String postdata) throws IOException, InterruptedException {
+        for (int i = 1; i <= 3; i++) {
+            br.postPage(page, postdata);
+            if (br.containsHTML("No htmlCode read")) {
+                logger.info("Uploaded.to: Request failed, retrying " + i + " of 3");
+                Thread.sleep(1000);
+                continue;
+            }
+            break;
+        }
+    }
+
+    private void getPageSafe(final String page) throws IOException, InterruptedException {
+        for (int i = 1; i <= 3; i++) {
+            br.getPage(page);
+            if (br.containsHTML("No htmlCode read")) {
+                logger.info("Uploaded.to: Request failed, retrying " + i + " of 3");
+                Thread.sleep(1000);
+                continue;
+            }
+            break;
         }
     }
 

@@ -648,6 +648,7 @@ public class FileFactory extends PluginForHost {
                     downloadLink.setDownloadSize(con.getLongContentLength());
                     con.disconnect();
                     dlUrl = downloadLink.getDownloadURL();
+                    downloadLink.setAvailable(true);
                     return AvailableStatus.TRUE;
                 } else {
                     br.followConnection();

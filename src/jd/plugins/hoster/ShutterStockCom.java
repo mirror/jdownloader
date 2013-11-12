@@ -119,7 +119,7 @@ public class ShutterStockCom extends PluginForHost {
                 br.setFollowRedirects(true);
                 br.getPage("http://www.shutterstock.com/login.mhtml");
                 if (br.containsHTML("google\\.com/recaptcha/")) {
-                    // Handly stupid login captcha
+                    // Handle stupid login captcha
                     final String rcID = br.getRegex("challenge\\?k=([^<>\"]*?)\"").getMatch(0);
                     if (rcID == null) {
                         logger.warning("Expected login captcha is not there!");

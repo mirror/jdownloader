@@ -53,16 +53,18 @@ public class UnrestrictLi extends PluginForHost {
         this.enablePremium("http://unrestrict.li");
     }
 
+    @Override
+    public String getAGBLink() {
+        return "http://unrestrict.li/terms_and_conditions";
+    }
+
+    private static final String NOCHUNKS = "NOCHUNKS";
+
     public void setBrowser() {
         br.getHeaders().put("User-Agent", "JDownloader");
         br.setCustomCharset("utf-8");
         br.setConnectTimeout(60 * 1000);
         br.setReadTimeout(60 * 1000);
-    }
-
-    @Override
-    public String getAGBLink() {
-        return "http://unrestrict.li/terms_and_conditions";
     }
 
     @Override
@@ -245,17 +247,39 @@ public class UnrestrictLi extends PluginForHost {
             generated = generated.replace("https://", "http://");
         }
         // Get and set chunks, default = 1
-        int chunks = 1;
+        int maxchunks = 1;
         try {
-            chunks = link.hasProperty("cons") ? ((Integer) link.getProperty("cons")) : 1;
+            maxchunks = link.hasProperty("cons") ? -((Integer) link.getProperty("cons")) : 1;
         } catch (final Throwable e) {
+        }
+        if (link.getBooleanProperty(UnrestrictLi.NOCHUNKS, false)) {
+            maxchunks = 1;
         }
         // Set JDownloader User-Agent
         br.getHeaders().put("User-Agent", "JDownloader");
         // Chunks is negative to set max number of chunks
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, generated, true, -chunks);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, generated, true, maxchunks);
         if (dl.getConnection().isContentDisposition()) {
-            dl.startDownload();
+            try {
+                if (!this.dl.startDownload()) {
+                    try {
+                        if (dl.externalDownloadStop()) return;
+                    } catch (final Throwable e) {
+                    }
+                    /* unknown error, we disable multiple chunks */
+                    if (link.getBooleanProperty(UnrestrictLi.NOCHUNKS, false) == false) {
+                        link.setProperty(UnrestrictLi.NOCHUNKS, Boolean.valueOf(true));
+                        throw new PluginException(LinkStatus.ERROR_RETRY);
+                    }
+                }
+            } catch (final PluginException e) {
+                // New V2 errorhandling
+                /* unknown error, we disable multiple chunks */
+                if (e.getLinkStatus() != LinkStatus.ERROR_RETRY && link.getBooleanProperty(UnrestrictLi.NOCHUNKS, false) == false) {
+                    link.setProperty(UnrestrictLi.NOCHUNKS, Boolean.valueOf(true));
+                    throw new PluginException(LinkStatus.ERROR_RETRY);
+                }
+            }
             return;
         } else {
             br.followConnection();
