@@ -256,7 +256,7 @@ public class SaveTv extends PluginForHost {
                     final String[] dataArray = seriesdata.split(" ");
                     if (dataArray != null) {
                         genre = dataArray[0];
-                        // Maybe the series was produced over multiple years
+                        // Maybe the media was produced over multiple years
                         produceyear = new Regex(seriesdata, "(\\d{4} / \\d{4})").getMatch(0);
                         producecountry = new Regex(seriesdata, genre + " ([A-Za-z/]+)").getMatch(0);
                         if (dataArray != null) {
@@ -273,18 +273,23 @@ public class SaveTv extends PluginForHost {
             } else if (br.containsHTML("src=\"/STV/IMG/global/TVCategorie/kat1\\.jpg\"") || br.containsHTML(CATEGORY_INFO)) {
                 // For movies
                 final Regex movieInfo = br.getRegex(INFOREGEX);
-                String moviedata = movieInfo.getMatch(3);
-                if (moviedata == null) moviedata = movieInfo.getMatch(1);
-                if (moviedata != null) {
-                    final String[] dataArray = moviedata.split(" ");
-                    genre = dataArray[0];
+                String moviesdata = movieInfo.getMatch(1);
+                if (moviesdata != null) {
+                    final String[] dataArray = moviesdata.split(" ");
                     if (dataArray != null) {
-                        if (dataArray.length == 3) {
-                            producecountry = dataArray[1];
-                            produceyear = dataArray[2];
-                        } else if (dataArray.length == 2) {
-                            producecountry = dataArray[1];
+                        genre = dataArray[0];
+                        // Maybe the media was produced over multiple years
+                        produceyear = new Regex(moviesdata, "(\\d{4} / \\d{4})").getMatch(0);
+                        producecountry = new Regex(moviesdata, genre + " ([A-Za-z/]+)").getMatch(0);
+                        if (dataArray != null) {
+                            if (dataArray.length >= 3) {
+                                if (producecountry == null) producecountry = dataArray[1];
+                                if (produceyear == null) produceyear = dataArray[2];
+                            } else if (dataArray.length == 2) {
+                                if (producecountry == null) producecountry = dataArray[1];
+                            }
                         }
+
                     }
                 }
                 link.setProperty("category", 1);
@@ -315,8 +320,10 @@ public class SaveTv extends PluginForHost {
         // Add series information
         if (episodenumber != null) link.setProperty("episodenumber", Integer.parseInt(episodenumber));
         link.setProperty("seriestitle", seriestitle);
-        episodename = episodename.replace("/", getPluginConfig().getStringProperty(CUSTOM_FILENAME_SERIES2_EPISODENAME_SEPERATION_MARK, defaultCustomSeperationMark));
-        link.setProperty("episodename", episodename);
+        if (episodename != null) {
+            episodename = episodename.replace("/", getPluginConfig().getStringProperty(CUSTOM_FILENAME_SERIES2_EPISODENAME_SEPERATION_MARK, defaultCustomSeperationMark));
+            link.setProperty("episodename", episodename);
+        }
         // Add movie information
         if (produceyear != null) {
             produceyear = produceyear.replace("/", "-");
@@ -835,7 +842,7 @@ public class SaveTv extends PluginForHost {
         return "JDownloader's Save.tv Plugin helps downloading videoclips from Save.tv. Save.tv provides different settings for its downloads.";
     }
 
-    private final static String defaultCustomFilename       = "*videotitel**zufallszahl**endung*";
+    private final static String defaultCustomFilename       = "*videotitel**telecastid**endung*";
     private final static String defaultCustomSeriesFilename = "*serientitel* ¦ *episodennummer* ¦ *episodenname**endung*";
     private final static String defaultCustomSeperationMark = "+";
 
