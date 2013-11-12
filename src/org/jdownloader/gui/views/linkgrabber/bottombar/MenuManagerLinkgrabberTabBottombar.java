@@ -60,6 +60,7 @@ public class MenuManagerLinkgrabberTabBottombar extends AbstractBottomBarMenuMan
 
         MenuManagerDownloadTabBottomBar.fillAddLinks(mr);
         //
+        //
 
         mr.add(setOptional(new MenuItemData(new ActionData(ResetAction.class))));
 
