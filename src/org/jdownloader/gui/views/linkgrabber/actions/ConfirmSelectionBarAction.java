@@ -6,6 +6,7 @@ import org.appwork.storage.config.events.GenericConfigEventListener;
 import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.swing.exttable.ExtTableEvent;
 import org.appwork.swing.exttable.ExtTableListener;
+import org.appwork.swing.exttable.ExtTableModelEventWrapper;
 import org.appwork.swing.exttable.ExtTableModelListener;
 import org.appwork.utils.swing.EDTRunner;
 import org.jdownloader.controlling.contextmenu.ActionContext;
@@ -116,7 +117,7 @@ public class ConfirmSelectionBarAction extends ConfirmLinksContextAction impleme
     }
 
     @Override
-    public void onExtTableModelEvent(ExtTableModelListener listener) {
+    public void onExtTableModelEvent(ExtTableModelEventWrapper listener) {
         delayer.resetAndStart();
     }
 

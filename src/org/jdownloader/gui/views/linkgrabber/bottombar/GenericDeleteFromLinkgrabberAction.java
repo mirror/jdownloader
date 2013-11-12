@@ -14,6 +14,7 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import org.appwork.scheduler.DelayedRunnable;
 import org.appwork.swing.exttable.ExtTableEvent;
 import org.appwork.swing.exttable.ExtTableListener;
+import org.appwork.swing.exttable.ExtTableModelEventWrapper;
 import org.appwork.swing.exttable.ExtTableModelListener;
 import org.appwork.utils.swing.EDTRunner;
 import org.jdownloader.controlling.contextmenu.ActionContext;
@@ -439,7 +440,7 @@ public class GenericDeleteFromLinkgrabberAction extends CustomizableAppAction im
     }
 
     @Override
-    public void onExtTableModelEvent(ExtTableModelListener listener) {
+    public void onExtTableModelEvent(ExtTableModelEventWrapper listener) {
         delayer.resetAndStart();
     }
 

@@ -16,6 +16,8 @@ import jd.plugins.LinkStatusProperty;
 import org.appwork.scheduler.DelayedRunnable;
 import org.appwork.swing.exttable.ExtTableEvent;
 import org.appwork.swing.exttable.ExtTableListener;
+import org.appwork.swing.exttable.ExtTableModelEventWrapper;
+import org.appwork.swing.exttable.ExtTableModelListener;
 import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.jdownloader.controlling.contextmenu.ActionContext;
@@ -29,7 +31,7 @@ import org.jdownloader.gui.views.downloads.table.DownloadsTable;
 import org.jdownloader.gui.views.downloads.table.DownloadsTableModel;
 import org.jdownloader.plugins.FinalLinkState;
 
-public class GenericDeleteFromDownloadlistAction extends CustomizableAppAction implements ExtTableListener, ActionContext, DownloadControllerListener {
+public class GenericDeleteFromDownloadlistAction extends CustomizableAppAction implements ExtTableListener, ActionContext, DownloadControllerListener, ExtTableModelListener {
 
     public static final String                         DELETE_ALL        = "deleteAll";
     public static final String                         DELETE_DISABLED   = "deleteDisabled";
@@ -314,9 +316,11 @@ public class GenericDeleteFromDownloadlistAction extends CustomizableAppAction i
         if (isOnlySelectedItems()) {
             getTable().getEventSender().addListener(GenericDeleteFromDownloadlistAction.this, true);
             DownloadController.getInstance().getEventSender().removeListener(GenericDeleteFromDownloadlistAction.this);
+            DownloadsTableModel.getInstance().getEventSender().removeListener(GenericDeleteFromDownloadlistAction.this);
         } else {
             getTable().getEventSender().removeListener(GenericDeleteFromDownloadlistAction.this);
             DownloadController.getInstance().getEventSender().addListener(GenericDeleteFromDownloadlistAction.this, true);
+            DownloadsTableModel.getInstance().getEventSender().addListener(GenericDeleteFromDownloadlistAction.this, true);
         }
     }
 
@@ -380,6 +384,11 @@ public class GenericDeleteFromDownloadlistAction extends CustomizableAppAction i
             }
         };
 
+    }
+
+    @Override
+    public void onExtTableModelEvent(ExtTableModelEventWrapper event) {
+        delayer.resetAndStart();
     }
 
 }
