@@ -226,7 +226,7 @@ public class ConfirmLinksContextAction extends CustomizableTableContextAppAction
 
     @Override
     public void onKeyModifier(int parameter) {
-        if (KeyObserver.getInstance().isControlDown(true) || KeyObserver.getInstance().isMetaDown(true)) {
+        if (KeyObserver.getInstance().isControlDown(false) || KeyObserver.getInstance().isMetaDown(false)) {
             metaCtrl = true;
         } else {
             metaCtrl = false;
