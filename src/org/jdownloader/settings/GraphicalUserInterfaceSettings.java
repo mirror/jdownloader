@@ -395,21 +395,6 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
 
     void setSpeedmeterAntiAliasingEnabled(boolean b);
 
-    public static enum DeleteLinksDialogOption {
-        @EnumLabel("Always hide Dialog and never delete Files from Harddisk")
-        HIDE_ALWAYS_AND_NEVER_DELETE_ANY_LINKS_FROM_HARDDISK,
-        @EnumLabel("Hide Dialog if CTRL is pressed and never delete Files from Harddisk")
-        HIDE_IF_CTRL_IS_PRESSED_AND_NEVER_DELETE_ANY_LINKS_FROM_HARDDISK,
-        @EnumLabel("Hide Dialog if CTRL is NOT pressed and never delete Files from Harddisk")
-        HIDE_IF_CTRL_IS_NOT_PRESSED_AND_NEVER_DELETE_ANY_LINKS_FROM_HARDDISK;
-    }
-
-    @DefaultEnumValue("HIDE_IF_CTRL_IS_PRESSED_AND_NEVER_DELETE_ANY_LINKS_FROM_HARDDISK")
-    @AboutConfig
-    DeleteLinksDialogOption getShowDeleteLinksDialogOption();
-
-    void setShowDeleteLinksDialogOption(DeleteLinksDialogOption option);
-
     public static enum MacDockProgressDisplay {
         @EnumLabel("Total Progress")
         TOTAL_PROGRESS,

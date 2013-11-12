@@ -6,6 +6,7 @@ import java.awt.LayoutManager;
 import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
 import java.util.EventObject;
@@ -36,9 +37,11 @@ import org.appwork.swing.exttable.ExtCheckBoxMenuItem;
 import org.appwork.swing.exttable.ExtColumn;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging2.LogSource;
+import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.jdownloader.actions.AppAction;
+import org.jdownloader.controlling.contextmenu.CustomizableAppAction;
 import org.jdownloader.controlling.contextmenu.MenuContainer;
 import org.jdownloader.controlling.contextmenu.MenuItemData;
 import org.jdownloader.controlling.contextmenu.MenuLink;
@@ -168,7 +171,7 @@ public class DownloadsTable extends PackageControllerTable<FilePackage, Download
 
     @Override
     protected boolean onShortcutDelete(final java.util.List<AbstractNode> selectedObjects, final KeyEvent evt, final boolean direct) {
-        DownloadTabActionUtils.deleteLinksRequest(getSelectionInfo(), _GUI._.RemoveSelectionAction_actionPerformed_());
+        DownloadTabActionUtils.deleteLinksRequest(getSelectionInfo(), _GUI._.RemoveSelectionAction_actionPerformed_(), direct, evt.isControlDown());
         return true;
     }
 
@@ -234,6 +237,27 @@ public class DownloadsTable extends PackageControllerTable<FilePackage, Download
         return true;
     }
 
+    @Override
+    protected boolean isDeleteFinalSelectionTrigger(KeyStroke ks) {
+        if (super.isDeleteFinalSelectionTrigger(ks)) return true;
+        if (CrossSystem.isMac()) {
+            if (ks == KeyStroke.getKeyStroke(KeyEvent.VK_BACK_SPACE, Toolkit.getDefaultToolkit().getMenuShortcutKeyMask() | InputEvent.CTRL_MASK | InputEvent.SHIFT_MASK)) return true;
+        }
+        if (ks == KeyStroke.getKeyStroke(KeyEvent.VK_DELETE, Toolkit.getDefaultToolkit().getMenuShortcutKeyMask() | InputEvent.SHIFT_MASK)) return true;
+        return false;
+    }
+
+    @Override
+    protected boolean isDeleteSelectionTrigger(KeyStroke ks) {
+        if (super.isDeleteSelectionTrigger(ks)) return true;
+        if (CrossSystem.isMac()) {
+            if (ks == KeyStroke.getKeyStroke(KeyEvent.VK_BACK_SPACE, Toolkit.getDefaultToolkit().getMenuShortcutKeyMask() | InputEvent.CTRL_MASK)) return true;
+        }
+        if (ks == KeyStroke.getKeyStroke(KeyEvent.VK_DELETE, Toolkit.getDefaultToolkit().getMenuShortcutKeyMask())) return true;
+
+        return false;
+    }
+
     @SuppressWarnings("unchecked")
     @Override
     protected boolean processKeyBinding(KeyStroke stroke, KeyEvent evt, int condition, boolean pressed) {
@@ -245,7 +269,9 @@ public class DownloadsTable extends PackageControllerTable<FilePackage, Download
                 final Object binding = map.get(stroke);
                 final Action action = (binding == null) ? null : am.get(binding);
                 if (action != null) {
-
+                    if (action instanceof CustomizableAppAction) {
+                        ((CustomizableAppAction) action).requestUpdate(this);
+                    }
                     if (!action.isEnabled()) {
 
                         Toolkit.getDefaultToolkit().beep();

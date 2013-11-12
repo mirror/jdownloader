@@ -48,6 +48,7 @@ import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.jdownloader.actions.AppAction;
+import org.jdownloader.controlling.contextmenu.CustomizableAppAction;
 import org.jdownloader.controlling.contextmenu.MenuContainer;
 import org.jdownloader.controlling.contextmenu.MenuItemData;
 import org.jdownloader.controlling.contextmenu.MenuLink;
@@ -319,7 +320,9 @@ public class LinkGrabberTable extends PackageControllerTable<CrawledPackage, Cra
                 final Object binding = map.get(stroke);
                 final Action action = (binding == null) ? null : am.get(binding);
                 if (action != null) {
-
+                    if (action instanceof CustomizableAppAction) {
+                        ((CustomizableAppAction) action).requestUpdate(this);
+                    }
                     if (!action.isEnabled()) {
 
                         Toolkit.getDefaultToolkit().beep();

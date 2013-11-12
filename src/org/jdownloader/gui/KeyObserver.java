@@ -23,39 +23,47 @@ public class KeyObserver implements AWTEventListener {
     /**
      * Returns whether or not the Shift modifier is down on this event.
      */
-    public boolean isShiftDown() {
+    public boolean isShiftDown(boolean nootherKey) {
+        if (nootherKey) {
+
+        return modifiers == KeyEvent.SHIFT_MASK && (kEvent == null || kEvent.getKeyCode() == KeyEvent.VK_SHIFT); }
         return (modifiers & KeyEvent.SHIFT_MASK) != 0;
     }
 
     /**
      * Returns whether or not the Control modifier is down on this event.
      */
-    public boolean isControlDown() {
+    public boolean isControlDown(boolean nootherKey) {
+        if (nootherKey) { return modifiers == KeyEvent.CTRL_MASK && (kEvent == null || kEvent.getKeyCode() == KeyEvent.VK_CONTROL); }
         return (modifiers & KeyEvent.CTRL_MASK) != 0;
     }
 
     /**
      * Returns whether or not the Meta modifier is down on this event.
      */
-    public boolean isMetaDown() {
+    public boolean isMetaDown(boolean nootherKey) {
+        if (nootherKey) return modifiers == KeyEvent.META_MASK && (kEvent == null || kEvent.getKeyCode() == KeyEvent.VK_META);
         return (modifiers & KeyEvent.META_MASK) != 0;
     }
 
     /**
      * Returns whether or not the Alt modifier is down on this event.
      */
-    public boolean isAltDown() {
+    public boolean isAltDown(boolean nootherKey) {
+        if (nootherKey) return modifiers == KeyEvent.ALT_MASK && (kEvent == null || kEvent.getKeyCode() == KeyEvent.VK_ALT);
         return (modifiers & KeyEvent.ALT_MASK) != 0;
     }
 
     /**
      * Returns whether or not the AltGraph modifier is down on this event.
      */
-    public boolean isAltGraphDown() {
+    public boolean isAltGraphDown(boolean nootherKey) {
+        if (nootherKey) return modifiers == KeyEvent.ALT_GRAPH_MASK && (kEvent == null || kEvent.getKeyCode() == KeyEvent.VK_ALT_GRAPH);
         return (modifiers & KeyEvent.ALT_GRAPH_MASK) != 0;
     }
 
-    private int modifiers;
+    private int      modifiers;
+    private KeyEvent kEvent;
 
     /**
      * Create a new instance of KeyObserver. This is a singleton class. Access the only existing instance by using {@link #getInstance()}.
@@ -68,8 +76,9 @@ public class KeyObserver implements AWTEventListener {
     @Override
     public void eventDispatched(AWTEvent event) {
 
-        KeyEvent kEvent = (KeyEvent) event;
+        kEvent = (KeyEvent) event;
         int modifier = kEvent.getModifiers();
+
         if (modifier != this.modifiers) {
             this.modifiers = modifier;
 
@@ -79,7 +88,4 @@ public class KeyObserver implements AWTEventListener {
 
     }
 
-    public boolean isAltOrAltGraphDown() {
-        return isAltDown() || isAltGraphDown();
-    }
 }

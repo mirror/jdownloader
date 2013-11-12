@@ -140,8 +140,6 @@ public class CFG_GUI {
 
     public static final BooleanKeyHandler                              UPDATE_BUTTON_FLASHING_ENABLED                       = SH.getKeyHandler("UpdateButtonFlashingEnabled", BooleanKeyHandler.class);
 
-    public static final EnumKeyHandler                                 SHOW_DELETE_LINKS_DIALOG_OPTION                      = SH.getKeyHandler("ShowDeleteLinksDialogOption", EnumKeyHandler.class);
-
     public static final StringKeyHandler                               PASSWORD                                             = SH.getKeyHandler("Password", StringKeyHandler.class);
 
     public static final BooleanKeyHandler                              LINK_PROPERTIES_PANEL_SAVE_TO_VISIBLE                = SH.getKeyHandler("LinkPropertiesPanelSaveToVisible", BooleanKeyHandler.class);

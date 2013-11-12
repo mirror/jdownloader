@@ -7,7 +7,6 @@ import jd.plugins.DeleteTo;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
-import org.appwork.storage.config.JsonConfig;
 import org.appwork.uio.UserIODefinition.CloseReason;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.swing.EDTRunner;
@@ -19,12 +18,11 @@ import org.jdownloader.gui.KeyObserver;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.images.NewTheme;
-import org.jdownloader.settings.GraphicalUserInterfaceSettings;
 import org.jdownloader.utils.JDFileUtils;
 
 public class DownloadTabActionUtils {
 
-    public static void deleteLinksRequest(final SelectionInfo<FilePackage, DownloadLink> si, final String msg) {
+    public static void deleteLinksRequest(final SelectionInfo<FilePackage, DownloadLink> si, final String msg, final boolean deleteFilesFormDiskEnabled, final boolean byPassDialog) {
         final DownloadLinkAggregator agg = new DownloadLinkAggregator();
         agg.setMirrorHandlingEnabled(false);
         agg.setLocalFileUsageEnabled(true);
@@ -40,19 +38,9 @@ public class DownloadTabActionUtils {
                 }
                 ConfirmDeleteLinksDialog dialog = new ConfirmDeleteLinksDialog(msg + "\r\n" + _GUI._.DeleteSelectionAction_actionPerformed_affected2(agg.getTotalCount(), SizeFormatter.formatBytes(agg.getBytesLoaded()), DownloadController.getInstance().getChildrenCount() - agg.getTotalCount(), agg.getLocalFileCount()), agg.getBytesLoaded());
                 dialog.setRecycleSupported(JDFileUtils.isTrashSupported());
-                dialog.setDeleteFilesFromDiskEnabled(KeyObserver.getInstance().isShiftDown());
-                boolean byPassDialog = false;
-                switch (JsonConfig.create(GraphicalUserInterfaceSettings.class).getShowDeleteLinksDialogOption()) {
-                case HIDE_ALWAYS_AND_NEVER_DELETE_ANY_LINKS_FROM_HARDDISK:
-                    byPassDialog = true;
-                    break;
-                case HIDE_IF_CTRL_IS_NOT_PRESSED_AND_NEVER_DELETE_ANY_LINKS_FROM_HARDDISK:
-                    byPassDialog = !KeyObserver.getInstance().isControlDown();
-                    break;
-                case HIDE_IF_CTRL_IS_PRESSED_AND_NEVER_DELETE_ANY_LINKS_FROM_HARDDISK:
-                    byPassDialog = KeyObserver.getInstance().isControlDown();
-                    break;
-                }
+
+                dialog.setDeleteFilesFromDiskEnabled(deleteFilesFormDiskEnabled);
+
                 ConfirmDeleteLinksDialogInterface ret = null;
                 if (!byPassDialog) {
                     ret = dialog.show();
@@ -77,7 +65,7 @@ public class DownloadTabActionUtils {
                         @Override
                         public boolean isDeleteFilesFromDiskEnabled() {
                             // Fehlerhafte zurücksetzen
-                            return KeyObserver.getInstance().isShiftDown();
+                            return KeyObserver.getInstance().isShiftDown(true);
                         }
 
                         @Override

@@ -47,28 +47,48 @@ import org.jdownloader.plugins.FinalLinkState;
 
 public class GenericDeleteFromTableToolbarAction extends AbstractToolBarAction implements ExtTableListener, DownloadControllerListener, GUIListener, LinkCollectorListener, ActionContext {
 
-    public static final String           DELETE_ALL        = "deleteAll";
-    public static final String           DELETE_DISABLED   = "deleteDisabled";
-    public static final String           DELETE_FAILED     = "deleteFailed";
-    public static final String           DELETE_FINISHED   = "deleteFinished";
-    public static final String           DELETE_OFFLINE    = "deleteOffline";
+    public static final String DELETE_ALL          = "deleteAll";
+    public static final String DELETE_DISABLED     = "deleteDisabled";
+    public static final String DELETE_FAILED       = "deleteFailed";
+    public static final String DELETE_FINISHED     = "deleteFinished";
+    public static final String DELETE_OFFLINE      = "deleteOffline";
     /**
      * 
      */
-    private static final long            serialVersionUID  = 1L;
+    private static final long  serialVersionUID    = 1L;
 
-    private DelayedRunnable              delayer;
-    private boolean                      deleteAll         = false;
+    private DelayedRunnable    delayer;
+    private boolean            deleteAll           = false;
 
-    private boolean                      deleteDisabled    = false;
+    private boolean            deleteDisabled      = false;
 
-    private boolean                      deleteFailed      = false;
+    private boolean            deleteFailed        = false;
 
-    private boolean                      deleteFinished    = false;
+    private boolean            deleteFinished      = false;
 
-    private boolean                      deleteOffline     = false;
+    private boolean            deleteOffline       = false;
 
-    private boolean                      ignoreFiltered    = true;
+    private boolean            ignoreFiltered      = true;
+    private boolean            bypassDialog        = false;
+    private boolean            deleteFilesFromDisk = false;
+
+    @Customizer(name = "Bypass the 'Really?' Dialog")
+    public boolean isBypassDialog() {
+        return bypassDialog;
+    }
+
+    public void setBypassDialog(boolean bypassDialog) {
+        this.bypassDialog = bypassDialog;
+    }
+
+    @Customizer(name = "Delete Files from Harddisk,too")
+    public boolean isDeleteFilesFromDisk() {
+        return deleteFilesFromDisk;
+    }
+
+    public void setDeleteFilesFromDisk(boolean deleteFilesFromDisk) {
+        this.deleteFilesFromDisk = deleteFilesFromDisk;
+    }
 
     private CrawledLink                  lastCrawledLink;
     private DownloadLink                 lastDownloadLink;
@@ -107,7 +127,7 @@ public class GenericDeleteFromTableToolbarAction extends AbstractToolBarAction i
             if (nodesToDelete.size() > 0) {
                 final SelectionInfo<FilePackage, DownloadLink> si = new SelectionInfo<FilePackage, DownloadLink>(null, nodesToDelete, null, null, e, (DownloadsTable) table);
                 if (si.getChildren().size() > 0) {
-                    DownloadTabActionUtils.deleteLinksRequest(si, _GUI._.GenericDeleteFromDownloadlistAction_actionPerformed_ask_(createName()));
+                    DownloadTabActionUtils.deleteLinksRequest(si, _GUI._.GenericDeleteFromDownloadlistAction_actionPerformed_ask_(createName()), isDeleteFilesFromDisk(), isDeleteFilesFromDisk());
                     return;
                 }
             }
