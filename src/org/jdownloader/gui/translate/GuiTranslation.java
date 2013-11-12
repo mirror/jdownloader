@@ -3715,4 +3715,10 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "In Work:" })
     String ServicePanel9kwTooltip_runInEDT_inwork();
 
+    @Default(lngs = { "en" }, values = { "Tray Icon is disabled!" })
+    String JDGui_tray_title();
+
+    @Default(lngs = { "en" }, values = { "It seems that your Tray Icon has been disabled by accident.\r\nDo you want to enable it now?" })
+    String JDGui_tray_msg();
+
 }

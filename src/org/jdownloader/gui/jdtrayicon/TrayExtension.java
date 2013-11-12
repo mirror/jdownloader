@@ -245,6 +245,7 @@ public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTransla
     // }
 
     public void initGUI(final boolean startup) {
+
         SecondLevelLaunch.GUI_COMPLETE.executeWhenReached(new Runnable() {
 
             public void run() {

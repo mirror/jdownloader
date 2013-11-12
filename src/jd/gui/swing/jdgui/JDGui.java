@@ -259,7 +259,46 @@ public class JDGui implements UpdaterListener, OwnerFinder {
         // init tray
         tray = new TrayExtension();
         try {
+
             tray.init();
+
+            if (!tray._isEnabled()) {
+                SecondLevelLaunch.INIT_COMPLETE.executeWhenReached(new Runnable() {
+
+                    @Override
+                    public void run() {
+                        new Thread("TrayBug") {
+                            public void run() {
+
+                                try {
+                                    ConfirmDialog d = new ConfirmDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI._.JDGui_tray_title(), _GUI._.JDGui_tray_msg(), NewTheme.I().getIcon("logo/logo-48x48", 32), null, null) {
+                                        @Override
+                                        public String getDontShowAgainKey() {
+                                            return "TrayBug2";
+                                        }
+
+                                        @Override
+                                        public ModalityType getModalityType() {
+                                            return ModalityType.MODELESS;
+                                        }
+                                    };
+                                    d.setDoNotShowAgainSelected(true);
+                                    UIOManager.I().show(null, d);
+                                    d.throwCloseExceptions();
+                                    tray.setEnabled(true);
+                                } catch (Exception e) {
+
+                                }
+
+                            };
+
+                        }.start();
+
+                    }
+
+                });
+
+            }
         } catch (Exception e1) {
             logger.log(e1);
         }
