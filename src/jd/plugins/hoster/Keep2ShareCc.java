@@ -64,7 +64,7 @@ public class Keep2ShareCc extends PluginForHost {
     }
 
     private final String           DOWNLOADPOSSIBLE = ">To download this file with slow speed, use";
-    private final String           MAINPAGE         = "http://keep2s.cc";
+    private final String           MAINPAGE         = "http://keep2share.cc";
     private final String           DOMAINS          = "(https?://(www\\.)?(keep2share|k2s|k2share|keep2s|keep2)\\.cc)";
 
     private static Object          LOCK             = new Object();
@@ -77,7 +77,7 @@ public class Keep2ShareCc extends PluginForHost {
 
     @Override
     public void correctDownloadLink(final DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replaceFirst("://[a-zA-Z0-9\\.]+\\.cc/", "://keep2s.cc/"));
+        link.setUrlDownload(link.getDownloadURL().replaceFirst("://[a-zA-Z0-9\\.]+\\.cc/", "://keep2share.cc/"));
     }
 
     private Browser prepBrowser(final Browser prepBr) {
@@ -472,7 +472,7 @@ public class Keep2ShareCc extends PluginForHost {
             String dllink = br.getRedirectLocation();
             if (dllink == null) dllink = br.getRegex("(\\'|\")(/file/url\\.html\\?file=[a-z0-9]+)(\\'|\")").getMatch(1);
             if (dllink != null && !dllink.contains(currentDomain))
-                newDomain = new Regex(dllink, "https?://([^<>\"/]*?)/").getMatch(0);
+                newDomain = new Regex(dllink, "https?://[^<>\"/]*?(k[^<>\"/]*?)/").getMatch(0); // dllink = /prx-169.keep2share.cc/
             else if (!br.getURL().contains(currentDomain)) {
                 newDomain = new Regex(br.getURL(), "https?://([^<>\"/]*?)/").getMatch(0);
             }
