@@ -302,8 +302,8 @@ public class Captcha9kwSolver extends ChallengeSolver<String> implements Challen
 
         try {
             ret.setCreditBalance(Integer.parseInt(credits.trim()));
-            String userhistory1 = br.getPage(getAPIROOT() + "index.cgi?action=userhistory&apikey=" + Encoding.urlEncode(config.getApiKey()));
-            String userhistory2 = br.getPage(getAPIROOT() + "index.cgi?action=userhistory2&apikey=" + Encoding.urlEncode(config.getApiKey()));
+            String userhistory1 = br.getPage(getAPIROOT() + "index.cgi?action=userhistory&short=1&apikey=" + Encoding.urlEncode(config.getApiKey()));
+            String userhistory2 = br.getPage(getAPIROOT() + "index.cgi?action=userhistory2&short=1&apikey=" + Encoding.urlEncode(config.getApiKey()));
 
             ret.setAnswered(Integer.parseInt(Regex.getLines(userhistory2)[0]));
             ret.setSolved(Integer.parseInt(Regex.getLines(userhistory1)[0]));
