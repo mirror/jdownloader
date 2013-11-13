@@ -27,6 +27,7 @@ LinkSource_ADD_LINKS_DIALOG=Přidat akci odkazů
 LinkSource_CLIPBOARD=Schránka
 LinkSource_CNL=Clik'n'Load
 LinkSource_DOWNLOADED_CONTAINER=Stažený kontejner
+LinkSource_FLASHGOT=Flashgot
 LinkSource_MAC_DOCK=Dok (pouze Mac)
 LinkSource_MYJD=MyJDownloader
 LinkSource_START_PARAMETER=Spustit parametr
