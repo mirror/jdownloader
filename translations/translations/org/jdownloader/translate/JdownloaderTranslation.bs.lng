@@ -104,7 +104,6 @@ gui_settings_downloadpath_description=Ovdje podesite podrazumijevanu putanju za 
 gui_settings_extensions_show_now=Sada prikazati %s1? Možete ga otvoriti kasnije izborom Glavni meni->Prozor
 gui_settings_filewriting_description=JDownloader koristi opcije hash provjere da verifikuje ispravnost vaših download-a nakon download-ovanja.
 gui_settings_general_title=Uopšteno
-gui_settings_linkgrabber_filter_description=Filter linkova se koristi za filtriranje linkova. Koristite ga za ignorisanje linkova, adresa, url-ova ili dokumenata na osnovu njihovih karakteristika. Dodajte izuzetke z aprihvatanje specijalnih linkova. Izuzeci će bit dostupni u Prikazu po želji u Bočnoj traci Grabioca linkova.
 gui_settings_linkgrabber_packagizer_description=Pravila Kreatora paketa da automatski postavite Download Podešenja na Dokumentima na osnovu njihovih podešenja.
 gui_settings_linkgrabber_title=Filter Grabioca Linkova
 gui_settings_plugins_description=JDownloader koristi 'Dodatke' za %s1 web stranica za automatizovanje download-a koji bi trajali jako dugo bez JDownloader. Neki od ovih Dodataka imaju postavke za podešavanje njihovog ponašanja.
@@ -119,7 +118,6 @@ gui_warning_reconnectFailed=Ponovna konekcija nije uspjela!
 gui_warning_reconnectSuccess=Ponovno konektovanje je bilo uspješno
 gui_warning_reconnect_running=U toku...
 gui_warning_reconnectunknown=Ponovna konekcija nije poznata
-jd_controlling_SingleDownloadController_askexists=Dokument '%s1' u paketu %s2 već postoji. Šta želite da uradite?
 jd_controlling_SingleDownloadController_askexists_title=Dokument postoji
 jd_controlling_reconnect_Reconnector_progress_failed2=Ponovno konektovanje suviče česo ne uspijeva! Automatsko konektovanje je onemogućeno! Molimo provjerite svoja Podešenja ponovnog konektovanja!
 jd_controlling_reconnect_plugins_DummyRouterPlugin_getGUI2=<b><u>Nije izabrana Ponovna konekcija</u></b><br/><p>Ponovna konekcija je napredni pristup za preskakanje dugih čekanja koja neki domaćini nameću korisnicima koji ne plaćaju. <br>Nije od pomoći kada koristite premium nalog.</p><p>Pročitajte više o Ponovnom konektovanju <a href='http://support.jdownloader.org/index.php?_m=knowledgebase&_a=viewarticle&kbarticleid=1'>ovdje</a></p>
