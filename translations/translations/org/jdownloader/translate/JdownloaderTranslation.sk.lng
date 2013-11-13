@@ -1,4 +1,9 @@
 DownloadLink_setSkipped_statusmessage=Preskočené
+DownloadLink_setSkipped_statusmessage_account=Preskočené - Chýba účet
+DownloadLink_setSkipped_statusmessage_captcha=Preskočené - Je vyžadované captcha
+DownloadLink_setSkipped_statusmessage_disk_full=Preskočené - Disk je plný
+DownloadLink_setSkipped_statusmessage_file_exists=Preskočené - Súbor už existuje
+DownloadLink_setSkipped_statusmessage_toomanyretries=Preskočené - Príliš veľa opakovaní
 DownloadWatchDog_onShutdownRequest_=Prebieha sťahovanie!
 DownloadWatchDog_onShutdownRequest_msg=Naozaj chcete zastaviť prebiehajúce sťahovanie a ukončiť JDownloader?
 DownloadWatchDog_onShutdownRequest_nonresumable=Práve prebiehajú nenaviazateľné sťahovania!
