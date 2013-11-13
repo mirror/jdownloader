@@ -923,7 +923,7 @@ public class TbCm extends PluginForDecrypt {
                 String dlLink = "";
                 String vQuality = "";
                 DestinationFormat cMode = null;
-
+                String TTSURL = br.getRegex("\"ttsurl\": \"(http.*?)\"").getMatch(0);
                 for (final Integer format : LinksFound.keySet()) {
                     if (ytVideo.containsKey(format)) {
                         cMode = (DestinationFormat) ytVideo.get(format)[0];
@@ -1045,10 +1045,7 @@ public class TbCm extends PluginForDecrypt {
 
                 // Grab Subtitles
                 if (cfg.getBooleanProperty("ALLOW_SUBTITLES_V2", true)) {
-                    br.getPage(preferHTTPS("http://video.google.com/timedtext?type=list&v=" + VIDEOID));
-
                     FilePackage filePackage = filepackages.get(NAME_SUBTITLES);
-
                     if (filePackage == null) {
                         filePackage = FilePackage.getInstance();
                         filePackage.setProperty("ALLOW_MERGE", true);
@@ -1061,12 +1058,25 @@ public class TbCm extends PluginForDecrypt {
                             filePackage.setName(YT_FILENAME + " " + subtitles);
                         filepackages.put(NAME_SUBTITLES, filePackage);
                     }
+                    /* new tts */
 
+                    if (TTSURL != null) {
+                        TTSURL = unescape(TTSURL.replaceAll("\\\\/", "/"));
+                        br.getPage(preferHTTPS(TTSURL + "&asrs=1&fmts=1&tlangs=1&ts=" + System.currentTimeMillis() + "&type=list"));
+                        TTSURL = TTSURL.replaceFirst("&v=[a-zA-Z0-9]+", "");
+                    } else {
+                        /* old tts */
+                        br.getPage(preferHTTPS("http://www.youtube.com/api/timedtext?type=list&v=" + VIDEOID));
+                    }
                     String[][] matches = br.getRegex("<track id=\"(.*?)\" name=\"(.*?)\" lang_code=\"(.*?)\" lang_original=\"(.*?)\".*?/>").getMatches();
 
                     for (String[] track : matches) {
-                        String link = preferHTTPS("http://video.google.com/timedtext?type=track&name=" + URLEncoder.encode(track[1], "UTF-8") + "&lang=" + URLEncoder.encode(track[2], "UTF-8") + "&v=" + URLEncoder.encode(VIDEOID, "UTF-8"));
-
+                        String link = null;
+                        if (TTSURL == null) {
+                            link = preferHTTPS("http://www.youtube.com/api/timedtext?type=track&name=" + URLEncoder.encode(track[1], "UTF-8") + "&lang=" + URLEncoder.encode(track[2], "UTF-8") + "&v=" + URLEncoder.encode(VIDEOID, "UTF-8"));
+                        } else {
+                            link = preferHTTPS(TTSURL + "&kind=asr&format=1&ts=" + System.currentTimeMillis() + "&type=track&lang=" + URLEncoder.encode(track[2], "UTF-8") + "&name=" + URLEncoder.encode(track[1], "UTF-8") + "&v=" + URLEncoder.encode(VIDEOID, "UTF-8"));
+                        }
                         DownloadLink dlink = this.createDownloadlink("youtubeJD" + link);
                         dlink.setProperty("ALLOW_DUPE", true);
                         dlink.setBrowserUrl(currentVideoUrl);
