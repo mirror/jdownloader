@@ -1780,6 +1780,13 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
      */
     private SingleDownloadController attach(final DownloadLinkCandidate candidate) {
         logger.info("Start new Download: Host:" + candidate);
+        String downloadTo = candidate.getLink().getFileOutput(true, false);
+        String customDownloadTo = candidate.getLink().getFileOutput(true, true);
+        logger.info("Download To: " + downloadTo);
+        if (!StringUtils.equalsIgnoreCase(downloadTo, customDownloadTo)) {
+            logger.info("Download To(custom): " + customDownloadTo);
+        }
+
         DownloadLinkCandidateHistory history = getSession().buildHistory(candidate.getLink());
         if (history == null || !history.attach(candidate)) {
             logger.severe("Could not attach to History: " + candidate);
@@ -2912,13 +2919,18 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                         throw new PluginException(LinkStatus.ERROR_ALREADYEXISTS);
                     }
                 }
-                DISKSPACECHECK check = checkFreeDiskSpace(fileOutput.getParentFile(), controller, (downloadLink.getDownloadSize() - downloadLink.getDownloadCurrent()));
+                File partFile = new File(fileOutput.getAbsolutePath() + ".part");
+                // we should not use downloadLink.getDownloadCurrent() here. downloadLink.getDownloadCurrent() returns the amout of loaded
+                // bytes, but NOT the size of the partfile.
+
+                DISKSPACECHECK check = checkFreeDiskSpace(fileOutput.getParentFile(), controller, (downloadLink.getDownloadSize() - (partFile.exists() ? partFile.length() : 0)));
                 switch (check) {
                 case FAILED:
                     throw new SkipReasonException(SkipReason.DISK_FULL);
                 case INVALIDFOLDER:
                     throw new SkipReasonException(SkipReason.INVALID_DESTINATION);
                 }
+
                 return;
             }
 
