@@ -105,9 +105,6 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Enter Captcha for %s1 to continue!" })
     String gui_captchaWindow_askForInput(String hoster);
 
-    @Default(lngs = { "en" }, values = { "DefaultProxy" })
-    String gui_column_defaultproxy();
-
     @Default(lngs = { "en" }, values = { "Host/IP" })
     String gui_column_host();
 
@@ -120,17 +117,11 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Proxytype" })
     String gui_column_proxytype();
 
-    @Default(lngs = { "en" }, values = { "Native" })
-    String gui_column_native();
-
     @Default(lngs = { "en" }, values = { "Use" })
     String gui_column_use();
 
     @Default(lngs = { "en" }, values = { "Username" })
     String gui_column_user();
-
-    @Default(lngs = { "en" }, values = { "Size of Captcha Dialogs" })
-    String gui_config_barrierfree_captchasize();
 
     @Default(lngs = { "en" }, values = { "SFV/CRC check when possible" })
     String gui_config_download_crc();
@@ -168,9 +159,6 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Message" })
     String gui_dialogs_message_title();
 
-    @Default(lngs = { "en" }, values = { "%s1 links" })
-    String gui_downloadlist_delete_size_packagev2(Object s1);
-
     @Default(lngs = { "en" }, values = { "Load DLC file" })
     String gui_filechooser_loaddlc();
 
@@ -197,9 +185,6 @@ public interface GuiTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Check Online Status" })
     String gui_table_contextmenu_check();
-
-    @Default(lngs = { "en" }, values = { "Delete from list" })
-    String gui_table_contextmenu_deletelist2();
 
     @Default(lngs = { "en" }, values = { "Create DLC" })
     String gui_table_contextmenu_dlc();
@@ -438,9 +423,6 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Use for Proxy Rotation" })
     String gui_column_proxytype_rotation_check();
 
-    @Default(lngs = { "en" }, values = { "Set Defaultproxy here" })
-    String gui_column_proxytype_default();
-
     @Default(lngs = { "en" }, values = { "Direct Gateway" })
     String gui_column_proxytype_direct();
 
@@ -595,17 +577,11 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Restore %s1 filtered Links" })
     String RestoreFilteredLinksAction_(int x);
 
-    @Default(lngs = { "en" }, values = { "Clears the list" })
-    String ClearAction_tt_();
-
     @Default(lngs = { "en" }, values = { "Hoster" })
     String LinkGrabberSidebar_LinkGrabberSidebar_hosterfilter();
 
     @Default(lngs = { "en" }, values = { "File Types" })
     String LinkGrabberSidebar_LinkGrabberSidebar_extensionfilter();
-
-    @Default(lngs = { "en" }, values = { "Quick Settings" })
-    String LinkGrabberSidebar_LinkGrabberSidebar_settings();
 
     @Default(lngs = { "en" }, values = { "Add at top" })
     String LinkGrabberSidebar_LinkGrabberSidebar_addtop();
@@ -633,18 +609,6 @@ public interface GuiTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Are you sure?" })
     String literally_are_you_sure();
-
-    @Default(lngs = { "en" }, values = { "Do you really want to remove all links from Linkgrabber?" })
-    String ClearAction_actionPerformed_msg();
-
-    @Default(lngs = { "en" }, values = { "Do you really want to remove all offline links from Linkgrabber?" })
-    String ClearAction_actionPerformed_offline_msg();
-
-    @Default(lngs = { "en" }, values = { "Do you really want to remove all selected links from Linkgrabber?" })
-    String ClearAction_actionPerformed_selected_msg();
-
-    @Default(lngs = { "en" }, values = { "Do you really want to remove all not-selected links from Linkgrabber?" })
-    String ClearAction_actionPerformed_notselected_msg();
 
     @Default(lngs = { "en" }, values = { "Yes" })
     String literally_yes();
@@ -1096,9 +1060,6 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Import Filterrules" })
     String LinkgrabberFilter_import_dialog_title();
 
-    @Default(lngs = { "en" }, values = { "Default Rules" })
-    String LinkgrabberFilter_default_rules();
-
     @Default(lngs = { "en" }, values = { "Rule File %s1 is empty or is invalid." })
     String LinkgrabberFilter_LinkgrabberFilter_import_invalid(String name);
 
@@ -1186,9 +1147,6 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Add to Download List" })
     String ConfirmAction_ConfirmAction_context_add();
 
-    @Default(lngs = { "en" }, values = { "Open in Browser" })
-    String OpenUrlAction_OpenUrlAction_();
-
     @Default(lngs = { "en" }, values = { "Save to" })
     String LinkGrabberTableModel_initColumns_folder();
 
@@ -1219,23 +1177,11 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Download Password" })
     String DownloadPasswordColumn_DownloadPasswordColumn_object_();
 
-    @Default(lngs = { "en" }, values = { "Delete selected" })
-    String ContextMenuFactory_createPopup_cleanup_only();
-
     @Default(lngs = { "en" }, values = { "Other" })
     String ContextMenuFactory_createPopup_other();
 
-    @Default(lngs = { "en" }, values = { "Offline Links" })
-    String RemoveOfflineAction_RemoveOfflineAction_object_();
-
-    @Default(lngs = { "en" }, values = { "Delete all visible Links (Keep filtered)" })
-    String RemoveAllAction_RemoveAllAction_object();
-
     @Default(lngs = { "en" }, values = { "Incomplete Split-Archives" })
     String RemoveIncompleteArchives_RemoveIncompleteArchives_object_();
-
-    @Default(lngs = { "en" }, values = { "Keep only selected Links" })
-    String RemoveNonSelectedAction_RemoveNonSelectedAction_object_();
 
     @Default(lngs = { "en" }, values = { "Split Packages By Hoster" })
     String SplitPackagesByHost_SplitPackagesByHost_object_();
@@ -1407,12 +1353,6 @@ public interface GuiTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "The Sidebar is hidden now. Click again to show it.\r\n\r\nWARNING: Views and Settings are still active! Check advanced Settings to disable the sidebar and all it's features completely." })
     String LinkGrabberPanel_onConfigValueModified_msg_();
-
-    @Default(lngs = { "en" }, values = { "Show Selection" })
-    String EnabledAllAction_EnabledAllAction_object_show();
-
-    @Default(lngs = { "en" }, values = { "Hide Selection" })
-    String EnabledAllAction_EnabledAllAction_object_hide();
 
     @Default(lngs = { "en" }, values = { "Filename" })
     String PackagizerFilterRuleDialog_layoutDialogContent_filename();
@@ -1717,9 +1657,6 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "If you set a Stop Mark on a Package, JDownloader will stop downloading after all files in this Package have finished." })
     String StopsignAction_actionPerformed_help_msg_package_();
 
-    @Default(lngs = { "en" }, values = { "Download next" })
-    String gui_table_contextmenu_SuperPriorityDownloadAction();
-
     @Default(lngs = { "en" }, values = { "Save DLC File to..." })
     String CreateDLCAction_actionPerformed_title_();
 
@@ -1758,9 +1695,6 @@ public interface GuiTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Choose new Directory:" })
     String OpenDownloadFolderAction_layoutDialogContent_object_();
-
-    @Default(lngs = { "en" }, values = { "%s1's Properties" })
-    String ContextMenuFactory_createPopup_properties(String name);
 
     @Default(lngs = { "en" }, values = { "Set Comment(s)" })
     String SetCommentAction_SetCommentAction_object_();
@@ -1831,21 +1765,6 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "You really should know that..." })
     String literall_usage_tipp();
 
-    @Default(lngs = { "en" }, values = { "Failed Links" })
-    String DeleteFailedAction_DeleteFailedAction_object_();
-
-    @Default(lngs = { "en" }, values = { "Successful Links" })
-    String DeleteSuccessFulAction_DeleteSuccessFulAction_object_();
-
-    @Default(lngs = { "en" }, values = { "DownloadLinks" })
-    String DeleteAllAction_DeleteAllAction_object_();
-
-    @Default(lngs = { "en" }, values = { "Offline Links" })
-    String DeleteOfflineAction_DeleteOfflineAction_object_();
-
-    @Default(lngs = { "en" }, values = { "Disabled Links" })
-    String DeleteDisabledLinks_DeleteDisabledLinks_object_();
-
     @Default(lngs = { "en" }, values = { "Delete" })
     String DeleteQuickAction_DeleteQuickAction_object_();
 
@@ -1854,9 +1773,6 @@ public interface GuiTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Do you want to remove all Links of the Archive %s1 from Linkgrabber?" })
     String RemoveIncompleteArchives_run_(String name);
-
-    @Default(lngs = { "en" }, values = { "Delete Selection" })
-    String RemoveOptionsAction_actionPerformed_selection_();
 
     @Default(lngs = { "en" }, values = { "Folder does not exist!" })
     String DownloadFolderChooserDialog_handleNonExistingFolders_title_();
@@ -1966,15 +1882,6 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "No, thanks" })
     String JDGui_showStatsDialog_no_();
 
-    @Default(lngs = { "en" }, values = { "App Manager" })
-    String ExtensionManager_getTitle_();
-
-    @Default(lngs = { "en" }, values = { "Extensions and additional Apps that make JDownloader even better can be found here." })
-    String ExtensionManager_ExtensionManager_description_();
-
-    @Default(lngs = { "en" }, values = { "Search here..." })
-    String pluginsettings_search_helptext();
-
     @Default(lngs = { "en" }, values = { "Please wait. Loading all plugins..." })
     String PluginSettingsPanel_PluginSettingsPanel_waittext_();
 
@@ -1983,30 +1890,6 @@ public interface GuiTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Crawler Plugin: %s1" })
     String PluginSettingsPanel_runInEDT_plugin_header_text_decrypt(String displayName);
-
-    @Default(lngs = { "en" }, values = { "%s1 Crawler" })
-    String PluginSettingsPanel_getListCellRendererComponent_crawler_(String displayName);
-
-    @Default(lngs = { "en" }, values = { "Install" })
-    String ExtensionModule_ExtensionModule_install_();
-
-    @Default(lngs = { "en" }, values = { "Uninstall" })
-    String ExtensionModule_ExtensionModule_uninstall_();
-
-    @Default(lngs = { "en" }, values = { "%s1" })
-    String ExtensionModule_createTitle_installed(String title);
-
-    @Default(lngs = { "en" }, values = { "%s1" })
-    String ExtensionModule_createTitle_not_installed(String title);
-
-    @Default(lngs = { "en" }, values = { "Restart Required!" })
-    String ExtensionModule_runInEDT_restart_required_();
-
-    @Default(lngs = { "en" }, values = { "Installing..." })
-    String ExtensionModule_run_installing_();
-
-    @Default(lngs = { "en" }, values = { "Uninstalling..." })
-    String ExtensionModule_run_uninstalling();
 
     @Default(lngs = { "en" }, values = { "Experimental & BETA Extensions - Use at your own risk!" })
     String ExtensionManager_getPanel_experimental_header_();

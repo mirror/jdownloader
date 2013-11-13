@@ -51,9 +51,6 @@ public interface JdownloaderTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "No permissions to write to harddisk" })
     String download_error_message_iopermissions();
 
-    @Default(lngs = { "en" }, values = { "[wait for new ip]" })
-    String gui_downloadlink_hosterwaittime();
-
     @Default(lngs = { "en" }, values = { "Reconnect duration" })
     String gui_config_reconnect_showcase_time();
 
@@ -63,23 +60,14 @@ public interface JdownloaderTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Outdated Javaversion found: %s1!" })
     String gui_javacheck_newerjavaavailable_title(Object s1);
 
-    @Default(lngs = { "en" }, values = { "File already exists." })
-    String controller_status_fileexists_skip();
-
     @Default(lngs = { "en" }, values = { "Reconnect unknown" })
     String gui_warning_reconnectunknown();
 
     @Default(lngs = { "en" }, values = { "Reconnect successful" })
     String gui_warning_reconnectSuccess();
 
-    @Default(lngs = { "en" }, values = { "Plugin error. Please inform Support" })
-    String plugins_errors_pluginerror();
-
     @Default(lngs = { "en" }, values = { "Wrong password" })
     String decrypter_wrongpassword();
-
-    @Default(lngs = { "en" }, values = { "Could not overwrite existing file" })
-    String system_download_errors_couldnotoverwrite();
 
     @Default(lngs = { "en" }, values = { "Could not delete existing part file" })
     String system_download_errors_couldnotdelete();
@@ -102,32 +90,17 @@ public interface JdownloaderTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Unexpected rangeheader format:" })
     String download_error_message_rangeheaderparseerror();
 
-    @Default(lngs = { "en" }, values = { "Premium Error" })
-    String downloadlink_status_error_premium();
-
-    @Default(lngs = { "en" }, values = { "No suitable account available" })
-    String downloadlink_status_error_premium_noacc();
-
-    @Default(lngs = { "en" }, values = { "[Not available]" })
-    String gui_download_onlinecheckfailed();
-
     @Default(lngs = { "en" }, values = { "No valid account found" })
     String decrypter_invalidaccount();
 
     @Default(lngs = { "en" }, values = { "Please enter the password for\r\n%s1" })
     String jd_plugins_PluginUtils_askPassword(Object s1);
 
-    @Default(lngs = { "en" }, values = { "Plugin out of date" })
-    String controller_status_plugindefective();
-
     @Default(lngs = { "en" }, values = { "Mirror %s1 is loading" })
     String system_download_errors_linkisBlocked(Object s1);
 
     @Default(lngs = { "en" }, values = { "Download failed" })
     String downloadlink_status_error_downloadfailed();
-
-    @Default(lngs = { "en" }, values = { "Unknown error, retrying" })
-    String downloadlink_status_error_retry();
 
     @Default(lngs = { "en" }, values = { "Reconnect failed!" })
     String gui_warning_reconnectFailed();
