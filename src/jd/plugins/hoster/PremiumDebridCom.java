@@ -41,7 +41,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
-import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
@@ -236,18 +235,28 @@ public class PremiumDebridCom extends PluginForHost {
             try {
                 br.postPage("http://premiumdebrid.com/index.php", "link=" + url + "&iuser=&ipass=&comment=&yt_fmt=highest&tor_user=&tor_pass=&email=&method=tc&partSize=10&proxy=&proxyuser=&proxypass=&premium_acc=on&premium_user=&premium_pass=&path=%2Fvar%2Fwww%2Fhtml%2Ffiles%2Ftit%40nium");
                 if (br.containsHTML(">Error\\[Cookie Failed\\!\\]<")) {
-                    int timesFailed = link.getIntegerProperty("timesfailedpremiumdebridcom", 0);
+                    int timesFailed = link.getIntegerProperty("timesfailedpremiumdebridcom_cookie", 0);
                     if (timesFailed <= 2) {
                         timesFailed++;
-                        link.setProperty("timesfailedpremiumdebridcom", timesFailed);
+                        link.setProperty("timesfailedpremiumdebridcom_cookie", timesFailed);
                         throw new PluginException(LinkStatus.ERROR_RETRY, "Server error");
                     } else {
-                        link.setProperty("timesfailedpremiumdebridcom", Property.NULL);
+                        link.setProperty("timesfailedpremiumdebridcom_cookie", Property.NULL);
                         tempUnavailableHoster(acc, link, 60 * 60 * 1000l);
                     }
                 }
                 final Form dlForm = br.getForm(0);
-                if (dlForm == null || !dlForm.containsHTML("partSize")) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                if (dlForm == null || !dlForm.containsHTML("partSize")) {
+                    int timesFailed = link.getIntegerProperty("timesfailedpremiumdebridcom_cookie", 0);
+                    if (timesFailed <= 2) {
+                        timesFailed++;
+                        link.setProperty("timesfailedpremiumdebridcom_cookie", timesFailed);
+                        throw new PluginException(LinkStatus.ERROR_RETRY, "Unknown error");
+                    } else {
+                        link.setProperty("timesfailedpremiumdebridcom_cookie", Property.NULL);
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
+                }
                 for (int i = 1; i <= 120; i++) {
                     showMessage(link, "Check " + i + "/120: Generating link");
                     br.submitForm(dlForm);
@@ -280,18 +289,24 @@ public class PremiumDebridCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         link.setProperty("premiumdebridcomdirectlink", dllink);
-        if (!this.dl.startDownload()) {
-            try {
-                if (dl.externalDownloadStop()) return;
-            } catch (final Throwable e) {
-            }
-            final String errormessage = link.getLinkStatus().getErrorMessage();
-            if (errormessage != null && (errormessage.startsWith(JDL.L("download.error.message.rangeheaders", "Server does not support chunkload")) || errormessage.equals("Unerwarteter Mehrfachverbindungsfehlernull"))) {
+        try {
+            if (!this.dl.startDownload()) {
+                try {
+                    if (dl.externalDownloadStop()) return;
+                } catch (final Throwable e) {
+                }
                 /* unknown error, we disable multiple chunks */
                 if (link.getBooleanProperty(PremiumDebridCom.NOCHUNKS, false) == false) {
                     link.setProperty(PremiumDebridCom.NOCHUNKS, Boolean.valueOf(true));
                     throw new PluginException(LinkStatus.ERROR_RETRY);
                 }
+            }
+        } catch (final PluginException e) {
+            // New V2 errorhandling
+            /* unknown error, we disable multiple chunks */
+            if (e.getLinkStatus() != LinkStatus.ERROR_RETRY && link.getBooleanProperty(PremiumDebridCom.NOCHUNKS, false) == false) {
+                link.setProperty(PremiumDebridCom.NOCHUNKS, Boolean.valueOf(true));
+                throw new PluginException(LinkStatus.ERROR_RETRY);
             }
         }
     }

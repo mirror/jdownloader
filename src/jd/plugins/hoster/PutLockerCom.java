@@ -184,13 +184,22 @@ public class PutLockerCom extends PluginForHost {
         }
         fixFilename(downloadLink);
         downloadLink.setProperty("pass", passCode);
-        if (!this.dl.startDownload()) {
-            try {
-                if (dl.externalDownloadStop()) return;
-            } catch (final Throwable e) {
+        try {
+            if (!this.dl.startDownload()) {
+                try {
+                    if (dl.externalDownloadStop()) return;
+                } catch (final Throwable e) {
+                }
+                /* unknown error, we disable multiple chunks */
+                if (downloadLink.getBooleanProperty(PutLockerCom.NOCHUNKS, false) == false) {
+                    downloadLink.setProperty(PutLockerCom.NOCHUNKS, Boolean.valueOf(true));
+                    throw new PluginException(LinkStatus.ERROR_RETRY);
+                }
             }
+        } catch (final PluginException e) {
+            // New V2 errorhandling
             /* unknown error, we disable multiple chunks */
-            if (downloadLink.getBooleanProperty(PutLockerCom.NOCHUNKS, false) == false) {
+            if (e.getLinkStatus() != LinkStatus.ERROR_RETRY && downloadLink.getBooleanProperty(PutLockerCom.NOCHUNKS, false) == false) {
                 downloadLink.setProperty(PutLockerCom.NOCHUNKS, Boolean.valueOf(true));
                 throw new PluginException(LinkStatus.ERROR_RETRY);
             }

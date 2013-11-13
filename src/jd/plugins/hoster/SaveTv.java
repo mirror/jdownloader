@@ -87,6 +87,7 @@ public class SaveTv extends PluginForHost {
     private static final String GRABARCHIVE                                                 = "GRABARCHIVE";
     private static final String GRABARCHIVE_FASTER                                          = "GRABARCHIVE_FASTER";
     private static final String DISABLE_LINKCHECK                                           = "DISABLE_LINKCHECK";
+    private static final String DELETE_TELECAST_ID_AFTER_DOWNLOAD                           = "DELETE_TELECAST_ID_AFTER_DOWNLOAD";
 
     /** Custom filename settings stuff */
     private static final String CUSTOM_DATE                                                 = "CUSTOM_DATE";
@@ -357,7 +358,7 @@ public class SaveTv extends PluginForHost {
         if (FORCE_ORIGINAL_FILENAME) {
             final String originalfilename = getFakeOriginalFilename(link);
             link.setFinalFileName(null);
-            link.setName(originalfilename + ".mp4");
+            link.setName(originalfilename);
         } else {
             final String formattedFilename = getFormattedFilename(link);
             link.setFinalFileName(formattedFilename);
@@ -398,6 +399,7 @@ public class SaveTv extends PluginForHost {
 
     @Override
     public void handlePremium(final DownloadLink downloadLink, final Account account) throws Exception {
+        final SubConfiguration cfg = SubConfiguration.getConfig("save.tv");
         FORCE_LINKCHECK = true;
         requestFileInformation(downloadLink);
         login(this.br, account, false);
@@ -407,20 +409,15 @@ public class SaveTv extends PluginForHost {
             downloadLink.setProperty(LASTFAILEDSTRING, LASTFAILED_PLUGIN_TEMPORARILY_UNAVAILABLE_NOCUTAVAILABLE);
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, NOCUTAVAILABLETEXT, 12 * 60 * 60 * 1000l);
         }
-        final String telecastID = getTelecastId(downloadLink);
-        final boolean preferAdsFree = getPluginConfig().getBooleanProperty(PREFERADSFREE);
-        final boolean preferMobileVids = getPluginConfig().getBooleanProperty(PREFERH264MOBILE);
+        final boolean preferAdsFree = cfg.getBooleanProperty(PREFERADSFREE);
+        final boolean preferMobileVids = cfg.getBooleanProperty(PREFERH264MOBILE);
         String downloadWithoutAds = "false";
         if (preferAdsFree) downloadWithoutAds = "true";
         String preferMobileVideos = null;
         if (SESSIONID != null) {
             preferMobileVideos = "5";
             if (preferMobileVids) preferMobileVideos = "4";
-            br.getHeaders().put("SOAPAction", "http://tempuri.org/IDownload/GetStreamingUrl");
-            br.getHeaders().put("Content-Type", "text/xml");
-            br.postPage(APIPAGE, "<?xml version=\"1.0\" encoding=\"utf-8\"?><v:Envelope xmlns:i=\"http://www.w3.org/2001/XMLSchema-instance\" xmlns:d=\"http://www.w3.org/2001/XMLSchema\" xmlns:c=\"http://schemas.xmlsoap.org/soap/encoding/\" xmlns:v=\"http://schemas.xmlsoap.org/soap/envelope/\"><v:Header /><v:Body><GetStreamingUrl xmlns=\"http://tempuri.org/\" id=\"o0\" c:root=\"1\"><sessionId i:type=\"d:string\">" + SESSIONID + "</sessionId><telecastId i:type=\"d:int\">" + telecastID + "</telecastId><telecastIdSpecified i:type=\"d:boolean\">true</telecastIdSpecified><recordingFormatId i:type=\"d:int\">" + preferMobileVideos + "</recordingFormatId><recordingFormatIdSpecified i:type=\"d:boolean\">true</recordingFormatIdSpecified><adFree i:type=\"d:boolean\">false</adFree><adFreeSpecified i:type=\"d:boolean\">" + downloadWithoutAds
-                    + "</adFreeSpecified></GetStreamingUrl></v:Body></v:Envelope>");
-            // Example request streaming url: http://jdownloader.net:8081/pastebin/110483
+            postDownloadPageAPI(downloadLink, preferMobileVideos, downloadWithoutAds);
             dllink = br.getRegex("<a:DownloadUrl>(http://[^<>\"]*?)</a").getMatch(0);
         } else {
             preferMobileVideos = "c0-param1=number:0";
@@ -433,7 +430,7 @@ public class SaveTv extends PluginForHost {
             // Ads-Free version not available - handle it
             if (br.containsHTML("\\'Leider enthält Ihre Aufnahme nur Werbung\\.\\'") && preferAdsFree) {
                 this.ISADSFREEAVAILABLE = false;
-                if (this.getPluginConfig().getBooleanProperty(DOWNLOADONLYADSFREE, false) && !this.ISADSFREEAVAILABLE) {
+                if (cfg.getBooleanProperty(DOWNLOADONLYADSFREE, false) && !this.ISADSFREEAVAILABLE) {
                     downloadLink.setProperty(LASTFAILEDSTRING, LASTFAILED_PLUGIN_TEMPORARILY_UNAVAILABLE_NOCUTAVAILABLE);
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, NOCUTAVAILABLETEXT, 12 * 60 * 60 * 1000l);
                 }
@@ -468,13 +465,22 @@ public class SaveTv extends PluginForHost {
         try {
             if (!this.dl.startDownload()) {
                 try {
-                    if (dl.externalDownloadStop()) return;
+                    if (dl.externalDownloadStop()) { return; }
                 } catch (final Throwable e) {
                 }
                 /* unknown error, we disable multiple chunks */
-                if (downloadLink.getBooleanProperty(SaveTv.NOCHUNKS, false) == false) {
+                if (downloadLink.getLinkStatus().getErrorMessage() != null && downloadLink.getBooleanProperty(SaveTv.NOCHUNKS, false) == false) {
                     downloadLink.setProperty(SaveTv.NOCHUNKS, Boolean.valueOf(true));
                     throw new PluginException(LinkStatus.ERROR_RETRY);
+                }
+            } else {
+                if (cfg.getBooleanProperty(DELETE_TELECAST_ID_AFTER_DOWNLOAD, false)) {
+                    try {
+                        br.postPage("https://www.save.tv/STV/M/obj/user/usShowVideoArchive.cfm?", "iFilterType=1&sText=&iTextSearchType=1&ChannelID=0&TVCategoryID=0&TVSubCategoryID=0&iRecordingState=1&iPageNumber=1&sSortOrder=&lTelecastID=" + getTelecastId(downloadLink));
+                        logger.info("Successfully deleted telecastID:  " + getTelecastId(downloadLink));
+                    } catch (final Throwable e) {
+                        logger.info("Failed to delete telecastID: " + getTelecastId(downloadLink));
+                    }
                 }
             }
         } catch (final PluginException e) {
@@ -498,6 +504,30 @@ public class SaveTv extends PluginForHost {
     private void postDownloadPage(final DownloadLink dl, final String preferMobileVideos, final String downloadWithoutAds) throws IOException {
         br.postPage("https://www.save.tv/STV/M/obj/cRecordOrder/croGetDownloadUrl.cfm?null.GetDownloadUrl", "ajax=true&clientAuthenticationKey=&callCount=1&c0-scriptName=null&c0-methodName=GetDownloadUrl&c0-id=&c0-param0=number:" + this.getTelecastId(dl) + "&" + preferMobileVideos + "&c0-param2=boolean:" + downloadWithoutAds + "&xml=true&");
     }
+
+    /**
+     * @param dl
+     *            DownloadLink
+     * @param preferMobileVideos
+     *            : Mobile Videos bevurzugen oder nicht
+     * @param downloadWithoutAds
+     *            : Videos mit angewandter Schnittliste bevorzugen oder nicht
+     */
+    private void postDownloadPageAPI(final DownloadLink dl, final String preferMobileVideos, final String downloadWithoutAds) throws IOException {
+        br.getHeaders().put("SOAPAction", "http://tempuri.org/IDownload/GetStreamingUrl");
+        br.getHeaders().put("Content-Type", "text/xml");
+        br.postPage(APIPAGE, "<?xml version=\"1.0\" encoding=\"utf-8\"?><v:Envelope xmlns:i=\"http://www.w3.org/2001/XMLSchema-instance\" xmlns:d=\"http://www.w3.org/2001/XMLSchema\" xmlns:c=\"http://schemas.xmlsoap.org/soap/encoding/\" xmlns:v=\"http://schemas.xmlsoap.org/soap/envelope/\"><v:Header /><v:Body><GetStreamingUrl xmlns=\"http://tempuri.org/\" id=\"o0\" c:root=\"1\"><sessionId i:type=\"d:string\">" + SESSIONID + "</sessionId><telecastId i:type=\"d:int\">" + this.getTelecastId(dl) + "</telecastId><telecastIdSpecified i:type=\"d:boolean\">true</telecastIdSpecified><recordingFormatId i:type=\"d:int\">" + preferMobileVideos + "</recordingFormatId><recordingFormatIdSpecified i:type=\"d:boolean\">true</recordingFormatIdSpecified><adFree i:type=\"d:boolean\">false</adFree><adFreeSpecified i:type=\"d:boolean\">" + downloadWithoutAds
+                + "</adFreeSpecified></GetStreamingUrl></v:Body></v:Envelope>");
+    }
+
+    // private void soapRequest(final DownloadLink dl, final String soapAction) throws IOException {
+    // br.getHeaders().put("SOAPAction", soapAction);
+    // br.getHeaders().put("Content-Type", "text/xml");
+    // br.postPage(APIPAGE,
+    // "<?xml version=\"1.0\" encoding=\"utf-8\"?><v:Envelope xmlns:i=\"http://www.w3.org/2001/XMLSchema-instance\" xmlns:d=\"http://www.w3.org/2001/XMLSchema\" xmlns:c=\"http://schemas.xmlsoap.org/soap/encoding/\" xmlns:v=\"http://schemas.xmlsoap.org/soap/envelope/\"><v:Header /><v:Body><GetVideoArchiveDelta xmlns=\"http://tempuri.org/\" id=\"o0\" c:root=\"1\"><sessionId i:type=\"d:string\">"
+    // + SESSIONID + "</sessionId><telecastId i:type=\"d:int\">" + getTelecastId(dl) +
+    // "</telecastId><telecastIdSpecified i:type=\"d:boolean\">true</telecastIdSpecified></GetAdFreeState></v:Body></v:Envelope>");
+    // }
 
     @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
@@ -912,6 +942,9 @@ public class SaveTv extends PluginForHost {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, sbseries.toString()).setEnabledCondidtion(origName, false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "Erweiterte Einstellungen:"));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), SaveTv.DELETE_TELECAST_ID_AFTER_DOWNLOAD, JDL.L("plugins.hoster.SaveTv.deleteFromArchiveAfterDownload", "[Kommt bald!] Erfolgreich geladene telecastIDs aus dem save.tv Archiv löschen?\r\n Warnung: Gelöschte telecast-IDs können nicht wiederhergestellt werden!\r\nFalls diese Funktion einen Fehler beinhaltet, ist Datenverlust möglich!\r\nWICHTIG: Bei aktivierter API kann man diese Einstellung nicht verwenden!")).setDefaultValue(false).setEnabled(false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         final StringBuilder sbmore = new StringBuilder();
         sbmore.append("Definiere Filme oder Serien, für die trotz obiger Einstellungen Originaldateinamen die\r\n");
         sbmore.append("genommen werden sollen.\r\n");
@@ -1154,6 +1187,52 @@ public class SaveTv extends PluginForHost {
                         message += "  unabhängig von den anderen Einstellungen erzwungen werden.\r\n";
                         message += "- Sind originale Dateinamen aktiviert, sehen die vorläufigen Dateinamen im Linkgrabber den finalen\r\n";
                         message += "  Dateinamen nun sehr ähnlich - wie zuvor auch ändern sich diese erst beim Downloadstart zu den Originalnamen.";
+                        message += getMessageEnd();
+                        JOptionPane.showConfirmDialog(jd.gui.swing.jdgui.JDGui.getInstance().getMainFrame(), message, title, JOptionPane.PLAIN_MESSAGE, JOptionPane.INFORMATION_MESSAGE, null);
+                    } catch (Throwable e) {
+                    }
+                }
+            });
+        } catch (Throwable e) {
+        }
+    }
+
+    private void checkFeatureDialog4() {
+        SubConfiguration config = null;
+        try {
+            config = getPluginConfig();
+            if (config.getBooleanProperty("featuredialog4Shown", Boolean.FALSE) == false) {
+                if (config.getProperty("featuredialog4Shown2") == null) {
+                    showFeatureDialog4();
+                } else {
+                    config = null;
+                }
+            } else {
+                config = null;
+            }
+        } catch (final Throwable e) {
+        } finally {
+            if (config != null) {
+                config.setProperty("featuredialog4Shown", Boolean.TRUE);
+                config.setProperty("featuredialog4Shown2", "shown");
+                config.save();
+            }
+        }
+    }
+
+    private static void showFeatureDialog4() {
+        try {
+            SwingUtilities.invokeAndWait(new Runnable() {
+
+                @Override
+                public void run() {
+                    try {
+                        String message = "";
+                        String title = null;
+                        title = "Save.tv - neue Features 4";
+                        message += "Hallo lieber save.tv Nutzer.\r\n";
+                        message += "Ab sofort gibt es folgende neue Features für das save.tv Plugin:\r\n";
+                        message += "- Über die Plugin Einstellungen kann man telecast-IDs nun nach erfolgreichem Download löschen lassen\r\n";
                         message += getMessageEnd();
                         JOptionPane.showConfirmDialog(jd.gui.swing.jdgui.JDGui.getInstance().getMainFrame(), message, title, JOptionPane.PLAIN_MESSAGE, JOptionPane.INFORMATION_MESSAGE, null);
                     } catch (Throwable e) {

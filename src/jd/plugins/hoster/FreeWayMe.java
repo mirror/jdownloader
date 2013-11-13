@@ -288,7 +288,15 @@ public class FreeWayMe extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_RETRY);
             }
             logger.info("Unhandled download error on free-way.me: " + br.toString());
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            int timesFailed = link.getIntegerProperty("timesfailedfreewayme_unknown", 0);
+            if (timesFailed <= 2) {
+                timesFailed++;
+                link.setProperty("timesfailedfreewayme_unknown", timesFailed);
+                throw new PluginException(LinkStatus.ERROR_RETRY, "Server error");
+            } else {
+                link.setProperty("timesfailedfreewayme_unknown", Property.NULL);
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
 
         }
         dl.startDownload();

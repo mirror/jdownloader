@@ -231,7 +231,15 @@ public class PremiumizeMe extends PluginForHost {
         if (dllink == null) {
             logger.severe("no download location");
             sendErrorLog(link, account);
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            int timesFailed = link.getIntegerProperty("timesfailedpremiumizeme_unknown", 0);
+            if (timesFailed <= 2) {
+                timesFailed++;
+                link.setProperty("timesfailedpremiumizeme_unknown", timesFailed);
+                throw new PluginException(LinkStatus.ERROR_RETRY, "Unknown error");
+            } else {
+                link.setProperty("timesfailedpremiumizeme_unknown", Property.NULL);
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
         }
         dllink = dllink.replaceAll("\\\\/", "/");
         showMessage(link, "Task 2: Download begins!");

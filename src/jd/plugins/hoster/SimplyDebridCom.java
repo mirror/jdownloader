@@ -161,8 +161,17 @@ public class SimplyDebridCom extends PluginForHost {
             tempUnavailableHoster(account, link, 2 * 60 * 60 * 1000l);
         }
         if (br.containsHTML("No htmlCode read")) {
-            logger.info("Unknown API error, disabling current host...");
-            tempUnavailableHoster(account, link, 2 * 60 * 60 * 1000l);
+            logger.info("simply-debrid.com: Unknown error");
+            int timesFailed = link.getIntegerProperty("timesfailedsimplydebridcom_unknown", 0);
+            if (timesFailed <= 2) {
+                timesFailed++;
+                link.setProperty("timesfailedsimplydebridcom_unknown", timesFailed);
+                throw new PluginException(LinkStatus.ERROR_RETRY, "Server error");
+            } else {
+                link.setProperty("timesfailedsimplydebridcom_unknown", Property.NULL);
+                logger.info("Unknown API error, disabling current host...");
+                tempUnavailableHoster(account, link, 2 * 60 * 60 * 1000l);
+            }
         }
 
         // crazy API
@@ -204,6 +213,20 @@ public class SimplyDebridCom extends PluginForHost {
         }
         if (dl.getConnection().getContentType().contains("html")) {
             br.getPage(dllink);
+            // This can only happen with share-online.biz links, their error is directly forwarded
+            if (br.containsHTML("your IP is temporary banned")) {
+                logger.info("simply-debrid.com: IP banned error - probably caused because the SD share-online.biz accounts are all blocked!");
+                int timesFailed = link.getIntegerProperty("timesfailedsimplydebridcom_shareonlinebiz", 0);
+                if (timesFailed <= 2) {
+                    timesFailed++;
+                    link.setProperty("timesfailedsimplydebridcom_shareonlinebiz", timesFailed);
+                    throw new PluginException(LinkStatus.ERROR_RETRY, "Account server error");
+                } else {
+                    link.setProperty("timesfailedsimplydebridcom_shareonlinebiz", Property.NULL);
+                    logger.info("simply-debrid.com: IP banned error - disabling current host (probably it's share-online.biz)");
+                    tempUnavailableHoster(account, link, 2 * 60 * 60 * 1000l);
+                }
+            }
             if (br.containsHTML("This error have been sent to our services this one is going to be fixed as soon as possible<")) {
                 logger.info("Possible simply-debrid.com bug, NO JDownloader bug!");
                 logger.info("Directlink: " + dllink);

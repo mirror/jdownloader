@@ -21,6 +21,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 
 import jd.PluginWrapper;
+import jd.config.Property;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
@@ -133,6 +134,18 @@ public class MegaDebridEu extends PluginForHost {
             // link is in the wrong format, needs to be corrected as above.
             logger.warning("Hi please inform JDownloader Development Team about this issue! Link correction needs to take place.");
             tempUnavailableHoster(account, link, 3 * 60 * 60 * 1000l);
+        } else if (br.containsHTML("Unable to load file")) {
+            logger.info("mega-debrid.eu: 'Unable to load file'");
+            int timesFailed = link.getIntegerProperty("timesfailedmegadebrideu_unabletoload", 0);
+            if (timesFailed <= 2) {
+                timesFailed++;
+                link.setProperty("timesfailedmegadebrideu_unabletoload", timesFailed);
+                throw new PluginException(LinkStatus.ERROR_RETRY, "Server error");
+            } else {
+                link.setProperty("timesfailedmegadebrideu_unabletoload", Property.NULL);
+                logger.info("Disabling current host for one hour...");
+                tempUnavailableHoster(account, link, 1 * 60 * 60 * 1000l);
+            }
         }
         String dllink = br.getRegex("\"debridLink\":\"(.*?)\"\\}").getMatch(0);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -150,9 +163,6 @@ public class MegaDebridEu extends PluginForHost {
             if (br.containsHTML(">400 Bad Request<")) {
                 logger.info("Temporarily removing hoster from hostlist because of server error 400");
                 tempUnavailableHoster(account, link, 3 * 60 * 60 * 1000l);
-            } else if (br.containsHTML("Unable to load file")) {
-                logger.info("Unable to load file, Temporarily removing hoster from supported host array");
-                tempUnavailableHoster(account, link, 1 * 60 * 60 * 1000l);
             }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }

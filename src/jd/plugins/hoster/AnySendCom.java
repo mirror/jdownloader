@@ -100,6 +100,9 @@ public class AnySendCom extends PluginForHost {
             filename = br.getRegex(">File Name: (.*?)<").getMatch(0);
             if (filename == null) {
                 filename = br.getRegex(">File Name:</div>(.*?)</div>").getMatch(0);
+                if (filename == null) {
+                    filename = br.getRegex("class=\"file\\-name\">([^<>\"]*?)(\\.\\.\\.)?</div>").getMatch(0);
+                }
             }
         }
         String filesize = br.getRegex("id=\"files-size\">([^<>\"]+)</td>").getMatch(0);
@@ -107,6 +110,9 @@ public class AnySendCom extends PluginForHost {
             filesize = br.getRegex(">File Size: (\\d+((\\.|,)\\d+)? ?(KB|MB|GB))<").getMatch(0);
             if (filesize == null) {
                 filesize = br.getRegex(">File Size:</div>(.*?)</div>").getMatch(0);
+                if (filesize == null) {
+                    filesize = br.getRegex("class=\"file\\-size\">([^<>\"]*?)</span>").getMatch(0);
+                }
             }
         }
         if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
