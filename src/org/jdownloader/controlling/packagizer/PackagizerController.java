@@ -156,13 +156,15 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
             public String replace(String modifiers, CrawledLink link, String input, PackagizerRuleWrapper lgr) {
                 if (modifiers == null) return input;
                 int id = Integer.parseInt(modifiers);
-                CrawledLink src = link;
+                String[] sources = link.getSourceUrls();
                 String txt = input;
-                while ((src = src.getSourceLink()) != null) {
-                    Regex regex = new Regex(src.getURL(), lgr.getSourceRule().getPattern());
-                    if (regex.matches()) {
-                        String[] values = regex.getRow(0);
-                        txt = Pattern.compile("<jd:source:" + id + "/?>").matcher(txt).replaceAll(values[id - 1]);
+                if (sources != null) {
+                    for (String s : sources) {
+                        Regex regex = new Regex(s, lgr.getSourceRule().getPattern());
+                        if (regex.matches()) {
+                            String[] values = regex.getRow(0);
+                            txt = Pattern.compile("<jd:source:" + id + "/?>").matcher(txt).replaceAll(values[id - 1]);
+                        }
                     }
                 }
                 return txt;
@@ -531,6 +533,7 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
         String originalFolder = f.getParent();
         String moveToFolder = originalFolder;
         String originalFileName = link.getName();
+        System.out.println(1);
         for (PackagizerRuleWrapper lgr : lfileFilter) {
             if (!StringUtils.isEmpty(lgr.getRule().getRename()) || !StringUtils.isEmpty(lgr.getRule().getMoveto())) {
                 if (lgr.getAlwaysFilter() == null || !lgr.getAlwaysFilter().isEnabled()) {

@@ -252,70 +252,74 @@ public abstract class ConditionDialog<T> extends AbstractDialog<T> {
         return new RegexFilter(cbHoster.isSelected(), MatchType.values()[cobHoster.getSelectedIndex()], txtHoster.getText(), cbRegHoster.isSelected());
     }
 
-    protected ExtCheckBox                cbFilename;
+    protected ExtCheckBox                  cbFilename;
 
-    protected JComboBox                  cobFilename;
-    protected ExtTextField               txtFilename;
+    protected JComboBox                    cobFilename;
+    protected ExtTextField                 txtFilename;
 
-    private JComponent                   size;
-    protected ExtCheckBox                cbSize;
+    private JComponent                     size;
+    protected ExtCheckBox                  cbSize;
 
-    protected SizeSpinner                fromSize;
-    protected SizeSpinner                toSize;
-    private SpinnerNumberModel           minSizeModel;
-    private SpinnerNumberModel           maxSizeModel;
+    protected SizeSpinner                  fromSize;
+    protected SizeSpinner                  toSize;
+    private SpinnerNumberModel             minSizeModel;
+    private SpinnerNumberModel             maxSizeModel;
 
-    protected ExtCheckBox                cbType;
+    protected ExtCheckBox                  cbType;
 
-    protected ExtTextField               txtCustumMime;
+    protected ExtTextField                 txtCustumMime;
 
-    protected ExtCheckBox                cbHoster;
-    protected ExtTextField               txtHoster;
-    protected JComboBox                  cobHoster;
+    protected ExtCheckBox                  cbHoster;
+    protected ExtTextField                 txtHoster;
+    protected JComboBox                    cobHoster;
 
-    protected ExtCheckBox                cbSource;
-    protected JComboBox                  cobSource;
-    protected ExtTextField               txtSource;
+    protected ExtCheckBox                  cbSource;
+    protected JComboBox                    cobSource;
+    protected ExtTextField                 txtSource;
 
-    private JComboBox                    cobSize;
+    private JComboBox                      cobSize;
 
-    private JComboBox                    cobType;
+    private JComboBox                      cobType;
 
-    private JComboBox                    cobOnline;
+    private JComboBox                      cobOnline;
 
-    private JComboBox                    cobOnlineOptions;
+    private JComboBox                      cobOnlineOptions;
 
-    private ExtCheckBox                  cbOnline;
+    private ExtCheckBox                    cbOnline;
 
-    private boolean                      autoset;
+    private boolean                        autoset;
 
-    private JButton                      btnIcon;
+    private JButton                        btnIcon;
 
-    private String                       iconKey;
+    private String                         iconKey;
 
-    private JComboBox                    cobPlugin;
+    private JComboBox                      cobPlugin;
 
-    private JComboBox                    cobPluginOptions;
+    private JComboBox                      cobPluginOptions;
 
-    private ExtCheckBox                  cbPlugin;
+    private ExtCheckBox                    cbPlugin;
 
     // private AutoScroller autoScroller;
 
-    private JComboBox                    cobCrawlerSource;
+    protected JComboBox                    cobCrawlerSource;
 
-    private PseudoMultiCombo<LinkOrigin> cobCrawlerSourceOptions;
+    protected PseudoMultiCombo<LinkOrigin> cobCrawlerSourceOptions;
 
-    private ExtCheckBox                  cbCrawlerSource;
+    protected ExtCheckBox                  cbCrawlerSource;
 
-    private PseudoMultiCombo<FileType>   cbTypeSelection;
+    private PseudoMultiCombo<FileType>     cbTypeSelection;
 
-    private JToggleButton                cbRegPackage;
+    private JToggleButton                  cbRegPackage;
 
-    private JComboBox                    cobPackage;
+    private JComboBox                      cobPackage;
 
-    private ExtTextField                 txtPackage;
+    private ExtTextField                   txtPackage;
 
-    private ExtCheckBox                  cbPackage;
+    private ExtCheckBox                    cbPackage;
+
+    protected JLabel                       lblSource;
+
+    protected JLabel                       lblCrawlerSource;
 
     public String getIconKey() {
         return iconKey;
@@ -754,7 +758,7 @@ public abstract class ConditionDialog<T> extends AbstractDialog<T> {
 
             @Override
             public void mousePressed(MouseEvent e) {
-                cbSource.setSelected(true);
+                if (cbSource.isEnabled()) cbSource.setSelected(true);
 
             }
 
@@ -763,7 +767,7 @@ public abstract class ConditionDialog<T> extends AbstractDialog<T> {
         cobSource.addMouseListener(ml);
         cbRegSource.addMouseListener(ml);
         panel.add(cbSource);
-        panel.add(new JLabel(_GUI._.FilterRuleDialog_layoutDialogContent_lbl_source()));
+        panel.add(lblSource = new JLabel(_GUI._.FilterRuleDialog_layoutDialogContent_lbl_source()));
         panel.add(cobSource);
         panel.add(txtSource, "spanx,pushx,growx,split 2");
         panel.add(cbRegSource, "width 22!,height 22!");
@@ -791,14 +795,14 @@ public abstract class ConditionDialog<T> extends AbstractDialog<T> {
         };
 
         panel.add(cbCrawlerSource);
-        panel.add(new JLabel(_GUI._.FilterRuleDialog_layoutDialogContent_lbl_crawlersource()));
+        panel.add(lblCrawlerSource = new JLabel(_GUI._.FilterRuleDialog_layoutDialogContent_lbl_crawlersource()));
         panel.add(cobCrawlerSource);
         panel.add(cobCrawlerSourceOptions, "spanx,pushx,growx");
         ml = new MouseAdapter() {
 
             @Override
             public void mousePressed(MouseEvent e) {
-                cbCrawlerSource.setSelected(true);
+                if (cbCrawlerSource.isEnabled()) cbCrawlerSource.setSelected(true);
 
             }
 
@@ -828,7 +832,7 @@ public abstract class ConditionDialog<T> extends AbstractDialog<T> {
 
             @Override
             public void mousePressed(MouseEvent e) {
-                cbOnline.setSelected(true);
+                if (cbOnline.isEnabled()) cbOnline.setSelected(true);
 
             }
 
@@ -849,7 +853,7 @@ public abstract class ConditionDialog<T> extends AbstractDialog<T> {
 
             @Override
             public void mousePressed(MouseEvent e) {
-                cbPlugin.setSelected(true);
+                if (cbPlugin.isEnabled()) cbPlugin.setSelected(true);
 
             }
 
@@ -969,7 +973,7 @@ public abstract class ConditionDialog<T> extends AbstractDialog<T> {
                 if (cbFilename.isSelected() || cbSize.isSelected() || cbType.isSelected()) {
                     if (!cbOnline.isSelected() || cobOnline.getSelectedIndex() != 0 || cobOnlineOptions.getSelectedIndex() != 1) {
                         autoset = true;
-                        cbOnline.setSelected(true);
+                        if (cbOnline.isEnabled()) cbOnline.setSelected(true);
                         cobOnline.setSelectedIndex(0);
                         cobOnlineOptions.setSelectedIndex(1);
                         Dialog.getInstance().showMessageDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI._.literally_warning(), _GUI._.ConditionDialog_updateOnline_linkcheck_required());

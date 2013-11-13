@@ -616,7 +616,9 @@ public class SecondLevelLaunch {
         }
         LogSource edtLogger = LogController.getInstance().getLogger("BlockingEDT");
         edtLogger.setInstantFlush(true);
-        new SlowEDTDetector(2000l, edtLogger);
+        if (Application.isJared(SecondLevelLaunch.class)) {
+            new SlowEDTDetector(10000l, edtLogger);
+        }
         /* these can be initiated without a gui */
         final Thread thread = new Thread() {
             @Override

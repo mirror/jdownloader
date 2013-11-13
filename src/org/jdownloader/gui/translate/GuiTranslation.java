@@ -3721,4 +3721,12 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "It seems that your Tray Icon has been disabled by accident.\r\nDo you want to enable it now?" })
     String JDGui_tray_msg();
 
+    @Default(lngs = { "en" }, values = { "This condition cannot be used to trigger 'After Extraction' Actions!" })
+    String PackagizerFilterRuleDialog_stateChanged_tt_disabled_archive();
+
+    @Default(lngs = { "en" }, values = { "Condition - Trigger Conflict!" })
+    String PackagizerFilterRuleDialog_layoutDialogContent_help_title();
+
+    @Default(lngs = { "en" }, values = { "You cannot use the Source or the Origin Condition to trigger this 'After Extraction' Action" })
+    String PackagizerFilterRuleDialog_layoutDialogContent_help_msg();
 }

@@ -1,5 +1,7 @@
 package jd.controlling.linkcrawler;
 
+import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 
 import javax.swing.ImageIcon;
@@ -114,11 +116,12 @@ public class CrawledLink implements AbstractPackageChildrenNode<CrawledPackage>,
     }
 
     /**
-     * Linkid should be unique for a certain link. in most cases, this is the url itself, but somtimes (youtube e.g.) the id contains info about how to prozess
-     * the file afterwards.
+     * Linkid should be unique for a certain link. in most cases, this is the url itself, but somtimes (youtube e.g.) the id contains info
+     * about how to prozess the file afterwards.
      * 
      * example:<br>
-     * 2 youtube links may have the same url, but the one will be converted into mp3, and the other stays flv. url is the same, but linkID different.
+     * 2 youtube links may have the same url, but the one will be converted into mp3, and the other stays flv. url is the same, but linkID
+     * different.
      * 
      * @return
      */
@@ -198,6 +201,7 @@ public class CrawledLink implements AbstractPackageChildrenNode<CrawledPackage>,
     private UniqueAlltimeID      previousParent = null;
     private PartInfo             partInfo;
     private transient ImageIcon  icon           = null;
+    private String[]             sourceUrls;
 
     public CrawledLink(DownloadLink dlLink) {
         this.dlLink = dlLink;
@@ -376,6 +380,13 @@ public class CrawledLink implements AbstractPackageChildrenNode<CrawledPackage>,
 
     public void setSourceLink(CrawledLink parent) {
         this.sourceLink = parent;
+
+        ArrayList<String> ret = new ArrayList<String>();
+        HashSet<String> uniquer = new HashSet<String>();
+        do {
+            if (uniquer.add(parent.getURL())) ret.add(parent.getURL());
+        } while ((parent = parent.getSourceLink()) != null);
+        setSourceUrls(ret.toArray(new String[] {}));
     }
 
     public void setMatchingFilter(FilterRule matchedFilter) {
@@ -533,7 +544,8 @@ public class CrawledLink implements AbstractPackageChildrenNode<CrawledPackage>,
                     return;
                 case ENABLED:
                     /* not needed to forward at the moment */
-                    // nodeUpdated(this, AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, new CrawledLinkProperty(this, CrawledLinkProperty.Property.ENABLED,
+                    // nodeUpdated(this, AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, new CrawledLinkProperty(this,
+                    // CrawledLinkProperty.Property.ENABLED,
                     // propertyEvent.getValue()));
                     return;
                 case NAME:
@@ -574,6 +586,14 @@ public class CrawledLink implements AbstractPackageChildrenNode<CrawledPackage>,
         if (hasNotificationListener()) {
             nodeUpdated(this, AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, new CrawledLinkProperty(this, property, value));
         }
+    }
+
+    public void setSourceUrls(String[] sourceUrls) {
+        this.sourceUrls = sourceUrls;
+    }
+
+    public String[] getSourceUrls() {
+        return sourceUrls;
     }
 
 }

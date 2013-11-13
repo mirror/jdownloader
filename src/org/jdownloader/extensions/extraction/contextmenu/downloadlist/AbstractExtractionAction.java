@@ -2,15 +2,18 @@ package org.jdownloader.extensions.extraction.contextmenu.downloadlist;
 
 import java.util.List;
 
-import jd.plugins.DownloadLink;
-import jd.plugins.FilePackage;
+import jd.gui.swing.jdgui.MainTabbedPane;
+import jd.gui.swing.jdgui.interfaces.View;
 
 import org.appwork.utils.swing.EDTRunner;
 import org.jdownloader.extensions.AbstractExtensionAction;
 import org.jdownloader.extensions.extraction.Archive;
 import org.jdownloader.extensions.extraction.ExtractionExtension;
 import org.jdownloader.gui.views.SelectionInfo;
+import org.jdownloader.gui.views.downloads.DownloadsView;
 import org.jdownloader.gui.views.downloads.table.DownloadsTable;
+import org.jdownloader.gui.views.linkgrabber.LinkGrabberTable;
+import org.jdownloader.gui.views.linkgrabber.LinkGrabberView;
 
 public abstract class AbstractExtractionAction extends AbstractExtensionAction<ExtractionExtension> {
 
@@ -63,8 +66,15 @@ public abstract class AbstractExtractionAction extends AbstractExtensionAction<E
         super.setEnabled(newValue);
     }
 
-    private SelectionInfo<FilePackage, DownloadLink> getSelection() {
-        return DownloadsTable.getInstance().getSelectionInfo(true, true);
+    private SelectionInfo<?, ?> getSelection() {
+        View view = MainTabbedPane.getInstance().getSelectedView();
+
+        if (view instanceof DownloadsView) {
+            return DownloadsTable.getInstance().getSelectionInfo(true, true);
+
+        } else if (view instanceof LinkGrabberView) { return LinkGrabberTable.getInstance().getSelectionInfo(); }
+        return null;
+
     }
 
     protected void asynchInit() {

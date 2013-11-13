@@ -501,6 +501,7 @@ public class TranslatorGui extends AddonPanel<TranslatorExtension> implements Li
                                                 if (value.getDescription() != null) {
                                                     Dialog.I().showMessageDialog("IMPORTANT!!!\r\n\r\n" + value.getCategory() + "." + value.getKey() + "\r\n" + value.getDescription());
                                                 }
+                                                // jdlog://6423355159731/
                                                 final InputDialog d = new InputDialog(Dialog.STYLE_HTML, "Progress " + getExtension().getPercent() + "%", ret, null, null, "Next", "Cancel") {
                                                     protected TextComponentInterface getSmallInputComponent() {
 

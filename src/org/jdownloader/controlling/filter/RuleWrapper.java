@@ -225,13 +225,16 @@ public class RuleWrapper<T extends FilterRule> {
     }
 
     public boolean checkSource(CrawledLink link) {
-        CrawledLink p = link;
-        if (getSourceRule() != null) {
-            do {
 
-                if (getSourceRule().matches(p.getURL())) { return true; }
-            } while ((p = p.getSourceLink()) != null);
+        if (getSourceRule() != null) {
+            String[] sources = link.getSourceUrls();
+            if (sources != null) {
+                for (String url : sources) {
+                    if (getSourceRule().matches(url)) { return true; }
+                }
+            }
             return false;
+
         }
         return true;
     }

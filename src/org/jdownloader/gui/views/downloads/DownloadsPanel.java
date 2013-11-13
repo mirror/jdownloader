@@ -178,7 +178,7 @@ public class DownloadsPanel extends SwitchPanel implements DownloadControllerLis
             }
 
             @Override
-            public void onConfigValueModified(KeyHandler<Boolean> keyHandler, Boolean newValue) {
+            public void onConfigValueModified(final KeyHandler<Boolean> keyHandler, final Boolean newValue) {
 
                 new EDTRunner() {
 
@@ -188,7 +188,13 @@ public class DownloadsPanel extends SwitchPanel implements DownloadControllerLis
                         if (CFG_GUI.DOWNLOAD_TAB_OVERVIEW_VISIBLE.isEnabled()) {
                             getOverView();
                         }
+
                         layoutComponents(DownloadController.DOWNLOADLIST_LOADED.isReached());
+                        if (newValue && keyHandler == CFG_GUI.DOWNLOADS_TAB_PROPERTIES_PANEL_VISIBLE) {
+                            setPropertiesPanelVisible(true);
+
+                            propertiesPanel.update(table.getModel().getObjectbyRow(table.getSelectionModel().getLeadSelectionIndex()));
+                        }
                     }
                 };
             }

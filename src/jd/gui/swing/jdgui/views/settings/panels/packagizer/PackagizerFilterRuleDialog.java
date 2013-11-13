@@ -24,6 +24,8 @@ import javax.swing.JSeparator;
 import javax.swing.JToggleButton;
 import javax.swing.ListCellRenderer;
 import javax.swing.SpinnerNumberModel;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
 import javax.swing.text.JTextComponent;
 
 import jd.controlling.linkcrawler.CrawledLink;
@@ -659,6 +661,65 @@ public class PackagizerFilterRuleDialog extends ConditionDialog<PackagizerRule> 
         focusHelp(fpMove.getTxt(), _GUI._.PackagizerFilterRuleDialog_layoutDialogContent_help_dynamic_variables());
 
         cbRename = new ExtCheckBox(txtRename);
+        ChangeListener al = new ChangeListener() {
+
+            private boolean wasSelectedSource        = false;
+            private boolean wasSelectedCrawlerSource = false;
+
+            @Override
+            public void stateChanged(ChangeEvent e) {
+                if (lblSource.isEnabled() && (cbRename.isSelected() || cbMove.isSelected())) {
+                    wasSelectedSource = cbSource.isSelected();
+                    cbSource.setSelected(false);
+                    wasSelectedCrawlerSource = cbCrawlerSource.isSelected();
+                    if (wasSelectedCrawlerSource || wasSelectedSource) {
+                        JDGui.help(_GUI._.PackagizerFilterRuleDialog_layoutDialogContent_help_title(), _GUI._.PackagizerFilterRuleDialog_layoutDialogContent_help_msg(), NewTheme.I().getIcon(IconKey.ICON_ARCHIVE, 32));
+                    }
+                    cbCrawlerSource.setSelected(false);
+                    cbSource.setEnabled(false);
+                    cobSource.setEnabled(false);
+                    txtSource.setEnabled(false);
+                    lblSource.setEnabled(false);
+                    cbCrawlerSource.setEnabled(false);
+                    cobCrawlerSource.setEnabled(false);
+                    cobCrawlerSourceOptions.setEnabled(false);
+                    lblCrawlerSource.setEnabled(false);
+
+                    cbSource.setToolTipText(_GUI._.PackagizerFilterRuleDialog_stateChanged_tt_disabled_archive());
+                    cobSource.setToolTipText(_GUI._.PackagizerFilterRuleDialog_stateChanged_tt_disabled_archive());
+                    txtSource.setToolTipText(_GUI._.PackagizerFilterRuleDialog_stateChanged_tt_disabled_archive());
+                    lblSource.setToolTipText(_GUI._.PackagizerFilterRuleDialog_stateChanged_tt_disabled_archive());
+                    cbCrawlerSource.setToolTipText(_GUI._.PackagizerFilterRuleDialog_stateChanged_tt_disabled_archive());
+                    cobCrawlerSource.setToolTipText(_GUI._.PackagizerFilterRuleDialog_stateChanged_tt_disabled_archive());
+                    cobCrawlerSourceOptions.setToolTipText(_GUI._.PackagizerFilterRuleDialog_stateChanged_tt_disabled_archive());
+                    lblCrawlerSource.setToolTipText(_GUI._.PackagizerFilterRuleDialog_stateChanged_tt_disabled_archive());
+
+                } else if (!lblSource.isEnabled() && !cbRename.isSelected() && !cbMove.isSelected()) {
+                    cbSource.setSelected(wasSelectedSource);
+                    cbCrawlerSource.setSelected(wasSelectedCrawlerSource);
+                    cbSource.setEnabled(true);
+                    cobSource.setEnabled(cbSource.isSelected());
+                    txtSource.setEnabled(cbSource.isSelected());
+                    lblSource.setEnabled(true);
+
+                    cbCrawlerSource.setEnabled(true);
+                    cobCrawlerSource.setEnabled(cbCrawlerSource.isSelected());
+                    cobCrawlerSourceOptions.setEnabled(cbCrawlerSource.isSelected());
+                    lblCrawlerSource.setEnabled(true);
+                    cbSource.setToolTipText(null);
+                    cobSource.setToolTipText(null);
+                    txtSource.setToolTipText(null);
+                    lblSource.setToolTipText(null);
+                    cbCrawlerSource.setToolTipText(null);
+                    cobCrawlerSource.setToolTipText(null);
+                    cobCrawlerSourceOptions.setToolTipText(null);
+                    lblCrawlerSource.setToolTipText(null);
+                }
+            }
+        };
+        cbRename.addChangeListener(al);
+
+        cbMove.addChangeListener(al);
         ret.add(cbRename);
         ret.add(lblRename, "spanx 2");
         ret.add(txtRename, "spanx,pushx,growx");

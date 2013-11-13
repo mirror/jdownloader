@@ -47,6 +47,14 @@ public class CrawledLinkStorable implements Storable {
         this.link = link;
     }
 
+    public void setSourceUrls(String[] urls) {
+        link.setSourceUrls(urls);
+    }
+
+    public String[] getSourceUrls() {
+        return link.getSourceUrls();
+    }
+
     public String getOrigin() {
         if (link.getOrigin() == null) return null;
         return link.getOrigin().name();

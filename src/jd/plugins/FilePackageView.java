@@ -312,7 +312,7 @@ public class FilePackageView extends ChildrenView<DownloadLink> {
         if (prog != null) {
             String id = prog.getClass().getName() + link.getHost();
             if (!tmp.pluginStates.containsKey(id)) {
-                PluginState ps = PluginState.create(prog.getMessage(FilePackageView.this) + " (" + link.getHost() + ")", new FavitIcon(prog.getIcon(), link.getDomainInfo()));
+                PluginState ps = PluginState.create(prog.getMessage(FilePackageView.this) + " (" + link.getDomainInfo().getTld() + ")", new FavitIcon(prog.getIcon(), link.getDomainInfo()));
                 if (ps != null) {
                     tmp.pluginStates.put(id, ps);
                 }
@@ -322,7 +322,7 @@ public class FilePackageView extends ChildrenView<DownloadLink> {
         if (conditionalSkipReason != null) {
             String id = conditionalSkipReason.getClass().getName() + link.getHost();
             if (!tmp.pluginStates.containsKey(id)) {
-                PluginState ps = PluginState.create(conditionalSkipReason.getMessage(this, link) + " (" + link.getHost() + ")", new FavitIcon(conditionalSkipReason.getIcon(this, link), link.getDomainInfo()));
+                PluginState ps = PluginState.create(conditionalSkipReason.getMessage(this, link) + " (" + link.getDomainInfo().getTld() + ")", new FavitIcon(conditionalSkipReason.getIcon(this, link), link.getDomainInfo()));
                 if (ps != null) {
                     tmp.pluginStates.put(id, ps);
                 }

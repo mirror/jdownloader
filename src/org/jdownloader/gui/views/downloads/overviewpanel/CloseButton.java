@@ -19,11 +19,16 @@ public class CloseButton extends ExtButton {
         super.setBounds(x + 4, y, width, height);
     }
 
+    protected void onReleased() {
+        onRollOut();
+
+    }
+
     private static final long serialVersionUID = 1L;
 
     protected void onRollOut() {
         setIcon(NewTheme.I().getIcon("close", -1));
-        // setIcon(NewTheme.I().getIcon("brightmix/w2", 18));
+
     }
 
     /**

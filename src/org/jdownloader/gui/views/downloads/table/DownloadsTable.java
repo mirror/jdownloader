@@ -66,6 +66,7 @@ public class DownloadsTable extends PackageControllerTable<FilePackage, Download
     public DownloadsTable(final DownloadsTableModel tableModel) {
         super(tableModel);
         INSTANCE = this;
+
         this.addRowHighlighter(new DropHighlighter(null, new Color(27, 164, 191, 75)));
         this.setTransferHandler(new DownloadsTableTransferHandler(this));
         this.setDragEnabled(true);
