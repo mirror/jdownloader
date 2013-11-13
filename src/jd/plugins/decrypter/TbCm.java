@@ -426,25 +426,21 @@ public class TbCm extends PluginForDecrypt {
         }
 
         // Some Stable errorhandling
-        if (isJava7nJDStable()) {
-            logger.info("Youtube is currently broken in the Stable version of JDownloader!");
-            final DownloadLink offline = getOfflineLink();
-            offline.setName(getVideoID(parameter));
-            decryptedLinks.add(offline);
-            return decryptedLinks;
-        }
 
         ArrayList<String[]> linkstodecrypt = new ArrayList<String[]>();
 
         boolean prem = false;
-        final ArrayList<Account> accounts = AccountController.getInstance().getAllAccounts("youtube.com");
-        if (accounts != null && accounts.size() != 0) {
-            Iterator<Account> it = accounts.iterator();
-            while (it.hasNext()) {
-                Account n = it.next();
-                if (n.isEnabled() && n.isValid()) {
-                    prem = this.login(n);
-                    break;
+        if (isJava7nJDStable()) {
+            logger.info("Youtube is currently broken in the Stable version of JDownloader!");
+            final ArrayList<Account> accounts = AccountController.getInstance().getAllAccounts("youtube.com");
+            if (accounts != null && accounts.size() != 0) {
+                Iterator<Account> it = accounts.iterator();
+                while (it.hasNext()) {
+                    Account n = it.next();
+                    if (n.isEnabled() && n.isValid()) {
+                        prem = this.login(n);
+                        break;
+                    }
                 }
             }
         }
@@ -853,8 +849,8 @@ public class TbCm extends PluginForDecrypt {
                 String ytID = getVideoID(currentVideoUrl);
 
                 /*
-                 * We match against users resolution and file encoding type. This allows us to use their upper and lower limits. It will
-                 * return multiple results if they are in the same quality rating
+                 * We match against users resolution and file encoding type. This allows us to use their upper and lower limits. It will return multiple results
+                 * if they are in the same quality rating
                  */
                 if (best) {
                     final HashMap<Integer, String[]> bestFound = new HashMap<Integer, String[]>();
