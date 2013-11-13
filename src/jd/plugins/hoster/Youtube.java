@@ -538,7 +538,7 @@ public class Youtube extends PluginForHost {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), CUSTOM_FILENAME, JDL.L("plugins.hoster.youtube.customfilename", "Define how the filenames should look:")).setDefaultValue(defaultCustomFilename));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         final StringBuilder sb = new StringBuilder();
-        sb.append("Explanation of the available tags:\r\n");
+        sb.append("<html>Explanation of the available tags:\r\n");
         sb.append("*channelname* = uploaders/channels text name (nice name, allows long names & spaces)\r\n");
         sb.append("*username* = uploaders/channels user name (youtube.com/users/example = example)\r\n");
         sb.append("*date* = date when the video was posted - appears in the user-defined format above\r\n");
@@ -546,7 +546,7 @@ public class Youtube extends PluginForHost {
         sb.append("*videoid* = id of the video: 'youtube.com/watch?v=YOUTUBE_VIDEO_ID'\r\n");
         sb.append("*videonumber* = number of the video (position in playlist or 'user' link)\r\n");
         sb.append("*quality* = the quality of the video e.g. '(1080p_H.264-AAC)'\r\n");
-        sb.append("*ext* = extension of the video e.g. '.mp4'");
+        sb.append("*ext* = extension of the video e.g. '.mp4'</html>");
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, sb.toString()));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), FAST_CHECK, JDL.L("plugins.hoster.youtube.fast", "Fast linkcheck (filesize won't be shown in linkgrabber)?")).setDefaultValue(false));
