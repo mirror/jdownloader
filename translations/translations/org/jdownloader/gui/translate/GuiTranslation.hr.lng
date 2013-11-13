@@ -485,6 +485,7 @@ LinkGrabberPanel_LinkGrabberPanel_btn_showsidebar_tt_up=Prikaži/Sakrij bočnu t
 LinkGrabberPanel_onConfigValueModified_msg_=je bočna traka je sada skrivena. Za njen prikaz ponovno kliknite.\r\n\r\nUPOZORENJE: Pogledi i postavke su još uvijek aktivni!\r\nProvjerite napredne postavke da potpuno onemogućite bočnu traku i sve njene značajke.
 LinkGrabberPanel_onConfigValueModified_title_=Bočna traka je skrivena!
 LinkGrabberPanel_setPropertiesPanelVisible=Aktivirali ste panel svojstava!
+LinkGrabberPanel_setPropertiesPanelVisible_help=...panel za svojstva upravo sada nije vidljiv zato jer ne postoji odabrani paket ili link za preuzimanje. Da biste vidjeli panel za svojstva, dodajte preuzimanja u Sakupljač linkova jednim klikom na red.
 LinkGrabberSideBarHeader_LinkGrabberSideBarHeader=Pogledi
 LinkGrabberSidebar_LinkGrabberSidebar_addtop=Dodaj na vrh
 LinkGrabberSidebar_LinkGrabberSidebar_addtop_tt=Dodaj linkove na vrh popisa preuzimanja. Oni će biti sljedeći na preuzimanju
