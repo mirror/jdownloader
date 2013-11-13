@@ -104,7 +104,10 @@ public class GeneralMultiuploadDecrypter extends PluginForDecrypt {
                 return null;
             }
             getPage(br, status);
-        } else if (parameter.matches("(?i).+(up4vn\\.com|go4up\\.com|multiupfile\\.com)/.+")) {
+        } else if (parameter.contains("go4up.com/")) {
+            getPage(br, parameter);
+            if (br.containsHTML("golink")) br.postPage(br.getURL(), "golink=Access+Links");
+        } else if (parameter.matches("(?i).+(up4vn\\.com|multiupfile\\.com)/.+")) {
             // use standard page, status.php doesn't exist
             getPage(br, parameter);
         } else {
