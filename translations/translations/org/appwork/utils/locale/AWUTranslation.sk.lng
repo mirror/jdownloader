@@ -61,6 +61,7 @@ PASSWORDDIALOG_PASSWORDCHANGE_NEWPASSWORD_REPEAT=Potvrďte heslo:
 PASSWORDDIALOG_PASSWORDCHANGE_OLDPASSWORD=Staré heslo:
 ProxyDialog_direct=Priame
 ProxyDialog_hostport=Hostiteľ:Port
+ProxyDialog_hostport_help=Zadajte názov hostiteľa alebo IP adresu...
 ProxyDialog_http=HTTP
 ProxyDialog_password=Heslo
 ProxyDialog_password_help=Zadajte heslo...
