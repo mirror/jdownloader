@@ -1,7 +1,9 @@
 package org.jdownloader.gui.views.downloads.columns;
 
 import java.awt.Dialog.ModalityType;
+import java.awt.Point;
 import java.awt.event.MouseEvent;
+import java.util.ArrayList;
 
 import javax.swing.Icon;
 import javax.swing.ImageIcon;
@@ -11,11 +13,15 @@ import jd.controlling.packagecontroller.AbstractNode;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.FilePackageView;
+import jd.plugins.FilePackageView.PluginState;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginProgress;
 import jd.plugins.PluginStateCollection;
 
 import org.appwork.storage.config.JsonConfig;
+import org.appwork.swing.components.tooltips.ExtTooltip;
+import org.appwork.swing.components.tooltips.MultiLineLabelTooltip;
+import org.appwork.swing.components.tooltips.MultiLineLabelTooltip.LabelInfo;
 import org.appwork.swing.exttable.columns.ExtTextColumn;
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.ImageProvider.ImageProvider;
@@ -165,6 +171,29 @@ public class TaskColumn extends ExtTextColumn<AbstractNode> {
     @Override
     protected void prepareColumn(AbstractNode value) {
         fillColumnHelper(columnHelper, value);
+    }
+
+    @Override
+    public ExtTooltip createToolTip(Point position, AbstractNode value) {
+        if (value instanceof FilePackage) {
+
+            FilePackage fp = (FilePackage) value;
+            FilePackageView view = fp.getView();
+
+            PluginStateCollection ps = view.getPluginStates();
+            if (ps.size() > 0) {
+                ArrayList<LabelInfo> lbls = new ArrayList<MultiLineLabelTooltip.LabelInfo>(ps.size());
+
+                for (PluginState p : ps) {
+                    lbls.add(new LabelInfo(p.getDescription(), p.getIcon()));
+                }
+
+                return new MultiLineLabelTooltip(lbls);
+            }
+
+        }
+        return super.createToolTip(position, value);
+
     }
 
     public void fillColumnHelper(ColumnHelper columnHelper, AbstractNode value) {

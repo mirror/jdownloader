@@ -311,13 +311,13 @@ public abstract class AbstractExtension<ConfigType extends ExtensionConfigInterf
             store.setEnabled(this.isDefaultEnabled());
             store.setFreshInstall(false);
         }
-        if (store.isEnabled()) if (store.isEnabled()) {
+        if (store.isEnabled()) {
             try {
                 setEnabled(true);
             } catch (StopException e) {
                 // cannot happen
+            }
         }
-    }
 
         logger.info("Init Duration: " + (System.currentTimeMillis() - t));
     }

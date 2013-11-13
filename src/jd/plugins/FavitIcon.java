@@ -28,19 +28,27 @@ public class FavitIcon implements Icon {
 
     @Override
     public void paintIcon(Component c, Graphics g, int x, int y) {
-        icon.paintIcon(c, g, x - 2, y - 2);
+        int size = 10;
+        ImageIcon badge = domainInfo.getIcon(size);
+        ImageIcon back = icon;
+
+        // badge = new ImageIcon(ImageProvider.getScaledInstance((BufferedImage) icon.getImage(), size, size,
+        // RenderingHints.VALUE_INTERPOLATION_BILINEAR, true));
+        // back = domainInfo.getIcon(icon.getIconHeight());
+        back.paintIcon(c, g, x - 0, y - 0);
         Graphics2D g2d = (Graphics2D) g;
         g.setColor(Color.WHITE);
 
-        int size = 12;
-        int xx = width - size + 1;
-        int yy = height - size + 1;
         Composite comp = g2d.getComposite();
         g2d.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.75f));
-        g.fillOval(xx - 1, yy - 1, size + 2, size + 2);
+
+        int xx = x + width - badge.getIconWidth();
+        int yy = y + height - badge.getIconHeight();
+        g.fillOval(xx, yy, badge.getIconWidth(), badge.getIconHeight());
         // g.fillRect(xx, yy, size, size);
-        g2d.setComposite(comp);
-        domainInfo.getIcon(size).paintIcon(c, g, xx, yy);
+
+        badge.paintIcon(c, g, xx, yy);
+        if (comp != null) g2d.setComposite(comp);
 
     }
 
