@@ -257,7 +257,7 @@ public class Youtube extends PluginForHost {
             resume = false;
         }
         this.dl = jd.plugins.BrowserAdapter.openDownload(this.br, downloadLink, downloadLink.getDownloadURL(), resume, maxChunks);
-        if (!this.dl.getConnection().isContentDisposition() && !this.dl.getConnection().getContentType().startsWith("video")) {
+        if (!this.dl.getConnection().isContentDisposition() && !this.dl.getConnection().getContentType().startsWith("video") && !this.dl.getConnection().getContentType().startsWith("application") && !downloadLink.getBooleanProperty("subtitle", false) && !downloadLink.getBooleanProperty("thumbnail", false)) {
             downloadLink.setProperty("valid", false);
             this.dl.getConnection().disconnect();
             throw new PluginException(LinkStatus.ERROR_RETRY);
