@@ -2,7 +2,6 @@ package org.jdownloader.gui.notify;
 
 import java.io.File;
 
-import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.SwingConstants;
 
@@ -11,19 +10,18 @@ import jd.controlling.proxy.ProxyInfo;
 import jd.plugins.Account;
 import jd.plugins.DownloadLink;
 
-import org.appwork.swing.MigPanel;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.swing.SwingUtils;
 import org.jdownloader.DomainInfo;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
 
-public class DownloadStartedContentPanel extends MigPanel {
+public class DownloadStartedContentPanel extends AbstractBubbleContentPanel {
 
     private SingleDownloadController downloadController;
 
     public DownloadStartedContentPanel(SingleDownloadController downloadController) {
-        super("ins 3 3 0 3,wrap 2", "[fill][grow,fill]", "[]");
+        super();
         this.downloadController = downloadController;
         DownloadLink downloadLink = downloadController.getDownloadLink();
         add(createHeaderLabel(_GUI._.lit_filename() + ":"));
@@ -45,14 +43,6 @@ public class DownloadStartedContentPanel extends MigPanel {
         add(createHeaderLabel(_GUI._.lit_save_to() + ":"));
         add(new JLabel(new File(downloadLink.getFileOutput()).getParent(), NewTheme.I().getIcon("folder", 18), SwingConstants.LEFT));
         SwingUtils.setOpaque(this, false);
-    }
-
-    protected JComponent createHeaderLabel(String label) {
-        JLabel lbl = new JLabel(label);
-        SwingUtils.toBold(lbl);
-        lbl.setEnabled(false);
-        lbl.setHorizontalAlignment(SwingConstants.RIGHT);
-        return lbl;
     }
 
     public void onClicked() {

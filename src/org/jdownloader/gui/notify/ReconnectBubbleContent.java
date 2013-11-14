@@ -31,6 +31,8 @@ public class ReconnectBubbleContent extends AbstractBubbleContentPanel {
         add(new JLabel(IPController.getInstance().getIpState().toString()));
         add(createHeaderLabel((_GUI._.ReconnectDialog_layoutDialogContent_currentip())));
         add(newIP = new JLabel(""));
+        progressCircle.setIndeterminate(true);
+        progressCircle.setValue(0);
 
     }
 

@@ -46,6 +46,8 @@ public class LinkCrawlerBubbleContent extends AbstractBubbleContentPanel {
 
         status = addPair(_GUI._.LinkCrawlerBubbleContent_LinkCrawlerBubbleContent_status(), IconKey.ICON_RUN);
         offline.setVisible(false);
+        progressCircle.setIndeterminate(true);
+        progressCircle.setValue(0);
 
     }
 

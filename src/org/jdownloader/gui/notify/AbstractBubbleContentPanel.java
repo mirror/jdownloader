@@ -1,5 +1,6 @@
 package org.jdownloader.gui.notify;
 
+import javax.swing.ImageIcon;
 import javax.swing.JLabel;
 import javax.swing.SwingConstants;
 
@@ -20,6 +21,10 @@ public class AbstractBubbleContentPanel extends MigPanel {
             label = label.substring(0, label.length() - 1);
         }
         return label + ":";
+    }
+
+    public boolean onSettings() {
+        return false;
     }
 
     public class Pair {
@@ -77,13 +82,25 @@ public class AbstractBubbleContentPanel extends MigPanel {
     }
 
     public AbstractBubbleContentPanel(String iconKey) {
+        this(NewTheme.I().getIcon(iconKey, 20));
+
+    }
+
+    public AbstractBubbleContentPanel(ImageIcon icon) {
         super("ins 3 3 0 3,wrap 3", "[][fill][grow,fill]", "[]");
 
-        progressCircle = new IconedProcessIndicator(NewTheme.I().getIcon(iconKey, 20));
+        progressCircle = new IconedProcessIndicator(icon);
 
-        progressCircle.setIndeterminate(true);
+        progressCircle.setIndeterminate(false);
         progressCircle.setEnabled(false);
+        progressCircle.setValue(100);
         add(progressCircle, "width 32!,height 32!,pushx,growx,pushy,growy,spany,aligny top");
+        startTime = System.currentTimeMillis();
+        SwingUtils.setOpaque(this, false);
+    }
+
+    public AbstractBubbleContentPanel() {
+        super("ins 3 3 0 3,wrap 2", "[fill][grow,fill]", "[]");
         startTime = System.currentTimeMillis();
         SwingUtils.setOpaque(this, false);
     }

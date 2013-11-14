@@ -41,6 +41,7 @@ public class ExtractionBubbleContent extends AbstractBubbleContentPanel {
         status = addPair(T._.archive_status(), IconKey.ICON_MEDIA_PLAYBACK_START);
 
         progressCircle.setIndeterminate(true);
+        progressCircle.setValue(0);
     }
 
     @Override
@@ -99,6 +100,10 @@ public class ExtractionBubbleContent extends AbstractBubbleContentPanel {
             }
         }
 
+    }
+
+    public boolean onSettings() {
+        return false;
     }
 
 }

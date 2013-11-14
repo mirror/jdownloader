@@ -24,11 +24,14 @@ import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
 import java.awt.image.BufferedImage;
 
-import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.SwingConstants;
 import javax.swing.Timer;
 
+import jd.gui.swing.jdgui.JDGui;
+import jd.gui.swing.jdgui.views.settings.ConfigurationView;
+
+import org.appwork.storage.config.JsonConfig;
 import org.appwork.swing.ExtJWindow;
 import org.appwork.swing.MigPanel;
 import org.appwork.swing.components.ExtButton;
@@ -36,12 +39,15 @@ import org.appwork.utils.Application;
 import org.appwork.utils.ColorUtils;
 import org.appwork.utils.images.IconIO;
 import org.appwork.utils.swing.SwingUtils;
+import org.appwork.utils.swing.windowmanager.WindowManager.FrameState;
 import org.jdownloader.gui.jdtrayicon.ScreenStack;
+import org.jdownloader.gui.notify.AbstractBubbleContentPanel;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
+import org.jdownloader.settings.GraphicalUserInterfaceSettings;
 import org.jdownloader.updatev2.gui.LAFOptions;
 
-public abstract class AbstractNotifyWindow<T extends JComponent> extends ExtJWindow implements ActionListener, AWTEventListener {
+public abstract class AbstractNotifyWindow<T extends AbstractBubbleContentPanel> extends ExtJWindow implements ActionListener, AWTEventListener {
 
     private static final int BOTTOM_MARGIN = 5;
     private static final int TOP_MARGIN    = 20;
@@ -427,6 +433,13 @@ public abstract class AbstractNotifyWindow<T extends JComponent> extends ExtJWin
     }
 
     protected void onSettings() {
+
+        if (!getContentComponent().onSettings()) {
+            JDGui.getInstance().setFrameState(FrameState.TO_FRONT_FOCUSED);
+            JsonConfig.create(GraphicalUserInterfaceSettings.class).setConfigViewVisible(true);
+            JDGui.getInstance().setContent(ConfigurationView.getInstance(), true);
+            ConfigurationView.getInstance().setSelectedSubPanel(BubbleNotifyConfigPanel.class);
+        }
     }
 
     protected void onClose() {

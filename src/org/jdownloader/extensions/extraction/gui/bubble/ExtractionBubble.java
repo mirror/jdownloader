@@ -31,10 +31,13 @@ public class ExtractionBubble extends AbstractNotifyWindow<ExtractionBubbleConte
     }
 
     protected void onSettings() {
-        JDGui.getInstance().setFrameState(FrameState.TO_FRONT_FOCUSED);
-        JsonConfig.create(GraphicalUserInterfaceSettings.class).setConfigViewVisible(true);
-        JDGui.getInstance().setContent(ConfigurationView.getInstance(), true);
-        ConfigurationView.getInstance().setSelectedSubPanel(BubbleNotifyConfigPanel.class);
+
+        if (!getContentComponent().onSettings()) {
+            JDGui.getInstance().setFrameState(FrameState.TO_FRONT_FOCUSED);
+            JsonConfig.create(GraphicalUserInterfaceSettings.class).setConfigViewVisible(true);
+            JDGui.getInstance().setContent(ConfigurationView.getInstance(), true);
+            ConfigurationView.getInstance().setSelectedSubPanel(BubbleNotifyConfigPanel.class);
+        }
 
     }
 

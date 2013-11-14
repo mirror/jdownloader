@@ -3,19 +3,18 @@ package org.jdownloader.gui.notify;
 import java.awt.Component;
 
 import javax.swing.ImageIcon;
-import javax.swing.JLabel;
 
-import org.appwork.swing.MigPanel;
+import net.miginfocom.swing.MigLayout;
+
 import org.appwork.swing.components.ExtTextArea;
 import org.appwork.utils.swing.SwingUtils;
 
-public class BasicContentPanel extends MigPanel {
+public class BasicContentPanel extends AbstractBubbleContentPanel {
 
     public BasicContentPanel(String text, ImageIcon icon) {
+        super(icon);
+        setLayout(new MigLayout("ins 0,wrap 2", "[][grow,fill]", "[]"));
 
-        super("ins 0,wrap 2", "[][grow,fill]", "[]");
-
-        add(getIconPanel(icon), "aligny center");
         add(getMessage(text), "aligny center");
         SwingUtils.setOpaque(this, false);
     }
@@ -26,12 +25,6 @@ public class BasicContentPanel extends MigPanel {
         ret.setText(text);
         ret.setLabelMode(true);
 
-        return ret;
-    }
-
-    private Component getIconPanel(ImageIcon icon) {
-        JLabel ret = new JLabel(icon);
-        SwingUtils.setOpaque(ret, false);
         return ret;
     }
 
