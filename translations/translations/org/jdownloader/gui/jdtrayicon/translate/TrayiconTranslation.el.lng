@@ -35,3 +35,5 @@ popup_premiumtoggle=Ενεργοποίηση Premium
 popup_reconnect=Άμεση Επανασύνδεση
 popup_reconnecttoggle=Ενεργοποίηση Αυτόματης Επανασύνδεσης
 popup_update=Έλεγχος για Ενημερώσεις
+popup_update_install=Εγκατάσταση τελευταίας Ενημέρωσης
+popup_update_install_tt=Υπάρχουν Ενημερώσεις έτοιμες για εγκατάσταση. Πατήστε για να τις εγκαταστήσετε τώρα!
