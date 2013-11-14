@@ -232,6 +232,7 @@ public class PremiumDebridCom extends PluginForHost {
         String dllink = checkDirectLink(link, "premiumdebridcomdirectlink");
         if (dllink == null) {
             showMessage(link, "Phase 1/2: Generating downloadlink!");
+            br.setCustomCharset("utf-8");
             dllink = generateDllinkNew(link, acc);
             if (dllink == null) {
                 int timesFailed = link.getIntegerProperty("timesfailedpremiumdebridcom_dllinknull", 0);
@@ -337,6 +338,9 @@ public class PremiumDebridCom extends PluginForHost {
             tempUnavailableHoster(acc, dl, 60 * 60 * 1000l);
         } else if (br.containsHTML("account in database\\. Contact admin")) {
             logger.info("premiumdebrid.com: Disabling current host because multi-host has no account for it");
+            tempUnavailableHoster(acc, dl, 2 * 60 * 60 * 1000l);
+        } else if (br.containsHTML("stato bloccato </font>")) {
+            logger.info("premiumdebrid.com: Disabling current host because the multi-hosters' host account is blocked");
             tempUnavailableHoster(acc, dl, 2 * 60 * 60 * 1000l);
         }
         return br.getRegex("\\'(http://(www\\.)?premiumdebrid\\.com/s\\d+/[^<>\"]*?)\\'").getMatch(0);
