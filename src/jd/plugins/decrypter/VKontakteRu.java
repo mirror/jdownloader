@@ -95,6 +95,7 @@ public class VKontakteRu extends PluginForDecrypt {
 
     private SubConfiguration    cfg                                = null;
     private String              MAINPAGE                           = null;
+    private boolean             VKVIDEOSPECIAL                     = false;
 
     @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
@@ -365,7 +366,15 @@ public class VKontakteRu extends PluginForDecrypt {
         // Offline2
         if (br.containsHTML("class=\"title\">Error</div>")) { throw new DecrypterException(EXCEPTION_LINKOFFLINE); }
         // Offline3
-        if (br.containsHTML("was removed from public access by request of the copyright holder")) { throw new DecrypterException(EXCEPTION_LINKOFFLINE); }
+        if (br.containsHTML("was removed from public access by request of the copyright holder")) {
+            // Check if it's really offline
+            final String[] ids = findVideoIDs(parameter);
+            final String oid = ids[0];
+            final String id = ids[1];
+            br.getPage("http://vk.com/video.php?act=a_flash_vars&vid=" + oid + "_" + id);
+            if (br.containsHTML("NO_ACCESS")) throw new DecrypterException(EXCEPTION_LINKOFFLINE);
+            VKVIDEOSPECIAL = true;
+        }
         // Offline4
         if (br.containsHTML("This video has been removed from public access")) { throw new DecrypterException(EXCEPTION_LINKOFFLINE); }
         // Offline5
@@ -380,124 +389,130 @@ public class VKontakteRu extends PluginForDecrypt {
         final ArrayList<DownloadLink> foundVideolinks = new ArrayList<DownloadLink>();
         String correctedBR = br.toString().replace("\\", "");
         String embedHash = null;
-        String oid = null;
-        String id = null;
-        /** Find OID and ID START */
-        if (parameter.matches(PATTERN_VIDEO_SINGLE_EMBED) || parameter.matches(PATTERN_VIDEO_SINGLE_EMBED_HASH)) {
-            final Regex idsRegex = new Regex(parameter, "vk\\.com/video_ext\\.php\\?oid=(\\d+)\\&id=(\\d+)");
-            oid = idsRegex.getMatch(0);
-            id = idsRegex.getMatch(1);
-        } else if (parameter.matches(PATTERN_VIDEO_SINGLE_ORIGINAL)) {
-            final Regex idsRegex = new Regex(parameter, "((\\-)?\\d+)_(\\d+)$");
-            oid = idsRegex.getMatch(0);
-            id = idsRegex.getMatch(2);
-        } else if (parameter.matches(PATTERN_VIDEO_SINGLE_ORIGINAL_LIST)) {
-            final Regex idsRegex = new Regex(parameter, "((\\-)?\\d+)_(\\d+)\\?");
-            oid = idsRegex.getMatch(0);
-            id = idsRegex.getMatch(2);
-        }
-        /** Find OID and ID END */
-        if (parameter.matches(PATTERN_VIDEO_SINGLE_EMBED_HASH)) {
-            // Embedded video with hash -> Cannot be an extern embed video
-            embedHash = new Regex(parameter, "([a-z0-9]+)$").getMatch(0);
+        final String[] ids = findVideoIDs(parameter);
+        final String oid = ids[0];
+        final String id = ids[1];
+        String embeddedVideo = null;
+        String filename = null;
+        if (VKVIDEOSPECIAL) {
+            if (br.containsHTML("\"extra_data\":\"http")) {
+                /** Find embed links 1 START */
+                embeddedVideo = br.getRegex("\"extra_data\":\"(http[^<>\"]*?)\"").getMatch(0);
+                foundVideolinks.add(createDownloadlink(Encoding.htmlDecode(embeddedVideo).replace("\\", "")));
+                return foundVideolinks;
+                /** Find embed links 1 END */
+            } else {
+                embedHash = br.getRegex("\"hash\":\"([a-z0-9]+)\"").getMatch(0);
+                if (embedHash == null) {
+                    logger.warning("Decrypter broken for link: " + parameter);
+                    return null;
+                }
+                filename = br.getRegex("\"md_title\":\"([^<>\"]*?)\"").getMatch(0);
+            }
         } else {
-            /** Find embed links START */
-            // Find youtube.com link if it exists
-            String embeddedVideo = new Regex(correctedBR, "youtube\\.com/embed/(.*?)\\?autoplay=").getMatch(0);
-            if (embeddedVideo != null) {
-                foundVideolinks.add(createDownloadlink("http://www.youtube.com/watch?v=" + embeddedVideo));
-                return foundVideolinks;
-            }
-            // Find rutube.ru link if it exists
-            embeddedVideo = new Regex(correctedBR, "url: \\'(https?://video\\.rutube\\.ru/[a-z0-9]+)\\'").getMatch(0);
-            if (embeddedVideo == null) embeddedVideo = new Regex(correctedBR, "\"(//rutube\\.ru/video/embed/\\d+)\" ").getMatch(0);
-            if (embeddedVideo != null) {
-                if (embeddedVideo.startsWith("//")) embeddedVideo = "http:" + embeddedVideo;
-                foundVideolinks.add(createDownloadlink(embeddedVideo));
-                return foundVideolinks;
-            }
-            // Find vimeo.com link if it exists
-            embeddedVideo = new Regex(correctedBR, "player\\.vimeo\\.com/video/(\\d+)").getMatch(0);
-            if (embeddedVideo != null) {
-                foundVideolinks.add(createDownloadlink("http://vimeo.com/" + embeddedVideo));
-                return foundVideolinks;
-            }
-            embeddedVideo = new Regex(correctedBR, "pdj\\.com/i/swf/og\\.swf\\?jsonURL=(http[^<>\"]*?)\\'").getMatch(0);
-            if (embeddedVideo != null) {
-                br.getPage(Encoding.htmlDecode(embeddedVideo));
-                correctedBR = br.toString().replace("\\", "");
-                embeddedVideo = new Regex(correctedBR, "@download_url\":\"(http://promodj\\.com/[^<>\"]*?)\"").getMatch(0);
-                if (embeddedVideo == null) return null;
-                foundVideolinks.add(createDownloadlink(Encoding.htmlDecode(embeddedVideo)));
-                return foundVideolinks;
-            }
-            embeddedVideo = new Regex(correctedBR, "url: \\'(http://player\\.digitalaccess\\.ru/[^<>\"/]*?\\&siteId=\\d+)\\&").getMatch(0);
-            if (embeddedVideo != null) {
-                foundVideolinks.add(createDownloadlink("directhttp://" + Encoding.htmlDecode(embeddedVideo)));
-                return foundVideolinks;
-            }
-            embeddedVideo = new Regex(correctedBR, "\\?file=(http://(www\\.)?1tv\\.ru/[^<>\"]*?)\\'").getMatch(0);
-            if (embeddedVideo != null) {
-                br.getPage(Encoding.htmlDecode(embeddedVideo));
-                embeddedVideo = br.getRegex("<media:content url=\"(http://[^<>\"]*?)\"").getMatch(0);
+            if (parameter.matches(PATTERN_VIDEO_SINGLE_EMBED_HASH)) {
+                // Embedded video with hash -> Cannot be an extern embed video
+                embedHash = new Regex(parameter, "([a-z0-9]+)$").getMatch(0);
+            } else {
+                /** Find embed links 2 START */
+                // Find youtube.com link if it exists
+                embeddedVideo = new Regex(correctedBR, "youtube\\.com/embed/(.*?)\\?autoplay=").getMatch(0);
+                if (embeddedVideo != null) {
+                    foundVideolinks.add(createDownloadlink("http://www.youtube.com/watch?v=" + embeddedVideo));
+                    return foundVideolinks;
+                }
+                // Find rutube.ru link if it exists
+                embeddedVideo = new Regex(correctedBR, "url: \\'(https?://video\\.rutube\\.ru/[a-z0-9]+)\\'").getMatch(0);
+                if (embeddedVideo == null) embeddedVideo = new Regex(correctedBR, "\"(//rutube\\.ru/video/embed/\\d+)\" ").getMatch(0);
+                if (embeddedVideo != null) {
+                    if (embeddedVideo.startsWith("//")) embeddedVideo = "http:" + embeddedVideo;
+                    foundVideolinks.add(createDownloadlink(embeddedVideo));
+                    return foundVideolinks;
+                }
+                // Find vimeo.com link if it exists
+                embeddedVideo = new Regex(correctedBR, "player\\.vimeo\\.com/video/(\\d+)").getMatch(0);
+                if (embeddedVideo != null) {
+                    foundVideolinks.add(createDownloadlink("http://vimeo.com/" + embeddedVideo));
+                    return foundVideolinks;
+                }
+                embeddedVideo = new Regex(correctedBR, "pdj\\.com/i/swf/og\\.swf\\?jsonURL=(http[^<>\"]*?)\\'").getMatch(0);
+                if (embeddedVideo != null) {
+                    br.getPage(Encoding.htmlDecode(embeddedVideo));
+                    correctedBR = br.toString().replace("\\", "");
+                    embeddedVideo = new Regex(correctedBR, "@download_url\":\"(http://promodj\\.com/[^<>\"]*?)\"").getMatch(0);
+                    if (embeddedVideo == null) return null;
+                    foundVideolinks.add(createDownloadlink(Encoding.htmlDecode(embeddedVideo)));
+                    return foundVideolinks;
+                }
+                embeddedVideo = new Regex(correctedBR, "url: \\'(http://player\\.digitalaccess\\.ru/[^<>\"/]*?\\&siteId=\\d+)\\&").getMatch(0);
                 if (embeddedVideo != null) {
                     foundVideolinks.add(createDownloadlink("directhttp://" + Encoding.htmlDecode(embeddedVideo)));
                     return foundVideolinks;
                 }
-            }
-            embeddedVideo = new Regex(correctedBR, "url: \\'//(www\\.)?kinopoisk\\.ru/player/vk/f/([^<>\"]*?)\\'").getMatch(1);
-            if (embeddedVideo != null) {
-                // http://www.kinopoisk.ru/player/vk/f/518097/ad/6/10/tr/62368/file/kinopoisk.ru-Le-Skylab-99112.mp4
-                final Regex dlInfo = new Regex(embeddedVideo, "(\\d+)/ad/\\d+/\\d+/[a-z]{2}/(\\d+)/file/(.+)");
-                final String trid = dlInfo.getMatch(1);
-                final String film = dlInfo.getMatch(0);
-                final String tid = dlInfo.getMatch(2);
-                if (trid == null || film == null || tid == null) {
-                    logger.warning("Decrypter broken for link: " + parameter);
-                    return null;
+                embeddedVideo = new Regex(correctedBR, "\\?file=(http://(www\\.)?1tv\\.ru/[^<>\"]*?)\\'").getMatch(0);
+                if (embeddedVideo != null) {
+                    br.getPage(Encoding.htmlDecode(embeddedVideo));
+                    embeddedVideo = br.getRegex("<media:content url=\"(http://[^<>\"]*?)\"").getMatch(0);
+                    if (embeddedVideo != null) {
+                        foundVideolinks.add(createDownloadlink("directhttp://" + Encoding.htmlDecode(embeddedVideo)));
+                        return foundVideolinks;
+                    }
                 }
-                final String redirectLink = "http://www.kinopoisk.ru/gettrailer.php?trid=" + trid + "&film=" + film + "&from_src=vk&tid=" + tid;
-                br.getPage(redirectLink);
-                final String finallink = br.getRedirectLocation();
-                if (finallink == null) {
-                    logger.warning("Decrypter broken for link: " + parameter);
-                    return null;
+                embeddedVideo = new Regex(correctedBR, "url: \\'//(www\\.)?kinopoisk\\.ru/player/vk/f/([^<>\"]*?)\\'").getMatch(1);
+                if (embeddedVideo != null) {
+                    // http://www.kinopoisk.ru/player/vk/f/518097/ad/6/10/tr/62368/file/kinopoisk.ru-Le-Skylab-99112.mp4
+                    final Regex dlInfo = new Regex(embeddedVideo, "(\\d+)/ad/\\d+/\\d+/[a-z]{2}/(\\d+)/file/(.+)");
+                    final String trid = dlInfo.getMatch(1);
+                    final String film = dlInfo.getMatch(0);
+                    final String tid = dlInfo.getMatch(2);
+                    if (trid == null || film == null || tid == null) {
+                        logger.warning("Decrypter broken for link: " + parameter);
+                        return null;
+                    }
+                    final String redirectLink = "http://www.kinopoisk.ru/gettrailer.php?trid=" + trid + "&film=" + film + "&from_src=vk&tid=" + tid;
+                    br.getPage(redirectLink);
+                    final String finallink = br.getRedirectLocation();
+                    if (finallink == null) {
+                        logger.warning("Decrypter broken for link: " + parameter);
+                        return null;
+                    }
+                    foundVideolinks.add(createDownloadlink("directhttp://" + Encoding.htmlDecode(finallink)));
+                    return foundVideolinks;
                 }
-                foundVideolinks.add(createDownloadlink("directhttp://" + Encoding.htmlDecode(finallink)));
-                return foundVideolinks;
-            }
-            /** This one isn't supported via plugin yet */
-            embeddedVideo = new Regex(correctedBR, "url: \\'(//myvi\\.ru[^<>\"]*?)\\'").getMatch(0);
-            if (embeddedVideo != null) {
-                foundVideolinks.add(createDownloadlink(embeddedVideo));
-                return foundVideolinks;
-            }
-            /** Find embed links END */
+                /** This one isn't supported via plugin yet */
+                embeddedVideo = new Regex(correctedBR, "url: \\'(//myvi\\.ru[^<>\"]*?)\\'").getMatch(0);
+                if (embeddedVideo != null) {
+                    foundVideolinks.add(createDownloadlink(embeddedVideo));
+                    return foundVideolinks;
+                }
+                /** Find embed links 2 END */
 
-            /**
-             * We couldn't find any external videos so it must be on their servers -> send it to the hosterplugin
-             */
-            embedHash = br.getRegex("\\\\\"hash2\\\\\":\\\\\"([a-z0-9]+)\\\\\"").getMatch(0);
-            if (embedHash == null) {
-                if (!br.containsHTML("VideoPlayer4_0\\.swf\\?")) { throw new DecrypterException(EXCEPTION_LINKOFFLINE); }
-                logger.warning("Decrypter broken for link: " + parameter);
-                return null;
+                /**
+                 * We couldn't find any external videos so it must be on their servers -> send it to the hosterplugin
+                 */
+                embedHash = br.getRegex("\\\\\"hash2\\\\\":\\\\\"([a-z0-9]+)\\\\\"").getMatch(0);
+                if (embedHash == null) {
+                    if (!br.containsHTML("VideoPlayer4_0\\.swf\\?")) { throw new DecrypterException(EXCEPTION_LINKOFFLINE); }
+                    logger.warning("Decrypter broken for link: " + parameter);
+                    return null;
+                }
             }
+            getPageSafe("http://vk.com/video_ext.php?oid=" + oid + "&id=" + id + "&hash=" + embedHash);
+            filename = br.getRegex("var video_title = \\'([^<>\"]*?)\\';").getMatch(0);
         }
-        final FilePackage fp = FilePackage.getInstance();
-        /** Find needed information */
-        getPageSafe("http://vk.com/video_ext.php?oid=" + oid + "&id=" + id + "&hash=" + embedHash);
-        String filename = br.getRegex("var video_title = \\'([^<>\"]*?)\\';").getMatch(0);
         if (filename == null) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
+        final FilePackage fp = FilePackage.getInstance();
+        /** Find needed information */
         final LinkedHashMap<String, String> foundQualities = findAvailableVideoQualities();
         if (foundQualities == null) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
         filename = Encoding.htmlDecode(filename.trim());
+        filename = encodeUnicode(filename);
         if (cfg.getBooleanProperty(VKVIDEO_USEIDASPACKAGENAME, false)) {
             fp.setName("video" + oid + "_" + id);
         } else {
@@ -540,6 +555,7 @@ public class VKontakteRu extends PluginForDecrypt {
                 dl.setProperty("embedhash", embedHash);
                 dl.setProperty("selectedquality", selectedQualityValue);
                 dl.setProperty("nologin", true);
+                if (VKVIDEOSPECIAL) dl.setProperty("videospecial", true);
                 if (fastLinkcheck) dl.setAvailable(true);
                 fp.add(dl);
                 foundVideolinks.add(dl);
@@ -550,6 +566,43 @@ public class VKontakteRu extends PluginForDecrypt {
             return foundVideolinks;
         }
         return foundVideolinks;
+    }
+
+    private String[] findVideoIDs(final String parameter) {
+        final String[] ids = new String[2];
+        String oid = null;
+        String id = null;
+        if (parameter.matches(PATTERN_VIDEO_SINGLE_EMBED) || parameter.matches(PATTERN_VIDEO_SINGLE_EMBED_HASH)) {
+            final Regex idsRegex = new Regex(parameter, "vk\\.com/video_ext\\.php\\?oid=(\\d+)\\&id=(\\d+)");
+            oid = idsRegex.getMatch(0);
+            id = idsRegex.getMatch(1);
+        } else if (parameter.matches(PATTERN_VIDEO_SINGLE_ORIGINAL)) {
+            final Regex idsRegex = new Regex(parameter, "((\\-)?\\d+)_(\\d+)$");
+            oid = idsRegex.getMatch(0);
+            id = idsRegex.getMatch(2);
+        } else if (parameter.matches(PATTERN_VIDEO_SINGLE_ORIGINAL_LIST)) {
+            final Regex idsRegex = new Regex(parameter, "((\\-)?\\d+)_(\\d+)\\?");
+            oid = idsRegex.getMatch(0);
+            id = idsRegex.getMatch(2);
+        }
+        ids[0] = oid;
+        ids[1] = id;
+        return ids;
+    }
+
+    private String encodeUnicode(final String input) {
+        String output = input;
+        output = output.replace(":", ";");
+        output = output.replace("|", "¦");
+        output = output.replace("<", "[");
+        output = output.replace(">", "]");
+        output = output.replace("/", "⁄");
+        output = output.replace("\\", "∖");
+        output = output.replace("*", "#");
+        output = output.replace("?", "¿");
+        output = output.replace("!", "¡");
+        output = output.replace("\"", "'");
+        return output;
     }
 
     private ArrayList<DownloadLink> decryptPhotoAlbum(ArrayList<DownloadLink> decryptedLinks, String parameter) throws IOException, DecrypterException {

@@ -136,7 +136,14 @@ public class VKontakteRuHoster extends PluginForHost {
                 FINALLINK = link.getStringProperty("directlink", null);
                 // Check if directlink is expired
                 if (!linkOk(link, link.getFinalFileName())) {
-                    br.getPage("http://vk.com/video_ext.php?oid=" + link.getStringProperty("userid", null) + "&id=" + link.getStringProperty("videoid", null) + "&hash=" + link.getStringProperty("embedhash", null));
+                    final String oid = link.getStringProperty("userid", null);
+                    final String id = link.getStringProperty("videoid", null);
+                    final String embedhash = link.getStringProperty("embedhash", null);
+                    if (link.getBooleanProperty("videospecial", false)) {
+                        br.getPage("http://vk.com/video.php?act=a_flash_vars&vid=" + oid + "_" + id);
+                    } else {
+                        br.getPage("http://vk.com/video_ext.php?oid=" + oid + "&id=" + id + "&hash=" + embedhash);
+                    }
                     final LinkedHashMap<String, String> availableQualities = findAvailableVideoQualities();
                     if (availableQualities == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     FINALLINK = availableQualities.get(link.getStringProperty("selectedquality", null));

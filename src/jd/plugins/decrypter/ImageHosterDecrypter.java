@@ -197,6 +197,7 @@ public class ImageHosterDecrypter extends PluginForDecrypt {
         } else if (parameter.contains("pic4free.org/")) {
             br.getPage(parameter);
             finallink = br.getRegex("\"(http://\\d+\\.\\d+\\.\\d+\\.\\d+:\\d+/download\\.php\\?id=\\d+)\"").getMatch(0);
+            if (finallink == null) finallink = br.getRegex("\"(http://[0-9\\.]+/stream\\.php\\?id=\\d+)\"").getMatch(0);
             if (finallink == null) finallink = parameter.replace("/?v=", "/images/");
         } else if (parameter.contains("imgjug.com/")) {
             br.setFollowRedirects(true);

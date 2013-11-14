@@ -174,6 +174,14 @@ public class PutLockerCom extends PluginForHost {
         br.setFollowRedirects(true);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, chunks);
         if (dl.getConnection().getContentType().contains("html")) {
+            if (dl.getConnection().getResponseCode() == 416) {
+                /* unknown error, we disable multiple chunks */
+                if (downloadLink.getBooleanProperty(PutLockerCom.NOCHUNKS, false) == false) {
+                    downloadLink.setProperty(PutLockerCom.NOCHUNKS, Boolean.valueOf(true));
+                    throw new PluginException(LinkStatus.ERROR_RETRY);
+                }
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error 416", 10 * 60 * 1000l);
+            }
             br.followConnection();
             // My experience was that such files just don't work, i wasn't able
             // to download a link with this error in 3 days!

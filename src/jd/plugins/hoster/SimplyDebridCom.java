@@ -142,6 +142,7 @@ public class SimplyDebridCom extends PluginForHost {
                 /* reset retrycounter */
                 link.getLinkStatus().setRetryCount(0);
                 // disable hoster for 15min
+                logger.info("simply-debrid.com: Creating account session failed, disabling current host...");
                 tempUnavailableHoster(account, link, 15 * 60 * 1000l);
             }
             String msg = "(" + (link.getLinkStatus().getRetryCount() + 1) + "/" + 3 + ")";
@@ -157,7 +158,7 @@ public class SimplyDebridCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 1 * 60 * 1000l);
         }
         if (br.containsHTML("Invalid link")) {
-            logger.info("'Invalid link' error, disabling current host...");
+            logger.info("simply-debrid.com: 'Invalid link' error, disabling current host...");
             tempUnavailableHoster(account, link, 2 * 60 * 60 * 1000l);
         }
         if (br.containsHTML("No htmlCode read")) {
@@ -169,7 +170,7 @@ public class SimplyDebridCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_RETRY, "Server error");
             } else {
                 link.setProperty("timesfailedsimplydebridcom_unknown", Property.NULL);
-                logger.info("Unknown API error, disabling current host...");
+                logger.info("simply-debrid.com: Unknown API error, disabling current host...");
                 tempUnavailableHoster(account, link, 2 * 60 * 60 * 1000l);
             }
         }
@@ -179,6 +180,7 @@ public class SimplyDebridCom extends PluginForHost {
         if (!(dllink.startsWith("http://") || dllink.startsWith("https://")) || dllink.endsWith("/Invalid link") || dllink.contains("php_network_getaddresses: getaddrinfo failed: Name or service not known")) {
             if (dllink.contains("UNDER MAINTENANCE")) {
                 // disable host for 30min
+                logger.info("simply-debrid.com: 'UNDER MAINTENANCE' error, disabling current host...");
                 tempUnavailableHoster(account, link, 30 * 60 * 1000l);
             }
             if (dllink.contains("03: Invalid link") || dllink.endsWith("/Invalid link") || dllink.contains("php_network_getaddresses: getaddrinfo failed: Name or service not known")) {
@@ -190,6 +192,7 @@ public class SimplyDebridCom extends PluginForHost {
                     /* reset retrycounter */
                     link.getLinkStatus().setRetryCount(0);
                     // disable hoster for 20min
+                    logger.info("simply-debrid.com: error after finallink creation, disabling current host...");
                     tempUnavailableHoster(account, link, 20 * 60 * 1000l);
                 }
                 String msg = "(" + (link.getLinkStatus().getRetryCount() + 1) + "/" + 3 + ")";
