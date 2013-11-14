@@ -85,5 +85,6 @@ settings_use_subpath=Vytvoriť podpriečinok
 settings_various=Rôzne
 showextractlog=Protokol rozbalenia pre %s1
 tooltip_NameColumn=Názov archívu
+tooltip_empty=Žiadna úloha rozbaľovania
 unknown=Neznámý
 unknown_tt=Odkaz na túto časť je k dispozícii, ale to môže byť v režime offline.
