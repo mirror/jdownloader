@@ -32,6 +32,7 @@ import org.appwork.utils.swing.EDTRunner;
 import org.jdownloader.extensions.ExtensionController;
 import org.jdownloader.extensions.ExtensionControllerListener;
 import org.jdownloader.extensions.LazyExtension;
+import org.jdownloader.gui.notify.BubbleNotify;
 import org.jdownloader.gui.notify.gui.BubbleNotifyConfigPanel;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings;
 
@@ -193,7 +194,7 @@ public class SettingsSidebarModel extends DefaultListModel implements GenericCon
         return new EDTHelper<BubbleNotifyConfigPanel>() {
             public BubbleNotifyConfigPanel edtRun() {
                 if (notifierPanel != null) return notifierPanel;
-                notifierPanel = new BubbleNotifyConfigPanel();
+                notifierPanel = BubbleNotify.getInstance().getConfigPanel();
                 return notifierPanel;
             }
         }.getReturnValue();

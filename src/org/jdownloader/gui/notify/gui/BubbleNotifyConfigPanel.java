@@ -17,6 +17,7 @@
 package org.jdownloader.gui.notify.gui;
 
 import java.util.ArrayList;
+import java.util.List;
 
 import javax.swing.ImageIcon;
 
@@ -25,19 +26,24 @@ import jd.gui.swing.jdgui.views.settings.components.ComboBox;
 import jd.gui.swing.jdgui.views.settings.components.Spinner;
 import jd.gui.swing.jdgui.views.settings.components.StateUpdateListener;
 
+import org.appwork.scheduler.DelayedRunnable;
 import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.events.GenericConfigEventListener;
 import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.utils.swing.EDTRunner;
+import org.jdownloader.gui.notify.BubbleNotify;
+import org.jdownloader.gui.notify.BubbleType;
 import org.jdownloader.gui.notify.gui.BubbleNotifyConfig.BubbleNotifyEnabledState;
 import org.jdownloader.gui.settings.AbstractConfigPanel;
 import org.jdownloader.gui.settings.Pair;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
 
-public class BubbleNotifyConfigPanel extends AbstractConfigPanel implements StateUpdateListener {
+public class BubbleNotifyConfigPanel extends AbstractConfigPanel implements StateUpdateListener, GenericConfigEventListener<Enum> {
 
-    private static final long serialVersionUID = 1L;
+    private static final long         serialVersionUID = 1L;
+    private ArrayList<Pair<Checkbox>> boxes;
+    private DelayedRunnable           delayer;
 
     public String getTitle() {
         return _GUI._.NotifierConfigPanel_getTitle();
@@ -46,48 +52,45 @@ public class BubbleNotifyConfigPanel extends AbstractConfigPanel implements Stat
     public BubbleNotifyConfigPanel() {
         super();
 
+        layoutComponents();
+        CFG_BUBBLE.BUBBLE_NOTIFY_ENABLED_STATE.getEventSender().addListener(this, true);
+        onConfigValueModified(null, null);
+        delayer = new DelayedRunnable(3000, 5000) {
+
+            @Override
+            public void delayedrun() {
+                new EDTRunner() {
+
+                    @Override
+                    protected void runInEDT() {
+                        removeAll();
+                        layoutComponents();
+                        revalidate();
+                        repaint();
+                    }
+                };
+            }
+        };
+    }
+
+    protected void layoutComponents() {
         this.addHeader(getTitle(), NewTheme.I().getIcon("bubble", 32));
         this.addDescription(_GUI._.plugins_optional_JDLightTray_ballon_desc());
         addPair(_GUI._.BubbleNotifyConfigPanel_BubbleNotifyConfigPanel_enabledstate(), null,
                 new ComboBox<BubbleNotifyEnabledState>((KeyHandler<BubbleNotifyEnabledState>) CFG_BUBBLE.SH.getKeyHandler("BubbleNotifyEnabledState", KeyHandler.class), new BubbleNotifyEnabledState[] { BubbleNotifyEnabledState.ALWAYS, BubbleNotifyEnabledState.JD_NOT_ACTIVE, BubbleNotifyEnabledState.TRAY_OR_TASKBAR, BubbleNotifyEnabledState.TASKBAR, BubbleNotifyEnabledState.TRAY, BubbleNotifyEnabledState.NEVER, }, new String[] { _GUI._.BubbleNotifyConfigPanel_BubbleNotifyConfigPanel_always(), _GUI._.BubbleNotifyConfigPanel_BubbleNotifyConfigPanel_jdnotactive(), _GUI._.BubbleNotifyConfigPanel_BubbleNotifyConfigPanel_trayortask(), _GUI._.BubbleNotifyConfigPanel_BubbleNotifyConfigPanel_taskbar(), _GUI._.BubbleNotifyConfigPanel_BubbleNotifyConfigPanel_tray(), _GUI._.BubbleNotifyConfigPanel_BubbleNotifyConfigPanel_never(), }));
 
-        final ArrayList<Pair<Checkbox>> boxes = new ArrayList<Pair<Checkbox>>();
-        boxes.add(addPair(_GUI._.lit_or() + " " + _GUI._.plugins_optional_JDLightTray_ballon_newlinks3(), "skip 1,split 2,pushx,growx", null, new Checkbox(CFG_BUBBLE.BUBBLE_NOTIFY_ON_NEW_LINKGRABBER_LINKS_ENABLED)));
-        boxes.add(addPair(_GUI._.lit_or() + " " + _GUI._.plugins_optional_JDLightTray_ballon_updates2(), "skip 1,split 2,pushx,growx", null, new Checkbox(CFG_BUBBLE.BUBBLE_NOTIFY_ON_UPDATE_AVAILABLE_ENABLED)));
-        boxes.add(addPair(_GUI._.lit_or() + " " + _GUI._.plugins_optional_JDLightTray_ballon_reconnectstart3(), "skip 1,split 2,pushx,growx", null, new Checkbox(CFG_BUBBLE.BUBBLE_NOTIFY_ON_RECONNECT_START_ENABLED)));
-
-        boxes.add(addPair(_GUI._.lit_or() + " " + _GUI._.plugins_optional_JDLightTray_ballon_captcha2(), "skip 1,split 2,pushx,growx", null, new Checkbox(CFG_BUBBLE.BUBBLE_NOTIFY_ON_CAPTCHA_IN_BACKGROUND_ENABLED)));
-        boxes.add(addPair(_GUI._.lit_or() + " " + _GUI._.plugins_optional_JDLightTray_ballon_startstopdownloads2(), "skip 1,split 2,pushx,growx", null, new Checkbox(CFG_BUBBLE.BUBBLE_NOTIFY_START_STOP_DOWNLOADS_ENABLED)));
-        boxes.add(addPair(_GUI._.lit_or() + " " + _GUI._.plugins_optional_JDLightTray_ballon_startpausestop2(), "skip 1,split 2,pushx,growx", null, new Checkbox(CFG_BUBBLE.BUBBLE_NOTIFY_START_PAUSE_STOP_ENABLED)));
-
-        CFG_BUBBLE.BUBBLE_NOTIFY_ENABLED_STATE.getEventSender().addListener(new GenericConfigEventListener<Enum>() {
-            {
-                onConfigValueModified(null, null);
-            }
-
-            @Override
-            public void onConfigValueModified(KeyHandler<Enum> keyHandler, Enum newValue) {
-                new EDTRunner() {
-
-                    @Override
-                    protected void runInEDT() {
-                        for (Pair<Checkbox> pc : boxes) {
-                            pc.setEnabled(CFG_BUBBLE.BUBBLE_NOTIFY_ENABLED_STATE.getValue() != BubbleNotifyEnabledState.NEVER);
-                        }
-                    }
-                };
-            }
-
-            @Override
-            public void onConfigValidatorError(KeyHandler<Enum> keyHandler, Enum invalidValue, ValidationException validateException) {
-            }
-        });
-
+        boxes = new ArrayList<Pair<Checkbox>>();
+        for (BubbleType pt : BubbleNotify.getInstance().getTypes()) {
+            boxes.add(addPair(_GUI._.lit_or() + " " + pt.getLabel(), "skip 1,split 2,pushx,growx", null, new Checkbox(pt.getKeyHandler())));
+        }
         this.addHeader(_GUI._.BubbleNotifyConfigPanel_BubbleNotifyConfigPanel_settings_(), NewTheme.I().getIcon("settings", 32));
 
         addPair(_GUI._.BubbleNotifyConfigPanel_BubbleNotifyConfigPanel_silent_(), null, new Checkbox(CFG_BUBBLE.BUBBLE_NOTIFY_ENABLED_DURING_SILENT_MODE));
         addPair(_GUI._.BubbleNotifyConfigPanel_BubbleNotifyConfigPanel_timeout(), null, new Spinner(CFG_BUBBLE.DEFAULT_TIMEOUT));
         addPair(_GUI._.BubbleNotifyConfigPanel_BubbleNotifyConfigPanel_fadetime(), null, new Spinner(CFG_BUBBLE.FADE_ANIMATION_DURATION));
+    }
+
+    public void updateTypes(List<BubbleType> types) {
     }
 
     @Override
@@ -108,5 +111,24 @@ public class BubbleNotifyConfigPanel extends AbstractConfigPanel implements Stat
     @Override
     public void onStateUpdated() {
 
+        delayer.resetAndStart();
     }
+
+    @Override
+    public void onConfigValidatorError(KeyHandler<Enum> keyHandler, Enum invalidValue, ValidationException validateException) {
+    }
+
+    @Override
+    public void onConfigValueModified(KeyHandler<Enum> keyHandler, Enum newValue) {
+        new EDTRunner() {
+
+            @Override
+            protected void runInEDT() {
+                for (Pair<Checkbox> pc : boxes) {
+                    pc.setEnabled(CFG_BUBBLE.BUBBLE_NOTIFY_ENABLED_STATE.getValue() != BubbleNotifyEnabledState.NEVER);
+                }
+            }
+        };
+    }
+
 }

@@ -6,6 +6,7 @@ import org.appwork.txtresource.TranslateInterface;
 
 @Defaults(lngs = { "en" })
 public interface ExtractionTranslation extends TranslateInterface {
+
     @Default(lngs = { "en", "de" }, values = { "Archive Extractor", "Archiv Entpacker" })
     String name();
 
@@ -325,5 +326,32 @@ public interface ExtractionTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Archive Password required!" })
     String ask_for_password();
+
+    @Default(lngs = { "en" }, values = { "an archive extraction is in progress" })
+    String bubbletype();
+
+    @Default(lngs = { "en" }, values = { "Archive:" })
+    String archive();
+
+    @Default(lngs = { "en" }, values = { "Status:" })
+    String archive_status();
+
+    @Default(lngs = { "en" }, values = { "Extracting archive!" })
+    String bubble_text();
+
+    @Default(lngs = { "en" }, values = { "File:" })
+    String archive_file();
+
+    @Default(lngs = { "en" }, values = { "Extract to:" })
+    String archive_folder();
+
+    @Default(lngs = { "en" }, values = { "Password required!" })
+    String password_required();
+
+    @Default(lngs = { "en" }, values = { "Finding Password.." })
+    String password_search();
+
+    @Default(lngs = { "en" }, values = { "Extracting..." })
+    String extracting_in_progress();
 
 }

@@ -3310,7 +3310,7 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "The File name" })
     String AddLinksDialog_layoutDialogContent_filename_tt();
 
-    @Default(lngs = { "en" }, values = { "Properties" })
+    @Default(lngs = { "en" }, values = { "Open Properties Panel" })
     String PropertiesAction_PropertiesAction();
 
     @Default(lngs = { "en" }, values = { "Speedmeter visible" })
@@ -3454,7 +3454,7 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Memory Problem detected!" })
     String MEMORY_RESTART_TITLE();
 
-    @Default(lngs = { "en" }, values = { "I seems that there is a memory Problem. A Restart of JDownloader is required to fix this problem.\r\nIf even 2 restarts do not fix it, please visit our support chat." })
+    @Default(lngs = { "en" }, values = { "It seems that there is a memory Problem. A Restart of JDownloader is required to fix this problem.\r\nIf even 2 restarts do not fix it, please visit our support chat." })
     String MEMORY_RESTART_MSG();
 
     @Default(lngs = { "en" }, values = { "Restart" })
@@ -3612,4 +3612,10 @@ public interface GuiTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "You cannot use the Source or the Origin Condition to trigger this 'After Extraction' Action" })
     String PackagizerFilterRuleDialog_layoutDialogContent_help_msg();
+
+    @Default(lngs = { "en" }, values = { "Archive Extraction" })
+    String ExtractorToolTip_ExtractorToolTip_title();
+
+    @Default(lngs = { "en" }, values = { "Successful" })
+    String lit_successfull();
 }

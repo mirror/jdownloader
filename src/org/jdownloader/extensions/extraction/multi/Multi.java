@@ -59,6 +59,7 @@ import org.jdownloader.extensions.extraction.ExtractionControllerConstants;
 import org.jdownloader.extensions.extraction.ExtractionException;
 import org.jdownloader.extensions.extraction.FileSignatures;
 import org.jdownloader.extensions.extraction.IExtraction;
+import org.jdownloader.extensions.extraction.Item;
 import org.jdownloader.extensions.extraction.Signature;
 import org.jdownloader.extensions.extraction.content.ContentView;
 import org.jdownloader.extensions.extraction.content.PackedFile;
@@ -681,11 +682,13 @@ public class Multi extends IExtraction {
                         }
                         round.clear();
                         Seven7ExtractCallback callback = null;
+
                         try {
                             inArchive.extract(items, false, callback = new Seven7ExtractCallback(this, inArchive, ctrl, archive, config));
                         } catch (SevenZipException e) {
                             logger.log(e);
                         } finally {
+                            ctrl.setCurrentActiveItem(null);
                             if (callback != null) callback.close();
                         }
                         if (callback != null) {
@@ -694,7 +697,7 @@ public class Multi extends IExtraction {
                     }
                 }
             } else {
-                final double size = archive.getContentView().getTotalSize() / 100.0d;
+                final long size2 = archive.getContentView().getTotalSize();
                 progressInBytes = 0l;
                 for (ISimpleInArchiveItem item : inArchive.getSimpleInterface().getArchiveItems()) {
                     // Skip folders
@@ -703,7 +706,7 @@ public class Multi extends IExtraction {
                     }
                     if (ctrl.gotKilled()) { throw new SevenZipException("Extraction has been aborted"); }
                     AtomicBoolean skipped = new AtomicBoolean(false);
-                    File extractTo = getExtractFilePath(item, ctrl, skipped, size);
+                    File extractTo = getExtractFilePath(item, ctrl, skipped, size2);
                     if (skipped.get()) {
                         /* file is skipped */
                         continue;
@@ -713,60 +716,66 @@ public class Multi extends IExtraction {
                         return;
                     }
                     archive.addExtractedFiles(extractTo);
-                    MultiCallback call = new MultiCallback(extractTo, controller, config, false) {
-
-                        @Override
-                        public int write(byte[] data) throws SevenZipException {
-                            try {
-                                if (ctrl.gotKilled()) throw new SevenZipException("Extraction has been aborted");
-                                return super.write(data);
-                            } finally {
-                                progressInBytes += data.length;
-                                ctrl.setProgress(progressInBytes / size);
-                            }
-                        }
-                    };
-                    ExtractOperationResult res;
+                    ctrl.setCurrentActiveItem(new Item(item.getPath(), extractTo));
                     try {
-                        if (item.isEncrypted()) {
-                            String pw = archive.getFinalPassword();
-                            if (pw == null) { throw new IOException("Password is null!"); }
-                            res = item.extractSlow(call, pw);
-                        } else {
-                            res = item.extractSlow(call);
+                        MultiCallback call = new MultiCallback(extractTo, controller, config, false) {
+
+                            @Override
+                            public int write(byte[] data) throws SevenZipException {
+                                try {
+                                    if (ctrl.gotKilled()) throw new SevenZipException("Extraction has been aborted");
+                                    return super.write(data);
+                                } finally {
+                                    progressInBytes += data.length;
+                                    ctrl.setProgress(progressInBytes / (double) size2);
+                                }
+                            }
+                        };
+                        ExtractOperationResult res;
+                        try {
+                            if (item.isEncrypted()) {
+                                String pw = archive.getFinalPassword();
+                                if (pw == null) { throw new IOException("Password is null!"); }
+                                res = item.extractSlow(call, pw);
+                            } else {
+                                res = item.extractSlow(call);
+                            }
+                        } finally {
+                            /* always close files, thats why its best in finally branch */
+                            call.close();
                         }
-                    } finally {
-                        /* always close files, thats why its best in finally branch */
-                        call.close();
-                    }
-                    setLastModifiedDate(item, extractTo);
-                    if (item.getSize() != extractTo.length()) {
-                        if (ExtractOperationResult.OK == res) {
-                            logger.info("Size missmatch for " + item.getPath() + ", but Extraction returned OK?! Archive seems incomplete");
-                            archive.setExitCode(ExtractionControllerConstants.EXIT_CODE_INCOMPLETE_ERROR);
+
+                        setLastModifiedDate(item, extractTo);
+                        if (item.getSize() != extractTo.length()) {
+                            if (ExtractOperationResult.OK == res) {
+                                logger.info("Size missmatch for " + item.getPath() + ", but Extraction returned OK?! Archive seems incomplete");
+                                archive.setExitCode(ExtractionControllerConstants.EXIT_CODE_INCOMPLETE_ERROR);
+                                return;
+                            }
+                            logger.info("Size missmatch for " + item.getPath() + " is " + extractTo.length() + " but should be " + item.getSize());
+                            archive.setExitCode(ExtractionControllerConstants.EXIT_CODE_CRC_ERROR);
                             return;
                         }
-                        logger.info("Size missmatch for " + item.getPath() + " is " + extractTo.length() + " but should be " + item.getSize());
-                        archive.setExitCode(ExtractionControllerConstants.EXIT_CODE_CRC_ERROR);
-                        return;
-                    }
-                    switch (res) {
-                    case OK:
-                        /* extraction successfully ,continue with next file */
-                        break;
-                    case CRCERROR:
-                        logger.info("CRC Error for " + item.getPath());
-                        writeCrashLog("CRC Error in " + item.getPath());
-                        archive.setExitCode(ExtractionControllerConstants.EXIT_CODE_CRC_ERROR);
-                        return;
-                    case UNSUPPORTEDMETHOD:
-                        logger.info("Unsupported Method " + item.getMethod() + " in " + item.getPath());
-                        writeCrashLog("Unsupported Method " + item.getMethod() + " in " + item.getPath());
-                        archive.setExitCode(ExtractionControllerConstants.EXIT_CODE_FATAL_ERROR);
-                        return;
-                    default:
-                        archive.setExitCode(ExtractionControllerConstants.EXIT_CODE_FATAL_ERROR);
-                        return;
+                        switch (res) {
+                        case OK:
+                            /* extraction successfully ,continue with next file */
+                            break;
+                        case CRCERROR:
+                            logger.info("CRC Error for " + item.getPath());
+                            writeCrashLog("CRC Error in " + item.getPath());
+                            archive.setExitCode(ExtractionControllerConstants.EXIT_CODE_CRC_ERROR);
+                            return;
+                        case UNSUPPORTEDMETHOD:
+                            logger.info("Unsupported Method " + item.getMethod() + " in " + item.getPath());
+                            writeCrashLog("Unsupported Method " + item.getMethod() + " in " + item.getPath());
+                            archive.setExitCode(ExtractionControllerConstants.EXIT_CODE_FATAL_ERROR);
+                            return;
+                        default:
+                            archive.setExitCode(ExtractionControllerConstants.EXIT_CODE_FATAL_ERROR);
+                            return;
+                        }
+                    } finally {
+                        ctrl.setCurrentActiveItem(null);
                     }
                 }
             }
@@ -786,7 +795,7 @@ public class Multi extends IExtraction {
             archive.setExitCode(ExtractionControllerConstants.EXIT_CODE_CREATE_ERROR);
             return;
         } finally {
-            controller.setProgress(100.0d);
+            controller.setProgress(1.0d);
         }
         archive.setExitCode(ExtractionControllerConstants.EXIT_CODE_SUCCESS);
     }
@@ -821,7 +830,7 @@ public class Multi extends IExtraction {
     // }
     //
 
-    public File getExtractFilePath(ISimpleInArchiveItem item, ExtractionController ctrl, AtomicBoolean skipped, double size) throws SevenZipException {
+    public File getExtractFilePath(ISimpleInArchiveItem item, ExtractionController ctrl, AtomicBoolean skipped, long size2) throws SevenZipException {
         String path = item.getPath();
         if (StringUtils.isEmpty(path)) {
             // example: test.tar.gz contains a test.tar file, that has
@@ -835,7 +844,7 @@ public class Multi extends IExtraction {
         if (filter(item.getPath())) {
             logger.info("Filtering file " + item.getPath() + " in " + archive.getFirstArchiveFile().getFilePath());
             progressInBytes += item.getSize();
-            ctrl.setProgress(progressInBytes / size);
+            ctrl.setProgress(progressInBytes / (double) size2);
             skipped.set(true);
             return null;
         }
@@ -869,7 +878,7 @@ public class Multi extends IExtraction {
                 /* skip file */
                 archive.addExtractedFiles(extractTo);
                 progressInBytes += item.getSize();
-                ctrl.setProgress(progressInBytes / size);
+                ctrl.setProgress(progressInBytes / (double) size2);
                 skipped.set(true);
                 return null;
             }

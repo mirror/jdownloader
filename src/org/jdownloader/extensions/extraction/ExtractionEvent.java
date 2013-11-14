@@ -21,6 +21,8 @@ public class ExtractionEvent extends SimpleEvent<ExtractionController, Object, E
         EXTRACTION_FAILED_CRC, // CRC error occurred
         NOT_ENOUGH_SPACE, // Not enough space for the archive
         FILE_NOT_FOUND // Archive was not found
+        ,
+        ACTIVE_ITEM// new file is beeing extracted
     }
 
     public ExtractionEvent(ExtractionController caller, Type type, Object... parameters) {

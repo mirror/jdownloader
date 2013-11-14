@@ -105,39 +105,31 @@ public class StatusBarImpl extends JPanel implements DownloadWatchdogListener {
         reconnectIndicator.setTitle(_GUI._.StatusBarImpl_initGUI_reconnect());
         reconnectIndicator.setIndeterminate(false);
         reconnectIndicator.setEnabled(false);
-
         DownloadWatchDog.getInstance().getEventSender().addListener(this);
-        SecondLevelLaunch.GUI_COMPLETE.executeWhenReached(new Runnable() {
+        Reconnecter.getInstance().getEventSender().addListener(new ReconnecterListener() {
 
-            public void run() {
-                Reconnecter.getInstance().getEventSender().addListener(new ReconnecterListener() {
-
+            @Override
+            public void onBeforeReconnect(ReconnecterEvent event) {
+                new EDTRunner() {
                     @Override
-                    public void onBeforeReconnect(ReconnecterEvent event) {
-                        new EDTRunner() {
-                            @Override
-                            protected void runInEDT() {
-                                reconnectIndicator.setEnabled(true);
-                                reconnectIndicator.setIndeterminate(true);
-                            }
-                        };
+                    protected void runInEDT() {
+                        reconnectIndicator.setEnabled(true);
+                        reconnectIndicator.setIndeterminate(true);
                     }
-
-                    @Override
-                    public void onAfterReconnect(ReconnecterEvent event) {
-                        new EDTRunner() {
-                            @Override
-                            protected void runInEDT() {
-                                reconnectIndicator.setEnabled(false);
-                                reconnectIndicator.setIndeterminate(false);
-                            }
-                        };
-                    }
-                });
+                };
             }
 
+            @Override
+            public void onAfterReconnect(ReconnecterEvent event) {
+                new EDTRunner() {
+                    @Override
+                    protected void runInEDT() {
+                        reconnectIndicator.setEnabled(false);
+                        reconnectIndicator.setIndeterminate(false);
+                    }
+                };
+            }
         });
-
         // reconnectIndicator.setToolTipText("<html><img src=\"" +
         // NewTheme.I().getImageUrl("reconnect") +
         // "\"></img>Waiting for new IP - Reconnect in progress</html>");
@@ -188,24 +180,17 @@ public class StatusBarImpl extends JPanel implements DownloadWatchdogListener {
             public void mouseClicked(MouseEvent e) {
             }
         });
-        SecondLevelLaunch.GUI_COMPLETE.executeWhenReached(new Runnable() {
+        LinkCrawler.getGlobalEventSender().addListener(new LinkCrawlerListener() {
 
-            public void run() {
-                LinkCrawler.getGlobalEventSender().addListener(new LinkCrawlerListener() {
+            public void onLinkCrawlerEvent(LinkCrawlerEvent event) {
+                updateLinkGrabberIndicator();
+            }
 
-                    public void onLinkCrawlerEvent(LinkCrawlerEvent event) {
-                        updateLinkGrabberIndicator();
-                    }
+        });
+        LinkChecker.getEventSender().addListener(new LinkCheckerListener() {
 
-                });
-                LinkChecker.getEventSender().addListener(new LinkCheckerListener() {
-
-                    public void onLinkCheckerEvent(LinkCheckerEvent event) {
-                        updateLinkGrabberIndicator();
-                    }
-
-                });
-
+            public void onLinkCheckerEvent(LinkCheckerEvent event) {
+                updateLinkGrabberIndicator();
             }
 
         });
@@ -219,8 +204,6 @@ public class StatusBarImpl extends JPanel implements DownloadWatchdogListener {
         // "\"></img>Extracting Archives: 85%</html>");
 
         statusLabel.setHorizontalAlignment(SwingConstants.RIGHT);
-
-        redoLayout();
 
         updateDelayer = new DelayedRunnable(ToolTipController.EXECUTER, 1000, 2000) {
             @Override
@@ -239,6 +222,8 @@ public class StatusBarImpl extends JPanel implements DownloadWatchdogListener {
                 };
             }
         };
+        redoLayout();
+
         // add(extractIndicator, "height 22!,width 22!,hidemode 2");
     }
 

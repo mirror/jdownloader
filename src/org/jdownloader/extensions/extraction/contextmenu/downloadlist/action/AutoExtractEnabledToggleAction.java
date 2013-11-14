@@ -6,10 +6,10 @@ import org.appwork.utils.Application;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.jdownloader.extensions.extraction.Archive;
 import org.jdownloader.extensions.extraction.BooleanStatus;
-import org.jdownloader.extensions.extraction.contextmenu.downloadlist.AbstractExtractionAction;
+import org.jdownloader.extensions.extraction.contextmenu.downloadlist.AbstractExtractionContextAction;
 import org.jdownloader.gui.IconKey;
 
-public class AutoExtractEnabledToggleAction extends AbstractExtractionAction {
+public class AutoExtractEnabledToggleAction extends AbstractExtractionContextAction {
 
     public AutoExtractEnabledToggleAction() {
         super();

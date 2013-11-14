@@ -21,6 +21,7 @@ import org.jdownloader.extensions.extraction.Archive;
 import org.jdownloader.extensions.extraction.ExtractionConfig;
 import org.jdownloader.extensions.extraction.ExtractionController;
 import org.jdownloader.extensions.extraction.ExtractionControllerConstants;
+import org.jdownloader.extensions.extraction.Item;
 
 public class Seven7ExtractCallback implements IArchiveExtractCallback, ICryptoGetTextPassword {
 
@@ -30,7 +31,7 @@ public class Seven7ExtractCallback implements IArchiveExtractCallback, ICryptoGe
     protected final String                   password;
     protected long                           progressInBytes = 0;
     protected final Archive                  archive;
-    protected final double                   size;
+    protected final long                     size2;
     protected final ExtractionConfig         config;
     protected int                            lastIndex       = -1;
     protected final ExtractOperationResult[] results;
@@ -54,7 +55,7 @@ public class Seven7ExtractCallback implements IArchiveExtractCallback, ICryptoGe
         this.config = config;
         this.multi = multi;
         logger = multi.getLogger();
-        size = archive.getContentView().getTotalSize() / 100.0d;
+        size2 = archive.getContentView().getTotalSize();
     }
 
     @Override
@@ -214,7 +215,8 @@ public class Seven7ExtractCallback implements IArchiveExtractCallback, ICryptoGe
             items[index] = item;
             try {
                 AtomicBoolean skipped = new AtomicBoolean(false);
-                File extractTo = multi.getExtractFilePath(item, ctrl, skipped, size);
+                final File extractTo = multi.getExtractFilePath(item, ctrl, skipped, size2);
+                ctrl.setCurrentActiveItem(new Item(path, extractTo));
                 if (skipped.get()) { return new ISequentialOutStream() {
 
                     @Override
@@ -227,16 +229,18 @@ public class Seven7ExtractCallback implements IArchiveExtractCallback, ICryptoGe
                     throw new SevenZipException("Extraction error");
                 }
                 archive.addExtractedFiles(extractTo);
+
                 ret = new MultiCallback(extractTo, ctrl, config, false) {
 
                     @Override
                     public int write(byte[] data) throws SevenZipException {
                         try {
                             if (ctrl.gotKilled()) throw new SevenZipException("Extraction has been aborted");
+
                             return super.write(data);
                         } finally {
                             progressInBytes += data.length;
-                            ctrl.setProgress(progressInBytes / size);
+                            ctrl.setProgress(progressInBytes / (double) size2);
                         }
                     }
 

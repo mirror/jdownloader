@@ -7,14 +7,14 @@ import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.jdownloader.extensions.extraction.Archive;
 import org.jdownloader.extensions.extraction.DummyArchive;
-import org.jdownloader.extensions.extraction.contextmenu.downloadlist.AbstractExtractionAction;
+import org.jdownloader.extensions.extraction.contextmenu.downloadlist.AbstractExtractionContextAction;
 import org.jdownloader.extensions.extraction.contextmenu.downloadlist.ArchiveValidator;
 import org.jdownloader.extensions.extraction.gui.DummyArchiveDialog;
 import org.jdownloader.extensions.extraction.multi.CheckException;
 import org.jdownloader.extensions.extraction.translate.T;
 import org.jdownloader.gui.IconKey;
 
-public class ValidateArchivesAction extends AbstractExtractionAction {
+public class ValidateArchivesAction extends AbstractExtractionContextAction {
 
     public ValidateArchivesAction() {
         super();

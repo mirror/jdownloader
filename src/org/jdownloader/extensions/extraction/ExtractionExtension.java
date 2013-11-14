@@ -74,6 +74,7 @@ import org.jdownloader.extensions.extraction.contextmenu.downloadlist.action.Set
 import org.jdownloader.extensions.extraction.contextmenu.downloadlist.action.SetExtractToAction;
 import org.jdownloader.extensions.extraction.contextmenu.downloadlist.action.ShowExtractionResultAction;
 import org.jdownloader.extensions.extraction.contextmenu.downloadlist.action.ValidateArchivesAction;
+import org.jdownloader.extensions.extraction.gui.bubble.ExtractionBubbleSupport;
 import org.jdownloader.extensions.extraction.gui.config.ExtractionConfigPanel;
 import org.jdownloader.extensions.extraction.multi.ArchiveException;
 import org.jdownloader.extensions.extraction.multi.CheckException;
@@ -86,6 +87,7 @@ import org.jdownloader.extensions.extraction.translate.T;
 import org.jdownloader.gui.mainmenu.MenuManagerMainmenu;
 import org.jdownloader.gui.mainmenu.container.ExtensionsMenuContainer;
 import org.jdownloader.gui.mainmenu.container.OptionalContainer;
+import org.jdownloader.gui.notify.BubbleNotify;
 import org.jdownloader.gui.toolbar.MenuManagerMainToolbar;
 import org.jdownloader.gui.views.downloads.context.submenu.MoreMenuContainer;
 import org.jdownloader.gui.views.downloads.contextmenumanager.MenuManagerDownloadTableContext;
@@ -462,6 +464,9 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
                     protected void runInEDT() {
                         if (statusbarListener != null) statusbarListener.cleanup();
                         eventSender.addListener(statusbarListener = new ExtractionListenerIcon(ExtractionExtension.this));
+                        ExtractionBubbleSupport bubbleSupport = new ExtractionBubbleSupport(T._.bubbletype(), CFG_EXTRACTION.BUBBLE_ENABLED_IF_ARCHIVE_EXTRACTION_IS_IN_PROGRESS);
+                        eventSender.addListener(bubbleSupport);
+                        BubbleNotify.getInstance().registerType(bubbleSupport);
                     }
                 };
             }

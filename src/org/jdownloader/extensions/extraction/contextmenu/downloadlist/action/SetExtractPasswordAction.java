@@ -8,11 +8,11 @@ import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.jdownloader.extensions.extraction.Archive;
-import org.jdownloader.extensions.extraction.contextmenu.downloadlist.AbstractExtractionAction;
+import org.jdownloader.extensions.extraction.contextmenu.downloadlist.AbstractExtractionContextAction;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.images.NewTheme;
 
-public class SetExtractPasswordAction extends AbstractExtractionAction {
+public class SetExtractPasswordAction extends AbstractExtractionContextAction {
 
     public SetExtractPasswordAction() {
         super();

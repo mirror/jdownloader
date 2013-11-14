@@ -41,6 +41,7 @@ import org.jdownloader.extensions.extraction.DummyArchive;
 import org.jdownloader.extensions.extraction.ExtractionController;
 import org.jdownloader.extensions.extraction.ExtractionControllerConstants;
 import org.jdownloader.extensions.extraction.IExtraction;
+import org.jdownloader.extensions.extraction.Item;
 import org.jdownloader.extensions.extraction.content.PackedFile;
 
 /**
@@ -122,6 +123,7 @@ public class XtreamSplit extends IExtraction {
             archive.addExtractedFiles(file);
 
             out = new BufferedOutputStream(new FileOutputStream(file));
+            controller.setCurrentActiveItem(new Item(file.getName(), file));
             MessageDigest md = null;
 
             for (int i = 0; i < files.size(); i++) {

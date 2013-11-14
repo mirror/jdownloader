@@ -46,6 +46,7 @@ import org.appwork.txtresource.TranslationFactory;
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging.Log;
+import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.swing.EDTHelper;
 import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.dialog.ComboBoxDialog;
@@ -101,10 +102,11 @@ public class TranslatorGui extends AddonPanel<TranslatorExtension> implements Li
     private MigPanel            menuPanel2;
     private QuickEdit           qe;
     private SearchField         search;
+    private LogSource           logger;
 
     public TranslatorGui(TranslatorExtension plg) {
         super(plg);
-
+        logger = LogController.getInstance().getLogger(TranslatorExtension.class.getName());
         this.panel = new SwitchPanel(new MigLayout("ins 0,wrap 1", "[grow,fill]", "[]2[]2[grow,fill][][grow,fill][]")) {
 
             @Override
@@ -354,7 +356,7 @@ public class TranslatorGui extends AddonPanel<TranslatorExtension> implements Li
 
                         @Override
                         public Dimension getPreferredSize() {
-                            return new Dimension(200, 100);
+                            return new Dimension(400, 100);
                         }
 
                     });
@@ -422,7 +424,7 @@ public class TranslatorGui extends AddonPanel<TranslatorExtension> implements Li
 
                         @Override
                         public Dimension getPreferredSize() {
-                            return new Dimension(200, 100);
+                            return new Dimension(400, 100);
                         }
 
                     });
@@ -444,7 +446,7 @@ public class TranslatorGui extends AddonPanel<TranslatorExtension> implements Li
             @Override
             public void actionPerformed(ActionEvent e) {
                 isWizard = true;
-
+                logger.info("Started Wizard");
                 new Thread("Translator Wizard") {
                     public void run() {
                         try {
@@ -457,6 +459,8 @@ public class TranslatorGui extends AddonPanel<TranslatorExtension> implements Li
                                         if (value.isOK()) continue;
 
                                         if (stopEditing) break;
+
+                                        logger.info("Next entry: " + value.getFullKey());
                                         String ret = "<style>td.a{font-style:italic;}</style><table valign=top>";
                                         ret += "<tr><td class=a>Key:</td><td>" + value.getCategory() + "." + value.getKey() + "</td></tr>";
 
@@ -497,7 +501,7 @@ public class TranslatorGui extends AddonPanel<TranslatorExtension> implements Li
                                         // null);
                                         try {
                                             while (true) {
-
+                                                logger.info("Try");
                                                 if (value.getDescription() != null) {
                                                     Dialog.I().showMessageDialog("IMPORTANT!!!\r\n\r\n" + value.getCategory() + "." + value.getKey() + "\r\n" + value.getDescription());
                                                 }
@@ -574,11 +578,14 @@ public class TranslatorGui extends AddonPanel<TranslatorExtension> implements Li
                                                 String newTranslation = Dialog.getInstance().showDialog(d);
 
                                                 if (newTranslation == null) {
+                                                    logger.info("User pressed Skip");
                                                     // Skip
                                                     break;
                                                 }
+                                                logger.info("new Translation: " + newTranslation);
                                                 value.setTranslation(newTranslation);
                                                 if (value.isOK() || value.isDefault()) break;
+                                                logger.info("next");
 
                                             }
                                         } catch (DialogClosedException e1) {
@@ -656,7 +663,7 @@ public class TranslatorGui extends AddonPanel<TranslatorExtension> implements Li
 
                             @Override
                             public Dimension getPreferredSize() {
-                                return new Dimension(200, 100);
+                                return new Dimension(400, 100);
                             }
 
                         });
@@ -829,7 +836,7 @@ public class TranslatorGui extends AddonPanel<TranslatorExtension> implements Li
 
                 @Override
                 public Dimension getPreferredSize() {
-                    return new Dimension(200, 100);
+                    return new Dimension(400, 100);
                 }
 
             });
@@ -907,7 +914,7 @@ public class TranslatorGui extends AddonPanel<TranslatorExtension> implements Li
 
                 @Override
                 public Dimension getPreferredSize() {
-                    return new Dimension(200, 100);
+                    return new Dimension(400, 100);
                 }
 
             });

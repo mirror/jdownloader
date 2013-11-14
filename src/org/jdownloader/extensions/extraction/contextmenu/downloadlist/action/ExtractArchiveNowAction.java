@@ -4,10 +4,10 @@ import java.awt.event.ActionEvent;
 
 import org.appwork.utils.swing.dialog.Dialog;
 import org.jdownloader.extensions.extraction.Archive;
-import org.jdownloader.extensions.extraction.contextmenu.downloadlist.AbstractExtractionAction;
+import org.jdownloader.extensions.extraction.contextmenu.downloadlist.AbstractExtractionContextAction;
 import org.jdownloader.gui.IconKey;
 
-public class ExtractArchiveNowAction extends AbstractExtractionAction {
+public class ExtractArchiveNowAction extends AbstractExtractionContextAction {
 
     /**
  * 

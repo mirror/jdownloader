@@ -11,8 +11,8 @@ import org.jdownloader.images.NewTheme;
 
 public class AbstractBubbleContentPanel extends MigPanel {
 
-    private IconedProcessIndicator progressCircle;
-    protected long                 startTime;
+    protected IconedProcessIndicator progressCircle;
+    protected long                   startTime;
 
     private String clean(String label) {
         label = label.trim();
@@ -34,6 +34,13 @@ public class AbstractBubbleContentPanel extends MigPanel {
         public void setVisible(boolean b) {
             lbl.setVisible(b);
             value.setVisible(b);
+        }
+
+        public void setTooltip(String filePath) {
+
+            lbl.setToolTipText(filePath);
+            value.setToolTipText(filePath);
+
         }
 
     }

@@ -6,11 +6,11 @@ import java.io.File;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.jdownloader.extensions.extraction.Archive;
-import org.jdownloader.extensions.extraction.contextmenu.downloadlist.AbstractExtractionAction;
+import org.jdownloader.extensions.extraction.contextmenu.downloadlist.AbstractExtractionContextAction;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.views.DownloadFolderChooserDialog;
 
-public class SetExtractToAction extends AbstractExtractionAction {
+public class SetExtractToAction extends AbstractExtractionContextAction {
 
     public SetExtractToAction() {
         super();

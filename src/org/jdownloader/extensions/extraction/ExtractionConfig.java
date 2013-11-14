@@ -170,4 +170,11 @@ public interface ExtractionConfig extends ExtensionConfigInterface {
     boolean isWriteExtractionLogEnabled();
 
     void setWriteExtractionLogEnabled(boolean b);
+
+    @DefaultBooleanValue(true)
+    @AboutConfig
+    @DescriptionForConfigEntry("Show Bubbles for Extration Jobs")
+    boolean isBubbleEnabledIfArchiveExtractionIsInProgress();
+
+    void setBubbleEnabledIfArchiveExtractionIsInProgress(boolean b);
 }

@@ -255,6 +255,9 @@ public class ExtractorProgress extends IconedProcessIndicator {
             progress /= entries.size();
         }
         setValue(progress);
+        if (!isIndeterminate() && progress <= 0) {
+            setIndeterminate(true);
+        }
 
         if (pu.isVisible()) {
 

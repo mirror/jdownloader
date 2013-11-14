@@ -16,12 +16,12 @@ import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.jdownloader.extensions.extraction.Archive;
 import org.jdownloader.extensions.extraction.CFG_EXTRACTION;
-import org.jdownloader.extensions.extraction.contextmenu.downloadlist.AbstractExtractionAction;
+import org.jdownloader.extensions.extraction.contextmenu.downloadlist.AbstractExtractionContextAction;
 import org.jdownloader.extensions.extraction.translate.T;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
 
-public class ShowExtractionResultAction extends AbstractExtractionAction implements GenericConfigEventListener<Boolean> {
+public class ShowExtractionResultAction extends AbstractExtractionContextAction implements GenericConfigEventListener<Boolean> {
 
     /**
  * 

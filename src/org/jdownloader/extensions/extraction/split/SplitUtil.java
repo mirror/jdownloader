@@ -39,6 +39,7 @@ import org.jdownloader.extensions.extraction.ExtractionConfig;
 import org.jdownloader.extensions.extraction.ExtractionController;
 import org.jdownloader.extensions.extraction.ExtractionControllerConstants;
 import org.jdownloader.extensions.extraction.FileSignatures;
+import org.jdownloader.extensions.extraction.Item;
 import org.jdownloader.extensions.extraction.content.PackedFile;
 
 /**
@@ -172,6 +173,7 @@ class SplitUtil {
         }
         controller.getArchiv().getContentView().add(new PackedFile(false, archive.getName(), size));
         controller.setProgress(0.0d);
+        controller.setCurrentActiveItem(new Item(file.getName(), file));
         Collections.sort(files);
         long progressInBytes = 0l;
         BufferedOutputStream bos = null;

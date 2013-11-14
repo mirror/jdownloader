@@ -62,6 +62,7 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> {
     private boolean                successful            = false;
     private ExtractLogFileWriter   crashLog;
     private boolean                askForUnknownPassword = false;
+    private Item                   currentActiveItem;
 
     public boolean isSuccessful() {
         return successful;
@@ -489,6 +490,17 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> {
      */
     public void setAskForUnknownPassword(boolean askForUnknownPassword) {
         this.askForUnknownPassword = askForUnknownPassword;
+    }
+
+    public void setCurrentActiveItem(Item item) {
+        if (currentActiveItem == item) return;
+        if (currentActiveItem != null && item != null && StringUtils.equals(currentActiveItem.getPath(), item.getPath())) return;
+        this.currentActiveItem = item;
+        fireEvent(ExtractionEvent.Type.ACTIVE_ITEM);
+    }
+
+    public Item getCurrentActiveItem() {
+        return currentActiveItem;
     }
 
 }

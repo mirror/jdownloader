@@ -15,11 +15,11 @@ import org.jdownloader.gui.views.downloads.table.DownloadsTable;
 import org.jdownloader.gui.views.linkgrabber.LinkGrabberTable;
 import org.jdownloader.gui.views.linkgrabber.LinkGrabberView;
 
-public abstract class AbstractExtractionAction extends AbstractExtensionAction<ExtractionExtension> {
+public abstract class AbstractExtractionContextAction extends AbstractExtensionAction<ExtractionExtension> {
 
     protected List<Archive> archives;
 
-    public AbstractExtractionAction() {
+    public AbstractExtractionContextAction() {
         super();
 
     }
@@ -27,6 +27,10 @@ public abstract class AbstractExtractionAction extends AbstractExtensionAction<E
     @Override
     public void requestUpdate(Object requestor) {
         super.requestUpdate(requestor);
+        requestUpdateSelection();
+    }
+
+    protected void requestUpdateSelection() {
         setEnabled(false);
 
         if (getSelection() != null && !getSelection().isEmpty()) {

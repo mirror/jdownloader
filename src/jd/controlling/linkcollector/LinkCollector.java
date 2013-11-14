@@ -1660,7 +1660,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
             if (containsOnline) {
                 // only ask for online links
                 try {
-                    Dialog.getInstance().showConfirmDialog(0, _GUI._.literally_are_you_sure(), _GUI._.GenericDeleteFromDownloadlistAction_actionPerformed_ask_(string), null, _GUI._.literally_yes(), _GUI._.literall_no());
+                    Dialog.getInstance().showConfirmDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN | UIOManager.LOGIC_DONT_SHOW_AGAIN_IGNORES_CANCEL, _GUI._.literally_are_you_sure(), _GUI._.GenericDeleteFromDownloadlistAction_actionPerformed_ask_(string), null, _GUI._.literally_yes(), _GUI._.literall_no());
                     LinkCollector.getInstance().removeChildren(nodesToDelete);
                 } catch (DialogClosedException e1) {
                     e1.printStackTrace();

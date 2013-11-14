@@ -25,6 +25,7 @@ import org.appwork.utils.Application;
 import org.jdownloader.extensions.extraction.content.ContentView;
 import org.jdownloader.extensions.extraction.content.PackedFile;
 import org.jdownloader.extensions.extraction.multi.ArchiveType;
+import org.jdownloader.gui.views.ArraySet;
 
 /**
  * Contains information about the archivefile.
@@ -119,7 +120,7 @@ public class Archive {
         factory = link;
         archives = new ArrayList<ArchiveFile>();
         crcError = new ArrayList<ArchiveFile>();
-        extractedFiles = new ArrayList<File>();
+        extractedFiles = new ArraySet<File>();
         contents = new ContentView();
     }
 
@@ -217,8 +218,11 @@ public class Archive {
     }
 
     public void addExtractedFiles(File file) {
-        this.extractedFiles.add(file);
-        extracted += file.length();
+
+        if (this.extractedFiles.add(file)) {
+            extracted += file.length();
+        }
+
     }
 
     public java.util.List<File> getExtractedFiles() {

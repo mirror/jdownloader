@@ -3,9 +3,11 @@ package org.jdownloader.gui.notify;
 import java.awt.Point;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
+import java.util.List;
 
 import javax.swing.JFrame;
 
@@ -40,6 +42,7 @@ import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.notify.gui.AbstractNotifyWindow;
 import org.jdownloader.gui.notify.gui.Balloner;
 import org.jdownloader.gui.notify.gui.BubbleNotifyConfig.Anchor;
+import org.jdownloader.gui.notify.gui.BubbleNotifyConfigPanel;
 import org.jdownloader.gui.notify.gui.CFG_BUBBLE;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
@@ -139,6 +142,18 @@ public class BubbleNotify implements UpdaterListener, ReconnecterListener, Chall
         UpdateController.getInstance().getEventSender().addListener(this, true);
 
         Reconnecter.getInstance().getEventSender().addListener(this, true);
+
+        synchronized (types) {
+
+            types.add(new BubbleType(_GUI._.plugins_optional_JDLightTray_ballon_newlinks3(), CFG_BUBBLE.BUBBLE_NOTIFY_ON_NEW_LINKGRABBER_LINKS_ENABLED));
+            types.add(new BubbleType(_GUI._.plugins_optional_JDLightTray_ballon_updates2(), CFG_BUBBLE.BUBBLE_NOTIFY_ON_UPDATE_AVAILABLE_ENABLED));
+            types.add(new BubbleType(_GUI._.plugins_optional_JDLightTray_ballon_reconnectstart3(), CFG_BUBBLE.BUBBLE_NOTIFY_ON_RECONNECT_START_ENABLED));
+
+            types.add(new BubbleType(_GUI._.plugins_optional_JDLightTray_ballon_captcha2(), CFG_BUBBLE.BUBBLE_NOTIFY_ON_CAPTCHA_IN_BACKGROUND_ENABLED));
+            types.add(new BubbleType(_GUI._.plugins_optional_JDLightTray_ballon_startstopdownloads2(), CFG_BUBBLE.BUBBLE_NOTIFY_START_STOP_DOWNLOADS_ENABLED));
+            types.add(new BubbleType(_GUI._.plugins_optional_JDLightTray_ballon_startpausestop2(), CFG_BUBBLE.BUBBLE_NOTIFY_START_PAUSE_STOP_ENABLED));
+
+        }
     }
 
     private void initLinkCollectorListener() {
@@ -492,5 +507,36 @@ public class BubbleNotify implements UpdaterListener, ReconnecterListener, Chall
                 show(no);
             }
         };
+    }
+
+    public void registerType(BubbleType type) {
+        synchronized (types) {
+            types.add(type);
+        }
+        new EDTRunner() {
+
+            @Override
+            protected void runInEDT() {
+                if (configPanel != null) {
+                    configPanel.updateTypes(getTypes());
+                }
+            }
+        };
+    }
+
+    private List<BubbleType>        types = new ArrayList<BubbleType>();
+    private BubbleNotifyConfigPanel configPanel;
+
+    public List<BubbleType> getTypes() {
+        synchronized (types) {
+            return new ArrayList<BubbleType>(types);
+        }
+    }
+
+    public BubbleNotifyConfigPanel getConfigPanel() {
+        if (configPanel == null) {
+            configPanel = new BubbleNotifyConfigPanel();
+        }
+        return configPanel;
     }
 }
