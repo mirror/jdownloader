@@ -1,3 +1,6 @@
 LogAction_actionPerformed_wait_=Por favor espere...
+LogModel_getStringValue_between_=Entre %s1 y %s2
 LogModel_initColumns_time_=Tiempo
 LogModel_initColumns_x_=Comprobar
+LogTable_onContextMenu_disable_=Deseleccionar
+LogTable_onContextMenu_enable_=Seleccionar
