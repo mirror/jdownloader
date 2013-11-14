@@ -1,5 +1,13 @@
-sys_warning_loguploadfailed=Falló el envio del archivo de registro!
-jd_plugins_optional_jdchat_newmessage=Nuevo mensage de %s1: <hr> %s2
-plugins_optional_jdchat_enternick=Nombre
+ChatExtensionGuiToggleAction_deselected=Abrir Chat
+ChatExtensionGuiToggleAction_deselected_tt=Abrir la Pestaña de Chat
+ChatExtensionGuiToggleAction_selected=Cerrar Chat
+ChatExtensionGuiToggleAction_selected_tt=Cerrar la Pestaña de Chat
+gui_tab_title=%s1 Canal
+jd_plugins_optional_jdchat_JDChatView_title=JD Char de Soporte
+jd_plugins_optional_jdchat_JDChatView_tooltip=JD Chat de Soporte
+jd_plugins_optional_jdchat_JDChat_topic_default=Cargando Mensaje del día
+jd_plugins_optional_jdchat_JDChat_topic_tooltip=Mensaje del día
+jd_plugins_optional_jdchat_closeTab=Cerrar Pestaña
 jd_plugins_optional_jdchat_jdchat=JD Chat de Soporte
-plugin_optional_jdchat_getlog=%s1 necesita un log para resolver tu problema. ¿Aceptas mandarle el log?
+plugins_optional_jdchat_enternick=Nombre
+settings_nick=Tu nombre
