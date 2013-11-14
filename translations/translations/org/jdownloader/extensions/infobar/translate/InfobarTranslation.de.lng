@@ -1,6 +1,13 @@
+EnableInfoBarGuiAction=InfoBar zeigen
+InfoBarGuiToggleAction_deselected=InfoBar öffnen
+InfoBarGuiToggleAction_deselected_tt=Die InfoBar öffnen
+InfoBarGuiToggleAction_selected=InfoBar schließen
+InfoBarGuiToggleAction_selected_tt=Die InfoBar schließen
 jd_plugins_optional_infobar_InfoDialog_help=Drag'N'Drop Bereich
 jd_plugins_optional_infobar_InfoDialog_help_tooltip2=Ziehe URLs, Hyperlinks oder DLCs hier rein!
 jd_plugins_optional_infobar_InfoDialog_hideWindow=Infoleiste verstecken
 jd_plugins_optional_infobar_docking=Andocken an den Rändern aktivieren
+jd_plugins_optional_infobar_dropLocation2=Drag'N'Drop Bereich aktivieren
 jd_plugins_optional_infobar_jdinfobar=Info Fenster
+jd_plugins_optional_infobar_jdinfobar_description=Ein kleines Fenster das Downloadinformationen und einen Drag'N'Drop Bereich für Links, Urls oder Linkcontainer bereitstellt.
 jd_plugins_optional_infobar_opacity=Transparenz [%]

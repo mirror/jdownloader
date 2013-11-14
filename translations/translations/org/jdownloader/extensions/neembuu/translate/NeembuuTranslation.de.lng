@@ -1,1 +1,10 @@
+browse=Durchsuchen
+description=Daten streamen - Während des Downloads ansehen
+filePanel_graph_downloadSpeed=Download Geschwindigkeit
+filePanel_graph_requestSpeed=Angefragte Geschwindigkeit
 filePanel_graph_yaxis=Geschwindigkeit (KiB/s)
+filePanel_killConnection=Verbindung trennen
+filePanel_regionRequestedTitle=Region angefragt
+title=Neembuu
+troubleHandler_pendingRequests_minutes=Minute(n)
+vfsNotWorking=Das virtuelle Dateisystem funktioniert nicht
