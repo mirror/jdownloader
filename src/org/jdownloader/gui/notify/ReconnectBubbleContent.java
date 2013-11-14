@@ -20,6 +20,7 @@ public class ReconnectBubbleContent extends AbstractBubbleContentPanel {
 
     public ReconnectBubbleContent() {
         super("auto-reconnect");
+        startTime = System.currentTimeMillis();
         // super("ins 0,wrap 2", "[][grow,fill]", "[grow,fill]");
 
         // , _GUI._.balloon_reconnect_start_msg(), NewTheme.I().getIcon("reconnect", 32)
