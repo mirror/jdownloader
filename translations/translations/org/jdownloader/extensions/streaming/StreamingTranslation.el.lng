@@ -1,10 +1,10 @@
-AddToLibraryAction=Προσθήκη Μέσων στη Βιβλιοθήκη
+﻿AddToLibraryAction=Προσθήκη Μέσων στη Βιβλιοθήκη
 SettingsSidebarModel_audio=Ήχοι
 SettingsSidebarModel_images=Εικόνες
 SettingsSidebarModel_video=Βίντεο
 add_files_action=Προσθήκη Μέσων
 categories=Κατηγορίες
-enter_password=Εισάγετε τον Κωδικό για άνοιγμα του %s1
+enter_password=Εισαγάγετε τον Κωδικό για άνοιγμα του %s1
 enter_passwordfor=Παρακαλούμε εισαγάγετε τους Κωδικούς. Δοκιμάστε έναν από αυτούς: %s1
 enter_passwordfor2=Παρακαλούμε εισαγάγετε τους Κωδικούς
 gui_title=Ροή πολυμέσων
