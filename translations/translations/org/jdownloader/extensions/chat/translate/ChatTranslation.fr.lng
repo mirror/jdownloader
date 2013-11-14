@@ -1,3 +1,7 @@
+ChatExtensionGuiToggleAction_deselected=Ouvrir le Chat
+ChatExtensionGuiToggleAction_deselected_tt=Ouvrir l'onglet du Chat
+ChatExtensionGuiToggleAction_selected=Fermer le Chat
+ChatExtensionGuiToggleAction_selected_tt=Fermer l'onglet du Chat
 description=Contactez les développeurs et les personnes du support de JDownloader
 gui_tab_title=Canal %s1
 jd_plugins_optional_jdchat_JDChatView_title=Conversation avec le support JD

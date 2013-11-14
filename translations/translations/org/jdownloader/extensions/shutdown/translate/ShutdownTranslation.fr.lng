@@ -23,3 +23,5 @@ jd_plugins_optional_jdshutdown=JD Mise hors tension
 jd_plugins_optional_jdshutdown_description=Extinction, Mise en veille ou Hibernation automatique à la fin des téléchargements
 lit_shutdownn=Arrêt
 show_admin=Les droits Administrateur sont nécessaires pour modifier le mode Mise en veille de JDownloader
+shutdown_toggle_action_disabled2=Arrêter après les Téléchargements
+shutdown_toggle_action_enabled2=Arrêter après les téléchargements

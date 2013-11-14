@@ -1,2 +1,6 @@
 Translator=Traducteur
+TranslatorExtensionGuiToggleAction_deselected=Ouvrir le traducteur
+TranslatorExtensionGuiToggleAction_deselected_tt=Ouvrir l'onglet du traducteur
+TranslatorExtensionGuiToggleAction_selected=Fermer le traducteur
+TranslatorExtensionGuiToggleAction_selected_tt=Fermer l'onglet du traducteur
 description=Cette extension peut être utilisée pour éditer les traductions de JDownloader. Vous avez besoin d'un compte développeur pour l'utiliser
