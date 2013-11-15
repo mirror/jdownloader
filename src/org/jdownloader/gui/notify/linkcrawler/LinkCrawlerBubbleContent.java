@@ -85,7 +85,7 @@ public class LinkCrawlerBubbleContent extends AbstractBubbleContentPanel {
     }
 
     public void update() {
-        duration.setText(TimeFormatter.formatMilliSeconds(System.currentTimeMillis() - startTime, 0));
+        if (duration != null) duration.setText(TimeFormatter.formatMilliSeconds(System.currentTimeMillis() - startTime, 0));
     }
 
     public void update(JobLinkCrawler jlc) {
