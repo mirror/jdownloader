@@ -71,7 +71,7 @@ import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.os.CrossSystem;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ex-load.com" }, urls = { "https?://(www\\.)?ex-load\\.com/((vid)?embed-)?[a-z0-9]{12}" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ex-load.com" }, urls = { "https?://(www\\.)?ex-load\\.com/((vid)?embed-)?[a-z0-9]{12}" }, flags = { 2 })
 @SuppressWarnings("deprecation")
 public class ExLoadCom extends PluginForHost {
 
@@ -109,14 +109,14 @@ public class ExLoadCom extends PluginForHost {
 
     private void setConstants(final Account account) {
         if (account != null && account.getBooleanProperty("free")) {
-            // free account
+            // free account untested
             chunks = 1;
             resumes = true;
             acctype = "Free Account";
             directlinkproperty = "freelink2";
         } else if (account != null && !account.getBooleanProperty("free")) {
-            // prem account
-            chunks = 0;
+            // prem account tested
+            chunks = 1;
             resumes = true;
             acctype = "Premium Account";
             directlinkproperty = "premlink";
@@ -166,7 +166,7 @@ public class ExLoadCom extends PluginForHost {
     public ExLoadCom(PluginWrapper wrapper) {
         super(wrapper);
         setConfigElements();
-        // this.enablePremium(COOKIE_HOST + "/premium.html");
+        this.enablePremium(COOKIE_HOST + "/premium.html");
     }
 
     /**
@@ -770,7 +770,7 @@ public class ExLoadCom extends PluginForHost {
             } else {
                 expire = expireD;
             }
-            account.setProperty("totalMaxSim", 20);
+            account.setProperty("totalMaxSim", 10);
             ai.setValidUntil(expire);
             ai.setStatus("Premium User");
         }

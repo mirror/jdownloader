@@ -116,7 +116,7 @@ public class FileparadoxIn extends PluginForHost {
             directlinkproperty = "freelink2";
         } else if (account != null && !account.getBooleanProperty("free")) {
             // prem account
-            chunks = -10; // tested
+            chunks = 1; // tested
             resumes = true;
             acctype = "Premium Account";
             directlinkproperty = "premlink";
@@ -770,7 +770,7 @@ public class FileparadoxIn extends PluginForHost {
             } else {
                 expire = expireD;
             }
-            account.setProperty("totalMaxSim", 20);
+            account.setProperty("totalMaxSim", 10);
             ai.setValidUntil(expire);
             ai.setStatus("Premium User");
         }

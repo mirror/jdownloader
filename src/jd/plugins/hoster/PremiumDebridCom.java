@@ -232,7 +232,6 @@ public class PremiumDebridCom extends PluginForHost {
         String dllink = checkDirectLink(link, "premiumdebridcomdirectlink");
         if (dllink == null) {
             showMessage(link, "Phase 1/2: Generating downloadlink!");
-            br.setCustomCharset("utf-8");
             dllink = generateDllinkNew(link, acc);
             if (dllink == null) {
                 int timesFailed = link.getIntegerProperty("timesfailedpremiumdebridcom_dllinknull", 0);

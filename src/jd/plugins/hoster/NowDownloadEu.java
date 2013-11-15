@@ -175,6 +175,14 @@ public class NowDownloadEu extends PluginForHost {
             br2.getPage(MAINPAGE.string + tokenPage);
             sleep(wait * 1001l, downloadLink);
             br.getPage(MAINPAGE.string + continuePage);
+            if (br.containsHTML(">You need Premium Membership to download this file")) {
+                try {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+                } catch (final Throwable e) {
+                    if (e instanceof PluginException) throw (PluginException) e;
+                }
+                throw new PluginException(LinkStatus.ERROR_FATAL, "This file can only be downloaded by premium users");
+            }
             dllink = getDllink();
             if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             String filename = new Regex(dllink, ".+/[^_]+_(.+)").getMatch(0);

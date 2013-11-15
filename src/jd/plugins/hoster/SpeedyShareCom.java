@@ -215,13 +215,22 @@ public class SpeedyShareCom extends PluginForHost {
                 }
                 br.setFollowRedirects(true);
                 br.postPage("https://www.speedyshare.com/login.php", "redir=%2user.php&remember=on&login=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass()));
+                final String lang = System.getProperty("user.language");
                 if (br.containsHTML("<b>Error occured</b>") && (br.containsHTML(">Your login information has been used from several networks recently"))) {
-                    // account sharing ?? can happen when devs use the account also!!
-                    logger.warning("Login failed, hoster determined you've logged in from too many IP subnets.");
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    if ("de".equalsIgnoreCase(lang)) {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nLogin fehlgeschlagen: Account wegen Loginversuchen\r\nüber zu viele verschiedene IPs temporär gesperrt!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    } else {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "Login failed, host determined you've logged in from too many IP subnets.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    }
                 }
                 if (br.getURL().endsWith("/user.php")) br.getPage("/user.php");
-                if (br.getCookie(MAINPAGE, "spl") == null || !br.containsHTML("<td>Account type:</td><td><b style=\\'color: green\\'>Premium</b>")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                if (br.getCookie(MAINPAGE, "spl") == null || !br.containsHTML("<td>Account type:</td><td><b style=\\'color: green\\'>Premium</b>")) {
+                    if ("de".equalsIgnoreCase(lang)) {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    } else {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    }
+                }
                 // Save cookies
                 final HashMap<String, String> cookies = new HashMap<String, String>();
                 final Cookies add = this.br.getCookies(MAINPAGE);
@@ -239,14 +248,14 @@ public class SpeedyShareCom extends PluginForHost {
     }
 
     @Override
-    public AccountInfo fetchAccountInfo(Account account) throws Exception {
-        AccountInfo ai = new AccountInfo();
+    public AccountInfo fetchAccountInfo(final Account account) throws Exception {
+        final AccountInfo ai = new AccountInfo();
         try {
             login(account, true);
         } catch (PluginException e) {
             account.setValid(false);
             ai.setProperty("multiHostSupport", Property.NULL);
-            return ai;
+            throw e;
         }
         final String expire = br.getRegex("<td>Next payment:</td><td>([^<>\"]*?)</td>").getMatch(0);
         if (expire != null) {

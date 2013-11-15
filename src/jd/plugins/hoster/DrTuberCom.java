@@ -142,7 +142,7 @@ public class DrTuberCom extends PluginForHost {
         if (continueLink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
 
         br.getPage(continueLink);
-        DLLINK = br.getRegex("<video_file>(http://.*?)</video_file>").getMatch(0);
+        DLLINK = br.getRegex("<video_file>(<\\!\\[CDATA\\[)?(http://.*?)(\\]\\]>)?</video_file>").getMatch(1);
         if (filename == null || DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         DLLINK = Encoding.htmlDecode(DLLINK.trim());
         filename = filename.trim();

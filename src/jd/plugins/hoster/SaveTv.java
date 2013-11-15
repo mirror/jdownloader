@@ -168,7 +168,12 @@ public class SaveTv extends PluginForHost {
         String genre = null;
         String producecountry = null;
         String produceyear = null;
-        if (SESSIONID != null) {
+        if (SESSIONID != null || this.getPluginConfig().getBooleanProperty(USEAPI, false)) {
+            if (SESSIONID == null) login(this.br, aa, true);
+            // doSoapRequest("http://tempuri.org/IVideoArchive/GetVideoArchiveDelta",
+            // "<s:Envelope xmlns:s=\"http://schemas.xmlsoap.org/soap/envelope/\"><s:Body><GetVideoArchiveDelta xmlns=\"http://tempuri.org/\"><sessionId>"
+            // + SESSIONID +
+            // "</sessionId><changesSince>2013-11-11T16:59:22.0873816</changesSince><from>0</from><count>0</count></GetVideoArchiveDelta></s:Body></s:Envelope>");
             br.getHeaders().put("SOAPAction", "http://tempuri.org/IVideoArchive/GetAdFreeState");
             br.getHeaders().put("Content-Type", "text/xml");
             br.postPage(APIPAGE, "<?xml version=\"1.0\" encoding=\"utf-8\"?><v:Envelope xmlns:i=\"http://www.w3.org/2001/XMLSchema-instance\" xmlns:d=\"http://www.w3.org/2001/XMLSchema\" xmlns:c=\"http://schemas.xmlsoap.org/soap/encoding/\" xmlns:v=\"http://schemas.xmlsoap.org/soap/envelope/\"><v:Header /><v:Body><GetAdFreeState xmlns=\"http://tempuri.org/\" id=\"o0\" c:root=\"1\"><sessionId i:type=\"d:string\">" + SESSIONID + "</sessionId><telecastId i:type=\"d:int\">" + getTelecastId(link) + "</telecastId><telecastIdSpecified i:type=\"d:boolean\">true</telecastIdSpecified></GetAdFreeState></v:Body></v:Envelope>");
@@ -520,13 +525,16 @@ public class SaveTv extends PluginForHost {
                 + "</adFreeSpecified></GetStreamingUrl></v:Body></v:Envelope>");
     }
 
-    // private void soapRequest(final DownloadLink dl, final String soapAction) throws IOException {
+    /**
+     * @param soapAction
+     *            : The soap link which should be accessed
+     * @param soapPost
+     *            : The soap post data
+     */
+    // private void doSoapRequest(final String soapAction, final String soapPost) throws IOException {
     // br.getHeaders().put("SOAPAction", soapAction);
     // br.getHeaders().put("Content-Type", "text/xml");
-    // br.postPage(APIPAGE,
-    // "<?xml version=\"1.0\" encoding=\"utf-8\"?><v:Envelope xmlns:i=\"http://www.w3.org/2001/XMLSchema-instance\" xmlns:d=\"http://www.w3.org/2001/XMLSchema\" xmlns:c=\"http://schemas.xmlsoap.org/soap/encoding/\" xmlns:v=\"http://schemas.xmlsoap.org/soap/envelope/\"><v:Header /><v:Body><GetVideoArchiveDelta xmlns=\"http://tempuri.org/\" id=\"o0\" c:root=\"1\"><sessionId i:type=\"d:string\">"
-    // + SESSIONID + "</sessionId><telecastId i:type=\"d:int\">" + getTelecastId(dl) +
-    // "</telecastId><telecastIdSpecified i:type=\"d:boolean\">true</telecastIdSpecified></GetAdFreeState></v:Body></v:Envelope>");
+    // br.postPage(APIPAGE, soapAction);
     // }
 
     @Override

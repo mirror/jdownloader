@@ -47,15 +47,16 @@ import org.appwork.utils.formatter.SizeFormatter;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "deviantart.com" }, urls = { "https?://[\\w\\.\\-]*?deviantart\\.com/art/[\\w\\-]+" }, flags = { 2 })
 public class DeviantArtCom extends PluginForHost {
 
-    private String              DLLINK               = null;
-    private final String        COOKIE_HOST          = "http://www.deviantart.com";
-    private final String        MATURECONTENTFILTER  = ">Mature Content Filter<";
-    private static Object       LOCK                 = new Object();
-    private static final String FASTLINKCHECK        = "FASTLINKCHECK";
+    private String              DLLINK                     = null;
+    private final String        COOKIE_HOST                = "http://www.deviantart.com";
+    private final String        MATURECONTENTFILTER        = ">Mature Content Filter<";
+    private static Object       LOCK                       = new Object();
+    private static final String FASTLINKCHECK              = "FASTLINKCHECK";
 
-    private static final String GENERALFILENAMEREGEX = "<title>([^<>\"]*?) on deviantART</title>";
-    private static final String TYPE_HTML            = "class=\"text\">HTML download</span>";
-    private boolean             HTMLALLOWED          = false;
+    private static final String GENERALFILENAMEREGEX       = "<title>([^<>\"]*?) on deviantART</title>";
+    private static final String TYPEDOWNLOADALLOWED_HTML   = "class=\"text\">HTML download</span>";
+    private static final String TYPEDOWNLOADFORBIDDEN_HTML = "<div class=\"grf\\-indent\"";
+    private boolean             HTMLALLOWED                = false;
 
     /**
      * @author raztoki
@@ -105,10 +106,23 @@ public class DeviantArtCom extends PluginForHost {
             DLLINK = br.getRegex("\"(http://(www\\.)?deviantart\\.com/download/[^<>\"]*?)\"").getMatch(0);
             if (ext == null || DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             DLLINK = Encoding.htmlDecode(DLLINK.trim());
-        } else if (br.containsHTML(TYPE_HTML)) {
+        } else if (br.containsHTML(TYPEDOWNLOADALLOWED_HTML)) {
             HTMLALLOWED = true;
             filename = findServerFilename(filename);
             ext = "html";
+        } else if (br.containsHTML(TYPEDOWNLOADFORBIDDEN_HTML)) {
+            HTMLALLOWED = true;
+            // Download whole html site
+            DLLINK = br.getURL();
+            filename = findServerFilename(filename);
+            filesize = br.getRegex("<dt>File Size</dt><dd>([^<>\"]*?)</dd>").getMatch(0);
+            ext = "html";
+            if (br.containsHTML(MATURECONTENTFILTER) && !loggedIn) {
+                link.getLinkStatus().setStatusText("Mature content can only be downloaded via account");
+                link.setName(filename + "." + ext);
+                if (filesize != null) link.setDownloadSize(SizeFormatter.getSize(filesize.replace(",", "")));
+                return AvailableStatus.TRUE;
+            }
         } else {
             filesize = br.getRegex("<label>Image Size:</label>([^<>\"]*?)<br>").getMatch(0);
             if (filesize == null) filesize = br.getRegex("<dt>Image Size</dt><dd>([^<>\"]*?)</dd>").getMatch(0);
@@ -226,24 +240,26 @@ public class DeviantArtCom extends PluginForHost {
     }
 
     private String getDllink() throws PluginException {
-        String dllink = null;
-        // Check if it's a video
-        dllink = br.getRegex("\"src\":\"(http:[^<>\"]*?mp4)\"").getMatch(0);
-        // First try to get downloadlink, if that doesn't exist, try to get the link to the picture which is displayed in browser
-        if (dllink == null) dllink = br.getRegex("\"(http://(www\\.)?deviantart\\.com/download/[^<>\"]*?)\"").getMatch(0);
-        if (dllink == null) {
-            if (br.containsHTML(">Mature Content</span>")) {
-                dllink = br.getRegex("data\\-gmiclass=\"ResViewSizer_img\".*?src=\"(http://[^<>\"]*?)\"").getMatch(0);
-                if (dllink == null) dllink = br.getRegex("<img collect_rid=\"\\d+:\\d+\" src=\"(https?://[^\"]+)").getMatch(0);
-            } else {
-                dllink = br.getRegex("(name|property)=\"og:image\" content=\"(http://[^<>\"]*?)\"").getMatch(1);
+        if (DLLINK == null) {
+            String dllink = null;
+            // Check if it's a video
+            dllink = br.getRegex("\"src\":\"(http:[^<>\"]*?mp4)\"").getMatch(0);
+            // First try to get downloadlink, if that doesn't exist, try to get the link to the picture which is displayed in browser
+            if (dllink == null) dllink = br.getRegex("\"(http://(www\\.)?deviantart\\.com/download/[^<>\"]*?)\"").getMatch(0);
+            if (dllink == null) {
+                if (br.containsHTML(">Mature Content</span>")) {
+                    dllink = br.getRegex("data\\-gmiclass=\"ResViewSizer_img\".*?src=\"(http://[^<>\"]*?)\"").getMatch(0);
+                    if (dllink == null) dllink = br.getRegex("<img collect_rid=\"\\d+:\\d+\" src=\"(https?://[^\"]+)").getMatch(0);
+                } else {
+                    dllink = br.getRegex("(name|property)=\"og:image\" content=\"(http://[^<>\"]*?)\"").getMatch(1);
+                }
             }
+            if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            dllink = dllink.replace("\\", "");
+            dllink = Encoding.htmlDecode(dllink);
+            DLLINK = dllink;
         }
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        dllink = dllink.replace("\\", "");
-        dllink = Encoding.htmlDecode(dllink);
-        DLLINK = dllink;
-        return dllink;
+        return DLLINK;
     }
 
     @Override
