@@ -137,7 +137,7 @@ gui_warning_reconnectunknown=Neznámé znovupřipojení
 image_description=Souborů obrázků: jpg, png, gif, ...
 jd_controlling_SingleDownloadController_askexists_title=Soubor existuje
 jd_controlling_reconnect_Reconnector_progress_failed2=Znovupřipojení selhalo příliš často! Automatické znovupřipojení je zakázáno! Zkontroluje vaše nastavení znovupřipojení!
-jd_controlling_reconnect_plugins_DummyRouterPlugin_getGUI2=<b><u>Nebyl vybrán způsob Reconnectu</u></b><br/><p>Reconnect ("znovupřipojení") je pokročilý způsob pro přeskočení dlouhého čekání, které nastává v případě stahování z některých serverů ve Free režimu.<br>Pro uživatele s Premium účtem je zbytečný.</p><p>Více o Reconnectu najdete <a href='http://support.jdownloader.org/index.php?_m=knowledgebase&_a=viewarticle&kbarticleid=1'>zde</a></p>
+jd_controlling_reconnect_plugins_DummyRouterPlugin_getGUI2=<b><u>Nebylo vybráno znovupřipojení</u></b><br/><p>Znovupřipojení je pokročilý způsob pro přeskočení dlouhého čekání, které někteří hostitelé zavádějí pro bezplatné uživatele.<br>Pokud používáte premiový účet, není to pro vás užitečné.</p><p>Více o znovupřipojení najdete <a href='http://support.jdownloader.org/index.php?/Knowledgebase/Article/View/1/0/why-should-i-set-up-my-reconnect'>zde</a></p>
 jd_controlling_reconnect_plugins_DummyRouterPlugin_getName=Žádné znovupřipojení
 jd_plugins_PluginUtils_askPassword=Zadejte heslo pro\n%s1
 literally_offline=Offline
