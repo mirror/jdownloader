@@ -18,6 +18,7 @@ LinkFilterSettings_DefaultFilterList_directhttp=Priame HTTP
 LinkFilterSettings_DefaultFilterList_getDefaultValue_=Offline súbory
 LinkSource_ADD_CONTAINER_ACTION=Pridať akciu kontajneru
 LinkSource_ADD_LINKS_DIALOG=Pridať akciu odkazu
+LinkSource_CLIPBOARD=Schránka
 LinkSource_MAC_DOCK=Dok (iba Mac)
 LinkSource_MYJD=Môj JDownloader
 LinkSource_TOOLBAR=Panel nástrojov
