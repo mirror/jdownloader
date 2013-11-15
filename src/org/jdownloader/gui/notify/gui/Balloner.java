@@ -14,8 +14,11 @@ import java.util.HashMap;
 
 import javax.swing.JFrame;
 
+import jd.gui.swing.jdgui.JDGui;
+
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.swing.EDTRunner;
+import org.appwork.utils.swing.windowmanager.WindowManager;
 import org.jdownloader.gui.jdtrayicon.ScreenStack;
 import org.jdownloader.gui.notify.gui.BubbleNotifyConfig.Anchor;
 
@@ -155,6 +158,11 @@ public class Balloner implements ComponentListener {
     private Anchor anchor;
 
     protected Rectangle getVisibleBounds(ScreenStack screenStack) {
+        if (CFG_BUBBLE.CFG.isBubbleAnchorRelativeToWindow() && JDGui.getInstance().getMainFrame().isVisible() && WindowManager.getInstance().hasFocus(JDGui.getInstance().getMainFrame())) {
+            Rectangle ret = JDGui.getInstance().getMainFrame().getBounds();
+
+            return ret;
+        }
         final Rectangle bounds = screenStack.getScreen().getDefaultConfiguration().getBounds();
         final Insets insets = Toolkit.getDefaultToolkit().getScreenInsets(screenStack.getScreen().getDefaultConfiguration());
         bounds.x += insets.left;

@@ -9,6 +9,7 @@ import java.awt.event.ComponentListener;
 import java.awt.event.FocusEvent;
 import java.awt.event.FocusListener;
 import java.awt.event.KeyEvent;
+import java.awt.event.KeyListener;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -626,9 +627,9 @@ public abstract class AbstractNodePropertiesPanel extends MigPanel implements Ac
         MigPanel p = this;
         p.removeAll();
         p.setLayout(new MigLayout("ins 0 0 0 0,wrap 3", "[][grow,fill]2[]", "2[]0"));
-        if (isSaveToEnabled()) addSaveTo(height, p);
-        if (isFileNameEnabled()) addFilename(height, p);
         if (isPackagenameEnabled()) addPackagename(height, p);
+        if (isFileNameEnabled()) addFilename(height, p);
+        if (isSaveToEnabled()) addSaveTo(height, p);
         if (isDownloadFromEnabled()) addDownloadFrom(height, p);
         //
         if (isDownloadPasswordEnabled()) addDownloadPassword(height, p);
@@ -845,26 +846,61 @@ public abstract class AbstractNodePropertiesPanel extends MigPanel implements Ac
 
     abstract protected void saveSha1(String cs);
 
-    protected void setListeners(final JTextField filename) {
-        filename.addActionListener(new ActionListener() {
+    class Listener implements ActionListener, KeyListener, FocusListener {
+        private JTextField field;
+        private boolean    saveOnFocusLost = true;
+        private String     oldText;
 
-            @Override
-            public void actionPerformed(ActionEvent e) {
+        public Listener(JTextField filename) {
+            this.field = filename;
+        }
+
+        @Override
+        public void actionPerformed(ActionEvent e) {
+            save();
+            KeyboardFocusManager.getCurrentKeyboardFocusManager().clearGlobalFocusOwner();
+        }
+
+        @Override
+        public void keyTyped(KeyEvent e) {
+
+        }
+
+        @Override
+        public void keyReleased(KeyEvent e) {
+            if (e.getKeyCode() == KeyEvent.VK_ESCAPE) {
+                System.out.println("set " + oldText);
+                field.setText(oldText);
+                field.selectAll();
+
+            }
+        }
+
+        @Override
+        public void focusGained(FocusEvent e) {
+            oldText = field.getText();
+        }
+
+        @Override
+        public void focusLost(FocusEvent e) {
+            if (saveOnFocusLost) {
                 save();
-                KeyboardFocusManager.getCurrentKeyboardFocusManager().clearGlobalFocusOwner();
-            }
-        });
-        filename.addFocusListener(new FocusListener() {
-
-            @Override
-            public void focusGained(FocusEvent e) {
-            }
-
-            @Override
-            public void focusLost(FocusEvent e) {
+            } else {
                 refresh();
             }
-        });
+
+        }
+
+        @Override
+        public void keyPressed(KeyEvent e) {
+        }
+    }
+
+    protected void setListeners(final JTextField filename) {
+        Listener list = new Listener(filename);
+        filename.addActionListener(list);
+        filename.addKeyListener(list);
+        filename.addFocusListener(list);
     }
 
     protected void updateArchiveInEDT(final Archive archive, boolean newData) {

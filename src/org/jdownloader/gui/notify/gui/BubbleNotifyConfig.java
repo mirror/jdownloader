@@ -259,4 +259,10 @@ public interface BubbleNotifyConfig extends ConfigInterface {
 
     public void setDownloadStartedBubbleContentFilenameVisible(boolean b);
 
+    @AboutConfig()
+    @DescriptionForConfigEntry("If enabled, all Anchor settings are relative to the JDownloader Window screen of JDownloader is visible on screen.")
+    @DefaultBooleanValue(false)
+    public boolean isBubbleAnchorRelativeToWindow();
+
+    public void setBubbleAnchorRelativeToWindow(boolean b);
 }
