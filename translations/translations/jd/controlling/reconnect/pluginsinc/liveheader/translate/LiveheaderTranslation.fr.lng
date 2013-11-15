@@ -1,5 +1,5 @@
 DataCompareDialog_DataCompareDialog_=Comparer les informations du routeur
-DataCompareDialog_layoutDialogContent__desc=S'il vous plaît vérifiez les informations suivantes, et essayez de remplir les champs vides aussi précisément que possible.
+DataCompareDialog_layoutDialogContent__desc=Merci de vérifier les informations suivantes, et essayez de remplir les champs vides aussi précisément que possible.
 DataCompareDialog_layoutDialogContent_firmware=Firmware/Version
 DataCompareDialog_layoutDialogContent_firmware_help=Entrez la version du micro-programme (Firmware) de votre routeur... Laisser vide si inconnu
 DataCompareDialog_layoutDialogContent_ip=IP ou nom d'hôte
@@ -31,7 +31,7 @@ LiveHeaderDetectionWizard_runOnlineScan_warning_badip=Il apparait qu'il n'y a pa
 LiveHeaderDetectionWizard_sendRouter_reconnectFailed=Èchec de reconnexion. Vous ne pouvez partager uniquement les réglages de reconnexions qui fonctionnent.
 LiveHeaderDetectionWizard_uploadData_sent_failed=Nous avons remarqué que votre script existe déjà dans notre base de données. Merci quand même.
 LiveHeaderDetectionWizard_uploadData_sent_ok=Merci! Nous avons ajouté votre script à notre bas de donné de routeur de reconnexion
-LiveHeaderDetectionWizard_userConfirm_loginstext=Les logins ne seront PAS transférés vers le serveur. S'il vous plaît saisissez-les tout de même. Nous avons besoin d'eux afin de supprimer toute information sensible à partir de vos paramètres de reconnexion avant le transfert. Si vous ne les connaissez pas, laissez vide, ou demandez à votre administrateur réseau.
+LiveHeaderDetectionWizard_userConfirm_loginstext=Les logins ne seront PAS téléchargés. Merci de les saisir tout de même.\nNous avons besoin d'eux afin de supprimer toute information sensible à partir de vos paramètres de reconnexion avant le transfert. \nSi vous ne les connaissez pas, laissez vide, ou demandez à votre administrateur réseau.
 LiveHeaderInvoker_getName_=En-tête en ligne : %s1
 LiveHeaderReconnect_getGUI_help_ip=Entrer l'IP du Routeur, ou cliquer [Trouver l'IP du Routeur]...
 LiveHeaderReconnect_getGUI_help_password=Entrer le mot de passe de l'interface Web...

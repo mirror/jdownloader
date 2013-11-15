@@ -1,7 +1,9 @@
 LogAction_actionPerformed_wait_=Merci de patienter ...
+LogAction_actionPerformed_zip_title_=Création du fichier log
 LogAction_getString_uploading_=Préparation de vos logs
 LogModel_getStringValue_between_=Entre %s1 et %s2
 LogModel_initColumns_time_=temps
+LogModel_initColumns_x_=Vérifier
 LogTable_onContextMenu_disable_=Désélectionner
 LogTable_onContextMenu_enable_=Selectionner
 SendLogDialog_SendLogDialog_title_=Envoyer un rapport de bug

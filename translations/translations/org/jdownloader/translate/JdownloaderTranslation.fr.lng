@@ -109,10 +109,10 @@ gui_warning_reconnectSuccess=Reconnexion réussie
 gui_warning_reconnect_running=en cours...
 gui_warning_reconnectunknown=Reconnexion inconnue
 jd_controlling_SingleDownloadController_askexists_title=Fichier existant
-jd_controlling_reconnect_Reconnector_progress_failed2=Reconnexion échouée trop souvent! Autoreconnexion désactivée! S'il vous plaît vérifiez vos paramêtres de reconnexion!
+jd_controlling_reconnect_Reconnector_progress_failed2=La reconnexion à échouée trop souvent ! La reconnexion automatique est désactivée ! Merci de vérifier vos paramêtres de reconnexion!
 jd_controlling_reconnect_plugins_DummyRouterPlugin_getGUI2=<b><u>Reconnexion non sélectionnée</u></b><br/><p>La reconnexion est un moyen avancé pour éviter les longues attentes imposées par certains hébergeurs en utilisation gratuite. <br>Ce moyen est inutile en cas d'utilisation d'un compte premium. </p><p>En savoir plus sur la reconnection : <a href='http://support.jdownloader.org/index.php?_m=knowledgebase&_a=viewarticle&kbarticleid=1'>here</a></p>
 jd_controlling_reconnect_plugins_DummyRouterPlugin_getName=Aucune reconnexion
-jd_plugins_PluginUtils_askPassword=S'il vous plaît entrez le mot de passe pour %s1
+jd_plugins_PluginUtils_askPassword=Merci d'entrer le mot de passe pour %s1
 literally_offline=Hors ligne
 literally_yes=Oui
 pattern_password=пароль|пасс|pa?s?w|passwort|password|passw?|pw
