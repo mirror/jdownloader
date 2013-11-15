@@ -22,6 +22,8 @@ import org.appwork.storage.config.JsonConfig;
 import org.appwork.swing.components.tooltips.ExtTooltip;
 import org.appwork.swing.components.tooltips.MultiLineLabelTooltip;
 import org.appwork.swing.components.tooltips.MultiLineLabelTooltip.LabelInfo;
+import org.appwork.swing.exttable.ExtColumn;
+import org.appwork.swing.exttable.ExtDefaultRowSorter;
 import org.appwork.swing.exttable.columns.ExtTextColumn;
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.ImageProvider.ImageProvider;
@@ -115,6 +117,29 @@ public class TaskColumn extends ExtTextColumn<AbstractNode> {
         trueIconExtracted = new ImageIcon(ImageProvider.merge(trueIcon.getImage(), NewTheme.I().getImage("archive", 16), 0, 0, trueIcon.getIconWidth() + 4, (trueIcon.getIconHeight() - 16) / 2 + 2));
         trueIconExtractedFailed = new ImageIcon(ImageProvider.merge(trueIconExtracted.getImage(), NewTheme.I().getImage("error", 10), 0, 0, trueIcon.getIconWidth() + 12, trueIconExtracted.getIconHeight() - 10));
         startingString = _GUI._.TaskColumn_fillColumnHelper_starting();
+        setRowSorter(new ExtDefaultRowSorter<AbstractNode>() {
+
+            @Override
+            public int compare(final AbstractNode o1, final AbstractNode o2) {
+                fillColumnHelper(columnHelper, o1);
+                String o1s = getStringValue(o1);
+                fillColumnHelper(columnHelper, o2);
+                String o2s = getStringValue(o2);
+                if (o1s == null) {
+                    o1s = "";
+                }
+                if (o2s == null) {
+                    o2s = "";
+                }
+                if (getSortOrderIdentifier() == ExtColumn.SORT_ASC) {
+                    return o1s.compareToIgnoreCase(o2s);
+                } else {
+                    return o2s.compareToIgnoreCase(o1s);
+                }
+
+            }
+
+        });
     }
 
     public boolean onSingleClick(final MouseEvent e, final AbstractNode value) {
@@ -300,6 +325,11 @@ public class TaskColumn extends ExtTextColumn<AbstractNode> {
     protected String getTooltipText(AbstractNode obj) {
         fillColumnHelper(columnHelper, obj);
         return columnHelper.tooltip;
+    }
+
+    @Override
+    public boolean isSortable(AbstractNode obj) {
+        return true;
     }
 
     @Override
