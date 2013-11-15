@@ -16,6 +16,7 @@ import jd.controlling.linkcollector.LinkCollectorCrawler;
 import jd.controlling.linkcollector.LinkCollectorEvent;
 import jd.controlling.linkcollector.LinkCollectorListener;
 import jd.controlling.linkcrawler.CrawledLink;
+import jd.controlling.linkcrawler.CrawledPackage;
 import jd.gui.swing.jdgui.JDGui;
 import jd.gui.swing.jdgui.JDGui.Panels;
 import jd.gui.swing.jdgui.interfaces.View;
@@ -30,6 +31,7 @@ import org.jdownloader.controlling.AggregatedCrawlerNumbers;
 import org.jdownloader.gui.event.GUIEventSender;
 import org.jdownloader.gui.event.GUIListener;
 import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.downloads.overviewpanel.DataEntry;
 import org.jdownloader.gui.views.linkgrabber.LinkGrabberTable;
 import org.jdownloader.gui.views.linkgrabber.LinkGrabberTableModel;
@@ -90,6 +92,7 @@ public class LinkgrabberOverview extends MigPanel implements GenericConfigEventL
         CFG_GUI.OVERVIEW_PANEL_TOTAL_INFO_VISIBLE.getEventSender().addListener(this, true);
         CFG_GUI.OVERVIEW_PANEL_SELECTED_INFO_VISIBLE.getEventSender().addListener(this, true);
         CFG_GUI.OVERVIEW_PANEL_VISIBLE_ONLY_INFO_VISIBLE.getEventSender().addListener(this, true);
+        CFG_GUI.OVERVIEW_PANEL_LINKGRABBER_INCLUDE_DISABLED_LINKS.getEventSender().addListener(this, true);
         CFG_GUI.OVERVIEW_PANEL_SMART_INFO_VISIBLE.getEventSender().addListener(this, true);
         CFG_GUI.LINKGRABBER_TAB_OVERVIEW_VISIBLE.getEventSender().addListener(this, true);
 
@@ -133,6 +136,7 @@ public class LinkgrabberOverview extends MigPanel implements GenericConfigEventL
             protected void runInEDT() {
                 CFG_GUI.OVERVIEW_PANEL_TOTAL_INFO_VISIBLE.getEventSender().removeListener(LinkgrabberOverview.this);
                 CFG_GUI.OVERVIEW_PANEL_SELECTED_INFO_VISIBLE.getEventSender().removeListener(LinkgrabberOverview.this);
+                CFG_GUI.OVERVIEW_PANEL_LINKGRABBER_INCLUDE_DISABLED_LINKS.getEventSender().removeListener(LinkgrabberOverview.this);
                 CFG_GUI.OVERVIEW_PANEL_VISIBLE_ONLY_INFO_VISIBLE.getEventSender().removeListener(LinkgrabberOverview.this);
                 CFG_GUI.OVERVIEW_PANEL_SMART_INFO_VISIBLE.getEventSender().removeListener(LinkgrabberOverview.this);
                 CFG_GUI.LINKGRABBER_TAB_OVERVIEW_VISIBLE.getEventSender().removeListener(LinkgrabberOverview.this);
@@ -143,6 +147,10 @@ public class LinkgrabberOverview extends MigPanel implements GenericConfigEventL
             }
         };
     }
+
+    private AggregatedCrawlerNumbers total;
+    private AggregatedCrawlerNumbers filtered;
+    private AggregatedCrawlerNumbers selected;
 
     protected void update() {
         if (visible.get() == false) return;
@@ -155,11 +163,31 @@ public class LinkgrabberOverview extends MigPanel implements GenericConfigEventL
                         updating.set(false);
                         return null;
                     }
-                    final AggregatedCrawlerNumbers total = CFG_GUI.OVERVIEW_PANEL_TOTAL_INFO_VISIBLE.isEnabled() ? new AggregatedCrawlerNumbers(table.getSelectionInfo(false, false)) : null;
-                    final AggregatedCrawlerNumbers filtered = (CFG_GUI.OVERVIEW_PANEL_VISIBLE_ONLY_INFO_VISIBLE.isEnabled() || CFG_GUI.OVERVIEW_PANEL_SMART_INFO_VISIBLE.isEnabled()) ? new AggregatedCrawlerNumbers(table.getSelectionInfo(false, true)) : null;
-                    final AggregatedCrawlerNumbers selected;
+                    if (CFG_GUI.OVERVIEW_PANEL_TOTAL_INFO_VISIBLE.isEnabled()) {
+                        SelectionInfo<CrawledPackage, CrawledLink> sel = table.getSelectionInfo(false, false);
+                        if (total == null || total.getSelectionInfo() != sel) {
+                            total = new AggregatedCrawlerNumbers(sel);
+                        }
+                    } else {
+                        total = null;
+                    }
+                    SelectionInfo<CrawledPackage, CrawledLink> sel;
+                    if (CFG_GUI.OVERVIEW_PANEL_VISIBLE_ONLY_INFO_VISIBLE.isEnabled() || CFG_GUI.OVERVIEW_PANEL_SMART_INFO_VISIBLE.isEnabled()) {
+                        sel = table.getSelectionInfo(false, true);
+                        if (filtered == null || filtered.getSelectionInfo() != sel) {
+                            filtered = new AggregatedCrawlerNumbers(sel);
+                        }
+
+                    } else {
+                        filtered = null;
+                    }
+
                     if ((CFG_GUI.OVERVIEW_PANEL_SELECTED_INFO_VISIBLE.isEnabled() || CFG_GUI.OVERVIEW_PANEL_SMART_INFO_VISIBLE.isEnabled())) {
-                        selected = new AggregatedCrawlerNumbers(table.getSelectionInfo(true, true));
+                        sel = table.getSelectionInfo(true, true);
+                        if (selected == null || selected.getSelectionInfo() != sel) {
+
+                            selected = new AggregatedCrawlerNumbers(sel);
+                        }
                     } else {
                         selected = null;
                     }
@@ -177,9 +205,9 @@ public class LinkgrabberOverview extends MigPanel implements GenericConfigEventL
                                 if (filtered != null) linkCount.setFiltered(filtered.getLinkCount() + "");
                                 if (selected != null) linkCount.setSelected(selected.getLinkCount() + "");
 
-                                if (total != null) size.setTotal(total.getTotalBytesString());
-                                if (filtered != null) size.setFiltered(filtered.getTotalBytesString());
-                                if (selected != null) size.setSelected(selected.getTotalBytesString());
+                                if (total != null) size.setTotal(total.getTotalBytesString(CFG_GUI.OVERVIEW_PANEL_LINKGRABBER_INCLUDE_DISABLED_LINKS.isEnabled()));
+                                if (filtered != null) size.setFiltered(filtered.getTotalBytesString(CFG_GUI.OVERVIEW_PANEL_LINKGRABBER_INCLUDE_DISABLED_LINKS.isEnabled()));
+                                if (selected != null) size.setSelected(selected.getTotalBytesString(CFG_GUI.OVERVIEW_PANEL_LINKGRABBER_INCLUDE_DISABLED_LINKS.isEnabled()));
 
                                 if (total != null) onlineCount.setTotal(total.getStatusOnline());
                                 if (filtered != null) onlineCount.setFiltered(filtered.getStatusOnline());
@@ -229,6 +257,7 @@ public class LinkgrabberOverview extends MigPanel implements GenericConfigEventL
                     onlineCount.updateVisibility(hasSelectedObjects);
                     unknownCount.updateVisibility(hasSelectedObjects);
                     hosterCount.updateVisibility(hasSelectedObjects);
+                    update();
                 }
             };
         }

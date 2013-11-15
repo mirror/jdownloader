@@ -3634,4 +3634,7 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Animated Icon" })
     String LinkCrawlerBubbleContent_LinkCrawlerBubbleContent_icon();
 
+    @Default(lngs = { "en" }, values = { "Include Disabled Links" })
+    String OverViewHeader_disabled();
+
 }

@@ -207,6 +207,20 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
     void setOverviewPanelVisibleOnlyInfoVisible(boolean b);
 
     @AboutConfig
+    @DescriptionForConfigEntry("Include disabled links in the size calculation")
+    @DefaultBooleanValue(true)
+    boolean isOverviewPanelLinkgrabberIncludeDisabledLinks();
+
+    void setOverviewPanelLinkgrabberIncludeDisabledLinks(boolean b);
+
+    @AboutConfig
+    @DefaultBooleanValue(true)
+    @DescriptionForConfigEntry("Include disabled links in the totalbytes and loadedbytes calculation")
+    boolean isOverviewPanelDownloadPanelIncludeDisabledLinks();
+
+    void setOverviewPanelDownloadPanelIncludeDisabledLinks(boolean b);
+
+    @AboutConfig
     @DefaultBooleanValue(false)
     boolean isDownloadPanelOverviewSettingsVisible();
 

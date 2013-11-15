@@ -47,6 +47,7 @@ import org.jdownloader.controlling.download.DownloadControllerListener;
 import org.jdownloader.gui.event.GUIEventSender;
 import org.jdownloader.gui.event.GUIListener;
 import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.downloads.DownloadsView;
 import org.jdownloader.gui.views.downloads.table.DownloadsTable;
 import org.jdownloader.gui.views.downloads.table.DownloadsTableModel;
@@ -75,6 +76,9 @@ public class DownloadOverview extends MigPanel implements DownloadControllerList
     private TableModelListener                  tableListener;
     private StateEventListener                  stateListener;
     private GenericConfigEventListener<Boolean> settingsListener;
+    protected AggregatedNumbers                 total;
+    protected AggregatedNumbers                 filtered;
+    protected AggregatedNumbers                 selected;
 
     @Override
     public void onKeyModifier(int parameter) {
@@ -120,6 +124,7 @@ public class DownloadOverview extends MigPanel implements DownloadControllerList
         CFG_GUI.OVERVIEW_PANEL_TOTAL_INFO_VISIBLE.getEventSender().addListener(this, true);
         CFG_GUI.OVERVIEW_PANEL_SELECTED_INFO_VISIBLE.getEventSender().addListener(this, true);
         CFG_GUI.OVERVIEW_PANEL_VISIBLE_ONLY_INFO_VISIBLE.getEventSender().addListener(this, true);
+        CFG_GUI.OVERVIEW_PANEL_DOWNLOAD_PANEL_INCLUDE_DISABLED_LINKS.getEventSender().addListener(this, true);
         CFG_GUI.OVERVIEW_PANEL_SMART_INFO_VISIBLE.getEventSender().addListener(this, true);
         final MigPanel settings = new MigPanel("ins 2 0 0 0 ,wrap 3", "[][fill][fill]", "[]2[]");
         SwingUtils.setOpaque(settings, false);
@@ -199,6 +204,7 @@ public class DownloadOverview extends MigPanel implements DownloadControllerList
                 CFG_GUI.OVERVIEW_PANEL_SELECTED_INFO_VISIBLE.getEventSender().removeListener(DownloadOverview.this);
                 CFG_GUI.OVERVIEW_PANEL_VISIBLE_ONLY_INFO_VISIBLE.getEventSender().removeListener(DownloadOverview.this);
                 CFG_GUI.OVERVIEW_PANEL_SMART_INFO_VISIBLE.getEventSender().removeListener(DownloadOverview.this);
+                CFG_GUI.OVERVIEW_PANEL_DOWNLOAD_PANEL_INCLUDE_DISABLED_LINKS.getEventSender().removeListener(DownloadOverview.this);
                 CFG_GUI.DOWNLOAD_PANEL_OVERVIEW_SETTINGS_VISIBLE.getEventSender().removeListener(settingsListener);
                 CFG_GUI.DOWNLOAD_TAB_OVERVIEW_VISIBLE.getEventSender().removeListener(DownloadOverview.this);
                 removeHierarchyListener(DownloadOverview.this);
@@ -222,13 +228,29 @@ public class DownloadOverview extends MigPanel implements DownloadControllerList
                         return null;
                     }
 
-                    final AggregatedNumbers total = CFG_GUI.OVERVIEW_PANEL_TOTAL_INFO_VISIBLE.isEnabled() ? new AggregatedNumbers(DownloadsTableModel.getInstance().getTable().getSelectionInfo(false, false)) : null;
-                    final AggregatedNumbers filtered = (CFG_GUI.OVERVIEW_PANEL_VISIBLE_ONLY_INFO_VISIBLE.isEnabled() || CFG_GUI.OVERVIEW_PANEL_SMART_INFO_VISIBLE.isEnabled()) ? new AggregatedNumbers(DownloadsTableModel.getInstance().getTable().getSelectionInfo(false, true)) : null;
-                    final AggregatedNumbers selected;
+                    if (CFG_GUI.OVERVIEW_PANEL_TOTAL_INFO_VISIBLE.isEnabled()) {
+                        SelectionInfo<FilePackage, DownloadLink> sel = DownloadsTableModel.getInstance().getTable().getSelectionInfo(false, false);
+                        if (total == null || total.getSelectionInfo() != sel) {
+                            total = new AggregatedNumbers(sel);
+                        }
+                    } else {
+                        total = null;
+                    }
+                    if ((CFG_GUI.OVERVIEW_PANEL_VISIBLE_ONLY_INFO_VISIBLE.isEnabled() || CFG_GUI.OVERVIEW_PANEL_SMART_INFO_VISIBLE.isEnabled())) {
+                        SelectionInfo<FilePackage, DownloadLink> sel = DownloadsTableModel.getInstance().getTable().getSelectionInfo(false, true);
+                        if (filtered == null || filtered.getSelectionInfo() != sel) {
+                            filtered = new AggregatedNumbers(sel);
+                        }
+                    } else {
+                        filtered = null;
+                    }
 
                     if ((CFG_GUI.OVERVIEW_PANEL_SELECTED_INFO_VISIBLE.isEnabled() || CFG_GUI.OVERVIEW_PANEL_SMART_INFO_VISIBLE.isEnabled())) {
 
-                        selected = new AggregatedNumbers(DownloadsTableModel.getInstance().getTable().getSelectionInfo(true, true));
+                        SelectionInfo<FilePackage, DownloadLink> sel = DownloadsTableModel.getInstance().getTable().getSelectionInfo(true, true);
+                        if (selected == null || selected.getSelectionInfo() != sel) {
+                            selected = new AggregatedNumbers(sel);
+                        }
                     } else {
                         selected = null;
                     }
@@ -246,13 +268,13 @@ public class DownloadOverview extends MigPanel implements DownloadControllerList
                                 if (filtered != null) linkCount.setFiltered(filtered.getLinkCount() + "");
                                 if (selected != null) linkCount.setSelected(selected.getLinkCount() + "");
 
-                                if (total != null) size.setTotal(total.getTotalBytesString());
-                                if (filtered != null) size.setFiltered(filtered.getTotalBytesString());
-                                if (selected != null) size.setSelected(selected.getTotalBytesString());
+                                if (total != null) size.setTotal(total.getTotalBytesString(CFG_GUI.OVERVIEW_PANEL_DOWNLOAD_PANEL_INCLUDE_DISABLED_LINKS.isEnabled()));
+                                if (filtered != null) size.setFiltered(filtered.getTotalBytesString(CFG_GUI.OVERVIEW_PANEL_DOWNLOAD_PANEL_INCLUDE_DISABLED_LINKS.isEnabled()));
+                                if (selected != null) size.setSelected(selected.getTotalBytesString(CFG_GUI.OVERVIEW_PANEL_DOWNLOAD_PANEL_INCLUDE_DISABLED_LINKS.isEnabled()));
 
-                                if (total != null) bytesLoaded.setTotal(total.getLoadedBytesString());
-                                if (filtered != null) bytesLoaded.setFiltered(filtered.getLoadedBytesString());
-                                if (selected != null) bytesLoaded.setSelected(selected.getLoadedBytesString());
+                                if (total != null) bytesLoaded.setTotal(total.getLoadedBytesString(CFG_GUI.OVERVIEW_PANEL_DOWNLOAD_PANEL_INCLUDE_DISABLED_LINKS.isEnabled()));
+                                if (filtered != null) bytesLoaded.setFiltered(filtered.getLoadedBytesString(CFG_GUI.OVERVIEW_PANEL_DOWNLOAD_PANEL_INCLUDE_DISABLED_LINKS.isEnabled()));
+                                if (selected != null) bytesLoaded.setSelected(selected.getLoadedBytesString(CFG_GUI.OVERVIEW_PANEL_DOWNLOAD_PANEL_INCLUDE_DISABLED_LINKS.isEnabled()));
 
                                 if (total != null) speed.setTotal(total.getDownloadSpeedString());
                                 if (filtered != null) speed.setFiltered(filtered.getDownloadSpeedString());
@@ -345,7 +367,7 @@ public class DownloadOverview extends MigPanel implements DownloadControllerList
                     eta.updateVisibility(hasSelectedObjects);
                     connections.updateVisibility(hasSelectedObjects);
                     runningDownloads.updateVisibility(hasSelectedObjects);
-
+                    update();
                 }
             };
         }

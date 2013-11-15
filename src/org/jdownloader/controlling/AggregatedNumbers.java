@@ -16,13 +16,19 @@ public class AggregatedNumbers {
 
     private long totalBytes;
 
-    public String getTotalBytesString() {
-        if (totalBytes < 0) { return _GUI._.lit_unknown(); }
-        return SizeFormatter.formatBytes(totalBytes);
+    public String getTotalBytesString(boolean inclDisabled) {
+        if (inclDisabled) return format(totalBytes + disabledTotalBytes);
+        return format(totalBytes);
     }
 
-    public String getLoadedBytesString() {
-        return SizeFormatter.formatBytes(loadedBytes);
+    private String format(long totalBytes2) {
+        if (totalBytes2 < 0) { return _GUI._.lit_unknown(); }
+        return SizeFormatter.formatBytes(totalBytes2);
+    }
+
+    public String getLoadedBytesString(boolean inclDisabled) {
+        if (inclDisabled) format(loadedBytes + disabledLoadedBytes);
+        return format(loadedBytes);
     }
 
     public String getDownloadSpeedString() {
@@ -56,10 +62,11 @@ public class AggregatedNumbers {
         return connections;
     }
 
-    private long connections;
-    private long disabledTotalBytes;
-    private long disabledLoadedBytes;
-    private long failedTotalBytes;
+    private long                                     connections;
+    private long                                     disabledTotalBytes;
+    private long                                     disabledLoadedBytes;
+    private long                                     failedTotalBytes;
+    private SelectionInfo<FilePackage, DownloadLink> selectionInfo;
 
     public long getDisabledTotalBytes() {
         return disabledTotalBytes;
@@ -70,6 +77,8 @@ public class AggregatedNumbers {
     }
 
     public AggregatedNumbers(SelectionInfo<FilePackage, DownloadLink> selection) {
+        this.selectionInfo = selection;
+
         totalBytes = 0l;
         disabledTotalBytes = 0l;
         disabledLoadedBytes = 0l;
@@ -117,6 +126,10 @@ public class AggregatedNumbers {
 
     }
 
+    public SelectionInfo<FilePackage, DownloadLink> getSelectionInfo() {
+        return selectionInfo;
+    }
+
     public long getFailedTotalBytes() {
         return failedTotalBytes;
     }
@@ -136,4 +149,5 @@ public class AggregatedNumbers {
     public long getLoadedBytes() {
         return loadedBytes;
     }
+
 }
