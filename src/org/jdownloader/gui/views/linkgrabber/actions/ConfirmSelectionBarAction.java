@@ -82,12 +82,12 @@ public class ConfirmSelectionBarAction extends ConfirmLinksContextAction impleme
 
     protected void update() {
         if (isSelectionOnly()) {
-            setEnabled(!LinkGrabberTable.getInstance().getSelectionInfo().isEmpty());
-        } else {
-            int rows = LinkGrabberTableModel.getInstance().getRowCount();
+            selection = LinkGrabberTable.getInstance().getSelectionInfo();
 
-            setEnabled(rows > 0);
+        } else {
+            selection = LinkGrabberTable.getInstance().getSelectionInfo(false, true);
         }
+        setEnabled(!selection.isEmpty());
     }
 
     @Override
