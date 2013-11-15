@@ -3618,4 +3618,20 @@ public interface GuiTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Successful" })
     String lit_successfull();
+
+    @Default(lngs = { "en" }, values = { "Open general Bubble Settings" })
+    String bubblepopup_open_settings();
+
+    @Default(lngs = { "en" }, values = { "Hide this Bubble Type permanently" })
+    String bubble_hide_permanent();
+
+    @Default(lngs = { "en" }, values = { "Are you sure that you do not want bubbles any more when %s1?\r\nYou can enable or disable bubbles at any time in the settings panel." })
+    String bubble_disable_rly_msg(String label);
+
+    @Default(lngs = { "en" }, values = { "Progress" })
+    String lit_progress();
+
+    @Default(lngs = { "en" }, values = { "Animated Icon" })
+    String LinkCrawlerBubbleContent_LinkCrawlerBubbleContent_icon();
+
 }

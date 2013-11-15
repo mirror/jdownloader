@@ -22,10 +22,18 @@ public class CFG_EXTRACTION {
     // let's do this mapping here. If we map all methods to static handlers, access is faster, and we get an error on init if mappings are
     // wrong.
 
+    public static final BooleanKeyHandler                BUBBLE_CONTENT_EXTRACT_TO_FOLDER_VISIBLE                         = SH.getKeyHandler("BubbleContentExtractToFolderVisible", BooleanKeyHandler.class);
+
     /**
      * Extraction Extension autoextracts sub-archives. If you do not want this, disable this option.
      **/
     public static final BooleanKeyHandler                DEEP_EXTRACTION_ENABLED                                          = SH.getKeyHandler("DeepExtractionEnabled", BooleanKeyHandler.class);
+
+    public static final BooleanKeyHandler                BUBBLE_CONTENT_CIRCLE_PROGRESS_VISIBLE                           = SH.getKeyHandler("BubbleContentCircleProgressVisible", BooleanKeyHandler.class);
+
+    public static final BooleanKeyHandler                BUBBLE_CONTENT_DURATION_VISIBLE                                  = SH.getKeyHandler("BubbleContentDurationVisible", BooleanKeyHandler.class);
+
+    public static final BooleanKeyHandler                BUBBLE_CONTENT_CURRENT_FILE_VISIBLE                              = SH.getKeyHandler("BubbleContentCurrentFileVisible", BooleanKeyHandler.class);
 
     /**
      * Only use subfolders if the archive ROOT contains at least *** files
@@ -44,10 +52,14 @@ public class CFG_EXTRACTION {
 
     public static final BooleanKeyHandler                FRESH_INSTALL                                                    = SH.getKeyHandler("FreshInstall", BooleanKeyHandler.class);
 
+    public static final BooleanKeyHandler                BUBBLE_CONTENT_STATUS_VISIBLE                                    = SH.getKeyHandler("BubbleContentStatusVisible", BooleanKeyHandler.class);
+
     /**
      * Absolute path to the folder where all archives should be extracted to
      **/
     public static final StringKeyHandler                 CUSTOM_EXTRACTION_PATH                                           = SH.getKeyHandler("CustomExtractionPath", StringKeyHandler.class);
+
+    public static final BooleanKeyHandler                BUBBLE_CONTENT_ARCHIVENAME_VISIBLE                               = SH.getKeyHandler("BubbleContentArchivenameVisible", BooleanKeyHandler.class);
 
     /**
      * Only use subfolders if the archive ROOT contains at least *** folders or folders

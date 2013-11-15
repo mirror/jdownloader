@@ -139,9 +139,9 @@ public interface BubbleNotifyConfig extends ConfigInterface {
 
     @AboutConfig()
     @DefaultBooleanValue(true)
-    public boolean isBubbleNotifyOnCaptchaInBackgroundEnabled();
+    public boolean isDownloadStartedBubbleContentSaveToVisible();
 
-    public void setBubbleNotifyOnCaptchaInBackgroundEnabled(boolean b);
+    public void setDownloadStartedBubbleContentSaveToVisible(boolean b);
 
     @AboutConfig()
     @DefaultBooleanValue(false)
@@ -180,4 +180,83 @@ public interface BubbleNotifyConfig extends ConfigInterface {
     public int getTransparency();
 
     public void setTransparency(int percent);
+
+    @AboutConfig()
+    @DefaultBooleanValue(true)
+    public boolean isBubbleNotifyOnCaptchaInBackgroundEnabled();
+
+    public void setBubbleNotifyOnCaptchaInBackgroundEnabled(boolean b);
+
+    @AboutConfig()
+    @DefaultBooleanValue(true)
+    public boolean isDownloadStartedBubbleContentStatusVisible();
+
+    public void setDownloadStartedBubbleContentStatusVisible(boolean b);
+
+    @AboutConfig()
+    @DefaultBooleanValue(true)
+    public boolean isDownloadStartedBubbleContentProxyVisible();
+
+    public void setDownloadStartedBubbleContentProxyVisible(boolean b);
+
+    @AboutConfig()
+    @DefaultBooleanValue(true)
+    public boolean isDownloadStartedBubbleContentAccountVisible();
+
+    public void setDownloadStartedBubbleContentAccountVisible(boolean b);
+
+    @AboutConfig()
+    @DefaultBooleanValue(true)
+    public boolean isDownloadStartedBubbleContentHosterVisible();
+
+    public void setDownloadStartedBubbleContentHosterVisible(boolean b);
+
+    @AboutConfig()
+    @DefaultBooleanValue(true)
+    public boolean isCrawlerBubbleContentDurationVisible();
+
+    public void setCrawlerBubbleContentDurationVisible(boolean b);
+
+    @AboutConfig()
+    @DefaultBooleanValue(true)
+    public boolean isCrawlerBubbleContentLinkCountVisible();
+
+    public void setCrawlerBubbleContentLinkCountVisible(boolean b);
+
+    @AboutConfig()
+    @DefaultBooleanValue(true)
+    public boolean isCrawlerBubbleContentPackageCountVisible();
+
+    public void setCrawlerBubbleContentPackageCountVisible(boolean b);
+
+    @AboutConfig()
+    @DefaultBooleanValue(true)
+    public boolean isCrawlerBubbleContentOfflineCountVisible();
+
+    public void setCrawlerBubbleContentOfflineCountVisible(boolean b);
+
+    @AboutConfig()
+    @DefaultBooleanValue(true)
+    public boolean isCrawlerBubbleContentOnlineCountVisible();
+
+    public void setCrawlerBubbleContentOnlineCountVisible(boolean b);
+
+    @AboutConfig()
+    @DefaultBooleanValue(true)
+    public boolean isCrawlerBubbleContentStatusVisible();
+
+    public void setCrawlerBubbleContentStatusVisible(boolean b);
+
+    @AboutConfig()
+    @DefaultBooleanValue(true)
+    public boolean isCrawlerBubbleContentAnimatedIconVisible();
+
+    public void setCrawlerBubbleContentAnimatedIconVisible(boolean b);
+
+    @AboutConfig()
+    @DefaultBooleanValue(true)
+    public boolean isDownloadStartedBubbleContentFilenameVisible();
+
+    public void setDownloadStartedBubbleContentFilenameVisible(boolean b);
+
 }

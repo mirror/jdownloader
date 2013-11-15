@@ -11,6 +11,8 @@ import java.io.IOException;
 import java.text.DecimalFormat;
 
 import javax.swing.BorderFactory;
+import javax.swing.Icon;
+import javax.swing.JComponent;
 
 import org.appwork.swing.components.circlebar.CircledProgressBar;
 import org.appwork.swing.components.circlebar.IconPainter;
@@ -20,10 +22,12 @@ import org.appwork.swing.exttable.columns.ExtTextColumn;
 import org.appwork.utils.ColorUtils;
 import org.appwork.utils.Files;
 import org.appwork.utils.os.CrossSystem;
-import org.appwork.utils.swing.SwingUtils;
+import org.appwork.utils.swing.renderer.RenderLabel;
+import org.appwork.utils.swing.renderer.RendererMigPanel;
 import org.jdownloader.extensions.extraction.ExtractionController;
 import org.jdownloader.extensions.extraction.ExtractionEvent.Type;
 import org.jdownloader.extensions.extraction.translate.T;
+import org.jdownloader.gui.translate._GUI;
 
 public class ExtractionJobTableModel extends ExtTableModel<ExtractionController> {
 
@@ -46,71 +50,16 @@ public class ExtractionJobTableModel extends ExtTableModel<ExtractionController>
 
     @Override
     protected void initColumns() {
-        addColumn(new ExtTextColumn<ExtractionController>("number") {
-            /**
-			 * 
-			 */
-            private static final long serialVersionUID = 7047854499241202678L;
 
-            {
-
-            }
-
-            @Override
-            public boolean isSortable(final ExtractionController obj) {
-                return false;
-            }
-
-            public void resetRenderer() {
-                super.resetRenderer();
-                this.rendererField.setForeground(textColor);
-                SwingUtils.toBold(rendererField);
-
-            }
-
-            @Override
-            public int getDefaultWidth() {
-                return 25;
-            }
-
-            protected int getMaxWidth() {
-                return getDefaultWidth();
-            }
-
-            /**
-             * @return
-             */
-            public int getMinWidth() {
-                return getDefaultWidth();
-            }
-
-            @Override
-            public void configureRendererComponent(final ExtractionController value, final boolean isSelected, final boolean hasFocus, final int row, final int column) {
-
-                // this.rendererField.setText((row + 1) + "");
-
-                try {
-                    this.rendererIcon.setIcon(CrossSystem.getMime().getFileIcon(Files.getExtension(value.getArchiv().getFirstArchiveFile().getFilePath()), 16, 16));
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-
-            }
-
-            @Override
-            public String getStringValue(ExtractionController value) {
-                return null;
-            }
-
-        });
         addColumn(new ExtTextColumn<ExtractionController>(T._.tooltip_NameColumn()) {
             /**
 			 * 
 			 */
             private static final long serialVersionUID = -7294960809807602558L;
 
-            {
-
+            @Override
+            protected Color getDefaultForeground() {
+                return textColor;
             }
 
             @Override
@@ -123,24 +72,29 @@ public class ExtractionJobTableModel extends ExtTableModel<ExtractionController>
                 return value.getArchiv().getName();
             }
 
-            public void resetRenderer() {
-                super.resetRenderer();
-                this.rendererField.setForeground(textColor);
-
-            }
-
             @Override
             public int getDefaultWidth() {
                 return 200;
             }
 
             @Override
+            protected Icon getIcon(ExtractionController value) {
+                try {
+                    return (CrossSystem.getMime().getFileIcon(Files.getExtension(value.getArchiv().getFirstArchiveFile().getFilePath()), 16, 16));
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+                return null;
+            }
+
+            @Override
             public String getStringValue(ExtractionController value) {
+
                 return value.getArchiv().getName();
             }
         });
 
-        addColumn(new ExtTextColumn<ExtractionController>("status") {
+        addColumn(new ExtTextColumn<ExtractionController>(_GUI._.lit_status()) {
             /**
 			 * 
 			 */
@@ -155,10 +109,9 @@ public class ExtractionJobTableModel extends ExtTableModel<ExtractionController>
                 return false;
             }
 
-            public void resetRenderer() {
-                super.resetRenderer();
-                this.rendererField.setForeground(textColor);
-
+            @Override
+            protected Color getDefaultForeground() {
+                return textColor;
             }
 
             @Override
@@ -218,21 +171,27 @@ public class ExtractionJobTableModel extends ExtTableModel<ExtractionController>
             }
         });
         ExtCircleProgressColumn<ExtractionController> sorter;
-        addColumn(sorter = new ExtCircleProgressColumn<ExtractionController>("Progress") {
+        addColumn(sorter = new ExtCircleProgressColumn<ExtractionController>(_GUI._.lit_progress()) {
             /**
 			 * 
 			 */
             private static final long serialVersionUID = -7238552518783596726L;
+            private RendererMigPanel  panel;
+            private RenderLabel       label;
+            private DecimalFormat     format;
 
             {
+                determinatedRenderer = new CircledProgressBar();
+                renderer = determinatedRenderer;
                 determinatedRenderer.setForeground(textColor);
                 determinatedRenderer.setValueClipPainter(new IconPainter() {
 
                     public void paint(final CircledProgressBar bar, final Graphics2D g2, final Shape shape, final int diameter, final double progress) {
                         g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
                         g2.setColor(textColor);
+                        // g2.fillRect(0, 0, 10, 10);
                         final Area a = new Area(shape);
-                        a.intersect(new Area(new Ellipse2D.Float(0, 0, diameter, diameter)));
+                        a.intersect(new Area(new Ellipse2D.Float(-(diameter) / 2, -(diameter) / 2, diameter, diameter)));
 
                         g2.fill(a);
 
@@ -240,7 +199,7 @@ public class ExtractionJobTableModel extends ExtTableModel<ExtractionController>
 
                     private Dimension dimension;
                     {
-                        dimension = new Dimension(32, 32);
+                        dimension = new Dimension(20, 20);
                     }
 
                     @Override
@@ -255,14 +214,14 @@ public class ExtractionJobTableModel extends ExtTableModel<ExtractionController>
                         g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
                         g2.setColor(back);
                         final Area a = new Area(shape);
-                        a.intersect(new Area(new Ellipse2D.Float(0, 0, diameter, diameter)));
+                        a.intersect(new Area(new Ellipse2D.Float(-(diameter) / 2, -(diameter) / 2, diameter, diameter)));
 
                         g2.fill(a);
                     }
 
                     private Dimension dimension;
                     {
-                        dimension = new Dimension(32, 32);
+                        dimension = new Dimension(20, 20);
                     }
 
                     @Override
@@ -271,11 +230,35 @@ public class ExtractionJobTableModel extends ExtTableModel<ExtractionController>
                     }
                 });
 
+                panel = new RendererMigPanel("ins 0", "[][grow,fill]", "[]");
+                panel.add(determinatedRenderer, "width 20!,height 20!");
+                label = new RenderLabel();
+                format = new DecimalFormat("00.00 %");
+                panel.add(label);
             }
 
             @Override
             protected String getString(ExtractionController value) {
+
                 return "fdfd";
+            }
+
+            @Override
+            protected Color getDefaultForeground() {
+                return textColor;
+            }
+
+            @Override
+            public JComponent getRendererComponent(ExtractionController value, boolean isSelected, boolean hasFocus, int row, int column) {
+                super.getRendererComponent(value, isSelected, hasFocus, row, column);
+
+                return panel;
+            }
+
+            @Override
+            public void configureRendererComponent(ExtractionController value, boolean isSelected, boolean hasFocus, int row, int column) {
+                super.configureRendererComponent(value, isSelected, hasFocus, row, column);
+                label.setText(format.format(value.getProgress()));
             }
 
             @Override
@@ -289,7 +272,7 @@ public class ExtractionJobTableModel extends ExtTableModel<ExtractionController>
 
             @Override
             public int getDefaultWidth() {
-                return 25;
+                return 80;
             }
 
             protected int getMaxWidth() {
@@ -310,54 +293,7 @@ public class ExtractionJobTableModel extends ExtTableModel<ExtractionController>
 
             @Override
             protected long getValue(ExtractionController value) {
-                return (long) (value.getProgress() * 100);
-            }
-        });
-
-        addColumn(new ExtTextColumn<ExtractionController>("percent") {
-            /**
-			 * 
-			 */
-            private static final long serialVersionUID = -3330335576942677846L;
-            private DecimalFormat     format;
-
-            {
-                format = new DecimalFormat("00.00 %");
-
-            }
-
-            @Override
-            public boolean isSortable(final ExtractionController obj) {
-                return false;
-            }
-
-            public void resetRenderer() {
-                super.resetRenderer();
-                this.rendererField.setForeground(textColor);
-
-            }
-
-            @Override
-            public int getDefaultWidth() {
-                return 50;
-            }
-
-            protected int getMaxWidth() {
-                return getDefaultWidth();
-            }
-
-            /**
-             * @return
-             */
-            public int getMinWidth() {
-                return getDefaultWidth();
-            }
-
-            @Override
-            public String getStringValue(ExtractionController value) {
-
-                return format.format(value.getProgress());
-
+                return (long) (value.getProgress() * 10000);
             }
         });
 

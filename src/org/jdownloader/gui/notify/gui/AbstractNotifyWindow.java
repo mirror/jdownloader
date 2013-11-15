@@ -23,8 +23,10 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
 import java.awt.image.BufferedImage;
+import java.util.List;
 
 import javax.swing.JLabel;
+import javax.swing.JSeparator;
 import javax.swing.SwingConstants;
 import javax.swing.Timer;
 
@@ -32,22 +34,36 @@ import jd.gui.swing.jdgui.JDGui;
 import jd.gui.swing.jdgui.views.settings.ConfigurationView;
 
 import org.appwork.storage.config.JsonConfig;
+import org.appwork.storage.config.ValidationException;
+import org.appwork.storage.config.events.GenericConfigEventListener;
+import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.swing.ExtJWindow;
 import org.appwork.swing.MigPanel;
 import org.appwork.swing.components.ExtButton;
 import org.appwork.utils.Application;
 import org.appwork.utils.ColorUtils;
 import org.appwork.utils.images.IconIO;
+import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.SwingUtils;
+import org.appwork.utils.swing.dialog.Dialog;
+import org.appwork.utils.swing.dialog.DialogCanceledException;
+import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.appwork.utils.swing.windowmanager.WindowManager.FrameState;
+import org.jdownloader.actions.AppAction;
+import org.jdownloader.controlling.contextmenu.gui.ExtPopupMenu;
+import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.jdtrayicon.ScreenStack;
 import org.jdownloader.gui.notify.AbstractBubbleContentPanel;
+import org.jdownloader.gui.notify.AbstractBubbleSupport;
+import org.jdownloader.gui.notify.BubbleNotify;
+import org.jdownloader.gui.notify.Element;
 import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.gui.views.components.ExtRealCheckBoxMenuItem;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings;
 import org.jdownloader.updatev2.gui.LAFOptions;
 
-public abstract class AbstractNotifyWindow<T extends AbstractBubbleContentPanel> extends ExtJWindow implements ActionListener, AWTEventListener {
+public abstract class AbstractNotifyWindow<T extends AbstractBubbleContentPanel> extends ExtJWindow implements ActionListener, AWTEventListener, GenericConfigEventListener<Boolean> {
 
     private static final int BOTTOM_MARGIN = 5;
     private static final int TOP_MARGIN    = 20;
@@ -61,21 +77,27 @@ public abstract class AbstractNotifyWindow<T extends AbstractBubbleContentPanel>
         return endLocation;
     }
 
-    private int       timeout = 15000;
+    private int                   timeout = 15000;
 
-    private Point     startLocation;
-    private int       round   = 10;
-    private Balloner  controller;
-    private T         contentComponent;
-    private long      endTime = 0;
-    private boolean   mouseOver;
-    private Rectangle bounds;
-    private boolean   disposed;
-    private boolean   closed;
-    private JLabel    headerLbl;
+    private Point                 startLocation;
+    private int                   round   = 10;
+    private Balloner              controller;
+    private T                     contentComponent;
+    private long                  endTime = 0;
+    private boolean               mouseOver;
+    private Rectangle             bounds;
+    private boolean               disposed;
+    private boolean               closed;
+    private JLabel                headerLbl;
+    private AbstractBubbleSupport bubbleSupport;
 
     public AbstractNotifyWindow(String caption, T comp) {
+        this(null, caption, comp);
+    };
+
+    public AbstractNotifyWindow(AbstractBubbleSupport bubbleSupport, String caption, T comp) {
         super();
+        this.bubbleSupport = bubbleSupport;
         bounds = new Rectangle();
         content = new MigPanel("ins 2 5 10 5,wrap 1", "[grow,fill]", "[][grow,fill]") {
 
@@ -115,11 +137,55 @@ public abstract class AbstractNotifyWindow<T extends AbstractBubbleContentPanel>
         timeout = CFG_BUBBLE.DEFAULT_TIMEOUT.getValue();
         if (timeout > 0) {
         }
+
+        if (bubbleSupport != null) {
+            List<Element> elements = bubbleSupport.getElements();
+            if (elements != null) {
+                for (Element e : elements) {
+                    e.getKeyhandler().getEventSender().addListener(this, true);
+                }
+            }
+        }
+    }
+
+    public AbstractBubbleSupport getBubbleSupport() {
+        return bubbleSupport;
+    }
+
+    @Override
+    public void onConfigValidatorError(KeyHandler<Boolean> keyHandler, Boolean invalidValue, ValidationException validateException) {
+    }
+
+    @Override
+    public void onConfigValueModified(KeyHandler<Boolean> keyHandler, Boolean newValue) {
+        new EDTRunner() {
+
+            @Override
+            protected void runInEDT() {
+                updateLayout();
+            }
+        };
+    }
+
+    protected void updateLayout() {
+
+        getContentComponent().updateLayout();
+        pack();
+        BubbleNotify.getInstance().relayout();
+
     }
 
     public void dispose() {
         disposed = true;
         closed = true;
+        if (bubbleSupport != null) {
+            List<Element> elements = bubbleSupport.getElements();
+            if (elements != null) {
+                for (Element e : elements) {
+                    e.getKeyhandler().getEventSender().removeListener(this);
+                }
+            }
+        }
         super.dispose();
     }
 
@@ -364,7 +430,7 @@ public abstract class AbstractNotifyWindow<T extends AbstractBubbleContentPanel>
                 addActionListener(new ActionListener() {
 
                     public void actionPerformed(ActionEvent e) {
-                        onSettings();
+                        onSettings(e);
                         onRollOut();
                     }
 
@@ -432,14 +498,87 @@ public abstract class AbstractNotifyWindow<T extends AbstractBubbleContentPanel>
         return ret;
     }
 
-    protected void onSettings() {
+    protected void onSettings(ActionEvent action) {
 
-        if (!getContentComponent().onSettings()) {
-            JDGui.getInstance().setFrameState(FrameState.TO_FRONT_FOCUSED);
-            JsonConfig.create(GraphicalUserInterfaceSettings.class).setConfigViewVisible(true);
-            JDGui.getInstance().setContent(ConfigurationView.getInstance(), true);
-            ConfigurationView.getInstance().setSelectedSubPanel(BubbleNotifyConfigPanel.class);
+        final AbstractBubbleSupport support = getBubbleSupport();
+
+        if (support != null) {
+            ExtRealCheckBoxMenuItem item;
+            ExtPopupMenu popup = new ExtPopupMenu();
+            List<Element> elements = support.getElements();
+            if (elements != null) {
+
+                for (final Element e : elements) {
+
+                    popup.add(item = new ExtRealCheckBoxMenuItem(new AppAction() {
+                        {
+
+                            setName(e.getLabel());
+                            setIconKey(e.getIcon());
+                            setSelected(e.getKeyhandler().isEnabled());
+                        }
+
+                        @Override
+                        public void actionPerformed(ActionEvent e1) {
+                            e.getKeyhandler().toggle();
+                        }
+                    }));
+                    item.setHideOnClick(false);
+                }
+
+            }
+            popup.add(new JSeparator());
+            popup.add(new AppAction() {
+                {
+                    setName(_GUI._.bubble_hide_permanent());
+                    setIconKey(IconKey.ICON_FALSE);
+                }
+
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    try {
+                        Dialog.getInstance().showConfirmDialog(0, _GUI._.lit_are_you_sure(), _GUI._.bubble_disable_rly_msg(support.getLabel()), NewTheme.I().getIcon(IconKey.ICON_QUESTION, 32), null, null);
+                        support.getKeyHandler().setValue(false);
+                        hideBubble(getTimeout());
+                    } catch (DialogClosedException e1) {
+                        e1.printStackTrace();
+                    } catch (DialogCanceledException e1) {
+                        e1.printStackTrace();
+                    }
+
+                }
+            });
+            popup.add(new JSeparator());
+            popup.add(new AppAction() {
+                {
+                    setName(_GUI._.bubblepopup_open_settings());
+                    setIconKey(IconKey.ICON_SETTINGS);
+                }
+
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    JDGui.getInstance().setFrameState(FrameState.TO_FRONT_FOCUSED);
+                    JsonConfig.create(GraphicalUserInterfaceSettings.class).setConfigViewVisible(true);
+                    JDGui.getInstance().setContent(ConfigurationView.getInstance(), true);
+                    ConfigurationView.getInstance().setSelectedSubPanel(BubbleNotifyConfigPanel.class);
+                }
+            });
+            Component source = (Component) action.getSource();
+            popup.show(source, 0, -popup.getPreferredSize().height);
+            return;
         }
+
+        JDGui.getInstance().setFrameState(FrameState.TO_FRONT_FOCUSED);
+        JsonConfig.create(GraphicalUserInterfaceSettings.class).setConfigViewVisible(true);
+        JDGui.getInstance().setContent(ConfigurationView.getInstance(), true);
+        ConfigurationView.getInstance().setSelectedSubPanel(BubbleNotifyConfigPanel.class);
+
+    }
+
+    protected void hideBubble(int timeout) {
+        startTimeout(timeout);
+        getContentComponent().stop();
+
     }
 
     protected void onClose() {

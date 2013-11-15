@@ -51,7 +51,7 @@ public class IconBadgePainter {
 
                 // g2.draw(a);
                 g2.setColor(Color.GREEN);
-                a.intersect(new Area(new Ellipse2D.Float(0, 0, diameter, diameter)));
+                a.intersect(new Area(new Ellipse2D.Float(-(diameter) / 2, -(diameter) / 2, diameter, diameter)));
 
                 g2.fill(a);
 
@@ -60,7 +60,7 @@ public class IconBadgePainter {
                 // g2.draw(shape);
                 g2.setStroke(new BasicStroke(2, BasicStroke.CAP_ROUND, BasicStroke.CAP_ROUND));
                 g2.setColor(Color.DARK_GRAY);
-                g2.draw(new Area(new Ellipse2D.Float(1, 1, diameter - 2, diameter - 2)));
+                g2.draw(new Area(new Ellipse2D.Float(-(diameter - 2) / 2, -(diameter - 2) / 2, diameter - 2, diameter - 2)));
 
             }
 
@@ -85,7 +85,7 @@ public class IconBadgePainter {
                 final Area a = new Area(shape);
 
                 g2.setColor(Color.WHITE);
-                a.intersect(new Area(new Ellipse2D.Float(0, 0, diameter, diameter)));
+                a.intersect(new Area(new Ellipse2D.Float(-(diameter) / 2, -(diameter) / 2, diameter, diameter)));
 
                 g2.fill(a);
                 // g2.setStroke(new BasicStroke(1, BasicStroke.CAP_ROUND, BasicStroke.CAP_ROUND));

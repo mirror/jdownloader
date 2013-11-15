@@ -1,4 +1,4 @@
-package org.jdownloader.gui.notify;
+package org.jdownloader.gui.notify.captcha;
 
 import java.awt.event.MouseEvent;
 
@@ -10,6 +10,8 @@ import org.jdownloader.captcha.v2.solver.gui.DialogClickCaptchaSolver;
 import org.jdownloader.captcha.v2.solverjob.ChallengeSolverJobListener;
 import org.jdownloader.captcha.v2.solverjob.SolverJob;
 import org.jdownloader.gui.IconKey;
+import org.jdownloader.gui.notify.BasicContentPanel;
+import org.jdownloader.gui.notify.BubbleNotify;
 import org.jdownloader.gui.notify.gui.AbstractNotifyWindow;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
@@ -18,8 +20,8 @@ public class CaptchaNotify extends AbstractNotifyWindow<BasicContentPanel> imple
 
     private SolverJob<?> job;
 
-    public CaptchaNotify(SolverJob<?> job) {
-        super(_GUI._.CaptchaNotify_CaptchaNotify_title_(Challenge.getHost(job.getChallenge())), new BasicContentPanel(_GUI._.CaptchaNotify_CaptchaNotifyPanel_text(), NewTheme.I().getIcon(IconKey.ICON_OCR, 32)));
+    public CaptchaNotify(CaptchaBubbleSupport captchaBubbleSupport, SolverJob<?> job) {
+        super(captchaBubbleSupport, _GUI._.CaptchaNotify_CaptchaNotify_title_(Challenge.getHost(job.getChallenge())), new BasicContentPanel(_GUI._.CaptchaNotify_CaptchaNotifyPanel_text(), NewTheme.I().getIcon(IconKey.ICON_OCR, 32)));
 
         job.getEventSender().addListener(this, true);
         this.job = job;

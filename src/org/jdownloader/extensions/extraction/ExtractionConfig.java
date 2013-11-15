@@ -177,4 +177,41 @@ public interface ExtractionConfig extends ExtensionConfigInterface {
     boolean isBubbleEnabledIfArchiveExtractionIsInProgress();
 
     void setBubbleEnabledIfArchiveExtractionIsInProgress(boolean b);
+
+    @DefaultBooleanValue(true)
+    @AboutConfig
+    boolean isBubbleContentDurationVisible();
+
+    void setBubbleContentDurationVisible(boolean b);
+
+    @DefaultBooleanValue(true)
+    @AboutConfig
+    boolean isBubbleContentCircleProgressVisible();
+
+    void setBubbleContentCircleProgressVisible(boolean b);
+
+    @DefaultBooleanValue(true)
+    @AboutConfig
+    boolean isBubbleContentStatusVisible();
+
+    void setBubbleContentStatusVisible(boolean b);
+
+    @DefaultBooleanValue(true)
+    @AboutConfig
+    boolean isBubbleContentCurrentFileVisible();
+
+    void setBubbleContentCurrentFileVisible(boolean b);
+
+    @DefaultBooleanValue(true)
+    @AboutConfig
+    boolean isBubbleContentExtractToFolderVisible();
+
+    void setBubbleContentExtractToFolderVisible(boolean b);
+
+    @DefaultBooleanValue(true)
+    @AboutConfig
+    boolean isBubbleContentArchivenameVisible();
+
+    void setBubbleContentArchivenameVisible(boolean b);
+
 }

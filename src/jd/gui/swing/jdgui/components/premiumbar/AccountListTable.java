@@ -39,6 +39,11 @@ public class AccountListTable extends BasicJDTable<AccountEntry> {
         return ret;
     }
 
+    @Override
+    protected void addSelectionHighlighter() {
+        super.addSelectionHighlighter();
+    }
+
     public static void setHeaderRendererColors(ExtTableHeaderRenderer ret) {
         ret.setFocusBackground(new Color(255, 255, 255, 80));
         ret.setBackgroundC(new Color(255, 255, 255, 80));

@@ -38,7 +38,11 @@ public class ExtractorToolTip extends PanelToolTip {
         color = (LAFOptions.getInstance().getColorForTooltipForeground());
         empty = new JLabel(T._.tooltip_empty());
         empty.setForeground(color);
-        panel.add(empty, "hidemode 3");
+        JLabel label = new JLabel(_GUI._.ExtractorToolTip_ExtractorToolTip_title(), NewTheme.I().getIcon(IconKey.ICON_EXTRACT, 20), JLabel.LEFT);
+        SwingUtils.toBold(label);
+        label.setForeground(LAFOptions.getInstance().getColorForTooltipForeground());
+        panel.add(label, "");
+        panel.add(empty, "hidemode 3,gapleft 23");
         table = new ExtractionJobTable(model = new ExtractionJobTableModel((LAFOptions.getInstance().getColorForTooltipForeground())));
         model.addTableModelListener(new TableModelListener() {
 
@@ -49,10 +53,7 @@ public class ExtractorToolTip extends PanelToolTip {
             }
         });
         table.getTableHeader().setOpaque(false);
-        JLabel label = new JLabel(_GUI._.ExtractorToolTip_ExtractorToolTip_title(), NewTheme.I().getIcon(IconKey.ICON_EXTRACT, 20), JLabel.LEFT);
-        SwingUtils.toBold(label);
-        label.setForeground(LAFOptions.getInstance().getColorForTooltipForeground());
-        panel.add(label, "gapleft 5");
+
         panel.add(table.getTableHeader(), "hidemode 3");
         panel.add(table, "hidemode 3");
     }
@@ -74,11 +75,14 @@ public class ExtractorToolTip extends PanelToolTip {
 
             table.setPreferredSize(new Dimension(width + 110 + 150, list.length * 22));
             table.setVisible(true);
+            table.getTableHeader().setVisible(true);
+
             empty.setVisible(false);
             panel.repaint();
         } else {
             table.setVisible(false);
             empty.setVisible(true);
+            table.getTableHeader().setVisible(false);
         }
     }
 }

@@ -1,4 +1,4 @@
-package org.jdownloader.gui.notify;
+package org.jdownloader.gui.notify.linkcrawler;
 
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -21,6 +21,7 @@ import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.windowmanager.WindowManager.FrameState;
+import org.jdownloader.gui.notify.BubbleNotify;
 import org.jdownloader.gui.notify.gui.AbstractNotifyWindow;
 import org.jdownloader.gui.notify.gui.BubbleNotifyConfigPanel;
 import org.jdownloader.gui.translate._GUI;
@@ -48,8 +49,8 @@ public class LinkCrawlerBubble extends AbstractNotifyWindow<LinkCrawlerBubbleCon
 
     private boolean              registered = false;
 
-    public LinkCrawlerBubble(LinkCollectorCrawler parameter) {
-        super(_GUI._.balloon_new_links(), new LinkCrawlerBubbleContent());
+    public LinkCrawlerBubble(LinkCrawlerBubbleSupport linkCrawlerBubbleSupport, LinkCollectorCrawler parameter) {
+        super(linkCrawlerBubbleSupport, _GUI._.balloon_new_links(), new LinkCrawlerBubbleContent());
         this.crawler = parameter;
 
     }

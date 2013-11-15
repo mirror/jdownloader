@@ -35,17 +35,14 @@ public class CFG_GUI {
      **/
     public static final BooleanKeyHandler                              SPEEDMETER_ANTI_ALIASING_ENABLED                     = SH.getKeyHandler("SpeedmeterAntiAliasingEnabled", BooleanKeyHandler.class);
 
+    public static final EnumKeyHandler                                 DELETE_DIALOG_DEFAULT_SELECTION                      = SH.getKeyHandler("DeleteDialogDefaultSelection", EnumKeyHandler.class);
+
     /**
      * Refreshrate in ms for the DownloadView
      **/
     public static final LongKeyHandler                                 DOWNLOAD_VIEW_REFRESH                                = SH.getKeyHandler("DownloadViewRefresh", LongKeyHandler.class);
 
     public static final EnumKeyHandler                                 NEW_LINKS_ACTION                                     = SH.getKeyHandler("NewLinksAction", EnumKeyHandler.class);
-
-    /**
-     * If true, java will try to use D3D for graphics
-     **/
-    public static final BooleanKeyHandler                              USE_D3D                                              = SH.getKeyHandler("UseD3D", BooleanKeyHandler.class);
 
     /**
      * Packages get a different background color if enabled
@@ -57,12 +54,17 @@ public class CFG_GUI {
      **/
     public static final BooleanKeyHandler                              CLIPBOARD_MONITORED                                  = SH.getKeyHandler("ClipboardMonitored", BooleanKeyHandler.class);
 
-    public static final EnumKeyHandler                                 NEW_DIALOG_FRAME_STATE                               = SH.getKeyHandler("NewDialogFrameState", EnumKeyHandler.class);
+    /**
+     * If true, java will try to use D3D for graphics
+     **/
+    public static final BooleanKeyHandler                              USE_D3D                                              = SH.getKeyHandler("UseD3D", BooleanKeyHandler.class);
 
     /**
      * Use horizontal Scrollbars in Linkgrabber
      **/
     public static final BooleanKeyHandler                              HORIZONTAL_SCROLLBARS_IN_LINKGRABBER_TABLE_ENABLED   = SH.getKeyHandler("HorizontalScrollbarsInLinkgrabberTableEnabled", BooleanKeyHandler.class);
+
+    public static final EnumKeyHandler                                 NEW_DIALOG_FRAME_STATE                               = SH.getKeyHandler("NewDialogFrameState", EnumKeyHandler.class);
 
     public static final BooleanKeyHandler                              LINK_PROPERTIES_PANEL_CHECKSUM_VISIBLE               = SH.getKeyHandler("LinkPropertiesPanelChecksumVisible", BooleanKeyHandler.class);
 
@@ -71,15 +73,15 @@ public class CFG_GUI {
      **/
     public static final BooleanKeyHandler                              DOWNLOAD_TAB_OVERVIEW_VISIBLE                        = SH.getKeyHandler("DownloadTabOverviewVisible", BooleanKeyHandler.class);
 
-    public static final StringKeyHandler                               ACTIVE_CONFIG_PANEL                                  = SH.getKeyHandler("ActiveConfigPanel", StringKeyHandler.class);
-
     public static final BooleanKeyHandler                              LINK_PROPERTIES_PANEL_COMMENT_VISIBLE                = SH.getKeyHandler("LinkPropertiesPanelCommentVisible", BooleanKeyHandler.class);
+
+    public static final StringKeyHandler                               ACTIVE_CONFIG_PANEL                                  = SH.getKeyHandler("ActiveConfigPanel", StringKeyHandler.class);
 
     public static final StringKeyHandler                               ACTIVE_PLUGIN_CONFIG_PANEL                           = SH.getKeyHandler("ActivePluginConfigPanel", StringKeyHandler.class);
 
-    public static final BooleanKeyHandler                              CAPTCHA_DEBUG_MODE_ENABLED                           = SH.getKeyHandler("CaptchaDebugModeEnabled", BooleanKeyHandler.class);
-
     public static final IntegerKeyHandler                              SPEED_METER_FRAMES_PER_SECOND                        = SH.getKeyHandler("SpeedMeterFramesPerSecond", IntegerKeyHandler.class);
+
+    public static final BooleanKeyHandler                              CAPTCHA_DEBUG_MODE_ENABLED                           = SH.getKeyHandler("CaptchaDebugModeEnabled", BooleanKeyHandler.class);
 
     /**
      * Icon Theme ID. Make sure that ./themes/<ID>/ exists
@@ -87,15 +89,15 @@ public class CFG_GUI {
     public static final StringKeyHandler                               THEME_ID                                             = SH.getKeyHandler("ThemeID", StringKeyHandler.class);
 
     /**
-     * If true, TaskColumn will show Premium Alerts in Free Download mode if JD thinks Premium would be better currently.
-     **/
-    public static final BooleanKeyHandler                              PREMIUM_ALERT_TASK_COLUMN_ENABLED                    = SH.getKeyHandler("PremiumAlertTaskColumnEnabled", BooleanKeyHandler.class);
-
-    /**
      * JDownloader uses a workaround to bring it's window or dialogs to focused to front. It simulates an ALT key shortcut. If disabled, you
      * will get focus problems
      **/
     public static final ListHandler<int[]>                             WINDOWS_WINDOW_MANAGER_ALT_KEY_COMBI                 = (ListHandler<int[]>) SH.getKeyHandler("WindowsWindowManagerAltKeyCombi", ListHandler.class);
+
+    /**
+     * If true, TaskColumn will show Premium Alerts in Free Download mode if JD thinks Premium would be better currently.
+     **/
+    public static final BooleanKeyHandler                              PREMIUM_ALERT_TASK_COLUMN_ENABLED                    = SH.getKeyHandler("PremiumAlertTaskColumnEnabled", BooleanKeyHandler.class);
 
     public static final BooleanKeyHandler                              BALLOON_NOTIFICATION_ENABLED                         = SH.getKeyHandler("BalloonNotificationEnabled", BooleanKeyHandler.class);
 
@@ -114,9 +116,9 @@ public class CFG_GUI {
 
     public static final BooleanKeyHandler                              OVERVIEW_PANEL_VISIBLE_ONLY_INFO_VISIBLE             = SH.getKeyHandler("OverviewPanelVisibleOnlyInfoVisible", BooleanKeyHandler.class);
 
-    public static final EnumKeyHandler                                 LAST_IF_FILE_EXISTS                                  = SH.getKeyHandler("LastIfFileExists", EnumKeyHandler.class);
-
     public static final BooleanKeyHandler                              LINK_PROPERTIES_PANEL_FILENAME_VISIBLE               = SH.getKeyHandler("LinkPropertiesPanelFilenameVisible", BooleanKeyHandler.class);
+
+    public static final EnumKeyHandler                                 LAST_IF_FILE_EXISTS                                  = SH.getKeyHandler("LastIfFileExists", EnumKeyHandler.class);
 
     /**
      * Captcha Dialog Image scale Faktor in %
@@ -139,6 +141,11 @@ public class CFG_GUI {
     public static final EnumKeyHandler                                 LINK_DOUBLE_CLICK_ACTION                             = SH.getKeyHandler("LinkDoubleClickAction", EnumKeyHandler.class);
 
     public static final BooleanKeyHandler                              UPDATE_BUTTON_FLASHING_ENABLED                       = SH.getKeyHandler("UpdateButtonFlashingEnabled", BooleanKeyHandler.class);
+
+    /**
+     * Placeholders: |#TITLE|, | - #SPEED/s|, | - #UPDATENOTIFY|
+     **/
+    public static final StringKeyHandler                               TITLE_PATTERN                                        = SH.getKeyHandler("TitlePattern", StringKeyHandler.class);
 
     public static final StringKeyHandler                               PASSWORD                                             = SH.getKeyHandler("Password", StringKeyHandler.class);
 
@@ -263,13 +270,13 @@ public class CFG_GUI {
 
     public static final BooleanKeyHandler                              OVERVIEW_PANEL_SMART_INFO_VISIBLE                    = SH.getKeyHandler("OverviewPanelSmartInfoVisible", BooleanKeyHandler.class);
 
-    public static final BooleanKeyHandler                              OVERVIEW_PANEL_TOTAL_INFO_VISIBLE                    = SH.getKeyHandler("OverviewPanelTotalInfoVisible", BooleanKeyHandler.class);
-
     /**
      * JDownloader uses a workaround to bring it's window or dialogs to focused to front. It simulates an ALT key shortcut. If disabled, you
      * will get focus problems
      **/
     public static final BooleanKeyHandler                              WINDOWS_WINDOW_MANAGER_ALT_KEY_WORKAROUND_ENABLED    = SH.getKeyHandler("WindowsWindowManagerAltKeyWorkaroundEnabled", BooleanKeyHandler.class);
+
+    public static final BooleanKeyHandler                              OVERVIEW_PANEL_TOTAL_INFO_VISIBLE                    = SH.getKeyHandler("OverviewPanelTotalInfoVisible", BooleanKeyHandler.class);
 
     /**
      * If true, hostcolumn will also show full hostname

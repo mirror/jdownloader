@@ -32,7 +32,7 @@ import org.appwork.storage.config.events.GenericConfigEventListener;
 import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.utils.swing.EDTRunner;
 import org.jdownloader.gui.notify.BubbleNotify;
-import org.jdownloader.gui.notify.BubbleType;
+import org.jdownloader.gui.notify.AbstractBubbleSupport;
 import org.jdownloader.gui.notify.gui.BubbleNotifyConfig.BubbleNotifyEnabledState;
 import org.jdownloader.gui.settings.AbstractConfigPanel;
 import org.jdownloader.gui.settings.Pair;
@@ -80,7 +80,7 @@ public class BubbleNotifyConfigPanel extends AbstractConfigPanel implements Stat
                 new ComboBox<BubbleNotifyEnabledState>((KeyHandler<BubbleNotifyEnabledState>) CFG_BUBBLE.SH.getKeyHandler("BubbleNotifyEnabledState", KeyHandler.class), new BubbleNotifyEnabledState[] { BubbleNotifyEnabledState.ALWAYS, BubbleNotifyEnabledState.JD_NOT_ACTIVE, BubbleNotifyEnabledState.TRAY_OR_TASKBAR, BubbleNotifyEnabledState.TASKBAR, BubbleNotifyEnabledState.TRAY, BubbleNotifyEnabledState.NEVER, }, new String[] { _GUI._.BubbleNotifyConfigPanel_BubbleNotifyConfigPanel_always(), _GUI._.BubbleNotifyConfigPanel_BubbleNotifyConfigPanel_jdnotactive(), _GUI._.BubbleNotifyConfigPanel_BubbleNotifyConfigPanel_trayortask(), _GUI._.BubbleNotifyConfigPanel_BubbleNotifyConfigPanel_taskbar(), _GUI._.BubbleNotifyConfigPanel_BubbleNotifyConfigPanel_tray(), _GUI._.BubbleNotifyConfigPanel_BubbleNotifyConfigPanel_never(), }));
 
         boxes = new ArrayList<Pair<Checkbox>>();
-        for (BubbleType pt : BubbleNotify.getInstance().getTypes()) {
+        for (AbstractBubbleSupport pt : BubbleNotify.getInstance().getTypes()) {
             boxes.add(addPair(_GUI._.lit_or() + " " + pt.getLabel(), "skip 1,split 2,pushx,growx", null, new Checkbox(pt.getKeyHandler())));
         }
         this.addHeader(_GUI._.BubbleNotifyConfigPanel_BubbleNotifyConfigPanel_settings_(), NewTheme.I().getIcon("settings", 32));
@@ -90,7 +90,7 @@ public class BubbleNotifyConfigPanel extends AbstractConfigPanel implements Stat
         addPair(_GUI._.BubbleNotifyConfigPanel_BubbleNotifyConfigPanel_fadetime(), null, new Spinner(CFG_BUBBLE.FADE_ANIMATION_DURATION));
     }
 
-    public void updateTypes(List<BubbleType> types) {
+    public void updateTypes(List<AbstractBubbleSupport> types) {
     }
 
     @Override

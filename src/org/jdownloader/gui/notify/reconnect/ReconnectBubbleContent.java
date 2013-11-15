@@ -1,4 +1,6 @@
-package org.jdownloader.gui.notify;
+package org.jdownloader.gui.notify.reconnect;
+
+import java.util.ArrayList;
 
 import javax.swing.JLabel;
 
@@ -7,6 +9,8 @@ import jd.controlling.reconnect.ipcheck.IPConnectionState;
 import jd.controlling.reconnect.ipcheck.IPController;
 
 import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.gui.notify.AbstractBubbleContentPanel;
+import org.jdownloader.gui.notify.Element;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
 
@@ -56,6 +60,13 @@ public class ReconnectBubbleContent extends AbstractBubbleContentPanel {
             break;
         }
 
+    }
+
+    @Override
+    public void updateLayout() {
+    }
+
+    public static void fill(ArrayList<Element> elements) {
     }
 
 }

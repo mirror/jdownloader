@@ -144,6 +144,11 @@ public class AccountListTableModel extends ExtTableModel<AccountEntry> implement
                 }
 
                 @Override
+                protected Color getDefaultForeground() {
+                    return LAFOptions.getInstance().getColorForTooltipForeground();
+                }
+
+                @Override
                 public boolean isHidable() {
                     return false;
                 }
@@ -180,17 +185,7 @@ public class AccountListTableModel extends ExtTableModel<AccountEntry> implement
             }
 
             @Override
-            public void resetRenderer() {
-                super.resetRenderer();
-                rendererField.setForeground(LAFOptions.getInstance().getColorForTooltipForeground());
-
-            }
-
-            /**
-             * @return
-             */
             protected Color getDefaultForeground() {
-
                 return LAFOptions.getInstance().getColorForTooltipForeground();
             }
 
@@ -247,13 +242,6 @@ public class AccountListTableModel extends ExtTableModel<AccountEntry> implement
             @Override
             public int getDefaultWidth() {
                 return getMinWidth();
-            }
-
-            @Override
-            public void resetRenderer() {
-                super.resetRenderer();
-                rendererField.setForeground(LAFOptions.getInstance().getColorForTooltipForeground());
-
             }
 
             protected Color getDefaultForeground() {

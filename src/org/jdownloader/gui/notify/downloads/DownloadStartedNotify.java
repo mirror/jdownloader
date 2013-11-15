@@ -1,4 +1,4 @@
-package org.jdownloader.gui.notify;
+package org.jdownloader.gui.notify.downloads;
 
 import java.awt.event.MouseEvent;
 
@@ -13,17 +13,18 @@ import org.jdownloader.gui.notify.gui.BubbleNotifyConfigPanel;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings;
 
-public class DownloadStoppedNotify extends AbstractNotifyWindow<DownloadStoppedContentPanel> {
+public class DownloadStartedNotify extends AbstractNotifyWindow<DownloadStartedContentPanel> {
 
-    public DownloadStoppedNotify(SingleDownloadController downloadController) {
-        super(_GUI._.DownloadStoppedNotify(), new DownloadStoppedContentPanel(downloadController));
+    public DownloadStartedNotify(StartDownloadsBubbleSupport startDownloadsBubbleSupport, SingleDownloadController downloadController) {
+        super(startDownloadsBubbleSupport, _GUI._.DownloadStartNotify_DownloadStartNotify(), new DownloadStartedContentPanel(downloadController));
+
     }
 
     @Override
     protected void onMouseClicked(MouseEvent m) {
         super.onMouseClicked(m);
-
         getContentComponent().onClicked();
+
     }
 
     protected void onSettings() {

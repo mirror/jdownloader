@@ -40,17 +40,7 @@ public class BasicJDTable<T> extends ExtTable<T> implements GenericConfigEventLi
 
         this.setBackground((LAFOptions.getInstance().getColorForPanelBackground()));
 
-        this.getModel().addExtComponentRowHighlighter(new ExtComponentRowHighlighter<T>((LAFOptions.getInstance().getColorForTableSelectedRowsForeground()), (LAFOptions.getInstance().getColorForTableSelectedRowsBackground()), null) {
-            public int getPriority() {
-                return Integer.MAX_VALUE;
-            }
-
-            @Override
-            public boolean accept(ExtColumn<T> column, T value, boolean selected, boolean focus, int row) {
-                return selected;
-            }
-
-        });
+        addSelectionHighlighter();
 
         if (CFG_GUI.TABLE_MOUSE_OVER_HIGHLIGHT_ENABLED.isEnabled()) {
 
@@ -62,6 +52,20 @@ public class BasicJDTable<T> extends ExtTable<T> implements GenericConfigEventLi
         this.setIntercellSpacing(new Dimension(0, 0));
         initAlternateRowHighlighter();
 
+    }
+
+    protected void addSelectionHighlighter() {
+        this.getModel().addExtComponentRowHighlighter(new ExtComponentRowHighlighter<T>((LAFOptions.getInstance().getColorForTableSelectedRowsForeground()), (LAFOptions.getInstance().getColorForTableSelectedRowsBackground()), null) {
+            public int getPriority() {
+                return Integer.MAX_VALUE;
+            }
+
+            @Override
+            public boolean accept(ExtColumn<T> column, T value, boolean selected, boolean focus, int row) {
+                return selected;
+            }
+
+        });
     }
 
     protected void initAlternateRowHighlighter() {

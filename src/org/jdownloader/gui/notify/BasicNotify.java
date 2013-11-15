@@ -20,7 +20,7 @@ public class BasicNotify extends AbstractNotifyWindow<BasicContentPanel> {
     private ActionListener actionListener;
 
     public BasicNotify(String caption, String text, ImageIcon icon) {
-        super(caption, new BasicContentPanel(text, icon));
+        super(null, caption, new BasicContentPanel(text, icon));
 
     }
 

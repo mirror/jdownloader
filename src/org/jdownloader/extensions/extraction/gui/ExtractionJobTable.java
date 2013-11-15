@@ -30,6 +30,11 @@ public class ExtractionJobTable extends BasicJDTable<ExtractionController> {
         setOpaque(false);
     }
 
+    @Override
+    protected void addSelectionHighlighter() {
+
+    }
+
     protected ExtTableHeaderRenderer createDefaultHeaderRenderer(ExtColumn<ExtractionController> column) {
         ExtTableHeaderRenderer ret = new ExtTableHeaderRenderer(column, getTableHeader());
 

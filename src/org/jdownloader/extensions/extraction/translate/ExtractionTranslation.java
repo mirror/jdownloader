@@ -354,4 +354,7 @@ public interface ExtractionTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Extracting..." })
     String extracting_in_progress();
 
+    @Default(lngs = { "en" }, values = { "Progress Icon" })
+    String bubblecontent_progress();
+
 }

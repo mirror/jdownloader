@@ -28,4 +28,8 @@ public class BasicContentPanel extends AbstractBubbleContentPanel {
         return ret;
     }
 
+    @Override
+    public void updateLayout() {
+    }
+
 }

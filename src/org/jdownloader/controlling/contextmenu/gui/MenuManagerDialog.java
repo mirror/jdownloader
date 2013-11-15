@@ -219,7 +219,9 @@ public class MenuManagerDialog extends AbstractDialog<Object> implements TreeSel
             @Override
             public void actionPerformed(ActionEvent e) {
                 try {
+
                     Dialog.getInstance().showConfirmDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN | UIOManager.LOGIC_DONT_SHOW_AGAIN_IGNORES_CANCEL, _GUI._.MenuManagerDialog_actionPerformed_title(), _GUI._.lit_are_you_sure());
+
                     MenuContainerRoot data = manager.setupDefaultStructure();
                     data.validateFull();
                     model.set(data);

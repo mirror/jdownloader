@@ -1,5 +1,6 @@
 package org.jdownloader.gui.notify;
 
+import javax.swing.Icon;
 import javax.swing.ImageIcon;
 import javax.swing.JLabel;
 import javax.swing.SwingConstants;
@@ -10,7 +11,7 @@ import org.appwork.swing.MigPanel;
 import org.appwork.utils.swing.SwingUtils;
 import org.jdownloader.images.NewTheme;
 
-public class AbstractBubbleContentPanel extends MigPanel {
+public abstract class AbstractBubbleContentPanel extends MigPanel {
 
     protected IconedProcessIndicator progressCircle;
     protected long                   startTime;
@@ -23,9 +24,7 @@ public class AbstractBubbleContentPanel extends MigPanel {
         return label + ":";
     }
 
-    public boolean onSettings() {
-        return false;
-    }
+    abstract public void updateLayout();
 
     public class Pair {
 
@@ -50,12 +49,26 @@ public class AbstractBubbleContentPanel extends MigPanel {
 
     }
 
-    protected Pair addPair(String lbl, String iconWait) {
-        Pair ret = new Pair();
-        add(ret.lbl = createHeaderLabel(lbl, iconWait), "hidemode 3");
+    protected Pair addPair(Pair existingPair, String lbl, Icon iconWait) {
+        if (existingPair == null) {
+            existingPair = new Pair();
+            existingPair.lbl = createHeaderLabel(lbl, iconWait);
+            existingPair.value = new JLabel("");
+        }
 
-        add(ret.value = new JLabel(""), "hidemode 3");
-        return ret;
+        add(existingPair.lbl, "hidemode 3");
+
+        add(existingPair.value, "hidemode 3");
+        return existingPair;
+    }
+
+    protected Pair addPair(Pair existingPair, String lbl, String icon) {
+
+        return addPair(existingPair, lbl, NewTheme.I().getIcon(icon, 18));
+    }
+
+    protected Pair addPair(String lbl, String iconWait) {
+        return addPair(null, lbl, iconWait);
     }
 
     public void stop() {
@@ -64,13 +77,18 @@ public class AbstractBubbleContentPanel extends MigPanel {
         progressCircle.setValue(100);
     }
 
-    protected JLabel createHeaderLabel(String lbl, String icon) {
+    protected JLabel createHeaderLabel(String lbl, Icon icon) {
         JLabel ret = createHeaderLabel(lbl);
         if (icon != null) {
-            ret.setDisabledIcon(NewTheme.I().getIcon(icon, 18));
+            ret.setDisabledIcon(icon);
             ret.setHorizontalTextPosition(SwingConstants.LEFT);
         }
         return ret;
+    }
+
+    protected JLabel createHeaderLabel(String lbl, String icon) {
+
+        return createHeaderLabel(lbl, NewTheme.I().getIcon(icon, 18));
     }
 
     protected JLabel createHeaderLabel(String label) {
@@ -94,9 +112,13 @@ public class AbstractBubbleContentPanel extends MigPanel {
         progressCircle.setIndeterminate(false);
         progressCircle.setEnabled(false);
         progressCircle.setValue(100);
-        add(progressCircle, "width 32!,height 32!,pushx,growx,pushy,growy,spany,aligny top");
+        addProgress();
         startTime = System.currentTimeMillis();
         SwingUtils.setOpaque(this, false);
+    }
+
+    protected void addProgress() {
+        add(progressCircle, "width 32!,height 32!,pushx,growx,pushy,growy,spany,aligny top");
     }
 
     public AbstractBubbleContentPanel() {

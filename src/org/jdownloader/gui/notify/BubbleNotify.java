@@ -1,30 +1,12 @@
 package org.jdownloader.gui.notify;
 
 import java.awt.Point;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.LinkedList;
 import java.util.List;
 
 import javax.swing.JFrame;
 
-import jd.controlling.downloadcontroller.DownloadWatchDog;
-import jd.controlling.downloadcontroller.SingleDownloadController;
-import jd.controlling.downloadcontroller.event.DownloadWatchdogListener;
-import jd.controlling.linkcollector.LinkCollector;
-import jd.controlling.linkcollector.LinkCollectorCrawler;
-import jd.controlling.linkcollector.LinkCollectorEvent;
-import jd.controlling.linkcollector.LinkCollectorListener;
-import jd.controlling.linkcrawler.CrawledLink;
-import jd.controlling.reconnect.Reconnecter;
-import jd.controlling.reconnect.ReconnecterEvent;
-import jd.controlling.reconnect.ReconnecterListener;
-import jd.gui.swing.dialog.AbstractCaptchaDialog;
 import jd.gui.swing.jdgui.JDGui;
-import jd.gui.swing.jdgui.components.toolbar.actions.UpdateAction;
 
 import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.events.GenericConfigEventListener;
@@ -33,24 +15,18 @@ import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.windowmanager.WindowManager;
 import org.appwork.utils.swing.windowmanager.WindowManager.WindowExtendedState;
-import org.jdownloader.captcha.event.ChallengeResponseListener;
-import org.jdownloader.captcha.v2.AbstractResponse;
-import org.jdownloader.captcha.v2.ChallengeResponseController;
-import org.jdownloader.captcha.v2.ChallengeSolver;
-import org.jdownloader.captcha.v2.solverjob.SolverJob;
-import org.jdownloader.gui.IconKey;
+import org.jdownloader.gui.notify.captcha.CaptchaBubbleSupport;
+import org.jdownloader.gui.notify.downloads.StartDownloadsBubbleSupport;
+import org.jdownloader.gui.notify.downloads.StartStopPauseBubbleSupport;
 import org.jdownloader.gui.notify.gui.AbstractNotifyWindow;
 import org.jdownloader.gui.notify.gui.Balloner;
 import org.jdownloader.gui.notify.gui.BubbleNotifyConfig.Anchor;
 import org.jdownloader.gui.notify.gui.BubbleNotifyConfigPanel;
 import org.jdownloader.gui.notify.gui.CFG_BUBBLE;
-import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.images.NewTheme;
-import org.jdownloader.updatev2.InstallLog;
-import org.jdownloader.updatev2.UpdateController;
-import org.jdownloader.updatev2.UpdaterListener;
+import org.jdownloader.gui.notify.linkcrawler.LinkCrawlerBubbleSupport;
+import org.jdownloader.gui.notify.reconnect.ReconnectBubbleSupport;
 
-public class BubbleNotify implements UpdaterListener, ReconnecterListener, ChallengeResponseListener, DownloadWatchdogListener {
+public class BubbleNotify {
     private static final BubbleNotify INSTANCE = new BubbleNotify();
 
     /**
@@ -63,7 +39,6 @@ public class BubbleNotify implements UpdaterListener, ReconnecterListener, Chall
     }
 
     private Balloner ballooner;
-    private boolean  updatesNotified;
 
     /**
      * Create a new instance of BubbleNotify. This is a singleton class. Access the only existing instance by using {@link #getInstance()}.
@@ -75,8 +50,7 @@ public class BubbleNotify implements UpdaterListener, ReconnecterListener, Chall
                 return JDGui.getInstance().getMainFrame();
             }
         };
-        ChallengeResponseController.getInstance().getEventSender().addListener(this);
-        DownloadWatchDog.getInstance().getEventSender().addListener(this);
+
         GenericConfigEventListener<Object> update = new GenericConfigEventListener<Object>() {
 
             @Override
@@ -136,119 +110,20 @@ public class BubbleNotify implements UpdaterListener, ReconnecterListener, Chall
 
         CFG_BUBBLE.CFG._getStorageHandler().getEventSender().addListener(update);
         update.onConfigValueModified(null, null);
-        initLinkCollectorListener();
+
         // if (ballooner != null) ballooner.add(new Notify(caption, text, NewTheme.I().getIcon("info", 32)));
-
-        UpdateController.getInstance().getEventSender().addListener(this, true);
-
-        Reconnecter.getInstance().getEventSender().addListener(this, true);
 
         synchronized (types) {
 
-            types.add(new BubbleType(_GUI._.plugins_optional_JDLightTray_ballon_newlinks3(), CFG_BUBBLE.BUBBLE_NOTIFY_ON_NEW_LINKGRABBER_LINKS_ENABLED));
-            types.add(new BubbleType(_GUI._.plugins_optional_JDLightTray_ballon_updates2(), CFG_BUBBLE.BUBBLE_NOTIFY_ON_UPDATE_AVAILABLE_ENABLED));
-            types.add(new BubbleType(_GUI._.plugins_optional_JDLightTray_ballon_reconnectstart3(), CFG_BUBBLE.BUBBLE_NOTIFY_ON_RECONNECT_START_ENABLED));
+            types.add(new LinkCrawlerBubbleSupport());
+            types.add(new UpdatesBubbleSupport());
+            types.add(new ReconnectBubbleSupport());
 
-            types.add(new BubbleType(_GUI._.plugins_optional_JDLightTray_ballon_captcha2(), CFG_BUBBLE.BUBBLE_NOTIFY_ON_CAPTCHA_IN_BACKGROUND_ENABLED));
-            types.add(new BubbleType(_GUI._.plugins_optional_JDLightTray_ballon_startstopdownloads2(), CFG_BUBBLE.BUBBLE_NOTIFY_START_STOP_DOWNLOADS_ENABLED));
-            types.add(new BubbleType(_GUI._.plugins_optional_JDLightTray_ballon_startpausestop2(), CFG_BUBBLE.BUBBLE_NOTIFY_START_PAUSE_STOP_ENABLED));
+            types.add(new CaptchaBubbleSupport());
+            types.add(new StartDownloadsBubbleSupport());
+            types.add(new StartStopPauseBubbleSupport());
 
         }
-    }
-
-    private void initLinkCollectorListener() {
-        LinkCollector.getInstance().getEventsender().addListener(new LinkCollectorListener() {
-
-            // @Override
-            // public void onHighLight(CrawledLink parameter) {
-            // if (!CFG_BUBBLE.BUBBLE_NOTIFY_ON_NEW_LINKGRABBER_LINKS_ENABLED.isEnabled()) return;
-            // new EDTRunner() {
-            //
-            // @Override
-            // protected void runInEDT() {
-            // BasicNotify no = new BasicNotify(_GUI._.balloon_new_links(),
-            // _GUI._.balloon_new_links_msg(LinkCollector.getInstance().getPackages().size(),
-            // LinkCollector.getInstance().getChildrenCount()), NewTheme.I().getIcon(IconKey.ICON_LINKGRABBER, 32));
-            // no.setActionListener(new ActionListener() {
-            //
-            // public void actionPerformed(ActionEvent e) {
-            // JDGui.getInstance().requestPanel(JDGui.Panels.LINKGRABBER);
-            // JDGui.getInstance().setFrameState(FrameState.TO_FRONT_FOCUSED);
-            // }
-            // });
-            // show(no);
-            // }
-            // };
-            // }
-            //
-            // @Override
-            // public boolean isThisListenerEnabled() {
-            // return CFG_BUBBLE.CFG.isBubbleNotifyOnNewLinkgrabberLinksEnabled();
-            // }
-
-            @Override
-            public void onLinkCrawlerAdded(final LinkCollectorCrawler parameter) {
-                if (!CFG_BUBBLE.BUBBLE_NOTIFY_ON_NEW_LINKGRABBER_LINKS_ENABLED.isEnabled()) return;
-
-                // it is important to wait. we could miss events if we do not wait
-                new EDTRunner() {
-
-                    @Override
-                    protected void runInEDT() {
-                        LinkCrawlerBubble no = new LinkCrawlerBubble(parameter);
-                        parameter.getEventSender().addListener(no, true);
-
-                    }
-                }.waitForEDT();
-
-            }
-
-            @Override
-            public void onLinkCrawlerStarted(LinkCollectorCrawler parameter) {
-
-            }
-
-            @Override
-            public void onLinkCrawlerStopped(LinkCollectorCrawler parameter) {
-            }
-
-            @Override
-            public void onLinkCollectorAbort(LinkCollectorEvent event) {
-            }
-
-            @Override
-            public void onLinkCollectorFilteredLinksAvailable(LinkCollectorEvent event) {
-            }
-
-            @Override
-            public void onLinkCollectorFilteredLinksEmpty(LinkCollectorEvent event) {
-            }
-
-            @Override
-            public void onLinkCollectorDataRefresh(LinkCollectorEvent event) {
-            }
-
-            @Override
-            public void onLinkCollectorStructureRefresh(LinkCollectorEvent event) {
-            }
-
-            @Override
-            public void onLinkCollectorContentRemoved(LinkCollectorEvent event) {
-            }
-
-            @Override
-            public void onLinkCollectorContentAdded(LinkCollectorEvent event) {
-            }
-
-            @Override
-            public void onLinkCollectorLinkAdded(LinkCollectorEvent event, CrawledLink parameter) {
-            }
-
-            @Override
-            public void onLinkCollectorDupeAdded(LinkCollectorEvent event, CrawledLink parameter) {
-            }
-        });
-
     }
 
     public void show(final AbstractNotifyWindow no) {
@@ -281,48 +156,10 @@ public class BubbleNotify implements UpdaterListener, ReconnecterListener, Chall
                     if (!JDGui.getInstance().getMainFrame().isVisible()) break;
                     return;
                 }
+
                 ballooner.add(no);
             }
         };
-
-    }
-
-    @Override
-    public void onUpdatesAvailable(boolean selfupdate, InstallLog installlog) {
-        if (!CFG_BUBBLE.BUBBLE_NOTIFY_ON_UPDATE_AVAILABLE_ENABLED.isEnabled()) return;
-        if (UpdateController.getInstance().hasPendingUpdates() && !updatesNotified) {
-            updatesNotified = true;
-            new EDTRunner() {
-                @Override
-                protected void runInEDT() {
-                    BasicNotify no = new BasicNotify(_GUI._.balloon_updates(), _GUI._.balloon_updates_msg(), NewTheme.I().getIcon("update", 32));
-                    no.setActionListener(new ActionListener() {
-
-                        public void actionPerformed(ActionEvent e) {
-                            new UpdateAction().actionPerformed(e);
-                        }
-                    });
-                    show(no);
-                }
-            };
-        } else if (!UpdateController.getInstance().hasPendingUpdates()) {
-            updatesNotified = false;
-        }
-    }
-
-    @Override
-    public void onBeforeReconnect(final ReconnecterEvent event) {
-        if (!CFG_BUBBLE.BUBBLE_NOTIFY_ON_RECONNECT_START_ENABLED.isEnabled()) return;
-        new EDTRunner() {
-            @Override
-            protected void runInEDT() {
-                show(new ReconnectBubble());
-            }
-        };
-    }
-
-    @Override
-    public void onAfterReconnect(final ReconnecterEvent event) {
 
     }
 
@@ -337,179 +174,11 @@ public class BubbleNotify implements UpdaterListener, ReconnecterListener, Chall
 
     }
 
-    @Override
-    public void onNewJobAnswer(SolverJob<?> job, AbstractResponse<?> response) {
-    }
-
-    @Override
-    public void onJobDone(SolverJob<?> job) {
-    }
-
-    @Override
-    public void onNewJob(SolverJob<?> job) {
-        switch (AbstractCaptchaDialog.getWindowState()) {
-        case TO_BACK:
-        case OS_DEFAULT:
-
-            CaptchaNotify notify = new CaptchaNotify(job);
-            show(notify);
-        }
-    }
-
-    @Override
-    public void onJobSolverEnd(ChallengeSolver<?> solver, SolverJob<?> job) {
-    }
-
-    @Override
-    public void onJobSolverStart(ChallengeSolver<?> solver, SolverJob<?> job) {
-    }
-
     public void relayout() {
         ballooner.relayout();
     }
 
-    @Override
-    public void onDownloadWatchdogDataUpdate() {
-    }
-
-    @Override
-    public void onDownloadWatchdogStateIsIdle() {
-    }
-
-    @Override
-    public void onDownloadWatchdogStateIsPause() {
-        if (!CFG_BUBBLE.BUBBLE_NOTIFY_START_PAUSE_STOP_ENABLED.isEnabled()) {
-
-        return; }
-        new EDTRunner() {
-            @Override
-            protected void runInEDT() {
-                BasicNotify no = new BasicNotify(_GUI._.download_paused(), _GUI._.download_paused_msg(), NewTheme.I().getIcon(IconKey.ICON_MEDIA_PLAYBACK_PAUSE, 24));
-                show(no);
-            }
-        };
-    }
-
-    @Override
-    public void onDownloadWatchdogStateIsRunning() {
-        if (!CFG_BUBBLE.BUBBLE_NOTIFY_START_PAUSE_STOP_ENABLED.isEnabled()) {
-
-        return; }
-        new EDTRunner() {
-            @Override
-            protected void runInEDT() {
-                BasicNotify no = new BasicNotify(_GUI._.download_start(), _GUI._.download_start_msg(), NewTheme.I().getIcon(IconKey.ICON_MEDIA_PLAYBACK_START, 24));
-                show(no);
-            }
-        };
-    }
-
-    @Override
-    public void onDownloadWatchdogStateIsStopped() {
-
-        if (!CFG_BUBBLE.BUBBLE_NOTIFY_START_PAUSE_STOP_ENABLED.isEnabled()) {
-
-        return; }
-        new EDTRunner() {
-            @Override
-            protected void runInEDT() {
-                BasicNotify no = new BasicNotify(_GUI._.download_stopped(), _GUI._.download_stopped_msg(), NewTheme.I().getIcon(IconKey.ICON_MEDIA_PLAYBACK_STOP, 24));
-                show(no);
-            }
-        };
-    }
-
-    @Override
-    public void onDownloadWatchdogStateIsStopping() {
-
-    }
-
-    private class QueuedStart {
-        public QueuedStart(SingleDownloadController downloadController) {
-            controller = downloadController;
-            this.time = System.currentTimeMillis();
-        }
-
-        private SingleDownloadController controller;
-        private long                     time;
-    }
-
-    private LinkedList<QueuedStart>           queue   = new LinkedList<QueuedStart>();
-    private Thread                            queueWorker;
-    private HashSet<SingleDownloadController> started = new HashSet<SingleDownloadController>();
-
-    @Override
-    public void onDownloadControllerStart(final SingleDownloadController downloadController) {
-        if (!CFG_BUBBLE.BUBBLE_NOTIFY_START_STOP_DOWNLOADS_ENABLED.isEnabled()) {
-            started.clear();
-            queue.clear();
-            return;
-        }
-        synchronized (queue) {
-            queue.add(new QueuedStart(downloadController));
-            if (queueWorker == null) {
-                queueWorker = new Thread("BubbleNotofyDelayerQUeue") {
-                    public void run() {
-                        while (true) {
-                            try {
-                                Thread.sleep(500);
-                            } catch (InterruptedException e) {
-                                return;
-                            }
-                            synchronized (queue) {
-
-                                for (Iterator<QueuedStart> it = queue.iterator(); it.hasNext();) {
-                                    final QueuedStart next = it.next();
-                                    if (!next.controller.isActive()) {
-                                        it.remove();
-                                    } else if (System.currentTimeMillis() - next.time > CFG_BUBBLE.CFG.getDownloadStartEndNotifyDelay()) {
-                                        it.remove();
-                                        started.add(next.controller);
-                                        new EDTRunner() {
-                                            @Override
-                                            protected void runInEDT() {
-
-                                                DownloadStartedNotify no = new DownloadStartedNotify(next.controller);
-                                                show(no);
-                                            }
-                                        };
-                                    }
-                                }
-                                if (queue.size() == 0) {
-                                    queueWorker = null;
-                                    return;
-                                }
-                            }
-                        }
-                    }
-                };
-                queueWorker.start();
-            }
-        }
-
-    }
-
-    @Override
-    public void onDownloadControllerStopped(final SingleDownloadController downloadController) {
-        if (!CFG_BUBBLE.BUBBLE_NOTIFY_START_STOP_DOWNLOADS_ENABLED.isEnabled()) {
-            started.clear();
-            queue.clear();
-            return;
-        }
-        synchronized (queue) {
-            if (!started.contains(downloadController)) return;
-            started.remove(downloadController);
-        }
-        new EDTRunner() {
-            @Override
-            protected void runInEDT() {
-                DownloadStoppedNotify no = new DownloadStoppedNotify(downloadController);
-                show(no);
-            }
-        };
-    }
-
-    public void registerType(BubbleType type) {
+    public void registerType(AbstractBubbleSupport type) {
         synchronized (types) {
             types.add(type);
         }
@@ -524,12 +193,12 @@ public class BubbleNotify implements UpdaterListener, ReconnecterListener, Chall
         };
     }
 
-    private List<BubbleType>        types = new ArrayList<BubbleType>();
-    private BubbleNotifyConfigPanel configPanel;
+    private List<AbstractBubbleSupport> types = new ArrayList<AbstractBubbleSupport>();
+    private BubbleNotifyConfigPanel     configPanel;
 
-    public List<BubbleType> getTypes() {
+    public List<AbstractBubbleSupport> getTypes() {
         synchronized (types) {
-            return new ArrayList<BubbleType>(types);
+            return new ArrayList<AbstractBubbleSupport>(types);
         }
     }
 

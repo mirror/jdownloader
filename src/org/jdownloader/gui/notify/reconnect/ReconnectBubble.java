@@ -1,4 +1,4 @@
-package org.jdownloader.gui.notify;
+package org.jdownloader.gui.notify.reconnect;
 
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -16,6 +16,8 @@ import jd.gui.swing.jdgui.views.settings.ConfigurationView;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.windowmanager.WindowManager.FrameState;
+import org.jdownloader.gui.notify.BasicNotify;
+import org.jdownloader.gui.notify.BubbleNotify;
 import org.jdownloader.gui.notify.gui.AbstractNotifyWindow;
 import org.jdownloader.gui.notify.gui.BubbleNotifyConfigPanel;
 import org.jdownloader.gui.translate._GUI;
