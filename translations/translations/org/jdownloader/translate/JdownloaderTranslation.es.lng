@@ -126,6 +126,7 @@ gui_settings_downloadpath_description=Carpeta de Descargas por defecto. Modifica
 gui_settings_extensions_show_now=Mostrar %s1 ahora? Puede abrirlo más tarde desde el menú Herramientas > Ventanas.
 gui_settings_filewriting_description=JDownloader comprobará la integridad de las descargas al finalizarlas, usando la comprobación por hash.
 gui_settings_general_title=General
+gui_settings_linkgrabber_filter_description2=El Filtro de Enlaces se utiliza para filtrar un enlace o grupo de enlaces. Se usa para ignorar o grupo enlaces, direcciones, direcciones URL o archivos basados en sus propiedades. Configure las 'Vistas personalizadas' de la barra lateral del Capturador de Enlaces, o los "filtros" para evitar la detección de vínculos especiales...
 gui_settings_linkgrabber_packagizer_description=El Empaquetador le permite autoasignar opciones de descarga a los archivos según sus propiedades.
 gui_settings_linkgrabber_title=Filtro de LinkGrabber
 gui_settings_plugins_description=JDownloader utiliza %s1 'Plugins' para automatizar las descargas. Algunos de estos Plugins tienen opciones para personalizar su comportamiento.
