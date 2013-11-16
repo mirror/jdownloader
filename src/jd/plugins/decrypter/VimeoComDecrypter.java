@@ -272,7 +272,7 @@ public class VimeoComDecrypter extends PluginForDecrypt {
             String sig = br.getRegex("\"signature\":\"([0-9a-f]+)\"").getMatch(0);
             String time = br.getRegex("\"timestamp\":(\\d+)").getMatch(0);
             if (sig != null && time != null) {
-                String fmts = br.getRegex("\"files\":\\{\"h264\":\\[(.*?)\\]\\}").getMatch(1);
+                String fmts = br.getRegex("\"files\":\\{\"h264\":\\[(.*?)\\]\\}").getMatch(0);
                 if (fmts != null) {
                     String quality[] = fmts.replaceAll("\"", "").split(",");
                     qualities = new String[quality.length][4];
