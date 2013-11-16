@@ -189,17 +189,41 @@ public class SaveTv extends PluginForHost {
             br.getHeaders().put("SOAPAction", "http://tempuri.org/IDownload/GetStreamingUrl");
             br.getHeaders().put("Content-Type", "text/xml");
             br.postPage(APIPAGE, "<?xml version=\"1.0\" encoding=\"utf-8\"?><v:Envelope xmlns:i=\"http://www.w3.org/2001/XMLSchema-instance\" xmlns:d=\"http://www.w3.org/2001/XMLSchema\" xmlns:c=\"http://schemas.xmlsoap.org/soap/encoding/\" xmlns:v=\"http://schemas.xmlsoap.org/soap/envelope/\"><v:Header /><v:Body><GetStreamingUrl xmlns=\"http://tempuri.org/\" id=\"o0\" c:root=\"1\"><sessionId i:type=\"d:string\">" + SESSIONID + "</sessionId><telecastId i:type=\"d:int\">" + getTelecastId(link) + "</telecastId><telecastIdSpecified i:type=\"d:boolean\">true</telecastIdSpecified><recordingFormatId i:type=\"d:int\">" + preferMobileVideosString + "</recordingFormatId><recordingFormatIdSpecified i:type=\"d:boolean\">true</recordingFormatIdSpecified><adFree i:type=\"d:boolean\">false</adFree><adFreeSpecified i:type=\"d:boolean\">false</adFreeSpecified></GetStreamingUrl></v:Body></v:Envelope>");
-            final String apifilename = br.getRegex("<a:Filename>([^<>\"]*?)</a").getMatch(0);
+            String apifilename = br.getRegex("<a:Filename>([^<>\"]*?)</a").getMatch(0);
             filesize = br.getRegex("<a:SizeMB>(\\d+)</a:SizeMB>").getMatch(0);
             if (apifilename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             final Regex fName = new Regex(apifilename, "((\\d{4}\\-\\d{2}\\-\\d{2})_\\d+_\\d+\\.mp4)");
             final String filenameReplace = fName.getMatch(0);
             if (filenameReplace != null) site_title = apifilename.replace(filenameReplace, "");
-            link.setProperty("apiplainfilename", apifilename);
 
             date = fName.getMatch(1);
             if (date != null) {
                 datemilliseconds = TimeFormatter.getMilliSeconds(date, "yyyy-MM-dd", Locale.ENGLISH);
+                final Regex originalDatePart = new Regex(apifilename, "(\\d{4}\\-\\d{2}\\-\\d{2}_(\\d{4}))_\\d+\\.mp4");
+                broadcastTime = originalDatePart.getMatch(1);
+                if (broadcastTime != null) {
+                    // Add time to date
+                    if (broadcastTime != null) {
+                        // Add missing time - Also add one hour because otherwise one is missing
+                        datemilliseconds += TimeFormatter.getMilliSeconds(broadcastTime, "hhmm", Locale.ENGLISH) + (60 * 60 * 1000l);
+                    }
+                }
+                // String newDateString = null;
+                // final String userDefinedDateFormat = "yyyy-MM-dd_HH_mm";
+                // SimpleDateFormat formatter = new SimpleDateFormat(userDefinedDateFormat);
+                // Date theDate = new Date(datemilliseconds);
+                // if (userDefinedDateFormat != null) {
+                // try {
+                // newDateString = formatter.format(theDate);
+                // final String originalDateString = originalDatePart.getMatch(0);
+                // apifilename = apifilename.replace(originalDateString, newDateString);
+                // } catch (Exception e) {
+                // // prevent user error killing plugin.
+                // newDateString = "";
+                // }
+                // }
+                link.setProperty("apiplainfilename", apifilename);
+
             }
 
             filesize += " KB";
@@ -276,6 +300,11 @@ public class SaveTv extends PluginForHost {
 
                     }
                 }
+            } else if (br.containsHTML("Kategorie:</label>[\t\n\r ]+Shows.*?") || br.containsHTML("src=\"/STV/IMG/global/TVCategorie/kat3\\.jpg\"")) {
+                // For shows
+                link.setProperty("category", 3);
+                final Regex showInfo = br.getRegex(INFOREGEX);
+                genre = showInfo.getMatch(1);
             } else if (br.containsHTML("src=\"/STV/IMG/global/TVCategorie/kat1\\.jpg\"") || br.containsHTML(CATEGORY_INFO)) {
                 // For movies
                 final Regex movieInfo = br.getRegex(INFOREGEX);
@@ -316,6 +345,11 @@ public class SaveTv extends PluginForHost {
                 link.getLinkStatus().setStatusText(ADSFREEANOTVAILABLE);
                 ISADSFREEAVAILABLE = false;
             }
+            // Add time to date
+            if (broadcastTime != null) {
+                // Add missing time - Also add one hour because otherwise one is missing
+                datemilliseconds += TimeFormatter.getMilliSeconds(broadcastTime, "HH:mm", Locale.GERMAN) + (60 * 60 * 1000l);
+            }
         }
         link.setAvailable(true);
         if (filesize != null) {
@@ -336,15 +370,11 @@ public class SaveTv extends PluginForHost {
             link.setProperty("produceyear", produceyear);
         }
         link.setProperty("genre", genre);
+        if (producecountry == null) producecountry = "-";
         link.setProperty("producecountry", producecountry);
         // Add remaining information
         link.setProperty("plainfilename", site_title);
         link.setProperty("type", ".mp4");
-        // Add time to date
-        if (broadcastTime != null) {
-            // Add missing time - Also add one hour because otherwise one is missing
-            datemilliseconds += TimeFormatter.getMilliSeconds(broadcastTime, "HH:mm", Locale.GERMAN) + (60 * 60 * 1000l);
-        }
         link.setProperty("originaldate", datemilliseconds);
         // No custom filename if not all required tags are given
         final boolean force_original_general = (datemilliseconds == 0 || getPluginConfig().getBooleanProperty(USEORIGINALFILENAME) || SESSIONID != null || link.getLongProperty("category", 0) == 0);
@@ -545,7 +575,7 @@ public class SaveTv extends PluginForHost {
         } catch (final PluginException e) {
             logger.info("save.tv Account ist ungültig!");
             account.setValid(false);
-            return ai;
+            throw e;
         } catch (final BrowserException eb) {
             for (int i = 1; i <= 3; i++) {
                 try {
@@ -596,7 +626,14 @@ public class SaveTv extends PluginForHost {
             br.getHeaders().put("Content-Type", "text/xml");
             final String postData = "<?xml version=\"1.0\" encoding=\"utf-8\"?><v:Envelope xmlns:i=\"http://www.w3.org/2001/XMLSchema-instance\" xmlns:d=\"http://www.w3.org/2001/XMLSchema\" xmlns:c=\"http://schemas.xmlsoap.org/soap/encoding/\" xmlns:v=\"http://schemas.xmlsoap.org/soap/envelope/\"><v:Header /><v:Body><Login xmlns=\"http://tempuri.org/\" id=\"o0\" c:root=\"1\"><sessionId i:type=\"d:string\">" + SESSIONID + "</sessionId><username i:type=\"d:string\">" + account.getUser() + "</username><password i:type=\"d:string\">" + account.getPass() + "</password></Login></v:Body></v:Envelope>";
             br.postPage(APIPAGE, postData);
-            if (!br.containsHTML("<a:HasPremiumStatus>true</a:HasPremiumStatus>")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+            if (!br.containsHTML("<a:HasPremiumStatus>true</a:HasPremiumStatus>")) {
+                final String lang = System.getProperty("user.language");
+                if ("de".equalsIgnoreCase(lang)) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                }
+            }
         } else {
             synchronized (LOCK) {
                 try {
@@ -618,7 +655,14 @@ public class SaveTv extends PluginForHost {
                     }
                     final String postData = "sUsername=" + Encoding.urlEncode_light(account.getUser()) + "&sPassword=" + Encoding.urlEncode_light(account.getPass()) + "&image.x=" + new Random().nextInt(100) + "&image.y=" + new Random().nextInt(100) + "&image=Login&bAutoLoginActivate=1";
                     br.postPage("https://www.save.tv/STV/M/Index.cfm?sk=PREMIUM", postData);
-                    if (!br.containsHTML("/STV/M/obj/user/usEdit.cfm") || br.containsHTML("Bitte verifizieren Sie Ihre Logindaten")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    if (!br.containsHTML("/STV/M/obj/user/usEdit.cfm") || br.containsHTML("Bitte verifizieren Sie Ihre Logindaten")) {
+                        final String lang = System.getProperty("user.language");
+                        if ("de".equalsIgnoreCase(lang)) {
+                            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                        } else {
+                            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                        }
+                    }
                     /** Save cookies */
                     final HashMap<String, String> cookies = new HashMap<String, String>();
                     final Cookies add = br.getCookies(COOKIE_HOST);
@@ -636,12 +680,7 @@ public class SaveTv extends PluginForHost {
         }
     }
 
-    public void extendedLogin(String accessSite, String postPage, String user, String password) throws Exception {
-        br.getPage(accessSite);
-        String postData = "sUsername=" + Encoding.urlEncode_light(user) + "&sPassword=" + Encoding.urlEncode_light(password) + "&image.x=" + new Random().nextInt(100) + "&image.y=" + new Random().nextInt(100) + "&image=Login&bAutoLoginActivate=1";
-        br.postPage(postPage, postData);
-    }
-
+    // Sync this with the decrypter
     private void getPageSafe(final String url, final Account acc) throws Exception {
         // Limits made by me:
         // Max 6 logins possible
@@ -730,7 +769,7 @@ public class SaveTv extends PluginForHost {
         }
 
         String formattedFilename = null;
-        if (downloadLink.getLongProperty("category", 0) == 1) {
+        if (downloadLink.getLongProperty("category", 0) == 1 || downloadLink.getLongProperty("category", 0) == 3) {
             final String title = downloadLink.getStringProperty("plainfilename", null);
             // For all other links
             formattedFilename = cfg.getStringProperty(CUSTOM_FILENAME2, defaultCustomFilename);
@@ -820,7 +859,8 @@ public class SaveTv extends PluginForHost {
         final DecimalFormat df2 = new DecimalFormat("000000");
         final int random2 = new Random().nextInt(100000);
         String formattedFilename = downloadLink.getStringProperty("apiplainfilename", null);
-        if (formattedFilename == null) {
+        if (formattedFilename != null) {
+        } else {
             if (downloadLink.getLongProperty("category", 0) == 1) {
                 final String title = downloadLink.getStringProperty("plainfilename", null);
                 formattedFilename = title.replace(" ", "_") + "_";
@@ -920,7 +960,7 @@ public class SaveTv extends PluginForHost {
         sbinfo.append("Kaputtmachen kannst du damit prinzipiell nichts also probiere es aus ;)");
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, sbinfo.toString()).setEnabledCondidtion(origName, false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), CUSTOM_FILENAME2, JDL.L("plugins.hoster.savetv.customfilenamemovies", "Eigener Dateiname für Filme:")).setDefaultValue(defaultCustomFilename).setEnabledCondidtion(origName, false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), CUSTOM_FILENAME2, JDL.L("plugins.hoster.savetv.customfilenamemovies", "Eigener Dateiname für Filme/Shows:")).setDefaultValue(defaultCustomFilename).setEnabledCondidtion(origName, false));
         final StringBuilder sb = new StringBuilder();
         sb.append("Erklärung der verfügbaren Tags:\r\n");
         sb.append("*datum* = Datum der Ausstrahlung der aufgenommenen Sendung\r\n[Erscheint im oben definierten Format, wird von der save.tv Seite ausgelesen]\r\n");

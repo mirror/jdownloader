@@ -62,7 +62,7 @@ public class SaveTvDecrypter extends PluginForDecrypt {
             return decryptedLinks;
         }
         final boolean fastLinkcheck = cfg.getBooleanProperty(GRABARCHIVE_FASTER, false);
-        br.getPage(parameter);
+        getPageSafe(parameter);
         int maxPage = 1;
         if (!parameter.matches(CONTAINSPAGE)) {
             final String[] pages = br.getRegex("PageNumber=(\\d+)\\&bLoadLast=1\"").getColumn(0);
@@ -104,7 +104,7 @@ public class SaveTvDecrypter extends PluginForDecrypt {
                     final FilePackage fp = FilePackage.getInstance();
                     fp.setName(Encoding.htmlDecode(seriesName));
                     fp.addLinks(decryptedLinks);
-                    dl.setFinalFileName(seriesName + " - " + episodeTitle + ".mp4");
+                    dl.setFinalFileName(seriesName + " - " + episodeTitle + " " + telecastID + ".mp4");
                     dl._setFilePackage(fp);
                     if (fastLinkcheck) dl.setAvailable(true);
                     try {
@@ -126,7 +126,7 @@ public class SaveTvDecrypter extends PluginForDecrypt {
                         final FilePackage fp = FilePackage.getInstance();
                         fp.setName(Encoding.htmlDecode(seriesName));
                         fp.addLinks(decryptedLinks);
-                        dl.setFinalFileName(seriesName + ".mp4");
+                        dl.setFinalFileName(seriesName + " " + telecastID + ".mp4");
                         dl._setFilePackage(fp);
                         if (fastLinkcheck) dl.setAvailable(true);
                         try {
@@ -153,7 +153,7 @@ public class SaveTvDecrypter extends PluginForDecrypt {
                     final FilePackage fp = FilePackage.getInstance();
                     fp.setName(Encoding.htmlDecode(movieName));
                     fp.addLinks(decryptedLinks);
-                    dl.setFinalFileName(movieName + " - " + episodeTitle + ".mp4");
+                    dl.setFinalFileName(movieName + " - " + episodeTitle + " " + telecastID + ".mp4");
                     dl._setFilePackage(fp);
                     if (fastLinkcheck) dl.setAvailable(true);
                     try {
@@ -175,7 +175,7 @@ public class SaveTvDecrypter extends PluginForDecrypt {
                         final FilePackage fp = FilePackage.getInstance();
                         fp.setName(Encoding.htmlDecode(movieName));
                         fp.addLinks(decryptedLinks);
-                        dl.setFinalFileName(movieName + ".mp4");
+                        dl.setFinalFileName(movieName + " " + telecastID + ".mp4");
                         dl._setFilePackage(fp);
                         if (fastLinkcheck) dl.setAvailable(true);
                         try {
@@ -234,7 +234,7 @@ public class SaveTvDecrypter extends PluginForDecrypt {
                             final String seriesName = Encoding.htmlDecode(episodeinfo[1].trim());
                             final DownloadLink dl = createDownloadlink("https://www.save.tv/STV/M/obj/user/usShowVideoArchiveDetail.cfm?TelecastID=" + telecastID);
                             final String episodeTitle = Encoding.htmlDecode(episodeinfo[2].trim());
-                            dl.setFinalFileName(seriesName + " - " + episodeTitle + ".mp4");
+                            dl.setFinalFileName(seriesName + " - " + episodeTitle + " " + telecastID + ".mp4");
                             dl._setFilePackage(fp);
                             if (fastLinkcheck) dl.setAvailable(true);
                             try {
@@ -254,7 +254,7 @@ public class SaveTvDecrypter extends PluginForDecrypt {
                             if (!addedIDs.contains(telecastID)) {
                                 final String seriesName = Encoding.htmlDecode(episodeinfo[1].trim());
                                 final DownloadLink dl = createDownloadlink("https://www.save.tv/STV/M/obj/user/usShowVideoArchiveDetail.cfm?TelecastID=" + telecastID);
-                                dl.setFinalFileName(seriesName + ".mp4");
+                                dl.setFinalFileName(seriesName + " " + telecastID + ".mp4");
                                 dl._setFilePackage(fp);
                                 if (fastLinkcheck) dl.setAvailable(true);
                                 try {
@@ -297,6 +297,33 @@ public class SaveTvDecrypter extends PluginForDecrypt {
             return false;
         }
         return true;
+    }
+
+    // Sync this with the decrypter
+    private void getPageSafe(final String url) throws Exception {
+        // Limits made by me:
+        // Max 6 logins possible
+        // Max 3 accesses of the link possible
+        // -> Max 9 total requests
+        for (int i = 0; i <= 2; i++) {
+            br.getPage(url);
+            if (br.getURL().contains("Token=MSG_LOGOUT_B")) {
+                for (int i2 = 0; i2 <= 1; i2++) {
+                    logger.info("Link redirected to login page, logging in again to retry this: " + url);
+                    logger.info("Try " + i2 + " of 1");
+                    try {
+                        getUserLogin(true);
+                    } catch (final BrowserException e) {
+                        logger.info("Login " + i2 + "of 1 failed, re-trying...");
+                        continue;
+                    }
+                    logger.info("Re-Login " + i2 + "of 1 successful...");
+                    break;
+                }
+                continue;
+            }
+            break;
+        }
     }
 
 }

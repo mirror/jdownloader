@@ -407,6 +407,12 @@ public class BillionUploadsCom extends PluginForHost {
             int repeat = 2;
             for (int i = 0; i <= repeat; i++) {
                 dlForm = cleanForm(dlForm);
+                dlForm.remove(null);
+                dlForm.remove("gloss");
+                dlForm.remove("rand");
+                dlForm.remove("sys");
+                final String specialStuff = br.getRegex("<textarea source=\"self\" style=\"display: none;visibility: hidden\">([^<>\"]*?)</textarea>").getMatch(0);
+                if (specialStuff != null) dlForm.put("blader", specialStuff);
                 // custom form inputs
 
                 final long timeBefore = System.currentTimeMillis();
@@ -1493,7 +1499,7 @@ public class BillionUploadsCom extends PluginForHost {
      * @param controlSlot
      *            (+1|-1)
      * */
-   private void controlSlot(final int num, final Account account) {
+    private void controlSlot(final int num, final Account account) {
         synchronized (CTRLLOCK) {
             if (account == null) {
                 int was = maxFree.get();

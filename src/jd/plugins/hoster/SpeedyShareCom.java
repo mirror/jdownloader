@@ -76,8 +76,9 @@ public class SpeedyShareCom extends PluginForHost {
 
     public void prepBrowser() {
         // define custom browser headers and language settings.
-        br.getHeaders().put("Accept-Language", "en-US,en;q=0.5");
+        br.getHeaders().put("Accept-Language", "en-us;q=0.7,en;q=0.3");
         br.getHeaders().put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
+        br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:25.0) Gecko/20100101 Firefox/25.0");
     }
 
     @Override
@@ -215,16 +216,22 @@ public class SpeedyShareCom extends PluginForHost {
                 }
                 br.setFollowRedirects(true);
                 br.postPage("https://www.speedyshare.com/login.php", "redir=%2user.php&remember=on&login=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass()));
+                String secondLoginurl = br.getRegex("http\\-equiv=\"REFRESH\" content=\"\\d+;url=(http://speedyshare.com/relogin[^<>\"]*?)\"").getMatch(0);
+                if (secondLoginurl != null) {
+                    br.setFollowRedirects(false);
+                    br.getPage(secondLoginurl);
+                }
                 final String lang = System.getProperty("user.language");
-                if (br.containsHTML("<b>Error occured</b>") && (br.containsHTML(">Your login information has been used from several networks recently"))) {
+                if (br.containsHTML("<b>Error occured</b>") && br.containsHTML(">Your login information has been used from several networks recently")) {
                     if ("de".equalsIgnoreCase(lang)) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nLogin fehlgeschlagen: Account wegen Loginversuchen\r\nüber zu viele verschiedene IPs temporär gesperrt!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     } else {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "Login failed, host determined you've logged in from too many IP subnets.", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
                 }
-                if (br.getURL().endsWith("/user.php")) br.getPage("/user.php");
-                if (br.getCookie(MAINPAGE, "spl") == null || !br.containsHTML("<td>Account type:</td><td><b style=\\'color: green\\'>Premium</b>")) {
+                br.setFollowRedirects(true);
+                if (!br.getURL().endsWith("speedyshare.com/user.php")) br.getPage("http://speedyshare.com/user.php");
+                if (br.getCookie(MAINPAGE, "S") == null || !br.containsHTML("<td>Account type:</td><td><b style=\\'color: green\\'>Premium</b>")) {
                     if ("de".equalsIgnoreCase(lang)) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     } else {

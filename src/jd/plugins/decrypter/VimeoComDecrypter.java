@@ -251,7 +251,7 @@ public class VimeoComDecrypter extends PluginForDecrypt {
         if (configURL != null) {
             configURL = configURL.replaceAll("&amp;", "&");
             br.getPage(configURL);
-            String fmts = br.getRegex("\"files\":\\{\"h264\":\\{(.*?)\\}\\}").getMatch(0);
+            String fmts = br.getRegex("\"files\":\\{\"(h264|vp6)\":\\{(.*?)\\}\\}").getMatch(1);
             if (fmts != null) {
                 String quality[][] = new Regex(fmts, "\"(.*?)\":\\{(.*?)(\\}|$)").getMatches();
                 qualities = new String[quality.length][4];
@@ -272,7 +272,7 @@ public class VimeoComDecrypter extends PluginForDecrypt {
             String sig = br.getRegex("\"signature\":\"([0-9a-f]+)\"").getMatch(0);
             String time = br.getRegex("\"timestamp\":(\\d+)").getMatch(0);
             if (sig != null && time != null) {
-                String fmts = br.getRegex("\"files\":\\{\"h264\":\\[(.*?)\\]\\}").getMatch(0);
+                String fmts = br.getRegex("\"files\":\\{\"h264\":\\[(.*?)\\]\\}").getMatch(1);
                 if (fmts != null) {
                     String quality[] = fmts.replaceAll("\"", "").split(",");
                     qualities = new String[quality.length][4];
@@ -285,6 +285,7 @@ public class VimeoComDecrypter extends PluginForDecrypt {
                 } else {
                     // Nothing found so SD should be available at least...
                     qualities = new String[1][4];
+                    qualities[0][0] = br.getRegex("").getMatch(0);
                     qualities[0][0] = "http://player.vimeo.com/play_redirect?clip_id=" + ID + "&sig=" + sig + "&time=" + time + "&quality=sd&codecs=H264,VP8,VP6&type=moogaloop_local&embed_location=&seek=0";
                     qualities[0][1] = title;
                     qualities[0][2] = "sd";

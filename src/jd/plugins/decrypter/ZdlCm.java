@@ -45,6 +45,7 @@ public class ZdlCm extends PluginForDecrypt {
 
         if (JDHash.getMD5(br.toString()).equals("0055ef2a0f3890e671813d45084142f8")) {
             // results is zoodl.com, effectively returning back to there own domain
+            logger.info("Link offline: " + parameter);
             return decryptedLinks;
         }
 

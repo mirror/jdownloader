@@ -706,7 +706,7 @@ public class FastSonicNet extends PluginForHost {
             getPage(myAccount);
         }
         // what type of account?
-        if (!cbr.containsHTML("(Premium(-| )Account expire|>Renew premium<)")) {
+        if (cbr.containsHTML(">Upgrade to premium<")) {
             account.setProperty("free", true);
         } else {
             account.setProperty("free", false);
@@ -1462,7 +1462,7 @@ public class FastSonicNet extends PluginForHost {
      * @param controlSlot
      *            (+1|-1)
      * */
-   private void controlSlot(final int num, final Account account) {
+    private void controlSlot(final int num, final Account account) {
         synchronized (CTRLLOCK) {
             if (account == null) {
                 int was = maxFree.get();

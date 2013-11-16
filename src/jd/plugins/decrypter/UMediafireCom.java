@@ -38,6 +38,10 @@ public class UMediafireCom extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
         br.getPage(parameter);
+        if (br.containsHTML(">This domain is not configured for this service")) {
+            logger.info("Link offline (server offline): " + parameter);
+            return decryptedLinks;
+        }
 
         if (parameter.contains("/index.php?p=")) {
             if (br.containsHTML("Requested page not found\\.")) {

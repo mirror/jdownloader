@@ -104,6 +104,7 @@ public class DataFileCom extends PluginForHost {
         if (br.containsHTML("ErrorCode 7: Download file count limit")) return AvailableStatus.UNCHECKABLE;
         final String filename = br.getRegex("class=\"file\\-name\">([^<>\"]*?)</div>").getMatch(0);
         filesize = br.getRegex(">Filesize:<span class=\"lime\">([^<>\"]*?)</span>").getMatch(0);
+        if (filesize == null) filesize = br.getRegex(">Filesize: <span class=\"lime\">([^<>\"]*?)</span>").getMatch(0);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         link.setFinalFileName(Encoding.htmlDecode(filename.trim()));
         link.setDownloadSize(SizeFormatter.getSize(filesize));
@@ -153,7 +154,7 @@ public class DataFileCom extends PluginForHost {
                 if (!SKIPWAITTIME || i > 1) {
                     waitTime(timeBefore, downloadLink, wait);
                 }
-                postPage("https://www.datafile.com/files/ajax.html", "doaction=getFileDownloadLink&recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + Encoding.urlEncode(c) + "&fileid=" + fid);
+                postPage("http://www.datafile.com/files/ajax.html", "doaction=getFileDownloadLink&recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + Encoding.urlEncode(c) + "&fileid=" + fid);
                 if (br.containsHTML("\"The two words is not valid")) {
                     rc.reload();
                     continue;
@@ -230,12 +231,12 @@ public class DataFileCom extends PluginForHost {
                     }
                 }
                 br.setFollowRedirects(true);
-                String protocol = "https://";
+                String protocol = "http://";
                 if (isJava7nJDStable()) {
                     if (!stableSucks.get()) showSSLWarning(this.getHost());
                     protocol = "http://";
                 }
-                br.postPage(protocol + "www.datafile.com/login.html", "login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&remember_me=1&btn=Submit");
+                br.postPage(protocol + "www.datafile.com/login.html", "login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&remember_me=0&remember_me=1&btn=");
                 if (br.getCookie(MAINPAGE, "hash") == null || br.getCookie(MAINPAGE, "user") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nUngültiger Benutzername oder ungültiges Passwort!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                 // Save cookies
                 final HashMap<String, String> cookies = new HashMap<String, String>();

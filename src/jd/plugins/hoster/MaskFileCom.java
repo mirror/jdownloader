@@ -98,14 +98,14 @@ public class MaskFileCom extends PluginForHost {
 
     // Connection Management
     // note: CAN NOT be negative or zero! (ie. -1 or 0) Otherwise math sections fail. .:. use [1-20]
-    private static final AtomicInteger totalMaxSimultanFreeDownload = new AtomicInteger(20);
+    private static final AtomicInteger totalMaxSimultanFreeDownload = new AtomicInteger(1);
 
     // DEV NOTES
     // XfileShare Version 3.0.8.4
     // last XfileSharingProBasic compare :: 2.6.2.1
     // captchatype: null
     // other: no redirects
-    // mods:
+    // mods: after dl start errorhandling change
 
     private void setConstants(final Account account) {
         if (account != null && account.getBooleanProperty("free")) {
@@ -466,8 +466,12 @@ public class MaskFileCom extends PluginForHost {
         }
         if (dl.getConnection().getContentType().contains("html")) {
             if (dl.getConnection().getResponseCode() == 503 && dl.getConnection().getHeaderFields("server").contains("nginx")) {
-                controlSimHost(account);
-                controlHost(account, downloadLink, false);
+                try {
+                    controlSimHost(account);
+                    controlHost(account, downloadLink, false);
+                } catch (final PluginException e) {
+                    if (dl.getConnection().getResponseCode() == 503) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Connection limit reached, waiting till new downloads can be started!", 5 * 60 * 1000l);
+                }
             } else {
                 logger.warning("The final dllink seems not to be a file!");
                 br.followConnection();
@@ -1459,7 +1463,7 @@ public class MaskFileCom extends PluginForHost {
      * @param controlSlot
      *            (+1|-1)
      * */
-   private void controlSlot(final int num, final Account account) {
+    private void controlSlot(final int num, final Account account) {
         synchronized (CTRLLOCK) {
             if (account == null) {
                 int was = maxFree.get();
