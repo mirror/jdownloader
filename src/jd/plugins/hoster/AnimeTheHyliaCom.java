@@ -58,7 +58,12 @@ public class AnimeTheHyliaCom extends PluginForHost {
         br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML(">Unfortunately, due to large server expenses we are not able to accomodate lots of consecutive")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED);
         DLLINK = br.getRedirectLocation();
-        if (DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (DLLINK == null) {
+            if (br.containsHTML("issues|network capacity|problems"))
+                throw new PluginException(LinkStatus.ERROR_FATAL, "Server reports errors with this file");
+            else
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         DLLINK = Encoding.htmlDecode(DLLINK);
         String ext = DLLINK.substring(DLLINK.lastIndexOf("."));
         if (ext == null || ext.length() > 5) ext = ".avi";
