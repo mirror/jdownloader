@@ -15,6 +15,7 @@ context_password_msg_multi=Postavi Šifru
 contextmenu_autodeletefiles=Omogućeno je 'Izbriši Dokumente Arhive'
 contextmenu_autodeletelinks=Omogućeno je 'Ukloni Linkove iz Liste Download-a'
 contextmenu_autoextract=Omogućena je Automatska Ekstrakcija
+contextmenu_disable_auto_extract2=Ekstraktuj nakon Download-a
 contextmenu_extract=Ekstraktuj Sada
 contextmenu_extract_show_result=Prikaži log Ekstrakcijw
 contextmenu_extract_to=Postavi Putanju Za Ekstrakciju
