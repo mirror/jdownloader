@@ -1,8 +1,8 @@
-package org.jdownloader.captcha.v2.solver.dbc;
+package org.jdownloader.captcha.v2.solver.dbc.api;
 
 import java.util.HashMap;
 
-import org.appwork.storage.JSonStorage;
+import org.appwork.storage.SimpleMapper;
 import org.appwork.storage.TypeRef;
 
 /**
@@ -14,7 +14,8 @@ import org.appwork.storage.TypeRef;
 public class DataObject extends HashMap<String, Object> {
     public DataObject(String sendAndReceive) {
         super();
-        DataObject nD = JSonStorage.restoreFromString(sendAndReceive, new TypeRef<DataObject>() {
+
+        DataObject nD = new SimpleMapper().stringToObject(sendAndReceive, new TypeRef<DataObject>() {
         });
         if (nD != null) putAll(nD);
     }
@@ -36,7 +37,7 @@ public class DataObject extends HashMap<String, Object> {
 
     public int optInt(String string, int i) {
         Object ret = get(string);
-        if (ret != null && ret instanceof Integer) return (Integer) ret;
+        if (ret != null && ret instanceof Number) return ((Number) ret).intValue();
         return i;
     }
 

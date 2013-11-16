@@ -1,4 +1,4 @@
-package org.jdownloader.captcha.v2.solver;
+package org.jdownloader.captcha.v2.solver.captchabrotherhood;
 
 import java.io.IOException;
 import java.net.URL;

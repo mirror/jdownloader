@@ -2,7 +2,7 @@
  * Source: http://deathbycaptcha.eu/user/api
  * Slightly modified to work without json and base64 dependencies
  */
-package org.jdownloader.captcha.v2.solver.dbc;
+package org.jdownloader.captcha.v2.solver.dbc.api;
 
 import java.io.IOException;
 import java.net.InetAddress;
@@ -16,7 +16,7 @@ import java.nio.charset.CharsetDecoder;
 import java.util.Iterator;
 import java.util.Random;
 
-import org.appwork.storage.JSonStorage;
+import org.appwork.storage.SimpleMapper;
 import org.appwork.utils.encoding.Base64;
 
 /**
@@ -66,7 +66,10 @@ public class SocketClient extends Client {
                             if (2 <= response.length() && response.substring(response.length() - 2, response.length()).equals(SocketClient.TERMINATOR)) {
                                 response.setLength(response.length() - 2);
                                 return response.toString();
-                            } else if (0 == response.length()) { throw new IOException("Connection lost"); }
+                            } else if (0 == response.length()) {
+                                //
+                                throw new IOException("Connection lost");
+                            }
                         }
                         if (key.isWritable() && sbuf.hasRemaining()) {
                             // Sending the request
@@ -79,14 +82,14 @@ public class SocketClient extends Client {
                 }
             }
         } catch (java.lang.Exception e) {
-            throw new IOException("API communication failed: " + e.toString());
+            throw new IOException(e);
         } finally {
             selector.close();
         }
     }
 
     /**
-     * @see org.jdownloader.captcha.v2.solver.dbc.Client#close
+     * @see org.jdownloader.captcha.v2.solver.dbc.api.Client#close
      */
     public void close() {
         if (null != this.channel) {
@@ -118,7 +121,7 @@ public class SocketClient extends Client {
     }
 
     /**
-     * @see org.jdownloader.captcha.v2.solver.dbc.Client#connect
+     * @see org.jdownloader.captcha.v2.solver.dbc.api.Client#connect
      */
     public boolean connect() throws IOException {
         if (null == this.channel) {
@@ -151,7 +154,8 @@ public class SocketClient extends Client {
         args.put("cmd", cmd).put("version", Client.API_VERSION);
 
         int attempts = 2;
-        byte[] payload = (JSonStorage.serializeToJson(args) + SocketClient.TERMINATOR).getBytes();
+
+        byte[] payload = (new SimpleMapper().objectToString(args) + SocketClient.TERMINATOR).getBytes();
         DataObject response = null;
         while (0 < attempts && null == response) {
             attempts--;
@@ -164,7 +168,7 @@ public class SocketClient extends Client {
                     try {
                         response = new DataObject(this.sendAndReceive(payload));
                     } catch (java.lang.Exception e) {
-                        // System.out.println("SocketClient.call(): " + e.toString());
+                        logger.log(e);
                         this.close();
                     }
                 }
@@ -204,10 +208,11 @@ public class SocketClient extends Client {
     }
 
     /**
-     * @see org.jdownloader.captcha.v2.solver.dbc.Client#Client(String, String)
+     * @see org.jdownloader.captcha.v2.solver.dbc.api.Client#Client(String, String)
      */
     public SocketClient(String username, String password) {
         super(username, password);
+
     }
 
     public void finalize() {
@@ -215,14 +220,14 @@ public class SocketClient extends Client {
     }
 
     /**
-     * @see org.jdownloader.captcha.v2.solver.dbc.Client#getUser
+     * @see org.jdownloader.captcha.v2.solver.dbc.api.Client#getUser
      */
     public User getUser() throws IOException, Exception {
         return new User(this.call("user"));
     }
 
     /**
-     * @see org.jdownloader.captcha.v2.solver.dbc.Client#upload
+     * @see org.jdownloader.captcha.v2.solver.dbc.api.Client#upload
      */
     public Captcha upload(byte[] img) throws IOException, Exception {
         DataObject args = new DataObject();
@@ -236,7 +241,7 @@ public class SocketClient extends Client {
     }
 
     /**
-     * @see org.jdownloader.captcha.v2.solver.dbc.Client#getCaptcha
+     * @see org.jdownloader.captcha.v2.solver.dbc.api.Client#getCaptcha
      */
     public Captcha getCaptcha(int id) throws IOException, Exception {
         DataObject args = new DataObject();
@@ -247,7 +252,7 @@ public class SocketClient extends Client {
     }
 
     /**
-     * @see org.jdownloader.captcha.v2.solver.dbc.Client#report
+     * @see org.jdownloader.captcha.v2.solver.dbc.api.Client#report
      */
     public boolean report(int id) throws IOException, Exception {
         DataObject args = new DataObject();

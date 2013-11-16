@@ -83,6 +83,14 @@ public interface CaptchaSettings extends ConfigInterface {
     void setCaptchaDialog9kwTimeout(int ms);
 
     @AboutConfig
+    @DefaultIntValue(300000)
+    @SpinnerValidator(min = 60000, max = Integer.MAX_VALUE)
+    @org.appwork.storage.config.annotations.DescriptionForConfigEntry("Milliseconds after which a Captcha Dialog will appear even if Auto DeathByCaptcha Service is still running")
+    int getCaptchaDialogDBCTimeout();
+
+    void setCaptchaDialogDBCTimeout(int ms);
+
+    @AboutConfig
     @DefaultIntValue(0)
     @org.appwork.storage.config.annotations.DescriptionForConfigEntry("Milliseconds after which a Captcha Dialog will appear even if Auto CaptchaBroptherhood Service is still running")
     int getCaptchaDialogCaptchaBroptherhoodTimeout();

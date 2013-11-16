@@ -2950,6 +2950,9 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Enter your 9kw.eu API Key below. If you do not have an account yet, click the Link above and register for an account. It's free!" })
     String NinekwService_createPanel_logins_();
 
+    @Default(lngs = { "en" }, values = { "Enter your deathbycaptcha.eu username and password below. If you do not have an account yet, click the Link above and register for an account!" })
+    String dbcService_createPanel_logins_();
+
     @Default(lngs = { "en" }, values = { "Enable 9kw.eu Service" })
     String NinekwService_createPanel_enabled();
 
@@ -3639,5 +3642,32 @@ public interface GuiTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Include Disabled Links" })
     String OverViewHeader_disabled();
+
+    @Default(lngs = { "en" }, values = { "Enable the Death By Captcha Service" })
+    String DeatchbyCaptcha_Service_createPanel_enabled();
+
+    @Default(lngs = { "en" }, values = { "Report incorrect Captchas" })
+    String DeatchbyCaptcha_Service_createPanel_feedback();
+
+    @Default(lngs = { "en" }, values = { "Blacklist" })
+    String DeatchbyCaptcha_Service_createPanel_blacklist();
+
+    @Default(lngs = { "en" }, values = { "Whitelist" })
+    String DeatchbyCaptcha_Service_createPanel_whitelist();
+
+    @Default(lngs = { "en" }, values = { "Captchas solved by the deathbycaptcha.eu System" })
+    String DeatchbyCaptcha_Service_getDescription_tt_();
+
+    @Default(lngs = { "en" }, values = { "Account is banned!" })
+    String ServicePanel9kwTooltip_runInEDT_banned();
+
+    @Default(lngs = { "en" }, values = { "Account ID" })
+    String lit_accountid();
+
+    @Default(lngs = { "en" }, values = { "Rate" })
+    String lit_rate();
+
+    @Default(lngs = { "en" }, values = { "Captchas remaining" })
+    String ServicePanelDBCTooltip_captcha_free();
 
 }

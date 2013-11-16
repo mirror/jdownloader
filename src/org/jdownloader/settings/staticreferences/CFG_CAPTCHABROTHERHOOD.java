@@ -5,7 +5,7 @@ import org.appwork.storage.config.JsonConfig;
 import org.appwork.storage.config.handler.BooleanKeyHandler;
 import org.appwork.storage.config.handler.StorageHandler;
 import org.appwork.storage.config.handler.StringKeyHandler;
-import org.jdownloader.captcha.v2.solver.CaptchaBrotherHoodSettings;
+import org.jdownloader.captcha.v2.solver.captchabrotherhood.CaptchaBrotherHoodSettings;
 
 public class CFG_CAPTCHABROTHERHOOD {
     public static void main(String[] args) {

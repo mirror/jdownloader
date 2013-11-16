@@ -2,13 +2,16 @@
  * Source: http://deathbycaptcha.eu/user/api
  * Slightly modified to work without json and base64 dependencies
  */
-package org.jdownloader.captcha.v2.solver.dbc;
+package org.jdownloader.captcha.v2.solver.dbc.api;
 
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+
+import org.appwork.utils.logging2.LogSource;
+import org.jdownloader.logging.LogController;
 
 /**
  * Base Death by Captcha API client.
@@ -30,10 +33,12 @@ abstract public class Client {
 
     protected String           _username          = "";
     protected String           _password          = "";
+    protected LogSource        logger;
 
     protected void log(String call, String msg) {
         if (this.isVerbose) {
-            System.out.println((System.currentTimeMillis() / 1000) + " " + call + (null != msg ? ": " + msg : ""));
+            logger.info(call + (null != msg ? ": " + msg : ""));
+
         }
     }
 
@@ -106,6 +111,8 @@ abstract public class Client {
     public Client(String username, String password) {
         this._username = username;
         this._password = password;
+        logger = LogController.getInstance().getLogger(Client.class.getName());
+
     }
 
     /**
@@ -121,7 +128,7 @@ abstract public class Client {
      * @return user balance
      */
     public double getBalance() throws IOException, Exception {
-        return this.getUser().balance;
+        return this.getUser().getBalance();
     }
 
     /**
@@ -134,7 +141,7 @@ abstract public class Client {
     abstract public Captcha upload(byte[] img) throws IOException, Exception;
 
     /**
-     * @see org.jdownloader.captcha.v2.solver.dbc.Client#upload
+     * @see org.jdownloader.captcha.v2.solver.dbc.api.Client#upload
      * @param st
      *            CAPTCHA image stream
      */
@@ -143,7 +150,7 @@ abstract public class Client {
     }
 
     /**
-     * @see org.jdownloader.captcha.v2.solver.dbc.Client#upload
+     * @see org.jdownloader.captcha.v2.solver.dbc.api.Client#upload
      * @param f
      *            CAPTCHA image file
      */
@@ -152,7 +159,7 @@ abstract public class Client {
     }
 
     /**
-     * @see org.jdownloader.captcha.v2.solver.dbc.Client#upload
+     * @see org.jdownloader.captcha.v2.solver.dbc.api.Client#upload
      * @param fn
      *            CAPTCHA image file name
      */
@@ -170,7 +177,7 @@ abstract public class Client {
     abstract public Captcha getCaptcha(int id) throws IOException, Exception;
 
     /**
-     * @see org.jdownloader.captcha.v2.solver.dbc.Client#getCaptcha
+     * @see org.jdownloader.captcha.v2.solver.dbc.api.Client#getCaptcha
      * @param captcha
      *            CAPTCHA object
      */
@@ -190,7 +197,7 @@ abstract public class Client {
     }
 
     /**
-     * @see org.jdownloader.captcha.v2.solver.dbc.Client#getText
+     * @see org.jdownloader.captcha.v2.solver.dbc.api.Client#getText
      * @param captcha
      *            CAPTCHA object
      */
@@ -208,7 +215,7 @@ abstract public class Client {
     abstract public boolean report(int id) throws IOException, Exception;
 
     /**
-     * @see org.jdownloader.captcha.v2.solver.dbc.Client#report
+     * @see org.jdownloader.captcha.v2.solver.dbc.api.Client#report
      * @param captcha
      *            CAPTCHA object
      */
@@ -239,14 +246,14 @@ abstract public class Client {
     }
 
     /**
-     * @see org.jdownloader.captcha.v2.solver.dbc.Client#decode(byte[], int)
+     * @see org.jdownloader.captcha.v2.solver.dbc.api.Client#decode(byte[], int)
      */
     public Captcha decode(byte[] img) throws IOException, Exception, InterruptedException {
         return this.decode(img, 0);
     }
 
     /**
-     * @see org.jdownloader.captcha.v2.solver.dbc.Client#decode
+     * @see org.jdownloader.captcha.v2.solver.dbc.api.Client#decode
      * @param st
      *            CAPTCHA image stream
      * @param timeout
@@ -257,14 +264,14 @@ abstract public class Client {
     }
 
     /**
-     * @see org.jdownloader.captcha.v2.solver.dbc.Client#decode(InputStream, int)
+     * @see org.jdownloader.captcha.v2.solver.dbc.api.Client#decode(InputStream, int)
      */
     public Captcha decode(InputStream st) throws IOException, Exception, InterruptedException {
         return this.decode(st, 0);
     }
 
     /**
-     * @see org.jdownloader.captcha.v2.solver.dbc.Client#decode
+     * @see org.jdownloader.captcha.v2.solver.dbc.api.Client#decode
      * @param f
      *            CAPTCHA image file
      * @param timeout
@@ -275,14 +282,14 @@ abstract public class Client {
     }
 
     /**
-     * @see org.jdownloader.captcha.v2.solver.dbc.Client#decode(File, int)
+     * @see org.jdownloader.captcha.v2.solver.dbc.api.Client#decode(File, int)
      */
     public Captcha decode(File f) throws IOException, FileNotFoundException, Exception, InterruptedException {
         return this.decode(f, 0);
     }
 
     /**
-     * @see org.jdownloader.captcha.v2.solver.dbc.Client#decode
+     * @see org.jdownloader.captcha.v2.solver.dbc.api.Client#decode
      * @param fn
      *            CAPTCHA image file name
      * @param timeout
@@ -293,7 +300,7 @@ abstract public class Client {
     }
 
     /**
-     * @see org.jdownloader.captcha.v2.solver.dbc.Client#decode(String, int)
+     * @see org.jdownloader.captcha.v2.solver.dbc.api.Client#decode(String, int)
      */
     public Captcha decode(String fn) throws IOException, FileNotFoundException, Exception, InterruptedException {
         return this.decode(fn, 0);

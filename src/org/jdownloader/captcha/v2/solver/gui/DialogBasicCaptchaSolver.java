@@ -13,10 +13,12 @@ import org.jdownloader.captcha.v2.Challenge;
 import org.jdownloader.captcha.v2.ChallengeSolver;
 import org.jdownloader.captcha.v2.challenge.stringcaptcha.BasicCaptchaChallenge;
 import org.jdownloader.captcha.v2.challenge.stringcaptcha.CaptchaResponse;
-import org.jdownloader.captcha.v2.solver.CBSolver;
-import org.jdownloader.captcha.v2.solver.CaptchaBrotherHoodSettings;
-import org.jdownloader.captcha.v2.solver.CaptchaResolutorCaptchaSettings;
-import org.jdownloader.captcha.v2.solver.CaptchaResolutorCaptchaSolver;
+import org.jdownloader.captcha.v2.solver.captchabrotherhood.CBSolver;
+import org.jdownloader.captcha.v2.solver.captchabrotherhood.CaptchaBrotherHoodSettings;
+import org.jdownloader.captcha.v2.solver.captcharesolutor.CaptchaResolutorCaptchaSettings;
+import org.jdownloader.captcha.v2.solver.captcharesolutor.CaptchaResolutorCaptchaSolver;
+import org.jdownloader.captcha.v2.solver.dbc.DeathByCaptchaSettings;
+import org.jdownloader.captcha.v2.solver.dbc.DeathByCaptchaSolver;
 import org.jdownloader.captcha.v2.solver.jac.JACSolver;
 import org.jdownloader.captcha.v2.solver.solver9kw.Captcha9kwSettings;
 import org.jdownloader.captcha.v2.solver.solver9kw.Captcha9kwSolver;
@@ -32,6 +34,7 @@ public class DialogBasicCaptchaSolver extends ChallengeSolver<String> {
     private CaptchaBrotherHoodSettings            configcbh;
     private CaptchaResolutorCaptchaSettings       configresolutor;
     private BasicCaptchaDialogHandler             handler;
+    private DeathByCaptchaSettings                configDBC;
     private static final DialogBasicCaptchaSolver INSTANCE = new DialogBasicCaptchaSolver();
 
     public static DialogBasicCaptchaSolver getInstance() {
@@ -63,6 +66,7 @@ public class DialogBasicCaptchaSolver extends ChallengeSolver<String> {
         super(1);
         config = JsonConfig.create(CaptchaSettings.class);
         config9kw = JsonConfig.create(Captcha9kwSettings.class);
+        configDBC = JsonConfig.create(DeathByCaptchaSettings.class);
         configcbh = JsonConfig.create(CaptchaBrotherHoodSettings.class);
         configresolutor = JsonConfig.create(CaptchaResolutorCaptchaSettings.class);
     }
@@ -74,6 +78,8 @@ public class DialogBasicCaptchaSolver extends ChallengeSolver<String> {
             if (job.getChallenge() instanceof BasicCaptchaChallenge && CFG_CAPTCHA.CAPTCHA_DIALOGS_ENABLED.isEnabled()) {
                 job.getLogger().info("Waiting for Other Solvers");
                 job.waitFor(config.getCaptchaDialogJAntiCaptchaTimeout(), JACSolver.getInstance());
+                if (configDBC.isEnabled() && config.getCaptchaDialogDBCTimeout() > 0) job.waitFor(config.getCaptchaDialogDBCTimeout(), DeathByCaptchaSolver.getInstance());
+
                 if (config9kw.isEnabled() && config.getCaptchaDialog9kwTimeout() > 0) job.waitFor(config.getCaptchaDialog9kwTimeout(), Captcha9kwSolver.getInstance());
                 if (configcbh.isEnabled() && config.getCaptchaDialogCaptchaBroptherhoodTimeout() > 0) job.waitFor(config.getCaptchaDialogCaptchaBroptherhoodTimeout(), CBSolver.getInstance());
                 if (configresolutor.isEnabled() && config.getCaptchaDialogResolutorCaptchaTimeout() > 0) job.waitFor(config.getCaptchaDialogResolutorCaptchaTimeout(), CaptchaResolutorCaptchaSolver.getInstance());

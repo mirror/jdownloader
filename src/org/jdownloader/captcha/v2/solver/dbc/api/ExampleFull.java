@@ -2,10 +2,10 @@
  * Source: http://deathbycaptcha.eu/user/api
  * Slightly modified to work without json and base64 dependencies
  */
-package org.jdownloader.captcha.v2.solver.dbc;
+package org.jdownloader.captcha.v2.solver.dbc.api;
 
-import java.util.Iterator;
-import java.util.Vector;
+import org.appwork.utils.Application;
+import org.jdownloader.settings.staticreferences.CFG_DBC;
 
 class ExampleFullDecoder implements Runnable {
     protected Client _client          = null;
@@ -57,22 +57,23 @@ class ExampleFull {
     public static void main(String[] args) throws java.lang.Exception {
         // Put your DBC username & password here:
         // Client client = (Client)(new HttpClient(args[0], args[1]));
-        Client client = (Client) (new SocketClient("username", "password"));
+        Application.setApplication(".jd_home");
+        Client client = (Client) (new SocketClient(CFG_DBC.CFG.getUserName(), CFG_DBC.CFG.getPassword()));
         client.isVerbose = true;
 
         System.out.println("Your balance is " + client.getBalance() + " US cents");
 
-        Vector threads = new Vector();
-
-        Thread t = new Thread(new ExampleFullDecoder(client, "captcha.png"));
-        t.start();
-        threads.add(t);
-
-        for (Iterator i = threads.iterator(); i.hasNext();) {
-            t = (Thread) i.next();
-            t.join();
-        }
-
-        System.out.println("Your balance is " + client.getBalance() + " US cents");
+        // Vector threads = new Vector();
+        //
+        // Thread t = new Thread(new ExampleFullDecoder(client, "captcha.png"));
+        // t.start();
+        // threads.add(t);
+        //
+        // for (Iterator i = threads.iterator(); i.hasNext();) {
+        // t = (Thread) i.next();
+        // t.join();
+        // }
+        //
+        // System.out.println("Your balance is " + client.getBalance() + " US cents");
     }
 }

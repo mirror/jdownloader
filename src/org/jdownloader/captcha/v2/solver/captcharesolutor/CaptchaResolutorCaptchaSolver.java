@@ -1,4 +1,4 @@
-package org.jdownloader.captcha.v2.solver;
+package org.jdownloader.captcha.v2.solver.captcharesolutor;
 
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;

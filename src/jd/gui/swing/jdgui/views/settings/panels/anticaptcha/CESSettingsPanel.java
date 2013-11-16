@@ -18,6 +18,7 @@ import jd.gui.swing.jdgui.JDGui;
 import jd.gui.swing.jdgui.views.settings.components.SettingsComponent;
 import jd.gui.swing.jdgui.views.settings.components.StateUpdateListener;
 import jd.gui.swing.jdgui.views.settings.panels.anticaptcha.ces.CaptchaBrotherhoodService;
+import jd.gui.swing.jdgui.views.settings.panels.anticaptcha.ces.DeathByCaptchaConfigPanel;
 import jd.gui.swing.jdgui.views.settings.panels.anticaptcha.ces.MyJDownloaderService;
 import jd.gui.swing.jdgui.views.settings.panels.anticaptcha.ces.NinekwService;
 import net.miginfocom.swing.MigLayout;
@@ -90,6 +91,7 @@ public class CESSettingsPanel extends JPanel implements SettingsComponent {
 
         add(new MyJDownloaderService());
         add(new NinekwService());
+        add(new DeathByCaptchaConfigPanel());
         add(new CaptchaBrotherhoodService());
         tab.addChangeListener(new ChangeListener() {
 
