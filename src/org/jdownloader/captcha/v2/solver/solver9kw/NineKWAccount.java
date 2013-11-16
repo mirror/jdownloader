@@ -27,6 +27,15 @@ public class NineKWAccount {
     private int    worker;
     private int    workerMouse;
     private int    workerConfirm;
+    private int    workerText;
+
+    public int getWorkerText() {
+        return workerText;
+    }
+
+    public void setWorkerText(int workerText) {
+        this.workerText = workerText;
+    }
 
     public int getWorkerMouse() {
         return workerMouse;

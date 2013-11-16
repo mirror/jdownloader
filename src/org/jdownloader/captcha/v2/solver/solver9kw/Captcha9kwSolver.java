@@ -321,6 +321,7 @@ public class Captcha9kwSolver extends ChallengeSolver<String> implements Challen
             ret.setInWork(Integer.parseInt(new Regex(servercheck, "inwork=(\\d+)").getMatch(0)));
             ret.setWorkerMouse(Integer.parseInt(new Regex(servercheck, "workermouse=(\\d+)").getMatch(0)));
             ret.setWorkerConfirm(Integer.parseInt(new Regex(servercheck, "workerconfirm=(\\d+)").getMatch(0)));
+            ret.setWorkerText(Integer.parseInt(new Regex(servercheck, "workertext=(\\d+)").getMatch(0)));
 
         } catch (NumberFormatException e) {
             ret.setError("API Error!");

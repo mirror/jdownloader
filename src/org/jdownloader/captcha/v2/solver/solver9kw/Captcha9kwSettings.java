@@ -94,7 +94,7 @@ public interface Captcha9kwSettings extends ConfigInterface {
 
     @AboutConfig
     @RequiresRestart("A JDownloader Restart is required after changes")
-    @DefaultIntValue(5)
+    @DefaultIntValue(3)
     @SpinnerValidator(min = 0, max = 25)
     @DescriptionForConfigEntry("Max. Captchas Parallel")
     int getThreadpoolSize();

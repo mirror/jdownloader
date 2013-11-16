@@ -3595,6 +3595,9 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Worker Confirm:" })
     String ServicePanel9kwTooltip_runInEDT_worker_confirm();
 
+    @Default(lngs = { "en" }, values = { "Worker Text:" })
+    String ServicePanel9kwTooltip_runInEDT_worker_text();
+
     @Default(lngs = { "en" }, values = { "In Work:" })
     String ServicePanel9kwTooltip_runInEDT_inwork();
 

@@ -104,6 +104,8 @@ public class ServicePanel9kwTooltip extends PanelToolTip {
                                 panel.add(lbl(account.getWorkerMouse()));
                                 panel.add(lbl(_GUI._.ServicePanel9kwTooltip_runInEDT_worker_confirm(), NewTheme.I().getIcon(IconKey.ICON_TRUE, 18), JLabel.LEFT));
                                 panel.add(lbl(account.getWorkerConfirm()));
+                                panel.add(lbl(_GUI._.ServicePanel9kwTooltip_runInEDT_worker_text(), NewTheme.I().getIcon(IconKey.ICON_TRUE, 18), JLabel.LEFT));
+                                panel.add(lbl(account.getWorkerText()));
 
                                 panel.add(lbl(_GUI._.ServicePanel9kwTooltip_runInEDT_inwork(), NewTheme.I().getIcon(IconKey.ICON_TRUE, 18), JLabel.LEFT));
                                 panel.add(lbl(account.getInWork()));
