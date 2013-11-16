@@ -4,6 +4,7 @@ import java.awt.event.ActionEvent;
 import java.util.ArrayList;
 import java.util.List;
 
+import jd.controlling.TaskQueue;
 import jd.controlling.linkcollector.LinkCollector;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledPackage;
@@ -16,6 +17,7 @@ import org.appwork.swing.exttable.ExtTableEvent;
 import org.appwork.swing.exttable.ExtTableListener;
 import org.appwork.swing.exttable.ExtTableModelEventWrapper;
 import org.appwork.swing.exttable.ExtTableModelListener;
+import org.appwork.utils.event.queue.QueueAction;
 import org.appwork.utils.swing.EDTRunner;
 import org.jdownloader.controlling.contextmenu.ActionContext;
 import org.jdownloader.controlling.contextmenu.CustomizableAppAction;
@@ -26,28 +28,105 @@ import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.components.packagetable.PackageControllerTableModelFilter;
 import org.jdownloader.gui.views.linkgrabber.LinkGrabberTable;
 import org.jdownloader.gui.views.linkgrabber.LinkGrabberTableModel;
+import org.jdownloader.gui.views.linkgrabber.LinkgrabberSearchField;
+import org.jdownloader.gui.views.linkgrabber.contextmenu.MenuManagerLinkgrabberTableContext;
 
 public class GenericDeleteFromLinkgrabberAction extends CustomizableAppAction implements ExtTableListener, ActionContext, ExtTableModelListener {
 
-    public static final String                           INCLUDE_UNSELECTED_LINKS = "includeUnselectedLinks";
-    public static final String                           INCLUDE_SELECTED_LINKS   = "includeSelectedLinks";
-    public static final String                           ONLY_SELECTED_ITEMS      = "onlySelectedItems";
-    public static final String                           DELETE_ALL               = "deleteAll";
-    public static final String                           DELETE_DISABLED          = "deleteDisabled";
-    public static final String                           DELETE_OFFLINE           = "deleteOffline";
+    public static final String FULL_LINK_COLLECTOR_RESET = "fullLinkCollectorReset";
+    public static final String CLEAR_FILTERED_LINKS      = "clearFilteredLinks";
+    public static final String CLEAR_SEARCH_FILTER       = "clearSearchFilter";
+    public static final String RESET_TABLE_SORTER        = "resetTableSorter";
+    public static final String CANCEL_LINKCRAWLER_JOBS   = "cancelLinkcrawlerJobs";
+    public static final String INCLUDE_UNSELECTED_LINKS  = "includeUnselectedLinks";
+    public static final String INCLUDE_SELECTED_LINKS    = "includeSelectedLinks";
+    public static final String ONLY_SELECTED_ITEMS       = "onlySelectedItems";
+    public static final String DELETE_ALL                = "deleteAll";
+    public static final String DELETE_DISABLED           = "deleteDisabled";
+    public static final String DELETE_OFFLINE            = "deleteOffline";
     /**
      * 
      */
-    private static final long                            serialVersionUID         = 1L;
+    private static final long  serialVersionUID          = 1L;
 
-    private DelayedRunnable                              delayer;
-    private boolean                                      deleteAll                = false;
+    private DelayedRunnable    delayer;
+    private boolean            deleteAll                 = false;
 
-    private boolean                                      deleteDisabled           = false;
+    private boolean            deleteDisabled            = false;
 
-    private boolean                                      deleteOffline            = false;
+    private boolean            deleteOffline             = false;
+    private boolean            cancelLinkcrawlerJobs     = false;
+    private boolean            resetTableSorter          = false;
+    private boolean            fullLinkCollectorReset    = false;
 
-    private boolean                                      ignoreFiltered           = true;
+    @Customizer(name = "Full Reset")
+    public boolean isFullLinkCollectorReset() {
+
+        return fullLinkCollectorReset;
+    }
+
+    public void setFullLinkCollectorReset(boolean fullLinkCollectorReset) {
+        this.fullLinkCollectorReset = fullLinkCollectorReset;
+    }
+
+    @Override
+    public void loadContextSetups() {
+        super.loadContextSetups();
+        new EDTRunner() {
+
+            @Override
+            protected void runInEDT() {
+                setName(createName());
+            }
+        }.getReturnValue();
+
+    }
+
+    @Customizer(name = "Cancel all running Crawler Jobs")
+    public boolean isCancelLinkcrawlerJobs() {
+
+        return cancelLinkcrawlerJobs;
+    }
+
+    public void setCancelLinkcrawlerJobs(boolean cancelLinkcrawlerJobs) {
+        this.cancelLinkcrawlerJobs = cancelLinkcrawlerJobs;
+    }
+
+    @Customizer(name = "Reset Table Sorting")
+    public boolean isResetTableSorter() {
+
+        return resetTableSorter;
+    }
+
+    public void setResetTableSorter(boolean resetTableSorter) {
+        this.resetTableSorter = resetTableSorter;
+    }
+
+    @Customizer(name = "Clear Searchfield")
+    public boolean isClearSearchFilter() {
+
+        return clearSearchFilter;
+    }
+
+    public void setClearSearchFilter(boolean clearSearchFilter) {
+        this.clearSearchFilter = clearSearchFilter;
+    }
+
+    @Customizer(name = "Clear Filtered Links")
+    public boolean isClearFilteredLinks() {
+
+        return clearFilteredLinks;
+    }
+
+    public void setClearFilteredLinks(boolean clearFilteredLinks) {
+        this.clearFilteredLinks = clearFilteredLinks;
+    }
+
+    private boolean                                      clearSearchFilter  = false;
+    private boolean                                      clearFilteredLinks = false;
+    //
+
+    private boolean                                      ignoreFiltered     = true;
 
     private CrawledLink                                  lastLink;
 
@@ -71,6 +150,46 @@ public class GenericDeleteFromLinkgrabberAction extends CustomizableAppAction im
     public void actionPerformed(final ActionEvent e) {
         final List<CrawledLink> nodesToDelete = new ArrayList<CrawledLink>();
         boolean containsOnline = false;
+
+        TaskQueue.getQueue().add(new QueueAction<Void, RuntimeException>() {
+
+            @Override
+            protected Void run() throws RuntimeException {
+
+                if (isCancelLinkcrawlerJobs()) {
+                    LinkCollector.getInstance().abort();
+                }
+
+                if (isResetTableSorter()) {
+                    new EDTRunner() {
+
+                        @Override
+                        protected void runInEDT() {
+                            final LinkGrabberTable table = MenuManagerLinkgrabberTableContext.getInstance().getTable();
+                            table.getModel().setSortColumn(null);
+                            table.getModel().refreshSort();
+                            table.getTableHeader().repaint();
+                        }
+                    };
+                }
+                if (isClearSearchFilter()) {
+
+                    LinkgrabberSearchField.getInstance().setText("");
+                    LinkgrabberSearchField.getInstance().onChanged();
+
+                }
+
+                if (isFullLinkCollectorReset()) {
+                    LinkCollector.getInstance().clear();
+                } else {
+                    if (isClearFilteredLinks()) {
+                        LinkCollector.getInstance().clearFilteredLinks();
+                    }
+                }
+
+                return null;
+            }
+        });
 
         switch (getSelectionType()) {
         case NONE:
@@ -133,7 +252,29 @@ public class GenericDeleteFromLinkgrabberAction extends CustomizableAppAction im
 
     private String createName() {
         final StringBuilder sb = new StringBuilder();
+        if (isFullLinkCollectorReset()) {
+            sb.append(_GUI._.GenericDeleteFromLinkgrabberAction_fullreset());
+        } else {
+            if (isClearFilteredLinks()) {
+                if (sb.length() > 0) sb.append(", ");
+                sb.append(_GUI._.GenericDeleteFromLinkgrabberAction_clearFiltered());
+            }
 
+        }
+        if (isCancelLinkcrawlerJobs()) {
+            if (sb.length() > 0) sb.append(", ");
+            sb.append(_GUI._.GenericDeleteFromLinkgrabberAction_cancelCrawler());
+        }
+        if (isClearSearchFilter()) {
+            if (sb.length() > 0) sb.append(", ");
+            sb.append(_GUI._.GenericDeleteFromLinkgrabberAction_clearSearch());
+        }
+
+        if (isResetTableSorter()) {
+            if (sb.length() > 0) sb.append(", ");
+            sb.append(_GUI._.GenericDeleteFromLinkgrabberAction_resetSorter());
+        }
+        if (sb.length() > 0) sb.append(" & ");
         if (this.isDeleteAll()) {
             switch (getSelectionType()) {
             case ALL:
@@ -240,28 +381,26 @@ public class GenericDeleteFromLinkgrabberAction extends CustomizableAppAction im
         super.requestUpdate(requestor);
         updateListeners();
         update();
+
     }
 
     public void setDeleteAll(final boolean deleteIdle) {
         GenericDeleteFromLinkgrabberAction.this.deleteAll = deleteIdle;
-        updateName();
 
     }
 
     public void setDeleteDisabled(final boolean deleteDisabled) {
         GenericDeleteFromLinkgrabberAction.this.deleteDisabled = deleteDisabled;
-        updateName();
 
     }
 
     public void setDeleteOffline(final boolean deleteOffline) {
         GenericDeleteFromLinkgrabberAction.this.deleteOffline = deleteOffline;
-        updateName();
+
     }
 
     public void setIgnoreFiltered(final boolean ignoreFiltered) {
         GenericDeleteFromLinkgrabberAction.this.ignoreFiltered = ignoreFiltered;
-        updateName();
 
     }
 
@@ -276,7 +415,7 @@ public class GenericDeleteFromLinkgrabberAction extends CustomizableAppAction im
 
         this.includeSelectedLinks = includeSelectedLinks;
         updateListeners();
-        updateName();
+
     }
 
     @Customizer(name = "Include Unselected Links")
@@ -288,7 +427,7 @@ public class GenericDeleteFromLinkgrabberAction extends CustomizableAppAction im
 
         this.includeUnselectedLinks = includeUnselectedLinks;
         updateListeners();
-        updateName();
+
     }
 
     private boolean includeUnselectedLinks = false;
@@ -401,6 +540,34 @@ public class GenericDeleteFromLinkgrabberAction extends CustomizableAppAction im
                 // we remember the last link and try it first
                 setVisible(true);
 
+                if (isFullLinkCollectorReset()) {
+                    setEnabled(true);
+                    return;
+                }
+                if (isCancelLinkcrawlerJobs()) {
+                    setEnabled(true);
+                    return;
+                }
+                if (isClearFilteredLinks()) {
+                    setEnabled(true);
+                    return;
+                }
+
+                if (isClearSearchFilter()) {
+                    setEnabled(true);
+                    return;
+                }
+                if (isResetTableSorter()) {
+                    setEnabled(true);
+                    return;
+                }
+
+                if (isClearSearchFilter()) {
+                    setEnabled(true);
+                    return;
+                }
+                LinkCollector.getInstance().abort();
+
                 if (lastLink != null && selection.contains(lastLink)) {
                     if (checkLink(lastLink)) {
 
@@ -425,7 +592,7 @@ public class GenericDeleteFromLinkgrabberAction extends CustomizableAppAction im
              */
 
         };
-
+        updateName();
     }
 
     private void updateName() {
@@ -436,7 +603,7 @@ public class GenericDeleteFromLinkgrabberAction extends CustomizableAppAction im
             protected void runInEDT() {
                 setName(createName());
             }
-        };
+        }.getReturnValue();
 
     }
 

@@ -81,6 +81,19 @@ public class GenericDeleteFromDownloadlistAction extends CustomizableAppAction i
         this.deleteFilesFromDisk = deleteFilesFromDisk;
     }
 
+    @Override
+    public void loadContextSetups() {
+        super.loadContextSetups();
+        new EDTRunner() {
+
+            @Override
+            protected void runInEDT() {
+                setName(createName());
+            }
+        }.getReturnValue();
+
+    }
+
     public GenericDeleteFromDownloadlistAction() {
         super();
 
@@ -293,43 +306,38 @@ public class GenericDeleteFromDownloadlistAction extends CustomizableAppAction i
 
     public void setDeleteAll(final boolean deleteIdle) {
         GenericDeleteFromDownloadlistAction.this.deleteAll = deleteIdle;
-        updateName();
 
     }
 
     public void setDeleteDisabled(final boolean deleteDisabled) {
         GenericDeleteFromDownloadlistAction.this.deleteDisabled = deleteDisabled;
-        updateName();
 
     }
 
     public void setDeleteFailed(final boolean deleteFailed) {
         GenericDeleteFromDownloadlistAction.this.deleteFailed = deleteFailed;
-        updateName();
 
     }
 
     public void setDeleteFinished(final boolean deleteFinished) {
         GenericDeleteFromDownloadlistAction.this.deleteFinished = deleteFinished;
-        updateName();
 
     }
 
     public void setDeleteOffline(final boolean deleteOffline) {
         GenericDeleteFromDownloadlistAction.this.deleteOffline = deleteOffline;
-        updateName();
+
     }
 
     public void setIgnoreFiltered(final boolean ignoreFiltered) {
         GenericDeleteFromDownloadlistAction.this.ignoreFiltered = ignoreFiltered;
-        updateName();
 
     }
 
     public void setOnlySelectedItems(final boolean onlySelectedItems) {
         GenericDeleteFromDownloadlistAction.this.onlySelectedItems = onlySelectedItems;
         updateListeners();
-        updateName();
+
     }
 
     protected void updateListeners() {

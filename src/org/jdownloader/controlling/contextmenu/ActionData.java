@@ -1,7 +1,7 @@
 package org.jdownloader.controlling.contextmenu;
 
-import java.util.HashMap;
 import java.util.Locale;
+import java.util.TreeMap;
 
 import org.appwork.storage.Storable;
 import org.jdownloader.extensions.AbstractExtension;
@@ -54,7 +54,7 @@ public class ActionData implements Storable {
     private String                  clazzName;
     private String                  name;
     private String                  iconKey;
-    private HashMap<String, Object> setup;
+    private TreeMap<String, Object> setup;
 
     private String                  tooltip;
 
@@ -101,17 +101,17 @@ public class ActionData implements Storable {
     public ActionData putSetup(String key, Object value) {
 
         if (setup == null) {
-            setup = new HashMap<String, Object>();
+            setup = new TreeMap<String, Object>();
         }
         setup.put(key.toUpperCase(Locale.ENGLISH), value);
         return this;
     }
 
-    public HashMap<String, Object> getSetup() {
+    public TreeMap<String, Object> getSetup() {
         return setup;
     }
 
-    public void setSetup(HashMap<String, Object> setup) {
+    public void setSetup(TreeMap<String, Object> setup) {
         this.setup = setup;
     }
 

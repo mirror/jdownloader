@@ -3670,4 +3670,19 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Captchas remaining" })
     String ServicePanelDBCTooltip_captcha_free();
 
+    @Default(lngs = { "en" }, values = { "Linkgrabber Reset" })
+    String GenericDeleteFromLinkgrabberAction_fullreset();
+
+    @Default(lngs = { "en" }, values = { "Abort Crawling" })
+    String GenericDeleteFromLinkgrabberAction_cancelCrawler();
+
+    @Default(lngs = { "en" }, values = { "Clear filtered Links" })
+    String GenericDeleteFromLinkgrabberAction_clearFiltered();
+
+    @Default(lngs = { "en" }, values = { "Clear Searchfield" })
+    String GenericDeleteFromLinkgrabberAction_clearSearch();
+
+    @Default(lngs = { "en" }, values = { "Reset Sorting" })
+    String GenericDeleteFromLinkgrabberAction_resetSorter();
+
 }

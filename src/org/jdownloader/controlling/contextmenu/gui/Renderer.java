@@ -15,6 +15,7 @@ import javax.swing.tree.TreePath;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.swing.renderer.RenderLabel;
 import org.jdownloader.actions.AppAction;
+import org.jdownloader.controlling.contextmenu.CustomizableAppAction;
 import org.jdownloader.controlling.contextmenu.MenuContainer;
 import org.jdownloader.controlling.contextmenu.MenuItemData;
 import org.jdownloader.controlling.contextmenu.MenuLink;
@@ -97,6 +98,9 @@ public class Renderer implements TreeCellRenderer {
                 if (mid._isValidated()) {
                     try {
                         AppAction action = mid.createAction();
+                        if (action instanceof CustomizableAppAction) {
+                            ((CustomizableAppAction) action).requestUpdate(this);
+                        }
 
                         if (StringUtils.isEmpty(name)) {
                             name = action.getName();

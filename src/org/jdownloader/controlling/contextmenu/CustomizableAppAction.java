@@ -14,6 +14,7 @@ import org.appwork.utils.ReflectionUtils;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.ImageProvider.ImageProvider;
 import org.appwork.utils.reflection.Clazz;
+import org.appwork.utils.swing.EDTRunner;
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.images.NewTheme;
 
@@ -46,6 +47,7 @@ public abstract class CustomizableAppAction extends AppAction {
         if (setupObjects != null) {
             fill(setupObjects);
         }
+
     }
 
     /**
@@ -83,6 +85,7 @@ public abstract class CustomizableAppAction extends AppAction {
 
     @Override
     public void setName(String name) {
+        String actualName = name;
         if (menuItemData != null) {
             ActionData actionData = menuItemData.getActionData();
 
@@ -100,9 +103,10 @@ public abstract class CustomizableAppAction extends AppAction {
         if (StringUtils.equals(MenuItemData.EMPTY_NAME, name)) {
             name = "";
         }
+        if (StringUtils.isEmpty(actualName)) actualName = getName();
         if (StringUtils.isEmpty(getTooltipText()) && StringUtils.isEmpty(name)) {
-            if (StringUtils.isNotEmpty(getName())) {
-                setTooltipText(getName());
+            if (StringUtils.isNotEmpty(actualName)) {
+                setTooltipText(actualName);
             }
         }
         super.setName(name);
@@ -168,8 +172,14 @@ public abstract class CustomizableAppAction extends AppAction {
      */
     public void applyMenuItemData() {
         if (menuItemData == null) return;
-        setName(getName());
-        setIconKey(getIconKey());
+        new EDTRunner() {
+
+            @Override
+            protected void runInEDT() {
+                setName(getName());
+                setIconKey(getIconKey());
+            }
+        }.getReturnValue();
 
     }
 

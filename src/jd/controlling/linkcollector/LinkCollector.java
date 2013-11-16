@@ -863,6 +863,20 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
         }
     }
 
+    public void clearFilteredLinks() {
+        QUEUE.add(new QueueAction<Void, RuntimeException>() {
+
+            @Override
+            protected Void run() throws RuntimeException {
+
+                filteredStuff.clear();
+
+                eventsender.fireEvent(new LinkCollectorEvent(LinkCollector.this, LinkCollectorEvent.TYPE.FILTERED_EMPTY));
+                return null;
+            }
+        });
+    }
+
     @Override
     public void clear() {
         QUEUE.add(new QueueAction<Void, RuntimeException>() {
