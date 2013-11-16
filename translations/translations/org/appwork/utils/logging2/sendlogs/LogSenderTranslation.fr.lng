@@ -7,3 +7,4 @@ LogModel_initColumns_x_=Vérifier
 LogTable_onContextMenu_disable_=Désélectionner
 LogTable_onContextMenu_enable_=Selectionner
 SendLogDialog_SendLogDialog_title_=Envoyer un rapport de bug
+SendLogDialog_layoutDialogContent_desc_=Quand le problème est il apparu? Merci de vérifier toutes les entrées qui pourraient être importantes!
