@@ -2959,8 +2959,14 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Blacklist" })
     String NinekwService_createPanel_blacklist();
 
+    @Default(lngs = { "en" }, values = { "Blacklistcheck" })
+    String NinekwService_createPanel_blacklistcheck();
+
     @Default(lngs = { "en" }, values = { "Whitelist" })
     String NinekwService_createPanel_whitelist();
+
+    @Default(lngs = { "en" }, values = { "Whitelistcheck" })
+    String NinekwService_createPanel_whitelistcheck();
 
     @Default(lngs = { "en" }, values = { "With Mouse" })
     String NinekwService_createPanel_mouse();

@@ -80,6 +80,20 @@ public interface Captcha9kwSettings extends ConfigInterface {
 
     @AboutConfig
     @DefaultBooleanValue(true)
+    @DescriptionForConfigEntry("Activate the blacklist")
+    boolean getblacklistcheck();
+
+    void setblacklistcheck(boolean b);
+
+    @AboutConfig
+    @DefaultBooleanValue(true)
+    @DescriptionForConfigEntry("Activate the whitelist")
+    boolean getwhitelistcheck();
+
+    void setwhitelistcheck(boolean b);
+
+    @AboutConfig
+    @DefaultBooleanValue(true)
     @DescriptionForConfigEntry("Activate the Captcha Feedback")
     boolean isfeedback();
 

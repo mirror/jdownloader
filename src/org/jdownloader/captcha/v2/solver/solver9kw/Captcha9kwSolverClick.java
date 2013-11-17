@@ -77,23 +77,28 @@ public class Captcha9kwSolverClick extends ChallengeSolver<ClickedPoint> impleme
             ClickCaptchaChallenge captchaChallenge = (ClickCaptchaChallenge) solverJob.getChallenge();
 
             solverJob.getLogger().info("Start Captcha to 9kw.eu. Timeout: " + JsonConfig.create(CaptchaSettings.class).getCaptchaDialogJAntiCaptchaTimeout() + " - getTypeID: " + captchaChallenge.getTypeID());
-            if (config.getwhitelist() != null) {
-                if (config.getwhitelist().length() > 5) {
-                    if (config.getwhitelist().contains(captchaChallenge.getTypeID())) {
-                        solverJob.getLogger().info("Hoster on whitelist for 9kw.eu. - " + captchaChallenge.getTypeID());
-                    } else {
-                        solverJob.getLogger().info("Hoster not on whitelist for 9kw.eu. - " + captchaChallenge.getTypeID());
-                        return;
+            if (config.getwhitelistcheck()) {
+                if (config.getwhitelist() != null) {
+                    if (config.getwhitelist().length() > 5) {
+                        if (config.getwhitelist().contains(captchaChallenge.getTypeID())) {
+                            solverJob.getLogger().info("Hoster on whitelist for 9kw.eu. - " + captchaChallenge.getTypeID());
+                        } else {
+                            solverJob.getLogger().info("Hoster not on whitelist for 9kw.eu. - " + captchaChallenge.getTypeID());
+                            return;
+                        }
                     }
                 }
             }
-            if (config.getblacklist() != null) {
-                if (config.getblacklist().length() > 5) {
-                    if (config.getblacklist().contains(captchaChallenge.getTypeID())) {
-                        solverJob.getLogger().info("Hoster on blacklist for 9kw.eu. - " + captchaChallenge.getTypeID());
-                        return;
-                    } else {
-                        solverJob.getLogger().info("Hoster not on blacklist for 9kw.eu. - " + captchaChallenge.getTypeID());
+
+            if (config.getblacklistcheck()) {
+                if (config.getblacklist() != null) {
+                    if (config.getblacklist().length() > 5) {
+                        if (config.getblacklist().contains(captchaChallenge.getTypeID())) {
+                            solverJob.getLogger().info("Hoster on blacklist for 9kw.eu. - " + captchaChallenge.getTypeID());
+                            return;
+                        } else {
+                            solverJob.getLogger().info("Hoster not on blacklist for 9kw.eu. - " + captchaChallenge.getTypeID());
+                        }
                     }
                 }
             }

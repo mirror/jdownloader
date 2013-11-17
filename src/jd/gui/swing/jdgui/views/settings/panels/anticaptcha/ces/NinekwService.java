@@ -72,7 +72,9 @@ public class NinekwService implements CESService {
                 addPair(_GUI._.NinekwService_createPanel_prio(), null, new Spinner(CFG_9KWCAPTCHA.PRIO));
                 addPair(_GUI._.NinekwService_createPanel_hour(), null, new Spinner(CFG_9KWCAPTCHA.HOUR));
 
+                addPair(_GUI._.NinekwService_createPanel_blacklistcheck(), null, new Checkbox(CFG_9KWCAPTCHA.BLACKLISTCHECK));
                 addPair(_GUI._.NinekwService_createPanel_blacklist(), null, blacklist);
+                addPair(_GUI._.NinekwService_createPanel_whitelistcheck(), null, new Checkbox(CFG_9KWCAPTCHA.WHITELISTCHECK));
                 addPair(_GUI._.NinekwService_createPanel_whitelist(), null, whitelist);
 
             }
