@@ -2,5 +2,6 @@ error_last_chance_connection_title=Aucune connexion internet !
 errordialog_selfupdate_failed=Echec lors de l'installation de la mise a jour. Merci de réessayer plus tard.\nSi ce problème ne se résoud pas de lui même après quelques heures, contactez le support ou réinstallez JDownloader
 errordialog_server_offline=Le serveur de mise à jour n'est pas disponible pour le moment. Merci de réessayer plus tard.
 guiless_you_are_up2date=Vous avez déjà la dernière version
+update_dialog_cancel=Annuler
 update_dialog_later=Me demander plus tard
 update_dialog_yes=Oui (recommandé)
