@@ -210,6 +210,7 @@ public class FileMonkeyIn extends PluginForHost {
 
     private void doFree(final DownloadLink downloadLink) throws Exception {
         br = new Browser();
+        prepareBrowser(br);
         br.getPage(downloadLink.getDownloadURL());
         String dllink = checkDirectLink(downloadLink, "directlink");
         if (dllink == null) {
@@ -358,10 +359,10 @@ public class FileMonkeyIn extends PluginForHost {
 
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
+        requestFileInformation(link);
         if (useAPI.get()) {
             handlePremium_API(link, account);
         } else {
-            requestFileInformation(link);
             handlePremium_web(link, account);
         }
     }
