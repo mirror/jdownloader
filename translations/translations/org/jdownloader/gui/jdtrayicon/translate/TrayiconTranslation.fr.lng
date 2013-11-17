@@ -1,2 +1,4 @@
+OnCloseAction_totray=Réduire vers la barre de notification
+OnMinimizeAction_totray=Réduire vers la barre de notification
 plugins_optional_trayIcon_dl_finished=Terminé:
 popup_reconnecttoggle=Reconnexion automatique activée
