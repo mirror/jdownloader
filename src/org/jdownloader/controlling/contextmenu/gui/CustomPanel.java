@@ -2,24 +2,35 @@ package org.jdownloader.controlling.contextmenu.gui;
 
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.KeyEvent;
+import java.awt.event.KeyListener;
 import java.lang.reflect.InvocationTargetException;
 
 import javax.swing.JCheckBox;
-import javax.swing.JComboBox;
 import javax.swing.JLabel;
+import javax.swing.KeyStroke;
 
 import org.appwork.storage.config.annotations.EnumLabel;
 import org.appwork.storage.config.annotations.LabelInterface;
 import org.appwork.swing.MigPanel;
+import org.appwork.swing.components.CheckBoxIcon;
 import org.appwork.swing.components.ExtTextField;
 import org.appwork.utils.GetterSetter;
 import org.appwork.utils.ReflectionUtils;
+import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.reflection.Clazz;
 import org.jdownloader.controlling.contextmenu.ActionContext;
 import org.jdownloader.controlling.contextmenu.ActionData;
 import org.jdownloader.controlling.contextmenu.CustomizableAppAction;
 import org.jdownloader.controlling.contextmenu.Customizer;
+import org.jdownloader.gui.IconKey;
+import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.gui.views.components.PseudoCombo;
+import org.jdownloader.gui.views.downloads.action.GenericDeleteFromDownloadlistAction;
+import org.jdownloader.gui.views.downloads.action.Modifier;
+import org.jdownloader.images.NewTheme;
+import org.jdownloader.settings.staticreferences.CFG_GUI;
 
 public class CustomPanel extends MigPanel {
 
@@ -35,10 +46,12 @@ public class CustomPanel extends MigPanel {
 
     public void add(final ActionData actionData, final CustomizableAppAction action, final ActionContext actionClass, final GetterSetter gs) {
         try {
+
             if (Clazz.isBoolean(gs.getType())) {
-                add(new JLabel(gs.getAnnotation(Customizer.class).name()), "pushx");
+                JLabel lbl;
+                add(lbl = new JLabel(gs.getAnnotation(Customizer.class).name()), "pushx");
                 final JCheckBox jb = new JCheckBox();
-                add(jb, "wrap");
+                add(jb, "wrap,alignx right");
                 try {
                     jb.setSelected((Boolean) actionData.fetchSetup(gs.getKey()));
                 } catch (Exception e) {
@@ -62,7 +75,59 @@ public class CustomPanel extends MigPanel {
 
                     }
                 });
+                if (gs.getKey().equals("BypassDialog") && gs.getGetter().getDeclaringClass() == GenericDeleteFromDownloadlistAction.class && CFG_GUI.CFG.isBypassAllRlyDeleteDialogsEnabled()) {
+                    jb.setSelected(true);
+                    jb.setEnabled(false);
+                    lbl.setEnabled(false);
+                }
+            } else if (gs.getType() == Modifier.class) {
+                final ExtTextField shortcut = new ExtTextField();
+                shortcut.setHelpText(_GUI._.InfoPanel_InfoPanel_shortcuthelp());
+                shortcut.setEditable(false);
+                String value = (String) actionData.fetchSetup(gs.getKey());
+                Modifier mod = null;
 
+                if (value != null) {
+                    mod = Modifier.create(value);
+                }
+                if (mod == null) {
+                    mod = (Modifier) gs.get(actionClass);
+
+                }
+                if (mod != null) {
+
+                    shortcut.setText(KeyEvent.getKeyModifiersText(mod.getKeyStroke().getModifiers()));
+                }
+                shortcut.addKeyListener(new KeyListener() {
+
+                    @Override
+                    public void keyTyped(KeyEvent e) {
+                    }
+
+                    @Override
+                    public void keyReleased(KeyEvent e) {
+                    }
+
+                    @Override
+                    public void keyPressed(KeyEvent event) {
+                        KeyStroke ks = KeyStroke.getKeyStroke(event.getKeyCode(), event.getModifiersEx());
+
+                        Modifier mod = Modifier.create(ks.toString());
+                        System.out.println(ks + " - " + ks.getModifiers());
+                        if (mod != null) {
+                            shortcut.setText(KeyEvent.getKeyModifiersText(mod.getKeyStroke().getModifiers()));
+                            actionData.putSetup(gs.getKey(), mod.toString());
+                        } else {
+                            shortcut.setText("");
+                            actionData.putSetup(gs.getKey(), null);
+                        }
+
+                        managerFrame.repaint();
+                    }
+
+                });
+                add(new JLabel(gs.getAnnotation(Customizer.class).name()), "pushx,growx");
+                add(shortcut, "spanx,width 20:120:n");
             } else if (Clazz.isEnum(gs.getType())) {
 
                 final Object[] values = ReflectionUtils.getEnumValues((Class<? extends Enum>) gs.getType());
@@ -75,32 +140,79 @@ public class CustomPanel extends MigPanel {
                     value = myValue.toString();
                 }
 
-                String[] strings = new String[values.length];
                 int index = 0;
                 for (int i = 0; i < values.length; i++) {
                     if (values[i].toString().equals(value)) myValue = values[i];
 
                     if (myValue == values[i]) index = i;
-                    strings[i] = values[i].toString();
-                    EnumLabel lbl = ((Class) gs.getType()).getDeclaredField(values[i].toString()).getAnnotation(EnumLabel.class);
-                    if (lbl != null) {
-                        strings[i] = lbl.value();
-                    } else if (values[i] instanceof LabelInterface) {
-                        strings[i] = ((LabelInterface) values[i]).getLabel();
 
-                    }
                 }
-                final JComboBox cb = new JComboBox(strings);
-                cb.setSelectedIndex(index);
-                cb.addActionListener(new ActionListener() {
+                final PseudoCombo cb = new PseudoCombo(values) {
+                    protected boolean isHideSelf() {
+                        return false;
+                    }
 
-                    @Override
-                    public void actionPerformed(ActionEvent e) {
-                        actionData.putSetup(gs.getKey(), values[cb.getSelectedIndex()].toString());
+                    protected javax.swing.Icon getIcon(Object v, boolean closed) {
+                        if (closed) return null;
+                        if (getSelectedItem() == v) {
+                            return CheckBoxIcon.TRUE;
+                        } else {
+                            return CheckBoxIcon.FALSE;
+                        }
+
+                    };
+
+                    public void onChanged(Object newValue) {
+                        actionData.putSetup(gs.getKey(), getSelectedItem().toString());
                         action.requestUpdate(null);
                         managerFrame.repaint();
-                    }
-                });
+                    };
+
+                    protected javax.swing.Icon getPopIcon(boolean closed) {
+
+                        if (closed) {
+                            if (isPopDown()) {
+                                return NewTheme.I().getIcon(IconKey.ICON_POPUPDOWN, -1);
+                            } else {
+                                return NewTheme.I().getIcon(IconKey.ICON_POPUP, -1);
+                            }
+                        } else {
+                            if (isPopDown()) {
+                                return NewTheme.I().getIcon(IconKey.ICON_POPUP, -1);
+                            } else {
+                                return NewTheme.I().getIcon(IconKey.ICON_POPUPDOWN, -1);
+
+                            }
+                        }
+                    };
+
+                    protected String getLabel(Object v, boolean closed) {
+                        String ret = null;
+                        EnumLabel lbl;
+                        try {
+                            lbl = ((Class) gs.getType()).getDeclaredField(v.toString()).getAnnotation(EnumLabel.class);
+
+                            if (lbl != null) {
+                                ret = lbl.value();
+                            } else if (v instanceof LabelInterface) {
+                                ret = ((LabelInterface) v).getLabel();
+
+                            }
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        }
+                        if (StringUtils.isEmpty(ret)) {
+                            ret = v.toString();
+                        }
+                        if (closed && ret.length() > 50) {
+                            ret = ret.substring(0, 50) + "...";
+                        }
+                        return ret;
+
+                    };
+                };
+                cb.setSelectedItem(values[index]);
+                add(new JLabel(gs.getAnnotation(Customizer.class).name()), "growx,spanx,wrap");
                 add(cb, "growx,spanx,wrap");
             } else if (gs.getType() == String.class) {
 

@@ -13,16 +13,17 @@ import org.appwork.uio.UIOManager;
 import org.appwork.utils.swing.dialog.ConfirmDialog;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
-import org.jdownloader.settings.staticreferences.CFG_GUI;
+import org.jdownloader.settings.GraphicalUserInterfaceSettings.DeleteFileOptions;
 
-public class ConfirmDeleteLinksDialog extends ConfirmDialog implements ConfirmDeleteLinksDialogInterface {
+public class ConfirmDeleteLinksDialog extends ConfirmDialog {
 
-    private long      bytes;
-    private boolean   toRecycle;
-    private JComboBox toRecycleCb;
-    private boolean   recycleSupported;
-    private boolean   shift;
-    private Image     image;
+    private long              bytes;
+
+    private JComboBox         toRecycleCb;
+    private boolean           recycleSupported;
+
+    private Image             image;
+    private DeleteFileOptions mode;
 
     public ConfirmDeleteLinksDialog(String msg, long bytes) {
         super(UIOManager.LOGIC_DONT_SHOW_AGAIN_IGNORES_CANCEL, _GUI._.literally_are_you_sure(), msg, NewTheme.I().getIcon("robot_del", -1), _GUI._.lit_delete(), _GUI._.lit_cancel());
@@ -35,9 +36,9 @@ public class ConfirmDeleteLinksDialog extends ConfirmDialog implements ConfirmDe
         return "ConfirmDeleteLinksDialog";
     }
 
-    public ConfirmDeleteLinksDialogInterface show() {
+    public ConfirmDeleteLinksDialog show() {
 
-        return UIOManager.I().show(ConfirmDeleteLinksDialogInterface.class, this);
+        return UIOManager.I().show(null, this);
     }
 
     @Override
@@ -66,46 +67,46 @@ public class ConfirmDeleteLinksDialog extends ConfirmDialog implements ConfirmDe
 
             toRecycleCb = new JComboBox(new String[] { _GUI._.ConfirmDeleteLinksDialog_layoutDialogContent_no_filedelete2(), _GUI._.ConfirmDeleteLinksDialog_layoutDialogContent_Recycle_2(), _GUI._.ConfirmDeleteLinksDialog_layoutDialogContent_delete_2() });
 
-            switch (CFG_GUI.CFG.getDeleteDialogDefaultSelection()) {
-            case REMOVE_LINKS_ONLY:
-                toRecycleCb.setSelectedIndex(0);
-                break;
-            case REMOVE_LINKS_AND_DELETE_FILES:
-                toRecycleCb.setSelectedIndex(2);
-                break;
-
-            case REMOVE_LINKS_AND_RECYCLE_FILES:
-                toRecycleCb.setSelectedIndex(1);
-                break;
-
-            }
         } else {
             toRecycleCb = new JComboBox(new String[] { _GUI._.ConfirmDeleteLinksDialog_layoutDialogContent_no_filedelete2(), _GUI._.ConfirmDeleteLinksDialog_layoutDialogContent_delete_2() });
-            switch (CFG_GUI.CFG.getDeleteDialogDefaultSelection()) {
-            case REMOVE_LINKS_ONLY:
-                toRecycleCb.setSelectedIndex(0);
-                break;
-            case REMOVE_LINKS_AND_DELETE_FILES:
-                toRecycleCb.setSelectedIndex(1);
-                break;
 
-            case REMOVE_LINKS_AND_RECYCLE_FILES:
-                toRecycleCb.setSelectedIndex(1);
-                break;
-
-            }
         }
 
         if (bytes > 0) {
             MigPanel p = new MigPanel("ins 15 0 0 0", "[][]", "[]");
             p.setOpaque(false);
             p.add(toRecycleCb, "newline,spanx,pushx,growx");
-            if (isRecycleSupported() && shift) {
-                toRecycleCb.setSelectedIndex(2);
-            } else if (shift) {
-                toRecycleCb.setSelectedIndex(1);
-            }
 
+            if (isRecycleSupported()) {
+
+                switch (mode) {
+                case REMOVE_LINKS_ONLY:
+                    toRecycleCb.setSelectedIndex(0);
+                    break;
+                case REMOVE_LINKS_AND_DELETE_FILES:
+                    toRecycleCb.setSelectedIndex(2);
+                    break;
+
+                case REMOVE_LINKS_AND_RECYCLE_FILES:
+                    toRecycleCb.setSelectedIndex(1);
+                    break;
+
+                }
+            } else {
+                switch (mode) {
+                case REMOVE_LINKS_ONLY:
+                    toRecycleCb.setSelectedIndex(0);
+                    break;
+                case REMOVE_LINKS_AND_DELETE_FILES:
+                    toRecycleCb.setSelectedIndex(1);
+                    break;
+
+                case REMOVE_LINKS_AND_RECYCLE_FILES:
+                    toRecycleCb.setSelectedIndex(1);
+                    break;
+
+                }
+            }
             ret.add(p, "newline,pushx,growx");
         }
 
@@ -113,19 +114,33 @@ public class ConfirmDeleteLinksDialog extends ConfirmDialog implements ConfirmDe
 
     }
 
-    @Override
-    public boolean isDeleteFilesFromDiskEnabled() {
-
-        return toRecycleCb.getSelectedIndex() > 0;
+    public void setMode(DeleteFileOptions mode) {
+        this.mode = mode;
     }
 
-    public void setDeleteFilesToRecycle(boolean shiftDown) {
-        toRecycle = shiftDown;
-    }
+    public DeleteFileOptions getMode() {
+        if (toRecycleCb != null) {
+            if (toRecycleCb.getItemCount() == 3) {
+                switch (toRecycleCb.getSelectedIndex()) {
+                case 0:
+                    return DeleteFileOptions.REMOVE_LINKS_ONLY;
+                case 1:
+                    return DeleteFileOptions.REMOVE_LINKS_AND_RECYCLE_FILES;
+                default:
+                    return DeleteFileOptions.REMOVE_LINKS_AND_DELETE_FILES;
+                }
+            } else {
+                switch (toRecycleCb.getSelectedIndex()) {
+                case 0:
+                    return DeleteFileOptions.REMOVE_LINKS_ONLY;
 
-    @Override
-    public boolean isDeleteFilesToRecycle() {
-        return toRecycle && isRecycleSupported() && toRecycleCb.getSelectedIndex() == 1;
+                default:
+                    return DeleteFileOptions.REMOVE_LINKS_AND_DELETE_FILES;
+                }
+            }
+
+        }
+        return mode;
     }
 
     public void setRecycleSupported(boolean windows) {
@@ -136,7 +151,4 @@ public class ConfirmDeleteLinksDialog extends ConfirmDialog implements ConfirmDe
         return recycleSupported;
     }
 
-    public void setDeleteFilesFromDiskEnabled(boolean shiftDown) {
-        this.shift = shiftDown;
-    }
 }

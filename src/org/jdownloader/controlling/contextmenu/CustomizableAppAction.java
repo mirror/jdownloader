@@ -7,6 +7,7 @@ import java.util.List;
 
 import javax.swing.Action;
 import javax.swing.ImageIcon;
+import javax.swing.KeyStroke;
 
 import org.appwork.swing.components.CheckBoxIcon;
 import org.appwork.utils.GetterSetter;
@@ -16,6 +17,7 @@ import org.appwork.utils.ImageProvider.ImageProvider;
 import org.appwork.utils.reflection.Clazz;
 import org.appwork.utils.swing.EDTRunner;
 import org.jdownloader.actions.AppAction;
+import org.jdownloader.gui.views.downloads.action.Modifier;
 import org.jdownloader.images.NewTheme;
 
 public abstract class CustomizableAppAction extends AppAction {
@@ -66,6 +68,10 @@ public abstract class CustomizableAppAction extends AppAction {
 
                                 v = ReflectionUtils.getEnumValueOf((Class<? extends Enum>) f.getType(), v.toString());
                                 if (v == null) continue;
+                            }
+                            if (f.getType() == Modifier.class) {
+                                v = Modifier.create((String) v);
+
                             }
                             f.set(setupObject, v);
                         }
@@ -181,6 +187,10 @@ public abstract class CustomizableAppAction extends AppAction {
             }
         }.getReturnValue();
 
+    }
+
+    public List<KeyStroke> getAdditionalShortcuts(KeyStroke keystroke) {
+        return null;
     }
 
 }

@@ -11,6 +11,7 @@ import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
 import java.util.EventObject;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map.Entry;
 
 import javax.swing.Action;
@@ -54,6 +55,7 @@ import org.jdownloader.gui.views.downloads.action.DownloadTabActionUtils;
 import org.jdownloader.gui.views.downloads.contextmenumanager.MenuManagerDownloadTableContext;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.logging.LogController;
+import org.jdownloader.settings.GraphicalUserInterfaceSettings.DeleteFileOptions;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
 
 public class DownloadsTable extends PackageControllerTable<FilePackage, DownloadLink> {
@@ -172,7 +174,7 @@ public class DownloadsTable extends PackageControllerTable<FilePackage, Download
 
     @Override
     protected boolean onShortcutDelete(final java.util.List<AbstractNode> selectedObjects, final KeyEvent evt, final boolean direct) {
-        DownloadTabActionUtils.deleteLinksRequest(getSelectionInfo(), _GUI._.RemoveSelectionAction_actionPerformed_(), direct, evt.isControlDown());
+        DownloadTabActionUtils.deleteLinksRequest(getSelectionInfo(), _GUI._.RemoveSelectionAction_actionPerformed_(), DeleteFileOptions.REMOVE_LINKS_AND_DELETE_FILES, evt.isControlDown());
         return true;
     }
 
@@ -346,48 +348,70 @@ public class DownloadsTable extends PackageControllerTable<FilePackage, Download
                             action.setAccelerator(keystroke);
                         }
                     }
-
-                    if (action != null && (keystroke = (KeyStroke) action.getValue(Action.ACCELERATOR_KEY)) != null) {
-                        String key = "CONTEXT_ACTION_" + keystroke;
-                        try {
-                            Object old = input.get(keystroke);
-                            if (old != null && action.getClass() != actions.get(old).getClass()) {
-                                logger.warning("Duplicate Shortcuts: " + action + " overwrites " + actions.get(old) + "(" + old + ")" + " for keystroke " + keystroke);
+                    keystroke = (KeyStroke) action.getValue(Action.ACCELERATOR_KEY);
+                    linkAction(input, input2, input3, actions, action, keystroke);
+                    if (action instanceof CustomizableAppAction) {
+                        List<KeyStroke> moreShortCuts = ((CustomizableAppAction) action).getAdditionalShortcuts(keystroke);
+                        if (moreShortCuts != null) {
+                            for (KeyStroke ks : moreShortCuts) {
+                                if (ks != null) {
+                                    linkAction(input, input2, input3, actions, action, ks);
+                                }
                             }
-                        } catch (Exception e) {
-                            logger.log(e);
                         }
-                        try {
-                            Object old = input2.get(keystroke);
-                            if (old != null && action.getClass() != actions.get(old).getClass()) {
-                                logger.warning("Duplicate Shortcuts: " + action + " overwrites " + actions.get(old) + "(" + old + ")" + " for keystroke " + keystroke);
-                            }
-                        } catch (Exception e) {
-                            logger.log(e);
-                        }
-                        try {
-                            Object old = input3.get(keystroke);
-                            if (old != null && action.getClass() != actions.get(old).getClass()) {
-                                logger.warning("Duplicate Shortcuts: " + action + " overwrites " + actions.get(old) + "(" + old + ")" + " for keystroke " + keystroke);
-                            }
-                        } catch (Exception e) {
-                            logger.log(e);
-                        }
-
-                        logger.info(keystroke + " -> " + action);
-
-                        input.put(keystroke, key);
-                        input2.put(keystroke, key);
-                        input3.put(keystroke, key);
-                        actions.put(key, action);
-                        shortCutActions.put(keystroke, action);
-
                     }
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
 
             }
+        }
+    }
+
+    /**
+     * @param input
+     * @param input2
+     * @param input3
+     * @param actions
+     * @param action
+     * @param keystroke
+     */
+    public void linkAction(final InputMap input, final InputMap input2, final InputMap input3, final ActionMap actions, AppAction action, KeyStroke keystroke) {
+        if (action != null && (keystroke) != null) {
+            String key = "CONTEXT_ACTION_" + keystroke;
+            try {
+                Object old = input.get(keystroke);
+                if (old != null && action.getClass() != actions.get(old).getClass()) {
+                    logger.warning("Duplicate Shortcuts: " + action + " overwrites " + actions.get(old) + "(" + old + ")" + " for keystroke " + keystroke);
+                }
+            } catch (Exception e) {
+                logger.log(e);
+            }
+            try {
+                Object old = input2.get(keystroke);
+                if (old != null && action.getClass() != actions.get(old).getClass()) {
+                    logger.warning("Duplicate Shortcuts: " + action + " overwrites " + actions.get(old) + "(" + old + ")" + " for keystroke " + keystroke);
+                }
+            } catch (Exception e) {
+                logger.log(e);
+            }
+            try {
+                Object old = input3.get(keystroke);
+                if (old != null && action.getClass() != actions.get(old).getClass()) {
+                    logger.warning("Duplicate Shortcuts: " + action + " overwrites " + actions.get(old) + "(" + old + ")" + " for keystroke " + keystroke);
+                }
+            } catch (Exception e) {
+                logger.log(e);
+            }
+
+            logger.info(keystroke + " -> " + action);
+
+            input.put(keystroke, key);
+            input2.put(keystroke, key);
+            input3.put(keystroke, key);
+            actions.put(key, action);
+            shortCutActions.put(keystroke, action);
+
         }
     }
 

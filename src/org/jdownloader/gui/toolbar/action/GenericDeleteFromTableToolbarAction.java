@@ -5,6 +5,8 @@ import java.awt.event.ActionEvent;
 import java.util.ArrayList;
 import java.util.List;
 
+import javax.swing.KeyStroke;
+
 import jd.controlling.downloadcontroller.DownloadController;
 import jd.controlling.linkcollector.LinkCollector;
 import jd.controlling.linkcollector.LinkCollectorCrawler;
@@ -31,6 +33,7 @@ import org.jdownloader.controlling.contextmenu.ActionContext;
 import org.jdownloader.controlling.contextmenu.Customizer;
 import org.jdownloader.controlling.download.DownloadControllerListener;
 import org.jdownloader.gui.IconKey;
+import org.jdownloader.gui.KeyObserver;
 import org.jdownloader.gui.event.GUIEventSender;
 import org.jdownloader.gui.event.GUIListener;
 import org.jdownloader.gui.translate._GUI;
@@ -38,56 +41,52 @@ import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.components.packagetable.PackageControllerTable;
 import org.jdownloader.gui.views.downloads.DownloadsView;
 import org.jdownloader.gui.views.downloads.action.DownloadTabActionUtils;
+import org.jdownloader.gui.views.downloads.action.Modifier;
 import org.jdownloader.gui.views.downloads.table.DownloadsTable;
 import org.jdownloader.gui.views.downloads.table.DownloadsTableModel;
 import org.jdownloader.gui.views.linkgrabber.LinkGrabberTable;
 import org.jdownloader.gui.views.linkgrabber.LinkGrabberTableModel;
 import org.jdownloader.gui.views.linkgrabber.LinkGrabberView;
 import org.jdownloader.plugins.FinalLinkState;
+import org.jdownloader.settings.GraphicalUserInterfaceSettings.DeleteFileOptions;
 
 public class GenericDeleteFromTableToolbarAction extends AbstractToolBarAction implements ExtTableListener, DownloadControllerListener, GUIListener, LinkCollectorListener, ActionContext {
 
-    public static final String DELETE_ALL          = "deleteAll";
-    public static final String DELETE_DISABLED     = "deleteDisabled";
-    public static final String DELETE_FAILED       = "deleteFailed";
-    public static final String DELETE_FINISHED     = "deleteFinished";
-    public static final String DELETE_OFFLINE      = "deleteOffline";
+    public static final String DELETE_ALL       = "deleteAll";
+    public static final String DELETE_DISABLED  = "deleteDisabled";
+    public static final String DELETE_FAILED    = "deleteFailed";
+    public static final String DELETE_FINISHED  = "deleteFinished";
+    public static final String DELETE_OFFLINE   = "deleteOffline";
     /**
      * 
      */
-    private static final long  serialVersionUID    = 1L;
+    private static final long  serialVersionUID = 1L;
 
     private DelayedRunnable    delayer;
-    private boolean            deleteAll           = false;
+    private boolean            deleteAll        = false;
 
-    private boolean            deleteDisabled      = false;
+    private boolean            deleteDisabled   = false;
 
-    private boolean            deleteFailed        = false;
+    private boolean            deleteFailed     = false;
 
-    private boolean            deleteFinished      = false;
+    private boolean            deleteFinished   = false;
 
-    private boolean            deleteOffline       = false;
+    private boolean            deleteOffline    = false;
 
-    private boolean            ignoreFiltered      = true;
-    private boolean            bypassDialog        = false;
-    private boolean            deleteFilesFromDisk = false;
+    private boolean            ignoreFiltered   = true;
+    private boolean            bypassDialog     = false;
 
     @Customizer(name = "Bypass the 'Really?' Dialog")
     public boolean isBypassDialog() {
+        Modifier byPassDialog = getByPassDialogToggleModifier();
+
+        if (byPassDialog != null && KeyObserver.getInstance().isModifierPressed(byPassDialog.getModifier(), false)) { return !bypassDialog; }
+
         return bypassDialog;
     }
 
     public void setBypassDialog(boolean bypassDialog) {
         this.bypassDialog = bypassDialog;
-    }
-
-    @Customizer(name = "Delete Files from Harddisk,too")
-    public boolean isDeleteFilesFromDisk() {
-        return deleteFilesFromDisk;
-    }
-
-    public void setDeleteFilesFromDisk(boolean deleteFilesFromDisk) {
-        this.deleteFilesFromDisk = deleteFilesFromDisk;
     }
 
     private CrawledLink                  lastCrawledLink;
@@ -114,6 +113,68 @@ public class GenericDeleteFromTableToolbarAction extends AbstractToolBarAction i
 
     }
 
+    private Modifier byPassDialogToggleModifier = null;
+    private Modifier deleteFilesToggleModifier  = null;
+
+    @Customizer(name = "Key Modifier to toggle 'Bypass Rly? Dialog'")
+    public Modifier getByPassDialogToggleModifier() {
+        return byPassDialogToggleModifier;
+    }
+
+    public void setByPassDialogToggleModifier(Modifier byPassDialogToggleModifier) {
+        this.byPassDialogToggleModifier = byPassDialogToggleModifier;
+    }
+
+    @Customizer(name = "Key Modifier to toggle 'Delete Files'")
+    public Modifier getDeleteFilesToggleModifier() {
+        return deleteFilesToggleModifier;
+    }
+
+    public void setDeleteFilesToggleModifier(Modifier deleteFilesToggleModifier) {
+        this.deleteFilesToggleModifier = deleteFilesToggleModifier;
+    }
+
+    public List<KeyStroke> getAdditionalShortcuts(KeyStroke keystroke) {
+        if (keystroke == null) return null;
+
+        ArrayList<KeyStroke> ret = new ArrayList<KeyStroke>();
+        Modifier mod = getByPassDialogToggleModifier();
+        if (mod != null) {
+            ret.add(KeyStroke.getKeyStroke(keystroke.getKeyCode(), keystroke.getModifiers() | mod.getModifier()));
+        }
+
+        mod = getDeleteFilesToggleModifier();
+        if (mod != null) {
+            ret.add(KeyStroke.getKeyStroke(keystroke.getKeyCode(), keystroke.getModifiers() | mod.getModifier()));
+        }
+        return ret;
+    }
+
+    @Customizer(name = "Delete Mode")
+    public DeleteFileOptions getDeleteMode() {
+
+        // Modifier byPassDialog = getByPassDialogToggleModifier();
+        Modifier deletToggle = getDeleteFilesToggleModifier();
+        if (deleteMode == null) deleteMode = DeleteFileOptions.REMOVE_LINKS_ONLY;
+        if (deletToggle != null && KeyObserver.getInstance().isModifierPressed(deletToggle.getModifier(), false)) {
+            switch (deleteMode) {
+            case REMOVE_LINKS_ONLY:
+                return DeleteFileOptions.REMOVE_LINKS_AND_RECYCLE_FILES;
+            case REMOVE_LINKS_AND_DELETE_FILES:
+            case REMOVE_LINKS_AND_RECYCLE_FILES:
+                return DeleteFileOptions.REMOVE_LINKS_ONLY;
+            }
+        }
+
+        return deleteMode;
+    }
+
+    public void setDeleteMode(DeleteFileOptions deleteMode) {
+        this.deleteMode = deleteMode;
+    }
+
+    private DeleteFileOptions deleteMode;
+
     @Override
     public void actionPerformed(final ActionEvent e) {
         if (table == null) return;
@@ -127,7 +188,8 @@ public class GenericDeleteFromTableToolbarAction extends AbstractToolBarAction i
             if (nodesToDelete.size() > 0) {
                 final SelectionInfo<FilePackage, DownloadLink> si = new SelectionInfo<FilePackage, DownloadLink>(null, nodesToDelete, null, null, e, (DownloadsTable) table);
                 if (si.getChildren().size() > 0) {
-                    DownloadTabActionUtils.deleteLinksRequest(si, _GUI._.GenericDeleteFromDownloadlistAction_actionPerformed_ask_(createName()), isDeleteFilesFromDisk(), isDeleteFilesFromDisk());
+
+                    DownloadTabActionUtils.deleteLinksRequest(si, _GUI._.GenericDeleteFromDownloadlistAction_actionPerformed_ask_(createName()), getDeleteMode(), isBypassDialog());
                     return;
                 }
             }

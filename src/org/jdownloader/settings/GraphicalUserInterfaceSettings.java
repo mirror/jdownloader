@@ -781,17 +781,17 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
 
     }
 
-    @DefaultEnumValue("REMOVE_LINKS_ONLY")
-    @AboutConfig
-    DeleteFileOptions getDeleteDialogDefaultSelection();
-
-    void setDeleteDialogDefaultSelection(DeleteFileOptions option);
-
     @DescriptionForConfigEntry("Placeholders: |#TITLE|, | - #SPEED/s|, | - #UPDATENOTIFY|")
     @DefaultStringValue("|#TITLE|| - #SPEED/s|| - #UPDATENOTIFY|")
     @AboutConfig
     public String getTitlePattern();
 
     public void setTitlePattern(String pattern);
+
+    @AboutConfig
+    @DefaultBooleanValue(false)
+    boolean isBypassAllRlyDeleteDialogsEnabled();
+
+    void setBypassAllRlyDeleteDialogsEnabled(boolean b);
 
 }

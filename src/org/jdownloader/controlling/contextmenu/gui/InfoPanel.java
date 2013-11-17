@@ -11,6 +11,9 @@ import java.io.File;
 import java.io.FilenameFilter;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 
 import javax.swing.Icon;
@@ -243,7 +246,8 @@ public class InfoPanel extends MigPanel implements ActionListener, Scrollable {
             @Override
             public void keyPressed(KeyEvent event) {
                 String msg1 = KeyUtils.getShortcutString(event, true);
-                currentShortcut = KeyStroke.getKeyStroke(event.getKeyCode(), event.getModifiers());
+                currentShortcut = KeyStroke.getKeyStroke(event.getKeyCode(), event.getModifiersEx());
+                System.out.println(":::" + event + " - " + currentShortcut + " - " + currentShortcut.getModifiers());
                 shortcut.setText(msg1);
                 save();
             }
@@ -338,7 +342,22 @@ public class InfoPanel extends MigPanel implements ActionListener, Scrollable {
                 if (sos != null) {
                     for (ActionContext so : sos) {
                         System.out.println(so);
-                        for (GetterSetter gs : ReflectionUtils.getGettersSetteres(so.getClass())) {
+                        ArrayList<GetterSetter> gss = new ArrayList<GetterSetter>(ReflectionUtils.getGettersSetteres(so.getClass()));
+                        Collections.sort(gss, new Comparator<GetterSetter>() {
+
+                            @Override
+                            public int compare(GetterSetter o1, GetterSetter o2) {
+
+                                String lbl1 = o1.getKey();
+                                String lbl2 = o2.getKey();
+                                Customizer oc1 = o1.getAnnotation(Customizer.class);
+                                Customizer oc2 = o2.getAnnotation(Customizer.class);
+                                if (oc1 != null) lbl1 = oc1.name();
+                                if (oc2 != null) lbl2 = oc2.name();
+                                return lbl1.compareTo(lbl2);
+                            }
+                        });
+                        for (GetterSetter gs : gss) {
 
                             if (gs.hasGetter() && gs.hasSetter()) {
                                 if (gs.hasAnnotation(Customizer.class)) {

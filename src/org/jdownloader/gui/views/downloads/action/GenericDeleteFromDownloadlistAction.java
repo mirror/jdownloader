@@ -5,6 +5,8 @@ import java.awt.event.ActionEvent;
 import java.util.ArrayList;
 import java.util.List;
 
+import javax.swing.KeyStroke;
+
 import jd.controlling.downloadcontroller.DownloadController;
 import jd.controlling.packagecontroller.AbstractNode;
 import jd.plugins.DownloadLink;
@@ -25,46 +27,71 @@ import org.jdownloader.controlling.contextmenu.CustomizableAppAction;
 import org.jdownloader.controlling.contextmenu.Customizer;
 import org.jdownloader.controlling.download.DownloadControllerListener;
 import org.jdownloader.gui.IconKey;
+import org.jdownloader.gui.KeyObserver;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.downloads.table.DownloadsTable;
 import org.jdownloader.gui.views.downloads.table.DownloadsTableModel;
 import org.jdownloader.plugins.FinalLinkState;
+import org.jdownloader.settings.GraphicalUserInterfaceSettings.DeleteFileOptions;
 
 public class GenericDeleteFromDownloadlistAction extends CustomizableAppAction implements ExtTableListener, ActionContext, DownloadControllerListener, ExtTableModelListener {
 
-    public static final String                         DELETE_ALL          = "deleteAll";
-    public static final String                         DELETE_DISABLED     = "deleteDisabled";
-    public static final String                         DELETE_FAILED       = "deleteFailed";
-    public static final String                         DELETE_FINISHED     = "deleteFinished";
-    public static final String                         DELETE_OFFLINE      = "deleteOffline";
+    public static final String DELETE_ALL                 = "deleteAll";
+    public static final String DELETE_DISABLED            = "deleteDisabled";
+    public static final String DELETE_FAILED              = "deleteFailed";
+    public static final String DELETE_FINISHED            = "deleteFinished";
+    public static final String DELETE_OFFLINE             = "deleteOffline";
     /**
      * 
      */
-    private static final long                          serialVersionUID    = 1L;
+    private static final long  serialVersionUID           = 1L;
 
-    private DelayedRunnable                            delayer;
-    private boolean                                    deleteAll           = false;
+    private DelayedRunnable    delayer;
+    private boolean            deleteAll                  = false;
 
-    private boolean                                    deleteDisabled      = false;
+    private boolean            deleteDisabled             = false;
 
-    private boolean                                    deleteFailed        = false;
+    private boolean            deleteFailed               = false;
 
-    private boolean                                    deleteFinished      = false;
+    private boolean            deleteFinished             = false;
 
-    private boolean                                    deleteOffline       = false;
+    private boolean            deleteOffline              = false;
 
-    private boolean                                    ignoreFiltered      = true;
+    private boolean            ignoreFiltered             = true;
 
-    private DownloadLink                               lastLink;
-    private boolean                                    onlySelectedItems   = false;
+    private DownloadLink       lastLink;
+    private boolean            onlySelectedItems          = false;
+    private Modifier           byPassDialogToggleModifier = null;
+    private Modifier           deleteFilesToggleModifier  = null;
+
+    @Customizer(name = "Key Modifier to toggle 'Bypass Rly? Dialog'")
+    public Modifier getByPassDialogToggleModifier() {
+        return byPassDialogToggleModifier;
+    }
+
+    public void setByPassDialogToggleModifier(Modifier byPassDialogToggleModifier) {
+        this.byPassDialogToggleModifier = byPassDialogToggleModifier;
+    }
+
+    @Customizer(name = "Key Modifier to toggle 'Delete Files'")
+    public Modifier getDeleteFilesToggleModifier() {
+        return deleteFilesToggleModifier;
+    }
+
+    public void setDeleteFilesToggleModifier(Modifier deleteFilesToggleModifier) {
+        this.deleteFilesToggleModifier = deleteFilesToggleModifier;
+    }
 
     protected SelectionInfo<FilePackage, DownloadLink> selection;
-    private boolean                                    bypassDialog        = false;
-    private boolean                                    deleteFilesFromDisk = false;
+    private boolean                                    bypassDialog = false;
 
     @Customizer(name = "Bypass the 'Really?' Dialog")
     public boolean isBypassDialog() {
+        Modifier byPassDialog = getByPassDialogToggleModifier();
+
+        if (byPassDialog != null && KeyObserver.getInstance().isModifierPressed(byPassDialog.getModifier(), false)) { return !bypassDialog; }
+
         return bypassDialog;
     }
 
@@ -72,14 +99,30 @@ public class GenericDeleteFromDownloadlistAction extends CustomizableAppAction i
         this.bypassDialog = bypassDialog;
     }
 
-    @Customizer(name = "Delete Files from Harddisk,too")
-    public boolean isDeleteFilesFromDisk() {
-        return deleteFilesFromDisk;
+    @Customizer(name = "Delete Mode")
+    public DeleteFileOptions getDeleteMode() {
+
+        // Modifier byPassDialog = getByPassDialogToggleModifier();
+        Modifier deletToggle = getDeleteFilesToggleModifier();
+        if (deleteMode == null) deleteMode = DeleteFileOptions.REMOVE_LINKS_ONLY;
+        if (deletToggle != null && KeyObserver.getInstance().isModifierPressed(deletToggle.getModifier(), false)) {
+            switch (deleteMode) {
+            case REMOVE_LINKS_ONLY:
+                return DeleteFileOptions.REMOVE_LINKS_AND_RECYCLE_FILES;
+            case REMOVE_LINKS_AND_DELETE_FILES:
+            case REMOVE_LINKS_AND_RECYCLE_FILES:
+                return DeleteFileOptions.REMOVE_LINKS_ONLY;
+            }
+        }
+
+        return deleteMode;
     }
 
-    public void setDeleteFilesFromDisk(boolean deleteFilesFromDisk) {
-        this.deleteFilesFromDisk = deleteFilesFromDisk;
+    public void setDeleteMode(DeleteFileOptions deleteMode) {
+        this.deleteMode = deleteMode;
     }
+
+    private DeleteFileOptions deleteMode;
 
     @Override
     public void loadContextSetups() {
@@ -108,6 +151,22 @@ public class GenericDeleteFromDownloadlistAction extends CustomizableAppAction i
 
     }
 
+    public List<KeyStroke> getAdditionalShortcuts(KeyStroke keystroke) {
+        if (keystroke == null) return null;
+
+        ArrayList<KeyStroke> ret = new ArrayList<KeyStroke>();
+        Modifier mod = getByPassDialogToggleModifier();
+        if (mod != null) {
+            ret.add(KeyStroke.getKeyStroke(keystroke.getKeyCode(), keystroke.getModifiers() | mod.getModifier()));
+        }
+
+        mod = getDeleteFilesToggleModifier();
+        if (mod != null) {
+            ret.add(KeyStroke.getKeyStroke(keystroke.getKeyCode(), keystroke.getModifiers() | mod.getModifier()));
+        }
+        return ret;
+    }
+
     @Override
     public void actionPerformed(final ActionEvent e) {
         final List<DownloadLink> nodesToDelete = new ArrayList<DownloadLink>();
@@ -119,7 +178,8 @@ public class GenericDeleteFromDownloadlistAction extends CustomizableAppAction i
         if (nodesToDelete.size() > 0) {
             final SelectionInfo<FilePackage, DownloadLink> si = new SelectionInfo<FilePackage, DownloadLink>(null, nodesToDelete, null, null, e, getTable());
             if (si.getChildren().size() > 0) {
-                DownloadTabActionUtils.deleteLinksRequest(si, _GUI._.GenericDeleteFromDownloadlistAction_actionPerformed_ask_(createName()), isDeleteFilesFromDisk(), isBypassDialog());
+
+                DownloadTabActionUtils.deleteLinksRequest(si, _GUI._.GenericDeleteFromDownloadlistAction_actionPerformed_ask_(createName()), getDeleteMode(), isBypassDialog());
                 return;
             }
         }

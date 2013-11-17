@@ -35,8 +35,6 @@ public class CFG_GUI {
      **/
     public static final BooleanKeyHandler                              SPEEDMETER_ANTI_ALIASING_ENABLED                     = SH.getKeyHandler("SpeedmeterAntiAliasingEnabled", BooleanKeyHandler.class);
 
-    public static final EnumKeyHandler                                 DELETE_DIALOG_DEFAULT_SELECTION                      = SH.getKeyHandler("DeleteDialogDefaultSelection", EnumKeyHandler.class);
-
     /**
      * Refreshrate in ms for the DownloadView
      **/

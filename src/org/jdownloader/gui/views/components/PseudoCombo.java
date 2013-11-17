@@ -112,7 +112,7 @@ public class PseudoCombo<Type> extends JButton {
         };
 
         for (final Type sc : values) {
-            if (sc == selectedItem) continue;
+            if (sc == selectedItem && isHideSelf()) continue;
             popup.add(new AppAction() {
                 private Type value;
                 {
@@ -142,6 +142,10 @@ public class PseudoCombo<Type> extends JButton {
 
         }
         closed = false;
+    }
+
+    protected boolean isHideSelf() {
+        return true;
     }
 
     protected void paintComponent(Graphics g) {
