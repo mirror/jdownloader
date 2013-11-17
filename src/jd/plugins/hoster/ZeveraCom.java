@@ -183,8 +183,18 @@ public class ZeveraCom extends PluginForHost {
             logger.info("Zevera download failed because: " + e.getMessage());
             throw e;
         } catch (final SocketTimeoutException e) {
-            logger.info("Zevera download failed because of a timeout -> This is probably caused by zevera and NOT a JD issue!");
-            throw e;
+            logger.info("zevera.com: Download failed because of a timeout -> This is caused by zevera and NOT a JD issue!");
+            int timesFailed = link.getIntegerProperty("timesfailedzevera_timeout", 0);
+            if (timesFailed <= 2) {
+                timesFailed++;
+                link.setProperty("timesfailedzevera_timeout", timesFailed);
+                logger.info("zevera.com: Download failed because of a timeout -> This is caused by zevera and NOT a JD issue! -> Retrying!");
+                throw new PluginException(LinkStatus.ERROR_RETRY, "Unknown error");
+            } else {
+                link.setProperty("timesfailedzevera_timeout", Property.NULL);
+                logger.info("zevera.com: Download failed because of a timeout -> This is caused by zevera and NOT a JD issue! -> Throwing exception!");
+                throw e;
+            }
         } catch (final SocketException e) {
             logger.info("Zevera download failed because of a timeout/connection problem -> This is probably caused by zevera and NOT a JD issue!");
             throw e;

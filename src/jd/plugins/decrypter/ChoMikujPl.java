@@ -91,8 +91,7 @@ public class ChoMikujPl extends PluginForDecrypt {
             final boolean isLinkendingWithoutID = (!linkending.contains(",") && tempExt != null && new Regex(tempExt, Pattern.compile(ENDINGS, Pattern.CASE_INSENSITIVE & Pattern.CANON_EQ)).matches());
             if (linkending.matches(",\\d+\\.[A-Za-z0-9]{1,5}") || isLinkendingWithoutID) {
                 /**
-                 * If the ID is missing but it's a single link we have to access
-                 * the link to get it's read link and it's download ID.
+                 * If the ID is missing but it's a single link we have to access the link to get it's read link and it's download ID.
                  */
                 if (isLinkendingWithoutID) {
                     br.getPage(parameter);
@@ -383,8 +382,7 @@ public class ChoMikujPl extends PluginForDecrypt {
             addRegexInt(0, 1, 3, 4, 2);
             if (fileIds == null || fileIds.length == 0) {
                 /**
-                 * Specified for videos (also works for mp3s, maybe also for
-                 * other types)
+                 * Specified for videos (also works for mp3s, maybe also for other types)
                  */
                 // this will also handle the table data with ratings, also
                 // removed
@@ -418,18 +416,26 @@ public class ChoMikujPl extends PluginForDecrypt {
                     final DownloadLink dl = createDownloadlink(parameter.replace("chomikuj.pl/", "chomikujdecrypted.pl/") + "," + System.currentTimeMillis() + new Random().nextInt(100000));
                     dl.setProperty("fileid", id[REGEXSORT.get(3)]);
                     if (id.length > 1) {
-                        if (id.length == 6)
+                        if (id.length == 6) {
                             dl.setName(correctFilename(Encoding.htmlDecode(id[REGEXSORT.get(4)].trim())));
-                        else {
-                            String fileNameAndExtestion = Encoding.htmlDecode(id[REGEXSORT.get(0)].trim()) + id[REGEXSORT.get(1)].trim();
-                            dl.setName(correctFilename(fileNameAndExtestion.replace("<span class=\"e\"> </span>", "")));
+                        } else {
+                            String fname = Encoding.htmlDecode(id[REGEXSORT.get(0)].trim());
+                            // Workaround for cut filenames
+                            if (fname.endsWith("...")) {
+                                final String tempname = fname.substring(0, fname.length() - 3);
+                                final String completeName = Encoding.htmlDecode(id[2].trim());
+                                if (completeName.contains(tempname)) fname = completeName;
+                            } else {
+                                fname += Encoding.htmlDecode(id[REGEXSORT.get(1)].trim());
+                            }
+                            fname = correctFilename(fname.replace("<span class=\"e\"> </span>", ""));
+                            dl.setName(fname);
                         }
 
                         dl.setDownloadSize(SizeFormatter.getSize(id[REGEXSORT.get(2)].replace(",", ".")));
                         dl.setAvailable(true);
                         /**
-                         * If the link is a video it needs other download
-                         * handling
+                         * If the link is a video it needs other download handling
                          */
                         if (id[REGEXSORT.get(1)].trim().matches(VIDEOENDINGS)) dl.setProperty("video", true);
                     } else {

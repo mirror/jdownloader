@@ -500,7 +500,7 @@ public class XFileSharingProBasic extends PluginForHost {
                     dllink = null;
                 }
                 con.disconnect();
-            } catch (Exception e) {
+            } catch (final Exception e) {
                 downloadLink.setProperty(property, Property.NULL);
                 dllink = null;
             }

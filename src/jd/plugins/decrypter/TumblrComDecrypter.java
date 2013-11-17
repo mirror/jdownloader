@@ -42,10 +42,10 @@ public class TumblrComDecrypter extends PluginForDecrypt {
             br.setFollowRedirects(false);
             br.getPage(parameter);
             String finallink = br.getRedirectLocation();
-            if (parameter.matches(".+tumblr\\.com/video_file/\\d+/tumblr_[A-Za-z0-9]+")) {
-                br.getPage(finallink);
-                finallink = br.getRedirectLocation();
-            }
+            // if (parameter.matches(".+tumblr\\.com/video_file/\\d+/tumblr_[A-Za-z0-9]+")) {
+            // br.getPage(finallink);
+            // finallink = br.getRedirectLocation();
+            // }
             if (finallink == null) {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;

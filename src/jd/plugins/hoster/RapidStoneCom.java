@@ -106,7 +106,7 @@ public class RapidStoneCom extends PluginForHost {
     // protocol: no https
     // captchatype: 4dignum
     // other: no redirects
-    // mods:
+    // mods: scanInfo filename regex
 
     private void setConstants(final Account account) {
         if (account != null && account.getBooleanProperty("free")) {
@@ -285,7 +285,7 @@ public class RapidStoneCom extends PluginForHost {
             if (inValidate(fileInfo[0])) {
                 fileInfo[0] = cbr.getRegex("fname\"( type=\"hidden\")? value=\"(.*?)\"").getMatch(1);
                 if (inValidate(fileInfo[0])) {
-                    fileInfo[0] = cbr.getRegex("<h2>Download File(.*?)</h2>").getMatch(0);
+                    fileInfo[0] = cbr.getRegex("<h2>Download File(.*?) \\[\\d+(\\.\\d+)? [A-Za-z]{1,5}\\]</h2>").getMatch(0);
                     if (inValidate(fileInfo[0])) {
                         // can cause new line finds, so check if it matches.
                         // fileInfo[0] = cbr.getRegex("Download File:? ?(<[^>]+> ?)+?([^<>\"']+)").getMatch(1);
@@ -582,7 +582,7 @@ public class RapidStoneCom extends PluginForHost {
                 passCode = null;
                 theLink.setProperty("pass", Property.NULL);
                 throw new PluginException(LinkStatus.ERROR_RETRY, "Wrong password supplied");
-            }	
+            }
         }
         // monitor this
         if (cbr.containsHTML("(class=\"err\">You have reached the download(-| )limit[^<]+for last[^<]+)")) {
@@ -1460,7 +1460,7 @@ public class RapidStoneCom extends PluginForHost {
      * @param controlSlot
      *            (+1|-1)
      * */
-   private void controlSlot(final int num, final Account account) {
+    private void controlSlot(final int num, final Account account) {
         synchronized (CTRLLOCK) {
             if (account == null) {
                 int was = maxFree.get();

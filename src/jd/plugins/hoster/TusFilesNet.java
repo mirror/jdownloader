@@ -109,8 +109,8 @@ public class TusFilesNet extends PluginForHost {
 
     private void setConstants(final Account account) {
         if (account != null && account.getBooleanProperty("free")) {
-            // free account
-            chunks = -2;
+            // free account, untested, set same as FREE
+            chunks = 1;
             resumes = true;
             acctype = "Free Account";
             directlinkproperty = "freelink2";
@@ -122,7 +122,7 @@ public class TusFilesNet extends PluginForHost {
             directlinkproperty = "premlink";
         } else {
             // non account
-            chunks = -2; // tested
+            chunks = 1; // tested
             resumes = true;
             acctype = "Non Account";
             directlinkproperty = "freelink";
@@ -1462,7 +1462,7 @@ public class TusFilesNet extends PluginForHost {
      * @param controlSlot
      *            (+1|-1)
      * */
-   private void controlSlot(final int num, final Account account) {
+    private void controlSlot(final int num, final Account account) {
         synchronized (CTRLLOCK) {
             if (account == null) {
                 int was = maxFree.get();

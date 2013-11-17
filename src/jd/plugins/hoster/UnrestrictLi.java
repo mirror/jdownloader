@@ -198,28 +198,30 @@ public class UnrestrictLi extends PluginForHost {
                 dl.getConnection().disconnect();
             } catch (final Throwable e) {
             }
+            // Throw retry exceptions
+            if (e1.getLinkStatus() == LinkStatus.ERROR_RETRY) throw e1;
             /* START Possible Error Messages */
-            if (br.containsHTML("Invalid API response.")) {
+            if (br.containsHTML("Invalid API response\\.")) {
                 logger.info("Invalid API response.");
                 MessageDialog("Error", "Invalid API response", false);
                 removeHostFromMultiHost(link, acc);
                 throw new PluginException(LinkStatus.ERROR_RETRY);
-            } else if (br.containsHTML("Host not supported.")) {
+            } else if (br.containsHTML("Host not supported\\.")) {
                 logger.info("Host not supported.");
                 MessageDialog("Error", "Host not supported", false);
                 removeHostFromMultiHost(link, acc);
                 throw new PluginException(LinkStatus.ERROR_RETRY);
-            } else if (br.containsHTML("Error downloading file.")) {
+            } else if (br.containsHTML("Error downloading file\\.")) {
                 logger.info("Error downloading file.");
                 MessageDialog("Error", "Error downloading file", false);
                 removeHostFromMultiHost(link, acc);
                 throw new PluginException(LinkStatus.ERROR_RETRY);
-            } else if (br.containsHTML("Invalid URL returned.")) {
+            } else if (br.containsHTML("Invalid URL returned\\.")) {
                 logger.info("Invalid URL returned.");
                 MessageDialog("Error", "Invalid URL returned", false);
                 removeHostFromMultiHost(link, acc);
                 throw new PluginException(LinkStatus.ERROR_RETRY);
-            } else if (br.containsHTML("Wrong server.")) {
+            } else if (br.containsHTML("Wrong server\\.")) {
                 logger.info("Wrong server.");
                 MessageDialog("Error", "Wrong server", false);
                 removeHostFromMultiHost(link, acc);
@@ -228,11 +230,11 @@ public class UnrestrictLi extends PluginForHost {
                 logger.info("Request denied. Please wait at least 5 seconds before refreshing. (Flooding)");
                 MessageDialog("Error", "Request denied. Please wait at least 5 seconds before refreshing. (Flooding)", false);
                 throw new PluginException(LinkStatus.ERROR_RETRY);
-            } else if (br.containsHTML("Error receiving page.")) {
-                logger.info("Error receiving page.");
+            } else if (br.containsHTML("Error receiving page\\.")) {
+                logger.info("Error receiving page\\.");
                 MessageDialog("Error", "Error receiving page", false);
                 throw new PluginException(LinkStatus.ERROR_RETRY);
-            } else if (br.containsHTML("An unknown error has occured.")) {
+            } else if (br.containsHTML("An unknown error has occured\\.")) {
                 logger.info("An unknown error has occured.");
                 MessageDialog("Error", "An unknown error has occured", false);
                 throw new PluginException(LinkStatus.ERROR_RETRY);
@@ -284,7 +286,17 @@ public class UnrestrictLi extends PluginForHost {
         } else {
             br.followConnection();
         }
-        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        logger.info("unrestrict.li: Unknown error");
+        int timesFailed = link.getIntegerProperty("timesfailedunrestrictli_unknown", 0);
+        if (timesFailed <= 2) {
+            timesFailed++;
+            link.setProperty("timesfailedunrestrictli_unknown", timesFailed);
+            throw new PluginException(LinkStatus.ERROR_RETRY, "Unknown error");
+        } else {
+            link.setProperty("timesfailedunrestrictli_unknown", Property.NULL);
+            logger.info("unrestrict.li: Unknown error - plugin out of date!");
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
     }
 
     private void removeHostFromMultiHost(DownloadLink link, Account acc) throws PluginException {

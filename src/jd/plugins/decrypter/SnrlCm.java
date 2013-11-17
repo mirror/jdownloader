@@ -70,10 +70,18 @@ public class SnrlCm extends PluginForDecrypt {
         if (br.getRedirectLocation() != null) {
             url = br.getRedirectLocation();
             try {
-                br.getPage(url);
+                con = br.openGetConnection(url);
+                if (con.getContentType().contains("html")) {
+                    br.followConnection();
+                }
             } catch (final BrowserException e) {
                 logger.info("Link offline: " + parameter);
                 return decryptedLinks;
+            } finally {
+                try {
+                    con.disconnect();
+                } catch (Throwable e) {
+                }
             }
         }
         if (br.containsHTML(">An error has occurred:<")) {

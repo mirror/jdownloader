@@ -205,7 +205,17 @@ public class PremiumizeMe extends PluginForHost {
             br.followConnection();
             sendErrorLog(link, account);
             handleAPIErrors(br, account, link);
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            logger.info("premiumize.me: Unknown error2");
+            int timesFailed = link.getIntegerProperty("timesfailedpremiumizeme_unknown2", 0);
+            if (timesFailed <= 2) {
+                timesFailed++;
+                link.setProperty("timesfailedpremiumizeme_unknown2", timesFailed);
+                throw new PluginException(LinkStatus.ERROR_RETRY, "Unknown error");
+            } else {
+                link.setProperty("timesfailedpremiumizeme_unknown2", Property.NULL);
+                logger.info("premiumize.me: Unknown error2 - disabling current host!");
+                tempUnavailableHoster(account, link, 60 * 60 * 1000l);
+            }
         }
     }
 
@@ -229,7 +239,7 @@ public class PremiumizeMe extends PluginForHost {
         handleAPIErrors(br, account, link);
         String dllink = br.getRegex("location\":\"(http[^\"]+)").getMatch(0);
         if (dllink == null) {
-            logger.severe("no download location");
+            logger.info("premiumize.me: Unknown error");
             sendErrorLog(link, account);
             int timesFailed = link.getIntegerProperty("timesfailedpremiumizeme_unknown", 0);
             if (timesFailed <= 2) {
@@ -238,7 +248,8 @@ public class PremiumizeMe extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_RETRY, "Unknown error");
             } else {
                 link.setProperty("timesfailedpremiumizeme_unknown", Property.NULL);
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                logger.info("premiumize.me: Unknown error - disabling current host!");
+                tempUnavailableHoster(account, link, 60 * 60 * 1000l);
             }
         }
         dllink = dllink.replaceAll("\\\\/", "/");

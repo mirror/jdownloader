@@ -152,7 +152,18 @@ public class DebridItaliaCom extends PluginForHost {
 
             }
             dllink = br.getRegex("(https?://(\\w+\\.)?debriditalia\\.com/dl/.+)").getMatch(0);
-            if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (dllink == null) {
+                logger.info("debriditalia.com: Unhandled error: " + br.toString());
+                int timesFailed = link.getIntegerProperty("timesfaileddebriditalia_unknownerror", 0);
+                if (timesFailed <= 2) {
+                    timesFailed++;
+                    link.setProperty("timesfaileddebriditalia_unknownerror", timesFailed);
+                    throw new PluginException(LinkStatus.ERROR_RETRY, "Unknown error");
+                } else {
+                    link.setProperty("timesfaileddebriditalia_unknownerror", Property.NULL);
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+            }
         }
 
         int chunks = 0;
@@ -174,8 +185,17 @@ public class DebridItaliaCom extends PluginForHost {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 1 * 60 * 1000l);
                 }
             }
-            logger.info("Unhandled download error on debriditalia.com: " + br.toString());
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            logger.info("debriditalia.com: Unhandled download error: " + br.toString());
+
+            int timesFailed = link.getIntegerProperty("timesfaileddebriditalia_unknownerror_download", 0);
+            if (timesFailed <= 2) {
+                timesFailed++;
+                link.setProperty("timesfaileddebriditalia_unknownerror_download", timesFailed);
+                throw new PluginException(LinkStatus.ERROR_RETRY, "Unknown error");
+            } else {
+                link.setProperty("timesfaileddebriditalia_unknownerror_download", Property.NULL);
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
 
         }
         // Directlinks can be used for up to 2 days

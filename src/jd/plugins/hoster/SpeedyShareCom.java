@@ -371,10 +371,10 @@ public class SpeedyShareCom extends PluginForHost {
     }
 
     @Override
-    public boolean canHandle(DownloadLink downloadLink, Account account) {
+    public boolean canHandle(final DownloadLink downloadLink, final Account account) {
         if (account == null) {
             /* without account its not possible to download the link */
-            return false;
+            return true;
         }
         synchronized (hostUnavailableMap) {
             HashMap<String, Long> unavailableMap = hostUnavailableMap.get(account);
