@@ -184,14 +184,15 @@ public class ZeveraCom extends PluginForHost {
             throw e;
         } catch (final SocketTimeoutException e) {
             logger.info("zevera.com: Download failed because of a timeout -> This is caused by zevera and NOT a JD issue!");
-            int timesFailed = link.getIntegerProperty("timesfailedzevera_timeout", 0);
-            if (timesFailed <= 2) {
+            int timesFailed = link.getIntegerProperty("timesfailedzeveracom_timeout", 1);
+            link.getLinkStatus().setRetryCount(0);
+            if (timesFailed <= 20) {
                 timesFailed++;
-                link.setProperty("timesfailedzevera_timeout", timesFailed);
+                link.setProperty("timesfailedzeveracom_timeout", timesFailed);
                 logger.info("zevera.com: Download failed because of a timeout -> This is caused by zevera and NOT a JD issue! -> Retrying!");
                 throw new PluginException(LinkStatus.ERROR_RETRY, "Unknown error");
             } else {
-                link.setProperty("timesfailedzevera_timeout", Property.NULL);
+                link.setProperty("timesfailedzeveracom_timeout", Property.NULL);
                 logger.info("zevera.com: Download failed because of a timeout -> This is caused by zevera and NOT a JD issue! -> Throwing exception!");
                 throw e;
             }
@@ -235,14 +236,16 @@ public class ZeveraCom extends PluginForHost {
         String dllink = br.getRedirectLocation();
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         if (dllink.contains("/member/systemmessage.aspx")) {
-            int timesFailed = link.getIntegerProperty("timesfailedzeveracom", 0);
-            if (timesFailed <= 2) {
+            logger.info("zevera.com: unknown error");
+            int timesFailed = link.getIntegerProperty("timesfailedzeveracom_unknown", 1);
+            link.getLinkStatus().setRetryCount(0);
+            if (timesFailed <= 20) {
                 timesFailed++;
-                link.setProperty("timesfailedzeveracom", timesFailed);
+                link.setProperty("timesfailedzeveracom_unknown", timesFailed);
                 throw new PluginException(LinkStatus.ERROR_RETRY, "Server error");
             } else {
-                logger.info("Current host doesn't seem to work, deactivating it for 1 hour...");
-                link.setProperty("timesfailedzeveracom", Property.NULL);
+                logger.info("zevera.com: Current host doesn't seem to work, deactivating it for 1 hour...");
+                link.setProperty("timesfailedzeveracom_unknown", Property.NULL);
                 tempUnavailableHoster(acc, link, 60 * 60 * 1000l);
             }
         }
