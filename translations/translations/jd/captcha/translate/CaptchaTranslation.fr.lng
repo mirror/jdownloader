@@ -54,4 +54,4 @@ showcaptcha_choose_file=Sélectionner un fichier d'image
 showcaptcha_chooser_title=JDownloader :: Afficher captcha
 train_choose_folder=Choisir un répertoire
 train_chooser_title=JDownloader :: Apprendre Tout
-train_method=Choisissez une méthode captcha
+train_method=Choisissez une méthode captcha :
