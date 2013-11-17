@@ -528,6 +528,7 @@ SpeedlimitEditor_SpeedlimitEditor_=Rýchlostný limit
 SpeedlimitEditor_format=%s1/s
 SpeedlimitToggleAction_SpeedlimitToggleAction=Viditeľný rýchlomer
 SplitPackagesByHost_SplitPackagesByHost_object_=Rozdeliť balíčky podľa serverov
+StatusBarImpl_initGUI_extract=Stav rozbalovania
 StatusBarImpl_initGUI_linkgrabber_desc_inactive=- nečinný -
 StatusBarImpl_skippedLinksMarker_desc=Vynechané sťahovania: %s1. Kliknite tu pre ich opakovanie.
 StatusBarImpl_skippedLinksMarker_title=Přeskočené sťahovania!
