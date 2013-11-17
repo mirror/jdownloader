@@ -275,7 +275,7 @@ public class UnrestrictLi extends PluginForHost {
                     }
                 }
             } catch (final PluginException e) {
-                // New V2 errorhandling
+                // New V2 chunk errorhandling
                 /* unknown error, we disable multiple chunks */
                 if (e.getLinkStatus() != LinkStatus.ERROR_RETRY && link.getBooleanProperty(UnrestrictLi.NOCHUNKS, false) == false) {
                     link.setProperty(UnrestrictLi.NOCHUNKS, Boolean.valueOf(true));

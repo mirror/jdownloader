@@ -69,8 +69,6 @@ public class FreeWayMe extends PluginForHost {
 
     private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap = new HashMap<Account, HashMap<String, Long>>();
     private static AtomicInteger                           maxPrem            = new AtomicInteger(1);
-    // we can switch to BETAENCODING next days if there are no problems, otherwise we have to switch back
-    private final String                                   USEBETAENCODING    = "USEBETAENCODING";
     private final String                                   ALLOWRESUME        = "ALLOWRESUME";
     private static final String                            NORESUME           = "NORESUME";
 

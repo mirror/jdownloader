@@ -234,11 +234,13 @@ public class PremiumDebridCom extends PluginForHost {
             showMessage(link, "Phase 1/2: Generating downloadlink!");
             dllink = generateDllinkNew(link, acc);
             if (dllink == null) {
-                int timesFailed = link.getIntegerProperty("timesfailedpremiumdebridcom_dllinknull", 0);
-                if (timesFailed <= 2) {
+                logger.info("premiumdebrid.com: dllink is null");
+                int timesFailed = link.getIntegerProperty("timesfailedpremiumdebridcom_dllinknull", 1);
+                link.getLinkStatus().setRetryCount(0);
+                if (timesFailed <= 10) {
                     timesFailed++;
                     link.setProperty("timesfailedpremiumdebridcom_dllinknull", timesFailed);
-                    throw new PluginException(LinkStatus.ERROR_RETRY, "Server error");
+                    throw new PluginException(LinkStatus.ERROR_RETRY, "Unknown server error");
                 } else {
                     link.setProperty("timesfailedpremiumdebridcom_dllinknull", Property.NULL);
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -250,8 +252,17 @@ public class PremiumDebridCom extends PluginForHost {
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, maxChunks);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
-            logger.info("Unhandled download error on premiumdebrid.com: " + br.toString());
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            logger.info("premiumdebrid.com: Unknown download error");
+            int timesFailed = link.getIntegerProperty("timesfailedpremiumdebridcom_unknowndlerror", 1);
+            link.getLinkStatus().setRetryCount(0);
+            if (timesFailed <= 10) {
+                timesFailed++;
+                link.setProperty("timesfailedpremiumdebridcom_unknowndlerror", timesFailed);
+                throw new PluginException(LinkStatus.ERROR_RETRY, "Unknown download error");
+            } else {
+                link.setProperty("timesfailedpremiumdebridcom_unknowndlerror", Property.NULL);
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
         }
         link.setProperty("premiumdebridcomdirectlink", dllink);
         try {
@@ -282,8 +293,9 @@ public class PremiumDebridCom extends PluginForHost {
         try {
             br.postPage("http://premiumdebrid.com/index.php", "link=" + url + "&iuser=&ipass=&comment=&yt_fmt=highest&tor_user=&tor_pass=&email=&method=tc&partSize=10&proxy=&proxyuser=&proxypass=&premium_acc=on&premium_user=&premium_pass=&path=%2Fvar%2Fwww%2Fhtml%2Ffiles%2Ftit%40nium");
             if (br.containsHTML(">Error\\[Cookie Failed\\!\\]<")) {
-                int timesFailed = dl.getIntegerProperty("timesfailedpremiumdebridcom_cookie", 0);
-                if (timesFailed <= 2) {
+                logger.info("premiumdebrid.com: Cookie error");
+                int timesFailed = dl.getIntegerProperty("timesfailedpremiumdebridcom_cookie", 1);
+                if (timesFailed <= 10) {
                     timesFailed++;
                     dl.setProperty("timesfailedpremiumdebridcom_cookie", timesFailed);
                     throw new PluginException(LinkStatus.ERROR_RETRY, "Server error");
@@ -294,13 +306,15 @@ public class PremiumDebridCom extends PluginForHost {
             }
             final Form dlForm = br.getForm(0);
             if (dlForm == null || !dlForm.containsHTML("partSize")) {
-                int timesFailed = dl.getIntegerProperty("timesfailedpremiumdebridcom_cookie", 0);
-                if (timesFailed <= 2) {
+                logger.info("premiumdebrid.com: Unknown error");
+                int timesFailed = dl.getIntegerProperty("timesfailedpremiumdebridcom_unknown", 1);
+                dl.getLinkStatus().setRetryCount(0);
+                if (timesFailed <= 10) {
                     timesFailed++;
-                    dl.setProperty("timesfailedpremiumdebridcom_cookie", timesFailed);
+                    dl.setProperty("timesfailedpremiumdebridcom_unknown", timesFailed);
                     throw new PluginException(LinkStatus.ERROR_RETRY, "Unknown error");
                 } else {
-                    dl.setProperty("timesfailedpremiumdebridcom_cookie", Property.NULL);
+                    dl.setProperty("timesfailedpremiumdebridcom_unknown", Property.NULL);
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
             }

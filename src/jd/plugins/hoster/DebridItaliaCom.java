@@ -40,9 +40,6 @@ public class DebridItaliaCom extends PluginForHost {
 
     private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap = new HashMap<Account, HashMap<String, Long>>();
 
-    // private static Object LOCK = new Object();
-    // private static final String COOKIE_HOST = "http://debriditalia.com";
-
     public DebridItaliaCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://www.debriditalia.com/premium.php");
@@ -175,14 +172,17 @@ public class DebridItaliaCom extends PluginForHost {
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             if (br.containsHTML("No htmlCode read")) {
-                int timesFailed = link.getIntegerProperty("timesfaileddebriditalia2", 0);
-                if (timesFailed <= 4) {
+                logger.info("debriditalia.com: Unknown download error");
+                int timesFailed = link.getIntegerProperty("timesfaileddebriditalia_unknowndlerror", 1);
+                link.getLinkStatus().setRetryCount(0);
+                if (timesFailed <= 10) {
                     timesFailed++;
-                    link.setProperty("timesfaileddebriditalia2", timesFailed);
+                    link.setProperty("timesfaileddebriditalia_unknowndlerror", timesFailed);
                     throw new PluginException(LinkStatus.ERROR_RETRY, "Server error");
                 } else {
-                    link.setProperty("timesfaileddebriditalia2", Property.NULL);
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 1 * 60 * 1000l);
+                    link.setProperty("timesfaileddebriditalia_unknowndlerror", Property.NULL);
+                    logger.info("debriditalia.com: Unknown download error -> Disabling current host");
+                    tempUnavailableHoster(acc, link, 60 * 60 * 1000l);
                 }
             }
             logger.info("debriditalia.com: Unhandled download error: " + br.toString());
@@ -205,13 +205,22 @@ public class DebridItaliaCom extends PluginForHost {
             controlPrem(+1);
             // start the dl
 
-            if (!this.dl.startDownload()) {
-                try {
-                    if (dl.externalDownloadStop()) return;
-                } catch (final Throwable e) {
+            try {
+                if (!this.dl.startDownload()) {
+                    try {
+                        if (dl.externalDownloadStop()) return;
+                    } catch (final Throwable e) {
+                    }
+                    /* unknown error, we disable multiple chunks */
+                    if (link.getBooleanProperty(DebridItaliaCom.NOCHUNKS, false) == false) {
+                        link.setProperty(DebridItaliaCom.NOCHUNKS, Boolean.valueOf(true));
+                        throw new PluginException(LinkStatus.ERROR_RETRY);
+                    }
                 }
+            } catch (final PluginException e) {
+                // New V2 chunk errorhandling
                 /* unknown error, we disable multiple chunks */
-                if (link.getBooleanProperty(DebridItaliaCom.NOCHUNKS, false) == false) {
+                if (e.getLinkStatus() != LinkStatus.ERROR_RETRY && link.getBooleanProperty(DebridItaliaCom.NOCHUNKS, false) == false) {
                     link.setProperty(DebridItaliaCom.NOCHUNKS, Boolean.valueOf(true));
                     throw new PluginException(LinkStatus.ERROR_RETRY);
                 }
