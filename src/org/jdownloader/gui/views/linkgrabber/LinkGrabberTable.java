@@ -275,7 +275,7 @@ public class LinkGrabberTable extends PackageControllerTable<CrawledPackage, Cra
             }
 
         }
-        LinkCollector.requestDeleteLinks(nodesToDelete, containsOnline, _GUI._.GenericDeleteSelectedToolbarAction_updateName_object_selected_all(), KeyObserver.getInstance().isControlDown(false), false, false, false, false, false);
+        LinkCollector.requestDeleteLinks(nodesToDelete, containsOnline, _GUI._.GenericDeleteSelectedToolbarAction_updateName_object_selected_all(), KeyObserver.getInstance().isControlDown(false), false, false, false, false);
         return true;
     }
 

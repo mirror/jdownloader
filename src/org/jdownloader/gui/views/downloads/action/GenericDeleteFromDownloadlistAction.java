@@ -486,9 +486,9 @@ public class GenericDeleteFromDownloadlistAction extends CustomizableAppAction i
                 default:
                     if (isIgnoreFiltered()) {
 
-                        selection = getTable().getSelectionInfo(false, false);
-                    } else {
                         selection = getTable().getSelectionInfo(false, true);
+                    } else {
+                        selection = getTable().getSelectionInfo(false, false);
 
                     }
                     break;

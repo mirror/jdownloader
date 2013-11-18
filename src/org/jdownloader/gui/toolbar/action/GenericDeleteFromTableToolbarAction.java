@@ -191,7 +191,7 @@ public class GenericDeleteFromTableToolbarAction extends AbstractToolBarAction i
                     }
                 }
             }
-            LinkCollector.requestDeleteLinks(nodesToDelete, containsOnline, createName(), byPass.isBypassDialog(), false, false, false, false, false);
+            LinkCollector.requestDeleteLinks(nodesToDelete, containsOnline, createName(), byPass.isBypassDialog(), false, false, false, false);
         }
     }
 

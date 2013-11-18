@@ -60,6 +60,7 @@ import org.appwork.utils.event.queue.Queue;
 import org.appwork.utils.event.queue.Queue.QueuePriority;
 import org.appwork.utils.event.queue.QueueAction;
 import org.appwork.utils.os.CrossSystem;
+import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
@@ -75,12 +76,17 @@ import org.jdownloader.extensions.extraction.bindings.crawledlink.CrawledLinkFac
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.components.packagetable.LinkTreeUtils;
+import org.jdownloader.gui.views.linkgrabber.LinkGrabberTable;
+import org.jdownloader.gui.views.linkgrabber.LinkGrabberTableModel;
+import org.jdownloader.gui.views.linkgrabber.LinkgrabberSearchField;
+import org.jdownloader.gui.views.linkgrabber.contextmenu.MenuManagerLinkgrabberTableContext;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.plugins.controller.UpdateRequiredClassNotFoundException;
 import org.jdownloader.plugins.controller.host.HostPluginController;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin;
 import org.jdownloader.plugins.controller.host.PluginFinder;
 import org.jdownloader.settings.GeneralSettings;
+import org.jdownloader.settings.staticreferences.CFG_GUI;
 import org.jdownloader.settings.staticreferences.CFG_LINKGRABBER;
 import org.jdownloader.translate._JDT;
 
@@ -1673,77 +1679,105 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
 
     }
 
-    public static void requestDeleteLinks(final List<CrawledLink> nodesToDelete, final boolean containsOnline, final String string, final boolean byPassDialog, final boolean isCancelLinkcrawlerJobs, final boolean isResetTableSorter, final boolean isClearSearchFilter, final boolean isFullLinkCollectorReset, final boolean isClearFilteredLinks) {
+    public static void requestDeleteLinks(final List<CrawledLink> nodesToDelete, final boolean containsOnline, final String string, final boolean byPassDialog, final boolean isCancelLinkcrawlerJobs, final boolean isResetTableSorter, final boolean isClearSearchFilter, final boolean isClearFilteredLinks) {
 
         TaskQueue.getQueue().add(new QueueAction<Void, RuntimeException>() {
 
             @Override
             protected Void run() throws RuntimeException {
 
-                // if (isCancelLinkcrawlerJobs) {
-                // LinkCollector.getInstance().abort();
-                // }
-                //
-                // if (isResetTableSorter) {
-                // new EDTRunner() {
-                //
-                // @Override
-                // protected void runInEDT() {
-                // final LinkGrabberTable table = MenuManagerLinkgrabberTableContext.getInstance().getTable();
-                // table.getModel().setSortColumn(null);
-                // table.getModel().refreshSort();
-                // table.getTableHeader().repaint();
-                // }
-                // };
-                // }
-                // if (isClearSearchFilter) {
-                //
-                // LinkgrabberSearchField.getInstance().setText("");
-                // LinkgrabberSearchField.getInstance().onChanged();
-                //
-                // }
-                //
-                // if (isFullLinkCollectorReset) {
-                // LinkCollector.getInstance().clear();
-                // } else {
-                // if (isClearFilteredLinks) {
-                // LinkCollector.getInstance().clearFilteredLinks();
-                // }
-                // }
+                boolean taskToDo = false;
+                taskToDo = taskToDo || (nodesToDelete.size() > 0);
+                taskToDo = taskToDo || ((isClearSearchFilter) && !LinkgrabberSearchField.getInstance().isEmpty());
+                taskToDo = taskToDo || ((isResetTableSorter) && LinkGrabberTableModel.getInstance().getSortColumn() != null);
+                taskToDo = taskToDo || ((isClearFilteredLinks) && LinkCollector.getInstance().isCollecting());
+                taskToDo = taskToDo || ((isCancelLinkcrawlerJobs) && LinkCollector.getInstance().getfilteredStuffSize() > 0);
 
-                GenericResetLinkgrabberRlyDialog dialog = new GenericResetLinkgrabberRlyDialog(nodesToDelete, containsOnline, string, isCancelLinkcrawlerJobs, isClearFilteredLinks, isClearSearchFilter, isFullLinkCollectorReset, isResetTableSorter);
-                try {
-                    Dialog.getInstance().showDialog(dialog);
-                } catch (DialogClosedException e) {
-                    e.printStackTrace();
-                } catch (DialogCanceledException e) {
-                    e.printStackTrace();
+                if (!taskToDo) {
+
+                    Toolkit.getDefaultToolkit().beep();
+                    return null;
+
+                }
+                if (!byPassDialog && !CFG_GUI.CFG.isBypassAllRlyDeleteDialogsEnabled()) {
+                    GenericResetLinkgrabberRlyDialog dialog = new GenericResetLinkgrabberRlyDialog(nodesToDelete, containsOnline, string, isCancelLinkcrawlerJobs, isClearFilteredLinks, isClearSearchFilter, isResetTableSorter);
+                    try {
+                        Dialog.getInstance().showDialog(dialog);
+
+                        if (dialog.isCancelCrawler()) {
+                            LinkCollector.getInstance().abort();
+                        }
+
+                        if (dialog.isResetSort()) {
+                            new EDTRunner() {
+
+                                @Override
+                                protected void runInEDT() {
+                                    final LinkGrabberTable table = MenuManagerLinkgrabberTableContext.getInstance().getTable();
+                                    table.getModel().setSortColumn(null);
+                                    table.getModel().refreshSort();
+                                    table.getTableHeader().repaint();
+                                }
+                            };
+                        }
+                        if (dialog.isResetSearch()) {
+
+                            LinkgrabberSearchField.getInstance().setText("");
+                            LinkgrabberSearchField.getInstance().onChanged();
+
+                        }
+
+                        if (dialog.isDeleteLinks()) {
+                            LinkCollector.getInstance().removeChildren(nodesToDelete);
+
+                        }
+                        if (dialog.isClearFiltered()) {
+                            LinkCollector.getInstance().clearFilteredLinks();
+                        }
+
+                    } catch (DialogClosedException e) {
+                        e.printStackTrace();
+                    } catch (DialogCanceledException e) {
+                        e.printStackTrace();
+                    }
+
+                } else {
+
+                    if (isCancelLinkcrawlerJobs) {
+                        LinkCollector.getInstance().abort();
+                    }
+
+                    if (isResetTableSorter) {
+                        new EDTRunner() {
+
+                            @Override
+                            protected void runInEDT() {
+                                final LinkGrabberTable table = MenuManagerLinkgrabberTableContext.getInstance().getTable();
+                                table.getModel().setSortColumn(null);
+                                table.getModel().refreshSort();
+                                table.getTableHeader().repaint();
+                            }
+                        };
+                    }
+                    if (isClearSearchFilter) {
+
+                        LinkgrabberSearchField.getInstance().setText("");
+                        LinkgrabberSearchField.getInstance().onChanged();
+
+                    }
+
+                    if (isClearFilteredLinks) {
+                        LinkCollector.getInstance().clearFilteredLinks();
+                    }
+
+                    if (nodesToDelete.size() > 0) {
+
+                        LinkCollector.getInstance().removeChildren(nodesToDelete);
+
+                    }
+
                 }
 
-                // if (nodesToDelete.size() > 0) {
-                //
-                // if (containsOnline && !byPassDialog && !CFG_GUI.CFG.isBypassAllRlyDeleteDialogsEnabled()) {
-                // // only ask for online links
-                // try {
-                // Dialog.getInstance().showConfirmDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN |
-                // UIOManager.LOGIC_DONT_SHOW_AGAIN_IGNORES_CANCEL, _GUI._.literally_are_you_sure(),
-                // _GUI._.GenericDeleteFromDownloadlistAction_actionPerformed_ask_(string), null, _GUI._.literally_yes(),
-                // _GUI._.literall_no());
-                // LinkCollector.getInstance().removeChildren(nodesToDelete);
-                // } catch (DialogClosedException e1) {
-                // e1.printStackTrace();
-                // } catch (DialogCanceledException e1) {
-                // e1.printStackTrace();
-                // }
-                //
-                // } else {
-                // LinkCollector.getInstance().removeChildren(nodesToDelete);
-                // }
-                // return;
-                //
-                // }
-                Toolkit.getDefaultToolkit().beep();
-                Dialog.getInstance().showErrorDialog(_GUI._.GenericDeleteSelectedToolbarAction_actionPerformed_nothing_to_delete_());
                 return null;
             }
         });

@@ -25,7 +25,7 @@ public class GenericResetLinkgrabberRlyDialog extends ConfirmDialog {
 
     private List<CrawledLink> nodesToDelete;
     private boolean           containsOnline;
-    private boolean           fullLinkCollectorReset;
+
     private boolean           resetTableSorter;
     private boolean           clearSearchFilter;
     private boolean           clearFilteredLinks;
@@ -41,7 +41,7 @@ public class GenericResetLinkgrabberRlyDialog extends ConfirmDialog {
     private JLabel            lblCrawler;
     private JLabel            lblFiltered;
 
-    public GenericResetLinkgrabberRlyDialog(List<CrawledLink> nodesToDelete, boolean containsOnline, String string, boolean CancelLinkcrawlerJobs, boolean ClearFilteredLinks, boolean ClearSearchFilter, boolean FullLinkCollectorReset, boolean ResetTableSorter) {
+    public GenericResetLinkgrabberRlyDialog(List<CrawledLink> nodesToDelete, boolean containsOnline, String string, boolean CancelLinkcrawlerJobs, boolean ClearFilteredLinks, boolean ClearSearchFilter, boolean ResetTableSorter) {
         super(UIOManager.LOGIC_DONT_SHOW_AGAIN_IGNORES_CANCEL | Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI._.literally_are_you_sure(), _GUI._.GenericResetLinkgrabberRlyDialog_GenericResetLinkgrabberRlyDialog_sure_(string), NewTheme.I().getIcon("robot_del", -1), _GUI._.lit_continue(), _GUI._.lit_cancel());
         this.nodesToDelete = nodesToDelete;
         this.containsOnline = containsOnline;
@@ -49,8 +49,28 @@ public class GenericResetLinkgrabberRlyDialog extends ConfirmDialog {
         this.clearFilteredLinks = ClearFilteredLinks;
         this.clearSearchFilter = ClearSearchFilter;
         this.resetTableSorter = ResetTableSorter;
-        this.fullLinkCollectorReset = FullLinkCollectorReset;
 
+    }
+
+    public boolean isCancelCrawler() {
+        return cbCrawler.isSelected();
+    }
+
+    public boolean isDeleteLinks() {
+        return cbLinks.isSelected();
+    }
+
+    public boolean isResetSort() {
+        return cbSort.isSelected();
+    }
+
+    public boolean isResetSearch() {
+        return cbSearch.isSelected();
+
+    }
+
+    public boolean isClearFiltered() {
+        return cbFiltered.isSelected();
     }
 
     @Override
@@ -97,29 +117,29 @@ public class GenericResetLinkgrabberRlyDialog extends ConfirmDialog {
 
         m.add(new JSeparator(), "spanx,growx,pushx,newline,gaptop 10");
         m.add(new JLabel(_GUI._.GenericResetLinkgrabberRlyDialog_layoutDialogContent_todo_()), "spanx,");
-        m.add(lblLinks = createLabel(_GUI._.ResetLinkGrabberOptionDialog_layoutDialogContent_remove_links2(nodesToDelete.size(), LinkCollector.getInstance().getChildrenCount() - nodesToDelete.size())));
-        m.add(cbLinks = new JCheckBox());
-        m.add(lblSort = createLabel(_GUI._.ResetLinkGrabberOptionDialog_layoutDialogContent_sort()));
-        m.add(cbSort = new JCheckBox());
-        m.add(lblSearch = createLabel(_GUI._.ResetLinkGrabberOptionDialog_layoutDialogContent_search()));
-        m.add(cbSearch = new JCheckBox());
-        m.add(lblCrawler = createLabel(_GUI._.ResetLinkGrabberOptionDialog_layoutDialogContent_interrup_crawler()));
-        m.add(cbCrawler = new JCheckBox());
-        m.add(lblFiltered = createLabel(_GUI._.ResetLinkGrabberOptionDialog_layoutDialogContent_filtered()));
-        m.add(cbFiltered = new JCheckBox());
-        cbLinks.setEnabled(nodesToDelete.size() > 0);
-        cbSort.setEnabled(LinkGrabberTableModel.getInstance().getSortColumn() != null);
-        cbSearch.setEnabled(!LinkgrabberSearchField.getInstance().isEmpty());
-        cbCrawler.setEnabled(LinkCollector.getInstance().isCollecting());
-        cbFiltered.setEnabled(LinkCollector.getInstance().getfilteredStuffSize() > 0);
+        m.add(lblLinks = createLabel(_GUI._.ResetLinkGrabberOptionDialog_layoutDialogContent_remove_links2(nodesToDelete.size(), LinkCollector.getInstance().getChildrenCount() - nodesToDelete.size())), "hidemode 3");
+        m.add(cbLinks = new JCheckBox(), "hidemode 3");
+        m.add(lblSort = createLabel(_GUI._.ResetLinkGrabberOptionDialog_layoutDialogContent_sort()), "hidemode 3");
+        m.add(cbSort = new JCheckBox(), "hidemode 3");
+        m.add(lblSearch = createLabel(_GUI._.ResetLinkGrabberOptionDialog_layoutDialogContent_search()), "hidemode 3");
+        m.add(cbSearch = new JCheckBox(), "hidemode 3");
+        m.add(lblCrawler = createLabel(_GUI._.ResetLinkGrabberOptionDialog_layoutDialogContent_interrup_crawler()), "hidemode 3");
+        m.add(cbCrawler = new JCheckBox(), "hidemode 3");
+        m.add(lblFiltered = createLabel(_GUI._.ResetLinkGrabberOptionDialog_layoutDialogContent_filtered()), "hidemode 3");
+        m.add(cbFiltered = new JCheckBox(), "hidemode 3");
+        cbLinks.setVisible(nodesToDelete.size() > 0);
+        cbSort.setVisible(LinkGrabberTableModel.getInstance().getSortColumn() != null);
+        cbSearch.setVisible(!LinkgrabberSearchField.getInstance().isEmpty());
+        cbCrawler.setVisible(LinkCollector.getInstance().isCollecting());
+        cbFiltered.setVisible(LinkCollector.getInstance().getfilteredStuffSize() > 0);
 
-        lblLinks.setEnabled(cbLinks.isEnabled());
-        lblSort.setEnabled(cbSort.isEnabled());
-        lblSearch.setEnabled(cbSearch.isEnabled());
-        lblCrawler.setEnabled(cbCrawler.isEnabled());
-        lblFiltered.setEnabled(cbFiltered.isEnabled());
+        lblLinks.setVisible(cbLinks.isVisible());
+        lblSort.setVisible(cbSort.isVisible());
+        lblSearch.setVisible(cbSearch.isVisible());
+        lblCrawler.setVisible(cbCrawler.isVisible());
+        lblFiltered.setVisible(cbFiltered.isVisible());
 
-        cbLinks.setSelected(fullLinkCollectorReset && cbLinks.isEnabled());
+        cbLinks.setSelected(cbLinks.isVisible());
 
         cbSort.setSelected(cbSort.isEnabled() && resetTableSorter);
         cbSearch.setSelected(cbSearch.isEnabled() && clearSearchFilter);

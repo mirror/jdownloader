@@ -64,7 +64,7 @@ public class SearchField<SearchCat extends SearchCatInterface, PackageType exten
     private boolean                                        closeEnabled     = false;
 
     public boolean isEmpty() {
-        return filterPatterns == null || filterPatterns.size() == 0;
+        return StringUtils.isEmpty(this.getText());
     }
 
     public SearchField(final PackageControllerTable<PackageType, ChildType> table2Filter, SearchCat defCategory) {

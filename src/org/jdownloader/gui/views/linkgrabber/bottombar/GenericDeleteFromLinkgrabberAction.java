@@ -54,17 +54,6 @@ public class GenericDeleteFromLinkgrabberAction extends CustomizableAppAction im
     private boolean            deleteOffline             = false;
     private boolean            cancelLinkcrawlerJobs     = false;
     private boolean            resetTableSorter          = false;
-    private boolean            fullLinkCollectorReset    = false;
-
-    @Customizer(name = "Full Reset")
-    public boolean isFullLinkCollectorReset() {
-
-        return fullLinkCollectorReset;
-    }
-
-    public void setFullLinkCollectorReset(boolean fullLinkCollectorReset) {
-        this.fullLinkCollectorReset = fullLinkCollectorReset;
-    }
 
     @Override
     public void loadContextSetups() {
@@ -198,7 +187,7 @@ public class GenericDeleteFromLinkgrabberAction extends CustomizableAppAction im
             }
         }
 
-        LinkCollector.requestDeleteLinks(nodesToDelete, containsOnline, createName(), byPassDialog.isBypassDialog(), isCancelLinkcrawlerJobs(), isResetTableSorter(), isClearSearchFilter(), isFullLinkCollectorReset(), isClearFilteredLinks());
+        LinkCollector.requestDeleteLinks(nodesToDelete, containsOnline, createName(), byPassDialog.isBypassDialog(), isCancelLinkcrawlerJobs(), isResetTableSorter(), isClearSearchFilter(), isClearFilteredLinks());
 
     }
 
@@ -228,15 +217,12 @@ public class GenericDeleteFromLinkgrabberAction extends CustomizableAppAction im
 
     private String createName() {
         final StringBuilder sb = new StringBuilder();
-        if (isFullLinkCollectorReset()) {
-            sb.append(_GUI._.GenericDeleteFromLinkgrabberAction_fullreset());
-        } else {
-            if (isClearFilteredLinks()) {
-                if (sb.length() > 0) sb.append(", ");
-                sb.append(_GUI._.GenericDeleteFromLinkgrabberAction_clearFiltered());
-            }
 
+        if (isClearFilteredLinks()) {
+            if (sb.length() > 0) sb.append(", ");
+            sb.append(_GUI._.GenericDeleteFromLinkgrabberAction_clearFiltered());
         }
+
         if (isCancelLinkcrawlerJobs()) {
             if (sb.length() > 0) sb.append(", ");
             sb.append(_GUI._.GenericDeleteFromLinkgrabberAction_cancelCrawler());
@@ -440,9 +426,9 @@ public class GenericDeleteFromLinkgrabberAction extends CustomizableAppAction im
                 default:
                     if (isIgnoreFiltered()) {
 
-                        selection = LinkGrabberTable.getInstance().getSelectionInfo(false, false);
-                    } else {
                         selection = LinkGrabberTable.getInstance().getSelectionInfo(false, true);
+                    } else {
+                        selection = LinkGrabberTable.getInstance().getSelectionInfo(false, false);
 
                     }
                     break;
@@ -460,10 +446,6 @@ public class GenericDeleteFromLinkgrabberAction extends CustomizableAppAction im
                 // we remember the last link and try it first
                 setVisible(true);
 
-                if (isFullLinkCollectorReset()) {
-                    setEnabled(true);
-                    return;
-                }
                 if (isCancelLinkcrawlerJobs()) {
                     setEnabled(true);
                     return;
