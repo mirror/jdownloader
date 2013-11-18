@@ -88,7 +88,7 @@ public class EgoFilesCom extends PluginForHost {
 
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
-
+        boolean reCaptchaNoId = false;
         // final boolean alwaysHttp = this.getPluginConfig().getBooleanProperty(jd.plugins.hoster.EgoFilesCom.USEALWAYSHTTP, false);
         final String connectionType = (downloadLink.getDownloadURL().contains("https") ? "https" : "http");
         requestFileInformation(downloadLink);
@@ -103,25 +103,57 @@ public class EgoFilesCom extends PluginForHost {
             logger.warning("Free daily download limit reached!");
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1000l);
         }
-        final String rcID = br.getRegex("google\\.com/recaptcha/api/challenge\\?k=([^<>\"]*?)\"").getMatch(0);
-        if (rcID == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "reCaptcha ID not recognized"); }
-        final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-        jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
-        rc.setId(rcID);
-        for (int i = 0; i <= 5; i++) {
-            rc.load();
-            File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-            String c = getCaptchaCode(cf, downloadLink);
-            br.postPage(downloadLink.getDownloadURL(), "recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + c);
-            if (br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)")) {
-                rc.reload();
-                continue;
+        int tries = 0;
+
+        while (true) {
+            tries++;
+            if (tries > 6) break;
+            final String rcID = br.getRegex("google\\.com/recaptcha/api/challenge\\?k=([^<>\"]*?)\"").getMatch(0);
+            if (rcID == null) {
+                if (br.containsHTML("www\\.google\\.com/recaptcha/api/image\\?c=")) {
+                    // captcha challenge image is directly in the page
+                    // google api calling is not necessary
+                    reCaptchaNoId = true;
+
+                } else
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "reCaptcha type not recognized");
+            } else
+                reCaptchaNoId = false;
+
+            if (reCaptchaNoId) {
+                String challenge = br.getRegex("www\\.google\\.com/recaptcha/api/image\\?c=(.*?)\" alt=\"Zadanie obrazkowe reCAPTCHA\"").getMatch(0);
+                if (challenge != null) {
+                    String captchaAddress = "https://www.google.com/recaptcha/api/image?c=" + challenge;
+                    File cf = getLocalCaptchaFile();
+
+                    Browser.download(cf, br.openGetConnection(captchaAddress));
+                    String c = getCaptchaCode(cf, downloadLink);
+                    logger.info("Egofiles: " + tries + " challenge, this without API");
+                    br.postPage(downloadLink.getDownloadURL(), "recaptcha_challenge_field=" + challenge + "&recaptcha_response_field=" + c);
+                    if (br.containsHTML("<div class=\"limiter-text\" id=\"counter\">captcha incorrect</div>")) {
+                        continue;
+                    }
+                    break;
+                }
+            } else {
+                final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
+                jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
+                rc.setId(rcID);
+                rc.load();
+                File cf = rc.downloadCaptcha(getLocalCaptchaFile());
+                String c = getCaptchaCode(cf, downloadLink);
+                logger.info("Egofiles: " + tries + " challenge, this with API");
+                br.postPage(downloadLink.getDownloadURL(), "recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + c);
+                if (br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)")) {
+                    rc.reload();
+                    continue;
+                }
+                break;
             }
-            break;
         }
         if (br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)")) {
             logger.info("6 reCaptcha tryouts for <" + downloadLink.getDownloadURL() + "> were incorrect");
-            throw new PluginException(LinkStatus.ERROR_CAPTCHA, "reCaptcha error");
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "reCaptcha error", 1 * 60 * 1000l);
         }
         br.setFollowRedirects(false);
         String dllink = br.getRegex("<h2 class=\"grey\\-brake\"><a href=\"(" + connectionType + "://[^<>\"]*?)\"").getMatch(0);
