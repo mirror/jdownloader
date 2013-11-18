@@ -54,8 +54,8 @@ public class PrtUpCm extends PluginForDecrypt {
             return null;
         }
         // find correct forum, post form
-        Form getform = br.getFormbyProperty("name", "linkprotect");
-        br.submitForm(getform);
+        final Form getform = br.getFormbyProperty("name", "linkprotect");
+        if (getform != null) br.submitForm(getform);
 
         // find tables
         String table = br.getRegex("<table(.*?)</table>").getMatch(0);

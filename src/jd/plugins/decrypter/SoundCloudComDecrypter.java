@@ -51,6 +51,7 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
     private static final String PLAYLISTAPILINK    = "https?://(www\\.|m\\.)?api\\.soundcloud\\.com/playlists/\\d+\\?secret_token=[A-Za-z0-9\\-_]+";
 
     private static final String GRAB500THUMB       = "GRAB500THUMB";
+    private static final String GRABORIGINALTHUMB  = "GRABORIGINALTHUMB";
     private static final String CUSTOM_PACKAGENAME = "CUSTOM_PACKAGENAME";
     private static final String CUSTOM_DATE        = "CUSTOM_DATE";
 
@@ -59,7 +60,8 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         CFG = SubConfiguration.getConfig("soundcloud.com");
-        final boolean decryptThumb = CFG.getBooleanProperty(GRAB500THUMB, false);
+        final boolean decrypt500Thumb = CFG.getBooleanProperty(GRAB500THUMB, false);
+        final boolean decryptOriginalThumb = CFG.getBooleanProperty(GRABORIGINALTHUMB, false);
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         // Sometimes slow servers
         br.setConnectTimeout(3 * 60 * 1000);
@@ -170,13 +172,22 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
                     final AvailableStatus status = ((jd.plugins.hoster.SoundcloudCom) HOSTPLUGIN).checkStatus(dl, item, false);
                     dl.setAvailableStatus(status);
                     decryptedLinks.add(dl);
-                    if (decryptThumb) {
+                    if (decrypt500Thumb) {
                         try {
                             // Handle thumbnail stuff
-                            final DownloadLink thumb = getThumbnail(dl, item);
+                            final DownloadLink thumb = get500Thumbnail(dl, item);
                             if (thumb != null) decryptedLinks.add(thumb);
                         } catch (final ParseException e) {
-                            logger.info("Failed to get thumbnail, adding song link only");
+                            logger.info("Failed to get 500x500 thumbnail...");
+                        }
+                    }
+                    if (decryptOriginalThumb) {
+                        try {
+                            // Handle thumbnail stuff
+                            final DownloadLink thumb = getOriginalThumbnail(dl, item);
+                            if (thumb != null) decryptedLinks.add(thumb);
+                        } catch (final ParseException e) {
+                            logger.info("Failed to get 500x500 thumbnail...");
                         }
                     }
                 }
@@ -223,13 +234,22 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
                     }
                     final AvailableStatus status = ((jd.plugins.hoster.SoundcloudCom) HOSTPLUGIN).checkStatus(dl, item, false);
                     dl.setAvailableStatus(status);
-                    if (decryptThumb) {
+                    if (decrypt500Thumb) {
                         try {
                             // Handle thumbnail stuff
-                            final DownloadLink thumb = getThumbnail(dl, item);
+                            final DownloadLink thumb = get500Thumbnail(dl, item);
                             if (thumb != null) decryptedLinks.add(thumb);
                         } catch (final ParseException e) {
-                            logger.info("Failed to get thumbnail, adding song link only");
+                            logger.info("Failed to get 500x500 thumbnail...");
+                        }
+                    }
+                    if (decryptOriginalThumb) {
+                        try {
+                            // Handle thumbnail stuff
+                            final DownloadLink thumb = getOriginalThumbnail(dl, item);
+                            if (thumb != null) decryptedLinks.add(thumb);
+                        } catch (final ParseException e) {
+                            logger.info("Failed to get original thumbnail...");
                         }
                     }
                     decryptedLinks.add(dl);
@@ -246,7 +266,7 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
             fp.addLinks(decryptedLinks);
         } else {
             // If the user wants to download the thumbnail also it's a bit more complicated
-            if (decryptThumb) {
+            if (decrypt500Thumb || decryptOriginalThumb) {
                 try {
                     br.getPage(parameter);
                     if (br.containsHTML("\"404 \\- Not Found\"")) {
@@ -264,9 +284,24 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
                     dl.setAvailableStatus(status);
                     decryptedLinks.add(dl);
 
-                    // Handle thumbnail stuff
-                    final DownloadLink thumb = getThumbnail(dl, this.br.toString());
-                    if (thumb != null) decryptedLinks.add(thumb);
+                    if (decrypt500Thumb) {
+                        try {
+                            // Handle thumbnail stuff
+                            final DownloadLink thumb = get500Thumbnail(dl, this.br.toString());
+                            if (thumb != null) decryptedLinks.add(thumb);
+                        } catch (final ParseException e) {
+                            logger.info("Failed to get 500x500 thumbnail...");
+                        }
+                    }
+                    if (decryptOriginalThumb) {
+                        try {
+                            // Handle thumbnail stuff
+                            final DownloadLink thumb = getOriginalThumbnail(dl, this.br.toString());
+                            if (thumb != null) decryptedLinks.add(thumb);
+                        } catch (final ParseException e) {
+                            logger.info("Failed to get original thumbnail...");
+                        }
+                    }
                 } catch (final Exception e) {
                     logger.info("Failed to get thumbnail, adding song link only");
                     decryptedLinks.add(createDownloadlink(parameter.replace("soundcloud", "soundclouddecrypted")));
@@ -278,7 +313,7 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    private DownloadLink getThumbnail(final DownloadLink audiolink, final String source) throws ParseException {
+    private DownloadLink get500Thumbnail(final DownloadLink audiolink, final String source) throws ParseException {
         // Handle artwork stuff
         DownloadLink thumb = null;
         String artworkurl = new Regex(source, "<artwork\\-url>(https?://[a-z0-9]+\\.sndcdn\\.com/artworks\\-[a-z0-9\\-]+\\-large\\.jpg\\?[a-z0-9]+)</artwork\\-url>").getMatch(0);
@@ -286,7 +321,25 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
             artworkurl = artworkurl.replace("-large.jpg", "-t500x500.jpg");
             thumb = createDownloadlink("directhttp://" + artworkurl);
             thumb.setProperty("originaldate", audiolink.getStringProperty("originaldate", null));
-            thumb.setProperty("plainfilename", audiolink.getStringProperty("plainfilename", null));
+            thumb.setProperty("plainfilename", audiolink.getStringProperty("plainfilename", null) + "_500x500");
+            thumb.setProperty("channel", audiolink.getStringProperty("channel", null));
+            thumb.setProperty("type", "jpg");
+            final String formattedFilename = ((jd.plugins.hoster.SoundcloudCom) HOSTPLUGIN).getFormattedFilename(thumb);
+            thumb.setFinalFileName(formattedFilename);
+            thumb.setAvailable(true);
+        }
+        return thumb;
+    }
+
+    private DownloadLink getOriginalThumbnail(final DownloadLink audiolink, final String source) throws ParseException {
+        // Handle artwork stuff
+        DownloadLink thumb = null;
+        String artworkurl = new Regex(source, "<artwork\\-url>(https?://[a-z0-9]+\\.sndcdn\\.com/artworks\\-[a-z0-9\\-]+\\-large\\.jpg\\?[a-z0-9]+)</artwork\\-url>").getMatch(0);
+        if (artworkurl != null) {
+            artworkurl = artworkurl.replace("-large.jpg", "-original.jpg");
+            thumb = createDownloadlink("directhttp://" + artworkurl);
+            thumb.setProperty("originaldate", audiolink.getStringProperty("originaldate", null));
+            thumb.setProperty("plainfilename", audiolink.getStringProperty("plainfilename", null) + "_original");
             thumb.setProperty("channel", audiolink.getStringProperty("channel", null));
             thumb.setProperty("type", "jpg");
             final String formattedFilename = ((jd.plugins.hoster.SoundcloudCom) HOSTPLUGIN).getFormattedFilename(thumb);

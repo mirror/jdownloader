@@ -20,6 +20,7 @@ import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Field;
 import java.net.URL;
+import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
@@ -608,7 +609,11 @@ public class FileServeCom extends PluginForHost {
         correctHeaders(this.br);
         if (this.checkLinks(new DownloadLink[] { link }) == false) {
             /* linkcheck broken */
-            br.getPage(link.getDownloadURL());
+            try {
+                br.getPage(link.getDownloadURL());
+            } catch (final UnknownHostException e) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             if (br.getRedirectLocation() != null && br.getRedirectLocation().contains("fileserve.com/maintenance.html")) {
                 link.getLinkStatus().setStatusText("This host is currently under maintenance");
                 link.setAvailableStatus(AvailableStatus.UNCHECKABLE);
@@ -630,7 +635,7 @@ public class FileServeCom extends PluginForHost {
         }
         if (!link.isAvailabilityStatusChecked()) {
             link.setAvailableStatus(AvailableStatus.UNCHECKABLE);
-        } else if (!link.isAvailable()) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+        } else if (!link.isAvailable()) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         return getAvailableStatus(link);
     }
 

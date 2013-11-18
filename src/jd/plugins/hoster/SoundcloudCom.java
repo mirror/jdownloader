@@ -61,6 +61,7 @@ public class SoundcloudCom extends PluginForHost {
     private static final String CUSTOM_DATE        = "CUSTOM_DATE";
     private static final String CUSTOM_FILENAME    = "CUSTOM_FILENAME";
     private static final String GRAB500THUMB       = "GRAB500THUMB";
+    private static final String GRABORIGINALTHUMB  = "GRABORIGINALTHUMB";
     private static final String CUSTOM_PACKAGENAME = "CUSTOM_PACKAGENAME";
 
     public void correctDownloadLink(DownloadLink link) {
@@ -368,6 +369,7 @@ public class SoundcloudCom extends PluginForHost {
 
     private void setConfigElements() {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), GRAB500THUMB, JDL.L("plugins.hoster.soundcloud.grab500thumb", "Grab 500x500 thumbnail (.jpg)?")).setDefaultValue(false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), GRABORIGINALTHUMB, JDL.L("plugins.hoster.soundcloud.grab500thumb", "Grab original thumbnail (.jpg)?")).setDefaultValue(false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "Customize the filename/packagename properties:"));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), CUSTOM_DATE, JDL.L("plugins.hoster.soundcloud.customdate", "Define how the date should look.")).setDefaultValue("dd.MM.yyyy_HH-mm-ss"));

@@ -44,6 +44,10 @@ public class ProtectUrlNet extends PluginForDecrypt {
         String parameter = param.toString();
         br.setFollowRedirects(true);
         br.getPage(parameter);
+        if (br.containsHTML("=images/erreur\\-redirect") || br.getURL().contains("/erreurflood.php")) {
+            logger.info("Limit reached, cannot decrypt at the moment: " + parameter);
+            return decryptedLinks;
+        }
         // Such links can also be decrypted (still...)
         // if
         // (br.containsHTML("(>ACCÈS REFUSÉ<|<td valign=top align=center><img src=images/icon_stop\\.gif)"))

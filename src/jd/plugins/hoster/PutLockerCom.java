@@ -211,6 +211,18 @@ public class PutLockerCom extends PluginForHost {
                 downloadLink.setProperty(PutLockerCom.NOCHUNKS, Boolean.valueOf(true));
                 throw new PluginException(LinkStatus.ERROR_RETRY);
             }
+        } catch (final InterruptedException e) {
+            logger.info("putlocker.com: Unknown error");
+            int timesFailed = downloadLink.getIntegerProperty("timesfailedputlockercom_unknown", 0);
+            downloadLink.getLinkStatus().setRetryCount(0);
+            if (timesFailed <= 2) {
+                timesFailed++;
+                downloadLink.setProperty("timesfailedputlockercom_unknown", timesFailed);
+                throw new PluginException(LinkStatus.ERROR_RETRY, "Unknown error");
+            } else {
+                downloadLink.setProperty("timesfailedputlockercom_unknown", Property.NULL);
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 30 * 60 * 1000l);
+            }
         }
     }
 

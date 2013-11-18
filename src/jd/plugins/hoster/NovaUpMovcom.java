@@ -139,6 +139,8 @@ public class NovaUpMovcom extends PluginForHost {
 
     private void getVideoLink() throws PluginException, IOException {
         String result = unWise();
+        // Maybe it's directly in the html
+        if (result == null) result = br.toString();
         final String fileId = new Regex(result, "flashvars\\.file=\"(.*?)\"").getMatch(0);
         final String fileKey = new Regex(result, "flashvars\\.filekey=\"(.*?)\"").getMatch(0);
         final String fileCid = new Regex(result, "flashvars\\.cid=\"(.*?)\"").getMatch(0);

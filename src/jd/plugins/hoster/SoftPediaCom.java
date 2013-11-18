@@ -139,7 +139,12 @@ public class SoftPediaCom extends PluginForHost {
             filename = br.getRegex("style=\"padding\\-top: 15px;\">Softpedia guarantees that <b>(.*?)</b> is <b").getMatch(0);
             if (filename == null) {
                 filename = br.getRegex(">yahooBuzzArticleHeadline = \"(.*?)\";").getMatch(0);
-                if (filename == null) filename = br.getRegex("<title>Download (.*?) Free \\- ").getMatch(0);
+                if (filename == null) {
+                    filename = br.getRegex("<title>([^<>\"]*?)Free Download</title>").getMatch(0);
+                    if (filename == null) {
+                        filename = br.getRegex("title=\"Click here to download ([^<>\"]*?)\"").getMatch(0);
+                    }
+                }
             }
         }
         // For fre trail programms
