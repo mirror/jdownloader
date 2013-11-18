@@ -279,11 +279,13 @@ public class DebridItaliaCom extends PluginForHost {
 
     private String checkDirectLink(final DownloadLink downloadLink, final String property) {
         String dllink = downloadLink.getStringProperty(property);
+        if (downloadLink.getDownloadURL().contains("clz.to/")) dllink = downloadLink.getDownloadURL();
         if (dllink != null) {
             try {
                 final Browser br2 = br.cloneBrowser();
                 URLConnectionAdapter con = br2.openGetConnection(dllink);
                 if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
+                    if (con.getResponseCode() == 302) downloadLink.setUrlDownload(br2.getRedirectLocation());
                     downloadLink.setProperty(property, Property.NULL);
                     dllink = null;
                 }
