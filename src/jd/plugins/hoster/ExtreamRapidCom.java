@@ -16,8 +16,6 @@
 
 package jd.plugins.hoster;
 
-import java.io.File;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Locale;
@@ -32,6 +30,7 @@ import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
@@ -41,28 +40,28 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "premiumdebrid.com" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32423" }, flags = { 2 })
-public class PremiumDebridCom extends PluginForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "extreamrapid.com" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32423" }, flags = { 2 })
+public class ExtreamRapidCom extends PluginForHost {
 
     private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap = new HashMap<Account, HashMap<String, Long>>();
     private static AtomicInteger                           maxPrem            = new AtomicInteger(20);
     private static final String                            NOCHUNKS           = "NOCHUNKS";
     private static Object                                  LOCK               = new Object();
-    private static final String                            COOKIE_HOST        = "http://premiumdebrid.com";
+    private static final String                            COOKIE_HOST        = "http://extreamrapid.com";
+    private static final String                            NICE_HOST          = "extreamrapid.com";
 
-    public PremiumDebridCom(PluginWrapper wrapper) {
+    public ExtreamRapidCom(PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium("http://premiumdebrid.com/index.php");
+        this.enablePremium("http://extreamrapid.com/terms.php");
     }
 
     @Override
     public String getAGBLink() {
-        return "http://premiumdebrid.com/index.php";
+        return "http://extreamrapid.com/terms.php";
     }
 
     @Override
@@ -82,8 +81,9 @@ public class PremiumDebridCom extends PluginForHost {
             account.setValid(false);
             return ac;
         }
-        if (!"http://premiumdebrid.com/index.php".equals(br.getURL())) br.getPage("http://premiumdebrid.com/index.php");
-        if (!br.containsHTML("class=\"userinfo\">Vip</font>")) {
+        if (!"http://extreamrapid.com/vip/index.php".equals(br.getURL())) br.getPage("http://extreamrapid.com/vip/index.php");
+        final String acctype = br.getRegex("<td>Account Type : <font color=\"#FFC500\" class=\"userinfo\">([^<>\"]*?)</font>").getMatch(0);
+        if (acctype == null || !acctype.toLowerCase().contains("vip")) {
             ac.setStatus("This is no premium account!");
             account.setValid(false);
             return ac;
@@ -100,7 +100,7 @@ public class PremiumDebridCom extends PluginForHost {
         } catch (final Throwable e) {
             // not available in old Stable 0.9.581
         }
-        ac.setStatus("Premium User [Vip]");
+        ac.setStatus("Account type: " + acctype);
         String trafficLeft = br.getRegex("User Traffic : <font color=\"#FFC500\" class=\"userinfo\">([^<>\"]*?)</font>").getMatch(0);
         if (trafficLeft != null) {
             if (trafficLeft.equals("Unlimeted") || trafficLeft.equals("Unlimited")) {
@@ -110,7 +110,8 @@ public class PremiumDebridCom extends PluginForHost {
             }
         }
         // now let's get a list of all supported hosts:
-        hosts = br.getRegex("\"templates/plugmod/icons/([^<>\"]*?)\\.png\"").getColumn(0);
+        final String hostsText = br.getRegex("<div dir=\"rtl\" align=\"left\" style=\"padding\\-left:5px;\">(.*?)</td>").getMatch(0);
+        if (hostsText != null) hosts = new Regex(hostsText, "class=\"plugincollst\">([^<>\"]*?)</span>").getColumn(0);
         ArrayList<String> supportedHosts = new ArrayList<String>();
         for (String host : hosts) {
             if (!host.isEmpty()) {
@@ -131,9 +132,9 @@ public class PremiumDebridCom extends PluginForHost {
         supportedHosts.remove("youtube.com");
 
         if (supportedHosts.size() == 0) {
-            ac.setStatus("Account valid: 0 Hosts via premiumdebrid.com available");
+            ac.setStatus("Account valid: 0 Hosts via " + NICE_HOST + " available");
         } else {
-            ac.setStatus("Account valid: " + supportedHosts.size() + " Hosts via premiumdebrid.com available");
+            ac.setStatus("Account valid: " + supportedHosts.size() + " Hosts via " + NICE_HOST + " available");
             ac.setProperty("multiHostSupport", supportedHosts);
         }
         return ac;
@@ -158,29 +159,17 @@ public class PremiumDebridCom extends PluginForHost {
                             final String value = cookieEntry.getValue();
                             this.br.setCookie(COOKIE_HOST, key, value);
                         }
-                        br.getPage("http://premiumdebrid.com/index.php");
-                        if (br.containsHTML("google\\.com/recaptcha/")) fullLogin = true;
+                        br.getPage(COOKIE_HOST + "/vip/index.php");
+                        if (!br.containsHTML("<td>User IP :")) fullLogin = true;
                     }
                 } else {
                     fullLogin = true;
                 }
                 if (fullLogin) {
-                    if (!"http://premiumdebrid.com/index.php".equals(br.getURL())) br.getPage("http://premiumdebrid.com/index.php");
+                    if (!"http://extreamrapid.com/vip/index.php".equals(br.getURL())) br.getPage("http://extreamrapid.com/vip/index.php");
                     br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-                    final String rcID = br.getRegex("challenge\\?k=([^<>\"]*?)\"").getMatch(0);
-                    if (rcID == null) {
-                        logger.warning("Expected login captcha is not there!");
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    }
-                    final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-                    final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
-                    rc.setId(rcID);
-                    rc.load();
-                    final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-                    final DownloadLink dummyLink = new DownloadLink(this, "Account", "premiumdebrid.com", "http://premiumdebrid.com", true);
-                    final String c = getCaptchaCode(cf, dummyLink);
-                    br.postPage("http://premiumdebrid.com/login.php?action=login", "username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&recaptcha_challenge_field=" + Encoding.urlEncode(rc.getChallenge()) + "&recaptcha_response_field=" + Encoding.urlEncode(c));
-                    if (br.getCookie("http://premiumdebrid.com/", "user") == null) {
+                    br.postPage(COOKIE_HOST + "/vip/login.php?action=login", "username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
+                    if (br.getCookie(COOKIE_HOST, "user") == null) {
                         final String lang = System.getProperty("user.language");
                         if ("de".equalsIgnoreCase(lang)) {
                             throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!\r\nGehe außerdem sicher, dass du das Captcha richtig eingibst!", PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -206,12 +195,6 @@ public class PremiumDebridCom extends PluginForHost {
         }
     }
 
-    private String getJson(final String parameter) {
-        String result = br.getRegex("\"" + parameter + "\":(\\d+)").getMatch(0);
-        if (result == null) result = br.getRegex("\"" + parameter + "\":\"([^<>\"]*?)\"").getMatch(0);
-        return result;
-    }
-
     @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 0;
@@ -226,25 +209,24 @@ public class PremiumDebridCom extends PluginForHost {
     public void handleMultiHost(final DownloadLink link, final Account acc) throws Exception {
         login(acc, false);
         int maxChunks = 0;
-        if (link.getBooleanProperty(PremiumDebridCom.NOCHUNKS, false)) {
+        if (link.getBooleanProperty(ExtreamRapidCom.NOCHUNKS, false)) {
             maxChunks = 1;
         }
-        String dllink = checkDirectLink(link, "premiumdebridcomdirectlink");
+        String dllink = checkDirectLink(link, "extreamrapidcomdirectlink");
         if (dllink == null) {
             showMessage(link, "Phase 1/2: Generating downloadlink!");
-            dllink = generateDllinkNew(link, acc);
+            dllink = generateDllink(link, acc);
             if (dllink == null) {
-                logger.info("premiumdebrid.com: dllink is null");
-                int timesFailed = link.getIntegerProperty("timesfailedpremiumdebridcom_dllinknull", 1);
+                logger.info(NICE_HOST + ": dllink is null");
+                int timesFailed = link.getIntegerProperty("timesfailedextreamrapidcom_dllinknull", 1);
                 link.getLinkStatus().setRetryCount(0);
                 if (timesFailed <= 10) {
                     timesFailed++;
-                    link.setProperty("timesfailedpremiumdebridcom_dllinknull", timesFailed);
+                    link.setProperty("timesfailedextreamrapidcom_dllinknull", timesFailed);
                     throw new PluginException(LinkStatus.ERROR_RETRY, "Unknown server error");
                 } else {
-                    logger.info("premiumdebrid.com: dllink is null - disabling current host");
-                    link.setProperty("timesfailedpremiumdebridcom_dllinknull", Property.NULL);
-                    tempUnavailableHoster(acc, link, 60 * 60 * 1000l);
+                    link.setProperty("timesfailedextreamrapidcom_dllinknull", Property.NULL);
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
             }
         }
@@ -253,20 +235,20 @@ public class PremiumDebridCom extends PluginForHost {
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, maxChunks);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
-            logger.info("premiumdebrid.com: Unknown download error");
-            int timesFailed = link.getIntegerProperty("timesfailedpremiumdebridcom_unknowndlerror", 1);
+            logger.info(NICE_HOST + ": Unknown download error");
+            int timesFailed = link.getIntegerProperty("timesfailedextreamrapidcom_unknowndlerror", 1);
             link.getLinkStatus().setRetryCount(0);
             if (timesFailed <= 10) {
                 timesFailed++;
-                link.setProperty("timesfailedpremiumdebridcom_unknowndlerror", timesFailed);
+                link.setProperty("timesfailedextreamrapidcom_unknowndlerror", timesFailed);
                 throw new PluginException(LinkStatus.ERROR_RETRY, "Unknown download error");
             } else {
-                logger.info("premiumdebrid.com: Unknown download error - disabling current host");
-                link.setProperty("timesfailedpremiumdebridcom_unknowndlerror", Property.NULL);
+                logger.info(NICE_HOST + ": Unknown download error - disabling current host");
+                link.setProperty("timesfailedextreamrapidcom_unknowndlerror", Property.NULL);
                 tempUnavailableHoster(acc, link, 60 * 60 * 1000l);
             }
         }
-        link.setProperty("premiumdebridcomdirectlink", dllink);
+        link.setProperty("extreamrapidcomdirectlink", dllink);
         try {
             if (!this.dl.startDownload()) {
                 try {
@@ -274,91 +256,69 @@ public class PremiumDebridCom extends PluginForHost {
                 } catch (final Throwable e) {
                 }
                 /* unknown error, we disable multiple chunks */
-                if (link.getBooleanProperty(PremiumDebridCom.NOCHUNKS, false) == false) {
-                    link.setProperty(PremiumDebridCom.NOCHUNKS, Boolean.valueOf(true));
+                if (link.getBooleanProperty(ExtreamRapidCom.NOCHUNKS, false) == false) {
+                    link.setProperty(ExtreamRapidCom.NOCHUNKS, Boolean.valueOf(true));
                     throw new PluginException(LinkStatus.ERROR_RETRY);
                 }
             }
         } catch (final PluginException e) {
             // New V2 errorhandling
             /* unknown error, we disable multiple chunks */
-            if (e.getLinkStatus() != LinkStatus.ERROR_RETRY && link.getBooleanProperty(PremiumDebridCom.NOCHUNKS, false) == false) {
-                link.setProperty(PremiumDebridCom.NOCHUNKS, Boolean.valueOf(true));
+            if (e.getLinkStatus() != LinkStatus.ERROR_RETRY && link.getBooleanProperty(ExtreamRapidCom.NOCHUNKS, false) == false) {
+                link.setProperty(ExtreamRapidCom.NOCHUNKS, Boolean.valueOf(true));
                 throw new PluginException(LinkStatus.ERROR_RETRY);
             }
         }
     }
 
-    private String generateDllinkOld(final DownloadLink dl, final Account acc) throws Exception {
+    private String generateDllink(final DownloadLink dl, final Account acc) throws Exception {
         final String url = Encoding.urlEncode(dl.getDownloadURL());
         String dllink = null;
         try {
-            br.postPage("http://premiumdebrid.com/index.php", "link=" + url + "&iuser=&ipass=&comment=&yt_fmt=highest&tor_user=&tor_pass=&email=&method=tc&partSize=10&proxy=&proxyuser=&proxypass=&premium_acc=on&premium_user=&premium_pass=&path=%2Fvar%2Fwww%2Fhtml%2Ffiles%2Ftit%40nium");
+            br.postPage("http://extreamrapid.com/vip/index.php", "link=" + url + "&referer=&iuser=&ipass=&comment=&yt_fmt=highest&tor_user=&tor_pass=&mu_cookie=&cookie=&email=&method=tc&partSize=10&proxy=&proxyuser=&proxypass=&premium_acc=on&premium_user=&premium_pass=&path=%2Fvar%2Fwww%2Fhtml%2Fvip%2Ffiles%2Fjdownloader");
             if (br.containsHTML(">Error\\[Cookie Failed\\!\\]<")) {
-                logger.info("premiumdebrid.com: Cookie error");
-                int timesFailed = dl.getIntegerProperty("timesfailedpremiumdebridcom_cookie", 1);
+                logger.info(NICE_HOST + ": Cookie error");
+                int timesFailed = dl.getIntegerProperty("timesfailedextreamrapidcom_cookie", 1);
                 if (timesFailed <= 10) {
                     timesFailed++;
-                    dl.setProperty("timesfailedpremiumdebridcom_cookie", timesFailed);
+                    dl.setProperty("timesfailedextreamrapidcom_cookie", timesFailed);
                     throw new PluginException(LinkStatus.ERROR_RETRY, "Server error");
                 } else {
-                    dl.setProperty("timesfailedpremiumdebridcom_cookie", Property.NULL);
+                    logger.info(NICE_HOST + ": Cookie error - disabling current host");
+                    dl.setProperty("timesfailedextreamrapidcom_cookie", Property.NULL);
                     tempUnavailableHoster(acc, dl, 60 * 60 * 1000l);
                 }
             }
             final Form dlForm = br.getForm(0);
             if (dlForm == null || !dlForm.containsHTML("partSize")) {
-                logger.info("premiumdebrid.com: Unknown error");
-                int timesFailed = dl.getIntegerProperty("timesfailedpremiumdebridcom_unknown", 1);
+                logger.info(NICE_HOST + ": Unknown error");
+                int timesFailed = dl.getIntegerProperty("timesfailedextreamrapidcom_unknown", 1);
                 dl.getLinkStatus().setRetryCount(0);
                 if (timesFailed <= 10) {
                     timesFailed++;
-                    dl.setProperty("timesfailedpremiumdebridcom_unknown", timesFailed);
+                    dl.setProperty("timesfailedextreamrapidcom_unknown", timesFailed);
                     throw new PluginException(LinkStatus.ERROR_RETRY, "Unknown error");
                 } else {
-                    dl.setProperty("timesfailedpremiumdebridcom_unknown", Property.NULL);
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    logger.info(NICE_HOST + ": Unknown error - disabling current host");
+                    dl.setProperty("timesfailedextreamrapidcom_unknown", Property.NULL);
+                    tempUnavailableHoster(acc, dl, 60 * 60 * 1000l);
                 }
             }
-            for (int i = 1; i <= 120; i++) {
-                showMessage(dl, "Check " + i + "/120: Generating link");
-                br.submitForm(dlForm);
-                dllink = br.getRegex("\"(/files/[^<>\"]*?)\"").getMatch(0);
-                if (dllink != null) {
-                    break;
-                }
-                sleep(5 * 1000l, dl);
-            }
+            br.submitForm(dlForm);
+            dllink = br.getRegex("\"(/vip/files/[^<>\"]*?)\"").getMatch(0);
         } catch (final BrowserException e) {
-            int timesFailed = dl.getIntegerProperty("timesfailedpremiumdebridcom_browserexception", 0);
+            int timesFailed = dl.getIntegerProperty("timesfailedextreamrapidcom_browserexception", 0);
             if (timesFailed <= 2) {
                 timesFailed++;
-                dl.setProperty("timesfailedpremiumdebridcom_browserexception", timesFailed);
+                dl.setProperty("timesfailedextreamrapidcom_browserexception", timesFailed);
                 throw new PluginException(LinkStatus.ERROR_RETRY, "Server error");
             } else {
-                dl.setProperty("timesfailedpremiumdebridcom_browserexception", Property.NULL);
+                dl.setProperty("timesfailedextreamrapidcom_browserexception", Property.NULL);
                 tempUnavailableHoster(acc, dl, 60 * 60 * 1000l);
             }
         }
-        if (dllink != null) dllink = "http://premiumdebrid.com" + dllink;
+        if (dllink != null) dllink = COOKIE_HOST + dllink;
         return dllink;
-    }
-
-    private String generateDllinkNew(final DownloadLink dl, final Account acc) throws IOException, PluginException {
-        final String url = Encoding.urlEncode(dl.getDownloadURL());
-        br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-        br.postPage("http://www.premiumdebrid.com/s1/index.php?rand=0." + System.currentTimeMillis(), "urllist=" + url + "&captcha=none&");
-        if (br.containsHTML("Scusa\\. Non supportiamo il tuo link")) {
-            logger.info("premiumdebrid.com: Disabling current host");
-            tempUnavailableHoster(acc, dl, 60 * 60 * 1000l);
-        } else if (br.containsHTML("account in database\\. Contact admin")) {
-            logger.info("premiumdebrid.com: Disabling current host because multi-host has no account for it");
-            tempUnavailableHoster(acc, dl, 2 * 60 * 60 * 1000l);
-        } else if (br.containsHTML("stato bloccato </font>")) {
-            logger.info("premiumdebrid.com: Disabling current host because the multi-hosters' host account is blocked");
-            tempUnavailableHoster(acc, dl, 2 * 60 * 60 * 1000l);
-        }
-        return br.getRegex("\\'(http://(www\\.)?premiumdebrid\\.com/s\\d+/[^<>\"]*?)\\'").getMatch(0);
     }
 
     private String checkDirectLink(final DownloadLink downloadLink, final String property) {

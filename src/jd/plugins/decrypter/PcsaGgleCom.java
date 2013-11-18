@@ -55,7 +55,7 @@ public class PcsaGgleCom extends PluginForDecrypt {
         }
         br.getPage(parameter);
         /* Error handling */
-        if (br.containsHTML("(Hier gibt es nichts zu sehen|Entweder haben Sie keinen Zugriff auf diese Fotos oder es gibt unter dieser Adresse keine|>404 NOT_FOUND</)")) {
+        if (br.containsHTML("(Hier gibt es nichts zu sehen|Entweder haben Sie keinen Zugriff auf diese Fotos oder es gibt unter dieser Adresse keine|>404 NOT_FOUND</|>Seite nicht gefunden<|>Sorry, that page was not found)")) {
             logger.info("Link offline: " + parameter);
             return decryptedLinks;
         }
