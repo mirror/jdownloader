@@ -70,19 +70,27 @@ public class XFileSharingProBasic extends PluginForHost {
     private static final String  PREMIUMONLY2                 = JDL.L("hoster.xfilesharingprobasic.errors.premiumonly2", "Only downloadable via premium or registered");
     private static final boolean VIDEOHOSTER                  = false;
     private static final boolean SUPPORTSHTTPS                = false;
+    // Connection stuff
+    private static final boolean FREE_RESUME                  = true;
+    private static final int     FREE_MAXCHUNKS               = 0;
+    private static final int     FREE_MAXDOWNLOADS            = 20;
+    private static final boolean ACCOUNT_FREE_RESUME          = true;
+    private static final int     ACCOUNT_FREE_MAXCHUNKS       = 0;
+    private static final int     ACCOUNT_FREE_MAXDOWNLOADS    = 20;
+    private static final boolean ACCOUNT_PREMIUM_RESUME       = true;
+    private static final int     ACCOUNT_PREMIUM_MAXCHUNKS    = 0;
+    private static final int     ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
     // note: CAN NOT be negative or zero! (ie. -1 or 0) Otherwise math sections fail. .:. use [1-20]
-    private static AtomicInteger totalMaxSimultanFreeDownload = new AtomicInteger(20);
+    private static AtomicInteger totalMaxSimultanFreeDownload = new AtomicInteger(FREE_MAXDOWNLOADS);
     // don't touch the following!
     private static AtomicInteger maxFree                      = new AtomicInteger(1);
     private static AtomicInteger maxPrem                      = new AtomicInteger(1);
     private static Object        LOCK                         = new Object();
 
     // DEV NOTES
-    // XfileSharingProBasic Version 2.6.2.6
+    // XfileSharingProBasic Version 2.6.2.7
     // mods:
-    // non account: chunks * maxdls
-    // free account: chunks * maxdls
-    // premium account: chunks * maxdls
+    // limit-info:
     // protocol: no https
     // captchatype: null 4dignum solvemedia recaptcha
     // other:
@@ -208,7 +216,7 @@ public class XFileSharingProBasic extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        doFree(downloadLink, true, 0, "freelink");
+        doFree(downloadLink, FREE_RESUME, FREE_MAXCHUNKS, "freelink");
     }
 
     @SuppressWarnings("unused")
@@ -719,7 +727,7 @@ public class XFileSharingProBasic extends PluginForHost {
         if (account.getBooleanProperty("nopremium")) {
             ai.setStatus("Registered (free) user");
             try {
-                maxPrem.set(20);
+                maxPrem.set(ACCOUNT_FREE_MAXDOWNLOADS);
                 // free accounts can still have captcha.
                 totalMaxSimultanFreeDownload.set(maxPrem.get());
                 account.setMaxSimultanDownloads(maxPrem.get());
@@ -736,7 +744,7 @@ public class XFileSharingProBasic extends PluginForHost {
             } else {
                 ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "dd MMMM yyyy", Locale.ENGLISH));
                 try {
-                    maxPrem.set(20);
+                    maxPrem.set(ACCOUNT_PREMIUM_MAXDOWNLOADS);
                     account.setMaxSimultanDownloads(maxPrem.get());
                     account.setConcurrentUsePossible(true);
                 } catch (final Throwable e) {
@@ -821,7 +829,7 @@ public class XFileSharingProBasic extends PluginForHost {
         login(account, false);
         if (account.getBooleanProperty("nopremium")) {
             requestFileInformation(downloadLink);
-            doFree(downloadLink, true, 0, "freelink2");
+            doFree(downloadLink, ACCOUNT_FREE_RESUME, ACCOUNT_FREE_MAXCHUNKS, "freelink2");
         } else {
             String dllink = checkDirectLink(downloadLink, "premlink");
             if (dllink == null) {
@@ -843,7 +851,7 @@ public class XFileSharingProBasic extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             logger.info("Final downloadlink = " + dllink + " starting the download...");
-            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, ACCOUNT_PREMIUM_RESUME, ACCOUNT_PREMIUM_MAXCHUNKS);
             if (dl.getConnection().getContentType().contains("html")) {
                 if (dl.getConnection().getResponseCode() == 503) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Connection limit reached, please contact our support!", 5 * 60 * 1000l);
                 logger.warning("The final dllink seems not to be a file!");
