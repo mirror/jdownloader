@@ -1,3 +1,6 @@
+JDGui_windowClosing_try_answer_totaskbar=Réduire dans la Barre des tâches
+JDGui_windowClosing_try_answer_tray=Cacher dans la Zone de notification
+JDGui_windowClosing_try_asnwer_close=Quitter JDownloader
 JDGui_windowClosing_try_msg_2=Merci de choisir entre :\r\n  - Quitter JDownloader (fermer tous les processus en cours)\r\n  - Réduire dans la Barre des tâches (Les téléchargements continueront)\r\n  - Cacher dans la Zone de notification (Les téléchargements continueront en arrière plan)
 JDGui_windowClosing_try_title=Fermer JDownloader...
 OnCloseAction_totray=Réduire vers la barre de notification
