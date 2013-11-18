@@ -87,8 +87,8 @@ public class VidsMySpaceCom extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink link) throws Exception {
         requestFileInformation(link);
-        // Plugin broken
-        if (true) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        /* Only rtmpe streams available */
+        if (true) throw new PluginException(LinkStatus.ERROR_FATAL, "RTMPE Streams are not longer supported due to legal reasons");
         String dlurl = null;
         if (link.getDownloadURL().matches(SONGURL)) {
             dlurl = br.getRegex("data\\-stream\\-url=\"(rtmp[^<>\"]*?)\"").getMatch(0);
