@@ -1915,8 +1915,8 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Reset Linkgrabber Options" })
     String ResetLinkGrabberOptionDialog_ResetLinkGrabberOptionDialog_title();
 
-    @Default(lngs = { "en" }, values = { "Clear all Links & Packages" })
-    String ResetLinkGrabberOptionDialog_layoutDialogContent_remove_links();
+    @Default(lngs = { "en" }, values = { "Delete %s1 link(s) - %s2 Link(s) remaining!" })
+    String ResetLinkGrabberOptionDialog_layoutDialogContent_remove_links2(int toDelete, int remaining);
 
     @Default(lngs = { "en" }, values = { "Reset Table Sorter" })
     String ResetLinkGrabberOptionDialog_layoutDialogContent_sort();
@@ -3160,8 +3160,8 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Account Error: %s1" })
     String ServicePanel9kwTooltip_runInEDT_error2(String error);
 
-    @Default(lngs = { "en" }, values = { "Delete" })
-    String DeleteMenuContainer_DeleteMenuContainer_delete_();
+    @Default(lngs = { "en" }, values = { "Clean Up..." })
+    String DeleteMenuContainer_DeleteMenuContainer_delete_2();
 
     @Default(lngs = { "en" }, values = { "Download list Bottombar Menumanager" })
     String BottomBarMenuManager_getName();
@@ -3690,5 +3690,26 @@ public interface GuiTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Reset Sorting" })
     String GenericDeleteFromLinkgrabberAction_resetSorter();
+
+    @Default(lngs = { "en" }, values = { "Keep only selected Links" })
+    String GenericDeleteSelectedToolbarAction_updateName_object_keep_selected();
+
+    @Default(lngs = { "en" }, values = { "Delete Links: Unselected & " })
+    String GenericDeleteSelectedToolbarAction_updateName_object_keep_unselected();
+
+    @Default(lngs = { "en" }, values = { "Pastebin" })
+    String pastbin();
+
+    @Default(lngs = { "en" }, values = { "Do you really want to perform this clean up action: \r\n%s1?" })
+    String GenericResetLinkgrabberRlyDialog_GenericResetLinkgrabberRlyDialog_sure_(String string);
+
+    @Default(lngs = { "en" }, values = { "Clear filtered Links" })
+    String ResetLinkGrabberOptionDialog_layoutDialogContent_filtered();
+
+    @Default(lngs = { "en" }, values = { "Tasks to do:" })
+    String GenericResetLinkgrabberRlyDialog_layoutDialogContent_todo_();
+
+    @Default(lngs = { "en" }, values = { "Continue" })
+    String lit_continue();
 
 }

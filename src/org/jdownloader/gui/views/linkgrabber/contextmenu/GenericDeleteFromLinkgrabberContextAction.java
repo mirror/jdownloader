@@ -7,6 +7,7 @@ import org.jdownloader.controlling.contextmenu.TableContext;
 import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.linkgrabber.LinkGrabberTable;
 import org.jdownloader.gui.views.linkgrabber.bottombar.GenericDeleteFromLinkgrabberAction;
+import org.jdownloader.gui.views.linkgrabber.bottombar.IncludedSelectionSetup;
 
 public class GenericDeleteFromLinkgrabberContextAction extends GenericDeleteFromLinkgrabberAction {
     private TableContext tableContext;
@@ -17,9 +18,13 @@ public class GenericDeleteFromLinkgrabberContextAction extends GenericDeleteFrom
 
     }
 
-    @Override
-    protected void updateListeners() {
+    protected void initIncludeSelectionSupport() {
+        addContextSetup(includedSelection = new IncludedSelectionSetup(LinkGrabberTable.getInstance(), this, this) {
+            @Override
+            public void updateListeners() {
 
+            }
+        });
     }
 
     @Override
@@ -39,7 +44,7 @@ public class GenericDeleteFromLinkgrabberContextAction extends GenericDeleteFrom
                     }
 
                 } else {
-                    switch (getSelectionType()) {
+                    switch (includedSelection.getSelectionType()) {
                     case SELECTED:
                         if (tableContext.isItemVisibleForEmptySelection()) {
                             setVisible(true);
@@ -74,8 +79,8 @@ public class GenericDeleteFromLinkgrabberContextAction extends GenericDeleteFrom
 
     @Override
     protected void initContextDefaults() {
-        setIncludeSelectedLinks(true);
-        setIncludeUnselectedLinks(false);
+        includedSelection.setIncludeSelectedLinks(true);
+        includedSelection.setIncludeUnselectedLinks(false);
     }
 
 }

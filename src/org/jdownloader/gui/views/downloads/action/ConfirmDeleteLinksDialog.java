@@ -33,7 +33,7 @@ public class ConfirmDeleteLinksDialog extends ConfirmDialog {
 
     @Override
     public String getDontShowAgainKey() {
-        return "ConfirmDeleteLinksDialog";
+        return null;
     }
 
     public ConfirmDeleteLinksDialog show() {

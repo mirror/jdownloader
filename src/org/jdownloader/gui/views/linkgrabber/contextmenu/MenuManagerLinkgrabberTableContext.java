@@ -26,11 +26,12 @@ import org.jdownloader.gui.views.components.packagetable.context.SetCommentActio
 import org.jdownloader.gui.views.components.packagetable.context.SetDownloadPassword;
 import org.jdownloader.gui.views.components.packagetable.context.URLEditorAction;
 import org.jdownloader.gui.views.downloads.action.MenuManagerAction;
+import org.jdownloader.gui.views.downloads.context.submenu.DeleteMenuContainer;
 import org.jdownloader.gui.views.downloads.context.submenu.PriorityMenuContainer;
 import org.jdownloader.gui.views.linkgrabber.LinkGrabberPanel;
 import org.jdownloader.gui.views.linkgrabber.LinkGrabberTable;
 import org.jdownloader.gui.views.linkgrabber.LinkGrabberTableModel;
-import org.jdownloader.gui.views.linkgrabber.actions.ResetAction;
+import org.jdownloader.gui.views.linkgrabber.bottombar.IncludedSelectionSetup;
 
 public class MenuManagerLinkgrabberTableContext extends ContextMenuManager<CrawledPackage, CrawledLink> {
 
@@ -101,11 +102,7 @@ public class MenuManagerLinkgrabberTableContext extends ContextMenuManager<Crawl
         mr.add(new SeperatorData());
         /* remove menu */
 
-        ActionData ad = new ActionData(GenericDeleteFromLinkgrabberContextAction.class);
-        ad.putSetup(GenericDeleteFromLinkgrabberContextAction.DELETE_ALL, true);
-        ad.putSetup(GenericDeleteFromLinkgrabberContextAction.ONLY_SELECTED_ITEMS, true);
-        ad.putSetup(TableContext.ITEM_VISIBLE_FOR_EMPTY_SELECTION, false);
-        mr.add(setShortcut(new MenuItemData(setIconKey(ad, IconKey.ICON_DELETE)), CrossSystem.getDeleteShortcut()));
+        mr.add(setAccelerator(new MenuItemData(setName(setIconKey(new ActionData(GenericDeleteFromLinkgrabberContextAction.class).putSetup(GenericDeleteFromLinkgrabberContextAction.DELETE_ALL, true), IconKey.ICON_DELETE), _GUI._.DeleteQuickAction_DeleteQuickAction_object_())), CrossSystem.getDeleteShortcut()));
 
         mr.add(createCleanupMenu());
         mr.add(new SeperatorData());
@@ -121,19 +118,17 @@ public class MenuManagerLinkgrabberTableContext extends ContextMenuManager<Crawl
         return menuItemData;
     }
 
-    private LinkgrabberCleanUpSubMenu createCleanupMenu() {
-        LinkgrabberCleanUpSubMenu cleanup = new LinkgrabberCleanUpSubMenu();
+    private DeleteMenuContainer createCleanupMenu() {
 
-        cleanup.add((new MenuItemData(setIconKey(new ActionData(GenericDeleteFromLinkgrabberContextAction.class).putSetup(GenericDeleteFromLinkgrabberContextAction.DELETE_ALL, true).putSetup(TableContext.ITEM_VISIBLE_FOR_EMPTY_SELECTION, true).putSetup(GenericDeleteFromLinkgrabberContextAction.ONLY_SELECTED_ITEMS, false), IconKey.ICON_RESET))));
+        DeleteMenuContainer cleanup = new DeleteMenuContainer();
+        cleanup.add((new MenuItemData(setIconKey(new ActionData(GenericDeleteFromLinkgrabberContextAction.class).putSetup(GenericDeleteFromLinkgrabberContextAction.DELETE_ALL, true).putSetup(TableContext.ITEM_VISIBLE_FOR_EMPTY_SELECTION, true).putSetup(IncludedSelectionSetup.INCLUDE_SELECTED_LINKS, true).putSetup(IncludedSelectionSetup.INCLUDE_UNSELECTED_LINKS, true), IconKey.ICON_RESET))));
         cleanup.add((new MenuItemData(setIconKey(new ActionData(GenericDeleteFromLinkgrabberContextAction.class).putSetup(GenericDeleteFromLinkgrabberContextAction.DELETE_DISABLED, true), IconKey.ICON_REMOVE_DISABLED))));
 
         cleanup.add((new MenuItemData(setIconKey(new ActionData(GenericDeleteFromLinkgrabberContextAction.class).putSetup(GenericDeleteFromLinkgrabberContextAction.DELETE_OFFLINE, true), IconKey.ICON_REMOVE_OFFLINE))));
 
-        cleanup.add(setIconKey(new ActionData(GenericDeleteFromLinkgrabberContextAction.class).putSetup(GenericDeleteFromLinkgrabberContextAction.DELETE_ALL, true).putSetup(GenericDeleteFromLinkgrabberContextAction.INCLUDE_UNSELECTED_LINKS, true).putSetup(GenericDeleteFromLinkgrabberContextAction.INCLUDE_SELECTED_LINKS, false), IconKey.ICON_OK));
+        cleanup.add(setIconKey(new ActionData(GenericDeleteFromLinkgrabberContextAction.class).putSetup(GenericDeleteFromLinkgrabberContextAction.DELETE_ALL, true).putSetup(IncludedSelectionSetup.INCLUDE_UNSELECTED_LINKS, true).putSetup(IncludedSelectionSetup.INCLUDE_SELECTED_LINKS, false), IconKey.ICON_OK));
 
         cleanup.add(RemoveIncompleteArchives.class);
-        cleanup.add(new SeperatorData());
-        cleanup.add(setName(new ActionData(ResetAction.class), _GUI._.ResetPopupAction_ResetPopupAction_()));
 
         return cleanup;
     }

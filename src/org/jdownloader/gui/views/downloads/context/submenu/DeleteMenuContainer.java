@@ -5,8 +5,8 @@ import org.jdownloader.gui.translate._GUI;
 
 public class DeleteMenuContainer extends MenuContainer {
     public DeleteMenuContainer() {
-        setName(_GUI._.DeleteMenuContainer_DeleteMenuContainer_delete_());
-        setIconKey("delete");
+        setName(_GUI._.DeleteMenuContainer_DeleteMenuContainer_delete_2());
+        setIconKey("clear");
 
     }
 }

@@ -53,6 +53,7 @@ import org.jdownloader.controlling.contextmenu.MenuContainer;
 import org.jdownloader.controlling.contextmenu.MenuItemData;
 import org.jdownloader.controlling.contextmenu.MenuLink;
 import org.jdownloader.controlling.contextmenu.SeperatorData;
+import org.jdownloader.gui.KeyObserver;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.components.packagetable.PackageControllerTable;
@@ -259,7 +260,7 @@ public class LinkGrabberTable extends PackageControllerTable<CrawledPackage, Cra
 
     @Override
     protected boolean onShortcutDelete(final java.util.List<AbstractNode> selectedObjects, final KeyEvent evt, final boolean direct) {
-        if (evt.isAltDown() || evt.isMetaDown() || evt.isAltGraphDown() || evt.isShiftDown() || evt.isControlDown()) return false;
+
         final List<CrawledLink> nodesToDelete = new ArrayList<CrawledLink>();
         boolean containsOnline = false;
         for (final CrawledLink dl : getSelectionInfo().getChildren()) {
@@ -274,7 +275,7 @@ public class LinkGrabberTable extends PackageControllerTable<CrawledPackage, Cra
             }
 
         }
-        LinkCollector.requestDeleteLinks(nodesToDelete, containsOnline, _GUI._.GenericDeleteSelectedToolbarAction_updateName_object_selected_all());
+        LinkCollector.requestDeleteLinks(nodesToDelete, containsOnline, _GUI._.GenericDeleteSelectedToolbarAction_updateName_object_selected_all(), KeyObserver.getInstance().isControlDown(false), false, false, false, false, false);
         return true;
     }
 
@@ -391,48 +392,62 @@ public class LinkGrabberTable extends PackageControllerTable<CrawledPackage, Cra
                             action.setAccelerator(keystroke);
                         }
                     }
-
-                    if (action != null && (keystroke = (KeyStroke) action.getValue(Action.ACCELERATOR_KEY)) != null) {
-                        String key = "CONTEXT_ACTION_" + keystroke;
-                        try {
-                            Object old = input.get(keystroke);
-                            if (old != null && action.getClass() != actions.get(old).getClass()) {
-                                logger.warning("Duplicate Shortcuts: " + action + " overwrites " + actions.get(old) + "(" + old + ")" + " for keystroke " + keystroke);
+                    keystroke = (KeyStroke) action.getValue(Action.ACCELERATOR_KEY);
+                    linkAction(input, input2, input3, actions, action, keystroke);
+                    if (action instanceof CustomizableAppAction) {
+                        List<KeyStroke> moreShortCuts = ((CustomizableAppAction) action).getAdditionalShortcuts(keystroke);
+                        if (moreShortCuts != null) {
+                            for (KeyStroke ks : moreShortCuts) {
+                                if (ks != null) {
+                                    linkAction(input, input2, input3, actions, action, ks);
+                                }
                             }
-                        } catch (Exception e) {
-                            logger.log(e);
                         }
-                        try {
-                            Object old = input2.get(keystroke);
-                            if (old != null && action.getClass() != actions.get(old).getClass()) {
-                                logger.warning("Duplicate Shortcuts: " + action + " overwrites " + actions.get(old) + "(" + old + ")" + " for keystroke " + keystroke);
-                            }
-                        } catch (Exception e) {
-                            logger.log(e);
-                        }
-                        try {
-                            Object old = input3.get(keystroke);
-                            if (old != null && action.getClass() != actions.get(old).getClass()) {
-                                logger.warning("Duplicate Shortcuts: " + action + " overwrites " + actions.get(old) + "(" + old + ")" + " for keystroke " + keystroke);
-                            }
-                        } catch (Exception e) {
-                            logger.log(e);
-                        }
-
-                        logger.info(keystroke + " -> " + action);
-
-                        input.put(keystroke, key);
-                        input2.put(keystroke, key);
-                        input3.put(keystroke, key);
-                        actions.put(key, action);
-                        shortCutActions.put(keystroke, action);
-
                     }
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
 
             }
+        }
+    }
+
+    protected void linkAction(final InputMap input, final InputMap input2, final InputMap input3, final ActionMap actions, AppAction action, KeyStroke keystroke) {
+        if (action != null && keystroke != null) {
+            String key = "CONTEXT_ACTION_" + keystroke;
+            try {
+                Object old = input.get(keystroke);
+                if (old != null && action.getClass() != actions.get(old).getClass()) {
+                    logger.warning("Duplicate Shortcuts: " + action + " overwrites " + actions.get(old) + "(" + old + ")" + " for keystroke " + keystroke);
+                }
+            } catch (Exception e) {
+                logger.log(e);
+            }
+            try {
+                Object old = input2.get(keystroke);
+                if (old != null && action.getClass() != actions.get(old).getClass()) {
+                    logger.warning("Duplicate Shortcuts: " + action + " overwrites " + actions.get(old) + "(" + old + ")" + " for keystroke " + keystroke);
+                }
+            } catch (Exception e) {
+                logger.log(e);
+            }
+            try {
+                Object old = input3.get(keystroke);
+                if (old != null && action.getClass() != actions.get(old).getClass()) {
+                    logger.warning("Duplicate Shortcuts: " + action + " overwrites " + actions.get(old) + "(" + old + ")" + " for keystroke " + keystroke);
+                }
+            } catch (Exception e) {
+                logger.log(e);
+            }
+
+            logger.info(keystroke + " -> " + action);
+
+            input.put(keystroke, key);
+            input2.put(keystroke, key);
+            input3.put(keystroke, key);
+            actions.put(key, action);
+            shortCutActions.put(keystroke, action);
+
         }
     }
 

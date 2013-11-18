@@ -289,6 +289,20 @@ public class InfoPanel extends MigPanel implements ActionListener, Scrollable {
         return new JLabel(infoPanel_InfoPanel_hideIfDisabled);
     }
 
+    private class Entry {
+
+        private MenuItemData  mid;
+        private ActionContext so;
+        private GetterSetter  gs;
+
+        public Entry(MenuItemData mid, ActionContext so, GetterSetter gs) {
+            this.mid = mid;
+            this.so = so;
+            this.gs = gs;
+        }
+
+    }
+
     /**
      * @param lastPathComponent
      */
@@ -340,31 +354,41 @@ public class InfoPanel extends MigPanel implements ActionListener, Scrollable {
                 action = mid.createAction();
                 List<ActionContext> sos = action.getSetupObjects();
                 if (sos != null) {
+                    ArrayList<Entry> lst = new ArrayList<Entry>();
                     for (ActionContext so : sos) {
-                        System.out.println(so);
+
                         ArrayList<GetterSetter> gss = new ArrayList<GetterSetter>(ReflectionUtils.getGettersSetteres(so.getClass()));
-                        Collections.sort(gss, new Comparator<GetterSetter>() {
-
-                            @Override
-                            public int compare(GetterSetter o1, GetterSetter o2) {
-
-                                String lbl1 = o1.getKey();
-                                String lbl2 = o2.getKey();
-                                Customizer oc1 = o1.getAnnotation(Customizer.class);
-                                Customizer oc2 = o2.getAnnotation(Customizer.class);
-                                if (oc1 != null) lbl1 = oc1.name();
-                                if (oc2 != null) lbl2 = oc2.name();
-                                return lbl1.compareTo(lbl2);
-                            }
-                        });
                         for (GetterSetter gs : gss) {
 
                             if (gs.hasGetter() && gs.hasSetter()) {
                                 if (gs.hasAnnotation(Customizer.class)) {
-                                    customPanel.add(mid.getActionData(), action, so, gs);
+                                    lst.add(new Entry(mid, so, gs));
+
                                 }
                             }
                         }
+                    }
+                    Collections.sort(lst, new Comparator<Entry>() {
+
+                        @Override
+                        public int compare(Entry o1, Entry o2) {
+                            try {
+                                String lbl1 = o1.gs.getKey();
+                                String lbl2 = o2.gs.getKey();
+                                Customizer oc1 = o1.gs.getAnnotation(Customizer.class);
+                                Customizer oc2 = o2.gs.getAnnotation(Customizer.class);
+                                if (oc1 != null) lbl1 = oc1.name();
+                                if (oc2 != null) lbl2 = oc2.name();
+
+                                return lbl1.compareToIgnoreCase(lbl2);
+                            } catch (Throwable e) {
+                                e.printStackTrace();
+                                return 0;
+                            }
+                        }
+                    });
+                    for (Entry e : lst) {
+                        customPanel.add(e.mid.getActionData(), action, e.so, e.gs);
                     }
                 }
             }

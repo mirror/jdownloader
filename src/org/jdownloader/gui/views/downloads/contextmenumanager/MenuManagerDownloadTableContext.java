@@ -44,6 +44,7 @@ import org.jdownloader.gui.views.downloads.context.submenu.PriorityMenuContainer
 import org.jdownloader.gui.views.downloads.context.submenu.SettingsMenuContainer;
 import org.jdownloader.gui.views.downloads.table.DownloadsTable;
 import org.jdownloader.gui.views.downloads.table.DownloadsTableModel;
+import org.jdownloader.gui.views.linkgrabber.bottombar.IncludedSelectionSetup;
 import org.jdownloader.gui.views.linkgrabber.contextmenu.AddContainerContextMenuAction;
 import org.jdownloader.gui.views.linkgrabber.contextmenu.AddLinksContextMenuAction;
 import org.jdownloader.gui.views.linkgrabber.contextmenu.SortAction;
@@ -118,6 +119,7 @@ public class MenuManagerDownloadTableContext extends ContextMenuManager<FilePack
         delete.add(setIconKey(new ActionData(GenericDeleteFromDownloadlistContextAction.class).putSetup(GenericDeleteFromDownloadlistAction.DELETE_FAILED, true), IconKey.ICON_REMOVE_FAILED));
         delete.add(setIconKey(new ActionData(GenericDeleteFromDownloadlistContextAction.class).putSetup(GenericDeleteFromDownloadlistAction.DELETE_FINISHED, true), IconKey.ICON_REMOVE_OK));
         delete.add(setIconKey(new ActionData(GenericDeleteFromDownloadlistContextAction.class).putSetup(GenericDeleteFromDownloadlistAction.DELETE_OFFLINE, true), IconKey.ICON_REMOVE_OFFLINE));
+        delete.add(setIconKey(new ActionData(GenericDeleteFromDownloadlistContextAction.class).putSetup(GenericDeleteFromDownloadlistContextAction.DELETE_ALL, true).putSetup(IncludedSelectionSetup.INCLUDE_UNSELECTED_LINKS, true).putSetup(IncludedSelectionSetup.INCLUDE_SELECTED_LINKS, false), IconKey.ICON_OK));
 
         return delete;
     }

@@ -27,7 +27,7 @@ import org.jdownloader.controlling.contextmenu.Customizer;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.components.PseudoCombo;
-import org.jdownloader.gui.views.downloads.action.GenericDeleteFromDownloadlistAction;
+import org.jdownloader.gui.views.downloads.action.ByPassDialogSetup;
 import org.jdownloader.gui.views.downloads.action.Modifier;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
@@ -70,12 +70,14 @@ public class CustomPanel extends MigPanel {
                     @Override
                     public void actionPerformed(ActionEvent e) {
                         actionData.putSetup(gs.getKey(), jb.isSelected());
-                        action.requestUpdate(null);
+                        if (action instanceof CustomizableAppAction) {
+                            ((CustomizableAppAction) action).loadContextSetups();
+                        }
                         managerFrame.repaint();
 
                     }
                 });
-                if (gs.getKey().equals("BypassDialog") && gs.getGetter().getDeclaringClass() == GenericDeleteFromDownloadlistAction.class && CFG_GUI.CFG.isBypassAllRlyDeleteDialogsEnabled()) {
+                if (gs.getKey().equals("BypassDialog") && gs.getGetter().getDeclaringClass().isAssignableFrom(ByPassDialogSetup.class) && CFG_GUI.CFG.isBypassAllRlyDeleteDialogsEnabled()) {
                     jb.setSelected(true);
                     jb.setEnabled(false);
                     lbl.setEnabled(false);
@@ -121,6 +123,9 @@ public class CustomPanel extends MigPanel {
                             shortcut.setText("");
                             actionData.putSetup(gs.getKey(), null);
                         }
+                        if (action instanceof CustomizableAppAction) {
+                            ((CustomizableAppAction) action).loadContextSetups();
+                        }
 
                         managerFrame.repaint();
                     }
@@ -164,7 +169,9 @@ public class CustomPanel extends MigPanel {
 
                     public void onChanged(Object newValue) {
                         actionData.putSetup(gs.getKey(), getSelectedItem().toString());
-                        action.requestUpdate(null);
+                        if (action instanceof CustomizableAppAction) {
+                            ((CustomizableAppAction) action).loadContextSetups();
+                        }
                         managerFrame.repaint();
                     };
 
@@ -228,7 +235,9 @@ public class CustomPanel extends MigPanel {
                     @Override
                     public void onChanged() {
                         actionData.putSetup(gs.getKey(), getText());
-                        action.requestUpdate(null);
+                        if (action instanceof CustomizableAppAction) {
+                            ((CustomizableAppAction) action).loadContextSetups();
+                        }
                         managerFrame.repaint();
                     }
 

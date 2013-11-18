@@ -17,6 +17,7 @@ public class ArchiveValidator {
     private static WeakHashMap<SelectionInfo, Object>                VALIDATIONLOCKS = new WeakHashMap<SelectionInfo, Object>();
 
     public static ValidateArchiveAction<FilePackage, DownloadLink> validate(SelectionInfo<?, ?> selection) {
+        if (EXTENSION == null) return null;
         Object lock = null;
         ValidateArchiveAction validation = null;
         synchronized (VALIDATIONCACHE) {

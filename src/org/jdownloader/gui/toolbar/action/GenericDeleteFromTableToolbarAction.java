@@ -40,6 +40,7 @@ import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.components.packagetable.PackageControllerTable;
 import org.jdownloader.gui.views.downloads.DownloadsView;
+import org.jdownloader.gui.views.downloads.action.ByPassDialogSetup;
 import org.jdownloader.gui.views.downloads.action.DownloadTabActionUtils;
 import org.jdownloader.gui.views.downloads.action.Modifier;
 import org.jdownloader.gui.views.downloads.table.DownloadsTable;
@@ -52,42 +53,28 @@ import org.jdownloader.settings.GraphicalUserInterfaceSettings.DeleteFileOptions
 
 public class GenericDeleteFromTableToolbarAction extends AbstractToolBarAction implements ExtTableListener, DownloadControllerListener, GUIListener, LinkCollectorListener, ActionContext {
 
-    public static final String DELETE_ALL       = "deleteAll";
-    public static final String DELETE_DISABLED  = "deleteDisabled";
-    public static final String DELETE_FAILED    = "deleteFailed";
-    public static final String DELETE_FINISHED  = "deleteFinished";
-    public static final String DELETE_OFFLINE   = "deleteOffline";
+    public static final String           DELETE_ALL        = "deleteAll";
+    public static final String           DELETE_DISABLED   = "deleteDisabled";
+    public static final String           DELETE_FAILED     = "deleteFailed";
+    public static final String           DELETE_FINISHED   = "deleteFinished";
+    public static final String           DELETE_OFFLINE    = "deleteOffline";
     /**
      * 
      */
-    private static final long  serialVersionUID = 1L;
+    private static final long            serialVersionUID  = 1L;
 
-    private DelayedRunnable    delayer;
-    private boolean            deleteAll        = false;
+    private DelayedRunnable              delayer;
+    private boolean                      deleteAll         = false;
 
-    private boolean            deleteDisabled   = false;
+    private boolean                      deleteDisabled    = false;
 
-    private boolean            deleteFailed     = false;
+    private boolean                      deleteFailed      = false;
 
-    private boolean            deleteFinished   = false;
+    private boolean                      deleteFinished    = false;
 
-    private boolean            deleteOffline    = false;
+    private boolean                      deleteOffline     = false;
 
-    private boolean            ignoreFiltered   = true;
-    private boolean            bypassDialog     = false;
-
-    @Customizer(name = "Bypass the 'Really?' Dialog")
-    public boolean isBypassDialog() {
-        Modifier byPassDialog = getByPassDialogToggleModifier();
-
-        if (byPassDialog != null && KeyObserver.getInstance().isModifierPressed(byPassDialog.getModifier(), false)) { return !bypassDialog; }
-
-        return bypassDialog;
-    }
-
-    public void setBypassDialog(boolean bypassDialog) {
-        this.bypassDialog = bypassDialog;
-    }
+    private boolean                      ignoreFiltered    = true;
 
     private CrawledLink                  lastCrawledLink;
     private DownloadLink                 lastDownloadLink;
@@ -95,10 +82,11 @@ public class GenericDeleteFromTableToolbarAction extends AbstractToolBarAction i
     private boolean                      onlySelectedItems = false;
     private SelectionInfo<?, ?>          selection;
     private PackageControllerTable<?, ?> table;
+    private ByPassDialogSetup            byPass;
 
     public GenericDeleteFromTableToolbarAction() {
         super();
-
+        addContextSetup(byPass = new ByPassDialogSetup());
         setIconKey(IconKey.ICON_DELETE);
         delayer = new DelayedRunnable(500, 1500) {
 
@@ -113,17 +101,7 @@ public class GenericDeleteFromTableToolbarAction extends AbstractToolBarAction i
 
     }
 
-    private Modifier byPassDialogToggleModifier = null;
-    private Modifier deleteFilesToggleModifier  = null;
-
-    @Customizer(name = "Key Modifier to toggle 'Bypass Rly? Dialog'")
-    public Modifier getByPassDialogToggleModifier() {
-        return byPassDialogToggleModifier;
-    }
-
-    public void setByPassDialogToggleModifier(Modifier byPassDialogToggleModifier) {
-        this.byPassDialogToggleModifier = byPassDialogToggleModifier;
-    }
+    private Modifier deleteFilesToggleModifier = null;
 
     @Customizer(name = "Key Modifier to toggle 'Delete Files'")
     public Modifier getDeleteFilesToggleModifier() {
@@ -138,7 +116,7 @@ public class GenericDeleteFromTableToolbarAction extends AbstractToolBarAction i
         if (keystroke == null) return null;
 
         ArrayList<KeyStroke> ret = new ArrayList<KeyStroke>();
-        Modifier mod = getByPassDialogToggleModifier();
+        Modifier mod = byPass.getByPassDialogToggleModifier();
         if (mod != null) {
             ret.add(KeyStroke.getKeyStroke(keystroke.getKeyCode(), keystroke.getModifiers() | mod.getModifier()));
         }
@@ -189,7 +167,7 @@ public class GenericDeleteFromTableToolbarAction extends AbstractToolBarAction i
                 final SelectionInfo<FilePackage, DownloadLink> si = new SelectionInfo<FilePackage, DownloadLink>(null, nodesToDelete, null, null, e, (DownloadsTable) table);
                 if (si.getChildren().size() > 0) {
 
-                    DownloadTabActionUtils.deleteLinksRequest(si, _GUI._.GenericDeleteFromDownloadlistAction_actionPerformed_ask_(createName()), getDeleteMode(), isBypassDialog());
+                    DownloadTabActionUtils.deleteLinksRequest(si, _GUI._.GenericDeleteFromDownloadlistAction_actionPerformed_ask_(createName()), getDeleteMode(), byPass.isBypassDialog());
                     return;
                 }
             }
@@ -213,7 +191,7 @@ public class GenericDeleteFromTableToolbarAction extends AbstractToolBarAction i
                     }
                 }
             }
-            LinkCollector.requestDeleteLinks(nodesToDelete, containsOnline, createName());
+            LinkCollector.requestDeleteLinks(nodesToDelete, containsOnline, createName(), byPass.isBypassDialog(), false, false, false, false, false);
         }
     }
 

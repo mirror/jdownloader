@@ -45,6 +45,7 @@ public class DownloadTabActionUtils {
 
                         switch (dialog.getMode()) {
                         case REMOVE_LINKS_ONLY:
+
                             DownloadController.getInstance().removeChildren(si.getChildren());
                             break;
                         case REMOVE_LINKS_AND_DELETE_FILES:

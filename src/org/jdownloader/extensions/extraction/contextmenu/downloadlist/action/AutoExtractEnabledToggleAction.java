@@ -2,7 +2,6 @@ package org.jdownloader.extensions.extraction.contextmenu.downloadlist.action;
 
 import java.awt.event.ActionEvent;
 
-import org.appwork.utils.Application;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.jdownloader.extensions.extraction.Archive;
 import org.jdownloader.extensions.extraction.BooleanStatus;
@@ -33,13 +32,6 @@ public class AutoExtractEnabledToggleAction extends AbstractExtractionContextAct
         super.onAsyncInitDone();
         if (archives != null && archives.size() > 0) setSelected(_getExtension().isAutoExtractEnabled(archives.get(0)));
 
-        if (!Application.isJared(ExtractArchiveNowAction.class) && archives != null) {
-            StringBuilder sb = new StringBuilder();
-            for (Archive a : archives) {
-                sb.append(a.getFactory().getID() + ", ");
-            }
-            setName(getName() + " Debug ID: " + sb);
-        }
     }
 
     public void actionPerformed(ActionEvent e) {

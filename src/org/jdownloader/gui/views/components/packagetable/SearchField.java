@@ -63,6 +63,10 @@ public class SearchField<SearchCat extends SearchCatInterface, PackageType exten
     private boolean                                        mouseoverClose   = false;
     private boolean                                        closeEnabled     = false;
 
+    public boolean isEmpty() {
+        return filterPatterns == null || filterPatterns.size() == 0;
+    }
+
     public SearchField(final PackageControllerTable<PackageType, ChildType> table2Filter, SearchCat defCategory) {
         super();
         this.table2Filter = table2Filter;

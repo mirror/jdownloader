@@ -60,14 +60,13 @@ public class MenuManagerLinkgrabberTabBottombar extends AbstractBottomBarMenuMan
         //
         //
 
-        mr.add(setName(setIconKey(new ActionData(GenericDeleteFromLinkgrabberAction.class).putSetup(GenericDeleteFromLinkgrabberAction.DELETE_ALL, true).putSetup(GenericDeleteFromLinkgrabberAction.INCLUDE_UNSELECTED_LINKS, true).putSetup(GenericDeleteFromLinkgrabberAction.INCLUDE_SELECTED_LINKS, true).putSetup(GenericDeleteFromLinkgrabberAction.FULL_LINK_COLLECTOR_RESET, true).putSetup(GenericDeleteFromLinkgrabberAction.CLEAR_SEARCH_FILTER, true).putSetup(GenericDeleteFromLinkgrabberAction.RESET_TABLE_SORTER, true), IconKey.ICON_RESET), null));
+        mr.add(setName(setIconKey(new ActionData(GenericDeleteFromLinkgrabberAction.class).putSetup(GenericDeleteFromLinkgrabberAction.DELETE_ALL, true).putSetup(IncludedSelectionSetup.INCLUDE_UNSELECTED_LINKS, true).putSetup(IncludedSelectionSetup.INCLUDE_SELECTED_LINKS, true).putSetup(GenericDeleteFromLinkgrabberAction.FULL_LINK_COLLECTOR_RESET, true).putSetup(GenericDeleteFromLinkgrabberAction.CLEAR_SEARCH_FILTER, true).putSetup(GenericDeleteFromLinkgrabberAction.RESET_TABLE_SORTER, true), IconKey.ICON_RESET), null));
 
         DeleteContainer delete = new DeleteContainer();
 
-        delete.add(setIconKey(new ActionData(GenericDeleteFromLinkgrabberAction.class).putSetup(GenericDeleteFromLinkgrabberAction.DELETE_DISABLED, true).putSetup(GenericDeleteFromLinkgrabberAction.INCLUDE_UNSELECTED_LINKS, true).putSetup(GenericDeleteFromLinkgrabberAction.INCLUDE_SELECTED_LINKS, true), IconKey.ICON_REMOVE_DISABLED));
+        delete.add(setIconKey(new ActionData(GenericDeleteFromLinkgrabberAction.class).putSetup(GenericDeleteFromLinkgrabberAction.DELETE_DISABLED, true).putSetup(IncludedSelectionSetup.INCLUDE_UNSELECTED_LINKS, true).putSetup(IncludedSelectionSetup.INCLUDE_SELECTED_LINKS, true), IconKey.ICON_REMOVE_DISABLED));
 
-        delete.add(setIconKey(new ActionData(GenericDeleteFromLinkgrabberAction.class).putSetup(GenericDeleteFromLinkgrabberAction.DELETE_OFFLINE, true).putSetup(GenericDeleteFromLinkgrabberAction.INCLUDE_UNSELECTED_LINKS, true).putSetup(GenericDeleteFromLinkgrabberAction.INCLUDE_SELECTED_LINKS, true), IconKey.ICON_REMOVE_OFFLINE));
-        delete.add(setIconKey(new ActionData(GenericDeleteFromLinkgrabberAction.class).putSetup(GenericDeleteFromLinkgrabberAction.DELETE_ALL, true).putSetup(GenericDeleteFromLinkgrabberAction.INCLUDE_UNSELECTED_LINKS, true).putSetup(GenericDeleteFromLinkgrabberAction.INCLUDE_SELECTED_LINKS, false), IconKey.ICON_OK));
+        delete.add(setIconKey(new ActionData(GenericDeleteFromLinkgrabberAction.class).putSetup(GenericDeleteFromLinkgrabberAction.DELETE_OFFLINE, true).putSetup(IncludedSelectionSetup.INCLUDE_UNSELECTED_LINKS, true).putSetup(IncludedSelectionSetup.INCLUDE_SELECTED_LINKS, true), IconKey.ICON_REMOVE_OFFLINE));
 
         delete.add(new SeperatorData());
         delete.add(new ActionData(RemoveIncompleteArchives.class).putSetup(TableContext.ITEM_VISIBLE_FOR_EMPTY_SELECTION, true));

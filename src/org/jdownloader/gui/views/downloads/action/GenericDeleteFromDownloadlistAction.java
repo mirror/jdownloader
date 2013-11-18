@@ -30,49 +30,43 @@ import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.KeyObserver;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo;
+import org.jdownloader.gui.views.components.packagetable.PackageControllerTableModelFilter;
 import org.jdownloader.gui.views.downloads.table.DownloadsTable;
 import org.jdownloader.gui.views.downloads.table.DownloadsTableModel;
+import org.jdownloader.gui.views.linkgrabber.bottombar.IncludedSelectionSetup;
 import org.jdownloader.plugins.FinalLinkState;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings.DeleteFileOptions;
 
 public class GenericDeleteFromDownloadlistAction extends CustomizableAppAction implements ExtTableListener, ActionContext, DownloadControllerListener, ExtTableModelListener {
 
-    public static final String DELETE_ALL                 = "deleteAll";
-    public static final String DELETE_DISABLED            = "deleteDisabled";
-    public static final String DELETE_FAILED              = "deleteFailed";
-    public static final String DELETE_FINISHED            = "deleteFinished";
-    public static final String DELETE_OFFLINE             = "deleteOffline";
+    public static final String                         DELETE_ALL                = "deleteAll";
+    public static final String                         DELETE_DISABLED           = "deleteDisabled";
+    public static final String                         DELETE_FAILED             = "deleteFailed";
+    public static final String                         DELETE_FINISHED           = "deleteFinished";
+    public static final String                         DELETE_OFFLINE            = "deleteOffline";
     /**
      * 
      */
-    private static final long  serialVersionUID           = 1L;
+    private static final long                          serialVersionUID          = 1L;
 
-    private DelayedRunnable    delayer;
-    private boolean            deleteAll                  = false;
+    private DelayedRunnable                            delayer;
+    private boolean                                    deleteAll                 = false;
 
-    private boolean            deleteDisabled             = false;
+    private boolean                                    deleteDisabled            = false;
 
-    private boolean            deleteFailed               = false;
+    private boolean                                    deleteFailed              = false;
 
-    private boolean            deleteFinished             = false;
+    private boolean                                    deleteFinished            = false;
 
-    private boolean            deleteOffline              = false;
+    private boolean                                    deleteOffline             = false;
 
-    private boolean            ignoreFiltered             = true;
+    private boolean                                    ignoreFiltered            = true;
 
-    private DownloadLink       lastLink;
-    private boolean            onlySelectedItems          = false;
-    private Modifier           byPassDialogToggleModifier = null;
-    private Modifier           deleteFilesToggleModifier  = null;
+    private DownloadLink                               lastLink;
 
-    @Customizer(name = "Key Modifier to toggle 'Bypass Rly? Dialog'")
-    public Modifier getByPassDialogToggleModifier() {
-        return byPassDialogToggleModifier;
-    }
+    private Modifier                                   deleteFilesToggleModifier = null;
 
-    public void setByPassDialogToggleModifier(Modifier byPassDialogToggleModifier) {
-        this.byPassDialogToggleModifier = byPassDialogToggleModifier;
-    }
+    protected SelectionInfo<FilePackage, DownloadLink> selection;
 
     @Customizer(name = "Key Modifier to toggle 'Delete Files'")
     public Modifier getDeleteFilesToggleModifier() {
@@ -83,20 +77,11 @@ public class GenericDeleteFromDownloadlistAction extends CustomizableAppAction i
         this.deleteFilesToggleModifier = deleteFilesToggleModifier;
     }
 
-    protected SelectionInfo<FilePackage, DownloadLink> selection;
-    private boolean                                    bypassDialog = false;
-
-    @Customizer(name = "Bypass the 'Really?' Dialog")
-    public boolean isBypassDialog() {
-        Modifier byPassDialog = getByPassDialogToggleModifier();
-
-        if (byPassDialog != null && KeyObserver.getInstance().isModifierPressed(byPassDialog.getModifier(), false)) { return !bypassDialog; }
-
-        return bypassDialog;
-    }
-
-    public void setBypassDialog(boolean bypassDialog) {
-        this.bypassDialog = bypassDialog;
+    @Override
+    protected void initContextDefaults() {
+        super.initContextDefaults();
+        includedSelection.setIncludeSelectedLinks(true);
+        includedSelection.setIncludeUnselectedLinks(true);
     }
 
     @Customizer(name = "Delete Mode")
@@ -122,7 +107,9 @@ public class GenericDeleteFromDownloadlistAction extends CustomizableAppAction i
         this.deleteMode = deleteMode;
     }
 
-    private DeleteFileOptions deleteMode;
+    private DeleteFileOptions        deleteMode;
+    private ByPassDialogSetup        byPassDialog;
+    protected IncludedSelectionSetup includedSelection;
 
     @Override
     public void loadContextSetups() {
@@ -139,7 +126,8 @@ public class GenericDeleteFromDownloadlistAction extends CustomizableAppAction i
 
     public GenericDeleteFromDownloadlistAction() {
         super();
-
+        addContextSetup(byPassDialog = new ByPassDialogSetup());
+        initIncludedSelectionSupport();
         setIconKey(IconKey.ICON_DELETE);
         delayer = new DelayedRunnable(500, 1500) {
 
@@ -151,18 +139,44 @@ public class GenericDeleteFromDownloadlistAction extends CustomizableAppAction i
 
     }
 
+    protected void initIncludedSelectionSupport() {
+        addContextSetup(includedSelection = new IncludedSelectionSetup(DownloadsTable.getInstance(), this, this) {
+            @Override
+            public void updateListeners() {
+                super.updateListeners();
+                switch (getSelectionType()) {
+                case ALL:
+                    DownloadController.getInstance().getEventSender().addListener(GenericDeleteFromDownloadlistAction.this, true);
+                    break;
+                case SELECTED:
+                case UNSELECTED:
+                    DownloadController.getInstance().getEventSender().removeListener(GenericDeleteFromDownloadlistAction.this);
+                    break;
+
+                case NONE:
+                    DownloadController.getInstance().getEventSender().removeListener(GenericDeleteFromDownloadlistAction.this);
+                }
+
+            }
+        });
+    }
+
     public List<KeyStroke> getAdditionalShortcuts(KeyStroke keystroke) {
         if (keystroke == null) return null;
 
         ArrayList<KeyStroke> ret = new ArrayList<KeyStroke>();
-        Modifier mod = getByPassDialogToggleModifier();
-        if (mod != null) {
-            ret.add(KeyStroke.getKeyStroke(keystroke.getKeyCode(), keystroke.getModifiers() | mod.getModifier()));
+        Modifier mod1 = byPassDialog.getByPassDialogToggleModifier();
+        if (mod1 != null) {
+            ret.add(KeyStroke.getKeyStroke(keystroke.getKeyCode(), keystroke.getModifiers() | mod1.getModifier()));
         }
 
-        mod = getDeleteFilesToggleModifier();
-        if (mod != null) {
-            ret.add(KeyStroke.getKeyStroke(keystroke.getKeyCode(), keystroke.getModifiers() | mod.getModifier()));
+        Modifier mod2 = getDeleteFilesToggleModifier();
+        if (mod2 != null) {
+            ret.add(KeyStroke.getKeyStroke(keystroke.getKeyCode(), keystroke.getModifiers() | mod2.getModifier()));
+        }
+
+        if (mod2 != null && mod1 != null) {
+            ret.add(KeyStroke.getKeyStroke(keystroke.getKeyCode(), keystroke.getModifiers() | mod2.getModifier() | mod1.getModifier()));
         }
         return ret;
     }
@@ -179,7 +193,7 @@ public class GenericDeleteFromDownloadlistAction extends CustomizableAppAction i
             final SelectionInfo<FilePackage, DownloadLink> si = new SelectionInfo<FilePackage, DownloadLink>(null, nodesToDelete, null, null, e, getTable());
             if (si.getChildren().size() > 0) {
 
-                DownloadTabActionUtils.deleteLinksRequest(si, _GUI._.GenericDeleteFromDownloadlistAction_actionPerformed_ask_(createName()), getDeleteMode(), isBypassDialog());
+                DownloadTabActionUtils.deleteLinksRequest(si, _GUI._.GenericDeleteFromDownloadlistAction_actionPerformed_ask_(createName()), getDeleteMode(), byPassDialog.isBypassDialog());
                 return;
             }
         }
@@ -210,17 +224,34 @@ public class GenericDeleteFromDownloadlistAction extends CustomizableAppAction i
         final StringBuilder sb = new StringBuilder();
 
         if (isDeleteAll()) {
-            if (isOnlySelectedItems()) {
+            switch (includedSelection.getSelectionType()) {
+            case SELECTED:
                 sb.append(_GUI._.GenericDeleteSelectedToolbarAction_updateName_object_selected_all());
-            } else {
+                break;
+
+            case UNSELECTED:
+                sb.append(_GUI._.GenericDeleteSelectedToolbarAction_updateName_object_keep_selected());
+                break;
+            default:
                 sb.append(_GUI._.GenericDeleteSelectedToolbarAction_updateName_object_all());
+
             }
+
         } else {
-            if (isOnlySelectedItems()) {
+
+            switch (includedSelection.getSelectionType()) {
+            case SELECTED:
                 sb.append(_GUI._.GenericDeleteSelectedToolbarAction_updateName_object_selected());
-            } else {
+                break;
+
+            case UNSELECTED:
+                sb.append(_GUI._.GenericDeleteSelectedToolbarAction_updateName_object_keep_unselected());
+                break;
+            default:
                 sb.append(_GUI._.GenericDeleteSelectedToolbarAction_updateName_object());
+
             }
+
             boolean first = true;
 
             if (isDeleteDisabled()) {
@@ -294,11 +325,6 @@ public class GenericDeleteFromDownloadlistAction extends CustomizableAppAction i
         return ignoreFiltered;
     }
 
-    @Customizer(name = "Only Selected Links")
-    public boolean isOnlySelectedItems() {
-        return onlySelectedItems;
-    }
-
     @Override
     public void onDownloadControllerAddedPackage(FilePackage pkg) {
     }
@@ -360,7 +386,7 @@ public class GenericDeleteFromDownloadlistAction extends CustomizableAppAction i
     @Override
     public void requestUpdate(Object requestor) {
         super.requestUpdate(requestor);
-        updateListeners();
+        includedSelection.updateListeners();
         update();
     }
 
@@ -394,42 +420,80 @@ public class GenericDeleteFromDownloadlistAction extends CustomizableAppAction i
 
     }
 
-    public void setOnlySelectedItems(final boolean onlySelectedItems) {
-        GenericDeleteFromDownloadlistAction.this.onlySelectedItems = onlySelectedItems;
-        updateListeners();
-
-    }
-
-    protected void updateListeners() {
-        if (isOnlySelectedItems()) {
-            getTable().getEventSender().addListener(GenericDeleteFromDownloadlistAction.this, true);
-            DownloadController.getInstance().getEventSender().removeListener(GenericDeleteFromDownloadlistAction.this);
-            DownloadsTableModel.getInstance().getEventSender().removeListener(GenericDeleteFromDownloadlistAction.this);
-        } else {
-            getTable().getEventSender().removeListener(GenericDeleteFromDownloadlistAction.this);
-            DownloadController.getInstance().getEventSender().addListener(GenericDeleteFromDownloadlistAction.this, true);
-            DownloadsTableModel.getInstance().getEventSender().addListener(GenericDeleteFromDownloadlistAction.this, true);
-        }
-    }
-
     protected void update() {
         new EDTRunner() {
 
             @Override
             protected void runInEDT() {
-                if (isOnlySelectedItems()) {
-                    selection = (getTable().getSelectionInfo(true, true));
 
-                } else {
-                    if (isIgnoreFiltered()) {
-                        selection = getTable().getSelectionInfo(false, true);
+                switch (includedSelection.getSelectionType()) {
+                case SELECTED:
+                    selection = getTable().getSelectionInfo();
+                    break;
+                case UNSELECTED:
+                    selection = getTable().getSelectionInfo();
 
-                    } else {
+                    setVisible(true);
 
-                        selection = getTable().getSelectionInfo(false, false);
+                    if (lastLink != null && !selection.contains(lastLink)) {
+                        if (checkLink(lastLink)) {
+
+                            setEnabled(true);
+                            return;
+                        }
                     }
 
+                    final List<PackageControllerTableModelFilter<FilePackage, DownloadLink>> filters = DownloadsTableModel.getInstance().getTableFilters();
+
+                    boolean read = DownloadController.getInstance().readLock();
+                    try {
+                        for (FilePackage pkg : DownloadController.getInstance().getPackages()) {
+                            if (selection.getFullPackages().contains(pkg)) {
+                                continue;
+                            }
+                            boolean readL2 = pkg.getModifyLock().readLock();
+                            try {
+                                childs: for (DownloadLink child : pkg.getChildren()) {
+                                    if (selection.contains(child)) {
+                                        continue;
+                                    }
+                                    if (isIgnoreFiltered()) {
+
+                                        for (PackageControllerTableModelFilter<FilePackage, DownloadLink> filter : filters) {
+                                            if (filter.isFiltered((DownloadLink) child)) {
+                                                continue childs;
+                                            }
+                                        }
+                                    }
+                                    if (checkLink(child)) {
+                                        setEnabled(true);
+                                        lastLink = child;
+                                        return;
+                                    }
+                                }
+                            } finally {
+                                pkg.getModifyLock().readUnlock(readL2);
+                            }
+                        }
+                    } finally {
+                        DownloadController.getInstance().readUnlock(read);
+                    }
+
+                    setEnabled(false);
+
+                    return;
+
+                default:
+                    if (isIgnoreFiltered()) {
+
+                        selection = getTable().getSelectionInfo(false, false);
+                    } else {
+                        selection = getTable().getSelectionInfo(false, true);
+
+                    }
+                    break;
                 }
+
                 // we remember the last link and try it first
                 if (lastLink != null && selection.contains(lastLink)) {
                     if (checkLink(lastLink)) {
