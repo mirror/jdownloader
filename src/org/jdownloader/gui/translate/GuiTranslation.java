@@ -3712,4 +3712,7 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Continue" })
     String lit_continue();
 
+    @Default(lngs = { "en" }, values = { "An Error occured! " })
+    String FilePackageView_addLinkToTemp_downloaderror_();
+
 }

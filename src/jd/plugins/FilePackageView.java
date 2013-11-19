@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
 
 import javax.swing.Icon;
+import javax.swing.ImageIcon;
 
 import jd.controlling.downloadcontroller.DownloadWatchDog;
 import jd.controlling.downloadcontroller.SingleDownloadController;
@@ -15,12 +16,16 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.download.DownloadInterface;
 
 import org.appwork.storage.config.JsonConfig;
+import org.appwork.swing.components.ExtMergedIcon;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.DomainInfo;
 import org.jdownloader.controlling.Priority;
+import org.jdownloader.extensions.extraction.ExtractionStatus;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.downloads.columns.AvailabilityColumn;
+import org.jdownloader.images.NewTheme;
 import org.jdownloader.plugins.ConditionalSkipReason;
+import org.jdownloader.plugins.FinalLinkState;
 import org.jdownloader.plugins.MirrorLoading;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings;
 
@@ -43,6 +48,8 @@ public class FilePackageView extends ChildrenView<DownloadLink> {
 
     private java.util.List<DownloadLink> items                    = new ArrayList<DownloadLink>();
 
+    private ImageIcon                    falseIcon;
+
     protected static final long          GUIUPDATETIMEOUT         = JsonConfig.create(GraphicalUserInterfaceSettings.class).getDownloadViewRefresh();
 
     public boolean isEnabled() {
@@ -56,6 +63,9 @@ public class FilePackageView extends ChildrenView<DownloadLink> {
      */
     protected FilePackageView(FilePackage fp) {
         this.fp = fp;
+
+        this.falseIcon = NewTheme.I().getIcon("false", 16);
+
     }
 
     private DomainInfo[]          infos = new DomainInfo[0];
@@ -307,12 +317,14 @@ public class FilePackageView extends ChildrenView<DownloadLink> {
             // online
             tmp.newOnline++;
         }
+        String id = null;
+        PluginState ps = null;
         //
         PluginProgress prog = link.getPluginProgress();
         if (prog != null) {
-            String id = prog.getClass().getName() + link.getHost();
+            id = prog.getClass().getName() + link.getHost();
             if (!tmp.pluginStates.containsKey(id)) {
-                PluginState ps = PluginState.create(prog.getMessage(FilePackageView.this) + " (" + link.getDomainInfo().getTld() + ")", new FavitIcon(prog.getIcon(), link.getDomainInfo()));
+                ps = PluginState.create(prog.getMessage(FilePackageView.this) + " (" + link.getDomainInfo().getTld() + ")", new FavitIcon(prog.getIcon(), link.getDomainInfo()));
                 if (ps != null) {
                     tmp.pluginStates.put(id, ps);
                 }
@@ -320,13 +332,78 @@ public class FilePackageView extends ChildrenView<DownloadLink> {
         }
         ConditionalSkipReason conditionalSkipReason = getConditionalSkipReason(link);
         if (conditionalSkipReason != null) {
-            String id = conditionalSkipReason.getClass().getName() + link.getHost();
+            id = conditionalSkipReason.getClass().getName() + link.getHost();
             if (!tmp.pluginStates.containsKey(id)) {
-                PluginState ps = PluginState.create(conditionalSkipReason.getMessage(this, link) + " (" + link.getDomainInfo().getTld() + ")", new FavitIcon(conditionalSkipReason.getIcon(this, link), link.getDomainInfo()));
+                ps = PluginState.create(conditionalSkipReason.getMessage(this, link) + " (" + link.getDomainInfo().getTld() + ")", new FavitIcon(conditionalSkipReason.getIcon(this, link), link.getDomainInfo()));
                 if (ps != null) {
                     tmp.pluginStates.put(id, ps);
                 }
             }
+        }
+
+        FinalLinkState finalLinkState = link.getFinalLinkState();
+
+        if (finalLinkState != null) {
+            // if (FinalLinkState.CheckFailed(finalLinkState)) {
+            switch (finalLinkState) {
+            case FAILED:
+            case FAILED_CRC32:
+            case FAILED_EXISTS:
+            case FAILED_FATAL:
+            case FAILED_MD5:
+            case FAILED_SHA1:
+            case OFFLINE:
+            case PLUGIN_DEFECT:
+                id = "error" + link.getHost();
+                ps = PluginState.create(_GUI._.FilePackageView_addLinkToTemp_downloaderror_() + " (" + link.getDomainInfo().getTld() + ")", new FavitIcon(this.falseIcon, link.getDomainInfo()));
+                if (ps != null) {
+                    tmp.pluginStates.put(id, ps);
+                }
+                break;
+            case FINISHED:
+            case FINISHED_SHA1:
+            case FINISHED_MD5:
+            case FINISHED_CRC32:
+            case FINISHED_MIRROR:
+            }
+
+            // }
+            ExtractionStatus extractionStatus = link.getExtractionStatus();
+            if (extractionStatus != null) {
+                switch (extractionStatus) {
+                case ERROR:
+                case ERROR_PW:
+                case ERROR_CRC:
+                case ERROR_NOT_ENOUGH_SPACE:
+                case ERRROR_FILE_NOT_FOUND:
+
+                    // ArchiveSettings as = ArchiveController.getInstance().getArchiveSettings(new DownloadLinkArchiveFactory(link));
+                    id = extractionStatus + link.getHost();
+                    ps = PluginState.create(extractionStatus.getExplanation() + " (" + link.getDomainInfo().getTld() + ")", new ExtMergedIcon(NewTheme.I().getIcon("archive", 18), 0, 0, 0, null).add(NewTheme.I().getIcon("error", 12), 6, 6, 1, null));
+                    if (ps != null) {
+                        tmp.pluginStates.put(id, ps);
+                    }
+                    break;
+                case SUCCESSFUL:
+                    id = extractionStatus + link.getHost();
+                    ps = PluginState.create(extractionStatus.getExplanation() + " (" + link.getDomainInfo().getTld() + ")", new ExtMergedIcon(NewTheme.I().getIcon("archive", 18), 0, 0, 0, null).add(NewTheme.I().getIcon("ok", 12), 6, 6, 1, null));
+
+                    if (ps != null) {
+                        tmp.pluginStates.put(id, ps);
+                    }
+                    break;
+                case RUNNING:
+                    // not required. this is using the progress interface
+                    // id = extractionStatus + link.getHost();
+                    // ps = PluginState.create(extractionStatus.getExplanation() + " (" + link.getDomainInfo().getTld() + ")", new
+                    // FavitIcon(extracting, link.getDomainInfo()));
+                    // if (ps != null) {
+                    // tmp.pluginStates.put(id, ps);
+                    // }
+                    break;
+                }
+            }
+
         }
         if (link.isEnabled()) {
             /*
