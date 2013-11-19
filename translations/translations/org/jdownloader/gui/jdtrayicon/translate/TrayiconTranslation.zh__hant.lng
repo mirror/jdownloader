@@ -36,3 +36,4 @@ popup_reconnect=立刻重新連線
 popup_reconnecttoggle=已啟用自動重新連線
 popup_update=檢查更新
 popup_update_install=安裝最新的更新
+popup_update_install_tt=有等待安裝的更新。按一下立即安裝！

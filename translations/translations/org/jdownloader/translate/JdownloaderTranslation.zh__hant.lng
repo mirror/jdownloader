@@ -29,6 +29,7 @@ LinkSource_ADD_LINKS_DIALOG=加入連結操作
 LinkSource_CLIPBOARD=剪貼簿
 LinkSource_DOWNLOADED_CONTAINER=已下載的容器
 LinkSource_FLASHGOT=Flashgot
+LinkSource_MAC_DOCK=停靠 (僅限 Mac)
 LinkSource_MYJD=MyJDownloader
 LinkSource_PASTE_LINKS_ACTION=貼上連結操作
 LinkSource_START_PARAMETER=啟動參數
@@ -139,6 +140,7 @@ gui_warning_reconnectSuccess=成功重新連線
 gui_warning_reconnect_running=執行中...
 gui_warning_reconnectunknown=重新連線未知
 image_description=圖片檔案：jpg, png, gif,...
+jd_controlling_SingleDownloadController_askexists3=有一個下載檔案的問題！\r\n硬碟上已存在該檔案了。您想要怎麼處理？
 jd_controlling_SingleDownloadController_askexists_title=檔案存在
 jd_controlling_reconnect_Reconnector_progress_failed2=重新連線失敗太頻繁！自動重新連線被停用！請檢查您的重新連線設定！
 jd_controlling_reconnect_plugins_DummyRouterPlugin_getGUI2=<b><u>未選擇重新連線</u></b><br/><p>重新連線是跳過某些強制免費使用者長時間等待的進階方式。<br>在使用付費帳號時這個功能沒什麼用途。</p><p>在<a href='http://support.jdownloader.org/index.php?_m=knowledgebase&_a=viewarticle&kbarticleid=1'>這裡</a>閱讀更多關於重新連線的資訊</p>
