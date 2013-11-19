@@ -4,15 +4,21 @@ import java.awt.event.ActionEvent;
 import java.util.List;
 
 import jd.controlling.TaskQueue;
+import jd.gui.swing.jdgui.JDGui;
+import jd.gui.swing.jdgui.WarnLevel;
 
 import org.appwork.swing.exttable.ExtTable;
 import org.appwork.utils.event.queue.QueueAction;
+import org.appwork.utils.swing.dialog.Dialog;
+import org.appwork.utils.swing.dialog.DialogCanceledException;
+import org.appwork.utils.swing.dialog.DialogClosedException;
+import org.jdownloader.actions.AppAction;
 import org.jdownloader.controlling.filter.LinkFilterController;
 import org.jdownloader.controlling.filter.LinkgrabberFilterRule;
-import org.jdownloader.gui.views.components.AbstractRemoveAction;
+import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.translate._JDT;
 
-public class RemoveAction extends AbstractRemoveAction {
+public class RemoveAction extends AppAction {
     private static final long                     serialVersionUID = -477419276505058907L;
     private java.util.List<LinkgrabberFilterRule> selected;
     private boolean                               ignoreSelection  = false;
@@ -30,8 +36,24 @@ public class RemoveAction extends AbstractRemoveAction {
         this.selected = selected;
     }
 
+    protected boolean rly(String msg) {
+
+        try {
+            Dialog.getInstance().showConfirmDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI._.literall_are_you_sure(), msg, null, null, null);
+            return true;
+        } catch (DialogClosedException e) {
+            e.printStackTrace();
+        } catch (DialogCanceledException e) {
+            e.printStackTrace();
+        }
+        return false;
+
+    }
+
     public void actionPerformed(ActionEvent e) {
-        if (!rly(_JDT._.RemoveAction_actionPerformed_rly_msg())) return;
+        if (JDGui.bugme(WarnLevel.NORMAL)) {
+            if (!rly(_JDT._.RemoveAction_actionPerformed_rly_msg())) return;
+        }
         if (!isEnabled()) return;
         final List<LinkgrabberFilterRule> remove;
         if (selected != null) {

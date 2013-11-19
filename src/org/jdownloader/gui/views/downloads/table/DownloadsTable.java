@@ -210,8 +210,9 @@ public class DownloadsTable extends PackageControllerTable<FilePackage, Download
                 t.stop();
                 if (oldSortColumn == getModel().getSortColumn()) return;
                 if (getModel().getSortColumn() != null) {
-                    HelpDialog.show(e1.getLocationOnScreen(), "downloadtabe_sortwarner", Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI._.DownloadsTable_actionPerformed_sortwarner_title(getModel().getSortColumn().getName()), _GUI._.DownloadsTable_actionPerformed_sortwarner_text(), NewTheme.I().getIcon("sort", 32));
-
+                    if (CFG_GUI.CFG.isHelpDialogsEnabled()) {
+                        HelpDialog.show(e1.getLocationOnScreen(), "downloadtabe_sortwarner", Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI._.DownloadsTable_actionPerformed_sortwarner_title(getModel().getSortColumn().getName()), _GUI._.DownloadsTable_actionPerformed_sortwarner_text(), NewTheme.I().getIcon("sort", 32));
+                    }
                 }
 
             }

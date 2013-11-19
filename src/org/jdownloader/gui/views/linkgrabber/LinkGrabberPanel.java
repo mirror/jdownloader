@@ -256,7 +256,7 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
                     CustomizeableActionBar iconComp = rightBar;
                     Point loc = rightBar.getLocationOnScreen();
 
-                    HelpDialog.show(false, false, new Point(loc.x + iconComp.getWidth() - iconComp.getHeight() / 2, loc.y + iconComp.getHeight() / 2), "overviewclosed", Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI._.DownloadsPanel_onCloseAction(), _GUI._.DownloadsPanel_onCloseAction_help(), NewTheme.I().getIcon("bottombar", 32));
+                    if (CFG_GUI.HELP_DIALOGS_ENABLED.isEnabled()) HelpDialog.show(false, false, new Point(loc.x + iconComp.getWidth() - iconComp.getHeight() / 2, loc.y + iconComp.getHeight() / 2), "overviewclosed", Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI._.DownloadsPanel_onCloseAction(), _GUI._.DownloadsPanel_onCloseAction_help(), NewTheme.I().getIcon("bottombar", 32));
 
                 }
             });
@@ -373,7 +373,7 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
                 CFG_GUI.LINKGRABBER_TAB_PROPERTIES_PANEL_VISIBLE.setValue(false);
                 CustomizeableActionBar iconComp = rightBar;
                 Point loc = iconComp.getLocationOnScreen();
-                HelpDialog.show(false, false, new Point(loc.x + iconComp.getWidth() - iconComp.getHeight() / 2, loc.y + iconComp.getHeight() / 2), "propertiesclosed", Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI._.DownloadsPanel_onCloseAction(), _GUI._.Linkgrabber_properties_onCloseAction_help(), NewTheme.I().getIcon("bottombar", 32));
+                if (CFG_GUI.HELP_DIALOGS_ENABLED.isEnabled()) HelpDialog.show(false, false, new Point(loc.x + iconComp.getWidth() - iconComp.getHeight() / 2, loc.y + iconComp.getHeight() / 2), "propertiesclosed", Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI._.DownloadsPanel_onCloseAction(), _GUI._.Linkgrabber_properties_onCloseAction_help(), NewTheme.I().getIcon("bottombar", 32));
 
             }
         });
@@ -461,7 +461,7 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
                     if (table.getSelectionModel().isSelectionEmpty()) {
                         if (table.getRowCount() == 0) {
 
-                            HelpDialog.show(false, false, null, "propertiespanelvisible", Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI._.LinkGrabberPanel_setPropertiesPanelVisible(), _GUI._.LinkGrabberPanel_setPropertiesPanelVisible_help(), NewTheme.I().getIcon("bottombar", 32));
+                            if (CFG_GUI.HELP_DIALOGS_ENABLED.isEnabled()) HelpDialog.show(false, false, null, "propertiespanelvisible", Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI._.LinkGrabberPanel_setPropertiesPanelVisible(), _GUI._.LinkGrabberPanel_setPropertiesPanelVisible_help(), NewTheme.I().getIcon("bottombar", 32));
 
                         } else {
                             table.getSelectionModel().setSelectionInterval(0, 0);

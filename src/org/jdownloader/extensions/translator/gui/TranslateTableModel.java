@@ -37,6 +37,7 @@ import org.jdownloader.extensions.translator.TranslateEntry;
 import org.jdownloader.extensions.translator.TranslatorExtension;
 import org.jdownloader.gui.helpdialogs.HelpDialog;
 import org.jdownloader.images.NewTheme;
+import org.jdownloader.settings.staticreferences.CFG_GUI;
 
 /**
  * The Tablemodel defines all columns and renderers
@@ -303,8 +304,9 @@ public class TranslateTableModel extends ExtTableModel<TranslateEntry> {
                             SwingUtilities.convertPointToScreen(point, ttx);
 
                             ttx.getDocument().insertString(ttx.getCaretPosition(), "\\r\\n", null);
-                            HelpDialog.show(point, "TRANSLETOR_USE_NEWLINE2", Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, "NewLine", "Press <Enter> to insert a Newline (\\r\\n). Press <CTRL ENTER> to Confirm  translation. Press <TAB> to confirm and move to next line.", NewTheme.I().getIcon("help", 32));
-
+                            if (CFG_GUI.CFG.isHelpDialogsEnabled()) {
+                                HelpDialog.show(point, "TRANSLETOR_USE_NEWLINE2", Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, "NewLine", "Press <Enter> to insert a Newline (\\r\\n). Press <CTRL ENTER> to Confirm  translation. Press <TAB> to confirm and move to next line.", NewTheme.I().getIcon("help", 32));
+                            }
                         } catch (BadLocationException e1) {
                             e1.printStackTrace();
                         }

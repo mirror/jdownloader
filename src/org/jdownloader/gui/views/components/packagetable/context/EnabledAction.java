@@ -7,7 +7,10 @@ import jd.controlling.TaskQueue;
 import jd.controlling.downloadcontroller.DownloadWatchDog;
 import jd.controlling.downloadcontroller.SingleDownloadController;
 import jd.controlling.packagecontroller.AbstractNode;
+import jd.gui.swing.jdgui.JDGui;
+import jd.gui.swing.jdgui.WarnLevel;
 import jd.plugins.DownloadLink;
+import jd.plugins.download.DownloadInterface;
 
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.event.queue.QueueAction;
@@ -91,6 +94,8 @@ public class EnabledAction extends CustomizableTableContextAppAction {
                 final boolean enable = state.equals(State.ALL_DISABLED);
                 if (!enable) {
                     int count = 0;
+
+                    long i = 0;
                     if (DownloadWatchDog.getInstance().isRunning()) {
                         for (Object a : selection.getChildren()) {
                             if (a instanceof DownloadLink) {
@@ -99,16 +104,31 @@ public class EnabledAction extends CustomizableTableContextAppAction {
                                 if (slc != null && slc.getDownloadInstance() != null && !link.isResumeable()) {
                                     count++;
                                 }
+                                DownloadInterface dl = slc.getDownloadInstance();
+                                if (dl != null && !slc.getDownloadLink().isResumeable()) {
+                                    i += slc.getDownloadLink().getDownloadCurrent();
+                                }
                             }
                         }
                     }
+                    final long bytesToDelete = i;
                     if (count > 0) {
                         final int finalCount = count;
                         new EDTRunner() {
 
                             @Override
                             protected void runInEDT() {
-                                if (!UIOManager.I().showConfirmDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI._.lit_are_you_sure(), _GUI._.EnableAction_run_msg_(SizeFormatter.formatBytes(DownloadWatchDog.getInstance().getNonResumableBytes()), finalCount), NewTheme.I().getIcon("stop", 32), _GUI._.lit_yes(), _GUI._.lit_no())) { return; }
+                                if (bytesToDelete > 0) {
+                                    if (JDGui.bugme(WarnLevel.SEVERE)) {
+                                        if (!UIOManager.I().showConfirmDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI._.lit_are_you_sure(), _GUI._.EnableAction_run_msg_(SizeFormatter.formatBytes(bytesToDelete), finalCount), NewTheme.I().getIcon("stop", 32), _GUI._.lit_yes(), _GUI._.lit_no())) { return; }
+
+                                    }
+                                } else {
+                                    if (JDGui.bugme(WarnLevel.LOW)) {
+                                        if (!UIOManager.I().showConfirmDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI._.lit_are_you_sure(), _GUI._.EnableAction_run_msg_(SizeFormatter.formatBytes(bytesToDelete), finalCount), NewTheme.I().getIcon("stop", 32), _GUI._.lit_yes(), _GUI._.lit_no())) { return; }
+
+                                    }
+                                }
                                 setEnabled(enable, getSelection().getChildren());
                             }
                         };

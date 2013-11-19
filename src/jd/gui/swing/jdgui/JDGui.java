@@ -179,8 +179,10 @@ public class JDGui implements UpdaterListener, OwnerFinder {
         Timer timer = new Timer(200, new ActionListener() {
 
             public void actionPerformed(ActionEvent e) {
-                HelpDialog.show(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, title, msg, icon);
 
+                if (CFG_GUI.CFG.isHelpDialogsEnabled()) {
+                    HelpDialog.show(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, title, msg, icon);
+                }
             }
         });
         timer.setRepeats(false);
@@ -1734,6 +1736,59 @@ public class JDGui implements UpdaterListener, OwnerFinder {
 
             }.getReturnValue();
         }
+    }
+
+    /**
+     * Returns true if we should bug the user with a are you sure dialog at the requesting level
+     * 
+     * @param requestedLevel
+     * @return
+     */
+    public static boolean bugme(WarnLevel requestedLevel) {
+        switch (requestedLevel) {
+        case LOW:
+
+            switch (CFG_GUI.CFG.getRlyWarnLevel()) {
+            case DISABLED:
+                return false;
+            case LOW:
+                return false;
+            case NORMAL:
+                return false;
+            case HIGH:
+                return true;
+
+            }
+            break;
+        case NORMAL:
+            switch (CFG_GUI.CFG.getRlyWarnLevel()) {
+            case DISABLED:
+                return false;
+            case LOW:
+                return false;
+            case NORMAL:
+                return true;
+            case HIGH:
+                return true;
+
+            }
+        case SEVERE:
+
+            switch (CFG_GUI.CFG.getRlyWarnLevel()) {
+            case DISABLED:
+                return false;
+            case LOW:
+                return true;
+            case NORMAL:
+                return true;
+            case HIGH:
+                return true;
+
+            }
+            break;
+
+        }
+        return true;
     }
 
 }

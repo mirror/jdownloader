@@ -35,6 +35,8 @@ import jd.controlling.linkcrawler.LinkCrawlerHandler;
 import jd.controlling.linkcrawler.PackageInfo;
 import jd.controlling.packagecontroller.AbstractNode;
 import jd.controlling.packagecontroller.PackageController;
+import jd.gui.swing.jdgui.JDGui;
+import jd.gui.swing.jdgui.WarnLevel;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
@@ -1607,9 +1609,13 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
             synchronized (shutdownLock) {
 
                 if (LinkChecker.isChecking() || LinkCrawler.isCrawling()) {
-                    if (UIOManager.I().showConfirmDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN | UIOManager.LOGIC_DONT_SHOW_AGAIN_IGNORES_CANCEL, _JDT._.LinkCollector_onShutdownRequest_(), _JDT._.LinkCollector_onShutdownRequest_msg(), NewTheme.I().getIcon("linkgrabber", 32), _JDT._.literally_yes(), null)) {
-
-                    return; }
+                    if (JDGui.bugme(WarnLevel.NORMAL)) {
+                        if (UIOManager.I().showConfirmDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN | UIOManager.LOGIC_DONT_SHOW_AGAIN_IGNORES_CANCEL, _JDT._.LinkCollector_onShutdownRequest_(), _JDT._.LinkCollector_onShutdownRequest_msg(), NewTheme.I().getIcon("linkgrabber", 32), _JDT._.literally_yes(), null)) {
+                        } else {
+                            return;
+                        }
+                        return;
+                    }
                     throw new ShutdownVetoException("LinkCollector is still running", this);
                 }
             }
@@ -1699,7 +1705,17 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                     return null;
 
                 }
-                if (!byPassDialog && !CFG_GUI.CFG.isBypassAllRlyDeleteDialogsEnabled()) {
+                WarnLevel level = WarnLevel.LOW;
+
+                boolean byPassDialog2 = byPassDialog;
+                if (containsOnline) {
+                    level = WarnLevel.NORMAL;
+                }
+                if (!JDGui.bugme(level)) {
+
+                    byPassDialog2 = true;
+                }
+                if (!byPassDialog2 && !CFG_GUI.CFG.isBypassAllRlyDeleteDialogsEnabled()) {
                     GenericResetLinkgrabberRlyDialog dialog = new GenericResetLinkgrabberRlyDialog(nodesToDelete, containsOnline, string, isCancelLinkcrawlerJobs, isClearFilteredLinks, isClearSearchFilter, isResetTableSorter);
                     try {
                         Dialog.getInstance().showDialog(dialog);

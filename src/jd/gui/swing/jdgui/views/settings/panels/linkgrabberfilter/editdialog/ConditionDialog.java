@@ -37,6 +37,8 @@ import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 
 import jd.controlling.linkcollector.LinkOrigin;
+import jd.gui.swing.jdgui.JDGui;
+import jd.gui.swing.jdgui.WarnLevel;
 import jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter.editdialog.OnlineStatusFilter.OnlineStatus;
 import jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter.editdialog.OnlineStatusFilter.OnlineStatusMatchtype;
 import jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter.editdialog.PluginStatusFilter.PluginStatus;
@@ -976,7 +978,9 @@ public abstract class ConditionDialog<T> extends AbstractDialog<T> {
                         if (cbOnline.isEnabled()) cbOnline.setSelected(true);
                         cobOnline.setSelectedIndex(0);
                         cobOnlineOptions.setSelectedIndex(1);
-                        Dialog.getInstance().showMessageDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI._.literally_warning(), _GUI._.ConditionDialog_updateOnline_linkcheck_required());
+                        if (JDGui.bugme(WarnLevel.NORMAL)) {
+                            Dialog.getInstance().showMessageDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI._.literally_warning(), _GUI._.ConditionDialog_updateOnline_linkcheck_required());
+                        }
                         return;
                     }
                 } else if (autoset) {

@@ -5,6 +5,8 @@ import java.awt.event.ActionEvent;
 import jd.controlling.TaskQueue;
 import jd.controlling.downloadcontroller.DownloadWatchDog;
 import jd.controlling.downloadcontroller.SingleDownloadController;
+import jd.gui.swing.jdgui.JDGui;
+import jd.gui.swing.jdgui.WarnLevel;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
@@ -96,8 +98,11 @@ public class SkipAction extends CustomizableTableContextAppAction<FilePackage, D
                             }
                         }
                     }
-                    if (count > 0) {
-                        if (!UIOManager.I().showConfirmDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI._.lit_are_you_sure(), _GUI._.SkipAction_run_msg_(SizeFormatter.formatBytes(DownloadWatchDog.getInstance().getNonResumableBytes()), count), NewTheme.I().getIcon("skipped", 32), _GUI._.lit_yes(), _GUI._.lit_no())) { return null; }
+                    if (count > 0 && DownloadWatchDog.getInstance().getNonResumableBytes(selection) > 0) {
+                        if (JDGui.bugme(WarnLevel.SEVERE)) {
+                            if (!UIOManager.I().showConfirmDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI._.lit_are_you_sure(), _GUI._.SkipAction_run_msg_(SizeFormatter.formatBytes(DownloadWatchDog.getInstance().getNonResumableBytes(selection)), count), NewTheme.I().getIcon("skipped", 32), _GUI._.lit_yes(), _GUI._.lit_no())) { return null; }
+
+                        }
                     }
                 }
                 for (DownloadLink a : selection.getChildren()) {

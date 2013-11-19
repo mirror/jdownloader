@@ -34,6 +34,7 @@ import org.appwork.swing.synthetica.SyntheticaHelper;
 import org.appwork.utils.Application;
 import org.appwork.utils.IO;
 import org.appwork.utils.logging2.LogSource;
+import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.LAFManagerInterface;
 import org.appwork.utils.swing.windowmanager.WindowManager;
@@ -64,7 +65,8 @@ public class LookAndFeelController implements LAFManagerInterface {
     private LogSource                      logger;
 
     /**
-     * Create a new instance of LookAndFeelController. This is a singleton class. Access the only existing instance by using {@link #getInstance()}.
+     * Create a new instance of LookAndFeelController. This is a singleton class. Access the only existing instance by using
+     * {@link #getInstance()}.
      */
     private LookAndFeelController() {
         config = JsonConfig.create(GraphicalUserInterfaceSettings.class);
@@ -187,7 +189,7 @@ public class LookAndFeelController implements LAFManagerInterface {
 
     private void initWindowManager() {
         WindowManager wm = WindowManager.getInstance();
-        if (wm instanceof WindowsWindowManager) {
+        if (wm instanceof WindowsWindowManager && CrossSystem.isWindows()) {
             final WindowsWindowManager wwm = (WindowsWindowManager) wm;
 
             wwm.setAltWorkaroundEnabled(CFG_GUI.CFG.isWindowsWindowManagerAltKeyWorkaroundEnabled());

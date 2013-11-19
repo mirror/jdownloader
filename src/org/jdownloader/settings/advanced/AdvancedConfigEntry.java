@@ -3,11 +3,15 @@ package org.jdownloader.settings.advanced;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Type;
 
+import jd.gui.swing.jdgui.JDGui;
+import jd.gui.swing.jdgui.WarnLevel;
+
 import org.appwork.storage.config.ConfigInterface;
 import org.appwork.storage.config.annotations.DescriptionForConfigEntry;
 import org.appwork.storage.config.annotations.RequiresRestart;
 import org.appwork.storage.config.annotations.SpinnerValidator;
 import org.appwork.storage.config.handler.KeyHandler;
+import org.appwork.uio.UIOManager;
 import org.appwork.utils.swing.dialog.ConfirmDialog;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.jdownloader.gui.IconKey;
@@ -67,15 +71,16 @@ public class AdvancedConfigEntry {
             if (!equals(v, value)) {
                 StatsManager.I().trackAdvancedOptionChange(keyHandler);
                 if (keyHandler.getAnnotation(RequiresRestart.class) != null) {
-                    ConfirmDialog d = new ConfirmDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI._.AdvancedConfigEntry_setValue_restart_warning_title(keyHandler.getKey()), _GUI._.AdvancedConfigEntry_setValue_restart_warning(keyHandler.getKey()), NewTheme.I().getIcon(IconKey.ICON_WARNING, 32), null, null) {
+                    if (JDGui.bugme(WarnLevel.NORMAL)) {
+                        ConfirmDialog d = new ConfirmDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN | UIOManager.BUTTONS_HIDE_CANCEL, _GUI._.AdvancedConfigEntry_setValue_restart_warning_title(keyHandler.getKey()), _GUI._.AdvancedConfigEntry_setValue_restart_warning(keyHandler.getKey()), NewTheme.I().getIcon(IconKey.ICON_WARNING, 32), null, null) {
 
-                        @Override
-                        public String getDontShowAgainKey() {
-                            return "RestartRequiredAdvancedConfig";
-                        }
+                            @Override
+                            public String getDontShowAgainKey() {
+                                return "RestartRequiredAdvancedConfig";
+                            }
 
-                    };
-
+                        };
+                    }
                 }
             }
         } catch (IllegalArgumentException e) {

@@ -2,6 +2,9 @@ package org.jdownloader.extensions.extraction.contextmenu.downloadlist.action;
 
 import java.awt.event.ActionEvent;
 
+import jd.gui.swing.jdgui.JDGui;
+import jd.gui.swing.jdgui.WarnLevel;
+
 import org.appwork.utils.swing.dialog.Dialog;
 import org.jdownloader.extensions.extraction.Archive;
 import org.jdownloader.extensions.extraction.BooleanStatus;
@@ -29,7 +32,8 @@ public class CleanupAutoDeleteLinksEnabledToggleAction extends AbstractExtractio
         for (Archive archive : archives) {
             archive.getSettings().setRemoveDownloadLinksAfterExtraction(isSelected() ? BooleanStatus.TRUE : BooleanStatus.FALSE);
         }
-        Dialog.getInstance().showMessageDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, isSelected() ? org.jdownloader.extensions.extraction.translate.T._.set_autoremovelinks_true() : org.jdownloader.extensions.extraction.translate.T._.set_autoremovelinks_false());
-
+        if (JDGui.bugme(WarnLevel.NORMAL)) {
+            Dialog.getInstance().showMessageDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, isSelected() ? org.jdownloader.extensions.extraction.translate.T._.set_autoremovelinks_true() : org.jdownloader.extensions.extraction.translate.T._.set_autoremovelinks_false());
+        }
     }
 }

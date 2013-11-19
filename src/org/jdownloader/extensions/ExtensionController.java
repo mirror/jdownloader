@@ -24,6 +24,8 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import jd.SecondLevelLaunch;
+import jd.gui.swing.jdgui.JDGui;
+import jd.gui.swing.jdgui.WarnLevel;
 
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
@@ -69,7 +71,8 @@ public class ExtensionController implements MenuExtenderHandler {
     private LogSource                      logger;
 
     /**
-     * Create a new instance of ExtensionController. This is a singleton class. Access the only existing instance by using {@link #getInstance()}.
+     * Create a new instance of ExtensionController. This is a singleton class. Access the only existing instance by using
+     * {@link #getInstance()}.
      */
     private ExtensionController() {
         eventSender = new ExtensionControllerEventSender();
@@ -579,14 +582,20 @@ public class ExtensionController implements MenuExtenderHandler {
                 object._setEnabled(true);
                 if (object instanceof LazyExtension) {
                     if (((LazyExtension) object)._getExtension().getGUI() != null && ((LazyExtension) object)._getExtension().isGuiOptional()) {
+                        if (JDGui.bugme(WarnLevel.NORMAL)) {
+                            ConfirmDialogInterface io = new ConfirmDialog(UIOManager.LOGIC_COUNTDOWN | Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, object.getName(), _JDT._.gui_settings_extensions_show_now(object.getName())).show();
+                            if (io.getCloseReason() == CloseReason.OK) {
+                                // activate panel
+                                ((LazyExtension) object)._getExtension().getGUI().setActive(true);
+                                // bring panel to front
+                                ((LazyExtension) object)._getExtension().getGUI().toFront();
 
-                        ConfirmDialogInterface io = new ConfirmDialog(UIOManager.LOGIC_COUNTDOWN | Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, object.getName(), _JDT._.gui_settings_extensions_show_now(object.getName())).show();
-                        if (io.getCloseReason() == CloseReason.OK) {
+                            }
+                        } else {
                             // activate panel
                             ((LazyExtension) object)._getExtension().getGUI().setActive(true);
                             // bring panel to front
                             ((LazyExtension) object)._getExtension().getGUI().toFront();
-
                         }
                     } else if (!((LazyExtension) object)._getExtension().isGuiOptional()) {
                         // activate panel

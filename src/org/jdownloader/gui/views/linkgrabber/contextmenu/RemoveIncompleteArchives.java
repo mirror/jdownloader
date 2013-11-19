@@ -7,6 +7,8 @@ import java.util.List;
 import jd.controlling.linkcollector.LinkCollector;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledPackage;
+import jd.gui.swing.jdgui.JDGui;
+import jd.gui.swing.jdgui.WarnLevel;
 
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.logging.Log;
@@ -49,7 +51,9 @@ public class RemoveIncompleteArchives extends CustomizableSelectionAppAction<Cra
                         final DummyArchive da = va.createDummyArchive(a);
                         if (!da.isComplete()) {
                             try {
-                                Dialog.getInstance().showConfirmDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN | UIOManager.LOGIC_DONT_SHOW_AGAIN_IGNORES_CANCEL, _GUI._.literally_are_you_sure(), _GUI._.RemoveIncompleteArchives_run_(da.getName()), null, _GUI._.literally_yes(), _GUI._.literall_no());
+                                if (JDGui.bugme(WarnLevel.LOW)) {
+                                    Dialog.getInstance().showConfirmDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN | UIOManager.LOGIC_DONT_SHOW_AGAIN_IGNORES_CANCEL, _GUI._.literally_are_you_sure(), _GUI._.RemoveIncompleteArchives_run_(da.getName()), null, _GUI._.literally_yes(), _GUI._.literall_no());
+                                }
                                 List<CrawledLink> l = new ArrayList<CrawledLink>();
                                 for (ArchiveFile af : a.getArchiveFiles()) {
                                     if (af instanceof CrawledLinkArchiveFile) {

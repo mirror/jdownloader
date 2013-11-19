@@ -68,6 +68,7 @@ import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.DownloadFolderChooserDialog;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.settings.GeneralSettings;
+import org.jdownloader.settings.staticreferences.CFG_GUI;
 import org.jdownloader.updatev2.gui.LAFOptions;
 
 public class AddLinksDialog extends AbstractDialog<LinkCollectingJob> {
@@ -521,7 +522,7 @@ public class AddLinksDialog extends AbstractDialog<LinkCollectingJob> {
                     @Override
                     protected void runInEDT() {
                         if (input.isShowing()) {
-                            HelpDialog.show(Boolean.FALSE, Boolean.TRUE, new Point(input.getLocationOnScreen().x + input.getWidth() / 2, input.getLocationOnScreen().y + 10), null, Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI._.AddLinksDialog_AddLinksDialog_(), _GUI._.AddLinksDialog_layoutDialogContent_description(), NewTheme.I().getIcon("linkgrabber", 32));
+                            if (CFG_GUI.HELP_DIALOGS_ENABLED.isEnabled()) HelpDialog.show(Boolean.FALSE, Boolean.TRUE, new Point(input.getLocationOnScreen().x + input.getWidth() / 2, input.getLocationOnScreen().y + 10), null, Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI._.AddLinksDialog_AddLinksDialog_(), _GUI._.AddLinksDialog_layoutDialogContent_description(), NewTheme.I().getIcon("linkgrabber", 32));
                         }
                     }
                 };

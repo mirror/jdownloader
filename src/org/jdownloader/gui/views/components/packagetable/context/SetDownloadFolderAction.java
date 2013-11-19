@@ -81,7 +81,9 @@ public abstract class SetDownloadFolderAction<PackageType extends AbstractPackag
                     File oldPath = LinkTreeUtils.getDownloadDirectory(entry);
                     File newPath = file;
                     if (oldPath.equals(newPath)) continue;
+
                     Dialog.getInstance().showConfirmDialog(Dialog.LOGIC_DONOTSHOW_BASED_ON_TITLE_ONLY | Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _JDT._.SetDownloadFolderAction_actionPerformed_(entry.getName()), _JDT._.SetDownloadFolderAction_msg(entry.getName(), getSelection().getSelectedLinksByPackage(entry).size()), null, _JDT._.SetDownloadFolderAction_yes(), _JDT._.SetDownloadFolderAction_no());
+
                     getQueue().add(new QueueAction<Object, RuntimeException>() {
 
                         @Override

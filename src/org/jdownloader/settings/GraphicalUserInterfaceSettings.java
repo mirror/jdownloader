@@ -751,6 +751,25 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
 
     void setDownloadsPropertiesPanelDownloadFromVisible(boolean v);
 
+    public static enum RlyWarnLevel {
+        @EnumLabel("HIGH! Show all 'Are you sure?' dialogs!")
+        HIGH,
+
+        @EnumLabel("NORMAL! Show the most important 'Are you sure?' dialogs!")
+        NORMAL,
+        @EnumLabel("LOW! Show only servere 'Are you sure?' dialogs!")
+        /** Only severe ones */
+        LOW,
+        @EnumLabel("DISABLED! Hide all 'Are you sure?' dialogs! (As far as possible)")
+        DISABLED;
+    }
+
+    @AboutConfig
+    @DefaultEnumValue("NORMAL")
+    public RlyWarnLevel getRlyWarnLevel();
+
+    public void setRlyWarnLevel(RlyWarnLevel level);
+
     public static enum DeleteFileOptions implements LabelInterface {
 
         REMOVE_LINKS_ONLY() {
@@ -793,5 +812,11 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
     boolean isBypassAllRlyDeleteDialogsEnabled();
 
     void setBypassAllRlyDeleteDialogsEnabled(boolean b);
+
+    @AboutConfig
+    @DefaultBooleanValue(true)
+    boolean isHelpDialogsEnabled();
+
+    void setHelpDialogsEnabled(boolean b);
 
 }

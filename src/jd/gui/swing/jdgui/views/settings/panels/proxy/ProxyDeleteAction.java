@@ -7,9 +7,9 @@ import jd.controlling.proxy.ProxyController;
 import jd.controlling.proxy.ProxyInfo;
 
 import org.appwork.utils.event.queue.QueueAction;
-import org.jdownloader.gui.views.components.AbstractRemoveAction;
+import org.jdownloader.actions.AppAction;
 
-public class ProxyDeleteAction extends AbstractRemoveAction {
+public class ProxyDeleteAction extends AppAction {
 
     private java.util.List<ProxyInfo> selected = null;
     private ProxyTable                table;

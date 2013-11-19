@@ -59,6 +59,7 @@ public class PasteLinksAction extends CustomizableAppAction implements ActionCon
         final LinkCollectingJob crawljob = new LinkCollectingJob(LinkOrigin.PASTE_LINKS_ACTION, content != null ? content.getContent() : null);
         if (content != null) crawljob.setCustomSourceUrl(content.getBrowserURL());
         crawljob.setDeepAnalyse(isDeepDecryptEnabled());
+
         AddLinksProgress d = new AddLinksProgress(crawljob);
         if (d.isHiddenByDontShowAgain()) {
             Thread thread = new Thread("AddLinksDialog") {

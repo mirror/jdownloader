@@ -2,6 +2,8 @@ package org.jdownloader.gui.views.downloads.action;
 
 import jd.controlling.downloadcontroller.DownloadController;
 import jd.controlling.downloadcontroller.DownloadWatchDog;
+import jd.gui.swing.jdgui.JDGui;
+import jd.gui.swing.jdgui.WarnLevel;
 import jd.plugins.DeleteTo;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
@@ -35,7 +37,18 @@ public class DownloadTabActionUtils {
                     return;
                 }
 
-                if (!byPassDialog && !CFG_GUI.CFG.isBypassAllRlyDeleteDialogsEnabled()) {
+                boolean byPassDialog2 = byPassDialog;
+                WarnLevel level = WarnLevel.LOW;
+                if (agg.getBytesLoaded() > 0 && mode == DeleteFileOptions.REMOVE_LINKS_AND_DELETE_FILES) {
+                    level = WarnLevel.SEVERE;
+                } else if (agg.getBytesLoaded() > 0 && mode == DeleteFileOptions.REMOVE_LINKS_AND_RECYCLE_FILES) {
+                    level = WarnLevel.NORMAL;
+                }
+                if (!JDGui.bugme(level)) {
+                    byPassDialog2 = true;
+                }
+
+                if (!byPassDialog2 && !CFG_GUI.CFG.isBypassAllRlyDeleteDialogsEnabled()) {
                     ConfirmDeleteLinksDialog dialog = new ConfirmDeleteLinksDialog(msg + "\r\n" + _GUI._.DeleteSelectionAction_actionPerformed_affected2(agg.getTotalCount(), SizeFormatter.formatBytes(agg.getBytesLoaded()), DownloadController.getInstance().getChildrenCount() - agg.getTotalCount(), agg.getLocalFileCount()), agg.getBytesLoaded());
                     dialog.setRecycleSupported(JDFileUtils.isTrashSupported());
 

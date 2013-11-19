@@ -117,7 +117,9 @@ import org.jdownloader.plugins.controller.host.HostPluginController;
 import org.jdownloader.settings.AutoDownloadStartOption;
 import org.jdownloader.settings.GeneralSettings;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings;
+import org.jdownloader.settings.GraphicalUserInterfaceSettings.RlyWarnLevel;
 import org.jdownloader.settings.staticreferences.CFG_GENERAL;
+import org.jdownloader.settings.staticreferences.CFG_GUI;
 import org.jdownloader.settings.staticreferences.CFG_SILENTMODE;
 import org.jdownloader.statistics.StatsManager;
 import org.jdownloader.translate._JDT;
@@ -876,8 +878,25 @@ public class SecondLevelLaunch {
             public Void edtRun() {
                 /* init gui here */
                 try {
-                    ShutdownController.getInstance().addShutdownVetoListener(RestartController.getInstance());
+                    if (CFG_GUI.CFG.getRlyWarnLevel() == RlyWarnLevel.HIGH) {
+                        ShutdownController.getInstance().addShutdownVetoListener(RestartController.getInstance());
+                    }
+                    CFG_GUI.RLY_WARN_LEVEL.getEventSender().addListener(new GenericConfigEventListener<Enum>() {
 
+                        @Override
+                        public void onConfigValueModified(KeyHandler<Enum> keyHandler, Enum newValue) {
+                            if (CFG_GUI.CFG.getRlyWarnLevel() == RlyWarnLevel.HIGH) {
+                                ShutdownController.getInstance().addShutdownVetoListener(RestartController.getInstance());
+                            } else {
+                                ShutdownController.getInstance().removeShutdownVetoListener(RestartController.getInstance());
+                            }
+
+                        }
+
+                        @Override
+                        public void onConfigValidatorError(KeyHandler<Enum> keyHandler, Enum invalidValue, ValidationException validateException) {
+                        }
+                    });
                     lafInit.waitForEDT();
                     SecondLevelLaunch.LOG.info("InitGUI->" + (System.currentTimeMillis() - SecondLevelLaunch.startup));
                     JDGui.init();

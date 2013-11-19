@@ -62,6 +62,8 @@ import jd.controlling.reconnect.ReconnecterEvent;
 import jd.controlling.reconnect.ReconnecterListener;
 import jd.controlling.reconnect.ipcheck.IPController;
 import jd.gui.UserIO;
+import jd.gui.swing.jdgui.JDGui;
+import jd.gui.swing.jdgui.WarnLevel;
 import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
@@ -113,6 +115,7 @@ import org.jdownloader.controlling.download.DownloadControllerListener;
 import org.jdownloader.controlling.hosterrule.AccountUsageRule;
 import org.jdownloader.controlling.hosterrule.HosterRuleController;
 import org.jdownloader.controlling.hosterrule.HosterRuleControllerListener;
+import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.plugins.ConditionalSkipReason;
@@ -3004,7 +3007,11 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
             }
             if (dialogTitle != null) {
                 if (request.isSilent() == false) {
-                    if (UIOManager.I().showConfirmDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN | UIOManager.LOGIC_DONT_SHOW_AGAIN_IGNORES_CANCEL, dialogTitle, _JDT._.DownloadWatchDog_onShutdownRequest_msg(), NewTheme.I().getIcon("download", 32), _JDT._.literally_yes(), null)) { return; }
+                    if (JDGui.bugme(WarnLevel.NORMAL)) {
+                        if (UIOManager.I().showConfirmDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN | UIOManager.LOGIC_DONT_SHOW_AGAIN_IGNORES_CANCEL, dialogTitle, _JDT._.DownloadWatchDog_onShutdownRequest_msg(), NewTheme.I().getIcon("download", 32), _JDT._.literally_yes(), null)) { return; }
+                    } else {
+                        return;
+                    }
                     throw new ShutdownVetoException(dialogTitle, this);
                 } else {
                     throw new ShutdownVetoException(dialogTitle, this);
@@ -3016,6 +3023,19 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
     @Override
     public long getShutdownVetoPriority() {
         return 0;
+    }
+
+    public long getNonResumableBytes(SelectionInfo<FilePackage, DownloadLink> selection) {
+        long i = 0;
+        if (this.stateMachine.isState(RUNNING_STATE, PAUSE_STATE, STOPPING_STATE)) {
+            for (final SingleDownloadController con : getSession().getControllers()) {
+                DownloadInterface dl = con.getDownloadInstance();
+                if (dl != null && !con.getDownloadLink().isResumeable() && selection.contains(con.getDownloadLink())) {
+                    i += con.getDownloadLink().getDownloadCurrent();
+                }
+            }
+        }
+        return i;
     }
 
     public int getNonResumableRunningCount() {

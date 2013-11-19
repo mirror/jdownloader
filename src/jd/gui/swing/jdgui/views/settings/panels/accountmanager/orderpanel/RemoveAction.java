@@ -8,12 +8,12 @@ import jd.controlling.TaskQueue;
 import org.appwork.utils.event.queue.QueueAction;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogNoAnswerException;
+import org.jdownloader.actions.AppAction;
 import org.jdownloader.controlling.hosterrule.AccountUsageRule;
 import org.jdownloader.controlling.hosterrule.HosterRuleController;
 import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.gui.views.components.AbstractRemoveAction;
 
-public class RemoveAction extends AbstractRemoveAction {
+public class RemoveAction extends AppAction {
     /**
      * 
      */

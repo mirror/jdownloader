@@ -15,6 +15,9 @@ import javax.swing.event.TreeSelectionListener;
 import javax.swing.filechooser.FileFilter;
 import javax.swing.tree.TreePath;
 
+import jd.gui.swing.jdgui.JDGui;
+import jd.gui.swing.jdgui.WarnLevel;
+
 import org.appwork.swing.MigPanel;
 import org.appwork.swing.components.ExtButton;
 import org.appwork.uio.UIOManager;
@@ -219,9 +222,9 @@ public class MenuManagerDialog extends AbstractDialog<Object> implements TreeSel
             @Override
             public void actionPerformed(ActionEvent e) {
                 try {
-
-                    Dialog.getInstance().showConfirmDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN | UIOManager.LOGIC_DONT_SHOW_AGAIN_IGNORES_CANCEL, _GUI._.MenuManagerDialog_actionPerformed_title(), _GUI._.lit_are_you_sure());
-
+                    if (JDGui.bugme(WarnLevel.NORMAL)) {
+                        Dialog.getInstance().showConfirmDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN | UIOManager.LOGIC_DONT_SHOW_AGAIN_IGNORES_CANCEL, _GUI._.MenuManagerDialog_actionPerformed_title(), _GUI._.lit_are_you_sure());
+                    }
                     MenuContainerRoot data = manager.setupDefaultStructure();
                     data.validateFull();
                     model.set(data);

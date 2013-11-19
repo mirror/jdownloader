@@ -66,6 +66,7 @@ import org.jdownloader.extensions.translator.gui.actions.NewTranslationAction;
 import org.jdownloader.gui.helpdialogs.HelpDialog;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.logging.LogController;
+import org.jdownloader.settings.staticreferences.CFG_GUI;
 import org.jdownloader.updatev2.RestartController;
 import org.jdownloader.updatev2.SmartRlyRestartRequest;
 import org.tmatesoft.svn.core.SVNException;
@@ -534,8 +535,9 @@ public class TranslatorGui extends AddonPanel<TranslatorExtension> implements Li
                                                                     SwingUtilities.convertPointToScreen(point, ttx);
 
                                                                     ttx.getDocument().insertString(ttx.getCaretPosition(), "\\r\\n", null);
-                                                                    HelpDialog.show(point, "TRANSLETOR_USE_NEWLINE", Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, "NewLine", "Press <Enter> to insert a Newline (\\r\\n). Press <CTRL ENTER> to Confirm  translation. Press <TAB> to confirm and move to next line.", NewTheme.I().getIcon("help", 32));
-
+                                                                    if (CFG_GUI.CFG.isHelpDialogsEnabled()) {
+                                                                        HelpDialog.show(point, "TRANSLETOR_USE_NEWLINE", Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, "NewLine", "Press <Enter> to insert a Newline (\\r\\n). Press <CTRL ENTER> to Confirm  translation. Press <TAB> to confirm and move to next line.", NewTheme.I().getIcon("help", 32));
+                                                                    }
                                                                 } catch (BadLocationException e1) {
                                                                     e1.printStackTrace();
                                                                 }

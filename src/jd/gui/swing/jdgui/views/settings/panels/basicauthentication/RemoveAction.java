@@ -7,9 +7,9 @@ import jd.controlling.authentication.AuthenticationController;
 import jd.controlling.authentication.AuthenticationInfo;
 
 import org.appwork.utils.event.queue.QueueAction;
-import org.jdownloader.gui.views.components.AbstractRemoveAction;
+import org.jdownloader.actions.AppAction;
 
-public class RemoveAction extends AbstractRemoveAction {
+public class RemoveAction extends AppAction {
     /**
      * 
      */
