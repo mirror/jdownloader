@@ -12,7 +12,6 @@ import org.jdownloader.extensions.extraction.contextmenu.downloadlist.ArchiveVal
 import org.jdownloader.extensions.extraction.gui.DummyArchiveDialog;
 import org.jdownloader.extensions.extraction.multi.CheckException;
 import org.jdownloader.extensions.extraction.translate.T;
-import org.jdownloader.gui.IconKey;
 
 public class ValidateArchivesAction extends AbstractExtractionContextAction {
 
@@ -20,7 +19,7 @@ public class ValidateArchivesAction extends AbstractExtractionContextAction {
         super();
         setName(T._.ValidateArchiveAction_ValidateArchiveAction_object_());
 
-        setIconKey(IconKey.ICON_VALIDATE_ARCHIVE);
+        setSmallIcon(new ExtractIconVariant("true", 18));
 
     }
 

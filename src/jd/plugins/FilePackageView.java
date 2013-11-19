@@ -16,11 +16,13 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.download.DownloadInterface;
 
 import org.appwork.storage.config.JsonConfig;
-import org.appwork.swing.components.ExtMergedIcon;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.DomainInfo;
 import org.jdownloader.controlling.Priority;
+import org.jdownloader.extensions.extraction.ExtractionProgress;
 import org.jdownloader.extensions.extraction.ExtractionStatus;
+import org.jdownloader.extensions.extraction.contextmenu.downloadlist.action.ExtractIconVariant;
+import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.downloads.columns.AvailabilityColumn;
 import org.jdownloader.images.NewTheme;
@@ -322,11 +324,13 @@ public class FilePackageView extends ChildrenView<DownloadLink> {
         //
         PluginProgress prog = link.getPluginProgress();
         if (prog != null) {
-            id = prog.getClass().getName() + link.getHost();
-            if (!tmp.pluginStates.containsKey(id)) {
-                ps = PluginState.create(prog.getMessage(FilePackageView.this) + " (" + link.getDomainInfo().getTld() + ")", new FavitIcon(prog.getIcon(), link.getDomainInfo()));
-                if (ps != null) {
-                    tmp.pluginStates.put(id, ps);
+            if (!(prog instanceof ExtractionProgress)) {
+                id = prog.getClass().getName() + link.getHost();
+                if (!tmp.pluginStates.containsKey(id)) {
+                    ps = PluginState.create(prog.getMessage(FilePackageView.this) + " (" + link.getDomainInfo().getTld() + ")", new FavitIcon(prog.getIcon(), link.getDomainInfo()));
+                    if (ps != null) {
+                        tmp.pluginStates.put(id, ps);
+                    }
                 }
             }
         }
@@ -378,28 +382,55 @@ public class FilePackageView extends ChildrenView<DownloadLink> {
                 case ERRROR_FILE_NOT_FOUND:
 
                     // ArchiveSettings as = ArchiveController.getInstance().getArchiveSettings(new DownloadLinkArchiveFactory(link));
-                    id = extractionStatus + link.getHost();
-                    ps = PluginState.create(extractionStatus.getExplanation() + " (" + link.getDomainInfo().getTld() + ")", new ExtMergedIcon(NewTheme.I().getIcon("archive", 18), 0, 0, 0, null).add(NewTheme.I().getIcon("error", 12), 6, 6, 1, null));
-                    if (ps != null) {
-                        tmp.pluginStates.put(id, ps);
+                    String archiveID = link.getArchiveID();
+                    // extracting the archive name here is probably too slow
+                    // ExtractionExtension.getIntance().createArchiveID(new DownloadLinkArchiveFactory(link));
+                    if (StringUtils.isNotEmpty(archiveID)) {
+                        id = "extractError:" + archiveID;
+                        ps = PluginState.create(extractionStatus.getExplanation() + " (" + link.getFinalFileName() + ")", new ExtractIconVariant("error", 18, 10));
+                        if (ps != null) {
+                            tmp.pluginStates.put(id, ps);
+                        }
                     }
                     break;
                 case SUCCESSFUL:
-                    id = extractionStatus + link.getHost();
-                    ps = PluginState.create(extractionStatus.getExplanation() + " (" + link.getDomainInfo().getTld() + ")", new ExtMergedIcon(NewTheme.I().getIcon("archive", 18), 0, 0, 0, null).add(NewTheme.I().getIcon("ok", 12), 6, 6, 1, null));
+                    archiveID = link.getArchiveID();
+                    // extracting the archive name here is probably too slow
+                    // ExtractionExtension.getIntance().createArchiveID(new DownloadLinkArchiveFactory(link));
+                    if (StringUtils.isNotEmpty(archiveID)) {
+                        id = "ExtractSuccess:" + archiveID;
+                        ps = PluginState.create(extractionStatus.getExplanation() + " (" + link.getFinalFileName() + ")", new ExtractIconVariant("ok", 18, 10));
 
-                    if (ps != null) {
-                        tmp.pluginStates.put(id, ps);
+                        if (ps != null) {
+                            tmp.pluginStates.put(id, ps);
+                        }
                     }
                     break;
                 case RUNNING:
-                    // not required. this is using the progress interface
-                    // id = extractionStatus + link.getHost();
-                    // ps = PluginState.create(extractionStatus.getExplanation() + " (" + link.getDomainInfo().getTld() + ")", new
-                    // FavitIcon(extracting, link.getDomainInfo()));
-                    // if (ps != null) {
-                    // tmp.pluginStates.put(id, ps);
-                    // }
+                    archiveID = link.getArchiveID();
+                    // extracting the archive name here is probably too slow
+                    // ExtractionExtension.getIntance().createArchiveID(new DownloadLinkArchiveFactory(link));
+
+                    if (StringUtils.isNotEmpty(archiveID)) {
+
+                        prog = link.getPluginProgress();
+                        ps = null;
+                        if (prog != null) {
+                            if (prog instanceof ExtractionProgress) {
+
+                                if (!tmp.pluginStates.containsKey(id)) {
+                                    ps = PluginState.create(prog.getMessage(FilePackageView.this) + " (" + link.getFinalFileName() + ")", new ExtractIconVariant(IconKey.ICON_MEDIA_PLAYBACK_START, 18, 16, 3, 3).crop());
+
+                                }
+                            }
+                        }
+                        if (ps == null) {
+                            ps = PluginState.create(extractionStatus.getExplanation() + " (" + link.getFinalFileName() + ")", new ExtractIconVariant(IconKey.ICON_MEDIA_PLAYBACK_START, 18, 16, 3, 3).crop());
+                        }
+                        if (ps != null) {
+                            tmp.pluginStates.put(id, ps);
+                        }
+                    }
                     break;
                 }
             }

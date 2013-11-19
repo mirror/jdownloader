@@ -11,7 +11,8 @@ public class DownloadLinkProperty {
         SKIPPED,
         PLUGIN_PROGRESS,
         CONDITIONAL_SKIPPED,
-        ARCHIVE;
+        ARCHIVE,
+        EXTRACTION_STATUS;
     }
 
     private final Object       value;

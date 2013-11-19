@@ -4,6 +4,7 @@ import java.awt.Color;
 
 import jd.plugins.PluginProgress;
 
+import org.jdownloader.extensions.extraction.translate.T;
 import org.jdownloader.images.NewTheme;
 
 public class ExtractionProgress extends PluginProgress {
@@ -15,7 +16,8 @@ public class ExtractionProgress extends PluginProgress {
 
     public ExtractionProgress(long current, long total, Color color) {
         super(current, total, color);
-        setIcon(NewTheme.I().getIcon("unpack", 16));
+        setIcon(NewTheme.I().getIcon("rar", 16));
+        message = T._.plugins_optional_extraction_status_extracting2();
     }
 
     @Override

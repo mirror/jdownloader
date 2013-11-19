@@ -41,6 +41,7 @@ import org.appwork.storage.TypeRef;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.swing.MigPanel;
 import org.appwork.swing.components.ExtCheckBox;
+import org.appwork.swing.components.ExtMergedIcon;
 import org.appwork.swing.components.ExtTextArea;
 import org.appwork.swing.components.ExtTextField;
 import org.appwork.swing.components.pathchooser.PathChooser;
@@ -66,6 +67,7 @@ import org.jdownloader.gui.packagehistorycontroller.PackageHistoryEntry;
 import org.jdownloader.gui.packagehistorycontroller.PackageHistoryManager;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.DownloadFolderChooserDialog;
+import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.settings.GeneralSettings;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
@@ -351,7 +353,7 @@ public class AddLinksDialog extends AbstractDialog<LinkCollectingJob> {
         p.add(createIconLabel("document", _GUI._.AddLinksDialog_layoutDialogContent_comment_tt()), "aligny center,width 32!");
         p.add(comment, "spanx,height " + height + "!");
 
-        p.add(createIconLabel("archivepassword", _GUI._.AddLinksDialog_layoutDialogContent_downloadpassword_tt()), "aligny center,height " + height + "!,width 32!");
+        p.add(createIconLabel(new ExtMergedIcon(new AbstractIcon("rar", 24)).add(new AbstractIcon("lock", 18), 6, 6), _GUI._.AddLinksDialog_layoutDialogContent_downloadpassword_tt()), "aligny center,height " + height + "!,width 32!");
 
         p.add(password, "pushx,growx,height " + height + "!");
         MigPanel subpanel = new MigPanel("ins 0", "[grow,fill][]", "[" + height + "!,grow]");
@@ -455,6 +457,12 @@ public class AddLinksDialog extends AbstractDialog<LinkCollectingJob> {
         // this.getDialog().getHeight()) / 2));
 
         return p;
+    }
+
+    private Component createIconLabel(Icon add, String tooltip) {
+        JLabel ret = new JLabel(add);
+        ret.setToolTipText(tooltip);
+        return ret;
     }
 
     public static String list(String[] links) {

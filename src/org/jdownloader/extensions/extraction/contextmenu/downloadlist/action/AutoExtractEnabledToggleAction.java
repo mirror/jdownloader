@@ -9,14 +9,13 @@ import org.appwork.utils.swing.dialog.Dialog;
 import org.jdownloader.extensions.extraction.Archive;
 import org.jdownloader.extensions.extraction.BooleanStatus;
 import org.jdownloader.extensions.extraction.contextmenu.downloadlist.AbstractExtractionContextAction;
-import org.jdownloader.gui.IconKey;
 
 public class AutoExtractEnabledToggleAction extends AbstractExtractionContextAction {
 
     public AutoExtractEnabledToggleAction() {
         super();
         setName(org.jdownloader.extensions.extraction.translate.T._.contextmenu_autoextract());
-        setIconKey(IconKey.ICON_ARCHIVE_REFRESH);
+        setSmallIcon(new ExtractIconVariant("refresh", 18));
         setSelected(false);
 
     }

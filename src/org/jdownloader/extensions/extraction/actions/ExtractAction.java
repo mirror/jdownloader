@@ -10,6 +10,7 @@ import javax.swing.filechooser.FileFilter;
 import jd.gui.UserIO;
 
 import org.appwork.storage.config.annotations.EnumLabel;
+import org.appwork.swing.components.ExtMergedIcon;
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
@@ -29,7 +30,7 @@ import org.jdownloader.extensions.extraction.multi.ArchiveException;
 import org.jdownloader.extensions.extraction.translate.T;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.views.DownloadFolderChooserDialog;
-import org.jdownloader.images.NewTheme;
+import org.jdownloader.images.AbstractIcon;
 
 public class ExtractAction extends AbstractExtractionContextAction {
 
@@ -69,7 +70,7 @@ public class ExtractAction extends AbstractExtractionContextAction {
         super();
 
         setName(T._.menu_tools_extract_files());
-        setIconKey("unpack");
+        setIconKey("rar");
 
     }
 
@@ -212,7 +213,7 @@ public class ExtractAction extends AbstractExtractionContextAction {
 
                                     return null;
                                 }
-                            }, 0, T._.extracting_archive(archive.getName()), T._.extracting_wait(archive.getName()), NewTheme.I().getIcon(IconKey.ICON_ARCHIVE_RUN, 32), null, null) {
+                            }, 0, T._.extracting_archive(archive.getName()), T._.extracting_wait(archive.getName()), new ExtMergedIcon(new AbstractIcon("rar", 32)).add(new AbstractIcon(IconKey.ICON_MEDIA_PLAYBACK_START, 24), 6, 6), null, null) {
                                 @Override
                                 public ModalityType getModalityType() {
                                     return ModalityType.MODELESS;

@@ -11,6 +11,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.DownloadLinkProperty;
 import jd.plugins.FilePackage;
+import jd.plugins.FilePackageView;
 import jd.plugins.PluginProgress;
 
 import org.appwork.utils.event.queue.QueueAction;
@@ -100,6 +101,7 @@ public class DownloadLinkArchiveFile implements ArchiveFile {
     }
 
     public void setProgress(long value, long max, Color color) {
+
         for (DownloadLink downloadLink : downloadLinks) {
             if (value <= 0 && max <= 0) {
                 downloadLink.setPluginProgress(null);
@@ -108,6 +110,10 @@ public class DownloadLinkArchiveFile implements ArchiveFile {
                 if (progress != null) {
                     progress.updateValues(value, max);
                     progress.setCurrent(value);
+                    FilePackageView view = downloadLink.getParentNode().getView();
+                    if (view != null) {
+                        view.requestUpdate();
+                    }
                 } else {
                     progress = new ExtractionProgress(value, max, color);
                     progress.setProgressSource(this);

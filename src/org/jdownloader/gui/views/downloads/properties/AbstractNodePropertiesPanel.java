@@ -541,7 +541,7 @@ public abstract class AbstractNodePropertiesPanel extends MigPanel implements Ac
     }
 
     protected void addArchiveLine(int height, MigPanel p) {
-        p.add(createIconLabel("archivepassword", _GUI._.propertiespanel_archivepassword(), _GUI._.AddLinksDialog_layoutDialogContent_downloadpassword_tt()), "aligny center,alignx right,height " + height + "!");
+        p.add(createIconLabel(_GUI._.propertiespanel_archivepassword(), _GUI._.AddLinksDialog_layoutDialogContent_downloadpassword_tt()), "aligny center,alignx right,height " + height + "!");
 
         p.add(password, "pushx,growx,height " + height + "!,growx,width 10:10:n");
 
@@ -549,18 +549,18 @@ public abstract class AbstractNodePropertiesPanel extends MigPanel implements Ac
     }
 
     protected void addChecksum(int height, MigPanel p) {
-        p.add(createIconLabel("package_open", _GUI._.propertiespanel_checksum(), _GUI._.AddLinksDialog_layoutDialogContent_checksum_tt()), "aligny center,alignx right,height " + height + "!");
+        p.add(createIconLabel(_GUI._.propertiespanel_checksum(), _GUI._.AddLinksDialog_layoutDialogContent_checksum_tt()), "aligny center,alignx right,height " + height + "!");
         p.add(checksum, "spanx,height " + height + "!,growx,width 10:10:n");
     }
 
     protected void addCommentLine(int height, MigPanel p) {
-        p.add(createIconLabel("document", _GUI._.propertiespanel_comment(), _GUI._.AddLinksDialog_layoutDialogContent_comment_tt()), "alignx right,aligny center,height " + height + "!");
+        p.add(createIconLabel(_GUI._.propertiespanel_comment(), _GUI._.AddLinksDialog_layoutDialogContent_comment_tt()), "alignx right,aligny center,height " + height + "!");
         p.add(comment, "height " + height + "!,growx,width 10:10:n");
         p.add(priority, "sg right,height " + height + "!");
     }
 
     protected void addDownloadFrom(int height, MigPanel p) {
-        p.add(createIconLabel(IconKey.ICON_URL, _GUI._.propertiespanel_downloadfrom(), _GUI._.AddLinksDialog_layoutDialogContent_downloadfrom_tt()), "aligny center,alignx right,height " + height + "!");
+        p.add(createIconLabel(_GUI._.propertiespanel_downloadfrom(), _GUI._.AddLinksDialog_layoutDialogContent_downloadfrom_tt()), "aligny center,alignx right,height " + height + "!");
         p.add(downloadFrom, "spanx,height " + height + "!,growx,width 10:10:n");
 
         // "gaptop 0,spanx,growx,pushx,gapleft 37,gapbottom 5"
@@ -568,30 +568,30 @@ public abstract class AbstractNodePropertiesPanel extends MigPanel implements Ac
     }
 
     protected void addDownloadPassword(int height, MigPanel p) {
-        p.add(createIconLabel("password", _GUI._.propertiespanel_passwod(), _GUI._.AddLinksDialog_layoutDialogContent_password_tt()), "aligny center,alignx right,height " + height + "!");
+        p.add(createIconLabel(_GUI._.propertiespanel_passwod(), _GUI._.AddLinksDialog_layoutDialogContent_password_tt()), "aligny center,alignx right,height " + height + "!");
         p.add(downloadpassword, "spanx,height " + height + "!,growx,width 10:10:n");
     }
 
     protected void addFilename(int height, MigPanel p) {
-        p.add(createIconLabel("package_open", _GUI._.propertiespanel_filename(), _GUI._.AddLinksDialog_layoutDialogContent_filename_tt()), "aligny center,alignx right,height " + height + "!");
+        p.add(createIconLabel(_GUI._.propertiespanel_filename(), _GUI._.AddLinksDialog_layoutDialogContent_filename_tt()), "aligny center,alignx right,height " + height + "!");
         p.add(filename, "spanx,height " + height + "!,growx,width 10:10:n");
     }
 
     protected void addPackagename(int height, MigPanel p) {
-        p.add(createIconLabel("package_open", _GUI._.propertiespanel_packagename(), _GUI._.AddLinksDialog_layoutDialogContent_package_tt()), "aligny center,alignx right,height " + height + "!");
+        p.add(createIconLabel(_GUI._.propertiespanel_packagename(), _GUI._.AddLinksDialog_layoutDialogContent_package_tt()), "aligny center,alignx right,height " + height + "!");
         p.add(packagename, "spanx,height " + height + "!,growx,width 10:10:n");
     }
 
     protected void addSaveTo(int height, MigPanel p) {
-        p.add(createIconLabel("save", _GUI._.propertiespanel_downloadpath(), _GUI._.AddLinksDialog_layoutDialogContent_save_tt()), "aligny center,alignx right,height " + height + "!");
+        p.add(createIconLabel(_GUI._.propertiespanel_downloadpath(), _GUI._.AddLinksDialog_layoutDialogContent_save_tt()), "aligny center,alignx right,height " + height + "!");
 
         p.add(destination.getDestination(), "height " + height + "!,growx,width 10:10:n");
         p.add(destination.getButton(), "sg right,height " + height + "! ");
     }
 
-    private Component createIconLabel(String iconKey, String label, String tooltip) {
+    private Component createIconLabel(String label, String tooltip) {
         JLabel ret = new JLabel();
-        // ret.setDisabledIcon(NewTheme.I().getIcon(iconKey, 20));
+
         ret.setText(label);
         ret.setToolTipText(tooltip);
         SwingUtils.toBold(ret);

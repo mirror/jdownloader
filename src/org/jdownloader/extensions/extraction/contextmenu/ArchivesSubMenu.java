@@ -15,7 +15,7 @@ import org.jdownloader.gui.views.downloads.table.DownloadsTable;
 public class ArchivesSubMenu extends MenuContainer {
     public ArchivesSubMenu() {
         setName(org.jdownloader.extensions.extraction.translate.T._.contextmenu_main());
-        setIconKey("archive");
+        setIconKey("rar");
     }
 
     @Override

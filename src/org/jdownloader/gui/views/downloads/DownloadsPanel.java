@@ -34,6 +34,8 @@ import org.appwork.utils.NullsafeAtomicReference;
 import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.jdownloader.controlling.download.DownloadControllerListener;
+import org.jdownloader.extensions.extraction.ExtractionEvent;
+import org.jdownloader.extensions.extraction.ExtractionListener;
 import org.jdownloader.gui.components.OverviewHeaderScrollPane;
 import org.jdownloader.gui.helpdialogs.HelpDialog;
 import org.jdownloader.gui.translate._GUI;
@@ -52,7 +54,7 @@ import org.jdownloader.images.NewTheme;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
 import org.jdownloader.updatev2.gui.LAFOptions;
 
-public class DownloadsPanel extends SwitchPanel implements DownloadControllerListener, GenericConfigEventListener<Boolean> {
+public class DownloadsPanel extends SwitchPanel implements DownloadControllerListener, GenericConfigEventListener<Boolean>, ExtractionListener {
 
     /**
      * 
@@ -78,7 +80,7 @@ public class DownloadsPanel extends SwitchPanel implements DownloadControllerLis
                 CFG_GUI.DOWNLOADS_TAB_PROPERTIES_PANEL_VISIBLE.setValue(false);
                 CustomizeableActionBar iconComp = bottomBar;
                 Point loc = iconComp.getLocationOnScreen();
-                if(CFG_GUI.HELP_DIALOGS_ENABLED.isEnabled())HelpDialog.show(false, false, new Point(loc.x + iconComp.getWidth() - iconComp.getHeight() / 2, loc.y + iconComp.getHeight() / 2), "propertiesclosed", Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI._.DownloadsPanel_onCloseAction(), _GUI._.Linkgrabber_properties_onCloseAction_help(), NewTheme.I().getIcon("bottombar", 32));
+                if (CFG_GUI.HELP_DIALOGS_ENABLED.isEnabled()) HelpDialog.show(false, false, new Point(loc.x + iconComp.getWidth() - iconComp.getHeight() / 2, loc.y + iconComp.getHeight() / 2), "propertiesclosed", Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI._.DownloadsPanel_onCloseAction(), _GUI._.Linkgrabber_properties_onCloseAction_help(), NewTheme.I().getIcon("bottombar", 32));
 
             }
         });
@@ -335,7 +337,7 @@ public class DownloadsPanel extends SwitchPanel implements DownloadControllerLis
                     CustomizeableActionBar iconComp = bottomBar;
                     Point loc = bottomBar.getLocationOnScreen();
 
-                    if(CFG_GUI.HELP_DIALOGS_ENABLED.isEnabled())HelpDialog.show(false, false, new Point(loc.x + iconComp.getWidth() - iconComp.getHeight() / 2, loc.y + iconComp.getHeight() / 2), "overviewclosed", Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI._.DownloadsPanel_onCloseAction(), _GUI._.DownloadsPanel_onCloseAction_help(), NewTheme.I().getIcon("bottombar", 32));
+                    if (CFG_GUI.HELP_DIALOGS_ENABLED.isEnabled()) HelpDialog.show(false, false, new Point(loc.x + iconComp.getWidth() - iconComp.getHeight() / 2, loc.y + iconComp.getHeight() / 2), "overviewclosed", Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI._.DownloadsPanel_onCloseAction(), _GUI._.DownloadsPanel_onCloseAction_help(), NewTheme.I().getIcon("bottombar", 32));
 
                 }
 
@@ -439,6 +441,16 @@ public class DownloadsPanel extends SwitchPanel implements DownloadControllerLis
             }, 250, 1000, TimeUnit.MILLISECONDS);
         }
         DownloadController.getInstance().addListener(this);
+        // SecondLevelLaunch.EXTENSIONS_LOADED.executeWhenReached(new Runnable() {
+        //
+        // @Override
+        // public void run() {
+        // ExtractionExtension extension = ExtractionExtension.getIntance();
+        // if(extension!=null){
+        // extension.getEventSender().addListener(DownloadsPanel.this);
+        // }
+        // }
+        // });
         table.requestFocusInWindow();
         if (propertiesPanel != null) propertiesPanel.refreshAfterTabSwitch();
     }
@@ -511,5 +523,9 @@ public class DownloadsPanel extends SwitchPanel implements DownloadControllerLis
     @Override
     public void onDownloadControllerUpdatedData(FilePackage pkg) {
         tableModel.refreshModel();
+    }
+
+    @Override
+    public void onExtractionEvent(ExtractionEvent event) {
     }
 }

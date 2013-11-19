@@ -23,6 +23,7 @@ import org.jdownloader.extensions.extraction.DummyArchive;
 import org.jdownloader.extensions.extraction.ExtractionExtension;
 import org.jdownloader.extensions.extraction.ValidateArchiveAction;
 import org.jdownloader.extensions.extraction.bindings.crawledlink.CrawledLinkArchiveFile;
+import org.jdownloader.extensions.extraction.contextmenu.downloadlist.action.ExtractIconVariant;
 import org.jdownloader.gui.translate._GUI;
 
 public class RemoveIncompleteArchives extends CustomizableSelectionAppAction<CrawledPackage, CrawledLink> {
@@ -35,7 +36,7 @@ public class RemoveIncompleteArchives extends CustomizableSelectionAppAction<Cra
     public RemoveIncompleteArchives() {
 
         setName(_GUI._.RemoveIncompleteArchives_RemoveIncompleteArchives_object_());
-        setIconKey("unpack");
+        setSmallIcon(new ExtractIconVariant("error", 18));
 
     }
 

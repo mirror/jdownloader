@@ -673,7 +673,7 @@ public class PackagizerFilterRuleDialog extends ConditionDialog<PackagizerRule> 
                     cbSource.setSelected(false);
                     wasSelectedCrawlerSource = cbCrawlerSource.isSelected();
                     if (wasSelectedCrawlerSource || wasSelectedSource) {
-                        JDGui.help(_GUI._.PackagizerFilterRuleDialog_layoutDialogContent_help_title(), _GUI._.PackagizerFilterRuleDialog_layoutDialogContent_help_msg(), NewTheme.I().getIcon(IconKey.ICON_ARCHIVE, 32));
+                        JDGui.help(_GUI._.PackagizerFilterRuleDialog_layoutDialogContent_help_title(), _GUI._.PackagizerFilterRuleDialog_layoutDialogContent_help_msg(), NewTheme.I().getIcon(IconKey.ICON_RAR, 32));
                     }
                     cbCrawlerSource.setSelected(false);
                     cbSource.setEnabled(false);

@@ -136,7 +136,7 @@ public class ExtractionJobTableModel extends ExtTableModel<ExtractionController>
                 if (event == null) return "";
                 switch (event) {
                 case START:
-                    return T._.plugins_optional_extraction_status_openingarchive();
+                    return T._.plugins_optional_extraction_status_openingarchive2();
 
                 case START_CRACK_PASSWORD:
                     return "Start password finding";

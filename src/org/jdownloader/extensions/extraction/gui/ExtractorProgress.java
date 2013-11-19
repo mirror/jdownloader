@@ -36,7 +36,7 @@ public class ExtractorProgress extends IconedProcessIndicator {
     private ExtractionJobTable      table;
 
     public ExtractorProgress(ExtractionExtension extractionExtension) {
-        super(NewTheme.I().getIcon("archive", 16));
+        super(NewTheme.I().getIcon("rar", 16));
         setEnabled(false);
 
         setTitle(_GUI._.StatusBarImpl_initGUI_extract());

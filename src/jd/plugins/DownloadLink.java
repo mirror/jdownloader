@@ -1077,6 +1077,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
 
     public void setPluginProgress(PluginProgress progress) {
         if (pluginProgress.getAndSet(progress) == progress) return;
+        System.out.println("Progress " + progress);
         if (hasNotificationListener()) notifyChanges(AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, new DownloadLinkProperty(this, DownloadLinkProperty.Property.PLUGIN_PROGRESS, progress));
     }
 
@@ -1275,11 +1276,19 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
             extractionStatus = new NullsafeAtomicReference<ExtractionStatus>(error);
         }
         if (old != error) {
+            System.out.println("ES:" + error + " - " + old);
             if (error == null) {
                 setProperty(DownloadLink.PROPERTY_EXTRACTION_STATUS, Property.NULL);
+                if (hasNotificationListener()) {
+                    notifyChanges(AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, new DownloadLinkProperty(this, DownloadLinkProperty.Property.EXTRACTION_STATUS, null));
+                }
             } else {
                 setProperty(DownloadLink.PROPERTY_EXTRACTION_STATUS, error.toString());
+                if (hasNotificationListener()) {
+                    notifyChanges(AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, new DownloadLinkProperty(this, DownloadLinkProperty.Property.EXTRACTION_STATUS, error));
+                }
             }
+
         }
 
     }

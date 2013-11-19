@@ -767,6 +767,8 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
                 case ENABLED:
                 case AVAILABILITY:
                 case PRIORITY:
+                case EXTRACTION_STATUS:
+                case PLUGIN_PROGRESS:
                     eventPropery.getDownloadLink().getParentNode().getView().requestUpdate();
                     break;
                 }

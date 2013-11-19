@@ -12,7 +12,7 @@ public enum LinktablesSearchCategory implements SearchCatInterface {
     @EnumLabel("Hoster")
     HOSTER(_GUI._.searchcategory_hoster(), "browse", _GUI._.searchcategory_hoster_help()),
     @EnumLabel("Package")
-    PACKAGE(_GUI._.searchcategory_package(), "archive", _GUI._.searchcategory_package_help());
+    PACKAGE(_GUI._.searchcategory_package(), "package_open", _GUI._.searchcategory_package_help());
 
     private String label;
     private String iconKey;

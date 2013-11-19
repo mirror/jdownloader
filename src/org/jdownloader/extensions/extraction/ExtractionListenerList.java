@@ -70,6 +70,7 @@ public class ExtractionListenerList implements ExtractionListener {
     public void onExtractionEvent(ExtractionEvent event) {
         final ExtractionController controller = event.getCaller();
         final LogSource logger = controller.getLogger();
+
         switch (event.getType()) {
         case QUEUED:
             controller.getArchiv().setStatus(ExtractionStatus.IDLE);
@@ -105,7 +106,7 @@ public class ExtractionListenerList implements ExtractionListener {
         case PASSWORD_NEEDED_TO_CONTINUE:
             if (ex.getSettings().isAskForUnknownPasswordsEnabled() || controller.isAskForUnknownPassword()) {
 
-                InputDialog id = new InputDialog(0, T._.ask_for_password(), T._.plugins_optional_extraction_askForPassword2(), "", NewTheme.I().getIcon(IconKey.ICON_ARCHIVE, 32), null, null) {
+                InputDialog id = new InputDialog(0, T._.ask_for_password(), T._.plugins_optional_extraction_askForPassword2(), "", NewTheme.I().getIcon(IconKey.ICON_RAR, 32), null, null) {
                     private FocusListener focusListener;
 
                     {
@@ -258,6 +259,7 @@ public class ExtractionListenerList implements ExtractionListener {
             controller.getArchiv().getFirstArchiveFile().setProgress(controller.getCrackProgress(), controller.getPasswordListSize(), Color.GREEN.darker());
             break;
         case EXTRACTING:
+
             controller.getArchiv().getFirstArchiveFile().setMessage(T._.plugins_optional_extraction_status_extracting2());
             controller.getArchiv().getFirstArchiveFile().setProgress((long) (controller.getProgress() * 100), 10000, Color.YELLOW.darker());
             break;

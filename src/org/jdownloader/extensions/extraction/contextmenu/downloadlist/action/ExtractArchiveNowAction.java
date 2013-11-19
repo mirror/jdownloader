@@ -2,10 +2,12 @@ package org.jdownloader.extensions.extraction.contextmenu.downloadlist.action;
 
 import java.awt.event.ActionEvent;
 
+import org.appwork.swing.components.ExtMergedIcon;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.jdownloader.extensions.extraction.Archive;
 import org.jdownloader.extensions.extraction.contextmenu.downloadlist.AbstractExtractionContextAction;
 import org.jdownloader.gui.IconKey;
+import org.jdownloader.images.AbstractIcon;
 
 public class ExtractArchiveNowAction extends AbstractExtractionContextAction {
 
@@ -18,7 +20,7 @@ public class ExtractArchiveNowAction extends AbstractExtractionContextAction {
 
         setName(org.jdownloader.extensions.extraction.translate.T._.contextmenu_extract());
 
-        setIconKey(IconKey.ICON_ARCHIVE_RUN);
+        setSmallIcon(new ExtMergedIcon(new AbstractIcon("rar", 18)).add(new AbstractIcon(IconKey.ICON_MEDIA_PLAYBACK_START, 12), 6, 6));
 
     }
 

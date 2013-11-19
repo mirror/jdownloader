@@ -30,7 +30,7 @@ public class ExtractionBubbleContent extends AbstractBubbleContentPanel {
     private Pair extractTo;
 
     public ExtractionBubbleContent() {
-        super(IconKey.ICON_ARCHIVE);
+        super(IconKey.ICON_RAR);
         startTime = System.currentTimeMillis();
         // super("ins 0,wrap 2", "[][grow,fill]", "[grow,fill]");
 
@@ -151,7 +151,7 @@ public class ExtractionBubbleContent extends AbstractBubbleContentPanel {
 
     public static void fillElements(ArrayList<Element> elements) {
 
-        elements.add(new Element(CFG_EXTRACTION.BUBBLE_CONTENT_CIRCLE_PROGRESS_VISIBLE, T._.bubblecontent_progress(), IconKey.ICON_ARCHIVE));
+        elements.add(new Element(CFG_EXTRACTION.BUBBLE_CONTENT_CIRCLE_PROGRESS_VISIBLE, T._.bubblecontent_progress(), IconKey.ICON_RAR));
         elements.add(new Element(CFG_EXTRACTION.BUBBLE_CONTENT_DURATION_VISIBLE, _GUI._.ReconnectDialog_layoutDialogContent_duration(), IconKey.ICON_WAIT));
         elements.add(new Element(CFG_EXTRACTION.BUBBLE_CONTENT_ARCHIVENAME_VISIBLE, T._.archive(), IconKey.ICON_EXTRACT));
         elements.add(new Element(CFG_EXTRACTION.BUBBLE_CONTENT_EXTRACT_TO_FOLDER_VISIBLE, T._.archive_folder(), IconKey.ICON_FOLDER));

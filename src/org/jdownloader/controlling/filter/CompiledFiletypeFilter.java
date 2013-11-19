@@ -192,7 +192,7 @@ public class CompiledFiletypeFilter {
         }
 
         public String getIconID() {
-            return "archive";
+            return "rar";
         }
     }
 

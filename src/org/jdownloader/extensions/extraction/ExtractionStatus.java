@@ -5,7 +5,7 @@ import org.jdownloader.gui.translate._GUI;
 
 public enum ExtractionStatus {
     IDLE(null),
-    RUNNING(T._.plugins_optional_extraction_status_openingarchive()),
+    RUNNING(T._.plugins_optional_extraction_status_openingarchive2()),
     ERROR_PW(T._.plugins_optional_extraction_status_extractfailedpass()),
     ERROR(_GUI._.TaskColumn_getStringValue_extraction_error()),
     SUCCESSFUL(_GUI._.TaskColumn_getStringValue_extraction_success()),

@@ -53,10 +53,7 @@ public class IconKey {
     public static final String ICON_ADDCONTAINER                 = "addContainer";
     public static final String ICON_ADD_SPECIAL                  = "add_special";
     public static final String ICON_ADVANCEDCONFIG               = "advancedConfig";
-    public static final String ICON_ARCHIVE                      = "archive";
-    public static final String ICON_ARCHIVEPASSWORD              = "archivepassword";
-    public static final String ICON_ARCHIVE_REFRESH              = "archive_refresh";
-    public static final String ICON_ARCHIVE_RUN                  = "archive_run";
+
     public static final String ICON_AUDIO                        = "audio";
     public static final String ICON_AUTO_RECONNECT               = "auto-reconnect";
     public static final String ICON_BAD                          = "bad";
@@ -309,7 +306,7 @@ public class IconKey {
     public static final String ICON_TRUE_ORANGE                  = "true-orange";
     public static final String ICON_TRUE                         = "true";
     public static final String ICON_UNDO                         = "undo";
-    public static final String ICON_UNPACK                       = "unpack";
+
     public static final String ICON_UPDATE                       = "update";
     public static final String ICON_UPDATERICON                  = "updatericon";
     public static final String ICON_UPDATERICON0                 = "updaterIcon0";
@@ -320,7 +317,7 @@ public class IconKey {
     public static final String ICON_URL                          = "url";
     public static final String ICON_USERS                        = "users";
     public static final String ICON_USERS_FTP                    = "users_ftp";
-    public static final String ICON_VALIDATE_ARCHIVE             = "validate_archive";
+
     public static final String ICON_VARIOUS                      = "various";
     public static final String ICON_VIDEO                        = "video";
     public static final String ICON_WAIT                         = "wait";
