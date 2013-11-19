@@ -552,6 +552,7 @@ LogAction=Skapa en logg
 LogAction_actionPerformed_givelogid_=Skicka detta log ID till supporten.
 LogAction_tooltip=Skapa en log
 LookAndFeelController_onConfigValueModified_reboot_required=En omstart krävs för att ändringarna ska börja gälla.
+MEMORY_RESTART_MSG=Det verkar vara ett minnesproblem. En omstart av JDownloader krävs fär att löse problemet. \nOm två omstarter inte löser problemet, besök vår support chat.
 MEMORY_RESTART_TITLE=Minnesproblem upptäckta!
 MainMenuManager_getName=Huvudmeny
 MainToolbarManager_getName=Huvudtoolbar
