@@ -76,7 +76,14 @@ public class NmLdsrg extends PluginForDecrypt {
             fpName = br.getRegex(":: (.*?)</span></h2>").getMatch(0);
             if (fpName == null) fpName = "No Title";
             String[] continueLinks = br.getRegex("\"(http://(www\\.)?anime\\-loads\\.org/redirect/\\d+/[a-z0-9]+)\"").getColumn(0);
-            if (continueLinks == null || continueLinks.length == 0) return null;
+            if (continueLinks == null || continueLinks.length == 0) {
+                if (br.containsHTML("<th width=\"30\">DL</th>")) {
+                    logger.info("Link offline:" + parameter);
+                    return decryptedLinks;
+                }
+                logger.warning("Decrypter broken for link: " + parameter);
+                return null;
+            }
             if (continueLinks != null && continueLinks.length != 0) {
                 links.addAll(Arrays.asList(continueLinks));
             }

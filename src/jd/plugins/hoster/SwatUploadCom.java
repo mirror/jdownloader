@@ -80,7 +80,7 @@ public class SwatUploadCom extends PluginForHost {
     // DEV NOTES
     // XfileSharingProBasic Version 2.6.2.6
     // mods:
-    // non account: 2 * 1
+    // non account: 1 * 2
     // free account: 1 * 10
     // premium account: untested, set free account limits
     // protocol: no https
@@ -208,7 +208,7 @@ public class SwatUploadCom extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        doFree(downloadLink, true, -2, "freelink");
+        doFree(downloadLink, true, 1, "freelink");
     }
 
     @SuppressWarnings("unused")

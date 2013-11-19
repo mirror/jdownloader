@@ -112,6 +112,7 @@ public class VideoPremiumNet extends PluginForHost {
     public void prepBrowser() {
         // define custom browser headers and language settings.
         br.getHeaders().put("Accept-Language", "en-gb, en;q=0.9, de;q=0.8");
+        br.getHeaders().put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
         br.setCookie(COOKIE_HOST, "lang", "english");
         br.getHeaders().put("User-Agent", RandomUserAgent.generate());
     }
@@ -124,6 +125,11 @@ public class VideoPremiumNet extends PluginForHost {
         correctDownloadLink(link);
         prepBrowser();
         getPage(link.getDownloadURL());
+        if (br.getRedirectLocation() != null) {
+            getPage(br.getRedirectLocation());
+            final String continuelink = br.getRegex(">window\\.location = \\'(http[^<>\"]*?)\\'").getMatch(0);
+            if (continuelink != null) getPage(continuelink);
+        }
         if (new Regex(correctedBR, "(No such file|>File Not Found<|>The file was removed by|Reason (of|for) deletion:\n|>File has been removed|>Page not found</h2>)").matches()) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (correctedBR.contains(MAINTENANCE)) {
             link.getLinkStatus().setStatusText(JDL.L("plugins.hoster.xfilesharingprobasic.undermaintenance", MAINTENANCEUSERTEXT));
@@ -175,6 +181,9 @@ public class VideoPremiumNet extends PluginForHost {
                                 fileInfo[0] = new Regex(correctedBR, "copy\\(this\\);.+>(.+) \\- [\\d\\.]+ (KB|MB|GB)</a></textarea>[\r\n\t ]+</div>").getMatch(0);
                                 if (fileInfo[0] == null) {
                                     fileInfo[0] = new Regex(correctedBR, "copy\\(this\\);.+\\](.+) \\- [\\d\\.]+ (KB|MB|GB)\\[/URL\\]").getMatch(0);
+                                    if (fileInfo[0] == null) {
+                                        fileInfo[0] = new Regex(correctedBR, "name=\"fname\" value=\"([^<>\"]*?)\"").getMatch(0);
+                                    }
                                 }
                             }
                         }

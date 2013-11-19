@@ -133,6 +133,7 @@ public class DoneVideoCom extends PluginForHost {
         String[] fileInfo = new String[3];
         scanInfo(fileInfo);
         if (fileInfo[0] == null || fileInfo[0].equals("")) {
+            if (correctedBR.contains(">Watch Video<")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             if (correctedBR.contains("You have reached the download(\\-| )limit")) {
                 logger.warning("Waittime detected, please reconnect to make the linkchecker work!");
                 return AvailableStatus.UNCHECKABLE;

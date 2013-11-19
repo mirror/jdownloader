@@ -29,7 +29,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mirrorstack.com" }, urls = { "https?://(www\\.)?(uploadmagnet\\.com|pdownload\\.net|zlinx\\.me|filesuploader\\.com|multishared\\.com|onmirror\\.com|multiupload\\.biz|lastbox\\.net|mirrorhive\\.com|mirrorstack\\.com)/([a-z0-9]{1,2}_)?[a-z0-9]{12}" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mirrorstack.com" }, urls = { "https?://(www\\.)?(uploadmagnet\\.com|pdownload\\.net|zlinx\\.me|filesuploader\\.com|onmirror\\.com|multiupload\\.biz|lastbox\\.net|mirrorhive\\.com|mirrorstack\\.com)/([a-z0-9]{1,2}_)?[a-z0-9]{12}" }, flags = { 0 })
 public class MirStkCm extends PluginForDecrypt {
 
     /*
@@ -49,10 +49,9 @@ public class MirStkCm extends PluginForDecrypt {
      */
 
     // 16/12/2012
-    // mirrorstack.com = up, multiple pages deep, requiring custom r_counter
+    // mirrorstack.com = up, multiple pages deep, requiring custom r_counter, link offline errorhandling
     // uploading.to = down/sudoparked = 173.192.223.71-static.reverse.softlayer.com
     // copyload.com = down/sudoparked = 208.43.167.115-static.reverse.softlayer.com
-    // multishared.com = up, custom fields for singleLinks && finallinks
     // onmirror.com = up, finallink are redirects on first singleLink page
     // multiupload.biz = up, multiple pages deep, with waits on last page
     // lastbox.net = up, finallink are redirects on first singleLink page
@@ -91,12 +90,8 @@ public class MirStkCm extends PluginForDecrypt {
         }
         br.setFollowRedirects(false);
         String[] singleLinks = null;
-        // multishared have normal hoster links outside SingleLink'.
-        if (parameter.matches(".+multishared.com/[a-z0-9]{12}")) {
-            singleLinks = br.getRegex("id=\\'stat\\d+_\\d+\\'><a href=\\'(http[^\\']+)").getColumn(0);
-        }
         // Add a single link parameter to String[]
-        else if (parameter.matches(regexSingleLink)) {
+        if (parameter.matches(regexSingleLink)) {
             singleLinks = new Regex(parameter, "(.+)").getColumn(0);
         }
         // Normal links, find all singleLinks
@@ -104,6 +99,10 @@ public class MirStkCm extends PluginForDecrypt {
             singleLinks = br.getRegex("<a href=\\'" + regexSingleLink + "\\'").getColumn(0);
             if (singleLinks == null || singleLinks.length == 0) {
                 singleLinks = br.getRegex(regexSingleLink).getColumn(0);
+            }
+            if ((singleLinks == null || singleLinks.length == 0) && parameter.contains("mirrorstack.com/") && br.containsHTML("class=\"mirror_hosts\"")) {
+                logger.info("Link offline: " + parameter);
+                return decryptedLinks;
             }
         }
         if (singleLinks == null || singleLinks.length == 0) {
@@ -125,38 +124,30 @@ public class MirStkCm extends PluginForDecrypt {
                 final Browser brc = br.cloneBrowser();
                 if (finallink == null) {
                     brc.getPage(singleLink);
-                    if (parameter.matches(".+(multishared\\.com)/.+")) {
-                        br.getPage(singleLink);
-                        brc.getHeaders().put("Referer", "http://multishared.com/r_counter");
-                        Thread.sleep(5 * 1000);
-                        brc.getPage(singleLink);
-                        finallink = brc.getRegex("http://multishared\\.com/r_ads\\'>[\t\n\r ]+<frame src=\"(http[^<>\"]*?)\"").getMatch(0);
-                    } else {
+                    finallink = brc.getRedirectLocation();
+                    if (finallink == null) {
+                        String referer = null;
+                        String add_char = "";
+                        Integer wait = 0;
+                        if (parameter.matches(".+(mirrorstack\\.com)/.+")) {
+                            add_char = "?";
+                            referer = new Regex(br.getURL(), "(https?://[^/]+)/").getMatch(0) + "/" + add_char + "q=r_counter";
+                        } else if (parameter.matches(".+(multiupload\\.biz)/.+")) {
+                            add_char = "?";
+                            referer = new Regex(br.getURL(), "(https?://[^/]+)/").getMatch(0).replace("http://", "https://") + "/r_counter";
+                            wait = 20;
+                        } else {
+                            referer = new Regex(br.getURL(), "(https?://[^/]+)/").getMatch(0) + "/r_counter";
+                        }
+                        brc.getHeaders().put("Referer", referer);
+                        Thread.sleep(wait * 1000);
+                        brc.getPage(singleLink + add_char);
                         finallink = brc.getRedirectLocation();
-                        if (finallink == null) {
-                            String referer = null;
-                            String add_char = "";
-                            Integer wait = 0;
-                            if (parameter.matches(".+(mirrorstack\\.com)/.+")) {
-                                add_char = "?";
-                                referer = new Regex(br.getURL(), "(https?://[^/]+)/").getMatch(0) + "/" + add_char + "q=r_counter";
-                            } else if (parameter.matches(".+(multiupload\\.biz)/.+")) {
-                                add_char = "?";
-                                referer = new Regex(br.getURL(), "(https?://[^/]+)/").getMatch(0).replace("http://", "https://") + "/r_counter";
-                                wait = 20;
-                            } else {
-                                referer = new Regex(br.getURL(), "(https?://[^/]+)/").getMatch(0) + "/r_counter";
-                            }
-                            brc.getHeaders().put("Referer", referer);
-                            Thread.sleep(wait * 1000);
-                            brc.getPage(singleLink + add_char);
-                            finallink = brc.getRedirectLocation();
-                        }
-                        if (finallink == null) {
-                            logger.warning("WARNING: Couldn't find finallink. Please report this issue to JD Developement team. : " + parameter);
-                            logger.warning("Continuing...");
-                            continue;
-                        }
+                    }
+                    if (finallink == null) {
+                        logger.warning("WARNING: Couldn't find finallink. Please report this issue to JD Developement team. : " + parameter);
+                        logger.warning("Continuing...");
+                        continue;
                     }
                 }
                 final DownloadLink link = createDownloadlink(finallink);

@@ -55,14 +55,20 @@ public class TrillHDCom extends PluginForHost {
         if (br.getURL().equals("http://www.trillhd.com/")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("<div class=\"title\">([^<>\"]*?)</div>").getMatch(0);
         if (filename == null) filename = br.getRegex("property='og:title'[\t\n\r ]+content='TrillHD \\| ([^<>\"]*?)'>").getMatch(0);
+        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        filename = Encoding.htmlDecode(filename.trim());
+        if (br.containsHTML("id=\"unreleased_clicker\"")) {
+            downloadLink.getLinkStatus().setStatusText("Not yet released");
+            downloadLink.setName(filename + ".mp4");
+            return AvailableStatus.TRUE;
+        }
         DLLINK = br.getRegex("\"480p\": \\[\"(http://[^<>\"]*?)\"\\]").getMatch(0);
         if (DLLINK == null) DLLINK = br.getRegex("\"(http://stream\\d+\\.trillhd\\.com/trill/[^<>\"]*?)\"").getMatch(0);
-        if (filename == null || DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         DLLINK = Encoding.htmlDecode(DLLINK);
-        filename = filename.trim();
         String ext = DLLINK.substring(DLLINK.lastIndexOf("."));
         if (ext == null || ext.length() > 5) ext = ".mp4";
-        downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + ext);
+        downloadLink.setFinalFileName(filename + ext);
         final Browser br2 = br.cloneBrowser();
         // In case the link redirects to the finallink
         br2.setFollowRedirects(true);
@@ -85,6 +91,7 @@ public class TrillHDCom extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
+        if (br.containsHTML("id=\"unreleased_clicker\"")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Not yet released", 12 * 60 * 60 * 1000l);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();

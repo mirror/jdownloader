@@ -71,15 +71,15 @@ import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.os.CrossSystem;
 
-@HostPlugin(revision = "$Revision: 19496 $", interfaceVersion = 2, names = { "dogupload.com" }, urls = { "https?://(www\\.)?dogupload\\.com/((vid)?embed-)?[a-z0-9]{12}" }, flags = { 0 })
+@HostPlugin(revision = "$Revision: 19496 $", interfaceVersion = 2, names = { "filesfrog.net", "dogupload.com" }, urls = { "https?://(www\\.)?(dogupload\\.com|filesfrog\\.net)/((vid)?embed-)?[a-z0-9]{12}", "46689ntjvrDELETE_MEdfg58imn38fth894uzjhvjmn34hgm2490jhgrt" }, flags = { 0, 0 })
 @SuppressWarnings("deprecation")
 public class DogUploadCom extends PluginForHost {
 
     // Site Setters
     // primary website url, take note of redirects
-    private final String               COOKIE_HOST                  = "http://dogupload.com";
+    private final String               COOKIE_HOST                  = "http://filesfrog.net";
     // domain names used within download links.
-    private final String               DOMAINS                      = "(dogupload\\.com)";
+    private final String               DOMAINS                      = "(filesfrog\\.net)";
     private final String               PASSWORDTEXT                 = "<br><b>Passwor(d|t):</b> <input";
     private final String               MAINTENANCE                  = ">This server is in maintenance mode";
     private final String               dllinkRegex                  = "https?://(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|([\\w\\-]+\\.)?" + DOMAINS + ")(:\\d{1,5})?/(files(/(dl|download))?|d|cgi-bin/dl\\.cgi)/(\\d+/)?([a-z0-9]+/){1,4}[^/<>\r\n\t]+";
@@ -110,8 +110,8 @@ public class DogUploadCom extends PluginForHost {
     private void setConstants(final Account account) {
         if (account != null && account.getBooleanProperty("free")) {
             // free account
-            chunks = 1;
-            resumes = false;
+            chunks = 0;
+            resumes = true;
             acctype = "Free Account";
             directlinkproperty = "freelink2";
         } else if (account != null && !account.getBooleanProperty("free")) {
@@ -1459,7 +1459,7 @@ public class DogUploadCom extends PluginForHost {
      * @param controlSlot
      *            (+1|-1)
      * */
-   private void controlSlot(final int num, final Account account) {
+    private void controlSlot(final int num, final Account account) {
         synchronized (CTRLLOCK) {
             if (account == null) {
                 int was = maxFree.get();

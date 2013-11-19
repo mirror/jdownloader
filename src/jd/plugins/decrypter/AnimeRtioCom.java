@@ -110,8 +110,6 @@ public class AnimeRtioCom extends PluginForDecrypt {
         if (tempID != null) return "http://www.facebook.com/video/video.php?v=" + tempID;
         tempID = new Regex(vidEntry, "frameborder=\"0\" src=\"(http://[^<>\"]*?)\"").getMatch(0);
         if (tempID != null) return tempID;
-        tempID = new Regex(vidEntry, "data=\"(http://(www\\.)?(videozer\\.com|videobb\\.com|video\\.rutube\\.ru)/[^<>\"]*?)\"").getMatch(0);
-        if (tempID != null) return tempID;
         return null;
     }
 

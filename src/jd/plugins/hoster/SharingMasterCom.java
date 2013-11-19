@@ -82,7 +82,7 @@ public class SharingMasterCom extends PluginForHost {
     private final String               DOMAINS                      = "(sharingmaster\\.com|ovh\\.net)";
     private final String               PASSWORDTEXT                 = "<br><b>Passwor(d|t):</b> <input";
     private final String               MAINTENANCE                  = ">This server is in maintenance mode";
-    // http://ns308303.ovh.net/cgi-bin/d2/dl.cgi/vlwnz2ajuzyianc2zkej2lhixdau36eibbnlbhuqae/DT.DesigAppCartoonCharactersinPhotoshop.part1.rar
+    // http://ns308303.ovh.net/cgi-bin/d2/dl.cgi/vlwnz2ajuzyianc2zkej2lhixdau36eibbnlbhuqae/xxxxx.rar
     private final String               dllinkRegex                  = "https?://(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|([\\w\\-]+\\.)?" + DOMAINS + ")(:\\d{1,5})?/((files(/(dl|download))?|d|cgi-bin(/d\\d+)?/dl\\.cgi)/(\\d+/)?([a-z0-9]+/){1,4}[^/<>\r\n\t]+|[a-z0-9]{58}/v(ideo)?\\.mp4)";
     private final boolean              supportsHTTPS                = false;
     private final boolean              enforcesHTTPS                = false;
@@ -1460,7 +1460,7 @@ public class SharingMasterCom extends PluginForHost {
      * @param controlSlot
      *            (+1|-1)
      * */
-   private void controlSlot(final int num, final Account account) {
+    private void controlSlot(final int num, final Account account) {
         synchronized (CTRLLOCK) {
             if (account == null) {
                 int was = maxFree.get();

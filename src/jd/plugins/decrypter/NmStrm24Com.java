@@ -151,7 +151,7 @@ public class NmStrm24Com extends PluginForDecrypt {
         }
         externID = new Regex(fragment, "player\\.mixturecloud\\.com/video/([A-Za-z0-9]+)\\.swf\"").getMatch(0);
         if (externID != null) { return "http://www.mixturecloud.com/media/" + externID; }
-        // For videozer.com, rutube.ru and probably more
+        // For rutube.ru and probably more
         externID = new Regex(fragment, "name=\"movie\" value=\"(http[^<>\"]*?)\"").getMatch(0);
         if (externID != null) { return externID; }
         // Redirect to other domain?
