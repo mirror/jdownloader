@@ -20,7 +20,7 @@ public class ExtractArchiveNowAction extends AbstractExtractionContextAction {
 
         setName(org.jdownloader.extensions.extraction.translate.T._.contextmenu_extract());
 
-        setSmallIcon(new ExtMergedIcon(new AbstractIcon("compress", 18)).add(new AbstractIcon(IconKey.ICON_MEDIA_PLAYBACK_START, 12), 6, 6));
+        setSmallIcon(new ExtMergedIcon(new AbstractIcon(org.jdownloader.gui.IconKey.ICON_COMPRESS, 18)).add(new AbstractIcon(IconKey.ICON_MEDIA_PLAYBACK_START, 12), 6, 6));
 
     }
 

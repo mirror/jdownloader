@@ -53,7 +53,7 @@ public class IconKey {
     public static final String ICON_ADDCONTAINER                 = "addContainer";
     public static final String ICON_ADD_SPECIAL                  = "add_special";
     public static final String ICON_ADVANCEDCONFIG               = "advancedConfig";
-
+    public static final String ICON_ARCHIVEPASSWORD              = "archivepassword";
     public static final String ICON_AUDIO                        = "audio";
     public static final String ICON_AUTO_RECONNECT               = "auto-reconnect";
     public static final String ICON_BAD                          = "bad";
@@ -66,6 +66,7 @@ public class IconKey {
     public static final String ICON_BOTTY_STOP                   = "botty_stop";
     public static final String ICON_BOX                          = "box";
     public static final String ICON_BRIGHTMIX_WRENCH             = "brightmix/wrench";
+    public static final String ICON_BRIGHTMIX_WRENCH_8           = "brightmix/wrench_8";
     public static final String ICON_BROWSE                       = "browse";
     public static final String ICON_BUBBLE                       = "bubble";
     public static final String ICON_BUG                          = "bug";
@@ -75,13 +76,16 @@ public class IconKey {
     public static final String ICON_CBH                          = "cbh";
     public static final String ICON_CES                          = "ces";
     public static final String ICON_CHAT                         = "chat";
-
+    public static final String ICON_CHECKBOX_FALSE               = "checkbox_false";
+    public static final String ICON_CHECKBOX_TRUE                = "checkbox_true";
+    public static final String ICON_CHECKBOX_UNDEFINED           = "checkbox_undefined";
     public static final String ICON_CHUNKS                       = "chunks";
     public static final String ICON_CLEAR                        = "clear";
     public static final String ICON_CLIPBOARD                    = "clipboard";
     public static final String ICON_CLOSE_ON                     = "close.on";
     public static final String ICON_CLOSE                        = "close";
     public static final String ICON_COLUMNBUTTON                 = "columnButton";
+    public static final String ICON_COMPRESS                     = "compress";
     public static final String ICON_CONFIRMALL                   = "confirmAll";
     public static final String ICON_CONFIRMSELECTEDLINKS         = "confirmSelectedLinks";
     public static final String ICON_CONSOLE                      = "console";
@@ -90,6 +94,7 @@ public class IconKey {
     public static final String ICON_COPY                         = "copy";
     public static final String ICON_COVER                        = "cover";
     public static final String ICON_CUT                          = "cut";
+    public static final String ICON_DBC                          = "dbc";
     public static final String ICON_DEFAULTPROXY                 = "defaultProxy";
     public static final String ICON_DELETE                       = "delete";
     public static final String ICON_DESKTOP                      = "desktop";
@@ -101,7 +106,8 @@ public class IconKey {
     public static final String ICON_DIALOG_LOGIN                 = "dialog/login";
     public static final String ICON_DIALOG_WARNING               = "dialog/warning";
     public static final String ICON_DIALOGOCR                    = "dialogOCR";
-
+    public static final String ICON_DISABLE                      = "disable";
+    public static final String ICON_DISABLED                     = "disabled";
     public static final String ICON_DLC                          = "dlc";
     public static final String ICON_DOCUMENT                     = "document";
     public static final String ICON_DOWNLOAD                     = "download";
@@ -109,7 +115,8 @@ public class IconKey {
     public static final String ICON_DOWNLOADPASSWORD             = "downloadpassword";
     public static final String ICON_DOWNLOADPATH                 = "downloadpath";
     public static final String ICON_EDIT                         = "edit";
-
+    public static final String ICON_ENABLE                       = "enable";
+    public static final String ICON_ENABLED                      = "enabled";
     public static final String ICON_ERROR                        = "error";
     public static final String ICON_EVENT                        = "event";
     public static final String ICON_EXIT                         = "exit";
@@ -122,6 +129,7 @@ public class IconKey {
     public static final String ICON_EXTTABLE_FINDMENU            = "exttable/findmenu";
     public static final String ICON_EXTTABLE_LOCKCOLUMN          = "exttable/lockColumn";
     public static final String ICON_EXTTABLE_RESETCOLUMNS        = "exttable/resetColumns";
+    public static final String ICON_EXTTABLE_SORT                = "exttable/sort";
     public static final String ICON_EXTTABLE_SORTASC             = "exttable/sortAsc";
     public static final String ICON_EXTTABLE_SORTDESC            = "exttable/sortDesc";
     public static final String ICON_EXTTABLE_WIDTHLOCKED         = "exttable/widthLocked";
@@ -294,6 +302,7 @@ public class IconKey {
     public static final String ICON_TOGGLE                       = "toggle";
     public static final String ICON_TOOLBAR                      = "toolbar";
     public static final String ICON_TOOLBARSS                    = "toolbarss";
+    public static final String ICON_TOPBAR                       = "topbar";
     public static final String ICON_TRASH                        = "trash";
     public static final String ICON_TREE_ARCHIVE                 = "tree_archive";
     public static final String ICON_TREE_ARCHIVE_ERROR           = "tree_archive_error";
@@ -306,7 +315,7 @@ public class IconKey {
     public static final String ICON_TRUE_ORANGE                  = "true-orange";
     public static final String ICON_TRUE                         = "true";
     public static final String ICON_UNDO                         = "undo";
-
+    public static final String ICON_UNPACK                       = "unpack";
     public static final String ICON_UPDATE                       = "update";
     public static final String ICON_UPDATERICON                  = "updatericon";
     public static final String ICON_UPDATERICON0                 = "updaterIcon0";
@@ -317,7 +326,7 @@ public class IconKey {
     public static final String ICON_URL                          = "url";
     public static final String ICON_USERS                        = "users";
     public static final String ICON_USERS_FTP                    = "users_ftp";
-
+    public static final String ICON_VALIDATE_ARCHIVE             = "validate_archive";
     public static final String ICON_VARIOUS                      = "various";
     public static final String ICON_VIDEO                        = "video";
     public static final String ICON_WAIT                         = "wait";

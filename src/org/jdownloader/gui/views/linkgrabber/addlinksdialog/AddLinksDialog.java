@@ -61,6 +61,7 @@ import org.jdownloader.controlling.PasswordUtils;
 import org.jdownloader.controlling.Priority;
 import org.jdownloader.controlling.packagizer.PackagizerController;
 import org.jdownloader.extensions.extraction.BooleanStatus;
+import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.helpdialogs.HelpDialog;
 import org.jdownloader.gui.packagehistorycontroller.DownloadPathHistoryManager;
 import org.jdownloader.gui.packagehistorycontroller.PackageHistoryEntry;
@@ -353,7 +354,7 @@ public class AddLinksDialog extends AbstractDialog<LinkCollectingJob> {
         p.add(createIconLabel("document", _GUI._.AddLinksDialog_layoutDialogContent_comment_tt()), "aligny center,width 32!");
         p.add(comment, "spanx,height " + height + "!");
 
-        p.add(createIconLabel(new ExtMergedIcon(new AbstractIcon("compress", 24)).add(new AbstractIcon("lock", 18), 6, 6), _GUI._.AddLinksDialog_layoutDialogContent_downloadpassword_tt()), "aligny center,height " + height + "!,width 32!");
+        p.add(createIconLabel(new ExtMergedIcon(new AbstractIcon(IconKey.ICON_COMPRESS, 24)).add(new AbstractIcon("lock", 18), 6, 6), _GUI._.AddLinksDialog_layoutDialogContent_downloadpassword_tt()), "aligny center,height " + height + "!,width 32!");
 
         p.add(password, "pushx,growx,height " + height + "!");
         MigPanel subpanel = new MigPanel("ins 0", "[grow,fill][]", "[" + height + "!,grow]");

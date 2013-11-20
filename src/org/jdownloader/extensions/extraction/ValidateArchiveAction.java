@@ -34,7 +34,7 @@ public class ValidateArchiveAction<PackageType extends AbstractPackageNode<Child
         } else {
             setName(T._.ValidateArchiveAction_ValidateArchiveAction(as[0].getName()));
         }
-        setSmallIcon(new ImageIcon(ImageProvider.merge(NewTheme.I().getImage("compress", 20), NewTheme.I().getImage("ok", 12), 0, 0, 10, 10)));
+        setSmallIcon(new ImageIcon(ImageProvider.merge(NewTheme.I().getImage(org.jdownloader.gui.IconKey.ICON_COMPRESS, 20), NewTheme.I().getImage("ok", 12), 0, 0, 10, 10)));
         extractor = extractionExtension;
         archives = new ArrayList<Archive>();
         for (Archive a : as) {
@@ -49,7 +49,7 @@ public class ValidateArchiveAction<PackageType extends AbstractPackageNode<Child
 
     public ValidateArchiveAction(ExtractionExtension extractionExtension, SelectionInfo<PackageType, ChildrenType> si) {
         setName(T._.ValidateArchiveAction_ValidateArchiveAction_object_());
-        setSmallIcon(new ImageIcon(ImageProvider.merge(NewTheme.I().getImage("compress", 18), NewTheme.I().getImage("ok", 11), -1, 0, 6, 8)));
+        setSmallIcon(new ImageIcon(ImageProvider.merge(NewTheme.I().getImage(org.jdownloader.gui.IconKey.ICON_COMPRESS, 18), NewTheme.I().getImage("ok", 11), -1, 0, 6, 8)));
         //
         extractor = extractionExtension;
         archives = new ArrayList<Archive>();

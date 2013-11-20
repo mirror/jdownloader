@@ -192,7 +192,7 @@ public class CompiledFiletypeFilter {
         }
 
         public String getIconID() {
-            return "compress";
+            return org.jdownloader.gui.IconKey.ICON_COMPRESS;
         }
     }
 
