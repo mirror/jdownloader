@@ -24,11 +24,9 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
-import jd.plugins.PluginForDecrypt;
-import jd.utils.JDUtilities;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "deleteme" }, urls = { "REGEXNOTUSED-ASDFJASnafhaysdfabFASDFYADSFnasdfhasdfyash" }, flags = { 0 })
-public class XSharezCom extends PluginForDecrypt {
+public class XSharezCom extends SflnkgNt {
 
     // TODO: DELETE WHEN JD2 goes stable.
 
@@ -39,8 +37,7 @@ public class XSharezCom extends PluginForDecrypt {
     @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final PluginForDecrypt solveplug = JDUtilities.getPluginForDecrypt("safelinking.net");
-        final jd.plugins.decrypter.SflnkgNt.GeneralSafelinkingHandling gsh = ((jd.plugins.decrypter.SflnkgNt) solveplug).getGeneralSafelinkingHandling(this.br, param, this.getHost());
+        final GeneralSafelinkingHandling gsh = new GeneralSafelinkingHandling(br, param, getHost());
         gsh.startUp();
         try {
             gsh.decrypt();

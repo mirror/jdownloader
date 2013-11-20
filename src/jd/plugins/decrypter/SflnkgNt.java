@@ -49,10 +49,6 @@ public class SflnkgNt extends PluginForDecrypt {
         super(wrapper);
     }
 
-    public GeneralSafelinkingHandling getGeneralSafelinkingHandling(final Browser br, final CryptedLink param, final String host) {
-        return new GeneralSafelinkingHandling(br, param, host);
-    }
-
     @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
@@ -98,8 +94,7 @@ public class SflnkgNt extends PluginForDecrypt {
 
     public class GeneralSafelinkingHandling {
         /**
-         * A class to handle sites similar to safelinking.net ->Google "Secure your links with a captcha, a password and much more" to find
-         * such sites
+         * A class to handle sites similar to safelinking.net ->Google "Secure your links with a captcha, a password and much more" to find such sites
          */
 
         public GeneralSafelinkingHandling(final Browser br, final CryptedLink param, final String host) {

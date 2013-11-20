@@ -38,7 +38,7 @@ import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "keeplinks.me" }, urls = { "https?://(www\\.)?keeplinks\\.me/(p|d)/[a-z0-9]+" }, flags = { 0 })
-public class KeepLinksMe extends PluginForDecrypt {
+public class KeepLinksMe extends SaveLinksNet {
 
     public KeepLinksMe(PluginWrapper wrapper) {
         super(wrapper);
@@ -50,8 +50,7 @@ public class KeepLinksMe extends PluginForDecrypt {
     @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final PluginForDecrypt solveplug = JDUtilities.getPluginForDecrypt("safelinking.net");
-        final jd.plugins.decrypter.SflnkgNt.GeneralSafelinkingHandling gsh = ((jd.plugins.decrypter.SflnkgNt) solveplug).getGeneralSafelinkingHandling(this.br, param, this.getHost());
+        final GeneralSafelinkingHandling gsh = new GeneralSafelinkingHandling(br, param, getHost());
         final String parameter = param.toString();
         gsh.startUp();
         try {
