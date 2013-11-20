@@ -123,7 +123,7 @@ public class AboutDialog extends AbstractDialog<Integer> {
         }
 
         contentpane.setLayout(new MigLayout("ins 10, wrap 1", "[grow,fill]"));
-        contentpane.add(new JLabel(NewTheme.I().getIcon("logo/jd_logo_128_128", -1)), "aligny center, spany 6");
+        contentpane.add(new JLabel(NewTheme.I().getIcon(IconKey.ICON_LOGO_JD_LOGO_64_64, -1)), "aligny center, spany 6");
 
         contentpane.add(lbl, "split 2");
         // this has been the branch label
@@ -221,15 +221,27 @@ public class AboutDialog extends AbstractDialog<Integer> {
             LogController.GL.log(e);
         }
 
-        stats.add(new JLabel("RTMP Support"), "");
+        stats.add(new JLabel("RTMP Support:"), "");
         stats.add(disable("RtmpDump (http://rtmpdump.mplayerhq.hu)"));
-        stats.add(new JLabel("UPNP"), "");
+        stats.add(new JLabel("UPNP:"), "");
         stats.add(disable("Cling (http://4thline.org/projects/cling)"));
-        stats.add(new JLabel("Extraction"), "");
+        stats.add(new JLabel("Extraction:"), "");
         stats.add(disable("7ZipJBindings (http://sevenzipjbind.sourceforge.net/)"));
+
         stats.add(new JLabel(_GUI._.jd_gui_swing_components_AboutDialog_laf()), "");
         stats.add(disable("Synthetica (http://www.jyloo.com/synthetica/)"));
         stats.add(disable(_GUI._.jd_gui_swing_components_AboutDialog_synthetica2("(#289416475)")), "skip");
+
+        stats.add(new JLabel(_GUI._.jd_gui_swing_components_AboutDialog_icons()), "");
+        stats.add(disable("See /themes/* folder for Icon Licenses"), "");
+        stats.add(disable("Tango Icons (http://tango.freedesktop.org/)"), "skip");
+        stats.add(disable("FatCow-Farm Fresh Icons (http://www.fatcow.com/free-icons)"), "skip");
+        stats.add(disable("Mimi Glyphs Set (http://salleedesign.com)"), "skip");
+        stats.add(disable("Bright Mix Set (http://www.brightmix.com)"), "skip");
+        stats.add(disable("Picol Icon Set (http://www.picol.org)"), "skip");
+        stats.add(disable("further icons by AppWork GmbH"), "skip");
+        stats.add(disable("& the JDownloader Community"), "skip");
+
         this.registerEscape(contentpane);
 
         return contentpane;

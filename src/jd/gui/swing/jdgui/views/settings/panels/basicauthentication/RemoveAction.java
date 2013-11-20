@@ -8,6 +8,8 @@ import jd.controlling.authentication.AuthenticationInfo;
 
 import org.appwork.utils.event.queue.QueueAction;
 import org.jdownloader.actions.AppAction;
+import org.jdownloader.gui.IconKey;
+import org.jdownloader.gui.translate._GUI;
 
 public class RemoveAction extends AppAction {
     /**
@@ -21,12 +23,16 @@ public class RemoveAction extends AppAction {
     public RemoveAction(AuthTable table) {
         this.table = table;
         this.ignoreSelection = true;
+        setName(_GUI._.literally_remove());
+        setIconKey(IconKey.ICON_REMOVE);
 
     }
 
     public RemoveAction(AuthTable authTable, java.util.List<AuthenticationInfo> selection, boolean force) {
         this.table = authTable;
         this.selection = selection;
+        setName(_GUI._.literally_remove());
+        setIconKey(IconKey.ICON_REMOVE);
 
     }
 

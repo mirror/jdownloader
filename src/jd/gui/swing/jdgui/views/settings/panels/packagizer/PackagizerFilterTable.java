@@ -30,7 +30,7 @@ public class PackagizerFilterTable extends BasicJDTable<PackagizerRule> {
         setTransferHandler(new ExtTransferHandler<PackagizerRule>());
         if (Application.getJavaVersion() >= Application.JAVA16) setDropMode(DropMode.INSERT_ROWS);
 
-        setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
     }
 
     /*

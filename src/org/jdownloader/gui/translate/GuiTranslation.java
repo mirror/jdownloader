@@ -3715,4 +3715,7 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "An Error occured! " })
     String FilePackageView_addLinkToTemp_downloaderror_();
 
+    @Default(lngs = { "en" }, values = { "Icons & Artwork:" })
+    String jd_gui_swing_components_AboutDialog_icons();
+
 }

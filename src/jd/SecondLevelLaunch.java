@@ -511,10 +511,17 @@ public class SecondLevelLaunch {
 
         try {
             if (FILE.exists()) {
+                final String error = IO.readFileToString(FILE);
+                // we need an extra thread. else this blocking dialog would block the startup process and cause the update launcher to think
+                // that starting jd failed.
+                new Thread("ShowBadExit") {
+                    public void run() {
+                        String txt = "It seems that JDownloader did not exit properly on " + error + "\r\nThis might result in losing settings or your downloadlist!\r\n\r\nPlease make sure to close JDownloader using Menu->File->Exit or Window->Close [X]";
+                        LOG.warning("BAD EXIT Detected!: " + txt);
+                        Dialog.getInstance().showErrorDialog(UIOManager.BUTTONS_HIDE_CANCEL | Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN | Dialog.LOGIC_DONOTSHOW_BASED_ON_TITLE_ONLY, "Warning - Bad Exit!", txt);
 
-                String txt = "It seems that JDownloader did not exit properly on " + IO.readFileToString(FILE) + "\r\nThis might result in losing settings or your downloadlist!\r\n\r\nPlease make sure to close JDownloader using Menu->File->Exit or Window->Close [X]";
-                LOG.warning("BAD EXIT Detected!: " + txt);
-                Dialog.getInstance().showErrorDialog(UIOManager.BUTTONS_HIDE_CANCEL | Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN | Dialog.LOGIC_DONOTSHOW_BASED_ON_TITLE_ONLY, "Warning - Bad Exit!", txt);
+                    };
+                }.start();
 
             }
 

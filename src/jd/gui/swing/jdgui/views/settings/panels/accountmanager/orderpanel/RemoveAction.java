@@ -11,6 +11,7 @@ import org.appwork.utils.swing.dialog.DialogNoAnswerException;
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.controlling.hosterrule.AccountUsageRule;
 import org.jdownloader.controlling.hosterrule.HosterRuleController;
+import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
 
 public class RemoveAction extends AppAction {
@@ -24,11 +25,15 @@ public class RemoveAction extends AppAction {
 
     public RemoveAction(HosterRuleTable table) {
         this.table = table;
+        setName(_GUI._.literally_remove());
+        setIconKey(IconKey.ICON_REMOVE);
     }
 
     public RemoveAction(List<AccountUsageRule> selection2, boolean force) {
         this.force = force;
         this.selection = selection2;
+        setName(_GUI._.literally_remove());
+        setIconKey(IconKey.ICON_REMOVE);
     }
 
     public void actionPerformed(ActionEvent e) {

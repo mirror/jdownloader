@@ -10,6 +10,7 @@ import org.appwork.utils.event.queue.QueueAction;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogNoAnswerException;
 import org.jdownloader.actions.AppAction;
+import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
 
 public class RemoveAction extends AppAction {
@@ -23,11 +24,15 @@ public class RemoveAction extends AppAction {
 
     public RemoveAction(PremiumAccountTable table) {
         this.table = table;
+        setName(_GUI._.literally_remove());
+        setIconKey(IconKey.ICON_REMOVE);
     }
 
     public RemoveAction(List<AccountEntry> selection2, boolean force) {
         this.force = force;
         this.selection = selection2;
+        setName(_GUI._.literally_remove());
+        setIconKey(IconKey.ICON_REMOVE);
     }
 
     public void actionPerformed(ActionEvent e) {

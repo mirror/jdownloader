@@ -14,6 +14,7 @@ import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.controlling.packagizer.PackagizerController;
 import org.jdownloader.controlling.packagizer.PackagizerRule;
+import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.translate._JDT;
 
@@ -26,12 +27,16 @@ public class RemoveAction extends AppAction {
     public RemoveAction(PackagizerFilterTable table) {
         this.table = table;
         this.ignoreSelection = true;
+        setName(_GUI._.literally_remove());
+        setIconKey(IconKey.ICON_REMOVE);
 
     }
 
     public RemoveAction(PackagizerFilterTable table, java.util.List<PackagizerRule> selected, boolean force) {
         this.table = table;
         this.selected = selected;
+        setName(_GUI._.literally_remove());
+        setIconKey(IconKey.ICON_REMOVE);
 
     }
 

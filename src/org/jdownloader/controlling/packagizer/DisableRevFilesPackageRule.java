@@ -17,7 +17,7 @@ public class DisableRevFilesPackageRule extends PackagizerRule {
         // setFilenameFilter(new RegexFilter(true, MatchType.EQUALS, "*.rev", false));
         setFiletypeFilter(new FiletypeFilter(TypeMatchType.IS, true, false, false, false, false, "rev", false));
         setOnlineStatusFilter(new OnlineStatusFilter(OnlineStatusMatchtype.IS, true, OnlineStatus.ONLINE));
-        setIconKey("rar");
+        setIconKey("compress");
         setName(_JDT._.DisableRevFilesPackageRulee_rule_name());
         setLinkEnabled(false);
         setEnabled(true);

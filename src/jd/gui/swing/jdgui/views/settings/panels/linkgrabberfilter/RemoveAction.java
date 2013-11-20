@@ -15,6 +15,7 @@ import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.controlling.filter.LinkFilterController;
 import org.jdownloader.controlling.filter.LinkgrabberFilterRule;
+import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.translate._JDT;
 
@@ -28,12 +29,17 @@ public class RemoveAction extends AppAction {
     public RemoveAction(LinkgrabberFilter linkgrabberFilter) {
         this.linkgrabberFilter = linkgrabberFilter;
         this.ignoreSelection = true;
+        setName(_GUI._.literally_remove());
+        setIconKey(IconKey.ICON_REMOVE);
+        ;
 
     }
 
     public RemoveAction(AbstractFilterTable table, java.util.List<LinkgrabberFilterRule> selected, boolean force) {
         this.table = table;
         this.selected = selected;
+        setName(_GUI._.literally_remove());
+        setIconKey(IconKey.ICON_REMOVE);
     }
 
     protected boolean rly(String msg) {

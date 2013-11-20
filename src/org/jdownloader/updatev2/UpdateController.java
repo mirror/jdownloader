@@ -61,7 +61,8 @@ public class UpdateController implements UpdateCallbackInterface {
     private UpdateSettings settings;
 
     /**
-     * Create a new instance of UpdateController. This is a singleton class. Access the only existing instance by using {@link #getInstance()}.
+     * Create a new instance of UpdateController. This is a singleton class. Access the only existing instance by using
+     * {@link #getInstance()}.
      */
     private UpdateController() {
         confirmedThreads = new HashSet<Thread>();
@@ -89,9 +90,10 @@ public class UpdateController implements UpdateCallbackInterface {
             if (logger != null) logger.close();
             logger = newLogger;
         }
-        handler.startIntervalChecker();
+
         this.appid = appid;
         this.updaterid = updaterid;
+        handler.startIntervalChecker();
         // UpdateAction.getInstance().setEnabled(true);
 
     }

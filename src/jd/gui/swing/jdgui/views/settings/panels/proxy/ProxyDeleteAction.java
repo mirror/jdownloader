@@ -8,6 +8,8 @@ import jd.controlling.proxy.ProxyInfo;
 
 import org.appwork.utils.event.queue.QueueAction;
 import org.jdownloader.actions.AppAction;
+import org.jdownloader.gui.IconKey;
+import org.jdownloader.gui.translate._GUI;
 
 public class ProxyDeleteAction extends AppAction {
 
@@ -17,12 +19,16 @@ public class ProxyDeleteAction extends AppAction {
     public ProxyDeleteAction(ProxyTable table) {
 
         this.table = table;
+        setName(_GUI._.literally_remove());
+        setIconKey(IconKey.ICON_REMOVE);
 
     }
 
     public ProxyDeleteAction(final java.util.List<ProxyInfo> selected, boolean force) {
         super();
         this.selected = selected;
+        setName(_GUI._.literally_remove());
+        setIconKey(IconKey.ICON_REMOVE);
 
     }
 

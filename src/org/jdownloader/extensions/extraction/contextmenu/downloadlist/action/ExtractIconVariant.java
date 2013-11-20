@@ -17,7 +17,7 @@ public class ExtractIconVariant extends ExtMergedIcon {
     }
 
     public ExtractIconVariant(String badge, int size, int badgesize, int xOffset, int yOffset) {
-        mainIcon = new AbstractIcon("rar", size);
+        mainIcon = new AbstractIcon("compress", size);
         add(mainIcon);
         AbstractIcon badgeIcon = new AbstractIcon(badge, badgesize);
         add(badgeIcon, xOffset + mainIcon.getIconWidth() - badgeIcon.getIconWidth(), yOffset + mainIcon.getIconHeight() - badgeIcon.getIconHeight());

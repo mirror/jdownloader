@@ -70,7 +70,7 @@ public class ExtractAction extends AbstractExtractionContextAction {
         super();
 
         setName(T._.menu_tools_extract_files());
-        setIconKey("rar");
+        setIconKey("compress");
 
     }
 
@@ -213,7 +213,7 @@ public class ExtractAction extends AbstractExtractionContextAction {
 
                                     return null;
                                 }
-                            }, 0, T._.extracting_archive(archive.getName()), T._.extracting_wait(archive.getName()), new ExtMergedIcon(new AbstractIcon("rar", 32)).add(new AbstractIcon(IconKey.ICON_MEDIA_PLAYBACK_START, 24), 6, 6), null, null) {
+                            }, 0, T._.extracting_archive(archive.getName()), T._.extracting_wait(archive.getName()), new ExtMergedIcon(new AbstractIcon("compress", 32)).add(new AbstractIcon(IconKey.ICON_MEDIA_PLAYBACK_START, 24), 6, 6), null, null) {
                                 @Override
                                 public ModalityType getModalityType() {
                                     return ModalityType.MODELESS;

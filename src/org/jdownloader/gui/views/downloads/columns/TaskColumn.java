@@ -112,9 +112,9 @@ public class TaskColumn extends ExtTextColumn<AbstractNode> {
         this.falseIcon = NewTheme.I().getIcon("false", 16);
         this.infoIcon = NewTheme.I().getIcon("info", 16);
         this.iconWait = NewTheme.I().getIcon("wait", 16);
-        this.extracting = NewTheme.I().getIcon("rar", 16);
+        this.extracting = NewTheme.I().getIcon("compress", 16);
         startingIcon = NewTheme.I().getIcon("run", 16);
-        trueIconExtracted = new ImageIcon(ImageProvider.merge(trueIcon.getImage(), NewTheme.I().getImage("rar", 16), 0, 0, trueIcon.getIconWidth() + 4, (trueIcon.getIconHeight() - 16) / 2 + 2));
+        trueIconExtracted = new ImageIcon(ImageProvider.merge(trueIcon.getImage(), NewTheme.I().getImage("compress", 16), 0, 0, trueIcon.getIconWidth() + 4, (trueIcon.getIconHeight() - 16) / 2 + 2));
         trueIconExtractedFailed = new ImageIcon(ImageProvider.merge(trueIconExtracted.getImage(), NewTheme.I().getImage("error", 10), 0, 0, trueIcon.getIconWidth() + 12, trueIconExtracted.getIconHeight() - 10));
         startingString = _GUI._.TaskColumn_fillColumnHelper_starting();
         setRowSorter(new ExtDefaultRowSorter<AbstractNode>() {
