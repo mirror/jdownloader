@@ -521,7 +521,7 @@ public class CosmoBoxOrg extends PluginForHost {
             } catch (final Throwable e) {
             }
         } else {
-            String expire = new Regex(correctedBR, Pattern.compile("<td>Premium(\\-| )Account expires?:</td>.*?<td>(<b>)?(\\d{1,2} [A-Za-z]+ \\d{4})(</b>)?</td>", Pattern.CASE_INSENSITIVE)).getMatch(2);
+            String expire = new Regex(correctedBR, Pattern.compile("(\\d{1,2} (January|February|March|April|May|June|July|August|September|October|November|December) \\d{4})", Pattern.CASE_INSENSITIVE)).getMatch(0);
             if (expire == null) {
                 ai.setExpired(true);
                 account.setValid(false);

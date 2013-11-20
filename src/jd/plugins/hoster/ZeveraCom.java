@@ -56,6 +56,8 @@ public class ZeveraCom extends PluginForHost {
     private static Object                                  LOCK               = new Object();
     private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap = new HashMap<Account, HashMap<String, Long>>();
 
+    private static final String                            NOCHUNKS           = "NOCHUNKS";
+
     public ZeveraCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium(mProt + mName + "/");
@@ -177,9 +179,16 @@ public class ZeveraCom extends PluginForHost {
     private void handleDL(final DownloadLink link, String dllink) throws Exception {
         br.setFollowRedirects(true);
         showMessage(link, "Phase 3/3: Check download!");
+        int maxchunks = 0;
+        if (link.getBooleanProperty(ZeveraCom.NOCHUNKS, false)) maxchunks = 1;
         try {
-            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, maxchunks);
         } catch (final PluginException e) {
+            /* unknown error, we disable multiple chunks */
+            if (link.getBooleanProperty(ZeveraCom.NOCHUNKS, false) == false) {
+                link.setProperty(ZeveraCom.NOCHUNKS, Boolean.valueOf(true));
+                throw new PluginException(LinkStatus.ERROR_RETRY);
+            }
             logger.info("Zevera download failed because: " + e.getMessage());
             throw e;
         } catch (final SocketTimeoutException e) {

@@ -58,6 +58,10 @@ public class GeneralFilesCom extends PluginForDecrypt {
             logger.info("Link offline: " + parameter);
             return decryptedLinks;
         }
+        if (br.containsHTML("No htmlCode read")) {
+            logger.info("Cannot decrypt link (server error): " + parameter);
+            return decryptedLinks;
+        }
 
         String fpName = br.getRegex("<h4 class=\"file\\-header\\-2\">([^<>\"]*?)</h4>").getMatch(0);
         if (fpName == null) fpName = new Regex(parameter, "/download/[a-z0-9]+/([^<>\"/]*?)\\.html").getMatch(0);

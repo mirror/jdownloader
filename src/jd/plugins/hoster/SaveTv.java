@@ -170,10 +170,11 @@ public class SaveTv extends PluginForHost {
         String produceyear = null;
         if (SESSIONID != null || this.getPluginConfig().getBooleanProperty(USEAPI, false)) {
             if (SESSIONID == null) login(this.br, aa, true);
-            // doSoapRequest("http://tempuri.org/IVideoArchive/GetVideoArchiveDelta",
-            // "<s:Envelope xmlns:s=\"http://schemas.xmlsoap.org/soap/envelope/\"><s:Body><GetVideoArchiveDelta xmlns=\"http://tempuri.org/\"><sessionId>"
-            // + SESSIONID +
-            // "</sessionId><changesSince>2013-11-11T16:59:22.0873816</changesSince><from>0</from><count>0</count></GetVideoArchiveDelta></s:Body></s:Envelope>");
+            // doSoapRequest("http://tempuri.org/ITelecast/GetTelecastDetail",
+            // "<s:Envelope xmlns:s=\"http://schemas.xmlsoap.org/soap/envelope/\"><s:Body><GetTelecastDetail xmlns=\"http://tempuri.org/\"><sessionId>"
+            // + this.SESSIONID +
+            // "</sessionId><telecastIds xmlns:a=\"http://schemas.microsoft.com/2003/10/Serialization/Arrays\"xmlns:i=\"http://www.w3.org/2001/XMLSchema-instance\"><a:int>"
+            // + this.getTelecastId(link) + "</a:int></telecastIds><detailLevel>1</detailLevel></GetTelecastDetail></s:Body></s:Envelope>");
             br.getHeaders().put("SOAPAction", "http://tempuri.org/IVideoArchive/GetAdFreeState");
             br.getHeaders().put("Content-Type", "text/xml");
             br.postPage(APIPAGE, "<?xml version=\"1.0\" encoding=\"utf-8\"?><v:Envelope xmlns:i=\"http://www.w3.org/2001/XMLSchema-instance\" xmlns:d=\"http://www.w3.org/2001/XMLSchema\" xmlns:c=\"http://schemas.xmlsoap.org/soap/encoding/\" xmlns:v=\"http://schemas.xmlsoap.org/soap/envelope/\"><v:Header /><v:Body><GetAdFreeState xmlns=\"http://tempuri.org/\" id=\"o0\" c:root=\"1\"><sessionId i:type=\"d:string\">" + SESSIONID + "</sessionId><telecastId i:type=\"d:int\">" + getTelecastId(link) + "</telecastId><telecastIdSpecified i:type=\"d:boolean\">true</telecastIdSpecified></GetAdFreeState></v:Body></v:Envelope>");
@@ -197,35 +198,46 @@ public class SaveTv extends PluginForHost {
             if (filenameReplace != null) site_title = apifilename.replace(filenameReplace, "");
 
             date = fName.getMatch(1);
-            if (date != null) {
-                datemilliseconds = TimeFormatter.getMilliSeconds(date, "yyyy-MM-dd", Locale.ENGLISH);
-                final Regex originalDatePart = new Regex(apifilename, "(\\d{4}\\-\\d{2}\\-\\d{2}_(\\d{4}))_\\d+\\.mp4");
-                broadcastTime = originalDatePart.getMatch(1);
-                if (broadcastTime != null) {
-                    // Add time to date
-                    if (broadcastTime != null) {
-                        // Add missing time - Also add one hour because otherwise one is missing
-                        datemilliseconds += TimeFormatter.getMilliSeconds(broadcastTime, "hhmm", Locale.ENGLISH) + (60 * 60 * 1000l);
-                    }
-                }
-                // String newDateString = null;
-                // final String userDefinedDateFormat = "yyyy-MM-dd_HH_mm";
-                // SimpleDateFormat formatter = new SimpleDateFormat(userDefinedDateFormat);
-                // Date theDate = new Date(datemilliseconds);
-                // if (userDefinedDateFormat != null) {
-                // try {
-                // newDateString = formatter.format(theDate);
-                // final String originalDateString = originalDatePart.getMatch(0);
-                // apifilename = apifilename.replace(originalDateString, newDateString);
-                // } catch (Exception e) {
-                // // prevent user error killing plugin.
-                // newDateString = "";
-                // }
-                // }
-                link.setProperty("apiplainfilename", apifilename);
-
-            }
-
+            // if (date != null) {
+            // datemilliseconds = TimeFormatter.getMilliSeconds(date, "yyyy-MM-dd", Locale.ENGLISH);
+            // final Regex originalDatePart = new Regex(apifilename, "(\\d{4}\\-\\d{2}\\-\\d{2}_(\\d{4}))_\\d+\\.mp4");
+            // broadcastTime = originalDatePart.getMatch(1);
+            // if (broadcastTime != null) {
+            // // Add time to date
+            // if (broadcastTime != null) {
+            // DateFormat readFormat = new SimpleDateFormat("hhmm");
+            // DateFormat writeFormat = new SimpleDateFormat("HH:mm");
+            // Date date2 = null;
+            // try {
+            // date2 = readFormat.parse(broadcastTime);
+            // } catch (ParseException e) {
+            // e.printStackTrace();
+            // }
+            // String formattedDate = null;
+            // if (date2 != null) {
+            // formattedDate = writeFormat.format(date2);
+            // }
+            //
+            // // Add missing time - Also add one hour because otherwise one is missing
+            // datemilliseconds += TimeFormatter.getMilliSeconds(broadcastTime, "hhmm", Locale.ENGLISH) + (60 * 60 * 1000l);
+            // }
+            // }
+            // String newDateString = null;
+            // final String userDefinedDateFormat = "yyyy-MM-dd_HH_mm";
+            // SimpleDateFormat formatter = new SimpleDateFormat(userDefinedDateFormat);
+            // Date theDate = new Date(datemilliseconds);
+            // if (userDefinedDateFormat != null) {
+            // try {
+            // newDateString = formatter.format(theDate);
+            // final String originalDateString = originalDatePart.getMatch(0);
+            // apifilename = apifilename.replace(originalDateString, newDateString);
+            // } catch (Exception e) {
+            // // prevent user error killing plugin.
+            // newDateString = "";
+            // }
+            // }
+            // }
+            link.setProperty("apiplainfilename", apifilename);
             filesize += " KB";
         } else {
             boolean isSeries = false;
@@ -561,11 +573,12 @@ public class SaveTv extends PluginForHost {
      * @param soapPost
      *            : The soap post data
      */
-    // private void doSoapRequest(final String soapAction, final String soapPost) throws IOException {
-    // br.getHeaders().put("SOAPAction", soapAction);
-    // br.getHeaders().put("Content-Type", "text/xml");
-    // br.postPage(APIPAGE, soapAction);
-    // }
+    private void doSoapRequest(final String soapAction, final String soapPost) throws IOException {
+        br.getHeaders().put("SOAPAction", soapAction);
+        br.getHeaders().put("Content-Type", "text/xml");
+        br.getHeaders().put("Content-Length", Integer.toString(soapPost.length()));
+        br.postPage(APIPAGE, soapAction);
+    }
 
     @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
@@ -653,7 +666,7 @@ public class SaveTv extends PluginForHost {
                             return;
                         }
                     }
-                    final String postData = "sUsername=" + Encoding.urlEncode_light(account.getUser()) + "&sPassword=" + Encoding.urlEncode_light(account.getPass()) + "&image.x=" + new Random().nextInt(100) + "&image.y=" + new Random().nextInt(100) + "&image=Login&bAutoLoginActivate=1";
+                    final String postData = "sUsername=" + Encoding.urlEncode(account.getUser()) + "&sPassword=" + Encoding.urlEncode(account.getPass()) + "&bAutoLoginActivate=1";
                     br.postPage("https://www.save.tv/STV/M/Index.cfm?sk=PREMIUM", postData);
                     if (!br.containsHTML("/STV/M/obj/user/usEdit.cfm") || br.containsHTML("Bitte verifizieren Sie Ihre Logindaten")) {
                         final String lang = System.getProperty("user.language");
