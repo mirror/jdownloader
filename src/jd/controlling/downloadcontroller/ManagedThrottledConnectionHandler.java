@@ -1,7 +1,9 @@
 package jd.controlling.downloadcontroller;
 
-import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 
 import jd.plugins.DownloadLink;
 
@@ -11,11 +13,11 @@ import org.appwork.utils.speedmeter.SpeedMeterInterface;
 
 public class ManagedThrottledConnectionHandler implements ThrottledConnectionHandler {
 
-    private java.util.List<ThrottledConnection> connections = new ArrayList<ThrottledConnection>();
-    private int                            limit       = 0;
-    private volatile long                  traffic     = 0;
-    final private DownloadLink             link;
-    private DownloadSpeedManager           managedBy   = null;
+    private CopyOnWriteArrayList<ThrottledConnection> connections = new CopyOnWriteArrayList<ThrottledConnection>();
+    private AtomicInteger                             limit       = new AtomicInteger(0);
+    private AtomicLong                                traffic     = new AtomicLong(0l);
+    final private DownloadLink                        link;
+    private DownloadSpeedManager                      managedBy   = null;
 
     public ManagedThrottledConnectionHandler(DownloadLink link) {
         this.link = link;
@@ -26,15 +28,11 @@ public class ManagedThrottledConnectionHandler implements ThrottledConnectionHan
     }
 
     public void addThrottledConnection(ThrottledConnection con) {
-        if (this.connections.contains(con)) return;
-        synchronized (this) {
-            java.util.List<ThrottledConnection> newConnections = new ArrayList<ThrottledConnection>(connections);
-            newConnections.add(con);
-            connections = newConnections;
+        if (connections.addIfAbsent(con)) {
+            DownloadSpeedManager lmanagedBy = managedBy;
+            if (lmanagedBy != null && lmanagedBy.getLimit() > 0 || getLimit() > 0) con.setLimit(10);
+            con.setHandler(this);
         }
-        DownloadSpeedManager lmanagedBy = managedBy;
-        if (lmanagedBy != null && lmanagedBy.getLimit() > 0 || getLimit() > 0) con.setLimit(10);
-        con.setHandler(this);
     }
 
     public List<ThrottledConnection> getConnections() {
@@ -42,44 +40,34 @@ public class ManagedThrottledConnectionHandler implements ThrottledConnectionHan
     }
 
     public int getLimit() {
-        return limit;
+        return limit.get();
     }
 
     public int getSpeed() {
-        java.util.List<ThrottledConnection> lconnections = connections;
         int ret = 0;
-        for (ThrottledConnection con : lconnections) {
+        for (ThrottledConnection con : connections) {
             ret += ((SpeedMeterInterface) con).getSpeedMeter();
         }
         return ret;
     }
 
     public long getTraffic() {
-        java.util.List<ThrottledConnection> lconnections = null;
-        long ret = 0;
-        synchronized (this) {
-            ret = traffic;
-            lconnections = connections;
-        }
-        for (ThrottledConnection con : lconnections) {
+        long ret = traffic.get();
+        for (ThrottledConnection con : connections) {
             ret += con.transfered();
         }
         return ret;
     }
 
     public void removeThrottledConnection(ThrottledConnection con) {
-        if (!this.connections.contains(con)) return;
-        synchronized (this) {
-            java.util.List<ThrottledConnection> newConnections = new ArrayList<ThrottledConnection>(connections);
-            newConnections.remove(con);
-            connections = newConnections;
-            traffic += con.transfered();
+        if (connections.remove(con)) {
+            traffic.addAndGet(con.transfered());
+            con.setHandler(null);
         }
-        con.setHandler(null);
     }
 
-    public void setLimit(int limit) {
-        this.limit = limit;
+    public void setLimit(int newLimit) {
+        this.limit.set(Math.max(0, newLimit));
     }
 
     public int size() {

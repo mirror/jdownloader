@@ -437,14 +437,11 @@ public class GenericDeleteFromDownloadlistAction extends CustomizableAppAction i
 
                     if (lastLink != null && !selection.contains(lastLink)) {
                         if (checkLink(lastLink)) {
-
                             setEnabled(true);
                             return;
                         }
                     }
-
-                    final List<PackageControllerTableModelFilter<FilePackage, DownloadLink>> filters = DownloadsTableModel.getInstance().getTableFilters();
-
+                    final List<PackageControllerTableModelFilter<FilePackage, DownloadLink>> filters = DownloadsTableModel.getInstance().getEnabledTableFilters();
                     boolean read = DownloadController.getInstance().readLock();
                     try {
                         for (FilePackage pkg : DownloadController.getInstance().getPackages()) {
@@ -458,7 +455,6 @@ public class GenericDeleteFromDownloadlistAction extends CustomizableAppAction i
                                         continue;
                                     }
                                     if (isIgnoreFiltered()) {
-
                                         for (PackageControllerTableModelFilter<FilePackage, DownloadLink> filter : filters) {
                                             if (filter.isFiltered((DownloadLink) child)) {
                                                 continue childs;
@@ -485,10 +481,9 @@ public class GenericDeleteFromDownloadlistAction extends CustomizableAppAction i
 
                 default:
                     if (isIgnoreFiltered()) {
-
-                        selection = getTable().getSelectionInfo(false, true);
-                    } else {
                         selection = getTable().getSelectionInfo(false, false);
+                    } else {
+                        selection = getTable().getSelectionInfo(false, true);
 
                     }
                     break;

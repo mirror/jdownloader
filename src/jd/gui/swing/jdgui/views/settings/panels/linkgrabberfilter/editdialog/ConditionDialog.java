@@ -429,6 +429,7 @@ public abstract class ConditionDialog<T> extends AbstractDialog<T> {
                     list.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
 
                         public void valueChanged(ListSelectionEvent e) {
+                            if (e.getValueIsAdjusting()) return;
                             String v = list.getSelectedValue().toString();
 
                             ConditionDialog.this.setIconKey(v.substring(0, v.length() - 4));

@@ -145,10 +145,10 @@ public class CrawledPackageView extends ChildrenView<CrawledLink> {
                     sameSource = StringUtils.getCommonalities(sameSource, sourceUrl);
                     sameSourceFullUrl = sameSourceFullUrl && sameSource.equals(sourceUrl);
                 }
-                if (item.getPriority().ordinal() < priorityLowset.ordinal()) {
+                if (item.getPriority().getId() < priorityLowset.getId()) {
                     priorityLowset = item.getPriority();
                 }
-                if (item.getPriority().ordinal() > priorityHighest.ordinal()) {
+                if (item.getPriority().getId() > priorityHighest.getId()) {
                     priorityHighest = item.getPriority();
                 }
                 // domain

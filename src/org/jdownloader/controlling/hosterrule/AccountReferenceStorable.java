@@ -35,15 +35,22 @@ public class AccountReferenceStorable implements Storable {
     }
 
     public AccountReference restore(String hoster, List<Account> availableAccounts) {
-        if (getId() == FreeAccountReference.FREE_ID) { return new FreeAccountReference(hoster); }
-        if (availableAccounts != null) {
-            for (Account acc : availableAccounts) {
-                if (acc.getId().getID() == getId()) {
-                    AccountReference ret = new AccountReference(acc);
-                    ret.setEnabled(isEnabled());
-                    return ret;
+        AccountReference ret = null;
+        if (getId() == FreeAccountReference.FREE_ID) {
+            ret = new FreeAccountReference(hoster);
+        } else {
+            if (availableAccounts != null) {
+                for (Account acc : availableAccounts) {
+                    if (acc.getId().getID() == getId()) {
+                        ret = new AccountReference(acc);
+                        break;
+                    }
                 }
             }
+        }
+        if (ret != null) {
+            ret.setEnabled(isEnabled());
+            return ret;
         }
         return null;
     }

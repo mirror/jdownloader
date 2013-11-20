@@ -27,6 +27,7 @@ public class DataEntry {
     private JLabel       filtered;
     private JLabel       selected;
     final private String label;
+    private Boolean      hasSelectedObjectsState = null;
 
     public String getLabel() {
         return label;
@@ -40,6 +41,7 @@ public class DataEntry {
         total.setToolTipText(_GUI._.DownloadOverview_DownloadOverview_tooltip1());
         filtered.setToolTipText(_GUI._.DownloadOverview_DownloadOverview_tooltip2());
         selected.setToolTipText(_GUI._.DownloadOverview_DownloadOverview_tooltip3());
+        updateVisibility(false);
     }
 
     private JComponent createHeaderLabel(String label) {
@@ -54,7 +56,6 @@ public class DataEntry {
     }
 
     public void addTo(MigPanel info, String constrains) {
-
         info.add(createHeaderLabel(label), "alignx right" + (constrains == null ? "" : constrains));
         info.add(total, "hidemode 3");
         info.add(filtered, "hidemode 3");
@@ -62,21 +63,15 @@ public class DataEntry {
     }
 
     public void setTotal(Object string) {
-
-        total.setText(string + "");
-
+        total.setText(string.toString());
     }
 
     public void setSelected(Object string) {
-
-        selected.setText(string + "");
-
+        selected.setText(string.toString());
     }
 
     public void setFiltered(Object string) {
-
-        filtered.setText(string + "");
-
+        filtered.setText(string.toString());
     }
 
     public void updateVisibility(boolean hasSelectedObjects) {

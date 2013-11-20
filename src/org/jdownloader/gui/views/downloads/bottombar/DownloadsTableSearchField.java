@@ -2,6 +2,8 @@ package org.jdownloader.gui.views.downloads.bottombar;
 
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
+import java.util.HashMap;
+import java.util.List;
 import java.util.regex.Pattern;
 
 import jd.plugins.DownloadLink;
@@ -11,6 +13,7 @@ import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.swing.EDTHelper;
 import org.jdownloader.gui.views.components.LinktablesSearchCategory;
 import org.jdownloader.gui.views.components.packagetable.PackageControllerTable;
+import org.jdownloader.gui.views.components.packagetable.PackageControllerTableModelFilter;
 import org.jdownloader.gui.views.components.packagetable.SearchField;
 import org.jdownloader.gui.views.downloads.table.DownloadsTableModel;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings;
@@ -45,32 +48,113 @@ public final class DownloadsTableSearchField extends SearchField<LinktablesSearc
         JsonConfig.create(GraphicalUserInterfaceSettings.class).setSelectedDownloadSearchCategory(selectedCategory);
     }
 
-    @Override
-    public boolean isFiltered(FilePackage e) {
-        if (LinktablesSearchCategory.PACKAGE == selectedCategory) {
-            for (Pattern filterPattern : filterPatterns) {
-                if (filterPattern.matcher(e.getName()).find()) return false;
-            }
-            return true;
-        }
-        return false;
-    }
+    protected PackageControllerTableModelFilter<FilePackage, DownloadLink> getFilter(final List<Pattern> pattern, LinktablesSearchCategory searchCat) {
+        if (searchCat == null || pattern == null || pattern.size() == 0) return null;
+        switch (searchCat) {
+        case PACKAGE:
+            return new PackageControllerTableModelFilter<FilePackage, DownloadLink>() {
 
-    @Override
-    public boolean isFiltered(DownloadLink v) {
-        switch (selectedCategory) {
+                @Override
+                public boolean isFilteringPackageNodes() {
+                    return true;
+                }
+
+                @Override
+                public boolean isFilteringChildrenNodes() {
+                    return false;
+                }
+
+                @Override
+                public boolean isFiltered(DownloadLink v) {
+                    return false;
+                }
+
+                @Override
+                public boolean isFiltered(FilePackage e) {
+                    for (Pattern filterPattern : pattern) {
+                        if (filterPattern.matcher(e.getName()).find()) return false;
+                    }
+                    return true;
+                }
+
+                @Override
+                public int getComplexity() {
+                    return 0;
+                }
+            };
         case FILENAME:
-            for (Pattern filterPattern : filterPatterns) {
-                if (filterPattern.matcher(v.getName()).find()) return false;
-            }
-            return true;
+            return new PackageControllerTableModelFilter<FilePackage, DownloadLink>() {
+
+                @Override
+                public boolean isFilteringPackageNodes() {
+                    return false;
+                }
+
+                @Override
+                public boolean isFilteringChildrenNodes() {
+                    return true;
+                }
+
+                @Override
+                public boolean isFiltered(DownloadLink v) {
+                    for (Pattern filterPattern : pattern) {
+                        if (filterPattern.matcher(v.getName()).find()) return false;
+                    }
+                    return true;
+                }
+
+                @Override
+                public boolean isFiltered(FilePackage e) {
+                    return false;
+                }
+
+                @Override
+                public int getComplexity() {
+                    return 0;
+                }
+            };
         case HOSTER:
-            for (Pattern filterPattern : filterPatterns) {
-                if (filterPattern.matcher(v.getHost()).find()) return false;
-            }
-            return true;
+            return new PackageControllerTableModelFilter<FilePackage, DownloadLink>() {
+
+                private HashMap<String, Boolean> fastCheck = new HashMap<String, Boolean>();
+
+                @Override
+                public boolean isFilteringPackageNodes() {
+                    return false;
+                }
+
+                @Override
+                public boolean isFilteringChildrenNodes() {
+                    return true;
+                }
+
+                @Override
+                public synchronized boolean isFiltered(DownloadLink v) {
+                    String host = v.getHost();
+                    Boolean ret = fastCheck.get(host);
+                    if (ret != null) return ret.booleanValue();
+                    for (Pattern filterPattern : pattern) {
+                        if (filterPattern.matcher(v.getHost()).find()) {
+                            fastCheck.put(host, Boolean.FALSE);
+                            return false;
+                        }
+                    }
+                    fastCheck.put(host, Boolean.TRUE);
+                    return true;
+                }
+
+                @Override
+                public boolean isFiltered(FilePackage e) {
+                    return false;
+                }
+
+                @Override
+                public int getComplexity() {
+                    return 0;
+                }
+            };
         }
-        return false;
+        return null;
     }
 
     public static DownloadsTableSearchField getInstance() {

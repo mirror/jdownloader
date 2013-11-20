@@ -5,6 +5,7 @@ import java.awt.event.ActionListener;
 import java.awt.event.HierarchyEvent;
 import java.awt.event.HierarchyListener;
 import java.util.List;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.swing.Box;
@@ -16,7 +17,6 @@ import javax.swing.event.TableModelEvent;
 import javax.swing.event.TableModelListener;
 
 import jd.SecondLevelLaunch;
-import jd.controlling.TaskQueue;
 import jd.controlling.downloadcontroller.DownloadController;
 import jd.controlling.downloadcontroller.DownloadWatchDog;
 import jd.controlling.packagecontroller.AbstractNode;
@@ -35,11 +35,12 @@ import jd.plugins.LinkStatusProperty;
 
 import org.appwork.controlling.StateEvent;
 import org.appwork.controlling.StateEventListener;
+import org.appwork.scheduler.DelayedRunnable;
 import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.events.GenericConfigEventListener;
 import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.swing.MigPanel;
-import org.appwork.utils.event.queue.QueueAction;
+import org.appwork.utils.NullsafeAtomicReference;
 import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.SwingUtils;
 import org.jdownloader.controlling.AggregatedNumbers;
@@ -47,7 +48,6 @@ import org.jdownloader.controlling.download.DownloadControllerListener;
 import org.jdownloader.gui.event.GUIEventSender;
 import org.jdownloader.gui.event.GUIListener;
 import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.downloads.DownloadsView;
 import org.jdownloader.gui.views.downloads.table.DownloadsTable;
 import org.jdownloader.gui.views.downloads.table.DownloadsTableModel;
@@ -66,19 +66,19 @@ public class DownloadOverview extends MigPanel implements DownloadControllerList
     private DataEntry                           bytesLoaded;
     private DataEntry                           speed;
     private DataEntry                           eta;
-    protected Timer                             updateTimer;
 
     private DataEntry                           runningDownloads;
     private DataEntry                           connections;
-    private AtomicBoolean                       updating         = new AtomicBoolean(false);
-    private AtomicBoolean                       visible          = new AtomicBoolean(false);
     private ListSelectionListener               listSelection;
     private TableModelListener                  tableListener;
     private StateEventListener                  stateListener;
     private GenericConfigEventListener<Boolean> settingsListener;
-    protected AggregatedNumbers                 total;
-    protected AggregatedNumbers                 filtered;
-    protected AggregatedNumbers                 selected;
+
+    private AtomicBoolean                       visible          = new AtomicBoolean(false);
+    protected NullsafeAtomicReference<Timer>    updateTimer      = new NullsafeAtomicReference<Timer>(null);
+
+    protected final DelayedRunnable             slowDelayer;
+    protected final DelayedRunnable             fastDelayer;
 
     @Override
     public void onKeyModifier(int parameter) {
@@ -116,6 +116,21 @@ public class DownloadOverview extends MigPanel implements DownloadControllerList
         speed.addTo(info);
         eta.addTo(info);
         connections.addTo(info);
+        final ScheduledExecutorService queue = DelayedRunnable.getNewScheduledExecutorService();
+        slowDelayer = new DelayedRunnable(queue, 500, 5000) {
+
+            @Override
+            public void delayedrun() {
+                update();
+            }
+        };
+        fastDelayer = new DelayedRunnable(queue, 50, 200) {
+
+            @Override
+            public void delayedrun() {
+                update();
+            }
+        };
 
         // new line
 
@@ -155,7 +170,7 @@ public class DownloadOverview extends MigPanel implements DownloadControllerList
 
             @Override
             public void tableChanged(TableModelEvent e) {
-                update();
+                slowDelayer.run();
             }
         });
         DownloadWatchDog.getInstance().getStateMachine().addListener(stateListener = new StateEventListener() {
@@ -165,22 +180,26 @@ public class DownloadOverview extends MigPanel implements DownloadControllerList
             }
 
             @Override
-            public void onStateChange(StateEvent event) {
-                if (event.getNewState() == DownloadWatchDog.RUNNING_STATE || event.getNewState() == DownloadWatchDog.PAUSE_STATE) {
-                    startUpdateTimer();
-                } else {
-                    stopUpdateTimer();
-                }
+            public void onStateChange(final StateEvent event) {
+                new EDTRunner() {
+
+                    @Override
+                    protected void runInEDT() {
+                        if (event.getNewState() == DownloadWatchDog.RUNNING_STATE || event.getNewState() == DownloadWatchDog.PAUSE_STATE) {
+                            startUpdateTimer();
+                        } else {
+                            stopUpdateTimer();
+                        }
+                    }
+                };
             }
         });
         this.addHierarchyListener(this);
         onConfigValueModified(null, null);
-        // new Timer(1000, this).start();
         DownloadsTableModel.getInstance().getTable().getSelectionModel().addListSelectionListener(listSelection = new ListSelectionListener() {
             @Override
             public void valueChanged(ListSelectionEvent e) {
-                if (e.getValueIsAdjusting()) { return; }
-                update();
+                if (e == null || e.getValueIsAdjusting() || DownloadsTableModel.getInstance().isTableSelectionClearing()) { return; }
                 onConfigValueModified(null, null);
             }
         });
@@ -188,7 +207,7 @@ public class DownloadOverview extends MigPanel implements DownloadControllerList
 
             public void run() {
                 visible.set(JDGui.getInstance().isCurrentPanel(Panels.DOWNLOADLIST));
-                update();
+                fastDelayer.run();
             }
         });
     }
@@ -218,89 +237,62 @@ public class DownloadOverview extends MigPanel implements DownloadControllerList
 
     protected void update() {
         if (visible.get() == false) return;
-        if (updating.getAndSet(true) == false) {
-            TaskQueue.getQueue().add(new QueueAction<Void, RuntimeException>() {
-
-                @Override
-                protected Void run() throws RuntimeException {
-                    if (visible.get() == false) {
-                        updating.set(false);
-                        return null;
-                    }
-
-                    if (CFG_GUI.OVERVIEW_PANEL_TOTAL_INFO_VISIBLE.isEnabled()) {
-                        SelectionInfo<FilePackage, DownloadLink> sel = DownloadsTableModel.getInstance().getTable().getSelectionInfo(false, false);
-                        if (total == null || total.getSelectionInfo() != sel) {
-                            total = new AggregatedNumbers(sel);
-                        }
-                    } else {
-                        total = null;
-                    }
-                    if ((CFG_GUI.OVERVIEW_PANEL_VISIBLE_ONLY_INFO_VISIBLE.isEnabled() || CFG_GUI.OVERVIEW_PANEL_SMART_INFO_VISIBLE.isEnabled())) {
-                        SelectionInfo<FilePackage, DownloadLink> sel = DownloadsTableModel.getInstance().getTable().getSelectionInfo(false, true);
-                        if (filtered == null || filtered.getSelectionInfo() != sel) {
-                            filtered = new AggregatedNumbers(sel);
-                        }
-                    } else {
-                        filtered = null;
-                    }
-
-                    if ((CFG_GUI.OVERVIEW_PANEL_SELECTED_INFO_VISIBLE.isEnabled() || CFG_GUI.OVERVIEW_PANEL_SMART_INFO_VISIBLE.isEnabled())) {
-
-                        SelectionInfo<FilePackage, DownloadLink> sel = DownloadsTableModel.getInstance().getTable().getSelectionInfo(true, true);
-                        if (selected == null || selected.getSelectionInfo() != sel) {
-                            selected = new AggregatedNumbers(sel);
-                        }
-                    } else {
-                        selected = null;
-                    }
-                    new EDTRunner() {
-
-                        @Override
-                        protected void runInEDT() {
-                            try {
-                                if (!isDisplayable()) { return; }
-                                if (total != null) packageCount.setTotal(total.getPackageCount() + "");
-                                if (filtered != null) packageCount.setFiltered(filtered.getPackageCount() + "");
-                                if (selected != null) packageCount.setSelected(selected.getPackageCount() + "");
-
-                                if (total != null) linkCount.setTotal(total.getLinkCount() + "");
-                                if (filtered != null) linkCount.setFiltered(filtered.getLinkCount() + "");
-                                if (selected != null) linkCount.setSelected(selected.getLinkCount() + "");
-
-                                if (total != null) size.setTotal(total.getTotalBytesString(CFG_GUI.OVERVIEW_PANEL_DOWNLOAD_PANEL_INCLUDE_DISABLED_LINKS.isEnabled()));
-                                if (filtered != null) size.setFiltered(filtered.getTotalBytesString(CFG_GUI.OVERVIEW_PANEL_DOWNLOAD_PANEL_INCLUDE_DISABLED_LINKS.isEnabled()));
-                                if (selected != null) size.setSelected(selected.getTotalBytesString(CFG_GUI.OVERVIEW_PANEL_DOWNLOAD_PANEL_INCLUDE_DISABLED_LINKS.isEnabled()));
-
-                                if (total != null) bytesLoaded.setTotal(total.getLoadedBytesString(CFG_GUI.OVERVIEW_PANEL_DOWNLOAD_PANEL_INCLUDE_DISABLED_LINKS.isEnabled()));
-                                if (filtered != null) bytesLoaded.setFiltered(filtered.getLoadedBytesString(CFG_GUI.OVERVIEW_PANEL_DOWNLOAD_PANEL_INCLUDE_DISABLED_LINKS.isEnabled()));
-                                if (selected != null) bytesLoaded.setSelected(selected.getLoadedBytesString(CFG_GUI.OVERVIEW_PANEL_DOWNLOAD_PANEL_INCLUDE_DISABLED_LINKS.isEnabled()));
-
-                                if (total != null) speed.setTotal(total.getDownloadSpeedString());
-                                if (filtered != null) speed.setFiltered(filtered.getDownloadSpeedString());
-                                if (selected != null) speed.setSelected(selected.getDownloadSpeedString());
-
-                                if (total != null) eta.setTotal(total.getEtaString());
-                                if (filtered != null) eta.setFiltered(filtered.getEtaString());
-                                if (selected != null) eta.setSelected(selected.getEtaString());
-
-                                if (total != null) connections.setTotal(total.getConnections() + "");
-                                if (filtered != null) connections.setFiltered(filtered.getConnections() + "");
-                                if (selected != null) connections.setSelected(selected.getConnections() + "");
-
-                                if (total != null) runningDownloads.setTotal(total.getRunning() + "");
-                                if (filtered != null) runningDownloads.setFiltered(filtered.getRunning() + "");
-                                if (selected != null) runningDownloads.setSelected(selected.getRunning() + "");
-                            } finally {
-                                updating.set(false);
-                            }
-                        }
-                    };
-                    return null;
-
-                }
-            });
+        final AggregatedNumbers total;
+        final AggregatedNumbers filtered;
+        final AggregatedNumbers selected;
+        final boolean smartInfo = CFG_GUI.OVERVIEW_PANEL_SMART_INFO_VISIBLE.isEnabled();
+        if (CFG_GUI.OVERVIEW_PANEL_TOTAL_INFO_VISIBLE.isEnabled()) {
+            total = new AggregatedNumbers(DownloadsTableModel.getInstance().getTable().getSelectionInfo(false, false));
+        } else {
+            total = null;
         }
+        if ((CFG_GUI.OVERVIEW_PANEL_VISIBLE_ONLY_INFO_VISIBLE.isEnabled() || smartInfo)) {
+            filtered = new AggregatedNumbers(DownloadsTableModel.getInstance().getTable().getSelectionInfo(false, true));
+        } else {
+            filtered = null;
+        }
+        if ((CFG_GUI.OVERVIEW_PANEL_SELECTED_INFO_VISIBLE.isEnabled() || smartInfo)) {
+            selected = new AggregatedNumbers(DownloadsTableModel.getInstance().getTable().getSelectionInfo(true, true));
+        } else {
+            selected = null;
+        }
+        new EDTRunner() {
+
+            @Override
+            protected void runInEDT() {
+                if (!isDisplayable() || visible.get() == false) { return; }
+                if (total != null) packageCount.setTotal(total.getPackageCount() + "");
+                if (filtered != null) packageCount.setFiltered(filtered.getPackageCount() + "");
+                if (selected != null) packageCount.setSelected(selected.getPackageCount() + "");
+
+                if (total != null) linkCount.setTotal(total.getLinkCount() + "");
+                if (filtered != null) linkCount.setFiltered(filtered.getLinkCount() + "");
+                if (selected != null) linkCount.setSelected(selected.getLinkCount() + "");
+                final boolean includeDisabled = CFG_GUI.OVERVIEW_PANEL_DOWNLOAD_PANEL_INCLUDE_DISABLED_LINKS.isEnabled();
+                if (total != null) size.setTotal(total.getTotalBytesString(includeDisabled));
+                if (filtered != null) size.setFiltered(filtered.getTotalBytesString(includeDisabled));
+                if (selected != null) size.setSelected(selected.getTotalBytesString(includeDisabled));
+
+                if (total != null) bytesLoaded.setTotal(total.getLoadedBytesString(includeDisabled));
+                if (filtered != null) bytesLoaded.setFiltered(filtered.getLoadedBytesString(includeDisabled));
+                if (selected != null) bytesLoaded.setSelected(selected.getLoadedBytesString(includeDisabled));
+                if (total != null) speed.setTotal(total.getDownloadSpeedString());
+                if (filtered != null) speed.setFiltered(filtered.getDownloadSpeedString());
+                if (selected != null) speed.setSelected(selected.getDownloadSpeedString());
+
+                if (total != null) eta.setTotal(total.getEtaString());
+                if (filtered != null) eta.setFiltered(filtered.getEtaString());
+                if (selected != null) eta.setSelected(selected.getEtaString());
+
+                if (total != null) connections.setTotal(total.getConnections() + "");
+                if (filtered != null) connections.setFiltered(filtered.getConnections() + "");
+                if (selected != null) connections.setSelected(selected.getConnections() + "");
+
+                if (total != null) runningDownloads.setTotal(total.getRunning() + "");
+                if (filtered != null) runningDownloads.setFiltered(filtered.getRunning() + "");
+                if (selected != null) runningDownloads.setSelected(selected.getRunning() + "");
+            }
+        }.waitForEDT();
     }
 
     @Override
@@ -311,37 +303,36 @@ public class DownloadOverview extends MigPanel implements DownloadControllerList
         if (!this.isDisplayable()) {
             stopUpdateTimer();
         } else {
-            Timer lupdateTimer = updateTimer;
-            if (lupdateTimer == null || !lupdateTimer.isRunning()) {
-                startUpdateTimer();
-            }
-            update();
+            startUpdateTimer();
+            fastDelayer.run();
         }
     }
 
     protected void startUpdateTimer() {
-        stopUpdateTimer();
+        Timer currentTimer = updateTimer.get();
+        if (currentTimer != null && currentTimer.isRunning()) return;
         if (DownloadWatchDog.getInstance().isRunning() == false) return;
-        Timer lupdateTimer = new Timer(1000, new ActionListener() {
+        currentTimer = new Timer(1000, new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
                 if (!(e.getSource() instanceof Timer)) return;
-                if (e.getSource() != updateTimer || !isDisplayable()) {
-                    ((Timer) e.getSource()).stop();
+                if (e.getSource() != updateTimer.get() || !isDisplayable()) {
+                    Timer timer = ((Timer) e.getSource());
+                    updateTimer.compareAndSet(timer, null);
+                    timer.stop();
                     return;
                 }
-                update();
+                fastDelayer.run();
             }
         });
-        lupdateTimer.setRepeats(true);
-        updateTimer = lupdateTimer;
-        lupdateTimer.start();
+        currentTimer.setRepeats(true);
+        updateTimer.set(currentTimer);
+        currentTimer.start();
     }
 
     protected void stopUpdateTimer() {
-        Timer lupdateTimer = updateTimer;
-        updateTimer = null;
-        if (lupdateTimer != null) lupdateTimer.stop();
+        Timer old = updateTimer.getAndSet(null);
+        if (old != null) old.stop();
     }
 
     @Override
@@ -367,7 +358,7 @@ public class DownloadOverview extends MigPanel implements DownloadControllerList
                     eta.updateVisibility(hasSelectedObjects);
                     connections.updateVisibility(hasSelectedObjects);
                     runningDownloads.updateVisibility(hasSelectedObjects);
-                    update();
+                    fastDelayer.run();
                 }
             };
         }
@@ -382,7 +373,7 @@ public class DownloadOverview extends MigPanel implements DownloadControllerList
                 if (newView instanceof DownloadsView) {
                     visible.set(true);
                     startUpdateTimer();
-                    update();
+                    fastDelayer.run();
                 } else {
                     visible.set(false);
                     stopUpdateTimer();
@@ -398,17 +389,17 @@ public class DownloadOverview extends MigPanel implements DownloadControllerList
 
     @Override
     public void onDownloadControllerStructureRefresh(FilePackage pkg) {
-        update();
+        slowDelayer.run();
     }
 
     @Override
     public void onDownloadControllerStructureRefresh() {
-        update();
+        slowDelayer.run();
     }
 
     @Override
     public void onDownloadControllerStructureRefresh(AbstractNode node, Object param) {
-        update();
+        slowDelayer.run();
     }
 
     @Override
@@ -421,26 +412,26 @@ public class DownloadOverview extends MigPanel implements DownloadControllerList
 
     @Override
     public void onDownloadControllerUpdatedData(DownloadLink downloadlink, DownloadLinkProperty property) {
-        update();
+        slowDelayer.run();
     }
 
     @Override
     public void onDownloadControllerUpdatedData(FilePackage pkg, FilePackageProperty property) {
-        update();
+        slowDelayer.run();
     }
 
     @Override
     public void onDownloadControllerUpdatedData(DownloadLink downloadlink, LinkStatusProperty property) {
-        update();
+        slowDelayer.run();
     }
 
     @Override
     public void onDownloadControllerUpdatedData(DownloadLink downloadlink) {
-        update();
+        slowDelayer.run();
     }
 
     @Override
     public void onDownloadControllerUpdatedData(FilePackage pkg) {
-        update();
+        slowDelayer.run();
     }
 }

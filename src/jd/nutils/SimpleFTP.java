@@ -64,8 +64,7 @@ import org.appwork.utils.speedmeter.AverageSpeedMeter;
 import org.jdownloader.logging.LogController;
 
 /**
- * SimpleFTP is a simple package that implements a Java FTP client. With SimpleFTP, you can connect to an FTP server and upload multiple
- * files.
+ * SimpleFTP is a simple package that implements a Java FTP client. With SimpleFTP, you can connect to an FTP server and upload multiple files.
  * 
  * Based on Work of Paul Mutton http://www.jibble.org/
  */
@@ -123,8 +122,8 @@ public class SimpleFTP {
     }
 
     /**
-     * Enter ASCII mode for sending text files. This is usually the default mode. Make sure you use binary mode if you are sending images or
-     * other binary data, as ASCII mode is likely to corrupt them.
+     * Enter ASCII mode for sending text files. This is usually the default mode. Make sure you use binary mode if you are sending images or other binary data,
+     * as ASCII mode is likely to corrupt them.
      */
     public synchronized boolean ascii() throws IOException {
         sendLine("TYPE A");
@@ -281,7 +280,10 @@ public class SimpleFTP {
         int endCodeMultiLine = 0;
         while (true) {
             response = readLine();
-            if (response == null) return sb.toString();
+            if (response == null) {
+                if (sb.length() == 0) throw new IOException("no response received, EOF?");
+                return sb.toString();
+            }
             sb.append(response + "\r\n");
             error = true;
             for (int expectcode : expectcodes) {
@@ -357,9 +359,9 @@ public class SimpleFTP {
      */
     private void sendLine(String line) throws IOException {
         try {
+            logger.info(host + " > " + line);
             writer.write(line + "\r\n");
             writer.flush();
-            logger.info(host + " > " + line);
         } catch (IOException e) {
             LogSource.exception(logger, e);
             if (socket != null) disconnect();
@@ -368,8 +370,8 @@ public class SimpleFTP {
     }
 
     /**
-     * Sends a file to be stored on the FTP server. Returns true if the file transfer was successful. The file is sent in passive mode to
-     * avoid NAT or firewall problems at the client end.
+     * Sends a file to be stored on the FTP server. Returns true if the file transfer was successful. The file is sent in passive mode to avoid NAT or firewall
+     * problems at the client end.
      */
     public synchronized boolean stor(File file) throws IOException {
         if (file.isDirectory()) { throw new IOException("SimpleFTP cannot upload a directory."); }
@@ -378,8 +380,8 @@ public class SimpleFTP {
     }
 
     /**
-     * Sends a file to be stored on the FTP server. Returns true if the file transfer was successful. The file is sent in passive mode to
-     * avoid NAT or firewall problems at the client end.
+     * Sends a file to be stored on the FTP server. Returns true if the file transfer was successful. The file is sent in passive mode to avoid NAT or firewall
+     * problems at the client end.
      */
     public synchronized boolean stor(InputStream input, String filename) throws IOException {
         Socket dataSocket = null;

@@ -48,7 +48,6 @@ public class SpeedMeterPanel extends Graph {
 
         this.setCapacity((CFG_GUI.CFG.getSpeedMeterTimeFrame() * CFG_GUI.CFG.getSpeedMeterFramesPerSecond()) / 1000);
         this.setInterval(1000 / CFG_GUI.CFG.getSpeedMeterFramesPerSecond());
-        ;
         setCurrentColorTop(LAFOptions.getInstance().getColorForSpeedmeterCurrentTop());
         setCurrentColorBottom(LAFOptions.getInstance().getColorForSpeedmeterCurrentBottom());
         setAverageColor(LAFOptions.getInstance().getColorForSpeedMeterAverage());

@@ -135,8 +135,7 @@ public abstract class AbstractExtension<ConfigType extends ExtensionConfigInterf
     }
 
     /**
-     * Returns the internal storage. Most of the configvalues are for internal use only. This config only contains values which are valid
-     * for all extensions
+     * Returns the internal storage. Most of the configvalues are for internal use only. This config only contains values which are valid for all extensions
      * 
      * @return
      */
@@ -186,8 +185,7 @@ public abstract class AbstractExtension<ConfigType extends ExtensionConfigInterf
      * 
      * @param translationInterface
      * @param contentType
-     *            name of this plugin. Until JD 2.* we should use null here to use the old defaultname. we used to sue this localized name
-     *            as config key.
+     *            name of this plugin. Until JD 2.* we should use null here to use the old defaultname. we used to sue this localized name as config key.
      * @throws
      * @throws StartException
      */

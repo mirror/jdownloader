@@ -19,10 +19,10 @@ import org.jdownloader.updatev2.gui.LAFOptions;
 
 public class PseudoCombo<Type> extends JButton {
 
-    protected Type  selectedItem = null;
+    protected volatile Type selectedItem = null;
 
-    private Type[]  values;
-    private boolean popDown      = false;
+    private Type[]          values;
+    private boolean         popDown      = false;
 
     public PseudoCombo(Type[] values) {
         super();
@@ -159,12 +159,10 @@ public class PseudoCombo<Type> extends JButton {
     }
 
     public void setSelectedItem(Type value) {
-
         if (selectedItem != value) {
             selectedItem = value;
             onChanged(value);
         }
-
         setText(getLabel(value, true));
         setIcon(getIcon(value, true));
         setToolTipText(getLabel(value, false));

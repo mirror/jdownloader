@@ -30,6 +30,7 @@ import jd.controlling.packagecontroller.AbstractPackageNode;
 import org.appwork.scheduler.DelayedRunnable;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.swing.components.ExtTextField;
+import org.appwork.utils.NullsafeAtomicReference;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging.Log;
 import org.jdownloader.actions.AppAction;
@@ -40,31 +41,32 @@ import org.jdownloader.images.NewTheme;
 import org.jdownloader.settings.GeneralSettings;
 import org.jdownloader.updatev2.gui.LAFOptions;
 
-public class SearchField<SearchCat extends SearchCatInterface, PackageType extends AbstractPackageNode<ChildType, PackageType>, ChildType extends AbstractPackageChildrenNode<PackageType>> extends ExtTextField implements PackageControllerTableModelFilter<PackageType, ChildType>, MouseMotionListener, MouseListener {
+public class SearchField<SearchCat extends SearchCatInterface, PackageType extends AbstractPackageNode<ChildType, PackageType>, ChildType extends AbstractPackageChildrenNode<PackageType>> extends ExtTextField implements MouseMotionListener, MouseListener {
     /**
      * 
      */
-    private static final long                              serialVersionUID = -8079363840549073686L;
-    private static final int                               SIZE             = 20;
-    private Image                                          img;
-    private DelayedRunnable                                delayedFilter;
-    private PackageControllerTable<PackageType, ChildType> table2Filter;
-    protected List<Pattern>                                filterPatterns   = null;
-    private JLabel                                         label;
-    private int                                            labelWidth;
-    private Color                                          bgColor;
-    private SearchCat[]                                    searchCategories;
-    private Image                                          popIcon;
-    private int                                            iconGap          = 38;
-    private Border                                         orgBorder;
-    private Image                                          close;
+    private static final long                                                                  serialVersionUID = -8079363840549073686L;
+    private static final int                                                                   SIZE             = 20;
+    private Image                                                                              img;
+    private DelayedRunnable                                                                    delayedFilter;
+    private PackageControllerTable<PackageType, ChildType>                                     table2Filter;
 
-    private int                                            closeXPos        = -1;
-    private boolean                                        mouseoverClose   = false;
-    private boolean                                        closeEnabled     = false;
+    private JLabel                                                                             label;
+    private int                                                                                labelWidth;
+    private Color                                                                              bgColor;
+    private SearchCat[]                                                                        searchCategories;
+    private Image                                                                              popIcon;
+    private int                                                                                iconGap          = 38;
+    private Border                                                                             orgBorder;
+    private Image                                                                              close;
+
+    private int                                                                                closeXPos        = -1;
+    private boolean                                                                            mouseoverClose   = false;
+    private boolean                                                                            closeEnabled     = false;
+    private NullsafeAtomicReference<PackageControllerTableModelFilter<PackageType, ChildType>> appliedFilter    = new NullsafeAtomicReference<PackageControllerTableModelFilter<PackageType, ChildType>>(null);
 
     public boolean isEmpty() {
-        return StringUtils.isEmpty(this.getText());
+        return appliedFilter.get() == null;
     }
 
     public SearchField(final PackageControllerTable<PackageType, ChildType> table2Filter, SearchCat defCategory) {
@@ -87,7 +89,6 @@ public class SearchField<SearchCat extends SearchCatInterface, PackageType exten
 
             @Override
             public void delayedrun() {
-                // System.out.println("update filter");
                 updateFilter();
             }
 
@@ -154,11 +155,11 @@ public class SearchField<SearchCat extends SearchCatInterface, PackageType exten
 
     }
 
-    private synchronized void updateFilter() {
+    private void updateFilter() {
         String filterRegex = this.getText();
         boolean enabled = filterRegex.length() > 0;
+        PackageControllerTableModelFilter<PackageType, ChildType> newFilter = null;
         if (enabled) {
-
             java.util.List<Pattern> list = new ArrayList<Pattern>();
             try {
                 if (JsonConfig.create(GeneralSettings.class).isFilterRegex()) {
@@ -168,28 +169,20 @@ public class SearchField<SearchCat extends SearchCatInterface, PackageType exten
                     for (String filter : filters) {
                         list.add(LinkgrabberFilterRuleWrapper.createPattern(filter, false));
                     }
-
                 }
-                filterPatterns = list;
-
-                table2Filter.getModel().addFilter(this);
-
+                newFilter = getFilter(list, getSelectedCategory());
             } catch (final Throwable e) {
                 Log.exception(e);
             }
-        } else {
-            table2Filter.getModel().removeFilter(this);
         }
+        PackageControllerTableModelFilter<PackageType, ChildType> oldFilter = appliedFilter.getAndSet(newFilter);
+        if (oldFilter != null) table2Filter.getModel().removeFilter(oldFilter);
+        if (newFilter != null) table2Filter.getModel().addFilter(newFilter);
         table2Filter.getModel().recreateModel(true);
-
     }
 
-    public boolean isFiltered(PackageType e) {
-        return false;
-    }
-
-    public boolean isFiltered(ChildType v) {
-        return false;
+    protected PackageControllerTableModelFilter<PackageType, ChildType> getFilter(List<Pattern> pattern, SearchCat searchCat) {
+        return null;
     }
 
     public void mouseDragged(MouseEvent e) {
@@ -325,11 +318,4 @@ public class SearchField<SearchCat extends SearchCatInterface, PackageType exten
 
     }
 
-    public boolean highlightFilter() {
-        return true;
-    }
-
-    @Override
-    public void reset() {
-    }
 }

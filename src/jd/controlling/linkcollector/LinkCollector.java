@@ -456,7 +456,6 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
             for (CrawledLink link : pkgchildren) {
                 String name = link.getDownloadLink().getNameSetbyPlugin();
                 if (name == null) {
-
                     continue;
                 }
                 String newName = link.gethPlugin().autoFilenameCorrection(autoRenameCache, name, link.getDownloadLink(), dlinks);
@@ -1020,7 +1019,8 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                 protected Void run() throws RuntimeException {
                     /* avoid additional linkCheck when linkID already exists */
                     /* update dupeCheck map */
-                    if (!dupeCheckMap.add(link.getLinkID())) {
+                    String id = link.getLinkID();
+                    if (!dupeCheckMap.add(id)) {
                         eventsender.fireEvent(new LinkCollectorEvent(LinkCollector.this, LinkCollectorEvent.TYPE.DUPE_LINK, link, QueuePriority.NORM));
                         return null;
                     }
@@ -1039,7 +1039,8 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                 @Override
                 protected Void run() throws RuntimeException {
                     /* update dupeCheck map */
-                    if (!dupeCheckMap.add(link.getLinkID())) {
+                    String id = link.getLinkID();
+                    if (!dupeCheckMap.add(id)) {
                         eventsender.fireEvent(new LinkCollectorEvent(LinkCollector.this, LinkCollectorEvent.TYPE.DUPE_LINK, link, QueuePriority.NORM));
                         return null;
                     }

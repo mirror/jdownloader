@@ -390,8 +390,8 @@ public class DirectHTTP extends PluginForHost {
                  * hotfix for synthetica license issues, as some java versions have broken aes support
                  */
                 /*
-                 * NOTE: This Licensee Information may only be used by AppWork UG. If you like to create derived creation based on this
-                 * sourcecode, you have to remove this license key. Instead you may use the FREE Version of synthetica found on javasoft.de
+                 * NOTE: This Licensee Information may only be used by AppWork UG. If you like to create derived creation based on this sourcecode, you have to
+                 * remove this license key. Instead you may use the FREE Version of synthetica found on javasoft.de
                  */
                 String[] li = { "Licensee=AppWork UG", "LicenseRegistrationNumber=289416475", "Product=Synthetica", "LicenseType=Small Business License", "ExpireDate=--.--.----", "MaxVersion=2.999.999" };
                 javax.swing.UIManager.put("Synthetica.license.info", li);
@@ -602,7 +602,18 @@ public class DirectHTTP extends PluginForHost {
 
             if (urlConnection.getResponseCode() == 503) { return AvailableStatus.UNCHECKABLE; }
             this.contentType = urlConnection.getContentType();
-            if (this.contentType.startsWith("text/html") && urlConnection.isContentDisposition() == false && downloadLink.getBooleanProperty(DirectHTTP.TRY_ALL, false) == false) {
+            if (contentType != null && contentType.startsWith("application/pls") && downloadLink.getName().endsWith("mp3")) {
+                br.followConnection();
+                String mp3URL = br.getRegex("(https?://.*?\\.mp3)").getMatch(0);
+                if (downloadLink.getBooleanProperty("htmlRedirect", false)) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+                if (mp3URL != null) {
+                    downloadLink.setUrlDownload(mp3URL);
+                    /* we set property here to avoid loops */
+                    downloadLink.setProperty("htmlRedirect", true);
+                    return requestFileInformation(downloadLink);
+                }
+            }
+            if (contentType != null && this.contentType.startsWith("text/html") && urlConnection.isContentDisposition() == false && downloadLink.getBooleanProperty(DirectHTTP.TRY_ALL, false) == false) {
                 /* jd does not want to download html content! */
                 /* if this page does redirect via js/html, try to follow */
                 this.br.followConnection();
@@ -619,7 +630,7 @@ public class DirectHTTP extends PluginForHost {
                 downloadLink.setUrlDownload(follow.get(0).trim());
                 /* we set property here to avoid loops */
                 downloadLink.setProperty("htmlRedirect", true);
-                return getAvailableStatus(downloadLink);
+                return requestFileInformation(downloadLink);
             } else {
                 urlConnection.disconnect();
             }
@@ -704,8 +715,7 @@ public class DirectHTTP extends PluginForHost {
         if (custom != null && custom.size() > 0) {
             for (final Object header : custom) {
                 /*
-                 * this is needed because we no longer serialize the stuff, we use json as storage and it does not differ between String[]
-                 * and ArrayList<String>
+                 * this is needed because we no longer serialize the stuff, we use json as storage and it does not differ between String[] and ArrayList<String>
                  */
                 if (header instanceof ArrayList) {
                     br.getHeaders().put((String) ((ArrayList<?>) header).get(0), (String) ((ArrayList<?>) header).get(1));

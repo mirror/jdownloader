@@ -16,6 +16,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -56,8 +57,10 @@ public class FavIcons {
     private static final AtomicInteger                                           THREADCOUNTER = new AtomicInteger(0);
     private static final Object                                                  LOCK          = new Object();
     private final static LinkedHashMap<String, java.util.List<FavIconRequestor>> QUEUE         = new LinkedHashMap<String, java.util.List<FavIconRequestor>>();
-    private static ArrayList<String>                                             FAILED_LIST   = null;
+    private static HashMap<String, ImageIcon>                                    FAILED_ICONS  = new HashMap<String, ImageIcon>();
+    private static HashMap<String, ImageIcon>                                    DEFAULT_ICONS = new HashMap<String, ImageIcon>();
     private static LogSource                                                     LOGGER;
+
     private static final FavIconsConfig                                          CONFIG        = JsonConfig.create(FavIconsConfig.class);
     static {
         LOGGER = LogController.getInstance().getLogger("FavIcons.class");
@@ -99,10 +102,15 @@ public class FavIcons {
 
         long lastRefresh = CONFIG.getLastRefresh();
         /* load failed hosts list */
-        FAILED_LIST = JsonConfig.create(FavIconsConfig.class).getFailedHosts();
-        if (FAILED_LIST == null || (System.currentTimeMillis() - lastRefresh) > (1000l * 60 * 60 * 24 * 7)) {
+        ArrayList<String> FAILED_ARRAY_LIST = JsonConfig.create(FavIconsConfig.class).getFailedHosts();
+        if (FAILED_ARRAY_LIST == null || (System.currentTimeMillis() - lastRefresh) > (1000l * 60 * 60 * 24 * 7)) {
             /* timeout is over, lets try again the failed ones */
-            FAILED_LIST = new ArrayList<String>();
+            FAILED_ARRAY_LIST = new ArrayList<String>();
+        }
+        synchronized (LOCK) {
+            for (String host : FAILED_ARRAY_LIST) {
+                FAILED_ICONS.put(host, null);
+            }
         }
         ShutdownController.getInstance().addShutdownEvent(new ShutdownEvent() {
             @Override
@@ -113,7 +121,11 @@ public class FavIcons {
             @Override
             public void onShutdown(final ShutdownRequest shutdownRequest) {
                 CONFIG.setLastRefresh(System.currentTimeMillis());
-                CONFIG.setFailedHosts(FAILED_LIST);
+                ArrayList<String> failedHosts = null;
+                synchronized (LOCK) {
+                    failedHosts = new ArrayList<String>(FAILED_ICONS.keySet());
+                }
+                CONFIG.setFailedHosts(failedHosts);
             }
 
         });
@@ -138,16 +150,39 @@ public class FavIcons {
         }
         if (image == null) {
             /* add to queue list */
-            image = new ImageIcon(createDefaultFavIcon(host));
-            add(host, requestor);
+            image = add(host, requestor);
         }
         return image;
     }
 
-    private static void add(final String host, FavIconRequestor requestor) {
+    private static ImageIcon getDefaultIcon(String host, boolean clearAfterGet) {
+        ImageIcon ret = null;
+        synchronized (LOCK) {
+            ret = DEFAULT_ICONS.get(host);
+            if (ret == null) {
+                ret = new ImageIcon(createDefaultFavIcon(host));
+                if (clearAfterGet == false) DEFAULT_ICONS.put(host, ret);
+            } else if (clearAfterGet) {
+                DEFAULT_ICONS.remove(host);
+            }
+        }
+        return ret;
+    }
+
+    private static ImageIcon add(final String host, FavIconRequestor requestor) {
+        ImageIcon icon = null;
         synchronized (LOCK) {
             /* don't try this host again? */
-            if (FAILED_LIST.contains(host)) return;
+            if (FAILED_ICONS.containsKey(host)) {
+                icon = FAILED_ICONS.get(host);
+                if (icon == null) {
+                    icon = getDefaultIcon(host, true);
+                    FAILED_ICONS.put(host, icon);
+                }
+                return icon;
+            } else {
+                icon = getDefaultIcon(host, false);
+            }
             /* enqueue this host for favicon loading */
             java.util.List<FavIconRequestor> ret = QUEUE.get(host);
             boolean enqueueFavIcon = false;
@@ -166,7 +201,11 @@ public class FavIcons {
                         if (existingHostPlugin != null && "jd.plugins.hoster.Offline".equals(existingHostPlugin.getClassname())) {
                             synchronized (LOCK) {
                                 QUEUE.remove(host);
-                                if (!FAILED_LIST.contains(host)) FAILED_LIST.add(host);
+                                ImageIcon failedIcon = FAILED_ICONS.get(host);
+                                if (failedIcon == null) {
+                                    failedIcon = getDefaultIcon(host, true);
+                                    FAILED_ICONS.put(host, failedIcon);
+                                }
                             }
                             return;
                         }
@@ -196,8 +235,11 @@ public class FavIcons {
                         synchronized (LOCK) {
                             java.util.List<FavIconRequestor> requestors = QUEUE.remove(host);
                             if (favicon == null) {
-                                /* favicon loader failed, add to failed list */
-                                if (!FAILED_LIST.contains(host)) FAILED_LIST.add(host);
+                                ImageIcon failedIcon = FAILED_ICONS.get(host);
+                                if (failedIcon == null) {
+                                    failedIcon = getDefaultIcon(host, true);
+                                    FAILED_ICONS.put(host, failedIcon);
+                                }
                             } else {
                                 FileOutputStream fos = null;
                                 try {
@@ -228,6 +270,7 @@ public class FavIcons {
 
                 });
             }
+            return icon;
         }
     }
 

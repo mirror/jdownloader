@@ -39,7 +39,6 @@ public class CustomWebIpCheck implements IPCheckProvider {
 
         final String site = JsonConfig.create(ReconnectConfig.class).getGlobalIPCheckUrl();
         final String patt = JsonConfig.create(ReconnectConfig.class).getGlobalIPCheckPattern();
-        ;
         try {
             /* check for valid website */
             new URL(site);

@@ -148,8 +148,7 @@ public class GenericDeleteFromLinkgrabberAction extends CustomizableAppAction im
         case NONE:
             break;
         case UNSELECTED:
-            final List<PackageControllerTableModelFilter<CrawledPackage, CrawledLink>> filters = LinkGrabberTableModel.getInstance().getTableFilters();
-
+            final List<PackageControllerTableModelFilter<CrawledPackage, CrawledLink>> filters = LinkGrabberTableModel.getInstance().getEnabledTableFilters();
             LinkCollector.getInstance().getChildrenByFilter(new AbstractPackageChildrenNodeFilter<CrawledLink>() {
 
                 @Override
@@ -364,17 +363,13 @@ public class GenericDeleteFromLinkgrabberAction extends CustomizableAppAction im
 
             @Override
             protected void runInEDT() {
-
                 switch (includedSelection.getSelectionType()) {
-
                 case SELECTED:
                     selection = LinkGrabberTable.getInstance().getSelectionInfo();
                     break;
                 case UNSELECTED:
                     selection = LinkGrabberTable.getInstance().getSelectionInfo();
-
                     setVisible(true);
-
                     if (lastLink != null && !selection.contains(lastLink)) {
                         if (checkLink(lastLink)) {
 
@@ -382,9 +377,7 @@ public class GenericDeleteFromLinkgrabberAction extends CustomizableAppAction im
                             return;
                         }
                     }
-
-                    final List<PackageControllerTableModelFilter<CrawledPackage, CrawledLink>> filters = LinkGrabberTableModel.getInstance().getTableFilters();
-
+                    final List<PackageControllerTableModelFilter<CrawledPackage, CrawledLink>> filters = LinkGrabberTableModel.getInstance().getEnabledTableFilters();
                     boolean read = LinkCollector.getInstance().readLock();
                     try {
                         for (CrawledPackage pkg : LinkCollector.getInstance().getPackages()) {
@@ -398,7 +391,6 @@ public class GenericDeleteFromLinkgrabberAction extends CustomizableAppAction im
                                         continue;
                                     }
                                     if (isIgnoreFiltered()) {
-
                                         for (PackageControllerTableModelFilter<CrawledPackage, CrawledLink> filter : filters) {
                                             if (filter.isFiltered((CrawledLink) child)) {
                                                 continue childs;

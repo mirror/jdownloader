@@ -104,7 +104,6 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
                 if (table.getModel().hasSelectedObjects()) {
                     setPropertiesPanelVisible(true);
                     propertiesPanel.update(table.getModel().getObjectbyRow(table.getSelectionModel().getLeadSelectionIndex()));
-
                 } else {
                     setPropertiesPanelVisible(false);
 

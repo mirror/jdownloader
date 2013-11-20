@@ -296,10 +296,10 @@ public class FilePackageView extends ChildrenView<DownloadLink> {
     }
 
     protected void addLinkToTemp(Temp tmp, DownloadLink link) {
-        if (link.getPriorityEnum().ordinal() < tmp.priorityLowset.ordinal()) {
+        if (link.getPriorityEnum().getId() < tmp.priorityLowset.getId()) {
             tmp.priorityLowset = link.getPriorityEnum();
         }
-        if (link.getPriorityEnum().ordinal() > tmp.priorityHighest.ordinal()) {
+        if (link.getPriorityEnum().getId() > tmp.priorityHighest.getId()) {
             tmp.priorityHighest = link.getPriorityEnum();
         }
         String sourceUrl = null;

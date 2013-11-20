@@ -17,8 +17,6 @@ import javax.swing.JList;
 import javax.swing.JScrollPane;
 import javax.swing.ListCellRenderer;
 import javax.swing.ListSelectionModel;
-import javax.swing.event.ListSelectionEvent;
-import javax.swing.event.ListSelectionListener;
 import javax.swing.event.TableModelEvent;
 import javax.swing.event.TableModelListener;
 
@@ -124,12 +122,6 @@ public class AccountTooltip extends PanelToolTip {
             // list.setFixedCellWidth(22);
             list.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
             list.setOpaque(false);
-            list.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
-
-                public void valueChanged(ListSelectionEvent e) {
-
-                }
-            });
 
             panel.add(list);
 

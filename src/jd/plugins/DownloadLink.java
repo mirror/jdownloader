@@ -55,8 +55,7 @@ import org.jdownloader.plugins.FinalLinkState;
 import org.jdownloader.plugins.SkipReason;
 
 /**
- * Hier werden alle notwendigen Informationen zu einem einzelnen Download festgehalten. Die Informationen werden dann in einer Tabelle
- * dargestellt
+ * Hier werden alle notwendigen Informationen zu einem einzelnen Download festgehalten. Die Informationen werden dann in einer Tabelle dargestellt
  * 
  * @author astaldo
  */
@@ -174,7 +173,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
     private transient NullsafeAtomicReference<FinalLinkState>           finalLinkState                      = new NullsafeAtomicReference<FinalLinkState>(null);
     private transient AtomicBoolean                                     enabled                             = new AtomicBoolean(false);
     private transient UniqueAlltimeID                                   previousParent                      = null;
-    private transient NullsafeAtomicReference<ExtractionStatus>         extractionStatus                    = null;
+    private transient NullsafeAtomicReference<ExtractionStatus>         extractionStatus                    = new NullsafeAtomicReference<ExtractionStatus>();
     private transient NullsafeAtomicReference<LinkStatus>               currentLinkStatus                   = new NullsafeAtomicReference<LinkStatus>(null);
     private transient PartInfo                                          partInfo;
 
@@ -552,8 +551,8 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
      * 
      * 2.) finalFileName (eg set by plugin where the final is 100% safe, eg API)
      * 
-     * 3.) unsafeFileName (eg set by plugin when no api is available, or no filename provided) ======= Liefert den Datei Namen dieses
-     * Downloads zurueck. Wurde der Name mit setfinalFileName(String) festgelegt wird dieser Name zurueckgegeben >>>>>>> .r21593
+     * 3.) unsafeFileName (eg set by plugin when no api is available, or no filename provided) ======= Liefert den Datei Namen dieses Downloads zurueck. Wurde
+     * der Name mit setfinalFileName(String) festgelegt wird dieser Name zurueckgegeben >>>>>>> .r21593
      * 
      * @param ignoreUnsafe
      * @return
@@ -624,8 +623,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
     }
 
     /**
-     * Gibt den Finalen Downloadnamen zurueck. Wird null zurueckgegeben, so wird der dateiname von den jeweiligen plugins automatisch
-     * ermittelt.
+     * Gibt den Finalen Downloadnamen zurueck. Wird null zurueckgegeben, so wird der dateiname von den jeweiligen plugins automatisch ermittelt.
      * 
      * @return Statischer Dateiname
      */
@@ -663,8 +661,8 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
     }
 
     /*
-     * Gibt zurueck ob Dieser Link schon auf verfuegbarkeit getestet wurde.+ Diese FUnktion fuehrt keinen!! Check durch. Sie prueft nur ob
-     * schon geprueft worden ist. anschiessend kann mit isAvailable() die verfuegbarkeit ueberprueft werden
+     * Gibt zurueck ob Dieser Link schon auf verfuegbarkeit getestet wurde.+ Diese FUnktion fuehrt keinen!! Check durch. Sie prueft nur ob schon geprueft worden
+     * ist. anschiessend kann mit isAvailable() die verfuegbarkeit ueberprueft werden
      * 
      * @return Link wurde schon getestet (true) nicht getestet(false)
      */
@@ -960,10 +958,10 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
     }
 
     /**
-     * Setzt den Statischen Dateinamen. Ist dieser wert != null, so wird er zum Speichern der Datei verwendet. ist er == null, so wird der
-     * dateiName im Plugin automatisch ermittelt. ACHTUNG: Der angegebene Dateiname ist endgueltig. Diese Funktion sollte nach Moeglichkeit
-     * nicht von Plugins verwendet werden. Sie gibt der Gui die Moeglichkeit unabhaengig von den Plugins einen Downloadnamen festzulegen.
-     * Userinputs>Automatische Erkennung - Plugins sollten {@link #setName(String)} verwenden um den Speichernamen anzugeben.
+     * Setzt den Statischen Dateinamen. Ist dieser wert != null, so wird er zum Speichern der Datei verwendet. ist er == null, so wird der dateiName im Plugin
+     * automatisch ermittelt. ACHTUNG: Der angegebene Dateiname ist endgueltig. Diese Funktion sollte nach Moeglichkeit nicht von Plugins verwendet werden. Sie
+     * gibt der Gui die Moeglichkeit unabhaengig von den Plugins einen Downloadnamen festzulegen. Userinputs>Automatische Erkennung - Plugins sollten
+     * {@link #setName(String)} verwenden um den Speichernamen anzugeben.
      */
     public void setFinalFileName(String newfinalFileName) {
         String oldName = getName();
@@ -1009,8 +1007,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
     }
 
     /**
-     * Diese Methhode fragt das eigene Plugin welche Informationen ueber die File bereit gestellt werden. Der String eignet Sich zur
-     * Darstellung in der UI
+     * Diese Methhode fragt das eigene Plugin welche Informationen ueber die File bereit gestellt werden. Der String eignet Sich zur Darstellung in der UI
      */
     @Override
     public String toString() {
@@ -1254,43 +1251,28 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
     }
 
     public ExtractionStatus getExtractionStatus() {
-        NullsafeAtomicReference<ExtractionStatus> lextractionStatus = extractionStatus;
-        if (lextractionStatus != null) return lextractionStatus.get();
+        if (extractionStatus.isValueSet()) return extractionStatus.get();
         String string = getStringProperty(PROPERTY_EXTRACTION_STATUS, null);
         ExtractionStatus ret = null;
         try {
             if (string != null) ret = ExtractionStatus.valueOf(string);
         } catch (Exception e) {
         }
-        extractionStatus = new NullsafeAtomicReference<ExtractionStatus>(ret);
+        extractionStatus.set(ret);
         return ret;
     }
 
-    public void setExtractionStatus(ExtractionStatus error) {
-        NullsafeAtomicReference<ExtractionStatus> lextractionStatus = extractionStatus;
-        ExtractionStatus old = null;
-        if (lextractionStatus != null) {
-            old = lextractionStatus.getAndSet(error);
+    public void setExtractionStatus(ExtractionStatus newExtractionStatus) {
+        ExtractionStatus old = extractionStatus.getAndSet(newExtractionStatus);
+        if (old == newExtractionStatus) return;
+        if (newExtractionStatus == null) {
+            setProperty(DownloadLink.PROPERTY_EXTRACTION_STATUS, Property.NULL);
         } else {
-            old = error;
-            extractionStatus = new NullsafeAtomicReference<ExtractionStatus>(error);
+            setProperty(DownloadLink.PROPERTY_EXTRACTION_STATUS, newExtractionStatus.name());
         }
-        if (old != error) {
-            System.out.println("ES:" + error + " - " + old);
-            if (error == null) {
-                setProperty(DownloadLink.PROPERTY_EXTRACTION_STATUS, Property.NULL);
-                if (hasNotificationListener()) {
-                    notifyChanges(AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, new DownloadLinkProperty(this, DownloadLinkProperty.Property.EXTRACTION_STATUS, null));
-                }
-            } else {
-                setProperty(DownloadLink.PROPERTY_EXTRACTION_STATUS, error.toString());
-                if (hasNotificationListener()) {
-                    notifyChanges(AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, new DownloadLinkProperty(this, DownloadLinkProperty.Property.EXTRACTION_STATUS, error));
-                }
-            }
-
+        if (hasNotificationListener()) {
+            notifyChanges(AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, new DownloadLinkProperty(this, DownloadLinkProperty.Property.EXTRACTION_STATUS, newExtractionStatus));
         }
-
     }
 
 }

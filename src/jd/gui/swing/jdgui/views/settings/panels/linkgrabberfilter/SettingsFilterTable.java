@@ -15,12 +15,12 @@ import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.jdownloader.controlling.filter.LinkFilterController;
 import org.jdownloader.controlling.filter.LinkgrabberFilterRule;
 
-public class FilterTable extends AbstractFilterTable {
+public class SettingsFilterTable extends AbstractFilterTable {
 
     private static final long serialVersionUID = 4698030718806607175L;
     private LinkgrabberFilter linkgrabberFilter;
 
-    public FilterTable(LinkgrabberFilter linkgrabberFilter) {
+    public SettingsFilterTable(LinkgrabberFilter linkgrabberFilter) {
         super(new FilterTableModel("FilterTable2"));
         this.setSearchEnabled(true);
         this.linkgrabberFilter = linkgrabberFilter;

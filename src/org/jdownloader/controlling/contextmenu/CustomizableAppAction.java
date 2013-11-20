@@ -130,13 +130,6 @@ public abstract class CustomizableAppAction extends AppAction {
 
     }
 
-    public CustomizableAppAction(MenuItemData data) {
-        this();
-
-        setMenuItemData(data);
-
-    }
-
     @Override
     public Object getValue(String key) {
         if (Action.MNEMONIC_KEY == key) {

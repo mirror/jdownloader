@@ -9,6 +9,7 @@ import jd.controlling.linkcrawler.CrawledPackage;
 import jd.controlling.packagecontroller.AbstractNode;
 
 import org.appwork.swing.exttable.ExtColumn;
+import org.jdownloader.gui.views.components.packagetable.PackageControllerTableModelData;
 import org.jdownloader.gui.views.components.packagetable.PackageControllerTableModel;
 import org.jdownloader.gui.views.components.packagetable.columns.ChecksumColumn;
 import org.jdownloader.gui.views.components.packagetable.columns.CommentColumn;
@@ -37,27 +38,22 @@ public class LinkGrabberTableModel extends PackageControllerTableModel<CrawledPa
 
     private LinkGrabberTableModel() {
         super(LinkCollector.getInstance(), "LinkGrabberTableModel");
-        // setTristateSorterEnabled(false);
     }
 
     public List<AbstractNode> refreshSort(final List<AbstractNode> data) {
-        if (isTristateSorterEnabled()) {
+        try {
             return super.refreshSort(data);
-        } else {
-            try {
-                return super.refreshSort(data);
-            } finally {
-                sortColumn = null;
-            }
+        } finally {
+            if (!isTristateSorterEnabled()) sortColumn = null;
         }
     }
 
     public java.util.List<AbstractNode> sort(final java.util.List<AbstractNode> data, ExtColumn<AbstractNode> column) {
-        java.util.List<AbstractNode> ret = super.sort(data, column);
+        PackageControllerTableModelData<CrawledPackage, CrawledLink> ret = (PackageControllerTableModelData<CrawledPackage, CrawledLink>) super.sort(data, column);
 
-        boolean autoConfirm = org.jdownloader.settings.staticreferences.CFG_LINKGRABBER.LINKGRABBER_AUTO_CONFIRM_ENABLED.getValue() && ret.size() > 0;
+        boolean autoConfirm = ret.size() > 0 && org.jdownloader.settings.staticreferences.CFG_LINKGRABBER.LINKGRABBER_AUTO_CONFIRM_ENABLED.getValue();
         if (!autoConfirm) {
-            for (CrawledLink l : this.getAllChildrenNodes(ret)) {
+            for (CrawledLink l : ret.getAllChildrenNodes()) {
                 if (l.getLinkState() != LinkState.OFFLINE) {
                     if (l.isAutoConfirmEnabled()) {
                         autoConfirm = true;

@@ -208,14 +208,11 @@ public class TaskColumn extends ExtTextColumn<AbstractNode> {
             PluginStateCollection ps = view.getPluginStates();
             if (ps.size() > 0) {
                 ArrayList<LabelInfo> lbls = new ArrayList<MultiLineLabelTooltip.LabelInfo>(ps.size());
-
                 for (PluginState p : ps) {
                     lbls.add(new LabelInfo(p.getDescription(), p.getIcon()));
                 }
-
                 return new MultiLineLabelTooltip(lbls);
             }
-
         }
         return super.createToolTip(position, value);
 

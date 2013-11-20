@@ -53,8 +53,8 @@ public class FrameStatus implements Storable {
         MAXIMIZED_VERT(Frame.MAXIMIZED_VERT),
 
         /**
-         * This state bit mask indicates that frame is fully maximized (that is both horizontally and vertically). It is just a convenience
-         * alias for <code>MAXIMIZED_VERT&nbsp;|&nbsp;MAXIMIZED_HORIZ</code>.
+         * This state bit mask indicates that frame is fully maximized (that is both horizontally and vertically). It is just a convenience alias for
+         * <code>MAXIMIZED_VERT&nbsp;|&nbsp;MAXIMIZED_HORIZ</code>.
          * 
          * <p>
          * Note that the correct test for frame being fully maximized is
@@ -202,7 +202,6 @@ public class FrameStatus implements Storable {
         boolean isok = false;
         for (final GraphicsDevice screen : screens) {
             final Rectangle bounds = screen.getDefaultConfiguration().getBounds();
-
             Insets insets = Toolkit.getDefaultToolkit().getScreenInsets(screen.getDefaultConfiguration());
 
             bounds.x += insets.left;

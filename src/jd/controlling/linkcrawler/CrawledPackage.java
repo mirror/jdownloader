@@ -6,6 +6,7 @@ import java.util.Locale;
 
 import jd.controlling.packagecontroller.AbstractNode;
 import jd.controlling.packagecontroller.AbstractNodeNotifier;
+import jd.controlling.packagecontroller.AbstractPackageChildrenNode;
 import jd.controlling.packagecontroller.AbstractPackageNode;
 import jd.controlling.packagecontroller.ModifyLock;
 import jd.controlling.packagecontroller.PackageController;
@@ -283,6 +284,10 @@ public class CrawledPackage implements AbstractPackageNode<CrawledLink, CrawledP
         if (n == null) return;
         AbstractNode lsource = source;
         if (lsource == null) lsource = this;
+        if (lsource instanceof AbstractPackageChildrenNode) {
+            CrawledPackageView lView = view;
+            if (lView != null) lView.requestUpdate();
+        }
         n.nodeUpdated(lsource, notify, param);
     }
 

@@ -132,7 +132,7 @@ public class DownloadsPanel extends SwitchPanel implements DownloadControllerLis
 
             @Override
             public void valueChanged(ListSelectionEvent e) {
-                if (!CFG_GUI.DOWNLOADS_TAB_PROPERTIES_PANEL_VISIBLE.isEnabled() || e.getValueIsAdjusting()) return;
+                if (e == null || e.getValueIsAdjusting() || table.getModel().isTableSelectionClearing() || !CFG_GUI.DOWNLOADS_TAB_PROPERTIES_PANEL_VISIBLE.isEnabled()) return;
                 if (table.getSelectedRowCount() > 0) {
                     setPropertiesPanelVisible(true);
 
@@ -427,8 +427,8 @@ public class DownloadsPanel extends SwitchPanel implements DownloadControllerLis
                     long contentChanges = DownloadController.getInstance().getContentChanges();
                     if (lastContentChanges != contentChanges && tableModel.isFilteredView()) {
                         /*
-                         * in case we have content changes(eg downloads started) and an active filteredView, we need to recreate the
-                         * tablemodel to reflect possible status changes in filtered view
+                         * in case we have content changes(eg downloads started) and an active filteredView, we need to recreate the tablemodel to reflect
+                         * possible status changes in filtered view
                          */
                         tableModel.recreateModel();
                     } else {

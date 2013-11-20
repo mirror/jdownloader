@@ -39,9 +39,14 @@ public class SelectionInfo<PackageType extends AbstractPackageNode<ChildrenType,
     private PackageControllerTable<PackageType, ChildrenType>                  table;
     private ExtColumn<AbstractNode>                                            contextColumn;
     private boolean                                                            shiftDown = false;
-    private List<PackageControllerTableModelFilter<PackageType, ChildrenType>> filters;
-    private ActionEvent                                                        actionEvent;
-    private ArraySet<AbstractNode>                                             raw;
+    private List<PackageControllerTableModelFilter<PackageType, ChildrenType>> filters   = null;
+
+    public List<PackageControllerTableModelFilter<PackageType, ChildrenType>> getTableFilters() {
+        return filters;
+    }
+
+    private ActionEvent            actionEvent;
+    private ArraySet<AbstractNode> raw;
 
     public SelectionInfo<PackageType, ChildrenType> setShiftDown(boolean shiftDown) {
         this.shiftDown = shiftDown;
@@ -78,8 +83,10 @@ public class SelectionInfo<PackageType extends AbstractPackageNode<ChildrenType,
         this.table = table;
         if (table != null) {
             PackageControllerTableModel<PackageType, ChildrenType> tableModel = table.getModel();
-            filters = tableModel.getTableFilters();
-            if (filters != null && filters.size() == 0) filters = null;
+            List<PackageControllerTableModelFilter<PackageType, ChildrenType>> lfilters = tableModel.getEnabledTableFilters();
+            if (lfilters != null && lfilters.size() > 1) {
+                filters = lfilters;
+            }
         }
 
         // System.out.println(isShiftDown());
@@ -169,14 +176,10 @@ public class SelectionInfo<PackageType extends AbstractPackageNode<ChildrenType,
                         List<ChildrenType> childs = ((PackageType) node).getChildren();
                         ArraySet<ChildrenType> unFiltered = new ArraySet<ChildrenType>();
                         if (filters == null) {
-
                             children.addAll(childs);
-
                             fullPackages.add((PackageType) node);
-
                         } else {
                             for (ChildrenType l : childs) {
-
                                 boolean filtered = false;
                                 for (PackageControllerTableModelFilter<PackageType, ChildrenType> filter : filters) {
                                     if (filter.isFiltered(l)) {
@@ -185,20 +188,16 @@ public class SelectionInfo<PackageType extends AbstractPackageNode<ChildrenType,
                                     }
                                 }
                                 if (!filtered) {
-
                                     unFiltered.add(l);
                                 }
-
                             }
                             children.addAll(unFiltered);
                             if (unFiltered.size() == childs.size()) {
                                 fullPackages.add((PackageType) node);
-
                             } else {
                                 incompleteSelectecPackages.put((PackageType) node, unFiltered);
                             }
                         }
-
                     } finally {
                         ((PackageType) node).getModifyLock().readUnlock(readL);
                     }
@@ -382,8 +381,7 @@ public class SelectionInfo<PackageType extends AbstractPackageNode<ChildrenType,
     }
 
     /**
-     * Returns a List of the rawselection. Contains packages and links as they were selected in the table. USe {@link #getChildren()}
-     * instead
+     * Returns a List of the rawselection. Contains packages and links as they were selected in the table. USe {@link #getChildren()} instead
      * 
      * @return
      */
@@ -401,8 +399,8 @@ public class SelectionInfo<PackageType extends AbstractPackageNode<ChildrenType,
     }
 
     /**
-     * Not all links of a package may have been selected @see ( {@link #getIncompletePackages()}. to get a list of all selected links for a
-     * certain package, use this method
+     * Not all links of a package may have been selected @see ( {@link #getIncompletePackages()}. to get a list of all selected links for a certain package, use
+     * this method
      * 
      * @param pkg
      * @return
@@ -445,65 +443,6 @@ public class SelectionInfo<PackageType extends AbstractPackageNode<ChildrenType,
     public boolean isPackageContext() {
         return contextObject != null && contextObject instanceof AbstractPackageNode;
     }
-
-    // /**
-    // * returns true if the shift key has been pressed when generating this instance
-    // *
-    // * @return
-    // */
-    // public boolean isShiftDown() {
-    //
-    // return shiftDown;
-    // }
-
-    // /** is true if ctrl+D is pressed */
-    // public boolean isAvoidRlyEnabled() {
-    //
-    // if (keyEvent != null) {
-    // if (keyEvent.isControlDown()) {
-    // return true;
-    // } else {
-    // return false;
-    // }
-    // }
-    // return false;
-    // }
-
-    // public ExtColumn<AbstractNode> getContextColumn() {
-    // return contextColumn;
-    // }
-
-    // public boolean isCtrlDown() {
-    //
-    // if (keyEvent != null && keyEvent.isControlDown()) { return true; }
-    // if (mouseEvent != null && mouseEvent.isControlDown()) { return true; }
-    // ;
-    // return false;
-    // }
-
-    // public boolean isMetaDown() {
-    //
-    // if (keyEvent != null && keyEvent.isMetaDown()) { return true; }
-    // if (mouseEvent != null && mouseEvent.isMetaDown()) { return true; }
-    // ;
-    // return false;
-    // }
-
-    // public boolean isAltGraphDown() {
-    //
-    // if (keyEvent != null && keyEvent.isAltGraphDown()) { return true; }
-    // if (mouseEvent != null && mouseEvent.isAltGraphDown()) { return true; }
-    // ;
-    // return false;
-    // }
-
-    // public boolean isAltDown() {
-    //
-    // if (keyEvent != null && keyEvent.isAltDown()) { return true; }
-    // if (mouseEvent != null && mouseEvent.isAltDown()) { return true; }
-    // ;
-    // return false;
-    // }
 
     public SelectionInfo<PackageType, ChildrenType> derive(AbstractNode contextObject2, MouseEvent event, KeyEvent kEvent, ActionEvent actionEvent, ExtColumn<AbstractNode> column) {
         SelectionInfo<PackageType, ChildrenType> ret = new SelectionInfo<PackageType, ChildrenType>();

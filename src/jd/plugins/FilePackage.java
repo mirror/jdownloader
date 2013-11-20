@@ -27,10 +27,11 @@ import java.util.List;
 import jd.config.Property;
 import jd.controlling.packagecontroller.AbstractNode;
 import jd.controlling.packagecontroller.AbstractNodeNotifier;
+import jd.controlling.packagecontroller.AbstractPackageChildrenNode;
 import jd.controlling.packagecontroller.AbstractPackageNode;
-import jd.controlling.packagecontroller.PackageControllerComparator;
 import jd.controlling.packagecontroller.ModifyLock;
 import jd.controlling.packagecontroller.PackageController;
+import jd.controlling.packagecontroller.PackageControllerComparator;
 
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging.Log;
@@ -60,6 +61,11 @@ public class FilePackage extends Property implements Serializable, AbstractPacka
 
             @Override
             public void _add(DownloadLink... links) {
+            }
+
+            @Override
+            public FilePackageView getView() {
+                return null;
             }
 
             @Override
@@ -147,9 +153,9 @@ public class FilePackage extends Property implements Serializable, AbstractPacka
         return uniqueID;
     }
 
-    private volatile transient FilePackageView fpInfo = null;
+    private volatile transient FilePackageView        fpInfo = null;
 
-    private PackageControllerComparator<DownloadLink>      sorter;
+    private PackageControllerComparator<DownloadLink> sorter;
 
     /*
      * (non-Javadoc)
@@ -474,6 +480,10 @@ public class FilePackage extends Property implements Serializable, AbstractPacka
         if (n == null) return;
         AbstractNode lsource = source;
         if (lsource == null) lsource = this;
+        if (lsource instanceof AbstractPackageChildrenNode) {
+            FilePackageView lfpInfo = fpInfo;
+            if (lfpInfo != null) lfpInfo.requestUpdate();
+        }
         n.nodeUpdated(lsource, notify, param);
     }
 

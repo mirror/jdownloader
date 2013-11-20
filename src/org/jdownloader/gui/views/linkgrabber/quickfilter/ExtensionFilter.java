@@ -1,19 +1,20 @@
 package org.jdownloader.gui.views.linkgrabber.quickfilter;
 
+import java.util.HashMap;
 import java.util.regex.Pattern;
 
 import javax.swing.ImageIcon;
 
 import jd.controlling.linkcrawler.CrawledLink;
 
-import org.appwork.utils.Files;
 import org.jdownloader.controlling.filter.CompiledFiletypeFilter.ExtensionsFilterInterface;
 import org.jdownloader.images.NewTheme;
 
 public abstract class ExtensionFilter extends Filter {
 
-    private Pattern pattern;
-    private String  description = null;
+    private Pattern                        pattern;
+    private String                         description = null;
+    private final HashMap<String, Boolean> fastCheck   = new HashMap<String, Boolean>();
 
     public ExtensionFilter(String string, ImageIcon icon, boolean b) {
         super(string, icon);
@@ -32,19 +33,17 @@ public abstract class ExtensionFilter extends Filter {
 
     @Override
     public boolean isFiltered(CrawledLink link) {
-        String ext = Files.getExtension(link.getName());
-        return isFiltered(ext);
+        return isFiltered(link.getExtension());
     }
 
-    public boolean isFiltered(String ext) {
+    protected synchronized boolean isFiltered(String ext) {
         if (ext == null) return false;
+        Boolean ret = fastCheck.get(ext);
+        if (ret != null) return ret.booleanValue();
         if (pattern == null) return false;
-        return pattern.matcher(ext).matches();
+        ret = Boolean.valueOf(pattern.matcher(ext).matches());
+        fastCheck.put(ext, ret);
+        return ret.booleanValue();
     }
-
-    // @Override
-    // public boolean isFiltered(CrawledPackage link) {
-    // return false;
-    // }
 
 }

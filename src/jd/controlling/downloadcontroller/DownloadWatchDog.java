@@ -605,8 +605,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
 
                 if (DownloadWatchDog.this.stateMachine.isStartState() || DownloadWatchDog.this.stateMachine.isFinal()) {
                     /*
-                     * no downloads are running, so we will force only the selected links to get started by setting stopmark to first forced
-                     * link
+                     * no downloads are running, so we will force only the selected links to get started by setting stopmark to first forced link
                      */
 
                     // DownloadWatchDog.this.setStopMark(linksForce.get(0));
@@ -1657,7 +1656,8 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
         DownloadLinkCandidateSelector selector = new DownloadLinkCandidateSelector(session);
         /* avoid captchas or not ? */
 
-        finalizeConditionalSkipReasons(session);
+        HashSet<DownloadLink> finalLinkStateLinks = finalizeConditionalSkipReasons(session);
+        handleFinalLinkStates(finalLinkStateLinks, session, logger, null);
         int maxConcurrentNormal = Math.max(1, config.getMaxSimultaneDownloads());
         int maxConcurrentForced = maxConcurrentNormal + Math.max(0, config.getMaxForcedDownloads());
         int loopCounter = 0;
@@ -1850,49 +1850,12 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                             logger.log(e);
                         }
                     }
-                    finalizeConditionalSkipReasons(currentSession);
+                    HashSet<DownloadLink> finalLinkStateLinks = finalizeConditionalSkipReasons(currentSession);
                     /* after each download, the order/position of next downloadCandidate could have changed */
                     currentSession.refreshCandidates();
-                    if (FinalLinkState.CheckFinished(link.getFinalLinkState())) {
-                        final LogSource finalLogger = logger;
-                        TaskQueue.getQueue().add(new QueueAction<Void, RuntimeException>() {
-
-                            @Override
-                            protected Void run() throws RuntimeException {
-                                FileCreationManager.getInstance().getEventSender().fireEvent(new FileCreationEvent(singleDownloadController, FileCreationEvent.Type.NEW_FILES, new File[] { new File(link.getFileOutput()) }));
-                                switch (org.jdownloader.settings.staticreferences.CFG_GENERAL.CFG.getCleanupAfterDownloadAction()) {
-                                case CLEANUP_IMMEDIATELY:
-                                    DownloadController.getInstance().getQueue().add(new QueueAction<Void, RuntimeException>() {
-
-                                        @Override
-                                        protected Void run() throws RuntimeException {
-                                            finalLogger.info("Remove Link " + link.getName() + " because Finished and CleanupImmediately!");
-                                            java.util.List<DownloadLink> remove = new ArrayList<DownloadLink>();
-                                            remove.add(link);
-                                            if (DownloadController.getInstance().askForRemoveVetos(remove)) {
-                                                DownloadController.getInstance().removeChildren(remove);
-                                            } else {
-                                                finalLogger.info("Remove Link " + link.getName() + " failed because of removeVetos!");
-                                            }
-                                            return null;
-                                        }
-
-                                    });
-                                    break;
-                                case CLEANUP_AFTER_PACKAGE_HAS_FINISHED:
-                                    DownloadController.removePackageIfFinished(finalLogger, link.getFilePackage());
-                                    break;
-                                }
-                                return null;
-                            }
-                        });
-                    } else if (FinalLinkState.FAILED_EXISTS.equals(link.getFinalLinkState()) && JsonConfig.create(GeneralSettings.class).getCleanupFileExists() && CleanAfterDownloadAction.CLEANUP_IMMEDIATELY.equals(org.jdownloader.settings.staticreferences.CFG_GENERAL.CFG.getCleanupAfterDownloadAction())) {
-                        ArrayList<DownloadLink> list = new ArrayList<DownloadLink>();
-                        list.add(link);
-                        DownloadController.getInstance().removeChildren(list);
-                    }
                     singleDownloadController.getDownloadLink().getFilePackage().getView().requestUpdate();
                     eventSender.fireEvent(new DownloadWatchdogEvent(this, DownloadWatchdogEvent.Type.LINK_STOPPED, singleDownloadController));
+                    handleFinalLinkStates(finalLinkStateLinks, currentSession, logger, singleDownloadController);
                 } catch (final Throwable e) {
                     logger.log(e);
                 } finally {
@@ -1903,6 +1866,103 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
 
             @Override
             public void interrupt() {
+            }
+        });
+    }
+
+    private void handleFinalLinkStates(HashSet<DownloadLink> links, DownloadSession session, final LogSource logger, final SingleDownloadController singleDownloadController) {
+        if ((links == null || links.size() == 0) && singleDownloadController == null) return;
+        if (links == null) links = new HashSet<DownloadLink>();
+        DownloadLink singleDownloadControllerLink = null;
+        if (singleDownloadController != null) {
+            singleDownloadControllerLink = singleDownloadController.getDownloadLinkCandidate().getLink();
+            links.add(singleDownloadControllerLink);
+        }
+        Iterator<DownloadLink> it = links.iterator();
+        final CleanAfterDownloadAction cleanupAction = org.jdownloader.settings.staticreferences.CFG_GENERAL.CFG.getCleanupAfterDownloadAction();
+        final boolean cleanupFileExists = JsonConfig.create(GeneralSettings.class).getCleanupFileExists();
+
+        final ArrayList<DownloadLink> cleanupLinks = new ArrayList<DownloadLink>();
+        final HashSet<FilePackage> cleanupPackages = new HashSet<FilePackage>();
+        while (it.hasNext()) {
+            final DownloadLink next = it.next();
+            FinalLinkState state = next.getFinalLinkState();
+            if (FinalLinkState.FAILED_EXISTS.equals(state)) {
+                session.removeActivationRequest(next);
+                session.removeHistory(next);
+                it.remove();
+                if (cleanupFileExists) {
+                    switch (cleanupAction) {
+                    case CLEANUP_IMMEDIATELY:
+                        cleanupLinks.add(next);
+                        break;
+                    case CLEANUP_AFTER_PACKAGE_HAS_FINISHED:
+                        cleanupPackages.add(next.getFilePackage());
+                        break;
+                    }
+                }
+            } else if (FinalLinkState.CheckFinished(state)) {
+                session.removeActivationRequest(next);
+                session.removeHistory(next);
+                it.remove();
+                switch (cleanupAction) {
+                case CLEANUP_IMMEDIATELY:
+                    cleanupLinks.add(next);
+                    break;
+                case CLEANUP_AFTER_PACKAGE_HAS_FINISHED:
+                    cleanupPackages.add(next.getFilePackage());
+                    break;
+                }
+                if (next == singleDownloadControllerLink) {
+                    TaskQueue.getQueue().add(new QueueAction<Void, RuntimeException>() {
+
+                        @Override
+                        protected Void run() throws RuntimeException {
+                            FileCreationManager.getInstance().getEventSender().fireEvent(new FileCreationEvent(singleDownloadController, FileCreationEvent.Type.NEW_FILES, new File[] { new File(next.getFileOutput()) }));
+                            return null;
+                        }
+                    });
+                }
+            }
+        }
+
+        TaskQueue.getQueue().add(new QueueAction<Void, RuntimeException>() {
+
+            @Override
+            protected Void run() throws RuntimeException {
+                switch (cleanupAction) {
+                case CLEANUP_IMMEDIATELY:
+                    if (cleanupLinks.size() > 0) {
+                        DownloadController.getInstance().getQueue().add(new QueueAction<Void, RuntimeException>() {
+
+                            @Override
+                            protected Void run() throws RuntimeException {
+                                for (DownloadLink cleanupLink : cleanupLinks) {
+                                    String name = cleanupLink.getName();
+                                    logger.info("Remove Link " + name + " because " + cleanupLink.getFinalLinkState() + " and CleanupImmediately!");
+                                    java.util.List<DownloadLink> remove = new ArrayList<DownloadLink>();
+                                    remove.add(cleanupLink);
+                                    if (DownloadController.getInstance().askForRemoveVetos(remove)) {
+                                        DownloadController.getInstance().removeChildren(remove);
+                                    } else {
+                                        logger.info("Remove Link " + name + " failed because of removeVetos!");
+                                    }
+                                }
+                                return null;
+                            }
+
+                        });
+                    }
+                    break;
+                case CLEANUP_AFTER_PACKAGE_HAS_FINISHED:
+                    if (cleanupPackages.size() > 0) {
+                        for (FilePackage filePackage : cleanupPackages) {
+                            DownloadController.removePackageIfFinished(logger, filePackage);
+                        }
+                    }
+                    break;
+                }
+                return null;
             }
         });
     }
@@ -2034,10 +2094,8 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                 message = pluginException.getErrorMessage();
                 if (pluginException.getValue() > 0) {
                     waitTime = pluginException.getValue();
-                } else if (pluginException.getValue() == 0) {
+                } else if (pluginException.getValue() <= 0) {
                     waitTime = JsonConfig.create(GeneralSettings.class).getDownloadTempUnavailableRetryWaittime();
-                } else {
-                    waitTime = -1;
                 }
                 break;
             case LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE:
@@ -2092,7 +2150,8 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
         return new DownloadLinkCandidateResult(RESULT.PLUGIN_DEFECT);
     }
 
-    private void finalizeConditionalSkipReasons(DownloadSession currentSession) {
+    private HashSet<DownloadLink> finalizeConditionalSkipReasons(DownloadSession currentSession) {
+        HashSet<DownloadLink> ret = new HashSet<DownloadLink>();
         boolean again = true;
         while (again) {
             again = false;
@@ -2102,9 +2161,11 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                     again = true;
                     link.setConditionalSkipReason(null);
                     conditionalSkipReason.finalize(link);
+                    if (link.getFinalLinkState() != null) ret.add(link);
                 }
             }
         }
+        return ret;
     }
 
     private synchronized void startDownloadJobExecuter() {
@@ -2262,9 +2323,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
             final int maxWaitTimeout = 5000;
 
             private void removeLink(final DownloadLink link, DownloadSession session) {
-                boolean removed = session.getActivationRequests().remove(link);
-                removed = session.getForcedLinks().remove(link) || removed;
-                if (removed) session.refreshCandidates();
+                session.removeActivationRequest(link);
                 SingleDownloadController con = link.getDownloadLinkController();
                 if (con != null) {
                     con.getJobsAfterDetach().add(new DownloadWatchDogJob() {
@@ -2558,7 +2617,8 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                                 @Override
                                 protected Void run() throws RuntimeException {
                                     processJobs();
-                                    finalizeConditionalSkipReasons(getSession());
+                                    HashSet<DownloadLink> finalLinkStateLinks = finalizeConditionalSkipReasons(getSession());
+                                    handleFinalLinkStates(finalLinkStateLinks, getSession(), logger, null);
                                     return null;
                                 }
                             });
@@ -2588,8 +2648,8 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                                     waitedForNewActivationRequests += System.currentTimeMillis() - currentTimeStamp;
                                     if ((getSession().isActivationRequestsWaiting() == false && DownloadWatchDog.this.getActiveDownloads() == 0)) {
                                         /*
-                                         * it's important that this if statement gets checked after wait!, else we will loop through without
-                                         * waiting for new links/user interaction
+                                         * it's important that this if statement gets checked after wait!, else we will loop through without waiting for new
+                                         * links/user interaction
                                          */
                                         break;
                                     }

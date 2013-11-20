@@ -55,7 +55,7 @@ public class NewAction extends AbstractAddAction {
 
     public static void add(final LinkgrabberFilterRule rule, final AbstractFilterTable table) {
         ConditionDialog<LinkgrabberFilterRule> d;
-        if (table instanceof FilterTable) {
+        if (table instanceof SettingsFilterTable) {
             d = new FilterRuleDialog(rule);
         } else {
             d = new ExceptionsRuleDialog(rule);

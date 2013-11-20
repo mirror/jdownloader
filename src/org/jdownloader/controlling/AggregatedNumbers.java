@@ -62,11 +62,10 @@ public class AggregatedNumbers {
         return connections;
     }
 
-    private long                                     connections;
-    private long                                     disabledTotalBytes;
-    private long                                     disabledLoadedBytes;
-    private long                                     failedTotalBytes;
-    private SelectionInfo<FilePackage, DownloadLink> selectionInfo;
+    private long connections;
+    private long disabledTotalBytes;
+    private long disabledLoadedBytes;
+    private long failedTotalBytes;
 
     public long getDisabledTotalBytes() {
         return disabledTotalBytes;
@@ -77,8 +76,6 @@ public class AggregatedNumbers {
     }
 
     public AggregatedNumbers(SelectionInfo<FilePackage, DownloadLink> selection) {
-        this.selectionInfo = selection;
-
         totalBytes = 0l;
         disabledTotalBytes = 0l;
         disabledLoadedBytes = 0l;
@@ -124,10 +121,6 @@ public class AggregatedNumbers {
 
         eta = downloadSpeed == 0 ? 0 : (totalBytes - loadedBytes) / downloadSpeed;
 
-    }
-
-    public SelectionInfo<FilePackage, DownloadLink> getSelectionInfo() {
-        return selectionInfo;
     }
 
     public long getFailedTotalBytes() {

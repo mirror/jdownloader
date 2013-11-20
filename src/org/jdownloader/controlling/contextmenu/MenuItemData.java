@@ -14,6 +14,9 @@ import javax.swing.KeyStroke;
 
 import org.appwork.exceptions.WTFException;
 import org.appwork.storage.Storable;
+import org.appwork.storage.config.MinTimeWeakReference;
+import org.appwork.storage.config.MinTimeWeakReferenceCleanup;
+import org.appwork.utils.NullsafeAtomicReference;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.actions.ComponentProviderInterface;
@@ -22,7 +25,7 @@ import org.jdownloader.extensions.ExtensionController;
 import org.jdownloader.extensions.ExtensionNotLoadedException;
 import org.jdownloader.images.NewTheme;
 
-public class MenuItemData implements Storable {
+public class MenuItemData implements Storable, MinTimeWeakReferenceCleanup {
 
     public static final String      EMPTY_NAME = "<NO NAME>";
     private ArrayList<MenuItemData> items;
@@ -75,20 +78,20 @@ public class MenuItemData implements Storable {
         CONTAINER;
     }
 
-    private Type                  type    = Type.ACTION;
+    private Type                                                                 type    = Type.ACTION;
 
-    private boolean               validated;
+    private boolean                                                              validated;
 
-    private Exception             validateException;
+    private Exception                                                            validateException;
 
-    private MenuContainerRoot     root;
+    private MenuContainerRoot                                                    root;
 
-    private String                mnemonic;
+    private String                                                               mnemonic;
 
-    private String                shortcut;
+    private String                                                               shortcut;
 
-    private CustomizableAppAction action;
-    private boolean               visible = true;
+    private NullsafeAtomicReference<MinTimeWeakReference<CustomizableAppAction>> action  = new NullsafeAtomicReference<MinTimeWeakReference<CustomizableAppAction>>();
+    private boolean                                                              visible = true;
 
     public void setMnemonic(String mnemonic) {
         this.mnemonic = mnemonic;
@@ -193,7 +196,7 @@ public class MenuItemData implements Storable {
             //
             throw new WTFException("No ACTION");
         }
-        CustomizableAppAction action = createAction();
+        final CustomizableAppAction action = createAction();
         action.requestUpdate(this);
         if (!isVisible()) return null;
         if (!action.isVisible()) return null;
@@ -226,7 +229,9 @@ public class MenuItemData implements Storable {
             //
             throw new WTFException("No ACTION");
         }
-        if (action != null) { return action; }
+        CustomizableAppAction ret = null;
+        MinTimeWeakReference<CustomizableAppAction> minWeakAction = this.action.get();
+        if (minWeakAction != null && (ret = minWeakAction.get()) != null) return ret;
         // if (action != null && action instanceof AbstractSelectionContextAction) {
         // ((AbstractSelectionContextAction) action).setSelection(selection);
         // if (action instanceof CachableInterface) {
@@ -249,22 +254,14 @@ public class MenuItemData implements Storable {
         // }
 
         Class<?> clazz = actionData._getClazz();
-
-        try {
-            Constructor<?> c = clazz.getConstructor(new Class[] { MenuItemData.class });
-            action = (CustomizableAppAction) c.newInstance(new Object[] { this });
-
-        } catch (NoSuchMethodException e) {
-            Constructor<?> c = clazz.getConstructor(new Class[] {});
-            action = (CustomizableAppAction) c.newInstance(new Object[] {});
-            action.setMenuItemData(this);
-
-        }
-        action.initContextDefaults();
-        action.loadContextSetups();
-
-        return (action);
-
+        Constructor<?> c = clazz.getConstructor(new Class[] {});
+        ret = (CustomizableAppAction) c.newInstance(new Object[] {});
+        ret.setMenuItemData(this);
+        ret.initContextDefaults();
+        ret.loadContextSetups();
+        minWeakAction = new MinTimeWeakReference<CustomizableAppAction>(ret, 30 * 1000l, "MenuItemAction", this);
+        action.set(minWeakAction);
+        return (ret);
     }
 
     public JComponent addTo(JComponent root) throws InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException, ClassNotFoundException, NoSuchMethodException, SecurityException, ExtensionNotLoadedException {
@@ -389,7 +386,13 @@ public class MenuItemData implements Storable {
     }
 
     public void clearCachedAction() {
-        action = null;
+        MinTimeWeakReference<CustomizableAppAction> old = action.getAndSet(null);
+        if (old != null) old.clearReference();
+    }
+
+    @Override
+    public void onMinTimeWeakReferenceCleanup(MinTimeWeakReference<?> minTimeWeakReference) {
+        action.compareAndSet((MinTimeWeakReference<CustomizableAppAction>) minTimeWeakReference, null);
     }
 
 }

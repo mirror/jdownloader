@@ -1,16 +1,17 @@
 package org.jdownloader.gui.views.linkgrabber.quickfilter;
 
 import java.util.ArrayList;
-import java.util.Collection;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.CopyOnWriteArraySet;
 
 import jd.SecondLevelLaunch;
-import jd.controlling.linkcollector.LinkCollector;
 import jd.controlling.linkcrawler.CrawledLink;
-import jd.controlling.linkcrawler.CrawledPackage;
 
-import org.appwork.utils.Files;
 import org.jdownloader.controlling.filter.CompiledFiletypeFilter.ArchiveExtensions;
 import org.jdownloader.controlling.filter.CompiledFiletypeFilter.AudioExtensions;
 import org.jdownloader.controlling.filter.CompiledFiletypeFilter.ImageExtensions;
@@ -24,194 +25,240 @@ import org.jdownloader.translate._JDT;
 public class QuickFilterTypeTable extends FilterTable {
     private static final long            serialVersionUID = 2109715691047942399L;
     private CopyOnWriteArrayList<Filter> allFilters       = new CopyOnWriteArrayList<Filter>();
+    private CopyOnWriteArraySet<Filter>  enabledFilters   = new CopyOnWriteArraySet<Filter>();
+    private HashMap<String, Filter>      fastCheck        = new HashMap<String, Filter>();
 
     public QuickFilterTypeTable(Header filetypeFilter, LinkGrabberTable table2Filter) {
         super(filetypeFilter, table2Filter, org.jdownloader.settings.staticreferences.CFG_LINKFILTER.LINKGRABBER_FILETYPE_QUICKFILTER_ENABLED);
         init();
     }
 
-    protected java.util.List<Filter> updateQuickFilerTableData() {
+    @Override
+    protected FilterTableDataUpdater getFilterTableDataUpdater() {
+        final List<Filter> availableFilters = new ArrayList<Filter>(allFilters);
+        return new FilterTableDataUpdater() {
+            private Set<Filter> usedFilters = new HashSet<Filter>();
 
-        // synchronized (LOCK) {
-        /* reset existing filter counters */
-        for (Filter filter : allFilters) {
-            filter.setCounter(0);
-        }
-        /* update filter list */
-        HashSet<Filter> filtersInUse = new HashSet<Filter>();
-        HashSet<CrawledLink> map = new HashSet<CrawledLink>();
-        java.util.List<CrawledLink> filteredLinks = new ArrayList<CrawledLink>();
-        for (CrawledLink link : getVisibleLinks()) {
-            map.add(link);
-            /*
-             * speed optimization, we dont want to get extension several times
-             */
-            String ext = Files.getExtension(link.getName());
-            for (Filter filter : allFilters) {
-                if (((ExtensionFilter) filter).isFiltered(ext)) {
-                    filtersInUse.add(filter);
-                    filter.setCounter(filter.getCounter() + 1);
-                    break;
+            @Override
+            public void updateVisible(CrawledLink link) {
+                for (Filter filter : availableFilters) {
+                    if (((ExtensionFilter) filter).isFiltered(link)) {
+                        usedFilters.add(filter);
+                        filter.increaseCounter();
+                        break;
+                    }
                 }
             }
-        }
 
-        for (CrawledPackage pkg : LinkCollector.getInstance().getPackagesCopy()) {
-            boolean readL = pkg.getModifyLock().readLock();
-            try {
-                for (CrawledLink link : pkg.getChildren()) {
-                    if (map.add(link)) {
-                        filteredLinks.add(link);
-                    }
-                    String ext = Files.getExtension(link.getName());
-                    for (Filter filter : allFilters) {
-                        if (((ExtensionFilter) filter).isFiltered(ext)) {
-                            filtersInUse.add(filter);
+            @Override
+            public void reset() {
+                for (Filter filter : availableFilters) {
+                    filter.resetCounter();
+                }
+            }
+
+            @Override
+            public void afterVisible() {
+                availableFilters.removeAll(usedFilters);
+            }
+
+            @Override
+            public void updateFiltered(CrawledLink link) {
+                if (availableFilters.size() > 0) {
+                    Iterator<Filter> it = availableFilters.iterator();
+                    while (it.hasNext()) {
+                        Filter filter = it.next();
+                        if (((ExtensionFilter) filter).isFiltered(link)) {
+                            usedFilters.add(filter);
+                            it.remove();
                             break;
                         }
                     }
                 }
-            } finally {
-                pkg.getModifyLock().readUnlock(readL);
             }
-        }
 
-        for (Filter filter : filtersInUse) {
-            if (filter.getCounter() == 0) {
-                filter.setCounter(getCountWithout(filter, filteredLinks));
+            @Override
+            public List<Filter> finalizeUpdater() {
+                return new ArrayList<Filter>(usedFilters);
             }
+
+            @Override
+            public FilterTable getFilterTable() {
+                return QuickFilterTypeTable.this;
+            }
+
+            @Override
+            public boolean hasNewDisabledFilters() {
+                return false;
+            }
+
+        };
+    }
+
+    private void setEnabled(boolean enabled, ExtensionFilter filter) {
+        if (!enabled) {
+            enabledFilters.add(filter);
+        } else {
+            enabledFilters.remove(filter);
         }
-        /* update FilterTableModel */
-        // java.util.List<Filter> newfilters = new
-        // java.util.List<Filter>();
-
-        return new ArrayList<Filter>(filtersInUse);
-
+        synchronized (fastCheck) {
+            fastCheck.clear();
+        }
+        getLinkgrabberTable().getModel().recreateModel(false);
     }
 
     public void init() {
         SecondLevelLaunch.INIT_COMPLETE.executeWhenReached(new Runnable() {
             public void run() {
-                final ArrayList<ExtensionFilter> knownExtensionFilters = new ArrayList<ExtensionFilter>();
-                ExtensionFilter filter = new ExtensionFilter(AudioExtensions.AA) {
-                    protected String getID() {
-                        return "Type_Audio";
-                    }
-
-                    public String getDescription() {
-                        return _JDT._.audiofilter_description();
-                    }
-
+                new Thread("QuickFilterTypeTable") {
                     @Override
-                    public void setEnabled(boolean enabled) {
-                        super.setEnabled(enabled);
-                        getLinkgrabberTable().getModel().recreateModel(false);
-                        updateAllFiltersInstant();
-                    }
+                    public void run() {
+                        final ArrayList<ExtensionFilter> knownExtensionFilters = new ArrayList<ExtensionFilter>();
+                        ExtensionFilter filter = null;
+                        allFilters.add(filter = new ExtensionFilter(AudioExtensions.AA) {
+                            private String description = _JDT._.audiofilter_description();
 
-                };
-                allFilters.add(filter);
-                knownExtensionFilters.add(filter);
-                allFilters.add(filter = new ExtensionFilter(VideoExtensions.ASF) {
-                    protected String getID() {
-                        return "Type_Video";
-                    }
+                            protected String getID() {
+                                return "Type_Audio";
+                            }
 
-                    public String getDescription() {
-                        return _JDT._.video_description();
-                    }
+                            public String getDescription() {
+                                return description;
+                            }
 
-                    @Override
-                    public void setEnabled(boolean enabled) {
-                        super.setEnabled(enabled);
-                        getLinkgrabberTable().getModel().recreateModel(false);
-                        updateAllFiltersInstant();
+                            @Override
+                            public void setEnabled(boolean enabled) {
+                                super.setEnabled(enabled);
+                                QuickFilterTypeTable.this.setEnabled(enabled, this);
+                            }
 
-                    }
-                });
-                knownExtensionFilters.add(filter);
-                allFilters.add(filter = new ExtensionFilter(ImageExtensions.BMP) {
-                    protected String getID() {
-                        return "Type_Image";
-                    }
+                        });
+                        knownExtensionFilters.add(filter);
+                        allFilters.add(filter = new ExtensionFilter(VideoExtensions.ASF) {
+                            private String description = _JDT._.video_description();
 
-                    public String getDescription() {
-                        return _JDT._.image_description();
-                    }
+                            protected String getID() {
+                                return "Type_Video";
+                            }
 
-                    @Override
-                    public void setEnabled(boolean enabled) {
-                        super.setEnabled(enabled);
-                        getLinkgrabberTable().getModel().recreateModel(false);
-                        updateAllFiltersInstant();
-                    }
-                });
-                knownExtensionFilters.add(filter);
-                allFilters.add(filter = new ExtensionFilter(ArchiveExtensions.ACE) {
-                    protected String getID() {
-                        return "Type_Archive";
-                    }
+                            public String getDescription() {
+                                return description;
+                            }
 
-                    public String getDescription() {
-                        return _JDT._.archive_description();
-                    }
+                            @Override
+                            public void setEnabled(boolean enabled) {
+                                super.setEnabled(enabled);
+                                QuickFilterTypeTable.this.setEnabled(enabled, this);
 
-                    @Override
-                    public void setEnabled(boolean enabled) {
-                        super.setEnabled(enabled);
-                        getLinkgrabberTable().getModel().recreateModel(false);
-                        updateAllFiltersInstant();
-                    }
-                });
-                knownExtensionFilters.add(filter);
-                knownExtensionFilters.trimToSize();
-                /*
-                 * now we add special extensionfilter which will handle all unknown extensions
-                 */
-                allFilters.add(new ExtensionFilter(_GUI._.settings_linkgrabber_filter_others(), NewTheme.I().getIcon("file", 16), false) {
-                    protected String getID() {
-                        return "Type_Others";
+                            }
+                        });
+                        knownExtensionFilters.add(filter);
+                        allFilters.add(filter = new ExtensionFilter(ImageExtensions.BMP) {
+                            private String description = _JDT._.image_description();
 
-                    }
+                            protected String getID() {
+                                return "Type_Image";
+                            }
 
-                    public String getDescription() {
-                        return _JDT._.other_files_description();
-                    }
+                            public String getDescription() {
+                                return description;
+                            }
 
-                    @Override
-                    public boolean isFiltered(String ext) {
-                        if (ext == null) return true;
-                        for (ExtensionFilter filter : knownExtensionFilters) {
-                            if (filter.isFiltered(ext)) return false;
+                            @Override
+                            public void setEnabled(boolean enabled) {
+                                super.setEnabled(enabled);
+                                QuickFilterTypeTable.this.setEnabled(enabled, this);
+                            }
+                        });
+                        knownExtensionFilters.add(filter);
+                        allFilters.add(filter = new ExtensionFilter(ArchiveExtensions.ACE) {
+                            private String description = _JDT._.archive_description();
+
+                            protected String getID() {
+                                return "Type_Archive";
+                            }
+
+                            public String getDescription() {
+                                return description;
+                            }
+
+                            @Override
+                            public void setEnabled(boolean enabled) {
+                                super.setEnabled(enabled);
+                                QuickFilterTypeTable.this.setEnabled(enabled, this);
+                            }
+                        });
+                        knownExtensionFilters.add(filter);
+                        knownExtensionFilters.trimToSize();
+                        /*
+                         * now we add special extensionfilter which will handle all unknown extensions
+                         */
+                        allFilters.add(filter = new ExtensionFilter(_GUI._.settings_linkgrabber_filter_others(), NewTheme.I().getIcon("file", 16), false) {
+                            private String description = _JDT._.other_files_description();
+
+                            protected String getID() {
+                                return "Type_Others";
+
+                            }
+
+                            public String getDescription() {
+                                return description;
+                            }
+
+                            @Override
+                            protected boolean isFiltered(String ext) {
+                                if (ext == null) return true;
+                                for (ExtensionFilter filter : knownExtensionFilters) {
+                                    if (filter.isFiltered(ext)) return false;
+                                }
+                                return true;
+                            }
+
+                            @Override
+                            public void setEnabled(boolean enabled) {
+                                super.setEnabled(enabled);
+                                QuickFilterTypeTable.this.setEnabled(enabled, this);
+                            }
+                        });
+                        for (Filter filterCheck : allFilters) {
+                            if (!filterCheck.isEnabled()) enabledFilters.add(filterCheck);
                         }
-                        return true;
+                        requestUpdate();
                     }
-
-                    @Override
-                    public void setEnabled(boolean enabled) {
-                        super.setEnabled(enabled);
-                        getLinkgrabberTable().getModel().recreateModel(false);
-                        updateAllFiltersInstant();
-                    }
-                });
+                }.start();
             }
         });
     }
 
-    public void reset() {
-        Collection<Filter> lfilters = filters;
-        for (Filter filter : lfilters) {
-            filter.setCounter(0);
-        }
+    @Override
+    public int getComplexity() {
+        return 1;
     }
 
     @Override
-    java.util.List<Filter> getAllFilters() {
-        return allFilters;
+    public boolean isFiltered(CrawledLink v) {
+        Filter exception = getFilterException();
+        String ext = v.getExtension();
+        Filter filter = null;
+        synchronized (fastCheck) {
+            filter = fastCheck.get(ext);
+        }
+        if (filter != null) return filter != exception && filter.isFiltered(v);
+        for (Filter enabledFilter : enabledFilters) {
+            if (enabledFilter == exception) continue;
+            if (enabledFilter.isFiltered(v)) {
+                synchronized (fastCheck) {
+                    fastCheck.put(ext, enabledFilter);
+                }
+                return true;
+            }
+        }
+        return false;
     }
 
-    public boolean highlightFilter() {
-        return false;
+    @Override
+    public boolean isFilteringChildrenNodes() {
+        return isEnabled() && enabledFilters.size() > 0;
     }
 
 }

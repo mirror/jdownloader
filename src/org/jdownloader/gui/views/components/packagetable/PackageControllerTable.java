@@ -14,12 +14,15 @@ import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
 
 import javax.swing.KeyStroke;
 import javax.swing.ListSelectionModel;
 import javax.swing.SwingUtilities;
+import javax.swing.event.TableModelEvent;
+import javax.swing.event.TableModelListener;
 import javax.swing.table.TableModel;
 
 import jd.controlling.packagecontroller.AbstractNode;
@@ -138,6 +141,13 @@ public abstract class PackageControllerTable<ParentType extends AbstractPackageN
                 updateMoveActions();
             }
         };
+        tableModel.addTableModelListener(new TableModelListener() {
+
+            @Override
+            public void tableChanged(TableModelEvent e) {
+                getSelectionInfo(false, false);
+            }
+        });
     }
 
     public SelectionInfo<ParentType, ChildrenType> getSelectionInfo() {
@@ -150,8 +160,9 @@ public abstract class PackageControllerTable<ParentType extends AbstractPackageN
             @Override
             public SelectionInfo<ParentType, ChildrenType> edtRun() {
                 SelectionInfoCache cachedSelectionInfo = selectionInfoCache.get();
-                if (cachedSelectionInfo == null || cachedSelectionInfo.getTableDataVersion() != tableModel.getTableDataVersion()) {
-                    cachedSelectionInfo = new SelectionInfoCache(tableModel.getTableDataVersion());
+                final long tableVersion = tableModel.getTableDataVersion();
+                if (cachedSelectionInfo == null || cachedSelectionInfo.getTableDataVersion() != tableVersion) {
+                    cachedSelectionInfo = new SelectionInfoCache(tableVersion);
                     selectionInfoCache.set(cachedSelectionInfo);
                 }
                 if (selectionOnly == false) {
@@ -167,7 +178,8 @@ public abstract class PackageControllerTable<ParentType extends AbstractPackageN
                         return cachedSelectionInfo.all_filtered;
                     }
                 } else {
-                    if (cachedSelectionInfo.selectionVersion.getAndSet(selectionVersion.get()) != selectionVersion.get()) {
+                    long selection = selectionVersion.get();
+                    if (cachedSelectionInfo.selectionVersion.getAndSet(selection) != selection) {
                         cachedSelectionInfo.selection = null;
                         cachedSelectionInfo.selection_filtered = null;
                     }
@@ -233,7 +245,7 @@ public abstract class PackageControllerTable<ParentType extends AbstractPackageN
     protected void onSelectionChanged() {
         selectionVersion.incrementAndGet();
         super.onSelectionChanged();
-        if (tableModel.isTableStructureChanging() == false && tableModel.hasSelectedObjects() == false || !updateMoveButtonEnabledStatus()) {
+        if (tableModel.hasSelectedObjects() == false || !updateMoveButtonEnabledStatus()) {
             // disable move buttons
             moveDownAction.setEnabled(false);
             moveBottomAction.setEnabled(false);
@@ -267,15 +279,21 @@ public abstract class PackageControllerTable<ParentType extends AbstractPackageN
         };
     }
 
-    protected void getSelected(List<ParentType> selectedPkgs, List<ChildrenType> selectedChld) {
-        final int[] rows = this.getSelectedRows();
-        for (final int row : rows) {
-            final AbstractNode node = getModel().getObjectbyRow(row);
-            if (node != null) {
-                if (node instanceof AbstractPackageNode<?, ?>) {
-                    if (selectedPkgs != null) selectedPkgs.add((ParentType) node);
-                } else if (node instanceof AbstractPackageChildrenNode<?>) {
-                    if (selectedChld != null) selectedChld.add((ChildrenType) node);
+    public void getSelected(List<ParentType> selectedPkgs, List<ChildrenType> selectedChld) {
+        final java.util.List<ChildrenType> ret = new ArrayList<ChildrenType>();
+        int iMin = selectionModel.getMinSelectionIndex();
+        int iMax = selectionModel.getMaxSelectionIndex();
+        if ((iMin == -1) || (iMax == -1)) { return; }
+        List<AbstractNode> tableData = getModel().getTableData();
+        for (int i = iMin; i <= iMax; i++) {
+            if (selectionModel.isSelectedIndex(i)) {
+                final AbstractNode node = tableData.get(i);
+                if (node != null) {
+                    if (node instanceof AbstractPackageNode<?, ?> && selectedPkgs != null) {
+                        selectedPkgs.add((ParentType) node);
+                    } else if (node instanceof AbstractPackageChildrenNode<?> && selectedChld != null) {
+                        selectedChld.add((ChildrenType) node);
+                    }
                 }
             }
         }
@@ -697,14 +715,14 @@ public abstract class PackageControllerTable<ParentType extends AbstractPackageN
         if (stroke.equals(KEY_STROKE_KP_LEFT) || stroke.equals(KEY_STROKE_LEFT)) {
             AbstractNode element = this.getModel().getElementAt(this.getSelectedRow());
             if (element != null && element instanceof AbstractPackageNode) {
-                tableModel.setFilePackageExpand((AbstractPackageNode<?, ?>) element, false);
+                tableModel.setFilePackageExpand(false, (AbstractPackageNode<?, ?>) element);
                 return true;
             }
         }
         if (stroke.equals(KEY_STROKE_KP_RIGHT) || stroke.equals(KEY_STROKE_RIGHT)) {
             AbstractNode element = this.getModel().getElementAt(this.getSelectedRow());
             if (element != null && element instanceof AbstractPackageNode) {
-                tableModel.setFilePackageExpand((AbstractPackageNode<?, ?>) element, true);
+                tableModel.setFilePackageExpand(true, (AbstractPackageNode<?, ?>) element);
                 return true;
             }
         }
@@ -807,11 +825,16 @@ public abstract class PackageControllerTable<ParentType extends AbstractPackageN
     @SuppressWarnings("unchecked")
     public java.util.List<ParentType> getSelectedPackages() {
         final java.util.List<ParentType> ret = new ArrayList<ParentType>();
-        final int[] rows = this.getSelectedRows();
-        for (final int row : rows) {
-            final AbstractNode node = getModel().getObjectbyRow(row);
-            if (node != null && node instanceof AbstractPackageNode<?, ?>) {
-                ret.add((ParentType) node);
+        int iMin = selectionModel.getMinSelectionIndex();
+        int iMax = selectionModel.getMaxSelectionIndex();
+        if ((iMin == -1) || (iMax == -1)) { return ret; }
+        List<AbstractNode> tableData = getModel().getTableData();
+        for (int i = iMin; i <= iMax; i++) {
+            if (selectionModel.isSelectedIndex(i)) {
+                final AbstractNode node = tableData.get(i);
+                if (node != null && node instanceof AbstractPackageNode<?, ?>) {
+                    ret.add((ParentType) node);
+                }
             }
         }
         return ret;
@@ -820,11 +843,16 @@ public abstract class PackageControllerTable<ParentType extends AbstractPackageN
     @SuppressWarnings("unchecked")
     public java.util.List<ChildrenType> getSelectedChildren() {
         final java.util.List<ChildrenType> ret = new ArrayList<ChildrenType>();
-        final int[] rows = this.getSelectedRows();
-        for (final int row : rows) {
-            final AbstractNode node = getModel().getObjectbyRow(row);
-            if (node != null && node instanceof AbstractPackageChildrenNode<?>) {
-                ret.add((ChildrenType) node);
+        int iMin = selectionModel.getMinSelectionIndex();
+        int iMax = selectionModel.getMaxSelectionIndex();
+        if ((iMin == -1) || (iMax == -1)) { return ret; }
+        List<AbstractNode> tableData = getModel().getTableData();
+        for (int i = iMin; i <= iMax; i++) {
+            if (selectionModel.isSelectedIndex(i)) {
+                final AbstractNode node = tableData.get(i);
+                if (node != null && node instanceof AbstractPackageChildrenNode<?>) {
+                    ret.add((ChildrenType) node);
+                }
             }
         }
         return ret;
@@ -832,24 +860,22 @@ public abstract class PackageControllerTable<ParentType extends AbstractPackageN
 
     @SuppressWarnings("unchecked")
     public java.util.List<ChildrenType> getAllSelectedChildren(java.util.List<AbstractNode> selectedObjects) {
-        final java.util.List<ChildrenType> links = new ArrayList<ChildrenType>();
+        LinkedHashSet<ChildrenType> list = new LinkedHashSet<ChildrenType>();
         for (final AbstractNode node : selectedObjects) {
             if (node instanceof AbstractPackageChildrenNode<?>) {
-                if (!links.contains(node)) links.add((ChildrenType) node);
+                list.add((ChildrenType) node);
             } else {
                 boolean readL = ((AbstractPackageNode) node).getModifyLock().readLock();
                 try {
                     for (final ChildrenType dl : ((ParentType) node).getChildren()) {
-                        if (!links.contains(dl)) {
-                            links.add(dl);
-                        }
+                        list.add(dl);
                     }
                 } finally {
                     ((AbstractPackageNode) node).getModifyLock().readUnlock(readL);
                 }
             }
         }
-        return links;
+        return new ArrayList<ChildrenType>(list);
     }
 
 }

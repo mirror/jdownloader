@@ -40,7 +40,7 @@ import org.jdownloader.images.NewTheme;
 public class LinkgrabberFilter extends JPanel implements SettingsComponent {
     private static final long              serialVersionUID = 6070464296168772795L;
 
-    private FilterTable                    filterTable;
+    private SettingsFilterTable                    filterTable;
     private ExtButton                      btadd;
 
     private ExtButton                      btImport;
@@ -262,7 +262,7 @@ public class LinkgrabberFilter extends JPanel implements SettingsComponent {
     }
 
     private void initComponents() {
-        filterTable = new FilterTable(this);
+        filterTable = new SettingsFilterTable(this);
         exceptionsTable = new ExceptionsTable(this);
         btRemove = new ExtButton(new RemoveAction(this));
         btadd = new ExtButton(new NewAction(this));
