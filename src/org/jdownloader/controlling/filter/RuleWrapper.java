@@ -4,6 +4,7 @@ import java.util.regex.Pattern;
 
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledLink.LinkState;
+import jd.plugins.DownloadLink;
 
 import org.appwork.utils.Files;
 import org.appwork.utils.StringUtils;
@@ -219,7 +220,15 @@ public class RuleWrapper<T extends FilterRule> {
     public boolean checkHoster(CrawledLink link) throws NoDownloadLinkException {
         if (getHosterRule() != null) {
             if (link.getDownloadLink() == null) { throw new NoDownloadLinkException(); }
-            return getHosterRule().matches(link.getURL());
+            DownloadLink dlLink = link.getDownloadLink();
+            switch (getHosterRule().getMatchType()) {
+            case CONTAINS:
+            case EQUALS:
+                return getHosterRule().matches(dlLink.getHost()) || getHosterRule().matches(dlLink.getDownloadURL());
+            case CONTAINS_NOT:
+            case EQUALS_NOT:
+                return getHosterRule().matches(dlLink.getHost()) && getHosterRule().matches(dlLink.getDownloadURL());
+            }
         }
         return true;
     }

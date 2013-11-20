@@ -27,7 +27,6 @@ public class DataEntry {
     private JLabel       filtered;
     private JLabel       selected;
     final private String label;
-    private Boolean      hasSelectedObjectsState = null;
 
     public String getLabel() {
         return label;
