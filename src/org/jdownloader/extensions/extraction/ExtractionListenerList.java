@@ -47,7 +47,6 @@ import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.InputDialog;
 import org.jdownloader.controlling.FileCreationEvent;
 import org.jdownloader.controlling.FileCreationManager;
-import org.jdownloader.controlling.FileCreationManager.DeleteOption;
 import org.jdownloader.extensions.extraction.bindings.downloadlink.DownloadLinkArchiveFile;
 import org.jdownloader.extensions.extraction.translate.T;
 import org.jdownloader.gui.IconKey;
@@ -107,10 +106,11 @@ public class ExtractionListenerList implements ExtractionListener {
         case PASSWORD_NEEDED_TO_CONTINUE:
             if (ex.getSettings().isAskForUnknownPasswordsEnabled() || controller.isAskForUnknownPassword()) {
 
-                InputDialog id = new InputDialog(0, T._.ask_for_password(), T._.plugins_optional_extraction_askForPassword2(), "", NewTheme.I().getIcon(IconKey.ICON_RAR, 32), null, null) {
+                InputDialog id = new InputDialog(UIOManager.LOGIC_COUNTDOWN, T._.ask_for_password(), T._.plugins_optional_extraction_askForPassword2(), "", NewTheme.I().getIcon(IconKey.ICON_RAR, 32), null, null) {
                     private FocusListener focusListener;
 
                     {
+                        setTimeout(10 * 60 * 1000);
                         focusListener = new FocusListener() {
 
                             @Override
