@@ -52,8 +52,9 @@ public class CBSolver extends ChallengeSolver<String> implements ServicePanelExt
 
     private CBSolver() {
         super(1);
-        initServicePanel();
         config = JsonConfig.create(CaptchaBrotherHoodSettings.class);
+        initServicePanel();
+
         AdvancedConfigManager.getInstance().register(config);
 
     }
