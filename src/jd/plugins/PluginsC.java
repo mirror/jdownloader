@@ -158,7 +158,7 @@ public abstract class PluginsC {
             try {
                 callDecryption(file);
                 if (askFileDeletion() == false) {
-                    FileCreationManager.getInstance().delete(file);
+                    FileCreationManager.getInstance().delete(file, null);
                 } else if (cls.size() > 0 && askFileDeletion()) {
                     switch (JsonConfig.create(GeneralSettings.class).getDeleteContainerFilesAfterAddingThemAction()) {
                     case ASK_FOR_DELETE:
@@ -171,7 +171,7 @@ public abstract class PluginsC {
 
                         org.appwork.uio.ConfirmDialogInterface io = d.show();
                         if (io.getCloseReason() == CloseReason.OK) {
-                            FileCreationManager.getInstance().delete(file);
+                            FileCreationManager.getInstance().delete(file, null);
                             if (io.isDontShowAgainSelected()) {
                                 JsonConfig.create(GeneralSettings.class).setDeleteContainerFilesAfterAddingThemAction(DeleteContainerAction.DELETE);
                             }
@@ -182,7 +182,7 @@ public abstract class PluginsC {
                         }
                         break;
                     case DELETE:
-                        FileCreationManager.getInstance().delete(file);
+                        FileCreationManager.getInstance().delete(file, null);
                         break;
                     case DONT_DELETE:
 

@@ -136,7 +136,7 @@ public class ShutdownExtension extends AbstractExtension<ShutdownConfig, Shutdow
                         JDUtilities.runCommand("cmd", new String[] { "/c", "start", "/min", "cscript", f.getAbsolutePath() }, null, 0);
 
                     } finally {
-                        FileCreationManager.getInstance().delete(f);
+                        FileCreationManager.getInstance().delete(f, null);
                     }
                 } catch (Exception e) {
                 }

@@ -96,7 +96,7 @@ public class XtreamSplit extends IExtraction {
         try {
             if (file.exists()) {
                 if (controller.isOverwriteFiles()) {
-                    if (!FileCreationManager.getInstance().delete(file)) {
+                    if (!FileCreationManager.getInstance().delete(file, null)) {
                         archive.setExitCode(ExtractionControllerConstants.EXIT_CODE_FATAL_ERROR);
                         return;
                     }
@@ -229,7 +229,7 @@ public class XtreamSplit extends IExtraction {
         }
 
         if (archive.getCrcError().size() > 0) {
-            if (!FileCreationManager.getInstance().delete(file)) {
+            if (!FileCreationManager.getInstance().delete(file, null)) {
                 logger.warning("Could not delete outputfile after crc error");
             }
             archive.setExitCode(ExtractionControllerConstants.EXIT_CODE_CRC_ERROR);

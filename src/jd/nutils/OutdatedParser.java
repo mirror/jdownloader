@@ -171,7 +171,7 @@ public class OutdatedParser {
                 if (!success) { return false; }
             }
         }
-        return FileCreationManager.getInstance().delete(dir);
+        return FileCreationManager.getInstance().delete(dir, null);
     }
 
 }

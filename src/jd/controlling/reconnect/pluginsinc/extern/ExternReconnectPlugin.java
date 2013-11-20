@@ -81,7 +81,7 @@ public class ExternReconnectPlugin extends RouterPlugin implements ActionListene
                     }
                     final File tmp = JDUtilities.getResourceFile("tmp/recon_" + number + ".bat", true);
                     if (tmp.exists()) {
-                        if (FileCreationManager.getInstance().delete(tmp)) { return tmp; }
+                        if (FileCreationManager.getInstance().delete(tmp, null)) { return tmp; }
                         tmp.deleteOnExit();
                     } else {
                         return tmp;

@@ -43,7 +43,7 @@ public class CrawlerPluginController extends PluginController<PluginForDecrypt> 
 
     protected static void validateCache() {
         CACHE_INVALIDATED.set(false);
-        FileCreationManager.getInstance().delete(Application.getResource(HostPluginController.TMP_INVALIDPLUGINS));
+        FileCreationManager.getInstance().delete(Application.getResource(HostPluginController.TMP_INVALIDPLUGINS), null);
     }
 
     /**

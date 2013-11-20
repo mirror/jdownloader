@@ -151,7 +151,7 @@ public abstract class MediaListController<T extends MediaItem> {
 
                 zip.close();
 
-                FileCreationManager.getInstance().delete(backup);
+                FileCreationManager.getInstance().delete(backup, null);
                 path.renameTo(backup);
                 tmp.renameTo(path);
                 return true;

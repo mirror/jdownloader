@@ -861,7 +861,7 @@ public class OldRAFDownload extends DownloadInterface {
                 LogSource.exception(logger, e);
                 /* error happened, lets delete complete file */
                 if (outputCompleteFile.exists() && outputCompleteFile.length() != outputPartFile.length()) {
-                    FileCreationManager.getInstance().delete(outputCompleteFile);
+                    FileCreationManager.getInstance().delete(outputCompleteFile, null);
                 }
             }
             if (!renameOkay) {

@@ -357,4 +357,13 @@ public interface ExtractionTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Progress Icon" })
     String bubblecontent_progress();
 
+    @Default(lngs = { "en" }, values = { "Move to Trash" })
+    String delete_to_trash();
+
+    @Default(lngs = { "en" }, values = { "Don't delete anything" })
+    String dont_delete();
+
+    @Default(lngs = { "en" }, values = { "Delete files finally" })
+    String final_delete();
+
 }

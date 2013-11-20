@@ -48,6 +48,7 @@ import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.ExceptionDialog;
 import org.jdownloader.controlling.FileCreationListener;
 import org.jdownloader.controlling.FileCreationManager;
+import org.jdownloader.controlling.FileCreationManager.DeleteOption;
 import org.jdownloader.controlling.contextmenu.ActionData;
 import org.jdownloader.controlling.contextmenu.ContextMenuManager;
 import org.jdownloader.controlling.contextmenu.MenuContainerRoot;
@@ -239,7 +240,7 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
         ExtractionController controller = new ExtractionController(this, archive, extractor);
         controller.setAskForUnknownPassword(forceAskForUnknownPassword);
         controller.setOverwriteFiles(isOverwriteFiles(archive));
-        controller.setRemoveAfterExtract(isRemoveFilesAfterExtractEnabled(archive));
+        controller.setRemoveAfterExtract(getRemoveFilesAfterExtractAction(archive));
         controller.setRemoveDownloadLinksAfterExtraction(isRemoveDownloadLinksAfterExtractEnabled(archive));
         archive.setActive(true);
         extractor.setConfig(getSettings());
@@ -259,14 +260,24 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
         return getSettings().isDeleteArchiveDownloadlinksAfterExtraction();
     }
 
-    public boolean isRemoveFilesAfterExtractEnabled(Archive archive) {
+    public FileCreationManager.DeleteOption getRemoveFilesAfterExtractAction(Archive archive) {
         switch (archive.getSettings().getRemoveFilesAfterExtraction()) {
         case FALSE:
-            return false;
+            return FileCreationManager.DeleteOption.NO_DELETE;
         case TRUE:
-            return true;
+            switch (getSettings().getDeleteArchiveFilesAfterExtractionAction()) {
+            case NO_DELETE:
+            case RECYCLE:
+
+                return FileCreationManager.DeleteOption.RECYCLE;
+
+            case NULL:
+                return FileCreationManager.DeleteOption.NULL;
+
+            }
         }
-        return getSettings().isDeleteArchiveFilesAfterExtraction();
+
+        return getSettings().getDeleteArchiveFilesAfterExtractionAction();
     }
 
     @Override

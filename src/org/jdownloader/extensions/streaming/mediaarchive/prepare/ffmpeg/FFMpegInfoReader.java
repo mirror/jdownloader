@@ -91,7 +91,7 @@ public class FFMpegInfoReader {
                 if (ffmpeg != null) {
                     thumb = Application.getResource("tmp/streaming/cover/" + mediaItem.getUniqueID().toString() + ".jpg");
                     FileCreationManager.getInstance().mkdir(thumb.getParentFile());
-                    FileCreationManager.getInstance().delete(thumb);
+                    FileCreationManager.getInstance().delete(thumb, null);
                     String[] ret = execute(ffmpeg, "-i", streamurl, "-c", "copy", thumb.getAbsolutePath());
                     logger.info(ret[1]);
                     System.out.println(2);
@@ -110,7 +110,7 @@ public class FFMpegInfoReader {
                             if (ffmpeg != null) {
                                 thumb = Application.getResource("tmp/streaming/thumbs/" + mediaItem.getUniqueID().toString() + ".jpg");
                                 FileCreationManager.getInstance().mkdir(thumb.getParentFile());
-                                FileCreationManager.getInstance().delete(thumb);
+                                FileCreationManager.getInstance().delete(thumb, null);
                                 long duration = getFormat().parseDuration() / 1000;
                                 int offsetInSeconds = (int) (((duration * 0.6 * Math.random())) + duration * 0.2);
                                 if (offsetInSeconds < 0) offsetInSeconds = 10;

@@ -53,7 +53,7 @@ public class GrowlExtension extends AbstractExtension<GrowlConfig, GrowlTranslat
     @Override
     protected void start() throws StartException {
         File tmp = Application.getResource(TMP_GROWL_NOTIFICATION_SCPT);
-        FileCreationManager.getInstance().delete(tmp);
+        FileCreationManager.getInstance().delete(tmp, null);
         tmp.deleteOnExit();
         try {
             IO.writeToFile(tmp, IO.readURL(getClass().getResource("osxnopasswordforshutdown.scpt")));

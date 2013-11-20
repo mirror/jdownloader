@@ -47,6 +47,7 @@ import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.InputDialog;
 import org.jdownloader.controlling.FileCreationEvent;
 import org.jdownloader.controlling.FileCreationManager;
+import org.jdownloader.controlling.FileCreationManager.DeleteOption;
 import org.jdownloader.extensions.extraction.bindings.downloadlink.DownloadLinkArchiveFile;
 import org.jdownloader.extensions.extraction.translate.T;
 import org.jdownloader.gui.IconKey;
@@ -318,14 +319,14 @@ public class ExtractionListenerList implements ExtractionListener {
                 if (controller.getException() != null) {
                     if (controller.getException() instanceof ExtractionException) {
                         af = ((ExtractionException) controller.getException()).getLatestAccessedArchiveFile();
-                        af.deleteFile();
+                        af.deleteFile(FileCreationManager.DeleteOption.RECYCLE);
                     }
                 }
                 if (controller.gotKilled()) {
                     controller.getArchiv().getFirstArchiveFile().setMessage(null);
                     for (File f : controller.getArchiv().getExtractedFiles()) {
                         if (f.exists()) {
-                            if (!FileCreationManager.getInstance().delete(f)) {
+                            if (!FileCreationManager.getInstance().delete(f, null)) {
                                 logger.warning("Could not delete file " + f.getAbsolutePath());
                             } else {
                                 logger.warning("Deleted file " + f.getAbsolutePath());
@@ -357,7 +358,7 @@ public class ExtractionListenerList implements ExtractionListener {
                 }
                 for (File f : controller.getArchiv().getExtractedFiles()) {
                     if (f.exists()) {
-                        if (!FileCreationManager.getInstance().delete(f)) {
+                        if (!FileCreationManager.getInstance().delete(f, null)) {
                             logger.warning("Could not delete file " + f.getAbsolutePath());
                         } else {
                             logger.warning("Deleted file " + f.getAbsolutePath());
@@ -376,7 +377,7 @@ public class ExtractionListenerList implements ExtractionListener {
         final LogSource logger = controller.getLogger();
         for (File f : controller.getArchiv().getExtractedFiles()) {
             if (f.exists()) {
-                if (!FileCreationManager.getInstance().delete(f)) {
+                if (!FileCreationManager.getInstance().delete(f, null)) {
                     logger.warning("Could not delete file " + f.getAbsolutePath());
                 } else {
                     logger.warning("Deleted file " + f.getAbsolutePath());

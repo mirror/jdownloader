@@ -203,7 +203,7 @@ public class ArchiveController implements LinkCollectorListener {
             }
             if (weNeedToCopyFile && path.exists()) {
                 // we need to copy the file. clone has no write flag, and the oldfile exists;
-                FileCreationManager.getInstance().delete(newPath);
+                FileCreationManager.getInstance().delete(newPath, null);
                 try {
                     IO.copyFile(path, newPath);
                 } catch (IOException e) {

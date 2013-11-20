@@ -67,7 +67,6 @@ import jd.gui.swing.jdgui.WarnLevel;
 import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
-import jd.plugins.DeleteTo;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.DownloadLinkProperty;
@@ -110,6 +109,7 @@ import org.jdownloader.controlling.DownloadLinkWalker;
 import org.jdownloader.controlling.FileCreationEvent;
 import org.jdownloader.controlling.FileCreationListener;
 import org.jdownloader.controlling.FileCreationManager;
+import org.jdownloader.controlling.FileCreationManager.DeleteOption;
 import org.jdownloader.controlling.Priority;
 import org.jdownloader.controlling.download.DownloadControllerListener;
 import org.jdownloader.controlling.hosterrule.AccountUsageRule;
@@ -605,7 +605,8 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
 
                 if (DownloadWatchDog.this.stateMachine.isStartState() || DownloadWatchDog.this.stateMachine.isFinal()) {
                     /*
-                     * no downloads are running, so we will force only the selected links to get started by setting stopmark to first forced link
+                     * no downloads are running, so we will force only the selected links to get started by setting stopmark to first forced
+                     * link
                      */
 
                     // DownloadWatchDog.this.setStopMark(linksForce.get(0));
@@ -1521,12 +1522,12 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                 container.invalidate();
             }
         }
-        deleteFile(link, DeleteTo.NULL);
+        deleteFile(link, DeleteOption.NULL);
         CaptchaBlackList.getInstance().addWhitelist(link);
         link.reset();
     }
 
-    public void delete(final List<DownloadLink> deleteFiles, final DeleteTo deleteTo) {
+    public void delete(final List<DownloadLink> deleteFiles, final DeleteOption deleteTo) {
         if (deleteFiles == null || deleteFiles.size() == 0) return;
         enqueueJob(new DownloadWatchDogJob() {
 
@@ -1580,8 +1581,9 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
         });
     }
 
-    private void deleteFile(DownloadLink link, DeleteTo deleteTo) {
-        if (deleteTo == null) deleteTo = DeleteTo.NULL;
+    private void deleteFile(DownloadLink link, DeleteOption deleteTo) {
+        if (deleteTo == null) deleteTo = DeleteOption.NULL;
+        if (DeleteOption.NO_DELETE == deleteTo) return;
         ArrayList<File> deleteFiles = new ArrayList<File>();
         try {
             File deletePartFile = new File(link.getFileOutput() + ".part");
@@ -2648,8 +2650,8 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                                     waitedForNewActivationRequests += System.currentTimeMillis() - currentTimeStamp;
                                     if ((getSession().isActivationRequestsWaiting() == false && DownloadWatchDog.this.getActiveDownloads() == 0)) {
                                         /*
-                                         * it's important that this if statement gets checked after wait!, else we will loop through without waiting for new
-                                         * links/user interaction
+                                         * it's important that this if statement gets checked after wait!, else we will loop through without
+                                         * waiting for new links/user interaction
                                          */
                                         break;
                                     }

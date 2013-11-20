@@ -525,7 +525,7 @@ public class SecondLevelLaunch {
 
             }
 
-            FileCreationManager.getInstance().delete(FILE);
+            FileCreationManager.getInstance().delete(FILE, null);
             FileCreationManager.getInstance().mkdir(FILE.getParentFile());
             IO.writeToFile(FILE, (new SimpleDateFormat("dd.MMM.yyyy HH:mm").format(new Date())).getBytes("UTF-8"));
 
@@ -548,7 +548,7 @@ public class SecondLevelLaunch {
 
             @Override
             public void onShutdown(final ShutdownRequest shutdownRequest) {
-                FileCreationManager.getInstance().delete(FILE);
+                FileCreationManager.getInstance().delete(FILE, null);
             }
         });
     }

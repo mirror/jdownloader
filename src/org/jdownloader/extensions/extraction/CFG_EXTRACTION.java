@@ -52,12 +52,12 @@ public class CFG_EXTRACTION {
 
     public static final BooleanKeyHandler                FRESH_INSTALL                                                    = SH.getKeyHandler("FreshInstall", BooleanKeyHandler.class);
 
-    public static final BooleanKeyHandler                BUBBLE_CONTENT_STATUS_VISIBLE                                    = SH.getKeyHandler("BubbleContentStatusVisible", BooleanKeyHandler.class);
-
     /**
      * Absolute path to the folder where all archives should be extracted to
      **/
     public static final StringKeyHandler                 CUSTOM_EXTRACTION_PATH                                           = SH.getKeyHandler("CustomExtractionPath", StringKeyHandler.class);
+
+    public static final BooleanKeyHandler                BUBBLE_CONTENT_STATUS_VISIBLE                                    = SH.getKeyHandler("BubbleContentStatusVisible", BooleanKeyHandler.class);
 
     public static final BooleanKeyHandler                BUBBLE_CONTENT_ARCHIVENAME_VISIBLE                               = SH.getKeyHandler("BubbleContentArchivenameVisible", BooleanKeyHandler.class);
 
@@ -65,11 +65,6 @@ public class CFG_EXTRACTION {
      * Only use subfolders if the archive ROOT contains at least *** folders or folders
      **/
     public static final IntegerKeyHandler                SUB_PATH_MIN_FILES_OR_FOLDERS_TRESHHOLD                          = SH.getKeyHandler("SubPathMinFilesOrFoldersTreshhold", IntegerKeyHandler.class);
-
-    /**
-     * Delete archives after successful extraction?
-     **/
-    public static final BooleanKeyHandler                DELETE_ARCHIVE_FILES_AFTER_EXTRACTION                            = SH.getKeyHandler("DeleteArchiveFilesAfterExtraction", BooleanKeyHandler.class);
 
     public static final BooleanKeyHandler                OVERWRITE_EXISTING_FILES_ENABLED                                 = SH.getKeyHandler("OverwriteExistingFilesEnabled", BooleanKeyHandler.class);
 
@@ -88,6 +83,11 @@ public class CFG_EXTRACTION {
      * A Blacklist is a list of regular expressions. Use a blacklist to avoid extracting certain filetypes.
      **/
     public static final StringListHandler                BLACKLIST_PATTERNS                                               = SH.getKeyHandler("BlacklistPatterns", StringListHandler.class);
+
+    /**
+     * Delete archives after successful extraction?
+     **/
+    public static final EnumKeyHandler                   DELETE_ARCHIVE_FILES_AFTER_EXTRACTION_ACTION                     = SH.getKeyHandler("DeleteArchiveFilesAfterExtractionAction", EnumKeyHandler.class);
 
     public static final BooleanKeyHandler                ENABLED                                                          = SH.getKeyHandler("Enabled", BooleanKeyHandler.class);
 

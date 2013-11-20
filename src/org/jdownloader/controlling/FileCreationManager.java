@@ -8,12 +8,23 @@ import java.util.List;
 
 import jd.controlling.downloadcontroller.DownloadWatchDog;
 
+import org.appwork.storage.config.annotations.EnumLabel;
 import org.appwork.utils.Application;
 import org.appwork.utils.IO;
 import org.appwork.utils.logging2.LogSource;
 import org.jdownloader.logging.LogController;
+import org.jdownloader.utils.JDFileUtils;
 
 public class FileCreationManager {
+    public static enum DeleteOption {
+        @EnumLabel("Don't delete any files")
+        NO_DELETE,
+        @EnumLabel("Move files to Recycle if possible")
+        RECYCLE,
+        @EnumLabel("Delete files from Harddisk")
+        NULL;
+    }
+
     private static final FileCreationManager INSTANCE = new FileCreationManager();
 
     /**
@@ -33,7 +44,8 @@ public class FileCreationManager {
     }
 
     /**
-     * Create a new instance of FileCreationManager. This is a singleton class. Access the only existing instance by using {@link #getInstance()}.
+     * Create a new instance of FileCreationManager. This is a singleton class. Access the only existing instance by using
+     * {@link #getInstance()}.
      */
     private FileCreationManager() {
         eventSender = new FileCreationEventSender();
@@ -71,20 +83,39 @@ public class FileCreationManager {
         return file.mkdir();
     }
 
-    public boolean delete(File file) {
+    public boolean delete(File file, DeleteOption deleteTo) {
+        if (deleteTo == null) deleteTo = FileCreationManager.DeleteOption.NULL;
         if (!file.exists()) return false;
-        if (file.delete()) {
-            return true;
-        } else {
-            if (Application.getJavaVersion() >= Application.JAVA17) {
+
+        switch (deleteTo) {
+        case NULL:
+            if (file.delete()) {
+                return true;
+            } else {
+                if (Application.getJavaVersion() >= Application.JAVA17) {
+                    try {
+                        java.nio.file.Files.delete(file.toPath());
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                }
+                return !file.exists();
+            }
+        case RECYCLE:
+
+            if (JDFileUtils.isTrashSupported()) {
                 try {
-                    java.nio.file.Files.delete(file.toPath());
-                } catch (Exception e) {
+                    JDFileUtils.moveToTrash(file);
+                    return !file.exists();
+                } catch (IOException e) {
                     e.printStackTrace();
                 }
             }
             return !file.exists();
         }
+
+        return false;
+
     }
 
     public void moveFile(String oldPath, String newPath) {
@@ -93,7 +124,7 @@ public class FileCreationManager {
             if (!new File(oldPath).renameTo(new File(newPath))) {
                 try {
                     IO.copyFile(new File(oldPath), new File(newPath));
-                    FileCreationManager.getInstance().delete(new File(oldPath));
+                    FileCreationManager.getInstance().delete(new File(oldPath), null);
                 } catch (IOException e) {
                     logger.log(e);
                 }

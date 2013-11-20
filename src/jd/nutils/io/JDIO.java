@@ -64,7 +64,7 @@ public final class JDIO {
         OutputStreamWriter ow = null;
         FileOutputStream fo = null;
         try {
-            if (!append && file.isFile() && !FileCreationManager.getInstance().delete(file)) {
+            if (!append && file.isFile() && !FileCreationManager.getInstance().delete(file, null)) {
                 System.err.println("Konnte Datei nicht löschen " + file);
                 return false;
             }
@@ -118,7 +118,7 @@ public final class JDIO {
         FileCreationManager.getInstance().mkdir(fileOutput.getParentFile());
 
         if (fileOutput.exists()) {
-            FileCreationManager.getInstance().delete(fileOutput);
+            FileCreationManager.getInstance().delete(fileOutput, null);
         }
         FileOutputStream fos = null;
         try {
@@ -236,7 +236,7 @@ public final class JDIO {
                 if (!success) return false;
             }
         }
-        return FileCreationManager.getInstance().delete(dir);
+        return FileCreationManager.getInstance().delete(dir, null);
     }
 
     /**
@@ -273,7 +273,7 @@ public final class JDIO {
                 removeRekursive(f, fileSelector);
             }
             if (fileSelector.doIt(f)) {
-                FileCreationManager.getInstance().delete(f);
+                FileCreationManager.getInstance().delete(f, null);
             }
         }
     }

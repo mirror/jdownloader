@@ -88,7 +88,7 @@ public final class NB_VirtualFileSystem extends SimpleReadOnlyFileSystem {
 
         if (mountLoc.exists()) {
             try {
-                boolean v = FileCreationManager.getInstance().delete(mountLoc);
+                boolean v = FileCreationManager.getInstance().delete(mountLoc, null);
                 if (!v) throw new Exception();
             } catch (Exception a) {
                 Log.L.log(Level.INFO, "Could not mount at preferred mount location", a);

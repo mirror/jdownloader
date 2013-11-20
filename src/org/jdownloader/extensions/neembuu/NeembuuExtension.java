@@ -88,7 +88,7 @@ public class NeembuuExtension extends AbstractExtension<NeembuuConfig, NeembuuTr
             // ok
         }
 
-        boolean del = FileCreationManager.getInstance().delete(f_test);
+        boolean del = FileCreationManager.getInstance().delete(f_test, null);
         if (!del) {
             LogController.CL().severe("could not delete " + f_test);
 

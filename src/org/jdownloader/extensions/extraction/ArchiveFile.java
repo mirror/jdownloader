@@ -2,6 +2,9 @@ package org.jdownloader.extensions.extraction;
 
 import java.awt.Color;
 
+import org.jdownloader.controlling.FileCreationManager;
+import org.jdownloader.controlling.FileCreationManager.DeleteOption;
+
 public interface ArchiveFile {
 
     public boolean isComplete();
@@ -10,7 +13,7 @@ public interface ArchiveFile {
 
     public long getFileSize();
 
-    public void deleteFile();
+    public void deleteFile(FileCreationManager.DeleteOption option);
 
     public void deleteLink();
 

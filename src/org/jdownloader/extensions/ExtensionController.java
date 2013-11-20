@@ -102,7 +102,7 @@ public class ExtensionController implements MenuExtenderHandler {
 
     protected void validateCache() {
         cacheInvalidated = false;
-        FileCreationManager.getInstance().delete(Application.getResource(TMP_INVALIDEXTENSIONS));
+        FileCreationManager.getInstance().delete(Application.getResource(TMP_INVALIDEXTENSIONS), null);
     }
 
     public void init() {

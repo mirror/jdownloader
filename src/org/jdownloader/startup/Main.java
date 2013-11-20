@@ -228,7 +228,7 @@ public class Main {
                     URL mainClass = Application.getRessourceURL("org", true);
 
                     File svnJar = new File(new File(mainClass.toURI()).getParentFile().getParentFile(), "dev/JDownloader.jar");
-                    FileCreationManager.getInstance().delete(jdjar);
+                    FileCreationManager.getInstance().delete(jdjar, null);
                     IO.copyFile(svnJar, jdjar);
 
                 }

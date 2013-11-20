@@ -160,7 +160,7 @@ public class LoadImage {
         File dest = new File(destination, b + "_" + JDHash.getMD5(file) + getFileType());
 
         if (dest.exists()) {
-            FileCreationManager.getInstance().delete(file);
+            FileCreationManager.getInstance().delete(file, null);
             return false;
         }
         file.renameTo(dest);

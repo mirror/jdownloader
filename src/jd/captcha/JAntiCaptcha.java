@@ -1329,7 +1329,7 @@ public class JAntiCaptcha {
     public void importDB(File path) throws InterruptedException {
         String pattern = JOptionPane.showInputDialog("PATTERN", "\\d+_(.*?)\\.");
         if (JOptionPane.showConfirmDialog(null, "Delete old db?") == JOptionPane.OK_OPTION) letterDB = new ArrayList<Letter>();
-        FileCreationManager.getInstance().delete(getResourceFile("letters.mth"));
+        FileCreationManager.getInstance().delete(getResourceFile("letters.mth"), null);
         System.out.println("LETTERS BEFORE: " + letterDB.size());
         Image image;
         Letter letter;

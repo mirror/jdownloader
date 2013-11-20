@@ -324,7 +324,7 @@ public abstract class PluginForDecrypt extends Plugin {
             String captchaCode = getCaptchaCode(method, captchaFile, param);
             return captchaCode;
         } finally {
-            if (captchaFile != null) FileCreationManager.getInstance().delete(captchaFile);
+            if (captchaFile != null) FileCreationManager.getInstance().delete(captchaFile, null);
         }
     }
 

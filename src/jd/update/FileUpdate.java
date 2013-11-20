@@ -148,14 +148,14 @@ public class FileUpdate {
                     tmpFile = JDUtilities.getResourceFile(getLocalPath() + ".tmp");
                 }
                 // delete tmp file
-                FileCreationManager.getInstance().delete(tmpFile);
+                FileCreationManager.getInstance().delete(tmpFile, null);
                 File updatetmp = this.getLocalTmpFile();
                 if (updatetmp.exists() && JDHash.getMD5(updatetmp).equals(hash)) {
                     return true;
                 } else {
                     // remove local tmp file, since it does either not exist or
                     // is invalid
-                    FileCreationManager.getInstance().delete(this.getLocalTmpFile());
+                    FileCreationManager.getInstance().delete(this.getLocalTmpFile(), null);
 
                     if (url.contains("?")) {
                         url += "&r=" + System.currentTimeMillis();
@@ -223,12 +223,12 @@ public class FileUpdate {
                     // hash of fresh downloaded file is ok
 
                     // move to update folder
-                    FileCreationManager.getInstance().delete(this.getLocalTmpFile());
+                    FileCreationManager.getInstance().delete(this.getLocalTmpFile(), null);
                     // tinyupdate has to be updated directly
                     boolean ret;
 
                     if (tmpFile.getName().startsWith("tinyupdate")) {
-                        FileCreationManager.getInstance().delete(this.getLocalFile());
+                        FileCreationManager.getInstance().delete(this.getLocalFile(), null);
                         ret = tmpFile.renameTo(this.getLocalFile());
                     } else {
                         ret = tmpFile.renameTo(getLocalTmpFile());
@@ -259,7 +259,7 @@ public class FileUpdate {
                     } else {
 
                     }
-                    FileCreationManager.getInstance().delete(tmpFile);
+                    FileCreationManager.getInstance().delete(tmpFile, null);
                     errorWait();
                     continue;
                 }

@@ -410,7 +410,7 @@ public class HostPluginController extends PluginController<PluginForHost> {
 
     protected void validateCache() {
         cacheInvalidated.set(false);
-        FileCreationManager.getInstance().delete(Application.getResource(TMP_INVALIDPLUGINS));
+        FileCreationManager.getInstance().delete(Application.getResource(TMP_INVALIDPLUGINS), null);
     }
 
     private void save(List<AbstractHostPlugin> save) {

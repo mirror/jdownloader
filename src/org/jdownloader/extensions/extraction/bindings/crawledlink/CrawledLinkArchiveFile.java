@@ -8,6 +8,7 @@ import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledLinkProperty;
 import jd.plugins.DownloadLink.AvailableStatus;
 
+import org.jdownloader.controlling.FileCreationManager.DeleteOption;
 import org.jdownloader.extensions.extraction.Archive;
 import org.jdownloader.extensions.extraction.ArchiveFile;
 import org.jdownloader.extensions.extraction.ExtractionController;
@@ -67,7 +68,7 @@ public class CrawledLinkArchiveFile implements ArchiveFile {
         return name;
     }
 
-    public void deleteFile() {
+    public void deleteFile(DeleteOption option) {
     }
 
     public String getName() {

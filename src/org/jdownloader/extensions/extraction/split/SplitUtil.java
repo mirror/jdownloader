@@ -186,7 +186,7 @@ class SplitUtil {
             /* read buffer, we use 64kb here which should be okay */
             if (file.exists()) {
                 if (controller.isOverwriteFiles()) {
-                    if (!FileCreationManager.getInstance().delete(file)) {
+                    if (!FileCreationManager.getInstance().delete(file, null)) {
                         archive.setExitCode(ExtractionControllerConstants.EXIT_CODE_FATAL_ERROR);
                         return false;
                     }

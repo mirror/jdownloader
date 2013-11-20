@@ -80,7 +80,7 @@ public class Zip {
         if (excludeFiles != null && excludeFiles.contains(folder)) { return ret; }
         if (folder.isDirectory()) {
             ret.addAll(addFolderToZip(path, srcFile, zip));
-            if (this.deleteAfterPack) FileCreationManager.getInstance().delete(new File(srcFile));
+            if (this.deleteAfterPack) FileCreationManager.getInstance().delete(new File(srcFile), null);
         } else {
             byte[] buf = new byte[1024];
             int len;
@@ -95,7 +95,7 @@ public class Zip {
                 zip.write(buf, 0, len);
             }
             in.close();
-            if (this.deleteAfterPack) FileCreationManager.getInstance().delete(new File(srcFile));
+            if (this.deleteAfterPack) FileCreationManager.getInstance().delete(new File(srcFile), null);
             ret.add(new File(srcFile));
         }
         return ret;
@@ -166,7 +166,7 @@ public class Zip {
             }
             in.close();
             out.close();
-            FileCreationManager.getInstance().delete(destinationFile);
+            FileCreationManager.getInstance().delete(destinationFile, null);
             newTarget.renameTo(destinationFile);
         }
         return ret;

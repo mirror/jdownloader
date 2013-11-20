@@ -155,7 +155,7 @@ public class LoadCaptchas {
 
                     public void windowClosing(WindowEvent e) {
                         for (LoadImage loadImage : images) {
-                            FileCreationManager.getInstance().delete(loadImage.file);
+                            FileCreationManager.getInstance().delete(loadImage.file, null);
                         }
                         dialog.dispose();
                     }
@@ -179,12 +179,12 @@ public class LoadCaptchas {
                     if (f == null || f.file == null || !f.file.exists() || f.file.length() < 100) continue;
                     final BufferedImage captchaImage = ImageProvider.read(f.file);
                     if (captchaImage == null) {
-                        FileCreationManager.getInstance().delete(f.file);
+                        FileCreationManager.getInstance().delete(f.file, null);
                         continue;
                     }
                     int area = captchaImage.getHeight(null) * captchaImage.getHeight(null);
                     if (area < 50 || captchaImage.getHeight(null) > maxHeight || captchaImage.getWidth(null) > maxWeight || captchaImage.getWidth(null) < 10 || captchaImage.getHeight(null) < 5) {
-                        FileCreationManager.getInstance().delete(f.file);
+                        FileCreationManager.getInstance().delete(f.file, null);
                         continue;
                     }
                     double faktor = Math.max((double) captchaImage.getWidth(null) / 100, (double) captchaImage.getHeight(null) / 100);
@@ -667,7 +667,7 @@ public class LoadCaptchas {
                 try {
                     if (images != null) {
                         for (LoadImage loadImage : images) {
-                            if (!loadImage.file.equals(selectedImage.file)) FileCreationManager.getInstance().delete(loadImage.file);
+                            if (!loadImage.file.equals(selectedImage.file)) FileCreationManager.getInstance().delete(loadImage.file, null);
                         }
                     }
                     boolean direct = selectedImage.directCaptchaLoad(dir);
@@ -710,7 +710,7 @@ public class LoadCaptchas {
                         }
 
                     } else {
-                        FileCreationManager.getInstance().delete(selectedImage.file);
+                        FileCreationManager.getInstance().delete(selectedImage.file, null);
 
                         if (!threaded) {
                             for (int k = 1; k < loadinfo.menge - 1; k++) {

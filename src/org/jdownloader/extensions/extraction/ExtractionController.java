@@ -34,6 +34,7 @@ import org.appwork.utils.StringUtils;
 import org.appwork.utils.event.queue.QueueAction;
 import org.appwork.utils.logging2.LogSource;
 import org.jdownloader.controlling.FileCreationManager;
+import org.jdownloader.controlling.FileCreationManager.DeleteOption;
 import org.jdownloader.extensions.extraction.ExtractionEvent.Type;
 import org.jdownloader.logging.LogController;
 
@@ -47,7 +48,7 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> {
     private java.util.List<String> passwordList;
     private int                    passwordListSize      = 0;
     private Exception              exception;
-    private boolean                removeAfterExtraction;
+    private FileCreationManager.DeleteOption           removeAfterExtractionAction;
     private Archive                archive;
     private IExtraction            extractor;
     private ScheduledFuture<?>     timer;
@@ -370,9 +371,9 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> {
      */
     void removeArchiveFiles() {
         for (ArchiveFile link : archive.getArchiveFiles()) {
-            if (removeAfterExtraction) {
-                link.deleteFile();
-            }
+
+            link.deleteFile(removeAfterExtractionAction);
+
             if (isRemoveDownloadLinksAfterExtraction()) {
                 link.deleteLink();
             }
@@ -410,10 +411,10 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> {
     /**
      * Should the archives be deleted after extracting.
      * 
-     * @param setProperty
+     * @param deleteOption
      */
-    void setRemoveAfterExtract(boolean setProperty) {
-        this.removeAfterExtraction = setProperty;
+    void setRemoveAfterExtract(FileCreationManager.DeleteOption deleteOption) {
+        this.removeAfterExtractionAction = deleteOption;
     }
 
     /**

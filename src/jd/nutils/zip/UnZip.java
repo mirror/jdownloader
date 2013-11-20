@@ -100,7 +100,7 @@ public class UnZip {
         }
         zipF.close();
         if (autoDelete) {
-            FileCreationManager.getInstance().delete(zipFile);
+            FileCreationManager.getInstance().delete(zipFile, null);
         }
         return ret.toArray(new File[ret.size()]);
 
@@ -135,7 +135,7 @@ public class UnZip {
             System.out.println("Exists skip " + zipName);
             return null;
         } else {
-            FileCreationManager.getInstance().delete(toExtract);
+            FileCreationManager.getInstance().delete(toExtract, null);
         }
         FileOutputStream os = new FileOutputStream(toExtract);
         InputStream is = zipF.getInputStream(e);

@@ -178,7 +178,7 @@ public class BackGroundImageManager {
             if (bgi == null || bgi.getBackgroundImage() == null || bgi.getBackgroundImage().matches("\\s*")) iter.remove();
         }
         if (backgroundList.isEmpty()) {
-            FileCreationManager.getInstance().delete(file);
+            FileCreationManager.getInstance().delete(file, null);
         } else {
             JDIO.saveObject(backgroundList, file, true);
         }

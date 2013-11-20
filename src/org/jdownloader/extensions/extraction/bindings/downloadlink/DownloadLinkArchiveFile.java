@@ -15,6 +15,7 @@ import jd.plugins.FilePackageView;
 import jd.plugins.PluginProgress;
 
 import org.appwork.utils.event.queue.QueueAction;
+import org.jdownloader.controlling.FileCreationManager.DeleteOption;
 import org.jdownloader.extensions.extraction.Archive;
 import org.jdownloader.extensions.extraction.ArchiveFile;
 import org.jdownloader.extensions.extraction.ExtractionController;
@@ -72,8 +73,9 @@ public class DownloadLinkArchiveFile implements ArchiveFile {
         return filePath;
     }
 
-    public void deleteFile() {
-        DownloadWatchDog.getInstance().delete(downloadLinks, null);
+    public void deleteFile(DeleteOption option) {
+
+        DownloadWatchDog.getInstance().delete(downloadLinks, option);
     }
 
     public List<DownloadLink> getDownloadLinks() {

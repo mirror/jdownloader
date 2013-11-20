@@ -11,6 +11,7 @@ import org.appwork.storage.config.annotations.DefaultStringArrayValue;
 import org.appwork.storage.config.annotations.DefaultStringValue;
 import org.appwork.storage.config.annotations.DescriptionForConfigEntry;
 import org.appwork.storage.config.annotations.SpinnerValidator;
+import org.jdownloader.controlling.FileCreationManager;
 
 public interface ExtractionConfig extends ExtensionConfigInterface {
     @DefaultStringArrayValue(value = {})
@@ -82,9 +83,9 @@ public interface ExtractionConfig extends ExtensionConfigInterface {
     boolean isDeepExtractionEnabled();
 
     @DescriptionForConfigEntry("Delete archives after successful extraction?")
-    @DefaultBooleanValue(false)
+    @DefaultEnumValue("NO_DELETE")
     @AboutConfig
-    boolean isDeleteArchiveFilesAfterExtraction();
+    FileCreationManager.DeleteOption getDeleteArchiveFilesAfterExtractionAction();
 
     @DescriptionForConfigEntry("Delete archive DownloadLinks after successful extraction?")
     @DefaultBooleanValue(false)
@@ -122,8 +123,6 @@ public interface ExtractionConfig extends ExtensionConfigInterface {
     void setCustomExtractionPathEnabled(boolean enabled);
 
     void setDeepExtractionEnabled(boolean enabled);
-
-    void setDeleteArchiveFilesAfterExtraction(boolean enabled);
 
     void setDeleteInfoFilesAfterExtraction(boolean enabled);
 
@@ -213,5 +212,7 @@ public interface ExtractionConfig extends ExtensionConfigInterface {
     boolean isBubbleContentArchivenameVisible();
 
     void setBubbleContentArchivenameVisible(boolean b);
+
+    void setDeleteArchiveFilesAfterExtractionAction(FileCreationManager.DeleteOption selectedItem);
 
 }

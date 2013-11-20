@@ -26,6 +26,8 @@ import org.appwork.utils.event.queue.QueueAction;
 import org.appwork.utils.logging.Log;
 import org.appwork.utils.swing.EDTRunner;
 import org.jdownloader.actions.AppAction;
+import org.jdownloader.controlling.FileCreationManager;
+import org.jdownloader.controlling.FileCreationManager.DeleteOption;
 import org.jdownloader.extensions.ExtensionConfigPanel;
 import org.jdownloader.extensions.extraction.ArchiveFactory;
 import org.jdownloader.extensions.extraction.CPUPriority;
@@ -36,25 +38,26 @@ import org.jdownloader.gui.settings.Pair;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.settings.GeneralSettings;
 import org.jdownloader.settings.staticreferences.CFG_LINKGRABBER;
+import org.jdownloader.utils.JDFileUtils;
 
 public class ExtractionConfigPanel extends ExtensionConfigPanel<ExtractionExtension> {
-    private static final long         serialVersionUID = 1L;
-    private Pair<Checkbox>            toggleCustomizedPath;
-    private Pair<FolderChooser>       customPath;
-    private Pair<Checkbox>            toggleUseSubpath;
-    private Pair<Spinner>             subPathMinFiles;
+    private static final long            serialVersionUID = 1L;
+    private Pair<Checkbox>               toggleCustomizedPath;
+    private Pair<FolderChooser>          customPath;
+    private Pair<Checkbox>               toggleUseSubpath;
+    private Pair<Spinner>                subPathMinFiles;
 
-    private Pair<? extends TextInput> subPath;
-    private Pair<Checkbox>            toggleDeleteArchives;
-    private Pair<Checkbox>            toggleOverwriteExisting;
-    private Pair<TextArea>            blacklist;
-    private Pair<Checkbox>            toggleUseOriginalFileDate;
-    private Pair<ComboBox<String>>    cpupriority;
-    private Pair<TextArea>            passwordlist;
-    private Pair<Checkbox>            toggleDeleteArchiveDownloadLinks;
-    private Pair<Checkbox>            toggleDefaultEnabled;
-    private Pair<Spinner>             subPathMinFolders;
-    private Pair<Spinner>             subPathMinFilesOrFolders;
+    private Pair<? extends TextInput>    subPath;
+    private Pair<ComboBox<FileCreationManager.DeleteOption>> toggleDeleteArchives;
+    private Pair<Checkbox>               toggleOverwriteExisting;
+    private Pair<TextArea>               blacklist;
+    private Pair<Checkbox>               toggleUseOriginalFileDate;
+    private Pair<ComboBox<String>>       cpupriority;
+    private Pair<TextArea>               passwordlist;
+    private Pair<Checkbox>               toggleDeleteArchiveDownloadLinks;
+    private Pair<Checkbox>               toggleDefaultEnabled;
+    private Pair<Spinner>                subPathMinFolders;
+    private Pair<Spinner>                subPathMinFilesOrFolders;
 
     public ExtractionConfigPanel(ExtractionExtension plg) {
         super(plg);
@@ -205,7 +208,36 @@ public class ExtractionConfigPanel extends ExtensionConfigPanel<ExtractionExtens
         subPath.setConditionPair(toggleUseSubpath);
 
         this.addHeader(T._.settings_various(), NewTheme.I().getIcon("settings", 32));
-        toggleDeleteArchives = this.addPair(T._.settings_remove_after_extract(), null, new Checkbox());
+        if (JDFileUtils.isTrashSupported()) {
+            toggleDeleteArchives = this.addPair(T._.settings_remove_after_extract(), null, (ComboBox<FileCreationManager.DeleteOption>) new ComboBox<FileCreationManager.DeleteOption>(FileCreationManager.DeleteOption.NO_DELETE, FileCreationManager.DeleteOption.RECYCLE, FileCreationManager.DeleteOption.NULL) {
+                protected String valueToString(FileCreationManager.DeleteOption value) {
+                    switch (value) {
+                    case RECYCLE:
+                        return T._.delete_to_trash();
+                    case NO_DELETE:
+                        return T._.dont_delete();
+                    case NULL:
+                        return T._.final_delete();
+                    }
+                    return null;
+                }
+            });
+        } else {
+            toggleDeleteArchives = this.addPair(T._.settings_remove_after_extract(), null, (ComboBox<FileCreationManager.DeleteOption>) new ComboBox<FileCreationManager.DeleteOption>(FileCreationManager.DeleteOption.NO_DELETE, FileCreationManager.DeleteOption.NULL) {
+                protected String valueToString(FileCreationManager.DeleteOption value) {
+                    switch (value) {
+                    case RECYCLE:
+                        return T._.delete_to_trash();
+                    case NO_DELETE:
+                        return T._.dont_delete();
+                    case NULL:
+                        return T._.final_delete();
+                    }
+                    return null;
+                }
+            });
+        }
+
         toggleDeleteArchiveDownloadLinks = this.addPair(T._.settings_remove_after_extract_downloadlink(), null, new Checkbox());
         toggleOverwriteExisting = this.addPair(T._.settings_overwrite(), null, new Checkbox());
         cpupriority = this.addPair(T._.settings_cpupriority(), null, new ComboBox<String>(T._.settings_cpupriority_high(), T._.settings_cpupriority_middle(), T._.settings_cpupriority_low()));
@@ -238,7 +270,7 @@ public class ExtractionConfigPanel extends ExtensionConfigPanel<ExtractionExtens
                         toggleDefaultEnabled.getComponent().setSelected(CFG_LINKGRABBER.AUTO_EXTRACTION_ENABLED.getValue());
                         toggleCustomizedPath.getComponent().setSelected(s.isCustomExtractionPathEnabled());
                         customPath.getComponent().setText(finalPath);
-                        toggleDeleteArchives.getComponent().setSelected(s.isDeleteArchiveFilesAfterExtraction());
+                        toggleDeleteArchives.getComponent().setSelectedItem(s.getDeleteArchiveFilesAfterExtractionAction());
                         toggleDeleteArchiveDownloadLinks.getComponent().setSelected(s.isDeleteArchiveDownloadlinksAfterExtraction());
                         toggleOverwriteExisting.getComponent().setSelected(s.isOverwriteExistingFilesEnabled());
                         toggleUseSubpath.getComponent().setSelected(s.isSubpathEnabled());
@@ -288,7 +320,7 @@ public class ExtractionConfigPanel extends ExtensionConfigPanel<ExtractionExtens
         CFG_LINKGRABBER.AUTO_EXTRACTION_ENABLED.setValue(toggleDefaultEnabled.getComponent().isSelected());
         s.setCustomExtractionPathEnabled(toggleCustomizedPath.getComponent().isSelected());
         s.setCustomExtractionPath(customPath.getComponent().getText());
-        s.setDeleteArchiveFilesAfterExtraction(toggleDeleteArchives.getComponent().isSelected());
+        s.setDeleteArchiveFilesAfterExtractionAction(toggleDeleteArchives.getComponent().getSelectedItem());
         s.setDeleteArchiveDownloadlinksAfterExtraction(toggleDeleteArchiveDownloadLinks.getComponent().isSelected());
         s.setOverwriteExistingFilesEnabled(toggleOverwriteExisting.getComponent().isSelected());
         s.setSubpathEnabled(toggleUseSubpath.getComponent().isSelected());

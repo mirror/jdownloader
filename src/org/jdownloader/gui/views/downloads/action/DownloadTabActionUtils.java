@@ -4,7 +4,6 @@ import jd.controlling.downloadcontroller.DownloadController;
 import jd.controlling.downloadcontroller.DownloadWatchDog;
 import jd.gui.swing.jdgui.JDGui;
 import jd.gui.swing.jdgui.WarnLevel;
-import jd.plugins.DeleteTo;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
@@ -13,6 +12,7 @@ import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.IconDialog;
 import org.jdownloader.controlling.DownloadLinkAggregator;
+import org.jdownloader.controlling.FileCreationManager.DeleteOption;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.images.NewTheme;
@@ -63,11 +63,11 @@ public class DownloadTabActionUtils {
                             break;
                         case REMOVE_LINKS_AND_DELETE_FILES:
                             DownloadController.getInstance().removeChildren(si.getChildren());
-                            DownloadWatchDog.getInstance().delete(si.getChildren(), DeleteTo.NULL);
+                            DownloadWatchDog.getInstance().delete(si.getChildren(), DeleteOption.NULL);
                             break;
                         case REMOVE_LINKS_AND_RECYCLE_FILES:
                             DownloadController.getInstance().removeChildren(si.getChildren());
-                            DownloadWatchDog.getInstance().delete(si.getChildren(), DeleteTo.RECYCLE);
+                            DownloadWatchDog.getInstance().delete(si.getChildren(), DeleteOption.RECYCLE);
 
                             break;
                         }
@@ -80,11 +80,11 @@ public class DownloadTabActionUtils {
                         break;
                     case REMOVE_LINKS_AND_DELETE_FILES:
                         DownloadController.getInstance().removeChildren(si.getChildren());
-                        DownloadWatchDog.getInstance().delete(si.getChildren(), DeleteTo.NULL);
+                        DownloadWatchDog.getInstance().delete(si.getChildren(), DeleteOption.NULL);
                         break;
                     case REMOVE_LINKS_AND_RECYCLE_FILES:
                         DownloadController.getInstance().removeChildren(si.getChildren());
-                        DownloadWatchDog.getInstance().delete(si.getChildren(), JDFileUtils.isTrashSupported() ? DeleteTo.RECYCLE : DeleteTo.NULL);
+                        DownloadWatchDog.getInstance().delete(si.getChildren(), JDFileUtils.isTrashSupported() ? DeleteOption.RECYCLE : DeleteOption.NULL);
 
                         break;
                     }

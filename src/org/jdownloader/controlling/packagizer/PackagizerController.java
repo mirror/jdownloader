@@ -618,10 +618,10 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
                 try {
                     Log.L.warning("Packagizer try copy " + f + " to" + newFile);
                     IO.copyFile(f, newFile);
-                    FileCreationManager.getInstance().delete(f);
+                    FileCreationManager.getInstance().delete(f, null);
                     successful = true;
                 } catch (final Throwable e) {
-                    FileCreationManager.getInstance().delete(newFile);
+                    FileCreationManager.getInstance().delete(newFile, null);
                     Log.L.warning("Packagizer could not move/rename " + f + " to" + newFile);
                 }
             }

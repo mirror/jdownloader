@@ -34,7 +34,7 @@ public class ExtractLogFileWriter {
 
     public void delete() {
         close();
-        FileCreationManager.getInstance().delete(file);
+        FileCreationManager.getInstance().delete(file, null);
     }
 
     public void write(String string) {
@@ -56,7 +56,7 @@ public class ExtractLogFileWriter {
             output.close();
             File newFile;
             newFile = Archive.getArchiveLogFileById(id);
-            FileCreationManager.getInstance().delete(newFile);
+            FileCreationManager.getInstance().delete(newFile, null);
             file.renameTo(newFile);
             file = newFile;
         } catch (Exception e) {

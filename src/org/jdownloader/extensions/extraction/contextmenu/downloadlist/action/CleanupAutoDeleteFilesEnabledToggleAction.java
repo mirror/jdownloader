@@ -6,6 +6,8 @@ import jd.gui.swing.jdgui.JDGui;
 import jd.gui.swing.jdgui.WarnLevel;
 
 import org.appwork.utils.swing.dialog.Dialog;
+import org.jdownloader.controlling.FileCreationManager;
+import org.jdownloader.controlling.FileCreationManager.DeleteOption;
 import org.jdownloader.extensions.extraction.Archive;
 import org.jdownloader.extensions.extraction.BooleanStatus;
 import org.jdownloader.extensions.extraction.contextmenu.downloadlist.AbstractExtractionContextAction;
@@ -25,7 +27,7 @@ public class CleanupAutoDeleteFilesEnabledToggleAction extends AbstractExtractio
     @Override
     protected void onAsyncInitDone() {
         super.onAsyncInitDone();
-        if (archives != null && archives.size() > 0) setSelected(_getExtension().isRemoveFilesAfterExtractEnabled(archives.get(0)));
+        if (archives != null && archives.size() > 0) setSelected(_getExtension().getRemoveFilesAfterExtractAction(archives.get(0)) != FileCreationManager.DeleteOption.NO_DELETE);
     }
 
     public void actionPerformed(ActionEvent e) {

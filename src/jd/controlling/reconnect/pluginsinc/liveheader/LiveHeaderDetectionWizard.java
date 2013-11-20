@@ -496,7 +496,7 @@ public class LiveHeaderDetectionWizard {
             try {
                 final BufferedImage image = FavIcons.downloadFavIcon(this.gatewayAdressHost);
                 final File imageFile = JDUtilities.getResourceFile("tmp/routerfav.png", true);
-                FileCreationManager.getInstance().delete(imageFile);
+                FileCreationManager.getInstance().delete(imageFile, null);
                 imageFile.deleteOnExit();
                 fos = new FileOutputStream(imageFile);
                 ImageIO.write(image, "png", fos);
@@ -541,7 +541,7 @@ public class LiveHeaderDetectionWizard {
             try {
                 final BufferedImage image = FavIcons.downloadFavIcon(this.gatewayAdressHost);
                 final File imageFile = JDUtilities.getResourceFile("tmp/routerfav.png", true);
-                FileCreationManager.getInstance().delete(imageFile);
+                FileCreationManager.getInstance().delete(imageFile, null);
                 imageFile.deleteOnExit();
                 fos = new FileOutputStream(imageFile);
                 ImageIO.write(image, "png", fos);

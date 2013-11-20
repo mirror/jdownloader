@@ -176,7 +176,7 @@ public abstract class PluginForHost extends Plugin {
             final String captchaCode = getCaptchaCode(method, captchaFile, downloadLink);
             return captchaCode;
         } finally {
-            FileCreationManager.getInstance().delete(captchaFile);
+            FileCreationManager.getInstance().delete(captchaFile, null);
         }
     }
 
@@ -898,7 +898,7 @@ public abstract class PluginForHost extends Plugin {
                     if (method.length() > 0) {
 
                         src = src.substring(0, src.lastIndexOf("}")) + method.toString() + "\r\n}";
-                        FileCreationManager.getInstance().delete(f);
+                        FileCreationManager.getInstance().delete(f, null);
                         IO.writeStringToFile(f, src);
                     }
 

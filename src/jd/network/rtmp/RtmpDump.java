@@ -221,16 +221,16 @@ public class RtmpDump extends RTMPDownload {
             error(new PluginException(LinkStatus.ERROR_DOWNLOAD_FAILED, _JDT._.downloadlink_status_error_file_not_found(), LinkStatus.VALUE_LOCAL_IO_ERROR));
             return false;
         }
-        if (!FileCreationManager.getInstance().delete(tmpFile)) {
+        if (!FileCreationManager.getInstance().delete(tmpFile, null)) {
             logger.severe("Could not delete part file " + tmpFile);
             error(new PluginException(LinkStatus.ERROR_DOWNLOAD_FAILED, _JDT._.system_download_errors_couldnotdelete(), LinkStatus.VALUE_LOCAL_IO_ERROR));
-            FileCreationManager.getInstance().delete(fixedFile);
+            FileCreationManager.getInstance().delete(fixedFile, null);
             return false;
         }
         if (!fixedFile.renameTo(tmpFile)) {
             logger.severe("Could not rename file " + fixedFile.getName() + " to " + tmpFile.getName());
             error(new PluginException(LinkStatus.ERROR_DOWNLOAD_FAILED, _JDT._.system_download_errors_couldnotrename(), LinkStatus.VALUE_LOCAL_IO_ERROR));
-            FileCreationManager.getInstance().delete(fixedFile);
+            FileCreationManager.getInstance().delete(fixedFile, null);
             return false;
         }
         return true;
@@ -451,7 +451,7 @@ public class RtmpDump extends RTMPDownload {
                 } else if (e.contains("rtmp_readpacket, failed to read rtmp packet header")) {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
                 } else if (e.contains("netstream.play.streamnotfound")) {
-                    FileCreationManager.getInstance().delete(tmpFile);
+                    FileCreationManager.getInstance().delete(tmpFile, null);
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 } else if (error.startsWith(timeoutMessage)) {
                     logger.severe(error);

@@ -115,7 +115,7 @@ public class Recaptcha {
 
         final File f = list[id];
         final File input = new File("input.jpg");
-        FileCreationManager.getInstance().delete(input);
+        FileCreationManager.getInstance().delete(input, null);
         IO.copyFile(f, input);
         // prepare image
         Recaptcha.prepareCaptcha(input);

@@ -666,7 +666,7 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
             if (packages != null && file != null) {
                 if (file.exists()) {
                     if (file.isDirectory()) throw new IOException("File " + file + " is a directory");
-                    if (FileCreationManager.getInstance().delete(file) == false) throw new IOException("Could not delete file " + file);
+                    if (FileCreationManager.getInstance().delete(file, null) == false) throw new IOException("Could not delete file " + file);
                 } else {
                     if (file.getParentFile().exists() == false && FileCreationManager.getInstance().mkdir(file.getParentFile()) == false) throw new IOException("Could not create parentFolder for file " + file);
                 }
@@ -712,7 +712,7 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
                             for (int removeIndex = downloadLists.size() - 1; removeIndex > keepXOld; removeIndex--) {
                                 File remove = downloadLists.remove(removeIndex);
                                 if (remove != null) {
-                                    logger.info("Delete outdated DownloadList: " + remove + " " + FileCreationManager.getInstance().delete(remove));
+                                    logger.info("Delete outdated DownloadList: " + remove + " " + FileCreationManager.getInstance().delete(remove, null));
                                 }
                             }
                         }
@@ -728,7 +728,7 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
                     } catch (final Throwable e) {
                     }
                     if (deleteFile && file.exists()) {
-                        FileCreationManager.getInstance().delete(file);
+                        FileCreationManager.getInstance().delete(file, null);
                     }
                 }
             }

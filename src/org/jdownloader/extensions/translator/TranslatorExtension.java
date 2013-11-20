@@ -732,7 +732,7 @@ public class TranslatorExtension extends AbstractExtension<TranslatorConfig, Tra
                     newFile = Application.getResource("translations/custom/" + h.getInterfaceClass().getName().replace(".", "/") + "." + localLoaded.getId() + ".lng");
                 }
                 // }
-                FileCreationManager.getInstance().delete(newFile);
+                FileCreationManager.getInstance().delete(newFile, null);
                 FileCreationManager.getInstance().mkdir(newFile.getParentFile());
                 IO.writeStringToFile(newFile, file);
 

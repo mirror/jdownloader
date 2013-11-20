@@ -110,7 +110,7 @@ public class Restarter {
             // themselves. tinyupdate.jar updates jdownloader.jar and
             // jdownloader.jar updates tinyupdate.jar
             new File("update/tools/tinyupdate.jar").deleteOnExit();
-            FileCreationManager.getInstance().delete(new File("update/tools/tinyupdate.jar"));
+            FileCreationManager.getInstance().delete(new File("update/tools/tinyupdate.jar"), null);
 
             extract(new File("update"));
             move(new File("update"));
@@ -233,7 +233,7 @@ public class Restarter {
                     }
                 }
                 int waittime = 15000;
-                while (newFile.exists() && !FileCreationManager.getInstance().delete(newFile) && !WAIT_FOR_JDOWNLOADER_TERM) {
+                while (newFile.exists() && !FileCreationManager.getInstance().delete(newFile, null) && !WAIT_FOR_JDOWNLOADER_TERM) {
 
                     try {
                         Thread.sleep(1000);
@@ -258,12 +258,12 @@ public class Restarter {
                 logger.severe("RENAME :" + f.renameTo(newFile));
                 if (f.getParentFile().list().length == 0) {
                     logger.severe("^^REMOVED PARENT DIR");
-                    FileCreationManager.getInstance().delete(f.getParentFile());
+                    FileCreationManager.getInstance().delete(f.getParentFile(), null);
                 }
             }
         }
         if (dir.list() != null) {
-            if (dir.list().length == 0) FileCreationManager.getInstance().delete(dir);
+            if (dir.list().length == 0) FileCreationManager.getInstance().delete(dir, null);
         }
 
     }
