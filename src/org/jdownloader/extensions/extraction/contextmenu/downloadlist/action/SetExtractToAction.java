@@ -15,7 +15,8 @@ public class SetExtractToAction extends AbstractExtractionContextAction {
     public SetExtractToAction() {
         super();
         setName(org.jdownloader.extensions.extraction.translate.T._.contextmenu_extract_to());
-        setIconKey(IconKey.ICON_FOLDER);
+
+        setSmallIcon(new ExtractIconVariant(IconKey.ICON_FOLDER, 18, 14, 0, 0).crop());
 
     }
 

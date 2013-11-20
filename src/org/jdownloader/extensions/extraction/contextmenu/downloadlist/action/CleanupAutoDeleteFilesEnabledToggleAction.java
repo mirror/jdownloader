@@ -16,7 +16,8 @@ public class CleanupAutoDeleteFilesEnabledToggleAction extends AbstractExtractio
     public CleanupAutoDeleteFilesEnabledToggleAction() {
         super();
         setName(org.jdownloader.extensions.extraction.translate.T._.contextmenu_autodeletefiles());
-        setIconKey(IconKey.ICON_FILE);
+        setSmallIcon(new ExtractIconVariant(IconKey.ICON_DELETE, 18, 14, 0, 0).crop());
+
         setSelected(false);
 
     }

@@ -9,12 +9,14 @@ import org.appwork.utils.swing.EDTRunner;
 import org.jdownloader.controlling.contextmenu.MenuContainer;
 import org.jdownloader.extensions.ExtensionNotLoadedException;
 import org.jdownloader.extensions.extraction.Archive;
+import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.views.downloads.table.DownloadsTable;
 
 public class CleanupSubMenu extends MenuContainer {
     public CleanupSubMenu() {
         setName(org.jdownloader.extensions.extraction.translate.T._.context_cleanup());
-        setIconKey("clear");
+        setIconKey(IconKey.ICON_DELETE);
+
     }
 
     @Override

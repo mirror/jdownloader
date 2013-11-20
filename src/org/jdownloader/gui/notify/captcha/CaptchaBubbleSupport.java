@@ -3,8 +3,6 @@ package org.jdownloader.gui.notify.captcha;
 import java.util.ArrayList;
 import java.util.List;
 
-import jd.gui.swing.dialog.AbstractCaptchaDialog;
-
 import org.jdownloader.captcha.event.ChallengeResponseListener;
 import org.jdownloader.captcha.v2.AbstractResponse;
 import org.jdownloader.captcha.v2.ChallengeResponseController;
@@ -42,13 +40,10 @@ public class CaptchaBubbleSupport extends AbstractBubbleSupport implements Chall
 
     @Override
     public void onNewJob(SolverJob<?> job) {
-        switch (AbstractCaptchaDialog.getWindowState()) {
-        case TO_BACK:
-        case OS_DEFAULT:
 
-            CaptchaNotify notify = new CaptchaNotify(this, job);
-            BubbleNotify.getInstance().show(notify);
-        }
+        CaptchaNotify notify = new CaptchaNotify(this, job);
+        BubbleNotify.getInstance().show(notify);
+
     }
 
     @Override

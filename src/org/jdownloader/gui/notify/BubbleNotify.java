@@ -127,6 +127,7 @@ public class BubbleNotify {
     }
 
     public void show(final AbstractNotifyWindow no) {
+
         if (JDGui.getInstance().isSilentModeActive() && !CFG_BUBBLE.BUBBLE_NOTIFY_ENABLED_DURING_SILENT_MODE.isEnabled()) return;
 
         new EDTRunner() {
@@ -156,7 +157,7 @@ public class BubbleNotify {
                     if (!JDGui.getInstance().getMainFrame().isVisible()) break;
                     return;
                 }
-
+                System.out.println(" Show  bubble 3" + no);
                 ballooner.add(no);
             }
         };

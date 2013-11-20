@@ -38,10 +38,11 @@ public class UPNPReconnectInvoker extends ReconnectInvoker {
         /*
          * 
          * final String data = "<?xml version=\"1.0\"?>\n" +
-         * "<s:Envelope xmlns:s=\"http://schemas.xmlsoap.org/soap/envelope/\" s:encodingStyle=\"http://schemas.xmlsoap.org/soap/encoding/\">\n" +
-         * " <s:Body>\n  <m:" + command + " xmlns:m=\"" + serviceType + "\"></m:" + command + ">\n </s:Body>\n</s:Envelope>"; try { final URL url = new
-         * URL(controlUrl); final URLConnection conn = url.openConnection(); conn.setDoOutput(true); conn.addRequestProperty("Content-Type",
-         * "text/xml; charset=\"utf-8\""); conn.addRequestProperty("SOAPAction", serviceType + "#" + command + "\"");
+         * "<s:Envelope xmlns:s=\"http://schemas.xmlsoap.org/soap/envelope/\" s:encodingStyle=\"http://schemas.xmlsoap.org/soap/encoding/\">\n"
+         * + " <s:Body>\n  <m:" + command + " xmlns:m=\"" + serviceType + "\"></m:" + command + ">\n </s:Body>\n</s:Envelope>"; try { final
+         * URL url = new URL(controlUrl); final URLConnection conn = url.openConnection(); conn.setDoOutput(true);
+         * conn.addRequestProperty("Content-Type", "text/xml; charset=\"utf-8\""); conn.addRequestProperty("SOAPAction", serviceType + "#" +
+         * command + "\""); p
          */
         final URL url = new URL(controlUrl);
         HTTPConnection con = new HTTPConnectionImpl(url);

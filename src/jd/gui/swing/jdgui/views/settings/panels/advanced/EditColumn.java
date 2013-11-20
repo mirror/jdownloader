@@ -1,27 +1,29 @@
 package jd.gui.swing.jdgui.views.settings.panels.advanced;
 
-import java.awt.Cursor;
+import java.awt.Point;
 import java.awt.event.ActionEvent;
+import java.awt.event.MouseEvent;
 
 import javax.swing.AbstractAction;
 import javax.swing.Action;
 import javax.swing.GrayFilter;
+import javax.swing.Icon;
 import javax.swing.ImageIcon;
-import javax.swing.JButton;
-import javax.swing.JComponent;
 
 import org.appwork.storage.JSonStorage;
-import org.appwork.swing.exttable.columns.ExtComponentColumn;
+import org.appwork.swing.components.tooltips.ExtTooltip;
+import org.appwork.swing.exttable.columns.ExtTextColumn;
+import org.appwork.utils.ImageProvider.ImageProvider;
 import org.appwork.utils.swing.EDTHelper;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
-import org.appwork.utils.swing.renderer.RendererMigPanel;
 import org.jdownloader.gui.IconKey;
+import org.jdownloader.gui.views.components.MergedIcon;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.settings.advanced.AdvancedConfigEntry;
 
-public class EditColumn extends ExtComponentColumn<AdvancedConfigEntry> {
+public class EditColumn extends ExtTextColumn<AdvancedConfigEntry> {
     private static final long serialVersionUID = 1L;
 
     static class InfoAction extends AbstractAction {
@@ -128,58 +130,32 @@ public class EditColumn extends ExtComponentColumn<AdvancedConfigEntry> {
 
     }
 
-    public static final int  SIZE = 16;
-    private RendererMigPanel renderer;
-    private RendererMigPanel editor;
-    private InfoAction       editorInfo;
-    private InfoAction       rendererInfo;
-    private ResetAction      editorReset;
-    private ResetAction      rendererReset;
-    private JButton          reset;
+    public static final int SIZE = 16;
+
+    private InfoAction      editorInfo;
+    private InfoAction      rendererInfo;
+
+    private MergedIcon      iconDD;
+
+    private MergedIcon      iconED;
+
+    private MergedIcon      iconDE;
+
+    private MergedIcon      iconEE;
+
+    private InfoAction      info;
+
+    private ResetAction     reset;
 
     public EditColumn() {
         super("Actions");
-        renderer = new RendererMigPanel("ins 2", "[]", "[]");
-        editor = new RendererMigPanel("ins 2", "[]", "[]");
-        editorInfo = new InfoAction();
-        rendererInfo = new InfoAction();
 
-        editorReset = new ResetAction();
-        rendererReset = new ResetAction();
-        renderer.add(getButton(rendererInfo), "width 18!,height 18!");
-        editor.add(getButton(editorInfo), "width 18!,height 18!");
-        renderer.add(getButton(rendererReset), "width 18!,height 18!");
-        editor.add(reset = getButton(editorReset), "width 18!,height 18!");
-        // add(info);
-    }
-
-    @Override
-    public void resetEditor() {
-        editor.setBackground(null);
-        editor.setOpaque(false);
-    }
-
-    @Override
-    public void resetRenderer() {
-        renderer.setBackground(null);
-        renderer.setOpaque(false);
-    }
-
-    private JButton getButton(final AbstractAction action) {
-        final JButton bt = new JButton(action) {
-
-            @Override
-            public void setEnabled(boolean b) {
-            }
-
-        };
-        bt.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-        bt.setContentAreaFilled(false);
-        bt.setBorderPainted(false);
-        // bt.setBorder(null);
-        bt.setToolTipText(bt.getText());
-        bt.setText("");
-        return bt;
+        iconDD = new MergedIcon(ImageProvider.getDisabledIcon(NewTheme.I().getIcon("help", 16)), ImageProvider.getDisabledIcon(NewTheme.I().getIcon("reset", 16)));
+        iconED = new MergedIcon(NewTheme.I().getIcon("help", 16), ImageProvider.getDisabledIcon(NewTheme.I().getIcon("reset", 16)));
+        iconDE = new MergedIcon(ImageProvider.getDisabledIcon(NewTheme.I().getIcon("help", 16)), NewTheme.I().getIcon("reset", 16));
+        iconEE = new MergedIcon(NewTheme.I().getIcon("help", 16), NewTheme.I().getIcon("reset", 16));
+        info = new InfoAction();
+        reset = new ResetAction();
     }
 
     @Override
@@ -192,33 +168,64 @@ public class EditColumn extends ExtComponentColumn<AdvancedConfigEntry> {
         return 45;
     }
 
-    @Override
-    public void configureEditorComponent(AdvancedConfigEntry value, boolean isSelected, int row, int column) {
-        editorInfo.setEntry(value);
-        editorReset.setEntry(value);
+    public ExtTooltip createToolTip(final Point p, final AdvancedConfigEntry obj) {
+        if (p.x - getBounds().x < getWidth() / 2) {
+            // left
+            this.tooltip.setTipText("Click to Open an infopanel");
+
+        } else {
+            // right
+            this.tooltip.setTipText("Click to reset to " + obj.getDefault());
+            System.out.println("RIGHT");
+        }
+
+        return this.tooltip;
     }
 
     @Override
-    public void configureRendererComponent(AdvancedConfigEntry value, boolean isSelected, boolean hasFocus, int row, int column) {
-        rendererInfo.setEntry(value);
-        rendererReset.setEntry(value);
+    public boolean onSingleClick(MouseEvent e, AdvancedConfigEntry obj) {
+        if (e.getPoint().x - getBounds().x < getWidth() / 2) {
+            // left
+            System.out.println("LEFT");
+            InfoAction info = new InfoAction();
+            info.setEntry(obj);
+            info.actionPerformed(null);
+        } else {
+            // right
+            System.out.println("RIGHT");
+            ResetAction reset = new ResetAction();
+            reset.setEntry(obj);
+            reset.actionPerformed(null);
+        }
+        return super.onSingleClick(e, obj);
     }
 
     @Override
     protected String getTooltipText(AdvancedConfigEntry obj) {
-        return "Reset to " + obj.getDefault();
+        return null;
     }
 
     @Override
-    protected JComponent getInternalEditorComponent(AdvancedConfigEntry value, boolean isSelected, int row, int column) {
-
-        return editor;
+    public String getStringValue(AdvancedConfigEntry value) {
+        return null;
     }
 
     @Override
-    protected JComponent getInternalRendererComponent(AdvancedConfigEntry value, boolean isSelected, boolean hasFocus, int row, int column) {
+    protected Icon getIcon(AdvancedConfigEntry value) {
+        info.setEntry(value);
+        reset.setEntry(value);
+        boolean resetable = reset.isEnabled();
+        boolean info = this.info.isEnabled();
 
-        return renderer;
+        if (resetable && info) {
+            return iconEE;
+        } else if (!resetable && info) {
+            return iconED;
+        } else if (!resetable && !info) {
+            return iconDD;
+        } else {
+            return iconDE;
+        }
     }
 
 }

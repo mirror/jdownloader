@@ -35,6 +35,7 @@ public class DialogBasicCaptchaSolver extends ChallengeSolver<String> {
     private CaptchaResolutorCaptchaSettings       configresolutor;
     private BasicCaptchaDialogHandler             handler;
     private DeathByCaptchaSettings                configDBC;
+    private Thread                                waitingThread;
     private static final DialogBasicCaptchaSolver INSTANCE = new DialogBasicCaptchaSolver();
 
     public static DialogBasicCaptchaSolver getInstance() {
@@ -77,12 +78,20 @@ public class DialogBasicCaptchaSolver extends ChallengeSolver<String> {
 
             if (job.getChallenge() instanceof BasicCaptchaChallenge && CFG_CAPTCHA.CAPTCHA_DIALOGS_ENABLED.isEnabled()) {
                 job.getLogger().info("Waiting for Other Solvers");
-                job.waitFor(config.getCaptchaDialogJAntiCaptchaTimeout(), JACSolver.getInstance());
-                if (configDBC.isEnabled() && config.getCaptchaDialogDBCTimeout() > 0) job.waitFor(config.getCaptchaDialogDBCTimeout(), DeathByCaptchaSolver.getInstance());
+                try {
+                    waitingThread = Thread.currentThread();
+                    job.waitFor(config.getCaptchaDialogJAntiCaptchaTimeout(), JACSolver.getInstance());
+                    if (configDBC.isEnabled() && config.getCaptchaDialogDBCTimeout() > 0) job.waitFor(config.getCaptchaDialogDBCTimeout(), DeathByCaptchaSolver.getInstance());
 
-                if (config9kw.isEnabled() && config.getCaptchaDialog9kwTimeout() > 0) job.waitFor(config.getCaptchaDialog9kwTimeout(), Captcha9kwSolver.getInstance());
-                if (configcbh.isEnabled() && config.getCaptchaDialogCaptchaBroptherhoodTimeout() > 0) job.waitFor(config.getCaptchaDialogCaptchaBroptherhoodTimeout(), CBSolver.getInstance());
-                if (configresolutor.isEnabled() && config.getCaptchaDialogResolutorCaptchaTimeout() > 0) job.waitFor(config.getCaptchaDialogResolutorCaptchaTimeout(), CaptchaResolutorCaptchaSolver.getInstance());
+                    if (config9kw.isEnabled() && config.getCaptchaDialog9kwTimeout() > 0) job.waitFor(config.getCaptchaDialog9kwTimeout(), Captcha9kwSolver.getInstance());
+                    if (configcbh.isEnabled() && config.getCaptchaDialogCaptchaBroptherhoodTimeout2() > 0) job.waitFor(config.getCaptchaDialogCaptchaBroptherhoodTimeout2(), CBSolver.getInstance());
+                    if (configresolutor.isEnabled() && config.getCaptchaDialogResolutorCaptchaTimeout() > 0) job.waitFor(config.getCaptchaDialogResolutorCaptchaTimeout(), CaptchaResolutorCaptchaSolver.getInstance());
+
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                } finally {
+                    waitingThread = null;
+                }
                 checkInterruption();
                 job.getLogger().info("Waits are done. Response so far: " + job.getResponse());
                 ChallengeSolverJobListener jacListener = null;
@@ -151,6 +160,9 @@ public class DialogBasicCaptchaSolver extends ChallengeSolver<String> {
     }
 
     public void requestFocus(Challenge<?> challenge) {
+        if (waitingThread != null) {
+            waitingThread.interrupt();
+        }
         BasicCaptchaDialogHandler hndlr = handler;
         if (hndlr != null) {
             hndlr.requestFocus();

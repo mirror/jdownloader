@@ -19,7 +19,7 @@ public class ValidateArchivesAction extends AbstractExtractionContextAction {
         super();
         setName(T._.ValidateArchiveAction_ValidateArchiveAction_object_());
 
-        setSmallIcon(new ExtractIconVariant("true", 18));
+        setSmallIcon(new ExtractIconVariant("ok", 18, 14, 0, 0).crop());
 
     }
 

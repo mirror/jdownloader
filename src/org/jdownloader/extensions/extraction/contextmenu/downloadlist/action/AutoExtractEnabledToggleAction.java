@@ -15,7 +15,7 @@ public class AutoExtractEnabledToggleAction extends AbstractExtractionContextAct
     public AutoExtractEnabledToggleAction() {
         super();
         setName(org.jdownloader.extensions.extraction.translate.T._.contextmenu_autoextract());
-        setSmallIcon(new ExtractIconVariant("refresh", 18));
+        setSmallIcon(new ExtractIconVariant("refresh", 18, 14, 0, 0).crop());
         setSelected(false);
 
     }

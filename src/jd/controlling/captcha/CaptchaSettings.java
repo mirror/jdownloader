@@ -91,11 +91,11 @@ public interface CaptchaSettings extends ConfigInterface {
     void setCaptchaDialogDBCTimeout(int ms);
 
     @AboutConfig
-    @DefaultIntValue(0)
+    @DefaultIntValue(120000)
     @org.appwork.storage.config.annotations.DescriptionForConfigEntry("Milliseconds after which a Captcha Dialog will appear even if Auto CaptchaBroptherhood Service is still running")
-    int getCaptchaDialogCaptchaBroptherhoodTimeout();
+    int getCaptchaDialogCaptchaBroptherhoodTimeout2();
 
-    void setCaptchaDialogCaptchaBroptherhoodTimeout(int ms);
+    void setCaptchaDialogCaptchaBroptherhoodTimeout2(int ms);
 
     @AboutConfig
     @DefaultIntValue(120000)

@@ -31,8 +31,7 @@ public class ShowExtractionResultAction extends AbstractExtractionContextAction 
         super();
 
         setName(org.jdownloader.extensions.extraction.translate.T._.contextmenu_extract_show_result());
-
-        setIconKey(IconKey.ICON_ABOUT);
+        setSmallIcon(new ExtractIconVariant(IconKey.ICON_ABOUT, 18, 16, 0, 0).crop());
 
         // CFG_EXTRACTION.WRITE_EXTRACTION_LOG_ENABLED.getEventSender().addListener(this, true);
         updateVisibility();
