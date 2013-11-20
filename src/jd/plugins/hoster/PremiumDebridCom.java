@@ -346,8 +346,11 @@ public class PremiumDebridCom extends PluginForHost {
 
     private String generateDllinkNew(final DownloadLink dl, final Account acc) throws IOException, PluginException {
         final String url = Encoding.urlEncode(dl.getDownloadURL());
+        br.getPage("http://premiumdebrid.com/pd.php");
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-        br.postPage("http://www.premiumdebrid.com/s1/index.php?rand=0." + System.currentTimeMillis(), "urllist=" + url + "&captcha=none&");
+        String server = br.getRegex("\"(http://(www\\.)?premiumdebrid\\.com/s\\d+)\"").getMatch(0);
+        if (server == null) server = "http://www.premiumdebrid.com/s1";
+        br.postPage(server + "/index.php?rand=0." + System.currentTimeMillis(), "urllist=" + url + "&captcha=none&");
         if (br.containsHTML("Scusa\\. Non supportiamo il tuo link")) {
             logger.info("premiumdebrid.com: Disabling current host");
             tempUnavailableHoster(acc, dl, 60 * 60 * 1000l);

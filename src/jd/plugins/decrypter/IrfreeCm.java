@@ -44,7 +44,7 @@ public class IrfreeCm extends PluginForDecrypt {
         ArrayList<String> passwords;
         br.setFollowRedirects(true);
         String parameter = param.toString().replace("irfree.eu/", "irfree.com/");
-        if (parameter.matches(INVALIDLINKS) || parameter.contains("rss.xml")) {
+        if (parameter.matches(INVALIDLINKS) || parameter.contains("rss.xml") || parameter.endsWith(".xml")) {
             logger.info("Link invalid: " + parameter);
             return decryptedLinks;
         }
@@ -55,7 +55,10 @@ public class IrfreeCm extends PluginForDecrypt {
         }
         passwords = HTMLParser.findPasswords(br.toString());
         String[] links = new Regex(br.toString(), "href=\"(http://.*?)\"", Pattern.CASE_INSENSITIVE).getColumn(0);
-        if (links == null || links.length == 0) return null;
+        if (links == null || links.length == 0) {
+            logger.warning("Decrypter broken for link: " + parameter);
+            return null;
+        }
         for (String link : links) {
             final String crypted = new Regex(link, "irfree\\.com/engine/go\\.php\\?url=([^<>\"]*?)\"").getMatch(0);
             if (crypted != null) link = Encoding.Base64Decode(Encoding.htmlDecode(crypted));

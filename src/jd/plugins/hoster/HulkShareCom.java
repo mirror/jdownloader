@@ -306,6 +306,7 @@ public class HulkShareCom extends PluginForHost {
             logger.info("Found md5hash: " + md5hash);
             downloadLink.setMD5Hash(md5hash);
         }
+        if (br.containsHTML("class=\"nhsDisabledPlayerText\"")) throw new PluginException(LinkStatus.ERROR_FATAL, "This file cannot be downloaded");
         String dllink = null;
         if (checkFastWay) {
             dllink = downloadLink.getStringProperty("freelink");
