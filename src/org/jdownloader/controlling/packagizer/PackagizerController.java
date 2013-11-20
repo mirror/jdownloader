@@ -5,6 +5,7 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Locale;
 import java.util.regex.Pattern;
 
@@ -18,6 +19,7 @@ import org.appwork.exceptions.WTFException;
 import org.appwork.shutdown.ShutdownController;
 import org.appwork.shutdown.ShutdownEvent;
 import org.appwork.shutdown.ShutdownRequest;
+import org.appwork.storage.JSonStorage;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.IO;
 import org.appwork.utils.Regex;
@@ -83,12 +85,14 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
         if (list == null) list = new ArrayList<PackagizerRule>();
         if (!isTestInstance()) {
             ArrayList<PackagizerRule> newList = new ArrayList<PackagizerRule>();
+            HashSet<String> dupefinder = new HashSet<String>();
             boolean subfolderFound = false;
             boolean revFileRule = false;
             for (PackagizerRule rule : list) {
 
                 if (SubFolderByPackageRule.ID.equals(rule.getId())) {
                     SubFolderByPackageRule r;
+                    if (!dupefinder.add(rule.getId())) continue;
                     newList.add(r = new SubFolderByPackageRule());
                     r.setEnabled(rule.isEnabled());
                     subfolderFound = true;
@@ -97,11 +101,16 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
                 }
                 if (DisableRevFilesPackageRule.ID.equals(rule.getId())) {
                     DisableRevFilesPackageRule r;
+                    if (!dupefinder.add(rule.getId())) continue;
                     newList.add(r = new DisableRevFilesPackageRule());
                     r.setEnabled(rule.isEnabled());
                     revFileRule = true;
                     continue;
 
+                }
+                if (!dupefinder.add(JSonStorage.serializeToJson(rule))) {
+                    //
+                    continue;
                 }
                 newList.add(rule);
             }
@@ -268,6 +277,14 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
     public void add(PackagizerRule linkFilter) {
         if (linkFilter == null) return;
         synchronized (this) {
+            HashSet<String> dupecheck = createDupeSet();
+
+            if (!linkFilter.isStaticRule()) {
+                if (dupecheck.add(JSonStorage.serializeToJson(linkFilter))) {
+                    list.add(linkFilter);
+                }
+            }
+
             list.add(linkFilter);
             if (config != null) config.setRuleList(list);
         }
@@ -327,10 +344,31 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
     public void addAll(java.util.List<PackagizerRule> all) {
         if (all == null) return;
         synchronized (this) {
-            list.addAll(all);
+
+            HashSet<String> dupecheck = createDupeSet();
+            for (PackagizerRule rule : all) {
+                if (!rule.isStaticRule()) {
+                    if (dupecheck.add(JSonStorage.serializeToJson(rule))) {
+                        list.add(rule);
+                    }
+                }
+            }
             if (config != null) config.setRuleList(list);
         }
         update();
+    }
+
+    private HashSet<String> createDupeSet() {
+        HashSet<String> ret = new HashSet<String>();
+        synchronized (this) {
+            for (PackagizerRule rule : list) {
+
+                ret.add(JSonStorage.serializeToJson(rule));
+
+            }
+
+        }
+        return ret;
     }
 
     public void remove(PackagizerRule lf) {
