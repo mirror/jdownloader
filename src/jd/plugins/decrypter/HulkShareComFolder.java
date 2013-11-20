@@ -20,6 +20,7 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
@@ -35,7 +36,8 @@ public class HulkShareComFolder extends PluginForDecrypt {
     }
 
     private static final String HULKSHAREDOWNLOADLINK = "http://(www\\.)?(hulkshare\\.com|hu\\/lk)/([a-z0-9]{12})";
-    private static final String SECONDSINGLELINK      = "http://(www\\.)?(hulkshare\\.com|hu\\.lk)/[a-z0-9]+/[^<>\"/]+";
+    private static final String TYPE_SECONDSINGLELINK = "http://(www\\.)?(hulkshare\\.com|hu\\.lk)/[a-z0-9]+/[^<>\"/]+";
+    private static final String TYPE_PLAYLIST         = "http://(www\\.)?(hulkshare\\.com|hu\\.lk)/playlist/\\d+";
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
@@ -96,7 +98,23 @@ public class HulkShareComFolder extends PluginForDecrypt {
             decryptedLinks.add(dl);
             return decryptedLinks;
         }
-        if (parameter.matches(SECONDSINGLELINK)) {
+        if (parameter.matches(TYPE_PLAYLIST)) {
+            String fpName = br.getRegex("property=\"og:title\" content=\"([^<>\"]*?)\"").getMatch(0);
+            if (fpName == null) fpName = "hulkshare.com playlist - " + new Regex(parameter, "(\\d+)$").getMatch(0);
+            final String pllist = br.getRegex("class=\"newPlayer\" id=\"hsPlayer[A-Za-z0-9\\-_]+\" pid=\"\\d+\" rel=\"([^<>\"]*?)\"").getMatch(0);
+            if (pllist == null) {
+                logger.warning("Decrypter broken for link: " + parameter);
+                return null;
+            }
+            final String[] playlistids = pllist.split(",");
+            for (final String pllistid : playlistids) {
+                decryptedLinks.add(createDownloadlink("http://hulksharedecrypted.com/playlistsong/" + pllistid));
+            }
+            final FilePackage fp = FilePackage.getInstance();
+            fp.setName(Encoding.htmlDecode(fpName.trim()));
+            fp.addLinks(decryptedLinks);
+            return decryptedLinks;
+        } else if (parameter.matches(TYPE_SECONDSINGLELINK)) {
             final String longLink = br.getRegex("longLink = \\'(http://(www\\.)?hulkshare\\.com/[a-z0-9]{12})\\'").getMatch(0);
             if (longLink == null) {
                 logger.warning("Decrypter broken for link: " + parameter);

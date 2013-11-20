@@ -54,7 +54,7 @@ import jd.utils.locale.JDL;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "hulkshare.com" }, urls = { "http://(www\\.)?(((hulkshare\\.com|hu\\.lk)/dl/|hulksharedecrypted\\.com/)|old\\.hulkshare\\.com/dl/)[a-z0-9]{12}" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "hulkshare.com" }, urls = { "http://(www\\.)?(hulksharedecrypted\\.com/playlistsong/\\d+|(((hulkshare\\.com|hu\\.lk)/dl/|hulksharedecrypted\\.com/)|old\\.hulkshare\\.com/dl/)[a-z0-9]{12})" }, flags = { 2 })
 public class HulkShareCom extends PluginForHost {
 
     private String              BRBEFORE            = "";
@@ -65,14 +65,18 @@ public class HulkShareCom extends PluginForHost {
     private static final String MAINTENANCEUSERTEXT = "This server is under Maintenance";
     private static Object       LOCK                = new Object();
 
+    private static final String TYPE_PLAYLISTSONG   = "http://(www\\.)?hulksharedecrypted\\.com/playlistsong/\\d+";
+
     public HulkShareCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium(COOKIE_HOST + "/premium.html");
     }
 
     @Override
-    public void correctDownloadLink(DownloadLink link) {
-        link.setUrlDownload("http://www.hulkshare.com/" + new Regex(link.getDownloadURL(), "/([a-z0-9]{12})$").getMatch(0));
+    public void correctDownloadLink(final DownloadLink link) {
+        if (link.getDownloadURL().matches("http://(www\\.)?(((hulkshare\\.com|hu\\.lk)/dl/|hulksharedecrypted\\.com/)|old\\.hulkshare\\.com/dl/)[a-z0-9]{12}")) {
+            link.setUrlDownload("http://www.hulkshare.com/" + new Regex(link.getDownloadURL(), "/([a-z0-9]{12})$").getMatch(0));
+        }
     }
 
     @Override
@@ -81,6 +85,15 @@ public class HulkShareCom extends PluginForHost {
         correctDownloadLink(link);
         br.setCookie(COOKIE_HOST, "lang", "english");
         if (link.getBooleanProperty("fileoffline")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        // Convert playlist-songs to real single links
+        if (link.getDownloadURL().matches(TYPE_PLAYLISTSONG)) {
+            br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+            br.postPage("http://www.hulkshare.com/mp3PlayerScripts/flConfig_hsPlayerLight.php?id=" + new Regex(link.getDownloadURL(), "(\\d+)$").getMatch(0) + "&playlist=1", "");
+            if (br.containsHTML("<empty>1</empty>")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            final String realID = br.getRegex("hulkshare\\.com/dl/([a-z0-9]{12})").getMatch(0);
+            if (realID == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            link.setUrlDownload("http://www.hulkshare.com/" + realID);
+        }
         br.getPage(link.getDownloadURL());
         final String argh = br.getRedirectLocation();
         // Handling for direct links
