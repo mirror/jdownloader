@@ -13,6 +13,7 @@ import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.swing.synthetica.SyntheticaSettings;
 import org.appwork.utils.logging2.LogConfig;
 import org.appwork.utils.logging2.LogSource;
+import org.jdownloader.controlling.ffmpeg.FFmpegSetup;
 import org.jdownloader.gui.notify.gui.CFG_BUBBLE;
 import org.jdownloader.gui.shortcuts.ShortcutSettings;
 import org.jdownloader.jdserv.stats.StatsManagerConfig;
@@ -65,7 +66,7 @@ public class AdvancedConfigManager {
         register(CFG_RECONNECT.CFG);
         register(CFG_API.CFG);
         register(CFG_PACKAGIZER.CFG);
-
+        register(JsonConfig.create(FFmpegSetup.class));
         register(JsonConfig.create(StatsManagerConfig.class));
         register(JsonConfig.create(LogConfig.class));
         register(JsonConfig.create(ShortcutSettings.class));
