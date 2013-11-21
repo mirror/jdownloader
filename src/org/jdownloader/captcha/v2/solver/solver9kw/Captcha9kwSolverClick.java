@@ -163,10 +163,12 @@ public class Captcha9kwSolverClick extends ChallengeSolver<ClickedPoint> impleme
                         Browser br = new Browser();
                         br.setAllowedResponseCodes(new int[] { 500 });
                         String ret = "";
-                        for (int i = 0; i <= 5; i++) {
+                        for (int i = 0; i <= 3; i++) {
                             ret = br.getPage(getAPIROOT() + "index.cgi?action=usercaptchacorrectback&source=jd2&correct=1&id=" + captchaID + "&apikey=" + Encoding.urlEncode(config.getApiKey()));
                             if (ret.startsWith("OK")) {
                                 break;
+                            } else {
+                                Thread.sleep(2000);
                             }
                         }
                     } catch (final Throwable e) {
@@ -178,8 +180,31 @@ public class Captcha9kwSolverClick extends ChallengeSolver<ClickedPoint> impleme
     }
 
     @Override
-    public void setUnused(AbstractResponse<?> response) {
+    public void setUnused(final AbstractResponse<?> response) {
+        if (config.isfeedback()) {
+            threadPool.execute(new Runnable() {
 
+                @Override
+                public void run() {
+                    try {
+                        String captchaID = ((Captcha9kwClickResponse) response).getCaptcha9kwID();
+                        Browser br = new Browser();
+                        br.setAllowedResponseCodes(new int[] { 500 });
+                        String ret = "";
+                        for (int i = 0; i <= 3; i++) {
+                            ret = br.getPage(getAPIROOT() + "index.cgi?action=usercaptchacorrectback&source=jd2&correct=3&id=" + captchaID + "&apikey=" + Encoding.urlEncode(config.getApiKey()));
+                            if (ret.startsWith("OK")) {
+                                break;
+                            } else {
+                                Thread.sleep(2000);
+                            }
+                        }
+                    } catch (final Throwable e) {
+                        LogController.CL(true).log(e);
+                    }
+                }
+            });
+        }
     }
 
     @Override
@@ -194,10 +219,12 @@ public class Captcha9kwSolverClick extends ChallengeSolver<ClickedPoint> impleme
                         Browser br = new Browser();
                         br.setAllowedResponseCodes(new int[] { 500 });
                         String ret = "";
-                        for (int i = 0; i <= 5; i++) {
+                        for (int i = 0; i <= 3; i++) {
                             ret = br.getPage(getAPIROOT() + "index.cgi?action=usercaptchacorrectback&source=jd2&correct=2&id=" + captchaID + "&apikey=" + Encoding.urlEncode(config.getApiKey()));
                             if (ret.startsWith("OK")) {
                                 break;
+                            } else {
+                                Thread.sleep(2000);
                             }
                         }
                     } catch (final Throwable e) {
