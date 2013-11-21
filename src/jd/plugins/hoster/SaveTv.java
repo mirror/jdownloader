@@ -320,22 +320,22 @@ public class SaveTv extends PluginForHost {
                 genre = showInfo.getMatch(3);
                 if (genre == null) genre = showInfo.getMatch(1);
             } else if (br.containsHTML("Kategorie:</label>[\t\n\r ]+Musik.*?") || br.containsHTML("src=\"/STV/IMG/global/TVCategorie/kat7\\.jpg\"")) {
-                // // For music
-                // link.setProperty("category", 7);
-                // final Regex musicInfo = br.getRegex(INFOREGEX);
-                // final String music_title = musicInfo.getMatch(0);
-                // final String music_subtitle = musicInfo.getMatch(1);
-                // if (music_title != null && music_subtitle != null) {
-                // site_title = Encoding.htmlDecode(music_title.trim()) + " - " + Encoding.htmlDecode(music_subtitle.trim());
-                // } else if (music_title != null) {
-                // site_title = Encoding.htmlDecode(music_title.trim());
-                // }
-                // String musicdata = musicInfo.getMatch(2);
-                // if (musicdata != null) {
-                // musicdata = musicdata.trim();
-                // musicdata = musicdata.replace("<p>", "").replace("</p>", "");
-                // genre = new Regex(musicdata, "([A-Za-z]+ / [A-Za-z, ]+)").getMatch(0);
-                // }
+                // For music
+                link.setProperty("category", 7);
+                final Regex musicInfo = br.getRegex(INFOREGEX);
+                final String music_title = musicInfo.getMatch(0);
+                final String music_subtitle = musicInfo.getMatch(1);
+                if (music_title != null && music_subtitle != null) {
+                    site_title = Encoding.htmlDecode(music_title.trim()) + " - " + Encoding.htmlDecode(music_subtitle.trim());
+                } else if (music_title != null) {
+                    site_title = Encoding.htmlDecode(music_title.trim());
+                }
+                String musicdata = musicInfo.getMatch(2);
+                if (musicdata != null) {
+                    musicdata = musicdata.trim();
+                    musicdata = musicdata.replace("<p>", "").replace("</p>", "");
+                    genre = new Regex(musicdata, "([A-Za-z]+ / [A-Za-z, ]+)").getMatch(0);
+                }
             } else if (br.containsHTML("src=\"/STV/IMG/global/TVCategorie/kat1\\.jpg\"") || br.containsHTML(GENERAL_REGEX)) {
                 // For movies
                 final Regex movieInfo = br.getRegex(INFOREGEX);
