@@ -120,7 +120,7 @@ gui_settings_extensions_show_now=Exibir %s1 agora? Você pode exibí-lo mais tar
 gui_settings_filewriting_description=Usando a opção hashcheck, o JDownloader irá verificar seus downloads por correções após o baixar.
 gui_settings_general_title=Geral
 gui_settings_linkgrabber_filter_description2=O filtro de links é usado para filtrar ou agrupar links. Use-o para ignorar ou agrupar links, endereços, URLs ou arquivos baseados em suas propriedades. Configure 'Visualizações' na barra lateral da Captura de Links, ou 'Filtros' para evitar capturar links especiais completamente...
-gui_settings_linkgrabber_packagizer_description=As regras do Criador de Pacotes lhe permitem auto definir Configurações de Download em Arquivos baseados em suas propriedades.
+gui_settings_linkgrabber_packagizer_description=As regras do Criador de Pacotes lhe permitem definir automaticamente as configurações do download de arquivos baseadas em suas propriedades.
 gui_settings_linkgrabber_title=Filtro da Captura de Links
 gui_settings_plugins_description=O JDownloader usa 'Plugins' para %s1 sites para automatizar downloads que levariam mais tempo sem o JDownloader. Alguns destes Plugins possuem configurações para personalizar suas ações.
 gui_settings_plugins_title=Configurações do Plugin
@@ -136,7 +136,7 @@ gui_warning_reconnect_running=Executando...
 gui_warning_reconnectunknown=Reconexão desconhecida
 image_description=Arquivos de Imagem: jpg, png, gif...
 jd_controlling_SingleDownloadController_askexists3=Houve um problema ao baixar um arquivo!\r\nO arquivo já existe no disco rígido. O que deseja fazer?
-jd_controlling_SingleDownloadController_askexists_title=O arquivo existe
+jd_controlling_SingleDownloadController_askexists_title=O arquivo já existe
 jd_controlling_reconnect_Reconnector_progress_failed2=A Reconexão falhou várias vezes!\r\nAuto Reconexão desativada! \r\nPor favor, verifique suas Configurações de Reconexão!
 jd_controlling_reconnect_plugins_DummyRouterPlugin_getGUI2=<b><u>Nenhuma Reconexão selecionada</u></b><br/><p>Reconexão é uma abordagem avançada para evitar longas esperas que alguns servidores impoem para usuários free. <br>Não é útil ao usar uma conta premium.</p><p>Leia mais sobre Reconexão <a href='http://support.jdownloader.org/index.php?_m=knowledgebase&_a=viewarticle&kbarticleid=1'>here</a></p>
 jd_controlling_reconnect_plugins_DummyRouterPlugin_getName=Sem Reconexão
