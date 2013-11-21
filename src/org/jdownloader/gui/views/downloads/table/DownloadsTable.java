@@ -174,7 +174,7 @@ public class DownloadsTable extends PackageControllerTable<FilePackage, Download
 
     @Override
     protected boolean onShortcutDelete(final java.util.List<AbstractNode> selectedObjects, final KeyEvent evt, final boolean direct) {
-        DownloadTabActionUtils.deleteLinksRequest(getSelectionInfo(), _GUI._.RemoveSelectionAction_actionPerformed_(), DeleteFileOptions.REMOVE_LINKS_AND_DELETE_FILES, evt.isControlDown());
+        DownloadTabActionUtils.deleteLinksRequest(getSelectionInfo(), _GUI._.RemoveSelectionAction_actionPerformed_(), DeleteFileOptions.REMOVE_LINKS_ONLY, evt.isControlDown());
         return true;
     }
 
