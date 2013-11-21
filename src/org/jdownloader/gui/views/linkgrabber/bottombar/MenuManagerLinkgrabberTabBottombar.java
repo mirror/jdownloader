@@ -60,7 +60,7 @@ public class MenuManagerLinkgrabberTabBottombar extends AbstractBottomBarMenuMan
         //
         //
 
-        mr.add(setName(setIconKey(new ActionData(GenericDeleteFromLinkgrabberAction.class).putSetup(GenericDeleteFromLinkgrabberAction.DELETE_ALL, true).putSetup(IncludedSelectionSetup.INCLUDE_UNSELECTED_LINKS, true).putSetup(IncludedSelectionSetup.INCLUDE_SELECTED_LINKS, true).putSetup(GenericDeleteFromLinkgrabberAction.FULL_LINK_COLLECTOR_RESET, true).putSetup(GenericDeleteFromLinkgrabberAction.CLEAR_SEARCH_FILTER, true).putSetup(GenericDeleteFromLinkgrabberAction.RESET_TABLE_SORTER, true), IconKey.ICON_RESET), null));
+        mr.add(ClearLinkgrabberAction.class);
 
         DeleteContainer delete = new DeleteContainer();
 

@@ -33,27 +33,26 @@ import org.jdownloader.gui.views.linkgrabber.LinkGrabberTableModel;
 
 public class GenericDeleteFromLinkgrabberAction extends CustomizableAppAction implements ExtTableListener, ActionContext, ExtTableModelListener {
 
-    public static final String FULL_LINK_COLLECTOR_RESET = "fullLinkCollectorReset";
-    public static final String CLEAR_FILTERED_LINKS      = "clearFilteredLinks";
-    public static final String CLEAR_SEARCH_FILTER       = "clearSearchFilter";
-    public static final String RESET_TABLE_SORTER        = "resetTableSorter";
-    public static final String CANCEL_LINKCRAWLER_JOBS   = "cancelLinkcrawlerJobs";
-    public static final String DELETE_ALL                = "deleteAll";
-    public static final String DELETE_DISABLED           = "deleteDisabled";
-    public static final String DELETE_OFFLINE            = "deleteOffline";
+    public static final String CLEAR_FILTERED_LINKS    = "clearFilteredLinks";
+    public static final String CLEAR_SEARCH_FILTER     = "clearSearchFilter";
+    public static final String RESET_TABLE_SORTER      = "resetTableSorter";
+    public static final String CANCEL_LINKCRAWLER_JOBS = "cancelLinkcrawlerJobs";
+    public static final String DELETE_ALL              = "deleteAll";
+    public static final String DELETE_DISABLED         = "deleteDisabled";
+    public static final String DELETE_OFFLINE          = "deleteOffline";
     /**
      * 
      */
-    private static final long  serialVersionUID          = 1L;
+    private static final long  serialVersionUID        = 1L;
 
     private DelayedRunnable    delayer;
-    private boolean            deleteAll                 = false;
+    private boolean            deleteAll               = false;
 
-    private boolean            deleteDisabled            = false;
+    private boolean            deleteDisabled          = false;
 
-    private boolean            deleteOffline             = false;
-    private boolean            cancelLinkcrawlerJobs     = false;
-    private boolean            resetTableSorter          = false;
+    private boolean            deleteOffline           = false;
+    private boolean            cancelLinkcrawlerJobs   = false;
+    private boolean            resetTableSorter        = false;
 
     @Override
     public void loadContextSetups() {
@@ -214,7 +213,7 @@ public class GenericDeleteFromLinkgrabberAction extends CustomizableAppAction im
         return false;
     }
 
-    private String createName() {
+    protected String createName() {
         final StringBuilder sb = new StringBuilder();
 
         if (isClearFilteredLinks()) {
