@@ -53,24 +53,24 @@ public class GenericResetLinkgrabberRlyDialog extends ConfirmDialog {
     }
 
     public boolean isCancelCrawler() {
-        return cbCrawler.isSelected();
+        return cbCrawler == null ? cancelLinkcrawlerJobs : cbCrawler.isSelected();
     }
 
     public boolean isDeleteLinks() {
-        return cbLinks.isSelected();
+        return cbLinks == null ? nodesToDelete.size() > 0 : cbLinks.isSelected();
     }
 
     public boolean isResetSort() {
-        return cbSort.isSelected();
+        return cbSort == null ? resetTableSorter : cbSort.isSelected();
     }
 
     public boolean isResetSearch() {
-        return cbSearch.isSelected();
+        return cbSearch == null ? clearSearchFilter : cbSearch.isSelected();
 
     }
 
     public boolean isClearFiltered() {
-        return cbFiltered.isSelected();
+        return cbFiltered == null ? clearFilteredLinks : cbFiltered.isSelected();
     }
 
     @Override
