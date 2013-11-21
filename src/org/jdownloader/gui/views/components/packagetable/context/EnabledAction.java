@@ -103,11 +103,12 @@ public class EnabledAction extends CustomizableTableContextAppAction {
                                 SingleDownloadController slc = link.getDownloadLinkController();
                                 if (slc != null && slc.getDownloadInstance() != null && !link.isResumeable()) {
                                     count++;
+                                    DownloadInterface dl = slc.getDownloadInstance();
+                                    if (dl != null && !slc.getDownloadLink().isResumeable()) {
+                                        i += slc.getDownloadLink().getDownloadCurrent();
+                                    }
                                 }
-                                DownloadInterface dl = slc.getDownloadInstance();
-                                if (dl != null && !slc.getDownloadLink().isResumeable()) {
-                                    i += slc.getDownloadLink().getDownloadCurrent();
-                                }
+
                             }
                         }
                     }
