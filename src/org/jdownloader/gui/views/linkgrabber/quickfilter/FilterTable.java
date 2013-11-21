@@ -4,6 +4,8 @@ import java.awt.Dimension;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -213,6 +215,22 @@ public abstract class FilterTable extends BasicJDTable<Filter> implements Packag
                 } finally {
                     filterExceptionThread = null;
                 }
+                Collections.sort(filters, new Comparator<Filter>() {
+
+                    public int compare(boolean x, boolean y) {
+                        return (x == y) ? 0 : (x ? -1 : 1);
+                    }
+
+                    @Override
+                    public int compare(Filter o1, Filter o2) {
+                        if (o1.isEnabled() == o2.isEnabled()) {
+                            return o1.getName().compareToIgnoreCase(o2.getName());
+                        } else {
+                            return compare(o1.isEnabled(), o2.isEnabled());
+                        }
+                    }
+
+                });
             }
             updateTableData.put(filterTable, filters);
         }

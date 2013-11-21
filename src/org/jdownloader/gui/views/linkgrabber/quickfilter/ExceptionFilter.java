@@ -19,7 +19,7 @@ public class ExceptionFilter extends Filter {
         this.wrapperRule = rule;
         if (rule.getRule().getIconKey() != null) setIcon(NewTheme.I().getIcon(rule.getRule().getIconKey(), 16));
         id = "Custom_" + Hash.getMD5(rule.getName() + ":" + getDescription());
-        enabled = filterSubConfig.getBooleanProperty(getID(), false);
+        enabled = filterSubConfig.getBooleanProperty(getID(), true);
         description = rule.getRule().toString();
     }
 
