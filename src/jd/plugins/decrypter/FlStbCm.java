@@ -286,6 +286,11 @@ public class FlStbCm extends PluginForDecrypt {
                 logger.info("Link offline: " + parameter);
                 return decryptedLinks;
             }
+            // Offline link
+            if (br.containsHTML("No results containing all your search terms were found")) {
+                logger.info("Link offline: " + parameter);
+                return decryptedLinks;
+            }
             String fpName = br.getRegex("<title>(.*?)\\- Free Download").getMatch(0);
             // Hmm this plugin should always have a name with that mass of
             // alternative ways to get the name

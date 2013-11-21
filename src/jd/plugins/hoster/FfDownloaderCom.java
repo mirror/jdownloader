@@ -62,7 +62,7 @@ public class FfDownloaderCom extends PluginForHost {
         br.setCustomCharset("utf-8");
         br.setConnectTimeout(60 * 1000);
         br.setReadTimeout(60 * 1000);
-        br.setAllowedResponseCodes(new int[] { 401, 403, 497, 500, 503 });
+        br.setAllowedResponseCodes(new int[] { 401, 204, 403, 404, 497, 500, 503 });
         return br;
     }
 

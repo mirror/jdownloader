@@ -30,6 +30,7 @@ import javax.swing.SwingUtilities;
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
+import jd.config.Property;
 import jd.config.SubConfiguration;
 import jd.http.Browser;
 import jd.http.RandomUserAgent;
@@ -549,7 +550,20 @@ public class ShareOnlineBiz extends PluginForHost {
         br.setFollowRedirects(true);
         /* Datei herunterladen */
         if (url != null && url.trim().length() == 0) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError", 5 * 60 * 1000l);
-        if (url == null || !url.startsWith("http")) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (br.containsHTML(">Proxy\\-Download not supported for free access")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Proxy download not supported for free access", 5 * 60 * 1000l);
+        if (url == null || !url.startsWith("http")) {
+            logger.info("share-online.biz: Unknown error");
+            int timesFailed = downloadLink.getIntegerProperty("timesfailedshareonlinebiz_unknown", 0);
+            if (timesFailed <= 2) {
+                timesFailed++;
+                downloadLink.setProperty("timesfailedshareonlinebiz_unknown", timesFailed);
+                throw new PluginException(LinkStatus.ERROR_RETRY, "Unknown error");
+            } else {
+                downloadLink.setProperty("timesfailedshareonlinebiz_unknown", Property.NULL);
+                logger.info("share-online.biz: Unknown error - Plugin broken!");
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+        }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, url);
         if (dl.getConnection().isContentDisposition() || (dl.getConnection().getContentType() != null && dl.getConnection().getContentType().contains("octet-stream"))) {
             try {

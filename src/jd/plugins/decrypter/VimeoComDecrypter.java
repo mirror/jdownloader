@@ -122,6 +122,7 @@ public class VimeoComDecrypter extends PluginForDecrypt {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
+        title = unescape(title);
         title = Encoding.htmlDecode(title.replaceAll("(\\\\|/)", "_").replaceAll("_+", "_").trim());
         final PluginForHost hostPlugin = JDUtilities.getPluginForHost("vimeo.com");
 
@@ -342,6 +343,18 @@ public class VimeoComDecrypter extends PluginForDecrypt {
             }
             if (br.getHttpConnection().getResponseCode() == 401 || br.getHttpConnection().getResponseCode() == 418) throw new DecrypterException(DecrypterException.PASSWORD);
         }
+    }
+
+    private static boolean pluginloaded = false;
+
+    private static synchronized String unescape(final String s) {
+        /* we have to make sure the youtube plugin is loaded */
+        if (pluginloaded == false) {
+            final PluginForHost plugin = JDUtilities.getPluginForHost("youtube.com");
+            if (plugin == null) throw new IllegalStateException("youtube plugin not found!");
+            pluginloaded = true;
+        }
+        return jd.plugins.hoster.Youtube.unescape(s);
     }
 
     /* NO OVERRIDE!! */

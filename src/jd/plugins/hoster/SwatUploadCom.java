@@ -373,7 +373,20 @@ public class SwatUploadCom extends PluginForHost {
         logger.info("Final downloadlink = " + dllink + " starting the download...");
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumable, maxchunks);
         if (dl.getConnection().getContentType().contains("html")) {
-            if (dl.getConnection().getResponseCode() == 503) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Connection limit reached, please contact our support!", 5 * 60 * 1000l);
+            if (dl.getConnection().getResponseCode() == 503) {
+                logger.info("swatupload.com: Connection limit reached");
+                int timesFailed = downloadLink.getIntegerProperty("timesfailedswatuploadcom_conlimit", 0);
+                downloadLink.getLinkStatus().setRetryCount(0);
+                if (timesFailed <= 2) {
+                    timesFailed++;
+                    downloadLink.setProperty("timesfailedswatuploadcom_conlimit", timesFailed);
+                    throw new PluginException(LinkStatus.ERROR_RETRY, "Connection limit reached");
+                } else {
+                    downloadLink.setProperty("timesfailedswatuploadcom_conlimit", Property.NULL);
+                    logger.info("swatupload.com: Connection limit reached - link is temporarily unavailable");
+                    throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Connection limit reached!", 5 * 60 * 1000l);
+                }
+            }
             logger.warning("The final dllink seems not to be a file!");
             br.followConnection();
             correctBR();
@@ -719,7 +732,7 @@ public class SwatUploadCom extends PluginForHost {
         if (account.getBooleanProperty("nopremium")) {
             ai.setStatus("Registered (free) user");
             try {
-                maxPrem.set(1);
+                maxPrem.set(10);
                 // free accounts can still have captcha.
                 totalMaxSimultanFreeDownload.set(maxPrem.get());
                 account.setMaxSimultanDownloads(maxPrem.get());
@@ -821,7 +834,7 @@ public class SwatUploadCom extends PluginForHost {
         login(account, false);
         if (account.getBooleanProperty("nopremium")) {
             requestFileInformation(downloadLink);
-            doFree(downloadLink, true, -10, "freelink2");
+            doFree(downloadLink, true, 1, "freelink2");
         } else {
             String dllink = checkDirectLink(downloadLink, "premlink");
             if (dllink == null) {
@@ -843,9 +856,22 @@ public class SwatUploadCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             logger.info("Final downloadlink = " + dllink + " starting the download...");
-            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, -10);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
             if (dl.getConnection().getContentType().contains("html")) {
-                if (dl.getConnection().getResponseCode() == 503) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Connection limit reached, please contact our support!", 5 * 60 * 1000l);
+                if (dl.getConnection().getResponseCode() == 503) {
+                    logger.info("swatupload.com: Connection limit reached");
+                    int timesFailed = downloadLink.getIntegerProperty("timesfailedswatuploadcom_conlimit", 0);
+                    downloadLink.getLinkStatus().setRetryCount(0);
+                    if (timesFailed <= 2) {
+                        timesFailed++;
+                        downloadLink.setProperty("timesfailedswatuploadcom_conlimit", timesFailed);
+                        throw new PluginException(LinkStatus.ERROR_RETRY, "Connection limit reached");
+                    } else {
+                        downloadLink.setProperty("timesfailedswatuploadcom_conlimit", Property.NULL);
+                        logger.info("swatupload.com: Connection limit reached - link is temporarily unavailable");
+                        throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Connection limit reached!", 5 * 60 * 1000l);
+                    }
+                }
                 logger.warning("The final dllink seems not to be a file!");
                 br.followConnection();
                 correctBR();
