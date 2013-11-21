@@ -393,7 +393,7 @@ public abstract class FilterTable extends BasicJDTable<Filter> implements Packag
         setVisible(enabled);
         if (visibleKey()) {
             if (enabled) {
-                getModel()._fireTableStructureChanged(filter, true);
+                getModel()._fireTableStructureChanged(filter, false);
             } else {
                 getModel().clear();
             }
