@@ -72,6 +72,19 @@ public class DialogBasicCaptchaSolver extends ChallengeSolver<String> {
         configresolutor = JsonConfig.create(CaptchaResolutorCaptchaSettings.class);
     }
 
+    /**
+     * returns true if the dialog solver waits for invisible solvers like captcha exchange services
+     * 
+     * @return
+     */
+    public boolean hasToWaitForInvisibleSolvers() {
+        if (configDBC.isEnabled() && config.getCaptchaDialogDBCTimeout() > 0) return true;
+        if (config9kw.isEnabled() && config.getCaptchaDialog9kwTimeout() > 0) return true;
+        if (configcbh.isEnabled() && config.getCaptchaDialogCaptchaBroptherhoodTimeout2() > 0) return true;
+        if (configresolutor.isEnabled() && config.getCaptchaDialogResolutorCaptchaTimeout() > 0) return true;
+        return false;
+    }
+
     @Override
     public void solve(final SolverJob<String> job) throws InterruptedException, SkipException {
         synchronized (this) {

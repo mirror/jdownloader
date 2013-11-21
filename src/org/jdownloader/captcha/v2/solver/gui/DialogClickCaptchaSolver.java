@@ -60,6 +60,18 @@ public class DialogClickCaptchaSolver extends ChallengeSolver<ClickedPoint> {
         }
     }
 
+    /**
+     * returns true if the dialog solver waits for invisible solvers like captcha exchange services
+     * 
+     * @return
+     */
+    public boolean hasToWaitForInvisibleSolvers() {
+
+        if (config9kw.isEnabled() && config.getCaptchaDialog9kwTimeout() > 0) return true;
+
+        return false;
+    }
+
     @Override
     public void solve(SolverJob<ClickedPoint> solverJob) throws InterruptedException, SkipException {
         synchronized (DialogBasicCaptchaSolver.getInstance()) {
