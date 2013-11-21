@@ -54,6 +54,7 @@ file_exists_not=El archivo no existe
 filename=Nombre del Archivo
 files2=archivo(s)
 files_and_folders=archivo(s) o carpeta(s)
+final_delete=Eliminar archivos finalizados
 folders=carpeta(s)
 hoster=Servidor
 local=Estado del Archivo
