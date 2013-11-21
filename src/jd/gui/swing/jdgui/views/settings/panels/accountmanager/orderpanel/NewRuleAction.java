@@ -1,6 +1,5 @@
 package jd.gui.swing.jdgui.views.settings.panels.accountmanager.orderpanel;
 
-import java.awt.Component;
 import java.awt.event.ActionEvent;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -9,17 +8,11 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import javax.swing.JLabel;
-import javax.swing.JList;
-import javax.swing.ListCellRenderer;
-
 import jd.config.Property;
 import jd.controlling.AccountController;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 
-import org.appwork.utils.locale._AWU;
-import org.appwork.utils.swing.dialog.ComboBoxDialog;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
@@ -47,35 +40,12 @@ public class NewRuleAction extends AbstractAddAction {
         for (AccountUsageRule aur : HosterRuleController.getInstance().list()) {
             list.remove(DomainInfo.getInstance(aur.getHoster()));
         }
-        ComboBoxDialog d = new ComboBoxDialog(0, _GUI._.NewRuleAction_actionPerformed_choose_hoster_(), _GUI._.NewRuleAction_actionPerformed_choose_hoster_message(), list.toArray(new DomainInfo[] {}), 0, null, _AWU.T.lit_continue(), null, null) {
-            protected ListCellRenderer getRenderer(final ListCellRenderer orgRenderer) {
-                // TODO Auto-generated method stub
-                return new ListCellRenderer() {
 
-                    @Override
-                    public Component getListCellRendererComponent(JList list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
-                        if (value == null) return (JLabel) orgRenderer.getListCellRendererComponent(list, "", index, isSelected, cellHasFocus);
-
-                        try {
-
-                            JLabel ret = (JLabel) orgRenderer.getListCellRendererComponent(list, ((DomainInfo) value).getTld(), index, isSelected, cellHasFocus);
-                            ret.setIcon(((DomainInfo) value).getFavIcon());
-
-                            return ret;
-                        } catch (Exception e) {
-                            e.printStackTrace();
-                            JLabel ret = (JLabel) orgRenderer.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
-
-                            return ret;
-                        }
-                    }
-                };
-            }
-        };
+        ChooseHosterDialog d = new ChooseHosterDialog(_GUI._.NewRuleAction_actionPerformed_choose_hoster_message(), list.toArray(new DomainInfo[] {}));
 
         try {
             Dialog.getInstance().showDialog(d);
-            DomainInfo di = list.get(d.getSelectedIndex());
+            DomainInfo di = d.getSelectedItem();
             AccountUsageRule rule = new AccountUsageRule(di.getTld());
             rule.setEnabled(true);
             HosterRuleController.getInstance().add(rule);
