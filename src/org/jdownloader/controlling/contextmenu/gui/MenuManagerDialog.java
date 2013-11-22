@@ -10,6 +10,7 @@ import java.io.UnsupportedEncodingException;
 
 import javax.swing.Box;
 import javax.swing.JComponent;
+import javax.swing.JScrollPane;
 import javax.swing.event.TreeSelectionEvent;
 import javax.swing.event.TreeSelectionListener;
 import javax.swing.filechooser.FileFilter;
@@ -361,7 +362,7 @@ public class MenuManagerDialog extends AbstractDialog<Object> implements TreeSel
     @Override
     public JComponent layoutDialogContent() {
         setMinimumSize(new Dimension(550, 400));
-        final MigPanel panel = new MigPanel("ins 2,wrap 2", "[grow,fill][]", "[grow,fill][]");
+        final MigPanel panel = new MigPanel("ins 2,wrap 2", "[grow,fill][fill]", "[grow,fill][]");
         panel.setOpaque(false);
 
         LAFOptions.getInstance().applyPanelBackground((JComponent) getDialog().getContentPane());
@@ -390,9 +391,8 @@ public class MenuManagerDialog extends AbstractDialog<Object> implements TreeSel
         panel.add(sp);
         infoPanel = new InfoPanel(this);
         LAFOptions.getInstance().applyPanelBackground(infoPanel);
-        sp = new HeaderScrollPane(infoPanel) {
-
-        };
+        sp = new HeaderScrollPane(infoPanel);
+        sp.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
         sp.setColumnHeaderView(new OptionsPaneHeader());
         panel.add(sp);
 

@@ -73,6 +73,7 @@ import org.jdownloader.controlling.contextmenu.SeperatorData;
 import org.jdownloader.controlling.contextmenu.gui.ExtPopupMenu;
 import org.jdownloader.controlling.contextmenu.gui.MenuBuilder;
 import org.jdownloader.extensions.ExtensionNotLoadedException;
+import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.toolbar.MenuManagerMainToolbar;
 import org.jdownloader.gui.toolbar.action.AbstractToolBarAction;
 import org.jdownloader.gui.views.downloads.QuickSettingsPopup;
@@ -240,7 +241,7 @@ public class MainToolBar extends JToolBar implements MouseListener, DownloadWatc
                         {
                             setTooltipText(menudata.getName());
                             setName(menudata.getName());
-                            putValue(AbstractAction.LARGE_ICON_KEY, createDropdownImage(menudata.getIconKey()));
+                            putValue(AbstractAction.LARGE_ICON_KEY, createDropdownImage(validateIconKey(menudata.getIconKey())));
                         }
 
                         @Override
@@ -398,6 +399,8 @@ public class MainToolBar extends JToolBar implements MouseListener, DownloadWatc
 
                     if (StringUtils.isNotEmpty(menudata.getShortcut()) && KeyStroke.getKeyStroke(menudata.getShortcut()) != null) {
                         action.setAccelerator(KeyStroke.getKeyStroke(menudata.getShortcut()));
+                    } else if (MenuItemData.EMPTY_NAME.equals(menudata.getShortcut())) {
+                        action.setAccelerator(null);
                     }
                     bt = null;
                     if (action instanceof AbstractToolBarAction) {
@@ -413,7 +416,7 @@ public class MainToolBar extends JToolBar implements MouseListener, DownloadWatc
                             bt = new JToggleButton(action);
                             ImageIcon icon;
 
-                            bt.setIcon(icon = NewTheme.I().getCheckBoxImage(action.getIconKey(), false, 24));
+                            bt.setIcon(icon = NewTheme.I().getCheckBoxImage(validateIconKey(action.getIconKey()), false, 24));
                             bt.setRolloverIcon(icon);
                             bt.setSelectedIcon(icon = NewTheme.I().getCheckBoxImage(action.getIconKey(), true, 24));
                             bt.setRolloverSelectedIcon(icon);
@@ -423,7 +426,7 @@ public class MainToolBar extends JToolBar implements MouseListener, DownloadWatc
                             action.requestUpdate(MainToolBar.this);
                             bt = new ExtButton(action);
 
-                            bt.setIcon(NewTheme.I().getIcon(action.getIconKey(), 24));
+                            bt.setIcon(NewTheme.I().getIcon(validateIconKey(action.getIconKey()), 24));
                             add(bt, "width 32!,height 32!,hidemode 3");
                             bt.setHideActionText(true);
                         }
@@ -465,7 +468,7 @@ public class MainToolBar extends JToolBar implements MouseListener, DownloadWatc
                     final JComponent item = menudata.createItem();
                     if (StringUtils.isNotEmpty(menudata.getIconKey())) {
                         if (item instanceof AbstractButton) {
-                            ((AbstractButton) item).setIcon(NewTheme.I().getIcon(menudata.getIconKey(), 24));
+                            ((AbstractButton) item).setIcon(NewTheme.I().getIcon(validateIconKey(menudata.getIconKey()), 24));
                         }
                     }
 
@@ -528,8 +531,15 @@ public class MainToolBar extends JToolBar implements MouseListener, DownloadWatc
 
     }
 
-    protected ImageIcon createDropdownImage(String iconKey) {
+    protected String validateIconKey(String key) {
 
+        if (StringUtils.isEmpty(key) || !NewTheme.I().hasIcon(key)) return IconKey.ICON_QUESTION;
+        return key;
+
+    }
+
+    protected ImageIcon createDropdownImage(String iconKey) {
+        if (StringUtils.equals(iconKey, MenuItemData.EMPTY_NAME)) iconKey = IconKey.ICON_QUESTION;
         Image back = NewTheme.I().getImage(iconKey, 20, false);
         return createDropdownImage(back);
 

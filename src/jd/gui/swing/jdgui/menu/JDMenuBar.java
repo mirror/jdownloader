@@ -92,6 +92,8 @@ public class JDMenuBar extends JMenuBar implements MouseListener {
 
                     if (StringUtils.isNotEmpty(inst.getShortcut()) && KeyStroke.getKeyStroke(inst.getShortcut()) != null) {
                         action.setAccelerator(KeyStroke.getKeyStroke(inst.getShortcut()));
+                    } else if (MenuItemData.EMPTY_NAME.equals(inst.getShortcut())) {
+                        action.setAccelerator(null);
                     }
 
                     AbstractButton ret;
@@ -144,9 +146,8 @@ public class JDMenuBar extends JMenuBar implements MouseListener {
                     if (StringUtils.isNotEmpty(inst.getName())) {
                         ret.setText(inst.getName());
                     }
-                    if (StringUtils.isNotEmpty(inst.getIconKey())) {
-                        ret.setIcon(NewTheme.I().getIcon(inst.getIconKey(), 20));
-                    }
+
+                    ret.setIcon(MenuItemData.getIcon(inst.getIconKey(), 20));
 
                     if (ret instanceof AbstractButton) {
                         applyMnemonic(root, (AbstractButton) ret);

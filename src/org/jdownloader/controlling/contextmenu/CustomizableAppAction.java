@@ -140,6 +140,14 @@ public abstract class CustomizableAppAction extends AppAction {
             }
 
         }
+
+        if (iconKey != null && LARGE_ICON_KEY.equalsIgnoreCase(key)) {
+            if (MenuItemData.EMPTY_NAME.equals(iconKey)) return null;
+            return NewTheme.I().getIcon(iconKey, size);
+        } else if (iconKey != null && SMALL_ICON.equalsIgnoreCase(key)) {
+            if (MenuItemData.EMPTY_NAME.equals(iconKey)) return null;
+            return NewTheme.I().getIcon(iconKey, size);
+        }
         return super.getValue(key);
     }
 

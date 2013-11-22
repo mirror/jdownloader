@@ -2,7 +2,10 @@ package org.jdownloader.gui.toolbar.action;
 
 import javax.swing.AbstractButton;
 
+import org.appwork.utils.StringUtils;
 import org.jdownloader.controlling.contextmenu.CustomizableAppAction;
+import org.jdownloader.controlling.contextmenu.MenuItemData;
+import org.jdownloader.gui.IconKey;
 import org.jdownloader.images.NewTheme;
 
 public abstract class AbstractToolBarAction extends CustomizableAppAction {
@@ -14,6 +17,12 @@ public abstract class AbstractToolBarAction extends CustomizableAppAction {
 
     protected String createMnemonic() {
         return "-";
+    }
+
+    public String getIconKey() {
+        if (StringUtils.isEmpty(super.getIconKey())) return IconKey.ICON_QUESTION;
+        if (MenuItemData.EMPTY_NAME.equals(super.getIconKey())) return IconKey.ICON_QUESTION;
+        return iconKey;
     }
 
     public Object getValue(String key) {

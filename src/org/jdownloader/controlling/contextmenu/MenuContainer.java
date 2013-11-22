@@ -9,7 +9,6 @@ import org.appwork.exceptions.WTFException;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.controlling.contextmenu.gui.ExtMenuImpl;
-import org.jdownloader.images.NewTheme;
 
 public class MenuContainer extends MenuItemData {
     public MenuContainer() {
@@ -58,7 +57,7 @@ public class MenuContainer extends MenuItemData {
 
         }
         if (getIconKey() != null) {
-            subMenu.setIcon(NewTheme.I().getIcon(getIconKey(), 18));
+            subMenu.setIcon(MenuItemData.getIcon(getIconKey(), 18));
         }
 
         return subMenu;

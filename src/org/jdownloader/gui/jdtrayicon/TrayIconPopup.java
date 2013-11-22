@@ -200,7 +200,7 @@ public final class TrayIconPopup extends ExtJFrame implements MouseListener {
 
                         }
                     });
-                    bt.setIcon(NewTheme.I().getIcon(menudata.getIconKey(), ICON_SIZE));
+                    bt.setIcon(MenuItemData.getIcon(menudata.getIconKey(), ICON_SIZE));
                     bt.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
                     bt.setFocusPainted(false);
                     bt.setHorizontalAlignment(JButton.LEFT);
@@ -259,33 +259,7 @@ public final class TrayIconPopup extends ExtJFrame implements MouseListener {
                         }
                     });
                     content.add(bt);
-                    // bt = new ExtButton(new AppAction() {
-                    // {
-                    // setTooltipText(menudata.getName());
-                    // setName(menudata.getName());
-                    // putValue(AbstractAction.LARGE_ICON_KEY, createDropdownImage(menudata.getIconKey()));
-                    // }
-                    //
-                    // @Override
-                    // public void actionPerformed(ActionEvent e) {
-                    // ExtPopupMenu root = new ExtPopupMenu();
-                    //
-                    // new MenuBuilder(MainToolbarManager.getInstance(), root, null, (MenuContainer) menudata).run();
-                    // Object src = e.getSource();
-                    // if (e.getSource() instanceof Component) {
-                    // Component button = (Component) e.getSource();
-                    // Dimension prefSize = root.getPreferredSize();
-                    // int[] insets = LAFOptions.getInstance().getPopupBorderInsets();
-                    // root.show(button, -insets[1], button.getHeight() - insets[0]);
-                    //
-                    // }
-                    // }
-                    //
-                    // });
-                    //
-                    // last = menudata;
-                    // add(bt, "width 32!,height 32!");
-                    // bt.setHideActionText(true);
+
                     continue;
                 } else if (menudata.getActionData() != null) {
 
@@ -293,6 +267,8 @@ public final class TrayIconPopup extends ExtJFrame implements MouseListener {
                     if (!action.isVisible()) continue;
                     if (StringUtils.isNotEmpty(menudata.getShortcut()) && KeyStroke.getKeyStroke(menudata.getShortcut()) != null) {
                         action.setAccelerator(KeyStroke.getKeyStroke(menudata.getShortcut()));
+                    } else if (MenuItemData.EMPTY_NAME.equals(menudata.getShortcut())) {
+                        action.setAccelerator(null);
                     }
                     content.add(getMenuEntry(action));
                     last = menudata;
@@ -301,7 +277,7 @@ public final class TrayIconPopup extends ExtJFrame implements MouseListener {
                     final JComponent item = menudata.createItem();
                     if (StringUtils.isNotEmpty(menudata.getIconKey())) {
                         if (item instanceof AbstractButton) {
-                            ((AbstractButton) item).setIcon(NewTheme.I().getIcon(menudata.getIconKey(), ICON_SIZE));
+                            ((AbstractButton) item).setIcon(MenuItemData.getIcon(menudata.getIconKey(), ICON_SIZE));
                         }
                     }
                     content.add(item, "");

@@ -19,9 +19,9 @@ import org.jdownloader.images.NewTheme;
  */
 public abstract class AppAction extends BasicAction {
 
-    private String               iconKey;
+    protected String             iconKey;
 
-    private int                  size;
+    protected int                size;
 
     private AppActionEventSender eventSender;
 

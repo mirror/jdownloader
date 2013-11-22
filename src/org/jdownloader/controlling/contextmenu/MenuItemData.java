@@ -7,6 +7,7 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 
+import javax.swing.Icon;
 import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JComponent;
 import javax.swing.JMenuItem;
@@ -202,6 +203,8 @@ public class MenuItemData implements Storable, MinTimeWeakReferenceCleanup {
         if (!action.isVisible()) return null;
         if (StringUtils.isNotEmpty(getShortcut())) {
             action.setAccelerator(KeyStroke.getKeyStroke(getShortcut()));
+        } else if (MenuItemData.EMPTY_NAME.equals(getShortcut())) {
+            action.setAccelerator(null);
         }
 
         if (action instanceof ComponentProviderInterface) { return ((ComponentProviderInterface) action).createComponent(this); }
@@ -213,7 +216,7 @@ public class MenuItemData implements Storable, MinTimeWeakReferenceCleanup {
             ret.setText(name);
         }
         if (StringUtils.isNotEmpty(iconKey)) {
-            ret.setIcon(NewTheme.I().getIcon(iconKey, 20));
+            ret.setIcon(getIcon(iconKey, 20));
         }
         return ret;
 
@@ -393,6 +396,12 @@ public class MenuItemData implements Storable, MinTimeWeakReferenceCleanup {
     @Override
     public void onMinTimeWeakReferenceCleanup(MinTimeWeakReference<?> minTimeWeakReference) {
         action.compareAndSet((MinTimeWeakReference<CustomizableAppAction>) minTimeWeakReference, null);
+    }
+
+    public static Icon getIcon(String key, int size) {
+        if (StringUtils.isEmpty(key)) return null;
+        if (StringUtils.equals(key, EMPTY_NAME)) return null;
+        return NewTheme.I().getIcon(key, size);
     }
 
 }

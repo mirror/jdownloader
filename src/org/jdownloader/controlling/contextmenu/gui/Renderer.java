@@ -68,9 +68,9 @@ public class Renderer implements TreeCellRenderer {
         String name = mid.getName();
         StringBuilder tt = new StringBuilder();
         Icon icon = null;
-        if (mid.getIconKey() != null) {
-            icon = (NewTheme.I().getIcon(mid.getIconKey(), 20));
-        }
+
+        icon = (MenuItemData.getIcon(mid.getIconKey(), 20));
+
         if (mid._isValidated()) {
 
             String desc = mid._getDescription();
@@ -122,7 +122,9 @@ public class Renderer implements TreeCellRenderer {
                         icon = NewTheme.I().getIcon(mid.getActionData().getIconKey(), 18);
                     }
                 }
-
+                if (MenuItemData.EMPTY_NAME.equals(mid.getIconKey())) {
+                    icon = null;
+                }
                 if (StringUtils.isEmpty(name)) {
 
                     name = mid.getActionData().getClazzName();

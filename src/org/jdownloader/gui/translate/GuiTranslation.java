@@ -2311,11 +2311,11 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "(%s2) %s1" })
     String InfoPanel_updateInfo_header_actionlabel(String name, String infoPanel_update_action);
 
-    @Default(lngs = { "en" }, values = { "Custom name" })
-    String InfoPanel_InfoPanel_itemname_();
+    @Default(lngs = { "en" }, values = { "Name" })
+    String InfoPanel_InfoPanel_itemname();
 
-    @Default(lngs = { "en" }, values = { "Custom Icon" })
-    String InfoPanel_InfoPanel_icon();
+    @Default(lngs = { "en" }, values = { "Icon" })
+    String InfoPanel_InfoPanel_icon2();
 
     @Default(lngs = { "en" }, values = { "Add %s1" })
     String AddGenericItem_AddGenericItem_(String name);
@@ -2386,11 +2386,11 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Main Menu" })
     String MainMenuManager_getName();
 
-    @Default(lngs = { "en" }, values = { "Custom Shortcut" })
+    @Default(lngs = { "en" }, values = { "Shortcut" })
     String InfoPanel_InfoPanel_shortcuts();
 
     @Default(lngs = { "en" }, values = { "Click here & press a shortcut..." })
-    String InfoPanel_InfoPanel_shortcuthelp();
+    String InfoPanel_InfoPanel_shortcuthelp2();
 
     @Default(lngs = { "en" }, values = { "Enter a name for this action..." })
     String InfoPanel_InfoPanel_customname_help();

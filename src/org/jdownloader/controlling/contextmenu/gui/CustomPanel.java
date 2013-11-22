@@ -84,7 +84,7 @@ public class CustomPanel extends MigPanel {
                 }
             } else if (gs.getType() == Modifier.class) {
                 final ExtTextField shortcut = new ExtTextField();
-                shortcut.setHelpText(_GUI._.InfoPanel_InfoPanel_shortcuthelp());
+                shortcut.setHelpText(_GUI._.InfoPanel_InfoPanel_shortcuthelp2());
                 shortcut.setEditable(false);
                 String value = (String) actionData.fetchSetup(gs.getKey());
                 Modifier mod = null;

@@ -149,6 +149,8 @@ public class CustomizeableActionBar extends MigPanel implements PropertyChangeLi
         if (!action.isVisible()) return;
         if (StringUtils.isNotEmpty(menudata.getShortcut())) {
             action.setAccelerator(KeyStroke.getKeyStroke(menudata.getShortcut()));
+        } else if (MenuItemData.EMPTY_NAME.equals(menudata.getShortcut())) {
+            action.setAccelerator(null);
         }
 
         AbstractButton bt = null;
@@ -174,7 +176,7 @@ public class CustomizeableActionBar extends MigPanel implements PropertyChangeLi
     }
 
     private void addContainer(MenuItemData menudata) {
-        if (StringUtils.isEmpty(menudata.getName()) && StringUtils.isEmpty(menudata.getIconKey())) {
+        if (StringUtils.isEmpty(menudata.getName()) && StringUtils.isEmpty(validateIconKey(menudata.getIconKey()))) {
 
             ExtButton bt = new ExtButton(createPopupAction(menudata, getComponentCount() > 0 ? getComponent(getComponentCount() - 1) : null)) {
                 /**
@@ -198,6 +200,12 @@ public class CustomizeableActionBar extends MigPanel implements PropertyChangeLi
             }
         }
 
+    }
+
+    private String validateIconKey(String iconKey) {
+        if (StringUtils.isEmpty(iconKey)) return "";
+        if (StringUtils.equals(iconKey, MenuItemData.EMPTY_NAME)) return "";
+        return iconKey;
     }
 
     protected ImageIcon createDropdownImage(boolean b, Image back) {
@@ -291,11 +299,11 @@ public class CustomizeableActionBar extends MigPanel implements PropertyChangeLi
 
             private void updateIcon(boolean b) {
 
-                if (StringUtils.isEmpty(menudata.getIconKey())) {
+                if (StringUtils.isEmpty(validateIconKey(menudata.getIconKey()))) {
                     setSmallIcon(NewTheme.I().getIcon(b ? IconKey.ICON_POPUPBUTTON : IconKey.ICON_POPDOWNBUTTON, -1));
 
                 } else {
-                    setSmallIcon(createDropdownImage(b, NewTheme.I().getImage(menudata.getIconKey(), 18)));
+                    setSmallIcon(createDropdownImage(b, NewTheme.I().getImage(validateIconKey(menudata.getIconKey()), 18)));
                 }
             }
         };
