@@ -102,7 +102,7 @@ public abstract class ConfigPanel extends SwitchPanel {
         }
         if (useScrollPane) {
             JScrollPane scroll = new JScrollPane(panel);
-            scroll.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+            // scroll.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
             scroll.setBorder(null);
             scroll.setOpaque(false);
             scroll.getViewport().setOpaque(false);

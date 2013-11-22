@@ -75,10 +75,13 @@ public class GUIConfigEntry implements GuiConfigListener, ActionListener, Change
 
         if (configEntry.getLabel() != null && configEntry.getLabel().trim().length() > 0) {
             String text = configEntry.getLabel().trim();
-            if (text.contains("\r\n")) {
+            if (!text.startsWith("<html>")) {
+                // html jabels do a better line wrapping
                 text = "<html>" + text.replaceAll("\r\n", "<br>") + "</html>";
+
             }
             decoration = new JLabel(text);
+
         }
 
         switch (configEntry.getType()) {
