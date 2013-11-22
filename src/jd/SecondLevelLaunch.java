@@ -380,8 +380,12 @@ public class SecondLevelLaunch {
                                 if (backup.exists()) backup.delete();
                                 if (vmOption.renameTo(backup)) {
                                     StringBuilder sb = new StringBuilder();
-                                    sb.append("-Xmx256m\r\n");
-                                    if (CrossSystem.isWindows()) sb.append("-Dsun.java2d.d3d=false\r\n");
+                                    if (CrossSystem.isWindows()) {
+                                        sb.append("-Xmx256m\r\n");
+                                        sb.append("-Dsun.java2d.d3d=false\r\n");
+                                    } else if (CrossSystem.isLinux()) {
+                                        sb.append("-Xmx256m\n\n");
+                                    }
                                     if (vmOption.exists() == false || vmOption.delete()) IO.writeStringToFile(vmOption, sb.toString());
                                 }
                             }
@@ -399,8 +403,12 @@ public class SecondLevelLaunch {
                             }
                             File vmOption = new File(launcher);
                             StringBuilder sb = new StringBuilder();
-                            sb.append("-Xmx256m\r\n");
-                            if (CrossSystem.isWindows()) sb.append("-Dsun.java2d.d3d=false\r\n");
+                            if (CrossSystem.isWindows()) {
+                                sb.append("-Xmx256m\r\n");
+                                sb.append("-Dsun.java2d.d3d=false\r\n");
+                            } else if (CrossSystem.isLinux()) {
+                                sb.append("-Xmx256m\n\n");
+                            }
                             if (vmOption.exists() == false || vmOption.delete()) IO.writeStringToFile(vmOption, sb.toString());
                         }
                     }
