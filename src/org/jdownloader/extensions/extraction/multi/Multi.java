@@ -152,19 +152,16 @@ public class Multi extends IExtraction {
         } else if (file.matches(REGEX_ENDS_WITH_DOT_RAR)) {
             pattern = "^" + Regex.escape(file.replaceAll("(?i)\\.rar$", "")) + REGEX_FIND_PART_EXTENSION_AND_PARTNUMBER;
             archive.setArchiveFiles(link.createPartFileList(file, pattern));
-
         } else if (file.matches(REGEX_ANY_DOT_R19_FILE)) {
             // matches.add(link);
             pattern = "^" + Regex.escape(file.replaceAll("(?i)\\.r\\d+$", "")) + "\\.(r\\d+|rar)$";
             archive.setArchiveFiles(link.createPartFileList(file, pattern));
             canBeSingleType = false;
-
         } else if (file.matches(REGEX_SINGLE_7ZIP)) {
             /* single part 7zip */
             pattern = "^" + Regex.escape(file.replaceAll("(?i)\\.7z$", "")) + _7Z$;
             archive.setArchiveFiles(link.createPartFileList(file, pattern));
             canBeSingleType = true;
-
         } else if (file.matches(REGEX_MULTI_ZIP_PART)) {
             pattern = "^" + Regex.escape(file.replaceAll(REGEX_ZIP_PART_REPLACE, "")) + "(\\.z\\d+$|\\.zip)";
             List<ArchiveFile> files = link.createPartFileList(file, pattern);
@@ -189,7 +186,6 @@ public class Multi extends IExtraction {
         } else {
             throw new ArchiveException("Unsupported Archive: " + link.getFilePath());
         }
-
         if (archive.getArchiveFiles().size() == 1 && canBeSingleType) {
             archive.setType(ArchiveType.SINGLE_FILE);
             archive.setFirstArchiveFile(link);
@@ -203,6 +199,7 @@ public class Multi extends IExtraction {
                         /* find the part with lowest number */
                         String newPartNumber = new Regex(l.getFilePath(), REGEX_FIND_PARTNUMBER_MULTIRAR).getMatch(0);
                         String oldPartNumber = new Regex(archive.getFirstArchiveFile().getFilePath(), REGEX_FIND_PARTNUMBER_MULTIRAR).getMatch(0);
+                        if (newPartNumber == null || oldPartNumber == null) { throw new ArchiveException("Regex issue? Type:" + archive.getType() + "|File1:" + l.getFilePath() + "|File2:" + archive.getFirstArchiveFile().getFilePath()); }
                         if (Integer.parseInt(newPartNumber) < Integer.parseInt(oldPartNumber)) {
                             archive.setFirstArchiveFile(l);
                         }
@@ -1027,8 +1024,7 @@ public class Multi extends IExtraction {
                                 ExtractOperationResult result = item.extractSlow(signatureOutStream, password);
                                 if (ExtractOperationResult.DATAERROR.equals(result)) {
                                     /*
-                                     * 100% wrong password, DO NOT CONTINUE as unrar already might have cleaned up (nullpointer in native ->
-                                     * crash jvm)
+                                     * 100% wrong password, DO NOT CONTINUE as unrar already might have cleaned up (nullpointer in native -> crash jvm)
                                      */
                                     return false;
                                 }

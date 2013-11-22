@@ -247,7 +247,7 @@ public class ShareOnlineBiz extends PluginForHost {
                     }
                 }
             }
-            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 15 * 60 * 1000l);
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ThreadsError", 3 * 60 * 1000l);
         }
         if (url.contains("failure/chunks")) {
             /* max chunks reached */

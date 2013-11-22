@@ -344,8 +344,8 @@ public class RAFChunk extends Thread {
             }
             logger.info("ExternalAbort: " + isExternalyAborted());
             long endPosition = endByte;
-            if (endPosition < 0) endPosition = dl.getFileSize();
-            if (endPosition > 0 && getCurrentBytesPosition() < endPosition) {
+            if (endPosition < 0) endPosition = downloadLink.getVerifiedFileSize();
+            if (endPosition >= 0 && getCurrentBytesPosition() < endPosition) {
                 logger.warning("Download not finished. Loaded until now: " + getCurrentBytesPosition() + "/" + endPosition);
                 dl.error(new PluginException(LinkStatus.ERROR_DOWNLOAD_INCOMPLETE, _JDT._.download_error_message_incomplete()));
             }
@@ -383,8 +383,9 @@ public class RAFChunk extends Thread {
             dl.error(new PluginException(LinkStatus.ERROR_RETRY, Exceptions.getStackTrace(e)));
         } finally {
             try {
-                inputStream.close();
-            } catch (Throwable e) {
+                inputStream.setHandler(null);
+                dl.getManagedConnetionHandler().removeThrottledConnection(inputStream);
+            } catch (final Throwable ignore) {
             } finally {
                 inputStream = null;
             }
@@ -469,7 +470,9 @@ public class RAFChunk extends Thread {
     public void run0() {
         try {
             logger.finer("Start Chunk " + getID() + " : " + startByte + " - " + endByte);
-            if (startByte >= endByte && endByte > 0 || startByte >= dl.getFileSize() && endByte > 0) return;
+            long endCheck = endByte;
+            if (endCheck < 0) endCheck = downloadLink.getVerifiedFileSize();
+            if (startByte >= endCheck && endCheck >= 0) return;
             if (dl.getChunkNum() > 1) {
                 /* we requested multiple chunks */
                 connection = copyConnection(getOriginalConnection());
@@ -479,7 +482,7 @@ public class RAFChunk extends Thread {
                         return;
                     }
                     /* copy failed!, lets check if this is the last chunk */
-                    if (startByte >= dl.getFileSize() && dl.getFileSize() > 0) {
+                    if (startByte >= endCheck && endCheck >= 0) {
                         logger.finer("Is no error. Last chunk is just already finished");
                         return;
                     }
@@ -493,8 +496,8 @@ public class RAFChunk extends Thread {
                     logger.severe("ExternalyAborted: no copyConnection for " + getID());
                     return;
                 }
-                // workaround fuer fertigen endchunk
-                if (startByte >= dl.getFileSize() && dl.getFileSize() > 0) {
+                /* workaround for last chunk already finished */
+                if (startByte >= endCheck && endCheck >= 0) {
                     logger.finer("Is no error. Last chunk is just already finished");
                     return;
                 }
@@ -503,7 +506,6 @@ public class RAFChunk extends Thread {
                     logger.severe("ERROR Chunk (connection copy failed) " + getID());
                     return;
                 }
-
                 if (startByte > 0 && (connection.getHeaderField("Content-Range") == null || connection.getHeaderField("Content-Range").length() == 0)) {
                     dl.error(new PluginException(LinkStatus.ERROR_DOWNLOAD_INCOMPLETE, _JDT._.download_error_message_rangeheaders()));
                     logger.severe("ERROR Chunk (no range header response)" + getID() + connection.toString());
