@@ -787,7 +787,7 @@ public class OldRAFDownload extends DownloadInterface {
 
         if (renameOkay) {
 
-            downloadable.logStats(outputCompleteFile, chunks.size());
+            downloadable.logStats(outputCompleteFile, chunks.size(), System.currentTimeMillis() - getStartTimeStamp());
 
             /* save absolutepath as final location property */
             downloadable.setFinalFileOutput(outputCompleteFile.getAbsolutePath());
@@ -803,6 +803,8 @@ public class OldRAFDownload extends DownloadInterface {
             } catch (final Throwable e) {
                 LogSource.exception(logger, e);
             }
+        } else {
+            error(new PluginException(LinkStatus.ERROR_DOWNLOAD_FAILED, _JDT._.system_download_errors_couldnotrename(), LinkStatus.VALUE_LOCAL_IO_ERROR));
         }
 
         return result;

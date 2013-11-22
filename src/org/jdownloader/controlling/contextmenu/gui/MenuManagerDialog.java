@@ -348,7 +348,8 @@ public class MenuManagerDialog extends AbstractDialog<Object> implements TreeSel
 
     @Override
     protected int getPreferredHeight() {
-        return 600;
+
+        return 550;
     }
 
     @Override
@@ -359,6 +360,7 @@ public class MenuManagerDialog extends AbstractDialog<Object> implements TreeSel
     // @Override
     @Override
     public JComponent layoutDialogContent() {
+        setMinimumSize(new Dimension(550, 400));
         final MigPanel panel = new MigPanel("ins 2,wrap 2", "[grow,fill][]", "[grow,fill][]");
         panel.setOpaque(false);
 
@@ -389,11 +391,7 @@ public class MenuManagerDialog extends AbstractDialog<Object> implements TreeSel
         infoPanel = new InfoPanel(this);
         LAFOptions.getInstance().applyPanelBackground(infoPanel);
         sp = new HeaderScrollPane(infoPanel) {
-            public Dimension getPreferredSize() {
-                Dimension ret = super.getPreferredSize();
-                ret.width = Math.max(ret.width, 300);
-                return ret;
-            }
+
         };
         sp.setColumnHeaderView(new OptionsPaneHeader());
         panel.add(sp);

@@ -7,18 +7,16 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Logger;
 
 import jd.controlling.downloadcontroller.DownloadWatchDog;
+import jd.controlling.downloadcontroller.DownloadWatchDog.DISKSPACECHECK;
 import jd.controlling.downloadcontroller.ExceptionRunnable;
 import jd.controlling.downloadcontroller.FileIsLockedException;
 import jd.controlling.downloadcontroller.ManagedThrottledConnectionHandler;
 import jd.controlling.downloadcontroller.SingleDownloadController;
-import jd.controlling.downloadcontroller.DownloadWatchDog.DISKSPACECHECK;
 import jd.http.Browser;
 import jd.plugins.DownloadLink;
-import jd.plugins.LinkStatus;
-import jd.plugins.PluginException;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginProgress;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.download.raf.HashResult;
 
 import org.appwork.utils.IO;
@@ -30,18 +28,17 @@ import org.jdownloader.downloadcore.v15.Downloadable;
 import org.jdownloader.downloadcore.v15.HashInfo;
 import org.jdownloader.plugins.FinalLinkState;
 import org.jdownloader.statistics.StatsManager;
-import org.jdownloader.translate._JDT;
 
 final class DownloadLinkDownloadable implements Downloadable {
     /**
      * 
      */
-    private final RAFDownload rafDownload;
+
     private final DownloadLink downloadLink;
     private PluginForHost      plugin;
 
-    DownloadLinkDownloadable(RAFDownload rafDownload, DownloadLink downloadLink) {
-        this.rafDownload = rafDownload;
+    DownloadLinkDownloadable(DownloadLink downloadLink) {
+
         this.downloadLink = downloadLink;
         plugin = downloadLink.getLivePlugin();
     }
@@ -315,8 +312,8 @@ final class DownloadLinkDownloadable implements Downloadable {
         /* Fallback */
         if (renameOkay == false) {
             /* rename failed, lets try fallback */
-            this.rafDownload.logger.severe("Could not rename file " + outputPartFile + " to " + outputCompleteFile);
-            this.rafDownload.logger.severe("Try copy workaround!");
+            getLogger().severe("Could not rename file " + outputPartFile + " to " + outputCompleteFile);
+            getLogger().severe("Try copy workaround!");
             try {
                 DISKSPACECHECK freeSpace = DownloadWatchDog.getInstance().checkFreeDiskSpace(outputPartFile.getParentFile(), downloadLink.getDownloadLinkController(), outputPartFile.length());
                 if (DISKSPACECHECK.FAILED.equals(freeSpace)) throw new Throwable("not enough diskspace free to copy part to complete file");
@@ -324,17 +321,17 @@ final class DownloadLinkDownloadable implements Downloadable {
                 renameOkay = true;
                 outputPartFile.delete();
             } catch (Throwable e) {
-                LogSource.exception(this.rafDownload.logger, e);
+                LogSource.exception(getLogger(), e);
                 /* error happened, lets delete complete file */
                 if (outputCompleteFile.exists() && outputCompleteFile.length() != outputPartFile.length()) {
                     FileCreationManager.getInstance().delete(outputCompleteFile, null);
                 }
             }
             if (!renameOkay) {
-                this.rafDownload.logger.severe("Copy workaround: :(");
-                this.rafDownload.error(new PluginException(LinkStatus.ERROR_DOWNLOAD_FAILED, _JDT._.system_download_errors_couldnotrename(), LinkStatus.VALUE_LOCAL_IO_ERROR));
+                getLogger().severe("Copy workaround: :(");
+
             } else {
-                this.rafDownload.logger.severe("Copy workaround: :)");
+                getLogger().severe("Copy workaround: :)");
             }
         }
 
@@ -342,12 +339,12 @@ final class DownloadLinkDownloadable implements Downloadable {
     }
 
     @Override
-    public void logStats(File outputCompleteFile, int chunksCount) {
+    public void logStats(File outputCompleteFile, int chunksCount, long downloadTimeInMs) {
         if (StatsManager.I().isEnabled()) {
             long speed = 0;
             long startDelay = -1;
             try {
-                speed = (outputCompleteFile.length() - Math.max(0, downloadLink.getDownloadLinkController().getSizeBefore())) / ((System.currentTimeMillis() - this.rafDownload.getStartTimeStamp()) / 1000);
+                speed = (outputCompleteFile.length() - Math.max(0, downloadLink.getDownloadLinkController().getSizeBefore())) / ((downloadTimeInMs) / 1000);
             } catch (final Throwable e) {
                 // LogSource.exception(logger, e);
             }

@@ -92,7 +92,7 @@ public interface Downloadable {
 
     boolean rename(File from, File to) throws InterruptedException;
 
-    void logStats(File outputCompleteFile, int size);
+    void logStats(File outputCompleteFile, int size, long downloadTimeInMS);
 
     void setFinalFileOutput(String absolutePath);
 

@@ -35,7 +35,7 @@ public class RAFDownload extends OldRAFDownload {
     }
 
     private Downloadable createInterface(final DownloadLink downloadLink) {
-        return new DownloadLinkDownloadable(this, downloadLink);
+        return new DownloadLinkDownloadable(downloadLink);
 
     }
 

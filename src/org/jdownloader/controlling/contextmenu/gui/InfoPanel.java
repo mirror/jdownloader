@@ -16,6 +16,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 
+import javax.swing.Action;
 import javax.swing.Icon;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
@@ -90,6 +91,15 @@ public class InfoPanel extends MigPanel implements ActionListener, Scrollable {
 
     protected KeyStroke       currentShortcut;
     private CustomPanel       customPanel;
+
+    private JLabel            namelabel;
+
+    public Dimension getPreferredSize() {
+        Dimension ret = super.getPreferredSize();
+        ret.width = Math.max(ret.width, 300);
+        return ret;
+        // return super.getPreferredSize();
+    }
 
     public InfoPanel(MenuManagerDialog m) {
         super("ins 5,wrap 2", "[grow,fill][]", "[22!][]");
@@ -177,7 +187,7 @@ public class InfoPanel extends MigPanel implements ActionListener, Scrollable {
             }
         });
         // icon=new JLabel(9)
-        add(label(_GUI._.InfoPanel_InfoPanel_itemname_()));
+        add(namelabel = label(_GUI._.InfoPanel_InfoPanel_itemname_()));
         add(name, "newline");
         add(new JButton(new AppAction() {
             {
@@ -320,17 +330,7 @@ public class InfoPanel extends MigPanel implements ActionListener, Scrollable {
             return;
         }
         visibleBox.setSelected(value.isVisible());
-        if (StringUtils.isNotEmpty(value.getShortcut())) {
-            currentShortcut = KeyStroke.getKeyStroke(value.getShortcut());
-            if (currentShortcut != null) {
-                shortcut.setText(KeyUtils.getShortcutString(currentShortcut, true));
-            } else {
-                shortcut.setText("");
-            }
-        } else {
-            currentShortcut = null;
-            shortcut.setText("");
-        }
+
         MenuItemData mid = ((MenuItemData) value);
         Rectangle bounds = null;
         if (mid.getIconKey() != null) {
@@ -352,6 +352,18 @@ public class InfoPanel extends MigPanel implements ActionListener, Scrollable {
         try {
             if (mid.getActionData() != null) {
                 action = mid.createAction();
+                KeyStroke ks = (KeyStroke) action.getValue(Action.ACCELERATOR_KEY);
+                if (ks != null) {
+                    currentShortcut = ks;
+                    if (currentShortcut != null) {
+                        shortcut.setText(KeyUtils.getShortcutString(currentShortcut, true));
+                    } else {
+                        shortcut.setText("");
+                    }
+                } else {
+                    currentShortcut = null;
+                    shortcut.setText("");
+                }
                 List<ActionContext> sos = action.getSetupObjects();
                 if (sos != null) {
                     ArrayList<Entry> lst = new ArrayList<Entry>();
