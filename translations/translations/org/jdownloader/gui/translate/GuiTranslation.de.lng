@@ -70,6 +70,7 @@ AntiCaptchaConfigPanel_AntiCaptchaConfigPanel_countdown_download=Schließe Captc
 AntiCaptchaConfigPanel_AntiCaptchaConfigPanel_solver=Anbieter für Captcha-Lösungen
 AntiCaptchaConfigPanel_AntiCaptchaConfigPanel_sounds=Spiele Benachrichtigungston für Captchas
 AntiCaptchaConfigPanel_getTitle=Captchas
+AntiCaptchaConfigPanel_onShow_description=Viele Dienste fragen Dich nach einem sogenannten 'Captcha'. Für gewöhnlich besteht dieses aus einem kleinen Bild mit Buchstaben. Du musst die Buchstaben eingeben, um zu beweisen, dass Du ein Mensch bist. JDownloader versucht, diese Captchas ohne Nachfragen zu lösen. Manchmal sind die Captchas aber zu kompliziert für JDownloader, sodass Du gefragt wirst.
 AntiCaptchaConfigPanel_onShow_description_solver=Einige Captchas sind für JDownloader zu schwer zu erkennen. Dafür gibt es jedoch ein paar Anbieter für Captcha-Lösungen, damit diese Captchas trotzdem gelöst werden...
 AutoConfirmButton_AutoConfirmButton_tooltip_=Downloads werden demnächst starten. Klicke hier, um den Countdown zu beenden.
 AutoDetectAction_actionPerformed_d_msg=Bitte warten. JDownloader versucht die optimalen Einstellungen für deine Internetverbindung zu finden.\n\nDas kann einige Minuten dauern.
