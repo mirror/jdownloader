@@ -106,6 +106,7 @@ gui_settings_downloadpath_description=Standarddownloadordner setzen. Eine Änder
 gui_settings_extensions_show_now=%s1 jetzt anzeigen?\r\n%s1 kann jederzeit über Hauptmenü -> Fenster angezeigt werden.
 gui_settings_filewriting_description=Über den automatischen Hashcheck kann JDownloader die geladenen Dateien automatisch auf Korrektheit überprüfen.
 gui_settings_general_title=Allgemein
+gui_settings_linkgrabber_filter_description2=Der Linkfilter dient der Filterung und Gruppierung von Links. Verwende ihn zum Ignorieren oder Gruppieren von Links, Adressen, URL's und Dateien mit bestimmten Eigenschaften. Erstelle 'Ansichten' für die Seitenleiste des Linksammlers oder 'Filter', um spezielle Links gar nicht erst zu sammeln...
 gui_settings_linkgrabber_packagizer_description=Die Packagizer-Regeln stellen automatisch anhand deiner Datei-Einstellungen die Download-Einstellungen ein.
 gui_settings_linkgrabber_title=Linksammler-Filter
 gui_settings_plugins_description=JDownloader benutzt "Plugins" für %s1 Webseiten um den Download zu automatisieren, der ohne JDownloader sehr lange dauern würde. Einige dieser Plugins haben Einstellungen, um ihr Verhalten regeln zu können.
