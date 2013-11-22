@@ -389,7 +389,7 @@ public class PremiumizeMe extends PluginForHost {
                  * temp multihoster issue, maintenance period, block host for 3 mins
                  */
                 if (statusMessage == null) statusMessage = "Hoster temporarily not possible";
-                // tempUnavailableHoster(account, downloadLink, 3 * 60 * 1000);
+                statusMessage = "premiumize.me: " + downloadLink.getHost() + ": " + statusMessage;
                 /* only disable plugin for this link */
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, statusMessage, 3 * 60 * 1000l);
             case 509:

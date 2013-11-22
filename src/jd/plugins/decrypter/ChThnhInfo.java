@@ -41,12 +41,12 @@ public class ChThnhInfo extends PluginForDecrypt {
         String parameter = param.toString();
         br.setFollowRedirects(true);
         br.getPage(parameter);
+        if (br.containsHTML(">Licensed, no download available<")) {
+            logger.info("Link offline (not downloadable): " + parameter);
+            return decryptedLinks;
+        }
         String fpName = null;
         if (parameter.matches(ANIMEVIEW)) {
-            if (br.containsHTML(">Licensed, no download available<")) {
-                logger.info("Link offline (not downloadable): " + parameter);
-                return decryptedLinks;
-            }
             if (br.containsHTML("class=\"center\">Server</th>[\t\n\r ]+<th>Size</th>")) {
                 logger.info("Link offline: " + parameter);
                 return decryptedLinks;
@@ -84,7 +84,14 @@ public class ChThnhInfo extends PluginForDecrypt {
             String[] links = br.getRegex("<tr><td><a href=\"(/.*?)\"").getColumn(0);
             if (links == null || links.length == 0) links = br.getRegex("\"(/animeDownload/download/\\d+/.*?)\"").getColumn(0);
             if (links == null || links.length == 0) links = br.getRegex("\\'\\.\\.(/download/[^<>\"]*?)\\'").getColumn(0);
-            if (links == null || links.length == 0) return null;
+            if (links == null || links.length == 0) {
+                if (br.containsHTML("<th>Size</th>")) {
+                    logger.info("Link offline: " + parameter);
+                    return decryptedLinks;
+                }
+                logger.warning("Decrypter broken for link: " + parameter);
+                return null;
+            }
             for (String finallink : links) {
                 if (finallink.startsWith("/download/")) {
                     finallink = "http://chauthanh.info/anime" + Encoding.htmlDecode(finallink);

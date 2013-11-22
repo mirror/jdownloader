@@ -124,7 +124,7 @@ public class CrockoCom extends PluginForHost {
         String wait = br.getRegex("w=\\'(\\d+)\\'").getMatch(0);
         int waittime = 0;
         if (wait != null) waittime = Integer.parseInt(wait.trim());
-        if (waittime > 90 && longwait.get()) {
+        if (waittime > 180 && longwait.get()) {
             /* first time >90 secs, it can be we are country with long waittime */
             longwait.set(true);
             sleep(waittime * 1000l, downloadLink);
@@ -152,15 +152,18 @@ public class CrockoCom extends PluginForHost {
         while (true) {
             tries++;
             id = br.getRegex("Recaptcha\\.create\\(\"(.*?)\"").getMatch(0);
-            if (id == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            Browser rcBr = br.cloneBrowser();
+            if (id == null) {
+                logger.warning("crocko.com: plugin broken, reCaptchaID is null");
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            final Browser rcBr = br.cloneBrowser();
             /* follow redirect needed as google redirects to another domain */
             rcBr.setFollowRedirects(true);
             rcBr.getPage("http://api.recaptcha.net/challenge?k=" + id);
             String challenge = rcBr.getRegex("challenge.*?:.*?'(.*?)',").getMatch(0);
             String server = rcBr.getRegex("server.*?:.*?'(.*?)',").getMatch(0);
             if (challenge == null || server == null) {
-                logger.severe("Recaptcha Module fails: " + br.getHttpConnection());
+                logger.severe("crocko.com: Recaptcha Module fails: " + br.getHttpConnection());
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             String captchaAddress = server + "image?c=" + challenge;
@@ -168,14 +171,20 @@ public class CrockoCom extends PluginForHost {
             Browser.download(cf, rcBr.openGetConnection(captchaAddress));
             Form form = null;
             Form[] allForms = br.getForms();
-            if (allForms == null || allForms.length == 0) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (allForms == null || allForms.length == 0) {
+                logger.warning("crocko.com: plugin broken, no download forms found");
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
             for (Form singleForm : allForms) {
                 if (singleForm.containsHTML("\"id\"") && !singleForm.containsHTML("lang_select")) {
                     form = singleForm;
                     break;
                 }
             }
-            if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (form == null) {
+                logger.warning("crocko.com: plugin broken, no download forms found #2");
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
             /*
              * another as default cause current stable has easy-captcha method that does not work
              */
@@ -195,7 +204,7 @@ public class CrockoCom extends PluginForHost {
                         throw new PluginException(LinkStatus.ERROR_CAPTCHA);
                     }
                 }
-
+                logger.warning("crocko.com: plugin broken, direct link -> HTML code");
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             break;
@@ -281,6 +290,7 @@ public class CrockoCom extends PluginForHost {
             } else if (br.containsHTML("(<div class=\"search_result\">|<form method=\"POST\" action=\"/search_form\">)")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             } else {
+                logger.warning("crocko.com: plugin broken, filename or filesize missing");
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }

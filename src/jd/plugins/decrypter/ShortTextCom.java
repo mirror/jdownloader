@@ -61,19 +61,13 @@ public class ShortTextCom extends PluginForDecrypt {
             }
             if (br.containsHTML(">This page is locked by the creator")) throw new DecrypterException(DecrypterException.PASSWORD);
         }
-        String plaintxt = br.getRegex("<span id=\"lblEdit\"></span>(.*?)<span id=\"lblCount\"><br><br>").getMatch(0);
-        if (plaintxt == null) plaintxt = br.getRegex("<DIV align=\"justify\">(.*?)</DIV>").getMatch(0);
-        if (plaintxt == null) {
-            logger.info("Decrypter broken for link: " + parameter);
-            return null;
-        }
-        String[] links = HTMLParser.getHttpLinks(plaintxt, "");
+        String[] links = HTMLParser.getHttpLinks(br.toString(), "");
         if (links == null || links.length == 0) {
             logger.info("No links found for link: " + parameter);
             return decryptedLinks;
         }
         for (String dl : links) {
-            if (!dl.contains("shorttext.com") && !dl.contains("tweetmeme.com") || !dl.contains("sharethis.com")) {
+            if (!dl.contains("shorttext.com/") && !dl.contains("tweetmeme.com/") || !dl.contains("sharethis.com/")) {
                 decryptedLinks.add(createDownloadlink(dl));
             }
         }

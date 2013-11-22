@@ -53,6 +53,7 @@ import jd.nutils.JDHash;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
+import jd.parser.html.Form.MethodType;
 import jd.parser.html.HTMLParser;
 import jd.parser.html.InputField;
 import jd.plugins.Account;
@@ -407,12 +408,7 @@ public class BillionUploadsCom extends PluginForHost {
             int repeat = 2;
             for (int i = 0; i <= repeat; i++) {
                 dlForm = cleanForm(dlForm);
-                dlForm.remove(null);
-                dlForm.remove("gloss");
-                dlForm.remove("rand");
-                dlForm.remove("sys");
-                final String specialStuff = br.getRegex("<textarea source=\"self\" style=\"display: none;visibility: hidden\">([^<>\"]*?)</textarea>").getMatch(0);
-                if (specialStuff != null) dlForm.put("blader", specialStuff);
+                dlForm = getDl2Form(downloadLink);
                 // custom form inputs
 
                 final long timeBefore = System.currentTimeMillis();
@@ -1248,6 +1244,23 @@ public class BillionUploadsCom extends PluginForHost {
         setConstants(null);
         requestFileInformation(downloadLink);
         doFree(downloadLink, null);
+    }
+
+    private Form getDl2Form(final DownloadLink dl) {
+        final Form dl2 = new Form();
+        dl2.setMethod(MethodType.POST);
+        dl2.setAction(br.getURL());
+        dl2.put("op", "download2");
+        dl2.put("id", new Regex(dl.getDownloadURL(), "([a-z0-9]{12})$").getMatch(0));
+        dl2.put("referer", "");
+        dl2.put("method_free", "");
+        dl2.put("method_premium", "");
+        dl2.put("down_direct", "");
+        dl2.put("submit_btn", "");
+        dl2.put("airman", "toast");
+        final String specialStuff = br.getRegex("<textarea source=\"self\" style=\"display: none;visibility: hidden\">([^<>\"]*?)</textarea>").getMatch(0);
+        if (specialStuff != null) dl2.put("blader", specialStuff);
+        return dl2;
     }
 
     /**

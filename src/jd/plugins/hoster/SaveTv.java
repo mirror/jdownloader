@@ -296,12 +296,13 @@ public class SaveTv extends PluginForHost {
                 else if (episodename.contains("Für diese Sendung stehen leider keine weiteren Informationen zur Verfügung")) episodename = "-";
                 String seriesdata = seriesInfo.getMatch(3);
                 if (seriesdata != null) {
+                    seriesdata = seriesdata.trim();
                     final String[] dataArray = seriesdata.split(" ");
                     if (dataArray != null) {
                         genre = dataArray[0];
                         // Maybe the media was produced over multiple years
                         produceyear = new Regex(seriesdata, "(\\d{4} / \\d{4})").getMatch(0);
-                        producecountry = new Regex(seriesdata, genre + " ([A-Za-z/]+)").getMatch(0);
+                        producecountry = getRegexSafe(seriesdata, genre + " ([\\p{L}/]+)", 0);
                         if (dataArray != null) {
                             if (dataArray.length >= 3) {
                                 if (producecountry == null) producecountry = dataArray[1];
@@ -764,6 +765,13 @@ public class SaveTv extends PluginForHost {
             }
         }
         return output;
+    }
+
+    private String getRegexSafe(final String input, final String regex, final int match) {
+        final String regexFixedInput = input.replace("(", "65788jdclipopenjd4684").replace(")", "65788jdclipclosejd4684");
+        String result = new Regex(regexFixedInput, regex).getMatch(match);
+        result = result.replace("65788jdclipopenjd4684", "(").replace("65788jdclipclosejd4684", ")");
+        return result;
     }
 
     private String getTelecastId(final DownloadLink link) {

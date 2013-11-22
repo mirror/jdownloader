@@ -18,13 +18,14 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.Browser.BrowserException;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "antena3.com" }, urls = { "http://(www\\.)?antena3\\.com/(?!programas\\.html)[^<>\"]*?\\.html" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "antena3.com" }, urls = { "http://(www\\.)?antena3\\.com/[^<>\"]*?\\.html" }, flags = { 0 })
 public class Antena3ComSalon extends PluginForDecrypt {
 
     public Antena3ComSalon(PluginWrapper wrapper) {
@@ -32,10 +33,26 @@ public class Antena3ComSalon extends PluginForDecrypt {
     }
 
     private ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+    private static final String     INVALIDLINKS   = "http://(www\\.)?antena3\\.com/(ajaxsportresults/.*?|objetivotv/.*?|fundacion/.*?|programmas).html";
 
     @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink link, ProgressController progress) throws Exception {
-        br.getPage(link.toString());
+        if (link.toString().matches(INVALIDLINKS)) {
+            final DownloadLink dl = createDownloadlink(link.toString().replace("antena3.com/", "antena3decrypted.com/"));
+            dl.setAvailable(false);
+            dl.setProperty("offline", true);
+            decryptedLinks.add(dl);
+            return decryptedLinks;
+        }
+        try {
+            br.getPage(link.toString());
+        } catch (final BrowserException e) {
+            final DownloadLink dl = createDownloadlink(link.toString().replace("antena3.com/", "antena3decrypted.com/"));
+            dl.setAvailable(false);
+            dl.setProperty("offline", true);
+            decryptedLinks.add(dl);
+            return decryptedLinks;
+        }
         if (br.containsHTML("<h1>¡Uy\\! No encontramos la página que buscas\\.</h1>") || br.containsHTML(">El contenido al que estás intentando acceder no existe<")) {
             final DownloadLink dl = createDownloadlink(link.toString().replace("antena3.com/", "antena3decrypted.com/"));
             dl.setAvailable(false);

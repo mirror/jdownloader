@@ -184,12 +184,28 @@ public class ZeveraCom extends PluginForHost {
         try {
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, maxchunks);
         } catch (final PluginException e) {
+            if ("Redirectloop".equals(e.getErrorMessage())) {
+                logger.info("zevera.com: Download failed because of a Redirectloop -> This is caused by zevera and NOT a JD issue!");
+                int timesFailed = link.getIntegerProperty("timesfailedzeveracom_redirectloop", 1);
+                link.getLinkStatus().setRetryCount(0);
+                if (timesFailed <= 20) {
+                    timesFailed++;
+                    link.setProperty("timesfailedzeveracom_redirectloop", timesFailed);
+                    logger.info("zevera.com: Download failed because of a Redirectloop -> This is caused by zevera and NOT a JD issue! -> Retrying!");
+                    throw new PluginException(LinkStatus.ERROR_RETRY, "Server error (redirectloop)");
+                } else {
+                    link.setProperty("timesfailedzeveracom_redirectloop", Property.NULL);
+                    logger.info("zevera.com: Download failed because of a Redirectloop -> This is caused by zevera and NOT a JD issue! -> Throwing temporarily unavailable server error");
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error (redirectloop)", 5 * 60 * 1000l);
+                }
+            }
             /* unknown error, we disable multiple chunks */
             if (link.getBooleanProperty(ZeveraCom.NOCHUNKS, false) == false) {
                 link.setProperty(ZeveraCom.NOCHUNKS, Boolean.valueOf(true));
                 throw new PluginException(LinkStatus.ERROR_RETRY);
             }
             logger.info("Zevera download failed because: " + e.getMessage());
+            logger.info("Zevera.com: Name of the errorMessage: " + e.getErrorMessage());
             throw e;
         } catch (final SocketTimeoutException e) {
             logger.info("zevera.com: Download failed because of a timeout -> This is caused by zevera and NOT a JD issue!");
@@ -220,6 +236,21 @@ public class ZeveraCom extends PluginForHost {
             /*
              * download is not contentdisposition, so remove this host from premiumHosts list
              */
+            if (dl.getConnection().getResponseCode() == 500) {
+                logger.info("zevera.com: Download failed because of a server error 500 -> This is caused by zevera and NOT a JD issue!");
+                int timesFailed = link.getIntegerProperty("timesfailedzeveracom_servererror500", 1);
+                link.getLinkStatus().setRetryCount(0);
+                if (timesFailed <= 20) {
+                    timesFailed++;
+                    link.setProperty("timesfailedzeveracom_servererror500", timesFailed);
+                    logger.info("zevera.com: Download failed because of a server error 500 -> This is caused by zevera and NOT a JD issue! -> Retrying");
+                    throw new PluginException(LinkStatus.ERROR_RETRY, "Server error (500)");
+                } else {
+                    link.setProperty("timesfailedzeveracom_servererror500", Property.NULL);
+                    logger.info("zevera.com: Download failed because of a server error 500 -> This is caused by zevera and NOT a JD issue! -> Throwing temporarily unavailable server error 500");
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error (500)", 5 * 60 * 1000l);
+                }
+            }
             br.followConnection();
         }
 
@@ -270,7 +301,7 @@ public class ZeveraCom extends PluginForHost {
         } catch (PluginException e) {
             account.setValid(false);
             ai.setProperty("multiHostSupport", Property.NULL);
-            return ai;
+            throw e;
         }
         account.setValid(true);
         account.setConcurrentUsePossible(true);
@@ -343,7 +374,14 @@ public class ZeveraCom extends PluginForHost {
                 }
                 br.getPage(mServ);
                 br.getPage(mServ + "/OfferLogin.aspx?login=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass()));
-                if (br.getCookie(mProt + mName, ".ASPNETAUTH") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                if (br.getCookie(mProt + mName, ".ASPNETAUTH") == null) {
+                    final String lang = System.getProperty("user.language");
+                    if ("de".equalsIgnoreCase(lang)) {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    } else {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    }
+                }
                 /** Save cookies */
                 final HashMap<String, String> cookies = new HashMap<String, String>();
                 final Cookies add = this.br.getCookies(mProt + mName);

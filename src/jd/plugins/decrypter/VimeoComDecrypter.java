@@ -322,7 +322,7 @@ public class VimeoComDecrypter extends PluginForDecrypt {
             for (int i = 0; i < 3; i++) {
                 pwForm = br.getFormbyProperty("id", "pw_form");
                 if (pwForm == null) break;
-                latestPassword = Plugin.getUserInput("Password?", param);
+                latestPassword = Plugin.getUserInput("Password for link: " + param.toString() + " ?", param);
                 pwForm.put("password", latestPassword);
                 pwForm.put("token", xsrft);
                 try {

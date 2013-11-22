@@ -20,7 +20,6 @@ import java.io.IOException;
 
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
-import jd.gui.UserIO;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -147,14 +146,23 @@ public class Zevera extends PluginForHost {
             }
             br.getPage("http://www.zevera.com/");
             String res = br.getPage("http://www.zevera.com/jDownloader.ashx?cmd=accountinfo&login=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass()));
-            if ("No trafic".equals(res) || res == null || res.trim().length() == 0) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+            final String lang = System.getProperty("user.language");
+            if ("No trafic".equals(res) || res == null || res.trim().length() == 0) {
+                if ("de".equalsIgnoreCase(lang)) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername/Passwort oder Traffic aufgebraucht!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password or no traffic left!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                }
+            }
             res = res.trim();
             account.setValid(true);
             if ("Login Error".equalsIgnoreCase(res)) {
                 ai.setStatus("Unknown user");
-                if (showDialog) UserIO.getInstance().requestMessageDialog(0, "Zevera Premium Error", "The username '" + account.getUser() + "' is unknown.\r\nPlease check your Username!");
-
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                if ("de".equalsIgnoreCase(lang)) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                }
             } else {
                 /* normal premium */
                 // 0 DayTrafficLimit:5120,
@@ -180,7 +188,13 @@ public class Zevera extends PluginForHost {
                 String AvailableTodayTraffic = new Regex(infos[3], "AvailableTodayTraffic:(\\d+)").getMatch(0);
                 logger.info("Zevera: AvailableTodayTraffic=" + AvailableTodayTraffic);
                 ai.setTrafficLeft(SizeFormatter.getSize(AvailableTodayTraffic + "mb"));
-                if (ai.isExpired()) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                if (ai.isExpired()) {
+                    if ("de".equalsIgnoreCase(lang)) {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nAccount abgelaufen!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    } else {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nAccount expired!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    }
+                }
             }
         }
     }

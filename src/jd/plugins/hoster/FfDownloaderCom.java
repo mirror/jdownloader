@@ -112,7 +112,9 @@ public class FfDownloaderCom extends PluginForHost {
         /* we want to follow redirects in final stage */
         br.setFollowRedirects(true);
         br.setCurrentURL(null);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, -10);
+        int maxChunks = -10;
+        if (link.getBooleanProperty(NOCHUNKS, false)) maxChunks = 1;
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, maxChunks);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             logger.info(NICE_HOST + ": Unknown download error");
