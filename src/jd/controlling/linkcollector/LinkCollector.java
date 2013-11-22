@@ -880,9 +880,8 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
 
             @Override
             protected Void run() throws RuntimeException {
-
+                cleanupMaps(filteredStuff);
                 filteredStuff.clear();
-
                 eventsender.fireEvent(new LinkCollectorEvent(LinkCollector.this, LinkCollectorEvent.TYPE.FILTERED_EMPTY));
                 return null;
             }
