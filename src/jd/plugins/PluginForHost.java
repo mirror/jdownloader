@@ -940,7 +940,7 @@ public abstract class PluginForHost extends Plugin {
      * 
      * @param cache
      *            TODO
-     * @param downloadLink
+     * @param downloadable
      * @param dlinks
      * @param orgiginalfilename
      */

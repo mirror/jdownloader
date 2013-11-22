@@ -162,19 +162,19 @@ public class RayFileCom extends PluginForHost {
                 logger.finer("Connect...");
                 this.connected = true;
                 br.connect(request);
-                if (this.plugin.getBrowser().isDebug()) logger.finest(request.printHeaders());
+                if (getBrowser().isDebug()) logger.finest(request.printHeaders());
                 connection = request.getHttpConnection();
                 if (request.getLocation() != null) throw new PluginException(LinkStatus.ERROR_DOWNLOAD_FAILED);
                 if (connection.getRange() != null) {
                     // Dateigröße wird aus dem Range-Response gelesen
                     if (connection.getRange()[2] > 0) {
                         this.setFilesizeCheck(true);
-                        this.downloadLink.setDownloadSize(connection.getRange()[2]);
+                        downloadLink.setDownloadSize(connection.getRange()[2]);
                     }
                 } else {
                     if (connection.getLongContentLength() > 0) {
                         this.setFilesizeCheck(true);
-                        this.downloadLink.setDownloadSize(connection.getLongContentLength());
+                        downloadLink.setDownloadSize(connection.getLongContentLength());
                     }
                 }
                 fileSize = downloadLink.getDownloadSize();

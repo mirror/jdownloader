@@ -11,13 +11,10 @@ import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Logger;
 
-import jd.controlling.downloadcontroller.SingleDownloadController;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
-import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-import jd.plugins.PluginForHost;
 
 import org.appwork.exceptions.WTFException;
 import org.appwork.storage.config.JsonConfig;
@@ -28,13 +25,14 @@ import org.appwork.utils.net.httpconnection.HTTPConnection.RequestMethod;
 import org.appwork.utils.net.throttledconnection.MeteredThrottledInputStream;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.speedmeter.AverageSpeedMeter;
+import org.jdownloader.downloadcore.v15.Downloadable;
 import org.jdownloader.settings.GeneralSettings;
 import org.jdownloader.translate._JDT;
 
 public class RAFChunk extends Thread {
     /**
-     * Wird durch die Speedbegrenzung ein chunk uter diesen Wert geregelt, so wird er weggelassen. Sehr niedrig geregelte chunks haben einen kleinen Buffer und
-     * eine sehr hohe Intervalzeit. Das fuehrt zu verstaerkt intervalartigem laden und ist ungewuenscht
+     * Wird durch die Speedbegrenzung ein chunk uter diesen Wert geregelt, so wird er weggelassen. Sehr niedrig geregelte chunks haben einen
+     * kleinen Buffer und eine sehr hohe Intervalzeit. Das fuehrt zu verstaerkt intervalartigem laden und ist ungewuenscht
      */
     public static final long                MIN_CHUNKSIZE    = 1 * 1024 * 1024;
 
@@ -57,11 +55,9 @@ public class RAFChunk extends Thread {
 
     private OldRAFDownload                  dl;
 
-    private DownloadLink                    downloadLink;
+    private Downloadable                    downloadLink;
 
     private Logger                          logger;
-
-    private PluginForHost                   plugin;
 
     protected ReusableByteArrayOutputStream buffer           = null;
     private AtomicBoolean                   running          = new AtomicBoolean(false);
@@ -87,7 +83,7 @@ public class RAFChunk extends Thread {
      * @param endByte
      * @param connection
      */
-    public RAFChunk(long startByte, long endByte, URLConnectionAdapter connection, OldRAFDownload dl, DownloadLink link, int id) {
+    public RAFChunk(long startByte, long endByte, URLConnectionAdapter connection, OldRAFDownload dl, Downloadable link, int id) {
         super("DownloadChunkRAF:" + link.getName());
         running.set(true);
         this.startByte = startByte;
@@ -97,7 +93,7 @@ public class RAFChunk extends Thread {
         this.originalConnection = connection;
         this.dl = dl;
         this.downloadLink = link;
-        this.plugin = link.getLivePlugin();
+
         this.logger = dl.getLogger();
         if (CrossSystem.isWindows()) {
             /* workaround for windows multimedia stuff. it reduces priority for non active(in background) stuff */
@@ -151,15 +147,16 @@ public class RAFChunk extends Thread {
         }
 
         try {
-            downloadLink.getLivePlugin().waitForNextConnectionAllowed(downloadLink);
+            downloadLink.waitForNextConnectionAllowed();
         } catch (InterruptedException e1) {
             LogSource.exception(logger, e1);
             return null;
         }
         try {
             /* only forward referer if referer already has been sent! */
-            boolean forwardReferer = plugin.getBrowser().getHeaders().contains("Referer");
-            Browser br = plugin.getBrowser().cloneBrowser();
+            Browser br = downloadLink.getContextBrowser();
+            boolean forwardReferer = br.getHeaders().contains("Referer");
+
             br.setReadTimeout(dl.getReadTimeout());
             br.setConnectTimeout(dl.getRequestTimeout());
             /* set requested range */
@@ -415,8 +412,8 @@ public class RAFChunk extends Thread {
     }
 
     /**
-     * Gibt die Aktuelle Endposition in der gesamtfile zurueck. Diese Methode gibt die Endposition unahaengig davon an Ob der aktuelle BUffer schon geschrieben
-     * wurde oder nicht.
+     * Gibt die Aktuelle Endposition in der gesamtfile zurueck. Diese Methode gibt die Endposition unahaengig davon an Ob der aktuelle
+     * BUffer schon geschrieben wurde oder nicht.
      * 
      * @return
      */
@@ -453,8 +450,8 @@ public class RAFChunk extends Thread {
      * @return
      */
     private boolean isExternalyAborted() {
-        SingleDownloadController sdc = downloadLink.getDownloadLinkController();
-        return isInterrupted() || (dl != null && dl.externalDownloadStop()) || (sdc != null && sdc.isAborting());
+
+        return isInterrupted() || (dl != null && dl.externalDownloadStop()) || downloadLink.isInterrupted();
     }
 
     /**
@@ -530,7 +527,10 @@ public class RAFChunk extends Thread {
                         return;
                     }
                     if (ContentRange == null && startByte == 0 && connection.getLongContentLength() >= endByte) {
-                        /* no contentRange response, but the Content-Length is long enough and startbyte begins at 0, so it might be a rangeless first Request */
+                        /*
+                         * no contentRange response, but the Content-Length is long enough and startbyte begins at 0, so it might be a
+                         * rangeless first Request
+                         */
                     } else {
                         logger.severe("ERROR Chunk (range header parse error)" + getID() + connection.toString());
                         dl.error(new PluginException(LinkStatus.ERROR_DOWNLOAD_INCOMPLETE, _JDT._.download_error_message_rangeheaderparseerror() + connection.getHeaderField("Content-Range")));

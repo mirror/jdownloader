@@ -33,24 +33,25 @@ public class BrowserAdapter {
         PluginForHost livePlugin = downloadLink.getLivePlugin();
         DownloadInterfaceFactory ret = null;
         if (livePlugin != null && (ret = livePlugin.getCustomizedDownloadFactory()) != null) return ret.getDownloadInterface(downloadLink, request);
-        // if ("DirectHTTP".equals(downloadLink.getHost()) || "http links".equals(downloadLink.getHost())) { return new ChunkedBrowserDownload(livePlugin,
+        // if ("DirectHTTP".equals(downloadLink.getHost()) || "http links".equals(downloadLink.getHost())) { return new
+        // ChunkedBrowserDownload(livePlugin,
         // downloadLink, request); }
         return RAFDownload.download(downloadLink, request);
     }
 
-    private static DownloadInterface getDownloadInterface(DownloadLink downloadLink, Request request, boolean b, int i) throws Exception {
+    private static DownloadInterface getDownloadInterface(DownloadLink downloadLink, Request request, boolean resumeEnabled, int chunksCount) throws Exception {
         Thread current = Thread.currentThread();
-        if (current instanceof DownloadInterfaceFactory) { return ((DownloadInterfaceFactory) current).getDownloadInterface(downloadLink, request, b, i); }
+        if (current instanceof DownloadInterfaceFactory) { return ((DownloadInterfaceFactory) current).getDownloadInterface(downloadLink, request, resumeEnabled, chunksCount); }
         PluginForHost livePlugin = downloadLink.getLivePlugin();
         DownloadInterfaceFactory ret = null;
-        if (livePlugin != null && (ret = livePlugin.getCustomizedDownloadFactory()) != null) return ret.getDownloadInterface(downloadLink, request, b, i);
+        if (livePlugin != null && (ret = livePlugin.getCustomizedDownloadFactory()) != null) return ret.getDownloadInterface(downloadLink, request, resumeEnabled, chunksCount);
         // if ("DirectHTTP".equals(downloadLink.getHost()) || "http links".equals(downloadLink.getHost())) {
         // ChunkedBrowserDownload ret2 = new ChunkedBrowserDownload(livePlugin, downloadLink, request);
         // ret2.setResumable(b);
         // ret2.setMaxConnections(i);
         // return ret2;
         // }
-        return RAFDownload.download(downloadLink, request, b, i);
+        return RAFDownload.download(downloadLink, request, resumeEnabled, chunksCount);
     }
 
     public static DownloadInterface openDownload(Browser br, DownloadLink downloadLink, String link) throws Exception {

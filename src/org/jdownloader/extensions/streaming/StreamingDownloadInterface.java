@@ -21,7 +21,7 @@ public class StreamingDownloadInterface extends DownloadInterface {
     private URLConnectionAdapter              connection;
 
     public StreamingDownloadInterface(PluginForHost plugin, DownloadLink downloadLink, Request request) throws Exception {
-        connectionHandler = new ManagedThrottledConnectionHandler(downloadLink);
+        connectionHandler = new ManagedThrottledConnectionHandler();
         this.downloadLink = downloadLink;
         this.plugin = plugin;
         browser = plugin.getBrowser().cloneBrowser();

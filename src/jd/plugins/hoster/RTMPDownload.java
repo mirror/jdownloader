@@ -28,10 +28,16 @@ public class RTMPDownload extends RAFDownload {
     protected final RtmpUrlConnection rtmpConnection;
 
     private final URL                 url;
+    // don't name it plugin!
+    protected PluginForHost           plg;
+    // don't name it downloadLink
+    protected DownloadLink            dLink;
 
     public RTMPDownload(final PluginForHost plugin, final DownloadLink downloadLink, final String rtmpURL) throws IOException, PluginException {
         super(plugin, downloadLink, null);
         // TODO Auto-generated constructor stub
+        this.plg = plugin;
+        this.dLink = downloadLink;
         url = new URL(rtmpURL);
         rtmpConnection = (RtmpUrlConnection) url.openConnection();
     }
@@ -54,7 +60,7 @@ public class RTMPDownload extends RAFDownload {
     }
 
     private RtmpDump rtmpDump() throws Exception {
-        return new RtmpDump(plugin, downloadLink, String.valueOf(url));
+        return new RtmpDump(plg, dLink, String.valueOf(url));
     }
 
 }
