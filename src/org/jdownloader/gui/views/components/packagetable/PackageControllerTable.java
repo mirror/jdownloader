@@ -168,12 +168,12 @@ public abstract class PackageControllerTable<ParentType extends AbstractPackageN
                 if (selectionOnly == false) {
                     if (filtered == false) {
                         if (cachedSelectionInfo.all == null) {
-                            cachedSelectionInfo.all = new SelectionInfo<ParentType, ChildrenType>(null, getModel().getController().getAllChildren(), null, null, null, PackageControllerTable.this);
+                            cachedSelectionInfo.all = new SelectionInfo<ParentType, ChildrenType>(null, getModel().getController().getAllChildren());
                         }
                         return cachedSelectionInfo.all;
                     } else {
                         if (cachedSelectionInfo.all_filtered == null) {
-                            cachedSelectionInfo.all_filtered = new SelectionInfo<ParentType, ChildrenType>(null, getModel().getElements(), null, null, null, PackageControllerTable.this);
+                            cachedSelectionInfo.all_filtered = new SelectionInfo<ParentType, ChildrenType>(null, getModel().getElements());
                         }
                         return cachedSelectionInfo.all_filtered;
                     }
@@ -187,7 +187,7 @@ public abstract class PackageControllerTable<ParentType extends AbstractPackageN
                     if (filtered == false) {
                         if (cachedSelectionInfo.selection == null) {
                             if (sm.isSelectionEmpty()) {
-                                cachedSelectionInfo.selection = new SelectionInfo<ParentType, ChildrenType>(null, null, null, null, null, PackageControllerTable.this);
+                                cachedSelectionInfo.selection = new SelectionInfo<ParentType, ChildrenType>(null, null);
                             } else {
                                 throw new WTFException("You really want an unfiltered filtered view?!");
                             }
@@ -196,9 +196,9 @@ public abstract class PackageControllerTable<ParentType extends AbstractPackageN
                     } else {
                         if (cachedSelectionInfo.selection_filtered == null) {
                             if (sm.isSelectionEmpty()) {
-                                cachedSelectionInfo.selection_filtered = new SelectionInfo<ParentType, ChildrenType>(null, null, null, null, null, PackageControllerTable.this);
+                                cachedSelectionInfo.selection_filtered = new SelectionInfo<ParentType, ChildrenType>(null, null);
                             } else {
-                                cachedSelectionInfo.selection_filtered = new SelectionInfo<ParentType, ChildrenType>(getModel().getObjectbyRow(sm.getLeadSelectionIndex()), getModel().getSelectedObjects(), null, null, null, PackageControllerTable.this);
+                                cachedSelectionInfo.selection_filtered = new SelectionInfo<ParentType, ChildrenType>(getModel().getObjectbyRow(sm.getLeadSelectionIndex()), getModel().getSelectedObjects());
                             }
                         }
                         return cachedSelectionInfo.selection_filtered;

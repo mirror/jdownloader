@@ -380,7 +380,7 @@ public class GenericDeleteFromLinkgrabberAction extends CustomizableAppAction im
                     boolean read = LinkCollector.getInstance().readLock();
                     try {
                         for (CrawledPackage pkg : LinkCollector.getInstance().getPackages()) {
-                            if (selection.getFullPackages().contains(pkg)) {
+                            if (selection.isFullPackageSelection(pkg)) {
                                 continue;
                             }
                             boolean readL2 = pkg.getModifyLock().readLock();

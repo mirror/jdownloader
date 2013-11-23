@@ -32,7 +32,7 @@ public class FilePackagePropertiesPanel extends DownloadLinkPropertiesPanel {
 
     @Override
     protected List<Archive> loadArchives() {
-        return ArchiveValidator.validate(new SelectionInfo<FilePackage, DownloadLink>(currentPackage, null, null, null, null, null)).getArchives();
+        return ArchiveValidator.validate(new SelectionInfo<FilePackage, DownloadLink>(currentPackage, null)).getArchives();
 
     }
 
@@ -69,7 +69,7 @@ public class FilePackagePropertiesPanel extends DownloadLinkPropertiesPanel {
     @Override
     protected void saveSaveTo(final String stringpath) {
 
-        new SetDownloadFolderInDownloadTableAction(new SelectionInfo<FilePackage, DownloadLink>(currentPackage, null, null, null, null, null)) {
+        new SetDownloadFolderInDownloadTableAction(new SelectionInfo<FilePackage, DownloadLink>(currentPackage, null)) {
             protected java.io.File dialog(java.io.File path) throws org.appwork.utils.swing.dialog.DialogClosedException, org.appwork.utils.swing.dialog.DialogCanceledException {
 
                 return new File(stringpath);

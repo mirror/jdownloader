@@ -99,7 +99,7 @@ public class LinkCrawlerApi implements ILinkCrawlerApi {
         CrawledPackage cp = getCrawledPackageFromID(crawledPackageID);
         if (cp != null) {
 
-            LinkCollector.getInstance().moveLinksToDownloadList(new SelectionInfo<CrawledPackage, CrawledLink>(cp, null, null, null, null, null));
+            LinkCollector.getInstance().moveLinksToDownloadList(new SelectionInfo<CrawledPackage, CrawledLink>(cp, null));
 
         }
         return true;

@@ -17,6 +17,7 @@ import org.jdownloader.controlling.contextmenu.CustomizableTableContextAppAction
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.DownloadFolderChooserDialog;
 import org.jdownloader.gui.views.SelectionInfo;
+import org.jdownloader.gui.views.SelectionInfo.PackageView;
 import org.jdownloader.gui.views.components.packagetable.LinkTreeUtils;
 import org.jdownloader.translate._JDT;
 
@@ -70,19 +71,25 @@ public abstract class SetDownloadFolderAction<PackageType extends AbstractPackag
 
                 @Override
                 protected Object run() {
-                    for (PackageType pkg : getSelection().getFullPackages()) {
-                        set(pkg, file.getAbsolutePath());
+                    for (PackageView<PackageType, ChildrenType> pkg : getSelection().getPackageViews()) {
+                        if (pkg.isFull()) {
+                            set(pkg.getPackage(), file.getAbsolutePath());
+                        }
                     }
                     return null;
                 }
             });
-            for (final PackageType entry : getSelection().getIncompletePackages()) {
+            for (final PackageView<PackageType, ChildrenType> pkg : getSelection().getPackageViews()) {
+                if (pkg.isFull()) {
+                    continue;
+                }
+                final PackageType entry = pkg.getPackage();
                 try {
                     File oldPath = LinkTreeUtils.getDownloadDirectory(entry);
                     File newPath = file;
                     if (oldPath.equals(newPath)) continue;
 
-                    Dialog.getInstance().showConfirmDialog(Dialog.LOGIC_DONOTSHOW_BASED_ON_TITLE_ONLY | Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _JDT._.SetDownloadFolderAction_actionPerformed_(entry.getName()), _JDT._.SetDownloadFolderAction_msg(entry.getName(), getSelection().getSelectedLinksByPackage(entry).size()), null, _JDT._.SetDownloadFolderAction_yes(), _JDT._.SetDownloadFolderAction_no());
+                    Dialog.getInstance().showConfirmDialog(Dialog.LOGIC_DONOTSHOW_BASED_ON_TITLE_ONLY | Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _JDT._.SetDownloadFolderAction_actionPerformed_(entry.getName()), _JDT._.SetDownloadFolderAction_msg(entry.getName(), pkg.getChildren().size()), null, _JDT._.SetDownloadFolderAction_yes(), _JDT._.SetDownloadFolderAction_no());
 
                     getQueue().add(new QueueAction<Object, RuntimeException>() {
 
@@ -108,7 +115,7 @@ public abstract class SetDownloadFolderAction<PackageType extends AbstractPackag
 
                             @Override
                             protected Object run() {
-                                move(pkg, getSelection().getSelectedLinksByPackage(entry));
+                                move(pkg, pkg.getChildren());
                                 return null;
                             }
 

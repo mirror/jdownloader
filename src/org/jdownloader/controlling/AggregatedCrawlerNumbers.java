@@ -74,7 +74,7 @@ public class AggregatedCrawlerNumbers {
         statusOffline = 0l;
         statusUnknown = 0l;
         hoster = new HashSet<DomainInfo>();
-        packageCount = selection.getAllPackages().size();
+        packageCount = selection.getPackageViews().size();
         linkCount = selection.getChildren().size();
         for (CrawledLink cl : selection.getChildren()) {
             if (cl == null) continue;

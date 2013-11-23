@@ -190,7 +190,7 @@ public class GenericDeleteFromDownloadlistAction extends CustomizableAppAction i
             }
         }
         if (nodesToDelete.size() > 0) {
-            final SelectionInfo<FilePackage, DownloadLink> si = new SelectionInfo<FilePackage, DownloadLink>(null, nodesToDelete, null, null, e, getTable());
+            final SelectionInfo<FilePackage, DownloadLink> si = new SelectionInfo<FilePackage, DownloadLink>(null, nodesToDelete);
             if (si.getChildren().size() > 0) {
 
                 DownloadTabActionUtils.deleteLinksRequest(si, _GUI._.GenericDeleteFromDownloadlistAction_actionPerformed_ask_(createName()), getDeleteMode(), byPassDialog.isBypassDialog());
@@ -445,7 +445,7 @@ public class GenericDeleteFromDownloadlistAction extends CustomizableAppAction i
                     boolean read = DownloadController.getInstance().readLock();
                     try {
                         for (FilePackage pkg : DownloadController.getInstance().getPackages()) {
-                            if (selection.getFullPackages().contains(pkg)) {
+                            if (selection.isFullPackageSelection(pkg)) {
                                 continue;
                             }
                             boolean readL2 = pkg.getModifyLock().readLock();

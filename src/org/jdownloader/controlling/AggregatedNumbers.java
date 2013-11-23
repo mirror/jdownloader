@@ -84,7 +84,7 @@ public class AggregatedNumbers {
         downloadSpeed = 0l;
         running = 0l;
         connections = 0l;
-        packageCount = selection.getAllPackages().size();
+        packageCount = selection.getPackageViews().size();
         linkCount = selection.getChildren().size();
         for (DownloadLink dl : selection.getChildren()) {
             if (dl == null) continue;

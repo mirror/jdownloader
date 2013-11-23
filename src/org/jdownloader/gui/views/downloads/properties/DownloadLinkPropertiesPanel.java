@@ -138,7 +138,7 @@ public class DownloadLinkPropertiesPanel extends AbstractNodePropertiesPanel imp
 
     @Override
     protected List<Archive> loadArchives() {
-        return ArchiveValidator.validate(new SelectionInfo<FilePackage, DownloadLink>(currentLink, null, null, null, null, null)).getArchives();
+        return ArchiveValidator.validate(new SelectionInfo<FilePackage, DownloadLink>(currentLink, null)).getArchives();
 
     }
 
@@ -309,7 +309,7 @@ public class DownloadLinkPropertiesPanel extends AbstractNodePropertiesPanel imp
     @Override
     protected void saveSaveTo(final String stringpath) {
         System.out.println(1);
-        new SetDownloadFolderInDownloadTableAction(new SelectionInfo<FilePackage, DownloadLink>(currentLink, null, null, null, null, null)) {
+        new SetDownloadFolderInDownloadTableAction(new SelectionInfo<FilePackage, DownloadLink>(currentLink, null)) {
             protected java.io.File dialog(java.io.File path) throws org.appwork.utils.swing.dialog.DialogClosedException, org.appwork.utils.swing.dialog.DialogCanceledException {
 
                 return new File(stringpath);

@@ -160,7 +160,7 @@ public class InfoDialog extends JWindow implements ActionListener, MouseListener
         public void run() {
             final Thread thread = Thread.currentThread();
             while (thread == updater.get()) {
-                final DownloadLinkAggregator dla = new DownloadLinkAggregator(new SelectionInfo<FilePackage, DownloadLink>(null, DownloadController.getInstance().getAllChildren(), null, null, null, null));
+                final DownloadLinkAggregator dla = new DownloadLinkAggregator(new SelectionInfo<FilePackage, DownloadLink>(null, DownloadController.getInstance().getAllChildren()));
                 new EDTRunner() {
 
                     @Override

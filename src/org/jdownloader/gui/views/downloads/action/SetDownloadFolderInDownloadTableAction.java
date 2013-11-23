@@ -28,7 +28,7 @@ public class SetDownloadFolderInDownloadTableAction extends SetDownloadFolderAct
 
     @Override
     protected void move(final FilePackage pkg, final List<DownloadLink> selectedLinksByPackage) {
-        final FilePackage source = getSelection().getAllPackages().get(0);
+        final FilePackage source = getSelection().getPackageViews().get(0).getPackage();
         DownloadController.getInstance().getQueue().add(new QueueAction<Void, RuntimeException>() {
 
             @Override

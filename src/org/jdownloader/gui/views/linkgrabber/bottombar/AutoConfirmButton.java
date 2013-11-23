@@ -196,7 +196,7 @@ public class AutoConfirmButton extends ExtButton implements ChangeListener, Tabl
                                         if (l.isAutoStartEnabled()) autoStart = true;
                                     }
                                 }
-                                ConfirmLinksContextAction ca = new ConfirmLinksContextAction(new SelectionInfo<CrawledPackage, CrawledLink>(null, list, null, null, null, LinkGrabberTableModel.getInstance().getTable()));
+                                ConfirmLinksContextAction ca = new ConfirmLinksContextAction(new SelectionInfo<CrawledPackage, CrawledLink>(null, list));
                                 ca.setAutoStart(autoStart ? AutoStartOptions.ENABLED : AutoStartOptions.DISABLED);
                                 ca.actionPerformed(null);
                                 return null;

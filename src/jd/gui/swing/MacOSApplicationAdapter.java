@@ -202,7 +202,7 @@ public class MacOSApplicationAdapter implements QuitHandler, AboutHandler, Prefe
                                 } catch (InterruptedException e) {
                                     break;
                                 }
-                                final AggregatedNumbers aggn = new AggregatedNumbers(new SelectionInfo<FilePackage, DownloadLink>(null, DownloadController.getInstance().getAllChildren(), null, null, null, null));
+                                final AggregatedNumbers aggn = new AggregatedNumbers(new SelectionInfo<FilePackage, DownloadLink>(null, DownloadController.getInstance().getAllChildren()));
                                 int percent = 0;
                                 if (aggn.getTotalBytes() > 0) {
                                     percent = (int) ((aggn.getLoadedBytes() * 100) / aggn.getTotalBytes());

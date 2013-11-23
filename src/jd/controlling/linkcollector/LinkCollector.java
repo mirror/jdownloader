@@ -77,6 +77,7 @@ import org.jdownloader.extensions.extraction.ExtractionExtension;
 import org.jdownloader.extensions.extraction.bindings.crawledlink.CrawledLinkFactory;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo;
+import org.jdownloader.gui.views.SelectionInfo.PackageView;
 import org.jdownloader.gui.views.components.packagetable.LinkTreeUtils;
 import org.jdownloader.gui.views.linkgrabber.LinkGrabberTable;
 import org.jdownloader.gui.views.linkgrabber.LinkGrabberTableModel;
@@ -1647,11 +1648,11 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
         boolean autostart = false;
         List<DownloadLink> force = new ArrayList<DownloadLink>();
 
-        for (CrawledPackage cp : selection.getAllPackages()) {
+        for (PackageView<CrawledPackage, CrawledLink> cp : selection.getPackageViews()) {
             List<CrawledLink> links;
-            //
-            links = selection.getSelectedLinksByPackage(cp);
-            System.out.println(1);
+
+            links = cp.getChildren();
+
             java.util.List<FilePackage> convertedLinks = LinkCollector.getInstance().convert(links, true);
             for (CrawledLink cl : links) {
                 autostart |= cl.isAutoStartEnabled();

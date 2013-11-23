@@ -28,6 +28,7 @@ import jd.http.BrowserSettingsThread;
 import jd.plugins.Account;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
+import jd.plugins.FilePackageView;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
@@ -279,7 +280,15 @@ public class SingleDownloadController extends BrowserSettingsThread {
             queueItem.queueLinks.remove(downloadLink);
             downloadLink.setLivePlugin(null);
             finalizeChallengeResponse(downloadLogger, originalPlugin, livePlugin, validateChallenge);
-            downloadLink.getFilePackage().getView().requestUpdate();
+            if (downloadLink.getFilePackage() != null) {
+                // if we remove link without stopping them.. the filepackage may be the default package already here.
+
+                FilePackageView view = downloadLink.getFilePackage().getView();
+                if (view != null) {
+                    view.requestUpdate();
+                }
+            }
+
         }
     }
 

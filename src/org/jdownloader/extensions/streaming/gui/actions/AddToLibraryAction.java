@@ -16,6 +16,7 @@ import org.jdownloader.actions.AppAction;
 import org.jdownloader.extensions.streaming.StreamingExtension;
 import org.jdownloader.extensions.streaming.T;
 import org.jdownloader.gui.views.SelectionInfo;
+import org.jdownloader.gui.views.SelectionInfo.PackageView;
 import org.jdownloader.images.NewTheme;
 
 public class AddToLibraryAction extends AppAction {
@@ -41,8 +42,8 @@ public class AddToLibraryAction extends AppAction {
 
             @Override
             protected Void run() throws RuntimeException {
-                for (CrawledPackage cp : selection.getAllPackages()) {
-                    for (FilePackage fp : LinkCollector.getInstance().convert(selection.getSelectedLinksByPackage(cp), false)) {
+                for (PackageView<CrawledPackage, CrawledLink> cp : selection.getPackageViews()) {
+                    for (FilePackage fp : LinkCollector.getInstance().convert(cp.getChildren(), false)) {
                         extension.getMediaArchiveController().mount(fp);
                     }
                 }

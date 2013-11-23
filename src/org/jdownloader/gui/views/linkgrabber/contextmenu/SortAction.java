@@ -14,6 +14,7 @@ import org.appwork.utils.event.queue.Queue.QueuePriority;
 import org.appwork.utils.event.queue.QueueAction;
 import org.jdownloader.controlling.contextmenu.CustomizableTableContextAppAction;
 import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.gui.views.SelectionInfo.PackageView;
 import org.jdownloader.gui.views.components.packagetable.PackageControllerTableModel;
 import org.jdownloader.gui.views.downloads.DownloadsView;
 import org.jdownloader.gui.views.downloads.table.DownloadsTable;
@@ -77,52 +78,52 @@ public class SortAction<PackageType extends AbstractPackageNode<ChildrenType, Pa
                     if (column.getModel() instanceof PackageControllerTableModel) {
                         PackageControllerTableModel model = (PackageControllerTableModel) column.getModel();
                         PackageControllerComparator<AbstractNode> comparator = null;
-                        for (AbstractNode node : getSelection().getAllPackages()) {
-                            if (node instanceof AbstractPackageNode) {
-                                if (comparator == null) {
-                                    if (((AbstractPackageNode) node).getCurrentSorter() == null || !((AbstractPackageNode) node).getCurrentSorter().getID().equals(column.getModel().getModelID() + ".Column." + column.getID()) || ((AbstractPackageNode) node).getCurrentSorter().isAsc()) {
-                                        comparator = new PackageControllerComparator<AbstractNode>() {
+                        for (PackageView<PackageType, ChildrenType> node : getSelection().getPackageViews()) {
 
-                                            public int compare(AbstractNode o1, AbstractNode o2) {
+                            if (comparator == null) {
+                                if (node.getPackage().getCurrentSorter() == null || !node.getPackage().getCurrentSorter().getID().equals(column.getModel().getModelID() + ".Column." + column.getID()) || node.getPackage().getCurrentSorter().isAsc()) {
+                                    comparator = new PackageControllerComparator<AbstractNode>() {
 
-                                                return column.getRowSorter().compare(o2, o1);
+                                        public int compare(AbstractNode o1, AbstractNode o2) {
 
-                                            }
+                                            return column.getRowSorter().compare(o2, o1);
 
-                                            @Override
-                                            public String getID() {
-                                                return column.getModel().getModelID() + ".Column." + column.getID();
-                                            }
+                                        }
 
-                                            @Override
-                                            public boolean isAsc() {
-                                                return false;
-                                            }
-                                        };
+                                        @Override
+                                        public String getID() {
+                                            return column.getModel().getModelID() + ".Column." + column.getID();
+                                        }
 
-                                    } else {
-                                        comparator = new PackageControllerComparator<AbstractNode>() {
+                                        @Override
+                                        public boolean isAsc() {
+                                            return false;
+                                        }
+                                    };
 
-                                            public int compare(AbstractNode o1, AbstractNode o2) {
+                                } else {
+                                    comparator = new PackageControllerComparator<AbstractNode>() {
 
-                                                return column.getRowSorter().compare(o1, o2);
+                                        public int compare(AbstractNode o1, AbstractNode o2) {
 
-                                            }
+                                            return column.getRowSorter().compare(o1, o2);
 
-                                            @Override
-                                            public String getID() {
-                                                return column.getModel().getModelID() + ".Column." + column.getID();
-                                            }
+                                        }
 
-                                            @Override
-                                            public boolean isAsc() {
-                                                return true;
-                                            }
-                                        };
-                                    }
+                                        @Override
+                                        public String getID() {
+                                            return column.getModel().getModelID() + ".Column." + column.getID();
+                                        }
+
+                                        @Override
+                                        public boolean isAsc() {
+                                            return true;
+                                        }
+                                    };
                                 }
-                                model.sortPackageChildren((AbstractPackageNode) node, comparator);
                             }
+                            model.sortPackageChildren((AbstractPackageNode) node, comparator);
+
                         }
                     }
                     return null;
