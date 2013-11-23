@@ -77,6 +77,10 @@ public class SflnkgNt extends PluginForDecrypt {
             logger.info("Link offline: " + parameter);
             return decryptedLinks;
         }
+        if (br.containsHTML(">This link does not exist")) {
+            logger.info("Link offline: " + parameter);
+            return decryptedLinks;
+        }
         br.setFollowRedirects(false);
         if (gsh.getAddedLink().contains("/d/")) {
             gsh.decryptSingleLink();
@@ -94,7 +98,8 @@ public class SflnkgNt extends PluginForDecrypt {
 
     public class GeneralSafelinkingHandling {
         /**
-         * A class to handle sites similar to safelinking.net ->Google "Secure your links with a captcha, a password and much more" to find such sites
+         * A class to handle sites similar to safelinking.net ->Google "Secure your links with a captcha, a password and much more" to find
+         * such sites
          */
 
         public GeneralSafelinkingHandling(final Browser br, final CryptedLink param, final String host) {

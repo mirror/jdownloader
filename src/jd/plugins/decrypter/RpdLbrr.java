@@ -32,7 +32,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rapidlibrary.com" }, urls = { "http://rapidlibrary\\.com/(download_file_i\\.php\\?.+|files/[^<>\"/]+\\.html)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rapidlibrary.com" }, urls = { "http://rapidlibrary\\.(com|biz)/(download_file_i\\.php\\?.+|files/[^<>\"/]+\\.html)" }, flags = { 0 })
 public class RpdLbrr extends PluginForDecrypt {
 
     private static AtomicBoolean decryptRunning = new AtomicBoolean(false);
@@ -42,7 +42,7 @@ public class RpdLbrr extends PluginForDecrypt {
 
     }
 
-    private final String OLDLINK = "http://rapidlibrary\\.com/download_file_i\\.php\\?.+";
+    private final String OLDLINK = "http://rapidlibrary\\.biz/download_file_i\\.php\\?.+";
 
     @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink parameter, ProgressController progress) throws Exception {
@@ -50,12 +50,13 @@ public class RpdLbrr extends PluginForDecrypt {
         /**
          * only the first link shows a captcha. so we wait and queue parallel requests
          */
+        final String crptlink = parameter.getCryptedUrl().replace("rdpidlibrary.com/", "rapidlibrary.biz/");
         try {
             waitQueue();
-            if (parameter.getCryptedUrl().matches(OLDLINK)) {
+            if (crptlink.matches(OLDLINK)) {
 
                 br.setCookiesExclusive(false);
-                br.getPage(parameter.getCryptedUrl());
+                br.getPage(crptlink);
                 String fpName = br.getRegex("<<title>File download:(.*?)from .*?</title>").getMatch(0);
                 if (fpName == null) {
                     fpName = br.getRegex("<font class=\"texta\">(.*?)</font>").getMatch(0);
@@ -69,11 +70,11 @@ public class RpdLbrr extends PluginForDecrypt {
                     for (int i = 0; i <= 7; i++) {
                         Form captchaForm = br.getForms()[1];
                         if (captchaForm == null) {
-                            logger.warning("Decrypter broken for link: " + parameter.getCryptedUrl());
+                            logger.warning("Decrypter broken for link: " + crptlink);
                             return null;
                         }
                         captchaForm.setAction(br.getURL());
-                        String captchaCode = getCaptchaCode("http://rapidlibrary.com/code2.php", parameter);
+                        String captchaCode = getCaptchaCode("http://rapidlibrary.biz/code2.php", parameter);
                         InputField nv = new InputField("c_code", captchaCode);
                         captchaForm.addInputField(nv);
                         br.submitForm(captchaForm);
@@ -86,7 +87,7 @@ public class RpdLbrr extends PluginForDecrypt {
                     if (pagepiece == null) return null;
                     String[] links = HTMLParser.getHttpLinks(pagepiece, "");
                     if (links == null || links.length == 0) {
-                        logger.warning("Decrypter broken for link: " + parameter.getCryptedUrl());
+                        logger.warning("Decrypter broken for link: " + crptlink);
                         return null;
                     }
                     for (String finallink : links) {
@@ -99,23 +100,25 @@ public class RpdLbrr extends PluginForDecrypt {
                     fp.addLinks(decryptedLinks);
                 }
             } else {
-                br.getPage(parameter.getCryptedUrl());
+                br.getPage(crptlink);
+                if (br.getRedirectLocation() != null) br.getPage(br.getRedirectLocation());
                 if (br.containsHTML("Error file not found")) {
-                    logger.info("Link offline: " + parameter.getCryptedUrl());
+                    logger.info("Link offline: " + crptlink);
                     return decryptedLinks;
                 }
                 String host = br.getRegex("height=\"16\">([^<>\"]*?)</span> <span class=\"size\"><span>size:</span>").getMatch(0);
                 String finallink = getFinallink();
-                if (finallink == null) finallink = br.getRegex(">If password needed check source link: <a target=\"_blank\" rel=\"nofollow\" href=\"/source\\.php\\?file=[a-z0-9]+\\&sec=[a-z0-9]+\">([^<>\"]*?)</a></small>").getMatch(0);
+                // Maybe the sourc == the finallink so we might be able to skip the captcha sometimes
+                if (finallink == null) finallink = br.getRegex("\"/source\\.php\\?file=[a-z0-9]+\\&sec=[a-z0-9]+\">([^<>\"]*?)</a>").getMatch(0);
                 if (finallink == null || (host != null && !finallink.contains(Encoding.htmlDecode(host.trim()))) && br.containsHTML("code2\\.php")) {
                     for (int i = 0; i <= 7; i++) {
                         Form captchaForm = br.getForms()[1];
                         if (captchaForm == null) {
-                            logger.warning("Decrypter broken for link: " + parameter.getCryptedUrl());
+                            logger.warning("Decrypter broken for link: " + crptlink);
                             return null;
                         }
                         captchaForm.setAction(br.getURL());
-                        String captchaCode = getCaptchaCode("http://rapidlibrary.com/code2.php", parameter);
+                        String captchaCode = getCaptchaCode("http://rapidlibrary.biz/code2.php", parameter);
                         InputField nv = new InputField("c_code", captchaCode);
                         captchaForm.addInputField(nv);
                         br.submitForm(captchaForm);
@@ -126,7 +129,7 @@ public class RpdLbrr extends PluginForDecrypt {
                     finallink = getFinallink();
                 }
                 if (finallink == null) {
-                    logger.warning("Decrypter broken for link: " + parameter.getCryptedUrl());
+                    logger.warning("Decrypter broken for link: " + crptlink);
                     return null;
                 }
                 if (!finallink.startsWith("http")) finallink = "http://" + finallink;
@@ -139,7 +142,7 @@ public class RpdLbrr extends PluginForDecrypt {
     }
 
     private String getFinallink() {
-        return br.getRegex("onclick=\"this\\.select\\(\\);\" value=\"(http[^<>\"]*?)\" readonly=\"readonly\"></div></div><h4>RapidLibrary").getMatch(0);
+        return br.getRegex("class=\"line\"><div class=\"wrap-input\"><input onclick=\"this\\.select\\(\\);\" value=\"(http[^<>\"]*?)\"").getMatch(0);
     }
 
     private void waitQueue() throws InterruptedException {

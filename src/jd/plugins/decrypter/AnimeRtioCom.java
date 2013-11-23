@@ -96,8 +96,6 @@ public class AnimeRtioCom extends PluginForDecrypt {
         if (tempID != null) return "http://www.veoh.com/watch/" + tempID;
         tempID = new Regex(vidEntry, "putlockers\\.php\\?id=([^<>\"]*?)\"").getMatch(0);
         if (tempID != null) return "http://putlocker.com/file/" + tempID;
-        tempID = new Regex(vidEntry, "/files/embed/filebox\\.php\\?id=([a-z0-9]{12})\"").getMatch(0);
-        if (tempID != null) return "http://filebox.com/" + tempID;
         tempID = new Regex(vidEntry, "yourupload\\.php\\?id=([a-z0-9]+)\"").getMatch(0);
         if (tempID != null) return "http://yourupload.com/file/" + tempID;
         tempID = new Regex(vidEntry, "(files/embed/myspace\\.php\\?id=\\d+)\"").getMatch(0);
