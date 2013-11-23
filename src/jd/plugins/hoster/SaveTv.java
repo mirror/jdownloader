@@ -594,12 +594,13 @@ public class SaveTv extends PluginForHost {
      * @param soapPost
      *            : The soap post data
      */
-    private void doSoapRequest(final String soapAction, final String soapPost) throws IOException {
-        br.getHeaders().put("SOAPAction", soapAction);
-        br.getHeaders().put("Content-Type", "text/xml");
-        br.getHeaders().put("Content-Length", Integer.toString(soapPost.length()));
-        br.postPage(APIPAGE, soapAction);
-    }
+    // private void doSoapRequest(final String soapAction, final String soapPost) throws IOException {
+    // System.out.println(soapPost);
+    // br.getHeaders().put("SOAPAction", soapAction);
+    // br.getHeaders().put("Content-Type", "text/xml");
+    // br.getHeaders().put("Content-Length", Integer.toString(soapPost.length()));
+    // br.postPage("http://api.save.tv/v2/Api.svc", soapAction);
+    // }
 
     @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {

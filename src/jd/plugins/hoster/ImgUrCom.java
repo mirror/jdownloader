@@ -47,6 +47,7 @@ public class ImgUrCom extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         br.setFollowRedirects(true);
+        String finalfilename = link.getStringProperty("decryptedfinalfilename", null);
         DLLINK = link.getStringProperty("directlink", null);
         if (DLLINK != null) {
             URLConnectionAdapter con = null;
@@ -67,9 +68,9 @@ public class ImgUrCom extends PluginForHost {
             if (br.getRequest().getHttpConnection().getResponseCode() == 404) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             if (br.containsHTML("<message>Image not found</message>")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             final String filesize = br.getRegex("<size>(\\d+)</size>").getMatch(0);
-            final String filename = br.getRegex("<original>https?://i\\.imgur\\.com/([^<>\"]*?)</original>").getMatch(0);
-            if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            link.setName(filename);
+            if (finalfilename == null) finalfilename = br.getRegex("<original>https?://i\\.imgur\\.com/([^<>\"]*?)</original>").getMatch(0);
+            if (finalfilename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            link.setFinalFileName(finalfilename);
             link.setDownloadSize(Long.parseLong(filesize));
         }
         return AvailableStatus.TRUE;

@@ -20,6 +20,7 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
@@ -64,13 +65,19 @@ public class ImgurCom extends PluginForDecrypt {
                     logger.warning("Decrypter broken for link: " + parameter);
                     return null;
                 }
-                final String filename = new Regex(directlink, "i\\.imgur\\.com/(.+)").getMatch(0);
+                String filetype = new Regex(item, "<type>image/([^<>\"]*?)</type>").getMatch(0);
+                if (filetype == null) filetype = "jpeg";
+                String filename = new Regex(item, "<title>([^<>\"]*?)</title>").getMatch(0);
+                if (filename == null || filename.equals("")) filename = new Regex(directlink, "i\\.imgur\\.com/(.+)").getMatch(0);
+                filename = Encoding.htmlDecode(filename.trim());
+                if (!filename.endsWith(filetype)) filename += "." + filetype;
                 final DownloadLink dl = createDownloadlink("http://imgurdecrypted.com/download/" + imgUID);
-                dl.setName(filename);
+                dl.setFinalFileName(filename);
                 dl.setDownloadSize(Long.parseLong(filesize));
                 dl.setAvailable(true);
                 dl.setProperty("imgUID", imgUID);
                 dl.setProperty("directlink", directlink);
+                dl.setProperty("decryptedfinalfilename", filename);
                 decryptedLinks.add(dl);
             }
             final FilePackage fp = FilePackage.getInstance();
