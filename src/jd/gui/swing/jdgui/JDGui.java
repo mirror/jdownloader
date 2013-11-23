@@ -273,7 +273,8 @@ public class JDGui implements UpdaterListener, OwnerFinder {
                             public void run() {
 
                                 try {
-                                    ConfirmDialog d = new ConfirmDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI._.JDGui_tray_title(), _GUI._.JDGui_tray_msg(), NewTheme.I().getIcon("logo/logo-48x48", 32), null, null) {
+
+                                    ConfirmDialog d = new ConfirmDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN | UIOManager.LOGIC_DONT_SHOW_AGAIN_IGNORES_OK, _GUI._.JDGui_tray_title(), _GUI._.JDGui_tray_msg(), NewTheme.I().getIcon("logo/logo-48x48", 32), null, null) {
                                         @Override
                                         public String getDontShowAgainKey() {
                                             return "TrayBug2";
