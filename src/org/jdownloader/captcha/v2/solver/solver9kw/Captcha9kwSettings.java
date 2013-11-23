@@ -17,7 +17,7 @@ public interface Captcha9kwSettings extends ConfigInterface {
 
     @AboutConfig
     @DefaultBooleanValue(false)
-    @DescriptionForConfigEntry("Active the 9kw.eu service")
+    @DescriptionForConfigEntry("Activate the 9kw.eu service")
     boolean isEnabled();
 
     void setEnabled(boolean b);
@@ -50,6 +50,32 @@ public interface Captcha9kwSettings extends ConfigInterface {
     int getprio();
 
     void setprio(int seconds);
+
+    @AboutConfig
+    @DescriptionForConfigEntry("Captcha whitelist for hoster with prio")
+    String getwhitelistprio();
+
+    void setwhitelistprio(String jser);
+
+    @AboutConfig
+    @DescriptionForConfigEntry("Captcha blacklist for hoster with prio")
+    String getblacklistprio();
+
+    void setblacklistprio(String jser);
+
+    @AboutConfig
+    @DefaultBooleanValue(true)
+    @DescriptionForConfigEntry("Activate the blacklist with prio")
+    boolean getblacklistpriocheck();
+
+    void setblacklistpriocheck(boolean b);
+
+    @AboutConfig
+    @DefaultBooleanValue(true)
+    @DescriptionForConfigEntry("Activate the whitelist with prio")
+    boolean getwhitelistpriocheck();
+
+    void setwhitelistpriocheck(boolean b);
 
     @AboutConfig
     @DefaultIntValue(0)

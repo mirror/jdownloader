@@ -76,6 +76,8 @@ public class Captcha9kwSolverClick extends ChallengeSolver<ClickedPoint> impleme
             checkInterruption();
             ClickCaptchaChallenge captchaChallenge = (ClickCaptchaChallenge) solverJob.getChallenge();
 
+            int priothing = config.getprio();
+
             solverJob.getLogger().info("Start Captcha to 9kw.eu. Timeout: " + JsonConfig.create(CaptchaSettings.class).getCaptchaDialogJAntiCaptchaTimeout() + " - getTypeID: " + captchaChallenge.getTypeID());
             if (config.getwhitelistcheck()) {
                 if (config.getwhitelist() != null) {
@@ -99,6 +101,28 @@ public class Captcha9kwSolverClick extends ChallengeSolver<ClickedPoint> impleme
                         } else {
                             solverJob.getLogger().info("Hoster not on blacklist for 9kw.eu. - " + captchaChallenge.getTypeID());
                         }
+                    }
+                }
+            }
+
+            if (config.getwhitelistprio() != null) {
+                if (config.getwhitelistprio().length() > 5) {
+                    if (config.getwhitelistprio().contains(captchaChallenge.getTypeID())) {
+                        solverJob.getLogger().info("Hoster on whitelist with prio for 9kw.eu. - " + captchaChallenge.getTypeID());
+                    } else {
+                        solverJob.getLogger().info("Hoster not on whitelist with prio for 9kw.eu. - " + captchaChallenge.getTypeID());
+                        priothing = 0;
+                    }
+                }
+            }
+
+            if (config.getblacklistprio() != null) {
+                if (config.getblacklistprio().length() > 5) {
+                    if (config.getblacklistprio().contains(captchaChallenge.getTypeID())) {
+                        priothing = 0;
+                        solverJob.getLogger().info("Hoster on blacklist with prio for 9kw.eu. - " + captchaChallenge.getTypeID());
+                    } else {
+                        solverJob.getLogger().info("Hoster not on blacklist with prio for 9kw.eu. - " + captchaChallenge.getTypeID());
                     }
                 }
             }

@@ -36,7 +36,8 @@ public class NinekwService implements CESService {
             private TextInput apiKey;
             private TextInput blacklist;
             private TextInput whitelist;
-
+            private TextInput blacklistprio;
+            private TextInput whitelistprio;
             {
                 addHeader(getDisplayName(), NewTheme.I().getIcon("9kw", 32));
                 addDescription(_GUI._.AntiCaptchaConfigPanel_onShow_description_ces());
@@ -56,6 +57,8 @@ public class NinekwService implements CESService {
                 apiKey = new TextInput(CFG_9KWCAPTCHA.API_KEY);
                 blacklist = new TextInput(CFG_9KWCAPTCHA.BLACKLIST);
                 whitelist = new TextInput(CFG_9KWCAPTCHA.WHITELIST);
+                blacklistprio = new TextInput(CFG_9KWCAPTCHA.BLACKLISTPRIO);
+                whitelistprio = new TextInput(CFG_9KWCAPTCHA.WHITELISTPRIO);
 
                 this.addHeader(_GUI._.MyJDownloaderSettingsPanel_MyJDownloaderSettingsPanel_logins_(), NewTheme.I().getIcon(IconKey.ICON_LOGINS, 32));
                 // addPair(_GUI._.MyJDownloaderSettingsPanel_MyJDownloaderSettingsPanel_enabled(), null, checkBox);
@@ -77,6 +80,10 @@ public class NinekwService implements CESService {
                 addPair(_GUI._.NinekwService_createPanel_whitelistcheck(), null, new Checkbox(CFG_9KWCAPTCHA.WHITELISTCHECK));
                 addPair(_GUI._.NinekwService_createPanel_whitelist(), null, whitelist);
 
+                addPair(_GUI._.NinekwService_createPanel_blacklistpriocheck(), null, new Checkbox(CFG_9KWCAPTCHA.BLACKLISTPRIOCHECK));
+                addPair(_GUI._.NinekwService_createPanel_blacklistprio(), null, blacklistprio);
+                addPair(_GUI._.NinekwService_createPanel_whitelistpriocheck(), null, new Checkbox(CFG_9KWCAPTCHA.WHITELISTPRIOCHECK));
+                addPair(_GUI._.NinekwService_createPanel_whitelistprio(), null, whitelistprio);
             }
 
             @Override
