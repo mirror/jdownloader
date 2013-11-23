@@ -79,6 +79,7 @@ plugins_optional_extraction_status_extracting_filename=Entpacke %s1
 plugins_optional_extraction_status_extractok=Entpacken OK
 plugins_optional_extraction_status_notenoughspace=Nicht genug Speicherplatz auf der Festplatte um zu entpacken
 plugins_optional_extraction_status_openingarchive2=Entpacken läuft
+plugins_optional_extraction_status_passfound=Passwort gefunden
 plugins_optional_extraction_status_queued=In Entpacker Warteschlange
 properties=Eigenschaften Unterordner
 set_autoextract_false=Automatisches Entpacken ist jetzt deaktiviert.
