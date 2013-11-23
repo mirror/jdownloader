@@ -100,6 +100,7 @@ BottomBar_BottomBar_moveup_tooltip=Ausgewählte Links & Pakete nach oben verschi
 BottomBar_BottomBar_settings=Schnelleinstellungen öffnen
 BottomBar_BottomBar_tobottom_tooltip=Ausgewähle Links & Pakete nach ganz unten verschieben
 BottomBar_BottomBar_totop_tooltip=Ausgewählte Links & Pakete nach ganz oben verschieben
+BubbleNotifyConfigPanel_BubbleNotifyConfigPanel_enabledstate=Zeige Sprechblasen...
 BubbleNotifyConfigPanel_BubbleNotifyConfigPanel_fadetime=Animationsdauer (Ein- und Ausblendezeit in ms)
 BubbleNotifyConfigPanel_BubbleNotifyConfigPanel_settings_=Sprechblaseneinstellungen
 BubbleNotifyConfigPanel_BubbleNotifyConfigPanel_silent_=Zeige Sprechblasen während aktivem Ruhemodus
