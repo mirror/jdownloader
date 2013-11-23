@@ -25,6 +25,7 @@ import org.appwork.utils.StringUtils;
 import org.appwork.utils.net.BasicHTTP.BasicHTTP;
 import org.jdownloader.captcha.v2.Challenge;
 import org.jdownloader.captcha.v2.ChallengeSolver;
+import org.jdownloader.captcha.v2.SolverStatus;
 import org.jdownloader.captcha.v2.challenge.stringcaptcha.BasicCaptchaChallenge;
 import org.jdownloader.captcha.v2.challenge.stringcaptcha.CaptchaResponse;
 import org.jdownloader.captcha.v2.solver.dbc.DeathByCaptchaSolver;
@@ -32,6 +33,9 @@ import org.jdownloader.captcha.v2.solver.jac.JACSolver;
 import org.jdownloader.captcha.v2.solver.jac.SolverException;
 import org.jdownloader.captcha.v2.solverjob.SolverJob;
 import org.jdownloader.gui.IconKey;
+import org.jdownloader.gui.notify.captcha.CESBubble;
+import org.jdownloader.gui.notify.captcha.CESBubbleSupport;
+import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.settings.advanced.AdvancedConfigManager;
 import org.jdownloader.settings.staticreferences.CFG_CAPTCHA;
@@ -168,44 +172,57 @@ public class CBSolver extends ChallengeSolver<String> implements ServicePanelExt
             job.waitFor(JsonConfig.create(CaptchaSettings.class).getCaptchaDialogJAntiCaptchaTimeout(), JACSolver.getInstance());
             checkInterruption();
             BasicCaptchaChallenge challenge = (BasicCaptchaChallenge) job.getChallenge();
+            CESBubble bubble = null;
 
             try {
-                counter.incrementAndGet();
-                String url = "http://www.captchabrotherhood.com/sendNewCaptcha.aspx?username=" + Encoding.urlEncode(config.getUser()) + "&password=" + Encoding.urlEncode(config.getPass()) + "&captchaSource=jdPlugin&captchaSite=999&timeout=80&version=1.1.7";
-                byte[] data = IO.readFile(challenge.getImageFile());
+                bubble = CESBubbleSupport.getInstance().show(this, job, CFG_CAPTCHA.CFG.getChanceToSkipBubbleTimeout());
+                checkInterruption();
+                try {
+                    counter.incrementAndGet();
+                    String url = "http://www.captchabrotherhood.com/sendNewCaptcha.aspx?username=" + Encoding.urlEncode(config.getUser()) + "&password=" + Encoding.urlEncode(config.getPass()) + "&captchaSource=jdPlugin&captchaSite=999&timeout=80&version=1.1.7";
+                    byte[] data = IO.readFile(challenge.getImageFile());
+                    setStatus(job, new SolverStatus(_GUI._.DeathByCaptchaSolver_solveBasicCaptchaChallenge_uploading(), NewTheme.I().getIcon(IconKey.ICON_UPLOAD, 20)));
 
-                BasicHTTP http = new BasicHTTP();
-                String ret = new String(http.postPage(new URL(url), data), "UTF-8");
+                    BasicHTTP http = new BasicHTTP();
+                    String ret = new String(http.postPage(new URL(url), data), "UTF-8");
+                    setStatus(job, new SolverStatus(_GUI._.DeathByCaptchaSolver_solveBasicCaptchaChallenge_solving(), NewTheme.I().getIcon(IconKey.ICON_UPLOAD, 20)));
 
-                job.getLogger().info("Send Captcha. Answer: " + ret);
-                if (!ret.startsWith("OK-")) throw new SolverException(ret);
-                // Error-No Credits
-                String captchaID = ret.substring(3);
-                data = null;
-                Thread.sleep(6000);
-                while (true) {
+                    job.getLogger().info("Send Captcha. Answer: " + ret);
+                    if (!ret.startsWith("OK-")) throw new SolverException(ret);
+                    // Error-No Credits
+                    String captchaID = ret.substring(3);
+                    data = null;
+                    Thread.sleep(6000);
+                    while (true) {
 
-                    Thread.sleep(1000);
-                    url = "http://www.captchabrotherhood.com/askCaptchaResult.aspx?username=" + Encoding.urlEncode(config.getUser()) + "&password=" + Encoding.urlEncode(config.getPass()) + "&captchaID=" + Encoding.urlEncode(captchaID) + "&version=1.1.7";
-                    job.getLogger().info("Ask " + url);
-                    ret = http.getPage(new URL(url));
-                    job.getLogger().info("Answer " + ret);
-                    if (ret.startsWith("OK-answered-")) {
-                        counterSolved.incrementAndGet();
-                        job.addAnswer(new CaptchaResponse(challenge, this, ret.substring("OK-answered-".length()), 100));
-                        return;
+                        Thread.sleep(1000);
+                        url = "http://www.captchabrotherhood.com/askCaptchaResult.aspx?username=" + Encoding.urlEncode(config.getUser()) + "&password=" + Encoding.urlEncode(config.getPass()) + "&captchaID=" + Encoding.urlEncode(captchaID) + "&version=1.1.7";
+                        job.getLogger().info("Ask " + url);
+                        ret = http.getPage(new URL(url));
+                        job.getLogger().info("Answer " + ret);
+                        if (ret.startsWith("OK-answered-")) {
+                            counterSolved.incrementAndGet();
+                            job.addAnswer(new CaptchaResponse(challenge, this, ret.substring("OK-answered-".length()), 100));
+                            return;
+                        }
+                        checkInterruption();
+
                     }
-                    checkInterruption();
+                } catch (InterruptedException e) {
+                    counterInterrupted.incrementAndGet();
+                    throw e;
+
+                } catch (IOException e) {
+                    job.getLogger().log(e);
+                    counterInterrupted.incrementAndGet();
+                } finally {
 
                 }
-            } catch (InterruptedException e) {
-                counterInterrupted.incrementAndGet();
-                throw e;
-
-            } catch (IOException e) {
-                job.getLogger().log(e);
-                counterInterrupted.incrementAndGet();
             } finally {
+
+                if (bubble != null) {
+                    CESBubbleSupport.getInstance().hide(bubble);
+                }
 
             }
 
@@ -235,5 +252,10 @@ public class CBSolver extends ChallengeSolver<String> implements ServicePanelExt
         }
         return ret;
 
+    }
+
+    @Override
+    public Icon getIcon(int size) {
+        return NewTheme.I().getIcon(IconKey.ICON_CBH, size);
     }
 }

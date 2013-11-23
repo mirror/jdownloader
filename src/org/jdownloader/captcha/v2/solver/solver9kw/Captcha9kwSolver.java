@@ -25,15 +25,19 @@ import org.appwork.swing.components.tooltips.ExtTooltip;
 import org.appwork.utils.IO;
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
-import org.jdownloader.DomainInfo;
 import org.jdownloader.captcha.v2.AbstractResponse;
 import org.jdownloader.captcha.v2.Challenge;
 import org.jdownloader.captcha.v2.ChallengeResponseValidation;
 import org.jdownloader.captcha.v2.ChallengeSolver;
+import org.jdownloader.captcha.v2.SolverStatus;
 import org.jdownloader.captcha.v2.challenge.stringcaptcha.BasicCaptchaChallenge;
 import org.jdownloader.captcha.v2.solver.jac.JACSolver;
 import org.jdownloader.captcha.v2.solver.jac.SolverException;
 import org.jdownloader.captcha.v2.solverjob.SolverJob;
+import org.jdownloader.gui.IconKey;
+import org.jdownloader.gui.notify.captcha.CESBubble;
+import org.jdownloader.gui.notify.captcha.CESBubbleSupport;
+import org.jdownloader.images.NewTheme;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.settings.advanced.AdvancedConfigManager;
 import org.jdownloader.settings.staticreferences.CFG_9KWCAPTCHA;
@@ -43,6 +47,7 @@ public class Captcha9kwSolver extends ChallengeSolver<String> implements Challen
     private Captcha9kwSettings            config;
     private static final Captcha9kwSolver INSTANCE   = new Captcha9kwSolver();
     private ThreadPoolExecutor            threadPool = new ThreadPoolExecutor(0, 1, 30000, TimeUnit.MILLISECONDS, new LinkedBlockingDeque<Runnable>(), Executors.defaultThreadFactory());
+    private CESBubbleSupport              bubbleSupport;
 
     public static Captcha9kwSolver getInstance() {
         return INSTANCE;
@@ -55,9 +60,11 @@ public class Captcha9kwSolver extends ChallengeSolver<String> implements Challen
 
     private Captcha9kwSolver() {
         super(Math.max(1, Math.min(25, JsonConfig.create(Captcha9kwSettings.class).getThreadpoolSize())));
+
         config = JsonConfig.create(Captcha9kwSettings.class);
         AdvancedConfigManager.getInstance().register(config);
         threadPool.allowCoreThreadTimeOut(true);
+
         SecondLevelLaunch.GUI_COMPLETE.executeWhenReached(new Runnable() {
 
             public void run() {
@@ -116,6 +123,11 @@ public class Captcha9kwSolver extends ChallengeSolver<String> implements Challen
     }
 
     @Override
+    public Icon getIcon(int size) {
+        return NewTheme.I().getIcon(IconKey.ICON_9KW, size);
+    }
+
+    @Override
     public void solve(final SolverJob<String> job) throws InterruptedException, SolverException {
         if (StringUtils.isEmpty(config.getApiKey())) {
             job.getLogger().info("No ApiKey for 9kw.eu found.");
@@ -123,6 +135,7 @@ public class Captcha9kwSolver extends ChallengeSolver<String> implements Challen
         }
         if (job.getChallenge() instanceof BasicCaptchaChallenge && CFG_CAPTCHA.CAPTCHA_EXCHANGE_SERVICES_ENABLED.isEnabled()) {
             job.waitFor(JsonConfig.create(CaptchaSettings.class).getCaptchaDialogJAntiCaptchaTimeout(), JACSolver.getInstance());
+
             checkInterruption();
             BasicCaptchaChallenge challenge = (BasicCaptchaChallenge) job.getChallenge();
 
@@ -154,6 +167,7 @@ public class Captcha9kwSolver extends ChallengeSolver<String> implements Challen
                     }
                 }
             }
+            CESBubble bubble = null;
 
             if (config.getwhitelistpriocheck()) {
                 if (config.getwhitelistprio() != null) {
@@ -182,47 +196,62 @@ public class Captcha9kwSolver extends ChallengeSolver<String> implements Challen
             }
 
             try {
+
+                bubble = CESBubbleSupport.getInstance().show(this, job, CFG_CAPTCHA.CFG.getChanceToSkipBubbleTimeout());
+                checkInterruption();
+
                 byte[] data = IO.readFile(challenge.getImageFile());
                 Browser br = new Browser();
                 br.setAllowedResponseCodes(new int[] { 500 });
                 String ret = "";
-
+                setStatus(job, new SolverStatus("Uploading...", NewTheme.I().getIcon(IconKey.ICON_UPLOAD, 18)));
                 for (int i = 0; i <= 5; i++) {
                     ret = br.postPage(getAPIROOT() + "index.cgi", "action=usercaptchaupload&jd=2&source=jd2&captchaperhour=" + config.gethour() + "&prio=" + priothing + "&selfsolve=" + config.isSelfsolve() + "&confirm=" + config.isconfirm() + "&oldsource=" + Encoding.urlEncode(challenge.getTypeID()) + "&apikey=" + Encoding.urlEncode(config.getApiKey()) + "&captchaSource=jdPlugin&maxtimeout=" + (JsonConfig.create(CaptchaSettings.class).getCaptchaDialog9kwTimeout() / 1000) + "&version=1.2&base64=1&file-upload-01=" + Encoding.urlEncode(org.appwork.utils.encoding.Base64.encodeToString(data, false)));
                     if (ret.startsWith("OK-")) {
                         break;
                     } else {
                         Thread.sleep(3000);
-                    }
-                }
-                job.getLogger().info("Send Captcha to 9kw.eu. - Answer: " + ret);
-                if (!ret.startsWith("OK-")) throw new SolverException(ret);
-                // Error-No Credits
-                String captchaID = ret.substring(3);
-                data = null;
-                long startTime = System.currentTimeMillis();
 
-                Thread.sleep(5000);
-
-                while (true) {
-
-                    job.getLogger().info("9kw.eu Ask " + captchaID);
-                    ret = br.getPage(getAPIROOT() + "index.cgi?action=usercaptchacorrectdata&jd=2&source=jd2&apikey=" + Encoding.urlEncode(config.getApiKey()) + "&id=" + Encoding.urlEncode(captchaID) + "&version=1.1");
-                    if (StringUtils.isEmpty(ret)) {
-                        job.getLogger().info("9kw.eu NO answer after " + ((System.currentTimeMillis() - startTime) / 1000) + "s ");
-                    } else {
-                        job.getLogger().info("9kw.eu Answer after " + ((System.currentTimeMillis() - startTime) / 1000) + "s: " + ret);
                     }
-                    if (ret.startsWith("OK-answered-")) {
-                        job.addAnswer(new Captcha9kwResponse(challenge, this, ret.substring("OK-answered-".length()), 100, captchaID));
-                        return;
+                    setStatus(job, new SolverStatus("Waiting... ", NewTheme.I().getIcon(IconKey.ICON_WAIT, 18)));
+                    job.getLogger().info("Send Captcha to 9kw.eu. - Answer: " + ret);
+                    if (!ret.startsWith("OK-")) throw new SolverException(ret);
+                    // Error-No Credits
+                    String captchaID = ret.substring(3);
+                    data = null;
+                    long startTime = System.currentTimeMillis();
+
+                    Thread.sleep(5000);
+
+                    while (true) {
+
+                        job.getLogger().info("9kw.eu Ask " + captchaID);
+                        ret = br.getPage(getAPIROOT() + "index.cgi?action=usercaptchacorrectdata&jd=2&source=jd2&apikey=" + Encoding.urlEncode(config.getApiKey()) + "&id=" + Encoding.urlEncode(captchaID) + "&version=1.1");
+                        if (StringUtils.isEmpty(ret)) {
+                            job.getLogger().info("9kw.eu NO answer after " + ((System.currentTimeMillis() - startTime) / 1000) + "s ");
+                        } else {
+                            job.getLogger().info("9kw.eu Answer after " + ((System.currentTimeMillis() - startTime) / 1000) + "s: " + ret);
+                        }
+                        if (ret.startsWith("OK-answered-")) {
+                            setStatus(job, new SolverStatus("Done: " + ret, NewTheme.I().getIcon(IconKey.ICON_OK, 18)));
+                            job.addAnswer(new Captcha9kwResponse(challenge, this, ret.substring("OK-answered-".length()), 100, captchaID));
+                            return;
+                        }
+                        setStatus(job, new SolverStatus("Waiting... ", NewTheme.I().getIcon(IconKey.ICON_WAIT, 18)));
+                        checkInterruption();
+                        Thread.sleep(3000);
                     }
-                    checkInterruption();
-                    Thread.sleep(3000);
                 }
 
             } catch (IOException e) {
                 job.getLogger().log(e);
+
+            } finally {
+
+                if (bubble != null) {
+                    CESBubbleSupport.getInstance().hide(bubble);
+                }
+
             }
         } else {
             job.getLogger().info("Problem with Captcha9kwSolver.");
@@ -328,7 +357,7 @@ public class Captcha9kwSolver extends ChallengeSolver<String> implements Challen
 
                 @Override
                 public Icon getIcon() {
-                    return DomainInfo.getInstance("9kw.eu").getFavIcon();
+                    return NewTheme.I().getIcon(IconKey.ICON_9KW, 18);
                 }
 
                 @Override

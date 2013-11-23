@@ -14,6 +14,13 @@ public interface CaptchaSettings extends ConfigInterface {
 
     @AboutConfig
     @DefaultBooleanValue(true)
+    @DescriptionForConfigEntry("Enable the CES & Remote Captcha Bubbles")
+    boolean isRemoteCaptchaBubbleEnabled();
+
+    void setRemoteCaptchaBubbleEnabled(boolean b);
+
+    @AboutConfig
+    @DefaultBooleanValue(true)
     @org.appwork.storage.config.annotations.DescriptionForConfigEntry("True to enable a countdown in captcha dialogs. Dialog will close automated after the coundown")
     boolean isDialogCountdownForDownloadsEnabled();
 
@@ -138,4 +145,10 @@ public interface CaptchaSettings extends ConfigInterface {
     int getDefaultChallengeTimeout();
 
     void setDefaultChallengeTimeout(int ms);
+
+    @AboutConfig
+    @DefaultIntValue(10000)
+    int getChanceToSkipBubbleTimeout();
+
+    void setChanceToSkipBubbleTimeout(int ms);
 }

@@ -76,11 +76,11 @@ public class AddLinksProgress extends AbstractDialog<Object> {
         MigPanel p = new MigPanel("ins 0,wrap 9", "[][][][][][][][][]", "[grow,fill]");
         progress = new CircledProgressBar();
         progress.setIndeterminate(true);
-        progress.setValueClipPainter(new ImagePainter(NewTheme.I().getImage("linkgrabber", 26), 1.0f));
+        progress.setValueClipPainter(new ImagePainter(NewTheme.I().getIcon("linkgrabber", 26), 1.0f));
         ((ImagePainter) progress.getValueClipPainter()).setBackground(Color.WHITE);
         ((ImagePainter) progress.getValueClipPainter()).setForeground(Color.GREEN);
 
-        progress.setNonvalueClipPainter(new ImagePainter(NewTheme.I().getImage("linkgrabber", 26), 0.5f));
+        progress.setNonvalueClipPainter(new ImagePainter(NewTheme.I().getIcon("linkgrabber", 26), 0.5f));
         ((ImagePainter) progress.getNonvalueClipPainter()).setBackground(Color.WHITE);
         ((ImagePainter) progress.getNonvalueClipPainter()).setForeground(Color.GREEN);
         p.add(progress, "height 40!,width 40!,spany 2");

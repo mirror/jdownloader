@@ -10,6 +10,8 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
+import javax.swing.Icon;
+
 import jd.controlling.captcha.SkipException;
 
 import org.jdownloader.captcha.v2.solver.jac.SolverException;
@@ -17,8 +19,9 @@ import org.jdownloader.captcha.v2.solverjob.SolverJob;
 
 public abstract class ChallengeSolver<T> {
 
-    private ThreadPoolExecutor threadPool;
-    private Class<T>           resultType;
+    private ThreadPoolExecutor                                             threadPool;
+    private Class<T>                                                       resultType;
+    private HashMap<SolverJob<?>, org.jdownloader.captcha.v2.SolverStatus> statis;
 
     /**
      * 
@@ -28,10 +31,24 @@ public abstract class ChallengeSolver<T> {
     @SuppressWarnings("unchecked")
     public ChallengeSolver(int i) {
         initThreadPool(i);
-
+        statis = new HashMap<SolverJob<?>, SolverStatus>();
         final Type superClass = this.getClass().getGenericSuperclass();
         if (superClass instanceof Class) { throw new IllegalArgumentException("Wrong Construct"); }
         resultType = (Class<T>) ((ParameterizedType) superClass).getActualTypeArguments()[0];
+    }
+
+    public SolverStatus getStatus(SolverJob<?> job) {
+
+        return statis.get(job);
+    }
+
+    public void setStatus(SolverJob<?> job, SolverStatus status) {
+        if (status == null) {
+            statis.remove(job);
+        } else {
+            statis.put(job, status);
+        }
+
     }
 
     protected HashMap<SolverJob<T>, JobRunnable<T>> map = new HashMap<SolverJob<T>, JobRunnable<T>>();
@@ -145,5 +162,7 @@ public abstract class ChallengeSolver<T> {
     }
 
     public abstract String getName();
+
+    public abstract Icon getIcon(int size);
 
 }

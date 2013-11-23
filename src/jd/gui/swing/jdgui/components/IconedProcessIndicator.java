@@ -6,7 +6,7 @@ import java.awt.Point;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 
-import javax.swing.ImageIcon;
+import javax.swing.Icon;
 import javax.swing.JLabel;
 import javax.swing.JTextArea;
 
@@ -47,7 +47,7 @@ public class IconedProcessIndicator extends CircledProgressBar implements MouseL
 
     }
 
-    public IconedProcessIndicator(ImageIcon icon) {
+    public IconedProcessIndicator(Icon icon) {
         super();
 
         updatePainter(icon, Color.WHITE, Color.GRAY, Color.WHITE, Color.GREEN, Color.LIGHT_GRAY, Color.GREEN);
@@ -56,7 +56,7 @@ public class IconedProcessIndicator extends CircledProgressBar implements MouseL
         addMouseListener(this);
     }
 
-    public void updatePainter(ImageIcon icon, Color c1, Color c2, Color c3, Color c4, Color c5, Color c6) {
+    public void updatePainter(Icon icon, Color c1, Color c2, Color c3, Color c4, Color c5, Color c6) {
         valuePainter = getPainer(icon, 1.0f);
         valuePainter.setBackground(c1);
         valuePainter.setForeground(c2);
@@ -139,8 +139,8 @@ public class IconedProcessIndicator extends CircledProgressBar implements MouseL
         }
     }
 
-    private ImagePainter getPainer(ImageIcon icon, float f) {
-        ImagePainter ret = new ImagePainter(icon.getImage(), f);
+    private ImagePainter getPainer(Icon icon, float f) {
+        ImagePainter ret = new ImagePainter(icon, f);
         ret.setBackground(Color.WHITE);
         ret.setForeground(Color.LIGHT_GRAY);
         return ret;

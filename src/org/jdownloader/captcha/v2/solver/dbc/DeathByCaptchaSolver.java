@@ -26,6 +26,7 @@ import org.jdownloader.captcha.v2.AbstractResponse;
 import org.jdownloader.captcha.v2.Challenge;
 import org.jdownloader.captcha.v2.ChallengeResponseValidation;
 import org.jdownloader.captcha.v2.ChallengeSolver;
+import org.jdownloader.captcha.v2.SolverStatus;
 import org.jdownloader.captcha.v2.challenge.stringcaptcha.BasicCaptchaChallenge;
 import org.jdownloader.captcha.v2.solver.dbc.api.Captcha;
 import org.jdownloader.captcha.v2.solver.dbc.api.Client;
@@ -34,6 +35,11 @@ import org.jdownloader.captcha.v2.solver.dbc.api.User;
 import org.jdownloader.captcha.v2.solver.jac.JACSolver;
 import org.jdownloader.captcha.v2.solver.jac.SolverException;
 import org.jdownloader.captcha.v2.solverjob.SolverJob;
+import org.jdownloader.gui.IconKey;
+import org.jdownloader.gui.notify.captcha.CESBubble;
+import org.jdownloader.gui.notify.captcha.CESBubbleSupport;
+import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.images.NewTheme;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.settings.advanced.AdvancedConfigManager;
 import org.jdownloader.settings.staticreferences.CFG_CAPTCHA;
@@ -155,41 +161,53 @@ public class DeathByCaptchaSolver extends ChallengeSolver<String> implements Cha
                 }
             }
         }
+        CESBubble bubble = null;
 
         try {
+            bubble = CESBubbleSupport.getInstance().show(this, job, CFG_CAPTCHA.CFG.getChanceToSkipBubbleTimeout());
+            checkInterruption();
+            try {
 
-            Client client = getClient();
-            Captcha captcha = null;
+                Client client = getClient();
+                Captcha captcha = null;
 
-            // Put your CAPTCHA image file, file object, input stream,
-            // or vector of bytes here:
-            captcha = client.upload(challenge.getImageFile());
-            if (null != captcha) {
-                job.getLogger().info("CAPTCHA " + challenge.getImageFile() + " uploaded: " + captcha.id);
-                long startTime = System.currentTimeMillis();
-                // Poll for the uploaded CAPTCHA status.
-                while (captcha.isUploaded() && !captcha.isSolved()) {
+                // Put your CAPTCHA image file, file object, input stream,
+                // or vector of bytes here:
+                setStatus(job, new SolverStatus(_GUI._.DeathByCaptchaSolver_solveBasicCaptchaChallenge_uploading(), NewTheme.I().getIcon(IconKey.ICON_UPLOAD, 20)));
+                captcha = client.upload(challenge.getImageFile());
+                if (null != captcha) {
+                    setStatus(job, new SolverStatus(_GUI._.DeathByCaptchaSolver_solveBasicCaptchaChallenge_solving(), NewTheme.I().getIcon(IconKey.ICON_WAIT, 20)));
+                    job.getLogger().info("CAPTCHA " + challenge.getImageFile() + " uploaded: " + captcha.id);
+                    long startTime = System.currentTimeMillis();
+                    // Poll for the uploaded CAPTCHA status.
+                    while (captcha.isUploaded() && !captcha.isSolved()) {
 
-                    job.getLogger().info("deathbycaptcha.eu NO answer after " + ((System.currentTimeMillis() - startTime) / 1000) + "s ");
+                        job.getLogger().info("deathbycaptcha.eu NO answer after " + ((System.currentTimeMillis() - startTime) / 1000) + "s ");
 
-                    Thread.sleep(Client.POLLS_INTERVAL * 1000);
-                    captcha = client.getCaptcha(captcha);
+                        Thread.sleep(Client.POLLS_INTERVAL * 1000);
+                        captcha = client.getCaptcha(captcha);
+                    }
+
+                    if (captcha.isSolved()) {
+                        job.getLogger().info("CAPTCHA " + challenge.getImageFile() + " solved: " + captcha.text);
+                        job.addAnswer(new DeathByCaptchaResponse(challenge, this, captcha));
+
+                    } else {
+                        job.getLogger().info("Failed solving CAPTCHA");
+                        throw new SolverException("Failed:" + captcha.toString());
+                    }
                 }
 
-                if (captcha.isSolved()) {
-                    job.getLogger().info("CAPTCHA " + challenge.getImageFile() + " solved: " + captcha.text);
-                    job.addAnswer(new DeathByCaptchaResponse(challenge, this, captcha));
+            } catch (Exception e) {
+                job.getLogger().log(e);
+            }
+        } finally {
 
-                } else {
-                    job.getLogger().info("Failed solving CAPTCHA");
-                    throw new SolverException("Failed:" + captcha.toString());
-                }
+            if (bubble != null) {
+                CESBubbleSupport.getInstance().hide(bubble);
             }
 
-        } catch (Exception e) {
-            job.getLogger().log(e);
         }
-
     }
 
     private synchronized Client getClient() {
@@ -302,5 +320,10 @@ public class DeathByCaptchaSolver extends ChallengeSolver<String> implements Cha
 
     @Override
     public void setValid(AbstractResponse<?> response) {
+    }
+
+    @Override
+    public Icon getIcon(int size) {
+        return NewTheme.I().getIcon(IconKey.ICON_DBC, size);
     }
 }

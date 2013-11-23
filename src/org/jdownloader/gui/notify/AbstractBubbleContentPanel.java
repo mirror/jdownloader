@@ -1,7 +1,6 @@
 package org.jdownloader.gui.notify;
 
 import javax.swing.Icon;
-import javax.swing.ImageIcon;
 import javax.swing.JLabel;
 import javax.swing.SwingConstants;
 
@@ -104,7 +103,7 @@ public abstract class AbstractBubbleContentPanel extends MigPanel {
 
     }
 
-    public AbstractBubbleContentPanel(ImageIcon icon) {
+    public AbstractBubbleContentPanel(Icon icon) {
         super("ins 3 3 0 3,wrap 3", "[][fill][grow,fill]", "[]");
 
         progressCircle = new IconedProcessIndicator(icon);

@@ -58,16 +58,16 @@ public abstract class ReconnectFindDialog extends AbstractDialog<Object> impleme
     public void onIPStateChanged(IPConnectionState parameter, IPConnectionState parameter2) {
     }
 
-    private JProgressBar                         bar;
-    private CircledProgressBar                   circle;
-    private JLabel                               header;
-    private JLabel                               state;
-    private JLabel                               duration;
+    private JProgressBar                              bar;
+    private CircledProgressBar                        circle;
+    private JLabel                                    header;
+    private JLabel                                    state;
+    private JLabel                                    duration;
 
-    private JLabel                               newIP;
-    private Thread                               th;
-    private Timer                                updateTimer;
-    private long                                 startTime;
+    private JLabel                                    newIP;
+    private Thread                                    th;
+    private Timer                                     updateTimer;
+    private long                                      startTime;
     private java.util.List<? extends ReconnectResult> foundList;
 
     public ReconnectFindDialog() {
@@ -113,11 +113,11 @@ public abstract class ReconnectFindDialog extends AbstractDialog<Object> impleme
         bar.setMaximum(100);
         p.add(bar);
         circle = new CircledProgressBar();
-        circle.setValueClipPainter(new ImagePainter(NewTheme.I().getImage("reconnect", 26), 1.0f));
+        circle.setValueClipPainter(new ImagePainter(NewTheme.I().getIcon("reconnect", 26), 1.0f));
         ((ImagePainter) circle.getValueClipPainter()).setBackground(Color.WHITE);
         ((ImagePainter) circle.getValueClipPainter()).setForeground(Color.GREEN);
 
-        circle.setNonvalueClipPainter(new ImagePainter(NewTheme.I().getImage("reconnect", 26), 0.5f));
+        circle.setNonvalueClipPainter(new ImagePainter(NewTheme.I().getIcon("reconnect", 26), 0.5f));
         ((ImagePainter) circle.getNonvalueClipPainter()).setBackground(Color.WHITE);
         ((ImagePainter) circle.getNonvalueClipPainter()).setForeground(Color.GREEN);
         MigPanel sp = new MigPanel("ins 0", "[fill][fill][grow,fill][fill][fill]", "[fill][grow,fill]");

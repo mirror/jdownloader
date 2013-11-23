@@ -227,9 +227,9 @@ public class DownloadsPanel extends SwitchPanel implements DownloadControllerLis
             }
         };
 
-        loader.setValueClipPainter(new ImagePainter(NewTheme.I().getImage("robot", 256), 1.0f));
+        loader.setValueClipPainter(new ImagePainter(NewTheme.I().getIcon("robot", 256), 1.0f));
 
-        loader.setNonvalueClipPainter(new ImagePainter(NewTheme.I().getImage("robot", 256), 0.1f));
+        loader.setNonvalueClipPainter(new ImagePainter(NewTheme.I().getIcon("robot", 256), 0.1f));
         ((ImagePainter) loader.getValueClipPainter()).setBackground(null);
         ((ImagePainter) loader.getValueClipPainter()).setForeground(null);
         loader.setIndeterminate(true);
@@ -427,8 +427,8 @@ public class DownloadsPanel extends SwitchPanel implements DownloadControllerLis
                     long contentChanges = DownloadController.getInstance().getContentChanges();
                     if (lastContentChanges != contentChanges && tableModel.isFilteredView()) {
                         /*
-                         * in case we have content changes(eg downloads started) and an active filteredView, we need to recreate the tablemodel to reflect
-                         * possible status changes in filtered view
+                         * in case we have content changes(eg downloads started) and an active filteredView, we need to recreate the
+                         * tablemodel to reflect possible status changes in filtered view
                          */
                         tableModel.recreateModel();
                     } else {

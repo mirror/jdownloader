@@ -23,7 +23,7 @@ public class ExtractionBubble extends AbstractNotifyWindow<ExtractionBubbleConte
 
     }
 
-    protected void hideBubble(int timeout) {
+    public void hideBubble(int timeout) {
         super.hideBubble(timeout);
         updateTimer.stop();
 

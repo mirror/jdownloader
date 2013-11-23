@@ -382,7 +382,10 @@ public abstract class AbstractNotifyWindow<T extends AbstractBubbleContentPanel>
             timer.stop();
         }
         endTime = System.currentTimeMillis() + to;
-
+        if (to <= 0) {
+            onClose();
+            return;
+        }
         timer = new Timer(to, this);
         timer.setRepeats(false);
         timer.start();
@@ -575,7 +578,7 @@ public abstract class AbstractNotifyWindow<T extends AbstractBubbleContentPanel>
 
     }
 
-    protected void hideBubble(int timeout) {
+    public void hideBubble(int timeout) {
         startTimeout(timeout);
         getContentComponent().stop();
 

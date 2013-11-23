@@ -9,8 +9,6 @@ import org.jdownloader.captcha.event.ChallengeResponseListener;
 import org.jdownloader.captcha.v2.AbstractResponse;
 import org.jdownloader.captcha.v2.ChallengeResponseController;
 import org.jdownloader.captcha.v2.ChallengeSolver;
-import org.jdownloader.captcha.v2.solver.gui.DialogBasicCaptchaSolver;
-import org.jdownloader.captcha.v2.solver.gui.DialogClickCaptchaSolver;
 import org.jdownloader.captcha.v2.solverjob.SolverJob;
 import org.jdownloader.gui.notify.AbstractBubbleSupport;
 import org.jdownloader.gui.notify.Element;
@@ -59,25 +57,10 @@ public class CaptchaBubbleSupport extends AbstractBubbleSupport implements Chall
                         notify = new CaptchaNotify(CaptchaBubbleSupport.this, job);
                         show(notify);
 
-                    } else {
-                        if (DialogBasicCaptchaSolver.getInstance().hasToWaitForInvisibleSolvers() || DialogClickCaptchaSolver.getInstance().hasToWaitForInvisibleSolvers()) {
-                            // show the bubble. because the dialog will probably get blocked by CES services
-                            // a click on the bubble will show the dialog then.
-                            notify = new CaptchaNotify(CaptchaBubbleSupport.this, job);
-                            show(notify);
-                            return;
-                        }
                     }
                     return;
                 default:
 
-                    if (DialogBasicCaptchaSolver.getInstance().hasToWaitForInvisibleSolvers() || DialogClickCaptchaSolver.getInstance().hasToWaitForInvisibleSolvers()) {
-                        // show the bubble. because the dialog will probably get blocked by CES services
-                        // a click on the bubble will show the dialog then.
-                        notify = new CaptchaNotify(CaptchaBubbleSupport.this, job);
-                        show(notify);
-                        return;
-                    }
                     return;
                 }
 

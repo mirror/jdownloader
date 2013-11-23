@@ -19,7 +19,7 @@ public abstract class AbstractBubbleSupport {
         return keyHandler;
     }
 
-    private BooleanKeyHandler keyHandler;
+    protected BooleanKeyHandler keyHandler;
 
     public AbstractBubbleSupport(String label, BooleanKeyHandler keyhandler) {
         this.label = label;

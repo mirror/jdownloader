@@ -1,5 +1,7 @@
 package org.jdownloader.captcha.v2.solver.gui;
 
+import javax.swing.Icon;
+
 import jd.controlling.captcha.BasicCaptchaDialogHandler;
 import jd.controlling.captcha.CaptchaSettings;
 import jd.controlling.captcha.SkipException;
@@ -25,6 +27,8 @@ import org.jdownloader.captcha.v2.solver.solver9kw.Captcha9kwSolver;
 import org.jdownloader.captcha.v2.solverjob.ChallengeSolverJobListener;
 import org.jdownloader.captcha.v2.solverjob.ResponseList;
 import org.jdownloader.captcha.v2.solverjob.SolverJob;
+import org.jdownloader.gui.IconKey;
+import org.jdownloader.images.NewTheme;
 import org.jdownloader.settings.staticreferences.CFG_CAPTCHA;
 import org.jdownloader.settings.staticreferences.CFG_SILENTMODE;
 
@@ -37,6 +41,11 @@ public class DialogBasicCaptchaSolver extends ChallengeSolver<String> {
     private DeathByCaptchaSettings                configDBC;
     private Thread                                waitingThread;
     private static final DialogBasicCaptchaSolver INSTANCE = new DialogBasicCaptchaSolver();
+
+    @Override
+    public Icon getIcon(int size) {
+        return NewTheme.I().getIcon(IconKey.ICON_OCR, size);
+    }
 
     public static DialogBasicCaptchaSolver getInstance() {
         return INSTANCE;

@@ -73,11 +73,11 @@ public class ReconnectDialog extends AbstractDialog<Object> implements IPControl
         MigPanel p = new MigPanel("ins 0,wrap 8", "[][][][][][][][]", "[grow,fill]");
         progress = new CircledProgressBar();
         progress.setIndeterminate(true);
-        progress.setValueClipPainter(new ImagePainter(NewTheme.I().getImage("reconnect", 26), 1.0f));
+        progress.setValueClipPainter(new ImagePainter(NewTheme.I().getIcon("reconnect", 26), 1.0f));
         ((ImagePainter) progress.getValueClipPainter()).setBackground(Color.WHITE);
         ((ImagePainter) progress.getValueClipPainter()).setForeground(Color.GREEN);
 
-        progress.setNonvalueClipPainter(new ImagePainter(NewTheme.I().getImage("reconnect", 26), 0.5f));
+        progress.setNonvalueClipPainter(new ImagePainter(NewTheme.I().getIcon("reconnect", 26), 0.5f));
         ((ImagePainter) progress.getNonvalueClipPainter()).setBackground(Color.WHITE);
         ((ImagePainter) progress.getNonvalueClipPainter()).setForeground(Color.GREEN);
         p.add(progress, "height 40!,width 40!,spany 2");

@@ -15,6 +15,7 @@ import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.windowmanager.WindowManager;
 import org.appwork.utils.swing.windowmanager.WindowManager.WindowExtendedState;
+import org.jdownloader.gui.notify.captcha.CESBubbleSupport;
 import org.jdownloader.gui.notify.captcha.CaptchaBubbleSupport;
 import org.jdownloader.gui.notify.downloads.StartDownloadsBubbleSupport;
 import org.jdownloader.gui.notify.downloads.StartStopPauseBubbleSupport;
@@ -122,6 +123,8 @@ public class BubbleNotify {
             types.add(new CaptchaBubbleSupport());
             types.add(new StartDownloadsBubbleSupport());
             types.add(new StartStopPauseBubbleSupport());
+            types.add(new StartStopPauseBubbleSupport());
+            types.add(CESBubbleSupport.getInstance());
 
         }
     }

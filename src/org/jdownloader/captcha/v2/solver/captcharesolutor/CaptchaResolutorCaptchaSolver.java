@@ -10,6 +10,7 @@ import java.net.InetAddress;
 import java.net.Socket;
 
 import javax.imageio.ImageIO;
+import javax.swing.Icon;
 
 import jd.controlling.captcha.CaptchaSettings;
 
@@ -23,6 +24,10 @@ import org.jdownloader.captcha.v2.challenge.stringcaptcha.CaptchaResponse;
 import org.jdownloader.captcha.v2.solver.jac.JACSolver;
 import org.jdownloader.captcha.v2.solver.jac.SolverException;
 import org.jdownloader.captcha.v2.solverjob.SolverJob;
+import org.jdownloader.gui.IconKey;
+import org.jdownloader.gui.notify.captcha.CESBubble;
+import org.jdownloader.gui.notify.captcha.CESBubbleSupport;
+import org.jdownloader.images.NewTheme;
 import org.jdownloader.settings.advanced.AdvancedConfigManager;
 import org.jdownloader.settings.staticreferences.CFG_CAPTCHA;
 
@@ -81,48 +86,64 @@ public class CaptchaResolutorCaptchaSolver extends ChallengeSolver<String> {
             job.waitFor(JsonConfig.create(CaptchaSettings.class).getCaptchaDialogJAntiCaptchaTimeout(), JACSolver.getInstance());
             checkInterruption();
             BasicCaptchaChallenge challenge = (BasicCaptchaChallenge) job.getChallenge();
+            CESBubble bubble = null;
+
             try {
-                String address[] = ((String) InetAddress.getByName(SERVER_PRODUCTION).toString()).split(_ADDRESS_SEPARATOR);
-                sk = new Socket(address[1], PORT);
-                dos = new DataOutputStream(sk.getOutputStream());
-                dis = new DataInputStream(sk.getInputStream());
-                dos.writeUTF(_REQUEST + _SEPARATOR + config.getUser() + _SEPARATOR + config.getPass());
-                String answerServer = dis.readUTF();
-                if (answerServer.equalsIgnoreCase(WRONG_PASSWORD)) {
-                    Dialog.getInstance().showErrorDialog(ERROR_INVALID_PASSWORD);
-                } else {
-                    if (answerServer.equalsIgnoreCase(NEGATIVE_CREDIT)) {
-                        Dialog.getInstance().showErrorDialog(YOUR_CREDIT_HAS_BEEN_SOLD);
+                bubble = CESBubbleSupport.getInstance().show(this, job, CFG_CAPTCHA.CFG.getChanceToSkipBubbleTimeout());
+                checkInterruption();
+                try {
+                    String address[] = ((String) InetAddress.getByName(SERVER_PRODUCTION).toString()).split(_ADDRESS_SEPARATOR);
+                    sk = new Socket(address[1], PORT);
+                    dos = new DataOutputStream(sk.getOutputStream());
+                    dis = new DataInputStream(sk.getInputStream());
+                    dos.writeUTF(_REQUEST + _SEPARATOR + config.getUser() + _SEPARATOR + config.getPass());
+                    String answerServer = dis.readUTF();
+                    if (answerServer.equalsIgnoreCase(WRONG_PASSWORD)) {
+                        Dialog.getInstance().showErrorDialog(ERROR_INVALID_PASSWORD);
                     } else {
-                        job.getLogger().info("Ask");
-                        // Captcha image is sent.
-                        exit = new ObjectOutputStream(sk.getOutputStream());
-                        BufferedImage bufferedImage = ImageIO.read(challenge.getImageFile());
-                        ByteArrayOutputStream salidaImagen = new ByteArrayOutputStream();
-                        ImageIO.write(bufferedImage, "jpg", salidaImagen);
-                        byte[] bytesImagen = salidaImagen.toByteArray();
-                        exit.writeObject(bytesImagen);
-                        exit.flush();
+                        if (answerServer.equalsIgnoreCase(NEGATIVE_CREDIT)) {
+                            Dialog.getInstance().showErrorDialog(YOUR_CREDIT_HAS_BEEN_SOLD);
+                        } else {
+                            job.getLogger().info("Ask");
+                            // Captcha image is sent.
+                            exit = new ObjectOutputStream(sk.getOutputStream());
+                            BufferedImage bufferedImage = ImageIO.read(challenge.getImageFile());
+                            ByteArrayOutputStream salidaImagen = new ByteArrayOutputStream();
+                            ImageIO.write(bufferedImage, "jpg", salidaImagen);
+                            byte[] bytesImagen = salidaImagen.toByteArray();
+                            exit.writeObject(bytesImagen);
+                            exit.flush();
 
-                        // captcha code is received in String ret.
-                        String ret = dis.readUTF();
-                        job.getLogger().info("Answer " + ret);
+                            // captcha code is received in String ret.
+                            String ret = dis.readUTF();
+                            job.getLogger().info("Answer " + ret);
 
-                        Thread.sleep(1000);
+                            Thread.sleep(1000);
 
-                        job.addAnswer(new CaptchaResponse(challenge, this, ret, 100));
+                            job.addAnswer(new CaptchaResponse(challenge, this, ret, 100));
+                        }
+                    }
+                } catch (IOException e) {
+                    job.getLogger().log(e);
+                } finally {
+                    try {
+                        sk.close();
+                    } catch (final Throwable e) {
                     }
                 }
-            } catch (IOException e) {
-                job.getLogger().log(e);
             } finally {
-                try {
-                    sk.close();
-                } catch (final Throwable e) {
-                }
-            }
 
+                if (bubble != null) {
+                    CESBubbleSupport.getInstance().hide(bubble);
+                }
+
+            }
         }
 
+    }
+
+    @Override
+    public Icon getIcon(int size) {
+        return NewTheme.I().getIcon(IconKey.ICON_OCR, size);
     }
 }

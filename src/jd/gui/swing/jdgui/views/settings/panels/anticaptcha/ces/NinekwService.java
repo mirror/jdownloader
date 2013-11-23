@@ -22,7 +22,7 @@ public class NinekwService implements CESService {
 
     @Override
     public ImageIcon getIcon(int i) {
-        return NewTheme.I().getIcon("9kw", i);
+        return NewTheme.I().getIcon(IconKey.ICON_9KW, i);
     }
 
     @Override
@@ -39,7 +39,7 @@ public class NinekwService implements CESService {
             private TextInput blacklistprio;
             private TextInput whitelistprio;
             {
-                addHeader(getDisplayName(), NewTheme.I().getIcon("9kw", 32));
+                addHeader(getDisplayName(), NewTheme.I().getIcon(IconKey.ICON_9KW, 32));
                 addDescription(_GUI._.AntiCaptchaConfigPanel_onShow_description_ces());
 
                 add(new SettingsButton(new AppAction() {

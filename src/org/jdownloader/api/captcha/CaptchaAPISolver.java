@@ -6,6 +6,8 @@ import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.List;
 
+import javax.swing.Icon;
+
 import jd.controlling.captcha.SkipException;
 import jd.controlling.captcha.SkipRequest;
 import jd.plugins.DownloadLink;
@@ -37,6 +39,8 @@ import org.jdownloader.captcha.v2.solver.gui.DialogBasicCaptchaSolver;
 import org.jdownloader.captcha.v2.solver.gui.DialogClickCaptchaSolver;
 import org.jdownloader.captcha.v2.solver.jac.SolverException;
 import org.jdownloader.captcha.v2.solverjob.SolverJob;
+import org.jdownloader.gui.IconKey;
+import org.jdownloader.images.NewTheme;
 import org.jdownloader.settings.staticreferences.CFG_CAPTCHA;
 
 public class CaptchaAPISolver extends ChallengeSolver<Object> implements CaptchaAPI, ChallengeResponseListener {
@@ -334,6 +338,11 @@ public class CaptchaAPISolver extends ChallengeSolver<Object> implements Captcha
 
     @Override
     public void onJobSolverStart(ChallengeSolver<?> solver, SolverJob<?> job) {
+    }
+
+    @Override
+    public Icon getIcon(int size) {
+        return NewTheme.I().getIcon(IconKey.ICON_MYJDOWNLOADER, size);
     }
 
 }

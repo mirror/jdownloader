@@ -98,9 +98,9 @@ public class LinkGrabberTable extends PackageControllerTable<CrawledPackage, Cra
             }
         };
 
-        loader.setValueClipPainter(new ImagePainter(NewTheme.I().getImage("robot", 256), 1.0f));
+        loader.setValueClipPainter(new ImagePainter(NewTheme.I().getIcon("robot", 256), 1.0f));
 
-        loader.setNonvalueClipPainter(new ImagePainter(NewTheme.I().getImage("robot", 256), 0.1f));
+        loader.setNonvalueClipPainter(new ImagePainter(NewTheme.I().getIcon("robot", 256), 0.1f));
         ((ImagePainter) loader.getValueClipPainter()).setBackground(null);
         ((ImagePainter) loader.getValueClipPainter()).setForeground(null);
         loader.setIndeterminate(true);

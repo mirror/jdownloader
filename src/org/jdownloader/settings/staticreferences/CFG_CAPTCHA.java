@@ -85,14 +85,14 @@ public class CFG_CAPTCHA {
     public static final IntegerKeyHandler               CAPTCHA_DIALOG9KW_TIMEOUT                     = SH.getKeyHandler("CaptchaDialog9kwTimeout", IntegerKeyHandler.class);
 
     /**
-     * Milliseconds after which a Captcha Dialog will appear even if Auto AntiCaptcha is still running
-     **/
-    public static final IntegerKeyHandler               CAPTCHA_DIALOG_JANTI_CAPTCHA_TIMEOUT          = SH.getKeyHandler("CaptchaDialogJAntiCaptchaTimeout", IntegerKeyHandler.class);
-
-    /**
      * Milliseconds after which a Captcha Dialog will appear even if Auto ResolutorCaptcha Service is still running
      **/
     public static final IntegerKeyHandler               CAPTCHA_DIALOG_RESOLUTOR_CAPTCHA_TIMEOUT      = SH.getKeyHandler("CaptchaDialogResolutorCaptchaTimeout", IntegerKeyHandler.class);
+
+    /**
+     * Milliseconds after which a Captcha Dialog will appear even if Auto AntiCaptcha is still running
+     **/
+    public static final IntegerKeyHandler               CAPTCHA_DIALOG_JANTI_CAPTCHA_TIMEOUT          = SH.getKeyHandler("CaptchaDialogJAntiCaptchaTimeout", IntegerKeyHandler.class);
 
     /**
      * Do not Change me unless you know 100000% what this value is used for!
@@ -103,4 +103,9 @@ public class CFG_CAPTCHA {
      * Disable all Captcha Dialogs.@See SilentMode Settings
      **/
     public static final BooleanKeyHandler               CAPTCHA_DIALOGS_ENABLED                       = SH.getKeyHandler("CaptchaDialogsEnabled", BooleanKeyHandler.class);
+
+    /**
+     * Enable the CES & Remote Captcha Bubbles
+     **/
+    public static final BooleanKeyHandler               REMOTE_CAPTCHA_BUBBLE_ENABLED                 = SH.getKeyHandler("RemoteCaptchaBubbleEnabled", BooleanKeyHandler.class);
 }

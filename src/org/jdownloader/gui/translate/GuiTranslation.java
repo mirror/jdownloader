@@ -3730,4 +3730,22 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Icons & Artwork:" })
     String jd_gui_swing_components_AboutDialog_icons();
 
+    @Default(lngs = { "en" }, values = { "a Remote Captcha Services are running" })
+    String CESBubbleSupport_CESBubbleSupport();
+
+    @Default(lngs = { "en" }, values = { "Remote Captcha: %s1" })
+    String CESBubble_CESBubble(String string);
+
+    @Default(lngs = { "en" }, values = { "Status:" })
+    String CESBubbleContent_CESBubbleContent_status();
+
+    @Default(lngs = { "en" }, values = { "Send Captcha to %s2 in %s1" })
+    String CESBubbleContent_CESBubbleContent_wait(String string, String service);
+
+    @Default(lngs = { "en" }, values = { "Uploading..." })
+    String DeathByCaptchaSolver_solveBasicCaptchaChallenge_uploading();
+
+    @Default(lngs = { "en" }, values = { "Solving..." })
+    String DeathByCaptchaSolver_solveBasicCaptchaChallenge_solving();
+
 }

@@ -6,6 +6,8 @@ import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
+import javax.swing.Icon;
+
 import jd.controlling.captcha.CaptchaSettings;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
@@ -22,6 +24,10 @@ import org.jdownloader.captcha.v2.challenge.clickcaptcha.ClickedPoint;
 import org.jdownloader.captcha.v2.solver.jac.JACSolver;
 import org.jdownloader.captcha.v2.solver.jac.SolverException;
 import org.jdownloader.captcha.v2.solverjob.SolverJob;
+import org.jdownloader.gui.IconKey;
+import org.jdownloader.gui.notify.captcha.CESBubble;
+import org.jdownloader.gui.notify.captcha.CESBubbleSupport;
+import org.jdownloader.images.NewTheme;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.settings.staticreferences.CFG_CAPTCHA;
 
@@ -32,6 +38,11 @@ public class Captcha9kwSolverClick extends ChallengeSolver<ClickedPoint> impleme
 
     public static Captcha9kwSolverClick getInstance() {
         return INSTANCE;
+    }
+
+    @Override
+    public Icon getIcon(int size) {
+        return NewTheme.I().getIcon(IconKey.ICON_9KW, size);
     }
 
     @Override
@@ -104,6 +115,7 @@ public class Captcha9kwSolverClick extends ChallengeSolver<ClickedPoint> impleme
                     }
                 }
             }
+            CESBubble bubble = null;
 
             if (config.getwhitelistprio() != null) {
                 if (config.getwhitelistprio().length() > 5) {
@@ -128,44 +140,57 @@ public class Captcha9kwSolverClick extends ChallengeSolver<ClickedPoint> impleme
             }
 
             try {
-                byte[] data = IO.readFile(captchaChallenge.getImageFile());
-                Browser br = new Browser();
-                br.setAllowedResponseCodes(new int[] { 500 });
-                String ret = "";
-                for (int i = 0; i <= 5; i++) {
-                    ret = br.postPage(getAPIROOT() + "index.cgi", "action=usercaptchaupload&jd=2&source=jd2&captchaperhour=" + config.gethour() + "&mouse=1&prio=" + priothing + "&selfsolve=" + config.isSelfsolve() + "&confirm=" + config.ismouseconfirm() + "&oldsource=" + Encoding.urlEncode(captchaChallenge.getTypeID()) + "&apikey=" + Encoding.urlEncode(config.getApiKey()) + "&captchaSource=jdPlugin&maxtimeout=" + (JsonConfig.create(CaptchaSettings.class).getCaptchaDialog9kwTimeout() / 1000) + "&version=1.2&base64=1&file-upload-01=" + Encoding.urlEncode(org.appwork.utils.encoding.Base64.encodeToString(data, false)));
-                    if (ret.startsWith("OK-")) {
-                        break;
-                    } else {
+
+                bubble = CESBubbleSupport.getInstance().show(this, solverJob, CFG_CAPTCHA.CFG.getChanceToSkipBubbleTimeout());
+                checkInterruption();
+                try {
+
+                    byte[] data = IO.readFile(captchaChallenge.getImageFile());
+                    Browser br = new Browser();
+                    br.setAllowedResponseCodes(new int[] { 500 });
+                    String ret = "";
+                    for (int i = 0; i <= 5; i++) {
+                        ret = br.postPage(getAPIROOT() + "index.cgi", "action=usercaptchaupload&jd=2&source=jd2&captchaperhour=" + config.gethour() + "&mouse=1&prio=" + priothing + "&selfsolve=" + config.isSelfsolve() + "&confirm=" + config.ismouseconfirm() + "&oldsource=" + Encoding.urlEncode(captchaChallenge.getTypeID()) + "&apikey=" + Encoding.urlEncode(config.getApiKey()) + "&captchaSource=jdPlugin&maxtimeout=" + (JsonConfig.create(CaptchaSettings.class).getCaptchaDialog9kwTimeout() / 1000) + "&version=1.2&base64=1&file-upload-01=" + Encoding.urlEncode(org.appwork.utils.encoding.Base64.encodeToString(data, false)));
+                        if (ret.startsWith("OK-")) {
+                            break;
+                        } else {
+                            Thread.sleep(3000);
+
+                        }
+                    }
+                    solverJob.getLogger().info("Send Captcha to 9kw.eu. - " + getAPIROOT() + " Answer: " + ret);
+                    if (!ret.startsWith("OK-")) throw new SolverException(ret);
+                    // Error-No Credits
+                    String captchaID = ret.substring(3);
+                    data = null;
+                    int count9kw = 5;
+                    Thread.sleep(5000);
+                    while (true) {
+                        count9kw += 2;
+                        solverJob.getLogger().info("9kw.eu Ask " + captchaID);
+                        ret = br.getPage(getAPIROOT() + "index.cgi?action=usercaptchacorrectdata&jd=2&source=jd2&mouse=1&apikey=" + Encoding.urlEncode(config.getApiKey()) + "&id=" + Encoding.urlEncode(captchaID) + "&version=1.1");
+                        solverJob.getLogger().info("9kw.eu Answer " + count9kw + "s: " + ret);
+                        if (ret.startsWith("OK-answered-")) {
+                            String antwort = ret.substring("OK-answered-".length());
+                            String[] splitResult = antwort.split("x");
+
+                            solverJob.addAnswer(new Captcha9kwClickResponse(captchaChallenge, this, new ClickedPoint(Integer.parseInt(splitResult[0]), Integer.parseInt(splitResult[1])), 100, captchaID));
+                            return;
+                        }
+                        checkInterruption();
                         Thread.sleep(3000);
                     }
-                }
-                solverJob.getLogger().info("Send Captcha to 9kw.eu. - " + getAPIROOT() + " Answer: " + ret);
-                if (!ret.startsWith("OK-")) throw new SolverException(ret);
-                // Error-No Credits
-                String captchaID = ret.substring(3);
-                data = null;
-                int count9kw = 5;
-                Thread.sleep(5000);
-                while (true) {
-                    count9kw += 2;
-                    solverJob.getLogger().info("9kw.eu Ask " + captchaID);
-                    ret = br.getPage(getAPIROOT() + "index.cgi?action=usercaptchacorrectdata&jd=2&source=jd2&mouse=1&apikey=" + Encoding.urlEncode(config.getApiKey()) + "&id=" + Encoding.urlEncode(captchaID) + "&version=1.1");
-                    solverJob.getLogger().info("9kw.eu Answer " + count9kw + "s: " + ret);
-                    if (ret.startsWith("OK-answered-")) {
-                        String antwort = ret.substring("OK-answered-".length());
-                        String[] splitResult = antwort.split("x");
 
-                        solverJob.addAnswer(new Captcha9kwClickResponse(captchaChallenge, this, new ClickedPoint(Integer.parseInt(splitResult[0]), Integer.parseInt(splitResult[1])), 100, captchaID));
-                        return;
-                    }
-                    checkInterruption();
-                    Thread.sleep(3000);
-                }
+                } catch (IOException e) {
+                    solverJob.getLogger().log(e);
+                } finally {
 
-            } catch (IOException e) {
-                solverJob.getLogger().log(e);
+                }
             } finally {
+
+                if (bubble != null) {
+                    CESBubbleSupport.getInstance().hide(bubble);
+                }
 
             }
 

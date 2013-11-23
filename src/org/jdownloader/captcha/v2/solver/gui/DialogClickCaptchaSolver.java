@@ -1,5 +1,7 @@
 package org.jdownloader.captcha.v2.solver.gui;
 
+import javax.swing.Icon;
+
 import jd.controlling.captcha.CaptchaSettings;
 import jd.controlling.captcha.ClickCaptchaDialogHandler;
 import jd.controlling.captcha.SkipException;
@@ -16,6 +18,8 @@ import org.jdownloader.captcha.v2.solver.jac.JACSolver;
 import org.jdownloader.captcha.v2.solver.solver9kw.Captcha9kwSettings;
 import org.jdownloader.captcha.v2.solver.solver9kw.Captcha9kwSolverClick;
 import org.jdownloader.captcha.v2.solverjob.SolverJob;
+import org.jdownloader.gui.IconKey;
+import org.jdownloader.images.NewTheme;
 import org.jdownloader.settings.staticreferences.CFG_CAPTCHA;
 import org.jdownloader.settings.staticreferences.CFG_SILENTMODE;
 
@@ -28,6 +32,11 @@ public class DialogClickCaptchaSolver extends ChallengeSolver<ClickedPoint> {
         super(1);
         config = JsonConfig.create(CaptchaSettings.class);
         config9kw = JsonConfig.create(Captcha9kwSettings.class);
+    }
+
+    @Override
+    public Icon getIcon(int size) {
+        return NewTheme.I().getIcon(IconKey.ICON_OCR, size);
     }
 
     private static final DialogClickCaptchaSolver INSTANCE = new DialogClickCaptchaSolver();

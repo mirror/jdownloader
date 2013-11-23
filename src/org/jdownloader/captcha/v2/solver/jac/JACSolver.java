@@ -5,6 +5,8 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Locale;
 
+import javax.swing.Icon;
+
 import jd.captcha.JACMethod;
 import jd.captcha.JAntiCaptcha;
 import jd.captcha.LetterComperator;
@@ -21,6 +23,8 @@ import org.jdownloader.captcha.v2.ChallengeSolver;
 import org.jdownloader.captcha.v2.challenge.stringcaptcha.BasicCaptchaChallenge;
 import org.jdownloader.captcha.v2.challenge.stringcaptcha.CaptchaResponse;
 import org.jdownloader.captcha.v2.solverjob.SolverJob;
+import org.jdownloader.gui.IconKey;
+import org.jdownloader.images.NewTheme;
 import org.jdownloader.settings.staticreferences.CFG_CAPTCHA;
 
 public class JACSolver extends ChallengeSolver<String> {
@@ -35,6 +39,11 @@ public class JACSolver extends ChallengeSolver<String> {
      */
     public static JACSolver getInstance() {
         return JACSolver.INSTANCE;
+    }
+
+    @Override
+    public Icon getIcon(int size) {
+        return NewTheme.I().getIcon(IconKey.ICON_OCR, size);
     }
 
     /**
