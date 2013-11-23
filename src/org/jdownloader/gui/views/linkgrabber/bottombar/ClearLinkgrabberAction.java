@@ -8,6 +8,10 @@ public class ClearLinkgrabberAction extends GenericDeleteFromLinkgrabberAction {
 
     }
 
+    protected String getLabelForAreYouSureDialog() {
+        return super.createName();
+    }
+
     @Override
     protected void initContextDefaults() {
         super.initContextDefaults();

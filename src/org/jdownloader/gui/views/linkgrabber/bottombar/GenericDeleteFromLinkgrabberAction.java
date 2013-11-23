@@ -185,8 +185,20 @@ public class GenericDeleteFromLinkgrabberAction extends CustomizableAppAction im
             }
         }
 
-        LinkCollector.requestDeleteLinks(nodesToDelete, containsOnline, createName(), byPassDialog.isBypassDialog(), isCancelLinkcrawlerJobs(), isResetTableSorter(), isClearSearchFilter(), isClearFilteredLinks());
+        finalDelete(nodesToDelete, containsOnline);
 
+    }
+
+    /**
+     * @param nodesToDelete
+     * @param containsOnline
+     */
+    protected void finalDelete(final List<CrawledLink> nodesToDelete, boolean containsOnline) {
+        LinkCollector.requestDeleteLinks(nodesToDelete, containsOnline, getLabelForAreYouSureDialog(), byPassDialog.isBypassDialog(), isCancelLinkcrawlerJobs(), isResetTableSorter(), isClearSearchFilter(), isClearFilteredLinks());
+    }
+
+    protected String getLabelForAreYouSureDialog() {
+        return createName();
     }
 
     public List<KeyStroke> getAdditionalShortcuts(KeyStroke keystroke) {
