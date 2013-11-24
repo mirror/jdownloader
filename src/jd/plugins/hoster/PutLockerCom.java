@@ -203,6 +203,18 @@ public class PutLockerCom extends PluginForHost {
                     downloadLink.setProperty(PutLockerCom.NOCHUNKS, Boolean.valueOf(true));
                     throw new PluginException(LinkStatus.ERROR_RETRY);
                 }
+                logger.info("putlocker.com: Unknown error1");
+                int timesFailed = downloadLink.getIntegerProperty("timesfailedputlockercom_unknown1", 0);
+                downloadLink.getLinkStatus().setRetryCount(0);
+                if (timesFailed <= 2) {
+                    timesFailed++;
+                    downloadLink.setProperty("timesfailedputlockercom_unknown1", timesFailed);
+                    throw new PluginException(LinkStatus.ERROR_RETRY, "Unknown error1");
+                } else {
+                    downloadLink.setProperty("timesfailedputlockercom_unknown1", Property.NULL);
+                    logger.info("putlocker.com: Unknown error1 - plugin broken!");
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
             }
         } catch (final PluginException e) {
             // New V2 errorhandling
@@ -211,17 +223,30 @@ public class PutLockerCom extends PluginForHost {
                 downloadLink.setProperty(PutLockerCom.NOCHUNKS, Boolean.valueOf(true));
                 throw new PluginException(LinkStatus.ERROR_RETRY);
             }
-        } catch (final InterruptedException e) {
-            logger.info("putlocker.com: Unknown error");
-            int timesFailed = downloadLink.getIntegerProperty("timesfailedputlockercom_unknown", 0);
+            logger.info("putlocker.com: Unknown error2");
+            int timesFailed = downloadLink.getIntegerProperty("timesfailedputlockercom_unknown2", 0);
             downloadLink.getLinkStatus().setRetryCount(0);
             if (timesFailed <= 2) {
                 timesFailed++;
-                downloadLink.setProperty("timesfailedputlockercom_unknown", timesFailed);
-                throw new PluginException(LinkStatus.ERROR_RETRY, "Unknown error");
+                downloadLink.setProperty("timesfailedputlockercom_unknown2", timesFailed);
+                throw new PluginException(LinkStatus.ERROR_RETRY, "Unknown error2");
             } else {
-                downloadLink.setProperty("timesfailedputlockercom_unknown", Property.NULL);
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 30 * 60 * 1000l);
+                downloadLink.setProperty("timesfailedputlockercom_unknown2", Property.NULL);
+                logger.info("putlocker.com: Unknown error2 - plugin broken!");
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+
+        } catch (final InterruptedException e) {
+            logger.info("putlocker.com: Unknown error3");
+            int timesFailed = downloadLink.getIntegerProperty("timesfailedputlockercom_unknown3", 0);
+            downloadLink.getLinkStatus().setRetryCount(0);
+            if (timesFailed <= 2) {
+                timesFailed++;
+                downloadLink.setProperty("timesfailedputlockercom_unknown3", timesFailed);
+                throw new PluginException(LinkStatus.ERROR_RETRY, "Unknown error3");
+            } else {
+                downloadLink.setProperty("timesfailedputlockercom_unknown3", Property.NULL);
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown error3", 30 * 60 * 1000l);
             }
         }
     }
@@ -233,7 +258,7 @@ public class PutLockerCom extends PluginForHost {
         br.getPage(link.getDownloadURL());
         br.setFollowRedirects(false);
         String dlURL = getDllink(link);
-        if (dlURL == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+        if (dlURL == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dlURL, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();

@@ -74,8 +74,8 @@ public class YouLoadMe extends PluginForHost {
     private static final boolean FREE_RESUME                  = false;
     private static final int     FREE_MAXCHUNKS               = 1;
     private static final int     FREE_MAXDOWNLOADS            = 20;
-    private static final boolean ACCOUNT_FREE_RESUME          = false;
-    private static final int     ACCOUNT_FREE_MAXCHUNKS       = 1;
+    private static final boolean ACCOUNT_FREE_RESUME          = true;
+    private static final int     ACCOUNT_FREE_MAXCHUNKS       = 0;
     private static final int     ACCOUNT_FREE_MAXDOWNLOADS    = 20;
     private static final boolean ACCOUNT_PREMIUM_RESUME       = true;
     private static final int     ACCOUNT_PREMIUM_MAXCHUNKS    = 0;
@@ -90,7 +90,7 @@ public class YouLoadMe extends PluginForHost {
     // DEV NOTES
     // XfileSharingProBasic Version 2.6.2.7
     // mods:
-    // limit-info: free account untested, set FREE limits
+    // limit-info: premium account untested, set free account limits
     // protocol: no https
     // captchatype: null 4dignum solvemedia recaptcha
     // other:

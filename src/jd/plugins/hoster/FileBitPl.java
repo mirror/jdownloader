@@ -230,8 +230,8 @@ public class FileBitPl extends PluginForHost {
         handleAPIErrors(br, account, null);
         account.setValid(true);
         account.setConcurrentUsePossible(true);
-        final String status = getJson("premium");
-        if (!"1".equals(status)) {
+        final String accounttype = getJson("premium");
+        if (!"1".equals(accounttype)) {
             ai.setStatus("This is no premium account!");
             account.setValid(false);
             return ai;
@@ -239,10 +239,11 @@ public class FileBitPl extends PluginForHost {
         String expire = getJson("expires");
         if (expire != null) {
             final Long expirelng = Long.parseLong(expire);
-            if (expirelng == -1)
+            if (expirelng == -1) {
                 ai.setValidUntil(expirelng);
-            else
+            } else {
                 ai.setValidUntil(System.currentTimeMillis() + expirelng * 1000);
+            }
         }
         final String trafficleft_bytes = getJson("transferLeft");
         if (trafficleft_bytes != null) {
