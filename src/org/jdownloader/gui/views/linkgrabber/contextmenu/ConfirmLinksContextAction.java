@@ -167,8 +167,6 @@ public class ConfirmLinksContextAction extends CustomizableTableContextAppAction
 
     private boolean          metaCtrl              = false;
 
-    private boolean          selectionOnly         = true;
-
     public ConfirmLinksContextAction() {
         super(false, true);
         GUIEventSender.getInstance().addListener(this, true);
@@ -213,12 +211,6 @@ public class ConfirmLinksContextAction extends CustomizableTableContextAppAction
         return clearListAfterConfirm;
     }
 
-    @Customizer(name = "Add only selected Links")
-    public boolean isSelectionOnly() {
-        return selectionOnly;
-
-    }
-
     @Override
     public void onGuiMainTabSwitch(View oldView, View newView) {
     }
@@ -254,6 +246,14 @@ public class ConfirmLinksContextAction extends CustomizableTableContextAppAction
     @Customizer(name = "Clear Linkgrabber after adding links")
     public void setClearListAfterConfirm(boolean clearListAfterConfirm) {
         this.clearListAfterConfirm = clearListAfterConfirm;
+    }
+
+    private boolean selectionOnly = true;
+
+    @Customizer(name = "Add only selected Links")
+    public boolean isSelectionOnly() {
+        return selectionOnly;
+
     }
 
     public void setSelectionOnly(boolean selectionOnly) {

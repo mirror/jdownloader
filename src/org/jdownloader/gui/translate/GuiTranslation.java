@@ -3757,4 +3757,13 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "No Answer!" })
     String DeathByCaptchaSolver_solveBasicCaptchaChallenge_failed();
 
+    @Default(lngs = { "en" }, values = { "Expand/Collapse all Packages" })
+    String CollapseExpandAllAction_CollapseExpandAllAction();
+
+    @Default(lngs = { "en" }, values = { "Expand/Collapse All" })
+    String CollapseExpandAllAction_CollapseExpandAllAction_();
+
+    @Default(lngs = { "en" }, values = { "Expand/Collapse" })
+    String CollapseExpandAllAction_CollapseExpandAllAction_selectiononly();
+
 }

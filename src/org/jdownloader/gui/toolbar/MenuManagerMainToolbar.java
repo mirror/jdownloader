@@ -42,6 +42,7 @@ import org.jdownloader.gui.mainmenu.container.OptionalContainer;
 import org.jdownloader.gui.mainmenu.container.SettingsMenuContainer;
 import org.jdownloader.gui.toolbar.action.CaptchaDialogsToogleAction;
 import org.jdownloader.gui.toolbar.action.CaptchaExchangeToogleAction;
+import org.jdownloader.gui.toolbar.action.CollapseExpandAllAction;
 import org.jdownloader.gui.toolbar.action.GenericDeleteFromTableToolbarAction;
 import org.jdownloader.gui.toolbar.action.JAntiCaptchaToogleAction;
 import org.jdownloader.gui.toolbar.action.MoveDownAction;
@@ -171,6 +172,7 @@ public class MenuManagerMainToolbar extends ContextMenuManager<FilePackage, Down
         mr.add(createDeleteMenu());
 
         ocr.add(CaptchaDialogsToogleAction.class);
+        opt.add(CollapseExpandAllAction.class);
         return mr;
     }
 

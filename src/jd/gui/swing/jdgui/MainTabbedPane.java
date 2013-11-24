@@ -35,6 +35,8 @@ import jd.gui.swing.jdgui.views.ClosableView;
 import org.appwork.utils.swing.EDTRunner;
 import org.jdownloader.gui.event.GUIEvent;
 import org.jdownloader.gui.event.GUIEventSender;
+import org.jdownloader.gui.views.downloads.DownloadsView;
+import org.jdownloader.gui.views.linkgrabber.LinkGrabberView;
 
 public class MainTabbedPane extends JTabbedPane {
 
@@ -182,6 +184,14 @@ public class MainTabbedPane extends JTabbedPane {
             if (c.equals(view)) return true;
         }
         return false;
+    }
+
+    public boolean isLinkgrabberView() {
+        return getSelectedView() instanceof LinkGrabberView;
+    }
+
+    public boolean isDownloadView() {
+        return getSelectedView() instanceof DownloadsView;
     }
 
     // public void mouseClicked(MouseEvent e) {

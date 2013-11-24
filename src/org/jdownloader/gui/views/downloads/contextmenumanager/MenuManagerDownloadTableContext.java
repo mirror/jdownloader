@@ -11,6 +11,7 @@ import org.jdownloader.controlling.contextmenu.MenuContainerRoot;
 import org.jdownloader.controlling.contextmenu.MenuItemData;
 import org.jdownloader.controlling.contextmenu.SeperatorData;
 import org.jdownloader.gui.IconKey;
+import org.jdownloader.gui.mainmenu.container.OptionalContainer;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.components.packagetable.context.CheckStatusAction;
 import org.jdownloader.gui.views.components.packagetable.context.EnabledAction;
@@ -22,6 +23,7 @@ import org.jdownloader.gui.views.components.packagetable.context.PriorityLowerAc
 import org.jdownloader.gui.views.components.packagetable.context.RenameAction;
 import org.jdownloader.gui.views.components.packagetable.context.SetDownloadPassword;
 import org.jdownloader.gui.views.components.packagetable.context.URLEditorAction;
+import org.jdownloader.gui.views.downloads.action.CollapseExpandContextAction;
 import org.jdownloader.gui.views.downloads.action.CreateDLCAction;
 import org.jdownloader.gui.views.downloads.action.ForceDownloadAction;
 import org.jdownloader.gui.views.downloads.action.GenericDeleteFromDownloadlistAction;
@@ -108,6 +110,9 @@ public class MenuManagerDownloadTableContext extends ContextMenuManager<FilePack
         mr.add(new SeperatorData());
 
         mr.add(new MenuItemData(new ActionData(MenuManagerAction.class)));
+        OptionalContainer opt;
+        mr.add(opt = new OptionalContainer(false));
+        opt.add(CollapseExpandContextAction.class);
 
         return mr;
     }

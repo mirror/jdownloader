@@ -1,8 +1,5 @@
 package org.jdownloader.gui.toolbar.action;
 
-import java.util.List;
-
-import jd.controlling.packagecontroller.AbstractNode;
 import jd.gui.swing.jdgui.MainTabbedPane;
 import jd.gui.swing.jdgui.interfaces.View;
 
@@ -48,9 +45,9 @@ public abstract class SelectionBasedToolbarAction extends AbstractToolBarAction 
             if (table != null) {
                 table.getEventSender().addListener(this, true);
             }
-            onSelectionUpdate(table == null ? null : table.getModel().getSelectedObjects());
+            onSelectionUpdate();
         } catch (Exception e) {
-            onSelectionUpdate(table == null ? null : table.getModel().getSelectedObjects());
+            onSelectionUpdate();
             setEnabled(false);
         }
 
@@ -76,7 +73,9 @@ public abstract class SelectionBasedToolbarAction extends AbstractToolBarAction 
     public void onExtTableEvent(ExtTableEvent<?> event) {
         switch (event.getType()) {
         case SELECTION_CHANGED:
-            onSelectionUpdate(table == null ? null : table.getModel().getSelectedObjects());
+
+            onSelectionUpdate();
+
         }
 
     }
@@ -85,7 +84,7 @@ public abstract class SelectionBasedToolbarAction extends AbstractToolBarAction 
         return table;
     }
 
-    protected abstract void onSelectionUpdate(List<AbstractNode> list);
+    protected abstract void onSelectionUpdate();
 
     private boolean showInAllViews        = true;
 

@@ -13,6 +13,7 @@ import org.jdownloader.controlling.contextmenu.MenuItemData;
 import org.jdownloader.controlling.contextmenu.SeperatorData;
 import org.jdownloader.controlling.contextmenu.TableContext;
 import org.jdownloader.gui.IconKey;
+import org.jdownloader.gui.mainmenu.container.OptionalContainer;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.components.packagetable.context.CheckStatusAction;
 import org.jdownloader.gui.views.components.packagetable.context.EnabledAction;
@@ -25,6 +26,7 @@ import org.jdownloader.gui.views.components.packagetable.context.RenameAction;
 import org.jdownloader.gui.views.components.packagetable.context.SetCommentAction;
 import org.jdownloader.gui.views.components.packagetable.context.SetDownloadPassword;
 import org.jdownloader.gui.views.components.packagetable.context.URLEditorAction;
+import org.jdownloader.gui.views.downloads.action.CollapseExpandContextAction;
 import org.jdownloader.gui.views.downloads.action.MenuManagerAction;
 import org.jdownloader.gui.views.downloads.context.submenu.DeleteMenuContainer;
 import org.jdownloader.gui.views.downloads.context.submenu.PriorityMenuContainer;
@@ -109,7 +111,9 @@ public class MenuManagerLinkgrabberTableContext extends ContextMenuManager<Crawl
         mr.add(new ActionData(PropertiesAction.class));
         mr.add(new SeperatorData());
         mr.add(new MenuItemData(new ActionData(LGMenuManagerAction.class)));
-
+        OptionalContainer opt;
+        mr.add(opt = new OptionalContainer(false));
+        opt.add(CollapseExpandContextAction.class);
         return mr;
     }
 
