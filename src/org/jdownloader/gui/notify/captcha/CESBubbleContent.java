@@ -11,14 +11,19 @@ import javax.swing.ImageIcon;
 import javax.swing.JLabel;
 import javax.swing.JSeparator;
 
+import net.miginfocom.swing.MigLayout;
+
+import org.appwork.swing.MigPanel;
 import org.appwork.swing.components.ExtButton;
+import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.images.IconIO;
 import org.appwork.utils.swing.SwingUtils;
 import org.jdownloader.actions.AppAction;
-import org.jdownloader.captcha.v2.ChallengeSolver;
 import org.jdownloader.captcha.v2.SolverStatus;
 import org.jdownloader.captcha.v2.challenge.stringcaptcha.ImageCaptchaChallenge;
+import org.jdownloader.captcha.v2.solver.CESChallengeSolver;
+import org.jdownloader.captcha.v2.solver.CESSolverJob;
 import org.jdownloader.captcha.v2.solverjob.SolverJob;
 import org.jdownloader.gui.notify.AbstractBubbleContentPanel;
 import org.jdownloader.gui.notify.BubbleNotify;
@@ -28,48 +33,58 @@ import org.jdownloader.updatev2.gui.LAFOptions;
 
 public class CESBubbleContent extends AbstractBubbleContentPanel {
 
-    private JLabel             status;
+    private JLabel                status;
 
-    private long               startTime;
+    private long                  startTime;
 
-    private JLabel             duration;
+    private JLabel                duration;
 
-    private ChallengeSolver<?> solver;
+    private CESChallengeSolver<?> solver;
 
-    private SolverJob<?>       job;
+    private CESSolverJob<?>       job;
 
-    private JLabel             statusLbl;
+    private JLabel                statusLbl;
 
-    private JLabel             timeoutLbl;
+    private JLabel                timeoutLbl;
 
-    private JLabel             durationLbl;
+    private JLabel                durationLbl;
 
-    private ExtButton          button;
+    private ExtButton             button;
 
-    private CESBubble          bubble;
+    private CESBubble             bubble;
 
-    public CESBubbleContent(final ChallengeSolver<?> solver, final SolverJob<?> job, int timeoutms) {
+    private SolverStatus          latestStatus;
+
+    private JLabel                creditsLabel;
+
+    private JLabel                credits;
+
+    public CESBubbleContent(final CESChallengeSolver<?> solver, final CESSolverJob<?> cesSolverJob, int timeoutms) {
         super(solver.getIcon(20));
         this.solver = solver;
-        this.job = job;
+        this.job = cesSolverJob;
         startTime = System.currentTimeMillis();
         // super("ins 0,wrap 2", "[][grow,fill]", "[grow,fill]");
-
+        setLayout(new MigLayout("ins 3 3 0 3,wrap 2", "[fill][grow,fill]", "[]"));
         // , _GUI._.balloon_reconnect_start_msg(), NewTheme.I().getIcon("reconnect", 32)
-
-        add(timeoutLbl = new JLabel(_GUI._.CESBubbleContent_CESBubbleContent_wait(TimeFormatter.formatMilliSeconds(timeoutms, 0), solver.getName())), "hidemode 3,spanx,spany 2");
+        MigPanel east = new MigPanel("ins 0 0 0 0,wrap 2", "[fill][grow,fill]", "[]");
+        east.setOpaque(false);
+        east.add(timeoutLbl = new JLabel(_GUI._.CESBubbleContent_CESBubbleContent_wait(TimeFormatter.formatMilliSeconds(timeoutms, 0), solver.getName())), "hidemode 3,spanx");
         timeoutLbl.setForeground(LAFOptions.getInstance().getColorForErrorForeground());
         SwingUtils.toBold(timeoutLbl);
 
-        add(durationLbl = createHeaderLabel((_GUI._.ReconnectDialog_layoutDialogContent_duration())), "hidemode 3");
-        add(duration = new JLabel(""), "hidemode 3");
-        add(statusLbl = createHeaderLabel((_GUI._.CESBubbleContent_CESBubbleContent_status())), "hidemode 3");
+        east.add(durationLbl = createHeaderLabel((_GUI._.ReconnectDialog_layoutDialogContent_duration())), "hidemode 3");
+        east.add(duration = new JLabel(""), "hidemode 3");
+        east.add(creditsLabel = createHeaderLabel((_GUI._.CESBubbleContent_CESBubbleContent_credits())), "hidemode 3");
+        east.add(credits = new JLabel(""), "hidemode 3");
+        east.add(statusLbl = createHeaderLabel((_GUI._.CESBubbleContent_CESBubbleContent_status())), "hidemode 3");
 
-        add(status = new JLabel(""), "hidemode 3");
-
-        if (job.getChallenge() instanceof ImageCaptchaChallenge) {
+        east.add(status = new JLabel(""), "hidemode 3");
+        add(progressCircle, "width 32!,height 32!,pushx,growx,pushy,growy,aligny top");
+        add(east);
+        if (cesSolverJob.getChallenge() instanceof ImageCaptchaChallenge) {
             try {
-                ImageIcon icon = new ImageIcon(ImageIO.read(((ImageCaptchaChallenge) job.getChallenge()).getImageFile()));
+                ImageIcon icon = new ImageIcon(ImageIO.read(((ImageCaptchaChallenge) cesSolverJob.getChallenge()).getImageFile()));
                 if (icon.getIconWidth() > 300 || icon.getIconHeight() > 300) {
 
                     icon = new ImageIcon(IconIO.getScaledInstance(icon.getImage(), 300, 300));
@@ -103,7 +118,7 @@ public class CESBubbleContent extends AbstractBubbleContentPanel {
 
             @Override
             public void mouseClicked(MouseEvent e) {
-                ((ChallengeSolver<Object>) solver).kill((SolverJob<Object>) job);
+                ((CESChallengeSolver<Object>) solver).kill((SolverJob<Object>) cesSolverJob.getJob());
                 if (bubble != null) {
                     bubble.hideBubble(0);
                 }
@@ -116,7 +131,7 @@ public class CESBubbleContent extends AbstractBubbleContentPanel {
 
             @Override
             public void actionPerformed(ActionEvent e) {
-                ((ChallengeSolver<Object>) solver).kill((SolverJob<Object>) job);
+                ((CESChallengeSolver<Object>) solver).kill((SolverJob<Object>) cesSolverJob.getJob());
                 if (bubble != null) {
                     bubble.hideBubble(0);
                 }
@@ -128,19 +143,29 @@ public class CESBubbleContent extends AbstractBubbleContentPanel {
 
     @Override
     protected void addProgress() {
-        add(progressCircle, "width 32!,height 32!,pushx,growx,pushy,growy,spany 2,aligny top");
+
+    }
+
+    @Override
+    public void stop() {
+        super.stop();
+        update();
+        button.setVisible(false);
     }
 
     public void update() {
-        SolverStatus s = solver.getStatus(job);
-        if (s == null) {
+        SolverStatus s = job.getStatus();
+        if (s != null) latestStatus = s;
+
+        credits.setText(solver.getAccountStatusString());
+        if (latestStatus == null) {
             status.setVisible(false);
             statusLbl.setVisible(false);
         } else {
             status.setVisible(true);
             statusLbl.setVisible(true);
-            status.setText(s.getLabel());
-            status.setIcon(s.getIcon());
+            status.setText(latestStatus.getLabel());
+            status.setIcon(latestStatus.getIcon());
         }
         duration.setText(TimeFormatter.formatMilliSeconds(System.currentTimeMillis() - startTime, 0));
 
@@ -162,6 +187,9 @@ public class CESBubbleContent extends AbstractBubbleContentPanel {
         duration.setVisible(rest <= 0);
         statusLbl.setVisible(rest <= 0);
         status.setVisible(rest <= 0);
+        creditsLabel.setVisible(StringUtils.isNotEmpty(credits.getText()));
+        credits.setVisible(StringUtils.isNotEmpty(credits.getText()));
+
         if (bubble != null) {
             bubble.pack();
             BubbleNotify.getInstance().relayout();

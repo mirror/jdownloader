@@ -13,7 +13,6 @@ import jd.SecondLevelLaunch;
 import jd.controlling.captcha.CaptchaSettings;
 import jd.gui.swing.jdgui.components.premiumbar.ServiceCollection;
 import jd.gui.swing.jdgui.components.premiumbar.ServicePanel;
-import jd.gui.swing.jdgui.components.premiumbar.ServicePanelExtender;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 
@@ -28,26 +27,22 @@ import org.appwork.utils.StringUtils;
 import org.jdownloader.captcha.v2.AbstractResponse;
 import org.jdownloader.captcha.v2.Challenge;
 import org.jdownloader.captcha.v2.ChallengeResponseValidation;
-import org.jdownloader.captcha.v2.ChallengeSolver;
 import org.jdownloader.captcha.v2.SolverStatus;
 import org.jdownloader.captcha.v2.challenge.stringcaptcha.BasicCaptchaChallenge;
-import org.jdownloader.captcha.v2.solver.jac.JACSolver;
+import org.jdownloader.captcha.v2.solver.CESChallengeSolver;
+import org.jdownloader.captcha.v2.solver.CESSolverJob;
 import org.jdownloader.captcha.v2.solver.jac.SolverException;
-import org.jdownloader.captcha.v2.solverjob.SolverJob;
 import org.jdownloader.gui.IconKey;
-import org.jdownloader.gui.notify.captcha.CESBubble;
-import org.jdownloader.gui.notify.captcha.CESBubbleSupport;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.settings.advanced.AdvancedConfigManager;
 import org.jdownloader.settings.staticreferences.CFG_9KWCAPTCHA;
 import org.jdownloader.settings.staticreferences.CFG_CAPTCHA;
 
-public class Captcha9kwSolver extends ChallengeSolver<String> implements ChallengeResponseValidation, ServicePanelExtender {
+public class Captcha9kwSolver extends CESChallengeSolver<String> implements ChallengeResponseValidation {
     private Captcha9kwSettings            config;
     private static final Captcha9kwSolver INSTANCE   = new Captcha9kwSolver();
     private ThreadPoolExecutor            threadPool = new ThreadPoolExecutor(0, 1, 30000, TimeUnit.MILLISECONDS, new LinkedBlockingDeque<Runnable>(), Executors.defaultThreadFactory());
-    private CESBubbleSupport              bubbleSupport;
 
     public static Captcha9kwSolver getInstance() {
         return INSTANCE;
@@ -111,7 +106,7 @@ public class Captcha9kwSolver extends ChallengeSolver<String> implements Challen
 
     @Override
     public boolean canHandle(Challenge<?> c) {
-        return CFG_CAPTCHA.CAPTCHA_EXCHANGE_SERVICES_ENABLED.isEnabled() && config.isEnabled() && super.canHandle(c);
+        return c instanceof BasicCaptchaChallenge && CFG_CAPTCHA.CAPTCHA_EXCHANGE_SERVICES_ENABLED.isEnabled() && config.isEnabled() && super.canHandle(c);
     }
 
     public String getAPIROOT() {
@@ -128,133 +123,114 @@ public class Captcha9kwSolver extends ChallengeSolver<String> implements Challen
     }
 
     @Override
-    public void solve(final SolverJob<String> job) throws InterruptedException, SolverException {
-        if (StringUtils.isEmpty(config.getApiKey())) {
-            job.getLogger().info("No ApiKey for 9kw.eu found.");
-            return;
-        }
-        if (job.getChallenge() instanceof BasicCaptchaChallenge && CFG_CAPTCHA.CAPTCHA_EXCHANGE_SERVICES_ENABLED.isEnabled()) {
-            job.waitFor(JsonConfig.create(CaptchaSettings.class).getCaptchaDialogJAntiCaptchaTimeout(), JACSolver.getInstance());
+    protected void solveCES(CESSolverJob<String> job) throws InterruptedException, SolverException {
 
-            checkInterruption();
-            BasicCaptchaChallenge challenge = (BasicCaptchaChallenge) job.getChallenge();
+        BasicCaptchaChallenge challenge = (BasicCaptchaChallenge) job.getChallenge();
 
-            int priothing = config.getprio();
+        int priothing = config.getprio();
 
-            job.getLogger().info("Start Captcha to 9kw.eu. Timeout: " + JsonConfig.create(CaptchaSettings.class).getCaptchaDialogJAntiCaptchaTimeout() + " - getTypeID: " + challenge.getTypeID());
-            if (config.getwhitelistcheck()) {
-                if (config.getwhitelist() != null) {
-                    if (config.getwhitelist().length() > 5) {
-                        if (config.getwhitelist().contains(challenge.getTypeID())) {
-                            job.getLogger().info("Hoster on whitelist for 9kw.eu. - " + challenge.getTypeID());
-                        } else {
-                            job.getLogger().info("Hoster not on whitelist for 9kw.eu. - " + challenge.getTypeID());
-                            return;
-                        }
-                    }
-                }
-            }
-
-            if (config.getblacklistcheck()) {
-                if (config.getblacklist() != null) {
-                    if (config.getblacklist().length() > 5) {
-                        if (config.getblacklist().contains(challenge.getTypeID())) {
-                            job.getLogger().info("Hoster on blacklist for 9kw.eu. - " + challenge.getTypeID());
-                            return;
-                        } else {
-                            job.getLogger().info("Hoster not on blacklist for 9kw.eu. - " + challenge.getTypeID());
-                        }
-                    }
-                }
-            }
-            CESBubble bubble = null;
-
-            if (config.getwhitelistpriocheck()) {
-                if (config.getwhitelistprio() != null) {
-                    if (config.getwhitelistprio().length() > 5) {
-                        if (config.getwhitelistprio().contains(challenge.getTypeID())) {
-                            job.getLogger().info("Hoster on whitelist with prio for 9kw.eu. - " + challenge.getTypeID());
-                        } else {
-                            job.getLogger().info("Hoster not on whitelist with prio for 9kw.eu. - " + challenge.getTypeID());
-                            priothing = 0;
-                        }
-                    }
-                }
-            }
-
-            if (config.getblacklistpriocheck()) {
-                if (config.getblacklistprio() != null) {
-                    if (config.getblacklistprio().length() > 5) {
-                        if (config.getblacklistprio().contains(challenge.getTypeID())) {
-                            priothing = 0;
-                            job.getLogger().info("Hoster on blacklist with prio for 9kw.eu. - " + challenge.getTypeID());
-                        } else {
-                            job.getLogger().info("Hoster not on blacklist with prio for 9kw.eu. - " + challenge.getTypeID());
-                        }
-                    }
-                }
-            }
-
-            try {
-
-                bubble = CESBubbleSupport.getInstance().show(this, job, CFG_CAPTCHA.CFG.getChanceToSkipBubbleTimeout());
-                checkInterruption();
-
-                byte[] data = IO.readFile(challenge.getImageFile());
-                Browser br = new Browser();
-                br.setAllowedResponseCodes(new int[] { 500 });
-                String ret = "";
-                setStatus(job, new SolverStatus("Uploading...", NewTheme.I().getIcon(IconKey.ICON_UPLOAD, 18)));
-                for (int i = 0; i <= 5; i++) {
-                    ret = br.postPage(getAPIROOT() + "index.cgi", "action=usercaptchaupload&jd=2&source=jd2&captchaperhour=" + config.gethour() + "&prio=" + priothing + "&selfsolve=" + config.isSelfsolve() + "&confirm=" + config.isconfirm() + "&oldsource=" + Encoding.urlEncode(challenge.getTypeID()) + "&apikey=" + Encoding.urlEncode(config.getApiKey()) + "&captchaSource=jdPlugin&maxtimeout=" + (JsonConfig.create(CaptchaSettings.class).getCaptchaDialog9kwTimeout() / 1000) + "&version=1.2&base64=1&file-upload-01=" + Encoding.urlEncode(org.appwork.utils.encoding.Base64.encodeToString(data, false)));
-                    if (ret.startsWith("OK-")) {
-                        break;
+        job.getLogger().info("Start Captcha to 9kw.eu. Timeout: " + JsonConfig.create(CaptchaSettings.class).getCaptchaDialogJAntiCaptchaTimeout() + " - getTypeID: " + challenge.getTypeID());
+        if (config.getwhitelistcheck()) {
+            if (config.getwhitelist() != null) {
+                if (config.getwhitelist().length() > 5) {
+                    if (config.getwhitelist().contains(challenge.getTypeID())) {
+                        job.getLogger().info("Hoster on whitelist for 9kw.eu. - " + challenge.getTypeID());
                     } else {
-                        Thread.sleep(3000);
-
-                    }
-                    setStatus(job, new SolverStatus("Waiting... ", NewTheme.I().getIcon(IconKey.ICON_WAIT, 18)));
-                    job.getLogger().info("Send Captcha to 9kw.eu. - Answer: " + ret);
-                    if (!ret.startsWith("OK-")) throw new SolverException(ret);
-                    // Error-No Credits
-                    String captchaID = ret.substring(3);
-                    data = null;
-                    long startTime = System.currentTimeMillis();
-
-                    Thread.sleep(5000);
-
-                    while (true) {
-
-                        job.getLogger().info("9kw.eu Ask " + captchaID);
-                        ret = br.getPage(getAPIROOT() + "index.cgi?action=usercaptchacorrectdata&jd=2&source=jd2&apikey=" + Encoding.urlEncode(config.getApiKey()) + "&id=" + Encoding.urlEncode(captchaID) + "&version=1.1");
-                        if (StringUtils.isEmpty(ret)) {
-                            job.getLogger().info("9kw.eu NO answer after " + ((System.currentTimeMillis() - startTime) / 1000) + "s ");
-                        } else {
-                            job.getLogger().info("9kw.eu Answer after " + ((System.currentTimeMillis() - startTime) / 1000) + "s: " + ret);
-                        }
-                        if (ret.startsWith("OK-answered-")) {
-                            setStatus(job, new SolverStatus("Done: " + ret, NewTheme.I().getIcon(IconKey.ICON_OK, 18)));
-                            job.addAnswer(new Captcha9kwResponse(challenge, this, ret.substring("OK-answered-".length()), 100, captchaID));
-                            return;
-                        }
-                        setStatus(job, new SolverStatus("Waiting... ", NewTheme.I().getIcon(IconKey.ICON_WAIT, 18)));
-                        checkInterruption();
-                        Thread.sleep(3000);
+                        job.getLogger().info("Hoster not on whitelist for 9kw.eu. - " + challenge.getTypeID());
+                        return;
                     }
                 }
-
-            } catch (IOException e) {
-                job.getLogger().log(e);
-
-            } finally {
-
-                if (bubble != null) {
-                    CESBubbleSupport.getInstance().hide(bubble);
-                }
-
             }
-        } else {
-            job.getLogger().info("Problem with Captcha9kwSolver.");
+        }
+
+        if (config.getblacklistcheck()) {
+            if (config.getblacklist() != null) {
+                if (config.getblacklist().length() > 5) {
+                    if (config.getblacklist().contains(challenge.getTypeID())) {
+                        job.getLogger().info("Hoster on blacklist for 9kw.eu. - " + challenge.getTypeID());
+                        return;
+                    } else {
+                        job.getLogger().info("Hoster not on blacklist for 9kw.eu. - " + challenge.getTypeID());
+                    }
+                }
+            }
+        }
+
+        if (config.getwhitelistpriocheck()) {
+            if (config.getwhitelistprio() != null) {
+                if (config.getwhitelistprio().length() > 5) {
+                    if (config.getwhitelistprio().contains(challenge.getTypeID())) {
+                        job.getLogger().info("Hoster on whitelist with prio for 9kw.eu. - " + challenge.getTypeID());
+                    } else {
+                        job.getLogger().info("Hoster not on whitelist with prio for 9kw.eu. - " + challenge.getTypeID());
+                        priothing = 0;
+                    }
+                }
+            }
+        }
+
+        if (config.getblacklistpriocheck()) {
+            if (config.getblacklistprio() != null) {
+                if (config.getblacklistprio().length() > 5) {
+                    if (config.getblacklistprio().contains(challenge.getTypeID())) {
+                        priothing = 0;
+                        job.getLogger().info("Hoster on blacklist with prio for 9kw.eu. - " + challenge.getTypeID());
+                    } else {
+                        job.getLogger().info("Hoster not on blacklist with prio for 9kw.eu. - " + challenge.getTypeID());
+                    }
+                }
+            }
+        }
+
+        try {
+
+            job.showBubble(this);
+            checkInterruption();
+
+            byte[] data = IO.readFile(challenge.getImageFile());
+            Browser br = new Browser();
+            br.setAllowedResponseCodes(new int[] { 500 });
+            String ret = "";
+            job.setStatus(SolverStatus.UPLOADING);
+            for (int i = 0; i <= 5; i++) {
+                ret = br.postPage(getAPIROOT() + "index.cgi", "action=usercaptchaupload&jd=2&source=jd2&captchaperhour=" + config.gethour() + "&prio=" + priothing + "&selfsolve=" + config.isSelfsolve() + "&confirm=" + config.isconfirm() + "&oldsource=" + Encoding.urlEncode(challenge.getTypeID()) + "&apikey=" + Encoding.urlEncode(config.getApiKey()) + "&captchaSource=jdPlugin&maxtimeout=" + (JsonConfig.create(CaptchaSettings.class).getCaptchaDialog9kwTimeout() / 1000) + "&version=1.2&base64=1&file-upload-01=" + Encoding.urlEncode(org.appwork.utils.encoding.Base64.encodeToString(data, false)));
+                if (ret.startsWith("OK-")) {
+                    break;
+                } else {
+                    Thread.sleep(3000);
+
+                }
+                job.setStatus(SolverStatus.SOLVING);
+                job.getLogger().info("Send Captcha to 9kw.eu. - Answer: " + ret);
+                if (!ret.startsWith("OK-")) throw new SolverException(ret);
+                // Error-No Credits
+                String captchaID = ret.substring(3);
+                data = null;
+                long startTime = System.currentTimeMillis();
+
+                Thread.sleep(5000);
+
+                while (true) {
+
+                    job.getLogger().info("9kw.eu Ask " + captchaID);
+                    ret = br.getPage(getAPIROOT() + "index.cgi?action=usercaptchacorrectdata&jd=2&source=jd2&apikey=" + Encoding.urlEncode(config.getApiKey()) + "&id=" + Encoding.urlEncode(captchaID) + "&version=1.1");
+                    if (StringUtils.isEmpty(ret)) {
+                        job.getLogger().info("9kw.eu NO answer after " + ((System.currentTimeMillis() - startTime) / 1000) + "s ");
+                    } else {
+                        job.getLogger().info("9kw.eu Answer after " + ((System.currentTimeMillis() - startTime) / 1000) + "s: " + ret);
+                    }
+                    if (ret.startsWith("OK-answered-")) {
+                        job.setAnswer(new Captcha9kwResponse(challenge, this, ret.substring("OK-answered-".length()), 100, captchaID));
+                        return;
+                    }
+
+                    checkInterruption();
+                    Thread.sleep(3000);
+                }
+            }
+
+        } catch (IOException e) {
+            job.getLogger().log(e);
         }
 
     }
@@ -418,6 +394,12 @@ public class Captcha9kwSolver extends ChallengeSolver<String> implements Challen
             ret.setError("API Error!");
         }
         return ret;
+
+    }
+
+    @Override
+    protected boolean validateLogins() {
+        return StringUtils.isNotEmpty(config.getApiKey()) && config.isEnabled();
 
     }
 }

@@ -138,7 +138,7 @@ public class DownloadLinkPropertiesPanel extends AbstractNodePropertiesPanel imp
 
     @Override
     protected List<Archive> loadArchives() {
-        return ArchiveValidator.validate(new SelectionInfo<FilePackage, DownloadLink>(currentLink, null)).getArchives();
+        return ArchiveValidator.validate(new SelectionInfo<FilePackage, DownloadLink>(currentLink, null));
 
     }
 

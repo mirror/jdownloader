@@ -31,7 +31,7 @@ public class PackagePropertiesPanel extends LinkPropertiesPanel {
 
     @Override
     protected List<Archive> loadArchives() {
-        return ArchiveValidator.validate(new SelectionInfo<CrawledPackage, CrawledLink>(currentPackage, null)).getArchives();
+        return ArchiveValidator.validate(new SelectionInfo<CrawledPackage, CrawledLink>(currentPackage, null));
 
     }
 

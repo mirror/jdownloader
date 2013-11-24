@@ -32,7 +32,7 @@ public class FilePackagePropertiesPanel extends DownloadLinkPropertiesPanel {
 
     @Override
     protected List<Archive> loadArchives() {
-        return ArchiveValidator.validate(new SelectionInfo<FilePackage, DownloadLink>(currentPackage, null)).getArchives();
+        return ArchiveValidator.validate(new SelectionInfo<FilePackage, DownloadLink>(currentPackage, null));
 
     }
 

@@ -64,7 +64,7 @@ public class ExtractionListenerList implements ExtractionListener {
     private ExtractionExtension ex;
 
     ExtractionListenerList() {
-        this.ex = ExtractionExtension.getIntance();
+        this.ex = ExtractionExtension.getInstance();
     }
 
     public void onExtractionEvent(ExtractionEvent event) {

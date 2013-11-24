@@ -16,13 +16,12 @@ import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogNoAnswerException;
 import org.jdownloader.controlling.contextmenu.CustomizableSelectionAppAction;
-import org.jdownloader.extensions.ExtensionController;
 import org.jdownloader.extensions.extraction.Archive;
 import org.jdownloader.extensions.extraction.ArchiveFile;
 import org.jdownloader.extensions.extraction.DummyArchive;
 import org.jdownloader.extensions.extraction.ExtractionExtension;
-import org.jdownloader.extensions.extraction.ValidateArchiveAction;
 import org.jdownloader.extensions.extraction.bindings.crawledlink.CrawledLinkArchiveFile;
+import org.jdownloader.extensions.extraction.contextmenu.downloadlist.ArchiveValidator;
 import org.jdownloader.extensions.extraction.contextmenu.downloadlist.action.ExtractIconVariant;
 import org.jdownloader.gui.translate._GUI;
 
@@ -47,9 +46,8 @@ public class RemoveIncompleteArchives extends CustomizableSelectionAppAction<Cra
             @Override
             public void run() {
                 try {
-                    ValidateArchiveAction<CrawledPackage, CrawledLink> va = new ValidateArchiveAction<CrawledPackage, CrawledLink>((ExtractionExtension) ExtensionController.getInstance().getExtension(ExtractionExtension.class)._getExtension(), getSelection());
-                    for (Archive a : va.getArchives()) {
-                        final DummyArchive da = va.createDummyArchive(a);
+                    for (Archive a : ArchiveValidator.validate(selection)) {
+                        final DummyArchive da = ExtractionExtension.getInstance().createDummyArchive(a);
                         if (!da.isComplete()) {
                             try {
                                 if (JDGui.bugme(WarnLevel.LOW)) {

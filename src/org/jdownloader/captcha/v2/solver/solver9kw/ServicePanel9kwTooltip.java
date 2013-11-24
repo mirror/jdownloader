@@ -67,6 +67,9 @@ public class ServicePanel9kwTooltip extends PanelToolTip {
 
                         @Override
                         protected void runInEDT() {
+                            if (!isShowing()) {
+
+                            return; }
                             panel.removeAll();
                             // panel.setPreferredSize(null);
                             if (!account.isValid()) {

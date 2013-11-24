@@ -121,7 +121,7 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> {
 
     private void fireEvent(ExtractionEvent.Type event) {
         latestEvent = event;
-        ExtractionExtension.getIntance().fireEvent(new ExtractionEvent(this, event));
+        ExtractionExtension.getInstance().fireEvent(new ExtractionEvent(this, event));
     }
 
     public Type getLatestEvent() {

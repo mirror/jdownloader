@@ -1,25 +1,29 @@
 package org.jdownloader.extensions.extraction.contextmenu.downloadlist;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.WeakHashMap;
 
+import jd.controlling.linkcrawler.CrawledLink;
 import jd.plugins.DownloadLink;
-import jd.plugins.FilePackage;
 
+import org.jdownloader.extensions.extraction.Archive;
 import org.jdownloader.extensions.extraction.ExtractionExtension;
-import org.jdownloader.extensions.extraction.ValidateArchiveAction;
+import org.jdownloader.extensions.extraction.bindings.crawledlink.CrawledLinkFactory;
+import org.jdownloader.extensions.extraction.bindings.downloadlink.DownloadLinkArchiveFactory;
 import org.jdownloader.gui.views.SelectionInfo;
 
 public class ArchiveValidator {
 
-    public static ExtractionExtension                                EXTENSION;
+    public static ExtractionExtension                        EXTENSION;
 
-    private static WeakHashMap<SelectionInfo, ValidateArchiveAction> VALIDATIONCACHE = new WeakHashMap<SelectionInfo, ValidateArchiveAction>();
-    private static WeakHashMap<SelectionInfo, Object>                VALIDATIONLOCKS = new WeakHashMap<SelectionInfo, Object>();
+    private static WeakHashMap<SelectionInfo, List<Archive>> VALIDATIONCACHE = new WeakHashMap<SelectionInfo, List<Archive>>();
+    private static WeakHashMap<SelectionInfo, Object>        VALIDATIONLOCKS = new WeakHashMap<SelectionInfo, Object>();
 
-    public static ValidateArchiveAction<FilePackage, DownloadLink> validate(SelectionInfo<?, ?> selection) {
+    public static List<Archive> validate(SelectionInfo<?, ?> selection) {
         if (EXTENSION == null) return null;
         Object lock = null;
-        ValidateArchiveAction validation = null;
+        List<Archive> validation = null;
         synchronized (VALIDATIONCACHE) {
             validation = VALIDATIONCACHE.get(selection);
             if (validation != null) return validation;
@@ -37,7 +41,7 @@ public class ArchiveValidator {
                     validation = VALIDATIONCACHE.get(selection);
                     if (validation != null) return validation;
                 }
-                validation = new ValidateArchiveAction<FilePackage, DownloadLink>(EXTENSION, (SelectionInfo<FilePackage, DownloadLink>) selection);
+                validation = getArchives(selection);
                 synchronized (VALIDATIONCACHE) {
                     VALIDATIONCACHE.put(selection, validation);
                 }
@@ -48,5 +52,49 @@ public class ArchiveValidator {
                 }
             }
         }
+    }
+
+    public static List<Archive> getArchives(SelectionInfo<?, ?> si) {
+        ExtractionExtension extractor = EXTENSION;
+        ArrayList<Archive> archives = new ArrayList<Archive>();
+        if (extractor == null) return archives;
+
+        nextLink: for (Object l : si.getChildren()) {
+            if (l instanceof CrawledLink) {
+                // if (((CrawledLink) l).getLinkState() != LinkState.OFFLINE) {
+                CrawledLinkFactory clf = new CrawledLinkFactory(((CrawledLink) l));
+                if (extractor.isLinkSupported(clf)) {
+
+                    for (Archive a : archives) {
+                        if (a.contains(clf)) continue nextLink;
+                    }
+
+                    Archive archive = extractor.getArchiveByFactory(clf);
+                    if (archive != null) {
+                        archives.add(archive);
+                    }
+
+                    // }
+                }
+            } else if (l instanceof DownloadLink) {
+                // if (((DownloadLink) l).isAvailable() || new File(((DownloadLink) l).getFileOutput()).exists()) {
+                DownloadLinkArchiveFactory clf = new DownloadLinkArchiveFactory(((DownloadLink) l));
+                if (extractor.isLinkSupported(clf)) {
+
+                    for (Archive a : archives) {
+                        if (a.contains(clf)) continue nextLink;
+                    }
+
+                    Archive archive = extractor.getArchiveByFactory(clf);
+                    if (archive != null) {
+                        archives.add(archive);
+                    }
+
+                }
+                // }
+
+            }
+        }
+        return archives;
     }
 }

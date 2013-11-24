@@ -136,7 +136,7 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
         return true;
     }
 
-    public static ExtractionExtension getIntance() {
+    public static ExtractionExtension getInstance() {
         return INSTANCE;
     }
 

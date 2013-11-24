@@ -74,7 +74,7 @@ public class JobRunnable<T> implements Runnable {
                 getJob().getLogger().log(e);
 
             } finally {
-                solver.setStatus(job, null);
+
                 fireDoneAndAfterSolveEvents();
 
             }

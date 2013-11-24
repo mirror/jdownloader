@@ -5,8 +5,8 @@ import java.util.List;
 
 import org.appwork.utils.swing.EDTHelper;
 import org.appwork.utils.swing.EDTRunner;
-import org.jdownloader.captcha.v2.ChallengeSolver;
-import org.jdownloader.captcha.v2.solverjob.SolverJob;
+import org.jdownloader.captcha.v2.solver.CESChallengeSolver;
+import org.jdownloader.captcha.v2.solver.CESSolverJob;
 import org.jdownloader.gui.notify.AbstractBubbleSupport;
 import org.jdownloader.gui.notify.Element;
 import org.jdownloader.gui.translate._GUI;
@@ -37,14 +37,14 @@ public class CESBubbleSupport extends AbstractBubbleSupport {
         return null;
     }
 
-    public CESBubble show(final ChallengeSolver<?> solver, final SolverJob<?> job, final int timeoutms) throws InterruptedException {
+    public CESBubble show(final CESChallengeSolver<?> solver, final CESSolverJob<?> cesSolverJob, final int timeoutms) throws InterruptedException {
         if (!keyHandler.isEnabled()) return null;
         final org.jdownloader.gui.notify.captcha.CESBubble ret = new EDTHelper<CESBubble>() {
 
             @Override
             public org.jdownloader.gui.notify.captcha.CESBubble edtRun() {
                 org.jdownloader.gui.notify.captcha.CESBubble bubble;
-                show(bubble = new CESBubble(solver, job, timeoutms));
+                show(bubble = new CESBubble(solver, cesSolverJob, timeoutms));
                 return bubble;
             }
         }.getReturnValue();

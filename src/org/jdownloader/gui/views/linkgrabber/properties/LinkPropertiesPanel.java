@@ -185,7 +185,7 @@ public class LinkPropertiesPanel extends AbstractNodePropertiesPanel implements 
 
     @Override
     protected List<Archive> loadArchives() {
-        return ArchiveValidator.validate(new SelectionInfo<CrawledPackage, CrawledLink>(currentLink, null)).getArchives();
+        return ArchiveValidator.validate(new SelectionInfo<CrawledPackage, CrawledLink>(currentLink, null));
 
     }
 

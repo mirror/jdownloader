@@ -89,7 +89,7 @@ public class DialogBasicCaptchaSolver extends ChallengeSolver<String> {
     public boolean hasToWaitForInvisibleSolvers() {
         if (configDBC.isEnabled() && config.getCaptchaDialogDBCTimeout() > 0) return true;
         if (config9kw.isEnabled() && config.getCaptchaDialog9kwTimeout() > 0) return true;
-        if (configcbh.isEnabled() && config.getCaptchaDialogCaptchaBroptherhoodTimeout2() > 0) return true;
+        if (configcbh.isEnabled() && config.getCaptchaDialogCaptchaBrotherhoodTimeout() > 0) return true;
         if (configresolutor.isEnabled() && config.getCaptchaDialogResolutorCaptchaTimeout() > 0) return true;
         return false;
     }
@@ -106,7 +106,7 @@ public class DialogBasicCaptchaSolver extends ChallengeSolver<String> {
                     if (configDBC.isEnabled() && config.getCaptchaDialogDBCTimeout() > 0) job.waitFor(config.getCaptchaDialogDBCTimeout(), DeathByCaptchaSolver.getInstance());
 
                     if (config9kw.isEnabled() && config.getCaptchaDialog9kwTimeout() > 0) job.waitFor(config.getCaptchaDialog9kwTimeout(), Captcha9kwSolver.getInstance());
-                    if (configcbh.isEnabled() && config.getCaptchaDialogCaptchaBroptherhoodTimeout2() > 0) job.waitFor(config.getCaptchaDialogCaptchaBroptherhoodTimeout2(), CBSolver.getInstance());
+                    if (configcbh.isEnabled() && config.getCaptchaDialogCaptchaBrotherhoodTimeout() > 0) job.waitFor(config.getCaptchaDialogCaptchaBrotherhoodTimeout(), CBSolver.getInstance());
                     if (configresolutor.isEnabled() && config.getCaptchaDialogResolutorCaptchaTimeout() > 0) job.waitFor(config.getCaptchaDialogResolutorCaptchaTimeout(), CaptchaResolutorCaptchaSolver.getInstance());
 
                 } catch (InterruptedException e) {

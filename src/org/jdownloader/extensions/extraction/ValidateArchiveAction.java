@@ -5,18 +5,15 @@ import java.util.ArrayList;
 
 import javax.swing.ImageIcon;
 
-import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.packagecontroller.AbstractPackageChildrenNode;
 import jd.controlling.packagecontroller.AbstractPackageNode;
-import jd.plugins.DownloadLink;
 
 import org.appwork.utils.ImageProvider.ImageProvider;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.jdownloader.actions.AppAction;
-import org.jdownloader.extensions.extraction.bindings.crawledlink.CrawledLinkFactory;
-import org.jdownloader.extensions.extraction.bindings.downloadlink.DownloadLinkArchiveFactory;
+import org.jdownloader.extensions.extraction.contextmenu.downloadlist.ArchiveValidator;
 import org.jdownloader.extensions.extraction.gui.DummyArchiveDialog;
 import org.jdownloader.extensions.extraction.multi.CheckException;
 import org.jdownloader.extensions.extraction.translate.T;
@@ -51,44 +48,7 @@ public class ValidateArchiveAction<PackageType extends AbstractPackageNode<Child
         setName(T._.ValidateArchiveAction_ValidateArchiveAction_object_());
         setSmallIcon(new ImageIcon(ImageProvider.merge(NewTheme.I().getImage(org.jdownloader.gui.IconKey.ICON_COMPRESS, 18), NewTheme.I().getImage("ok", 11), -1, 0, 6, 8)));
         //
-        extractor = extractionExtension;
-        archives = new ArrayList<Archive>();
-        nextLink: for (ChildrenType l : si.getChildren()) {
-            if (l instanceof CrawledLink) {
-                // if (((CrawledLink) l).getLinkState() != LinkState.OFFLINE) {
-                CrawledLinkFactory clf = new CrawledLinkFactory(((CrawledLink) l));
-                if (extractor.isLinkSupported(clf)) {
-
-                    for (Archive a : archives) {
-                        if (a.contains(clf)) continue nextLink;
-                    }
-
-                    Archive archive = extractor.getArchiveByFactory(clf);
-                    if (archive != null) {
-                        archives.add(archive);
-                    }
-
-                    // }
-                }
-            } else if (l instanceof DownloadLink) {
-                // if (((DownloadLink) l).isAvailable() || new File(((DownloadLink) l).getFileOutput()).exists()) {
-                DownloadLinkArchiveFactory clf = new DownloadLinkArchiveFactory(((DownloadLink) l));
-                if (extractor.isLinkSupported(clf)) {
-
-                    for (Archive a : archives) {
-                        if (a.contains(clf)) continue nextLink;
-                    }
-
-                    Archive archive = extractor.getArchiveByFactory(clf);
-                    if (archive != null) {
-                        archives.add(archive);
-                    }
-
-                }
-                // }
-
-            }
-        }
+        archives = ArchiveValidator.validate(si);
         setEnabled(archives.size() > 0);
     }
 

@@ -29,11 +29,10 @@ import org.jdownloader.actions.AppAction;
 import org.jdownloader.controlling.contextmenu.ActionContext;
 import org.jdownloader.controlling.contextmenu.CustomizableTableContextAppAction;
 import org.jdownloader.controlling.contextmenu.Customizer;
-import org.jdownloader.extensions.ExtensionController;
 import org.jdownloader.extensions.extraction.Archive;
 import org.jdownloader.extensions.extraction.DummyArchive;
 import org.jdownloader.extensions.extraction.ExtractionExtension;
-import org.jdownloader.extensions.extraction.ValidateArchiveAction;
+import org.jdownloader.extensions.extraction.contextmenu.downloadlist.ArchiveValidator;
 import org.jdownloader.extensions.extraction.gui.DummyArchiveDialog;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.KeyObserver;
@@ -83,9 +82,9 @@ public class ConfirmLinksContextAction extends CustomizableTableContextAppAction
             public void run() {
                 try {
                     // this validation step also copies the passwords from the CRawledlinks in the archive settings
-                    ValidateArchiveAction<CrawledPackage, CrawledLink> va = new ValidateArchiveAction<CrawledPackage, CrawledLink>((ExtractionExtension) ExtensionController.getInstance().getExtension(ExtractionExtension.class)._getExtension(), selection);
-                    for (Archive a : va.getArchives()) {
-                        final DummyArchive da = va.createDummyArchive(a);
+
+                    for (Archive a : ArchiveValidator.validate(selection)) {
+                        final DummyArchive da = ExtractionExtension.getInstance().createDummyArchive(a);
                         if (!da.isComplete()) {
 
                             ConfirmDialog d = new ConfirmDialog(0, _GUI._.ConfirmAction_run_incomplete_archive_title_(a.getName()), _GUI._.ConfirmAction_run_incomplete_archive_msg(), NewTheme.I().getIcon("stop", 32), _GUI._.ConfirmAction_run_incomplete_archive_continue(), null) {

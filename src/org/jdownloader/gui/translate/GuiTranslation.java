@@ -3748,4 +3748,13 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Solving..." })
     String DeathByCaptchaSolver_solveBasicCaptchaChallenge_solving();
 
+    @Default(lngs = { "en" }, values = { "Result: %s1" })
+    String DeathByCaptchaSolver_solveBasicCaptchaChallenge_answer(String substring);
+
+    @Default(lngs = { "en" }, values = { "Account:" })
+    String CESBubbleContent_CESBubbleContent_credits();
+
+    @Default(lngs = { "en" }, values = { "No Answer!" })
+    String DeathByCaptchaSolver_solveBasicCaptchaChallenge_failed();
+
 }

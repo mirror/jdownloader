@@ -5,8 +5,9 @@ import java.awt.event.ActionListener;
 
 import javax.swing.Timer;
 
-import org.jdownloader.captcha.v2.ChallengeSolver;
-import org.jdownloader.captcha.v2.solverjob.SolverJob;
+import org.appwork.utils.swing.EDTRunner;
+import org.jdownloader.captcha.v2.solver.CESChallengeSolver;
+import org.jdownloader.captcha.v2.solver.CESSolverJob;
 import org.jdownloader.gui.notify.gui.AbstractNotifyWindow;
 import org.jdownloader.gui.translate._GUI;
 
@@ -14,8 +15,8 @@ public class CESBubble extends AbstractNotifyWindow<CESBubbleContent> {
 
     private Timer updateTimer;
 
-    public CESBubble(ChallengeSolver<?> solver, SolverJob<?> job, int timeoutms) {
-        super(_GUI._.CESBubble_CESBubble(solver.getName()), new CESBubbleContent(solver, job, timeoutms));
+    public CESBubble(CESChallengeSolver<?> solver, CESSolverJob<?> cesSolverJob, int timeoutms) {
+        super(_GUI._.CESBubble_CESBubble(solver.getName()), new CESBubbleContent(solver, cesSolverJob, timeoutms));
         getContentComponent().setBubble(this);
         updateTimer = new Timer(1000, new ActionListener() {
 
@@ -40,7 +41,22 @@ public class CESBubble extends AbstractNotifyWindow<CESBubbleContent> {
         updateTimer.stop();
     }
 
+    @Override
+    public void hideBubble(int timeout) {
+        super.hideBubble(timeout);
+        updateTimer.stop();
+        getContentComponent().stop();
+    }
+
     public void update() {
+        new EDTRunner() {
+
+            @Override
+            protected void runInEDT() {
+                getContentComponent().update();
+            }
+        };
+
     }
 
     public void update(long rest) {

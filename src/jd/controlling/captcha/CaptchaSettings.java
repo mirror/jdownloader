@@ -100,9 +100,9 @@ public interface CaptchaSettings extends ConfigInterface {
     @AboutConfig
     @DefaultIntValue(120000)
     @org.appwork.storage.config.annotations.DescriptionForConfigEntry("Milliseconds after which a Captcha Dialog will appear even if Auto CaptchaBroptherhood Service is still running")
-    int getCaptchaDialogCaptchaBroptherhoodTimeout2();
+    int getCaptchaDialogCaptchaBrotherhoodTimeout();
 
-    void setCaptchaDialogCaptchaBroptherhoodTimeout2(int ms);
+    void setCaptchaDialogCaptchaBrotherhoodTimeout(int ms);
 
     @AboutConfig
     @DefaultIntValue(120000)
@@ -148,7 +148,8 @@ public interface CaptchaSettings extends ConfigInterface {
 
     @AboutConfig
     @DefaultIntValue(10000)
-    int getChanceToSkipBubbleTimeout();
+    @DescriptionForConfigEntry("If the CES Bubble Support is enable, the bubble gives the user a chance to cancel the CES usage. This is the timeout for this skip option")
+    int getCaptchaExchangeChanceToSkipBubbleTimeout();
 
-    void setChanceToSkipBubbleTimeout(int ms);
+    void setCaptchaExchangeChanceToSkipBubbleTimeout(int ms);
 }

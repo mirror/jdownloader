@@ -82,7 +82,7 @@ public abstract class AbstractExtractionContextAction extends AbstractExtensionA
     }
 
     protected void asynchInit() {
-        archives = ArchiveValidator.validate(getSelection()).getArchives();
+        archives = ArchiveValidator.validate(getSelection());
     }
 
 }
