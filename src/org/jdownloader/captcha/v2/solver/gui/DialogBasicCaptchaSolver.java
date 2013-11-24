@@ -40,6 +40,7 @@ public class DialogBasicCaptchaSolver extends ChallengeSolver<String> {
     private BasicCaptchaDialogHandler             handler;
     private DeathByCaptchaSettings                configDBC;
     private Thread                                waitingThread;
+    private boolean                               focusRequested;
     private static final DialogBasicCaptchaSolver INSTANCE = new DialogBasicCaptchaSolver();
 
     @Override
@@ -101,6 +102,7 @@ public class DialogBasicCaptchaSolver extends ChallengeSolver<String> {
             if (job.getChallenge() instanceof BasicCaptchaChallenge && CFG_CAPTCHA.CAPTCHA_DIALOGS_ENABLED.isEnabled()) {
                 job.getLogger().info("Waiting for Other Solvers");
                 try {
+                    focusRequested = false;
                     waitingThread = Thread.currentThread();
                     job.waitFor(config.getCaptchaDialogJAntiCaptchaTimeout(), JACSolver.getInstance());
                     if (configDBC.isEnabled() && config.getCaptchaDialogDBCTimeout() > 0) job.waitFor(config.getCaptchaDialogDBCTimeout(), DeathByCaptchaSolver.getInstance());
@@ -111,8 +113,10 @@ public class DialogBasicCaptchaSolver extends ChallengeSolver<String> {
 
                 } catch (InterruptedException e) {
                     e.printStackTrace();
+                    if (!focusRequested) throw e;
                 } finally {
                     waitingThread = null;
+                    focusRequested = false;
                 }
                 checkInterruption();
                 job.getLogger().info("Waits are done. Response so far: " + job.getResponse());
@@ -183,6 +187,7 @@ public class DialogBasicCaptchaSolver extends ChallengeSolver<String> {
 
     public void requestFocus(Challenge<?> challenge) {
         if (waitingThread != null) {
+            focusRequested = true;
             waitingThread.interrupt();
         }
         BasicCaptchaDialogHandler hndlr = handler;

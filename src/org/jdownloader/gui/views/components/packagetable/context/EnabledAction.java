@@ -119,6 +119,7 @@ public class EnabledAction extends CustomizableTableContextAppAction {
 
                             @Override
                             protected void runInEDT() {
+
                                 if (bytesToDelete > 0) {
                                     if (JDGui.bugme(WarnLevel.SEVERE)) {
                                         if (!UIOManager.I().showConfirmDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI._.lit_are_you_sure(), _GUI._.EnableAction_run_msg_(SizeFormatter.formatBytes(bytesToDelete), finalCount), NewTheme.I().getIcon("stop", 32), _GUI._.lit_yes(), _GUI._.lit_no())) { return; }
