@@ -153,8 +153,11 @@ public class CustomizeableActionBar extends MigPanel implements PropertyChangeLi
             action.setAccelerator(null);
         }
 
-        AbstractButton bt = null;
-        if (action.isToggle()) {
+        JComponent bt = null;
+        if (action instanceof SelfComponentFactoryInterface) {
+            action.requestUpdate(this);
+            bt = ((SelfComponentFactoryInterface) action).createComponent();
+        } else if (action.isToggle()) {
             action.requestUpdate(this);
             bt = new JToggleButton(action);
         } else {
@@ -162,7 +165,9 @@ public class CustomizeableActionBar extends MigPanel implements PropertyChangeLi
             bt = new ExtButton(action);
         }
         bt.setEnabled(action.isEnabled());
-        if (menudata instanceof SelfLayoutInterface) {
+        if (action instanceof SelfLayoutInterface) {
+            add(bt, ((SelfLayoutInterface) action).createConstraints());
+        } else if (menudata instanceof SelfLayoutInterface) {
             add(bt, ((SelfLayoutInterface) menudata).createConstraints());
         } else {
             if (StringUtils.isEmpty(action.getName())) {
