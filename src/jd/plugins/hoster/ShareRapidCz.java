@@ -70,7 +70,7 @@ public class ShareRapidCz extends PluginForHost {
             login(account);
         } catch (final PluginException e) {
             account.setValid(false);
-            return ai;
+            throw e;
         }
         long realTraffic = 0l;
         String trafficleft = null;
@@ -165,7 +165,14 @@ public class ShareRapidCz extends PluginForHost {
         if (br.containsHTML("Disk, na kterém se soubor nachází, je dočasně odpojen, zkuste to prosím později")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "This file is on a damaged hard drive disk", 60 * 60 * 1000); }
         if (br.containsHTML("Soubor byl chybně nahrán na server")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "This file isn't uploaded correctly", 60 * 60 * 1000); }
         final String dllink = br.getRegex("\"(http://s[0-9]{1,2}\\.share-rapid\\.com/download.*?)\"").getMatch(0);
-        if (dllink == null && br.containsHTML("(Stahování je přístupné pouze přihlášeným uživatelům|class=\"error_div\"><strong>Stahov)")) { throw new PluginException(LinkStatus.ERROR_FATAL, "Only downloadable for registered users"); }
+        if (dllink == null && br.containsHTML("(Stahování je přístupné pouze přihlášeným uživatelům|class=\"error_div\"><strong>Stahov)")) {
+            try {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+            } catch (final Throwable e) {
+                if (e instanceof PluginException) throw (PluginException) e;
+            }
+            throw new PluginException(LinkStatus.ERROR_FATAL, "Only downloadable for registered users");
+        }
         if (dllink == null) { throw new PluginException(LinkStatus.ERROR_FATAL, "Please contact the support jdownloader.org"); }
         br.setFollowRedirects(true);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
@@ -185,7 +192,7 @@ public class ShareRapidCz extends PluginForHost {
         if (br.containsHTML("Disk, na kterém se soubor nachází, je dočasně odpojen, zkuste to prosím později")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "This file is on a damaged hard drive disk", 60 * 60 * 1000); }
         if (br.containsHTML("Soubor byl chybně nahrán na server")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "This file isn't uploaded correctly", 60 * 60 * 1000); }
         if (br.containsHTML("Již Vám došel kredit a vyčerpal jste free limit")) {
-            logger.info("Not enough traffic left!");
+            logger.info("share-rapid.cz: Not enough traffic left!");
             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
         }
         String dllink = br.getRegex("\"(http://s[0-9]{1,2}\\.share-rapid\\.com/download.*?)\"").getMatch(0);
@@ -216,7 +223,7 @@ public class ShareRapidCz extends PluginForHost {
         }
         if (dllink == null) {
             if (br.containsHTML(">Stahování zdarma je možné jen přes náš")) {
-                logger.info("No traffic left, disabling premium...");
+                logger.info("share-rapid.cz: No traffic left, disabling premium...");
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
             }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -243,15 +250,28 @@ public class ShareRapidCz extends PluginForHost {
         br.setDebug(true);
         br.setCookie(MAINPAGE, "lang", "cs");
         br.getPage("http://share-rapid.com/prihlaseni/");
+        final String lang = System.getProperty("user.language");
         final Form form = br.getForm(0);
-        if (form == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+        if (form == null) {
+            if ("de".equalsIgnoreCase(lang)) {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin defekt, bitte den JDownloader Support kontaktieren!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin broken, please contact the JDownloader Support!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+            }
+        }
         form.put("login", Encoding.urlEncode(account.getUser()));
         form.put("pass1", Encoding.urlEncode(account.getPass()));
         form.remove("remember");
         br.submitForm(form);
         if (!br.containsHTML("<td>GB:</td>")) {
             br.getPage("http://share-rapid.com/mujucet/");
-            if (!br.containsHTML("<td>GB:</td>")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+            if (!br.containsHTML("<td>GB:</td>")) {
+                if ("de".equalsIgnoreCase(lang)) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                }
+            }
         }
     }
 

@@ -242,7 +242,7 @@ public class FileBitPl extends PluginForHost {
             if (expirelng == -1) {
                 ai.setValidUntil(expirelng);
             } else {
-                ai.setValidUntil(System.currentTimeMillis() + expirelng * 1000);
+                ai.setValidUntil(System.currentTimeMillis() + expirelng);
             }
         }
         final String trafficleft_bytes = getJson("transferLeft");
@@ -320,13 +320,13 @@ public class FileBitPl extends PluginForHost {
     private void handleAPIErrors(final Browser br, final Account account, final DownloadLink downloadLink) throws PluginException {
         String statusCode = br.getRegex("\"errno\":(\\d+)").getMatch(0);
         if (statusCode == null && br.containsHTML("\"result\":true"))
-            statusCode = "-1";
+            statusCode = "999";
         else if (statusCode == null) statusCode = "0";
         String statusMessage = null;
         try {
             int status = Integer.parseInt(statusCode);
             switch (status) {
-            case -1:
+            case 0:
                 /* Everything ok */
                 break;
             case 2:

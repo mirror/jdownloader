@@ -1,18 +1,18 @@
-//    jDownloader - Downloadmanager
-//    Copyright (C) 2013  JD-Team support@jdownloader.org
+//jDownloader - Downloadmanager
+//Copyright (C) 2013  JD-Team support@jdownloader.org
 //
-//    This program is free software: you can redistribute it and/or modify
-//    it under the terms of the GNU General Public License as published by
-//    the Free Software Foundation, either version 3 of the License, or
-//    (at your option) any later version.
+//This program is free software: you can redistribute it and/or modify
+//it under the terms of the GNU General Public License as published by
+//the Free Software Foundation, either version 3 of the License, or
+//(at your option) any later version.
 //
-//    This program is distributed in the hope that it will be useful,
-//    but WITHOUT ANY WARRANTY; without even the implied warranty of
-//    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-//    GNU General Public License for more details.
+//This program is distributed in the hope that it will be useful,
+//but WITHOUT ANY WARRANTY; without even the implied warranty of
+//MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+//GNU General Public License for more details.
 //
-//    You should have received a copy of the GNU General Public License
-//    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+//You should have received a copy of the GNU General Public License
+//along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 package jd.plugins.hoster;
 
@@ -53,16 +53,16 @@ import jd.utils.locale.JDL;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "unlimitzone.com" }, urls = { "https?://(www\\.)?unlimitzone\\.com/(vidembed\\-)?[a-z0-9]{12}" }, flags = { 2 })
-public class UnlimitZoneCom extends PluginForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filechin.com" }, urls = { "https?://(www\\.)?filechin\\.com/(vidembed\\-)?[a-z0-9]{12}" }, flags = { 2 })
+public class FileChinCom extends PluginForHost {
 
     private String               correctedBR                  = "";
     private String               passCode                     = null;
     private static final String  PASSWORDTEXT                 = "<br><b>Passwor(d|t):</b> <input";
     // primary website url, take note of redirects
-    private static final String  COOKIE_HOST                  = "http://unlimitzone.com";
+    private static final String  COOKIE_HOST                  = "http://filechin.com";
     // domain names used within download links.
-    private static final String  DOMAINS                      = "(unlimitzone\\.com)";
+    private static final String  DOMAINS                      = "(filechin\\.com)";
     private static final String  MAINTENANCE                  = ">This server is in maintenance mode";
     private static final String  MAINTENANCEUSERTEXT          = JDL.L("hoster.xfilesharingprobasic.errors.undermaintenance", "This server is under Maintenance");
     private static final String  ALLWAIT_SHORT                = JDL.L("hoster.xfilesharingprobasic.errors.waitingfordownloads", "Waiting till new downloads can be started");
@@ -71,14 +71,14 @@ public class UnlimitZoneCom extends PluginForHost {
     private static final boolean VIDEOHOSTER                  = false;
     private static final boolean SUPPORTSHTTPS                = false;
     // Connection stuff
-    private static final boolean FREE_RESUME                  = true;
+    private static final boolean FREE_RESUME                  = false;
     private static final int     FREE_MAXCHUNKS               = 1;
     private static final int     FREE_MAXDOWNLOADS            = 1;
-    private static final boolean ACCOUNT_FREE_RESUME          = true;
-    private static final int     ACCOUNT_FREE_MAXCHUNKS       = -2;
+    private static final boolean ACCOUNT_FREE_RESUME          = false;
+    private static final int     ACCOUNT_FREE_MAXCHUNKS       = 1;
     private static final int     ACCOUNT_FREE_MAXDOWNLOADS    = 1;
-    private static final boolean ACCOUNT_PREMIUM_RESUME       = true;
-    private static final int     ACCOUNT_PREMIUM_MAXCHUNKS    = -2;
+    private static final boolean ACCOUNT_PREMIUM_RESUME       = false;
+    private static final int     ACCOUNT_PREMIUM_MAXCHUNKS    = 1;
     private static final int     ACCOUNT_PREMIUM_MAXDOWNLOADS = 1;
     // note: CAN NOT be negative or zero! (ie. -1 or 0) Otherwise math sections fail. .:. use [1-20]
     private static AtomicInteger totalMaxSimultanFreeDownload = new AtomicInteger(FREE_MAXDOWNLOADS);
@@ -89,10 +89,10 @@ public class UnlimitZoneCom extends PluginForHost {
 
     // DEV NOTES
     // XfileSharingProBasic Version 2.6.2.7
-    // mods: one other filesize regex
-    // limit-info: premium untested, set free account limits
+    // mods: getDllink
+    // limit-info: premium account untested, set free account limits
     // protocol: no https
-    // captchatype: solvemedia
+    // captchatype: null 4dignum solvemedia recaptcha
     // other:
 
     @Override
@@ -114,7 +114,7 @@ public class UnlimitZoneCom extends PluginForHost {
         return COOKIE_HOST + "/tos.html";
     }
 
-    public UnlimitZoneCom(PluginWrapper wrapper) {
+    public FileChinCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium(COOKIE_HOST + "/premium.html");
     }
@@ -203,7 +203,7 @@ public class UnlimitZoneCom extends PluginForHost {
         if (fileInfo[1] == null) {
             fileInfo[1] = new Regex(correctedBR, "\\(([0-9]+ bytes)\\)").getMatch(0);
             if (fileInfo[1] == null) {
-                fileInfo[1] = new Regex(correctedBR, "<b>File Size:</b>([^<>\"]*?)</td>").getMatch(0);
+                fileInfo[1] = new Regex(correctedBR, "</font>[ ]+\\(([^<>\"\\'/]+)\\)(.*?)</font>").getMatch(0);
                 if (fileInfo[1] == null) {
                     fileInfo[1] = new Regex(correctedBR, "(\\d+(\\.\\d+)? ?(KB|MB|GB))").getMatch(0);
                 }
@@ -450,7 +450,7 @@ public class UnlimitZoneCom extends PluginForHost {
     public String getDllink() {
         String dllink = br.getRedirectLocation();
         if (dllink == null) {
-            dllink = new Regex(correctedBR, "(\"|\\')(https?://(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|([\\w\\-]+\\.)?" + DOMAINS + ")(:\\d{1,4})?/(files|d|cgi\\-bin/dl\\.cgi)/(\\d+/)?[a-z0-9]+/[^<>\"/]*?)(\"|\\')").getMatch(1);
+            dllink = new Regex(correctedBR, "(\"|\\')(https?://(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|([\\w\\-]+\\.)?" + DOMAINS + ")(:\\d{1,4})?/(files|d|cgi\\-bin/dl\\.cgi|dl/f)/(\\d+/)?[a-z0-9]+/[^<>\"/]*?)(\"|\\')").getMatch(1);
             if (dllink == null) {
                 final String cryptedScripts[] = new Regex(correctedBR, "p\\}\\((.*?)\\.split\\('\\|'\\)").getColumn(0);
                 if (cryptedScripts != null && cryptedScripts.length != 0) {

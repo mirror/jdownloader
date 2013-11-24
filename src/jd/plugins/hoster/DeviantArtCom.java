@@ -80,6 +80,9 @@ public class DeviantArtCom extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
+        // Workaround for a strange bug - DLLINK is not null at the beginning so if multiple links are to be checked they will all get the
+        // same filenames
+        DLLINK = null;
         br.setFollowRedirects(true);
         boolean loggedIn = false;
         final Account acc = AccountController.getInstance().getValidAccount(this);

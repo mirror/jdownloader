@@ -172,10 +172,7 @@ public class SaveTv extends PluginForHost {
         if (SESSIONID != null || this.getPluginConfig().getBooleanProperty(USEAPI, false)) {
             if (SESSIONID == null) login(this.br, aa, true);
             // doSoapRequest("http://tempuri.org/ITelecast/GetTelecastDetail",
-            // "<s:Envelope xmlns:s=\"http://schemas.xmlsoap.org/soap/envelope/\"><s:Body><GetTelecastDetail xmlns=\"http://tempuri.org/\"><sessionId>"
-            // + this.SESSIONID +
-            // "</sessionId><telecastIds xmlns:a=\"http://schemas.microsoft.com/2003/10/Serialization/Arrays\"xmlns:i=\"http://www.w3.org/2001/XMLSchema-instance\"><a:int>"
-            // + this.getTelecastId(link) + "</a:int></telecastIds><detailLevel>1</detailLevel></GetTelecastDetail></s:Body></s:Envelope>");
+            // "<s:Envelope xmlns:s=\"http://schemas.xmlsoap.org/soap/envelope/\"><s:Body><GetTelecastDetail xmlns=\"http://tempuri.org/\"><sessionId>6f33f94f-13bb-4271-ab48-3339d2430d75</sessionId><telecastIds xmlns:a=\"http://schemas.microsoft.com/2003/10/Serialization/Arrays\" xmlns:i=\"http://www.w3.org/2001/XMLSchema-instance\"/><detailLevel>1</detailLevel></GetTelecastDetail></s:Body></s:Envelope>");
             br.getHeaders().put("SOAPAction", "http://tempuri.org/IVideoArchive/GetAdFreeState");
             br.getHeaders().put("Content-Type", "text/xml");
             br.postPage(APIPAGE, "<?xml version=\"1.0\" encoding=\"utf-8\"?><v:Envelope xmlns:i=\"http://www.w3.org/2001/XMLSchema-instance\" xmlns:d=\"http://www.w3.org/2001/XMLSchema\" xmlns:c=\"http://schemas.xmlsoap.org/soap/encoding/\" xmlns:v=\"http://schemas.xmlsoap.org/soap/envelope/\"><v:Header /><v:Body><GetAdFreeState xmlns=\"http://tempuri.org/\" id=\"o0\" c:root=\"1\"><sessionId i:type=\"d:string\">" + SESSIONID + "</sessionId><telecastId i:type=\"d:int\">" + getTelecastId(link) + "</telecastId><telecastIdSpecified i:type=\"d:boolean\">true</telecastIdSpecified></GetAdFreeState></v:Body></v:Envelope>");
@@ -594,13 +591,12 @@ public class SaveTv extends PluginForHost {
      * @param soapPost
      *            : The soap post data
      */
-    // private void doSoapRequest(final String soapAction, final String soapPost) throws IOException {
-    // System.out.println(soapPost);
-    // br.getHeaders().put("SOAPAction", soapAction);
-    // br.getHeaders().put("Content-Type", "text/xml");
-    // br.getHeaders().put("Content-Length", Integer.toString(soapPost.length()));
-    // br.postPage("http://api.save.tv/v2/Api.svc", soapAction);
-    // }
+    private void doSoapRequest(final String soapAction, final String soapPost) throws IOException {
+        System.out.println(soapPost);
+        br.getHeaders().put("SOAPAction", soapAction);
+        br.getHeaders().put("Content-Type", "text/xml");
+        br.postPageRaw("http://api.save.tv/v2/Api.svc", soapAction);
+    }
 
     @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
@@ -1003,11 +999,12 @@ public class SaveTv extends PluginForHost {
         sbinfo.append("zu unschönen Dateinamen führt und das Tag nicht die Daten ersetzt werden kann.\r\n");
         sbinfo.append("Wenn man die Tags trennen will muss man die anderen Zeichen zwischen Tags\r\n");
         sbinfo.append("z.B. '-*telecastid*-*endung*' -> Der Dateiname würde dann in etwa so aussehen: '-7573789-.mp4' (ohne die '')\r\n");
-        sbinfo.append("WICHTIG: Tags, zu denen die Daten fehlen , werden durch '-' (Bindestrich) ersetzt!\r\n");
+        sbinfo.append("WICHTIG: Tags, zu denen die Daten fehlen , werden standardmäßig durch '-' (Bindestrich) ersetzt!\r\n");
         sbinfo.append("Fehlen z.B. die Daten zu *genre*, steht statt statt dem Genre dann ein Bindestrich ('-') an dieser Stelle im Dateinamen.");
-        sbinfo.append("Gut zu wissen: Statt dem Bindestrich lässt sich hierfür unten auch ein anderes Zeichen definieren.\r\n");
-        sbinfo.append("Bedenke, dass es für Filme und Serien unterschiedliche Tags gibt.\r\n");
-        sbinfo.append("Kaputtmachen kannst du damit prinzipiell nichts also probiere es aus ;)");
+        sbinfo.append("Gut zu wissen: Statt dem Bindestrich lässt sich hierfür unten auch ein anderes Zeichen bzw. Zeichenfolge definieren.\r\n");
+        sbinfo.append("Gut zu wissen: Bedenke, dass es für Filme und Serien unterschiedliche Tags gibt.\r\n");
+        sbinfo.append("Kaputtmachen kannst du mit den Einstellungen prinzipiell nichts also probiere es aus ;)\r\n");
+        sbinfo.append("Tipp: Die Einstellungen lassen sich rechts oben wieder auf ihre Standardwerte zurücksetzen!\r\n");
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, sbinfo.toString()).setEnabledCondidtion(origName, false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), CUSTOM_FILENAME2, JDL.L("plugins.hoster.savetv.customfilenamemovies", "Eigener Dateiname für Filme/Shows:")).setDefaultValue(defaultCustomFilename).setEnabledCondidtion(origName, false));
@@ -1033,7 +1030,7 @@ public class SaveTv extends PluginForHost {
         sbseries.append("*produktionsjahr* = Produktionsjahr\r\n");
         sbseries.append("*serientitel* = Name der Serie\r\n");
         sbseries.append("*episodenname* = Name der Episode\r\n");
-        sbseries.append("*episodennummer* = Episodennummer - falls nicht gegeben entspricht das '-' (Bindestrich)\r\n");
+        sbseries.append("*episodennummer* = Episodennummer\r\n");
         sbseries.append("*zufallszahl* = Eine vierstellige Zufallszahl - nützlich um Dateinamenkollisionen zu vermeiden\r\n");
         sbseries.append("*telecastid* = Die id, die in jedem save.tv Link steht: TelecastID=XXXXXXX\r\n[Nützlich um Dateinamenkollisionen zu vermeiden]\r\n");
         sbseries.append("*endung* = Die Dateiendung, in diesem Fall '.mp4'");
