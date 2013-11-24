@@ -123,7 +123,7 @@ public class BubbleNotify {
             types.add(new CaptchaBubbleSupport());
             types.add(new StartDownloadsBubbleSupport());
             types.add(new StartStopPauseBubbleSupport());
-            types.add(new StartStopPauseBubbleSupport());
+
             types.add(CESBubbleSupport.getInstance());
 
         }
