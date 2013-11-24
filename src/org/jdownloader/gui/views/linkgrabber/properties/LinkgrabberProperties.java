@@ -59,4 +59,12 @@ public class LinkgrabberProperties extends MigPanel {
         pkgPanel.refresh();
     }
 
+    public void save() {
+        if (linkPanel.isVisible()) {
+            linkPanel.save();
+        } else {
+            pkgPanel.save();
+        }
+    }
+
 }

@@ -26,8 +26,18 @@ public class PropertiesScrollPane extends OverviewHeaderScrollPane {
         panel.update(objectbyRow);
     }
 
+    @Override
+    public void setVisible(boolean aFlag) {
+        panel.save();
+        super.setVisible(aFlag);
+    }
+
     public void refreshAfterTabSwitch() {
         panel.refreshAfterTabSwitch();
+    }
+
+    public void save() {
+        panel.save();
     }
 
 }

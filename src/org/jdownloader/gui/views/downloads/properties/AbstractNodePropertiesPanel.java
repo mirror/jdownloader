@@ -517,6 +517,7 @@ public abstract class AbstractNodePropertiesPanel extends MigPanel implements Ac
     }
 
     protected void onHidden() {
+        save();
 
     }
 
@@ -740,7 +741,7 @@ public abstract class AbstractNodePropertiesPanel extends MigPanel implements Ac
 
     }
 
-    protected void save() {
+    public void save() {
         new EDTRunner() {
 
             @Override

@@ -192,6 +192,7 @@ public class DownloadsPanel extends SwitchPanel implements DownloadControllerLis
                         }
 
                         layoutComponents(DownloadController.DOWNLOADLIST_LOADED.isReached());
+
                         if (newValue && keyHandler == CFG_GUI.DOWNLOADS_TAB_PROPERTIES_PANEL_VISIBLE) {
                             setPropertiesPanelVisible(true);
 
@@ -268,7 +269,7 @@ public class DownloadsPanel extends SwitchPanel implements DownloadControllerLis
     }
 
     private void layoutComponents(boolean downloadListLoaded) {
-
+        propertiesPanel.save();
         if (!downloadListLoaded) {
             MigPanel loader = createLoaderPanel();
             setLayout(new MigLayout("ins 0, wrap 1", "[grow,fill]", "[grow,fill]"));

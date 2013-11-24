@@ -265,6 +265,7 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
     }
 
     private void layoutComponents() {
+        propertiesPanel.save();
         removeAll();
         boolean propertiesPanelVisible = CFG_GUI.LINKGRABBER_TAB_PROPERTIES_PANEL_VISIBLE.isEnabled();
         if (CFG_GUI.LINKGRABBER_SIDEBAR_VISIBLE.isEnabled()) {

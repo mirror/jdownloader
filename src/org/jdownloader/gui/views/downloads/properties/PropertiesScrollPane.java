@@ -21,6 +21,15 @@ public class PropertiesScrollPane extends OverviewHeaderScrollPane {
         this.header = linkgrabberPropertiesHeader;
     }
 
+    @Override
+    public void setVisible(boolean aFlag) {
+        if (!aFlag) {
+            panel.save();
+        }
+        super.setVisible(aFlag);
+
+    }
+
     public void update(AbstractNode objectbyRow) {
         header.update(objectbyRow);
         panel.update(objectbyRow);
@@ -31,6 +40,10 @@ public class PropertiesScrollPane extends OverviewHeaderScrollPane {
 
     public void refreshAfterTabSwitch() {
         panel.refreshAfterTabSwitch();
+    }
+
+    public void save() {
+        panel.save();
     }
 
 }

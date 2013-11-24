@@ -59,4 +59,12 @@ public class DownloadPropertiesBasePanel extends MigPanel {
         linkPanel.refresh();
     }
 
+    public void save() {
+        if (linkPanel.isVisible()) {
+            linkPanel.save();
+        } else {
+            pkgPanel.save();
+        }
+    }
+
 }
