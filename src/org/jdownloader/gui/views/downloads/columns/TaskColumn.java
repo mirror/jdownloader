@@ -297,6 +297,7 @@ public class TaskColumn extends ExtTextColumn<AbstractNode> {
             if (ps.size() > 0) {
                 columnHelper.icon = ps.getMergedIcon();
                 columnHelper.string = ps.isMultiline() ? "" : ps.getText();
+                System.out.println(ps.getText());
                 columnHelper.tooltip = ps.getText();
                 return;
             }

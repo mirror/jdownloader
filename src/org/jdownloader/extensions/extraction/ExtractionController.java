@@ -34,7 +34,6 @@ import org.appwork.utils.StringUtils;
 import org.appwork.utils.event.queue.QueueAction;
 import org.appwork.utils.logging2.LogSource;
 import org.jdownloader.controlling.FileCreationManager;
-import org.jdownloader.controlling.FileCreationManager.DeleteOption;
 import org.jdownloader.extensions.extraction.ExtractionEvent.Type;
 import org.jdownloader.logging.LogController;
 
@@ -45,25 +44,25 @@ import org.jdownloader.logging.LogController;
  * 
  */
 public class ExtractionController extends QueueAction<Void, RuntimeException> {
-    private java.util.List<String> passwordList;
-    private int                    passwordListSize      = 0;
-    private Exception              exception;
-    private FileCreationManager.DeleteOption           removeAfterExtractionAction;
-    private Archive                archive;
-    private IExtraction            extractor;
-    private ScheduledFuture<?>     timer;
-    private Type                   latestEvent;
-    private double                 progress;
-    private boolean                removeDownloadLinksAfterExtraction;
-    private ExtractionExtension    extension;
-    private final LogSource        logger;
-    private FileSignatures         fileSignatures        = null;
-    private boolean                overwriteFiles;
-    private File                   extractToFolder;
-    private boolean                successful            = false;
-    private ExtractLogFileWriter   crashLog;
-    private boolean                askForUnknownPassword = false;
-    private Item                   currentActiveItem;
+    private java.util.List<String>           passwordList;
+    private int                              passwordListSize      = 0;
+    private Exception                        exception;
+    private FileCreationManager.DeleteOption removeAfterExtractionAction;
+    private Archive                          archive;
+    private IExtraction                      extractor;
+    private ScheduledFuture<?>               timer;
+    private Type                             latestEvent;
+    private double                           progress;
+    private boolean                          removeDownloadLinksAfterExtraction;
+    private ExtractionExtension              extension;
+    private final LogSource                  logger;
+    private FileSignatures                   fileSignatures        = null;
+    private boolean                          overwriteFiles;
+    private File                             extractToFolder;
+    private boolean                          successful            = false;
+    private ExtractLogFileWriter             crashLog;
+    private boolean                          askForUnknownPassword = false;
+    private Item                             currentActiveItem;
 
     public boolean isSuccessful() {
         return successful;
@@ -251,7 +250,7 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> {
                         fireEvent(ExtractionEvent.Type.EXTRACTING);
                     }
 
-                }, 1, 2, TimeUnit.SECONDS);
+                }, 1, 1, TimeUnit.SECONDS);
                 crashLog.write("Start Extracting " + extractor);
                 try {
                     extractor.extract(this);

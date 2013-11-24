@@ -51,7 +51,7 @@ public interface ExtractionTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Extract failed (password)" })
     String plugins_optional_extraction_status_extractfailedpass();
 
-    @Default(lngs = { "en" }, values = { "Extration running" })
+    @Default(lngs = { "en" }, values = { "Extraction running" })
     String plugins_optional_extraction_status_openingarchive2();
 
     @Default(lngs = { "en" }, values = { "Extract: failed (CRC in %s1)" })

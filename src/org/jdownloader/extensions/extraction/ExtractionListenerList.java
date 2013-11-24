@@ -262,7 +262,7 @@ public class ExtractionListenerList implements ExtractionListener {
         case EXTRACTING:
 
             controller.getArchiv().getFirstArchiveFile().setMessage(T._.plugins_optional_extraction_status_extracting2());
-            controller.getArchiv().getFirstArchiveFile().setProgress((long) (controller.getProgress() * 100), 10000, Color.YELLOW.darker());
+            controller.getArchiv().getFirstArchiveFile().setProgress((long) (controller.getProgress() * 100), 100, Color.YELLOW.darker());
             break;
         case EXTRACTION_FAILED_CRC:
             try {

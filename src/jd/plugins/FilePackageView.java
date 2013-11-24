@@ -412,7 +412,7 @@ public class FilePackageView extends ChildrenView<DownloadLink> {
                     // ExtractionExtension.getIntance().createArchiveID(new DownloadLinkArchiveFactory(link));
 
                     if (StringUtils.isNotEmpty(archiveID)) {
-
+                        id = "ExtractionRunning" + archiveID;
                         prog = link.getPluginProgress();
                         ps = null;
                         if (prog != null) {
@@ -420,16 +420,19 @@ public class FilePackageView extends ChildrenView<DownloadLink> {
 
                                 if (!tmp.pluginStates.containsKey(id)) {
                                     ps = PluginState.create(prog.getMessage(FilePackageView.this) + " (" + link.getFinalFileName() + ")", new ExtractIconVariant(IconKey.ICON_MEDIA_PLAYBACK_START, 18, 16, 3, 3).crop());
-
+                                    if (ps != null) {
+                                        tmp.pluginStates.put(id, ps);
+                                    }
                                 }
                             }
                         }
                         if (ps == null) {
                             ps = PluginState.create(extractionStatus.getExplanation() + " (" + link.getFinalFileName() + ")", new ExtractIconVariant(IconKey.ICON_MEDIA_PLAYBACK_START, 18, 16, 3, 3).crop());
+                            if (ps != null && !tmp.pluginStates.containsKey(id)) {
+                                tmp.pluginStates.put(id, ps);
+                            }
                         }
-                        if (ps != null) {
-                            tmp.pluginStates.put(id, ps);
-                        }
+
                     }
                     break;
                 }
