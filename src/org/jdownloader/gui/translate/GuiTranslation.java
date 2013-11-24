@@ -3766,4 +3766,10 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Expand/Collapse" })
     String CollapseExpandAllAction_CollapseExpandAllAction_selectiononly();
 
+    @Default(lngs = { "en" }, values = { "About the Package Condition..." })
+    String ConditionDialog_help_packagecondition_title();
+
+    @Default(lngs = { "en" }, values = { "the Package Condition only matches to packagenames that could be read from the source website.\r\nIn most cases however, the packagename is generated from the filenames in the package.\r\nIn this case, this condition will not work. Please use the filename condition instead!" })
+    String ConditionDialog_help_packagecondition_msg();
+
 }

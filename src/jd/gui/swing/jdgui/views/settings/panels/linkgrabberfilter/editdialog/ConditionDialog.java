@@ -33,6 +33,8 @@ import javax.swing.ListCellRenderer;
 import javax.swing.ListSelectionModel;
 import javax.swing.SpinnerNumberModel;
 import javax.swing.SwingUtilities;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 
@@ -64,6 +66,7 @@ import org.jdownloader.controlling.filter.FiletypeFilter.TypeMatchType;
 import org.jdownloader.controlling.filter.RegexFilter;
 import org.jdownloader.controlling.filter.RegexFilter.MatchType;
 import org.jdownloader.controlling.filter.RuleWrapper;
+import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.components.MergedIcon;
 import org.jdownloader.gui.views.components.PseudoMultiCombo;
@@ -527,6 +530,15 @@ public abstract class ConditionDialog<T> extends AbstractDialog<T> {
             }
 
         };
+        cbPackage.addChangeListener(new ChangeListener() {
+
+            @Override
+            public void stateChanged(ChangeEvent e) {
+                if (cbPackage.isSelected()) {
+                    JDGui.help(_GUI._.ConditionDialog_help_packagecondition_title(), _GUI._.ConditionDialog_help_packagecondition_msg(), NewTheme.I().getIcon(IconKey.ICON_PACKAGE_OPEN, 32));
+                }
+            }
+        });
         ml = new MouseAdapter() {
 
             @Override
