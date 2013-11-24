@@ -18,6 +18,7 @@ public class ClearLinkgrabberAction extends GenericDeleteFromLinkgrabberAction {
         setDeleteAll(true);
         includedSelection.setIncludeSelectedLinks(true);
         includedSelection.setIncludeUnselectedLinks(true);
+        setIgnoreFiltered(false);
         setCancelLinkcrawlerJobs(true);
         setClearSearchFilter(true);
         setClearFilteredLinks(true);
