@@ -23,9 +23,7 @@ public class PropertiesScrollPane extends OverviewHeaderScrollPane {
 
     @Override
     public void setVisible(boolean aFlag) {
-        if (!aFlag) {
-            panel.save();
-        }
+
         super.setVisible(aFlag);
 
     }

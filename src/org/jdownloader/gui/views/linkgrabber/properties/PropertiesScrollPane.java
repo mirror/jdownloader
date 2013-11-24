@@ -28,8 +28,10 @@ public class PropertiesScrollPane extends OverviewHeaderScrollPane {
 
     @Override
     public void setVisible(boolean aFlag) {
-        panel.save();
+
         super.setVisible(aFlag);
+        // important that save is AFTER setVisible.
+        // panel.save();
     }
 
     public void refreshAfterTabSwitch() {

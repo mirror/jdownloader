@@ -53,7 +53,7 @@ public final class LinkgrabberSearchField extends SearchField<LinktablesSearchCa
             }
         });
         setSelectedCategory(JsonConfig.create(GraphicalUserInterfaceSettings.class).getSelectedLinkgrabberSearchCategory());
-        setCategories(new LinktablesSearchCategory[] { LinktablesSearchCategory.FILENAME, LinktablesSearchCategory.HOSTER, LinktablesSearchCategory.PACKAGE });
+        setCategories(new LinktablesSearchCategory[] { LinktablesSearchCategory.FILENAME, LinktablesSearchCategory.HOSTER, LinktablesSearchCategory.PACKAGE, LinktablesSearchCategory.COMMENT });
     }
 
     @Override
@@ -126,6 +126,59 @@ public final class LinkgrabberSearchField extends SearchField<LinktablesSearchCa
                 @Override
                 public int getComplexity() {
                     return 0;
+                }
+            };
+
+        case COMMENT:
+            return new PackageControllerTableModelFilter<CrawledPackage, CrawledLink>() {
+
+                @Override
+                public boolean isFilteringPackageNodes() {
+                    return true;
+                }
+
+                @Override
+                public boolean isFilteringChildrenNodes() {
+                    return true;
+                }
+
+                @Override
+                public boolean isFiltered(CrawledLink v) {
+                    for (Pattern filterPattern : pattern) {
+                        if (v.getDownloadLink().getComment() != null && filterPattern.matcher(v.getDownloadLink().getComment()).find()) return false;
+                    }
+
+                    for (Pattern filterPattern : pattern) {
+                        if (v.getParentNode().getComment() != null && filterPattern.matcher(v.getParentNode().getComment()).find()) return false;
+                    }
+
+                    return true;
+                }
+
+                @Override
+                public boolean isFiltered(CrawledPackage fp) {
+                    for (Pattern filterPattern : pattern) {
+                        if (fp.getComment() != null && filterPattern.matcher(fp.getComment()).find()) return false;
+                    }
+
+                    boolean readL = fp.getModifyLock().readLock();
+
+                    try {
+                        for (CrawledLink dl : fp.getChildren()) {
+                            for (Pattern filterPattern : pattern) {
+                                if (dl.getDownloadLink().getComment() != null && filterPattern.matcher(dl.getDownloadLink().getComment()).find()) return false;
+                            }
+                        }
+                    } finally {
+                        fp.getModifyLock().readUnlock(readL);
+                    }
+
+                    return true;
+                }
+
+                @Override
+                public int getComplexity() {
+                    return 1;
                 }
             };
         case HOSTER:

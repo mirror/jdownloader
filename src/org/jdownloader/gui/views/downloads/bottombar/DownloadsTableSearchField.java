@@ -24,7 +24,7 @@ public final class DownloadsTableSearchField extends SearchField<LinktablesSearc
     public DownloadsTableSearchField(PackageControllerTable<FilePackage, DownloadLink> table2Filter, LinktablesSearchCategory defCategory) {
         super(table2Filter, defCategory);
         setSelectedCategory(JsonConfig.create(GraphicalUserInterfaceSettings.class).getSelectedDownloadSearchCategory());
-        setCategories(new LinktablesSearchCategory[] { LinktablesSearchCategory.FILENAME, LinktablesSearchCategory.HOSTER, LinktablesSearchCategory.PACKAGE });
+        setCategories(new LinktablesSearchCategory[] { LinktablesSearchCategory.FILENAME, LinktablesSearchCategory.HOSTER, LinktablesSearchCategory.PACKAGE, LinktablesSearchCategory.COMMENT });
         addKeyListener(new KeyListener() {
 
             public void keyTyped(KeyEvent e) {
@@ -111,6 +111,58 @@ public final class DownloadsTableSearchField extends SearchField<LinktablesSearc
                 @Override
                 public int getComplexity() {
                     return 0;
+                }
+            };
+        case COMMENT:
+            return new PackageControllerTableModelFilter<FilePackage, DownloadLink>() {
+
+                @Override
+                public boolean isFilteringPackageNodes() {
+                    return true;
+                }
+
+                @Override
+                public boolean isFilteringChildrenNodes() {
+                    return true;
+                }
+
+                @Override
+                public boolean isFiltered(DownloadLink v) {
+                    for (Pattern filterPattern : pattern) {
+                        if (v.getComment() != null && filterPattern.matcher(v.getComment()).find()) return false;
+                    }
+
+                    for (Pattern filterPattern : pattern) {
+                        if (v.getParentNode().getComment() != null && filterPattern.matcher(v.getParentNode().getComment()).find()) return false;
+                    }
+
+                    return true;
+                }
+
+                @Override
+                public boolean isFiltered(FilePackage fp) {
+                    for (Pattern filterPattern : pattern) {
+                        if (fp.getComment() != null && filterPattern.matcher(fp.getComment()).find()) return false;
+                    }
+
+                    boolean readL = fp.getModifyLock().readLock();
+
+                    try {
+                        for (DownloadLink dl : fp.getChildren()) {
+                            for (Pattern filterPattern : pattern) {
+                                if (dl.getComment() != null && filterPattern.matcher(dl.getComment()).find()) return false;
+                            }
+                        }
+                    } finally {
+                        fp.getModifyLock().readUnlock(readL);
+                    }
+
+                    return true;
+                }
+
+                @Override
+                public int getComplexity() {
+                    return 1;
                 }
             };
         case HOSTER:

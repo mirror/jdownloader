@@ -1561,6 +1561,9 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Hoster" })
     String searchcategory_hoster();
 
+    @Default(lngs = { "en" }, values = { "Comment" })
+    String searchcategory_comment();
+
     @Default(lngs = { "en" }, values = { "Package Name" })
     String searchcategory_package();
 
@@ -1581,6 +1584,9 @@ public interface GuiTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Please enter the domain you are looking for..." })
     String searchcategory_hoster_help();
+
+    @Default(lngs = { "en" }, values = { "Please enter the comment you are looking for..." })
+    String searchcategory_comment_help();
 
     @Default(lngs = { "en" }, values = { "Please enter the package name you are looking for..." })
     String searchcategory_package_help();
