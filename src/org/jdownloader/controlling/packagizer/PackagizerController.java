@@ -285,7 +285,6 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
                 }
             }
 
-            list.add(linkFilter);
             if (config != null) config.setRuleList(list);
         }
         update();
