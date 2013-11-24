@@ -268,7 +268,7 @@ public class MenuItemData implements Storable, MinTimeWeakReferenceCleanup {
     }
 
     public JComponent addTo(JComponent root) throws InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException, ClassNotFoundException, NoSuchMethodException, SecurityException, ExtensionNotLoadedException {
-
+        if (!isVisible()) return null;
         JComponent it;
 
         it = createItem();

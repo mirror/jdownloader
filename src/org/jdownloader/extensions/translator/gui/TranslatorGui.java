@@ -8,6 +8,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.lang.reflect.Type;
 import java.util.EventObject;
+import java.util.List;
 import java.util.Locale;
 
 import javax.swing.AbstractAction;
@@ -451,161 +452,198 @@ public class TranslatorGui extends AddonPanel<TranslatorExtension> implements Li
                 new Thread("Translator Wizard") {
                     public void run() {
                         try {
-
+                            TranslateEntry currentValue = null;
                             while (true) {
-                                boolean nothingtoDo = true;
-                                try {
 
-                                    for (final TranslateEntry value : getExtension().getTranslationEntries()) {
-                                        if (value.isOK()) continue;
+                                List<TranslateEntry> lst = getExtension().getTranslationEntries();
 
-                                        if (stopEditing) break;
+                                main: for (int i = 0; i < lst.size(); i++) {
+                                    TranslateEntry newValue = lst.get(i);
 
-                                        logger.info("Next entry: " + value.getFullKey());
-                                        String ret = "<style>td.a{font-style:italic;}</style><table valign=top>";
-                                        ret += "<tr><td class=a>Key:</td><td>" + value.getCategory() + "." + value.getKey() + "</td></tr>";
-
-                                        ret += "<tr><td class=a>Location:</td><td>" + value.getFullKey() + "</td></tr>";
-
-                                        ret += "<tr><td class=a>Original:</td><td><b>" + Encoding.cdataEncode(value.getDirect()) + "</b></td></tr>";
-                                        if (value.isMissing()) {
-                                            ret += "<tr><td class=a><font color='#ff0000' >Error:</font></td><td class=a><font color='#ff0000' >Not translated yet</font></td></tr>";
-
+                                    if (currentValue == null) {
+                                        if (!newValue.isOK()) {
+                                            currentValue = newValue;
+                                            break;
                                         }
-                                        if (value.isDefault()) {
-                                            ret += "<tr><td class=a><font color='#339900' >Warning:</font></td><td class=a><font color='#339900' >The translation equals the english default language.</font></td></tr>";
-                                        }
+                                    } else if (newValue.equals(currentValue)) {
+                                        for (int ii = i + 1; ii < lst.size(); ii++) {
+                                            newValue = lst.get(ii);
+                                            if (!newValue.isOK()) {
+                                                currentValue = newValue;
+                                                break main;
 
-                                        if (value.isParameterInvalid()) {
-                                            ret += "<tr><td class=a><font color='#ff0000' >Error:</font></td><td class=a><font color='#ff0000' >Parameter Wildcards (%s*) do not match.</font></td></tr>";
-                                        }
-
-                                        Type[] parameters = value.getParameters();
-                                        ret += "<tr><td class=a>Parameters:</td>";
-                                        if (parameters.length == 0) {
-                                            ret += "<td>none</td></tr>";
-                                        } else {
-                                            ret += "<td>";
-                                            int i = 1;
-                                            for (Type t : parameters) {
-                                                ret += "   %s" + i + " (" + t + ")<br>";
-                                                i++;
                                             }
-                                            ret += "</td>";
-                                            ret += "</tr>";
                                         }
+                                        currentValue = null;
+                                        i = 0;
 
-                                        ret += "</table>";
+                                    }
+                                }
+                                if (currentValue == null) {
+                                    // nothing to do
+                                    break;
+                                }
 
-                                        // ConfirmDialog d = new
-                                        // ConfirmDialog(Dialog.STYLE_HTML, "", ret, null, null,
-                                        // null);
-                                        try {
-                                            while (true) {
-                                                logger.info("Try");
-                                                if (value.getDescription() != null) {
-                                                    Dialog.I().showMessageDialog("IMPORTANT!!!\r\n\r\n" + value.getCategory() + "." + value.getKey() + "\r\n" + value.getDescription());
-                                                }
-                                                // jdlog://6423355159731/
-                                                final InputDialog d = new InputDialog(Dialog.STYLE_HTML, "Progress " + getExtension().getPercent() + "%", ret, null, null, "Next", "Cancel") {
-                                                    protected TextComponentInterface getSmallInputComponent() {
+                                final TranslateEntry value = currentValue;
 
-                                                        final ExtTextField ttx = new ExtTextField();
+                                logger.info("Next entry: " + value.getFullKey());
+                                String ret = "<style>td.a{font-style:italic;}</style><table valign=top>";
+                                ret += "<tr><td class=a>Key:</td><td>" + value.getCategory() + "." + value.getKey() + "</td></tr>";
 
-                                                        // private static final String
-                                                        // TEXT_SUBMIT = "text-submit";
-                                                        // private static final String
-                                                        // INSERT_BREAK = "insert-break";
+                                ret += "<tr><td class=a>Location:</td><td>" + value.getFullKey() + "</td></tr>";
 
-                                                        InputMap input = ttx.getInputMap();
-                                                        KeyStroke enter = KeyStroke.getKeyStroke("ENTER");
-                                                        KeyStroke shiftEnter = KeyStroke.getKeyStroke("shift ENTER");
-                                                        input.put(shiftEnter, "INSERT_BREAK"); // input.get(enter))
-                                                                                               // =
-                                                                                               // "insert-break"
-                                                        input.put(enter, "TEXT_SUBMIT");
+                                ret += "<tr><td class=a>Original:</td><td><b>" + Encoding.cdataEncode(value.getDirect()) + "</b></td></tr>";
+                                if (value.isMissing()) {
+                                    ret += "<tr><td class=a><font color='#ff0000' >Error:</font></td><td class=a><font color='#ff0000' >Not translated yet</font></td></tr>";
 
-                                                        ActionMap actions = ttx.getActionMap();
-                                                        actions.put("TEXT_SUBMIT", new AbstractAction() {
-                                                            @Override
-                                                            public void actionPerformed(ActionEvent e) {
-                                                                System.out.println("INSRT");
-                                                                try {
-                                                                    Point point = ttx.getCaret().getMagicCaretPosition();
-                                                                    SwingUtilities.convertPointToScreen(point, ttx);
+                                }
+                                if (value.isDefault()) {
+                                    ret += "<tr><td class=a><font color='#339900' >Warning:</font></td><td class=a><font color='#339900' >The translation equals the english default language.</font></td></tr>";
+                                }
 
-                                                                    ttx.getDocument().insertString(ttx.getCaretPosition(), "\\r\\n", null);
-                                                                    if (CFG_GUI.CFG.isHelpDialogsEnabled()) {
-                                                                        HelpDialog.show(point, "TRANSLETOR_USE_NEWLINE", Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, "NewLine", "Press <Enter> to insert a Newline (\\r\\n). Press <CTRL ENTER> to Confirm  translation. Press <TAB> to confirm and move to next line.", NewTheme.I().getIcon("help", 32));
-                                                                    }
-                                                                } catch (BadLocationException e1) {
-                                                                    e1.printStackTrace();
-                                                                }
-                                                            }
-                                                        });
+                                if (value.isParameterInvalid()) {
+                                    ret += "<tr><td class=a><font color='#ff0000' >Error:</font></td><td class=a><font color='#ff0000' >Parameter Wildcards (%s*) do not match.</font></td></tr>";
+                                }
 
-                                                        ttx.setClearHelpTextOnFocus(false);
-                                                        ttx.addKeyListener(this);
-                                                        ttx.addMouseListener(this);
-                                                        ttx.setHelpText("Please translate: " + value.getDirect());
-                                                        ttx.addActionListener(new ActionListener() {
+                                Type[] parameters = value.getParameters();
+                                ret += "<tr><td class=a>Parameters:</td>";
+                                if (parameters.length == 0) {
+                                    ret += "<td>none</td></tr>";
+                                } else {
+                                    ret += "<td>";
+                                    int i = 1;
+                                    for (Type t : parameters) {
+                                        ret += "   %s" + i + " (" + t + ")<br>";
+                                        i++;
+                                    }
+                                    ret += "</td>";
+                                    ret += "</tr>";
+                                }
 
-                                                            @Override
-                                                            public void actionPerformed(ActionEvent e) {
-                                                                setReturnmask(true);
-                                                            }
-                                                        });
-                                                        return ttx;
+                                ret += "</table>";
 
-                                                    }
+                                // ConfirmDialog d = new
+                                // ConfirmDialog(Dialog.STYLE_HTML, "", ret, null, null,
+                                // null);
+                                try {
+                                    while (true) {
+                                        logger.info("Try");
+                                        if (value.getDescription() != null) {
+                                            Dialog.I().showMessageDialog("IMPORTANT!!!\r\n\r\n" + value.getCategory() + "." + value.getKey() + "\r\n" + value.getDescription());
+                                        }
+                                        // jdlog://6423355159731/
+                                        final InputDialog d = new InputDialog(Dialog.STYLE_HTML, "Progress " + getExtension().getPercent() + "%", ret, null, null, "Next", "Cancel") {
+                                            protected TextComponentInterface getSmallInputComponent() {
 
+                                                final ExtTextField ttx = new ExtTextField();
+
+                                                // private static final String
+                                                // TEXT_SUBMIT = "text-submit";
+                                                // private static final String
+                                                // INSERT_BREAK = "insert-break";
+
+                                                InputMap input = ttx.getInputMap();
+                                                KeyStroke enter = KeyStroke.getKeyStroke("ENTER");
+                                                KeyStroke shiftEnter = KeyStroke.getKeyStroke("shift ENTER");
+                                                input.put(shiftEnter, "INSERT_BREAK"); // input.get(enter))
+                                                                                       // =
+                                                                                       // "insert-break"
+                                                input.put(enter, "TEXT_SUBMIT");
+
+                                                ActionMap actions = ttx.getActionMap();
+                                                actions.put("TEXT_SUBMIT", new AbstractAction() {
                                                     @Override
-                                                    protected int getPreferredWidth() {
-                                                        return JDGui.getInstance().getMainFrame().getWidth();
-                                                    }
+                                                    public void actionPerformed(ActionEvent e) {
+                                                        System.out.println("INSRT");
+                                                        try {
+                                                            Point point = ttx.getCaret().getMagicCaretPosition();
+                                                            SwingUtilities.convertPointToScreen(point, ttx);
 
-                                                };
-                                                d.setLeftActions(new AppAction() {
-                                                    {
-                                                        setName("Skip");
+                                                            ttx.getDocument().insertString(ttx.getCaretPosition(), "\\r\\n", null);
+                                                            if (CFG_GUI.CFG.isHelpDialogsEnabled()) {
+                                                                HelpDialog.show(point, "TRANSLETOR_USE_NEWLINE", Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, "NewLine", "Press <Enter> to insert a Newline (\\r\\n). Press <CTRL ENTER> to Confirm  translation. Press <TAB> to confirm and move to next line.", NewTheme.I().getIcon("help", 32));
+                                                            }
+                                                        } catch (BadLocationException e1) {
+                                                            e1.printStackTrace();
+                                                        }
                                                     }
+                                                });
+
+                                                ttx.setClearHelpTextOnFocus(false);
+                                                ttx.addKeyListener(this);
+                                                ttx.addMouseListener(this);
+                                                ttx.setHelpText("Please translate: " + value.getDirect());
+                                                ttx.addActionListener(new ActionListener() {
 
                                                     @Override
                                                     public void actionPerformed(ActionEvent e) {
-                                                        d.dispose();
+                                                        setReturnmask(true);
                                                     }
-
                                                 });
-                                                nothingtoDo = false;
-                                                String newTranslation = Dialog.getInstance().showDialog(d);
-
-                                                if (newTranslation == null) {
-                                                    logger.info("User pressed Skip");
-                                                    // Skip
-                                                    break;
-                                                }
-                                                logger.info("new Translation: " + newTranslation);
-                                                value.setTranslation(newTranslation);
-                                                if (value.isOK() || value.isDefault()) break;
-                                                logger.info("next");
+                                                return ttx;
 
                                             }
-                                        } catch (DialogClosedException e1) {
-                                            e1.printStackTrace();
 
-                                        } catch (DialogCanceledException e1) {
-                                            return;
+                                            @Override
+                                            protected int getPreferredWidth() {
+                                                return JDGui.getInstance().getMainFrame().getWidth();
+                                            }
+
+                                        };
+                                        d.setLeftActions(new AppAction() {
+                                            {
+                                                setName("Skip");
+                                            }
+
+                                            @Override
+                                            public void actionPerformed(ActionEvent e) {
+                                                d.dispose();
+                                            }
+
+                                        });
+
+                                        String newTranslation = Dialog.getInstance().showDialog(d);
+
+                                        if (newTranslation == null) {
+                                            logger.info("User pressed Skip");
+                                            // Skip
+                                            break;
                                         }
+                                        logger.info("new Translation: " + newTranslation);
+
+                                        lst = getExtension().getTranslationEntries();
+
+                                        for (int i = 0; i < lst.size(); i++) {
+                                            TranslateEntry newValue = lst.get(i);
+
+                                            if (value.equals(newValue)) {
+                                                if (currentValue != newValue) {
+                                                    System.out.println(1);
+                                                }
+                                                currentValue = newValue;
+                                                break;
+
+                                            }
+                                        }
+                                        currentValue.setTranslation(newTranslation);
+                                        if (currentValue.isOK() || currentValue.isDefault()) break;
+                                        logger.info("next");
 
                                     }
-                                } finally {
-                                    isWizard = false;
+                                } catch (DialogClosedException e1) {
+                                    e1.printStackTrace();
+
+                                } catch (DialogCanceledException e1) {
+                                    return;
                                 }
-                                if (nothingtoDo && !stopEditing) break;
+
                             }
                         } finally {
 
                             Dialog.getInstance().showMessageDialog("Wizard ended");
+
+                            isWizard = false;
+
                         }
                     }
                 }.start();

@@ -370,6 +370,7 @@ public class LinkGrabberTable extends PackageControllerTable<CrawledPackage, Cra
     }
 
     private void fillActions(MenuContainer menuData) {
+        if (!menuData._isValidated()) return;
         final InputMap input = getInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT);
         final InputMap input2 = getInputMap(JComponent.WHEN_FOCUSED);
         final InputMap input3 = getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW);
@@ -377,6 +378,7 @@ public class LinkGrabberTable extends PackageControllerTable<CrawledPackage, Cra
         final ActionMap actions = getActionMap();
 
         for (MenuItemData mi : menuData.getItems()) {
+            if (!mi._isValidated()) continue;
             if (mi instanceof MenuContainer) {
                 fillActions((MenuContainer) mi);
             } else if (mi instanceof SeperatorData) {
