@@ -3,6 +3,7 @@ package org.jdownloader.gui.views.linkgrabber.bottombar;
 import java.awt.event.ActionEvent;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.swing.KeyStroke;
 
@@ -141,7 +142,7 @@ public class GenericDeleteFromLinkgrabberAction extends CustomizableAppAction im
     @Override
     public void actionPerformed(final ActionEvent e) {
         final List<CrawledLink> nodesToDelete = new ArrayList<CrawledLink>();
-        boolean containsOnline = false;
+        final AtomicBoolean containsOnline = new AtomicBoolean(false);
 
         switch (includedSelection.getSelectionType()) {
         case NONE:
@@ -164,6 +165,9 @@ public class GenericDeleteFromLinkgrabberAction extends CustomizableAppAction im
                                 if (filter.isFiltered(node)) { return false; }
                             }
                         }
+                        if (node.getDownloadLink().getAvailableStatus() != AvailableStatus.FALSE) {
+                            containsOnline.set(true);
+                        }
                         nodesToDelete.add(node);
                     }
                     return false;
@@ -178,14 +182,14 @@ public class GenericDeleteFromLinkgrabberAction extends CustomizableAppAction im
                     if (TYPE.OFFLINE == dl.getParentNode().getType()) continue;
                     if (TYPE.POFFLINE == dl.getParentNode().getType()) continue;
                     if (dl.getDownloadLink().getAvailableStatus() != AvailableStatus.FALSE) {
-                        containsOnline = true;
+                        containsOnline.set(true);
 
                     }
                 }
             }
         }
 
-        finalDelete(nodesToDelete, containsOnline);
+        finalDelete(nodesToDelete, containsOnline.get());
 
     }
 
