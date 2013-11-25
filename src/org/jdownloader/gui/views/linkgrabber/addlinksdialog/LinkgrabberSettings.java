@@ -173,4 +173,10 @@ public interface LinkgrabberSettings extends ConfigInterface {
     boolean isRestoreButtonEnabled();
 
     void setRestoreButtonEnabled(boolean b);
+
+    @DefaultBooleanValue(true)
+    @AboutConfig
+    boolean isAutoFillAddLinksDialogWithClipboardContentEnabled();
+
+    void setAutoFillAddLinksDialogWithClipboardContentEnabled(boolean b);
 }

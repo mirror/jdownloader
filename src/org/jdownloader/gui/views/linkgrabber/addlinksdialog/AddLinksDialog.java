@@ -4,6 +4,8 @@ import java.awt.Component;
 import java.awt.Dialog.ModalityType;
 import java.awt.Point;
 import java.awt.event.ActionEvent;
+import java.awt.event.FocusEvent;
+import java.awt.event.FocusListener;
 import java.awt.event.HierarchyEvent;
 import java.awt.event.HierarchyListener;
 import java.awt.event.WindowEvent;
@@ -301,12 +303,24 @@ public class AddLinksDialog extends AbstractDialog<LinkCollectingJob> {
             destination.setFile(new File(latest));
 
         }
+
         input = new ExtTextArea() {
             @Override
             public void onChanged() {
                 delayedValidate.run();
             }
         };
+        input.addFocusListener(new FocusListener() {
+
+            @Override
+            public void focusLost(FocusEvent e) {
+            }
+
+            @Override
+            public void focusGained(FocusEvent e) {
+                input.selectAll();
+            }
+        });
         // input.setLineWrap(true);
         input.setWrapStyleWord(true);
         input.setHelpText(_GUI._.AddLinksDialog_layoutDialogContent_input_help());
@@ -388,7 +402,7 @@ public class AddLinksDialog extends AbstractDialog<LinkCollectingJob> {
                         inform();
                         String newText = config.getPresetDebugLinks();
                         String browserURL = null;
-                        if (StringUtils.isEmpty(newText)) {
+                        if (StringUtils.isEmpty(newText) && config.isAutoFillAddLinksDialogWithClipboardContentEnabled()) {
                             ClipboardContent content = ClipboardMonitoring.getINSTANCE().getCurrentContent();
                             if (content != null) {
                                 newText = content.getContent();
