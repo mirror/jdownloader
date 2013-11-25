@@ -340,7 +340,8 @@ public class ExtractionConfigPanel extends ExtensionConfigPanel<ExtractionExtens
             Log.exception(e);
         }
         {
-            String[] list = passwordlist.getComponent().getText().split("[\r\n]{1,2}");
+            String txt = passwordlist.getComponent().getText();
+            String[] list = txt.split("[\r\n]{1,2}");
             java.util.List<String> passwords = new ArrayList<String>(list.length);
             for (String ss : list) {
                 if (passwords.contains(ss)) continue;

@@ -23,6 +23,8 @@ import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 
+import javax.swing.Icon;
+
 import org.appwork.swing.MigPanel;
 import org.appwork.swing.components.ExtButton;
 import org.appwork.swing.components.tooltips.ExtTooltip;
@@ -83,13 +85,15 @@ public class TinyProgressBar extends MigPanel {
         bt.setBorderPainted(false);
         add(bt, "width 20!,height 20!");
 
-        bt.setIcon(serviceCollection.getIcon());
+        Icon ico = serviceCollection.getIcon();
+        bt.setIcon(ico);
         this.setVisible(true);
         setEnabled(serviceCollection.isEnabled());
     }
 
     public void setEnabled(boolean enabled) {
         super.setEnabled(enabled);
+
         bt.setEnabled(enabled);
     }
 

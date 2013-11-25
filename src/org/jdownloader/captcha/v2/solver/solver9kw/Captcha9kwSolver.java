@@ -33,7 +33,7 @@ import org.jdownloader.captcha.v2.solver.CESChallengeSolver;
 import org.jdownloader.captcha.v2.solver.CESSolverJob;
 import org.jdownloader.captcha.v2.solver.jac.SolverException;
 import org.jdownloader.gui.IconKey;
-import org.jdownloader.images.NewTheme;
+import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.settings.advanced.AdvancedConfigManager;
 import org.jdownloader.settings.staticreferences.CFG_9KWCAPTCHA;
@@ -119,7 +119,8 @@ public class Captcha9kwSolver extends CESChallengeSolver<String> implements Chal
 
     @Override
     public Icon getIcon(int size) {
-        return NewTheme.I().getIcon(IconKey.ICON_9KW, size);
+
+        return new AbstractIcon(IconKey.ICON_9KW, size);
     }
 
     @Override
@@ -333,7 +334,7 @@ public class Captcha9kwSolver extends CESChallengeSolver<String> implements Chal
 
                 @Override
                 public Icon getIcon() {
-                    return NewTheme.I().getIcon(IconKey.ICON_9KW, 18);
+                    return new AbstractIcon(IconKey.ICON_9KW, 18);
                 }
 
                 @Override
