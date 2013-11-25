@@ -43,17 +43,14 @@ import jd.http.Request;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.BrowserAdapter;
-import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
-import jd.plugins.PluginForHost;
 import jd.plugins.PluginProgress;
 import jd.plugins.download.DownloadInterface;
 import jd.plugins.download.DownloadPluginProgress;
 import jd.plugins.download.HashCheckPluginProgress;
-import jd.plugins.download.RAFDownload;
 
 import org.appwork.exceptions.WTFException;
 import org.appwork.storage.config.JsonConfig;
@@ -134,18 +131,15 @@ public class OldRAFDownload extends DownloadInterface {
     }
 
     protected OldRAFDownload() {
-
     }
 
     public OldRAFDownload(Downloadable downloadLink, Request request) throws IOException, PluginException {
         init(downloadLink, request);
-
     }
 
     protected void init(Downloadable downloadLink, Request request) {
         connectionHandler = new ManagedThrottledConnectionHandler();
         this.downloadable = downloadLink;
-
         logger = downloadLink.getLogger();
         browser = downloadLink.getContextBrowser();
         InternetConnectionSettings config = JsonConfig.create(InternetConnectionSettings.PATH, InternetConnectionSettings.class);
@@ -377,8 +371,8 @@ public class OldRAFDownload extends DownloadInterface {
         if (doFilesizeCheck() && getFileSize() > 0 && totalLinkBytesLoaded != getFileSize()) {
             if (totalLinkBytesLoaded > getFileSize()) {
                 /*
-                 * workaround for old bug deep in this downloadsystem. more data got loaded (maybe just counting bug) than filesize. but in
-                 * most cases the file is okay! WONTFIX because new downloadsystem is on its way
+                 * workaround for old bug deep in this downloadsystem. more data got loaded (maybe just counting bug) than filesize. but in most cases the file
+                 * is okay! WONTFIX because new downloadsystem is on its way
                  */
                 logger.severe("Filesize: " + getFileSize() + " Loaded: " + totalLinkBytesLoaded);
                 if (caughtPluginException == null) {
@@ -416,8 +410,7 @@ public class OldRAFDownload extends DownloadInterface {
     }
 
     /**
-     * Wartet bis alle Chunks fertig sind, aktuelisiert den downloadlink regelmaesig und fordert beim Controller eine aktualisierung des
-     * links an
+     * Wartet bis alle Chunks fertig sind, aktuelisiert den downloadlink regelmaesig und fordert beim Controller eine aktualisierung des links an
      */
     protected void onChunkFinished(RAFChunk chunk) {
         synchronized (chunks) {
@@ -697,8 +690,7 @@ public class OldRAFDownload extends DownloadInterface {
     }
 
     /**
-     * Setzt vor ! dem download dden requesttimeout. Sollte nicht zu niedrig sein weil sonst das automatische kopieren der Connections fehl
-     * schlaegt.,
+     * Setzt vor ! dem download dden requesttimeout. Sollte nicht zu niedrig sein weil sonst das automatische kopieren der Connections fehl schlaegt.,
      */
     public void setRequestTimeout(int requestTimeout) {
         this.requestTimeout = requestTimeout;
@@ -979,40 +971,6 @@ public class OldRAFDownload extends DownloadInterface {
             error(new PluginException(LinkStatus.ERROR_DOWNLOAD_FAILED, Exceptions.getStackTrace(e), LinkStatus.VALUE_LOCAL_IO_ERROR));
             return false;
         }
-    }
-
-    /**
-     * 
-     * @param downloadLink
-     *            downloadlink der geladne werden soll (wird zur darstellung verwendet)
-     * @param request
-     *            Verbindung die geladen werden soll
-     * @param b
-     *            Resumefaehige verbindung
-     * @param i
-     *            max chunks. fuer negative werte wirden die chunks aus der config verwendet. Bsp: -3 : Min(3,Configwert);
-     * @return
-     * @throws IOException
-     * @throws PluginException
-     */
-    public static DownloadInterface download(DownloadLink downloadLink, Request request, boolean b, int i) throws IOException, PluginException {
-        /* disable gzip, because current downloadsystem cannot handle it correct */
-        request.getHeaders().put("Accept-Encoding", null);
-        RAFDownload dl = new RAFDownload(downloadLink.getLivePlugin(), downloadLink, request);
-        PluginForHost plugin = downloadLink.getLivePlugin();
-        if (plugin != null) plugin.setDownloadInterface(dl);
-        if (i == 0) {
-            dl.setChunkNum(JsonConfig.create(GeneralSettings.class).getMaxChunksPerFile());
-        } else {
-            dl.setChunkNum(i < 0 ? Math.min(i * -1, JsonConfig.create(GeneralSettings.class).getMaxChunksPerFile()) : i);
-        }
-        dl.setResume(b);
-        return dl;
-
-    }
-
-    public static DownloadInterface download(DownloadLink downloadLink, Request request) throws Exception {
-        return download(downloadLink, request, false, 1);
     }
 
     public void cleanupDownladInterface() {

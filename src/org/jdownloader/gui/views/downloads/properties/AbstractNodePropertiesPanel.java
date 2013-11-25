@@ -563,9 +563,7 @@ public abstract class AbstractNodePropertiesPanel extends MigPanel implements Ac
     protected void addDownloadFrom(int height, MigPanel p) {
         p.add(createIconLabel(_GUI._.propertiespanel_downloadfrom(), _GUI._.AddLinksDialog_layoutDialogContent_downloadfrom_tt()), "aligny center,alignx right,height " + height + "!");
         p.add(downloadFrom, "spanx,height " + height + "!,growx,width 10:10:n");
-
         // "gaptop 0,spanx,growx,pushx,gapleft 37,gapbottom 5"
-
     }
 
     protected void addDownloadPassword(int height, MigPanel p) {

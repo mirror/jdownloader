@@ -24,19 +24,11 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.download.raf.OldRAFDownload;
 
-import org.jdownloader.downloadcore.v15.Downloadable;
-
 @Deprecated
 public class RAFDownload extends OldRAFDownload {
 
     public RAFDownload(PluginForHost plugin, DownloadLink downloadLink, Request request) throws IOException, PluginException {
         super();
-        init(createInterface(downloadLink), request);
-    }
-
-    private Downloadable createInterface(final DownloadLink downloadLink) {
-        return new DownloadLinkDownloadable(downloadLink);
-
     }
 
     @Deprecated

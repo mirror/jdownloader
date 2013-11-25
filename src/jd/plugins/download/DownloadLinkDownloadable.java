@@ -29,7 +29,7 @@ import org.jdownloader.downloadcore.v15.HashInfo;
 import org.jdownloader.plugins.FinalLinkState;
 import org.jdownloader.statistics.StatsManager;
 
-final class DownloadLinkDownloadable implements Downloadable {
+public class DownloadLinkDownloadable implements Downloadable {
     /**
      * 
      */
@@ -37,7 +37,7 @@ final class DownloadLinkDownloadable implements Downloadable {
     private final DownloadLink downloadLink;
     private PluginForHost      plugin;
 
-    DownloadLinkDownloadable(DownloadLink downloadLink) {
+    public DownloadLinkDownloadable(DownloadLink downloadLink) {
 
         this.downloadLink = downloadLink;
         plugin = downloadLink.getLivePlugin();

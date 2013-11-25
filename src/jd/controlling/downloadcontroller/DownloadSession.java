@@ -158,6 +158,14 @@ public class DownloadSession {
         return removed;
     }
 
+    public boolean removeActivationRequests(List<DownloadLink> links) {
+        if (links == null) return false;
+        boolean removed = activationRequests.remove(links);
+        removed = forcedLinks.remove(links) || removed;
+        if (removed) refreshCandidates();
+        return removed;
+    }
+
     public HashMap<String, PluginForHost> getActivationPluginCache() {
         return activationPluginCache;
     }

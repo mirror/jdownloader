@@ -33,7 +33,6 @@ import javax.swing.ScrollPaneConstants;
 import javax.swing.SwingConstants;
 
 import jd.SecondLevelLaunch;
-import jd.controlling.downloadcontroller.DownloadController;
 import jd.controlling.downloadcontroller.DownloadWatchDog;
 import jd.controlling.downloadcontroller.SingleDownloadController;
 import jd.controlling.downloadcontroller.event.DownloadWatchdogListener;
@@ -48,18 +47,14 @@ import jd.controlling.reconnect.Reconnecter;
 import jd.controlling.reconnect.ReconnecterEvent;
 import jd.controlling.reconnect.ReconnecterListener;
 import jd.gui.swing.jdgui.components.premiumbar.ServicePanel;
-import jd.plugins.DownloadLink;
-import jd.plugins.FilePackage;
 import net.miginfocom.swing.MigLayout;
 
 import org.appwork.exceptions.WTFException;
 import org.appwork.scheduler.DelayedRunnable;
 import org.appwork.swing.components.tooltips.ToolTipController;
-import org.appwork.utils.event.queue.QueueAction;
 import org.appwork.utils.swing.EDTHelper;
 import org.appwork.utils.swing.EDTRunner;
 import org.jdownloader.actions.AppAction;
-import org.jdownloader.controlling.DownloadLinkWalker;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.updatev2.gui.LAFOptions;
@@ -320,30 +315,7 @@ public class StatusBarImpl extends JPanel implements DownloadWatchdogListener {
                 ldownloadWatchdogIndicator.addMouseListener(new MouseListener() {
 
                     public void mouseReleased(MouseEvent e) {
-                        DownloadController.getInstance().getQueue().add(new QueueAction<Void, RuntimeException>() {
-
-                            @Override
-                            protected Void run() throws RuntimeException {
-                                DownloadController.getInstance().set(new DownloadLinkWalker() {
-
-                                    @Override
-                                    public void handle(DownloadLink link) {
-                                        link.setSkipReason(null);
-                                    }
-
-                                    @Override
-                                    public boolean accept(FilePackage fp) {
-                                        return true;
-                                    }
-
-                                    @Override
-                                    public boolean accept(DownloadLink link) {
-                                        return true;
-                                    }
-                                });
-                                return null;
-                            }
-                        });
+                        DownloadWatchDog.getInstance().unSkipAllSkipped();
                     }
 
                     public void mousePressed(MouseEvent e) {

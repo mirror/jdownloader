@@ -1,6 +1,8 @@
 package org.jdownloader.gui.views.downloads.action;
 
 import java.awt.event.ActionEvent;
+import java.util.ArrayList;
+import java.util.List;
 
 import jd.controlling.TaskQueue;
 import jd.controlling.downloadcontroller.DownloadWatchDog;
@@ -104,6 +106,7 @@ public class SkipAction extends CustomizableTableContextAppAction<FilePackage, D
                         }
                     }
                 }
+                List<DownloadLink> unSkip = new ArrayList<DownloadLink>();
                 for (DownloadLink a : selection.getChildren()) {
                     // keep skipreason if a reason is set
                     if (enable) {
@@ -111,10 +114,10 @@ public class SkipAction extends CustomizableTableContextAppAction<FilePackage, D
                             a.setSkipReason(SkipReason.MANUAL);
                         }
                     } else {
-
-                        a.setSkipReason(null);
+                        unSkip.add(a);
                     }
                 }
+                DownloadWatchDog.getInstance().unSkip(unSkip);
                 return null;
             }
         });

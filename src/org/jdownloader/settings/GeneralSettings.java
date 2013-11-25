@@ -82,6 +82,19 @@ public interface GeneralSettings extends ConfigInterface {
     CleanAfterDownloadAction getCleanupAfterDownloadAction();
 
     @AboutConfig
+    @DefaultEnumValue("FILENAME")
+    MirrorDetectionDecision getMirrorDetectionDecision();
+
+    @AboutConfig
+    @DefaultIntValue(100)
+    @SpinnerValidator(min = 1, max = 100)
+    int getMirrorDetectionFileSizeEquality();
+
+    public void setMirrorDetectionFileSizeEquality(int size);
+
+    public void setMirrorDetectionDecision(MirrorDetectionDecision decision);
+
+    @AboutConfig
     @DefaultFactory(DefaultDownloadFolder.class)
     @CustomValueGetter(CustomDownloadFolderGetter.class)
     String getDefaultDownloadFolder();
