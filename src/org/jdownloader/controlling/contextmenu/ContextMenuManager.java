@@ -28,6 +28,7 @@ import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.swing.EDTHelper;
 import org.appwork.utils.swing.EDTRunner;
+import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.windowmanager.WindowManager;
 import org.appwork.utils.swing.windowmanager.WindowManager.FrameState;
 import org.jdownloader.controlling.contextmenu.gui.ExtPopupMenu;
@@ -55,6 +56,17 @@ public abstract class ContextMenuManager<PackageType extends AbstractPackageNode
             }
 
         };
+    }
+
+    public void exportTo(File saveTo) throws UnsupportedEncodingException, IOException {
+        File file = null;
+        int i = 1;
+        while (file == null || file.exists()) {
+            file = new File(saveTo, getStorageKey() + "_" + i + getFileExtension());
+            i++;
+        }
+        saveTo(config.getMenu(), file);
+
     }
 
     protected abstract String getStorageKey();
@@ -374,8 +386,21 @@ public abstract class ContextMenuManager<PackageType extends AbstractPackageNode
     }
 
     public void saveTo(MenuContainerRoot root, File saveTo) throws UnsupportedEncodingException, IOException {
+        if (root == null) {
+            Dialog.getInstance().showErrorDialog("Cannot export '" + getName() + "', because there is no custom menu");
+        } else {
+            IO.secureWrite(saveTo, JSonStorage.serializeToJson(new MenuStructure(root, getUnused(root))).getBytes("UTF-8"));
+        }
 
-        IO.secureWrite(saveTo, JSonStorage.serializeToJson(new MenuStructure(root, getUnused(root))).getBytes("UTF-8"));
+    }
+
+    public void importFrom(File f) throws IOException {
+
+        MenuStructure data = readFrom(f);
+        data.getRoot().validateFull();
+        setMenuData(data.getRoot());
+
+        Dialog.getInstance().showMessageDialog("Imported '" + getName() + "");
     }
 
     public MenuStructure readFrom(File file) throws IOException {

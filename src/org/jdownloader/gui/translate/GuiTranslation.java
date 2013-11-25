@@ -3778,4 +3778,13 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "the Package Condition only matches to packagenames that could be read from the source website.\r\nIn most cases however, the packagename is generated from the filenames in the package.\r\nIn this case, this condition will not work. Please use the filename condition instead!" })
     String ConditionDialog_help_packagecondition_msg();
 
+    @Default(lngs = { "en" }, values = { "Directory" })
+    String lit_directory();
+
+    @Default(lngs = { "en" }, values = { "Export all Menus to a Directory" })
+    String ExportAllMenusAdvancedAction_actionPerformed();
+
+    @Default(lngs = { "en" }, values = { "Import all Menus" })
+    String ImportAllMenusAdvancedAction_actionPerformed();
+
 }

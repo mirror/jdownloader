@@ -24,6 +24,7 @@ import org.appwork.utils.swing.dialog.View;
 import org.appwork.utils.swing.windowmanager.WindowManager.FrameState;
 import org.jdownloader.gui.laf.jddefault.JDDefaultLookAndFeel;
 import org.jdownloader.gui.views.components.LinktablesSearchCategory;
+import org.jdownloader.settings.advanced.ActionClass;
 
 public interface GraphicalUserInterfaceSettings extends ConfigInterface {
 
@@ -611,6 +612,18 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
         DONT_GROUP
 
     }
+
+    @AboutConfig
+    @ActionClass(ImportAllMenusAdvancedAction.class)
+    boolean getImportAllMenusAction();
+
+    void setImportAllMenusAction(boolean type);
+
+    @AboutConfig
+    @ActionClass(ExportAllMenusAdvancedAction.class)
+    boolean getExportAllMenusAction();
+
+    void setExportAllMenusAction(boolean type);
 
     @AboutConfig
     @DefaultEnumValue("GROUP_BY_ACCOUNT_TYPE")
