@@ -28,7 +28,6 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.swing.Icon;
-import javax.swing.ImageIcon;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
@@ -709,7 +708,7 @@ public class FreeWayMe extends PluginForHost {
             return host;
         }
 
-        public ImageIcon getIcon() {
+        public Icon getIcon() {
             try {
                 return DomainInfo.getInstance(host).getFavIcon();
             } catch (Exception e) {

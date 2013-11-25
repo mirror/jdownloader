@@ -4,6 +4,7 @@ import java.awt.Color;
 import java.awt.Point;
 import java.awt.event.MouseEvent;
 
+import javax.swing.Icon;
 import javax.swing.ImageIcon;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
@@ -209,7 +210,7 @@ public class ConnectionColumn extends ExtColumn<AbstractNode> {
                 }
                 index++;
                 if (sdc.getAccount() != null) {
-                    ImageIcon icon = sdc.getAccount().getPlugin().getDomainInfo(dlLink).getFavIcon();
+                    Icon icon = sdc.getAccount().getPlugin().getDomainInfo(dlLink).getFavIcon();
                     labels[index].setIcon(icon);
                     labels[index].setVisible(true);
                     index++;
@@ -265,7 +266,7 @@ public class ConnectionColumn extends ExtColumn<AbstractNode> {
                 }
                 SkipReason skipReason = link.getSkipReason();
                 if (skipReason != null) {
-                    panel.add(lbl = new JLabel(skipReason.getExplanation(ConnectionColumn.this, link), skipped, JLabel.LEADING));
+                    panel.add(lbl = new JLabel(skipReason.getExplanation(ConnectionColumn.this), skipped, JLabel.LEADING));
                     SwingUtils.setOpaque(lbl, false);
                     lbl.setForeground(new Color(this.getConfig().getForegroundColor()));
                 }
@@ -288,7 +289,7 @@ public class ConnectionColumn extends ExtColumn<AbstractNode> {
                 }
                 if (sdc.getAccount() != null) {
                     /* account in use? */
-                    ImageIcon icon = sdc.getAccount().getPlugin().getDomainInfo(link).getFavIcon();
+                    Icon icon = sdc.getAccount().getPlugin().getDomainInfo(link).getFavIcon();
                     panel.add(lbl = new JLabel(_GUI._.ConnectionColumn_DownloadUsesAccount(sdc.getAccount().getUser()), icon, JLabel.LEADING));
                     SwingUtils.setOpaque(lbl, false);
                     lbl.setForeground(new Color(this.getConfig().getForegroundColor()));

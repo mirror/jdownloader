@@ -31,9 +31,9 @@ import org.jdownloader.settings.GraphicalUserInterfaceSettings;
 public class ETAColumn extends ExtTextColumn<AbstractNode> {
 
     private class ColumnHelper {
-        private ImageIcon icon   = null;
-        private long      eta    = -1;
-        private String    string = null;
+        private Icon   icon   = null;
+        private long   eta    = -1;
+        private String string = null;
     }
 
     /**
@@ -98,7 +98,7 @@ public class ETAColumn extends ExtTextColumn<AbstractNode> {
             DownloadLink link = (DownloadLink) value;
             PluginProgress progress = null;
             if ((progress = link.getPluginProgress()) != null) {
-                columnHelper.icon = progress.getIcon();
+                columnHelper.icon = progress.getIcon(this);
                 columnHelper.string = progress.getMessage(this);
                 long eta = progress.getETA();
                 if (eta >= 0) {
@@ -106,6 +106,7 @@ public class ETAColumn extends ExtTextColumn<AbstractNode> {
                 } else {
                     columnHelper.eta = -1;
                 }
+
                 return;
             }
             ConditionalSkipReason conditionalSkipReason = link.getConditionalSkipReason();

@@ -18,17 +18,18 @@ package jd.plugins;
 
 import java.awt.Color;
 
+import javax.swing.Icon;
 import javax.swing.ImageIcon;
 
 public abstract class PluginProgress {
 
-    protected long      total;
-    protected long      current;
-    protected long      ETA            = -1;
+    protected long   total;
+    protected long   current;
+    protected long   ETA            = -1;
 
-    protected Color     color;
-    protected ImageIcon icon           = null;
-    protected Object    progressSource = null;
+    protected Color  color;
+    protected Icon   icon           = null;
+    protected Object progressSource = null;
 
     public abstract String getMessage(Object requestor);
 
@@ -71,7 +72,7 @@ public abstract class PluginProgress {
         this.total = total;
     }
 
-    public ImageIcon getIcon() {
+    public Icon getIcon(Object requestor) {
         return icon;
     }
 

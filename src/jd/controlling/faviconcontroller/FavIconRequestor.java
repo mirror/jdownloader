@@ -1,7 +1,7 @@
 package jd.controlling.faviconcontroller;
 
-import javax.swing.ImageIcon;
+import javax.swing.Icon;
 
 public interface FavIconRequestor {
-    public ImageIcon setFavIcon(ImageIcon icon);
+    public Icon setFavIcon(Icon icon);
 }

@@ -414,7 +414,7 @@ public class MainToolBar extends JToolBar implements MouseListener, DownloadWatc
                         if (action.isToggle()) {
                             action.requestUpdate(MainToolBar.this);
                             bt = new JToggleButton(action);
-                            ImageIcon icon;
+                            Icon icon;
 
                             bt.setIcon(icon = NewTheme.I().getCheckBoxImage(validateIconKey(action.getIconKey()), false, 24));
                             bt.setRolloverIcon(icon);

@@ -1,5 +1,6 @@
 package org.jdownloader.images;
 
+import javax.swing.Icon;
 import javax.swing.ImageIcon;
 
 import org.appwork.resources.AWUTheme;
@@ -45,8 +46,8 @@ public class NewTheme extends Theme {
      * @param size
      * @return
      */
-    public ImageIcon getCheckBoxImage(String path, boolean selected, int size) {
-        ImageIcon ret = null;
+    public Icon getCheckBoxImage(String path, boolean selected, int size) {
+        Icon ret = null;
         String key = this.getCacheKey(path, size, selected);
         ret = getCached(key);
         if (ret == null) {

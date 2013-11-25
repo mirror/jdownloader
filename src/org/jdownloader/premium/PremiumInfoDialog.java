@@ -5,6 +5,7 @@ import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.Image;
 
+import javax.swing.Icon;
 import javax.swing.ImageIcon;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
@@ -14,6 +15,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.swing.MigPanel;
 import org.appwork.swing.components.ExtTextArea;
+import org.appwork.utils.images.IconIO;
 import org.appwork.utils.logging.Log;
 import org.appwork.utils.swing.SwingUtils;
 import org.appwork.utils.swing.dialog.AbstractDialog;
@@ -99,13 +101,13 @@ public class PremiumInfoDialog extends AbstractDialog<Object> {
         final MigPanel ret = new MigPanel("ins 0,wrap 2", "[][grow,fill]", "[]");
 
         ret.setOpaque(false);
-        getDialog().setIconImage(info.getFavIcon().getImage());
+        getDialog().setIconImage(IconIO.toBufferedImage(info.getFavIcon()));
 
         ExtTextArea explain = new ExtTextArea();
         explain.setLabelMode(true);
         explain.setText(getDescription(info));
         int h = explain.getPreferredSize().height;
-        ImageIcon icon = info.getIcon(h);
+        Icon icon = info.getIcon(h);
 
         // if (NewTheme.I().hasIcon("fav/large.wupload.com")) {
         // JLabel lbl = new JLabel(NewTheme.I().getIcon("fav/large.wupload.com",

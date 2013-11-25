@@ -1,10 +1,9 @@
 package org.jdownloader;
 
-import java.awt.image.BufferedImage;
 import java.util.HashMap;
 import java.util.Locale;
 
-import javax.swing.ImageIcon;
+import javax.swing.Icon;
 
 import jd.controlling.faviconcontroller.FavIconRequestor;
 import jd.controlling.faviconcontroller.FavIcons;
@@ -37,17 +36,17 @@ public class DomainInfo implements FavIconRequestor, Comparable<DomainInfo> {
         return tld;
     }
 
-    protected MinTimeWeakReference<ImageIcon> hosterIcon          = null;
-    protected boolean                         hosterIconRequested = false;
+    protected MinTimeWeakReference<Icon> hosterIcon          = null;
+    protected boolean                    hosterIconRequested = false;
 
     /**
      * Returns a
      * 
      * @return
      */
-    public ImageIcon getFavIcon() {
-        ImageIcon ia = null;
-        MinTimeWeakReference<ImageIcon> lhosterIcon = hosterIcon;
+    public Icon getFavIcon() {
+        Icon ia = null;
+        MinTimeWeakReference<Icon> lhosterIcon = hosterIcon;
         if (lhosterIcon != null) {
             ia = lhosterIcon.get();
             // cleanup;
@@ -79,9 +78,9 @@ public class DomainInfo implements FavIconRequestor, Comparable<DomainInfo> {
         hosterIcon = null;
     }
 
-    public ImageIcon setFavIcon(ImageIcon icon) {
+    public Icon setFavIcon(Icon icon) {
         if (icon == null) {
-            MinTimeWeakReference<ImageIcon> lhosterIcon = hosterIcon;
+            MinTimeWeakReference<Icon> lhosterIcon = hosterIcon;
             if (lhosterIcon != null) {
                 icon = lhosterIcon.get();
             }
@@ -89,9 +88,9 @@ public class DomainInfo implements FavIconRequestor, Comparable<DomainInfo> {
                 icon = FavIcons.getFavIcon(getTld(), this);
             }
         } else {
-            icon = new ImageIcon(IconIO.getScaledInstance(icon.getImage(), WIDTH, HEIGHT, Interpolation.BICUBIC, true));
+            icon = IconIO.getScaledInstance(icon, WIDTH, HEIGHT, Interpolation.BICUBIC);
         }
-        this.hosterIcon = new MinTimeWeakReference<ImageIcon>(icon, CACHE_TIMEOUT, getTld());
+        this.hosterIcon = new MinTimeWeakReference<Icon>(icon, CACHE_TIMEOUT, getTld());
         return icon;
     }
 
@@ -119,23 +118,24 @@ public class DomainInfo implements FavIconRequestor, Comparable<DomainInfo> {
     }
 
     /**
-     * returns a high quality icon for this domain. most domains do not support this and will return null; the icon is NOT cached. use with care
+     * returns a high quality icon for this domain. most domains do not support this and will return null; the icon is NOT cached. use with
+     * care
      * 
      * @param i
      * @return
      */
-    public ImageIcon getIcon(int size) {
-        ImageIcon ret = null;
+    public Icon getIcon(int size) {
+        Icon ret = null;
         if (NewTheme.I().hasIcon("fav/big." + getTld())) {
             ret = NewTheme.I().getIcon("fav/big." + getTld(), -1);
         }
         if (ret == null && NewTheme.I().hasIcon("fav/" + getTld())) {
             ret = NewTheme.I().getIcon("fav/" + getTld(), -1);
         }
-        if (ret != null && ret.getIconHeight() >= size && ret.getIconWidth() >= size) { return new ImageIcon(IconIO.getScaledInstance((BufferedImage) ret.getImage(), size, size)); }
+        if (ret != null && ret.getIconHeight() >= size && ret.getIconWidth() >= size) { return IconIO.getScaledInstance(ret, size, size); }
         if (!hosterIconRequested) getFavIcon();
         ret = FavIcons.getFavIcon(getTld(), null);
-        if (ret.getIconHeight() >= size && ret.getIconWidth() >= size) { return new ImageIcon(IconIO.getScaledInstance((BufferedImage) ret.getImage(), size, size)); }
+        if (ret.getIconHeight() >= size && ret.getIconWidth() >= size) { return IconIO.getScaledInstance(ret, size, size); }
         return null;
     }
 

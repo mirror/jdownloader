@@ -6,10 +6,8 @@ import java.awt.Component;
 import java.awt.Composite;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
-import java.awt.image.BufferedImage;
 
 import javax.swing.Icon;
-import javax.swing.ImageIcon;
 
 import jd.controlling.faviconcontroller.FavIconRequestor;
 import jd.controlling.faviconcontroller.FavIcons;
@@ -19,22 +17,22 @@ import org.jdownloader.DomainInfo;
 
 public class FavitIcon implements Icon, FavIconRequestor {
 
-    private int             width;
-    private int             height;
-    private final int       size  = 10;
-    private final ImageIcon icon;
-    private ImageIcon       badge = null;
+    private int        width;
+    private int        height;
+    private final int  size  = 10;
+    private final Icon icon;
+    private Icon       badge = null;
 
-    public FavitIcon(ImageIcon icon, DomainInfo domainInfo) {
+    public FavitIcon(Icon icon, DomainInfo domainInfo) {
         width = icon.getIconWidth();
         height = icon.getIconHeight();
-        this.badge = new ImageIcon(IconIO.getScaledInstance((BufferedImage) FavIcons.getFavIcon(domainInfo.getTld(), this).getImage(), size, size));
+        this.badge = IconIO.getScaledInstance(FavIcons.getFavIcon(domainInfo.getTld(), this), size, size);
         this.icon = icon;
     }
 
     @Override
     public void paintIcon(Component c, Graphics g, int x, int y) {
-        ImageIcon back = icon;
+        Icon back = icon;
 
         // badge = new ImageIcon(ImageProvider.getScaledInstance((BufferedImage) icon.getImage(), size, size,
         // RenderingHints.VALUE_INTERPOLATION_BILINEAR, true));
@@ -67,8 +65,8 @@ public class FavitIcon implements Icon, FavIconRequestor {
     }
 
     @Override
-    public ImageIcon setFavIcon(ImageIcon icon) {
-        if (icon != null) badge = new ImageIcon(IconIO.getScaledInstance((BufferedImage) icon.getImage(), size, size));
+    public Icon setFavIcon(Icon icon) {
+        if (icon != null) badge = IconIO.getScaledInstance(icon, size, size);
         return badge;
     }
 }

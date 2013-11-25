@@ -2,6 +2,7 @@ package org.jdownloader.gui.views.linkgrabber.quickfilter;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
+import javax.swing.Icon;
 import javax.swing.ImageIcon;
 
 import jd.config.Property;
@@ -13,7 +14,7 @@ import org.jdownloader.images.NewTheme;
 
 public abstract class Filter implements FavIconRequestor {
 
-    protected ImageIcon                     icon            = null;
+    protected Icon                          icon            = null;
     protected AtomicInteger                 counter         = new AtomicInteger(0);
     protected boolean                       enabled         = false;
     protected static final SubConfiguration filterSubConfig = SubConfiguration.getConfig("quickfilters");
@@ -34,11 +35,11 @@ public abstract class Filter implements FavIconRequestor {
         counter.incrementAndGet();
     }
 
-    public ImageIcon getIcon() {
+    public Icon getIcon() {
         return icon;
     }
 
-    public void setIcon(ImageIcon icon) {
+    public void setIcon(Icon icon) {
         if (icon != null) this.icon = NewTheme.I().getScaledInstance(icon, 16);
     }
 
@@ -74,7 +75,7 @@ public abstract class Filter implements FavIconRequestor {
 
     protected final String name;
 
-    public ImageIcon setFavIcon(ImageIcon icon) {
+    public Icon setFavIcon(Icon icon) {
         setIcon(icon);
         return icon;
     }

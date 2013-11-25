@@ -4,6 +4,7 @@ import java.awt.Point;
 import java.awt.event.MouseEvent;
 import java.util.LinkedList;
 
+import javax.swing.Icon;
 import javax.swing.ImageIcon;
 import javax.swing.JComponent;
 import javax.swing.JPopupMenu;
@@ -194,7 +195,7 @@ public class HosterColumn extends ExtColumn<AbstractNode> {
                     labels[i].setVisible(true);
                     break;
                 }
-                ImageIcon icon = link.getFavIcon();
+                Icon icon = link.getFavIcon();
                 if (icon != null) {
                     labels[i].setVisible(true);
                     labels[i].setIcon(icon);

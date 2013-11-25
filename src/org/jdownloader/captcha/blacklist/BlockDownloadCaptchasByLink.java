@@ -15,7 +15,7 @@ public class BlockDownloadCaptchasByLink implements SessionBlackListEntry<Object
 
     @Override
     public boolean canCleanUp() {
-        return false;
+        return CaptchaBlackList.getInstance().isWhitelisted(downloadLink);
     }
 
     @Override

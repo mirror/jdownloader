@@ -2,7 +2,10 @@ package jd.plugins;
 
 import java.awt.Color;
 
+import javax.swing.Icon;
+
 import org.jdownloader.gui.IconKey;
+import org.jdownloader.gui.views.downloads.columns.ETAColumn;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.translate._JDT;
 
@@ -13,7 +16,18 @@ public final class CaptchaStepProgress extends PluginProgress {
     }
 
     @Override
+    public Icon getIcon(Object requestor) {
+        if (requestor != null) {
+            if (requestor instanceof ETAColumn) { return null; }
+        }
+        return super.getIcon(requestor);
+    }
+
+    @Override
     public String getMessage(Object requestor) {
+        if (requestor != null) {
+            if (requestor instanceof ETAColumn) { return null; }
+        }
         return _JDT._.gui_downloadview_statustext_jac();
     }
 }

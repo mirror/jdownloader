@@ -96,7 +96,7 @@ public class Helper {
         ConditionalSkipReason conditionalSkipReason = link.getConditionalSkipReason();
         if (conditionalSkipReason != null && !conditionalSkipReason.isConditionReached()) { return conditionalSkipReason.getMessage(null, null); }
         SkipReason skipReason = link.getSkipReason();
-        if (skipReason != null) { return skipReason.getExplanation(null, link); }
+        if (skipReason != null) { return skipReason.getExplanation(null); }
         FinalLinkState finalLinkState = link.getFinalLinkState();
         if (finalLinkState != null) {
             if (FinalLinkState.CheckFailed(finalLinkState)) { return finalLinkState.getExplanation(null, link); }

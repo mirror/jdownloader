@@ -29,6 +29,7 @@ import org.appwork.uio.UIOManager;
 import org.appwork.utils.ImageProvider.ImageProvider;
 import org.jdownloader.DomainInfo;
 import org.jdownloader.extensions.extraction.ExtractionStatus;
+import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.plugins.ConditionalSkipReason;
@@ -90,6 +91,8 @@ public class TaskColumn extends ExtTextColumn<AbstractNode> {
 
     private ImageIcon         startingIcon;
 
+    private ImageIcon         skippedIcon;
+
     @Override
     public int getDefaultWidth() {
         return 180;
@@ -112,6 +115,7 @@ public class TaskColumn extends ExtTextColumn<AbstractNode> {
         this.falseIcon = NewTheme.I().getIcon("false", 16);
         this.infoIcon = NewTheme.I().getIcon("info", 16);
         this.iconWait = NewTheme.I().getIcon("wait", 16);
+        this.skippedIcon = NewTheme.I().getIcon(IconKey.ICON_SKIPPED, 16);
         this.extracting = NewTheme.I().getIcon(org.jdownloader.gui.IconKey.ICON_COMPRESS, 16);
         startingIcon = NewTheme.I().getIcon("run", 16);
         trueIconExtracted = new ImageIcon(ImageProvider.merge(trueIcon.getImage(), NewTheme.I().getImage(org.jdownloader.gui.IconKey.ICON_COMPRESS, 16), 0, 0, trueIcon.getIconWidth() + 4, (trueIcon.getIconHeight() - 16) / 2 + 2));
@@ -223,7 +227,7 @@ public class TaskColumn extends ExtTextColumn<AbstractNode> {
             DownloadLink link = (DownloadLink) value;
             PluginProgress prog = link.getPluginProgress();
             if (prog != null) {
-                columnHelper.icon = prog.getIcon();
+                columnHelper.icon = prog.getIcon(this);
                 columnHelper.string = prog.getMessage(this);
                 columnHelper.tooltip = null;
                 return;
@@ -237,8 +241,9 @@ public class TaskColumn extends ExtTextColumn<AbstractNode> {
             }
             SkipReason skipReason = link.getSkipReason();
             if (skipReason != null) {
-                columnHelper.icon = infoIcon;
-                columnHelper.string = skipReason.getExplanation(this, link);
+
+                columnHelper.icon = skipReason.getIcon(this, 18);
+                columnHelper.string = skipReason.getExplanation(this);
                 columnHelper.tooltip = null;
                 return;
             }

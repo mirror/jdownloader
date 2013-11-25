@@ -1,5 +1,6 @@
 package org.jdownloader.extensions;
 
+import javax.swing.Icon;
 import javax.swing.ImageIcon;
 import javax.swing.JCheckBox;
 import javax.swing.JLabel;
@@ -85,7 +86,7 @@ public class Header extends JPanel {
         return enabled.isSelected();
     }
 
-    public void setIcon(ImageIcon _getIcon) {
+    public void setIcon(Icon _getIcon) {
         if (iconLabel.getIcon() == null && _getIcon != null) {
             setLayout(new MigLayout("ins 0", "[35!]5[]10[grow,fill]"));
         } else if (iconLabel.getIcon() != null && _getIcon == null) {

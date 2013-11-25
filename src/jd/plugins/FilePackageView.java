@@ -29,6 +29,7 @@ import org.jdownloader.images.NewTheme;
 import org.jdownloader.plugins.ConditionalSkipReason;
 import org.jdownloader.plugins.FinalLinkState;
 import org.jdownloader.plugins.MirrorLoading;
+import org.jdownloader.plugins.SkipReason;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings;
 
 public class FilePackageView extends ChildrenView<DownloadLink> {
@@ -327,7 +328,7 @@ public class FilePackageView extends ChildrenView<DownloadLink> {
             if (!(prog instanceof ExtractionProgress)) {
                 id = prog.getClass().getName() + link.getHost();
                 if (!tmp.pluginStates.containsKey(id)) {
-                    ps = PluginState.create(prog.getMessage(FilePackageView.this) + " (" + link.getDomainInfo().getTld() + ")", new FavitIcon(prog.getIcon(), link.getDomainInfo()));
+                    ps = PluginState.create(prog.getMessage(FilePackageView.this) + " (" + link.getDomainInfo().getTld() + ")", new FavitIcon(prog.getIcon(this), link.getDomainInfo()));
                     if (ps != null) {
                         tmp.pluginStates.put(id, ps);
                     }
@@ -344,7 +345,16 @@ public class FilePackageView extends ChildrenView<DownloadLink> {
                 }
             }
         }
-
+        SkipReason skipReason = link.getSkipReason();
+        if (skipReason != null) {
+            id = skipReason.name();
+            if (!tmp.pluginStates.containsKey(id)) {
+                ps = PluginState.create(skipReason.getExplanation(this), skipReason.getIcon(this, 18));
+                if (ps != null) {
+                    tmp.pluginStates.put(id, ps);
+                }
+            }
+        }
         FinalLinkState finalLinkState = link.getFinalLinkState();
 
         if (finalLinkState != null) {

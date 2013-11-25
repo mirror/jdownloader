@@ -6,7 +6,7 @@ import java.awt.event.MouseListener;
 import java.lang.reflect.InvocationTargetException;
 
 import javax.swing.AbstractButton;
-import javax.swing.ImageIcon;
+import javax.swing.Icon;
 import javax.swing.JComponent;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
@@ -100,7 +100,7 @@ public class JDMenuBar extends JMenuBar implements MouseListener {
                     if (action.isToggle()) {
                         action.requestUpdate(JDMenuBar.this);
                         ret = new MenuJToggleButton(action);
-                        ImageIcon icon;
+                        Icon icon;
 
                         ret.setIcon(icon = NewTheme.I().getCheckBoxImage(action.getIconKey(), false, 18));
                         ret.setRolloverIcon(icon);

@@ -123,7 +123,7 @@ public class AccountAPIImpl implements AccountAPI {
             out = RemoteAPI.getOutputStream(response, request, RemoteAPI.gzip(request), false);
 
             LazyHostPlugin plugin = HostPluginController.getInstance().get(premiumHoster);
-            if (plugin != null) ImageIO.write(IconIO.toBufferedImage(DomainInfo.getInstance(plugin.getHost()).getFavIcon().getImage()), "png", out);
+            if (plugin != null) ImageIO.write(IconIO.toBufferedImage(DomainInfo.getInstance(plugin.getHost()).getFavIcon()), "png", out);
 
         } catch (IOException e) {
             Log.exception(e);

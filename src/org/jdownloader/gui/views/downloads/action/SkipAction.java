@@ -14,7 +14,6 @@ import org.appwork.uio.UIOManager;
 import org.appwork.utils.event.queue.QueueAction;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.swing.dialog.Dialog;
-import org.jdownloader.captcha.blacklist.CaptchaBlackList;
 import org.jdownloader.controlling.contextmenu.CustomizableTableContextAppAction;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo;
@@ -113,9 +112,6 @@ public class SkipAction extends CustomizableTableContextAppAction<FilePackage, D
                         }
                     } else {
 
-                        if (a.getSkipReason() == SkipReason.CAPTCHA) {
-                            CaptchaBlackList.getInstance().addWhitelist(a);
-                        }
                         a.setSkipReason(null);
                     }
                 }

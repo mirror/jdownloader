@@ -128,5 +128,29 @@ public class CaptchaBlackList implements DownloadWatchdogListener {
         synchronized (whitelist) {
             whitelist.add(link);
         }
+
+        collectGarbage();
+    }
+
+    protected void collectGarbage() {
+        synchronized (entries) {
+            ArrayList<BlacklistEntry> cleanups = new ArrayList<BlacklistEntry>();
+            try {
+                for (BlacklistEntry e : entries) {
+                    if (e.canCleanUp()) {
+                        cleanups.add(e);
+                        continue;
+                    }
+                }
+            } finally {
+                entries.removeAll(cleanups);
+            }
+        }
+    }
+
+    public boolean isWhitelisted(DownloadLink downloadLink) {
+        synchronized (whitelist) {
+            return whitelist.contains(downloadLink);
+        }
     }
 }

@@ -35,7 +35,7 @@ import java.lang.reflect.InvocationTargetException;
 
 import javax.swing.AbstractButton;
 import javax.swing.BorderFactory;
-import javax.swing.ImageIcon;
+import javax.swing.Icon;
 import javax.swing.JButton;
 import javax.swing.JComponent;
 import javax.swing.JPanel;
@@ -389,7 +389,7 @@ public final class TrayIconPopup extends ExtJFrame implements MouseListener {
                 }
             });
 
-            ImageIcon icon;
+            Icon icon;
             bt.setIcon(icon = NewTheme.I().getCheckBoxImage(action.getIconKey(), false, ICON_SIZE));
             bt.setRolloverIcon(icon);
             bt.setSelectedIcon(icon = NewTheme.I().getCheckBoxImage(action.getIconKey(), true, ICON_SIZE));
