@@ -31,6 +31,11 @@ public class ExtractionJobTable extends BasicJDTable<ExtractionController> {
     }
 
     @Override
+    protected void initAlternateRowHighlighter() {
+
+    }
+
+    @Override
     protected void addSelectionHighlighter() {
 
     }

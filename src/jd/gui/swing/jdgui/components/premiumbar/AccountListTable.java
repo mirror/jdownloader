@@ -32,6 +32,11 @@ public class AccountListTable extends BasicJDTable<AccountEntry> {
         // this.setShowHorizontalLines(false);
     }
 
+    @Override
+    protected void initAlternateRowHighlighter() {
+
+    }
+
     protected ExtTableHeaderRenderer createDefaultHeaderRenderer(ExtColumn<AccountEntry> column) {
         ExtTableHeaderRenderer ret = new ExtTableHeaderRenderer(column, getTableHeader());
 
@@ -41,7 +46,7 @@ public class AccountListTable extends BasicJDTable<AccountEntry> {
 
     @Override
     protected void addSelectionHighlighter() {
-        super.addSelectionHighlighter();
+
     }
 
     public static void setHeaderRendererColors(ExtTableHeaderRenderer ret) {
