@@ -98,7 +98,9 @@ public class TbCm extends PluginForDecrypt {
         VIDEOWEBM("Video (Webm)", new String[] { ".webm" }),
         VIDEO3GP("Video (3GP)", new String[] { ".3gp" }),
         UNKNOWN("Unknown (unk)", new String[] { ".unk" }),
-        VIDEOIPHONE("Video (IPhone)", new String[] { ".mp4" });
+        VIDEOIPHONE("Video (IPhone)", new String[] { ".mp4" }),
+        VIDEO_DASH("Video (MP4)", new String[] { ".mp4" }),
+        AUDIO_DASH("Video (MP4)", new String[] { ".mp4" });
 
         private String   text;
         private String[] ext;
@@ -430,7 +432,7 @@ public class TbCm extends PluginForDecrypt {
         ArrayList<String[]> linkstodecrypt = new ArrayList<String[]>();
 
         boolean prem = false;
-        if (isJava7nJDStable()) {
+        if (!isJDownloader2()) {
             logger.info("Youtube is currently broken in the Stable version of JDownloader!");
             final ArrayList<Account> accounts = AccountController.getInstance().getAllAccounts("youtube.com");
             if (accounts != null && accounts.size() != 0) {
@@ -604,6 +606,7 @@ public class TbCm extends PluginForDecrypt {
                 boolean q720p = cfg.getBooleanProperty("ALLOW_720P_V2", true);
                 boolean q1080p = cfg.getBooleanProperty("ALLOW_1080P_V2", true);
                 boolean original = cfg.getBooleanProperty("ALLOW_ORIGINAL_V2", true);
+                boolean dashSupported = isJDownloader2();
                 if (!q144p && !q240p && !q360p && !q480p && !q520p && !q720p && !q1080p && !original && !threeD) {
                     q144p = true;
                     q240p = true;
@@ -655,23 +658,28 @@ public class TbCm extends PluginForDecrypt {
 
                 // **** MP4 *****
                 if (mp4) {
+                    if (q144p) {
+                        if (dashSupported) {
+                            this.put(160, new Object[] { DestinationFormat.VIDEO_DASH, "DASH_H.264", "AAC", "Stereo", "144p" });
+                        }
+                    }
                     if (q240p) {
-                        this.put(133, new Object[] { DestinationFormat.VIDEOMP4, "H.264", "AAC", "Stereo", "240p" });
+                        if (dashSupported) this.put(133, new Object[] { DestinationFormat.VIDEO_DASH, "DASH_H.264", "AAC", "Stereo", "240p" });
                     }
                     if (q360p) {
                         // 270p / 360p
-                        this.put(18, new Object[] { DestinationFormat.VIDEOMP4, "H.264", "AAC", "Stereo", "360p" });
-                        this.put(134, new Object[] { DestinationFormat.VIDEOMP4, "H.264", "AAC", "Stereo", "360p" });
+                        if (dashSupported) this.put(134, new Object[] { DestinationFormat.VIDEO_DASH, "H.264", "AAC", "Stereo", "360p" });
+                        this.put(18, new Object[] { DestinationFormat.VIDEOMP4, "DASH_H.264", "AAC", "Stereo", "360p" });
                     }
                     if (q480p) {
-                        this.put(135, new Object[] { DestinationFormat.VIDEOMP4, "H.264", "AAC", "Stereo", "480p" });
+                        if (dashSupported) this.put(135, new Object[] { DestinationFormat.VIDEO_DASH, "DASH_H.264", "AAC", "Stereo", "480p" });
                     }
                     if (q720p) {
-                        this.put(136, new Object[] { DestinationFormat.VIDEOMP4, "H.264", "AAC", "Stereo", "720p" });
+                        if (dashSupported) this.put(136, new Object[] { DestinationFormat.VIDEO_DASH, "DASH_H.264", "AAC", "Stereo", "720p" });
                         this.put(22, new Object[] { DestinationFormat.VIDEOMP4, "H.264", "AAC", "Stereo", "720p" });
                     }
                     if (q1080p) {
-                        this.put(137, new Object[] { DestinationFormat.VIDEOMP4, "H.264", "AAC", "Stereo", "1080p" });
+                        if (dashSupported) this.put(137, new Object[] { DestinationFormat.VIDEO_DASH, "DASH_H.264", "AAC", "Stereo", "1080p" });
                         this.put(37, new Object[] { DestinationFormat.VIDEOMP4, "H.264", "AAC", "Stereo", "1080p" });
                     }
                     // maybe this varies?? wiki says 3072p but I've seen less. eg :: 38 2048x1536 9 0 115,
@@ -723,6 +731,20 @@ public class TbCm extends PluginForDecrypt {
                             this.put(84, new Object[] { DestinationFormat.VIDEOMP4, "H.264", "AAC", "Stereo", "720p" });
                         }
                     }
+                }
+
+                if (dashSupported) {
+                    // 48k mp4
+                    this.put(139, new Object[] { DestinationFormat.AUDIO_DASH, "AAC_48k", "AAC", "Stereo", "low(48k)" });
+                    // 128k mp4
+                    this.put(140, new Object[] { DestinationFormat.AUDIO_DASH, "AAC_128k", "AAC", "Stereo", "middle(128k)" });
+                    // 256k mp4
+                    this.put(141, new Object[] { DestinationFormat.AUDIO_DASH, "AAC_256k", "AAC", "Stereo", "high(256k)" });
+                    // 128k webm
+                    // this.put(171, new Object[] { DestinationFormat.AUDIO_DASH, "WEBM_128k", "WEBM", "Stereo", "middle(128k)" });
+                    // 256k webm
+                    // this.put(172, new Object[] { DestinationFormat.AUDIO_DASH, "WEBM_256k", "WEBM", "Stereo", "high(256k)" });
+
                 }
             }
         };
@@ -852,34 +874,73 @@ public class TbCm extends PluginForDecrypt {
                  * We match against users resolution and file encoding type. This allows us to use their upper and lower limits. It will return multiple results
                  * if they are in the same quality rating
                  */
+
                 if (best) {
+                    boolean hasDashAudio = LinksFound.containsKey(139) || LinksFound.containsKey(140) || LinksFound.containsKey(141) || LinksFound.containsKey(171) || LinksFound.containsKey(172);
+                    boolean needsDashAudio = false;
                     final HashMap<Integer, String[]> bestFound = new HashMap<Integer, String[]>();
                     if (LinksFound.get(38) != null && ytVideo.containsKey(38)) {
                         // 3072p mp4
                         if (LinksFound.containsKey(38) && ytVideo.containsKey(38)) bestFound.put(38, LinksFound.get(38));
                     } else if ((LinksFound.containsKey(37) && ytVideo.containsKey(37)) || (LinksFound.containsKey(137) && ytVideo.containsKey(137)) || (LinksFound.containsKey(46) && ytVideo.containsKey(46))) {
-                        // 1080p mp4
-                        if (LinksFound.containsKey(37) && ytVideo.containsKey(37)) bestFound.put(37, LinksFound.get(37));
-                        if (LinksFound.containsKey(137) && ytVideo.containsKey(137)) bestFound.put(137, LinksFound.get(137));
-                        // 1080p webm
-                        if (LinksFound.containsKey(46) && ytVideo.containsKey(46)) bestFound.put(46, LinksFound.get(46));
-                    } else if ((LinksFound.containsKey(22) && ytVideo.containsKey(22)) || (LinksFound.containsKey(45) && ytVideo.containsKey(45)) || (LinksFound.containsKey(84) && ytVideo.containsKey(84)) || (LinksFound.containsKey(102) && ytVideo.containsKey(102))) {
-                        // 720p mp4
-                        if (LinksFound.containsKey(22) && ytVideo.containsKey(22)) bestFound.put(22, LinksFound.get(22));
-                        // 720p webm
-                        if (LinksFound.containsKey(45) && ytVideo.containsKey(45)) bestFound.put(45, LinksFound.get(45));
-                        // 720p(3d) mp4
-                        if (LinksFound.containsKey(84) && ytVideo.containsKey(84)) bestFound.put(84, LinksFound.get(84));
-                        // 720p(3d) webm
-                        if (LinksFound.containsKey(102) && ytVideo.containsKey(102)) bestFound.put(102, LinksFound.get(102));
+                        if (LinksFound.containsKey(37) && ytVideo.containsKey(37)) {
+                            // 1080p mp4
+                            bestFound.put(37, LinksFound.get(37));
+                        }
+                        if (LinksFound.containsKey(137) && ytVideo.containsKey(137)) {
+                            // dash 1080p
+                            if (hasDashAudio) {
+                                needsDashAudio = true;
+                                bestFound.put(137, LinksFound.get(137));
+                            }
+                        }
+                        if (LinksFound.containsKey(46) && ytVideo.containsKey(46)) {
+                            // 1080p webm
+                            bestFound.put(46, LinksFound.get(46));
+                        }
+                    } else if ((LinksFound.containsKey(22) && ytVideo.containsKey(22)) || (LinksFound.containsKey(45) && ytVideo.containsKey(45)) || (LinksFound.containsKey(84) && ytVideo.containsKey(84)) || (LinksFound.containsKey(102) && ytVideo.containsKey(102) || LinksFound.containsKey(136) && ytVideo.containsKey(136))) {
+                        if (LinksFound.containsKey(22) && ytVideo.containsKey(22)) {
+                            // 720p mp4
+                            bestFound.put(22, LinksFound.get(22));
+                        }
+                        if (LinksFound.containsKey(45) && ytVideo.containsKey(45)) {
+                            // 720p webm
+                            bestFound.put(45, LinksFound.get(45));
+                        }
+                        if (LinksFound.containsKey(84) && ytVideo.containsKey(84)) {
+                            // 720p(3d) mp4
+                            bestFound.put(84, LinksFound.get(84));
+                        }
+                        if (LinksFound.containsKey(102) && ytVideo.containsKey(102)) {
+                            // 720p(3d) webm
+                            bestFound.put(102, LinksFound.get(102));
+                        }
+                        if (LinksFound.containsKey(136) && ytVideo.containsKey(136)) {
+                            // dash 720p
+                            if (hasDashAudio) {
+                                needsDashAudio = true;
+                                bestFound.put(136, LinksFound.get(136));
+                            }
+                        }
                     } else if (LinksFound.containsKey(85) && ytVideo.containsKey(85)) {
                         // 520p(3d) mp4
                         if (LinksFound.containsKey(85) && ytVideo.containsKey(85)) bestFound.put(85, LinksFound.get(85));
-                    } else if ((LinksFound.containsKey(35) && ytVideo.containsKey(35)) || (LinksFound.containsKey(44) && ytVideo.containsKey(44))) {
-                        // 480p flv
-                        if (LinksFound.containsKey(35) && ytVideo.containsKey(35)) bestFound.put(35, LinksFound.get(35));
-                        // 480p webm
-                        if (LinksFound.containsKey(44) && ytVideo.containsKey(44)) bestFound.put(44, LinksFound.get(44));
+                    } else if ((LinksFound.containsKey(35) && ytVideo.containsKey(35)) || (LinksFound.containsKey(44) && ytVideo.containsKey(44) || LinksFound.containsKey(135) && ytVideo.containsKey(135))) {
+                        if (LinksFound.containsKey(35) && ytVideo.containsKey(35)) {
+                            // 480p flv
+                            bestFound.put(35, LinksFound.get(35));
+                        }
+                        if (LinksFound.containsKey(44) && ytVideo.containsKey(44)) {
+                            // 480p webm
+                            bestFound.put(44, LinksFound.get(44));
+                        }
+                        if (LinksFound.containsKey(135) && ytVideo.containsKey(135)) {
+                            // dash 480p
+                            if (hasDashAudio) {
+                                needsDashAudio = true;
+                                bestFound.put(135, LinksFound.get(135));
+                            }
+                        }
                     } else if ((LinksFound.containsKey(18) && ytVideo.containsKey(18)) || (LinksFound.containsKey(34) && ytVideo.containsKey(34)) || (LinksFound.containsKey(43) && ytVideo.containsKey(43)) || (LinksFound.containsKey(82) && ytVideo.containsKey(82) || (LinksFound.containsKey(100) && ytVideo.containsKey(100)) || (LinksFound.containsKey(101) && ytVideo.containsKey(101)))) {
                         // 360p mp4
                         if (LinksFound.containsKey(18) && ytVideo.containsKey(18)) bestFound.put(18, LinksFound.get(18));
@@ -916,6 +977,13 @@ public class TbCm extends PluginForDecrypt {
                         logger.warning("You do not have Resolution or Format selected within range! : " + currentVideoUrl);
                         break;
                     } else {
+                        if (needsDashAudio) {
+                            if (LinksFound.containsKey(139) && ytVideo.containsKey(139)) bestFound.put(139, LinksFound.get(139));
+                            if (LinksFound.containsKey(140) && ytVideo.containsKey(140)) bestFound.put(140, LinksFound.get(140));
+                            if (LinksFound.containsKey(141) && ytVideo.containsKey(141)) bestFound.put(141, LinksFound.get(141));
+                            if (LinksFound.containsKey(171) && ytVideo.containsKey(171)) bestFound.put(171, LinksFound.get(171));
+                            if (LinksFound.containsKey(172) && ytVideo.containsKey(172)) bestFound.put(172, LinksFound.get(172));
+                        }
                         LinksFound = bestFound;
                     }
                 }
@@ -974,10 +1042,29 @@ public class TbCm extends PluginForDecrypt {
                         }
                     }
                 }
-
+                Info bestDashAudio = null;
+                ArrayList<Info> dashAudio = possibleconverts.get(DestinationFormat.AUDIO_DASH);
+                if (dashAudio != null) {
+                    for (Info audio : dashAudio) {
+                        if (audio.fmt > 141) {
+                            /* ignore webm audio at the moment */
+                            continue;
+                        }
+                        if (bestDashAudio == null) {
+                            bestDashAudio = audio;
+                        } else if (audio.fmt > bestDashAudio.fmt) {
+                            bestDashAudio = audio;
+                        }
+                    }
+                }
                 for (final Entry<DestinationFormat, ArrayList<Info>> next : this.possibleconverts.entrySet()) {
                     final DestinationFormat convertTo = next.getKey();
-
+                    if (DestinationFormat.AUDIO_DASH.equals(convertTo)) {
+                        continue;
+                    }
+                    if (DestinationFormat.VIDEO_DASH.equals(convertTo) && bestDashAudio == null) {
+                        continue;
+                    }
                     // create a package, for each quality.
                     FilePackage filePackage = filepackages.get(convertTo.getText());
                     if (filePackage == null) {
@@ -1017,25 +1104,39 @@ public class TbCm extends PluginForDecrypt {
                         currentFilename = currentFilename.replace("*quality*", desc);
                         currentFilename = currentFilename.replace("*ext*", convertTo.getExtFirst());
                         currentFilename = currentFilename.replace("*videoname*", YT_FILENAME);
-
-                        thislink.setFinalFileName(currentFilename);
-                        thislink.setProperty("size", info.size);
-                        if (info.size > 0) thislink.setProperty("VERIFIEDFILESIZE", info.size);
-                        if (convertTo != DestinationFormat.AUDIOMP3) {
+                        if (DestinationFormat.VIDEO_DASH.equals(convertTo)) {
+                            /* special DASH handling */
+                            thislink.setFinalFileName(currentFilename);
                             thislink.setProperty("name", currentFilename);
+                            thislink.setProperty("DASH", true);
+                            long completeSize = info.size + bestDashAudio.size;
+                            thislink.setProperty("size", completeSize);
+                            thislink.setProperty("DASH_AUDIO", bestDashAudio.fmt);
+                            thislink.setProperty("DASH_AUDIO_SIZE", bestDashAudio.size);
+                            thislink.setProperty("DASH_VIDEO", info.fmt);
+                            thislink.setProperty("DASH_VIDEO_SIZE", info.size);
                         } else {
-                            // because demuxer will fail when mp3 file already exists
-                            String audioName = formattedFilename;
-                            audioName = audioName.replace("*quality*", desc);
-                            audioName = audioName.replace("*ext*", ".tmp");
-                            audioName = audioName.replace("*videoname*", YT_FILENAME);
-                            thislink.setProperty("name", audioName);
+                            /* normal handling */
+                            thislink.setFinalFileName(currentFilename);
+                            if (convertTo != DestinationFormat.AUDIOMP3) {
+                                thislink.setProperty("name", currentFilename);
+                            } else {
+                                // because demuxer will fail when mp3 file already exists
+                                String audioName = formattedFilename;
+                                audioName = audioName.replace("*quality*", desc);
+                                audioName = audioName.replace("*ext*", ".tmp");
+                                audioName = audioName.replace("*videoname*", YT_FILENAME);
+                                thislink.setProperty("name", audioName);
+                            }
+                            thislink.setProperty("size", info.size);
+                            if (info.size > 0) thislink.setProperty("VERIFIEDFILESIZE", info.size);
                         }
                         /** FILENAME PART2 END */
                         thislink.setProperty("convertto", convertTo.name());
                         thislink.setProperty("videolink", currentVideoUrl);
                         thislink.setProperty("valid", true);
                         thislink.setProperty("fmtNew", info.fmt);
+                        thislink.setProperty("ytID", ytID);
                         thislink.setProperty("LINKDUPEID", "ytID" + ytID + "." + info.fmt);
                         decryptedLinks.add(thislink);
                     }
@@ -1175,7 +1276,31 @@ public class TbCm extends PluginForDecrypt {
                     if (sig == null) sig = decryptSignature(new Regex(hit, "s=(.*?)(\\&|$)").getMatch(0));
                     String hitFmt = new Regex(hit, "itag=(\\d+)").getMatch(0);
                     String hitQ = new Regex(hit, "quality=(.*?)(\\&|$)").getMatch(0);
-                    if (hitQ == null && allowVideoOnly) hitQ = "unknown";
+                    if (hitQ == null && allowVideoOnly) {
+                        if (hitFmt != null) {
+                            switch (Integer.parseInt(hitFmt)) {
+                            case 160:
+                                hitQ = "144p";
+                                break;
+                            case 137:
+                                hitQ = "1080p";
+                                break;
+                            case 136:
+                                hitQ = "720p";
+                                break;
+                            case 135:
+                                hitQ = "480p";
+                                break;
+                            case 134:
+                                hitQ = "360p";
+                                break;
+                            case 133:
+                                hitQ = "240p";
+                                break;
+                            }
+                        }
+                        if (hitQ == null) hitQ = "unknown";
+                    }
                     if (hitUrl != null && hitFmt != null && hitQ != null) {
                         hitUrl = unescape(hitUrl.replaceAll("\\\\/", "/"));
                         if (hitUrl.startsWith("http%253A")) {
@@ -1234,7 +1359,7 @@ public class TbCm extends PluginForDecrypt {
                 HashMap<Integer, String[]> ret = parseLinks(html5_fmt_map, false);
                 if (ret.size() == 0) return links;
                 links.putAll(ret);
-                if (false) {
+                if (isJDownloader2()) {
                     /* not playable by vlc */
                     /* check for adaptive fmts */
                     String adaptive = br.getRegex("\"adaptive_fmts\": \"(.*?)\"").getMatch(0);
@@ -1663,11 +1788,8 @@ public class TbCm extends PluginForDecrypt {
         }
     }
 
-    private boolean isJava7nJDStable() {
-        if (System.getProperty("jd.revision.jdownloaderrevision") == null && System.getProperty("java.version").matches("1\\.[7-9].+"))
-            return true;
-        else
-            return false;
+    private boolean isJDownloader2() {
+        return System.getProperty("jd.revision.jdownloaderrevision") != null;
     }
 
     /* NO OVERRIDE!! */

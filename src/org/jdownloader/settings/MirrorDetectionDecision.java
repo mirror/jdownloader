@@ -1,8 +1,7 @@
 package org.jdownloader.settings;
 
 public enum MirrorDetectionDecision {
-    FILENAME,
+    AUTO,
     FILENAME_FILESIZE,
-    FILEHASH,
-    FILEHASH_FILESIZE;
+    FILENAME;
 }

@@ -64,8 +64,6 @@ public interface Downloadable {
 
     void addDownloadTime(long ms);
 
-    void removePluginProgress();
-
     void setLinkStatusText(String system_download_doCRC2_success);
 
     long getDownloadTotalBytes();

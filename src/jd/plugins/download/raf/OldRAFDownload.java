@@ -507,7 +507,7 @@ public class OldRAFDownload extends DownloadInterface {
                         downloadable.addDownloadTime(System.currentTimeMillis() - getStartTimeStamp());
                     } catch (final Throwable e) {
                     }
-                    downloadable.removePluginProgress();
+                    downloadable.setPluginProgress(null);
                 }
                 HashResult result = onChunksReady();
                 if (result != null) {

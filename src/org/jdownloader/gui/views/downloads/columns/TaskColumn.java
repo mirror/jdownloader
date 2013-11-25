@@ -285,7 +285,6 @@ public class TaskColumn extends ExtTextColumn<AbstractNode> {
                 return;
             }
             if (link.getDownloadLinkController() != null) {
-
                 columnHelper.icon = startingIcon;
                 columnHelper.string = startingString;
                 columnHelper.tooltip = null;

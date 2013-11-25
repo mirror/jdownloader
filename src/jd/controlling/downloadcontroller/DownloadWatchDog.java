@@ -885,37 +885,43 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
 
     private boolean isMirrorCandidate(DownloadLink linkCandidate, String cachedLinkCandidateName, DownloadLink mirrorCandidate) {
         if (cachedLinkCandidateName == null) cachedLinkCandidateName = linkCandidate.getName();
+        Boolean sameSizeResult = null;
         switch (config.getMirrorDetectionDecision()) {
+        case AUTO:
+            Boolean sameHashResult = hasSameHash(linkCandidate, mirrorCandidate);
+            if (sameHashResult != null) return sameHashResult;
+            sameSizeResult = hasSameSize(linkCandidate, mirrorCandidate);
+            if (sameSizeResult != null && Boolean.FALSE.equals(sameSizeResult)) return false;
+            return cachedLinkCandidateName.equals(mirrorCandidate.getName());
         case FILENAME:
             return cachedLinkCandidateName.equals(mirrorCandidate.getName());
         case FILENAME_FILESIZE:
-            return isSameFileSize(linkCandidate, mirrorCandidate) && cachedLinkCandidateName.equals(mirrorCandidate.getName());
-        case FILEHASH:
-            return hasSameHash(linkCandidate, mirrorCandidate);
-        case FILEHASH_FILESIZE:
-            return isSameFileSize(linkCandidate, mirrorCandidate) && hasSameHash(linkCandidate, mirrorCandidate);
+            sameSizeResult = hasSameSize(linkCandidate, mirrorCandidate);
+            return cachedLinkCandidateName.equals(mirrorCandidate.getName()) && sameSizeResult != null && Boolean.TRUE.equals(sameSizeResult);
         }
         return false;
     }
 
-    private boolean isSameFileSize(DownloadLink linkCandidate, DownloadLink mirrorCandidate) {
+    private Boolean hasSameSize(DownloadLink linkCandidate, DownloadLink mirrorCandidate) {
         int fileSizeEquality = config.getMirrorDetectionFileSizeEquality();
+        long sizeA = linkCandidate.getVerifiedFileSize();
+        long sizeB = linkCandidate.getVerifiedFileSize();
         if (fileSizeEquality == 100) {
-            long linkSize = linkCandidate.getVerifiedFileSize();
-            long mirrorSize = mirrorCandidate.getVerifiedFileSize();
-            return linkSize >= 0 && linkSize == mirrorSize;
-        } else {
-            /* TODO: work on non verifiedFileSizes and less equality */
+            /* 100 percent sure, only use verifiedFileSizes */
+            if (sizeA >= 0 && sizeB >= 0) return sizeA == sizeB;
             return false;
         }
+        return null;
     }
 
-    private boolean hasSameHash(DownloadLink linkCandidate, DownloadLink mirrorCandidate) {
-        String hash = linkCandidate.getMD5Hash();
-        if (hash != null && StringUtils.equals(hash, mirrorCandidate.getMD5Hash())) return true;
-        hash = linkCandidate.getSha1Hash();
-        if (hash != null && StringUtils.equals(hash, mirrorCandidate.getSha1Hash())) return true;
-        return false;
+    private Boolean hasSameHash(DownloadLink linkCandidate, DownloadLink mirrorCandidate) {
+        String hashA = linkCandidate.getMD5Hash();
+        String hashB = mirrorCandidate.getMD5Hash();
+        if (hashA != null && hashB != null) { return StringUtils.equals(hashA, hashB); }
+        hashA = linkCandidate.getSha1Hash();
+        hashB = mirrorCandidate.getSha1Hash();
+        if (hashA != null && hashB != null) { return StringUtils.equals(hashA, hashB); }
+        return null;
     }
 
     private List<DownloadLink> findDownloadLinkMirrors(final DownloadLink link) {
@@ -1642,30 +1648,17 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
         if (DeleteOption.NO_DELETE == deleteTo) return;
         ArrayList<File> deleteFiles = new ArrayList<File>();
         try {
-            File deletePartFile = new File(link.getFileOutput() + ".part");
-            if (deletePartFile.exists() && deletePartFile.isFile()) {
-                try {
-                    getSession().getFileAccessManager().lock(deletePartFile, this);
-                    deleteFiles.add(deletePartFile);
-                } catch (FileIsLockedException e) {
-                    logger.log(e);
-                }
-            }
-            String finalFilePaths[] = new String[] { link.getFileOutput(), link.getFileOutput(false, true) };
-            for (String finalFilePath : finalFilePaths) {
-                if (StringUtils.isNotEmpty(finalFilePath)) {
-                    File deleteFinalFile = new File(finalFilePath);
-                    if (deleteFinalFile.exists() && deleteFinalFile.isFile()) {
-                        try {
-                            getSession().getFileAccessManager().lock(deleteFinalFile, this);
-                            deleteFiles.add(deleteFinalFile);
-                        } catch (FileIsLockedException e) {
-                            logger.log(e);
-                        }
+            for (File deleteFile : link.getDefaultPlugin().deleteDownloadLink(link)) {
+                if (deleteFile.exists() && deleteFile.isFile()) {
+                    try {
+                        getSession().getFileAccessManager().lock(deleteFile, this);
+                        deleteFiles.add(deleteFile);
+                    } catch (FileIsLockedException e) {
+                        logger.log(e);
                     }
-                    link.setFinalFileOutput(null);
                 }
             }
+            link.setFinalFileOutput(null);
             for (File deleteFile : deleteFiles) {
                 switch (deleteTo) {
                 case NULL:
@@ -1686,7 +1679,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                 }
             }
             /* try to delete folder (if its empty and NOT the default downloadfolder */
-            File dlFolder = deletePartFile.getParentFile();
+            File dlFolder = new File(link.getDownloadDirectory());
             if (dlFolder != null && dlFolder.exists() && dlFolder.isDirectory() && dlFolder.listFiles() != null && dlFolder.listFiles().length == 0) {
                 if (!new File(org.appwork.storage.config.JsonConfig.create(GeneralSettings.class).getDefaultDownloadFolder()).equals(dlFolder)) {
                     if (!dlFolder.delete()) {

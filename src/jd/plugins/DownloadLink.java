@@ -235,7 +235,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
     }
 
     public long getDownloadTime() {
-        return getLongProperty(PROPERTY_DOWNLOADTIME, 0);
+        return getLongProperty(PROPERTY_DOWNLOADTIME, 0l);
     }
 
     public long getCreated() {
@@ -423,14 +423,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
             /* we have a fixed final location */
             return ret;
         }
-        FilePackage fp = getFilePackage();
-        String downloadDirectory = getFilePackage().getDownloadDirectory();
-        if (FilePackage.isDefaultFilePackage(fp)) {
-            /* downloadLink has no longer a FilePackage parent, so fetch latest downloadDirectory from property(set by setFilePackage) */
-            downloadDirectory = getStringProperty(PROPERTY_LASTFPDEST, null);
-        }
-        if (StringUtils.isEmpty(downloadDirectory)) throw new WTFException("what the fuck just happened here? defaultFilePackage: " + FilePackage.isDefaultFilePackage(fp));
-
+        String downloadDirectory = getDownloadDirectory();
         String fileName = getCustomFileOutputFilename();
         if (!StringUtils.isEmpty(fileName) && !ignoreCustom) {
             /* we have a customized fileOutputFilename */
@@ -441,6 +434,17 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
         String customAppend = getCustomFileOutputFilenameAppend();
         if (!StringUtils.isEmpty(customAppend) && !ignoreCustom) fileName = fileName + customAppend;
         return new File(downloadDirectory, fileName).getAbsolutePath();
+    }
+
+    public String getDownloadDirectory() {
+        FilePackage fp = getFilePackage();
+        String downloadDirectory = getFilePackage().getDownloadDirectory();
+        if (FilePackage.isDefaultFilePackage(fp)) {
+            /* downloadLink has no longer a FilePackage parent, so fetch latest downloadDirectory from property(set by setFilePackage) */
+            downloadDirectory = getStringProperty(PROPERTY_LASTFPDEST, null);
+        }
+        if (StringUtils.isEmpty(downloadDirectory)) throw new WTFException("what the fuck just happened here? defaultFilePackage: " + FilePackage.isDefaultFilePackage(fp));
+        return downloadDirectory;
     }
 
     /**

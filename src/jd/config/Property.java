@@ -114,7 +114,6 @@ public class Property implements Serializable {
      * 
      * @since JD2
      * */
-    @Deprecated
     public long getLongProperty(final String key, final long def) {
         try {
             Object r = getProperty(key, def);

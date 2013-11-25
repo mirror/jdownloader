@@ -47,7 +47,7 @@ import jd.utils.locale.JDL;
 public class Youtube extends PluginForHost {
 
     private static Object lock                    = new Object();
-    private boolean       prem                    = false;
+    protected boolean     prem                    = false;
     private final String  ISVIDEOANDPLAYLIST      = "ISVIDEOANDPLAYLIST";
 
     private final String  CUSTOM_DATE             = "CUSTOM_DATE";
@@ -231,7 +231,7 @@ public class Youtube extends PluginForHost {
             this.postprocess(downloadLink);
         } else {
             try {
-                final long lastProgress = downloadLink.getLongProperty("lastprogress", -1);
+                final long lastProgress = downloadLink.getLongProperty("lastprogress", -1l);
                 if (lastProgress > 0) {
                     logger.info("LastProgress is: " + lastProgress);
                 }
@@ -446,7 +446,7 @@ public class Youtube extends PluginForHost {
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
         // For streaming extension to tell her that these links can be streamed without account
         // System.out.println("Youtube: " + downloadLink);
-
+        if (downloadLink.getBooleanProperty("DASH", false)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (downloadLink.getBooleanProperty("offline", false)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
 
         if (downloadLink.getBooleanProperty("subtitle", false) || downloadLink.getBooleanProperty("thumbnail", false)) {
@@ -457,7 +457,9 @@ public class Youtube extends PluginForHost {
                 if (urlConnection.getResponseCode() == 404) return AvailableStatus.FALSE;
 
                 String size = urlConnection.getHeaderField("Content-Length");
-                downloadLink.setDownloadSize(Long.parseLong(size));
+                long contentSize = Long.parseLong(size);
+                downloadLink.setDownloadSize(contentSize);
+                downloadLink.setProperty("PROPERTY_VERIFIEDFILESIZE", contentSize);
                 return AvailableStatus.TRUE;
             } finally {
                 try {
@@ -470,12 +472,12 @@ public class Youtube extends PluginForHost {
         downloadLink.setProperty("STREAMING", true);
         for (int i = 0; i < 4; i++) {
             if (downloadLink.getBooleanProperty("valid", true)) {
-                downloadLink.setFinalFileName(downloadLink.getStringProperty("name", "video.tmp"));
-                downloadLink.setDownloadSize((Long) downloadLink.getProperty("size", 0l));
+                downloadLink.setFinalFileName(downloadLink.getStringProperty("name", null));
+                downloadLink.setDownloadSize((Long) downloadLink.getProperty("size", -1l));
                 return AvailableStatus.TRUE;
             } else {
-                downloadLink.setFinalFileName(downloadLink.getStringProperty("name", "video.tmp"));
-                downloadLink.setDownloadSize((Long) downloadLink.getProperty("size", 0l));
+                downloadLink.setFinalFileName(downloadLink.getStringProperty("name", null));
+                downloadLink.setDownloadSize((Long) downloadLink.getProperty("size", -1l));
                 final PluginForDecrypt plugin = JDUtilities.getPluginForDecrypt("youtube.com");
                 if (plugin == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "cannot decrypt videolink"); }
                 if (downloadLink.getStringProperty("fmtNew", null) == null) { throw new PluginException(LinkStatus.ERROR_FATAL, "You have to add link again"); }
@@ -507,8 +509,8 @@ public class Youtube extends PluginForHost {
 
     @Override
     public void resetDownloadlink(final DownloadLink downloadLink) {
-        downloadLink.setFinalFileName(downloadLink.getStringProperty("name", "video.tmp"));
-        downloadLink.setDownloadSize((Long) downloadLink.getProperty("size", 0l));
+        downloadLink.setFinalFileName(downloadLink.getStringProperty("name", null));
+        downloadLink.setDownloadSize((Long) downloadLink.getProperty("size", -1l));
         downloadLink.setProperty("valid", false);
     }
 

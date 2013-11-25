@@ -22,6 +22,7 @@ import java.io.IOException;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Random;
@@ -671,6 +672,14 @@ public abstract class PluginForHost extends Plugin {
     public abstract void reset();
 
     public abstract void resetDownloadlink(DownloadLink link);
+
+    public List<File> deleteDownloadLink(DownloadLink link) {
+        List<File> ret = new ArrayList<File>();
+        ret.add(new File(link.getFileOutput() + ".part"));
+        ret.add(new File(link.getFileOutput()));
+        ret.add(new File(link.getFileOutput(false, true)));
+        return ret;
+    }
 
     public int getTimegapBetweenConnections() {
         return 50;

@@ -18,7 +18,7 @@ public class DownloadPluginProgress extends PluginProgress {
     private final DownloadInterface downloadInterface;
 
     private final String            unknownFileSize = _JDT._.gui_download_filesize_unknown() + " \u221E";
-    private final long              startTimeStamp;
+    protected final long            startTimeStamp;
     private final String            normal;
 
     private Downloadable            downloadable;
