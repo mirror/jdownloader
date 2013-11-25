@@ -122,7 +122,8 @@ public class BeStreamsNet extends PluginForHost {
             directlinkproperty = "premlink";
         } else {
             // non account
-            chunks = 0;
+            // max 2
+            chunks = 1;
             resumes = true;
             acctype = "Non Account";
             directlinkproperty = "freelink";
@@ -391,6 +392,7 @@ public class BeStreamsNet extends PluginForHost {
                 download1 = cleanForm(download1);
                 // end of backward compatibility
                 download1.remove("method_premium");
+                waitTime(System.currentTimeMillis(), downloadLink);
                 sendForm(download1);
                 checkErrors(downloadLink, account, false);
                 getDllink();
@@ -465,7 +467,7 @@ public class BeStreamsNet extends PluginForHost {
             }
         }
         if (dl.getConnection().getContentType().contains("html")) {
-            if (dl.getConnection().getResponseCode() == 503 && dl.getConnection().getHeaderFields("server").contains("nginx")) {
+            if (dl.getConnection().getResponseCode() == 503) {
                 controlSimHost(account);
                 controlHost(account, downloadLink, false);
             } else {
@@ -549,7 +551,7 @@ public class BeStreamsNet extends PluginForHost {
     private void waitTime(final long timeBefore, final DownloadLink downloadLink) throws PluginException {
         /** Ticket Time */
         String ttt = cbr.getRegex("id=\"countdown_str\">[^<>\"]+<span id=\"[^<>\"]+\"( class=\"[^<>\"]+\")?>([\n ]+)?(\\d+)([\n ]+)?</span>").getMatch(2);
-        if (inValidate(ttt)) ttt = cbr.getRegex("id=\"countdown_str\"[^>]+>Wait[^>]+>(\\d+)\\s?+</span>").getMatch(0);
+        if (inValidate(ttt)) ttt = cbr.getRegex(">Wait <span id=\"[a-z0-9]+\">(\\d+)</span> seconds</span>").getMatch(0);
         if (!inValidate(ttt)) {
             // remove one second from past, to prevent returning too quickly.
             final long passedTime = ((System.currentTimeMillis() - timeBefore) / 1000) - 1;
@@ -1459,7 +1461,7 @@ public class BeStreamsNet extends PluginForHost {
      * @param controlSlot
      *            (+1|-1)
      * */
-   private void controlSlot(final int num, final Account account) {
+    private void controlSlot(final int num, final Account account) {
         synchronized (CTRLLOCK) {
             if (account == null) {
                 int was = maxFree.get();
@@ -1576,7 +1578,10 @@ public class BeStreamsNet extends PluginForHost {
             if (!action) {
                 // download finished (completed, failed, etc), check for value and remove a value
                 Integer usedSlots = getHashedHashedValue(account);
-                if (usedSlots == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                if (usedSlots == null) {
+                    // Cheap workaround for a bug
+                    throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Connection limit reached, waiting till new downloads can be started", 5 * 60 * 1000l);
+                }
                 setHashedHashKeyValue(account, -1);
                 if (usedSlots.equals(1)) {
                     logger.info("controlHost = " + user + " -> " + usedHost + " :: No longer used!");

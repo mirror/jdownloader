@@ -111,7 +111,7 @@ public class FileparadoxIn extends PluginForHost {
         if (account != null && account.getBooleanProperty("free")) {
             // free account
             chunks = 1;
-            resumes = true;
+            resumes = false;
             acctype = "Free Account";
             directlinkproperty = "freelink2";
         } else if (account != null && !account.getBooleanProperty("free")) {
