@@ -290,27 +290,27 @@ public class GenericDeleteFromDownloadlistAction extends CustomizableAppAction i
         return (DownloadsTable) DownloadsTableModel.getInstance().getTable();
     }
 
-    @Customizer(name = "Include All Links")
+    @Customizer(name = "Affected Links: All")
     public boolean isDeleteAll() {
         return deleteAll;
     }
 
-    @Customizer(name = "Include disabled Links")
+    @Customizer(name = "Affected Links: Disabled")
     public boolean isDeleteDisabled() {
         return deleteDisabled;
     }
 
-    @Customizer(name = "Include failed")
+    @Customizer(name = "Affected Links: Failed")
     public boolean isDeleteFailed() {
         return deleteFailed;
     }
 
-    @Customizer(name = "Include finished Links")
+    @Customizer(name = "Affected Links: Finished")
     public boolean isDeleteFinished() {
         return deleteFinished;
     }
 
-    @Customizer(name = "Include Offline Links")
+    @Customizer(name = "Affected Links: Offline")
     public boolean isDeleteOffline() {
         return deleteOffline;
     }

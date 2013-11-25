@@ -313,17 +313,17 @@ public class GenericDeleteFromLinkgrabberAction extends CustomizableAppAction im
         NONE;
     }
 
-    @Customizer(name = "Delete all")
+    @Customizer(name = "Affected Links: All")
     public boolean isDeleteAll() {
         return deleteAll;
     }
 
-    @Customizer(name = "Delete disabled")
+    @Customizer(name = "Affected Links: Disabled")
     public boolean isDeleteDisabled() {
         return deleteDisabled;
     }
 
-    @Customizer(name = "Delete Offline")
+    @Customizer(name = "Affected Links: Offline")
     public boolean isDeleteOffline() {
         return deleteOffline;
     }

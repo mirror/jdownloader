@@ -6,7 +6,6 @@ import java.util.List;
 
 import jd.controlling.linkcollector.LinkCollector;
 import jd.controlling.linkcrawler.CrawledLink;
-import jd.controlling.linkcrawler.CrawledPackage;
 import jd.gui.swing.jdgui.JDGui;
 import jd.gui.swing.jdgui.WarnLevel;
 
@@ -15,7 +14,7 @@ import org.appwork.utils.logging.Log;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogNoAnswerException;
-import org.jdownloader.controlling.contextmenu.CustomizableSelectionAppAction;
+import org.jdownloader.controlling.contextmenu.CustomizableAppAction;
 import org.jdownloader.extensions.extraction.Archive;
 import org.jdownloader.extensions.extraction.ArchiveFile;
 import org.jdownloader.extensions.extraction.DummyArchive;
@@ -24,8 +23,9 @@ import org.jdownloader.extensions.extraction.bindings.crawledlink.CrawledLinkArc
 import org.jdownloader.extensions.extraction.contextmenu.downloadlist.ArchiveValidator;
 import org.jdownloader.extensions.extraction.contextmenu.downloadlist.action.ExtractIconVariant;
 import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.gui.views.linkgrabber.LinkGrabberTable;
 
-public class RemoveIncompleteArchives extends CustomizableSelectionAppAction<CrawledPackage, CrawledLink> {
+public class RemoveIncompleteArchives extends CustomizableAppAction {
 
     /**
      * 
@@ -39,6 +39,11 @@ public class RemoveIncompleteArchives extends CustomizableSelectionAppAction<Cra
 
     }
 
+    @Override
+    protected void initContextDefaults() {
+        super.initContextDefaults();
+    }
+
     public void actionPerformed(ActionEvent e) {
 
         if (!isEnabled()) return;
@@ -46,7 +51,7 @@ public class RemoveIncompleteArchives extends CustomizableSelectionAppAction<Cra
             @Override
             public void run() {
                 try {
-                    for (Archive a : ArchiveValidator.validate(selection)) {
+                    for (Archive a : ArchiveValidator.validate(LinkGrabberTable.getInstance().getSelectionInfo(false, true))) {
                         final DummyArchive da = ExtractionExtension.getInstance().createDummyArchive(a);
                         if (!da.isComplete()) {
                             try {
