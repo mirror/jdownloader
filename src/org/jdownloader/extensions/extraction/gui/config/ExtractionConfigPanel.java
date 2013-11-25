@@ -27,7 +27,6 @@ import org.appwork.utils.logging.Log;
 import org.appwork.utils.swing.EDTRunner;
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.controlling.FileCreationManager;
-import org.jdownloader.controlling.FileCreationManager.DeleteOption;
 import org.jdownloader.extensions.ExtensionConfigPanel;
 import org.jdownloader.extensions.extraction.ArchiveFactory;
 import org.jdownloader.extensions.extraction.CPUPriority;
@@ -41,23 +40,23 @@ import org.jdownloader.settings.staticreferences.CFG_LINKGRABBER;
 import org.jdownloader.utils.JDFileUtils;
 
 public class ExtractionConfigPanel extends ExtensionConfigPanel<ExtractionExtension> {
-    private static final long            serialVersionUID = 1L;
-    private Pair<Checkbox>               toggleCustomizedPath;
-    private Pair<FolderChooser>          customPath;
-    private Pair<Checkbox>               toggleUseSubpath;
-    private Pair<Spinner>                subPathMinFiles;
+    private static final long                                serialVersionUID = 1L;
+    private Pair<Checkbox>                                   toggleCustomizedPath;
+    private Pair<FolderChooser>                              customPath;
+    private Pair<Checkbox>                                   toggleUseSubpath;
+    private Pair<Spinner>                                    subPathMinFiles;
 
-    private Pair<? extends TextInput>    subPath;
+    private Pair<? extends TextInput>                        subPath;
     private Pair<ComboBox<FileCreationManager.DeleteOption>> toggleDeleteArchives;
-    private Pair<Checkbox>               toggleOverwriteExisting;
-    private Pair<TextArea>               blacklist;
-    private Pair<Checkbox>               toggleUseOriginalFileDate;
-    private Pair<ComboBox<String>>       cpupriority;
-    private Pair<TextArea>               passwordlist;
-    private Pair<Checkbox>               toggleDeleteArchiveDownloadLinks;
-    private Pair<Checkbox>               toggleDefaultEnabled;
-    private Pair<Spinner>                subPathMinFolders;
-    private Pair<Spinner>                subPathMinFilesOrFolders;
+    private Pair<Checkbox>                                   toggleOverwriteExisting;
+    private Pair<TextArea>                                   blacklist;
+    private Pair<Checkbox>                                   toggleUseOriginalFileDate;
+    private Pair<ComboBox<String>>                           cpupriority;
+    private Pair<TextArea>                                   passwordlist;
+    private Pair<Checkbox>                                   toggleDeleteArchiveDownloadLinks;
+    private Pair<Checkbox>                                   toggleDefaultEnabled;
+    private Pair<Spinner>                                    subPathMinFolders;
+    private Pair<Spinner>                                    subPathMinFilesOrFolders;
 
     public ExtractionConfigPanel(ExtractionExtension plg) {
         super(plg);
@@ -341,7 +340,7 @@ public class ExtractionConfigPanel extends ExtensionConfigPanel<ExtractionExtens
             Log.exception(e);
         }
         {
-            String[] list = Regex.getLines(passwordlist.getComponent().getText());
+            String[] list = passwordlist.getComponent().getText().split("[\r\n]{1,2}");
             java.util.List<String> passwords = new ArrayList<String>(list.length);
             for (String ss : list) {
                 if (passwords.contains(ss)) continue;

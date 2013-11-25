@@ -194,8 +194,19 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> {
                             crashLog.write("Try Password: " + password);
                             if (checkPassword(password, extension.getSettings().isPasswordFindOptimizationEnabled())) {
                                 correctPW = password;
-                                crashLog.write("Found password: " + password);
+                                crashLog.write("Found password: \"" + password + "\"");
                                 break;
+                            } else {
+                                // try trimmed password
+                                String trimmed = password.trim();
+                                if (trimmed.length() != password.length()) {
+                                    password = trimmed;
+                                    if (checkPassword(password, extension.getSettings().isPasswordFindOptimizationEnabled())) {
+                                        correctPW = password;
+                                        crashLog.write("Found password: \"" + password + "\"");
+                                        break;
+                                    }
+                                }
                             }
                         }
 

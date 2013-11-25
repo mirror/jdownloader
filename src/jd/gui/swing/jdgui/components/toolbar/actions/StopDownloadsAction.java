@@ -39,8 +39,15 @@ public class StopDownloadsAction extends AbstractToolBarAction implements Downlo
     public void actionPerformed(ActionEvent e) {
         if (DownloadWatchDog.getInstance().getStateMachine().hasPassed(DownloadWatchDog.STOPPING_STATE)) return;
         int count = DownloadWatchDog.getInstance().getNonResumableRunningCount();
-        if (count > 0 && JDGui.bugme(WarnLevel.SEVERE)) {
-            if (!UIOManager.I().showConfirmDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI._.lit_are_you_sure(), _GUI._.StopDownloadsAction_run_msg_(SizeFormatter.formatBytes(DownloadWatchDog.getInstance().getNonResumableBytes()), count), NewTheme.I().getIcon("stop", 32), _GUI._.lit_yes(), _GUI._.lit_no())) { return; }
+        if (count > 0) {
+            long bytesToLoose = DownloadWatchDog.getInstance().getNonResumableBytes();
+            WarnLevel level = WarnLevel.LOW;
+            if (bytesToLoose > 0) {
+                level = WarnLevel.SEVERE;
+            }
+            if (JDGui.bugme(level)) {
+                if (!UIOManager.I().showConfirmDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN | UIOManager.LOGIC_DONT_SHOW_AGAIN_IGNORES_CANCEL, _GUI._.lit_are_you_sure(), _GUI._.StopDownloadsAction_run_msg_(SizeFormatter.formatBytes(bytesToLoose), count), NewTheme.I().getIcon("stop", 32), _GUI._.lit_yes(), _GUI._.lit_no())) { return; }
+            }
         }
         DownloadWatchDog.getInstance().stopDownloads();
     }
