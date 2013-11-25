@@ -121,17 +121,25 @@ public class RLCsh extends PluginForDecrypt {
                 link = new Regex(correctedBR, "linkDestUrl = '([^']+)").getMatch(0);
                 if (link == null) {
                     link = new Regex(correctedBR, "<iframe name=\\'redirectframe\\' id=\\'redirectframe\\'.*?src=\\'(.*?)\\'.*?></iframe>").getMatch(0);
-                    if (link == null) {
-                        link = br.getRedirectLocation();
-                        if (link == null && br.containsHTML("<title>URLCash\\.net \\- An URL forwarding service where you make money from")) {
-                            logger.info("Link offline: " + parameter);
-                            return decryptedLinks;
-                        } else {
-                            logger.warning("Decrypter broken for link:" + parameter);
-                            return null;
-                        }
-                    }
                 }
+            }
+        }
+
+        if (link == null) {
+            link = br.getRedirectLocation();
+            if (link == null && br.containsHTML("<title>URLCash\\.net \\- An URL forwarding service where you make money from")) {
+                logger.info("Link offline: " + parameter);
+                return decryptedLinks;
+            } else {
+                final String[] piclinks = br.getRegex("\\'(http://[a-z0-9]+\\.imgchili\\.com/[^<>\"]*?)\\'").getColumn(0);
+                if (piclinks != null && piclinks.length != 0) {
+                    for (final String piclink : piclinks) {
+                        decryptedLinks.add(createDownloadlink(Encoding.htmlDecode(piclink)));
+                    }
+                    return decryptedLinks;
+                }
+                logger.warning("Decrypter broken for link:" + parameter);
+                return null;
             }
         }
 

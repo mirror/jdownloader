@@ -27,6 +27,7 @@ import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.http.Browser;
+import jd.http.Browser.BrowserException;
 import jd.http.RandomUserAgent;
 import jd.nutils.JDHash;
 import jd.nutils.encoding.Encoding;
@@ -50,12 +51,13 @@ import org.appwork.utils.formatter.TimeFormatter;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "hitfile.net" }, urls = { "http://(www\\.)?hitfile\\.net/(?!download/)[A-Za-z0-9]+" }, flags = { 2 })
 public class HitFileNet extends PluginForHost {
 
-    private final String        UA            = RandomUserAgent.generate();
-    private static final String RECAPTCHATEXT = "(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)";
-    private static final String CAPTCHATEXT   = "hitfile\\.net/captcha/";
-    private static final String MAINPAGE      = "http://hitfile.net";
-    public static Object        LOCK          = new Object();
-    private static final String BLOCKED       = "Hitfile.net is blocking JDownloader: Please contact the hitfile.net support and complain!";
+    private final String         UA                  = RandomUserAgent.generate();
+    private static final String  RECAPTCHATEXT       = "(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)";
+    private static final String  CAPTCHATEXT         = "hitfile\\.net/captcha/";
+    private static final String  MAINPAGE            = "http://hitfile.net";
+    public static Object         LOCK                = new Object();
+    private static final String  BLOCKED             = "Hitfile.net is blocking JDownloader: Please contact the hitfile.net support and complain!";
+    private static final boolean ENABLE_CRYPTO_STUFF = false;
 
     public HitFileNet(final PluginWrapper wrapper) {
         super(wrapper);
@@ -189,9 +191,13 @@ public class HitFileNet extends PluginForHost {
         }
         String downloadUrl = null, waittime = null;
         final String fileID = new Regex(downloadLink.getDownloadURL(), "hitfile\\.net/(.+)").getMatch(0);
-        if (fileID == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
-        br.getPage("/turbolight?file=" + fileID);
-        br.setFollowRedirects(false);
+        if (fileID == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        try {
+            br.getPage("http://hitfile.net/turbolight?file=" + fileID);
+            br.setFollowRedirects(false);
+            this.sleep(3 * 1000l, downloadLink);
+        } catch (final Throwable e) {
+        }
         br.getPage("/download/free/" + fileID);
         if (br.getRedirectLocation() != null) {
             if (br.getRedirectLocation().equals(downloadLink.getDownloadURL().replace("www.", ""))) { throw new PluginException(LinkStatus.ERROR_FATAL, JDL.LF("plugins.hoster.hitfilenet.only4premium", "This file is only available for premium users!")); }
@@ -228,8 +234,11 @@ public class HitFileNet extends PluginForHost {
             if (!br.containsHTML(CAPTCHATEXT)) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
             logger.info("Handling normal captchas");
             final String captchaUrl = br.getRegex("<div><img alt=\"Captcha\" src=\"(http://hitfile\\.net/captcha/.*?)\"").getMatch(0);
-            final Form captchaForm = br.getForm(2);
-            if (captchaForm == null || captchaUrl == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+            Form captchaForm = br.getForm(2);
+            if (captchaForm == null) captchaForm = br.getForm(1);
+            if (captchaForm == null) captchaForm = br.getForm(0);
+            if (captchaForm == null || captchaUrl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            captchaForm.remove(null);
             for (int i = 1; i <= 2; i++) {
                 String captchaCode;
                 if (!getPluginConfig().getBooleanProperty("JAC", false) || i == 2) {
@@ -241,7 +250,14 @@ public class HitFileNet extends PluginForHost {
                     captchaCode = getCaptchaCode("hitfile.net", captchaUrl, downloadLink);
                 }
                 captchaForm.put("captcha_response", captchaCode);
-                br.submitForm(captchaForm);
+                try {
+                    br.submitForm(captchaForm);
+                } catch (final BrowserException e) {
+                    if (br.getRequest().getHttpConnection().getResponseCode() == 500) {
+                        // Server- or captcha error
+                        throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                    }
+                }
                 if (!br.containsHTML(CAPTCHATEXT)) {
                     try {
                         validateLastChallengeResponse();
@@ -255,7 +271,7 @@ public class HitFileNet extends PluginForHost {
                     }
                 }
             }
-            if (br.containsHTML(RECAPTCHATEXT) || br.containsHTML(CAPTCHATEXT)) { throw new PluginException(LinkStatus.ERROR_CAPTCHA); }
+            if (br.containsHTML(RECAPTCHATEXT) || br.containsHTML(CAPTCHATEXT)) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         }
 
         // Ticket Time
@@ -313,7 +329,8 @@ public class HitFileNet extends PluginForHost {
             }
         }
 
-        if (res != null && res.matches(hf(10))) {
+        if (res == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (res.matches(hf(10)) && this.ENABLE_CRYPTO_STUFF) {
             sleep(tt * 1001, downloadLink);
             for (int i = 0; i <= 4; i++) {
                 br.getPage(res);
@@ -331,15 +348,17 @@ public class HitFileNet extends PluginForHost {
                 logger.warning(br.toString());
                 throw new PluginException(LinkStatus.ERROR_FATAL, "FATAL waittime error");
             }
-            downloadUrl = br.getRegex("<br/><h1><a href=\\'(/.*?)\\'").getMatch(0);
+        } else {
+            final String correctRes = new Regex(res, "(/download/[A-Za-z0-9\\-_]+/[A-Za-z0-9]+)").getMatch(0);
+            if (correctRes != null) res = correctRes;
+            sleep(tt * 1001, downloadLink);
+            br.getPage(res);
+        }
+        downloadUrl = br.getRegex("<br/><h1><a href=\\'(/.*?)\\'").getMatch(0);
+        if (downloadUrl == null) {
+            downloadUrl = br.getRegex("\\'(/download/redirect/[^<>\"]*?)\\'").getMatch(0);
             if (downloadUrl == null) {
-                downloadUrl = br.getRegex("If the download does not start - <a href=\\'/(.*?)\\'>try again").getMatch(0);
-                if (downloadUrl == null) {
-                    downloadUrl = br.getRegex("\\'(/download/redirect/[a-z0-9]+/[A-Za-z0-9]+/.*?)\\'").getMatch(0);
-                    if (downloadUrl == null) {
-                        downloadUrl = rhino(escape(br.toString()) + "@" + rtUpdate, 999);
-                    }
-                }
+                downloadUrl = rhino(escape(br.toString()) + "@" + rtUpdate, 999);
             }
         }
         if (downloadUrl == null) {

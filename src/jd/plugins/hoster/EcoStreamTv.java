@@ -48,6 +48,8 @@ public class EcoStreamTv extends PluginForHost {
         return -1;
     }
 
+    private static final String NOCHUNKS = "NOCHUNKS";
+
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
@@ -61,17 +63,41 @@ public class EcoStreamTv extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
+        final String tmp = br.getRegex("var anlytcs=\\'([^<>\"]*?)\\';").getMatch(0);
+        final String noSenseForThat = br.getRegex("var adslotid=\\'([^<>\"]*?)\\';").getMatch(0);
+        if (tmp == null || noSenseForThat == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-        br.postPage("http://www.ecostream.tv/xhr/video/get", "id=" + getfid(downloadLink));
+        br.postPage("http://www.ecostream.tv/xhr/video/vidurl", "id=" + getfid(downloadLink) + "&tpm=" + tmp + noSenseForThat);
         String finallink = br.getRegex("\"url\":\"(/[^<>\"]*?)\"").getMatch(0);
         if (finallink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         finallink = "http://www.ecostream.tv" + finallink;
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, finallink, true, 0);
+        int maxChunks = 0;
+        if (downloadLink.getBooleanProperty(EcoStreamTv.NOCHUNKS, false)) maxChunks = 1;
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, finallink, true, maxChunks);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dl.startDownload();
+        try {
+            if (!this.dl.startDownload()) {
+                try {
+                    if (dl.externalDownloadStop()) return;
+                } catch (final Throwable e) {
+                }
+                /* unknown error, we disable multiple chunks */
+                if (downloadLink.getBooleanProperty(EcoStreamTv.NOCHUNKS, false) == false) {
+                    downloadLink.setProperty(EcoStreamTv.NOCHUNKS, Boolean.valueOf(true));
+                    throw new PluginException(LinkStatus.ERROR_RETRY);
+                }
+            }
+        } catch (final PluginException e) {
+            // New V2 chunk errorhandling
+            /* unknown error, we disable multiple chunks */
+            if (e.getLinkStatus() != LinkStatus.ERROR_RETRY && downloadLink.getBooleanProperty(EcoStreamTv.NOCHUNKS, false) == false) {
+                downloadLink.setProperty(EcoStreamTv.NOCHUNKS, Boolean.valueOf(true));
+                throw new PluginException(LinkStatus.ERROR_RETRY);
+            }
+        }
     }
 
     private String getfid(final DownloadLink downloadLink) {
