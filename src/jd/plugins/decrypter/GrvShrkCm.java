@@ -77,7 +77,7 @@ public class GrvShrkCm extends PluginForDecrypt {
         decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
         parameter = parameter.replaceAll("\\?src=\\d+", "");
-        parameter = parameter.replaceAll("html5\\.grooveshark\\.com", "grooveshark\\.com");
+        parameter = parameter.replaceAll("(html5|retro)\\.grooveshark\\.com", "grooveshark\\.com");
         if (parameter.endsWith("similar") || parameter.matches(UNSUPPORTEDLINKS)) {
             logger.warning("Link format is not supported: " + parameter);
             return decryptedLinks;
@@ -149,6 +149,9 @@ public class GrvShrkCm extends PluginForDecrypt {
             return null;
         }
 
+        if (decryptedLinks.size() == 1) {
+            if (decryptedLinks.get(0).getBooleanProperty("SONGCOUNTEQUALNULL", false)) return decryptedLinks;
+        }
         if (getPluginConfig().getBooleanProperty("TITLENUMBERING")) {
             String format = "%0" + String.valueOf(decryptedLinks.size()).length() + "d";
             for (DownloadLink dl : decryptedLinks) {
@@ -208,7 +211,13 @@ public class GrvShrkCm extends PluginForDecrypt {
 
                 if (type) {
                     // Regex broken?
-                    if (t1 == null || t1.length() == 0) { return; }
+                    if (t1 == null || t1.length() == 0) {
+                        /* tempfix for Ticket #10310 */
+                        final DownloadLink link = createDownloadlink(parameter.replace("http://", "decrypted://"));
+                        link.setProperty("SONGCOUNTEQUALNULL", true);
+                        decryptedLinks.add(link);
+                        return;
+                    }
                     t1 = t1 + "," + br.getRegex("(result|Songs|songs)\":\\[(.*?)\\]\\}?").getMatch(1);
                     break;
                 }
