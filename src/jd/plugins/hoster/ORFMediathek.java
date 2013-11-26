@@ -21,6 +21,8 @@ import java.io.IOException;
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
+import jd.http.Browser;
+import jd.http.URLConnectionAdapter;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -30,7 +32,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.download.DownloadInterface;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "orf.at" }, urls = { "decrypted://(www\\.)?tvthek\\.orf\\.at/(programs/[\\w\\-]+\\&quality=\\w+\\&hash=\\w+|subtitles/\\d+)" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "orf.at" }, urls = { "decrypted://(www\\.)?tvthek\\.orf\\.at/(programs?/.+\\&quality=\\w+\\&hash=\\w+|subtitles/\\d+)" }, flags = { 0 })
 public class ORFMediathek extends PluginForHost {
 
     private static final String Q_SUBTITLES = "Q_SUBTITLES";
@@ -38,6 +40,7 @@ public class ORFMediathek extends PluginForHost {
     private static final String Q_LOW       = "Q_LOW";
     private static final String Q_MEDIUM    = "Q_MEDIUM";
     private static final String Q_HIGH      = "Q_HIGH";
+    private static final String HTTP_STREAM = "HTTP_STREAM";
 
     public ORFMediathek(PluginWrapper wrapper) {
         super(wrapper);
@@ -66,6 +69,27 @@ public class ORFMediathek extends PluginForHost {
             if (true) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
         } else {
             link.setFinalFileName(link.getStringProperty("directName", null));
+        }
+        if ("http".equals(link.getStringProperty("streamingType", "rtmp"))) {
+            final Browser br2 = br.cloneBrowser();
+            // In case the link redirects to the finallink
+            br2.setFollowRedirects(true);
+            URLConnectionAdapter con = null;
+            try {
+                final String dllink = link.getStringProperty("directURL", null);
+                if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                con = br2.openGetConnection(dllink);
+                if (!con.getContentType().contains("html"))
+                    link.setDownloadSize(con.getLongContentLength());
+                else
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                return AvailableStatus.TRUE;
+            } finally {
+                try {
+                    con.disconnect();
+                } catch (Throwable e) {
+                }
+            }
         }
         return AvailableStatus.TRUE;
     }
@@ -130,6 +154,8 @@ public class ORFMediathek extends PluginForHost {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), Q_LOW, JDL.L("plugins.hoster.orf.loadlow", "Load low version")).setDefaultValue(true).setEnabledCondidtion(bestonly, false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), Q_MEDIUM, JDL.L("plugins.hoster.orf.loadmedium", "Load medium version")).setDefaultValue(true).setEnabledCondidtion(bestonly, false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), Q_HIGH, JDL.L("plugins.hoster.orf.loadhigh", "Load high version")).setDefaultValue(true).setEnabledCondidtion(bestonly, false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), HTTP_STREAM, JDL.L("plugins.hoster.orf.loadhttp", "Load http streams ONLY")).setDefaultValue(false));
     }
 
 }

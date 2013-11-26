@@ -19,8 +19,12 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Random;
+import java.util.TreeMap;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
@@ -42,7 +46,7 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
 // http://tvthek,orf.at/live/... --> HDS
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "orfmediathek.at" }, urls = { "http://(www\\.)?tvthek\\.orf\\.at/programs/[\\w\\-]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "orfmediathek.at" }, urls = { "http://(www\\.)?tvthek\\.orf\\.at/programs?/.+" }, flags = { 0 })
 public class ORFMediathekDecrypter extends PluginForDecrypt {
 
     private static final String Q_SUBTITLES = "Q_SUBTITLES";
@@ -50,6 +54,7 @@ public class ORFMediathekDecrypter extends PluginForDecrypt {
     private static final String Q_LOW       = "Q_LOW";
     private static final String Q_MEDIUM    = "Q_MEDIUM";
     private static final String Q_HIGH      = "Q_HIGH";
+    private static final String HTTP_STREAM = "HTTP_STREAM";
     private boolean             BEST        = false;
 
     public ORFMediathekDecrypter(final PluginWrapper wrapper) {
@@ -63,8 +68,23 @@ public class ORFMediathekDecrypter extends PluginForDecrypt {
         String parameter = param.toString();
 
         br.getPage(parameter);
+        int status = br.getHttpConnection().getResponseCode();
+        if (status == 301 || status == 302) {
+            br.setFollowRedirects(true);
+            if (br.getRedirectLocation() != null) {
+                parameter = br.getRedirectLocation();
+                br.getPage(parameter);
+            }
+        } else if (status != 200) {
+            // Check...if offline, add to llinkgrabber so user can see it
+            final DownloadLink link = createDownloadlink(parameter.replace("http://", "decrypted://") + "&quality=default&hash=default");
+            link.setAvailable(false);
+            link.setProperty("offline", true);
+            decryptedLinks.add(link);
+            return decryptedLinks;
+        }
         // Check...if offline, add to llinkgrabber so user can see it
-        if (br.containsHTML("Keine aktuellen Sendungen vorhanden")) {
+        if (br.containsHTML("(404 \\- Seite nicht gefunden\\.|area_headline error_message\">Keine Sendung vorhanden<)")) {
             final DownloadLink link = createDownloadlink(parameter.replace("http://", "decrypted://") + "&quality=default&hash=default");
             link.setAvailable(false);
             link.setProperty("offline", true);
@@ -101,35 +121,88 @@ public class ORFMediathekDecrypter extends PluginForDecrypt {
 
         try {
             String xmlData = br.getRegex("ORF\\.flashXML\\s*=\\s*\'([^\']+)\';").getMatch(0);
-            if (xmlData != null) {
-                Document doc = JDUtilities.parseXmlString(Encoding.htmlDecode(xmlData), false);
+            String jsonData = br.getRegex("\"segments\":\\[(\\{.*?\\})\\],\"is_forward_container\"").getMatch(0);
 
-                /* xmlData --> HashMap */
-                // /PlayerConfig/PlayList/Items/Item... --> name, quality, rtmp stream url
-                NodeList nl = doc.getElementsByTagName("Item");
-
-                HashMap<String, HashMap<String, String>> MediaEntrys = new HashMap<String, HashMap<String, String>>();
+            if (xmlData != null || jsonData != null) {
+                Map<String, HashMap<String, String>> MediaEntrys = new TreeMap<String, HashMap<String, String>>();
                 HashMap<String, String> MediaEntry = null;
-                String quality = null, key = null;
+                String quality = null, key = null, title = null;
 
-                for (int i = 0; i < nl.getLength(); i++) {
-                    Node childNode = nl.item(i);
-                    NodeList t = childNode.getChildNodes();
-                    MediaEntry = new HashMap<String, String>();
-                    for (int j = 0; j < t.getLength(); j++) {
-                        Node g = t.item(j);
-                        if ("#text".equals(g.getNodeName())) continue;
-                        quality = ((Element) g).getAttribute("quality");
-                        key = g.getNodeName();
-                        if (isEmpty(quality) && "VideoUrl".equalsIgnoreCase(key)) continue;
-                        if ("VideoUrl".equalsIgnoreCase(key)) key = quality;
-                        MediaEntry.put(key, g.getTextContent());
+                if (xmlData != null) {
+                    Document doc = JDUtilities.parseXmlString(Encoding.htmlDecode(xmlData), false);
+
+                    /* xmlData --> HashMap */
+                    // /PlayerConfig/PlayList/Items/Item... --> name, quality, rtmp stream url
+                    NodeList nl = doc.getElementsByTagName("Item");
+
+                    for (int i = 0; i < nl.getLength(); i++) {
+                        Node childNode = nl.item(i);
+                        NodeList t = childNode.getChildNodes();
+                        MediaEntry = new HashMap<String, String>();
+                        for (int j = 0; j < t.getLength(); j++) {
+                            Node g = t.item(j);
+                            if ("#text".equals(g.getNodeName())) continue;
+                            quality = ((Element) g).getAttribute("quality");
+                            key = g.getNodeName();
+                            if (isEmpty(quality) && "VideoUrl".equalsIgnoreCase(key)) continue;
+                            if ("VideoUrl".equalsIgnoreCase(key)) key = quality;
+                            MediaEntry.put(key, g.getTextContent());
+                        }
+                        title = MediaEntry.get("Title");
+                        if (isEmpty(title)) continue;
+                        MediaEntrys.put(title, MediaEntry);
                     }
-                    String title = MediaEntry.get("Title");
-                    if (isEmpty(title)) continue;
-                    MediaEntrys.put(title, MediaEntry);
-                }
+                } else {
+                    /* jsonData --> HashMap */
+                    HashMap<String, String> tmpMediaEntry = new HashMap<String, String>();
+                    // if (!jsonData.endsWith("}]")) jsonData += "}]";
+                    jsonData = decodeUnicode(jsonData);
 
+                    String selector = "";
+                    for (String segment : new Regex(jsonData, "\\{\"clickcounter_corrected\"(.*?)\"is_episode_one_segment_episode\":").getColumn(0)) {
+                        segment = segment.replace("\\", "");
+                        title = new Regex(segment, "\"title\":\"(.*?)\",").getMatch(0);
+                        if (title == null) {
+                            if (title == null) title = new Regex(segment, "\"title\":\"([^\"]+)\"").getMatch(0);
+                            if (title == null) title = new Regex(segment, "\"description\":\"\\\\\"([^\\\\\"]+)\\\\\"").getMatch(0);
+                            if (title == null) title = new Regex(segment, "\"description\":\"([^\"]+)\"").getMatch(0);
+                            if (title != null && title.length() > 80) title = title.substring(0, 80);
+                        }
+
+                        String streams = new Regex(segment, "\"sources\":\\[(.*?)\\]").getMatch(0);
+                        if (isEmpty(streams)) continue;
+                        for (String stream : new Regex(streams, "\\{(.*?)\\}").getColumn(0)) {
+                            MediaEntry = new HashMap<String, String>();
+                            for (String[] sss : new Regex(stream, "\"([^\"]+)\":\"([^\"]+)\"").getMatches()) {
+                                System.out.println(sss[0] + ":" + sss[1]);
+                                MediaEntry.put(sss[0], sss[1]);
+                            }
+                            if (isEmpty(title)) continue;
+                            title = title.trim();
+                            MediaEntry.put("title", title);
+                            /* Backward compatibility with xml method */
+                            String url = MediaEntry.get("src");
+                            String q = MediaEntry.get("quality");
+                            String p = MediaEntry.get("protocol");
+                            String d = MediaEntry.get("delivery");
+                            if (isEmpty(url) && isEmpty(q) && isEmpty(p) && isEmpty(d)) continue;
+                            String subtitle = new Regex(segment, "\"subtitles\":\\[\\{\"src\":\"(http[^\"]+)\"").getMatch(0);
+                            if (subtitle != null) MediaEntry.put("SubTitleUrl", subtitle.replace("\\", ""));
+                            MediaEntry.remove("src");
+                            MediaEntry.put(q, url);
+                            if (isEmpty(selector)) selector = p + d;
+                            if (!(p + d).equals(selector)) {
+                                MediaEntrys.put(title + "@" + selector, tmpMediaEntry);
+                                selector = p + d;
+                                tmpMediaEntry = new HashMap<String, String>();
+                                tmpMediaEntry.putAll(MediaEntry);
+                            } else {
+                                tmpMediaEntry.putAll(MediaEntry);
+                            }
+                        }
+                        MediaEntrys.put(title + "@" + selector, tmpMediaEntry);
+                    }
+                }
                 String fpName = getTitle(br);
                 String extension = ".mp4";
                 if (br.getRegex("new MediaCollection\\(\"audio\",").matches()) extension = ".mp3";
@@ -137,13 +210,27 @@ public class ORFMediathekDecrypter extends PluginForDecrypt {
                 ArrayList<DownloadLink> newRet = new ArrayList<DownloadLink>();
                 ArrayList<DownloadLink> part = new ArrayList<DownloadLink>();
                 HashMap<String, DownloadLink> bestMap = new HashMap<String, DownloadLink>();
-                String lastQualityFMT = null;
+                String vIdTemp = "";
 
                 for (Entry<String, HashMap<String, String>> next : MediaEntrys.entrySet()) {
                     MediaEntry = new HashMap<String, String>(next.getValue());
                     String fileName = next.getKey();
                     fileName = fileName.replaceAll("\"", "");
                     fileName = fileName.replaceAll(":\\s|\\s\\|\\s", " - ").trim();
+                    String protocol = MediaEntry.get("protocol");
+                    String delivery = MediaEntry.get("delivery");
+                    if (protocol != null && delivery != null) {
+                        if (fileName.contains(protocol) && fileName.contains(delivery)) fileName = MediaEntry.get("title");
+                    }
+
+                    // available protocols: http, rtmp, rtsp, hds, hls
+                    if (!("http".equals(protocol) && "progressive".equals(delivery))) {
+                        if (!("rtmp".equals(protocol) && "streaming".equals(delivery))) continue;
+                    }
+                    if (cfg.getBooleanProperty(HTTP_STREAM, false) && "rtmp".equals(protocol)) continue;
+
+                    boolean sub = true;
+                    if (fileName.equals(vIdTemp)) sub = false;
 
                     for (Entry<String, String> stream : MediaEntry.entrySet()) {
                         String url = stream.getValue();
@@ -155,6 +242,7 @@ public class ORFMediathekDecrypter extends PluginForDecrypt {
                                 if ((cfg.getBooleanProperty(Q_LOW, true) || BEST) == false) {
                                     continue;
                                 } else {
+                                    if ("http".equals(protocol)) continue; // 404
                                     fmt = "LOW";
                                 }
                             } else if ("MEDIUM".equals(fmt)) {
@@ -177,18 +265,24 @@ public class ORFMediathekDecrypter extends PluginForDecrypt {
                                 continue;
                             }
                         }
-                        lastQualityFMT = fmt;
                         String ext = url.substring(url.lastIndexOf("."));
                         if (ext.length() == 4) extension = ext;
-                        final String name = fileName + "@" + fmt + extension;
+                        final String name = fileName + "@" + fmt + (protocol != null ? "_" + protocol : "") + extension;
                         final DownloadLink link = createDownloadlink(data.replace("http://", "decrypted://") + "&quality=" + fmt + "&hash=" + JDHash.getMD5(name));
-                        link.setAvailable(true);
+
                         link.setFinalFileName(name);
                         link.setBrowserUrl(data);
                         link.setProperty("directURL", url);
                         link.setProperty("directName", name);
                         link.setProperty("directQuality", fmt);
-                        link.setProperty("streamingType", "rtmp");
+                        if (protocol == null && delivery == null) {
+                            link.setAvailable(true);
+                            link.setProperty("streamingType", "rtmp");
+                        } else {
+                            link.setProperty("streamingType", protocol);
+                            link.setProperty("delivery", delivery);
+                            if (!"http".equals(protocol)) link.setAvailable(true);
+                        }
 
                         DownloadLink best = bestMap.get(fmt);
                         if (best == null || link.getDownloadSize() > best.getDownloadSize()) {
@@ -201,11 +295,9 @@ public class ORFMediathekDecrypter extends PluginForDecrypt {
                             /* only keep best quality */
                             DownloadLink keep = bestMap.get("HIGH");
                             if (keep == null) {
-                                lastQualityFMT = "MEDIUM";
                                 keep = bestMap.get("MEDIUM");
                             }
                             if (keep == null) {
-                                lastQualityFMT = "LOW";
                                 keep = bestMap.get("LOW");
                             }
                             if (keep != null) {
@@ -214,17 +306,20 @@ public class ORFMediathekDecrypter extends PluginForDecrypt {
                             }
                         }
                     }
-                    if (cfg.getBooleanProperty(Q_SUBTITLES, false)) {
-                        String subtitleUrl = MediaEntry.get("SubTitleUrl");
-                        if (!isEmpty(subtitleUrl)) {
-                            final String name = fileName + "@" + lastQualityFMT + ".srt";
-                            final DownloadLink link = createDownloadlink("decrypted://tvthek.orf.at/subtitles/" + System.currentTimeMillis() + new Random().nextInt(1000000));
-                            link.setAvailable(true);
-                            link.setFinalFileName(name);
-                            link.setProperty("directURL", subtitleUrl);
-                            link.setProperty("directName", name);
-                            link.setProperty("streamingType", "subtitle");
-                            part.add(link);
+                    if (sub) {
+                        if (cfg.getBooleanProperty(Q_SUBTITLES, false)) {
+                            String subtitleUrl = MediaEntry.get("SubTitleUrl");
+                            if (!isEmpty(subtitleUrl)) {
+                                final String name = fileName + ".srt";
+                                final DownloadLink link = createDownloadlink("decrypted://tvthek.orf.at/subtitles/" + System.currentTimeMillis() + new Random().nextInt(1000000));
+                                link.setAvailable(true);
+                                link.setFinalFileName(name);
+                                link.setProperty("directURL", subtitleUrl);
+                                link.setProperty("directName", name);
+                                link.setProperty("streamingType", "subtitle");
+                                part.add(link);
+                                vIdTemp = fileName;
+                            }
                         }
                     }
                     newRet.addAll(part);
@@ -273,8 +368,18 @@ public class ORFMediathekDecrypter extends PluginForDecrypt {
     }
 
     private boolean unknownQualityIdentifier(String s) {
-        if (s.matches("(DESCRIPTION|SMIL|SUBTITLEURL|DURATION|TRANSCRIPTURL|TITLE)")) return false;
+        if (s.matches("(DESCRIPTION|SMIL|SUBTITLEURL|DURATION|TRANSCRIPTURL|TITLE|QUALITY|QUALITY_STRING|PROTOCOL|TYPE|DELIVERY)")) return false;
         return true;
+    }
+
+    private String decodeUnicode(String s) {
+        Pattern p = Pattern.compile("\\\\u([0-9a-fA-F]{4})");
+        String res = s;
+        Matcher m = p.matcher(res);
+        while (m.find()) {
+            res = res.replaceAll("\\" + m.group(0), Character.toString((char) Integer.parseInt(m.group(1), 16)));
+        }
+        return res;
     }
 
     /* NO OVERRIDE!! */
