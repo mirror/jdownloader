@@ -57,8 +57,8 @@ public interface SilentModeSettings extends ConfigInterface {
     public static enum CaptchaDuringSilentModeAction {
         @EnumLabel("Skip the Captcha")
         SKIP_LINK,
-        @EnumLabel("Handle Captcha Dialogs Like all other dialogs (@see OnDialogDuringSilentModeAction)")
-        DEFAULT_DIALOG_HANDLING,
+        @EnumLabel("Wait in Background until window gets focus or timeout is reached")
+        WAIT_IN_BACKGROUND_UNTIL_WINDOW_GETS_FOCUS_OR_TIMEOUT,
         @EnumLabel("Do not show a dialog, but try auto solver (AntiCaptcha, Exchange Services,...)")
         DISABLE_DIALOG_SOLVER;
 
@@ -66,7 +66,7 @@ public interface SilentModeSettings extends ConfigInterface {
 
     void setOnCaptchaDuringSilentModeAction(CaptchaDuringSilentModeAction action);
 
-    @DefaultEnumValue("DEFAULT_DIALOG_HANDLING")
+    @DefaultEnumValue("DISABLE_DIALOG_SOLVER")
     @AboutConfig
     CaptchaDuringSilentModeAction getOnCaptchaDuringSilentModeAction();
 

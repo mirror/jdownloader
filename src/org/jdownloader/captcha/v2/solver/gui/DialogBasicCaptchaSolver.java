@@ -5,8 +5,6 @@ import javax.swing.Icon;
 import jd.controlling.captcha.BasicCaptchaDialogHandler;
 import jd.controlling.captcha.CaptchaSettings;
 import jd.controlling.captcha.SkipException;
-import jd.controlling.captcha.SkipRequest;
-import jd.gui.swing.jdgui.JDGui;
 
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.StringUtils;
@@ -30,9 +28,8 @@ import org.jdownloader.captcha.v2.solverjob.SolverJob;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.settings.staticreferences.CFG_CAPTCHA;
-import org.jdownloader.settings.staticreferences.CFG_SILENTMODE;
 
-public class DialogBasicCaptchaSolver extends ChallengeSolver<String> {
+public class DialogBasicCaptchaSolver extends AbstractDialogSolver<String> {
     private CaptchaSettings                       config;
     private Captcha9kwSettings                    config9kw;
     private CaptchaBrotherHoodSettings            configcbh;
@@ -121,17 +118,7 @@ public class DialogBasicCaptchaSolver extends ChallengeSolver<String> {
                 checkInterruption();
                 job.getLogger().info("Waits are done. Response so far: " + job.getResponse());
                 ChallengeSolverJobListener jacListener = null;
-                if (JDGui.getInstance().isSilentModeActive()) {
-                    switch (CFG_SILENTMODE.CFG.getOnCaptchaDuringSilentModeAction()) {
-                    case DEFAULT_DIALOG_HANDLING:
-                        break;
-                    case DISABLE_DIALOG_SOLVER:
-                        return;
-                    case SKIP_LINK:
-                        throw new SkipException(SkipRequest.SINGLE);
-                    }
-                }
-                checkInterruption();
+                checkSilentMode(job);
                 BasicCaptchaChallenge captchaChallenge = (BasicCaptchaChallenge) job.getChallenge();
                 // we do not need another queue
                 handler = new BasicCaptchaDialogHandler(captchaChallenge);

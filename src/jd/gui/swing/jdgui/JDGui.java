@@ -785,6 +785,7 @@ public class JDGui implements UpdaterListener, OwnerFinder {
                     }
 
                     boolean silentModeActive = isSilentModeActive();
+
                     if (silentModeActive && CFG_SILENTMODE.ON_DIALOG_DURING_SILENT_MODE_ACTION.getValue() == DialogDuringSilentModeAction.CANCEL_DIALOG) {
                         // Cancel dialog
                         throw new DialogClosedException(Dialog.RETURN_CLOSED);
@@ -1135,28 +1136,49 @@ public class JDGui implements UpdaterListener, OwnerFinder {
             @Override
             public Boolean edtRun() {
                 // don't block anthing if the frame is active anyway
-                if ((getMainFrame().hasFocus() || getMainFrame().isActive()) && getMainFrame().isVisible()) { return false; }
-                if (UpdateController.getInstance().getHandler() != null && GuiUtils.isActiveWindow(UpdateController.getInstance().getHandler().getGuiFrame())) return false;
+                if ((getMainFrame().hasFocus() || getMainFrame().isActive()) && getMainFrame().isVisible()) {
+                    logger.info("SilentMode: Mainframe has Focus: ");
+                    return false;
+                }
+                if (UpdateController.getInstance().getHandler() != null && GuiUtils.isActiveWindow(UpdateController.getInstance().getHandler().getGuiFrame())) {
+                    logger.info("SilentMode: Updater Frame is Active");
+                    return false;
+                }
                 for (Window w : Window.getWindows()) {
                     if ((w.hasFocus() || w.isActive()) && w.isVisible()) {
-                        logger.info("No SilentMode. Active Window: " + w);
+                        logger.info("SilentMode: No SilentMode. Active Window: " + w);
                         return false;
                     }
                 }
                 // don't block anything if the tray is active
-                if (tray.isEnabled() && tray.isActive()) return false;
+                if (tray.isEnabled() && tray.isActive()) {
+                    logger.info("SilentMode: Tray");
 
-                if (CFG_SILENTMODE.MANUAL_ENABLED.isEnabled()) { return true; }
-                switch (CFG_SILENTMODE.CFG.getAutoTrigger()) {
-                case JD_IN_TASKBAR:
-                    if (getMainFrame().getState() == JFrame.ICONIFIED && getMainFrame().isVisible()) return true;
-                    break;
-                case JD_IN_TRAY:
-                    if (!getMainFrame().isVisible()) return true;
-                    break;
-                default:
                     return false;
                 }
+
+                if (CFG_SILENTMODE.MANUAL_ENABLED.isEnabled()) {
+                    logger.info("SilentMode: MANUEL true");
+                    return true;
+                }
+                switch (CFG_SILENTMODE.CFG.getAutoTrigger()) {
+                case JD_IN_TASKBAR:
+                    if (getMainFrame().getState() == JFrame.ICONIFIED && getMainFrame().isVisible()) {
+                        logger.info("SilentMode: auto task true");
+                        return true;
+                    }
+                    break;
+                case JD_IN_TRAY:
+                    if (!getMainFrame().isVisible()) {
+                        logger.info("SilentMode: auto tray true");
+                        return true;
+                    }
+                    break;
+                default:
+                    logger.info("SilentMode: auto false");
+                    return false;
+                }
+                logger.info("SilentMode: else false");
                 return false;
             }
         }.getReturnValue();

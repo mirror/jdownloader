@@ -1,6 +1,5 @@
 package jd.controlling.captcha;
 
-import java.awt.Dialog.ModalExclusionType;
 import java.awt.Image;
 import java.awt.image.BufferedImage;
 import java.net.MalformedURLException;
@@ -19,10 +18,8 @@ import jd.plugins.PluginForHost;
 import org.appwork.exceptions.WTFException;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.uio.UIOManager;
-import org.appwork.utils.BinaryLogic;
 import org.appwork.utils.images.IconIO;
 import org.appwork.utils.logging2.LogSource;
-import org.appwork.utils.swing.EDTHelper;
 import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.dialog.AbstractDialog;
 import org.appwork.utils.swing.dialog.Dialog;
@@ -34,7 +31,7 @@ import org.jdownloader.DomainInfo;
 import org.jdownloader.captcha.v2.challenge.stringcaptcha.ImageCaptchaChallenge;
 import org.jdownloader.controlling.UniqueAlltimeID;
 import org.jdownloader.logging.LogController;
-import org.jdownloader.settings.SilentModeSettings.DialogDuringSilentModeAction;
+import org.jdownloader.settings.SilentModeSettings.CaptchaDuringSilentModeAction;
 import org.jdownloader.settings.staticreferences.CFG_SILENTMODE;
 
 public abstract class ChallengeDialogHandler<T extends ImageCaptchaChallenge<?>> {
@@ -64,10 +61,11 @@ public abstract class ChallengeDialogHandler<T extends ImageCaptchaChallenge<?>>
 
                     if (silentModeActive) {
 
-                        if (CFG_SILENTMODE.ON_DIALOG_DURING_SILENT_MODE_ACTION.getValue() == DialogDuringSilentModeAction.CANCEL_DIALOG) {
-                            // Cancel dialog
-                            throw new DialogClosedException(Dialog.RETURN_CLOSED);
-                        }
+                        // switch (CFG_SILENTMODE.CFG.getOnCaptchaDuringSilentModeAction()) {
+                        // case WAIT_IN_BACKGROUND_UNTIL_WINDOW_GETS_FOCUS_OR_TIMEOUT
+                        // // Cancel dialog
+                        // throw new DialogClosedException(Dialog.RETURN_CLOSED);
+                        // }
 
                         // if this is the edt, we should not block it.. NEVER
                         if (!SwingUtilities.isEventDispatchThread()) {
@@ -78,7 +76,7 @@ public abstract class ChallengeDialogHandler<T extends ImageCaptchaChallenge<?>>
                                 long countdownDif = dialog.getCountdown();
                                 countdown = System.currentTimeMillis() + countdownDif;
                             }
-                            if (countdown < 0 && CFG_SILENTMODE.ON_DIALOG_DURING_SILENT_MODE_ACTION.getValue() == DialogDuringSilentModeAction.WAIT_IN_BACKGROUND_UNTIL_WINDOW_GETS_FOCUS_OR_TIMEOUT) {
+                            if (countdown < 0 && CFG_SILENTMODE.CFG.getOnCaptchaDuringSilentModeAction() == CaptchaDuringSilentModeAction.WAIT_IN_BACKGROUND_UNTIL_WINDOW_GETS_FOCUS_OR_TIMEOUT) {
                                 countdown = System.currentTimeMillis() + CFG_SILENTMODE.ON_DIALOG_DURING_SILENT_MODE_ACTION_TIMEOUT.getValue();
 
                             }
@@ -90,17 +88,7 @@ public abstract class ChallengeDialogHandler<T extends ImageCaptchaChallenge<?>>
                                         dialog.onTimeout();
                                         // clear interrupt
                                         Thread.interrupted();
-                                        final int mask = dialog.getReturnmask();
-                                        if (BinaryLogic.containsSome(mask, Dialog.RETURN_CLOSED)) { throw new DialogClosedException(mask); }
-                                        if (BinaryLogic.containsSome(mask, Dialog.RETURN_CANCEL)) { throw new DialogCanceledException(mask); }
-                                        try {
-                                            return dialog.getReturnValue();
-
-                                        } catch (Exception e) {
-                                            // dialogs have not been initialized. so the getReturnValue might fail.
-                                            logger.log(e);
-                                            throw new DialogClosedException(Dialog.RETURN_CLOSED | Dialog.RETURN_TIMEOUT);
-                                        }
+                                        throw new DialogCanceledException(dialog.getReturnmask());
                                     }
                                 } else {
                                     Thread.sleep(250);
@@ -110,8 +98,7 @@ public abstract class ChallengeDialogHandler<T extends ImageCaptchaChallenge<?>>
                     }
                 } catch (InterruptedException e) {
                     throw new DialogClosedException(Dialog.RETURN_INTERRUPT, e);
-                } catch (DialogClosedException e) {
-                    throw e;
+
                 } catch (DialogCanceledException e) {
                     throw e;
                 } catch (Exception e) {
@@ -133,14 +120,10 @@ public abstract class ChallengeDialogHandler<T extends ImageCaptchaChallenge<?>>
         };
     }
 
-    protected void showDialog(AbstractCaptchaDialog dialog2) {
-        try {
-            dialogHandler.showDialog(dialog2);
-        } catch (DialogClosedException e) {
-            e.printStackTrace();
-        } catch (DialogCanceledException e) {
-            e.printStackTrace();
-        }
+    protected void showDialog(AbstractCaptchaDialog dialog2) throws DialogClosedException, DialogCanceledException {
+
+        dialogHandler.showDialog(dialog2);
+
     }
 
     public DomainInfo getHost() {
@@ -195,14 +178,6 @@ public abstract class ChallengeDialogHandler<T extends ImageCaptchaChallenge<?>>
             }
 
             // }
-
-            final ModalExclusionType orgEx = new EDTHelper<ModalExclusionType>() {
-
-                @Override
-                public ModalExclusionType edtRun() {
-                    return JDGui.getInstance().getMainFrame().getModalExclusionType();
-                }
-            }.getReturnValue();
 
             try {
 

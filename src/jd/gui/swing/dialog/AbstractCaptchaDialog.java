@@ -446,10 +446,11 @@ public abstract class AbstractCaptchaDialog extends AbstractDialog<Object> {
 
     public void dispose() {
         if (!isInitialized()) return;
-        config.setX(getDialog().getWidth());
-        config.setValid(true);
-        config.setY(getDialog().getHeight());
-
+        if (dialog != null) {
+            config.setX(getDialog().getWidth());
+            config.setValid(true);
+            config.setY(getDialog().getHeight());
+        }
         super.dispose();
         if (paintTimer != null) {
             paintTimer.stop();

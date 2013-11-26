@@ -67,7 +67,7 @@ public abstract class ChallengeSolver<T> {
         }
     }
 
-    protected void checkInterruption() throws InterruptedException {
+    protected static void checkInterruption() throws InterruptedException {
         if (Thread.interrupted()) throw new InterruptedException();
     }
 

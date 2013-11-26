@@ -54,6 +54,7 @@ import org.appwork.swing.ExtJFrame;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.swing.EDTHelper;
 import org.jdownloader.actions.AppAction;
+import org.jdownloader.controlling.contextmenu.CustomizableAppAction;
 import org.jdownloader.controlling.contextmenu.MenuContainer;
 import org.jdownloader.controlling.contextmenu.MenuItemData;
 import org.jdownloader.controlling.contextmenu.MenuLink;
@@ -376,6 +377,9 @@ public final class TrayIconPopup extends ExtJFrame implements MouseListener {
     }
 
     private AbstractButton createButton(AppAction action) {
+        if (action instanceof CustomizableAppAction) {
+            ((CustomizableAppAction) action).requestUpdate(this);
+        }
         if (action.isToggle()) {
             JToggleButton bt = new JToggleButton(action);
             bt.setOpaque(false);
@@ -403,6 +407,7 @@ public final class TrayIconPopup extends ExtJFrame implements MouseListener {
             return bt;
         } else {
             // we use a JToggleButton here, because JToggle buttons seem to have a different left icon gap the jbuttons
+
             JToggleButton bt = new JToggleButton(action);
             bt.setOpaque(false);
             bt.setContentAreaFilled(false);

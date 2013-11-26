@@ -5,12 +5,9 @@ import javax.swing.Icon;
 import jd.controlling.captcha.CaptchaSettings;
 import jd.controlling.captcha.ClickCaptchaDialogHandler;
 import jd.controlling.captcha.SkipException;
-import jd.controlling.captcha.SkipRequest;
-import jd.gui.swing.jdgui.JDGui;
 
 import org.appwork.storage.config.JsonConfig;
 import org.jdownloader.captcha.v2.Challenge;
-import org.jdownloader.captcha.v2.ChallengeSolver;
 import org.jdownloader.captcha.v2.challenge.clickcaptcha.ClickCaptchaChallenge;
 import org.jdownloader.captcha.v2.challenge.clickcaptcha.ClickedPoint;
 import org.jdownloader.captcha.v2.challenge.stringcaptcha.ClickCaptchaResponse;
@@ -21,9 +18,8 @@ import org.jdownloader.captcha.v2.solverjob.SolverJob;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.settings.staticreferences.CFG_CAPTCHA;
-import org.jdownloader.settings.staticreferences.CFG_SILENTMODE;
 
-public class DialogClickCaptchaSolver extends ChallengeSolver<ClickedPoint> {
+public class DialogClickCaptchaSolver extends AbstractDialogSolver<ClickedPoint> {
     private CaptchaSettings           config;
     private Captcha9kwSettings        config9kw;
     private ClickCaptchaDialogHandler handler;
@@ -91,17 +87,7 @@ public class DialogClickCaptchaSolver extends ChallengeSolver<ClickedPoint> {
                 if (config9kw.ismouse() && config.getCaptchaDialog9kwTimeout() > 0) solverJob.waitFor(config.getCaptchaDialog9kwTimeout(), Captcha9kwSolverClick.getInstance());
 
                 solverJob.getLogger().info("JAC (Click/Mouse) is done. Response so far: " + solverJob.getResponse());
-                if (JDGui.getInstance().isSilentModeActive()) {
-                    switch (CFG_SILENTMODE.CFG.getOnCaptchaDuringSilentModeAction()) {
-                    case DEFAULT_DIALOG_HANDLING:
-                        break;
-                    case DISABLE_DIALOG_SOLVER:
-                        return;
-                    case SKIP_LINK:
-                        throw new SkipException(SkipRequest.SINGLE);
-                    }
-                }
-                checkInterruption();
+                checkSilentMode(solverJob);
                 ClickCaptchaChallenge captchaChallenge = (ClickCaptchaChallenge) solverJob.getChallenge();
                 checkInterruption();
                 handler = new ClickCaptchaDialogHandler(captchaChallenge);
