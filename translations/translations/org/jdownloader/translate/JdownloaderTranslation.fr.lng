@@ -1,3 +1,10 @@
+DownloadLink_setSkipped_statusmessage=Ignoré
+DownloadLink_setSkipped_statusmessage_account=Ignoré - Nécessite un compte
+DownloadLink_setSkipped_statusmessage_captcha=Ignoré - Captcha demandé
+DownloadLink_setSkipped_statusmessage_disk_full=Ignoré - Le disque dur est plein
+DownloadLink_setSkipped_statusmessage_file_exists=Ignoré - Les fichiers existent déjà
+DownloadLink_setSkipped_statusmessage_invalid_path=Dossier de téléchargement invalide
+DownloadLink_setSkipped_statusmessage_toomanyretries=Ignoré - Trop de tentatives
 DownloadWatchDog_onShutdownRequest_=Téléchargements en progression !
 DownloadWatchDog_onShutdownRequest_msg=Voulez vous stopper tous les téléchargements en cours pour fermer JDownloader ?
 DownloadWatchDog_onShutdownRequest_nonresumable=Aucun téléchargement réactivable en cours !
