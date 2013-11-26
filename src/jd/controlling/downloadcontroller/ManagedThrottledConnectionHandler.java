@@ -5,6 +5,8 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
+import jd.plugins.DownloadLink;
+
 import org.appwork.utils.net.throttledconnection.ThrottledConnection;
 import org.appwork.utils.net.throttledconnection.ThrottledConnectionHandler;
 import org.appwork.utils.speedmeter.SpeedMeterInterface;
@@ -18,7 +20,10 @@ public class ManagedThrottledConnectionHandler implements ThrottledConnectionHan
     private DownloadSpeedManager                      managedBy   = null;
 
     public ManagedThrottledConnectionHandler() {
+    }
 
+    @Deprecated
+    public ManagedThrottledConnectionHandler(DownloadLink link) {
     }
 
     public void addThrottledConnection(ThrottledConnection con) {

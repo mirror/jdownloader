@@ -1106,7 +1106,9 @@ public class Uploadedto extends PluginForHost {
         try {
             br.getHeaders().put("X-Prototype-Version", "1.6.1");
             br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-            postPageSafe(getProtocol() + "uploaded.net/io/login", "id=" + Encoding.urlEncode(account.getUser()) + "&pw=" + Encoding.urlEncode(account.getPass()) + "&_=");
+            br.getHeaders().put("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8");
+            /* login method always returns empty body */
+            br.postPage(getProtocol() + "uploaded.net/io/login", "id=" + Encoding.urlEncode(account.getUser()) + "&pw=" + Encoding.urlEncode(account.getPass()));
             if (br.containsHTML("User and password do not match")) {
                 final AccountInfo ai = account.getAccountInfo();
                 if (ai != null) ai.setStatus("User and password do not match");
@@ -1118,6 +1120,7 @@ public class Uploadedto extends PluginForHost {
             account.setProperty("tokenType", null);
             throw e;
         } finally {
+            br.getHeaders().put("Content-Type", null);
             br.getHeaders().put("X-Prototype-Version", null);
             br.getHeaders().put("X-Requested-With", null);
         }
