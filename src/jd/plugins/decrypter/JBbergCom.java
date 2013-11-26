@@ -111,8 +111,8 @@ public class JBbergCom extends PluginForDecrypt {
                 continue;
             }
             if (finallink == null) {
-                logger.warning("Decrypter broken for link: " + parameter);
-                return null;
+                logger.info("Failed to decrypt single link: " + hoster);
+                continue;
             }
             final DownloadLink dl = createDownloadlink(finallink.replace("\\", ""));
             dl._setFilePackage(fp);
@@ -122,6 +122,10 @@ public class JBbergCom extends PluginForDecrypt {
                 // Not available in old Stable 0.9851
             }
             decryptedLinks.add(dl);
+        }
+        if (decryptedLinks.size() == 0) {
+            logger.warning("Decrypter broken for link: " + parameter);
+            return null;
         }
 
         return decryptedLinks;

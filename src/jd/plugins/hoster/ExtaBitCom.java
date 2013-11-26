@@ -19,11 +19,14 @@ package jd.plugins.hoster;
 import java.io.File;
 import java.net.URL;
 import java.util.Random;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
 
 import jd.PluginWrapper;
+import jd.config.ConfigContainer;
+import jd.config.ConfigEntry;
 import jd.config.SubConfiguration;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
@@ -46,9 +49,13 @@ import org.appwork.utils.os.CrossSystem;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "extabit.com" }, urls = { "http://(www\\.)?(u\\d+\\.extabit\\.com/go/[a-z0-9]{13}|extabit\\.com/file(_[^/]+)?/[a-z0-9]{13}(/[A-Za-z0-9]+/[^<>\"/]*?\\.htm)?)" }, flags = { 2 })
 public class ExtaBitCom extends PluginForHost {
 
-    private static final String NOTAVAILABLETEXT = "(>File is temporary unavailable<|temporary unavailable<br/>)";
-    private static final String NOMIRROR         = ">No download mirror<";
-    private static final String PREMIUMONLY      = "(>Only premium users can download (this file|files of this size\\. <)|<h2>The file that you're trying to download is larger than \\d+ (Mb|Gb).*?Upgrade to premium</b>.*?<h2>)";
+    private static final String  NOTAVAILABLETEXT = "(>File is temporary unavailable<|temporary unavailable<br/>)";
+    private static final String  NOMIRROR         = ">No download mirror<";
+    private static final String  PREMIUMONLY      = "(>Only premium users can download (this file|files of this size\\. <)|<h2>The file that you're trying to download is larger than \\d+ (Mb|Gb).*?Upgrade to premium</b>.*?<h2>)";
+
+    private static final String  SKIPFREELIMITS   = "SKIPFREELIMITS";
+    private static AtomicInteger maxFree          = new AtomicInteger(1);
+    private static final String  NOCHUNKS         = "NOCHUNKS";
 
     // extabit api specs http://code.google.com/p/extabit-api/wiki/APIDocumentation
 
@@ -57,6 +64,7 @@ public class ExtaBitCom extends PluginForHost {
         this.enablePremium("http://extabit.com/premium.jsp");
         // Too many downloads in a short time = 503 errors for premiumusers
         this.setStartIntervall(5 * 1000l);
+        this.setConfigElements();
     }
 
     public void correctDownloadLink(DownloadLink link) {
@@ -87,6 +95,7 @@ public class ExtaBitCom extends PluginForHost {
         br.setCookie("http://extabit.com", "language", "en");
         br.setFollowRedirects(true);
         br.setCustomCharset("utf-8");
+        br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:25.0) Gecko/20100101 Firefox/25.0");
         br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML("(File not found|Such file doesn\\'t exsist)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("<title>(.*?)download Extabit.com \\- file hosting</title>").getMatch(0);
@@ -160,7 +169,7 @@ public class ExtaBitCom extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return 1;
+        return maxFree.get();
     }
 
     @Override
@@ -234,100 +243,140 @@ public class ExtaBitCom extends PluginForHost {
         this.setBrowserExclusive();
         requestFileInformation(link);
         checkShowFreeDialog();
-        if (br.containsHTML(PREMIUMONLY))
-            throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.ExtaBitCom.errors.Only4Premium", "This file is only available for premium users"));
-        else if (br.containsHTML(NOTAVAILABLETEXT))
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.ExtaBitCom.errors.TempUnavailable", "This file is temporary unavailable"));
-        else if (br.containsHTML(NOMIRROR)) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.ExtaBitCom.errors.NoMirror", "Extabit error: \"No download mirror\", contact extabit support."), 120 * 60 * 1000l);
-        String addedlink = br.getURL();
-        if (!addedlink.equals(link.getDownloadURL())) link.setUrlDownload(addedlink);
-        if (br.containsHTML("The daily downloads limit from your IP is exceeded")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1000l);
-        if (br.containsHTML("Next free download from your ip will be available")) {
-            String wait = br.getRegex("will be available in <b>(.*?)minutes").getMatch(0);
-            int minutes = 15;
-            if (wait != null) minutes = Integer.parseInt(wait.trim());
-            int waitTime = minutes * 60 * 1001;
-            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, waitTime);
-        }
-        // If the waittime was forced it yould be here but it isn't!
-        // Re Captcha handling
-        final String fileID = new Regex(link.getDownloadURL(), "extabit\\.com/file/(.+)(/.+)?").getMatch(0);
-        Browser xmlbrowser = br.cloneBrowser();
-        xmlbrowser.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-        if (br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)")) {
-            PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-            jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
-            for (int i = 0; i <= 5; i++) {
-                rc.parse();
-                rc.load();
-                File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-                String c = getCaptchaCode(cf, link);
-                xmlbrowser.getPage("http://extabit.com/file/" + fileID + "?type=recaptcha&challenge=" + rc.getChallenge() + "&capture=" + Encoding.urlEncode(c));
-                if (xmlbrowser.containsHTML("\"Entered digits are incorrect\\.\"")) {
-                    rc.reload();
-                    continue;
-                }
-                if (!xmlbrowser.containsHTML("\"ok\":true")) {
-                    logger.warning("Unknown captcha error...");
-                    break;
-                }
-                String xmlhref = new Regex(xmlbrowser, "href\":\"(\\?.*?)\"").getMatch(0);
-                if (xmlhref != null) {
-                    br.getPage(link.getDownloadURL() + xmlhref);
-                    break;
-                } else {
-                    br.getPage(link.getDownloadURL());
-                    break;
-                }
-            }
+        int maxChunks = 1;
+        boolean resume = false;
+        String dllink = null;
+        if (this.getPluginConfig().getBooleanProperty(ExtaBitCom.SKIPFREELIMITS)) dllink = br.getRegex("product_download_url=(http[^<>\"]*?)(\\'|\")").getMatch(0);
+        if (dllink != null) {
+            maxFree.set(20);
+            maxChunks = -10;
+            resume = true;
+            br.getHeaders().put("User-Agent", "TixDll");
         } else {
-            for (int i = 0; i <= 5; i++) {
-                // *Normal* captcha handling
-                String captchaurl = br.getRegex("(/capture\\.gif\\?\\d+)").getMatch(0);
-                if (captchaurl == null) captchaurl = br.getRegex("<div id=\"reload_captcha\">.*?<img src=\"(/.*?)\"").getMatch(0);
-                if (captchaurl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                captchaurl = "http://extabit.com" + captchaurl;
-                String code = getCaptchaCode(captchaurl, link);
-                // dlform.put("capture", code);
-                // br.submitForm(dlform);
-                xmlbrowser.getPage(link.getDownloadURL() + "?capture=" + code);
-                if (!xmlbrowser.containsHTML("\"ok\":true")) {
-                    br.getPage(br.getURL());
-                    continue;
+            if (br.containsHTML(PREMIUMONLY))
+                throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.ExtaBitCom.errors.Only4Premium", "This file is only available for premium users"));
+            else if (br.containsHTML(NOTAVAILABLETEXT))
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.ExtaBitCom.errors.TempUnavailable", "This file is temporary unavailable"));
+            else if (br.containsHTML(NOMIRROR)) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.ExtaBitCom.errors.NoMirror", "Extabit error: \"No download mirror\", contact extabit support."), 120 * 60 * 1000l);
+            String addedlink = br.getURL();
+            if (!addedlink.equals(link.getDownloadURL())) link.setUrlDownload(addedlink);
+            if (br.containsHTML("The daily downloads limit from your IP is exceeded")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1000l);
+            if (br.containsHTML("Next free download from your ip will be available")) {
+                String wait = br.getRegex("will be available in <b>(.*?)minutes").getMatch(0);
+                int minutes = 15;
+                if (wait != null) minutes = Integer.parseInt(wait.trim());
+                int waitTime = minutes * 60 * 1001;
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, waitTime);
+            }
+            // If the waittime was forced it yould be here but it isn't!
+            // Re Captcha handling
+            final String fileID = new Regex(link.getDownloadURL(), "extabit\\.com/file/(.+)(/.+)?").getMatch(0);
+            Browser xmlbrowser = br.cloneBrowser();
+            xmlbrowser.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+            if (br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)")) {
+                PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
+                jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
+                for (int i = 0; i <= 5; i++) {
+                    rc.parse();
+                    rc.load();
+                    File cf = rc.downloadCaptcha(getLocalCaptchaFile());
+                    String c = getCaptchaCode(cf, link);
+                    xmlbrowser.getPage("http://extabit.com/file/" + fileID + "?type=recaptcha&challenge=" + rc.getChallenge() + "&capture=" + Encoding.urlEncode(c));
+                    if (xmlbrowser.containsHTML("\"Entered digits are incorrect\\.\"")) {
+                        rc.reload();
+                        continue;
+                    }
+                    if (!xmlbrowser.containsHTML("\"ok\":true")) {
+                        logger.warning("Unknown captcha error...");
+                        break;
+                    }
+                    String xmlhref = new Regex(xmlbrowser, "href\":\"(\\?.*?)\"").getMatch(0);
+                    if (xmlhref != null) {
+                        br.getPage(link.getDownloadURL() + xmlhref);
+                        break;
+                    } else {
+                        br.getPage(link.getDownloadURL());
+                        break;
+                    }
                 }
-                String xmlhref = new Regex(xmlbrowser, "href\":\"(\\?.*?)\"").getMatch(0);
-                if (xmlhref != null) {
-                    br.getPage(link.getDownloadURL() + xmlhref);
-                    break;
-                } else {
-                    br.getPage(link.getDownloadURL());
-                    break;
+            } else {
+                for (int i = 0; i <= 5; i++) {
+                    // *Normal* captcha handling
+                    String captchaurl = br.getRegex("(/capture\\.gif\\?\\d+)").getMatch(0);
+                    if (captchaurl == null) captchaurl = br.getRegex("<div id=\"reload_captcha\">.*?<img src=\"(/.*?)\"").getMatch(0);
+                    if (captchaurl == null) {
+                        // Check if maybe the link is only downloadable via their downloadmanager
+                        if (br.containsHTML("/img/dlbanner\\.jpg\"")) { throw new PluginException(LinkStatus.ERROR_FATAL, "Download not possible!"); }
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
+
+                    captchaurl = "http://extabit.com" + captchaurl;
+                    String code = getCaptchaCode(captchaurl, link);
+                    // dlform.put("capture", code);
+                    // br.submitForm(dlform);
+                    xmlbrowser.getPage(link.getDownloadURL() + "?capture=" + code);
+                    if (!xmlbrowser.containsHTML("\"ok\":true")) {
+                        br.getPage(br.getURL());
+                        continue;
+                    }
+                    String xmlhref = new Regex(xmlbrowser, "href\":\"(\\?.*?)\"").getMatch(0);
+                    if (xmlhref != null) {
+                        br.getPage(link.getDownloadURL() + xmlhref);
+                        break;
+                    } else {
+                        br.getPage(link.getDownloadURL());
+                        break;
+                    }
                 }
             }
-        }
-        if (br.containsHTML("\"Entered digits are incorrect\\.\"") || !xmlbrowser.containsHTML("\"ok\":true")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-        // Australia 20130613
-        String dllink = br.getRegex("href=\"(https?://guest\\d+\\.extabit\\.com/[a-z0-9]+/[^\"]+)\"[^>]+>Download file</a>").getMatch(0);
-        if (dllink == null) {
-            // Russia 20130613
-            dllink = br.getRegex("&product_download_url=(https?://guest\\d+\\.extabit\\.com/[a-z0-9]+/.*?)';").getMatch(0);
+            if (br.containsHTML("\"Entered digits are incorrect\\.\"") || !xmlbrowser.containsHTML("\"ok\":true")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+            // Australia 20130613
+            dllink = br.getRegex("href=\"(https?://guest\\d+\\.extabit\\.com/[a-z0-9]+/[^\"]+)\"[^>]+>Download file</a>").getMatch(0);
             if (dllink == null) {
-                // fail over 20130613
-                dllink = br.getRegex("(\"|')(https?://guest\\d+\\.extabit\\.com/[a-z0-9]+/.*?)(\"|')").getMatch(1);
+                // Russia 20130613
+                dllink = br.getRegex("&product_download_url=(https?://guest\\d+\\.extabit\\.com/[a-z0-9]+/.*?)';").getMatch(0);
                 if (dllink == null) {
-                    if (br.getURL().endsWith("?af")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Hoster error, please contact the extabit.com support!", 60 * 60 * 1000l);
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    // fail over 20130613
+                    dllink = br.getRegex("(\"|')(https?://guest\\d+\\.extabit\\.com/[a-z0-9]+/.*?)(\"|')").getMatch(1);
+                    if (dllink == null) {
+                        if (br.getURL().endsWith("?af")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Hoster error, please contact the extabit.com support!", 60 * 60 * 1000l);
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
                 }
             }
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, false, 1);
+        if (link.getBooleanProperty(ExtaBitCom.NOCHUNKS, false)) {
+            resume = false;
+            maxChunks = 1;
+        }
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resume, maxChunks);
         dl.setFilenameFix(true);
         if ((dl.getConnection().getContentType().contains("html"))) {
             if (dl.getConnection().getResponseCode() == 503) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 60 * 60 * 1000l);
             if (dl.getConnection().getResponseCode() == 404) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dl.startDownload();
+        try {
+            if (!this.dl.startDownload()) {
+                try {
+                    if (dl.externalDownloadStop()) { return; }
+                } catch (final Throwable e) {
+                }
+                /* unknown error, we disable multiple chunks */
+                if (link.getLinkStatus().getErrorMessage() != null && link.getBooleanProperty(ExtaBitCom.NOCHUNKS, false) == false) {
+                    link.setProperty(ExtaBitCom.NOCHUNKS, Boolean.valueOf(true));
+                    throw new PluginException(LinkStatus.ERROR_RETRY);
+                }
+            } else {
+            }
+        } catch (final PluginException e) {
+            // New V2 errorhandling
+            /* unknown error, we disable multiple chunks */
+            if (e.getLinkStatus() != LinkStatus.ERROR_RETRY && link.getBooleanProperty(ExtaBitCom.NOCHUNKS, false) == false) {
+                link.setProperty(ExtaBitCom.NOCHUNKS, Boolean.valueOf(true));
+                throw new PluginException(LinkStatus.ERROR_RETRY);
+            }
+        }
     }
 
     @Override
@@ -373,6 +422,10 @@ public class ExtaBitCom extends PluginForHost {
         br.setFollowRedirects(false);
         br.postPage("http://extabit.com/login.jsp", "email=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass()) + "&remember=1&auth_submit_login.x=" + new Random().nextInt(10) + "&auth_submit_login.y=" + new Random().nextInt(10) + "&auth_submit_login=Enter");
         if (br.getCookie("http://extabit.com/", "auth_uid") == null || br.getCookie("http://extabit.com/", "auth_hash") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+    }
+
+    private void setConfigElements() {
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ExtaBitCom.SKIPFREELIMITS, JDL.L("plugins.hoster.ExtaBitCom.skipfreelimits", "Free Mode: Try to skip captchas, speed-limits and waittimes.\r\nWARNING: This can cause bugs/problems - if you experience bugs/problems with downloads from extabit.com with this enabled, disable it again!")).setDefaultValue(false));
     }
 
     @Override

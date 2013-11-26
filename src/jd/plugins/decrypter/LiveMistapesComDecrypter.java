@@ -19,15 +19,19 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 
 import jd.PluginWrapper;
+import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.plugins.Account;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
+import jd.plugins.PluginForHost;
+import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
@@ -59,6 +63,7 @@ public class LiveMistapesComDecrypter extends PluginForDecrypt {
             parameter = correctLink;
             br.setFollowRedirects(true);
         } else {
+            getUserLogin();
             br.setFollowRedirects(true);
             br.getPage(parameter);
         }
@@ -107,6 +112,23 @@ public class LiveMistapesComDecrypter extends PluginForDecrypt {
         decryptedLinks.add(mainlink);
 
         return decryptedLinks;
+    }
+
+    private boolean getUserLogin() throws Exception {
+        final PluginForHost hostPlugin = JDUtilities.getPluginForHost("livemixtapes.com");
+        final Account aa = AccountController.getInstance().getValidAccount(hostPlugin);
+        if (aa == null) {
+            logger.info("There is no account available, stopping...");
+            return false;
+        }
+        try {
+            ((jd.plugins.hoster.LiveMixTapesCom) hostPlugin).login(this.br, aa);
+        } catch (final PluginException e) {
+            aa.setEnabled(false);
+            aa.setValid(false);
+            return false;
+        }
+        return true;
     }
 
 }

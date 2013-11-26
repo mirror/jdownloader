@@ -95,7 +95,7 @@ public class JunoCloudMe extends PluginForHost {
     private final boolean              waitTimeSkipableSolveMedia   = false;
     private final boolean              waitTimeSkipableKeyCaptcha   = false;
     private final boolean              captchaSkipableSolveMedia    = false;
-    
+
     // Connection Management
     // note: CAN NOT be negative or zero! (ie. -1 or 0) Otherwise math sections fail. .:. use [1-20]
     private static final AtomicInteger totalMaxSimultanFreeDownload = new AtomicInteger(20);
@@ -105,7 +105,7 @@ public class JunoCloudMe extends PluginForHost {
     // last XfileSharingProBasic compare :: 2.6.2.1
     // captchatype: recaptcha
     // other: no redirects
-    // mods: action required for download1 and download2 forms, account checking expire
+    // mods: action required for download1 and download2 forms, account checking expire, requestFileInformation other file not found regex
 
     private void setConstants(final Account account) {
         if (account != null && account.getBooleanProperty("free")) {
@@ -240,7 +240,7 @@ public class JunoCloudMe extends PluginForHost {
             }
         }
 
-        if (cbr.containsHTML("(No such file|>File Not Found<|>The file was removed by|Reason for deletion:\n|<li>The file (expired|deleted by (its owner|administration)))")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (cbr.containsHTML("(No such file|>File Not Found<|>The file was removed by|Reason for deletion:\n|<li>The file (expired|deleted by (its owner|administration))|>Size: </p>)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (cbr.containsHTML(MAINTENANCE)) {
             downloadLink.getLinkStatus().setStatusText(MAINTENANCEUSERTEXT);
             return AvailableStatus.TRUE;
@@ -1464,7 +1464,7 @@ public class JunoCloudMe extends PluginForHost {
      * @param controlSlot
      *            (+1|-1)
      * */
-   private void controlSlot(final int num, final Account account) {
+    private void controlSlot(final int num, final Account account) {
         synchronized (CTRLLOCK) {
             if (account == null) {
                 int was = maxFree.get();

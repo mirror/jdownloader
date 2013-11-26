@@ -102,11 +102,16 @@ public class DeviantArtCom extends PluginForHost {
         filename = Encoding.htmlDecode(filename.trim());
         String ext = null;
         String filesize = null;
-        if (br.containsHTML(">Download File<")) {
+        if (br.containsHTML(">ZIP download<")) {
+            ext = "zip";
+            DLLINK = getDOWNLOADdownloadlink();
+            if (DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            DLLINK = Encoding.htmlDecode(DLLINK.trim());
+        } else if (br.containsHTML(">Download File<")) {
             final Regex fInfo = br.getRegex("<strong>Download File</strong><br/>[\t\n\r ]+<small>([A-Za-z0-9]{1,5}), ([^<>\"]*?)</small>");
             ext = fInfo.getMatch(0);
             filesize = fInfo.getMatch(1);
-            DLLINK = br.getRegex("\"(http://(www\\.)?deviantart\\.com/download/[^<>\"]*?)\"").getMatch(0);
+            DLLINK = getDOWNLOADdownloadlink();
             if (ext == null || DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             DLLINK = Encoding.htmlDecode(DLLINK.trim());
         } else if (br.containsHTML(TYPEDOWNLOADALLOWED_HTML)) {
@@ -171,6 +176,10 @@ public class DeviantArtCom extends PluginForHost {
         if (!filename.endsWith(ext)) filename += "." + ext.trim();
         link.setFinalFileName(Encoding.htmlDecode(filename.trim()));
         return AvailableStatus.TRUE;
+    }
+
+    private String getDOWNLOADdownloadlink() {
+        return br.getRegex("\"(http://(www\\.)?deviantart\\.com/download/[^<>\"]*?)\"").getMatch(0);
     }
 
     private String getCrippledDllink() {

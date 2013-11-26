@@ -57,7 +57,7 @@ public class FaceBookComGallery extends PluginForDecrypt {
     private static final String SET_LINK_VIDEO         = "https?://(www\\.)?facebook\\.com/media/set/\\?set=vb\\.\\d+";
     private static final String ALBUMS_LINK            = "https?://(www\\.)?facebook\\.com/[a-z0-9\\.]+/photos_albums";
     private static final String PHOTOS_OF_LINK         = "https?://(www\\.)?facebook\\.com/[a-z0-9\\.]+/photos_of";
-    private static final String PHOTOS_LINK            = "https?://(www\\.)?facebook\\.com/[a-z0-9\\.]+/photos";
+    private static final String PHOTOS_LINK            = "https?://(www\\.)?facebook\\.com/[A-Za-z0-9\\.]+/photos";
 
     private String              MAINPAGE               = "http://www.facebook.com";
 
@@ -259,6 +259,10 @@ public class FaceBookComGallery extends PluginForDecrypt {
                 getpagefirsttime(parameter);
                 if (br.containsHTML(">Dieser Inhalt ist derzeit nicht verfügbar</")) {
                     logger.info("The link is either offline or an account is needed to grab it: " + parameter);
+                    return decryptedLinks;
+                }
+                if (br.containsHTML("class=\"fbStarGridBlankContent\"")) {
+                    logger.info("Album empty: " + parameter);
                     return decryptedLinks;
                 }
                 final String profileID = getProfileID();

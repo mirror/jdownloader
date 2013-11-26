@@ -105,7 +105,7 @@ public class PotLoadCom extends PluginForHost {
     // last XfileSharingProBasic compare :: 2.6.2.1
     // captchatype: null
     // other: no redirects
-    // mods:
+    // mods:fixFilename, disabled this mechanism because server sometimes sends bad filenames
 
     private void setConstants(final Account account) {
         if (account != null && account.getBooleanProperty("free")) {
@@ -1222,6 +1222,7 @@ public class PotLoadCom extends PluginForHost {
         String orgExt = null;
         String servName = null;
         String servExt = null;
+        String FFN = null;
         String orgNameExt = downloadLink.getFinalFileName();
         if (orgNameExt == null) orgNameExt = downloadLink.getName();
         if (!inValidate(orgNameExt) && orgNameExt.contains(".")) orgExt = orgNameExt.substring(orgNameExt.lastIndexOf("."));
@@ -1229,23 +1230,27 @@ public class PotLoadCom extends PluginForHost {
             orgName = new Regex(orgNameExt, "(.+)" + orgExt).getMatch(0);
         else
             orgName = orgNameExt;
-        // if (orgName.endsWith("...")) orgName = orgName.replaceFirst("\\.\\.\\.$", "");
-        String servNameExt = Encoding.htmlDecode(getFileNameFromHeader(dl.getConnection()));
-        if (!inValidate(servNameExt) && servNameExt.contains(".")) {
-            servExt = servNameExt.substring(servNameExt.lastIndexOf("."));
-            servName = new Regex(servNameExt, "(.+)" + servExt).getMatch(0);
-        } else
-            servName = servNameExt;
-        String FFN = null;
-        if (orgName.equalsIgnoreCase(fuid.toLowerCase()))
-            FFN = servNameExt;
-        else if (inValidate(orgExt) && !inValidate(servExt) && (servName.toLowerCase().contains(orgName.toLowerCase()) && !servName.equalsIgnoreCase(orgName)))
-            // when partial match of filename exists. eg cut off by quotation mark miss match, or orgNameExt has been abbreviated by hoster.
-            FFN = servNameExt;
-        else if (!inValidate(orgExt) && !inValidate(servExt) && !orgExt.equalsIgnoreCase(servExt))
-            FFN = orgName + servExt;
-        else
+        if (true) {
             FFN = orgNameExt;
+        } else {
+            // if (orgName.endsWith("...")) orgName = orgName.replaceFirst("\\.\\.\\.$", "");
+            String servNameExt = Encoding.htmlDecode(getFileNameFromHeader(dl.getConnection()));
+            if (!inValidate(servNameExt) && servNameExt.contains(".")) {
+                servExt = servNameExt.substring(servNameExt.lastIndexOf("."));
+                servName = new Regex(servNameExt, "(.+)" + servExt).getMatch(0);
+            } else
+                servName = servNameExt;
+            if (orgName.equalsIgnoreCase(fuid.toLowerCase()))
+                FFN = servNameExt;
+            else if (inValidate(orgExt) && !inValidate(servExt) && (servName.toLowerCase().contains(orgName.toLowerCase()) && !servName.equalsIgnoreCase(orgName)))
+                // when partial match of filename exists. eg cut off by quotation mark miss match, or orgNameExt has been abbreviated by
+                // hoster.
+                FFN = servNameExt;
+            else if (!inValidate(orgExt) && !inValidate(servExt) && !orgExt.equalsIgnoreCase(servExt))
+                FFN = orgName + servExt;
+            else
+                FFN = orgNameExt;
+        }
         downloadLink.setFinalFileName(FFN);
     }
 

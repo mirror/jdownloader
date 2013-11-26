@@ -160,7 +160,7 @@ public class LiveMixTapesCom extends PluginForHost {
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
         try {
-            login(account);
+            login(this.br, account);
         } catch (PluginException e) {
             account.setValid(false);
             return ai;
@@ -194,7 +194,7 @@ public class LiveMixTapesCom extends PluginForHost {
     @Override
     public void handlePremium(DownloadLink link, Account account) throws Exception {
         requestFileInformation(link);
-        login(account);
+        login(this.br, account);
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
         doFree(link);
@@ -205,7 +205,7 @@ public class LiveMixTapesCom extends PluginForHost {
         return true;
     }
 
-    private void login(Account account) throws Exception {
+    public void login(final Browser br, final Account account) throws Exception {
         this.setBrowserExclusive();
         // br.getPage(MAINPAGE);
         br.postPage("http://www.livemixtapes.com/login.php", "username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));

@@ -23,6 +23,7 @@ import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
+import jd.http.Browser.BrowserException;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -203,7 +204,8 @@ public class DlFreeFr extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
+        downloadLink.setName(new Regex(downloadLink.getDownloadURL(), "dl\\.free\\.fr/(.+)").getMatch(0));
         this.setBrowserExclusive();
         br.setReadTimeout(3 * 60 * 1000);
         br.setFollowRedirects(true);
@@ -218,6 +220,8 @@ public class DlFreeFr extends PluginForHost {
                 br.followConnection();
                 HTML = true;
             }
+        } catch (final BrowserException e) {
+            if (br.getRequest().getHttpConnection().getResponseCode() == 503) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } finally {
             try {
                 con.disconnect();

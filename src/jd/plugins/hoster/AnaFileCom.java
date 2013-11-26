@@ -110,7 +110,7 @@ public class AnaFileCom extends PluginForHost {
     private void setConstants(final Account account) {
         if (account != null && account.getBooleanProperty("free")) {
             // free account
-            chunks = 0;
+            chunks = -2;
             resumes = true;
             acctype = "Free Account";
             directlinkproperty = "freelink2";
@@ -122,7 +122,7 @@ public class AnaFileCom extends PluginForHost {
             directlinkproperty = "premlink";
         } else {
             // non account
-            chunks = 0; // tested
+            chunks = -2; // tested
             resumes = true;
             acctype = "Non Account";
             directlinkproperty = "freelink";

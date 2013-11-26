@@ -37,12 +37,12 @@ public class GeneralFilesCom extends PluginForDecrypt {
         super(wrapper);
     }
 
-    private static final String currenthost = "general-files.org";
+    private static final String currenthost = "generalfiles.biz";
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         br.setFollowRedirects(true);
-        final String parameter = param.toString().replaceAll("(general\\-files\\.com|generalfiles\\.org|generalfiles\\.me|general\\-files\\.org)/", "general-files.biz/");
+        final String parameter = param.toString().replaceAll("(general\\-files\\.com|generalfiles\\.org|generalfiles\\.me|general\\-files\\.org|general\\-files\\.biz)/", "generalfiles.biz/");
         try {
             br.getPage(parameter);
         } catch (final UnknownHostException e) {
@@ -63,6 +63,7 @@ public class GeneralFilesCom extends PluginForDecrypt {
             return decryptedLinks;
         }
 
+        br.setFollowRedirects(false);
         String fpName = br.getRegex("<h4 class=\"file\\-header\\-2\">([^<>\"]*?)</h4>").getMatch(0);
         if (fpName == null) fpName = new Regex(parameter, "/download/[a-z0-9]+/([^<>\"/]*?)\\.html").getMatch(0);
         fpName = Encoding.htmlDecode(fpName.trim());
@@ -82,15 +83,16 @@ public class GeneralFilesCom extends PluginForDecrypt {
                 if (br.getRedirectLocation() != null && br.getRedirectLocation().matches("http://(www\\.)?" + currenthost + "/download/[a-z0-9]+/[^<>\"/]*?\\.html")) {
                     br.getPage(br.getRedirectLocation());
                     continue;
-                }
+                } else if (br.containsHTML(">Please enter captcha and")) continue;
                 break;
             }
             if (br.containsHTML(">Please enter captcha and")) throw new DecrypterException(DecrypterException.CAPTCHA);
         } else {
             br.getPage("http://www." + currenthost + goLink);
         }
-        final String finallink = br.getRegex("window\\.location\\.replace\\(\\'(http[^<>\"]*?)\\'\\)").getMatch(0);
-        if (finallink == null) {
+        String finallink = br.getRegex("window\\.location\\.replace\\(\\'(http[^<>\"]*?)\\'\\)").getMatch(0);
+        if (finallink == null) finallink = br.getRedirectLocation();
+        if (finallink == null || finallink.contains(currenthost)) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }

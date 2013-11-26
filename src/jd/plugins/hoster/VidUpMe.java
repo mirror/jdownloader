@@ -57,14 +57,14 @@ public class VidUpMe extends PluginForHost {
     private static final String  PREMIUMONLY2                 = JDL.L("hoster.xfilesharingprobasic.errors.premiumonly2", "Only downloadable via premium or registered");
     private static final String  BACKSOON                     = "We will be back soon";
     // note: can not be negative -x or 0 .:. [1-*]
-    private static AtomicInteger totalMaxSimultanFreeDownload = new AtomicInteger(20);
+    private static AtomicInteger totalMaxSimultanFreeDownload = new AtomicInteger(1);
     // don't touch
     private static AtomicInteger maxFree                      = new AtomicInteger(1);
 
     // DEV NOTES
     // XfileSharingProBasic Version 2.5.6.6-raz
     // mods: added "BACKSOON" errorhandling
-    // non account: 2 * 1
+    // non account: 1 * 1
     // free account:
     // premium account:
     // protocol: no https
@@ -183,7 +183,7 @@ public class VidUpMe extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        doFree(downloadLink, true, -2, "freelink");
+        doFree(downloadLink, false, 1, "freelink");
     }
 
     public void doFree(DownloadLink downloadLink, boolean resumable, int maxchunks, String directlinkproperty) throws Exception, PluginException {
