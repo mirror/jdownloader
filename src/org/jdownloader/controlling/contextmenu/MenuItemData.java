@@ -127,7 +127,6 @@ public class MenuItemData implements Storable, MinTimeWeakReferenceCleanup {
     }
 
     public void setName(String name) {
-
         this.name = name;
     }
 
@@ -136,7 +135,6 @@ public class MenuItemData implements Storable, MinTimeWeakReferenceCleanup {
     }
 
     public void setIconKey(String iconKey) {
-
         this.iconKey = iconKey;
     }
 
@@ -255,7 +253,6 @@ public class MenuItemData implements Storable, MinTimeWeakReferenceCleanup {
         // } else if (action != null) {
         // System.out.println("Please Update Action " + action.getClass().getName());
         // }
-
         Class<?> clazz = actionData._getClazz();
         Constructor<?> c = clazz.getConstructor(new Class[] {});
         ret = (CustomizableAppAction) c.newInstance(new Object[] {});

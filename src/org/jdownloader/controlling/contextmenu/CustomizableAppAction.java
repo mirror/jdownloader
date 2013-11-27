@@ -2,13 +2,16 @@ package org.jdownloader.controlling.contextmenu;
 
 import java.awt.AlphaComposite;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 
+import javax.swing.AbstractAction;
 import javax.swing.Action;
 import javax.swing.ImageIcon;
 import javax.swing.KeyStroke;
 
+import org.appwork.swing.action.BasicAction;
 import org.appwork.swing.components.CheckBoxIcon;
 import org.appwork.utils.GetterSetter;
 import org.appwork.utils.ReflectionUtils;
@@ -21,8 +24,9 @@ import org.jdownloader.gui.views.downloads.action.Modifier;
 import org.jdownloader.images.NewTheme;
 
 public abstract class CustomizableAppAction extends AppAction {
-    private MenuItemData           menuItemData;
-    private HashSet<ActionContext> setupObjects;
+    private MenuItemData            menuItemData;
+    private HashSet<ActionContext>  setupObjects;
+    private HashMap<String, String> initialValues = new HashMap<String, String>();
 
     public List<ActionContext> getSetupObjects() {
         if (setupObjects == null) return null;
@@ -94,16 +98,11 @@ public abstract class CustomizableAppAction extends AppAction {
         String actualName = name;
         if (menuItemData != null) {
             ActionData actionData = menuItemData.getActionData();
-
             if (StringUtils.isNotEmpty(actionData.getName())) {
-
                 name = actionData.getName();
-
             }
             if (StringUtils.isNotEmpty(menuItemData.getName())) {
-
                 name = menuItemData.getName();
-
             }
         }
         if (StringUtils.equals(MenuItemData.EMPTY_NAME, name)) {
@@ -115,14 +114,26 @@ public abstract class CustomizableAppAction extends AppAction {
                 setTooltipText(actualName);
             }
         }
+        if (!initialValues.containsKey(NAME)) initialValues.put(NAME, name);
         super.setName(name);
+    }
+
+    @Override
+    public BasicAction setAccelerator(final KeyStroke stroke) {
+        if (!initialValues.containsKey(AbstractAction.ACCELERATOR_KEY)) {
+            if (stroke != null) {
+                initialValues.put(AbstractAction.ACCELERATOR_KEY, stroke.toString());
+            } else {
+                initialValues.put(AbstractAction.ACCELERATOR_KEY, null);
+            }
+        }
+        return super.setAccelerator(stroke);
     }
 
     public CustomizableAppAction() {
         super();
         if (this instanceof ActionContext) {
             addContextSetup((ActionContext) this);
-
         }
     }
 
@@ -158,6 +169,10 @@ public abstract class CustomizableAppAction extends AppAction {
 
     }
 
+    public String getInitialValue(String key) {
+        return initialValues.get(key);
+    }
+
     @Override
     public void setIconKey(String iconKey) {
 
@@ -171,6 +186,7 @@ public abstract class CustomizableAppAction extends AppAction {
 
             }
         }
+        if (!initialValues.containsKey("ICONKEY")) initialValues.put("ICONKEY", iconKey);
         super.setIconKey(iconKey);
     }
 

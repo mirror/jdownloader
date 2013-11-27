@@ -24,12 +24,10 @@ public class AddLinksAction extends CustomizableAppAction {
     private static final long serialVersionUID = -1824957567580275989L;
 
     public AddLinksAction(String string) {
-
         setName(string);
         setIconKey("add");
         setTooltipText(_GUI._.AddLinksAction_AddLinksAction_tt());
         setAccelerator(KeyEvent.VK_L, Toolkit.getDefaultToolkit().getMenuShortcutKeyMask());
-
     }
 
     public AddLinksAction() {

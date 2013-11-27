@@ -51,6 +51,7 @@ import org.jdownloader.controlling.contextmenu.MenuLink;
 import org.jdownloader.controlling.contextmenu.SeperatorData;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
+import org.jdownloader.logging.LogController;
 
 public class InfoPanel extends MigPanel implements ActionListener, Scrollable {
     public Dimension getPreferredScrollableViewportSize() {
@@ -92,6 +93,12 @@ public class InfoPanel extends MigPanel implements ActionListener, Scrollable {
 
     private JLabel            namelabel;
 
+    private JButton           iconKeyReset;
+
+    private JButton           nameReset;
+
+    private JButton           shortCutReset;
+
     public Dimension getPreferredSize() {
         Dimension ret = super.getPreferredSize();
         ret.width = Math.max(ret.width, 300);
@@ -120,6 +127,7 @@ public class InfoPanel extends MigPanel implements ActionListener, Scrollable {
             public void onChanged() {
                 item.setName(name.getText());
                 item.clearCachedAction();
+                updateResetButtons(item);
                 updateHeaderLabel(item);
                 managerFrame.fireUpdate();
 
@@ -172,6 +180,7 @@ public class InfoPanel extends MigPanel implements ActionListener, Scrollable {
                             String v = list.getSelectedValue().toString();
                             v = v.substring(0, v.length() - 4);
                             item.setIconKey(v);
+                            item.clearCachedAction();
                             updateInfo(item);
                             p.setVisible(false);
                             managerFrame.fireUpdate();
@@ -187,7 +196,7 @@ public class InfoPanel extends MigPanel implements ActionListener, Scrollable {
         // icon=new JLabel(9)
         add(namelabel = label(_GUI._.InfoPanel_InfoPanel_itemname()));
         add(name, "newline");
-        add(new JButton(new AppAction() {
+        add(nameReset = new JButton(new AppAction() {
             {
                 setIconKey("reset");
             }
@@ -198,18 +207,10 @@ public class InfoPanel extends MigPanel implements ActionListener, Scrollable {
 
                     @Override
                     protected void runInEDT() {
-                        if (MenuItemData.EMPTY_NAME.equals(name.getText())) {
-                            item.setName("");
-                            item.clearCachedAction();
-                            updateInfo(item);
-                            managerFrame.fireUpdate();
-                        } else {
-                            item.setName(MenuItemData.EMPTY_NAME);
-                            item.clearCachedAction();
-                            updateInfo(item);
-                            managerFrame.fireUpdate();
-                        }
-
+                        item.setName(null);
+                        item.clearCachedAction();
+                        updateInfo(item);
+                        managerFrame.fireUpdate();
                     }
                 };
             }
@@ -217,7 +218,7 @@ public class InfoPanel extends MigPanel implements ActionListener, Scrollable {
         }), "width 22!,height 22!");
 
         add(iconChange, "newline");
-        add(new JButton(new AppAction() {
+        add(iconKeyReset = new JButton(new AppAction() {
             {
                 setIconKey("reset");
             }
@@ -229,14 +230,7 @@ public class InfoPanel extends MigPanel implements ActionListener, Scrollable {
                     @Override
                     protected void runInEDT() {
                         if (StringUtils.isNotEmpty(item.getIconKey())) {
-
                             item.setIconKey(null);
-                            item.clearCachedAction();
-                            updateInfo(item);
-                            managerFrame.fireUpdate();
-
-                        } else {
-                            item.setIconKey(MenuItemData.EMPTY_NAME);
                             item.clearCachedAction();
                             updateInfo(item);
                             managerFrame.fireUpdate();
@@ -264,16 +258,16 @@ public class InfoPanel extends MigPanel implements ActionListener, Scrollable {
             public void keyPressed(KeyEvent event) {
                 String msg1 = KeyUtils.getShortcutString(event, true);
                 currentShortcut = KeyStroke.getKeyStroke(event.getKeyCode(), event.getModifiersEx());
-                System.out.println(":::" + event + " - " + currentShortcut + " - " + currentShortcut.getModifiers());
                 shortcut.setText(msg1);
                 save();
+                updateResetButtons(item);
             }
 
         });
         if (managerFrame.getManager().isAcceleratorsEnabled()) {
             add(label(_GUI._.InfoPanel_InfoPanel_shortcuts()));
             add(shortcut, "newline");
-            add(new JButton(new AppAction() {
+            add(shortCutReset = new JButton(new AppAction() {
                 {
                     setIconKey("reset");
                 }
@@ -284,20 +278,10 @@ public class InfoPanel extends MigPanel implements ActionListener, Scrollable {
 
                         @Override
                         protected void runInEDT() {
-                            if (StringUtils.isNotEmpty(item.getShortcut())) {
-
-                                item.setShortcut(null);
-                                item.clearCachedAction();
-                                updateInfo(item);
-                                managerFrame.fireUpdate();
-
-                            } else {
-                                item.setShortcut(MenuItemData.EMPTY_NAME);
-                                item.clearCachedAction();
-                                updateInfo(item);
-                                managerFrame.fireUpdate();
-                            }
-
+                            item.setShortcut(null);
+                            item.clearCachedAction();
+                            updateInfo(item);
+                            managerFrame.fireUpdate();
                         }
                     };
                 }
@@ -331,6 +315,36 @@ public class InfoPanel extends MigPanel implements ActionListener, Scrollable {
 
     }
 
+    public void updateResetButtons(final MenuItemData value) {
+        if (value == null) {
+            iconKeyReset.setEnabled(false);
+            iconKeyReset.setToolTipText(null);
+            nameReset.setEnabled(false);
+            nameReset.setToolTipText(null);
+            if (shortCutReset != null) {
+                shortCutReset.setEnabled(false);
+                shortCutReset.setToolTipText(null);
+            }
+        } else {
+            try {
+                CustomizableAppAction action = value.createAction();
+                String defaultIconKey = action.getInitialValue("ICONKEY");
+                iconKeyReset.setToolTipText(_GUI._.ManagerFrame_layoutPanel_resettodefault(defaultIconKey));
+                iconKeyReset.setEnabled(value.getIconKey() != null && !StringUtils.equals(value.getIconKey(), defaultIconKey));
+                String defaultName = action.getInitialValue(Action.NAME);
+                nameReset.setToolTipText(_GUI._.ManagerFrame_layoutPanel_resettodefault(defaultName));
+                nameReset.setEnabled(value.getName() != null && !StringUtils.equals(value.getName(), defaultName));
+                if (shortCutReset != null) {
+                    String defaultShortCut = action.getInitialValue(Action.ACCELERATOR_KEY);
+                    shortCutReset.setToolTipText(_GUI._.ManagerFrame_layoutPanel_resettodefault(defaultShortCut));
+                    shortCutReset.setEnabled(value.getShortcut() != null && !StringUtils.equals(value.getShortcut(), defaultShortCut));
+                }
+            } catch (Throwable e) {
+                LogController.CL().log(e);
+            }
+        }
+    }
+
     /**
      * @param lastPathComponent
      */
@@ -338,12 +352,10 @@ public class InfoPanel extends MigPanel implements ActionListener, Scrollable {
         // getParent().revalidate();
         // Component.revalidate is 1.7 only - that's why we have to cast
         JComponent p = (JComponent) getParent().getParent().getParent();
-
+        updateResetButtons(value);
         p.revalidate();
-
         this.item = value;
         if (value == null) {
-
             label.setText("");
             return;
         }
