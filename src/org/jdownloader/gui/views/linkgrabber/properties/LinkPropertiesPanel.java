@@ -98,7 +98,7 @@ public class LinkPropertiesPanel extends AbstractNodePropertiesPanel implements 
     // }
     @Override
     protected void saveSaveTo(final String str) {
-        new SetDownloadFolderInLinkgrabberAction(new SelectionInfo<CrawledPackage, CrawledLink>(currentLink, null)) {
+        new SetDownloadFolderInLinkgrabberAction(new SelectionInfo<CrawledPackage, CrawledLink>(currentLink, null, false)) {
             protected java.io.File dialog(java.io.File path) throws org.appwork.utils.swing.dialog.DialogClosedException, org.appwork.utils.swing.dialog.DialogCanceledException {
 
                 return new File(str);
@@ -185,7 +185,7 @@ public class LinkPropertiesPanel extends AbstractNodePropertiesPanel implements 
 
     @Override
     protected List<Archive> loadArchives() {
-        return ArchiveValidator.validate(new SelectionInfo<CrawledPackage, CrawledLink>(currentLink, null));
+        return ArchiveValidator.validate(new SelectionInfo<CrawledPackage, CrawledLink>(currentLink, null, false));
 
     }
 

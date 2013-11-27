@@ -293,7 +293,7 @@ public class LinkCollectorAPIImpl implements LinkCollectorAPI {
             lc.readUnlock(lb);
         }
 
-        LinkCollector.getInstance().moveLinksToDownloadList(new SelectionInfo<CrawledPackage, CrawledLink>(null, lks));
+        LinkCollector.getInstance().moveLinksToDownloadList(new SelectionInfo<CrawledPackage, CrawledLink>(null, lks, false));
 
         return true;
     }

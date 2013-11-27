@@ -39,6 +39,7 @@ public class SelectionInfo<PackageType extends AbstractPackageNode<ChildrenType,
 
     private ArraySet<AbstractNode>                                       raw;
     private HashMap<PackageType, PackageView<PackageType, ChildrenType>> view;
+    private boolean                                                      applyTableFilter;
 
     public static class PackageView<PackageType extends AbstractPackageNode<ChildrenType, PackageType>, ChildrenType extends AbstractPackageChildrenNode<PackageType>> {
         private ArraySet<ChildrenType> children;
@@ -78,8 +79,9 @@ public class SelectionInfo<PackageType extends AbstractPackageNode<ChildrenType,
     };
 
     @SuppressWarnings("unchecked")
-    public SelectionInfo(AbstractNode contextObject, List<? extends AbstractNode> selection) {
+    public SelectionInfo(AbstractNode contextObject, List<? extends AbstractNode> selection, boolean applyTableFilter) {
         this.contextObject = contextObject;
+        this.applyTableFilter = applyTableFilter;
         if (selection == null || selection.size() == 0) {
             if (contextObject == null) {
                 rawSelection = new ArraySet<AbstractNode>();
@@ -111,10 +113,10 @@ public class SelectionInfo<PackageType extends AbstractPackageNode<ChildrenType,
                 table = (PackageControllerTable<PackageType, ChildrenType>) LinkGrabberTable.getInstance();
             }
         }
-        if (table != null) {
+        if (table != null && applyTableFilter) {
             PackageControllerTableModel<PackageType, ChildrenType> tableModel = table.getModel();
             List<PackageControllerTableModelFilter<PackageType, ChildrenType>> lfilters = tableModel.getEnabledTableFilters();
-            if (lfilters != null && lfilters.size() > 1) {
+            if (lfilters != null && lfilters.size() > 0) {
                 filters = lfilters;
             }
 

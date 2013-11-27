@@ -31,7 +31,7 @@ public class PackagePropertiesPanel extends LinkPropertiesPanel {
 
     @Override
     protected List<Archive> loadArchives() {
-        return ArchiveValidator.validate(new SelectionInfo<CrawledPackage, CrawledLink>(currentPackage, null));
+        return ArchiveValidator.validate(new SelectionInfo<CrawledPackage, CrawledLink>(currentPackage, null, false));
 
     }
 
@@ -63,7 +63,7 @@ public class PackagePropertiesPanel extends LinkPropertiesPanel {
 
     @Override
     protected void saveSaveTo(final String str) {
-        new SetDownloadFolderInLinkgrabberAction(new SelectionInfo<CrawledPackage, CrawledLink>(currentPackage, null)) {
+        new SetDownloadFolderInLinkgrabberAction(new SelectionInfo<CrawledPackage, CrawledLink>(currentPackage, null, false)) {
             protected java.io.File dialog(java.io.File path) throws org.appwork.utils.swing.dialog.DialogClosedException, org.appwork.utils.swing.dialog.DialogCanceledException {
 
                 return new File(str);

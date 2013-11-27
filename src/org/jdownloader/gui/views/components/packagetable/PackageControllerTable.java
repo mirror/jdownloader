@@ -60,10 +60,10 @@ public abstract class PackageControllerTable<ParentType extends AbstractPackageN
             return tableDataVersion;
         }
 
-        protected volatile SelectionInfo<ParentType, ChildrenType> all;
-        protected volatile SelectionInfo<ParentType, ChildrenType> all_filtered;
-        protected volatile SelectionInfo<ParentType, ChildrenType> selection;
-        protected volatile SelectionInfo<ParentType, ChildrenType> selection_filtered;
+        protected volatile SelectionInfo<ParentType, ChildrenType> unfilteredList;
+        protected volatile SelectionInfo<ParentType, ChildrenType> filteredList;
+        protected volatile SelectionInfo<ParentType, ChildrenType> unfilteredSelection;
+        protected volatile SelectionInfo<ParentType, ChildrenType> filteredSelection;
         protected final AtomicLong                                 selectionVersion = new AtomicLong(-1);
 
         protected SelectionInfoCache(long tableDataVersion) {
@@ -154,7 +154,7 @@ public abstract class PackageControllerTable<ParentType extends AbstractPackageN
         return getSelectionInfo(true, true);
     }
 
-    public SelectionInfo<ParentType, ChildrenType> getSelectionInfo(final boolean selectionOnly, final boolean filtered) {
+    public SelectionInfo<ParentType, ChildrenType> getSelectionInfo(final boolean selectionOnly, final boolean excludeFilteredLinks) {
         return new EDTHelper<SelectionInfo<ParentType, ChildrenType>>() {
 
             @Override
@@ -165,43 +165,46 @@ public abstract class PackageControllerTable<ParentType extends AbstractPackageN
                     cachedSelectionInfo = new SelectionInfoCache(tableVersion);
                     selectionInfoCache.set(cachedSelectionInfo);
                 }
-                if (selectionOnly == false) {
-                    if (filtered == false) {
-                        if (cachedSelectionInfo.all == null) {
-                            cachedSelectionInfo.all = new SelectionInfo<ParentType, ChildrenType>(null, getModel().getController().getAllChildren());
-                        }
-                        return cachedSelectionInfo.all;
-                    } else {
-                        if (cachedSelectionInfo.all_filtered == null) {
-                            cachedSelectionInfo.all_filtered = new SelectionInfo<ParentType, ChildrenType>(null, getModel().getElements());
-                        }
-                        return cachedSelectionInfo.all_filtered;
-                    }
-                } else {
+                if (selectionOnly) {
                     long selection = selectionVersion.get();
                     if (cachedSelectionInfo.selectionVersion.getAndSet(selection) != selection) {
-                        cachedSelectionInfo.selection = null;
-                        cachedSelectionInfo.selection_filtered = null;
+                        cachedSelectionInfo.unfilteredSelection = null;
+                        cachedSelectionInfo.filteredSelection = null;
                     }
                     ListSelectionModel sm = getSelectionModel();
-                    if (filtered == false) {
-                        if (cachedSelectionInfo.selection == null) {
+                    if (excludeFilteredLinks) {
+                        if (cachedSelectionInfo.filteredSelection == null) {
                             if (sm.isSelectionEmpty()) {
-                                cachedSelectionInfo.selection = new SelectionInfo<ParentType, ChildrenType>(null, null);
+                                cachedSelectionInfo.filteredSelection = new SelectionInfo<ParentType, ChildrenType>(null, null, true);
+                            } else {
+                                cachedSelectionInfo.filteredSelection = new SelectionInfo<ParentType, ChildrenType>(getModel().getObjectbyRow(sm.getLeadSelectionIndex()), getModel().getSelectedObjects(), true);
+                            }
+                        }
+                        return cachedSelectionInfo.filteredSelection;
+
+                    } else {
+                        if (cachedSelectionInfo.unfilteredSelection == null) {
+                            if (sm.isSelectionEmpty()) {
+                                cachedSelectionInfo.unfilteredSelection = new SelectionInfo<ParentType, ChildrenType>(null, null, false);
                             } else {
                                 throw new WTFException("You really want an unfiltered filtered view?!");
                             }
                         }
-                        return cachedSelectionInfo.selection;
-                    } else {
-                        if (cachedSelectionInfo.selection_filtered == null) {
-                            if (sm.isSelectionEmpty()) {
-                                cachedSelectionInfo.selection_filtered = new SelectionInfo<ParentType, ChildrenType>(null, null);
-                            } else {
-                                cachedSelectionInfo.selection_filtered = new SelectionInfo<ParentType, ChildrenType>(getModel().getObjectbyRow(sm.getLeadSelectionIndex()), getModel().getSelectedObjects());
-                            }
+                        return cachedSelectionInfo.unfilteredSelection;
+                    }
+
+                } else {
+                    if (excludeFilteredLinks) {
+                        if (cachedSelectionInfo.filteredList == null) {
+                            cachedSelectionInfo.filteredList = new SelectionInfo<ParentType, ChildrenType>(null, getModel().getElements(), true);
                         }
-                        return cachedSelectionInfo.selection_filtered;
+                        return cachedSelectionInfo.filteredList;
+
+                    } else {
+                        if (cachedSelectionInfo.unfilteredList == null) {
+                            cachedSelectionInfo.unfilteredList = new SelectionInfo<ParentType, ChildrenType>(null, getModel().getController().getAllChildren(), false);
+                        }
+                        return cachedSelectionInfo.unfilteredList;
                     }
                 }
             }

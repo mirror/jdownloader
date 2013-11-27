@@ -57,7 +57,7 @@ public class DownloadFolderColumn extends ExtTextColumn<AbstractNode> {
     public boolean onRenameClick(MouseEvent e, AbstractNode clicked) {
         // JDGui.help(_GUI._.literall_usage_tipp(), _GUI._.DownloadFolderColumn_onSingleClick_object_(), NewTheme.I().getIcon("smart", 48));
 
-        new SetDownloadFolderInDownloadTableAction(new SelectionInfo<FilePackage, DownloadLink>(clicked, null)).actionPerformed(null);
+        new SetDownloadFolderInDownloadTableAction(new SelectionInfo<FilePackage, DownloadLink>(clicked, null, false)).actionPerformed(null);
         return true;
     }
 

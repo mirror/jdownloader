@@ -58,14 +58,14 @@ public class PollingAPIImpl implements PollingAPI {
         SelectionInfo<FilePackage, DownloadLink> selDc = null;
         boolean dcrl = dc.readLock();
         try {
-            selDc = new SelectionInfo<FilePackage, DownloadLink>(null, dc.getPackages());
+            selDc = new SelectionInfo<FilePackage, DownloadLink>(null, dc.getPackages(), false);
         } finally {
             dc.readUnlock(dcrl);
         }
         boolean lcrl = lc.readLock();
         SelectionInfo<CrawledPackage, CrawledLink> selLc = null;
         try {
-            selLc = new SelectionInfo<CrawledPackage, CrawledLink>(null, lc.getPackages());
+            selLc = new SelectionInfo<CrawledPackage, CrawledLink>(null, lc.getPackages(), false);
         } finally {
             lc.readUnlock(lcrl);
         }

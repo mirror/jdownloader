@@ -164,7 +164,7 @@ public class GenericDeleteFromTableToolbarAction extends AbstractToolBarAction i
                 }
             }
             if (nodesToDelete.size() > 0) {
-                final SelectionInfo<FilePackage, DownloadLink> si = new SelectionInfo<FilePackage, DownloadLink>(null, nodesToDelete);
+                final SelectionInfo<FilePackage, DownloadLink> si = new SelectionInfo<FilePackage, DownloadLink>(null, nodesToDelete, false);
                 if (si.getChildren().size() > 0) {
 
                     DownloadTabActionUtils.deleteLinksRequest(si, _GUI._.GenericDeleteFromDownloadlistAction_actionPerformed_ask_(createName()), getDeleteMode(), byPass.isBypassDialog());

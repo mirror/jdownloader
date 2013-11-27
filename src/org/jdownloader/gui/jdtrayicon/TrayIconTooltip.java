@@ -63,7 +63,7 @@ public class TrayIconTooltip extends JWindowTooltip {
     @Override
     protected void updateContent() {
         final Thread thread = Thread.currentThread();
-        final DownloadLinkAggregator dla = new DownloadLinkAggregator(new SelectionInfo<FilePackage, DownloadLink>(null, DownloadController.getInstance().getAllChildren()));
+        final DownloadLinkAggregator dla = new DownloadLinkAggregator(new SelectionInfo<FilePackage, DownloadLink>(null, DownloadController.getInstance().getAllChildren(), false));
         new EDTRunner() {
 
             @Override
