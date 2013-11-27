@@ -3,12 +3,14 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.net.URL;
 
+import jd.controlling.downloadcontroller.ManagedThrottledConnectionHandler;
 import jd.network.rtmp.RtmpDump;
 import jd.network.rtmp.url.CustomUrlStreamHandlerFactory;
 import jd.network.rtmp.url.RtmpUrlConnection;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.download.DownloadLinkDownloadable;
 import jd.plugins.download.RAFDownload;
 
 /* Old librtmp handling in revision < 13938 */
@@ -35,9 +37,14 @@ public class RTMPDownload extends RAFDownload {
 
     public RTMPDownload(final PluginForHost plugin, final DownloadLink downloadLink, final String rtmpURL) throws IOException, PluginException {
         super(plugin, downloadLink, null);
-        // TODO Auto-generated constructor stub
+
         this.plg = plugin;
         this.dLink = downloadLink;
+
+        this.connectionHandler = new ManagedThrottledConnectionHandler();
+        this.downloadable = new DownloadLinkDownloadable(downloadLink);
+        this.logger = downloadable.getLogger();
+
         url = new URL(rtmpURL);
         rtmpConnection = (RtmpUrlConnection) url.openConnection();
     }
@@ -47,7 +54,6 @@ public class RTMPDownload extends RAFDownload {
     }
 
     public boolean startDownload() throws Exception {
-        /* Workaround for retry count loop */
         return rtmpDump().start(rtmpConnection);
     }
 

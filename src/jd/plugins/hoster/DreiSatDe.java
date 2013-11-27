@@ -19,11 +19,15 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Locale;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.TreeMap;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.http.Browser;
+import jd.nutils.JDHash;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
@@ -34,9 +38,15 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.download.DownloadInterface;
+import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "3sat.de" }, urls = { "http://(www\\.)?3sat\\.de/mediathek/index\\.php\\?display=\\d+\\&mode=play(set)?\\&obj=\\d+" }, flags = { 32 })
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
+
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "3sat.de" }, urls = { "http://(www\\.)?3sat\\.de/mediathek/(index\\.php)?(\\?display=\\d+\\&|\\?)mode=play(set)?\\&obj=\\d+" }, flags = { 32 })
 public class DreiSatDe extends PluginForHost {
 
     private static final String Q_LOW      = "Q_LOW";
@@ -54,6 +64,7 @@ public class DreiSatDe extends PluginForHost {
     public void correctDownloadLink(DownloadLink link) {
         /* only flash videos are supported */
         link.setUrlDownload(link.getDownloadURL().replaceAll("\\?display=\\d+\\&", "?display=1&"));
+        link.setUrlDownload(link.getDownloadURL().replaceAll("\\?mode=play", "?display=1&mode=play"));
     }
 
     @Override
@@ -66,49 +77,73 @@ public class DreiSatDe extends PluginForHost {
                  * we make sure only one result is in ret, thats the case for svn/next major version
                  */
                 final DownloadLink sourceLink = ret.get(0);
-                String ID = new Regex(sourceLink.getDownloadURL(), "\\?display=(\\d+)").getMatch(0);
+                String ID = new Regex(sourceLink.getDownloadURL(), "\\&obj=(\\d+)").getMatch(0);
                 // Flash: 1=auto; 11=low; 13=high; 14=veryhigh; 1?=hd --> rtmp://
                 // Quicktime: 5=auto; 51=low; 53=high; 54=veryhigh; 5?=hd --> rtsp://
                 // WindowsMedia: 2=auto; 21=low; 23=high; 24=veryhigh; 2?=hd --> mms://
                 if (ID != null) {
                     Browser br = new Browser();
-                    setBrowserExclusive();
-                    br.setFollowRedirects(true);
                     br.getPage(sourceLink.getDownloadURL());
-                    String mediaUrl = br.getRegex("Flashvars\\.mediaURL\\s+?=\\s+?\"([^\"]+)\"").getMatch(0);
 
-                    if (br.containsHTML("(>Dieser Beitrag ist leider.*?nicht \\(mehr\\) verf&uuml;gbar|>Das Video ist in diesem Format.*?aktuell leider nicht verf&uuml;gbar)") || mediaUrl == null) {
-                        sourceLink.setAvailable(false);
-                        ret.set(0, sourceLink);
-                        return ret;
-                    }
                     String title = br.getRegex("<div class=\"MainBoxHeadline\">([^<]+)</").getMatch(0);
                     String titleUT = br.getRegex("<span class=\"BoxHeadlineUT\">([^<]+)</").getMatch(0);
                     if (title == null) title = br.getRegex("<title>3sat\\.online \\- Mediathek: ([^<]+)</title>").getMatch(0);
                     if (title != null) title = Encoding.htmlDecode(title + (titleUT != null ? "__" + titleUT.replaceAll(":$", "") : "").trim());
                     if (title == null) title = "UnknownTitle_" + System.currentTimeMillis();
-                    /*
-                     * little pause needed so the next call does not return trash
-                     */
-                    Thread.sleep(1000);
-                    br.getPage(mediaUrl);
-                    String app = br.getRegex("<param name=\"app\" value=\"([^\"]+)\"").getMatch(0);
-                    String host = br.getRegex("<param name=\"host\" value=\"([^\"]+)\"").getMatch(0);
 
-                    if (app == null && host == null) {
+                    if (br.containsHTML("<debuginfo>Kein Beitrag mit ID") || br.containsHTML("<statuscode>wrongParameter</statuscode>")) {
                         sourceLink.setAvailable(false);
                         ret.set(0, sourceLink);
                         return ret;
                     }
-                    if (!host.startsWith("rtmp://")) host = "rtmp://" + host;
+                    Map<String, HashMap<String, String>> MediaEntrys = new TreeMap<String, HashMap<String, String>>();
+                    HashMap<String, String> MediaEntry = null;
+
+                    Document doc = JDUtilities.parseXmlString(br.getPage("http://www.3sat.de/mediathek/xmlservice/web/beitragsDetails?ak=web&id=" + ID).toString(), false);
+
+                    /* xmlData --> HashMap */
+                    // /response/video/formitaeten/formitaet... --> name, quality, stream url
+                    NodeList nl = doc.getElementsByTagName("formitaet");
+
+                    for (int i = 0; i < nl.getLength(); i++) {
+                        Node childNode = nl.item(i);
+                        String mediaType = ((Element) childNode).getAttribute("basetype");
+                        if (isEmpty(mediaType)) continue;
+                        if (!(mediaType.contains("http_na_na") || mediaType.contains("rtmp_zdfmeta"))) continue;
+                        NodeList t = childNode.getChildNodes();
+                        MediaEntry = new HashMap<String, String>();
+                        for (int j = 0; j < t.getLength(); j++) {
+                            Node g = t.item(j);
+                            if ("#text".equals(g.getNodeName())) continue;
+                            MediaEntry.put(g.getNodeName(), g.getTextContent());
+                        }
+                        if (isEmpty(title)) continue;
+                        MediaEntry.put("basetype", mediaType);
+                        if (MediaEntry.get("url").contains("metafilegenerator.de")) continue;
+                        MediaEntrys.put(title + "@" + mediaType + MediaEntry.get("quality") + MediaEntry.get("videoBitrate"), MediaEntry);
+                    }
+
+                    if (br.containsHTML("(>Dieser Beitrag ist leider.*?nicht \\(mehr\\) verf&uuml;gbar|>Das Video ist in diesem Format.*?aktuell leider nicht verf&uuml;gbar)")) {
+                        sourceLink.setAvailable(false);
+                        ret.set(0, sourceLink);
+                        return ret;
+                    }
+
+                    /*
+                     * little pause needed so the next call does not return trash
+                     */
+                    Thread.sleep(1000);
 
                     ArrayList<DownloadLink> newRet = new ArrayList<DownloadLink>();
                     HashMap<String, DownloadLink> bestMap = new HashMap<String, DownloadLink>();
-                    for (String quality[] : br.getRegex("<video dur=\"([\\d:]+)\" paramGroup=\"gl\\-vod\\-rtmp\" src=\"([^\"]+)\" system\\-bitrate=\"(\\d+)\".*?<param name=\"quality\" value=\"([^\"]+)\".*?</video>").getMatches()) {
-                        // url = host@app@playpath
-                        String url = host + "@" + app + "@" + quality[1];
-                        String name = title + "@" + quality[3].toUpperCase(Locale.ENGLISH) + ".mp4";
-                        String fmt = quality[3];
+                    for (Entry<String, HashMap<String, String>> next : MediaEntrys.entrySet()) {
+                        MediaEntry = new HashMap<String, String>(next.getValue());
+
+                        String name = next.getKey();
+                        String protocol = MediaEntry.get("basetype").split("_")[3];
+                        String url = MediaEntry.get("url");
+                        String fmt = MediaEntry.get("quality");
+
                         if (fmt != null) fmt = fmt.toLowerCase(Locale.ENGLISH).trim();
                         if (fmt != null) {
                             /* best selection is done at the end */
@@ -139,6 +174,8 @@ public class DreiSatDe extends PluginForHost {
                             }
                         }
 
+                        String ext = MediaEntry.get("basetype").split("_")[2];
+                        name = name.split("@")[0] + "__" + MediaEntry.get("quality") + "_" + protocol + "@" + MediaEntry.get("videoBitrate") + "bps." + ext;
                         final DownloadLink link = new DownloadLink(this, name, getHost(), sourceLink.getDownloadURL(), true);
                         link.setAvailable(true);
                         link.setFinalFileName(name);
@@ -146,10 +183,11 @@ public class DreiSatDe extends PluginForHost {
                         link.setProperty("directURL", url);
                         link.setProperty("directName", name);
                         link.setProperty("directQuality", fmt);
-                        link.setProperty("LINKDUPEID", "3sat" + ID + name + fmt);
+                        link.setProperty("streamingType", protocol);
+                        link.setProperty("LINKDUPEID", "3sat" + JDHash.getMD5(ID + name + fmt + MediaEntry.get("videoBitrate") + System.nanoTime()));
 
                         try {
-                            link.setDownloadSize(durationToSec(quality[0]) * (Long.parseLong(quality[2]) / 9));
+                            link.setDownloadSize(Long.parseLong(MediaEntry.get("filesize")));
                         } catch (Throwable e) {
                         }
 
@@ -196,11 +234,6 @@ public class DreiSatDe extends PluginForHost {
         return ret;
     }
 
-    private long durationToSec(String in) {
-        String temp[] = in.split(":");
-        return (Long.parseLong(temp[0]) * 3600) + (Long.parseLong(temp[1]) * 60) + Long.parseLong(temp[2]);
-    }
-
     @Override
     public String getAGBLink() {
         return "http://www.3sat.de/page/?source=/service/140013/index.html";
@@ -217,10 +250,10 @@ public class DreiSatDe extends PluginForHost {
         download(downloadLink);
     }
 
-    private void setupRTMPConnection(String[] stream, DownloadInterface dl) {
+    private void setupRTMPConnection(String dllink, DownloadInterface dl) {
         jd.network.rtmp.url.RtmpUrlConnection rtmp = ((RTMPDownload) dl).getRtmpConnection();
-        rtmp.setPlayPath(stream[2]);
-        rtmp.setUrl(stream[0] + "/" + stream[1]);
+        // rtmp.setPlayPath(stream[2]);
+        rtmp.setUrl(dllink);
         // rtmp.setApp(stream[1]);
         rtmp.setResume(true);
         // rtmp.setSwfVfy("http://www.3sat.de/mediaplayer/5/EmbeddedPlayer.swf");
@@ -229,12 +262,16 @@ public class DreiSatDe extends PluginForHost {
     }
 
     private void download(final DownloadLink downloadLink) throws Exception {
-        if (downloadLink.getStringProperty("directURL", null) == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        String stream[] = downloadLink.getStringProperty("directURL").split("@");
-        if (stream[0].startsWith("rtmp")) {
+        String dllink = downloadLink.getStringProperty("directURL", null);
+        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if ("rtmp".equals(downloadLink.getStringProperty("streamingType", null))) {
             downloadLink.setProperty("FLVFIXER", true);
-            dl = new RTMPDownload(this, downloadLink, stream[0]);
-            setupRTMPConnection(stream, dl);
+            if (!(dllink.startsWith("http") && dllink.endsWith(".meta"))) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            br.getPage(dllink);
+            dllink = br.getRegex("<default\\-stream\\-url>(.*?)</default\\-stream\\-url>").getMatch(0);
+            if (dllink == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            dl = new RTMPDownload(this, downloadLink, dllink);
+            setupRTMPConnection(dllink, dl);
             if (!((RTMPDownload) dl).startDownload()) {
                 if (downloadLink.getLinkStatus().getStatus() != 513) {
                     // downloadLink.setProperty("directURL", null);
@@ -244,8 +281,6 @@ public class DreiSatDe extends PluginForHost {
 
         } else {
             br.setFollowRedirects(true);
-            final String dllink = stream[0];
-            if (dllink == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
             if (dllink.startsWith("mms")) throw new PluginException(LinkStatus.ERROR_FATAL, "Protocol (mms://) not supported!");
             if (dllink.startsWith("rtsp")) throw new PluginException(LinkStatus.ERROR_FATAL, "Protocol (rtsp://) not supported!");
             dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
@@ -294,12 +329,17 @@ public class DreiSatDe extends PluginForHost {
     public void resetPluginGlobals() {
     }
 
+    private boolean isEmpty(String ip) {
+        return ip == null || ip.trim().length() == 0;
+    }
+
     private void setConfigElements() {
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), Q_BEST, JDL.L("plugins.hoster.dreisat.best", "Load Best Version ONLY")).setDefaultValue(false));
+        final ConfigEntry bestonly = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), Q_BEST, JDL.L("plugins.hoster.dreisat.best", "Load Best Version ONLY")).setDefaultValue(false);
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), Q_LOW, JDL.L("plugins.hoster.dreisat.loadlow", "Load Low Version")).setDefaultValue(true));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), Q_HIGH, JDL.L("plugins.hoster.dreisat.loadhigh", "Load High Version")).setDefaultValue(true));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), Q_VERYHIGH, JDL.L("plugins.hoster.dreisat.loadveryhigh", "Load VeryHigh Version")).setDefaultValue(true));
+        getConfig().addEntry(bestonly);
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), Q_LOW, JDL.L("plugins.hoster.dreisat.loadlow", "Load Low Version")).setDefaultValue(true).setEnabledCondidtion(bestonly, false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), Q_HIGH, JDL.L("plugins.hoster.dreisat.loadhigh", "Load High Version")).setDefaultValue(true).setEnabledCondidtion(bestonly, false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), Q_VERYHIGH, JDL.L("plugins.hoster.dreisat.loadveryhigh", "Load VeryHigh Version")).setDefaultValue(true).setEnabledCondidtion(bestonly, false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), Q_HD, JDL.L("plugins.hoster.dreisat.loadhd", "Load HD Version")).setDefaultValue(false).setEnabled(false));
     }
 

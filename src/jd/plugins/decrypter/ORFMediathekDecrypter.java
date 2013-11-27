@@ -174,7 +174,6 @@ public class ORFMediathekDecrypter extends PluginForDecrypt {
                         for (String stream : new Regex(streams, "\\{(.*?)\\}").getColumn(0)) {
                             MediaEntry = new HashMap<String, String>();
                             for (String[] sss : new Regex(stream, "\"([^\"]+)\":\"([^\"]+)\"").getMatches()) {
-                                System.out.println(sss[0] + ":" + sss[1]);
                                 MediaEntry.put(sss[0], sss[1]);
                             }
                             if (isEmpty(title)) continue;

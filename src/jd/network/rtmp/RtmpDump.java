@@ -1,5 +1,6 @@
 package jd.network.rtmp;
 
+import java.awt.Color;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
@@ -22,6 +23,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.download.DownloadPluginProgress;
 import jd.plugins.hoster.RTMPDownload;
 
 import org.appwork.storage.config.JsonConfig;
@@ -95,6 +97,7 @@ public class RtmpDump extends RTMPDownload {
     public RtmpDump(final PluginForHost plugin, final DownloadLink downloadLink, final String rtmpURL) throws IOException, PluginException {
         super(plugin, downloadLink, rtmpURL);
 
+        downloadable.setDownloadInterface(this);
         config = JsonConfig.create(RtmpdumpSettings.class);
     }
 
@@ -266,6 +269,10 @@ public class RtmpDump extends RTMPDownload {
             getManagedConnetionHandler().addThrottledConnection(tcon);
             downloadable.setConnectionHandler(getManagedConnetionHandler());
 
+            DownloadPluginProgress downloadPluginProgress = null;
+            downloadPluginProgress = new DownloadPluginProgress(downloadable, this, Color.GREEN.darker());
+            downloadable.setPluginProgress(downloadPluginProgress);
+
             rtmpConnection.connect();
 
             String line = "";
@@ -371,8 +378,8 @@ public class RtmpDump extends RTMPDownload {
                                 SPEED = (BYTESLOADED - before) / (System.currentTimeMillis() - lastTime) * 1000l;
                                 lastTime = System.currentTimeMillis();
                                 before = BYTESLOADED;
-                                // downloadLink.requestGuiUpdate();
-                                downloadable.setChunksProgress(new long[] { BYTESLOADED });
+                                // downloadable.setChunksProgress(new long[] { BYTESLOADED });
+                                downloadable.setDownloadBytesLoaded(BYTESLOADED);
                             }
                         }
                     }
@@ -476,6 +483,7 @@ public class RtmpDump extends RTMPDownload {
                 downloadable.setDownloadBytesLoaded(BYTESLOADED);
             }
             plg.setDownloadInterface(null);
+            downloadable.setPluginProgress(null);
             getManagedConnetionHandler().removeThrottledConnection(tcon);
             downloadable.removeConnectionHandler(getManagedConnetionHandler());
 

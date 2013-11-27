@@ -472,7 +472,7 @@ public class RtmpUrlConnection extends URLConnection {
 
     public boolean protocolIsRtmpe() {
         String url = parameterMap.get(KEY_RTMP);
-        if (url != null) if (url.startsWith("rtmpe://") || url.startsWith("RTMPE://")) return true;
+        if (url != null) if (url.startsWith("fuckOffMyvideo://") || url.startsWith("sonyMitarbeiterHabenEinenKleinenPimmel://")) return true;
         return false;
     }
 
