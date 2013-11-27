@@ -35,7 +35,9 @@ public class ForceDownloadAction extends CustomizableTableContextAppAction<FileP
     public void actionPerformed(ActionEvent e) {
         if (!isEnabled()) return;
         JDGui.help(_GUI._.ForceDownloadAction_actionPerformed_help_title_(), _GUI._.ForceDownloadAction_actionPerformed_help_msg_(), NewTheme.I().getIcon("robot_info", -1));
+        DownloadWatchDog.getInstance().resume(getSelection().getChildren());
         DownloadWatchDog.getInstance().forceDownload(getSelection().getChildren());
+
     }
 
 }

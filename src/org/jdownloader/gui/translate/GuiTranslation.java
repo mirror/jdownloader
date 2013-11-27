@@ -3790,4 +3790,61 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Import all Menus" })
     String ImportAllMenusAdvancedAction_actionPerformed();
 
+    @Default(lngs = { "en" }, values = { "FFmpeg is missing!" })
+    String FFMpegInstallTypeChooserDialog_FFMpegInstallTypeChooserDialog_title();
+
+    @Default(lngs = { "en" }, values = { "To perform this task, the \"Third party\" application FFmpeg™ is required.\r\nFFmpeg™ is a leading multimedia application that can be started by JDownloader \r\nto merge video and audio streams and vice versa. Unfortunately, JDownloader \r\ncould not find FFmpeg™ installed on your system." })
+    String FFMpegInstallTypeChooserDialog_FFMpegInstallTypeChooserDialog_message();
+
+    @Default(lngs = { "en" }, values = { "Ok, but what now?" })
+    String FFMpegInstallTypeChooserDialog_layoutDialogContent_path_chooser();
+
+    @Default(lngs = { "en" }, values = { "Step %s1:" })
+    String lit_step_x(int i);
+
+    @Default(lngs = { "en" }, values = { "Download FFmpeg™. Recommended Version: Offical \"FFmpeg static build for linux\"" })
+    String FFMpegInstallTypeChooserDialog_FFMpegInstallTypeChooserDialog_message_download_linux();
+
+    @Default(lngs = { "en" }, values = { "Download FFmpeg™. Recommended Version: Offical \"FFmpeg binary for mac\"" })
+    String FFMpegInstallTypeChooserDialog_FFMpegInstallTypeChooserDialog_message_download_mac();
+
+    @Default(lngs = { "en" }, values = { "Download FFmpeg™. Recommended Version: Offical \"FFmpeg build for windows\"" })
+    String FFMpegInstallTypeChooserDialog_FFMpegInstallTypeChooserDialog_message_download_windows();
+
+    @Default(lngs = { "en" }, values = { "Download FFmpeg™. Recommended Version: Offical \"FFmpeg build for %s1\"" })
+    String FFMpegInstallTypeChooserDialog_FFMpegInstallTypeChooserDialog_message_download_others(String osString);
+
+    @Default(lngs = { "en" }, values = { "Install it" })
+    String FFMpegInstallTypeChooserDialog_FFMpegInstallTypeChooserDialog_message_install();
+
+    @Default(lngs = { "en" }, values = { "Tell JDownloader the Installation Location" })
+    String FFMpegInstallTypeChooserDialog_FFMpegInstallTypeChooserDialog_message_path();
+
+    @Default(lngs = { "en" }, values = { "What's the matter?" })
+    String FFMpegInstallTypeChooserDialog_layoutDialogContent_problem();
+
+    @Default(lngs = { "en" }, values = { "If you have FFmpeg™ installed, please tell us the installation path. \r\nIf not, you should download & install it first, or click cancel to skip this task." })
+    String FFMpegInstallTypeChooserDialog_FFMpegInstallTypeChooserDialog_solve();
+
+    @Default(lngs = { "en" }, values = { "Searching for the FFmpeg™ Binary" })
+    String FFMpegInstallTypeChooserDialog_run_searching_();
+
+    @Default(lngs = { "en" }, values = { "Please wait..." })
+    String lit_please_wait_dotdotdot();
+
+    @Default(lngs = { "en" }, values = { "Please choose the correct path to the  FFmpeg™ binary..." })
+    String FFMpegInstallTypeChooserDialog_layoutDialogContent_help_();
+
+    @Default(lngs = { "en" }, values = { "FFmpeg™ Setup" })
+    String FFMpegInstallProgress_getMessage();
+
+    @Default(lngs = { "en" }, values = { "FFmpeg™ is missing" })
+    String YoutubeDash_handleFree_ffmpegmissing();
+
+    @Default(lngs = { "en" }, values = { "Merging Streams..." })
+    String FFMpegProgress_getMessage_merging_();
+
+    @Default(lngs = { "en" }, values = { "Merging Failed." })
+    String YoutubeDash_handleFree_error_();
+
 }

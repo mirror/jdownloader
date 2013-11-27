@@ -6,8 +6,11 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
+import java.util.ArrayList;
+import java.util.Locale;
 
-import org.appwork.exceptions.WTFException;
+import jd.plugins.PluginProgress;
+
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.Application;
 import org.appwork.utils.Regex;
@@ -17,25 +20,11 @@ import org.appwork.utils.processes.ProcessBuilderFactory;
 import org.jdownloader.logging.LogController;
 
 public class FFmpeg {
-    public static void main(String[] args) throws InterruptedException, IOException {
-        Application.setApplication(".jd_home");
-        FFmpeg f = new FFmpeg();
-        if (!f.validateBinary()) { throw new WTFException("FFmpeg Binary missing"); }
-        System.out.println(f.getVersion());
 
-        System.out.println("ok");
-    }
-
-    private String getVersion() throws InterruptedException, IOException {
-        String[] ret = execute(5000, getFullPath(), "-version");
-        String version = new Regex(ret[0], "ffmpeg version N-(\\d+)").getMatch(0);
-        return version;
-    }
-
-    private String[] execute(final int timeout, String... cmds) throws InterruptedException, IOException {
+    private String[] execute(final int timeout, PluginProgress progess, File runin, String... cmds) throws InterruptedException, IOException {
 
         final ProcessBuilder pb = ProcessBuilderFactory.create(cmds);
-
+        if (runin != null) pb.directory(runin);
         final StringBuilder sb = new StringBuilder();
         final StringBuilder sb2 = new StringBuilder();
         final Process process = pb.start();
@@ -88,7 +77,9 @@ public class FFmpeg {
             System.out.println(process.waitFor());
             timouter.interrupt();
             if (interrupted[0]) { throw new InterruptedException("Timeout!"); }
+            return new String[] { sb.toString(), sb2.toString() };
         }
+        System.out.println(process.waitFor());
         return new String[] { sb.toString(), sb2.toString() };
 
     }
@@ -129,20 +120,45 @@ public class FFmpeg {
 
     private FFmpegSetup config;
     private LogSource   logger;
+    private String      path;
+
+    public String getPath() {
+        return path;
+    }
+
+    public void setPath(String path) {
+        this.path = path;
+    }
 
     public FFmpeg() {
         config = JsonConfig.create(FFmpegSetup.class);
         logger = LogController.getInstance().getLogger(FFmpeg.class.getName());
+        path = config.getBinaryPath();
+    }
 
+    public FFmpeg(String path) {
+        this();
+        this.path = path;
     }
 
     public boolean validateBinary() {
-        return StringUtils.isNotEmpty(getFullPath());
+        String fp = getFullPath();
+        if (StringUtils.isEmpty(fp)) return false;
+        try {
+
+            String[] result = execute(-1, null, null, fp, "-version");
+            return result != null && result.length == 2 && result[0] != null && result[0].toLowerCase(Locale.ENGLISH).contains("ffmpeg");
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return false;
     }
 
     private String getFullPath() {
         try {
-            String path = config.getBinaryPath();
+
             if (StringUtils.isEmpty(path)) return null;
 
             File file = new File(path);
@@ -156,5 +172,102 @@ public class FFmpeg {
             return null;
 
         }
+    }
+
+    public boolean isAvailable() {
+        return validateBinary();
+    }
+
+    public boolean merge(FFMpegProgress progress, String out, String videoIn, String audioIn) throws InterruptedException, IOException {
+        String[] mc = config.getMergeCommand();
+        ArrayList<String> commandLine = new ArrayList<String>();
+        commandLine.add(getFullPath());
+        for (int i = 0; i < mc.length; i++) {
+            commandLine.add(mc[i].replace("%video", videoIn).replace("%audio", audioIn).replace("%out", out));
+        }
+        // overwrite
+        commandLine.add("-y");
+        final ProcessBuilder pb = ProcessBuilderFactory.create(commandLine);
+
+        final StringBuilder sb = new StringBuilder();
+        final StringBuilder sb2 = new StringBuilder();
+        final Process process = pb.start();
+
+        final Thread reader1 = new Thread("ffmpegReader") {
+            public void run() {
+                try {
+                    sb.append(readInputStreamToString(process.getInputStream()));
+                } catch (UnsupportedEncodingException e) {
+                    e.printStackTrace();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        };
+
+        final Thread reader2 = new Thread("ffmpegReader") {
+            public void run() {
+                try {
+                    sb2.append(readInputStreamToString(process.getErrorStream()));
+
+                } catch (UnsupportedEncodingException e) {
+                    e.printStackTrace();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        };
+        reader1.start();
+        reader2.start();
+        try {
+            long start = System.currentTimeMillis();
+            long lastUpdate = System.currentTimeMillis();
+            long lastLength = 0;
+            while (true) {
+                String duration = new Regex(sb2.toString(), "Duration\\: (.*?).?\\d*?\\, start").getMatch(0);
+                if (duration != null) {
+                    long ms = formatStringToMilliseconds(duration);
+
+                    String[] times = new Regex(sb2.toString(), "time=(.*?).?\\d*? ").getColumn(0);
+                    if (times != null && times.length > 0) {
+                        long msDone = formatStringToMilliseconds(times[times.length - 1]);
+
+                        System.out.println(msDone + "/" + ms);
+                        if (progress != null) progress.updateValues(msDone, ms);
+                    }
+                }
+                try {
+                    int exitCode = process.exitValue();
+                    return exitCode == 0;
+                } catch (IllegalThreadStateException e) {
+                    // still running;
+                }
+                if (lastLength != sb2.length()) {
+                    lastUpdate = System.currentTimeMillis();
+                }
+                lastLength = sb2.length();
+
+                if (System.currentTimeMillis() - lastUpdate > 60000) {
+                    // 60 seconds without any ffmpeg update. interrupt
+                    process.destroy();
+                    throw new InterruptedException("FFMPeg does not answer");
+                }
+            }
+        } catch (InterruptedException e) {
+            process.destroy();
+            throw e;
+
+        }
+
+    }
+
+    public static long formatStringToMilliseconds(final String text) {
+        final String[] found = new Regex(text, "(\\d+):(\\d+):(\\d+)").getRow(0);
+        if (found == null) { return 0; }
+        int hours = Integer.parseInt(found[0]);
+        int minutes = Integer.parseInt(found[1]);
+        int seconds = Integer.parseInt(found[2]);
+
+        return hours * 60 * 60 * 1000 + minutes * 60 * 1000 + seconds * 1000;
     }
 }

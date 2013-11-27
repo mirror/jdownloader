@@ -19,7 +19,8 @@ package jd.plugins;
 import java.awt.Color;
 
 import javax.swing.Icon;
-import javax.swing.ImageIcon;
+
+import org.jdownloader.gui.views.downloads.columns.ETAColumn;
 
 public abstract class PluginProgress {
 
@@ -73,10 +74,11 @@ public abstract class PluginProgress {
     }
 
     public Icon getIcon(Object requestor) {
+        if (requestor instanceof ETAColumn) return null;
         return icon;
     }
 
-    public void setIcon(ImageIcon icon) {
+    public void setIcon(Icon icon) {
         this.icon = icon;
     }
 

@@ -601,7 +601,8 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
 
                 if (DownloadWatchDog.this.stateMachine.isStartState() || DownloadWatchDog.this.stateMachine.isFinal()) {
                     /*
-                     * no downloads are running, so we will force only the selected links to get started by setting stopmark to first forced link
+                     * no downloads are running, so we will force only the selected links to get started by setting stopmark to first forced
+                     * link
                      */
 
                     // DownloadWatchDog.this.setStopMark(linksForce.get(0));
@@ -714,18 +715,25 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                     break;
                 case WINDOWS:
                 default:
-                    folders = CrossSystem.getPathComponents(file);
-                    if (folders.length > 0) {
-                        String root = folders[0];
-                        if (root.matches("^[a-zA-Z]{1}:\\\\$") || root.matches("^[a-zA-Z]{1}://$")) {
-                            /* X:/ or X:\ */
-                            checking = new File(folders[0]);
-                        } else if (root.equals("\\\\")) {
-                            if (folders.length >= 3) {
-                                /* \\\\computer\\folder\\ in network */
-                                checking = new File(folders[0] + folders[1] + "\\" + folders[2]);
+                    if (file.getAbsolutePath().length() > 259) {
+                        // old windows API does not allow pathes longer than that (this api is even used in the windows 7 explorer and other
+                        // tools like ffmpeg)
+                        checking = file;
+                    } else {
+                        folders = CrossSystem.getPathComponents(file);
+                        if (folders.length > 0) {
+                            String root = folders[0];
+                            if (root.matches("^[a-zA-Z]{1}:\\\\$") || root.matches("^[a-zA-Z]{1}://$")) {
+                                /* X:/ or X:\ */
+                                checking = new File(folders[0]);
+                            } else if (root.equals("\\\\")) {
+                                if (folders.length >= 3) {
+                                    /* \\\\computer\\folder\\ in network */
+                                    checking = new File(folders[0] + folders[1] + "\\" + folders[2]);
+                                }
                             }
                         }
+
                     }
                 }
                 if (checking != null && checking.exists() && checking.isDirectory()) checking = null;
@@ -2718,8 +2726,8 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                                     waitedForNewActivationRequests += System.currentTimeMillis() - currentTimeStamp;
                                     if ((getSession().isActivationRequestsWaiting() == false && DownloadWatchDog.this.getActiveDownloads() == 0)) {
                                         /*
-                                         * it's important that this if statement gets checked after wait!, else we will loop through without waiting for new
-                                         * links/user interaction
+                                         * it's important that this if statement gets checked after wait!, else we will loop through without
+                                         * waiting for new links/user interaction
                                          */
                                         break;
                                     }

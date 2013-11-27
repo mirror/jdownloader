@@ -57,6 +57,11 @@ public class ProgressColumn extends ExtProgressColumn<AbstractNode> {
     }
 
     @Override
+    protected boolean isIndeterminated(AbstractNode value, boolean isSelected, boolean hasFocus, int row, int column) {
+        return getValue(value) < 0;
+    }
+
+    @Override
     public boolean isEnabled(AbstractNode obj) {
 
         return obj.isEnabled();
@@ -219,6 +224,11 @@ public class ProgressColumn extends ExtProgressColumn<AbstractNode> {
 
     @Override
     protected void prepareGetter(AbstractNode value) {
+    }
+
+    @Override
+    protected int getFps() {
+        return 5;
     }
 
     @Override

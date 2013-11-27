@@ -327,10 +327,12 @@ public class FilePackageView extends ChildrenView<DownloadLink> {
         if (prog != null) {
             if (!(prog instanceof ExtractionProgress)) {
                 id = prog.getClass().getName() + link.getHost();
-                if (!tmp.pluginStates.containsKey(id)) {
-                    ps = PluginState.create(prog.getMessage(FilePackageView.this) + " (" + link.getDomainInfo().getTld() + ")", new FavitIcon(prog.getIcon(this), link.getDomainInfo()));
-                    if (ps != null) {
-                        tmp.pluginStates.put(id, ps);
+                if (prog.getIcon(this) != null) {
+                    if (!tmp.pluginStates.containsKey(id)) {
+                        ps = PluginState.create(prog.getMessage(FilePackageView.this) + " (" + link.getDomainInfo().getTld() + ")", new FavitIcon(prog.getIcon(this), link.getDomainInfo()));
+                        if (ps != null) {
+                            tmp.pluginStates.put(id, ps);
+                        }
                     }
                 }
             }
