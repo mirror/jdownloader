@@ -750,6 +750,14 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
         if (hasNotificationListener()) notifyChanges(AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, new DownloadLinkProperty(this, DownloadLinkProperty.Property.RESET, null));
     }
 
+    public void resume() {
+        try {
+            getDefaultPlugin().resumeDownloadlink(this);
+        } catch (final Throwable e) {
+            LogController.CL().log(e);
+        }
+    }
+
     public void setAvailable(boolean available) {
         setAvailableStatus(available ? AvailableStatus.TRUE : AvailableStatus.FALSE);
     }

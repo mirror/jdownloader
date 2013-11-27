@@ -152,8 +152,12 @@ public class SoundcloudCom extends PluginForHost {
             return AvailableStatus.FALSE;
         }
         filename = Encoding.htmlDecode(filename.trim().replace("\"", "'"));
+        final String id = getXML("id", source);
+        if (id != null) {
+            /* avoid duplicates */
+            filename = filename + "_" + id;
+        }
         final String filesize = getXML("original-content-size", source);
-        if (filesize != null) parameter.setDownloadSize(Long.parseLong(filesize));
         final String description = getXML("description", source);
         if (description != null) {
             try {
@@ -168,9 +172,12 @@ public class SoundcloudCom extends PluginForHost {
         username = Encoding.htmlDecode(username.trim());
         url = getXML("download-url", source);
         if (url != null) {
+            /* we have original file downloadable */
+            if (filesize != null) parameter.setDownloadSize(Long.parseLong(filesize));
             if (fromHostplugin) parameter.getLinkStatus().setStatusText(JDL.L("plugins.hoster.SoundCloudCom.status.downloadavailable", "Original file is downloadable"));
         } else {
             url = getXML("stream-url", source);
+            type = "mp3";
             if (fromHostplugin) parameter.getLinkStatus().setStatusText(JDL.L("plugins.hoster.SoundCloudCom.status.previewavailable", "Preview (Stream) is downloadable"));
         }
         if (url == null) {
@@ -199,7 +206,6 @@ public class SoundcloudCom extends PluginForHost {
                 return;
             }
             downloadLink.setDownloadSize(con.getLongContentLength());
-
         } catch (Exception e) {
             downloadLink.setProperty(property, Property.NULL);
             url = null;

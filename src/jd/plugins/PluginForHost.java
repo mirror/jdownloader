@@ -1181,4 +1181,7 @@ public abstract class PluginForHost extends Plugin {
         return new DefaultAccountFactory();
     }
 
+    public void resumeDownloadlink(DownloadLink downloadLink) {
+    }
+
 }

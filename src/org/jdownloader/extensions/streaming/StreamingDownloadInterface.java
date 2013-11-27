@@ -45,11 +45,6 @@ public class StreamingDownloadInterface extends DownloadInterface {
     }
 
     @Override
-    public boolean isResumable() {
-        return true;
-    }
-
-    @Override
     public URLConnectionAdapter getConnection() {
         return connection;
     }

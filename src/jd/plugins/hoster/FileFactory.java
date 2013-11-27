@@ -118,9 +118,11 @@ public class FileFactory extends PluginForHost {
             }
             throw new PluginException(LinkStatus.ERROR_FATAL, "This file is only available to Premium Members");
         }
+        if (br.getURL().contains("code=265")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "The requested Download URL was invalid.  Please retry your download", 5 * 60 * 1000l); }
+        if (br.getURL().contains("code=263")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Could not retrieve information about your download, or your download key has expired. Please try again. ", 5 * 60 * 1000l); }
         if (!premiumActive) {
             if (br.containsHTML(CAPTCHALIMIT)) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 10 * 60 * 1000l);
-            if (br.containsHTML(NO_SLOT) || br.getURL().contains("error.php?code=257")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, NO_SLOT_USERTEXT, 10 * 60 * 1000l); }
+            if (br.containsHTML(NO_SLOT) || br.getURL().contains("code=257")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, NO_SLOT_USERTEXT, 10 * 60 * 1000l); }
             if (br.getRegex("Please wait (\\d+) minutes to download more files, or").getMatch(0) != null) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(br.getRegex("Please wait (\\d+) minutes to download more files, or").getMatch(0)) * 60 * 1001l); }
         }
         if (br.containsHTML(SERVERFAIL)) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 60 * 60 * 1000l); }
@@ -538,8 +540,8 @@ public class FileFactory extends PluginForHost {
 
     public void handleTrafficShare(final DownloadLink downloadLink) throws Exception {
         /*
-         * This is for filefactory.com/trafficshare/ sharing links or I guess what we call public premium links. This might replace dlUrl,
-         * Unknown until proven otherwise.
+         * This is for filefactory.com/trafficshare/ sharing links or I guess what we call public premium links. This might replace dlUrl, Unknown until proven
+         * otherwise.
          */
         logger.finer("Traffic sharing link - Free Premium Donwload");
         String finalLink = br.getRegex("<a href=\"(https?://\\w+\\.filefactory\\.com/[^\"]+)\"([^>]+)?>Download").getMatch(0);

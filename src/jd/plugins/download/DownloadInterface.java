@@ -60,8 +60,6 @@ abstract public class DownloadInterface {
 
     public abstract long getTotalLinkBytesLoadedLive();
 
-    public abstract boolean isResumable();
-
     public abstract boolean startDownload() throws Exception;
 
     public abstract URLConnectionAdapter getConnection();

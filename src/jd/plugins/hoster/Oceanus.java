@@ -632,7 +632,7 @@ public class Oceanus extends PluginForHost {
 
         public void setDownloadLink(DownloadLink downloadLink) {
             this.downloadLink = downloadLink;
-            this.manager = new ManagedThrottledConnectionHandler();
+            this.manager = new ManagedThrottledConnectionHandler(this.downloadLink);
         }
 
         public void setOceanus(Oceanus oceanus) {
@@ -1026,11 +1026,6 @@ public class Oceanus extends PluginForHost {
         public void close() {
         }
 
-        @Override
-        @Deprecated
-        public boolean isResumable() {
-            return false;
-        }
     }
 
     @XmlAccessorType(XmlAccessType.FIELD)

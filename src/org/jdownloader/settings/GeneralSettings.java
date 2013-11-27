@@ -82,12 +82,13 @@ public interface GeneralSettings extends ConfigInterface {
     CleanAfterDownloadAction getCleanupAfterDownloadAction();
 
     @AboutConfig
-    @DefaultEnumValue("FILENAME")
+    @DefaultEnumValue("AUTO")
     MirrorDetectionDecision getMirrorDetectionDecision();
 
     @AboutConfig
-    @DefaultIntValue(100)
-    @SpinnerValidator(min = 1, max = 100)
+    @DefaultIntValue(10000)
+    @SpinnerValidator(min = 1, max = 10000)
+    @DescriptionForConfigEntry("Filesize must be x equal to be a mirror. 10000 = 100%")
     int getMirrorDetectionFileSizeEquality();
 
     public void setMirrorDetectionFileSizeEquality(int size);

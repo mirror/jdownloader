@@ -806,7 +806,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                 MirrorLoading condition = new MirrorLoading(finalCandidate.getLink());
                 for (DownloadLink mirror : findDownloadLinkMirrors(finalCandidate.getLink())) {
                     selector.setExcluded(mirror);
-                    if (mirror.getFinalLinkState() == null) mirror.setConditionalSkipReason(condition);
+                    if (mirror.getFinalLinkState() == null || FinalLinkState.CheckFailed(mirror.getFinalLinkState())) mirror.setConditionalSkipReason(condition);
                 }
                 return finalCandidate;
             }
@@ -905,11 +905,20 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
     private Boolean hasSameSize(DownloadLink linkCandidate, DownloadLink mirrorCandidate) {
         int fileSizeEquality = config.getMirrorDetectionFileSizeEquality();
         long sizeA = linkCandidate.getVerifiedFileSize();
-        long sizeB = linkCandidate.getVerifiedFileSize();
-        if (fileSizeEquality == 100) {
+        long sizeB = mirrorCandidate.getVerifiedFileSize();
+        if (fileSizeEquality == 10000) {
             /* 100 percent sure, only use verifiedFileSizes */
             if (sizeA >= 0 && sizeB >= 0) return sizeA == sizeB;
-            return false;
+        } else {
+            /* we use knownDownloadSize for check */
+            sizeA = linkCandidate.getKnownDownloadSize();
+            sizeB = mirrorCandidate.getKnownDownloadSize();
+            if (sizeA >= 0 && sizeB >= 0) {
+                long diff = Math.abs(sizeA - sizeB);
+                int maxDiffPercent = 10000 - fileSizeEquality;
+                long maxDiff = (sizeA * maxDiffPercent) / 10000;
+                return diff <= maxDiff;
+            }
         }
         return null;
     }
@@ -917,10 +926,10 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
     private Boolean hasSameHash(DownloadLink linkCandidate, DownloadLink mirrorCandidate) {
         String hashA = linkCandidate.getMD5Hash();
         String hashB = mirrorCandidate.getMD5Hash();
-        if (hashA != null && hashB != null) { return StringUtils.equals(hashA, hashB); }
+        if (hashA != null && hashB != null) { return hashA.equalsIgnoreCase(hashB); }
         hashA = linkCandidate.getSha1Hash();
         hashB = mirrorCandidate.getSha1Hash();
-        if (hashA != null && hashB != null) { return StringUtils.equals(hashA, hashB); }
+        if (hashA != null && hashB != null) { return hashA.equalsIgnoreCase(hashB); }
         return null;
     }
 
@@ -1566,6 +1575,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
             unSkipLink(link, session);
             if (!link.isEnabled()) link.setEnabled(true);
         }
+        link.resume();
     }
 
     private void unSkipLink(DownloadLink link, DownloadSession session) {

@@ -383,6 +383,7 @@ public class OldRAFDownload extends DownloadInterface {
             }
             logger.severe("Filesize: " + getFileSize() + " Loaded: " + totalLinkBytesLoaded);
             logger.severe("DOWNLOAD INCOMPLETE DUE TO FILESIZECHECK");
+            if (caughtPluginException != null) throw caughtPluginException;
             throw new PluginException(LinkStatus.ERROR_DOWNLOAD_INCOMPLETE, _JDT._.download_error_message_incomplete());
         }
         if (caughtPluginException == null) {
