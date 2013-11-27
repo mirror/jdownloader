@@ -832,4 +832,10 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
 
     void setHelpDialogsEnabled(boolean b);
 
+    @AboutConfig
+    @DefaultBooleanValue(true)
+    boolean isHateCaptchasTextInCaptchaDialogVisible();
+
+    void setHateCaptchasTextInCaptchaDialogVisible(boolean b);
+
 }

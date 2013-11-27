@@ -553,7 +553,7 @@ public abstract class AbstractCaptchaDialog extends AbstractDialog<Object> {
         // premium.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0,
         // premium.getForeground()));
         LazyHostPlugin plg = HostPluginController.getInstance().get(hosterInfo.getTld());
-        if (plg != null && plg.isPremium()) {
+        if (plg != null && plg.isPremium() && CFG_GUI.CFG.isHateCaptchasTextInCaptchaDialogVisible()) {
             ret.add(premium);
         }
         SwingUtils.setOpaque(premium, false);

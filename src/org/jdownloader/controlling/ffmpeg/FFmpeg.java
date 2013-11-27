@@ -32,7 +32,7 @@ public class FFmpeg {
         final Thread reader1 = new Thread("ffmpegReader") {
             public void run() {
                 try {
-                    sb.append(readInputStreamToString(process.getInputStream()));
+                    readInputStreamToString(sb, process.getInputStream());
                 } catch (UnsupportedEncodingException e) {
                     e.printStackTrace();
                 } catch (IOException e) {
@@ -44,7 +44,7 @@ public class FFmpeg {
         final Thread reader2 = new Thread("ffmpegReader") {
             public void run() {
                 try {
-                    sb2.append(readInputStreamToString(process.getErrorStream()));
+                    readInputStreamToString(sb2, process.getErrorStream());
 
                 } catch (UnsupportedEncodingException e) {
                     e.printStackTrace();
@@ -74,7 +74,9 @@ public class FFmpeg {
             };
             timouter.start();
 
-            System.out.println(process.waitFor());
+            process.waitFor();
+            reader1.join();
+            reader2.join();
             timouter.interrupt();
             if (interrupted[0]) { throw new InterruptedException("Timeout!"); }
             return new String[] { sb.toString(), sb2.toString() };
@@ -84,25 +86,28 @@ public class FFmpeg {
 
     }
 
-    public static String readInputStreamToString(final InputStream fis) throws UnsupportedEncodingException, IOException {
+    public static String readInputStreamToString(StringBuilder ret, final InputStream fis) throws UnsupportedEncodingException, IOException {
         BufferedReader f = null;
         try {
             f = new BufferedReader(new InputStreamReader(fis, "UTF8"));
             String line;
-            final StringBuilder ret = new StringBuilder();
+
             final String sep = System.getProperty("line.separator");
             while ((line = f.readLine()) != null) {
-                if (ret.length() > 0) {
-                    ret.append(sep);
-                } else if (line.startsWith("\uFEFF")) {
-                    /*
-                     * Workaround for this bug: http://bugs.sun.com/view_bug.do?bug_id=4508058
-                     * http://bugs.sun.com/view_bug.do?bug_id=6378911
-                     */
+                synchronized (ret) {
 
-                    line = line.substring(1);
+                    if (ret.length() > 0) {
+                        ret.append(sep);
+                    } else if (line.startsWith("\uFEFF")) {
+                        /*
+                         * Workaround for this bug: http://bugs.sun.com/view_bug.do?bug_id=4508058
+                         * http://bugs.sun.com/view_bug.do?bug_id=6378911
+                         */
+
+                        line = line.substring(1);
+                    }
+                    ret.append(line);
                 }
-                ret.append(line);
             }
 
             return ret.toString();
@@ -196,7 +201,7 @@ public class FFmpeg {
         final Thread reader1 = new Thread("ffmpegReader") {
             public void run() {
                 try {
-                    sb.append(readInputStreamToString(process.getInputStream()));
+                    readInputStreamToString(sb, process.getInputStream());
                 } catch (UnsupportedEncodingException e) {
                     e.printStackTrace();
                 } catch (IOException e) {
@@ -208,7 +213,7 @@ public class FFmpeg {
         final Thread reader2 = new Thread("ffmpegReader") {
             public void run() {
                 try {
-                    sb2.append(readInputStreamToString(process.getErrorStream()));
+                    readInputStreamToString(sb2, process.getErrorStream());
 
                 } catch (UnsupportedEncodingException e) {
                     e.printStackTrace();
@@ -224,20 +229,25 @@ public class FFmpeg {
             long lastUpdate = System.currentTimeMillis();
             long lastLength = 0;
             while (true) {
-                String duration = new Regex(sb2.toString(), "Duration\\: (.*?).?\\d*?\\, start").getMatch(0);
-                if (duration != null) {
-                    long ms = formatStringToMilliseconds(duration);
+                synchronized (sb2) {
 
-                    String[] times = new Regex(sb2.toString(), "time=(.*?).?\\d*? ").getColumn(0);
-                    if (times != null && times.length > 0) {
-                        long msDone = formatStringToMilliseconds(times[times.length - 1]);
+                    String duration = new Regex(sb2.toString(), "Duration\\: (.*?).?\\d*?\\, start").getMatch(0);
+                    if (duration != null) {
+                        long ms = formatStringToMilliseconds(duration);
 
-                        System.out.println(msDone + "/" + ms);
-                        if (progress != null) progress.updateValues(msDone, ms);
+                        String[] times = new Regex(sb2.toString(), "time=(.*?).?\\d*? ").getColumn(0);
+                        if (times != null && times.length > 0) {
+                            long msDone = formatStringToMilliseconds(times[times.length - 1]);
+
+                            System.out.println(msDone + "/" + ms);
+                            if (progress != null) progress.updateValues(msDone, ms);
+                        }
                     }
                 }
                 try {
                     int exitCode = process.exitValue();
+                    reader1.join();
+                    reader2.join();
                     return exitCode == 0;
                 } catch (IllegalThreadStateException e) {
                     // still running;
