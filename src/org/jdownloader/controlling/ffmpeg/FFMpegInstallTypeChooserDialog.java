@@ -96,7 +96,8 @@ public class FFMpegInstallTypeChooserDialog extends AbstractDialog<Object> imple
                                 case WINDOWS:
                                     if (f.getName().equalsIgnoreCase("ffmpeg.exe") && f.isFile()) { throw new FoundException(f); }
                                     break;
-                                case OTHERS:
+                                case LINUX:
+                                case MAC:
                                     if (f.getName().equalsIgnoreCase("ffmpeg") && f.isFile() && f.canExecute()) { throw new FoundException(f); }
                                     break;
                                 }
