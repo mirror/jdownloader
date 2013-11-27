@@ -30,7 +30,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filestube.com" }, urls = { "http://(www\\.)?(filestube\\.com/([^<>/\"]+\\.html|[A-Za-z0-9]{10,})|video\\.filestube\\.com/(watch,[a-z0-9]+/.+\\.html|[a-z0-9]+))" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filestube.com" }, urls = { "http://(www\\.)?(filestube\\.(com|to)/([^<>/\"]+\\.html|[A-Za-z0-9]{10,})|video\\.filestube\\.(com|to)/(watch,[a-z0-9]+/.+\\.html|[a-z0-9]+))" }, flags = { 0 })
 public class FlStbCm extends PluginForDecrypt {
 
     public FlStbCm(PluginWrapper wrapper) {
@@ -38,19 +38,20 @@ public class FlStbCm extends PluginForDecrypt {
         // TODO Auto-generated constructor stub
     }
 
-    private static final String INVALIDLINKS = "http://(www\\.)?filestube\\.com/(source|advanced_search\\.html|search|look_for\\.html.+|sponsored_go\\.html.+|account|about\\.html|alerts/|api\\.html|contact\\.html|dmca\\.html|feedback|privacy\\.html|terms\\.html|trends/|last_added_files\\.html|add_contact\\.html|apidoc\\.html|submit\\.html|query\\.html|affiliation\\.html|cookies_policy\\.html)";
+    private static final String INVALIDLINKS = "http://(www\\.)?filestube\\.(com|to)/(source|advanced_search\\.html|search|look_for\\.html.+|sponsored_go\\.html.+|account|about\\.html|alerts/|api\\.html|contact\\.html|dmca\\.html|feedback|privacy\\.html|terms\\.html|trends/|last_added_files\\.html|add_contact\\.html|apidoc\\.html|submit\\.html|query\\.html|affiliation\\.html|cookies_policy\\.html)";
+    private static final String NICE_HOST    = "filestube.to";
 
     @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final FilePackage fp = FilePackage.getInstance();
-        final String parameter = param.toString();
+        final String parameter = param.toString().replace("filestube.com/", "filestube.to/");
         if (parameter.matches(INVALIDLINKS)) {
             logger.info("Link invalid: " + parameter);
             return decryptedLinks;
         }
         // Allows us to get age restricted videos
-        br.setCookie("http://filestube.com/", "adultChecked", "1");
+        br.setCookie("http://" + NICE_HOST, "adultChecked", "1");
         br.setFollowRedirects(true);
         try {
             br.getPage(parameter);
@@ -59,7 +60,7 @@ public class FlStbCm extends PluginForDecrypt {
             return decryptedLinks;
         }
         br.setFollowRedirects(false);
-        if (br.getURL().contains("filestube.com/query.html")) {
+        if (br.getURL().contains(NICE_HOST + "/query.html")) {
             logger.info("The added link links to a search links and those links are unsupported: " + br.getURL());
             return decryptedLinks;
         }
@@ -83,14 +84,14 @@ public class FlStbCm extends PluginForDecrypt {
                 return null;
             }
             decryptedLinks.add(createDownloadlink(finallink));
-        } else if (parameter.contains("video.filestube.com/")) {
+        } else if (parameter.contains("video." + NICE_HOST + "/")) {
             if (br.containsHTML("(>Error 404 video not found<|>Sorry, the video you requested does not exist|>This video has been removed)")) {
                 logger.info("Link offline: " + parameter);
                 return decryptedLinks;
             }
             String externID = null;
             // Check if there was a redirect to another site
-            if (!br.getURL().contains("filestube.com/")) {
+            if (!br.getURL().contains(NICE_HOST + "/")) {
                 externID = br.getURL();
                 decryptedLinks.add(createDownloadlink(externID));
                 return decryptedLinks;
@@ -272,7 +273,7 @@ public class FlStbCm extends PluginForDecrypt {
             }
         } else {
             br.setFollowRedirects(true);
-            if (br.getURL().equals("http://www.filestube.com/")) {
+            if (br.getURL().equals("http://www." + NICE_HOST + "/")) {
                 logger.info("Link offline: " + parameter);
                 return decryptedLinks;
             }
@@ -333,7 +334,7 @@ public class FlStbCm extends PluginForDecrypt {
                             if (alts != null && alts.length != 0) {
                                 Browser br3 = br.cloneBrowser();
                                 for (String link : alts) {
-                                    br3.getPage("http://www.filestube.com/" + link + "/go.html");
+                                    br3.getPage("http://www." + NICE_HOST + "/" + link + "/go.html");
                                     String finallink = br3.getRegex("<noframes> <br /> <a href=\"(.*?)\"").getMatch(0);
                                     if (finallink == null) finallink = br3.getRegex("<iframe style=\".*?\" src=\"(.*?)\"").getMatch(0);
                                     if (finallink != null) decryptedLinks.add(createDownloadlink(finallink));

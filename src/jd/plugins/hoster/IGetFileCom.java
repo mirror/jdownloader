@@ -72,22 +72,22 @@ import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.os.CrossSystem;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "igetfile.com" }, urls = { "https?://(www\\.)?igetfile\\.com/((vid)?embed-)?[a-z0-9]{12}" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sumofile.me", "igetfile.com" }, urls = { "https?://(www\\.)?(igetfile\\.com|sumofile\\.me)/((vid)?embed-)?[a-z0-9]{12}", "hg45890huz459j0bhterijmopwegrvpoijmn35h9jbjrtlpikKILL_ME_JD2_RELEASE47jznb" }, flags = { 2, 0 })
 @SuppressWarnings("deprecation")
 public class IGetFileCom extends PluginForHost {
 
     // Site Setters
     // primary website url, take note of redirects
-    private final String               COOKIE_HOST                  = "http://igetfile.com";
+    private final String               COOKIE_HOST                  = "http://sumofile.me";
     // domain names used within download links.
-    private final String               DOMAINS                      = "(igetfile\\.com)";
+    private final String               DOMAINS                      = "(sumofile\\.me)";
     private final String               PASSWORDTEXT                 = "<br><b>Passwor(d|t):</b> <input";
     private final String               MAINTENANCE                  = ">This server is in maintenance mode";
     private final String               dllinkRegex                  = "https?://(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|([\\w\\-]+\\.)?" + DOMAINS + ")(:\\d{1,5})?/((files(/(dl|download))?|d|cgi-bin/dl\\.cgi|dl)/(\\d+/)?([a-z0-9]+/){1,4}[^/<>\r\n\t]+|[a-z0-9]{58}/v(ideo)?\\.mp4)";
     private final boolean              supportsHTTPS                = false;
     private final boolean              enforcesHTTPS                = false;
     private final boolean              useRUA                       = false;
-    private final boolean              useAltLinkCheck              = false;
+    private final boolean              useAltLinkCheck              = true;
     private final boolean              useVidEmbed                  = false;
     private final boolean              useAltEmbed                  = false;
     private final boolean              useAltExpire                 = true;

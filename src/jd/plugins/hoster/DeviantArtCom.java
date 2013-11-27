@@ -52,6 +52,7 @@ public class DeviantArtCom extends PluginForHost {
     private final String        MATURECONTENTFILTER        = ">Mature Content Filter<";
     private static Object       LOCK                       = new Object();
     private static final String FASTLINKCHECK              = "FASTLINKCHECK";
+    private static final String FORCEHTMLDOWNLOAD          = "FORCEHTMLDOWNLOAD";
 
     private static final String GENERALFILENAMEREGEX       = "<title>([^<>\"]*?) on deviantART</title>";
     private static final String TYPEDOWNLOADALLOWED_HTML   = "class=\"text\">HTML download</span>";
@@ -102,7 +103,11 @@ public class DeviantArtCom extends PluginForHost {
         filename = Encoding.htmlDecode(filename.trim());
         String ext = null;
         String filesize = null;
-        if (br.containsHTML(">ZIP download<")) {
+        if (this.getPluginConfig().getBooleanProperty(FORCEHTMLDOWNLOAD, false)) {
+            HTMLALLOWED = true;
+            filename = findServerFilename(filename);
+            ext = "html";
+        } else if (br.containsHTML(">ZIP download<")) {
             ext = "zip";
             DLLINK = getDOWNLOADdownloadlink();
             if (DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -347,6 +352,7 @@ public class DeviantArtCom extends PluginForHost {
 
     public void setConfigElements() {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), FASTLINKCHECK, JDL.L("plugins.hoster.deviantartcom.fastLinkcheck", "Enable fast linkcheck (filesize and correct filename won't be shown in linkgrabber)?")).setDefaultValue(false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), FORCEHTMLDOWNLOAD, JDL.L("plugins.hoster.deviantartcom.forceHTMLDownload", "Download html code instead of the media (files/pictures)?")).setDefaultValue(false));
     }
 
     @Override

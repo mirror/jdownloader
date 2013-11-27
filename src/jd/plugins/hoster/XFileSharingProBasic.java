@@ -104,8 +104,8 @@ public class XFileSharingProBasic extends PluginForHost {
         // strip video hosting url's to reduce possible duped links.
         link.setUrlDownload(link.getDownloadURL().replace("/vidembed-", "/"));
         // output the hostmask as we wish based on COOKIE_HOST url!
-        String desiredHost = new Regex(COOKIE_HOST, "https?://([^/]+)").getMatch(0);
-        String importedHost = new Regex(link.getDownloadURL(), "https?://([^/]+)").getMatch(0);
+        final String desiredHost = new Regex(COOKIE_HOST, "https?://([^/]+)").getMatch(0);
+        final String importedHost = new Regex(link.getDownloadURL(), "https?://([^/]+)").getMatch(0);
         link.setUrlDownload(link.getDownloadURL().replaceAll(importedHost, desiredHost));
     }
 

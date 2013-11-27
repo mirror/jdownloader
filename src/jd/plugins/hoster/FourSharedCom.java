@@ -435,24 +435,29 @@ public class FourSharedCom extends PluginForHost {
             prepBrowser(br);
             br.setFollowRedirects(true);
             br.getPage(downloadLink.getDownloadURL());
+            if (br.containsHTML("The file link that you requested is not valid")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            String filename = null, size = null;
             // need password?
-            if (br.containsHTML(PASSWORDTEXT)) downloadLink.getLinkStatus().setStatusText(JDL.L("plugins.hoster.foursharedcom.passwordprotected", "This link is password protected"));
-            if (br.containsHTML("The file link that you requested is not valid")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
-            String filename = br.getRegex("title\" content=\"(.*?)\"").getMatch(0);
-            if (filename == null) {
-                filename = br.getRegex(Pattern.compile("id=\"fileNameTextSpan\">(.*?)</span>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
+            if (br.containsHTML(PASSWORDTEXT)) {
+                downloadLink.getLinkStatus().setStatusText(JDL.L("plugins.hoster.foursharedcom.passwordprotected", "This link is password protected"));
+                filename = br.getRegex("id=\"fileNameText\">([^<>\"]*?)</h1>").getMatch(0);
+            } else {
+                filename = br.getRegex("title\" content=\"(.*?)\"").getMatch(0);
                 if (filename == null) {
-                    filename = br.getRegex("<title>(.*?) \\- 4shared\\.com \\- online file sharing and storage \\- download</title>").getMatch(0);
-                    if (filename == null) filename = br.getRegex("<h1 id=\"fileNameText\">(.*?)</h1>").getMatch(0);
+                    filename = br.getRegex(Pattern.compile("id=\"fileNameTextSpan\">(.*?)</span>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
+                    if (filename == null) {
+                        filename = br.getRegex("<title>(.*?) \\- 4shared\\.com \\- online file sharing and storage \\- download</title>").getMatch(0);
+                        if (filename == null) filename = br.getRegex("<h1 id=\"fileNameText\">(.*?)</h1>").getMatch(0);
+                    }
+                }
+                size = br.getRegex("<td class=\"finforight lgraybox\" style=\"border\\-top:1px #dddddd solid\">([0-9,]+ [a-zA-Z]+)</td>").getMatch(0);
+                if (size == null) {
+                    size = br.getRegex("<span title=\"Size: (.*?)\">").getMatch(0);
+                    // For mp3 stream- and maybe also normal stream links
+                    if (size == null) size = br.getRegex("class=\"fileOwner dark\\-gray lucida f11\">[^<>\"/]*?</a>([^<>\"]*?) \\|").getMatch(0);
                 }
             }
-            String size = br.getRegex("<td class=\"finforight lgraybox\" style=\"border\\-top:1px #dddddd solid\">([0-9,]+ [a-zA-Z]+)</td>").getMatch(0);
-            if (size == null) {
-                size = br.getRegex("<span title=\"Size: (.*?)\">").getMatch(0);
-                // For mp3 stream- and maybe also normal stream links
-                if (size == null) size = br.getRegex("class=\"fileOwner dark\\-gray lucida f11\">[^<>\"/]*?</a>([^<>\"]*?) \\|").getMatch(0);
-            }
-            if (filename == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+            if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             /** Server sometimes sends bad filenames */
             downloadLink.setFinalFileName(Encoding.htmlDecode(filename.trim()));
             if (size != null) {

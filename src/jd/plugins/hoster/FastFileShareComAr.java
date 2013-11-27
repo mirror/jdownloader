@@ -33,7 +33,7 @@ import jd.plugins.PluginForHost;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fastfileshare.com.ar" }, urls = { "http://[\\w\\.]*?fastfileshare\\.com\\.ar/index\\.php\\?p=download\\&hash=[A-Za-z0-9]+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fastfileshare.com.ar" }, urls = { "http://(www\\.)?fastfileshare\\.com\\.ar/index\\.php\\?p=download\\&hash=[A-Za-z0-9]+" }, flags = { 2 })
 public class FastFileShareComAr extends PluginForHost {
 
     private static final String COOKIE_HOST = "http://fastfileshare.com.ar";
@@ -87,26 +87,35 @@ public class FastFileShareComAr extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
         br.setFollowRedirects(false);
-        if (!br.containsHTML("/temp/")) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        Form dlform = br.getForm(0);
-        if (dlform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         String dllink = null;
+        boolean captcha = true;
+        Form dlform = null;
         for (int i = 0; i <= 5; i++) {
             String captchaurl = br.getRegex("class=\"captchapict\" src=\"(.*?)\"").getMatch(0);
             if (captchaurl == null) {
                 logger.info("Captcharegex 1 failed!");
                 captchaurl = br.getRegex("\"(http://fastfileshare\\.com\\.ar/temp/[a-z0-9]+\\.jpg)\"").getMatch(0);
             }
-            if (captchaurl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            String code = getCaptchaCode(captchaurl, downloadLink);
-            dlform.put("private_key", code);
-            br.submitForm(dlform);
+            if (captchaurl == null && i == 0) {
+                captcha = false;
+                break;
+            } else {
+                dlform = br.getForm(0);
+                if (dlform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                String code = getCaptchaCode(captchaurl, downloadLink);
+                dlform.put("private_key", code);
+                br.submitForm(dlform);
+                dllink = br.getRedirectLocation();
+                if (dllink == null) continue;
+                break;
+            }
+        }
+        if (!captcha) {
+            br.postPage(br.getURL(), "waited=yes&pass_test={PASS}");
             dllink = br.getRedirectLocation();
-            if (dllink == null) continue;
-            break;
         }
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

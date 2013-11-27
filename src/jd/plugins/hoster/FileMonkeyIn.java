@@ -36,6 +36,7 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
+import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
@@ -211,31 +212,39 @@ public class FileMonkeyIn extends PluginForHost {
     private void doFree(final DownloadLink downloadLink) throws Exception {
         br = new Browser();
         prepareBrowser(br);
-        br.getPage(downloadLink.getDownloadURL());
         String dllink = checkDirectLink(downloadLink, "directlink");
         if (dllink == null) {
-            final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-            final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
-            rc.findID();
-            rc.load();
-            final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-            final String c = getCaptchaCode(cf, downloadLink);
-            br.postPage(br.getURL(), "recaptcha_challenge_field=" + Encoding.urlEncode(rc.getChallenge()) + "&recaptcha_response_field=" + Encoding.urlEncode(c));
-            if (br.containsHTML("google\\.com/recaptcha")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-            dllink = br.getRegex("(\\'|\")(https?://[a-z0-9\\.\\-]+\\.filemonkey\\.in/download/[^<>\"]*?)(\\'|\")").getMatch(1);
-            if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            br.getPage(downloadLink.getDownloadURL());
+            if (br.getRedirectLocation() != null) br.getPage(br.getRedirectLocation());
+            final String reconnectWait = br.getRegex("Please wait (\\d{2}(\\.\\d{2})?) minutes before downloading another file").getMatch(0);
+            if (reconnectWait != null) {
+                final double reconWait = Double.parseDouble(reconnectWait) * 60;
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, (long) reconWait * 1001 + 10000);
+            }
+            if (dllink == null) {
+                final PluginForDecrypt solveplug = JDUtilities.getPluginForDecrypt("linkcrypt.ws");
+                final jd.plugins.decrypter.LnkCrptWs.SolveMedia sm = ((jd.plugins.decrypter.LnkCrptWs) solveplug).getSolveMedia(br);
+                final File cf = sm.downloadCaptcha(getLocalCaptchaFile());
+                final String code = getCaptchaCode(cf, downloadLink);
+                final String chid = sm.getChallenge(code);
+                br.postPage(br.getURL(), "adcopy_challenge=" + Encoding.urlEncode(sm.getChallenge()) + "&adcopy_response=" + Encoding.urlEncode(chid));
+                if (br.containsHTML("solvemedia\\.com/")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                dllink = br.getRegex("(\\'|\")(https?://[a-z0-9\\.\\-]+\\.filemonkey\\.in/download/[^<>\"]*?)(\\'|\")").getMatch(1);
+                if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        downloadLink.setProperty("directlink", dllink);
         dl.startDownload();
     }
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return -1;
+        return 1;
     }
 
     private static AtomicInteger maxPrem = new AtomicInteger(1);
