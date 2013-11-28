@@ -3016,7 +3016,6 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                     case SKIP_FILE:
                         switch (CFG_GENERAL.CFG.getOnSkipDueToAlreadyExistsAction()) {
                         case SET_FILE_TO_SUCCESSFUL:
-
                             throw new PluginException(LinkStatus.FINISHED);
                         default:
                             throw new PluginException(LinkStatus.ERROR_ALREADYEXISTS);
