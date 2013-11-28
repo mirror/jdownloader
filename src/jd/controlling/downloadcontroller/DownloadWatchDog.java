@@ -3014,7 +3014,14 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                     }
                     switch (doAction) {
                     case SKIP_FILE:
-                        throw new PluginException(LinkStatus.ERROR_ALREADYEXISTS);
+                        switch (CFG_GENERAL.CFG.getOnSkipDueToAlreadyExistsAction()) {
+                        case SET_FILE_TO_SUCCESSFUL:
+                            // DOTO: http://svn.jdownloader.org/issues/10509
+                            throw new PluginException(LinkStatus.ERROR_ALREADYEXISTS);
+                        default:
+                            throw new PluginException(LinkStatus.ERROR_ALREADYEXISTS);
+                        }
+
                     case OVERWRITE_FILE:
                         if (fileInProgress) {
                             /* we cannot overwrite a file that is currently in progress */

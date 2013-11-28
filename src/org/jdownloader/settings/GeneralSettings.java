@@ -22,6 +22,7 @@ import org.appwork.storage.config.defaults.AbstractDefaultFactory;
 import org.appwork.utils.Application;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.os.CrossSystem;
+import org.jdownloader.gui.translate._GUI;
 
 public interface GeneralSettings extends ConfigInterface {
     class DefaultBrowserCommand extends AbstractDefaultFactory<String[]> {
@@ -455,4 +456,31 @@ public interface GeneralSettings extends ConfigInterface {
 
     void setCrawlerCrawlerPluginBlacklist(String[] blacklist);
 
+    public static enum OnSkipDueToAlreadyExistsAction {
+
+        SKIP_FILE() {
+            public String getName() {
+                return _GUI._.OnSkipDueToAlreadyExistsAction_skip_file();
+            }
+        },
+        SET_FILE_TO_SUCCESSFUL {
+            public String getName() {
+                return _GUI._.OnSkipDueToAlreadyExistsAction_mark_successful();
+            }
+        };
+        private OnSkipDueToAlreadyExistsAction() {
+
+        }
+
+        public String getName() {
+            return toString();
+        }
+
+    }
+
+    @AboutConfig
+    @DefaultEnumValue("SKIP_FILE")
+    OnSkipDueToAlreadyExistsAction getOnSkipDueToAlreadyExistsAction();
+
+    void setOnSkipDueToAlreadyExistsAction(OnSkipDueToAlreadyExistsAction e);
 }

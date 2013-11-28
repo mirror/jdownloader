@@ -3862,4 +3862,10 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Force all Downloads' Start" })
     String ConfirmAllContextmenuAction_context_add_and_force();
 
+    @Default(lngs = { "en" }, values = { "Skip File" })
+    String OnSkipDueToAlreadyExistsAction_skip_file();
+
+    @Default(lngs = { "en" }, values = { "Mark File as successfully loaded" })
+    String OnSkipDueToAlreadyExistsAction_mark_successful();
+
 }
