@@ -89,7 +89,7 @@ public class AdvancedValueColumn extends ExtCompoundColumn<AdvancedConfigEntry> 
 
             {
                 editorBtn = new JButton("");
-                System.out.println(1);
+
                 editorBtn.setFocusable(false);
                 editorBtn.addActionListener(new ActionListener() {
 
