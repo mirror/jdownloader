@@ -115,8 +115,10 @@ public class EgoFilesCom extends PluginForHost {
                     // google api calling is not necessary
                     reCaptchaNoId = true;
 
-                } else
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "reCaptcha type not recognized");
+                } else {
+                    logger.info("Egofiles: reCaptcha challenge with missing image!");
+                    throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "reCaptcha type not recognized", 15 * 1000l);
+                }
             } else
                 reCaptchaNoId = false;
 
