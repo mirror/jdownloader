@@ -36,8 +36,8 @@ import org.appwork.swing.exttable.columns.ExtTextAreaColumn;
 import org.appwork.swing.exttable.columns.ExtTextColumn;
 import org.appwork.utils.reflection.Clazz;
 import org.appwork.utils.swing.dialog.Dialog;
+import org.appwork.utils.swing.renderer.RenderLabel;
 import org.appwork.utils.swing.renderer.RendererMigPanel;
-import org.jdesktop.swingx.renderer.JRendererLabel;
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.controlling.contextmenu.gui.ExtPopupMenu;
 import org.jdownloader.gui.IconKey;
@@ -85,7 +85,7 @@ public class AdvancedValueColumn extends ExtCompoundColumn<AdvancedConfigEntry> 
             private AdvancedConfigEntry editing;
             protected MigPanel          editor;
             protected RendererMigPanel  renderer;
-            private JRendererLabel      label;
+            private RenderLabel         label;
 
             {
                 editorBtn = new JButton("");
@@ -103,7 +103,7 @@ public class AdvancedValueColumn extends ExtCompoundColumn<AdvancedConfigEntry> 
                         }
                     }
                 });
-                label = new JRendererLabel();
+                label = new RenderLabel();
                 rendererBtn = new JButton("");
                 this.editor = new MigPanel("ins 1", "[grow,fill]", "[18!]") {
 
