@@ -126,7 +126,7 @@ public interface Captcha9kwSettings extends ConfigInterface {
     void setfeedback(boolean b);
 
     @AboutConfig
-    @DefaultBooleanValue(true)
+    @DefaultBooleanValue(false)
     @DescriptionForConfigEntry("Activate the option selfsolve")
     boolean isSelfsolve();
 
