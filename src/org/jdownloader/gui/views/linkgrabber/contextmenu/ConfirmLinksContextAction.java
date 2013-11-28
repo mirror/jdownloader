@@ -6,7 +6,6 @@ import java.awt.event.ActionEvent;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
 
-import jd.controlling.downloadcontroller.DownloadWatchDog;
 import jd.controlling.linkcollector.LinkCollector;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledPackage;
@@ -26,6 +25,7 @@ import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.appwork.utils.swing.dialog.DialogNoAnswerException;
 import org.jdownloader.actions.AppAction;
+import org.jdownloader.controlling.Priority;
 import org.jdownloader.controlling.contextmenu.ActionContext;
 import org.jdownloader.controlling.contextmenu.CustomizableTableContextAppAction;
 import org.jdownloader.controlling.contextmenu.Customizer;
@@ -69,6 +69,39 @@ public class ConfirmLinksContextAction extends CustomizableTableContextAppAction
         this.ctrlToggle = ctrlToggle;
     }
 
+    private boolean forceDownloads = false;
+
+    @Customizer(name = "Force Downloads")
+    public boolean isForceDownloads() {
+        return forceDownloads;
+    }
+
+    public void setForceDownloads(boolean forceDownloads) {
+        this.forceDownloads = forceDownloads;
+    }
+
+    private boolean assignPriorityEnabled = false;
+
+    @Customizer(name = "Enabled Prioritychange")
+    public boolean isAssignPriorityEnabled() {
+        return assignPriorityEnabled;
+    }
+
+    public void setAssignPriorityEnabled(boolean assignPriorityEnabled) {
+        this.assignPriorityEnabled = assignPriorityEnabled;
+    }
+
+    private Priority piority = Priority.HIGHEST;
+
+    @Customizer(name = "Download Priority:")
+    public Priority getPiority() {
+        return piority;
+    }
+
+    public void setPiority(Priority piority) {
+        this.piority = piority;
+    }
+
     public static final String AUTO_START       = "autoStart";
 
     /**
@@ -76,7 +109,7 @@ public class ConfirmLinksContextAction extends CustomizableTableContextAppAction
      */
     private static final long  serialVersionUID = -3937346180905569896L;
 
-    public static void confirmSelection(final SelectionInfo<CrawledPackage, CrawledLink> selection, final boolean autoStart, final boolean clearLinkgrabber, final boolean doTabSwitch) {
+    public static void confirmSelection(final SelectionInfo<CrawledPackage, CrawledLink> selection, final boolean autoStart, final boolean clearLinkgrabber, final boolean doTabSwitch, final Priority newPriority, final boolean forcedStart) {
         Thread thread = new Thread() {
 
             public void run() {
@@ -124,10 +157,16 @@ public class ConfirmLinksContextAction extends CustomizableTableContextAppAction
                     Log.exception(e);
                 }
 
-                LinkCollector.getInstance().moveLinksToDownloadList(selection);
-                if (autoStart) {
-                    DownloadWatchDog.getInstance().startDownloads();
+                for (CrawledLink cl : selection.getChildren()) {
+                    cl.setForcedAutoStartEnabled(forcedStart);
+                    cl.setAutoStartEnabled(autoStart);
+                    if (newPriority != null) {
+                        cl.setPriority(newPriority);
+                    }
                 }
+
+                LinkCollector.getInstance().moveLinksToDownloadList(selection);
+
                 if (doTabSwitch) switchToDownloadTab();
 
                 if (clearLinkgrabber) {
@@ -182,10 +221,11 @@ public class ConfirmLinksContextAction extends CustomizableTableContextAppAction
     public void actionPerformed(ActionEvent e) {
         if (!isEnabled()) return;
         if (isSelectionOnly()) {
-            confirmSelection(getSelection(), doAutostart(), isClearListAfterConfirm(), JsonConfig.create(LinkgrabberSettings.class).isAutoSwitchToDownloadTableOnConfirmDefaultEnabled());
+
+            confirmSelection(getSelection(), doAutostart(), isClearListAfterConfirm(), JsonConfig.create(LinkgrabberSettings.class).isAutoSwitchToDownloadTableOnConfirmDefaultEnabled(), isAssignPriorityEnabled() ? getPiority() : null, isForceDownloads());
 
         } else {
-            confirmSelection(LinkGrabberTable.getInstance().getSelectionInfo(false, true), doAutostart(), isClearListAfterConfirm(), JsonConfig.create(LinkgrabberSettings.class).isAutoSwitchToDownloadTableOnConfirmDefaultEnabled());
+            confirmSelection(LinkGrabberTable.getInstance().getSelectionInfo(false, true), doAutostart(), isClearListAfterConfirm(), JsonConfig.create(LinkgrabberSettings.class).isAutoSwitchToDownloadTableOnConfirmDefaultEnabled(), isAssignPriorityEnabled() ? getPiority() : null, isForceDownloads());
         }
     }
 
@@ -232,6 +272,7 @@ public class ConfirmLinksContextAction extends CustomizableTableContextAppAction
         if (!isSelectionOnly()) {
             selection = LinkGrabberTable.getInstance().getSelectionInfo(false, true);
         }
+        onKeyModifier(-1);
         updateLabelAndIcon();
     }
 
@@ -262,8 +303,18 @@ public class ConfirmLinksContextAction extends CustomizableTableContextAppAction
     }
 
     protected void updateLabelAndIcon() {
+        if (isForceDownloads()) {
+            if (isSelectionOnly()) {
+                setName(_GUI._.ConfirmAction_ConfirmAction_context_add_and_force());
+            } else {
+                setName(_GUI._.ConfirmAllContextmenuAction_context_add_and_force());
+            }
 
-        if (doAutostart()) {
+            Image add = NewTheme.I().getImage("media-playback-start", 20);
+            Image play = NewTheme.I().getImage("prio_3", 14);
+            setSmallIcon(new ImageIcon(ImageProvider.merge(add, play, -4, 0, 6, 10)));
+            setIconKey(null);
+        } else if (doAutostart()) {
             if (isSelectionOnly()) {
                 setName(_GUI._.ConfirmAction_ConfirmAction_context_add_and_start());
             } else {

@@ -1806,6 +1806,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
      * start the DownloadWatchDog
      */
     public void startDownloads(final Runnable runBeforeStartingDownloadWatchDog) {
+
         enqueueJob(new DownloadWatchDogJob() {
 
             @Override

@@ -163,11 +163,11 @@ public class LinkGrabberTable extends PackageControllerTable<CrawledPackage, Cra
                         if (LinkGrabberTable.this.isRowSelected(row)) {
                             // clicked on a selected row. let's confirm them all
 
-                            ConfirmLinksContextAction.confirmSelection(getSelectionInfo(true, true), org.jdownloader.settings.staticreferences.CFG_LINKGRABBER.LINKGRABBER_AUTO_START_ENABLED.getValue(), false, false);
+                            ConfirmLinksContextAction.confirmSelection(getSelectionInfo(true, true), org.jdownloader.settings.staticreferences.CFG_LINKGRABBER.LINKGRABBER_AUTO_START_ENABLED.getValue(), false, false, null, false);
                         } else {
                             // clicked on a not-selected row. only add the context item
 
-                            ConfirmLinksContextAction.confirmSelection(new SelectionInfo<CrawledPackage, CrawledLink>(obj, null, false), org.jdownloader.settings.staticreferences.CFG_LINKGRABBER.LINKGRABBER_AUTO_START_ENABLED.getValue(), false, false);
+                            ConfirmLinksContextAction.confirmSelection(new SelectionInfo<CrawledPackage, CrawledLink>(obj, null, false), org.jdownloader.settings.staticreferences.CFG_LINKGRABBER.LINKGRABBER_AUTO_START_ENABLED.getValue(), false, false, null, false);
 
                         }
 

@@ -3856,4 +3856,10 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Plugin Menu Entries" })
     String DownloadsTablePluginLink_getName_object_();
 
+    @Default(lngs = { "en" }, values = { "Force Downloads' Start" })
+    String ConfirmAction_ConfirmAction_context_add_and_force();
+
+    @Default(lngs = { "en" }, values = { "Force all Downloads' Start" })
+    String ConfirmAllContextmenuAction_context_add_and_force();
+
 }

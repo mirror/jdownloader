@@ -1677,11 +1677,10 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
          * addBottom = negative number -> add at the end
          */
         DownloadController.getInstance().addAllAt(filePackagesToAdd, addTop ? 0 : -(filePackagesToAdd.size() + 10));
-        if (autostart) {
-            DownloadWatchDog.getInstance().startDownloads();
-        }
         if (force.size() > 0) {
             DownloadWatchDog.getInstance().forceDownload(force);
+        } else if (autostart) {
+            DownloadWatchDog.getInstance().startDownloads();
         }
 
     }
