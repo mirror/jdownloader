@@ -396,7 +396,7 @@ public class LinkGrabberTable extends PackageControllerTable<CrawledPackage, Cra
                         if (keystroke != null) {
                             action.setAccelerator(keystroke);
                         }
-                    } else if (MenuItemData.EMPTY_NAME.equals(mi.getShortcut())) {
+                    } else if (MenuItemData.EMPTY.equals(mi.getShortcut())) {
                         action.setAccelerator(null);
                     }
                     keystroke = (KeyStroke) action.getValue(Action.ACCELERATOR_KEY);

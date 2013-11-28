@@ -122,7 +122,7 @@ public class Renderer implements TreeCellRenderer {
                         icon = NewTheme.I().getIcon(mid.getActionData().getIconKey(), 18);
                     }
                 }
-                if (MenuItemData.EMPTY_NAME.equals(mid.getIconKey())) {
+                if (MenuItemData.EMPTY.equals(mid.getIconKey())) {
                     icon = null;
                 }
                 if (StringUtils.isEmpty(name)) {
@@ -130,10 +130,10 @@ public class Renderer implements TreeCellRenderer {
                     name = mid.getActionData().getClazzName();
                     name = name.substring(name.lastIndexOf(".") + 1);
                 }
-                if (name.equals(MenuItemData.EMPTY_NAME)) {
+                if (name.equals(MenuItemData.EMPTY)) {
                     name = mid.getActionData().getClazzName();
                     name = name.substring(name.lastIndexOf(".") + 1);
-                    name = MenuItemData.EMPTY_NAME + "(" + name + ")";
+                    name = MenuItemData.EMPTY + "(" + name + ")";
                 }
 
             }

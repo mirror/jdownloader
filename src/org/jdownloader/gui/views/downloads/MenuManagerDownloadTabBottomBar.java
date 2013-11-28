@@ -62,7 +62,7 @@ public class MenuManagerDownloadTabBottomBar extends AbstractBottomBarMenuManage
 
         fillAddLinks(mr);
 
-        mr.add(setName(setIconKey(new ActionData(GenericDeleteFromDownloadlistAction.class).putSetup(GenericDeleteFromDownloadlistAction.DELETE_ALL, true), IconKey.ICON_DELETE), MenuItemData.EMPTY_NAME));
+        mr.add(setName(setIconKey(new ActionData(GenericDeleteFromDownloadlistAction.class).putSetup(GenericDeleteFromDownloadlistAction.DELETE_ALL, true), IconKey.ICON_DELETE), MenuItemData.EMPTY));
 
         DeleteContainer delete = new DeleteContainer();
 

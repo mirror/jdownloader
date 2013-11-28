@@ -268,7 +268,7 @@ public final class TrayIconPopup extends ExtJFrame implements MouseListener {
                     if (!action.isVisible()) continue;
                     if (StringUtils.isNotEmpty(menudata.getShortcut()) && KeyStroke.getKeyStroke(menudata.getShortcut()) != null) {
                         action.setAccelerator(KeyStroke.getKeyStroke(menudata.getShortcut()));
-                    } else if (MenuItemData.EMPTY_NAME.equals(menudata.getShortcut())) {
+                    } else if (MenuItemData.EMPTY.equals(menudata.getShortcut())) {
                         action.setAccelerator(null);
                     }
                     content.add(getMenuEntry(action));

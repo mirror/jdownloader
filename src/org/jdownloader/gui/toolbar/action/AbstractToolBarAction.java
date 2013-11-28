@@ -21,7 +21,7 @@ public abstract class AbstractToolBarAction extends CustomizableAppAction {
 
     public String getIconKey() {
         if (StringUtils.isEmpty(super.getIconKey())) return IconKey.ICON_QUESTION;
-        if (MenuItemData.EMPTY_NAME.equals(super.getIconKey())) return IconKey.ICON_QUESTION;
+        if (MenuItemData.EMPTY.equals(super.getIconKey())) return IconKey.ICON_QUESTION;
         return iconKey;
     }
 

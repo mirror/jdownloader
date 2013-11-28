@@ -28,7 +28,7 @@ import org.jdownloader.images.NewTheme;
 
 public class MenuItemData implements Storable, MinTimeWeakReferenceCleanup {
 
-    public static final String      EMPTY_NAME = "<NO NAME>";
+    public static final String      EMPTY = "<EMPTY>";
     private ArrayList<MenuItemData> items;
     private String                  name;
     private String                  iconKey;
@@ -201,7 +201,7 @@ public class MenuItemData implements Storable, MinTimeWeakReferenceCleanup {
         if (!action.isVisible()) return null;
         if (StringUtils.isNotEmpty(getShortcut())) {
             action.setAccelerator(KeyStroke.getKeyStroke(getShortcut()));
-        } else if (MenuItemData.EMPTY_NAME.equals(getShortcut())) {
+        } else if (MenuItemData.EMPTY.equals(getShortcut())) {
             action.setAccelerator(null);
         }
 
@@ -397,7 +397,7 @@ public class MenuItemData implements Storable, MinTimeWeakReferenceCleanup {
 
     public static Icon getIcon(String key, int size) {
         if (StringUtils.isEmpty(key)) return null;
-        if (StringUtils.equals(key, EMPTY_NAME)) return null;
+        if (StringUtils.equals(key, EMPTY)) return null;
         return NewTheme.I().getIcon(key, size);
     }
 

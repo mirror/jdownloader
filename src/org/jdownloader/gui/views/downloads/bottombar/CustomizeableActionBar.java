@@ -149,7 +149,7 @@ public class CustomizeableActionBar extends MigPanel implements PropertyChangeLi
         if (!action.isVisible()) return;
         if (StringUtils.isNotEmpty(menudata.getShortcut())) {
             action.setAccelerator(KeyStroke.getKeyStroke(menudata.getShortcut()));
-        } else if (MenuItemData.EMPTY_NAME.equals(menudata.getShortcut())) {
+        } else if (MenuItemData.EMPTY.equals(menudata.getShortcut())) {
             action.setAccelerator(null);
         }
 
@@ -209,7 +209,7 @@ public class CustomizeableActionBar extends MigPanel implements PropertyChangeLi
 
     private String validateIconKey(String iconKey) {
         if (StringUtils.isEmpty(iconKey)) return "";
-        if (StringUtils.equals(iconKey, MenuItemData.EMPTY_NAME)) return "";
+        if (StringUtils.equals(iconKey, MenuItemData.EMPTY)) return "";
         return iconKey;
     }
 

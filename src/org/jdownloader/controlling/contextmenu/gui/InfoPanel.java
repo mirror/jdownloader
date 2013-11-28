@@ -207,7 +207,18 @@ public class InfoPanel extends MigPanel implements ActionListener, Scrollable {
 
                     @Override
                     protected void runInEDT() {
-                        item.setName(null);
+                        String newName = null;
+                        String oldName = item.getName();
+                        if (StringUtils.isNotEmpty(oldName)) {
+                            if (MenuItemData.EMPTY.equals(oldName)) {
+                                newName = null;
+                            } else {
+                                newName = MenuItemData.EMPTY;
+                            }
+                        } else {
+                            newName = MenuItemData.EMPTY;
+                        }
+                        item.setName(newName);
                         item.clearCachedAction();
                         updateInfo(item);
                         managerFrame.fireUpdate();
@@ -229,13 +240,21 @@ public class InfoPanel extends MigPanel implements ActionListener, Scrollable {
 
                     @Override
                     protected void runInEDT() {
-                        if (StringUtils.isNotEmpty(item.getIconKey())) {
-                            item.setIconKey(null);
-                            item.clearCachedAction();
-                            updateInfo(item);
-                            managerFrame.fireUpdate();
+                        String newIconKey = null;
+                        String oldIconKey = item.getIconKey();
+                        if (StringUtils.isNotEmpty(oldIconKey)) {
+                            if (MenuItemData.EMPTY.equals(oldIconKey)) {
+                                newIconKey = null;
+                            } else {
+                                newIconKey = MenuItemData.EMPTY;
+                            }
+                        } else {
+                            newIconKey = MenuItemData.EMPTY;
                         }
-
+                        item.setIconKey(newIconKey);
+                        item.clearCachedAction();
+                        updateInfo(item);
+                        managerFrame.fireUpdate();
                     }
                 };
             }
@@ -278,7 +297,18 @@ public class InfoPanel extends MigPanel implements ActionListener, Scrollable {
 
                         @Override
                         protected void runInEDT() {
-                            item.setShortcut(null);
+                            String newShortcut = null;
+                            String oldShortcut = item.getShortcut();
+                            if (StringUtils.isNotEmpty(oldShortcut)) {
+                                if (MenuItemData.EMPTY.equals(oldShortcut)) {
+                                    newShortcut = null;
+                                } else {
+                                    newShortcut = MenuItemData.EMPTY;
+                                }
+                            } else {
+                                newShortcut = MenuItemData.EMPTY;
+                            }
+                            item.setShortcut(newShortcut);
                             item.clearCachedAction();
                             updateInfo(item);
                             managerFrame.fireUpdate();
@@ -330,14 +360,17 @@ public class InfoPanel extends MigPanel implements ActionListener, Scrollable {
                 CustomizableAppAction action = value.createAction();
                 String defaultIconKey = action.getInitialValue("ICONKEY");
                 iconKeyReset.setToolTipText(_GUI._.ManagerFrame_layoutPanel_resettodefault(defaultIconKey));
-                iconKeyReset.setEnabled(value.getIconKey() != null && !StringUtils.equals(value.getIconKey(), defaultIconKey));
+                // iconKeyReset.setEnabled(value.getIconKey() != null && !StringUtils.equals(value.getIconKey(), defaultIconKey));
+                iconKeyReset.setEnabled(true);
                 String defaultName = action.getInitialValue(Action.NAME);
                 nameReset.setToolTipText(_GUI._.ManagerFrame_layoutPanel_resettodefault(defaultName));
-                nameReset.setEnabled(value.getName() != null && !StringUtils.equals(value.getName(), defaultName));
+                // nameReset.setEnabled(value.getName() != null && !StringUtils.equals(value.getName(), defaultName));
+                nameReset.setEnabled(true);
                 if (shortCutReset != null) {
                     String defaultShortCut = action.getInitialValue(Action.ACCELERATOR_KEY);
                     shortCutReset.setToolTipText(_GUI._.ManagerFrame_layoutPanel_resettodefault(defaultShortCut));
-                    shortCutReset.setEnabled(value.getShortcut() != null && !StringUtils.equals(value.getShortcut(), defaultShortCut));
+                    // shortCutReset.setEnabled(value.getShortcut() != null && !StringUtils.equals(value.getShortcut(), defaultShortCut));
+                    shortCutReset.setEnabled(true);
                 }
             } catch (Throwable e) {
                 LogController.CL().log(e);
@@ -378,9 +411,9 @@ public class InfoPanel extends MigPanel implements ActionListener, Scrollable {
                 action = mid.createAction();
                 name.setText(action.getName());
                 if (StringUtils.isEmpty(action.getName())) {
-                    name.setText(MenuItemData.EMPTY_NAME);
+                    name.setText(MenuItemData.EMPTY);
                 }
-                if (MenuItemData.EMPTY_NAME.equals(mid.getShortcut())) {
+                if (MenuItemData.EMPTY.equals(mid.getShortcut())) {
                     action.setAccelerator(null);
                 }
                 KeyStroke ks = (KeyStroke) action.getValue(Action.ACCELERATOR_KEY);
@@ -496,13 +529,13 @@ public class InfoPanel extends MigPanel implements ActionListener, Scrollable {
                     name = name.substring(name.lastIndexOf(".") + 1);
 
                 }
-                if (MenuItemData.EMPTY_NAME.equals(mid.getIconKey())) {
+                if (MenuItemData.EMPTY.equals(mid.getIconKey())) {
                     icon = null;
                 }
-                if (name.equals(MenuItemData.EMPTY_NAME)) {
+                if (name.equals(MenuItemData.EMPTY)) {
                     name = mid.getActionData().getClazzName();
                     name = name.substring(name.lastIndexOf(".") + 1);
-                    name += "(" + MenuItemData.EMPTY_NAME + ")";
+                    name += "(" + MenuItemData.EMPTY + ")";
                 }
 
             }

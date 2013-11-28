@@ -77,13 +77,13 @@ public abstract class ContextMenuManager<PackageType extends AbstractPackageNode
     }
 
     protected static ActionData setName(ActionData actionData, String name) {
-        if (StringUtils.isEmpty(name)) name = MenuItemData.EMPTY_NAME;
+        if (StringUtils.isEmpty(name)) name = MenuItemData.EMPTY;
         actionData.setName(name);
         return actionData;
     }
 
     protected static ActionData setTooltip(ActionData actionData, String tooltip) {
-        if (StringUtils.isEmpty(tooltip)) tooltip = MenuItemData.EMPTY_NAME;
+        if (StringUtils.isEmpty(tooltip)) tooltip = MenuItemData.EMPTY;
         actionData.setTooltip(tooltip);
         return actionData;
     }
