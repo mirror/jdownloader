@@ -68,6 +68,7 @@ import org.jdownloader.captcha.v2.ChallengeSolver;
 import org.jdownloader.captcha.v2.challenge.stringcaptcha.BasicCaptchaChallenge;
 import org.jdownloader.captcha.v2.solverjob.ResponseList;
 import org.jdownloader.controlling.FileCreationManager;
+import org.jdownloader.controlling.linkcrawler.LinkVariant;
 import org.jdownloader.gui.helpdialogs.HelpDialog;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
@@ -85,7 +86,8 @@ import org.jdownloader.translate._JDT;
 public abstract class PluginForHost extends Plugin {
     private static Pattern[]            PATTERNS              = new Pattern[] {
                                                               /**
-                                                               * these patterns should split filename and fileextension (extension must include the point)
+                                                               * these patterns should split filename and fileextension (extension must
+                                                               * include the point)
                                                                */
                                                               // multipart rar archives
             Pattern.compile("(.*)(\\.pa?r?t?\\.?[0-9]+.*?\\.rar$)", Pattern.CASE_INSENSITIVE),
@@ -437,7 +439,8 @@ public abstract class PluginForHost extends Plugin {
     }
 
     /**
-     * Hier werden Treffer fuer Downloadlinks dieses Anbieters in diesem Text gesucht. Gefundene Links werden dann in einem ArrayList zurueckgeliefert
+     * Hier werden Treffer fuer Downloadlinks dieses Anbieters in diesem Text gesucht. Gefundene Links werden dann in einem ArrayList
+     * zurueckgeliefert
      * 
      * @param data
      *            Ein Text mit beliebig vielen Downloadlinks dieses Anbieters
@@ -484,7 +487,8 @@ public abstract class PluginForHost extends Plugin {
     }
 
     /*
-     * OVERRIDE this function if you need to modify the link, ATTENTION: you have to use new browser instances, this plugin might not have one!
+     * OVERRIDE this function if you need to modify the link, ATTENTION: you have to use new browser instances, this plugin might not have
+     * one!
      */
     public void correctDownloadLink(final DownloadLink link) throws Exception {
     }
@@ -656,8 +660,8 @@ public abstract class PluginForHost extends Plugin {
          * 
          * in fetchAccountInfo we don't have to synchronize because we create a new instance of AccountInfo and fill it
          * 
-         * if you need customizable maxDownloads, please use getMaxSimultanDownload to handle this you are in multihost when account host does not equal link
-         * host!
+         * if you need customizable maxDownloads, please use getMaxSimultanDownload to handle this you are in multihost when account host
+         * does not equal link host!
          * 
          * 
          * 
@@ -944,8 +948,8 @@ public abstract class PluginForHost extends Plugin {
     }
 
     /**
-     * Some hosters have bad filenames. Rapidshare for example replaces all special chars and spaces with _. Plugins can try to autocorrect this based on other
-     * downloadlinks
+     * Some hosters have bad filenames. Rapidshare for example replaces all special chars and spaces with _. Plugins can try to autocorrect
+     * this based on other downloadlinks
      * 
      * @param cache
      *            TODO
@@ -1041,7 +1045,8 @@ public abstract class PluginForHost extends Plugin {
                     /* no prototypesplit available yet, create new one */
                     if (pattern != null) {
                         /*
-                         * a pattern does exist, we must use the same one to make sure the *filetypes* match (eg . part01.rar and .r01 with same filename
+                         * a pattern does exist, we must use the same one to make sure the *filetypes* match (eg . part01.rar and .r01 with
+                         * same filename
                          */
                         prototypesplit = new Regex(prototypeName, pattern).getMatch(0);
                     } else {
@@ -1182,6 +1187,26 @@ public abstract class PluginForHost extends Plugin {
     }
 
     public void resumeDownloadlink(DownloadLink downloadLink) {
+    }
+
+    public void setActiveVariantByLink(DownloadLink downloadLink, LinkVariant variant) {
+
+    }
+
+    public List<LinkVariant> getActiveVariantsByLink(DownloadLink downloadLink) {
+        return null;
+    }
+
+    public List<LinkVariant> getVariantsByLink(DownloadLink downloadLink) {
+        return null;
+    }
+
+    public JComponent getVariantPopupComponent(DownloadLink downloadLink) {
+        return null;
+    }
+
+    public boolean hasVariantToChooseFrom(DownloadLink downloadLink) {
+        return false;
     }
 
 }

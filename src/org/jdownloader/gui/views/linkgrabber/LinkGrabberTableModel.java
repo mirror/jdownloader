@@ -9,8 +9,8 @@ import jd.controlling.linkcrawler.CrawledPackage;
 import jd.controlling.packagecontroller.AbstractNode;
 
 import org.appwork.swing.exttable.ExtColumn;
-import org.jdownloader.gui.views.components.packagetable.PackageControllerTableModelData;
 import org.jdownloader.gui.views.components.packagetable.PackageControllerTableModel;
+import org.jdownloader.gui.views.components.packagetable.PackageControllerTableModelData;
 import org.jdownloader.gui.views.components.packagetable.columns.ChecksumColumn;
 import org.jdownloader.gui.views.components.packagetable.columns.CommentColumn;
 import org.jdownloader.gui.views.components.packagetable.columns.DownloadPasswordColumn;
@@ -22,6 +22,7 @@ import org.jdownloader.gui.views.downloads.columns.SizeColumn;
 import org.jdownloader.gui.views.linkgrabber.columns.DownloadFolderColumn;
 import org.jdownloader.gui.views.linkgrabber.columns.PartColumn;
 import org.jdownloader.gui.views.linkgrabber.columns.UrlColumn;
+import org.jdownloader.gui.views.linkgrabber.columns.VariantColumn;
 
 public class LinkGrabberTableModel extends PackageControllerTableModel<CrawledPackage, CrawledLink> {
 
@@ -35,6 +36,7 @@ public class LinkGrabberTableModel extends PackageControllerTableModel<CrawledPa
     private boolean        autoConfirm;
     protected FileColumn   expandCollapse;
     private PriorityColumn priorityColumn;
+    private VariantColumn  variantColumn;
 
     private LinkGrabberTableModel() {
         super(LinkCollector.getInstance(), "LinkGrabberTableModel");
@@ -76,6 +78,7 @@ public class LinkGrabberTableModel extends PackageControllerTableModel<CrawledPa
     @Override
     protected void initColumns() {
         this.addColumn(expandCollapse = new FileColumn());
+        this.addColumn(variantColumn = new VariantColumn());
         addColumn(new PartColumn());
         this.addColumn(new UrlColumn());
         this.addColumn(new DownloadFolderColumn());

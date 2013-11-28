@@ -1,8 +1,11 @@
 package jd.plugins.hoster;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+
+import javax.swing.Icon;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -29,29 +32,56 @@ import org.jdownloader.controlling.ffmpeg.FFMpegProgress;
 import org.jdownloader.controlling.ffmpeg.FFmpeg;
 import org.jdownloader.controlling.ffmpeg.FFmpegProvider;
 import org.jdownloader.controlling.ffmpeg.FFmpegSetup;
+import org.jdownloader.controlling.linkcrawler.LinkVariant;
 import org.jdownloader.downloadcore.v15.Downloadable;
 import org.jdownloader.gui.translate._GUI;
 
 @HostPlugin(revision = "$Revision: 24000 $", interfaceVersion = 3, names = { "youtube.com" }, urls = { "((httpJDYoutube|youtubeJDhttps?)://[\\w\\.\\-]*?(youtube|googlevideo)\\.com/(videoplayback\\?.+|get_video\\?.*?video_id=.+\\&.+(\\&fmt=\\d+)?))|((httpJDYoutube|youtubeJDhttps?)://[\\w\\.\\-]*?(video\\.google|googlevideo|youtube)\\.com/api/timedtext\\?.+\\&v=[a-z\\-_A-Z0-9]+)|((httpJDYoutube|youtubeJDhttps?)://img\\.youtube.com/vi/[a-z\\-_A-Z0-9]+/(hqdefault|mqdefault|default|maxresdefault)\\.jpg)" }, flags = { 2 })
 public class YoutubeDash extends Youtube {
 
-    private final String DASH_AUDIO          = "DASH_AUDIO";
-    private final String DASH_AUDIO_SIZE     = "DASH_AUDIO_SIZE";
-    private final String DASH_AUDIO_LOADED   = "DASH_AUDIO_LOADED";
-    private final String DASH_AUDIO_CHUNKS   = "DASH_AUDIO_CHUNKS";
-    private final String DASH_AUDIO_FINISHED = "DASH_AUDIO_FINISHED";
+    private final String           DASH_AUDIO          = "DASH_AUDIO";
+    private final String           DASH_AUDIO_SIZE     = "DASH_AUDIO_SIZE";
+    private final String           DASH_AUDIO_LOADED   = "DASH_AUDIO_LOADED";
+    private final String           DASH_AUDIO_CHUNKS   = "DASH_AUDIO_CHUNKS";
+    private final String           DASH_AUDIO_FINISHED = "DASH_AUDIO_FINISHED";
 
-    private final String DASH_VIDEO          = "DASH_VIDEO";
-    private final String DASH_VIDEO_SIZE     = "DASH_VIDEO_SIZE";
-    private final String DASH_VIDEO_LOADED   = "DASH_VIDEO_LOADED";
-    private final String DASH_VIDEO_CHUNKS   = "DASH_VIDEO_CHUNKS";
-    private final String DASH_VIDEO_FINISHED = "DASH_VIDEO_FINISHED";
+    private final String           DASH_VIDEO          = "DASH_VIDEO";
+    private final String           DASH_VIDEO_SIZE     = "DASH_VIDEO_SIZE";
+    private final String           DASH_VIDEO_LOADED   = "DASH_VIDEO_LOADED";
+    private final String           DASH_VIDEO_CHUNKS   = "DASH_VIDEO_CHUNKS";
+    private final String           DASH_VIDEO_FINISHED = "DASH_VIDEO_FINISHED";
 
-    protected String     dashAudioURL        = null;
-    protected String     dashVideoURL        = null;
+    protected String               dashAudioURL        = null;
+    protected String               dashVideoURL        = null;
+    private ArrayList<LinkVariant> variants;
+
+    public static class YoutubeVariant implements LinkVariant {
+
+        private String name;
+
+        public YoutubeVariant(String name) {
+            this.name = name;
+        }
+
+        @Override
+        public String getName() {
+            return name;
+        }
+
+        @Override
+        public Icon getIcon() {
+            return null;
+        }
+
+    }
 
     public YoutubeDash(PluginWrapper wrapper) {
         super(wrapper);
+        variants = new ArrayList<LinkVariant>();
+        variants.add(new YoutubeVariant("1080p Mp4-Video"));
+        variants.add(new YoutubeVariant("720p Mp4-Video"));
+        variants.add(new YoutubeVariant("1080p Mp4-Video"));
+        variants.add(new YoutubeVariant("AAC-Audio"));
     }
 
     @Override
@@ -366,5 +396,24 @@ public class YoutubeDash extends Youtube {
 
     public String getDashVideoFileName(DownloadLink link) {
         return link.getStringProperty("ytID", null) + link.getProperty(DASH_VIDEO) + ".dashVideo";
+    }
+
+    @Override
+    public List<LinkVariant> getActiveVariantsByLink(DownloadLink downloadLink) {
+        return variants;
+    }
+
+    @Override
+    public void setActiveVariantByLink(DownloadLink downloadLink, LinkVariant variant) {
+        super.setActiveVariantByLink(downloadLink, variant);
+    }
+
+    public boolean hasVariantToChooseFrom(DownloadLink downloadLink) {
+        return true;
+    }
+
+    @Override
+    public List<LinkVariant> getVariantsByLink(DownloadLink downloadLink) {
+        return variants;
     }
 }

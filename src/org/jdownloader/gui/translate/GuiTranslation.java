@@ -3847,4 +3847,7 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Merging Failed." })
     String YoutubeDash_handleFree_error_();
 
+    @Default(lngs = { "en" }, values = { "Variant" })
+    String VariantColumn_VariantColumn_name_();
+
 }
