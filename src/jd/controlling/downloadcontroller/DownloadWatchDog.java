@@ -601,8 +601,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
 
                 if (DownloadWatchDog.this.stateMachine.isStartState() || DownloadWatchDog.this.stateMachine.isFinal()) {
                     /*
-                     * no downloads are running, so we will force only the selected links to get started by setting stopmark to first forced
-                     * link
+                     * no downloads are running, so we will force only the selected links to get started by setting stopmark to first forced link
                      */
 
                     // DownloadWatchDog.this.setStopMark(linksForce.get(0));
@@ -1039,6 +1038,14 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
             if (onDetach) {
                 currentSession.removeHistory(link);
                 candidate.getLink().setFinalLinkState(FinalLinkState.OFFLINE);
+                return;
+            }
+            break;
+        case FINISHED_EXISTS:
+            if (onDetach) {
+                currentSession.removeHistory(link);
+                candidate.getLink().setFinishedDate(value.getFinishTime());
+                candidate.getLink().setFinalLinkState(FinalLinkState.FINISHED_MIRROR);
                 return;
             }
             break;
@@ -2137,7 +2144,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                 ret = new DownloadLinkCandidateResult(RESULT.CAPTCHA);
                 break;
             case LinkStatus.FINISHED:
-                ret = new DownloadLinkCandidateResult(RESULT.FINISHED);
+                ret = new DownloadLinkCandidateResult(RESULT.FINISHED_EXISTS);
                 break;
             case LinkStatus.ERROR_FILE_NOT_FOUND:
                 if (link.getHost().equals(pluginHost)) {
@@ -2727,8 +2734,8 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                                     waitedForNewActivationRequests += System.currentTimeMillis() - currentTimeStamp;
                                     if ((getSession().isActivationRequestsWaiting() == false && DownloadWatchDog.this.getActiveDownloads() == 0)) {
                                         /*
-                                         * it's important that this if statement gets checked after wait!, else we will loop through without
-                                         * waiting for new links/user interaction
+                                         * it's important that this if statement gets checked after wait!, else we will loop through without waiting for new
+                                         * links/user interaction
                                          */
                                         break;
                                     }
@@ -3020,7 +3027,6 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                         default:
                             throw new PluginException(LinkStatus.ERROR_ALREADYEXISTS);
                         }
-
                     case OVERWRITE_FILE:
                         if (fileInProgress) {
                             /* we cannot overwrite a file that is currently in progress */

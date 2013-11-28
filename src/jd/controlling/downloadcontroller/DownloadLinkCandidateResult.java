@@ -23,6 +23,7 @@ public class DownloadLinkCandidateResult {
         CONDITIONAL_SKIPPED,
         SKIPPED,
         FINISHED,
+        FINISHED_EXISTS,
         FAILED,
         FAILED_INCOMPLETE,
         FAILED_EXISTS,

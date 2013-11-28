@@ -487,7 +487,6 @@ public class OldRAFDownload extends DownloadInterface {
                     createOutputChannel();
                     try {
                         downloadable.lockFiles(outputCompleteFile, outputFinalCompleteFile, outputPartFile);
-
                     } catch (FileIsLockedException e) {
                         downloadable.unlockFiles(outputCompleteFile, outputFinalCompleteFile, outputPartFile);
                         throw new PluginException(LinkStatus.ERROR_ALREADYEXISTS);
@@ -521,8 +520,8 @@ public class OldRAFDownload extends DownloadInterface {
                 }
                 return handleErrors();
             } finally {
-                cleanupDownladInterface();
                 downloadable.unlockFiles(outputCompleteFile, outputFinalCompleteFile, outputPartFile);
+                cleanupDownladInterface();
             }
         } catch (PluginException e) {
             error(e);

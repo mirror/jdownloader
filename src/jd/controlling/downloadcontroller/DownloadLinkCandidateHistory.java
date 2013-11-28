@@ -64,6 +64,7 @@ public class DownloadLinkCandidateHistory {
                 /* already handled in onDetach */
                 break;
             case FINISHED:
+            case FINISHED_EXISTS:
             case SKIPPED:
             case STOPPED:
             case FAILED:
