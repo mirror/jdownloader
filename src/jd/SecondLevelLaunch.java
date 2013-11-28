@@ -945,11 +945,8 @@ public class SecondLevelLaunch {
                 break;
             }
         }
-        if (!JDGui.getInstance().getMainFrame().isVisible()) {
-            // this may happen. for example if the user set a password on jd, and does not enter the correct password on start!
-            ShutdownController.getInstance().requestShutdown(true);
-            return;
-        }
+        JDGui.getInstance().badLaunchCheck();
+
         SecondLevelLaunch.GUI_COMPLETE.setReached();
 
         SecondLevelLaunch.LOG.info("Initialisation finished");

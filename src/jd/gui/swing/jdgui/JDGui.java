@@ -235,29 +235,6 @@ public class JDGui implements UpdaterListener, OwnerFinder {
         this.setWindowIcon();
         this.layoutComponents();
         this.mainFrame.pack();
-
-        initLocationAndDimension();
-        //
-        initToolTipSettings();
-
-        initUpdateFrameListener();
-
-        initCaptchaToFrontListener();
-
-        initShiftControlSWindowResetKeyListener();
-        // Launcher.INIT_COMPLETE
-        SecondLevelLaunch.GUI_COMPLETE.executeWhenReached(new Runnable() {
-
-            public void run() {
-                onGuiInitComplete();
-
-            }
-
-        });
-
-        initSilentModeHooks();
-        KeyObserver.getInstance();
-
         // init tray
         tray = new TrayExtension();
         try {
@@ -305,6 +282,28 @@ public class JDGui implements UpdaterListener, OwnerFinder {
         } catch (Exception e1) {
             logger.log(e1);
         }
+        initLocationAndDimension();
+        //
+        initToolTipSettings();
+
+        initUpdateFrameListener();
+
+        initCaptchaToFrontListener();
+
+        initShiftControlSWindowResetKeyListener();
+        // Launcher.INIT_COMPLETE
+        SecondLevelLaunch.GUI_COMPLETE.executeWhenReached(new Runnable() {
+
+            public void run() {
+                onGuiInitComplete();
+
+            }
+
+        });
+
+        initSilentModeHooks();
+        KeyObserver.getInstance();
+
         BubbleNotify.getInstance();
         setSpeedInTitleUpdaterEnabled(CFG_GUI.SPEED_IN_WINDOW_TITLE.getValue() != ShowSpeedInWindowTitleTrigger.NEVER);
         CFG_GUI.SPEED_IN_WINDOW_TITLE.getStorageHandler().getEventSender().addListener(new GenericConfigEventListener<Object>() {
@@ -1057,8 +1056,10 @@ public class JDGui implements UpdaterListener, OwnerFinder {
                 mainFrame.setSize(finalDim);
                 mainFrame.setPreferredSize(finalDim);
                 if (finalState != null) mainFrame.setExtendedState(finalState);
+                if (tray == null || !tray.getSettings().isEnabled() || !tray.getSettings().isStartMinimizedEnabled()) {
+                    WindowManager.getInstance().setVisible(mainFrame, true, FrameState.OS_DEFAULT);
+                }
 
-                WindowManager.getInstance().setVisible(mainFrame, true, FrameState.OS_DEFAULT);
                 if (CrossSystem.isMac() && !mainFrame.isUndecorated()) {
                     mainFrame.addComponentListener(new ComponentAdapter() {
 
@@ -1810,6 +1811,19 @@ public class JDGui implements UpdaterListener, OwnerFinder {
             }
             break;
 
+        }
+        return true;
+    }
+
+    public boolean badLaunchCheck() {
+        if (!getMainFrame().isVisible()) {
+            if (tray != null && tray.getSettings().isEnabled() && tray.getSettings().isStartMinimizedEnabled()) {
+                // ok
+            } else {
+                // this may happen. for example if the user set a password on jd, and does not enter the correct password on start!
+                ShutdownController.getInstance().requestShutdown(true);
+                return false;
+            }
         }
         return true;
     }
