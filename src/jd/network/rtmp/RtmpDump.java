@@ -102,8 +102,8 @@ public class RtmpDump extends RTMPDownload {
     }
 
     /**
-     * Attempt to locate a rtmpdump executable. The *nix /usr bin folders is searched first, then local tools folder. If found, the path
-     * will is saved to the variable RTMPDUMP.
+     * Attempt to locate a rtmpdump executable. The *nix /usr bin folders is searched first, then local tools folder. If found, the path will is saved to the
+     * variable RTMPDUMP.
      * 
      * @return Whether or not rtmpdump executable was found
      */
@@ -268,9 +268,7 @@ public class RtmpDump extends RTMPDownload {
         try {
             getManagedConnetionHandler().addThrottledConnection(tcon);
             downloadable.setConnectionHandler(getManagedConnetionHandler());
-
-            DownloadPluginProgress downloadPluginProgress = null;
-            downloadPluginProgress = new DownloadPluginProgress(downloadable, this, Color.GREEN.darker());
+            DownloadPluginProgress downloadPluginProgress = new DownloadPluginProgress(downloadable, this, Color.GREEN.darker());
             downloadable.setPluginProgress(downloadPluginProgress);
 
             rtmpConnection.connect();
