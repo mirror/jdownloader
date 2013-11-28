@@ -302,6 +302,7 @@ FilterRuleDialog_layoutDialogContent_contains=sadrži
 FilterRuleDialog_layoutDialogContent_contains_not=ne sadrži
 FilterRuleDialog_layoutDialogContent_equals=jednako
 FilterRuleDialog_layoutDialogContent_equals_not=nije jednako
+FilterRuleDialog_layoutDialogContent_ht_Package=Unesite određeni naziv paketa... (Upotrijebite * kao zamjenski znak)
 FilterRuleDialog_layoutDialogContent_ht_filename=Unesite naziv datoteke jednako... (* za zamjenski znak)
 FilterRuleDialog_layoutDialogContent_ht_name=Unesite kratak naziv za ovaj uvjet...
 FilterRuleDialog_layoutDialogContent_if=Ako sljedeći uvjeti odgovaraju ...
