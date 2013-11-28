@@ -51,6 +51,10 @@ public class BergFilesCom extends PluginForDecrypt {
             }
             if (ajaxBR.containsHTML("Bad code from picture")) throw new DecrypterException(DecrypterException.CAPTCHA);
             final String finallink = ajaxBR.getRegex("<a target=_blank href=\"(https?://[^<>\"]*?)\"").getMatch(0);
+            if (ajaxBR.containsHTML("target=_blank href=\"\"")) {
+                logger.info("Link offline: " + parameter);
+                return decryptedLinks;
+            }
             if (finallink == null) {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;

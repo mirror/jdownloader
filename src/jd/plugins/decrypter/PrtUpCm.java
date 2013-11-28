@@ -50,8 +50,12 @@ public class PrtUpCm extends PluginForDecrypt {
 
         // error clauses
         if (br.containsHTML("(?i)>Not Found</h1>")) {
-            logger.warning("Invalid URL: " + parameter);
-            return null;
+            logger.info("Invalid URL: " + parameter);
+            return decryptedLinks;
+        }
+        if (br.containsHTML("<h4>Password:</h4>")) {
+            logger.info("Password protected links are not supported yet: " + parameter);
+            return decryptedLinks;
         }
         // find correct forum, post form
         final Form getform = br.getFormbyProperty("name", "linkprotect");

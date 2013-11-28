@@ -97,16 +97,18 @@ public class Srnnks extends PluginForDecrypt {
         }
     }
 
-    private final ArrayList<String> passwords           = new ArrayList<String>(Arrays.asList(new String[] { "serienjunkies.dl.am", "serienjunkies.org", "dokujunkies.org" }));
-    private static AtomicLong       LATEST_BLOCK_DETECT = new AtomicLong(0);
+    private final ArrayList<String> passwords              = new ArrayList<String>(Arrays.asList(new String[] { "serienjunkies.dl.am", "serienjunkies.org", "dokujunkies.org" }));
+    private static AtomicLong       LATEST_BLOCK_DETECT    = new AtomicLong(0);
 
-    private static AtomicLong       LATEST_RECONNECT    = new AtomicLong(0);
-    private static Object           GLOBAL_LOCK         = new Object();
+    private static AtomicLong       LATEST_RECONNECT       = new AtomicLong(0);
+    private static Object           GLOBAL_LOCK            = new Object();
 
     // seems like sj does block ips if requestlimit is not ok
-    private final long              FW_WAIT             = 300;
-    private static Object           LOCK                = new Object();
-    private static AtomicInteger    RUNNING             = new AtomicInteger(0);
+    private final long              FW_WAIT                = 300;
+    private static Object           LOCK                   = new Object();
+    private static AtomicInteger    RUNNING                = new AtomicInteger(0);
+    // Always use real-expire-seconds minus 2
+    private int                     CAPTCHA_EXPIRE_SECONDS = 58;
 
     private synchronized static boolean limitsReached(final Browser br) throws IOException {
         int ret = -100;
@@ -315,6 +317,7 @@ public class Srnnks extends PluginForDecrypt {
                                     crawlStatus += "(" + RUNNING.intValue() + " pending)";
                                     final File captcha = this.getLocalCaptchaFile(".png");
                                     String code = null;
+                                    long timeBefore = 0;
                                     try {
                                         // captcha laden
                                         synchronized (Srnnks.GLOBAL_LOCK) {
@@ -340,7 +343,7 @@ public class Srnnks extends PluginForDecrypt {
                                         }
 
                                         // wenn es ein Einzellink ist soll die Captchaerkennung benutzt werden
-
+                                        timeBefore = System.currentTimeMillis();
                                         if (captchaLink.contains(".gif")) {
                                             code = this.getCaptchaCode("einzellinks.serienjunkies.org", captcha, parameter);
                                         } else {
@@ -351,6 +354,11 @@ public class Srnnks extends PluginForDecrypt {
                                     }
                                     if (code == null) { return ret; }
                                     if (code.length() != 3) {
+                                        progress.setStatus(30);
+                                        Thread.sleep(1100);
+                                        continue;
+                                    }
+                                    if (captchaIsExpired(timeBefore)) {
                                         progress.setStatus(30);
                                         Thread.sleep(1100);
                                         continue;
@@ -433,6 +441,15 @@ public class Srnnks extends PluginForDecrypt {
             }
         }
         return new ArrayList<DownloadLink>();
+    }
+
+    private boolean captchaIsExpired(final long timeBefore) {
+        final long timeDifference = System.currentTimeMillis() - timeBefore;
+        if (timeDifference > (CAPTCHA_EXPIRE_SECONDS * 1000l)) {
+            return true;
+        } else {
+            return false;
+        }
     }
 
     /* NO OVERRIDE!! */

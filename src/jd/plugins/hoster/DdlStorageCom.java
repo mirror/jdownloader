@@ -1642,7 +1642,7 @@ public class DdlStorageCom extends PluginForHost {
             if (!action) {
                 // download finished (completed, failed, etc), check for value and remove a value
                 Integer usedSlots = getHashedHashedValue(account);
-                if (usedSlots == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                if (usedSlots == null) { throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Server error", 5 * 60 * 1000l); }
                 setHashedHashKeyValue(account, -1);
                 if (usedSlots.equals(1)) {
                     logger.info("controlHost = " + user + " -> " + usedHost + " :: No longer used!");
