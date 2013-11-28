@@ -357,6 +357,7 @@ public class InfoPanel extends MigPanel implements ActionListener, Scrollable {
             }
         } else {
             try {
+                if (value.getActionData() == null) return;
                 CustomizableAppAction action = value.createAction();
                 String defaultIconKey = action.getInitialValue("ICONKEY");
                 iconKeyReset.setToolTipText(_GUI._.ManagerFrame_layoutPanel_resettodefault(defaultIconKey));

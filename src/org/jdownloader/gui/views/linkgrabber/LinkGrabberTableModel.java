@@ -78,7 +78,7 @@ public class LinkGrabberTableModel extends PackageControllerTableModel<CrawledPa
     @Override
     protected void initColumns() {
         this.addColumn(expandCollapse = new FileColumn());
-        this.addColumn(variantColumn = new VariantColumn());
+        // this.addColumn(variantColumn = new VariantColumn());
         addColumn(new PartColumn());
         this.addColumn(new UrlColumn());
         this.addColumn(new DownloadFolderColumn());

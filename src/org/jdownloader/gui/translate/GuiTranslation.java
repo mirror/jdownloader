@@ -3850,4 +3850,10 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Variant" })
     String VariantColumn_VariantColumn_name_();
 
+    @Default(lngs = { "en" }, values = { "Plugin Menu Entries" })
+    String LinkgrabberPluginLink_getName_object_();
+
+    @Default(lngs = { "en" }, values = { "Plugin Menu Entries" })
+    String DownloadsTablePluginLink_getName_object_();
+
 }

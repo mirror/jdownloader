@@ -87,7 +87,7 @@ public class MenuManagerLinkgrabberTableContext extends ContextMenuManager<Crawl
         mr.add(new MenuItemData(new ActionData(ConfirmLinksContextAction.class).putSetup(ConfirmLinksContextAction.SELECTION_ONLY, false).putSetup(TableContext.ITEM_VISIBLE_FOR_EMPTY_SELECTION, true)));
 
         mr.add(new SeperatorData());
-
+        mr.add(new LinkgrabberPluginLink());
         mr.add(new SeperatorData());
         mr.add(createSettingsSubmenu());
 

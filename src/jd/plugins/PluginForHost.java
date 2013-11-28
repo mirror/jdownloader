@@ -38,6 +38,7 @@ import jd.controlling.captcha.CaptchaSettings;
 import jd.controlling.captcha.SkipException;
 import jd.controlling.captcha.SkipRequest;
 import jd.controlling.downloadcontroller.SingleDownloadController.WaitingQueueItem;
+import jd.controlling.linkcrawler.CrawledLink;
 import jd.http.Browser;
 import jd.nutils.Formatter;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -71,6 +72,7 @@ import org.jdownloader.controlling.FileCreationManager;
 import org.jdownloader.controlling.linkcrawler.LinkVariant;
 import org.jdownloader.gui.helpdialogs.HelpDialog;
 import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.gui.views.SelectionInfo.PluginView;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.plugins.accounts.AccountFactory;
@@ -1207,6 +1209,12 @@ public abstract class PluginForHost extends Plugin {
 
     public boolean hasVariantToChooseFrom(DownloadLink downloadLink) {
         return false;
+    }
+
+    public void extendLinkgrabberContextMenu(JComponent parent, PluginView<CrawledLink> pv) {
+    }
+
+    public void extendDownloadsTableContextMenu(JComponent parent, PluginView<DownloadLink> pv) {
     }
 
 }

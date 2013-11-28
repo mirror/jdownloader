@@ -4,11 +4,13 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
+import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.packagecontroller.AbstractNode;
 import jd.controlling.packagecontroller.AbstractPackageChildrenNode;
 import jd.controlling.packagecontroller.AbstractPackageNode;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.PluginForHost;
 
 import org.jdownloader.gui.views.components.packagetable.PackageControllerTable;
 import org.jdownloader.gui.views.components.packagetable.PackageControllerTableModel;
@@ -25,6 +27,7 @@ public class SelectionInfo<PackageType extends AbstractPackageNode<ChildrenType,
     }
 
     private ArrayList<PackageView<PackageType, ChildrenType>>                  packageViews;
+    private ArrayList<PluginView<ChildrenType>>                                pluginViews;
     private AbstractNode                                                       contextObject;
 
     private List<? extends AbstractNode>                                       rawSelection;
@@ -38,8 +41,39 @@ public class SelectionInfo<PackageType extends AbstractPackageNode<ChildrenType,
     }
 
     private ArraySet<AbstractNode>                                       raw;
+    private HashMap<PluginForHost, PluginView<ChildrenType>>             pluginView;
+
     private HashMap<PackageType, PackageView<PackageType, ChildrenType>> view;
     private boolean                                                      applyTableFilter;
+
+    public static class PluginView<ChildrenType extends AbstractPackageChildrenNode> {
+        private ArraySet<ChildrenType> children;
+        private PluginForHost          plugin;
+
+        public PluginView(PluginForHost pkg) {
+            children = new ArraySet<ChildrenType>();
+
+            this.plugin = pkg;
+
+        }
+
+        public ArraySet<ChildrenType> getChildren() {
+            return children;
+        }
+
+        public PluginForHost getPlugin() {
+            return plugin;
+        }
+
+        public void addChildren(List<ChildrenType> children) {
+            this.children.addAll(children);
+        }
+
+        public void addChild(ChildrenType child) {
+            children.add(child);
+        }
+
+    };
 
     public static class PackageView<PackageType extends AbstractPackageNode<ChildrenType, PackageType>, ChildrenType extends AbstractPackageChildrenNode<PackageType>> {
         private ArraySet<ChildrenType> children;
@@ -96,6 +130,8 @@ public class SelectionInfo<PackageType extends AbstractPackageNode<ChildrenType,
         packageViews = new ArrayList<PackageView<PackageType, ChildrenType>>();
 
         view = new HashMap<PackageType, PackageView<PackageType, ChildrenType>>();
+        pluginView = new HashMap<PluginForHost, SelectionInfo.PluginView<ChildrenType>>();
+        pluginViews = new ArrayList<SelectionInfo.PluginView<ChildrenType>>();
 
         // System.out.println(kEvent);
 
@@ -181,6 +217,7 @@ public class SelectionInfo<PackageType extends AbstractPackageNode<ChildrenType,
                 PackageType pkg = (PackageType) ((ChildrenType) node).getParentNode();
                 PackageView<PackageType, ChildrenType> pv = internalPackageView(pkg);
                 pv.addChild((ChildrenType) node);
+                addPluginView(node);
                 children.add((ChildrenType) node);
 
             } else {
@@ -205,6 +242,9 @@ public class SelectionInfo<PackageType extends AbstractPackageNode<ChildrenType,
                             children.addAll(childs);
 
                             pv.addChildren(childs);
+                            for (ChildrenType l : childs) {
+                                addPluginView(l);
+                            }
                         } else {
                             for (ChildrenType l : childs) {
                                 boolean filtered = false;
@@ -217,6 +257,7 @@ public class SelectionInfo<PackageType extends AbstractPackageNode<ChildrenType,
                                 if (!filtered) {
                                     unFiltered.add(l);
                                     pv.addChild(l);
+                                    addPluginView(l);
                                 }
                             }
                             children.addAll(unFiltered);
@@ -260,18 +301,29 @@ public class SelectionInfo<PackageType extends AbstractPackageNode<ChildrenType,
                             if (filters == null) {
                                 pv.addChildren(childs);
                                 children.addAll(childs);
-
+                                for (ChildrenType l : childs) {
+                                    addPluginView(l);
+                                }
                             } else {
                                 pv.addChildren(unFiltered);
                                 children.addAll(unFiltered);
+                                for (ChildrenType l : unFiltered) {
+                                    addPluginView(l);
+                                }
 
                             }
                         } else if (containsAll) {
                             pv.addChildren(childs);
                             children.addAll(childs);
+                            for (ChildrenType l : childs) {
+                                addPluginView(l);
+                            }
 
                         } else {
                             pv.addChildren(selected);
+                            for (ChildrenType l : selected) {
+                                addPluginView(l);
+                            }
 
                         }
                     } finally {
@@ -281,6 +333,27 @@ public class SelectionInfo<PackageType extends AbstractPackageNode<ChildrenType,
             }
         }
 
+    }
+
+    protected void addPluginView(AbstractNode node) {
+        PluginForHost plg = node instanceof CrawledLink ? ((CrawledLink) node).gethPlugin() : ((DownloadLink) node).getDefaultPlugin();
+        internalPluginView(plg).addChild((ChildrenType) node);
+    }
+
+    private PluginView<ChildrenType> internalPluginView(PluginForHost pkg) {
+        PluginView<ChildrenType> pv = pluginView.get(pkg);
+
+        if (pv == null) {
+
+            pv = new PluginView<ChildrenType>(pkg);
+            pluginViews.add(pv);
+            pluginView.put(pkg, pv);
+        }
+        return pv;
+    }
+
+    public List<PluginView<ChildrenType>> getPluginViews() {
+        return pluginViews;
     }
 
     /**

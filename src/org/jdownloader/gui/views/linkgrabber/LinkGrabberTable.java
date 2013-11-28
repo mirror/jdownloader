@@ -52,9 +52,12 @@ import org.appwork.utils.swing.dialog.Dialog;
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.controlling.contextmenu.CustomizableAppAction;
 import org.jdownloader.controlling.contextmenu.MenuContainer;
+import org.jdownloader.controlling.contextmenu.MenuContainerRoot;
 import org.jdownloader.controlling.contextmenu.MenuItemData;
 import org.jdownloader.controlling.contextmenu.MenuLink;
 import org.jdownloader.controlling.contextmenu.SeperatorData;
+import org.jdownloader.controlling.contextmenu.gui.ExtPopupMenu;
+import org.jdownloader.controlling.contextmenu.gui.MenuBuilder;
 import org.jdownloader.gui.KeyObserver;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo;
@@ -62,7 +65,6 @@ import org.jdownloader.gui.views.components.packagetable.PackageControllerTable;
 import org.jdownloader.gui.views.downloads.table.HorizontalScrollbarAction;
 import org.jdownloader.gui.views.linkgrabber.bottombar.MenuManagerLinkgrabberTabBottombar;
 import org.jdownloader.gui.views.linkgrabber.contextmenu.ConfirmLinksContextAction;
-import org.jdownloader.gui.views.linkgrabber.contextmenu.ContextMenuFactory;
 import org.jdownloader.gui.views.linkgrabber.contextmenu.MenuManagerLinkgrabberTableContext;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.logging.LogController;
@@ -72,7 +74,7 @@ import org.jdownloader.translate._JDT;
 public class LinkGrabberTable extends PackageControllerTable<CrawledPackage, CrawledLink> {
 
     private static final long          serialVersionUID = 8843600834248098174L;
-    private ContextMenuFactory         contextMenuFactory;
+
     private HashMap<KeyStroke, Action> shortCutActions;
     private LogSource                  logger;
     private static LinkGrabberTable    INSTANCE;
@@ -85,7 +87,7 @@ public class LinkGrabberTable extends PackageControllerTable<CrawledPackage, Cra
         this.setDragEnabled(true);
         this.setDropMode(DropMode.ON_OR_INSERT_ROWS);
         logger = LogController.getInstance().getLogger(LinkGrabberTable.class.getName());
-        contextMenuFactory = new ContextMenuFactory(this, linkGrabberPanel);
+
         final MigPanel loaderPanel = new MigPanel("ins 0,wrap 1", "[grow,fill]", "[grow,fill][]");
         // loaderPanel.setPreferredSize(new Dimension(200, 200));
 
@@ -250,8 +252,14 @@ public class LinkGrabberTable extends PackageControllerTable<CrawledPackage, Cra
 
     @Override
     protected JPopupMenu onContextMenu(final JPopupMenu popup, final AbstractNode contextObject, final java.util.List<AbstractNode> selection, final ExtColumn<AbstractNode> column, MouseEvent event) {
+        long t = System.currentTimeMillis();
+        ExtPopupMenu root = new ExtPopupMenu();
+        MenuContainerRoot md = MenuManagerLinkgrabberTableContext.getInstance().getMenuData();
 
-        return contextMenuFactory.createPopup(contextObject, selection, column, event);
+        new MenuBuilder(MenuManagerLinkgrabberTableContext.getInstance(), root, md).run();
+        // createLayer(root, md);
+
+        return root;
     }
 
     protected JPopupMenu columnControlMenu(final ExtColumn<AbstractNode> extColumn) {

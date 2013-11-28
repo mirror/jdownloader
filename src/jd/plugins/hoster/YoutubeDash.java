@@ -6,10 +6,12 @@ import java.util.HashMap;
 import java.util.List;
 
 import javax.swing.Icon;
+import javax.swing.JComponent;
 
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.controlling.downloadcontroller.SingleDownloadController;
+import jd.controlling.linkcrawler.CrawledLink;
 import jd.http.requests.GetRequest;
 import jd.plugins.Account;
 import jd.plugins.BrowserAdapter;
@@ -35,6 +37,7 @@ import org.jdownloader.controlling.ffmpeg.FFmpegSetup;
 import org.jdownloader.controlling.linkcrawler.LinkVariant;
 import org.jdownloader.downloadcore.v15.Downloadable;
 import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.gui.views.SelectionInfo.PluginView;
 
 @HostPlugin(revision = "$Revision: 24000 $", interfaceVersion = 3, names = { "youtube.com" }, urls = { "((httpJDYoutube|youtubeJDhttps?)://[\\w\\.\\-]*?(youtube|googlevideo)\\.com/(videoplayback\\?.+|get_video\\?.*?video_id=.+\\&.+(\\&fmt=\\d+)?))|((httpJDYoutube|youtubeJDhttps?)://[\\w\\.\\-]*?(video\\.google|googlevideo|youtube)\\.com/api/timedtext\\?.+\\&v=[a-z\\-_A-Z0-9]+)|((httpJDYoutube|youtubeJDhttps?)://img\\.youtube.com/vi/[a-z\\-_A-Z0-9]+/(hqdefault|mqdefault|default|maxresdefault)\\.jpg)" }, flags = { 2 })
 public class YoutubeDash extends Youtube {
@@ -400,7 +403,7 @@ public class YoutubeDash extends Youtube {
 
     @Override
     public List<LinkVariant> getActiveVariantsByLink(DownloadLink downloadLink) {
-        return variants;
+        return null;
     }
 
     @Override
@@ -409,11 +412,16 @@ public class YoutubeDash extends Youtube {
     }
 
     public boolean hasVariantToChooseFrom(DownloadLink downloadLink) {
-        return true;
+        return false;
     }
 
     @Override
     public List<LinkVariant> getVariantsByLink(DownloadLink downloadLink) {
-        return variants;
+        return null;
+    }
+
+    @Override
+    public void extendLinkgrabberContextMenu(JComponent parent, PluginView<CrawledLink> pv) {
+        super.extendLinkgrabberContextMenu(parent, pv);
     }
 }

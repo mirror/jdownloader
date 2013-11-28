@@ -2,7 +2,6 @@ package org.jdownloader.controlling.ffmpeg;
 
 import java.io.File;
 
-import jd.gui.swing.jdgui.JDGui;
 import jd.gui.swing.laf.LookAndFeelController;
 
 import org.appwork.storage.config.JsonConfig;
@@ -49,7 +48,9 @@ public class FFmpegProvider {
         @Override
         public void run() {
 
-            File path = FFMpegInstallTypeChooserDialog.searchFileIn(Application.getResource("tmp").getParentFile(), JDGui.getInstance() == null ? null : JDGui.getInstance().getMainFrame(), true);
+            File path = null;
+            // FFMpegInstallTypeChooserDialog.searchFileIn(Application.getResource("tmp").getParentFile(), JDGui.getInstance() == null ?
+            // null : JDGui.getInstance().getMainFrame(), true);
 
             if (path == null) {
                 FFMPegInstallTypeChooserDialogInterface res = UIOManager.I().show(FFMPegInstallTypeChooserDialogInterface.class, new FFMpegInstallTypeChooserDialog());

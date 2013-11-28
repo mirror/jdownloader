@@ -88,6 +88,8 @@ public class MenuManagerDownloadTableContext extends ContextMenuManager<FilePack
         mr.add(createSettingsMenu());
 
         mr.add(new SeperatorData());
+        mr.add(new DownloadsTablePluginLink());
+        mr.add(new SeperatorData());
         mr.add(new MenuItemData(new ActionData(OpenFileAction.class)));
         mr.add(new MenuItemData(new ActionData(OpenDirectoryAction.class)));
         mr.add(new MenuItemData(new ActionData(SortAction.class)));

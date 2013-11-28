@@ -256,9 +256,7 @@ public class FileColumn extends ExtTextColumn<AbstractNode> implements GenericCo
 
             if (((DownloadLink) value).hasVariantSupport()) {
                 List<LinkVariant> active = ((DownloadLink) value).getDefaultPlugin().getActiveVariantsByLink(((DownloadLink) value).getDownloadLink());
-                if (active != null && active.size() > 0) {
-
-                return new ExtMergedIcon(new AbstractIcon(IconKey.ICON_PACKAGE_CLOSED, 14)).add(IconIO.getScaledInstance(((DownloadLink) value).getIcon(), 14, 14), 4, 4); }
+                if (active != null && active.size() > 0) { return new ExtMergedIcon(new AbstractIcon(IconKey.ICON_PACKAGE_OPEN, 16), 0, 3).add(IconIO.getScaledInstance(((DownloadLink) value).getIcon(), 10, 10), 3, -2); }
             }
             return (((DownloadLink) value).getIcon());
         } else if (value instanceof CrawledLink) {
@@ -268,10 +266,11 @@ public class FileColumn extends ExtTextColumn<AbstractNode> implements GenericCo
 
                     // return new ExtMergedIcon(new AbstractIcon(IconKey.ICON_PACKAGE_CLOSED, 14)).add(IconIO.getScaledInstance(, 14, 14),
                     // 14, 4);
-                    return new ExtMergedIcon(((CrawledLink) value).getIcon()).add(new AbstractIcon(IconKey.ICON_PACKAGE_CLOSED, 12), 6, 6);
+                    return new ExtMergedIcon(new AbstractIcon(IconKey.ICON_PACKAGE_OPEN, 16), 0, 3).add(IconIO.getScaledInstance(((CrawledLink) value).getIcon(), 10, 10), 3, -2);
 
                 }
             }
+
             return (((CrawledLink) value).getIcon());
         }
         return null;
