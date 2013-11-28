@@ -3865,7 +3865,7 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Skip File" })
     String OnSkipDueToAlreadyExistsAction_skip_file();
 
-    @Default(lngs = { "en" }, values = { "Mark File as successfully loaded" })
+    @Default(lngs = { "en" }, values = { "Skip File & mark as finished" })
     String OnSkipDueToAlreadyExistsAction_mark_successful();
 
 }

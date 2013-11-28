@@ -86,7 +86,7 @@ public class GeneralSettingsConfigPanel extends AbstractConfigPanel {
 
         remove = new ComboBox<CleanAfterDownloadAction>(CleanAfterDownloadAction.values(), removeDownloads);
         startDownloadsAfterAppStart = new ComboBox<AutoDownloadStartOption>(CFG_GENERAL.SH.getKeyHandler("AutoStartDownloadOption", KeyHandler.class), AutoDownloadStartOption.values(), new String[] { _GUI._.gui_config_general_AutoDownloadStartOption_always(), _GUI._.gui_config_general_AutoDownloadStartOption_only_if_closed_running(), _GUI._.gui_config_general_AutoDownloadStartOption_never() });
-        String[] fileExists = new String[] { _GUI._.system_download_triggerfileexists_overwrite(), _GUI._.system_download_triggerfileexists_skip(), _GUI._.system_download_triggerfileexists_rename(), _GUI._.system_download_triggerfileexists_ask(), _GUI._.system_download_triggerfileexists_ask() };
+        String[] fileExists = new String[] { _GUI._.system_download_triggerfileexists_overwrite(), CFG_GENERAL.CFG.getOnSkipDueToAlreadyExistsAction().getLabel(), _GUI._.system_download_triggerfileexists_rename(), _GUI._.system_download_triggerfileexists_ask(), _GUI._.system_download_triggerfileexists_ask() };
         ifFileExists = new ComboBox<IfFileExistsAction>(IfFileExistsAction.values(), fileExists);
         this.addPair(_GUI._.gui_config_download_simultan_downloads(), null, maxSim);
         this.addPair(_GUI._.gui_config_download_simultan_downloads_per_host2(), org.jdownloader.settings.staticreferences.CFG_GENERAL.MAX_DOWNLOADS_PER_HOST_ENABLED, maxSimPerHost);

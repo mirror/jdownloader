@@ -16,6 +16,7 @@ import org.appwork.storage.config.annotations.DefaultIntValue;
 import org.appwork.storage.config.annotations.DefaultLongValue;
 import org.appwork.storage.config.annotations.DescriptionForConfigEntry;
 import org.appwork.storage.config.annotations.EnumLabel;
+import org.appwork.storage.config.annotations.LabelInterface;
 import org.appwork.storage.config.annotations.RequiresRestart;
 import org.appwork.storage.config.annotations.SpinnerValidator;
 import org.appwork.storage.config.defaults.AbstractDefaultFactory;
@@ -456,25 +457,19 @@ public interface GeneralSettings extends ConfigInterface {
 
     void setCrawlerCrawlerPluginBlacklist(String[] blacklist);
 
-    public static enum OnSkipDueToAlreadyExistsAction {
+    public static enum OnSkipDueToAlreadyExistsAction implements LabelInterface {
 
         SKIP_FILE() {
-            public String getName() {
+            public String getLabel() {
                 return _GUI._.OnSkipDueToAlreadyExistsAction_skip_file();
             }
+
         },
         SET_FILE_TO_SUCCESSFUL {
-            public String getName() {
+            public String getLabel() {
                 return _GUI._.OnSkipDueToAlreadyExistsAction_mark_successful();
             }
         };
-        private OnSkipDueToAlreadyExistsAction() {
-
-        }
-
-        public String getName() {
-            return toString();
-        }
 
     }
 
