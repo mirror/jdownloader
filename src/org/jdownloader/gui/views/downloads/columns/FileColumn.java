@@ -3,6 +3,7 @@ package org.jdownloader.gui.views.downloads.columns;
 import java.awt.event.FocusEvent;
 import java.awt.event.MouseEvent;
 import java.io.File;
+import java.util.List;
 import java.util.logging.Level;
 
 import javax.swing.BorderFactory;
@@ -26,21 +27,26 @@ import jd.plugins.FilePackage;
 import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.events.GenericConfigEventListener;
 import org.appwork.storage.config.handler.KeyHandler;
+import org.appwork.swing.components.ExtMergedIcon;
 import org.appwork.swing.exttable.ExtColumn;
 import org.appwork.swing.exttable.columnmenu.LockColumnWidthAction;
 import org.appwork.swing.exttable.columns.ExtTextColumn;
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.images.IconIO;
 import org.appwork.utils.logging.Log;
 import org.appwork.utils.os.CrossSystem;
+import org.jdownloader.controlling.linkcrawler.LinkVariant;
 import org.jdownloader.extensions.ExtensionController;
 import org.jdownloader.extensions.extraction.ExtractionExtension;
 import org.jdownloader.extensions.extraction.bindings.crawledlink.CrawledLinkFactory;
+import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.components.packagetable.LinkTreeUtils;
 import org.jdownloader.gui.views.components.packagetable.PackageControllerTableModel;
 import org.jdownloader.gui.views.components.packagetable.PackageControllerTableModel.TOGGLEMODE;
 import org.jdownloader.gui.views.components.packagetable.actions.SortPackagesDownloadOrdnerOnColumn;
 import org.jdownloader.gui.views.downloads.action.OpenFileAction;
+import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
 
@@ -247,8 +253,27 @@ public class FileColumn extends ExtTextColumn<AbstractNode> implements GenericCo
         } else if (value instanceof AbstractPackageNode) {
             return (((AbstractPackageNode<?, ?>) value).isExpanded() ? iconPackageOpen : iconPackageClosed);
         } else if (value instanceof DownloadLink) {
+
+            if (((DownloadLink) value).hasVariantSupport()) {
+                List<LinkVariant> active = ((DownloadLink) value).getDefaultPlugin().getActiveVariantsByLink(((DownloadLink) value).getDownloadLink());
+                if (active != null && active.size() > 0) {
+
+                return new ExtMergedIcon(new AbstractIcon(IconKey.ICON_PACKAGE_CLOSED, 14)).add(IconIO.getScaledInstance(((DownloadLink) value).getIcon(), 14, 14), 4, 4); }
+            }
             return (((DownloadLink) value).getIcon());
-        } else if (value instanceof CrawledLink) { return (((CrawledLink) value).getIcon()); }
+        } else if (value instanceof CrawledLink) {
+            if (((CrawledLink) value).hasVariantSupport()) {
+                List<LinkVariant> active = ((CrawledLink) value).gethPlugin().getActiveVariantsByLink(((CrawledLink) value).getDownloadLink());
+                if (active != null && active.size() > 0) {
+
+                    // return new ExtMergedIcon(new AbstractIcon(IconKey.ICON_PACKAGE_CLOSED, 14)).add(IconIO.getScaledInstance(, 14, 14),
+                    // 14, 4);
+                    return new ExtMergedIcon(((CrawledLink) value).getIcon()).add(new AbstractIcon(IconKey.ICON_PACKAGE_CLOSED, 12), 6, 6);
+
+                }
+            }
+            return (((CrawledLink) value).getIcon());
+        }
         return null;
     }
 
