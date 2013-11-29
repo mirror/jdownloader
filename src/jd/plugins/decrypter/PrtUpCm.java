@@ -53,10 +53,6 @@ public class PrtUpCm extends PluginForDecrypt {
             logger.info("Invalid URL: " + parameter);
             return decryptedLinks;
         }
-        if (br.containsHTML("<h4>Password:</h4>")) {
-            logger.info("Password protected links are not supported yet: " + parameter);
-            return decryptedLinks;
-        }
         // find correct forum, post form
         final Form getform = br.getFormbyProperty("name", "linkprotect");
         if (getform != null) br.submitForm(getform);
@@ -68,6 +64,10 @@ public class PrtUpCm extends PluginForDecrypt {
         if (links == null || links.length == 0) {
             links = new Regex(table, "(?i)blank>(.*?)</a>").getColumn(0);
             if (links == null || links.length == 0) {
+                if (br.containsHTML("<h4>Password:</h4>")) {
+                    logger.info("Password protected links are not supported yet: " + parameter);
+                    return decryptedLinks;
+                }
                 logger.warning("ProtectUp: Either invalid URL or the plugin broken : " + parameter);
                 logger.warning("ProtectUp: Please confirm via browser, and report any bugs to developement team.");
                 return null;
