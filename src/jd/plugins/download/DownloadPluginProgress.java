@@ -8,7 +8,6 @@ import jd.plugins.PluginProgress;
 
 import org.jdownloader.api.jdanywhere.api.Helper;
 import org.jdownloader.downloadcore.v15.Downloadable;
-import org.jdownloader.gui.views.downloads.columns.ProgressColumn;
 import org.jdownloader.gui.views.downloads.columns.TaskColumn;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.translate._JDT;
@@ -47,13 +46,7 @@ public class DownloadPluginProgress extends PluginProgress {
     public String getMessage(Object requestor) {
         if (requestor instanceof TaskColumn || requestor == Helper.REQUESTOR || requestor instanceof FilePackageView) { return normal; }
         long total = getTotal();
-        if (requestor instanceof ProgressColumn) {
-            if (total > 0) {
-                return String.valueOf(getPercent());
-            } else {
-                return "~";
-            }
-        }
+
         if (total < 0) { return unknownFileSize; }
         long speed = getSpeed();
         if (speed > 0) {

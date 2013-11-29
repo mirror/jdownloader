@@ -201,33 +201,33 @@ public class Captcha9kwSolver extends CESChallengeSolver<String> implements Chal
                     Thread.sleep(3000);
 
                 }
-                job.setStatus(SolverStatus.SOLVING);
-                job.getLogger().info("Send Captcha to 9kw.eu. - Answer: " + ret);
-                if (!ret.startsWith("OK-")) throw new SolverException(ret);
-                // Error-No Credits
-                String captchaID = ret.substring(3);
-                data = null;
-                long startTime = System.currentTimeMillis();
+            }
+            job.setStatus(SolverStatus.SOLVING);
+            job.getLogger().info("Send Captcha to 9kw.eu. - Answer: " + ret);
+            if (!ret.startsWith("OK-")) throw new SolverException(ret);
+            // Error-No Credits
+            String captchaID = ret.substring(3);
+            data = null;
+            long startTime = System.currentTimeMillis();
 
-                Thread.sleep(5000);
+            Thread.sleep(5000);
 
-                while (true) {
+            while (true) {
 
-                    job.getLogger().info("9kw.eu Ask " + captchaID);
-                    ret = br.getPage(getAPIROOT() + "index.cgi?action=usercaptchacorrectdata&jd=2&source=jd2&apikey=" + Encoding.urlEncode(config.getApiKey()) + "&id=" + Encoding.urlEncode(captchaID) + "&version=1.1");
-                    if (StringUtils.isEmpty(ret)) {
-                        job.getLogger().info("9kw.eu NO answer after " + ((System.currentTimeMillis() - startTime) / 1000) + "s ");
-                    } else {
-                        job.getLogger().info("9kw.eu Answer after " + ((System.currentTimeMillis() - startTime) / 1000) + "s: " + ret);
-                    }
-                    if (ret.startsWith("OK-answered-")) {
-                        job.setAnswer(new Captcha9kwResponse(challenge, this, ret.substring("OK-answered-".length()), 100, captchaID));
-                        return;
-                    }
-
-                    checkInterruption();
-                    Thread.sleep(3000);
+                job.getLogger().info("9kw.eu Ask " + captchaID);
+                ret = br.getPage(getAPIROOT() + "index.cgi?action=usercaptchacorrectdata&jd=2&source=jd2&apikey=" + Encoding.urlEncode(config.getApiKey()) + "&id=" + Encoding.urlEncode(captchaID) + "&version=1.1");
+                if (StringUtils.isEmpty(ret)) {
+                    job.getLogger().info("9kw.eu NO answer after " + ((System.currentTimeMillis() - startTime) / 1000) + "s ");
+                } else {
+                    job.getLogger().info("9kw.eu Answer after " + ((System.currentTimeMillis() - startTime) / 1000) + "s: " + ret);
                 }
+                if (ret.startsWith("OK-answered-")) {
+                    job.setAnswer(new Captcha9kwResponse(challenge, this, ret.substring("OK-answered-".length()), 100, captchaID));
+                    return;
+                }
+
+                checkInterruption();
+                Thread.sleep(3000);
             }
 
         } catch (IOException e) {
