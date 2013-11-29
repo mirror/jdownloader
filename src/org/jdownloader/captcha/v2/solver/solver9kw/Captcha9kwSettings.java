@@ -86,7 +86,7 @@ public interface Captcha9kwSettings extends ConfigInterface {
     void sethour(int seconds);
 
     @AboutConfig
-    @DefaultBooleanValue(true)
+    @DefaultBooleanValue(false)
     @DescriptionForConfigEntry("Only https requests to 9kw.eu")
     boolean ishttps();
 
