@@ -24,6 +24,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Random;
@@ -733,7 +734,7 @@ public class LetitBitNet extends PluginForHost {
 
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
-        AccountInfo ai = new AccountInfo();
+        final AccountInfo ai = new AccountInfo();
         if (account.getUser() == null || account.getUser().trim().length() == 0) {
             // Reset stuff because it can only be checked while downloading
             ai.setValidUntil(-1);
@@ -747,6 +748,14 @@ public class LetitBitNet extends PluginForHost {
         } catch (PluginException e) {
             account.setValid(false);
             return ai;
+        }
+        br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+        br.postPage("http://letitbit.net/ajax/get_attached_passwords.php", "act=get_attached_passwords");
+        final String[] data = br.getRegex("<td>([^<>\"]*?)</td>").getColumn(0);
+        if (data != null && data.length >= 3) {
+            // 1 point = 1 GB
+            ai.setTrafficLeft(SizeFormatter.getSize(data[1].trim() + "GB"));
+            ai.setValidUntil(TimeFormatter.getMilliSeconds(data[2].trim(), "yyyy-MM-dd", Locale.ENGLISH));
         }
         account.setValid(true);
         ai.setStatus("Valid account");
@@ -874,7 +883,7 @@ public class LetitBitNet extends PluginForHost {
         String expireDate = br.getRegex("\">Expire date:</acronym> ([0-9\\-]+) \\[<acronym class").getMatch(0);
         if (expireDate == null) expireDate = br.getRegex("\">Period of validity:</acronym>(.*?) \\[<acronym").getMatch(0);
         if (expireDate != null || points != null) {
-            AccountInfo accInfo = new AccountInfo();
+            final AccountInfo accInfo = new AccountInfo();
             // 1 point = 1 GB
             if (points != null) accInfo.setTrafficLeft(SizeFormatter.getSize(points.trim() + "GB"));
             if (expireDate != null) {
