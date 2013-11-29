@@ -36,6 +36,7 @@ import java.util.zip.CRC32;
 import java.util.zip.CheckedInputStream;
 
 import jd.controlling.downloadcontroller.DownloadController;
+import jd.controlling.downloadcontroller.ExceptionRunnable;
 import jd.controlling.downloadcontroller.FileIsLockedException;
 import jd.controlling.downloadcontroller.ManagedThrottledConnectionHandler;
 import jd.http.Browser;
@@ -483,15 +484,19 @@ public class OldRAFDownload extends DownloadInterface {
             }
 
             try {
-                if (downloadable.checkIfWeCanWrite()) {
-                    createOutputChannel();
-                    try {
-                        downloadable.lockFiles(outputCompleteFile, outputFinalCompleteFile, outputPartFile);
-                    } catch (FileIsLockedException e) {
-                        downloadable.unlockFiles(outputCompleteFile, outputFinalCompleteFile, outputPartFile);
-                        throw new PluginException(LinkStatus.ERROR_ALREADYEXISTS);
+                if (!downloadable.checkIfWeCanWrite(new ExceptionRunnable() {
+
+                    @Override
+                    public void run() throws Exception {
+                        createOutputChannel();
+                        try {
+                            downloadable.lockFiles(outputCompleteFile, outputFinalCompleteFile, outputPartFile);
+                        } catch (FileIsLockedException e) {
+                            downloadable.unlockFiles(outputCompleteFile, outputFinalCompleteFile, outputPartFile);
+                            throw new PluginException(LinkStatus.ERROR_ALREADYEXISTS);
+                        }
                     }
-                }
+                }, null)) { throw new SkipReasonException(SkipReason.INVALID_DESTINATION); }
 
                 DownloadPluginProgress downloadPluginProgress = null;
                 try {
@@ -908,6 +913,7 @@ public class OldRAFDownload extends DownloadInterface {
     private void createOutputChannel() throws SkipReasonException {
         try {
             String fileOutput = downloadable.getFileOutput();
+            logger.info("createOutputChannel for " + fileOutput);
             String finalFileOutput = downloadable.getFileOutput(false, true);
             outputCompleteFile = new File(fileOutput);
             outputFinalCompleteFile = outputCompleteFile;
@@ -917,6 +923,7 @@ public class OldRAFDownload extends DownloadInterface {
             outputPartFile = new File(fileOutput + ".part");
             outputPartFileRaf = new RandomAccessFile(outputPartFile, "rw");
         } catch (Exception e) {
+            LogSource.exception(logger, e);
             throw new SkipReasonException(SkipReason.INVALID_DESTINATION, e);
         }
     }
@@ -993,6 +1000,7 @@ public class OldRAFDownload extends DownloadInterface {
                 loutputPartFileRaf.close();
             }
         } catch (Throwable e) {
+            LogSource.exception(logger, e);
         } finally {
             outputPartFileRaf = null;
         }

@@ -3,6 +3,7 @@ package org.jdownloader.downloadcore.v15;
 import java.io.File;
 import java.util.logging.Logger;
 
+import jd.controlling.downloadcontroller.ExceptionRunnable;
 import jd.controlling.downloadcontroller.FileIsLockedException;
 import jd.controlling.downloadcontroller.ManagedThrottledConnectionHandler;
 import jd.http.Browser;
@@ -56,7 +57,7 @@ public interface Downloadable {
 
     void setFinalFileName(String htmlDecode);
 
-    boolean checkIfWeCanWrite() throws Exception;
+    boolean checkIfWeCanWrite(ExceptionRunnable runOkay, ExceptionRunnable runFailed) throws Exception;
 
     void lockFiles(File... files) throws FileIsLockedException;
 

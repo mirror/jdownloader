@@ -149,16 +149,17 @@ public class DownloadLinkDownloadable implements Downloadable {
     }
 
     @Override
-    public boolean checkIfWeCanWrite() throws Exception {
+    public boolean checkIfWeCanWrite(final ExceptionRunnable runOkay, final ExceptionRunnable runFailed) throws Exception {
         final SingleDownloadController dlc = getDownloadLinkController();
         final AtomicBoolean atomicBoolean = new AtomicBoolean(false);
         DownloadWatchDog.getInstance().localFileCheck(dlc, new ExceptionRunnable() {
 
             @Override
             public void run() throws Exception {
+                runOkay.run();
                 atomicBoolean.set(true);
             }
-        }, null);
+        }, runFailed);
         return atomicBoolean.get();
     }
 

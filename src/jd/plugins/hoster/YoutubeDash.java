@@ -378,7 +378,6 @@ public class YoutubeDash extends Youtube {
     @Override
     public List<File> deleteDownloadLink(DownloadLink link) {
         List<File> ret = super.deleteDownloadLink(link);
-
         ret.add(new File(getVideoStreamPath(link)));
         ret.add(new File(getAudioStreamPath(link)));
         return ret;
