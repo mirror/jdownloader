@@ -23,6 +23,6 @@ interaction_shutdown_dialog_title_standby=Standby?
 jd_plugins_optional_jdshutdown=Chiusura JD
 jd_plugins_optional_jdshutdown_description=Spegni automaticamente, sospendi, iberna il tuo PC o chiudi JDownloader alla fine dei download.
 lit_shutdownn=Spegni
-show_admin=Sono rechiesti i diritti di amministratore per configurare JDownload per Ibernazione o Standny
+show_admin=Sono rechiesti i diritti di amministratore per configurare JDownload per Ibernazione o Standby
 shutdown_toggle_action_disabled2=Spegni dopo i download
 shutdown_toggle_action_enabled2=Spegni dopo i download
