@@ -1,6 +1,7 @@
 action_tooltip=ダウンロード完了後、システムをシャットダウンする
 addons_jdshutdown_statusmessage_disabled=このシステムはJDownloaderでシャットダウンできません!
 addons_jdshutdown_statusmessage_enabled=JDownloader はダウンロード完了後にシステムをシャットダウンします。
+config_active_by_default=シャットダウンの設定を維持する
 config_toolbarbutton=ツールバーボタンを表示
 gui_config_jdshutdown_close=JDownloaderを終了
 gui_config_jdshutdown_forceshutdown=強制的にシャットダウン(一部のOSのみ対応)
@@ -9,6 +10,7 @@ gui_config_jdshutdown_mode=モード:
 gui_config_jdshutdown_shutdown=シャットダウン
 gui_config_jdshutdown_standby=スタンバイ(一部のOSのみ対応)
 install_force=強制的にシャットダウンする
+install_msg=Do you want to prepare your System for the force shutdown feature?
 install_title=強制的にシャットダウンする
 interaction_shutdown_dialog_msg_closejd=<h2><font color="red">JDownloaderを終了します!</font></h2>
 interaction_shutdown_dialog_msg_hibernate=<h2><font color="red">システムを休止モードにします!</font></h2>
@@ -22,3 +24,5 @@ jd_plugins_optional_jdshutdown=JDシャットダウン
 jd_plugins_optional_jdshutdown_description=ダウンロード完了後、自動的にPC をシャットダウン/休止状態へ移行、又はJDownloaderを終了します。
 lit_shutdownn=シャットダウン
 show_admin=休止またはスタンバイモードをJDownloaderで設定するには管理者権限が必要になります
+shutdown_toggle_action_disabled2=ダウンロード後にシャットダウン
+shutdown_toggle_action_enabled2=ダウンロード後にシャットダウン
