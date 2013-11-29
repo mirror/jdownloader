@@ -23,3 +23,5 @@ jd_plugins_optional_jdshutdown=Выключение
 jd_plugins_optional_jdshutdown_description=Автоматическое выключение, ожидание, гибернация вашего PC или закрытие JDownloader по завершении закачек.
 lit_shutdownn=Выключить
 show_admin=Для настройки режимов гибернации\сна в JDownloader требуются права администратора
+shutdown_toggle_action_disabled2=Выключить по завершению загрузок
+shutdown_toggle_action_enabled2=Выключить по завершению загрузок
