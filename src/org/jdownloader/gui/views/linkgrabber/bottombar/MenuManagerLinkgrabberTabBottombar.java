@@ -53,6 +53,10 @@ public class MenuManagerLinkgrabberTabBottombar extends AbstractBottomBarMenuMan
         return _GUI._.gui_config_menumanager_linkgrabberBottom();
     }
 
+    public static void main(String[] args) {
+        System.out.println("abc".equals(null));
+    }
+
     public MenuContainerRoot createDefaultStructure() {
         MenuContainerRoot mr = new MenuContainerRoot();
 

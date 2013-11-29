@@ -85,8 +85,8 @@ public class Multi extends IExtraction {
      * 
      */
 
-    private static final String      _7Z_D                                                       = "(\\.7z)?\\..?(\\d+)$";
-    private static final String      REGEX_ANY_7ZIP_PART                                         = "(?i).*(\\.7z)?\\.\\d+$";
+    private static final String      _7Z_D                                                       = "(\\.7z)?\\..?(\\d{1,4})$";
+    private static final String      REGEX_ANY_7ZIP_PART                                         = "(?i).*(\\.7z)?\\.\\d{1,4}$";
 
     private static final String      _7Z$                                                        = "\\.7z$";
     private static final String      REGEX_SINGLE_7ZIP                                           = "(?i).*\\.7z$";
@@ -426,7 +426,7 @@ public class Multi extends IExtraction {
                 getpartid = _7Z_D;
                 start = 0;
                 format = archive.getArchiveFiles().get(0).getName().replace("%", "\\%").replace("$", "\\$").replaceAll("(\\.7z\\.?)(\\d+)$", "$1%s");
-                length = new Regex(archive.getArchiveFiles().get(0).getName(), "(\\.7z)?\\.?(\\d+)$").getMatch(1).length();
+                length = new Regex(archive.getArchiveFiles().get(0).getName(), "(\\.7z)?\\.?(\\d{1,4})$").getMatch(1).length();
                 // Just get partnumbers to speed up the checking.
 
                 for (ArchiveFile l : archive.getArchiveFiles()) {
@@ -578,6 +578,7 @@ public class Multi extends IExtraction {
 
             }
             if (archive.getType() == ArchiveType.MULTI && missing == 0 && ZEROZEROZEROMissing) {
+
                 logger.info("Workaround(may be wrong) for non existing .000");
             }
             return ret;
@@ -1024,7 +1025,8 @@ public class Multi extends IExtraction {
                                 ExtractOperationResult result = item.extractSlow(signatureOutStream, password);
                                 if (ExtractOperationResult.DATAERROR.equals(result)) {
                                     /*
-                                     * 100% wrong password, DO NOT CONTINUE as unrar already might have cleaned up (nullpointer in native -> crash jvm)
+                                     * 100% wrong password, DO NOT CONTINUE as unrar already might have cleaned up (nullpointer in native ->
+                                     * crash jvm)
                                      */
                                     return false;
                                 }

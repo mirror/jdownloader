@@ -122,7 +122,7 @@ public class SortAction<PackageType extends AbstractPackageNode<ChildrenType, Pa
                                     };
                                 }
                             }
-                            model.sortPackageChildren((AbstractPackageNode) node, comparator);
+                            model.sortPackageChildren((AbstractPackageNode) node.getPackage(), comparator);
 
                         }
                     }
