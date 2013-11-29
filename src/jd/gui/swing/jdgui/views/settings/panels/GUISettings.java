@@ -18,7 +18,6 @@ package jd.gui.swing.jdgui.views.settings.panels;
 
 import java.awt.Component;
 import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.io.File;
 import java.io.FileFilter;
 import java.util.Collections;
@@ -30,6 +29,8 @@ import javax.swing.DefaultComboBoxModel;
 import javax.swing.ImageIcon;
 import javax.swing.JLabel;
 import javax.swing.JList;
+import javax.swing.event.PopupMenuEvent;
+import javax.swing.event.PopupMenuListener;
 
 import jd.gui.swing.jdgui.JDGui;
 import jd.gui.swing.jdgui.views.settings.components.Checkbox;
@@ -102,6 +103,8 @@ public class GUISettings extends AbstractConfigPanel implements StateUpdateListe
 
         lng = new ComboBox<String>(TranslationFactory.getDesiredLanguage()) {
 
+            private boolean blockActionEvents = false;
+
             @Override
             protected void renderComponent(Component lbl, JList list, String value, int index, boolean isSelected, boolean cellHasFocus) {
                 Locale loc = TranslationFactory.stringToLocale(value);
@@ -111,12 +114,15 @@ public class GUISettings extends AbstractConfigPanel implements StateUpdateListe
 
         };
 
-        lng.addActionListener(new ActionListener() {
+        lng.addPopupMenuListener(new PopupMenuListener() {
 
             @Override
-            public void actionPerformed(ActionEvent e) {
-                String newLng = (String) lng.getSelectedItem();
+            public void popupMenuWillBecomeVisible(PopupMenuEvent e) {
+            }
 
+            @Override
+            public void popupMenuWillBecomeInvisible(PopupMenuEvent e) {
+                String newLng = (String) lng.getSelectedItem();
                 if (!newLng.equals(TranslationFactory.getDesiredLanguage())) {
                     JSonStorage.saveTo(Application.getResource("cfg/language.json"), newLng);
 
@@ -129,6 +135,11 @@ public class GUISettings extends AbstractConfigPanel implements StateUpdateListe
 
                     }
                 }
+            }
+
+            @Override
+            public void popupMenuCanceled(PopupMenuEvent e) {
+
             }
         });
 
