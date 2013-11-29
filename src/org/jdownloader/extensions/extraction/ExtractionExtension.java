@@ -48,7 +48,6 @@ import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.ExceptionDialog;
 import org.jdownloader.controlling.FileCreationListener;
 import org.jdownloader.controlling.FileCreationManager;
-import org.jdownloader.controlling.FileCreationManager.DeleteOption;
 import org.jdownloader.controlling.contextmenu.ActionData;
 import org.jdownloader.controlling.contextmenu.ContextMenuManager;
 import org.jdownloader.controlling.contextmenu.MenuContainerRoot;
@@ -437,6 +436,10 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
                             statusbarListener.cleanup();
                             eventSender.removeListener(statusbarListener);
                         }
+                        if (bubbleSupport != null) {
+                            eventSender.removeListener(bubbleSupport);
+                            BubbleNotify.getInstance().unregisterTypes(bubbleSupport);
+                        }
                     }
                 };
             }
@@ -455,6 +458,8 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
             getSettings().setPasswordList(pwList);
         }
     }
+
+    private ExtractionBubbleSupport bubbleSupport;
 
     @Override
     protected void start() throws StartException {
@@ -475,7 +480,7 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
                     protected void runInEDT() {
                         if (statusbarListener != null) statusbarListener.cleanup();
                         eventSender.addListener(statusbarListener = new ExtractionListenerIcon(ExtractionExtension.this));
-                        ExtractionBubbleSupport bubbleSupport = new ExtractionBubbleSupport(T._.bubbletype(), CFG_EXTRACTION.BUBBLE_ENABLED_IF_ARCHIVE_EXTRACTION_IS_IN_PROGRESS);
+                        bubbleSupport = new ExtractionBubbleSupport(T._.bubbletype(), CFG_EXTRACTION.BUBBLE_ENABLED_IF_ARCHIVE_EXTRACTION_IS_IN_PROGRESS);
                         eventSender.addListener(bubbleSupport);
                         BubbleNotify.getInstance().registerType(bubbleSupport);
                     }

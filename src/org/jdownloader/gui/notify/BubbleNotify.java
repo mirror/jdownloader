@@ -182,6 +182,21 @@ public class BubbleNotify {
         ballooner.relayout();
     }
 
+    public void unregisterTypes(AbstractBubbleSupport type) {
+        synchronized (types) {
+            types.remove(type);
+        }
+        new EDTRunner() {
+
+            @Override
+            protected void runInEDT() {
+                if (configPanel != null) {
+                    configPanel.updateTypes(getTypes());
+                }
+            }
+        };
+    }
+
     public void registerType(AbstractBubbleSupport type) {
         synchronized (types) {
             types.add(type);
@@ -212,4 +227,5 @@ public class BubbleNotify {
         }
         return configPanel;
     }
+
 }
