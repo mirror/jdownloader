@@ -1,2 +1,6 @@
 Translator=Переводчик
+TranslatorExtensionGuiToggleAction_deselected=Открыть Переводчик
+TranslatorExtensionGuiToggleAction_deselected_tt=Открыть вкладку Переводчик
+TranslatorExtensionGuiToggleAction_selected=Закрыть Переводчик
+TranslatorExtensionGuiToggleAction_selected_tt=Закрыть вкладку Переводчик
 description=Расширение для переводчиков с аккаунтом разработчика
