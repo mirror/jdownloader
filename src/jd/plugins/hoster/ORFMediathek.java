@@ -104,7 +104,7 @@ public class ORFMediathek extends PluginForHost {
         jd.network.rtmp.url.RtmpUrlConnection rtmp = ((RTMPDownload) dl).getRtmpConnection();
         rtmp.setUrl(stream);
         rtmp.setResume(true);
-        // rtmp.setRealTime();
+        rtmp.setRealTime();
     }
 
     private void download(final DownloadLink downloadLink) throws Exception {
