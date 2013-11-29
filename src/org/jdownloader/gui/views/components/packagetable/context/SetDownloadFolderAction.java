@@ -35,10 +35,11 @@ public abstract class SetDownloadFolderAction<PackageType extends AbstractPackag
     @Override
     public void requestUpdate(Object requestor) {
         super.requestUpdate(requestor);
-        selection = getSelection();
-        if (hasSelection(selection)) {
-            path = LinkTreeUtils.getRawDownloadDirectory(getSelection().getContextPackage());
-            if (path.getName().equals(getSelection().getContextPackage().getName())) {
+        final SelectionInfo<PackageType, ChildrenType> lselection = getSelection();
+        selection = lselection;
+        if (hasSelection(lselection)) {
+            path = LinkTreeUtils.getRawDownloadDirectory(lselection.getContextPackage());
+            if (path.getName().equals(lselection.getContextPackage().getName())) {
                 path = new File(path.getParentFile(), DownloadFolderChooserDialog.PACKAGETAG);
             }
         }
@@ -46,8 +47,7 @@ public abstract class SetDownloadFolderAction<PackageType extends AbstractPackag
     }
 
     /**
-     * checks if the given file is valid as a downloadfolder, this means it must be an existing folder or at least its parent folder must
-     * exist
+     * checks if the given file is valid as a downloadfolder, this means it must be an existing folder or at least its parent folder must exist
      * 
      * @param file
      * @return
@@ -66,12 +66,12 @@ public abstract class SetDownloadFolderAction<PackageType extends AbstractPackag
         try {
             final File file = dialog(path);
             if (file == null) return;
-
+            final SelectionInfo<PackageType, ChildrenType> lselection = getSelection();
             getQueue().add(new QueueAction<Object, RuntimeException>() {
 
                 @Override
                 protected Object run() {
-                    for (PackageView<PackageType, ChildrenType> pkg : getSelection().getPackageViews()) {
+                    for (PackageView<PackageType, ChildrenType> pkg : lselection.getPackageViews()) {
                         if (pkg.isFull()) {
                             set(pkg.getPackage(), file.getAbsolutePath());
                         }
@@ -79,7 +79,7 @@ public abstract class SetDownloadFolderAction<PackageType extends AbstractPackag
                     return null;
                 }
             });
-            for (final PackageView<PackageType, ChildrenType> pkg : getSelection().getPackageViews()) {
+            for (final PackageView<PackageType, ChildrenType> pkg : lselection.getPackageViews()) {
                 if (pkg.isFull()) {
                     continue;
                 }
@@ -109,7 +109,7 @@ public abstract class SetDownloadFolderAction<PackageType extends AbstractPackag
 
                     @Override
                     protected Object run() {
-                        final PackageType pkg = createNewByPrototype(getSelection(), entry);
+                        final PackageType pkg = createNewByPrototype(lselection, entry);
                         set(pkg, file.getAbsolutePath());
                         getQueue().add(new QueueAction<Object, RuntimeException>() {
 
