@@ -21,15 +21,13 @@ public abstract class AbstractToolBarAction extends CustomizableAppAction {
 
     public String getIconKey() {
         if (StringUtils.isEmpty(super.getIconKey())) return IconKey.ICON_QUESTION;
-        if (MenuItemData.EMPTY.equals(super.getIconKey())) return IconKey.ICON_QUESTION;
+        if (MenuItemData.isEmptyValue(super.getIconKey())) return IconKey.ICON_QUESTION;
         return iconKey;
     }
 
     public Object getValue(String key) {
-
         if (LARGE_ICON_KEY == (key)) { return NewTheme.I().getIcon(getIconKey(), 24); }
         if (SMALL_ICON == (key)) { return NewTheme.I().getIcon(getIconKey(), 18); }
-
         if (MNEMONIC_KEY == key || DISPLAYED_MNEMONIC_INDEX_KEY == key) {
             Object ret = super.getValue(key);
             if (ret == null) {

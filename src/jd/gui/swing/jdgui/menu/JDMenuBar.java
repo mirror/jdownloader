@@ -92,7 +92,7 @@ public class JDMenuBar extends JMenuBar implements MouseListener {
 
                     if (StringUtils.isNotEmpty(inst.getShortcut()) && KeyStroke.getKeyStroke(inst.getShortcut()) != null) {
                         action.setAccelerator(KeyStroke.getKeyStroke(inst.getShortcut()));
-                    } else if (MenuItemData.EMPTY.equals(inst.getShortcut())) {
+                    } else if (MenuItemData.isEmptyValue(inst.getShortcut())) {
                         action.setAccelerator(null);
                     }
 

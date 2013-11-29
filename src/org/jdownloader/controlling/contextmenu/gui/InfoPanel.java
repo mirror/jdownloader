@@ -210,7 +210,7 @@ public class InfoPanel extends MigPanel implements ActionListener, Scrollable {
                         String newName = null;
                         String oldName = item.getName();
                         if (StringUtils.isNotEmpty(oldName)) {
-                            if (MenuItemData.EMPTY.equals(oldName)) {
+                            if (MenuItemData.isEmptyValue(oldName)) {
                                 newName = null;
                             } else {
                                 newName = MenuItemData.EMPTY;
@@ -243,7 +243,7 @@ public class InfoPanel extends MigPanel implements ActionListener, Scrollable {
                         String newIconKey = null;
                         String oldIconKey = item.getIconKey();
                         if (StringUtils.isNotEmpty(oldIconKey)) {
-                            if (MenuItemData.EMPTY.equals(oldIconKey)) {
+                            if (MenuItemData.isEmptyValue(oldIconKey)) {
                                 newIconKey = null;
                             } else {
                                 newIconKey = MenuItemData.EMPTY;
@@ -300,7 +300,7 @@ public class InfoPanel extends MigPanel implements ActionListener, Scrollable {
                             String newShortcut = null;
                             String oldShortcut = item.getShortcut();
                             if (StringUtils.isNotEmpty(oldShortcut)) {
-                                if (MenuItemData.EMPTY.equals(oldShortcut)) {
+                                if (MenuItemData.isEmptyValue(oldShortcut)) {
                                     newShortcut = null;
                                 } else {
                                     newShortcut = MenuItemData.EMPTY;
@@ -414,7 +414,7 @@ public class InfoPanel extends MigPanel implements ActionListener, Scrollable {
                 if (StringUtils.isEmpty(action.getName())) {
                     name.setText(MenuItemData.EMPTY);
                 }
-                if (MenuItemData.EMPTY.equals(mid.getShortcut())) {
+                if (MenuItemData.isEmptyValue(mid.getShortcut())) {
                     action.setAccelerator(null);
                 }
                 KeyStroke ks = (KeyStroke) action.getValue(Action.ACCELERATOR_KEY);
@@ -530,10 +530,10 @@ public class InfoPanel extends MigPanel implements ActionListener, Scrollable {
                     name = name.substring(name.lastIndexOf(".") + 1);
 
                 }
-                if (MenuItemData.EMPTY.equals(mid.getIconKey())) {
+                if (MenuItemData.isEmptyValue(mid.getIconKey())) {
                     icon = null;
                 }
-                if (name.equals(MenuItemData.EMPTY)) {
+                if (MenuItemData.isEmptyValue(name)) {
                     name = mid.getActionData().getClazzName();
                     name = name.substring(name.lastIndexOf(".") + 1);
                     name += "(" + MenuItemData.EMPTY + ")";

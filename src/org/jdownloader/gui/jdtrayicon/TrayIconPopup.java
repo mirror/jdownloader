@@ -268,7 +268,7 @@ public final class TrayIconPopup extends ExtJFrame implements MouseListener {
                     if (!action.isVisible()) continue;
                     if (StringUtils.isNotEmpty(menudata.getShortcut()) && KeyStroke.getKeyStroke(menudata.getShortcut()) != null) {
                         action.setAccelerator(KeyStroke.getKeyStroke(menudata.getShortcut()));
-                    } else if (MenuItemData.EMPTY.equals(menudata.getShortcut())) {
+                    } else if (MenuItemData.isEmptyValue(menudata.getShortcut())) {
                         action.setAccelerator(null);
                     }
                     content.add(getMenuEntry(action));
@@ -445,8 +445,7 @@ public final class TrayIconPopup extends ExtJFrame implements MouseListener {
     }
 
     /**
-     * When we perform a tray action, we need a away to ask in the silentmode controller (JDGui) is the action has been invoked from the
-     * tray
+     * When we perform a tray action, we need a away to ask in the silentmode controller (JDGui) is the action has been invoked from the tray
      * 
      * @return
      */

@@ -105,7 +105,7 @@ public abstract class CustomizableAppAction extends AppAction {
                 name = menuItemData.getName();
             }
         }
-        if (StringUtils.equals(MenuItemData.EMPTY, name)) {
+        if (MenuItemData.isEmptyValue(name)) {
             name = "";
         }
         if (StringUtils.isEmpty(actualName)) actualName = getName();
@@ -153,10 +153,10 @@ public abstract class CustomizableAppAction extends AppAction {
         }
 
         if (iconKey != null && LARGE_ICON_KEY.equalsIgnoreCase(key)) {
-            if (MenuItemData.EMPTY.equals(iconKey)) return null;
+            if (MenuItemData.isEmptyValue(iconKey)) return null;
             return NewTheme.I().getIcon(iconKey, size);
         } else if (iconKey != null && SMALL_ICON.equalsIgnoreCase(key)) {
-            if (MenuItemData.EMPTY.equals(iconKey)) return null;
+            if (MenuItemData.isEmptyValue(iconKey)) return null;
             return NewTheme.I().getIcon(iconKey, size);
         }
         return super.getValue(key);

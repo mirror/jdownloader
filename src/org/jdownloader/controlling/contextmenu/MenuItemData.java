@@ -28,7 +28,9 @@ import org.jdownloader.images.NewTheme;
 
 public class MenuItemData implements Storable, MinTimeWeakReferenceCleanup {
 
-    public static final String      EMPTY = "<EMPTY>";
+    public static final String      EMPTY      = "<EMPTY>";
+    /* needed for old values */
+    private static final String     EMPTY_NAME = "<NO NAME>";
     private ArrayList<MenuItemData> items;
     private String                  name;
     private String                  iconKey;
@@ -46,7 +48,12 @@ public class MenuItemData implements Storable, MinTimeWeakReferenceCleanup {
         if (getClass() != MenuContainer.class && getClass() != MenuItemData.class) { return getClass().getName(); }
         if (StringUtils.isNotEmpty(className)) return className;
         return getIconKey() + ":" + getName();
+    }
 
+    public static boolean isEmptyValue(String value) {
+        if (StringUtils.equals(EMPTY, value)) return true;
+        if (StringUtils.equals(EMPTY_NAME, value)) return true;
+        return false;
     }
 
     public String toString() {
@@ -201,7 +208,7 @@ public class MenuItemData implements Storable, MinTimeWeakReferenceCleanup {
         if (!action.isVisible()) return null;
         if (StringUtils.isNotEmpty(getShortcut())) {
             action.setAccelerator(KeyStroke.getKeyStroke(getShortcut()));
-        } else if (MenuItemData.EMPTY.equals(getShortcut())) {
+        } else if (MenuItemData.isEmptyValue(getShortcut())) {
             action.setAccelerator(null);
         }
 
@@ -397,7 +404,7 @@ public class MenuItemData implements Storable, MinTimeWeakReferenceCleanup {
 
     public static Icon getIcon(String key, int size) {
         if (StringUtils.isEmpty(key)) return null;
-        if (StringUtils.equals(key, EMPTY)) return null;
+        if (MenuItemData.isEmptyValue(key)) return null;
         return NewTheme.I().getIcon(key, size);
     }
 

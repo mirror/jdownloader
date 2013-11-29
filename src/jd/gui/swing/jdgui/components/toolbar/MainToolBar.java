@@ -399,7 +399,7 @@ public class MainToolBar extends JToolBar implements MouseListener, DownloadWatc
 
                     if (StringUtils.isNotEmpty(menudata.getShortcut()) && KeyStroke.getKeyStroke(menudata.getShortcut()) != null) {
                         action.setAccelerator(KeyStroke.getKeyStroke(menudata.getShortcut()));
-                    } else if (MenuItemData.EMPTY.equals(menudata.getShortcut())) {
+                    } else if (MenuItemData.isEmptyValue(menudata.getShortcut())) {
                         action.setAccelerator(null);
                     }
                     bt = null;
@@ -539,7 +539,7 @@ public class MainToolBar extends JToolBar implements MouseListener, DownloadWatc
     }
 
     protected ImageIcon createDropdownImage(String iconKey) {
-        if (StringUtils.equals(iconKey, MenuItemData.EMPTY)) iconKey = IconKey.ICON_QUESTION;
+        if (MenuItemData.isEmptyValue(iconKey)) iconKey = IconKey.ICON_QUESTION;
         Image back = NewTheme.I().getImage(iconKey, 20, false);
         return createDropdownImage(back);
 

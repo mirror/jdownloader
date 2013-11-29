@@ -50,12 +50,12 @@ public class ToggleAppAction extends CustomizableAppAction implements ComponentP
         ret.getAccessibleContext().setAccessibleDescription(getTooltipText());
         if (StringUtils.isNotEmpty(menuItemData.getName())) {
             ret.setText(menuItemData.getName());
-        } else if (StringUtils.equals(menuItemData.getName(), MenuItemData.EMPTY)) {
+        } else if (MenuItemData.isEmptyValue(menuItemData.getName())) {
             ret.setText("");
         }
         if (StringUtils.isNotEmpty(menuItemData.getIconKey())) {
             ret.setIcon(NewTheme.I().getIcon(menuItemData.getIconKey(), 20));
-        } else if (StringUtils.equals(menuItemData.getIconKey(), MenuItemData.EMPTY)) {
+        } else if (MenuItemData.isEmptyValue(menuItemData.getIconKey())) {
             ret.setIcon(null);
         }
         return ret;
