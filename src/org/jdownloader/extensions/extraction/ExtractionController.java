@@ -190,6 +190,7 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> {
                         logger.info("Start password finding for " + archive);
                         String correctPW = null;
                         for (String password : passwordList) {
+                            if (password == null) continue;
                             if (gotKilled()) return null;
                             crashLog.write("Try Password: " + password);
                             if (checkPassword(password, extension.getSettings().isPasswordFindOptimizationEnabled())) {
