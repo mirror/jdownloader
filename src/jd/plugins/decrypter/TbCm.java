@@ -21,7 +21,6 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.net.URL;
 import java.net.URLEncoder;
 import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
@@ -37,9 +36,6 @@ import java.util.Random;
 import java.util.Scanner;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.regex.Pattern;
-
-import javax.swing.JOptionPane;
-import javax.swing.SwingUtilities;
 
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
@@ -64,9 +60,6 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
-
-import org.appwork.utils.os.CrossSystem;
-
 import de.savemytube.flv.FLV;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "youtube.com" }, urls = { "https?://([a-z]+\\.)?youtube\\.com/(embed/|.*?watch.*?v(%3D|=)|view_play_list\\?p=|playlist\\?(p|list)=|.*?g/c/|.*?grid/user/|v/|user/|course\\?list=)[A-Za-z0-9\\-_]+(.*?page=\\d+)?(.*?list=[A-Za-z0-9\\-_]+)?" }, flags = { 0 })
@@ -151,9 +144,7 @@ public class TbCm extends PluginForDecrypt {
     private final String                        VIDEONUMBERFORMAT   = "VIDEONUMBERFORMAT";
 
     public static boolean ConvertFile(final DownloadLink downloadlink, final DestinationFormat InType, final DestinationFormat OutType) {
-        System.out.println("Convert " + downloadlink.getName() + " - " + InType.getText() + " - " + OutType.getText());
         if (InType.equals(OutType)) {
-            System.out.println("No Conversion needed, renaming...");
             final File oldone = new File(downloadlink.getFileOutput());
             final File newone = new File(downloadlink.getFileOutput().replaceAll(TbCm.TEMP_EXT, OutType.getExtFirst()));
             downloadlink.setFinalFileName(downloadlink.getName().replaceAll(TbCm.TEMP_EXT, OutType.getExtFirst()));
@@ -402,7 +393,6 @@ public class TbCm extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, final ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         canHandle();
-        checkNewsDialog();
         this.possibleconverts = new HashMap<DestinationFormat, ArrayList<Info>>();
         if (PLUGIN_DISABLED.get() == true) return decryptedLinks;
         long startTime = System.currentTimeMillis();
@@ -660,26 +650,26 @@ public class TbCm extends PluginForDecrypt {
                 if (mp4) {
                     if (q144p) {
                         if (dashSupported) {
-                            this.put(160, new Object[] { DestinationFormat.VIDEO_DASH, "DASH_H.264", "AAC", "Stereo", "144p" });
+                            this.put(160, new Object[] { DestinationFormat.VIDEO_DASH, "H.264", "AAC", "Stereo", "144p" });
                         }
                     }
                     if (q240p) {
-                        if (dashSupported) this.put(133, new Object[] { DestinationFormat.VIDEO_DASH, "DASH_H.264", "AAC", "Stereo", "240p" });
+                        if (dashSupported) this.put(133, new Object[] { DestinationFormat.VIDEO_DASH, "H.264", "AAC", "Stereo", "240p" });
                     }
                     if (q360p) {
                         // 270p / 360p
                         if (dashSupported) this.put(134, new Object[] { DestinationFormat.VIDEO_DASH, "H.264", "AAC", "Stereo", "360p" });
-                        this.put(18, new Object[] { DestinationFormat.VIDEOMP4, "DASH_H.264", "AAC", "Stereo", "360p" });
+                        this.put(18, new Object[] { DestinationFormat.VIDEOMP4, "H.264", "AAC", "Stereo", "360p" });
                     }
                     if (q480p) {
-                        if (dashSupported) this.put(135, new Object[] { DestinationFormat.VIDEO_DASH, "DASH_H.264", "AAC", "Stereo", "480p" });
+                        if (dashSupported) this.put(135, new Object[] { DestinationFormat.VIDEO_DASH, "H.264", "AAC", "Stereo", "480p" });
                     }
                     if (q720p) {
-                        if (dashSupported) this.put(136, new Object[] { DestinationFormat.VIDEO_DASH, "DASH_H.264", "AAC", "Stereo", "720p" });
+                        if (dashSupported) this.put(136, new Object[] { DestinationFormat.VIDEO_DASH, "H.264", "AAC", "Stereo", "720p" });
                         this.put(22, new Object[] { DestinationFormat.VIDEOMP4, "H.264", "AAC", "Stereo", "720p" });
                     }
                     if (q1080p) {
-                        if (dashSupported) this.put(137, new Object[] { DestinationFormat.VIDEO_DASH, "DASH_H.264", "AAC", "Stereo", "1080p" });
+                        if (dashSupported) this.put(137, new Object[] { DestinationFormat.VIDEO_DASH, "H.264", "AAC", "Stereo", "1080p" });
                         this.put(37, new Object[] { DestinationFormat.VIDEOMP4, "H.264", "AAC", "Stereo", "1080p" });
                     }
                     // maybe this varies?? wiki says 3072p but I've seen less. eg :: 38 2048x1536 9 0 115,
@@ -886,13 +876,10 @@ public class TbCm extends PluginForDecrypt {
                         if (LinksFound.containsKey(37) && ytVideo.containsKey(37)) {
                             // 1080p mp4
                             bestFound.put(37, LinksFound.get(37));
-                        }
-                        if (LinksFound.containsKey(137) && ytVideo.containsKey(137)) {
-                            // dash 1080p
-                            if (hasDashAudio) {
-                                needsDashAudio = true;
-                                bestFound.put(137, LinksFound.get(137));
-                            }
+                        } else if (hasDashAudio && LinksFound.containsKey(137) && ytVideo.containsKey(137)) {
+                            // dash 1080p,mp4
+                            needsDashAudio = true;
+                            bestFound.put(137, LinksFound.get(137));
                         }
                         if (LinksFound.containsKey(46) && ytVideo.containsKey(46)) {
                             // 1080p webm
@@ -902,6 +889,10 @@ public class TbCm extends PluginForDecrypt {
                         if (LinksFound.containsKey(22) && ytVideo.containsKey(22)) {
                             // 720p mp4
                             bestFound.put(22, LinksFound.get(22));
+                        } else if (hasDashAudio && LinksFound.containsKey(136) && ytVideo.containsKey(136)) {
+                            // dash 720p,mp4
+                            needsDashAudio = true;
+                            bestFound.put(136, LinksFound.get(136));
                         }
                         if (LinksFound.containsKey(45) && ytVideo.containsKey(45)) {
                             // 720p webm
@@ -915,13 +906,6 @@ public class TbCm extends PluginForDecrypt {
                             // 720p(3d) webm
                             bestFound.put(102, LinksFound.get(102));
                         }
-                        if (LinksFound.containsKey(136) && ytVideo.containsKey(136)) {
-                            // dash 720p
-                            if (hasDashAudio) {
-                                needsDashAudio = true;
-                                bestFound.put(136, LinksFound.get(136));
-                            }
-                        }
                     } else if (LinksFound.containsKey(85) && ytVideo.containsKey(85)) {
                         // 520p(3d) mp4
                         if (LinksFound.containsKey(85) && ytVideo.containsKey(85)) bestFound.put(85, LinksFound.get(85));
@@ -929,21 +913,24 @@ public class TbCm extends PluginForDecrypt {
                         if (LinksFound.containsKey(35) && ytVideo.containsKey(35)) {
                             // 480p flv
                             bestFound.put(35, LinksFound.get(35));
+                        } else if (hasDashAudio && LinksFound.containsKey(135) && ytVideo.containsKey(135)) {
+                            // dash 480p,mp4
+                            needsDashAudio = true;
+                            bestFound.put(135, LinksFound.get(135));
                         }
                         if (LinksFound.containsKey(44) && ytVideo.containsKey(44)) {
                             // 480p webm
                             bestFound.put(44, LinksFound.get(44));
                         }
-                        if (LinksFound.containsKey(135) && ytVideo.containsKey(135)) {
-                            // dash 480p
-                            if (hasDashAudio) {
-                                needsDashAudio = true;
-                                bestFound.put(135, LinksFound.get(135));
-                            }
-                        }
                     } else if ((LinksFound.containsKey(18) && ytVideo.containsKey(18)) || (LinksFound.containsKey(34) && ytVideo.containsKey(34)) || (LinksFound.containsKey(43) && ytVideo.containsKey(43)) || (LinksFound.containsKey(82) && ytVideo.containsKey(82) || (LinksFound.containsKey(100) && ytVideo.containsKey(100)) || (LinksFound.containsKey(101) && ytVideo.containsKey(101)))) {
                         // 360p mp4
-                        if (LinksFound.containsKey(18) && ytVideo.containsKey(18)) bestFound.put(18, LinksFound.get(18));
+                        if (LinksFound.containsKey(18) && ytVideo.containsKey(18)) {
+                            bestFound.put(18, LinksFound.get(18));
+                        } else if (hasDashAudio && LinksFound.containsKey(134) && ytVideo.containsKey(134)) {
+                            // dash 360p,mp4
+                            needsDashAudio = true;
+                            bestFound.put(134, LinksFound.get(134));
+                        }
                         // 360p flv
                         if (LinksFound.containsKey(34) && ytVideo.containsKey(34)) bestFound.put(34, LinksFound.get(34));
                         // 360p webm
@@ -987,6 +974,12 @@ public class TbCm extends PluginForDecrypt {
                         LinksFound = bestFound;
                     }
                 }
+
+                /* filter out dash/xy duplicates */
+                if (LinksFound.containsKey(37)) LinksFound.remove(137);
+                if (LinksFound.containsKey(22)) LinksFound.remove(136);
+                if (LinksFound.containsKey(35)) LinksFound.remove(135);
+                if (LinksFound.containsKey(18)) LinksFound.remove(134);
 
                 String dlLink = "";
                 String vQuality = "";
@@ -1699,93 +1692,6 @@ public class TbCm extends PluginForDecrypt {
             return false;
         }
         return true;
-    }
-
-    private void checkNewsDialog() {
-        SubConfiguration config = null;
-        try {
-            config = getPluginConfig();
-            if (config.getBooleanProperty("checkNewsDialog", Boolean.FALSE) == false) {
-                if (config.getProperty("checkNewsDialog2") == null) {
-                    showFreeDialog();
-                } else {
-                    config = null;
-                }
-            } else {
-                config = null;
-            }
-        } catch (final Throwable e) {
-        } finally {
-            if (config != null) {
-                config.setProperty("checkNewsDialog", Boolean.TRUE);
-                config.setProperty("checkNewsDialog2", "shown");
-                config.save();
-            }
-        }
-    }
-
-    private static void showFreeDialog() {
-        try {
-            SwingUtilities.invokeAndWait(new Runnable() {
-
-                @Override
-                public void run() {
-                    try {
-                        String lng = System.getProperty("user.language");
-                        String message = null;
-                        String title = null;
-                        if ("de".equalsIgnoreCase(lng)) {
-                            title = "youtube.com - Probleme";
-                            message = "Folgende youtube Probleme sind momentan bekannt:\r\n";
-                            message += "-480p Versionen können nicht geladen werden\r\n";
-                            message += "-1080p Versionen können nicht geladen werden\r\n";
-                            message += "-Das youtube Plugin ist in der JD Version 0.9.581 momentan gar nicht mehr funktionsfähig\r\n";
-                            message += "--> In dem Fall bitte auf die JDownloader 2 BETA ausweichen!\r\n";
-                            message += "\r\n";
-                            message += "Die Probleme sind NICHT durch neue JD Updates entstanden sondern, weil youtube\r\n";
-                            message += "für die obigen Qualitätsstufen ein neues Streamingverfahren verwendet, das JD noch nicht kann.\r\n";
-                            message += "Wir bitten euch, diese Probleme nicht weiter zu melden, da wir bereits bescheid wissen.\r\n";
-                            message += "\r\n";
-                            message += "Das Streamingverfahren heißt 'DASH' und falls jemand weiß, wie man dieses bei den obigen Qualitätsstufen\r\n";
-                            message += "deaktivieren kann, meldet euch bitte unter support@jdownloader.org oder bei uns im Supportforum.\r\n";
-                            message += "\r\n";
-                            message += "Ja = bestehenden JDownloader Supportforum Thread im Browser öffnen und Fenster schließen\r\n";
-                            message += "Nein = Fenster schließen\r\n";
-                            message += "\r\n";
-                            message += "Euer JDownloader Team\r\n";
-                            if (CrossSystem.isOpenBrowserSupported()) {
-                                int result = JOptionPane.showConfirmDialog(jd.gui.swing.jdgui.JDGui.getInstance().getMainFrame(), message, title, JOptionPane.YES_NO_OPTION, JOptionPane.INFORMATION_MESSAGE, null);
-                                if (JOptionPane.OK_OPTION == result) CrossSystem.openURL(new URL("http://board.jdownloader.org/showthread.php?t=51500"));
-                            }
-                        } else {
-                            title = "youtube.com - problems";
-                            message = "The following youtube.com problems are known:\r\n";
-                            message += "-480p versions can't be downloaded\r\n";
-                            message += "-1080p versions can't be downloaded\r\n";
-                            message += "-At the moment the youtube plugin is completely broken in JD version 0.9.581\r\n";
-                            message += "--> Use the JDownloader 2 BETA to be able to download from youtube again\r\n";
-                            message += "\r\n";
-                            message += "This isn't caused by JDownloader recient plugin updates, it's caused by a recent change Youtube platform.\r\n";
-                            message += "Youtube using a new streaming technique 'DASH', which JD cannot handle yet.\r\n";
-                            message += "As we are aware of the aforementioned issues, their is no need to report it to us.\r\n";
-                            message += "\r\n";
-                            message += "If anyone knows how to deactivate it, please contact us via support@jdownloader.org or through our support forum.\r\n";
-                            message += "\r\n";
-                            message += "Yes = Open's our support forum thread for 'Youtube Issues', and this dialog window closes\r\n";
-                            message += "No = Closes this dialog window.\r\n";
-                            message += "\r\n";
-                            message += "Your JDownloader Development Team\r\n";
-                            if (CrossSystem.isOpenBrowserSupported()) {
-                                int result = JOptionPane.showConfirmDialog(jd.gui.swing.jdgui.JDGui.getInstance().getMainFrame(), message, title, JOptionPane.YES_NO_OPTION, JOptionPane.INFORMATION_MESSAGE, null);
-                                if (JOptionPane.OK_OPTION == result) CrossSystem.openURL(new URL("http://board.jdownloader.org/showthread.php?t=48894"));
-                            }
-                        }
-                    } catch (Throwable e) {
-                    }
-                }
-            });
-        } catch (Throwable e) {
-        }
     }
 
     private boolean isJDownloader2() {
