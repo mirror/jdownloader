@@ -54,7 +54,6 @@ public class RpdLbrr extends PluginForDecrypt {
         try {
             waitQueue();
             if (crptlink.matches(OLDLINK)) {
-
                 br.setCookiesExclusive(false);
                 br.getPage(crptlink);
                 String fpName = br.getRegex("<<title>File download:(.*?)from .*?</title>").getMatch(0);
@@ -104,6 +103,10 @@ public class RpdLbrr extends PluginForDecrypt {
                 if (br.getRedirectLocation() != null) br.getPage(br.getRedirectLocation());
                 if (br.containsHTML("Error file not found")) {
                     logger.info("Link offline: " + crptlink);
+                    return decryptedLinks;
+                }
+                if (br.containsHTML(">In response to a complaint")) {
+                    logger.info("Link offline: " + parameter);
                     return decryptedLinks;
                 }
                 String host = br.getRegex("height=\"16\">([^<>\"]*?)</span> <span class=\"size\"><span>size:</span>").getMatch(0);

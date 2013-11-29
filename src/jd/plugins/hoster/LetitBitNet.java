@@ -73,7 +73,7 @@ public class LetitBitNet extends PluginForHost {
      */
     public final String          APIKEY                            = "VjR1U3JGUkNx";
     public final String          APIPAGE                           = "http://api.letitbit.net/";
-    private final String         TEMPDISABLED                      = "(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)";
+    private final String         TEMPDISABLED                      = "(api\\.recaptcha\\.net|google\\.com/recaptcha/api/|>File not found<|id=\"videocaptcha_)";
     private String               agent                             = null;
     private static final boolean PLUGIN_BROKEN                     = true;
 
@@ -901,7 +901,7 @@ public class LetitBitNet extends PluginForHost {
                 if (availableMirrors.equals("0")) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 } else {
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Temporarily not downloaded, " + availableMirrors + " mirrors remaining!");
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Temporarily not downloadable, " + availableMirrors + " mirrors remaining!");
                 }
             }
         }

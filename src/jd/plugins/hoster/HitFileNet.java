@@ -475,8 +475,8 @@ public class HitFileNet extends PluginForHost {
         // br.getHeaders().put("Pragma", null);
         br.getHeaders().put("Cache-Control", null);
         br.getHeaders().put("Accept-Charset", null);
-        br.getHeaders().put("Accept", "text/html, application/xhtml+xml, */*");
-        br.getHeaders().put("Accept-Language", "en-EN");
+        br.getHeaders().put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
+        br.getHeaders().put("Accept-Language", "en-us;q=0.7,en;q=0.3");
         br.getHeaders().put("User-Agent", userAgent);
         br.getHeaders().put("Referer", null);
     }

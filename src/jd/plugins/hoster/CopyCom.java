@@ -43,7 +43,7 @@ public class CopyCom extends PluginForHost {
     }
 
     public void correctDownloadLink(DownloadLink link) {
-        link.setUrlDownload("https://www.copy.com/" + new Regex(link.getDownloadURL(), "([A-Za-z0-9]+)$").getMatch(0));
+        link.setUrlDownload("https://www.copy.com/s/" + new Regex(link.getDownloadURL(), "([A-Za-z0-9]+)$").getMatch(0));
     }
 
     private static final String INVALIDLINKS = "https?://(www\\.)?copy\\.com/(price|about|barracuda|bigger|install|developer|browse|home|auth|signup|policies)";

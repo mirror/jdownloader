@@ -292,6 +292,8 @@ public class SaveTv extends PluginForHost {
                     episodename = "-";
                 else if (episodename.contains("Für diese Sendung stehen leider keine weiteren Informationen zur Verfügung")) episodename = "-";
                 String seriesdata = seriesInfo.getMatch(3);
+                if (seriesdata == null) seriesdata = seriesInfo.getMatch(2);
+                if (seriesdata == null) seriesdata = seriesInfo.getMatch(1);
                 if (seriesdata != null) {
                     seriesdata = seriesdata.trim();
                     final String[] dataArray = seriesdata.split(" ");
@@ -299,7 +301,7 @@ public class SaveTv extends PluginForHost {
                         genre = dataArray[0];
                         // Maybe the media was produced over multiple years
                         produceyear = new Regex(seriesdata, "(\\d{4} / \\d{4})").getMatch(0);
-                        producecountry = getRegexSafe(seriesdata, genre + " ([\\p{L}/]+)", 0);
+                        producecountry = getRegexSafe(seriesdata + genre, " ([\\p{L}/]+)", 0);
                         if (dataArray != null) {
                             if (dataArray.length >= 3) {
                                 if (producecountry == null) producecountry = dataArray[1];
@@ -345,7 +347,7 @@ public class SaveTv extends PluginForHost {
                         genre = dataArray[0];
                         // Maybe the media was produced over multiple years
                         produceyear = new Regex(moviesdata, "(\\d{4} / \\d{4})").getMatch(0);
-                        producecountry = new Regex(moviesdata, genre + " ([A-Za-z/]+)").getMatch(0);
+                        producecountry = new Regex(moviesdata + genre, " ([A-Za-z/]+)").getMatch(0);
                         if (dataArray != null) {
                             if (dataArray.length >= 3) {
                                 if (producecountry == null) producecountry = dataArray[1];

@@ -37,6 +37,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
@@ -297,6 +298,27 @@ public class PremiumDebridCom extends PluginForHost {
         if (server == null) server = br.getRegex("<iframe src=\"(http://(www\\.)?premiumdebrid\\.com/[^<>\"]*?)\"").getMatch(0);
         if (server == null) server = "http://www.premiumdebrid.com/s1";
         br.postPage(server + "/index.php?rand=0." + System.currentTimeMillis(), "urllist=" + url + "&captcha=none&");
+        if (br.containsHTML(">Please enter password to login")) {
+            synchronized (LOCK) {
+                String premiumpass = null;
+                for (int i = 0; i <= 3; i++) {
+                    premiumpass = acc.getStringProperty("premiumdebridpremiumpassword", null);
+                    if (premiumpass == null) premiumpass = Plugin.getUserInput("Please enter the premium password for premiumdebrid.com/pd.php", dl);
+                    br.postPage(server + "/login.php", "submit=Submit&secure=" + Encoding.urlEncode(premiumpass));
+                    if (br.containsHTML("<script>alert\\(\"Wrong password")) {
+                        acc.setProperty("premiumdebridpremiumpassword", Property.NULL);
+                        continue;
+                    }
+                    acc.setProperty("premiumdebridpremiumpassword", premiumpass);
+                    break;
+                }
+                int timesFailed_premiumpass = acc.getIntegerProperty("timesfailedpremiumdebridcom_premiumpassword", 1);
+                if (br.containsHTML("<script>alert\\(\"Wrong password") || timesFailed_premiumpass >= 3) throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPremium password missing or invalid!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                timesFailed_premiumpass++;
+                acc.setProperty("timesfailedpremiumdebridcom_premiumpassword", timesFailed_premiumpass);
+                throw new PluginException(LinkStatus.ERROR_RETRY, "Premium pass retry");
+            }
+        }
         if (br.containsHTML("Scusa\\. Non supportiamo il tuo link")) {
             logger.info("premiumdebrid.com: Disabling current host");
             tempUnavailableHoster(acc, dl, 60 * 60 * 1000l);

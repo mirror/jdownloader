@@ -585,7 +585,7 @@ public class ShareFlareNet extends PluginForHost {
                 if (availableMirrors.equals("0")) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 } else {
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Temporarily not downloaded, " + availableMirrors + " mirrors remaining!");
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Temporarily not downloadable, " + availableMirrors + " mirrors remaining!");
                 }
             }
         }
