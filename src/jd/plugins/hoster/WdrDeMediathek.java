@@ -28,8 +28,9 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.download.DownloadInterface;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "wdr.de" }, urls = { "http://(www\\.)?wdr\\.de/mediathek/html/regional/\\d{4}/\\d{2}/\\d{2}/[a-z0-9\\-_]+\\.xml" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "wdr.de" }, urls = { "http://(www\\.)?wdr\\.de/(mediathek/html/regional/\\d{4}/\\d{2}/\\d{2}/[a-z0-9\\-_]+\\.xml|tv/rockpalast/extra/videos/\\d+/\\d+/\\w+\\.jsp)" }, flags = { 0 })
 public class WdrDeMediathek extends PluginForHost {
 
     public WdrDeMediathek(PluginWrapper wrapper) {
@@ -47,7 +48,11 @@ public class WdrDeMediathek extends PluginForHost {
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.getPage(downloadLink.getDownloadURL());
+        final String startLink = downloadLink.getDownloadURL();
+        br.getPage(startLink);
+
+        if (startLink.matches("http://(www\\.)?wdr\\.de/tv/rockpalast/extra/videos/\\d+/\\d+/\\w+\\.jsp")) return requestRockpalastFileInformation(downloadLink);
+
         if (br.getURL().contains("/fehler.xml")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String sendung = br.getRegex("class=\"moSubText\">([^<>\"]*?)<br").getMatch(0);
         String filename = br.getRegex("<title>([^<>\"]*?)\\-  WDR MEDIATHEK \\- WDR\\.de</title>").getMatch(0);
@@ -91,15 +96,35 @@ public class WdrDeMediathek extends PluginForHost {
         }
     }
 
+    private AvailableStatus requestRockpalastFileInformation(final DownloadLink downloadlink) throws IOException, PluginException {
+        String fileName = br.getRegex("<h1 class=\"wsSingleH1\">([^<]+)</h1>[\r\n]+<h2>([^<]+)<").getMatch(0);
+        DLLINK = br.getRegex("dslSrc=(.*?)\\&amp").getMatch(0);
+        if (fileName == null || DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        downloadlink.setFinalFileName(fileName + ".mp4");
+        return AvailableStatus.TRUE;
+    }
+
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 0);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (DLLINK.startsWith("rtmp")) {
+            dl = new RTMPDownload(this, downloadLink, DLLINK);
+            setupRTMPConnection(DLLINK, dl);
+            ((RTMPDownload) dl).startDownload();
+        } else {
+            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 0);
+            if (dl.getConnection().getContentType().contains("html")) {
+                br.followConnection();
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            dl.startDownload();
         }
-        dl.startDownload();
+    }
+
+    private void setupRTMPConnection(String dllink, DownloadInterface dl) {
+        jd.network.rtmp.url.RtmpUrlConnection rtmp = ((RTMPDownload) dl).getRtmpConnection();
+        rtmp.setUrl(dllink);
+        rtmp.setResume(true);
     }
 
     @Override
@@ -118,4 +143,5 @@ public class WdrDeMediathek extends PluginForHost {
     @Override
     public void resetDownloadlink(DownloadLink link) {
     }
+
 }
