@@ -27,6 +27,14 @@ public interface Cnl2APIBasics extends RemoteAPIInterface, FlashGotAPI {
      */
     public void jdcheckjs(RemoteAPIResponse response) throws InternalApiException;
 
+    @ApiMethodName("jdcheckjson")
+    @ApiRawMethod(/* this method does not use json, it uses raw parameters */)
+    /**
+     * this method returns a json object containing information about the JD {version: #JD_VERSION#, deviceId: #MY_JD_DEVICE_ID}
+     * @param response
+     */
+    public void jdcheckjson(RemoteAPIResponse response) throws InternalApiException;
+
     @ApiMethodName("flash")
     @ApiRawMethod(/* this method does not use json, it uses raw parameters */)
     /**

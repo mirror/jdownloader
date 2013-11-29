@@ -46,4 +46,21 @@ public interface Cnl2APIFlash extends RemoteAPIInterface {
      */
     public void alive(RemoteAPIResponse response, RemoteAPIRequest request) throws InternalApiException;
 
+    @ApiMethodName("addcrypted2Remote")
+    /**
+     * this is the addcrypted2 function of the cnl2 interface for use with MyJDownloader
+     * @param response
+     * @param request
+     */
+    public void addcrypted2Remote(String crypted, String jk, String k);
+
+    @ApiMethodName("add")
+    @ApiRawMethod(/* this method does not use json, it uses raw parameters */)
+    /**
+     * this is the normal add function of the cnl2 interface for use with MyJDownloader
+     * @param response
+     * @param request
+     */
+    public void add(String password, String source, String url) throws InternalApiException;
+
 }

@@ -31,6 +31,8 @@ import org.appwork.remoteapi.RemoteAPIRequest;
 import org.appwork.remoteapi.RemoteAPIResponse;
 import org.appwork.remoteapi.exceptions.InternalApiException;
 import org.appwork.storage.config.JsonConfig;
+import org.appwork.storage.simplejson.JSonObject;
+import org.appwork.storage.simplejson.JSonValue;
 import org.appwork.utils.IO;
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
@@ -45,6 +47,7 @@ import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogNoAnswerException;
 import org.jdownloader.api.RemoteAPIConfig;
 import org.jdownloader.api.cnl2.translate.ExternInterfaceTranslation;
+import org.jdownloader.api.myjdownloader.MyJDownloaderSettings;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.plugins.controller.host.HostPluginController;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin;
@@ -101,6 +104,15 @@ public class ExternInterfaceImpl implements Cnl2APIBasics, Cnl2APIFlash {
         writeString(response, null, sb.toString(), false);
     }
 
+    public void jdcheckjson(RemoteAPIResponse response) throws InternalApiException {
+        MyJDownloaderSettings set = JsonConfig.create(MyJDownloaderSettings.class);
+        JSonObject obj = new JSonObject();
+        obj.put("version", new JSonValue(JDUtilities.getRevision()));
+        obj.put("deviceId", new JSonValue(set.getUniqueDeviceID()));
+        obj.put("name", new JSonValue(set.getDeviceName()));
+        writeString(response, null, obj.toString(), false);
+    }
+
     public void addcrypted2(RemoteAPIResponse response, RemoteAPIRequest request) throws InternalApiException {
         try {
             askPermission(request);
@@ -116,6 +128,14 @@ public class ExternInterfaceImpl implements Cnl2APIBasics, Cnl2APIFlash {
         } catch (Throwable e) {
             writeString(response, request, "failed " + e.getMessage() + "\r\n", true);
         }
+    }
+
+    // For My JD API
+    public void addcrypted2Remote(String crypted, String jk, String source) {
+        String urls = decrypt(crypted, jk, null);
+        LinkCollectingJob job = new LinkCollectingJob(LinkOrigin.CNL, urls);
+        job.setCustomSourceUrl(source);
+        LinkCollector.getInstance().addCrawlerJob(job);
     }
 
     private void clickAndLoad2Add(String urls, RemoteAPIRequest request) throws IOException {
@@ -199,6 +219,23 @@ public class ExternInterfaceImpl implements Cnl2APIBasics, Cnl2APIFlash {
         } catch (Throwable e) {
             writeString(response, request, "failed " + e.getMessage() + "\r\n", true);
         }
+    }
+
+    // For My JD API
+    @Override
+    public void add(String passwords, String source, String urls) throws InternalApiException {
+        LinkCollectingJob job = new LinkCollectingJob(LinkOrigin.CNL, urls);
+        // String dir = HttpRequest.getParameterbyKey(request, "dir");
+        // if (!StringUtils.isEmpty(dir)) {
+        // job.setOutputFolder(new File(dir));
+        // }
+        job.setCustomSourceUrl(source);
+        // job.setCustomComment(comment);
+        // job.setPackageName(HttpRequest.getParameterbyKey(request, "package"));
+        HashSet<String> pws = new HashSet<String>();
+        pws.add(passwords);
+        job.setExtractPasswords(pws);
+        LinkCollector.getInstance().addCrawlerJob(job);
     }
 
     public void addcrypted(RemoteAPIResponse response, RemoteAPIRequest request) throws InternalApiException {
