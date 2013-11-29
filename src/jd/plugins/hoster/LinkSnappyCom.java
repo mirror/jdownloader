@@ -119,11 +119,27 @@ public class LinkSnappyCom extends PluginForHost {
 
         for (int i = 1; i <= 10; i++) {
             getPageSecure("http://gen.linksnappy.com/genAPI.php?genLinks=" + encode("{\"link\"+:+\"" + link.getDownloadURL() + "\",+\"username\"+:+\"" + account.getUser() + "\",+\"password\"+:+\"" + account.getPass() + "\"}"));
-            if (br.containsHTML("\"error\":\"Invalid file URL format\\.\"")) tempUnavailableHoster(account, link, 60 * 60 * 1000);
+            if (br.containsHTML("\"error\":\"Invalid file URL format\\.\"")) {
+                logger.info("Linksnappy.com: disabling current host");
+                tempUnavailableHoster(account, link, 60 * 60 * 1000);
+            }
             // Bullshit, we just try again
             if (br.containsHTML("\"error\":\"File not found")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 30 * 1000l);
             String dllink = br.getRegex("\"generated\":\"(http:[^<>\"]*?)\"").getMatch(0);
-            if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (dllink == null) {
+                logger.info("linksnappy.com: Direct downloadlink not found");
+                int timesFailed = link.getIntegerProperty("timesfailedlinksnappycom_dllinkmissing", 0);
+                link.getLinkStatus().setRetryCount(0);
+                if (timesFailed <= 2) {
+                    timesFailed++;
+                    link.setProperty("timesfailedlinksnappycom_dllinkmissing", timesFailed);
+                    throw new PluginException(LinkStatus.ERROR_RETRY, "Unknown error - final downloadlink not found");
+                } else {
+                    logger.info("linksnappy.com: Direct downloadlink not found -> Disabling current host");
+                    link.setProperty("timesfailedlinksnappycom_dllinkmissing", Property.NULL);
+                    tempUnavailableHoster(account, link, 60 * 60 * 1000l);
+                }
+            }
             dllink = dllink.replace("\\", "");
             try {
                 dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
@@ -148,7 +164,18 @@ public class LinkSnappyCom extends PluginForHost {
         if (dl.getConnection().getResponseCode() == 503) stupidServerError();
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            logger.info("linksnappy.com: Unknown download error");
+            int timesFailed = link.getIntegerProperty("timesfailedlinksnappycom_unknowndlerror", 0);
+            link.getLinkStatus().setRetryCount(0);
+            if (timesFailed <= 2) {
+                timesFailed++;
+                link.setProperty("timesfailedlinksnappycom_unknowndlerror", timesFailed);
+                throw new PluginException(LinkStatus.ERROR_RETRY, "Unknown download error");
+            } else {
+                logger.info("linksnappy.com: Unknown download error -> Disabling current host");
+                link.setProperty("timesfailedlinksnappycom_unknowndlerror", Property.NULL);
+                tempUnavailableHoster(account, link, 60 * 60 * 1000l);
+            }
         }
         this.dl.startDownload();
     }

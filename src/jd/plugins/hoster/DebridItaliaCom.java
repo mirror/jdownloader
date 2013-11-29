@@ -138,6 +138,7 @@ public class DebridItaliaCom extends PluginForHost {
             // Either server error or the host is broken (we have to find out by retrying)
             if (br.containsHTML("ERROR: not_available")) {
                 int timesFailed = link.getIntegerProperty("timesfaileddebriditalia", 0);
+                link.getLinkStatus().setRetryCount(0);
                 if (timesFailed <= 2) {
                     timesFailed++;
                     link.setProperty("timesfaileddebriditalia", timesFailed);
@@ -150,15 +151,17 @@ public class DebridItaliaCom extends PluginForHost {
             }
             dllink = br.getRegex("(https?://(\\w+\\.)?debriditalia\\.com/dl/.+)").getMatch(0);
             if (dllink == null) {
-                logger.info("debriditalia.com: Unhandled error: " + br.toString());
-                int timesFailed = link.getIntegerProperty("timesfaileddebriditalia_unknownerror", 0);
+                logger.info("debriditalia.com: Unknown error - final downloadlink is missing");
+                int timesFailed = link.getIntegerProperty("timesfaileddebriditalia_unknownerror_dllink_missing", 0);
+                link.getLinkStatus().setRetryCount(0);
                 if (timesFailed <= 2) {
                     timesFailed++;
-                    link.setProperty("timesfaileddebriditalia_unknownerror", timesFailed);
+                    link.setProperty("timesfaileddebriditalia_unknownerror_dllink_missing", timesFailed);
                     throw new PluginException(LinkStatus.ERROR_RETRY, "Unknown error");
                 } else {
-                    link.setProperty("timesfaileddebriditalia_unknownerror", Property.NULL);
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    logger.info("debriditalia.com: Unknown error - final downloadlink is missing -> Disabling current host");
+                    link.setProperty("timesfaileddebriditalia_unknownerror_dllink_missing", Property.NULL);
+                    tempUnavailableHoster(acc, link, 60 * 60 * 1000l);
                 }
             }
         }
@@ -185,16 +188,18 @@ public class DebridItaliaCom extends PluginForHost {
                     tempUnavailableHoster(acc, link, 60 * 60 * 1000l);
                 }
             }
-            logger.info("debriditalia.com: Unhandled download error: " + br.toString());
+            logger.info("debriditalia.com: Unknown download error 2" + br.toString());
 
-            int timesFailed = link.getIntegerProperty("timesfaileddebriditalia_unknownerror_download", 0);
+            int timesFailed = link.getIntegerProperty("timesfaileddebriditalia_unknowndlerror2", 0);
+            link.getLinkStatus().setRetryCount(0);
             if (timesFailed <= 2) {
                 timesFailed++;
-                link.setProperty("timesfaileddebriditalia_unknownerror_download", timesFailed);
+                link.setProperty("timesfaileddebriditalia_unknowndlerror2", timesFailed);
                 throw new PluginException(LinkStatus.ERROR_RETRY, "Unknown error");
             } else {
-                link.setProperty("timesfaileddebriditalia_unknownerror_download", Property.NULL);
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                logger.info("debriditalia.com: Unknown download error 2: Disabling current host");
+                link.setProperty("timesfaileddebriditalia_unknowndlerror2", Property.NULL);
+                tempUnavailableHoster(acc, link, 60 * 60 * 1000l);
             }
 
         }

@@ -91,6 +91,10 @@ public class JBbergCom extends PluginForDecrypt {
         br.getPage(parameter.replaceFirst("/(captcha|download)/", "/mirrors/"));
         String[] results = br.getRegex("(<div class=\"host_dl\".*?</span>[\r\n\t ]+</div>)").getColumn(0);
         if (results == null || results.length == 0) {
+            if (br.containsHTML("Débrider maintenant \\!<|>Hébergeur indisponible</")) {
+                logger.info("Link offline: " + parameter);
+                return decryptedLinks;
+            }
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
