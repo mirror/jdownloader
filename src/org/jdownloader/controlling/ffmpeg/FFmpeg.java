@@ -86,7 +86,7 @@ public class FFmpeg {
 
     }
 
-    public static String readInputStreamToString(StringBuilder ret, final InputStream fis) throws UnsupportedEncodingException, IOException {
+    public String readInputStreamToString(StringBuilder ret, final InputStream fis) throws UnsupportedEncodingException, IOException {
         BufferedReader f = null;
         try {
             f = new BufferedReader(new InputStreamReader(fis, "UTF8"));
@@ -148,16 +148,25 @@ public class FFmpeg {
 
     public boolean validateBinary() {
         String fp = getFullPath();
-        if (StringUtils.isEmpty(fp)) return false;
+        logger.info("Validate FFmpeg Binary: " + fp);
+        if (StringUtils.isEmpty(fp)) {
+            logger.info("Binary is ok: " + false);
+            return false;
+        }
         try {
 
             String[] result = execute(-1, null, null, fp, "-version");
-            return result != null && result.length == 2 && result[0] != null && result[0].toLowerCase(Locale.ENGLISH).contains("ffmpeg");
+            logger.info(result[0]);
+            logger.info(result[1]);
+            boolean ret = result != null && result.length == 2 && result[0] != null && result[0].toLowerCase(Locale.ENGLISH).contains("ffmpeg");
+            logger.info("Binary is ok: " + ret);
+            return ret;
         } catch (InterruptedException e) {
-            e.printStackTrace();
+            logger.log(e);
         } catch (IOException e) {
-            e.printStackTrace();
+            logger.log(e);
         }
+        logger.info("Binary is ok: " + false);
         return false;
     }
 
@@ -184,6 +193,7 @@ public class FFmpeg {
     }
 
     public boolean merge(FFMpegProgress progress, String out, String videoIn, String audioIn) throws InterruptedException, IOException {
+        logger.info("Merging " + videoIn + " + " + audioIn + " = " + out);
         String[] mc = config.getMergeCommand();
         ArrayList<String> commandLine = new ArrayList<String>();
         commandLine.add(getFullPath());
@@ -192,6 +202,7 @@ public class FFmpeg {
         }
         // overwrite
         commandLine.add("-y");
+        logger.info("FFmpeg command: " + commandLine);
         final ProcessBuilder pb = ProcessBuilderFactory.create(commandLine);
 
         final StringBuilder sb = new StringBuilder();
@@ -248,6 +259,9 @@ public class FFmpeg {
                     int exitCode = process.exitValue();
                     reader1.join();
                     reader2.join();
+
+                    logger.info(sb.toString());
+                    logger.info(sb2.toString());
                     return exitCode == 0;
                 } catch (IllegalThreadStateException e) {
                     // still running;
@@ -265,6 +279,7 @@ public class FFmpeg {
             }
         } catch (InterruptedException e) {
             process.destroy();
+            logger.log(e);
             throw e;
 
         }

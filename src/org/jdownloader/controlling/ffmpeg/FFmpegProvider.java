@@ -7,6 +7,8 @@ import jd.gui.swing.laf.LookAndFeelController;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.Application;
+import org.appwork.utils.logging2.LogSource;
+import org.jdownloader.logging.LogController;
 
 public class FFmpegProvider {
     private static final FFmpegProvider INSTANCE = new FFmpegProvider();
@@ -22,13 +24,14 @@ public class FFmpegProvider {
 
     private boolean       installing = false;
     private InstallThread installThread;
+    private LogSource     logger;
 
     /**
      * Create a new instance of FFmpegProvider. This is a singleton class. Access the only existing instance by using {@link #getInstance()}
      * .
      */
     private FFmpegProvider() {
-
+        logger = LogController.getInstance().getLogger(FFmpeg.class.getName());
     }
 
     public class InstallThread extends Thread {
@@ -85,6 +88,7 @@ public class FFmpegProvider {
             if (installThread == null) {
                 installThread = new InstallThread();
                 installThread.start();
+                logger.info("Started Install process");
             }
         }
 
@@ -93,6 +97,6 @@ public class FFmpegProvider {
             progress.updateValues(installThread.getProgress(), 100);
             Thread.sleep(1000);
         }
-
+        logger.info("Ended Install process");
     }
 }

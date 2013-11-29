@@ -322,20 +322,37 @@ public class YoutubeDash extends Youtube {
 
         prem = false;
         requestFileInformation(downloadLink);
-        boolean continueDash = downloadLink.getBooleanProperty(DASH_VIDEO_FINISHED, false);
-        if (continueDash == false) {
-            /* videoStream not finished yet, resume/download it */
-            continueDash = downloadDashStream(downloadLink, true);
-        } else {
-            /* videoStream is finished */
-            continueDash = downloadLink.getBooleanProperty(DASH_AUDIO_FINISHED, false);
+
+        if (new File(getVideoStreamPath(downloadLink)).exists()) {
+            downloadLink.setProperty(DASH_VIDEO_FINISHED, true);
         }
-        if (continueDash) {
-            /* audioStream not finished yet, resume/download it */
-            continueDash = downloadDashStream(downloadLink, false);
+        boolean loadVideo = !downloadLink.getBooleanProperty(DASH_VIDEO_FINISHED, false);
+
+        loadVideo |= !new File(getVideoStreamPath(downloadLink)).exists();
+
+        if (loadVideo) {
+            /* videoStream not finished yet, resume/download it */
+            if (!downloadDashStream(downloadLink, true)) {
+
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
         }
 
-        if (continueDash) {
+        if (new File(getAudioStreamPath(downloadLink)).exists()) {
+            downloadLink.setProperty(DASH_AUDIO_FINISHED, true);
+        }
+        /* videoStream is finished */
+        boolean loadAudio = !downloadLink.getBooleanProperty(DASH_AUDIO_FINISHED, false);
+
+        loadAudio |= !new File(getAudioStreamPath(downloadLink)).exists();
+
+        if (loadAudio) {
+            /* audioStream not finished yet, resume/download it */
+            if (!downloadDashStream(downloadLink, false)) {
+
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+        }
+
+        if (new File(getAudioStreamPath(downloadLink)).exists() && new File(getVideoStreamPath(downloadLink)).exists() && !new File(downloadLink.getFileOutput()).exists()) {
             /* audioStream also finished */
             FFMpegProgress progress = new FFMpegProgress();
             downloadLink.setPluginProgress(progress);
@@ -353,7 +370,6 @@ public class YoutubeDash extends Youtube {
             }
         }
 
-        System.out.println(1);
     }
 
     @Override
@@ -380,6 +396,8 @@ public class YoutubeDash extends Youtube {
         List<File> ret = super.deleteDownloadLink(link);
         ret.add(new File(getVideoStreamPath(link)));
         ret.add(new File(getAudioStreamPath(link)));
+        ret.add(new File(getVideoStreamPath(link) + ".part"));
+        ret.add(new File(getAudioStreamPath(link) + ".part"));
         return ret;
     }
 
