@@ -47,7 +47,8 @@ public abstract class SetDownloadFolderAction<PackageType extends AbstractPackag
     }
 
     /**
-     * checks if the given file is valid as a downloadfolder, this means it must be an existing folder or at least its parent folder must exist
+     * checks if the given file is valid as a downloadfolder, this means it must be an existing folder or at least its parent folder must
+     * exist
      * 
      * @param file
      * @return
@@ -79,17 +80,17 @@ public abstract class SetDownloadFolderAction<PackageType extends AbstractPackag
                     return null;
                 }
             });
-            for (final PackageView<PackageType, ChildrenType> pkg : lselection.getPackageViews()) {
-                if (pkg.isFull()) {
+            for (final PackageView<PackageType, ChildrenType> pkgView : lselection.getPackageViews()) {
+                if (pkgView.isFull()) {
                     continue;
                 }
-                final PackageType entry = pkg.getPackage();
+                final PackageType entry = pkgView.getPackage();
                 try {
                     File oldPath = LinkTreeUtils.getDownloadDirectory(entry);
                     File newPath = file;
                     if (oldPath.equals(newPath)) continue;
 
-                    Dialog.getInstance().showConfirmDialog(Dialog.LOGIC_DONOTSHOW_BASED_ON_TITLE_ONLY | Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _JDT._.SetDownloadFolderAction_actionPerformed_(entry.getName()), _JDT._.SetDownloadFolderAction_msg(entry.getName(), pkg.getChildren().size()), null, _JDT._.SetDownloadFolderAction_yes(), _JDT._.SetDownloadFolderAction_no());
+                    Dialog.getInstance().showConfirmDialog(Dialog.LOGIC_DONOTSHOW_BASED_ON_TITLE_ONLY | Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _JDT._.SetDownloadFolderAction_actionPerformed_(entry.getName()), _JDT._.SetDownloadFolderAction_msg(entry.getName(), pkgView.getChildren().size()), null, _JDT._.SetDownloadFolderAction_yes(), _JDT._.SetDownloadFolderAction_no());
 
                     getQueue().add(new QueueAction<Object, RuntimeException>() {
 
@@ -115,7 +116,7 @@ public abstract class SetDownloadFolderAction<PackageType extends AbstractPackag
 
                             @Override
                             protected Object run() {
-                                move(pkg, pkg.getChildren());
+                                move(pkg, pkgView.getChildren());
                                 return null;
                             }
 
