@@ -180,10 +180,13 @@ public class OnlineNoLifeTvCom extends PluginForHost {
         if (aa != null && br.getCookie(MAINPAGE, "bbpassword") == null) {
             login(aa, false);
         }
-        br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML("<title>Nolife Online \\- </title>")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
-        String filename = br.getRegex("<title>Nolife Online \\- ([^<>\"]*?)</title>").getMatch(0);
-        if (filename == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+        String dllink = downloadLink.getDownloadURL();
+        br.getPage(dllink);
+        String filename = br.getRegex("<title>Nolife Online \\- ([^<>\"]+)</title>").getMatch(0);
+        if (filename == null) {
+            filename = dllink.substring(dllink.lastIndexOf("/") + 1);
+            if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         filename = Encoding.htmlDecode(filename);
         if (!br.containsHTML("flashvars")) {
             notDownloadable = true;
@@ -197,9 +200,10 @@ public class OnlineNoLifeTvCom extends PluginForHost {
              */
 
             long ts = System.currentTimeMillis();
-            br.postPage("/_nlfplayer/api/api_player.php", "a=UEM%7CSEM%7CMEM%7CCH%7CSWQ&id%5Fnlshow=" + getId(downloadLink.getDownloadURL()) + "&timestamp=" + ts + "&skey=" + getSKey(ts) + "&quality=0");
+            br.postPage("/_nlfplayer/api/api_player.php", "a=UEM%7CSEM%7CMEM%7CCH%7CSWQ&id%5Fnlshow=" + getId(dllink) + "&timestamp=" + ts + "&skey=" + getSKey(ts) + "&quality=0");
             DLLINK = br.getRegex("\\&url=(http://[^<>\"\\'\\&]+\\.mp4)\\&").getMatch(0);
-            if (DLLINK == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+            if (br.containsHTML("message=Je ne trouve pas cette émission")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            if (DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             filename = filename.trim();
             String ext = DLLINK.substring(DLLINK.lastIndexOf("."));
             if (ext == null) {
@@ -232,7 +236,9 @@ public class OnlineNoLifeTvCom extends PluginForHost {
     }
 
     private String getId(String s) {
-        return new Regex(s, "\\?id=(\\d+)").getMatch(0);
+        String id = new Regex(s, "\\?id=(\\d+)").getMatch(0);
+        if (id == null) id = new Regex(s, "/([\\d]{5})/").getMatch(0);
+        return id;
     }
 
     @Override
