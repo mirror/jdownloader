@@ -65,7 +65,7 @@ public class OneThousandEbCom extends PluginForHost {
         requestFileInformation(downloadLink);
         // final String js =
         // br.getRegex("src=\"(http://static\\.1000eb\\.com/combo/[^<>]+/file\\.js\\&t=\\d+)\">").getMatch(0);
-        final String dllink = requestDownloadLink("http://1000eb.com/base.js");
+        final String dllink = requestDownloadLink("http://static.1000eb.com/www/js/file/base.js?2013042501");
         if (dllink == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
         if (dl.getConnection().getContentType().contains("html")) {

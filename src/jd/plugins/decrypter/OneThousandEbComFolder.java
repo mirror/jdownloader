@@ -75,7 +75,7 @@ public class OneThousandEbComFolder extends PluginForDecrypt {
                 if (i > minCount) br.getPage(parameter + "?p=" + i);
             } catch (Throwable e) {
                 logger.warning("1000eb.com: " + e.getMessage());
-                return decryptedLinks;
+                continue;
             }
 
             for (final String[] singleLink : br.getRegex("class=\"li\\-name\"><a title=\"[^\"]+\" href=\'(http://1000eb\\.com/[^\']+)\' target=\"_blank\" class=\"ellipsis\">([^<]+)</a></span> <span class=\"li\\-size\">([^<]+)</span>").getMatches()) {
