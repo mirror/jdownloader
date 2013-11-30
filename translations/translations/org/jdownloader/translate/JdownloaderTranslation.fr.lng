@@ -1,3 +1,4 @@
+CaptchaQuickSettingsContainer_CaptchaQuickSettingsContainer=Accéder aux paramètres du Captcha
 DownloadLink_setSkipped_statusmessage=Ignoré
 DownloadLink_setSkipped_statusmessage_account=Ignoré - Nécessite un compte
 DownloadLink_setSkipped_statusmessage_captcha=Ignoré - Captcha demandé
@@ -20,6 +21,8 @@ LinkCollector_onShutdownRequest_=Le collecteur de lien est toujours en cours !
 LinkCollector_onShutdownRequest_msg=Voulez-vous stopper la collecte de liens ?
 LinkFilterSettings_DefaultFilterList_getDefaultValue_=Fichiers hors ligne
 LinkSource_CLIPBOARD=Presse papier
+LinkSource_FLASHGOT=Flashgot
+LinkSource_MYJD=MyJDownloader
 LinkgrabberFilterRule_duplicate=%s1 (Copie)
 Main_run_autostart_=Démarrer les téléchargements
 Main_run_autostart_msg=Les télechargements vont démarrer dans quelques secondes...
