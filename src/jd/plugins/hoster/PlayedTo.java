@@ -216,6 +216,8 @@ public class PlayedTo extends PluginForHost {
                 dllink = getDllink();
             }
         }
+        // Special errorhandling
+        if (correctedBR.contains(">Video is processing now")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Video not ready to stream yet", 5 * 60 * 1000l);
         if (dllink == null) {
             Form dlForm = br.getFormbyProperty("name", "F1");
             if (dlForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
