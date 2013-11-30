@@ -268,7 +268,7 @@ public class RDMdthk extends PluginForDecrypt {
                         }
                     }
                     if (cfg.getBooleanProperty(Q_SUBTITLES, false)) {
-                        final String filename = title + "@" + lastQualityFMT + ".xml";
+                        final String filename = title + "@subtitle.xml";
                         String subtitleLink = br.getRegex("mediaCollection\\.setSubtitleUrl\\(\"(/static/avportal/untertitel_mediathek/\\d+\\.xml)\"").getMatch(0);
                         if (subtitleLink != null) {
                             final String finallink = "http://www.ardmediathek.de" + subtitleLink + "@";
