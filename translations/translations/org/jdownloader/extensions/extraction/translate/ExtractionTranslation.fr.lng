@@ -54,6 +54,7 @@ file_exists_not=Le fichier n'existe pas
 filename=nom du fichier
 files2=fichier(s)
 files_and_folders=fichier(s) ou dossier(s)
+final_delete=Supprimer finalement les fichiers
 folders=dossier(s)
 hoster=Hébergeur
 local=Propriété du fichier
