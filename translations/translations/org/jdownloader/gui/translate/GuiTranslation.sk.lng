@@ -675,6 +675,7 @@ gui_config_menumanager_traymenu=Menu v oblasti oznámení
 gui_config_simple_container=Automaticky otvoriť kontajnery z odkazmi (dlc, ccf, ...)
 gui_config_various=Rôzne
 gui_dialogs_message_title=Správa
+gui_downloadlist_reset2=Resetovať vybrané odkazy?\nTo by resetovalo %s1 odkaz(y) a odstránilo %s3 súbory(y) (%s2) z disku.
 gui_filechooser_loaddlc=Načítať súbor DLC
 gui_linklist_editpackagename_message=Názov nového balíka
 gui_menu_about=Pomocník
