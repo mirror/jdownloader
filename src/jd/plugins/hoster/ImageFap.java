@@ -117,7 +117,8 @@ public class ImageFap extends PluginForHost {
             }
         } else {
             // final String gallery_name = getGalleryName(downloadLink);
-            String imagelink = br.getRegex("\"(http://fap\\.to/images/(full/)?\\d+/\\d+/.*?)\"").getMatch(0);
+            // String imagelink = br.getRegex("\"(http://fap\\.to/images/(full/)?\\d+/\\d+/.*?)\"").getMatch(0);
+            String imagelink = br.getRegex("name=\"mainPhoto\".*src=\"(http://fap\\.to/images/\\d+/.*?)\"").getMatch(0);
             if (imagelink == null) {
                 final String returnID = new Regex(br, Pattern.compile("return lD\\(\\'(\\S+?)\\'\\);", Pattern.CASE_INSENSITIVE)).getMatch(0);
                 if (returnID != null) {
@@ -188,6 +189,9 @@ public class ImageFap extends PluginForHost {
                         authorsName = br.getRegex("<td class=\"mnu0\"><a href=\"/profile\\.php\\?user=(.*?)\"").getMatch(0);
                         if (authorsName == null) {
                             authorsName = br.getRegex("jQuery\\.BlockWidget\\(\\d+,\"(.*?)\",\"left\"\\);").getMatch(0);
+                            if (authorsName == null) {
+                                authorsName = br.getRegex("Uploaded by ([^<>\"]+)</font>").getMatch(0);
+                            }
                         }
                     }
                 }
