@@ -20,6 +20,7 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.Browser.BrowserException;
 import jd.parser.html.HTMLParser;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
@@ -38,7 +39,15 @@ public class DigitalRippedCom extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
-        br.getPage(parameter);
+        try {
+            br.getPage(parameter);
+        } catch (final BrowserException e) {
+            logger.info("Cannot decrypt link (server error or connection problems): " + parameter);
+            return decryptedLinks;
+        } catch (final IllegalStateException e) {
+            logger.info("Cannot decrypt link (unsupported link): " + parameter);
+            return decryptedLinks;
+        }
         if (br.getRequest().getHttpConnection().getContentType().contains("text/plain")) {
             final String[] links = HTMLParser.getHttpLinks(br.toString(), "");
             if (links == null || links.length == 0) {

@@ -224,7 +224,13 @@ public class FileMonkeyIn extends PluginForHost {
             if (dllink == null) {
                 final PluginForDecrypt solveplug = JDUtilities.getPluginForDecrypt("linkcrypt.ws");
                 final jd.plugins.decrypter.LnkCrptWs.SolveMedia sm = ((jd.plugins.decrypter.LnkCrptWs) solveplug).getSolveMedia(br);
-                final File cf = sm.downloadCaptcha(getLocalCaptchaFile());
+                File cf = null;
+                try {
+                    cf = sm.downloadCaptcha(getLocalCaptchaFile());
+                } catch (final Exception e) {
+                    if (br.containsHTML(">error: invalid ckey<")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 1 * 60 * 1000l);
+                    throw e;
+                }
                 final String code = getCaptchaCode(cf, downloadLink);
                 final String chid = sm.getChallenge(code);
                 br.postPage(br.getURL(), "adcopy_challenge=" + Encoding.urlEncode(sm.getChallenge()) + "&adcopy_response=" + Encoding.urlEncode(chid));

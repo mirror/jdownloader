@@ -105,7 +105,7 @@ public class FileparadoxIn extends PluginForHost {
     // last XfileSharingProBasic compare :: 2.6.2.1
     // captchatype: solvemedia??
     // other: no redirects
-    // mods: dllink = regexDllink(br.toString());
+    // mods: dllink = regexDllink(br.toString());, doFree more errorhandling
 
     private void setConstants(final Account account) {
         if (account != null && account.getBooleanProperty("free")) {
@@ -396,6 +396,8 @@ public class FileparadoxIn extends PluginForHost {
                 getDllink();
             }
         }
+        // Special errorhandling
+        if (cbr.containsHTML("This file has been blocked")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (inValidate(dllink)) {
             Form dlForm = getFormByKey(cbr, "op", "download2");
             if (dlForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

@@ -297,7 +297,7 @@ public class PremiumDebridCom extends PluginForHost {
         String server = br.getRegex("\"(http://(www\\.)?premiumdebrid\\.com/s\\d+)\"").getMatch(0);
         if (server == null) server = br.getRegex("<iframe src=\"(http://(www\\.)?premiumdebrid\\.com/[^<>\"]*?)\"").getMatch(0);
         if (server == null) server = "http://www.premiumdebrid.com/s1";
-        br.postPage(server + "/index.php?rand=0." + System.currentTimeMillis(), "urllist=" + url + "&captcha=none&");
+        br.getPage(server);
         if (br.containsHTML(">Please enter password to login")) {
             synchronized (LOCK) {
                 String premiumpass = null;
@@ -305,7 +305,8 @@ public class PremiumDebridCom extends PluginForHost {
                     premiumpass = acc.getStringProperty("premiumdebridpremiumpassword", null);
                     if (premiumpass == null) premiumpass = Plugin.getUserInput("Please enter the premium password for premiumdebrid.com/pd.php", dl);
                     br.postPage(server + "/login.php", "submit=Submit&secure=" + Encoding.urlEncode(premiumpass));
-                    if (br.containsHTML("<script>alert\\(\"Wrong password")) {
+                    br.getPage(server);
+                    if (br.containsHTML(">Please enter password to login")) {
                         acc.setProperty("premiumdebridpremiumpassword", Property.NULL);
                         continue;
                     }
@@ -319,6 +320,7 @@ public class PremiumDebridCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_RETRY, "Premium pass retry");
             }
         }
+        br.postPage(server + "/index.php?rand=0." + System.currentTimeMillis(), "urllist=" + url + "&captcha=none&");
         if (br.containsHTML("Scusa\\. Non supportiamo il tuo link")) {
             logger.info("premiumdebrid.com: Disabling current host");
             tempUnavailableHoster(acc, dl, 60 * 60 * 1000l);
