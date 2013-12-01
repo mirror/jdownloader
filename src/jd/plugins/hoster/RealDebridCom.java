@@ -380,7 +380,8 @@ public class RealDebridCom extends PluginForHost {
         }
         String expire = br.getRegex("<expiration-txt>([^<]+)").getMatch(0);
         if (expire != null) {
-            ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "dd/MM/yyyy hh:mm:ss", null));
+            // Add one day to make sure it doesn't expire too early
+            ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "dd/MM/yyyy hh:mm:ss", null) + (24 * 60 * 60 * 1000l));
         }
         String acctype = br.getRegex("<type>(\\w+)</type>").getMatch(0).toLowerCase();
         if (acctype.equals("premium")) {

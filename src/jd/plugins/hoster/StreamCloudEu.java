@@ -152,7 +152,7 @@ public class StreamCloudEu extends PluginForHost {
             }
             if (waittime != null) wait = Integer.parseInt(waittime);
             if (br.containsHTML("id=\"werbung1\"")) wait = wait * 2;
-            sleep(wait * 1001l, downloadLink);
+            sleep((wait + 5) * 1001l, downloadLink);
             dlForm.remove(null);
             br.submitForm(dlForm);
             dllink = br.getRegex("file: \"(http://[^<>\"\\']+)\"").getMatch(0);

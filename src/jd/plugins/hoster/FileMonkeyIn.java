@@ -228,7 +228,7 @@ public class FileMonkeyIn extends PluginForHost {
                 try {
                     cf = sm.downloadCaptcha(getLocalCaptchaFile());
                 } catch (final Exception e) {
-                    if (br.containsHTML(">error: invalid ckey<")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 1 * 60 * 1000l);
+                    if (sm.getBr().containsHTML(">error: invalid ckey<")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 1 * 60 * 1000l);
                     throw e;
                 }
                 final String code = getCaptchaCode(cf, downloadLink);

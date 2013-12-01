@@ -88,7 +88,7 @@ public class XFileSharingProBasic extends PluginForHost {
     private static Object        LOCK                         = new Object();
 
     // DEV NOTES
-    // XfileSharingProBasic Version 2.6.2.7
+    // XfileSharingProBasic Version 2.6.2.8
     // mods:
     // limit-info:
     // protocol: no https
@@ -229,9 +229,15 @@ public class XFileSharingProBasic extends PluginForHost {
         if (dllink == null) dllink = getDllink();
         // Third, do they provide video hosting?
         if (dllink == null && VIDEOHOSTER) {
-            final Browser brv = br.cloneBrowser();
-            brv.getPage("/vidembed-" + new Regex(downloadLink.getDownloadURL(), "([a-z0-9]+)$").getMatch(0));
-            dllink = brv.getRedirectLocation();
+            try {
+                logger.info("Trying to get link via vidembed");
+                final Browser brv = br.cloneBrowser();
+                brv.getPage("/vidembed-" + new Regex(downloadLink.getDownloadURL(), "([a-z0-9]+)$").getMatch(0));
+                dllink = brv.getRedirectLocation();
+                if (dllink == null) logger.info("Failed to get link via vidembed");
+            } catch (final Throwable e) {
+                logger.info("Failed to get link via vidembed");
+            }
         }
         // Fourth, continue like normal.
         if (dllink == null) {

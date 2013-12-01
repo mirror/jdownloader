@@ -484,6 +484,10 @@ public class LnkCrptWs extends PluginForDecrypt {
             return smBr.getRegex("id=gibberish>([^<]+)").getMatch(0);
         }
 
+        public Browser getBr() {
+            return smBr;
+        }
+
         /**
          * @default false
          * @parameter if true uses "https://api-secure.solvemedia.com" instead of "http://api.solvemedia.com"

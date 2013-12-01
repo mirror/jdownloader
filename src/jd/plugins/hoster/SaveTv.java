@@ -769,7 +769,7 @@ public class SaveTv extends PluginForHost {
     private String getRegexSafe(final String input, final String regex, final int match) {
         final String regexFixedInput = input.replace("(", "65788jdclipopenjd4684").replace(")", "65788jdclipclosejd4684");
         String result = new Regex(regexFixedInput, regex).getMatch(match);
-        result = result.replace("65788jdclipopenjd4684", "(").replace("65788jdclipclosejd4684", ")");
+        if (result != null) result = result.replace("65788jdclipopenjd4684", "(").replace("65788jdclipclosejd4684", ")");
         return result;
     }
 
