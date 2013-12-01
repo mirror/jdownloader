@@ -23,6 +23,7 @@ easycaptcha_loadcaptchas_loaddirect=可能なら直接読み込む(高速)
 easycaptcha_loadcaptchas_threaded=スレッド画像ダウンロード(超高速)
 easycaptcha_loadcaptchas_title=Captcha の読み込み
 easycaptcha_mask=マスク:
+easycaptcha_needCaptchas=キャプチャが必要です!
 easycaptcha_openCaptchaFolder=Captcha フォルダを開く
 easycaptcha_orginal=オリジナル:
 easycaptcha_remove=削除
