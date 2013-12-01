@@ -11,6 +11,7 @@ archive_status=Stav:
 archivename=Názov archívu
 ask_for_password=Vyžadované heslo archívu!
 bubble_text=Rozbaľovanie archívu!
+bubblecontent_progress=Ikona priebehu
 cannot_extract_incopmplete=Nemožno extrahovať %s1. Archív je nekompletný!
 close=Zavrieť
 context_cleanup=Vyčistiť po rozbalení
