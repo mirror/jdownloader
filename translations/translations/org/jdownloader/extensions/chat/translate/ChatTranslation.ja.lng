@@ -9,6 +9,7 @@ jd_plugins_optional_jdchat_jdchat=チャット
 plugins_optional_jdchat_enternick=あなたのニックネーム?
 settings_enabled_userlist_colors=ユーザリストを色分け
 settings_nick=あなたの名前
+settings_perform=チャット入室後にこのアクションを実行:
 settings_userlist_position=ユーザリストの位置
 settings_userlist_position_left=左側
 settings_userlist_position_right=右側

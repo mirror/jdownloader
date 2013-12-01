@@ -10,7 +10,7 @@ gui_config_jdshutdown_mode=モード:
 gui_config_jdshutdown_shutdown=シャットダウン
 gui_config_jdshutdown_standby=スタンバイ(一部のOSのみ対応)
 install_force=強制的にシャットダウンする
-install_msg=Do you want to prepare your System for the force shutdown feature?
+install_msg=シャットダウン機能強制の為にシステムの設定を行いますか?
 install_title=強制的にシャットダウンする
 interaction_shutdown_dialog_msg_closejd=<h2><font color="red">JDownloaderを終了します!</font></h2>
 interaction_shutdown_dialog_msg_hibernate=<h2><font color="red">システムを休止モードにします!</font></h2>
