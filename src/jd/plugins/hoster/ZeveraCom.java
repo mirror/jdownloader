@@ -19,6 +19,7 @@ package jd.plugins.hoster;
 import java.lang.reflect.Field;
 import java.net.SocketException;
 import java.net.SocketTimeoutException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -177,11 +178,18 @@ public class ZeveraCom extends PluginForHost {
     }
 
     private void handleDL(final DownloadLink link, String dllink) throws Exception {
+
+        // Severa uses this redirect logic to wait for the actuall file in the backend. This means: follow the redirects undtil we get Data
+        // after 10 redirects, severa shows an error page. We do not allow more than 10 redirects - so we probably never see this error page
+        //
+        // Besides redirects, the connections often run into socketexceptions. do the same on socket problems - retry
+        // according to zevera, 20 retries should be enough
         br.setFollowRedirects(true);
         showMessage(link, "Phase 3/3: Check download!");
         int maxchunks = 0;
         if (link.getBooleanProperty(ZeveraCom.NOCHUNKS, false)) maxchunks = 1;
         try {
+            logger.info("Connecting to " + new URL(dllink).getHost());
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, maxchunks);
         } catch (final PluginException e) {
             if ("Redirectloop".equals(e.getErrorMessage())) {
@@ -223,7 +231,18 @@ public class ZeveraCom extends PluginForHost {
             }
         } catch (final SocketException e) {
             logger.info("Zevera download failed because of a timeout/connection problem -> This is probably caused by zevera and NOT a JD issue!");
-            throw e;
+            int timesFailed = link.getIntegerProperty("timesfailedzeveracom_timeout", 1);
+            link.getLinkStatus().setRetryCount(0);
+            if (timesFailed <= 20) {
+                timesFailed++;
+                link.setProperty("timesfailedzeveracom_timeout", timesFailed);
+                logger.info("zevera.com: Download failed because of a timeout -> This is caused by zevera and NOT a JD issue! -> Retrying!");
+                throw new PluginException(LinkStatus.ERROR_RETRY, "Unknown error");
+            } else {
+                link.setProperty("timesfailedzeveracom_timeout", Property.NULL);
+                logger.info("zevera.com: Download failed because of a timeout -> This is caused by zevera and NOT a JD issue! -> Throwing exception!");
+                throw e;
+            }
         } catch (final Exception e) {
             logger.info("Zevera download FATAL failed because: " + e.getMessage());
             throw e;
