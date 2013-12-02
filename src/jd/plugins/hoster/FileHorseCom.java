@@ -20,6 +20,7 @@ import java.io.IOException;
 
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -42,13 +43,16 @@ public class FileHorseCom extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+        // Offline links should also have nice filenames
+        link.setName(new Regex(link.getDownloadURL(), "filehorse\\.com/download\\-(.+)").getMatch(0));
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
         if (br.containsHTML("(>404 Error \\- Page Not Found<|>Page Not Found)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("<title>([^<>\"]*?) Download for").getMatch(0);
         String filesize = br.getRegex("id=\"btn_file_size\">\\(([^<>\"]*?)\\)</span>").getMatch(0);
+        if (filesize == null) filesize = br.getRegex(">File size / license:</p><p>(\\d+(\\.\\d+)? [A-Za-z]{1,5})").getMatch(0);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         link.setName(Encoding.htmlDecode(filename.trim()));
         link.setDownloadSize(SizeFormatter.getSize(filesize));

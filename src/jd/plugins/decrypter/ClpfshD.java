@@ -68,6 +68,10 @@ public class ClpfshD extends PluginForDecrypt {
             logger.info("Link offline: " + parameter);
             return decryptedLinks;
         }
+        if (!br.containsHTML("CFAdBrandedPlayer\\.js")) {
+            logger.info("Link offline/unsupported: " + parameter);
+            return decryptedLinks;
+        }
         String tmpStr = regexInfo.getMatch(0);
         if (tmpStr == null) {
             tmpStr = br.getRegex("<h2>([^<]+)</h2>").getMatch(0);

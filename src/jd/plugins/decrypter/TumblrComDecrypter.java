@@ -161,7 +161,15 @@ public class TumblrComDecrypter extends PluginForDecrypt {
             } else if (parameter.matches(".+tumblr\\.com/image/\\d+")) {
                 br.setFollowRedirects(false);
                 br.getPage(parameter);
-                final String finallink = getBiggestPicture();
+                if (br.getRequest().getHttpConnection().getResponseCode() == 404) {
+                    logger.info("Link offline (error 404): " + parameter);
+                    return decryptedLinks;
+                }
+                String finallink = null;
+                if (parameter.contains("demo.tumblr.com/image/"))
+                    finallink = br.getRegex("data\\-src=\"(http://(www\\.)?tumblr\\.com/photo/[^<>\"]*?)\"").getMatch(0);
+                else
+                    finallink = getBiggestPicture();
                 if (finallink == null) {
                     logger.warning("Decrypter broken for link: " + parameter);
                     return null;

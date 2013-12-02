@@ -43,6 +43,7 @@ public class SnrlCm extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
         URLConnectionAdapter con = null;
+        String url = null;
         try {
             try {
                 con = br.openGetConnection(parameter);
@@ -50,6 +51,8 @@ public class SnrlCm extends PluginForDecrypt {
                     logger.info("Link offline: " + parameter);
                     return decryptedLinks;
                 }
+                url = br.getRedirectLocation();
+                if (url != null && url.matches("http://[\\w\\.]*?(snurl\\.com|snipurl\\.com|sn\\.im|snipr\\.com)/[\\w]+")) url = null;
                 try {
                     br.followConnection();
                 } catch (final BrowserException e) {
@@ -66,46 +69,47 @@ public class SnrlCm extends PluginForDecrypt {
             } catch (Throwable e) {
             }
         }
-        String url = null;
-        if (br.getRedirectLocation() != null) {
-            url = br.getRedirectLocation();
-            try {
-                con = br.openGetConnection(url);
-                if (con.getContentType().contains("html")) {
-                    br.followConnection();
+        if (url == null) {
+            if (br.getRedirectLocation() != null) {
+                url = br.getRedirectLocation();
+                try {
+                    con = br.openGetConnection(url);
+                    if (con.getContentType().contains("html")) {
+                        br.followConnection();
+                    }
+                } catch (final BrowserException e) {
+                    logger.info("Link offline: " + parameter);
+                    return decryptedLinks;
+                } finally {
+                    try {
+                        con.disconnect();
+                    } catch (Throwable e) {
+                    }
                 }
-            } catch (final BrowserException e) {
+            }
+            if (br.containsHTML(">An error has occurred:<")) {
                 logger.info("Link offline: " + parameter);
                 return decryptedLinks;
-            } finally {
-                try {
-                    con.disconnect();
-                } catch (Throwable e) {
-                }
             }
-        }
-        if (br.containsHTML(">An error has occurred:<")) {
-            logger.info("Link offline: " + parameter);
-            return decryptedLinks;
-        }
 
-        // Password
-        if (br.containsHTML("Please enter a passcode to continue to")) {
-            url = null;
-            Form form = br.getFormbyProperty("name", "pkeyform");
-            if (form == null) return null;
+            // Password
+            if (br.containsHTML("Please enter a passcode to continue to")) {
+                url = null;
+                Form form = br.getFormbyProperty("name", "pkeyform");
+                if (form == null) return null;
 
-            for (int i = 1; i <= 3; i++) {
-                String folderPass = UserIO.getInstance().requestInputDialog("File Password");
-                if (folderPass == null) continue;
-                form.put("pkey", folderPass);
-                br.submitForm(form);
-                if (br.getRedirectLocation() != null) {
-                    url = br.getRedirectLocation();
-                    break;
+                for (int i = 1; i <= 3; i++) {
+                    String folderPass = UserIO.getInstance().requestInputDialog("File Password");
+                    if (folderPass == null) continue;
+                    form.put("pkey", folderPass);
+                    br.submitForm(form);
+                    if (br.getRedirectLocation() != null) {
+                        url = br.getRedirectLocation();
+                        break;
+                    }
                 }
+                if (url == null) throw new DecrypterException(DecrypterException.PASSWORD);
             }
-            if (url == null) throw new DecrypterException(DecrypterException.PASSWORD);
         }
 
         decryptedLinks.add(createDownloadlink(url));

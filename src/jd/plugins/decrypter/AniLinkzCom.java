@@ -108,12 +108,19 @@ public class AniLinkzCom extends PluginForDecrypt {
             prepBrowser(br);
             getPage(parameter);
             boolean offline = false;
+            if (br.getRedirectLocation() != null && br.getRedirectLocation().contains("/home/anilinkz/public_html/")) {
+                logger.info("Incorrect Link! Redirecting to search page...");
+                offline = true;
+            } else if (br.getRedirectLocation() != null) {
+                br.setFollowRedirects(true);
+                br.getPage(br.getRedirectLocation());
+            }
             if (br.containsHTML(">Page Not Found<")) {
                 logger.info("Link offline: " + parameter);
                 offline = true;
             }
-            if (br.getRedirectLocation() != null && br.getRedirectLocation().contains("/home/anilinkz/public_html/")) {
-                logger.info("Incorrect Link! Redirecting to search page...");
+            if (br.containsHTML(">No Results Found|>Search Results for")) {
+                logger.info("Link offline: " + parameter);
                 offline = true;
             }
             if (offline) {

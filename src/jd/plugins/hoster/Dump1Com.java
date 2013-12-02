@@ -86,7 +86,11 @@ public class Dump1Com extends PluginForHost {
         br2.setFollowRedirects(true);
         URLConnectionAdapter con = null;
         try {
-            con = br2.openGetConnection(DLLINK);
+            try {
+                con = br2.openGetConnection(DLLINK);
+            } catch (final UnknownHostException e) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             if (!con.getContentType().contains("html"))
                 downloadLink.setDownloadSize(con.getLongContentLength());
             else

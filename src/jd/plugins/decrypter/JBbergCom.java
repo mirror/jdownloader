@@ -89,7 +89,7 @@ public class JBbergCom extends PluginForDecrypt {
         if (fpName != null) fp.setName(Encoding.htmlDecode(fpName.trim()));
 
         br.getPage(parameter.replaceFirst("/(captcha|download)/", "/mirrors/"));
-        String[] results = br.getRegex("(<div class=\"host_dl\".*?</span>[\r\n\t ]+</div>)").getColumn(0);
+        String[] results = br.getRegex("\"(/redirect/[^<>\"]*?)\"").getColumn(0);
         if (results == null || results.length == 0) {
             if (br.containsHTML("Débrider maintenant \\!<|>Hébergeur indisponible</")) {
                 logger.info("Link offline: " + parameter);
@@ -98,14 +98,9 @@ public class JBbergCom extends PluginForDecrypt {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
-        for (String result : results) {
-            String host = new Regex(result, "class=\"host_dl\" id=\"([^\"]+)\">").getMatch(0);
-            if (host == null) {
-                continue;
-            }
-            final String hoster = "/redirect/" + linkID + "/" + host + "/";
+        for (final String result : results) {
+            final String hoster = result;
             if (filter.add(hoster) == false) continue;
-            if (result.contains("Hébergeur indisponible")) continue;
             final Browser br2 = br.cloneBrowser();
             br2.setFollowRedirects(false);
             br2.getPage(hoster);
