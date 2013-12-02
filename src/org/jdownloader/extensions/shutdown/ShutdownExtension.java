@@ -128,7 +128,7 @@ public class ShutdownExtension extends AbstractExtension<ShutdownConfig, Shutdow
                 /* also try extra methods for windows2000 and nt */
                 try {
 
-                    File f = JDUtilities.getResourceFile("tmp/shutdown.vbs");
+                    File f = Application.getTempResource("shutdown.vbs");
                     f.deleteOnExit();
                     IO.writeStringToFile(f, "set WshShell = CreateObject(\"WScript.Shell\")\r\nWshShell.SendKeys \"^{ESC}^{ESC}^{ESC}{UP}{ENTER}{ENTER}\"\r\n");
 

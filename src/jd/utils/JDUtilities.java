@@ -225,6 +225,7 @@ public class JDUtilities {
     @Deprecated
     /* please use Application.getRessource where possible */
     public static File getResourceFile(final String resource) {
+        if (resource.startsWith("tmp/")) return Application.getTempResource(resource.substring(4));
         return Application.getResource(resource);
 
     }

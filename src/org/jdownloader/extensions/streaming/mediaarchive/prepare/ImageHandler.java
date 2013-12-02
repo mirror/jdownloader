@@ -36,12 +36,12 @@ public class ImageHandler extends ExtensionHandler<ImageMediaItem> {
             ret.setWidth(image.getWidth());
             ret.setHeight(image.getHeight());
 
-            File thumb = Application.getResource("tmp/streaming/thumbs/" + dl.getUniqueID().toString() + ".png");
+            File thumb = Application.getTempResource("streaming/thumbs/" + dl.getUniqueID().toString() + ".png");
             FileCreationManager.getInstance().mkdir(thumb.getParentFile());
             FileCreationManager.getInstance().delete(thumb, null);
             fos = new FileOutputStream(thumb);
             ImageIO.write(IconIO.getScaledInstance(image, 300, 300), "png", fos);
-            ret.setThumbnailPath(Files.getRelativePath(Application.getResource("tmp").getParentFile(), thumb));
+            ret.setThumbnailPath(Files.getRelativePath(Application.getTemp().getParentFile(), thumb));
             return ret;
         } catch (Throwable e) {
             e.printStackTrace();

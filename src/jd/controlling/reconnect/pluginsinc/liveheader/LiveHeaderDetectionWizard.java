@@ -31,11 +31,11 @@ import jd.controlling.reconnect.pluginsinc.upnp.UPNPRouterPlugin;
 import jd.controlling.reconnect.pluginsinc.upnp.cling.UpnpRouterDevice;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
-import jd.utils.JDUtilities;
 
 import org.appwork.remotecall.client.RemoteCallCommunicationException;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.uio.UIOManager;
+import org.appwork.utils.Application;
 import org.appwork.utils.Hash;
 import org.appwork.utils.Regex;
 import org.appwork.utils.event.ProcessCallBack;
@@ -495,7 +495,7 @@ public class LiveHeaderDetectionWizard {
             FileOutputStream fos = null;
             try {
                 final BufferedImage image = FavIcons.downloadFavIcon(this.gatewayAdressHost);
-                final File imageFile = JDUtilities.getResourceFile("tmp/routerfav.png", true);
+                final File imageFile = Application.getTempResource("routerfav.png");
                 FileCreationManager.getInstance().delete(imageFile, null);
                 imageFile.deleteOnExit();
                 fos = new FileOutputStream(imageFile);
@@ -540,7 +540,7 @@ public class LiveHeaderDetectionWizard {
             FileOutputStream fos = null;
             try {
                 final BufferedImage image = FavIcons.downloadFavIcon(this.gatewayAdressHost);
-                final File imageFile = JDUtilities.getResourceFile("tmp/routerfav.png", true);
+                final File imageFile = Application.getTempResource("routerfav.png");
                 FileCreationManager.getInstance().delete(imageFile, null);
                 imageFile.deleteOnExit();
                 fos = new FileOutputStream(imageFile);

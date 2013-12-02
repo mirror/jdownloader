@@ -10,8 +10,8 @@ import jd.controlling.linkcollector.LinkOrigin;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledPackage;
 import jd.controlling.packagecontroller.AbstractPackageChildrenNodeFilter;
-import jd.utils.JDUtilities;
 
+import org.appwork.utils.Application;
 import org.appwork.utils.IO;
 import org.jdownloader.api.jdanywhere.api.interfaces.ILinkCrawlerApi;
 import org.jdownloader.api.jdanywhere.api.storable.CrawledLinkStoreable;
@@ -113,7 +113,7 @@ public class LinkCrawlerApi implements ILinkCrawlerApi {
         try {
             if (dlcContent == null) throw new IllegalArgumentException("no DLC Content available");
             String dlc = dlcContent.trim().replace(" ", "+");
-            File tmp = JDUtilities.getResourceFile("tmp/jd_" + System.currentTimeMillis() + ".dlc", true);
+            File tmp = Application.getTempResource("jd_" + System.currentTimeMillis() + ".dlc");
             IO.writeToFile(tmp, dlc.getBytes("UTF-8"));
             String url = "file://" + tmp.getAbsolutePath();
             LinkCollectingJob job = new LinkCollectingJob(LinkOrigin.MYJD, url);

@@ -1290,7 +1290,7 @@ public class JDGui implements UpdaterListener, OwnerFinder {
                     }
                     try {
                         logger.info("Delete extensioncache");
-                        Files.deleteRecursiv(Application.getResource("tmp/extensioncache"));
+                        Files.deleteRecursiv(Application.getTempResource("extensioncache"));
                     } catch (IOException e) {
                         e.printStackTrace();
                     }

@@ -43,7 +43,7 @@ public class VideoHandler extends ExtensionHandler<VideoMediaItem> {
                     return null;
                 }
                 ret.setInfoString(ffmpeg.getResult());
-                if (ffmpeg.getThumbnailPath() != null) ret.setThumbnailPath(Files.getRelativePath(Application.getResource("tmp").getParentFile(), new File(ffmpeg.getThumbnailPath())));
+                if (ffmpeg.getThumbnailPath() != null) ret.setThumbnailPath(Files.getRelativePath(Application.getTemp().getParentFile(), new File(ffmpeg.getThumbnailPath())));
                 ret.setSystemBitrate(ffmpeg.getFormat().parseBitrate());
                 ret.setDuration(ffmpeg.getFormat().parseDuration());
                 ret.setContainerFormat(ffmpeg.getFormat().getFormat_name());

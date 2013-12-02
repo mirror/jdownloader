@@ -38,7 +38,7 @@ import org.jdownloader.plugins.controller.UpdateRequiredClassNotFoundException;
 
 public class HostPluginController extends PluginController<PluginForHost> {
 
-    public static final String                TMP_INVALIDPLUGINS = "tmp/invalidplugins";
+    public static final String                TMP_INVALIDPLUGINS = "invalidplugins";
     private static final HostPluginController INSTANCE           = new HostPluginController();
 
     /**
@@ -53,11 +53,12 @@ public class HostPluginController extends PluginController<PluginForHost> {
     private volatile LinkedHashMap<String, LazyHostPlugin> list;
 
     private String getCache() {
-        return "tmp/hosts.json";
+        return "hosts.json";
     }
 
     /**
-     * Create a new instance of HostPluginController. This is a singleton class. Access the only existing instance by using {@link #getInstance()}.
+     * Create a new instance of HostPluginController. This is a singleton class. Access the only existing instance by using
+     * {@link #getInstance()}.
      */
     private HostPluginController() {
         this.list = null;
@@ -210,7 +211,7 @@ public class HostPluginController extends PluginController<PluginForHost> {
     }
 
     private List<LazyHostPlugin> loadFromCache() {
-        java.util.List<AbstractHostPlugin> l = JSonStorage.restoreFrom(Application.getResource(getCache()), true, null, new TypeRef<ArrayList<AbstractHostPlugin>>() {
+        java.util.List<AbstractHostPlugin> l = JSonStorage.restoreFrom(Application.getTempResource(getCache()), true, null, new TypeRef<ArrayList<AbstractHostPlugin>>() {
         }, new ArrayList<AbstractHostPlugin>());
         List<LazyHostPlugin> ret = new ArrayList<LazyHostPlugin>(l.size());
         LazyHostPlugin fallBackPlugin = null;
@@ -289,7 +290,8 @@ public class HostPluginController extends PluginController<PluginForHost> {
                             try {
                                 String displayName = new String(names[i]);
                                 /*
-                                 * HostPlugins: multiple use of displayName is not possible because it is used to find the correct plugin for each downloadLink
+                                 * HostPlugins: multiple use of displayName is not possible because it is used to find the correct plugin
+                                 * for each downloadLink
                                  */
                                 AbstractHostPlugin existingPlugin = ret.get(displayName);
                                 if (existingPlugin != null && existingPlugin.getInterfaceVersion() > a.interfaceVersion()) {
@@ -410,11 +412,11 @@ public class HostPluginController extends PluginController<PluginForHost> {
 
     protected void validateCache() {
         cacheInvalidated.set(false);
-        FileCreationManager.getInstance().delete(Application.getResource(TMP_INVALIDPLUGINS), null);
+        FileCreationManager.getInstance().delete(Application.getTempResource(TMP_INVALIDPLUGINS), null);
     }
 
     private void save(List<AbstractHostPlugin> save) {
-        JSonStorage.saveTo(Application.getResource(getCache()), save);
+        JSonStorage.saveTo(Application.getTempResource(getCache()), save);
     }
 
     public Collection<LazyHostPlugin> list() {
@@ -436,7 +438,7 @@ public class HostPluginController extends PluginController<PluginForHost> {
     }
 
     public void invalidateCacheIfRequired() {
-        if (Application.getResource(TMP_INVALIDPLUGINS).exists()) {
+        if (Application.getTempResource(TMP_INVALIDPLUGINS).exists()) {
             invalidateCache();
         }
     }

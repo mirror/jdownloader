@@ -26,7 +26,6 @@ import jd.SecondLevelLaunch;
 import jd.controlling.downloadcontroller.DownloadWatchDog;
 import jd.nutils.Executer;
 import jd.plugins.AddonPanel;
-import jd.utils.JDUtilities;
 
 import org.appwork.controlling.StateEvent;
 import org.appwork.controlling.StateEventListener;
@@ -43,7 +42,7 @@ import org.jdownloader.extensions.growl.translate.T;
 
 public class GrowlExtension extends AbstractExtension<GrowlConfig, GrowlTranslation> implements StateEventListener {
 
-    private static final String TMP_GROWL_NOTIFICATION_SCPT = "tmp/growlNotification.scpt";
+    private static final String TMP_GROWL_NOTIFICATION_SCPT = "growlNotification.scpt";
 
     @Override
     protected void stop() throws StopException {
@@ -52,7 +51,7 @@ public class GrowlExtension extends AbstractExtension<GrowlConfig, GrowlTranslat
 
     @Override
     protected void start() throws StartException {
-        File tmp = Application.getResource(TMP_GROWL_NOTIFICATION_SCPT);
+        File tmp = Application.getTempResource(TMP_GROWL_NOTIFICATION_SCPT);
         FileCreationManager.getInstance().delete(tmp, null);
         tmp.deleteOnExit();
         try {
@@ -113,7 +112,7 @@ public class GrowlExtension extends AbstractExtension<GrowlConfig, GrowlTranslat
     private void growlNotification(String headline, String message, String title) {
         if (CrossSystem.isMac()) {
             Executer exec = new Executer("/usr/bin/osascript");
-            exec.addParameter(JDUtilities.getResourceFile(GrowlExtension.TMP_GROWL_NOTIFICATION_SCPT).getAbsolutePath());
+            exec.addParameter(Application.getTempResource(GrowlExtension.TMP_GROWL_NOTIFICATION_SCPT).getAbsolutePath());
             exec.addParameter(headline);
             exec.addParameter(message);
             exec.addParameter(title);

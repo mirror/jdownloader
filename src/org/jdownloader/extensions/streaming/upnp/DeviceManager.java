@@ -105,7 +105,7 @@ public class DeviceManager implements RegistryListener {
         if ("MediaRenderer".equalsIgnoreCase(device.getType().getType())) {
 
             final String id = device.getIdentity().getUdn().toString().substring(5);
-            final RendererDeviceSettings deviceCache = JsonConfig.create(Application.getResource("tmp/streaming/devices/" + id), RendererDeviceSettings.class);
+            final RendererDeviceSettings deviceCache = JsonConfig.create(Application.getTempResource("streaming/devices/" + id), RendererDeviceSettings.class);
 
             int size = 0;
             org.fourthline.cling.model.meta.Icon biggest = null;
@@ -131,10 +131,10 @@ public class DeviceManager implements RegistryListener {
                             protected Void run() throws RuntimeException {
 
                                 try {
-                                    File file = Application.getResource("tmp/streaming/devices/icon_" + id + "." + format);
+                                    File file = Application.getTempResource("streaming/devices/icon_" + id + "." + format);
                                     FileCreationManager.getInstance().mkdir(file.getParentFile());
                                     new SimpleHTTP().download(iconUrl, null, file);
-                                    deviceCache.setIconPath(Files.getRelativePath(Application.getResource("tmp").getParentFile(), file));
+                                    deviceCache.setIconPath(Files.getRelativePath(Application.getTemp().getParentFile(), file));
                                 } catch (IOException e) {
                                     e.printStackTrace();
                                 } catch (InterruptedException e) {
@@ -246,7 +246,7 @@ public class DeviceManager implements RegistryListener {
 
     public DeviceCache getDeviceCache(Device device) {
         final String id = device.getIdentity().getUdn().toString().substring(5);
-        final RendererDeviceSettings deviceCache = JsonConfig.create(Application.getResource("tmp/streaming/devices/" + id), RendererDeviceSettings.class);
+        final RendererDeviceSettings deviceCache = JsonConfig.create(Application.getTempResource("streaming/devices/" + id), RendererDeviceSettings.class);
 
         return new DeviceCache(id, device, deviceCache);
     }

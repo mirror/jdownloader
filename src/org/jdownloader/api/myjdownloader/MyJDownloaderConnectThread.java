@@ -144,7 +144,7 @@ public class MyJDownloaderConnectThread extends Thread {
         }
         deviceConnectionHelper = helper.toArray(new DeviceConnectionHelper[helper.size()]);
         notifyInterests = new HashSet<NotificationRequestMessage.TYPE>();
-        sessionInfoCache = Application.getResource("tmp/myjd.session");
+        sessionInfoCache = Application.getTempResource("myjd.session");
         loadSessionInfo();
     }
 

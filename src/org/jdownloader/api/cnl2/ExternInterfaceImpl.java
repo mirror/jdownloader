@@ -33,6 +33,7 @@ import org.appwork.remoteapi.exceptions.InternalApiException;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.storage.simplejson.JSonObject;
 import org.appwork.storage.simplejson.JSonValue;
+import org.appwork.utils.Application;
 import org.appwork.utils.IO;
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
@@ -244,7 +245,7 @@ public class ExternInterfaceImpl implements Cnl2APIBasics, Cnl2APIFlash {
             String dlcContent = HttpRequest.getParameterbyKey(request, "crypted");
             if (dlcContent == null) throw new IllegalArgumentException("no DLC Content available");
             String dlc = dlcContent.trim().replace(" ", "+");
-            File tmp = JDUtilities.getResourceFile("tmp/jd_" + System.currentTimeMillis() + ".dlc", true);
+            File tmp = Application.getTempResource("jd_" + System.currentTimeMillis() + ".dlc");
             IO.writeToFile(tmp, dlc.getBytes("UTF-8"));
             String url = "file://" + tmp.getAbsolutePath();
             clickAndLoad2Add(url, request);

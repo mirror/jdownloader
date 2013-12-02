@@ -89,7 +89,7 @@ public class FFMpegInfoReader {
             if ("mp3".equals(getFormat().getFormat_name())) {
                 String ffmpeg = getFFMpegPath();
                 if (ffmpeg != null) {
-                    thumb = Application.getResource("tmp/streaming/cover/" + mediaItem.getUniqueID().toString() + ".jpg");
+                    thumb = Application.getTempResource("streaming/cover/" + mediaItem.getUniqueID().toString() + ".jpg");
                     FileCreationManager.getInstance().mkdir(thumb.getParentFile());
                     FileCreationManager.getInstance().delete(thumb, null);
                     String[] ret = execute(ffmpeg, "-i", streamurl, "-c", "copy", thumb.getAbsolutePath());
@@ -108,7 +108,7 @@ public class FFMpegInfoReader {
 
                             String ffmpeg = getFFMpegPath();
                             if (ffmpeg != null) {
-                                thumb = Application.getResource("tmp/streaming/thumbs/" + mediaItem.getUniqueID().toString() + ".jpg");
+                                thumb = Application.getTempResource("streaming/thumbs/" + mediaItem.getUniqueID().toString() + ".jpg");
                                 FileCreationManager.getInstance().mkdir(thumb.getParentFile());
                                 FileCreationManager.getInstance().delete(thumb, null);
                                 long duration = getFormat().parseDuration() / 1000;

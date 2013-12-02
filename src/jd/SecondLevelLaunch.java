@@ -515,7 +515,7 @@ public class SecondLevelLaunch {
             return;
         }
 
-        FILE = Application.getResource("tmp/exitcheck");
+        FILE = Application.getTempResource("exitcheck");
 
         try {
             if (FILE.exists()) {

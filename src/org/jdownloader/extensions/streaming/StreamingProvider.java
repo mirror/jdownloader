@@ -40,7 +40,7 @@ public class StreamingProvider {
         synchronized (streaming) {
             Streaming stream = streaming.get(remoteLink);
             if (stream == null || stream.isClosed()) {
-                File tmp = Application.getResource("/tmp/streaming/" + remoteLink.getUniqueID());
+                File tmp = Application.getTempResource("streaming/" + remoteLink.getUniqueID());
                 FileCreationManager.getInstance().mkdir(tmp.getParentFile());
                 stream = new Streaming(tmp.getAbsolutePath()) {
                     private long fileSize = -1;

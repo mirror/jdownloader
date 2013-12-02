@@ -52,7 +52,7 @@ public class FFmpegProvider {
         public void run() {
 
             File path = null;
-            // FFMpegInstallTypeChooserDialog.searchFileIn(Application.getResource("tmp").getParentFile(), JDGui.getInstance() == null ?
+            // FFMpegInstallTypeChooserDialog.searchFileIn(Application.getTemp().getParentFile(), JDGui.getInstance() == null ?
             // null : JDGui.getInstance().getMainFrame(), true);
 
             if (path == null) {

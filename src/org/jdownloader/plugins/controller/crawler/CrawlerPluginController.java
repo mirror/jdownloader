@@ -71,7 +71,8 @@ public class CrawlerPluginController extends PluginController<PluginForDecrypt> 
     }
 
     /**
-     * Create a new instance of HostPluginController. This is a singleton class. Access the only existing instance by using {@link #getInstance()}.
+     * Create a new instance of HostPluginController. This is a singleton class. Access the only existing instance by using
+     * {@link #getInstance()}.
      * 
      */
     private CrawlerPluginController() {
@@ -363,7 +364,7 @@ public class CrawlerPluginController extends PluginController<PluginForDecrypt> 
     }
 
     public static void invalidateCacheIfRequired() {
-        if (Application.getResource(HostPluginController.TMP_INVALIDPLUGINS).exists()) {
+        if (Application.getTempResource(HostPluginController.TMP_INVALIDPLUGINS).exists()) {
             invalidateCache();
         }
     }

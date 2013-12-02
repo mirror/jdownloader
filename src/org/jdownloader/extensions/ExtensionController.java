@@ -51,7 +51,7 @@ import org.jdownloader.logging.LogController;
 import org.jdownloader.translate._JDT;
 
 public class ExtensionController implements MenuExtenderHandler {
-    private static final String              TMP_INVALIDEXTENSIONS = "tmp/invalidextensions";
+    private static final String              TMP_INVALIDEXTENSIONS = "invalidextensions";
 
     private static final ExtensionController INSTANCE              = new ExtensionController();
 
@@ -82,7 +82,7 @@ public class ExtensionController implements MenuExtenderHandler {
     }
 
     private File getCache() {
-        return Application.getResource("tmp/extensioncache/extensionInfos.json");
+        return Application.getTempResource("extensioncache/extensionInfos.json");
     }
 
     public ExtensionControllerEventSender getEventSender() {
@@ -102,7 +102,7 @@ public class ExtensionController implements MenuExtenderHandler {
 
     protected void validateCache() {
         cacheInvalidated = false;
-        FileCreationManager.getInstance().delete(Application.getResource(TMP_INVALIDEXTENSIONS), null);
+        FileCreationManager.getInstance().delete(Application.getTempResource(TMP_INVALIDEXTENSIONS), null);
     }
 
     public void init() {
@@ -474,7 +474,7 @@ public class ExtensionController implements MenuExtenderHandler {
     }
 
     public void invalidateCacheIfRequired() {
-        if (Application.getResource(TMP_INVALIDEXTENSIONS).exists()) {
+        if (Application.getTempResource(TMP_INVALIDEXTENSIONS).exists()) {
             invalidateCache();
         }
     }

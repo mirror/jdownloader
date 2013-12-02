@@ -101,7 +101,7 @@ public class ShutdownConfigPanel extends ExtensionConfigPanel<ShutdownExtension>
 
         Dialog.getInstance().showConfirmDialog(0, T._.install_title(), T._.install_msg());
         Executer exec = new Executer("/usr/bin/osascript");
-        File tmp = Application.getResource("tmp/osxnopasswordforshutdown.scpt");
+        File tmp = Application.getTempResource("osxnopasswordforshutdown.scpt");
         FileCreationManager.getInstance().delete(tmp, null);
         try {
             IO.writeToFile(tmp, IO.readURL(getClass().getResource("osxnopasswordforshutdown.scpt")));

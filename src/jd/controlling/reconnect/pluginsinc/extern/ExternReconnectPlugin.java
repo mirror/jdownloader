@@ -27,6 +27,7 @@ import net.miginfocom.swing.MigLayout;
 
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.Storage;
+import org.appwork.utils.Application;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.TextComponentChangeListener;
@@ -79,7 +80,7 @@ public class ExternReconnectPlugin extends RouterPlugin implements ActionListene
                         logger.severe("Cannot create dummy Bat file, please delete all recon_*.bat files in tmp folder!");
                         return null;
                     }
-                    final File tmp = JDUtilities.getResourceFile("tmp/recon_" + number + ".bat", true);
+                    final File tmp = Application.getTempResource("recon_" + number + ".bat");
                     if (tmp.exists()) {
                         if (FileCreationManager.getInstance().delete(tmp, null)) { return tmp; }
                         tmp.deleteOnExit();

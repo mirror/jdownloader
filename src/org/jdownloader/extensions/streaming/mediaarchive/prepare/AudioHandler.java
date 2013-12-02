@@ -41,7 +41,7 @@ public class AudioHandler extends ExtensionHandler<AudioMediaItem> {
                     }
 
                 }
-                if (ffmpeg.getThumbnailPath() != null) ret.setThumbnailPath(Files.getRelativePath(Application.getResource("tmp").getParentFile(), new File(ffmpeg.getThumbnailPath())));
+                if (ffmpeg.getThumbnailPath() != null) ret.setThumbnailPath(Files.getRelativePath(Application.getTemp().getParentFile(), new File(ffmpeg.getThumbnailPath())));
                 ret.setContainerFormat(ffmpeg.getFormat().getFormat_name());
                 ret.setSize(ffmpeg.getFormat().parseSize());
 

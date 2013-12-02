@@ -47,7 +47,7 @@ public class RestartController implements ShutdownVetoListener {
 
     private ParameterParser startupParameters;
 
-    private File            root = Application.getResource("tmp").getParentFile();
+    private File            root = Application.getTemp().getParentFile();
 
     // public String updaterJar = "Updater.jar";
     //
@@ -62,7 +62,7 @@ public class RestartController implements ShutdownVetoListener {
     // private boolean silentShutDownEnabled = false;
 
     public void setRoot(File root) {
-        if (root == null) root = Application.getResource("tmp").getParentFile();
+        if (root == null) root = Application.getTemp().getParentFile();
         this.root = root;
     }
 

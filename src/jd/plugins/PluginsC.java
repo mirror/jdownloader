@@ -213,7 +213,7 @@ public abstract class PluginsC {
                     }
                 }
                 if (askFileDeletion) {
-                    String tmp = Application.getResource("tmp/").getAbsolutePath();
+                    String tmp = Application.getTempResource("").getAbsolutePath();
                     String rel = Files.getRelativePath(tmp, file);
                     if (rel != null) {
                         logger.fine("Do not ask - just delete: " + origin.getURL());

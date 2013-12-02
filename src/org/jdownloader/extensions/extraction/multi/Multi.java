@@ -361,7 +361,7 @@ public class Multi extends IExtraction {
             String s1 = System.getProperty("os.name").split(" ")[0];
             libID = new StringBuilder().append(s1).append("-").append(s).toString();
             logger.finer("Lib ID: " + libID);
-            tmp = Application.getResource("tmp/7zip");
+            tmp = Application.getTempResource("7zip");
             try {
                 org.appwork.utils.Files.deleteRecursiv(tmp);
             } catch (final Throwable e) {

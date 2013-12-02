@@ -352,7 +352,7 @@ public class SflnkgNt extends PluginForDecrypt {
                 if (con.getResponseCode() == 200) {
                     try {
                         /* does not exist in 09581 */
-                        file = org.appwork.utils.Application.getResource("tmp/generalsafelinking/" + test.replaceAll("(:|/|\\?)", "") + format);
+                        file = org.appwork.utils.Application.getTempResource("generalsafelinking/" + test.replaceAll("(:|/|\\?)", "") + format);
                     } catch (Throwable e) {
                         file = JDUtilities.getResourceFile("tmp/generalsafelinking/" + test.replaceAll("(:|/|\\?)", "") + format);
                     }

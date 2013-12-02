@@ -31,7 +31,7 @@ public class AdvancedConfigAPIEntry extends HashMap<String, Object> implements S
         File expectedPath = Application.getResource("cfg/" + i);
         String storage = null;
         if (!expectedPath.equals(kh.getStorageHandler().getPath())) {
-            storage = Files.getRelativePath(Application.getResource("tmp").getParentFile(), kh.getStorageHandler().getPath());
+            storage = Files.getRelativePath(Application.getTemp().getParentFile(), kh.getStorageHandler().getPath());
             if (StringUtils.isEmpty(storage)) storage = kh.getStorageHandler().getPath().getAbsolutePath();
         }
         if (storage != null) {
