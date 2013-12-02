@@ -1,7 +1,7 @@
 LogAction_actionPerformed_wait_=暫くお待ち下さい...\n
 LogAction_actionPerformed_zip_title_=ログパッケージを作成中
 LogAction_getString_uploading_=ログの準備中
-LogModel_getStringValue_between_=%s1 と %s2 の間
+LogModel_getStringValue_between_=%s1と%s2の間
 LogModel_initColumns_time_=時間
 LogModel_initColumns_x_=確認
 LogTable_onContextMenu_disable_=選択解除
