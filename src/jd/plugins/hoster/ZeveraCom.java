@@ -184,6 +184,7 @@ public class ZeveraCom extends PluginForHost {
         //
         // Besides redirects, the connections often run into socketexceptions. do the same on socket problems - retry
         // according to zevera, 20 retries should be enough
+
         br.setFollowRedirects(true);
         showMessage(link, "Phase 3/3: Check download!");
         int maxchunks = 0;
