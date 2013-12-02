@@ -1026,6 +1026,7 @@ download_stopped_msg=Todas las Descargas han sido detenidas o finalizadas.
 downloadview_all=Todas las Descargas
 downloadview_failed=Descargas Fallidas
 downloadview_running=Descargas en Curso
+downloadview_skipped=Descargas Omitidas
 downloadview_successful=Descargas Exitosas
 downloadview_todo=Descargas Pendientes
 enabled_os_ballons=Globos de Notificación deshabilitados!
