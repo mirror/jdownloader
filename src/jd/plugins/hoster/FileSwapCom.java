@@ -80,7 +80,7 @@ public class FileSwapCom extends PluginForHost {
         prepBrowser();
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
-        if (br.containsHTML("The file you requested has not been found|<title>FileSwap\\.com : File not found</title>")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("The file you requested has not been found|<title>FileSwap\\.com : File not found</title>|The file you requested is not available for sharing")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("<legend>Share This File \\&#187; (.*?)</legend>").getMatch(0);
         if (filename == null) filename = br.getRegex("<title>FileSwap\\.com : (.*?) download free</title>").getMatch(0);
         String filesize = br.getRegex("Size:([^<>\"]*?)\\&nbsp;\\&nbsp;\\&nbsp;").getMatch(0);
