@@ -40,7 +40,7 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "Linksave.in" }, urls = { "http://(www\\.)?linksave\\.in/(view.php\\?id=)?(?!dl\\-)[\\w]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "Linksave.in" }, urls = { "https?://(www\\.)?linksave\\.in/(view.php\\?id=)?(?!dl\\-)[\\w]+" }, flags = { 0 })
 public class Lnksvn extends PluginForDecrypt {
 
     private boolean isExternInterfaceActive() {
@@ -61,7 +61,7 @@ public class Lnksvn extends PluginForDecrypt {
         br.setRequestIntervalLimit(getHost(), 1000);
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         setBrowserExclusive();
-        final String parameter = param.toString();
+        final String parameter = param.toString().replace("https://", "http://");
         br.forceDebug(true);
 
         br.getHeaders().put("User-Agent", RandomUserAgent.generate());

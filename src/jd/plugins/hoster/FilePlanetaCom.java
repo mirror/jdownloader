@@ -105,7 +105,7 @@ public class FilePlanetaCom extends PluginForHost {
     // last XfileSharingProBasic compare :: 2.6.2.1
     // captchatype: keycaptcha
     // other: no redirects
-    // mods: doFree(download1, ajax on final step), prepBrowser(additional cookies),
+    // mods: doFree(download1, ajax on final step), prepBrowser(additional cookies),fixFilename (fail-check for invalid server-filenames)
 
     private void setConstants(final Account account) {
         if (account != null && account.getBooleanProperty("free")) {
@@ -1267,9 +1267,12 @@ public class FilePlanetaCom extends PluginForHost {
         else if (inValidate(orgExt) && !inValidate(servExt) && (servName.toLowerCase().contains(orgName.toLowerCase()) && !servName.equalsIgnoreCase(orgName)))
             // when partial match of filename exists. eg cut off by quotation mark miss match, or orgNameExt has been abbreviated by hoster.
             FFN = servNameExt;
-        else if (!inValidate(orgExt) && !inValidate(servExt) && !orgExt.equalsIgnoreCase(servExt))
-            FFN = orgName + servExt;
-        else
+        else if (!inValidate(orgExt) && !inValidate(servExt) && !orgExt.equalsIgnoreCase(servExt)) {
+            if (servNameExt.contains("\"") && !orgNameExt.contains("\""))
+                FFN = orgNameExt;
+            else
+                FFN = orgName + servExt;
+        } else
             FFN = orgNameExt;
         downloadLink.setFinalFileName(FFN);
     }
@@ -1484,7 +1487,7 @@ public class FilePlanetaCom extends PluginForHost {
      * @param controlSlot
      *            (+1|-1)
      * */
-   private void controlSlot(final int num, final Account account) {
+    private void controlSlot(final int num, final Account account) {
         synchronized (CTRLLOCK) {
             if (account == null) {
                 int was = maxFree.get();

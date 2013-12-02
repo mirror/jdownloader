@@ -51,7 +51,7 @@ public class EHowCom extends PluginForHost {
         br.getPage(downloadLink.getDownloadURL());
         if (br.getRedirectLocation() != null) {
             if (br.getRedirectLocation().contains("Error.aspx\\?404=true")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            br.getPage(br.getRedirectLocation());
         }
         if (br.containsHTML("(<title>eHow \\| How to Videos, Articles \\&amp; More \\- Trusted Advice for the Curious Life \\| eHow\\.com</title>|>Oh no\\! It looks like the page you\\'re trying to find isn\\'t around anymore\\.<)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("<meta property=\"og:title\" content=\"(.*?)\"").getMatch(0);

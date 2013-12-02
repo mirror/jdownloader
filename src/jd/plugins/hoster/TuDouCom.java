@@ -77,7 +77,7 @@ public class TuDouCom extends PluginForHost {
             downloadLink.getLinkStatus().setStatusText("Not downloadable in your country");
             return AvailableStatus.TRUE;
         }
-        if (br.containsHTML("No htmlCode read")) { return AvailableStatus.UNCHECKABLE; }
+        if (br.containsHTML("No htmlCode read")) return AvailableStatus.UNCHECKABLE;
         dllink = br.getRegex("brt=\"2\".*?(http://.*?)<").getMatch(0);
         if (dllink == null) dllink = br.getRegex("brt=\"1\".*?(http://.*?)<").getMatch(0);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

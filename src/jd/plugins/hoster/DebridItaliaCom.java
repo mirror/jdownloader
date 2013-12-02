@@ -290,7 +290,6 @@ public class DebridItaliaCom extends PluginForHost {
                 final Browser br2 = br.cloneBrowser();
                 URLConnectionAdapter con = br2.openGetConnection(dllink);
                 if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
-                    if (con.getResponseCode() == 302) downloadLink.setUrlDownload(br2.getRedirectLocation());
                     downloadLink.setProperty(property, Property.NULL);
                     dllink = null;
                 }
