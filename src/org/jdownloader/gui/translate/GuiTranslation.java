@@ -1573,6 +1573,9 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "All Downloads" })
     String downloadview_all();
 
+    @Default(lngs = { "en" }, values = { "Skipped Downloads" })
+    String downloadview_skipped();
+
     @Default(lngs = { "en" }, values = { "Failed Downloads" })
     String downloadview_failed();
 

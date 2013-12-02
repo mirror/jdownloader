@@ -21,6 +21,7 @@ import jd.controlling.AccountController;
 import jd.controlling.AccountControllerEvent;
 import jd.controlling.accountchecker.AccountCheckerThread;
 
+import org.appwork.utils.StringUtils;
 import org.jdownloader.controlling.UniqueAlltimeID;
 
 public class Account extends Property {
@@ -125,8 +126,6 @@ public class Account extends Property {
     }
 
     public String getPass() {
-        // if (pass != null) return pass.trim();
-        // return null;
         return pass;
     }
 
@@ -140,7 +139,6 @@ public class Account extends Property {
 
     public void setValid(final boolean b) {
         valid = b;
-
         if (valid == false) {
             this.setEnabled(false);
         }
@@ -216,7 +214,6 @@ public class Account extends Property {
             if (enabled && (!isValid() || ai != null && ai.isExpired())) {
                 setUpdateTime(0);
             }
-
             notifyUpdate(enabled);
         }
     }
@@ -237,22 +234,14 @@ public class Account extends Property {
     private void notifyUpdate(boolean recheckRequired) {
         AccountController lac = ac;
         if (lac != null) {
-            if (Thread.currentThread() instanceof AccountCheckerThread) {
-                recheckRequired = false;
-            }
-            AccountControllerEvent event = new AccountControllerEvent(lac, AccountControllerEvent.Types.UPDATE, this);
-            event.setRecheckRequired(recheckRequired);
-            lac.getBroadcaster().fireEvent(event);
+            if (Thread.currentThread() instanceof AccountCheckerThread) return;
+            lac.getBroadcaster().fireEvent(new AccountControllerEvent(lac, AccountControllerEvent.Types.UPDATE, this));
         }
     }
 
     public void setPass(final String pass) {
-        // if (this.pass == pass) return;
-        // if (pass != null) pass = pass.trim();
-        // if (this.pass != null && this.pass.equals(pass)) return;
-        // this.pass = pass;
         final String newPass = trim(pass);
-        if (this.pass != newPass && (this.pass == null || !this.pass.equals(newPass))) {
+        if (!StringUtils.equals(pass, newPass)) {
             this.pass = newPass;
             accinfo = null;
             setUpdateTime(0);
@@ -280,10 +269,10 @@ public class Account extends Property {
 
     public void setUser(final String user) {
         final String newUser = trim(user);
-        if (this.user != newUser && (this.user == null || !this.user.equals(newUser))) {
+        if (!StringUtils.equals(user, newUser)) {
+            this.user = newUser;
             accinfo = null;
             setUpdateTime(0);
-            this.user = newUser;
             notifyUpdate(true);
         }
     }

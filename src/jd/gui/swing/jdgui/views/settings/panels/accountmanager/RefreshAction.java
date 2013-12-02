@@ -42,13 +42,13 @@ public class RefreshAction extends AbstractAction {
             protected Void run() throws RuntimeException {
                 if (selection == null) {
                     for (Account acc : AccountController.getInstance().list()) {
-                        if (acc.isEnabled() == false || acc.isTempDisabled()) continue;
+                        if (acc == null || acc.isEnabled() == false || acc.isTempDisabled()) continue;
                         AccountChecker.getInstance().check(acc, true);
                     }
                 } else {
                     for (AccountEntry accEntry : selection) {
                         Account acc = accEntry.getAccount();
-                        if (acc == null || acc.isEnabled() == false || acc.isTempDisabled()) continue;
+                        if (acc == null || acc.isEnabled() == false) continue;
                         AccountChecker.getInstance().check(acc, true);
                     }
                 }

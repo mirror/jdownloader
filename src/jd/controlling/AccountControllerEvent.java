@@ -22,16 +22,6 @@ import org.appwork.utils.event.SimpleEvent;
 
 public class AccountControllerEvent extends SimpleEvent<AccountController, Account, AccountControllerEvent.Types> {
 
-    private boolean recheckRequired = false;
-
-    public boolean isRecheckRequired() {
-        return recheckRequired;
-    }
-
-    public void setRecheckRequired(boolean recheckRequired) {
-        this.recheckRequired = recheckRequired;
-    }
-
     public AccountControllerEvent(AccountController caller, Types type, Account... parameters) {
         super(caller, type, parameters);
 

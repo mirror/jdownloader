@@ -9,6 +9,7 @@ import org.jdownloader.images.NewTheme;
 public enum View {
     RUNNING(_GUI._.downloadview_running(), "media-playback-start"),
     ALL(_GUI._.downloadview_all(), "download"),
+    SKIPPED(_GUI._.downloadview_skipped(), "skipped"),
     FAILED(_GUI._.downloadview_failed(), "error"),
     SUCCESSFUL(_GUI._.downloadview_successful(), "ok"),
     TODO(_GUI._.downloadview_todo(), IconKey.ICON_WAIT);

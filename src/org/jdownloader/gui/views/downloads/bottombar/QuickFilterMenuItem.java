@@ -58,7 +58,7 @@ public class QuickFilterMenuItem extends MenuItemData implements MenuLink {
         }
 
         private FilterCombo() {
-            super(new View[] { View.ALL, View.RUNNING, View.FAILED, View.SUCCESSFUL, View.TODO });
+            super(new View[] { View.ALL, View.RUNNING, View.FAILED, View.SKIPPED, View.SUCCESSFUL, View.TODO });
             this.setToolTipText(_GUI._.PseudoCombo_PseudoCombo_tt_());
             this.table = (DownloadsTable) DownloadsTableModel.getInstance().getTable();
             View view = (View) CFG_GUI.DOWNLOAD_VIEW.getValue();
@@ -83,6 +83,34 @@ public class QuickFilterMenuItem extends MenuItemData implements MenuLink {
             switch (value) {
             case ALL:
                 return null;
+            case SKIPPED:
+                return new PackageControllerTableModelFilter<FilePackage, DownloadLink>() {
+
+                    @Override
+                    public boolean isFilteringPackageNodes() {
+                        return false;
+                    }
+
+                    @Override
+                    public boolean isFilteringChildrenNodes() {
+                        return true;
+                    }
+
+                    @Override
+                    public boolean isFiltered(DownloadLink v) {
+                        return v.getSkipReason() == null;
+                    }
+
+                    @Override
+                    public boolean isFiltered(FilePackage e) {
+                        return false;
+                    }
+
+                    @Override
+                    public int getComplexity() {
+                        return 0;
+                    }
+                };
             case FAILED:
                 return new PackageControllerTableModelFilter<FilePackage, DownloadLink>() {
 

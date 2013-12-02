@@ -30,6 +30,7 @@ import java.util.logging.Logger;
 import jd.config.Property;
 import jd.config.SubConfiguration;
 import jd.controlling.accountchecker.AccountChecker;
+import jd.controlling.accountchecker.AccountCheckerThread;
 import jd.controlling.reconnect.ipcheck.BalancedWebIPCheck;
 import jd.controlling.reconnect.ipcheck.IPCheckException;
 import jd.controlling.reconnect.ipcheck.OfflineException;
@@ -205,6 +206,7 @@ public class AccountController implements AccountControllerListener {
             if (plugin == null) {
                 LogController.CL().severe("AccountCheck: Failed because plugin " + account.getHoster() + " is missing!");
                 account.setEnabled(false);
+                this.broadcaster.fireEvent(new AccountControllerEvent(this, AccountControllerEvent.Types.INVALID, account));
                 return null;
             }
         } catch (final Throwable e) {
@@ -228,6 +230,7 @@ public class AccountController implements AccountControllerListener {
             oldLogger = bThread.getLogger();
             bThread.setLogger(logger);
         }
+        final boolean accountWasEnabled = account.isEnabled();
         try {
             Browser br = new Browser();
             br.setLogger(logger);
@@ -261,7 +264,6 @@ public class AccountController implements AccountControllerListener {
                 return ai;
             } else {
                 account.setLastValidTimestamp(System.currentTimeMillis());
-
             }
             if (ai != null && ai.isExpired()) {
                 /* expired account */
@@ -280,13 +282,14 @@ public class AccountController implements AccountControllerListener {
             logger.clear();
             this.broadcaster.fireEvent(new AccountControllerEvent(this, AccountControllerEvent.Types.UPDATE, account));
         } catch (final Throwable e) {
+            logger.log(e);
+            ai = account.getAccountInfo();
+            if (ai == null) {
+                ai = new AccountInfo();
+                account.setAccountInfo(ai);
+            }
             if (e instanceof PluginException) {
                 PluginException pe = (PluginException) e;
-                ai = account.getAccountInfo();
-                if (ai == null) {
-                    ai = new AccountInfo();
-                    account.setAccountInfo(ai);
-                }
                 if ((pe.getLinkStatus() == LinkStatus.ERROR_PREMIUM)) {
                     if (pe.getValue() == PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE) {
                         logger.clear();
@@ -296,8 +299,11 @@ public class AccountController implements AccountControllerListener {
                         } else {
                             ai.setStatus("Traffic limit reached");
                         }
+                        /* needed because some plugins set invalid on pluginException */
+                        account.setValid(true);
+                        if (accountWasEnabled) account.setEnabled(true);
                         account.setTempDisabled(true);
-                        account.getAccountInfo().setTrafficLeft(0);
+                        ai.setTrafficLeft(0);
                         this.broadcaster.fireEvent(new AccountControllerEvent(this, AccountControllerEvent.Types.UPDATE, account));
                         return ai;
                     } else if (pe.getValue() == PluginException.VALUE_ID_PREMIUM_DISABLE) {
@@ -313,6 +319,22 @@ public class AccountController implements AccountControllerListener {
                         this.broadcaster.fireEvent(new AccountControllerEvent(this, AccountControllerEvent.Types.INVALID, account));
                         return ai;
                     }
+                } else if (pe.getLinkStatus() == LinkStatus.ERROR_PLUGIN_DEFECT) {
+                    logger.severe("AccountCheck: Failed because of PluginDefect, temp disable it!");
+                    logger.log(e);
+                    if (!StringUtils.isEmpty(pe.getErrorMessage())) {
+                        ai.setStatus(pe.getErrorMessage());
+                    } else {
+                        ai.setStatus("Could not check account status. Will try again later.");
+                    }
+                    if (account.getProperty(Account.PROPERTY_TEMP_DISABLED_TIMEOUT) == null) account.setProperty(Account.PROPERTY_TEMP_DISABLED_TIMEOUT, config.getTempDisableOnErrorTimeout() * 60 * 1000l);
+                    /* needed because some plugins set invalid on pluginException */
+                    account.setValid(true);
+                    if (accountWasEnabled) account.setEnabled(true);
+                    account.setTempDisabled(true);
+                    ai.setTrafficLeft(0);
+                    this.broadcaster.fireEvent(new AccountControllerEvent(this, AccountControllerEvent.Types.UPDATE, account));
+                    return ai;
                 }
             } else if (e instanceof IOException) {
                 /* network exception, lets temp disable the account */
@@ -331,8 +353,14 @@ public class AccountController implements AccountControllerListener {
             }
             logger.severe("AccountCheck: Failed because of exception, temp disable it!");
             logger.log(e);
-            /* move download log into global log */
-            account.setProperty(Account.PROPERTY_TEMP_DISABLED_TIMEOUT, config.getTempDisableOnErrorTimeout() * 60 * 1000l);
+            if (!StringUtils.isEmpty(e.getMessage())) {
+                ai.setStatus(e.getMessage());
+            } else {
+                ai.setStatus("Could not check account status");
+            }
+            if (account.getProperty(Account.PROPERTY_TEMP_DISABLED_TIMEOUT) == null) account.setProperty(Account.PROPERTY_TEMP_DISABLED_TIMEOUT, config.getTempDisableOnErrorTimeout() * 60 * 1000l);
+            account.setValid(true);
+            if (accountWasEnabled) account.setEnabled(true);
             account.setTempDisabled(true);
             this.broadcaster.fireEvent(new AccountControllerEvent(this, AccountControllerEvent.Types.UPDATE, account));
         } finally {
@@ -536,26 +564,24 @@ public class AccountController implements AccountControllerListener {
     }
 
     public void onAccountControllerEvent(final AccountControllerEvent event) {
-        Account acc = null;
+        Account acc = event.getParameter();
         delayedSaver.resetAndStart();
         switch (event.getType()) {
         case ADDED:
-            updateInternalMultiHosterMap(event.getParameter(), event.getParameter().getAccountInfo());
+            updateInternalMultiHosterMap(event.getParameter(), acc.getAccountInfo());
             org.jdownloader.settings.staticreferences.CFG_GENERAL.USE_AVAILABLE_ACCOUNTS.setValue(true);
+            break;
+        case UPDATE:
+            updateInternalMultiHosterMap(event.getParameter(), acc.getAccountInfo());
             break;
         case REMOVED:
         case EXPIRED:
         case INVALID:
             updateInternalMultiHosterMap(event.getParameter(), null);
             return;
-        case UPDATE:
-            updateInternalMultiHosterMap(event.getParameter(), event.getParameter().getAccountInfo());
-            break;
         }
-        if (event.isRecheckRequired()) {
-            /* event tells us to recheck the account */
-            acc = event.getParameter();
-            if (acc != null) AccountChecker.getInstance().check(acc, true);
+        if (acc != null && !(Thread.currentThread() instanceof AccountCheckerThread)) {
+            AccountChecker.getInstance().check(acc, true);
         }
     }
 
