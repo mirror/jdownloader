@@ -1026,6 +1026,7 @@ download_stopped_msg=全てのダウンロードが完了又は停止しまし�
 downloadview_all=全てのダウンロード
 downloadview_failed=ダウンロード失敗
 downloadview_running=ダウンロード中...
+downloadview_skipped=スキップ
 downloadview_successful=ダウンロード成功
 downloadview_todo=ダウンロード待機
 enabled_os_ballons=吹き出し通知が無効です!
