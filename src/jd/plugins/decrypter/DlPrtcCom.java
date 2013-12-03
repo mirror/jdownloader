@@ -100,7 +100,7 @@ public class DlPrtcCom extends PluginForDecrypt {
             for (int i = 0; i <= 5; i++) {
                 Form importantForm = getForm();
                 if (importantForm == null) {
-                    logger.warning("Decrypter broken for link: " + parameter);
+                    logger.warning("Decrypter broken 1 for link: " + parameter);
                     return null;
                 }
                 if (cbr.containsHTML(PASSWORDTEXT)) {
@@ -109,7 +109,7 @@ public class DlPrtcCom extends PluginForDecrypt {
                 if (cbr.containsHTML(CAPTCHATEXT)) {
                     String captchaLink = getCaptchaLink(importantForm.getHtmlCode());
                     if (captchaLink == null) {
-                        logger.warning("Decrypter broken for link: " + parameter);
+                        logger.warning("Decrypter broken 2 for link: " + parameter);
                         return null;
                     }
                     captchaLink = "http://www.dl-protect.com" + captchaLink;
@@ -129,9 +129,9 @@ public class DlPrtcCom extends PluginForDecrypt {
         }
 
         if (cbr.containsHTML(">Please click on continue to see the content")) {
-            Form continueForm = getForm();
+            Form continueForm = getContinueForm();
             if (continueForm == null) {
-                logger.warning("Decrypter broken for link: " + parameter);
+                logger.warning("Decrypter broken 3 for link: " + parameter);
                 return null;
             }
             if (coLoaded) {
@@ -143,14 +143,14 @@ public class DlPrtcCom extends PluginForDecrypt {
         if (JDHash.getMD5(JDDETECTED).equals(JDHash.getMD5(br.toString()))) {
             rmCookie(parameter);
         }
-        String linktext = cbr.getRegex("class=\"divlink link\"\\s+id=\"slinks\"><a(.*?)valign=\"top\" align=\"right\" width=\"500px\" height=\"280px\"><pre style=\"text\\-align:center\">").getMatch(0);
+        String linktext = cbr.getRegex("class=\"divlink link\"\\s+id=\"slinks\"><a(.*?)\">").getMatch(0);
         if (linktext == null) {
-            logger.warning("Decrypter broken for link: " + parameter);
+            logger.warning("Decrypter broken 4 for link: " + parameter);
             return null;
         }
         final String[] links = new Regex(linktext, "href=\"([^\"\\']+)\"").getColumn(0);
         if (links == null || links.length == 0) {
-            logger.warning("Decrypter broken for link: " + parameter);
+            logger.warning("Decrypter broken 5 for link: " + parameter);
             return null;
         }
         for (String dl : links)
@@ -190,6 +190,12 @@ public class DlPrtcCom extends PluginForDecrypt {
 
     private Form getForm() {
         Form theForm = cbr.getFormbyProperty("name", "ccerure");
+        if (theForm == null) theForm = cbr.getForm(0);
+        return theForm;
+    }
+
+    private Form getContinueForm() {
+        Form theForm = cbr.getFormbyProperty("name", "submitform");
         if (theForm == null) theForm = cbr.getForm(0);
         return theForm;
     }
