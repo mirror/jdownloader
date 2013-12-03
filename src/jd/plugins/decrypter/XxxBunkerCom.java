@@ -23,6 +23,7 @@ import jd.controlling.ProgressController;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
@@ -81,10 +82,14 @@ public class XxxBunkerCom extends PluginForDecrypt {
             return null;
         }
         filename = Encoding.htmlDecode(filename.trim());
-        String externID = br.getRegex("amfdata=http%3A%2F%2F141\\.\\d+\\.\\d+\\.\\d+%2Fflashservices%2Fgateway\\.php%7C(\\d+)%7Cdefault%7C\\&amp;").getMatch(0);
+        String externID = br.getRegex(">localembedcode=\\'([^<>\"]*?)\\'").getMatch(0);
         if (externID != null) {
-            decryptedLinks.add(createDownloadlink("http://www.xvideos.com/video" + externID));
-            return decryptedLinks;
+            externID = Encoding.htmlDecode(externID);
+            externID = new Regex(externID, "gateway\\.php%7C(\\d+)%7Cdefault%7C\\&").getMatch(0);
+            if (externID != null) {
+                decryptedLinks.add(createDownloadlink("http://www.xvideos.com/video" + externID));
+                return decryptedLinks;
+            }
         }
         externID = br.getRegex("postbackurl=([^<>\"]*?)\"").getMatch(0);
         if (externID != null) {
@@ -112,12 +117,12 @@ public class XxxBunkerCom extends PluginForDecrypt {
         if (externID != null) {
             externID = Encoding.deepHtmlDecode(externID);
             br2.getPage(externID);
+            boolean success = true;
             externID = br2.getRedirectLocation();
             if (externID == null) {
-                logger.warning("Decrypter broken for link: " + parameter);
-                return null;
+                success = false;
             }
-            if (checkDirectLink(externID)) {
+            if (success && checkDirectLink(externID)) {
                 final DownloadLink dl = createDownloadlink(externID + ".jdeatme");
                 dl.setFinalFileName(Encoding.htmlDecode(filename.trim()) + ".mp4");
                 decryptedLinks.add(dl);
@@ -126,18 +131,14 @@ public class XxxBunkerCom extends PluginForDecrypt {
                 externID = br.getRegex("player\\.swf\\?config=(http%3A%2F%2Fxxxbunker\\.com%2FplayerConfig\\.php%3F[^<>\"]*?)\"").getMatch(0);
                 if (externID != null) {
                     br2.getPage(Encoding.htmlDecode(externID));
+                    String relayurl = br2.getRegex("<relayurl>([^<>\"]*?)</relayurl>").getMatch(0);
                     externID = br2.getRegex("<file>(http[^<>\"]*?)</file>").getMatch(0);
-                    if (externID == null) {
+                    if (relayurl == null) {
                         logger.warning("Decrypter broken for link: " + parameter);
                         return null;
                     }
-                    br2.getPage(externID);
-                    externID = br2.getRedirectLocation();
-                    if (externID == null) {
-                        logger.warning("Decrypter broken for link: " + parameter);
-                        return null;
-                    }
-                    final DownloadLink dl = createDownloadlink(externID + ".jdeatme");
+                    relayurl = Encoding.Base64Decode(relayurl);
+                    final DownloadLink dl = createDownloadlink(relayurl + ".jdeatme");
                     dl.setFinalFileName(Encoding.htmlDecode(filename.trim()) + ".flv");
                     decryptedLinks.add(dl);
                     return decryptedLinks;

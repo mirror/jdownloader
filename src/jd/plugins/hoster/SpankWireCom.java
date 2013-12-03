@@ -56,7 +56,7 @@ public class SpankWireCom extends PluginForHost {
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
         // Invalid link
-        if (br.getURL().equals("http://www.spankwire.com/")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.getURL().equals("http://www.spankwire.com/") || br.containsHTML("removedCopyright\\.jpg\"")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         // Link offline
         if (br.containsHTML(">This article has been deleted") | br.containsHTML(">This video has been deleted") || br.containsHTML(">This video has been disabled")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String fileID = new Regex(downloadLink.getDownloadURL(), "spankwire\\.com/.*?/video(\\d+)").getMatch(0);

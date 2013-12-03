@@ -34,7 +34,7 @@ public class HrnOxCm extends PluginForDecrypt {
         super(wrapper);
     }
 
-    private static final String INVALIDLINKS = "http://(www\\.)?hornoxe\\.com/(picdumps|sonstiges|eigener\\-content|comics\\-cartoons|amazon|witze|fun\\-clips|fun\\-bilder|sexy|kurzfilme|bastelstunde|games|fun\\-links|natur\\-technik|feed|shop)/";
+    private static final String INVALIDLINKS = "http://(www\\.)?hornoxe\\.com/(picdumps|sonstiges|eigener\\-content|comics\\-cartoons|amazon|witze|fun\\-clips|fun\\-bilder|sexy|kurzfilme|bastelstunde|games|fun\\-links|natur\\-technik|feed|shop|category|images|page)/.*?";
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();

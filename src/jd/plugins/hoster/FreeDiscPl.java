@@ -19,6 +19,7 @@ package jd.plugins.hoster;
 import java.io.IOException;
 
 import jd.PluginWrapper;
+import jd.http.Browser.BrowserException;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
@@ -50,7 +51,12 @@ public class FreeDiscPl extends PluginForHost {
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.getPage(link.getDownloadURL());
+        try {
+            br.getPage(link.getDownloadURL());
+        } catch (final BrowserException e) {
+            if (br.getRequest().getHttpConnection().getResponseCode() == 410) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            throw e;
+        }
         if (br.containsHTML("Ten plik został usunięty przez użytkownika lub administratora")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         // Handle no public files as offline
         if (br.containsHTML("Ten plik nie jest publicznie dostępny")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);

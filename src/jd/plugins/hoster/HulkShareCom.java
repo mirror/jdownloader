@@ -76,6 +76,9 @@ public class HulkShareCom extends PluginForHost {
     public void correctDownloadLink(final DownloadLink link) {
         if (link.getDownloadURL().matches("http://(www\\.)?(((hulkshare\\.com|hu\\.lk)/dl/|hulksharedecrypted\\.com/)|old\\.hulkshare\\.com/dl/)[a-z0-9]{12}")) {
             link.setUrlDownload("http://www.hulkshare.com/" + new Regex(link.getDownloadURL(), "/([a-z0-9]{12})$").getMatch(0));
+        } else if (link.getDownloadURL().contains("hulksharedecrypted.com/")) {
+            link.setUrlDownload(link.getDownloadURL().replace("hulksharedecrypted.com/", "hulkshare.com/"));
+            link.setProperty("fileoffline", true);
         }
     }
 

@@ -42,7 +42,7 @@ public class FreeDiscPlFolder extends PluginForDecrypt {
         final String username = new Regex(parameter, "freedisc\\.pl/([A-Za-z0-9\\-_]+),d\\-\\d+").getMatch(0);
         final String fpName = br.getRegex("<title>([^<>\"]*?)\\-  Freedisc\\.pl</title>").getMatch(0);
         final String[] links = br.getRegex("<div style=\\'float: left; overflow: auto;\\'>[\t\n\r ]+<a  href=\"(/[^<>\"]*?)\"").getColumn(0);
-        if ((links == null || links.length == 0) && br.containsHTML("<a href=\"/" + username + ",d\\-0\" class=\"directoryText previousDirLinkFS\"")) {
+        if ((links == null || links.length == 0) && br.containsHTML("class=\"directoryText previousDirLinkFS\"")) {
             logger.info("Link offline: " + parameter);
             return decryptedLinks;
         }

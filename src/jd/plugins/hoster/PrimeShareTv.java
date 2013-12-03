@@ -68,7 +68,7 @@ public class PrimeShareTv extends PluginForHost {
         int wait = 10;
         final String waittime = br.getRegex("var cWaitTime = (\\d+);").getMatch(0);
         if (waittime != null) wait = Integer.parseInt(waittime);
-        sleep(wait * 1001, downloadLink);
+        sleep((wait + 3) * 1001, downloadLink);
         br.postPage(br.getURL(), "hash=" + new Regex(downloadLink.getDownloadURL(), "([A-Z0-9]+)$").getMatch(0));
         if (br.containsHTML("files per hour for free users\\.<")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1000l);
         String dllink = br.getRegex("(\"|\\')(http://[a-z0-9]+\\.primeshare\\.tv(:\\d+)?/get/[^<>\"]*?)(\"|\\')").getMatch(1);

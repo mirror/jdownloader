@@ -73,7 +73,7 @@ public class Up4ShareVn extends PluginForHost {
             login(account);
         } catch (PluginException e) {
             account.setValid(false);
-            return ai;
+            throw e;
         }
         String space = br.getRegex("<br/>\\&#272;\\&#227; s\\&#7917; d\\&#7909;ng: <b>(.*?)  \\(").getMatch(0);
         if (space != null) ai.setUsedSpace(space.trim());
@@ -162,8 +162,22 @@ public class Up4ShareVn extends PluginForHost {
     private void login(final Account account) throws Exception {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.postPage(MAINPAGE, "inputUserName=" + Encoding.urlEncode(account.getUser()) + "&inputPassword=" + Encoding.urlEncode(account.getPass()) + "&rememberlogin=on");
-        if (br.getCookie(MAINPAGE, "userid") == null || br.getCookie(MAINPAGE, "passwd") == null || !br.containsHTML("<td> <b>VIP</b>")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        br.postPage("http://up.4share.vn/?control=login", "inputUserName=" + Encoding.urlEncode(account.getUser()) + "&inputPassword=" + Encoding.urlEncode(account.getPass()) + "&rememberlogin=on");
+        final String lang = System.getProperty("user.language");
+        if (br.getCookie(MAINPAGE, "userid") == null || br.getCookie(MAINPAGE, "passwd") == null) {
+            if ("de".equalsIgnoreCase(lang)) {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+            }
+        }
+        if (!br.containsHTML("<td> <b>VIP</b>")) {
+            if ("de".equalsIgnoreCase(lang)) {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Account Typ!\r\nDas ist ein kostenloser Account.\r\nJDownloader unterstützt keine kostenlosen Accounts für diesen Hoster!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid account type!\r\nThis is a free account. JDownloader only supports premium (VIP) accounts for this host!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+            }
+        }
     }
 
     @Override
