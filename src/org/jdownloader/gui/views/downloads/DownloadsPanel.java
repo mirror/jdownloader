@@ -2,6 +2,8 @@ package org.jdownloader.gui.views.downloads;
 
 import java.awt.Component;
 import java.awt.Point;
+import java.awt.event.ComponentEvent;
+import java.awt.event.ComponentListener;
 import java.util.List;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
@@ -84,7 +86,9 @@ public class DownloadsPanel extends SwitchPanel implements DownloadControllerLis
 
             }
         });
+
         propertiesScrollPane.setVisible(false);
+
         propertiesScrollPane.setBorder(BorderFactory.createCompoundBorder(BorderFactory.createEmptyBorder(2, 0, 0, 0), propertiesScrollPane.getBorder()));
         return propertiesScrollPane;
     }
@@ -110,6 +114,28 @@ public class DownloadsPanel extends SwitchPanel implements DownloadControllerLis
         tableModel = DownloadsTableModel.getInstance();
         table = new DownloadsTable(tableModel);
         tableScrollPane = new JScrollPane(table);
+
+        tableScrollPane.addComponentListener(new ComponentListener() {
+
+            @Override
+            public void componentShown(ComponentEvent e) {
+            }
+
+            @Override
+            public void componentResized(ComponentEvent e) {
+
+                table.scrollToSelection(-1);
+            }
+
+            @Override
+            public void componentMoved(ComponentEvent e) {
+            }
+
+            @Override
+            public void componentHidden(ComponentEvent e) {
+            }
+        });
+
         tableScrollPane.setBorder(null);
         HorizontalScrollbarAction.setup(CFG_GUI.HORIZONTAL_SCROLLBARS_IN_DOWNLOAD_TABLE_ENABLED, table);
         bottomBar = new CustomizeableActionBar(MenuManagerDownloadTabBottomBar.getInstance()) {
@@ -139,6 +165,7 @@ public class DownloadsPanel extends SwitchPanel implements DownloadControllerLis
                     propertiesPanel.update(table.getModel().getObjectbyRow(table.getSelectionModel().getLeadSelectionIndex()));
 
                 } else {
+
                     setPropertiesPanelVisible(false);
 
                 }

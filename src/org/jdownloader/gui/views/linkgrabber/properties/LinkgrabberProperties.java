@@ -1,5 +1,7 @@
 package org.jdownloader.gui.views.linkgrabber.properties;
 
+import java.awt.Dimension;
+
 import javax.swing.JPopupMenu;
 
 import jd.controlling.linkcrawler.CrawledLink;
@@ -8,6 +10,7 @@ import jd.controlling.packagecontroller.AbstractNode;
 
 import org.appwork.swing.MigPanel;
 import org.jdownloader.gui.views.linkgrabber.LinkGrabberTable;
+import org.jdownloader.settings.staticreferences.CFG_GUI;
 import org.jdownloader.updatev2.gui.LAFOptions;
 
 public class LinkgrabberProperties extends MigPanel {
@@ -31,6 +34,15 @@ public class LinkgrabberProperties extends MigPanel {
 
     }
 
+    @Override
+    public Dimension getPreferredSize() {
+        Dimension ret = super.getPreferredSize();
+        if (CFG_GUI.CFG.isPropertiesPanelHeightNormalized()) {
+            ret.height = Math.max(pkgPanel.getPreferredSize().height, linkPanel.getPreferredSize().height);
+        }
+        return ret;
+    }
+
     public void update(AbstractNode objectbyRow) {
         if (objectbyRow instanceof CrawledPackage) {
             CrawledPackage pkg = (CrawledPackage) objectbyRow;
@@ -52,6 +64,7 @@ public class LinkgrabberProperties extends MigPanel {
         } else {
             pkgPanel.fillPopup(pu);
         }
+
     }
 
     public void refreshAfterTabSwitch() {

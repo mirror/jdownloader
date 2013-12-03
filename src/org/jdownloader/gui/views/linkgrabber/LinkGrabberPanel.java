@@ -4,6 +4,8 @@ import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.Insets;
 import java.awt.Point;
+import java.awt.event.ComponentEvent;
+import java.awt.event.ComponentListener;
 
 import javax.swing.BorderFactory;
 import javax.swing.JScrollPane;
@@ -105,6 +107,7 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
                     setPropertiesPanelVisible(true);
                     propertiesPanel.update(table.getModel().getObjectbyRow(table.getSelectionModel().getLeadSelectionIndex()));
                 } else {
+
                     setPropertiesPanelVisible(false);
 
                 }
@@ -112,6 +115,28 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
             }
         });
         tableScrollPane = new JScrollPane(table);
+
+        tableScrollPane.addComponentListener(new ComponentListener() {
+
+            @Override
+            public void componentShown(ComponentEvent e) {
+            }
+
+            @Override
+            public void componentResized(ComponentEvent e) {
+
+                table.scrollToSelection(-1);
+            }
+
+            @Override
+            public void componentMoved(ComponentEvent e) {
+            }
+
+            @Override
+            public void componentHidden(ComponentEvent e) {
+            }
+        });
+
         HorizontalScrollbarAction.setup(CFG_GUI.HORIZONTAL_SCROLLBARS_IN_LINKGRABBER_TABLE_ENABLED, table);
 
         // filteredAdd.setVisible(false);
@@ -377,7 +402,9 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
 
             }
         });
+
         propertiesScrollPane.setVisible(false);
+
         propertiesScrollPane.setBorder(BorderFactory.createCompoundBorder(BorderFactory.createEmptyBorder(2, 0, 0, 0), propertiesScrollPane.getBorder()));
         return propertiesScrollPane;
     }
@@ -483,6 +510,7 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
                 layoutComponents();
 
                 revalidate();
+
             }
         };
     }

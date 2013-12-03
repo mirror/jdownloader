@@ -838,4 +838,9 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
 
     void setHateCaptchasTextInCaptchaDialogVisible(boolean b);
 
+    @AboutConfig
+    @DefaultBooleanValue(false)
+    boolean isPropertiesPanelHeightNormalized();
+
+    void setPropertiesPanelHeightNormalized(boolean b);
 }

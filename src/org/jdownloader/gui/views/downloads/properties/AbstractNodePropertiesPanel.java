@@ -827,7 +827,8 @@ public abstract class AbstractNodePropertiesPanel extends MigPanel implements Ac
 
             }
         }
-        if (destination.getDestination().isShowing() && !loadSaveTo().equals(new File(destination.getPath()))) {
+        if (destination.getDestination().isShowing() && !loadSaveTo().equals(destination.getPath())) {
+            String lst = loadSaveTo();
             saveSaveTo(destination.getPath());
 
             DownloadPathHistoryManager.getInstance().add(destination.getPath());

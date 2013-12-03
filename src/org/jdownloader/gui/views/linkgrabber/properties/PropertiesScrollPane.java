@@ -1,5 +1,7 @@
 package org.jdownloader.gui.views.linkgrabber.properties;
 
+import java.awt.Dimension;
+
 import jd.controlling.packagecontroller.AbstractNode;
 
 import org.jdownloader.gui.components.OverviewHeaderScrollPane;
@@ -24,6 +26,13 @@ public class PropertiesScrollPane extends OverviewHeaderScrollPane {
     public void update(AbstractNode objectbyRow) {
         header.update(objectbyRow);
         panel.update(objectbyRow);
+    }
+
+    @Override
+    public Dimension getPreferredSize() {
+        Dimension ret = super.getPreferredSize();
+        // System.out.println(panel.getPreferredSize());
+        return ret;
     }
 
     @Override

@@ -3871,4 +3871,7 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Skip File & mark as finished" })
     String OnSkipDueToAlreadyExistsAction_mark_successful();
 
+    @Default(lngs = { "en" }, values = { "Panel is always visible" })
+    String LinkgrabberProperties_fillPopup_always_visible_();
+
 }
