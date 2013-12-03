@@ -231,10 +231,10 @@ public class IconKey {
     public static final String ICON_PASTE                        = "paste";
     public static final String ICON_PLAY                         = "play";
     public static final String ICON_PLUGIN                       = "plugin";
-    public static final String ICON_POPDOWNBUTTON                = "popdownButton";
-    public static final String ICON_POPUP                        = "popup";
-    public static final String ICON_POPUPBUTTON                  = "popupButton";
-    public static final String ICON_POPUPDOWN                    = "popupdown";
+    public static final String ICON_POPDOWNSMALL                 = "popDownSmall";
+    public static final String ICON_POPUPLARGE                   = "popUpLarge";
+    public static final String ICON_POPUPSMALL                   = "popUpSmall";
+    public static final String ICON_POPDOWNLARGE                 = "popDownLarge";
     public static final String ICON_PREMIUM                      = "premium";
     public static final String ICON_PREMIUMZONE                  = "premiumzone";
     public static final String ICON_PRIO__1                      = "prio_-1";

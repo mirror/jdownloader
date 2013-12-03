@@ -1195,7 +1195,7 @@ public abstract class PluginForHost extends Plugin {
 
     }
 
-    public List<LinkVariant> getActiveVariantsByLink(DownloadLink downloadLink) {
+    public LinkVariant getActiveVariantByLink(DownloadLink downloadLink) {
         return null;
     }
 

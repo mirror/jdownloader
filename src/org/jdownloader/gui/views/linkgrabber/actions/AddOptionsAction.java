@@ -21,7 +21,7 @@ public class AddOptionsAction extends AppAction {
     private JButton           positionComp;
 
     public AddOptionsAction(JButton addLinks) {
-        setSmallIcon(NewTheme.I().getIcon("popupButton", -1));
+        setSmallIcon(NewTheme.I().getIcon("popUpSmall", -1));
         setTooltipText(_GUI._.AddOptionsAction_AddOptionsAction_tt());
         positionComp = addLinks;
     }

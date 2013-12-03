@@ -19,7 +19,7 @@ public class ConfirmOptionsAction extends AbstractAction {
     private AddLinksDialog dialog;
 
     {
-        putValue(SMALL_ICON, NewTheme.I().getIcon("popupButton", -1));
+        putValue(SMALL_ICON, NewTheme.I().getIcon("popUpSmall", -1));
 
     }
 

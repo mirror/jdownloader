@@ -64,7 +64,7 @@ public class SearchField extends ExtTextField implements MouseMotionListener, Mo
         bgColor = (lafo.getColorForPanelHeaderBackground());
         setHelpText(_GUI._.SearchField_SearchField_helptext());
         setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
-        popIcon = NewTheme.I().getImage("popupButton", -1);
+        popIcon = NewTheme.I().getImage("popUpSmall", -1);
         delayedFilter = new DelayedRunnable(150l, 2000l) {
 
             @Override

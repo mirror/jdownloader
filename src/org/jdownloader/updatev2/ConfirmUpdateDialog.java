@@ -30,7 +30,7 @@ public class ConfirmUpdateDialog extends org.appwork.utils.swing.dialog.ConfirmD
             public void addCancelButton(final JButton cancelButton) {
                 super.addCancelButton(cancelButton);
 
-                final JButton bt = new JButton(NewTheme.I().getIcon("popdownButton", -1)) {
+                final JButton bt = new JButton(NewTheme.I().getIcon("popDownSmall", -1)) {
 
                     public void setBounds(int x, int y, int width, int height) {
                         int delta = 5;

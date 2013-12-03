@@ -61,7 +61,7 @@ public abstract class SearchField<SearchCat extends SearchCatInterface> extends 
         bgColor = (lafo.getColorForPanelHeaderBackground());
         setHelpText(_GUI._.SearchField_SearchField_helptext());
         setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
-        popIcon = NewTheme.I().getImage("popupButton", -1);
+        popIcon = NewTheme.I().getImage("popUpSmall", -1);
         delayedFilter = new DelayedRunnable(150l, 2000l) {
             @Override
             public String getID() {

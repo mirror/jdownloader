@@ -546,7 +546,7 @@ public class MainToolBar extends JToolBar implements MouseListener, DownloadWatc
     }
 
     protected ImageIcon createDropdownImage(Image back) {
-        Image checkBox = NewTheme.I().getImage("popdownButton", -1, false);
+        Image checkBox = NewTheme.I().getImage("popDownSmall", -1, false);
         back = ImageProvider.merge(back, checkBox, 0, 0, 24 - checkBox.getWidth(null), 24 - checkBox.getHeight(null));
 
         return new ImageIcon(back);

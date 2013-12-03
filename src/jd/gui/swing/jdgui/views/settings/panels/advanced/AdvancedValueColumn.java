@@ -527,7 +527,7 @@ public class AdvancedValueColumn extends ExtCompoundColumn<AdvancedConfigEntry> 
             }
 
             protected Icon getIcon(final AdvancedConfigEntry value) {
-                return NewTheme.I().getIcon(IconKey.ICON_POPUPDOWN, -1);
+                return NewTheme.I().getIcon(IconKey.ICON_POPDOWNLARGE, -1);
             }
 
             @Override

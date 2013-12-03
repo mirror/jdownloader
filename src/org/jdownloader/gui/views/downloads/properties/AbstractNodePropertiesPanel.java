@@ -380,9 +380,9 @@ public abstract class AbstractNodePropertiesPanel extends MigPanel implements Ac
             @Override
             protected Icon getPopIcon(boolean closed) {
                 if (closed) {
-                    return NewTheme.I().getIcon(IconKey.ICON_POPUPDOWN, -1);
+                    return NewTheme.I().getIcon(IconKey.ICON_POPDOWNLARGE, -1);
                 } else {
-                    return NewTheme.I().getIcon(IconKey.ICON_POPUP, -1);
+                    return NewTheme.I().getIcon(IconKey.ICON_POPUPLARGE, -1);
                 }
 
             }
@@ -485,9 +485,9 @@ public abstract class AbstractNodePropertiesPanel extends MigPanel implements Ac
             @Override
             protected Icon getPopIcon(boolean closed) {
                 if (closed) {
-                    return NewTheme.I().getIcon(IconKey.ICON_POPUPDOWN, -1);
+                    return NewTheme.I().getIcon(IconKey.ICON_POPDOWNLARGE, -1);
                 } else {
-                    return NewTheme.I().getIcon(IconKey.ICON_POPUP, -1);
+                    return NewTheme.I().getIcon(IconKey.ICON_POPUPLARGE, -1);
                 }
 
             }

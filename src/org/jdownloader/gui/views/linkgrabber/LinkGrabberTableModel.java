@@ -9,6 +9,8 @@ import jd.controlling.linkcrawler.CrawledPackage;
 import jd.controlling.packagecontroller.AbstractNode;
 
 import org.appwork.swing.exttable.ExtColumn;
+import org.appwork.utils.logging.Log;
+import org.appwork.utils.swing.EDTRunner;
 import org.jdownloader.gui.views.components.packagetable.PackageControllerTableModel;
 import org.jdownloader.gui.views.components.packagetable.PackageControllerTableModelData;
 import org.jdownloader.gui.views.components.packagetable.columns.ChecksumColumn;
@@ -78,7 +80,7 @@ public class LinkGrabberTableModel extends PackageControllerTableModel<CrawledPa
     @Override
     protected void initColumns() {
         this.addColumn(expandCollapse = new FileColumn());
-        // this.addColumn(variantColumn = new VariantColumn());
+        this.addColumn(variantColumn = new VariantColumn());
         addColumn(new PartColumn());
         this.addColumn(new UrlColumn());
         this.addColumn(new DownloadFolderColumn());
@@ -104,6 +106,34 @@ public class LinkGrabberTableModel extends PackageControllerTableModel<CrawledPa
 
         this.addColumn(new ChecksumColumn());
 
+    }
+
+    protected void setVariantsSupport(final boolean vs) {
+        new EDTRunner() {
+
+            @Override
+            protected void runInEDT() {
+                setVariantsColumnVisible(vs);
+            }
+        };
+    }
+
+    public void setColumnVisible(final ExtColumn<AbstractNode> column, final boolean visible) {
+        try {
+            this.getTable().getStorage().put(this.getTable().getColumnStoreKey("VISABLE_COL_", column.getID()), visible);
+        } catch (final Exception e) {
+            Log.exception(e);
+        }
+        this.getTable().updateColumns();
+
+    }
+
+    public void setVariantsColumnVisible(boolean b) {
+
+        if (variantColumn != null) {
+            variantColumn.setAutoVisible(b);
+            this.getTable().updateColumns();
+        }
     }
 
     public void setPriorityColumnVisible(boolean b) {

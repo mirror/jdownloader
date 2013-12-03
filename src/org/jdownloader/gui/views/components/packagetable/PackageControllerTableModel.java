@@ -375,7 +375,8 @@ public abstract class PackageControllerTableModel<PackageType extends AbstractPa
     }
 
     /*
-     * we override sort to have a better sorting of packages/files, to keep their structure alive,data is only used to specify the size of the new ArrayList
+     * we override sort to have a better sorting of packages/files, to keep their structure alive,data is only used to specify the size of
+     * the new ArrayList
      */
     @Override
     public java.util.List<AbstractNode> sort(final java.util.List<AbstractNode> data, ExtColumn<AbstractNode> column) {
@@ -519,7 +520,20 @@ public abstract class PackageControllerTableModel<PackageType extends AbstractPa
             throw new IllegalArgumentException("data must be instanceof AbstractNodeList");
         } else {
             tableData = (PackageControllerTableModelData) data;
+            boolean vs = false;
+            for (AbstractNode node : tableData.getAllChildrenNodes()) {
+                if (node instanceof AbstractPackageChildrenNode) {
+                    if (((AbstractPackageChildrenNode) node).hasVariantSupport()) {
+                        vs = true;
+                        break;
+                    }
+                }
+            }
+            setVariantsSupport(vs);
         }
+    }
+
+    protected void setVariantsSupport(boolean vs) {
     }
 
     protected ExtColumn<AbstractNode> getDefaultSortColumn() {

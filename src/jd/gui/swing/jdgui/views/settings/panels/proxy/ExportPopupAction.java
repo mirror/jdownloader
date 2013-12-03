@@ -22,7 +22,7 @@ public class ExportPopupAction extends AppAction {
     private ProxyTable        table;
 
     public ExportPopupAction(JButton addLinks, ProxyTable table) {
-        setSmallIcon(NewTheme.I().getIcon("popupButton", -1));
+        setSmallIcon(NewTheme.I().getIcon("popUpSmall", -1));
         setTooltipText(_GUI._.AddOptionsAction_AddOptionsAction_tt());
         positionComp = addLinks;
         this.table = table;

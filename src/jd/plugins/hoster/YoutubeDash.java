@@ -83,7 +83,7 @@ public class YoutubeDash extends Youtube {
         variants = new ArrayList<LinkVariant>();
         variants.add(new YoutubeVariant("1080p Mp4-Video"));
         variants.add(new YoutubeVariant("720p Mp4-Video"));
-        variants.add(new YoutubeVariant("1080p Mp4-Video"));
+        variants.add(new YoutubeVariant("480p Mp4-Video"));
         variants.add(new YoutubeVariant("AAC-Audio"));
     }
 
@@ -419,22 +419,22 @@ public class YoutubeDash extends Youtube {
     }
 
     @Override
-    public List<LinkVariant> getActiveVariantsByLink(DownloadLink downloadLink) {
-        return null;
+    public LinkVariant getActiveVariantByLink(DownloadLink downloadLink) {
+        return variants.get(downloadLink.getIntegerProperty("VARIANT", 0));
     }
 
     @Override
     public void setActiveVariantByLink(DownloadLink downloadLink, LinkVariant variant) {
-        super.setActiveVariantByLink(downloadLink, variant);
+        downloadLink.setProperty("VARIANT", variants.indexOf(variant));
     }
 
     public boolean hasVariantToChooseFrom(DownloadLink downloadLink) {
-        return false;
+        return true;
     }
 
     @Override
     public List<LinkVariant> getVariantsByLink(DownloadLink downloadLink) {
-        return null;
+        return variants;
     }
 
     @Override

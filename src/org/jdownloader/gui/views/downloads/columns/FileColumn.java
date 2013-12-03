@@ -255,13 +255,13 @@ public class FileColumn extends ExtTextColumn<AbstractNode> implements GenericCo
         } else if (value instanceof DownloadLink) {
 
             if (((DownloadLink) value).hasVariantSupport()) {
-                List<LinkVariant> active = ((DownloadLink) value).getDefaultPlugin().getActiveVariantsByLink(((DownloadLink) value).getDownloadLink());
+                List<LinkVariant> active = ((DownloadLink) value).getDefaultPlugin().getVariantsByLink(((DownloadLink) value));
                 if (active != null && active.size() > 0) { return new ExtMergedIcon(new AbstractIcon(IconKey.ICON_PACKAGE_OPEN, 16), 0, 3).add(IconIO.getScaledInstance(((DownloadLink) value).getIcon(), 10, 10), 3, -2); }
             }
             return (((DownloadLink) value).getIcon());
         } else if (value instanceof CrawledLink) {
             if (((CrawledLink) value).hasVariantSupport()) {
-                List<LinkVariant> active = ((CrawledLink) value).gethPlugin().getActiveVariantsByLink(((CrawledLink) value).getDownloadLink());
+                List<LinkVariant> active = ((CrawledLink) value).gethPlugin().getVariantsByLink(((CrawledLink) value).getDownloadLink());
                 if (active != null && active.size() > 0) {
 
                     // return new ExtMergedIcon(new AbstractIcon(IconKey.ICON_PACKAGE_CLOSED, 14)).add(IconIO.getScaledInstance(, 14, 14),

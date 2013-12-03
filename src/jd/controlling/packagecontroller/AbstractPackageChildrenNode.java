@@ -12,4 +12,6 @@ public interface AbstractPackageChildrenNode<E> extends AbstractNode {
     UniqueAlltimeID getPreviousParentNodeID();
 
     public DomainInfo getDomainInfo();
+
+    public boolean hasVariantSupport();
 }

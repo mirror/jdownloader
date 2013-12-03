@@ -56,15 +56,15 @@ public class PseudoCombo<Type> extends JButton {
     protected Icon getPopIcon(boolean closed) {
         if (closed) {
             if (isPopDown()) {
-                return NewTheme.I().getIcon(IconKey.ICON_POPDOWNBUTTON, -1);
+                return NewTheme.I().getIcon(IconKey.ICON_POPDOWNSMALL, -1);
             } else {
-                return NewTheme.I().getIcon(IconKey.ICON_POPUPBUTTON, -1);
+                return NewTheme.I().getIcon(IconKey.ICON_POPUPSMALL, -1);
             }
         } else {
             if (isPopDown()) {
-                return NewTheme.I().getIcon(IconKey.ICON_POPUPBUTTON, -1);
+                return NewTheme.I().getIcon(IconKey.ICON_POPUPSMALL, -1);
             } else {
-                return NewTheme.I().getIcon(IconKey.ICON_POPDOWNBUTTON, -1);
+                return NewTheme.I().getIcon(IconKey.ICON_POPDOWNSMALL, -1);
 
             }
         }

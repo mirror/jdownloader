@@ -179,15 +179,15 @@ public class CustomPanel extends MigPanel {
 
                         if (closed) {
                             if (isPopDown()) {
-                                return NewTheme.I().getIcon(IconKey.ICON_POPUPDOWN, -1);
+                                return NewTheme.I().getIcon(IconKey.ICON_POPDOWNLARGE, -1);
                             } else {
-                                return NewTheme.I().getIcon(IconKey.ICON_POPUP, -1);
+                                return NewTheme.I().getIcon(IconKey.ICON_POPUPLARGE, -1);
                             }
                         } else {
                             if (isPopDown()) {
-                                return NewTheme.I().getIcon(IconKey.ICON_POPUP, -1);
+                                return NewTheme.I().getIcon(IconKey.ICON_POPUPLARGE, -1);
                             } else {
-                                return NewTheme.I().getIcon(IconKey.ICON_POPUPDOWN, -1);
+                                return NewTheme.I().getIcon(IconKey.ICON_POPDOWNLARGE, -1);
 
                             }
                         }

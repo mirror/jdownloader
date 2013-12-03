@@ -214,7 +214,7 @@ public class CustomizeableActionBar extends MigPanel implements PropertyChangeLi
     }
 
     protected ImageIcon createDropdownImage(boolean b, Image back) {
-        Image front = NewTheme.I().getImage(b ? IconKey.ICON_POPUPBUTTON : IconKey.ICON_POPDOWNBUTTON, -1, false);
+        Image front = NewTheme.I().getImage(b ? IconKey.ICON_POPUPSMALL : IconKey.ICON_POPDOWNSMALL, -1, false);
         int w = back.getWidth(null);
         int h = back.getHeight(null);
         int xoffsetBack = 0;
@@ -305,7 +305,7 @@ public class CustomizeableActionBar extends MigPanel implements PropertyChangeLi
             private void updateIcon(boolean b) {
 
                 if (StringUtils.isEmpty(validateIconKey(menudata.getIconKey()))) {
-                    setSmallIcon(NewTheme.I().getIcon(b ? IconKey.ICON_POPUPBUTTON : IconKey.ICON_POPDOWNBUTTON, -1));
+                    setSmallIcon(NewTheme.I().getIcon(b ? IconKey.ICON_POPUPSMALL : IconKey.ICON_POPDOWNSMALL, -1));
 
                 } else {
                     setSmallIcon(createDropdownImage(b, NewTheme.I().getImage(validateIconKey(menudata.getIconKey()), 18)));
