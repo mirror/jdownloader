@@ -59,7 +59,11 @@ public class StaSh extends PluginForHost {
         this.setBrowserExclusive();
         if (link.getDownloadURL().matches(INVALIDLINKS)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         br.setFollowRedirects(true);
-        br.getPage(link.getDownloadURL());
+        try {
+            br.getPage(link.getDownloadURL());
+        } catch (final IllegalStateException e) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         if (br.containsHTML("/error\\-title\\-oops\\.png\\)") || br.containsHTML("The page you wanted to visit doesn't exist")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         final boolean loggedIn = false;
         // Motionbooks are not supported (yet)

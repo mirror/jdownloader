@@ -56,6 +56,11 @@ public class LsnTo extends PluginForDecrypt {
             }
             final String newLink = new Regex(redirect, "(http://(www\\.)?lesen\\.to/protection/folder_\\d+\\.html)").getMatch(0);
             if (newLink == null) {
+                if (redirect.contains("lesen.to/download")) {
+                    logger.info("Cannot decrypt link: " + parameter);
+                    logger.info("Link offline: " + redirect);
+                    return decryptedLinks;
+                }
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
             }

@@ -52,7 +52,7 @@ public class TrillHDCom extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        if (br.getURL().equals("http://www.trillhd.com/")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.getURL().equals("http://www.trillhd.com/") || br.containsHTML("youtube\\.com/embed/")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("<div class=\"title\">([^<>\"]*?)</div>").getMatch(0);
         if (filename == null) filename = br.getRegex("property='og:title'[\t\n\r ]+content='TrillHD \\| ([^<>\"]*?)'>").getMatch(0);
         if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

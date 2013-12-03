@@ -146,15 +146,14 @@ public class UlozTo extends PluginForHost {
         boolean failed = true;
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         for (int i = 0; i <= 5; i++) {
-            String captchaUrl = br.getRegex(Pattern.compile("\"(http://img\\.uloz\\.to/captcha/\\d+\\.png)\"")).getMatch(0);
+            String captchaUrl = new Regex(br.toString().replace("\\", ""), "captchaContainer\">\\n\\t\\t<img  src=\"(http:[^<>\"]*?)\"").getMatch(0);
             Form captchaForm = br.getFormbyProperty("id", "frm-downloadDialog-freeDownloadForm");
-            final String captchaKey = br.getRegex("name=\"captcha_key\" value=\"([^<>\"]*?)\"").getMatch(0);
-            if (captchaForm == null || captchaUrl == null || captchaKey == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (captchaForm == null || captchaUrl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            captchaUrl = captchaUrl.replace("\\", "");
 
-            String key = null, code = null, ts = null, sign = null, cid = null;
+            String code = null, ts = null, sign = null, cid = null;
             // Tries to read if property selected
             if (getPluginConfig().getBooleanProperty(REPEAT_CAPTCHA)) {
-                key = getPluginConfig().getStringProperty(CAPTCHA_ID);
                 code = getPluginConfig().getStringProperty(CAPTCHA_TEXT);
                 ts = getPluginConfig().getStringProperty("ts");
                 sign = getPluginConfig().getStringProperty("cid");
@@ -162,12 +161,10 @@ public class UlozTo extends PluginForHost {
             }
 
             // If property not selected or read failed (no data), asks to solve
-            if (key == null || code == null) {
+            if (code == null) {
                 code = getCaptchaCode(captchaUrl, downloadLink);
                 final Matcher m = Pattern.compile("http://img\\.uloz\\.to/captcha/(\\d+)\\.png").matcher(captchaUrl);
                 if (m.find()) {
-                    key = m.group(1);
-                    getPluginConfig().setProperty(CAPTCHA_ID, key);
                     getPluginConfig().setProperty(CAPTCHA_TEXT, code);
                     getPluginConfig().setProperty("ts", new Regex(captchaForm.getHtmlCode(), "name=\"ts\" id=\"frmfreeDownloadForm\\-ts\" value=\"([^<>\"]*?)\"").getMatch(0));
                     getPluginConfig().setProperty("cid", new Regex(captchaForm.getHtmlCode(), "name=\"cid\" id=\"frmfreeDownloadForm\\-cid\" value=\"([^<>\"]*?)\"").getMatch(0));
@@ -177,11 +174,9 @@ public class UlozTo extends PluginForHost {
             }
 
             // if something failed
-            if (key == null || code == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (code == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
 
-            captchaForm.put("captcha_id", key);
             captchaForm.put("captcha_value", code);
-            captchaForm.put("captcha_key", captchaKey);
             captchaForm.remove(null);
             captchaForm.remove("freeDownload");
             if (ts != null) captchaForm.put("ts", ts);
