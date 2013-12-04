@@ -40,7 +40,6 @@ import jd.controlling.AccountController;
 import jd.controlling.AccountControllerEvent;
 import jd.controlling.AccountControllerListener;
 import jd.controlling.TaskQueue;
-import jd.controlling.downloadcontroller.AccountCache.ACCOUNTTYPE;
 import jd.controlling.downloadcontroller.AccountCache.CachedAccount;
 import jd.controlling.downloadcontroller.DownloadLinkCandidateResult.RESULT;
 import jd.controlling.downloadcontroller.DownloadSession.STOPMARK;
@@ -121,10 +120,12 @@ import org.jdownloader.logging.LogController;
 import org.jdownloader.plugins.ConditionalSkipReason;
 import org.jdownloader.plugins.ConditionalSkipReasonException;
 import org.jdownloader.plugins.FinalLinkState;
+import org.jdownloader.plugins.IgnorableConditionalSkipReason;
 import org.jdownloader.plugins.MirrorLoading;
 import org.jdownloader.plugins.SkipReason;
 import org.jdownloader.plugins.SkipReasonException;
 import org.jdownloader.plugins.ValidatableConditionalSkipReason;
+import org.jdownloader.plugins.WaitForAccountSkipReason;
 import org.jdownloader.plugins.WaitingSkipReason;
 import org.jdownloader.plugins.WaitingSkipReason.CAUSE;
 import org.jdownloader.settings.CleanAfterDownloadAction;
@@ -986,12 +987,9 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
             }
             break;
         case CONDITIONAL_SKIPPED:
-            if (onDetach) {
-                ConditionalSkipReason conditionalSkipReason = value.getConditionalSkip();
-                if (conditionalSkipReason != null) link.setConditionalSkipReason(conditionalSkipReason);
-                return;
-            }
-            break;
+            ConditionalSkipReason conditionalSkipReason = value.getConditionalSkip();
+            if (conditionalSkipReason != null) link.setConditionalSkipReason(conditionalSkipReason);
+            return;
         case IP_BLOCKED:
             if (onDetach) {
                 long remainingTime = value.getRemainingTime();
@@ -1160,37 +1158,47 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
             if (!candidate.isForced() && selector.isMirrorManagement()) {
                 possible.addAll(findDownloadLinkCandidateMirrors(selector, candidate));
             }
-            mirrors.clear();
+            if (mirrors.size() > 0) mirrors.clear();
             for (DownloadLinkCandidate mirror : possible) {
                 selector.addExcluded(mirror.getLink());
                 AccountCache accountCache = currentSession.getAccountCache(mirror.getLink());
                 Iterator<CachedAccount> it = accountCache.iterator();
-                CachedAccount cachedAccount = null;
                 boolean cachedAccountFound = false;
+                boolean cachedAccountUsed = false;
+                CachedAccount tempDisabledCachedAccount = null;
                 while (it.hasNext()) {
-                    cachedAccount = it.next();
-                    if (cachedAccount.canHandle(mirror.getLink())) {
-                        /* this cachedAccount can handle our candidate */
-                        switch (selector.getCachedAccountPermission(cachedAccount)) {
-                        case DISABLED:
-                            break;
-                        case FORBIDDEN:
-                            cachedAccountFound = true;
-                            break;
-                        case OK:
-                            cachedAccountFound = true;
-                            mirrors.add(new DownloadLinkCandidate(mirror, cachedAccount));
-                            break;
+                    CachedAccount cachedAccount = it.next();
+                    /* this cachedAccount can handle our candidate */
+                    switch (selector.getCachedAccountPermission(cachedAccount)) {
+                    case TEMP_DISABLED:
+                        if (tempDisabledCachedAccount == null) {
+                            tempDisabledCachedAccount = cachedAccount;
+                        } else if (tempDisabledCachedAccount.getAccount().getTmpDisabledTimeout() > cachedAccount.getAccount().getTmpDisabledTimeout()) {
+                            tempDisabledCachedAccount = cachedAccount;
                         }
+                        cachedAccountFound = true;
+                        break;
+                    case FORBIDDEN:
+                        break;
+                    case DISABLED:
+                        break;
+                    case OK:
+                        cachedAccountFound = true;
+                        if (cachedAccount.canHandle(mirror.getLink())) {
+                            cachedAccountUsed = true;
+                            mirrors.add(new DownloadLinkCandidate(mirror, cachedAccount));
+                        }
+                        break;
                     }
                 }
-
-                if (cachedAccountFound == false && cachedAccount != null && cachedAccount.getType() == ACCOUNTTYPE.NONE) {
+                if (cachedAccountFound == false) {
                     /* even NONE cannot handle our candidate, so let's skip it */
                     selector.addExcluded(mirror, new DownloadLinkCandidateResult(SkipReason.NO_ACCOUNT));
+                } else if (cachedAccountUsed == false) {
+                    if (tempDisabledCachedAccount != null) selector.addExcluded(mirror, new DownloadLinkCandidateResult(new WaitForAccountSkipReason(tempDisabledCachedAccount.getAccount())));
                 }
             }
-            if (mirrors.size() > 0) return mirrors;
+            if (mirrors.size() > 0) { return mirrors; }
         }
         return null;
     }
@@ -1255,6 +1263,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
         }
         ConditionalSkipReason conditionalSkipReason = next.getConditionalSkipReason();
         if (conditionalSkipReason != null) {
+            if (conditionalSkipReason instanceof IgnorableConditionalSkipReason && ((IgnorableConditionalSkipReason) conditionalSkipReason).canIgnore()) return true;
             if (!(conditionalSkipReason instanceof ValidatableConditionalSkipReason) || ((ValidatableConditionalSkipReason) conditionalSkipReason).isValid()) return true;
         }
         return false;

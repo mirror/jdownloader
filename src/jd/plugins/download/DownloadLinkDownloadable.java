@@ -1,10 +1,16 @@
 package jd.plugins.download;
 
+import java.awt.Color;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.security.DigestInputStream;
+import java.security.MessageDigest;
 import java.util.ArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Logger;
+import java.util.zip.CRC32;
+import java.util.zip.CheckedInputStream;
 
 import jd.controlling.downloadcontroller.DownloadWatchDog;
 import jd.controlling.downloadcontroller.DownloadWatchDog.DISKSPACECHECK;
@@ -19,10 +25,12 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginProgress;
 import jd.plugins.download.raf.HashResult;
+import jd.plugins.download.raf.HashResult.TYPE;
 
 import org.appwork.utils.IO;
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.HexFormatter;
 import org.appwork.utils.logging2.LogSource;
 import org.jdownloader.controlling.FileCreationManager;
 import org.jdownloader.downloadcore.v15.Downloadable;
@@ -235,6 +243,63 @@ public class DownloadLinkDownloadable implements Downloadable {
         downloadLink.setPluginProgress(progress);
     }
 
+    public HashResult getHashResult(HashInfo hashInfo) {
+        if (hashInfo == null) return null;
+        TYPE type = hashInfo.getType();
+        File outputPartFile = new File(getFileOutputPart());
+        PluginProgress hashProgress = new HashCheckPluginProgress(outputPartFile, Color.YELLOW.darker(), type);
+        hashProgress.setProgressSource(this);
+        try {
+            setPluginProgress(hashProgress);
+            final byte[] b = new byte[32767];
+            String hashFile = null;
+            FileInputStream fis = null;
+            int n = 0;
+            int cur = 0;
+            switch (type) {
+            case MD5:
+            case SHA1:
+                try {
+                    DigestInputStream is = new DigestInputStream(fis = new FileInputStream(outputPartFile), MessageDigest.getInstance(type.name()));
+                    while ((n = is.read(b)) >= 0) {
+                        cur += n;
+                        hashProgress.setCurrent(cur);
+                    }
+                    hashFile = HexFormatter.byteArrayToHex(is.getMessageDigest().digest());
+                } catch (final Throwable e) {
+                    LogSource.exception(getLogger(), e);
+                } finally {
+                    try {
+                        fis.close();
+                    } catch (final Throwable e) {
+                    }
+                }
+                break;
+            case CRC32:
+                try {
+                    fis = new FileInputStream(outputPartFile);
+                    CheckedInputStream cis = new CheckedInputStream(fis, new CRC32());
+                    while ((n = cis.read(b)) >= 0) {
+                        cur += n;
+                        hashProgress.setCurrent(cur);
+                    }
+                    hashFile = Long.toHexString(cis.getChecksum().getValue());
+                } catch (final Throwable e) {
+                    LogSource.exception(getLogger(), e);
+                } finally {
+                    try {
+                        fis.close();
+                    } catch (final Throwable e) {
+                    }
+                }
+                break;
+            }
+            return new HashResult(hashInfo.getHash(), hashFile, hashInfo.getType());
+        } finally {
+            setPluginProgress(null);
+        }
+    }
+
     @Override
     public HashInfo getHashInfo() {
         String hash;
@@ -362,11 +427,6 @@ public class DownloadLinkDownloadable implements Downloadable {
     }
 
     @Override
-    public String getFileOutput(boolean ignoreUnsafe, boolean ignoreCustom) {
-        return downloadLink.getFileOutput(ignoreUnsafe, ignoreCustom);
-    }
-
-    @Override
     public void waitForNextConnectionAllowed() throws InterruptedException {
         plugin.waitForNextConnectionAllowed(downloadLink);
     }
@@ -385,5 +445,20 @@ public class DownloadLinkDownloadable implements Downloadable {
     @Override
     public int getLinkStatus() {
         return getDownloadLinkController().getLinkStatus().getStatus();
+    }
+
+    @Override
+    public String getFileOutputPart() {
+        return getFileOutput() + ".part";
+    }
+
+    @Override
+    public String getFinalFileOutput() {
+        return downloadLink.getFileOutput(false, true);
+    }
+
+    @Override
+    public boolean isResumable() {
+        return downloadLink.isResumeable();
     }
 }

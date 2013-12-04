@@ -138,6 +138,33 @@ public class YoutubeDash extends Youtube {
         final LinkStatus videoLinkStatus = new LinkStatus(dashLink);
         Downloadable dashDownloadable = new DownloadLinkDownloadable(dashLink) {
 
+            long[] chunkProgress = null;
+            {
+                Object ret = downloadLink.getProperty(dashChunksProperty, null);
+                if (ret != null && ret instanceof long[]) {
+                    chunkProgress = (long[]) ret;
+                } else {
+                    if (ret != null && ret instanceof List) {
+                        /* restored json-object */
+                        List<Object> list = ((List<Object>) ret);
+                        long[] ret2 = new long[list.size()];
+                        for (int i = 0; i < ret2.length; i++) {
+                            ret2[i] = Long.valueOf(list.get(0).toString());
+                        }
+                        chunkProgress = ret2;
+                    }
+                }
+            }
+
+            @Override
+            public void setResumeable(boolean value) {
+            }
+
+            @Override
+            public boolean isResumable() {
+                return true;
+            }
+
             @Override
             public void addDownloadTime(long ms) {
                 downloadLink.addDownloadTime(ms);
@@ -152,7 +179,7 @@ public class YoutubeDash extends Youtube {
             }
 
             @Override
-            public String getFileOutput(boolean ignoreUnsafe, boolean ignoreCustom) {
+            public String getFinalFileOutput() {
                 return dashPath;
             }
 
@@ -182,22 +209,12 @@ public class YoutubeDash extends Youtube {
 
             @Override
             public long[] getChunksProgress() {
-                Object ret = downloadLink.getProperty(dashChunksProperty, null);
-                if (ret != null && ret instanceof long[]) return (long[]) ret;
-                if (ret != null && ret instanceof List) {
-                    /* restored json-object */
-                    List<Object> list = ((List<Object>) ret);
-                    long[] ret2 = new long[list.size()];
-                    for (int i = 0; i < ret2.length; i++) {
-                        ret2[i] = Long.valueOf(list.get(0).toString());
-                    }
-                    return ret2;
-                }
-                return null;
+                return chunkProgress;
             }
 
             @Override
             public void setChunksProgress(long[] ls) {
+                chunkProgress = ls;
                 if (ls == null) {
                     downloadLink.setProperty(dashChunksProperty, Property.NULL);
                 } else {

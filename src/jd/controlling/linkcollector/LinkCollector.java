@@ -72,7 +72,6 @@ import org.jdownloader.controlling.FileCreationManager;
 import org.jdownloader.controlling.UniqueAlltimeID;
 import org.jdownloader.controlling.filter.LinkFilterController;
 import org.jdownloader.controlling.packagizer.PackagizerController;
-import org.jdownloader.extensions.extraction.BooleanStatus;
 import org.jdownloader.extensions.extraction.ExtractionExtension;
 import org.jdownloader.extensions.extraction.bindings.crawledlink.CrawledLinkFactory;
 import org.jdownloader.gui.translate._GUI;
@@ -102,11 +101,6 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
             this.linkCollector = linkCollector;
             setFilter(linkCollector.getCrawlerFilter());
             setHandler(linkCollector);
-        }
-
-        @Override
-        protected void generalCrawledLinkModifier(CrawledLink link) {
-            LinkCollector.crawledLinkModifier(link, link.getSourceJob());
         }
 
         @Override
@@ -173,11 +167,6 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
             ret.setCollectingInfo(collectingInfo);
             ret.setSourceJob(job);
             return ret;
-        }
-
-        @Override
-        protected void generalCrawledLinkModifier(CrawledLink link) {
-            LinkCollector.crawledLinkModifier(link, job);
         }
 
         @Override
@@ -514,6 +503,17 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
             @Override
             protected Void run() throws RuntimeException {
                 try {
+                    LinkCollectingJob job = link.getSourceJob();
+                    if (job != null) {
+                        try {
+                            if (job.getCrawledLinkModifier() != null) job.getCrawledLinkModifier().modifyCrawledLink(link);
+                        } catch (final Throwable e) {
+                            logger.log(e);
+                        }
+                        if (link.getDownloadLink() != null && StringUtils.isNotEmpty(job.getCustomSourceUrl())) {
+                            link.getDownloadLink().setBrowserUrl(job.getCustomSourceUrl());
+                        }
+                    }
                     if (link.getDownloadLink() != null) {
                         /* set CrawledLink as changeListener to its DownloadLink */
                         link.getDownloadLink().setNodeChangeListener(link);
@@ -567,7 +567,6 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                     }
                     LazyHostPlugin lazyPlg = null;
                     PluginForHost plg = link.gethPlugin();
-
                     if (plg != null && CFG_LINKGRABBER.AUTO_PACKAGE_MATCHING_CORRECTION_ENABLED.isEnabled()) {
                         identifier = plg.filterPackageID(identifier);
                         // run through all active hosts, and filter the
@@ -677,8 +676,10 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                     if (e instanceof RuntimeException) throw (RuntimeException) e;
                     throw new RuntimeException(e);
                 } finally {
+                    /* clear references */
                     link.setCollectingInfo(null);
                     link.setSourceJob(null);
+                    link.setMatchingFilter(null);
                 }
             }
         });
@@ -779,41 +780,6 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
         }
     }
 
-    private static void crawledLinkModifier(CrawledLink link, LinkCollectingJob job) {
-        if (job != null && link != null) {
-            if (link.getDownloadLink() != null) {
-                if (!StringUtils.isEmpty(job.getCustomSourceUrl())) link.getDownloadLink().setBrowserUrl(job.getCustomSourceUrl());
-                if (!StringUtils.isEmpty(job.getCustomComment())) link.getDownloadLink().setComment(job.getCustomComment());
-                if (!StringUtils.isEmpty(job.getDownloadPassword())) link.getDownloadLink().setDownloadPassword(job.getDownloadPassword());
-            }
-            if (job.getOutputFolder() != null && (link.getDesiredPackageInfo() == null || link.getDesiredPackageInfo().getDestinationFolder() == null)) {
-                if (link.getDesiredPackageInfo() == null) link.setDesiredPackageInfo(new PackageInfo());
-                link.getDesiredPackageInfo().setDestinationFolder(job.getOutputFolder().getAbsolutePath());
-            }
-            if (!StringUtils.isEmpty(job.getPackageName()) && (link.getDesiredPackageInfo() == null || StringUtils.isEmpty(link.getDesiredPackageInfo().getName()))) {
-                if (link.getDesiredPackageInfo() == null) link.setDesiredPackageInfo(new PackageInfo());
-                link.getDesiredPackageInfo().setName(job.getPackageName());
-            }
-            if (job.getExtractPasswords() != null && job.getExtractPasswords().size() > 0) {
-                if (link.getDesiredPackageInfo() == null) link.setDesiredPackageInfo(new PackageInfo());
-                link.getArchiveInfo().getExtractionPasswords().addAll(job.getExtractPasswords());
-            }
-            if (job.getAutoExtract() != null) {
-                if (link.getArchiveInfo().getAutoExtract() == BooleanStatus.UNSET) {
-                    link.getArchiveInfo().setAutoExtract(job.getAutoExtract());
-                }
-            }
-            if (job.isAutoStart()) {
-                link.setAutoConfirmEnabled(true);
-                link.setAutoStartEnabled(true);
-            }
-
-            if (job.getPriority() != null) {
-                link.setPriority(job.getPriority());
-            }
-        }
-    }
-
     public LinkCrawler addCrawlerJob(final LinkCollectingJob job) {
         try {
             if (job == null) throw new IllegalArgumentException("job is null");
@@ -847,6 +813,8 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
         filtered.setCollectingInfo(null);
         if (restoreButtonEnabled == false) {
             /** RestoreButton is disabled, no need to save the filtered links */
+            /* clear references */
+            filtered.setSourceJob(null);
             return;
         }
         QUEUE.add(new QueueAction<Void, RuntimeException>() {
@@ -854,6 +822,9 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
             @Override
             protected Void run() throws RuntimeException {
                 if (checkDupe && !dupeCheckMap.add(filtered.getLinkID())) {
+                    /* clear references */
+                    filtered.setSourceJob(null);
+                    filtered.setMatchingFilter(null);
                     eventsender.fireEvent(new LinkCollectorEvent(LinkCollector.this, LinkCollectorEvent.TYPE.DUPE_LINK, filtered, QueuePriority.NORM));
                     return null;
                 }
@@ -1021,6 +992,10 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                     /* update dupeCheck map */
                     String id = link.getLinkID();
                     if (!dupeCheckMap.add(id)) {
+                        /* clear references */
+                        link.setCollectingInfo(null);
+                        link.setSourceJob(null);
+                        link.setMatchingFilter(null);
                         eventsender.fireEvent(new LinkCollectorEvent(LinkCollector.this, LinkCollectorEvent.TYPE.DUPE_LINK, link, QueuePriority.NORM));
                         return null;
                     }
@@ -1041,6 +1016,10 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                     /* update dupeCheck map */
                     String id = link.getLinkID();
                     if (!dupeCheckMap.add(id)) {
+                        /* clear references */
+                        link.setCollectingInfo(null);
+                        link.setSourceJob(null);
+                        link.setMatchingFilter(null);
                         eventsender.fireEvent(new LinkCollectorEvent(LinkCollector.this, LinkCollectorEvent.TYPE.DUPE_LINK, link, QueuePriority.NORM));
                         return null;
                     }

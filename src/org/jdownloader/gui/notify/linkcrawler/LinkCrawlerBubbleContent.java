@@ -104,13 +104,11 @@ public class LinkCrawlerBubbleContent extends AbstractBubbleContentPanel {
                     dupe.add(cl.getParentNode());
                     if (cl.getSourceJob() != jlc.getJob()) {
                         jobless++;
-
                     }
 
                     DownloadLink dl = cl.getDownloadLink();
                     if (dl != null) {
                         AvailableStatus status = dl.getAvailableStatus();
-
                         switch (status) {
                         case FALSE:
                             offlineCnt++;

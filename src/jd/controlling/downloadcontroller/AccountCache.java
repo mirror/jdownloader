@@ -223,7 +223,7 @@ public class AccountCache implements Iterable<CachedAccount> {
                         if (iNext.getAccount().getAccountController() == null) continue;
                         if (!iNext.getAccount().isEnabled()) continue;
                         if (!iNext.getAccount().isValid()) continue;
-                        if (iNext.getAccount().isTempDisabled()) continue;
+                        // if (iNext.getAccount().isTempDisabled()) continue;
                     }
                     next.set(iNext);
                     break;

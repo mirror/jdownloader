@@ -41,6 +41,7 @@ public class DownloadLinkCandidateSelector {
     public static enum AccountPermission {
         OK,
         FORBIDDEN,
+        TEMP_DISABLED,
         DISABLED
     }
 
@@ -102,16 +103,17 @@ public class DownloadLinkCandidateSelector {
 
     public AccountPermission getCachedAccountPermission(CachedAccount cachedAccount) {
         if (session.isUseAccountsEnabled() == false && (cachedAccount.getType() == ACCOUNTTYPE.MULTI || cachedAccount.getType() == ACCOUNTTYPE.ORIGINAL)) return AccountPermission.DISABLED;
+        Account acc = cachedAccount.getAccount();
+        if (acc != null && acc.isTempDisabled()) return AccountPermission.TEMP_DISABLED;
         for (SingleDownloadController con : session.getControllers()) {
             Account accountInUse = con.getAccount();
             if (accountInUse == null) {
                 /* no account in use, check next one */
                 continue;
-            }
-            if (accountInUse == cachedAccount.getAccount()) {
+            } else if (accountInUse == acc) {
                 /* same account */
                 if (!accountInUse.isConcurrentUsePossible()) return AccountPermission.FORBIDDEN;
-                return AccountPermission.OK;
+                break;
             }
         }
         return AccountPermission.OK;
@@ -216,6 +218,7 @@ public class DownloadLinkCandidateSelector {
                 case PROXY_UNAVAILABLE:
                 case FILE_UNAVAILABLE:
                 case CONNECTION_ISSUES:
+                case CONDITIONAL_SKIPPED:
                     results.add(new CandidateResultHolder(next2.getKey(), candidateResult));
                     break;
                 default:

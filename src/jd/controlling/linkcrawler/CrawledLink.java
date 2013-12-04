@@ -116,12 +116,11 @@ public class CrawledLink implements AbstractPackageChildrenNode<CrawledPackage>,
     }
 
     /**
-     * Linkid should be unique for a certain link. in most cases, this is the url itself, but somtimes (youtube e.g.) the id contains info
-     * about how to prozess the file afterwards.
+     * Linkid should be unique for a certain link. in most cases, this is the url itself, but somtimes (youtube e.g.) the id contains info about how to prozess
+     * the file afterwards.
      * 
      * example:<br>
-     * 2 youtube links may have the same url, but the one will be converted into mp3, and the other stays flv. url is the same, but linkID
-     * different.
+     * 2 youtube links may have the same url, but the one will be converted into mp3, and the other stays flv. url is the same, but linkID different.
      * 
      * @return
      */
@@ -148,7 +147,6 @@ public class CrawledLink implements AbstractPackageChildrenNode<CrawledPackage>,
         if (sourceJob != null) {
             setOrigin(sourceJob.getOrigin());
         }
-
     }
 
     public long getSize() {
@@ -160,22 +158,11 @@ public class CrawledLink implements AbstractPackageChildrenNode<CrawledPackage>,
      * @return the hPlugin
      */
     public PluginForHost gethPlugin() {
-        if (hPlugin != null) return hPlugin;
         if (dlLink != null) return dlLink.getDefaultPlugin();
         return null;
     }
 
-    /**
-     * @param hPlugin
-     *            the hPlugin to set
-     */
-    public void sethPlugin(PluginForHost hPlugin) {
-        this.hPlugin = hPlugin;
-    }
-
-    private PluginForHost hPlugin = null;
-
-    private DownloadLink  dlLink  = null;
+    private DownloadLink dlLink = null;
 
     /**
      * @return the dlLink

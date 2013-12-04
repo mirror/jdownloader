@@ -53,7 +53,6 @@ public abstract class HistoryManager<T extends HistoryEntry> {
     }
 
     public void add(String packageName) {
-
         if (!StringUtils.isEmpty(packageName)) {
             changed = true;
             boolean found = false;

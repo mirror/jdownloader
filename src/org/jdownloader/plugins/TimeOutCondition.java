@@ -6,6 +6,4 @@ public interface TimeOutCondition {
 
     public long getTimeOutLeft();
 
-    public long getTimeOut();
-
 }

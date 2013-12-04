@@ -34,7 +34,7 @@ public class UniqueAlltimeID {
 
     @Override
     public String toString() {
-        return id + "";
+        return Long.toString(id);
     }
 
     /**
@@ -47,6 +47,6 @@ public class UniqueAlltimeID {
     }
 
     public static String create() {
-        return ID.incrementAndGet() + "";
+        return Long.toString(ID.incrementAndGet());
     }
 }

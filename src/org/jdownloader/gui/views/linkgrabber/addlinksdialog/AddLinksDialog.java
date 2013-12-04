@@ -32,10 +32,14 @@ import jd.controlling.ClipboardMonitoring;
 import jd.controlling.ClipboardMonitoring.ClipboardContent;
 import jd.controlling.linkcollector.LinkCollectingJob;
 import jd.controlling.linkcollector.LinkOrigin;
+import jd.controlling.linkcrawler.CrawledLink;
+import jd.controlling.linkcrawler.CrawledLinkModifier;
+import jd.controlling.linkcrawler.PackageInfo;
 import jd.gui.swing.jdgui.JDGui;
 import jd.gui.swing.jdgui.views.settings.panels.packagizer.VariableAction;
 import jd.gui.swing.laf.LookAndFeelController;
 import jd.parser.html.HTMLParser;
+import jd.plugins.DownloadLink;
 
 import org.appwork.scheduler.DelayedRunnable;
 import org.appwork.storage.JSonStorage;
@@ -187,36 +191,68 @@ public class AddLinksDialog extends AbstractDialog<LinkCollectingJob> {
 
     @Override
     protected LinkCollectingJob createReturnValue() {
-        LinkCollectingJob ret = new LinkCollectingJob(LinkOrigin.ADD_LINKS_DIALOG);
+        LinkCollectingJob ret = new LinkCollectingJob(LinkOrigin.ADD_LINKS_DIALOG, input.getText());
 
-        ret.setText(input.getText());
-        // if (destination.getSelectedIndex() > 0) {
-        //
-        ret.setOutputFolder(destination.getFile());
-        // }
-        ret.setDeepAnalyse(isDeepAnalyse());
-        ret.setPackageName(packagename.getText().trim());
-        ret.setAutoExtract(this.extractToggle.isSelected() ? BooleanStatus.TRUE : BooleanStatus.FALSE);
-        ret.setCustomComment(getComment().trim());
+        final String finalPackageName = packagename.getText().trim();
+        if (StringUtils.isNotEmpty(finalPackageName)) PackageHistoryManager.getInstance().add(finalPackageName);
+        final String finalComment = getComment().trim();
+        final String finalDownloadPassword = downloadPassword.getText();
+        final String finalDestination = destination.getFile() != null ? destination.getFile().getAbsolutePath() : null;
+        if (StringUtils.isNotEmpty(finalDestination)) {
+            DownloadPathHistoryManager.getInstance().add(finalDestination);
+        }
         String passwordTxt = password.getText();
+        HashSet<String> passwords = null;
         if (!StringUtils.isEmpty(passwordTxt)) {
             /* avoid empty hashsets */
-            HashSet<String> passwords = JSonStorage.restoreFromString(passwordTxt, new TypeRef<HashSet<String>>() {
+            passwords = JSonStorage.restoreFromString(passwordTxt, new TypeRef<HashSet<String>>() {
             }, new HashSet<String>());
             if (passwords == null || passwords.size() == 0) {
                 passwords = new HashSet<String>();
                 passwords.add(password.getText().trim());
             }
-            ret.setExtractPasswords(passwords);
         }
-        ret.setPriority((Priority) priority.getSelectedItem());
-        ret.setDownloadPassword(downloadPassword.getText());
-        PackageHistoryManager.getInstance().add(ret.getPackageName());
+        final HashSet<String> finalPasswords = passwords;
 
-        if (ret.getOutputFolder() != null) {
-            DownloadPathHistoryManager.getInstance().add(ret.getOutputFolder().getAbsolutePath());
+        final Priority finalPriority = (Priority) priority.getSelectedItem();
+        ret.setDeepAnalyse(isDeepAnalyse());
+        final BooleanStatus finalExtractStatus = this.extractToggle.isSelected() ? BooleanStatus.TRUE : BooleanStatus.FALSE;
+        ret.setCrawledLinkModifier(new CrawledLinkModifier() {
 
-        }
+            private PackageInfo getPackageInfo(CrawledLink link) {
+                PackageInfo packageInfo = link.getDesiredPackageInfo();
+                if (packageInfo != null) return packageInfo;
+                packageInfo = new PackageInfo();
+                link.setDesiredPackageInfo(packageInfo);
+                return packageInfo;
+            }
+
+            @Override
+            public void modifyCrawledLink(CrawledLink link) {
+                if (StringUtils.isNotEmpty(finalPackageName)) {
+                    getPackageInfo(link).setName(finalPackageName);
+                    getPackageInfo(link).setUniqueId(null);
+                }
+                if (!BooleanStatus.UNSET.equals(finalExtractStatus)) {
+                    link.getArchiveInfo().setAutoExtract(finalExtractStatus);
+                }
+                if (finalPriority != null) {
+                    link.setPriority(finalPriority);
+                }
+                DownloadLink dlLink = link.getDownloadLink();
+                if (dlLink != null) {
+                    if (StringUtils.isNotEmpty(finalComment)) dlLink.setComment(finalComment);
+                    if (StringUtils.isNotEmpty(finalDownloadPassword)) dlLink.setDownloadPassword(finalDownloadPassword);
+                }
+                if (StringUtils.isNotEmpty(finalDestination)) {
+                    getPackageInfo(link).setDestinationFolder(finalDestination);
+                    getPackageInfo(link).setUniqueId(null);
+                }
+                if (finalPasswords != null && finalPasswords.size() > 0) {
+                    link.getArchiveInfo().getExtractionPasswords().addAll(finalPasswords);
+                }
+            }
+        });
 
         return ret;
 

@@ -1,6 +1,5 @@
 package org.jdownloader.api.linkcollector;
 
-import java.io.File;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -11,13 +10,16 @@ import jd.controlling.linkcollector.LinkCollector;
 import jd.controlling.linkcollector.LinkOrigin;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledLink.LinkState;
+import jd.controlling.linkcrawler.CrawledLinkModifier;
 import jd.controlling.linkcrawler.CrawledPackage;
 import jd.controlling.linkcrawler.CrawledPackageView;
+import jd.controlling.linkcrawler.PackageInfo;
 import jd.controlling.packagecontroller.AbstractPackageChildrenNodeFilter;
+import jd.plugins.DownloadLink;
 
 import org.appwork.remoteapi.APIQuery;
 import org.appwork.remoteapi.QueryResponseMap;
-import org.jdownloader.controlling.Priority;
+import org.appwork.utils.StringUtils;
 import org.jdownloader.gui.packagehistorycontroller.DownloadPathHistoryManager;
 import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.settings.GeneralSettings;
@@ -231,28 +233,47 @@ public class LinkCollectorAPIImpl implements LinkCollectorAPI {
         return addLinks(links, packageName, extractPassword, downloadPassword, null, true);
     }
 
-    private Boolean addLinks(String links, String packageName, String extractPassword, String downloadPassword, String destinationFolder, boolean autostart) {
+    private Boolean addLinks(String links, final String finalPackageName, String extractPassword, final String downloadPassword, final String destinationFolder, final boolean autostart) {
         LinkCollector lc = LinkCollector.getInstance();
-
         LinkCollectingJob lcj = new LinkCollectingJob(LinkOrigin.MYJD, links);
-        lcj.setAutoStart(autostart);
-        if (autostart) lcj.setPriority(Priority.HIGHEST);
+        HashSet<String> extPws = null;
+        if (StringUtils.isNotEmpty(extractPassword)) {
+            extPws = new HashSet<String>();
+            extPws.add(extractPassword);
+        }
+        final HashSet<String> finalExtPws = extPws;
+        lcj.setCrawledLinkModifier(new CrawledLinkModifier() {
+            private PackageInfo getPackageInfo(CrawledLink link) {
+                PackageInfo packageInfo = link.getDesiredPackageInfo();
+                if (packageInfo != null) return packageInfo;
+                packageInfo = new PackageInfo();
+                link.setDesiredPackageInfo(packageInfo);
+                return packageInfo;
+            }
 
-        if (packageName != null) {
-            lcj.setPackageName(packageName);
-        }
-        if (downloadPassword != null) {
-            lcj.setDownloadPassword(downloadPassword);
-        }
-        if (extractPassword != null) {
-            Set<String> passwords = new HashSet<String>();
-            passwords.add(extractPassword);
-            lcj.setExtractPasswords(passwords);
-        }
-        if (destinationFolder != null) {
-            lcj.setOutputFolder(new File(destinationFolder));
-        }
-
+            @Override
+            public void modifyCrawledLink(CrawledLink link) {
+                if (finalExtPws != null && finalExtPws.size() > 0) {
+                    link.getArchiveInfo().getExtractionPasswords().addAll(finalExtPws);
+                }
+                if (StringUtils.isNotEmpty(finalPackageName)) {
+                    getPackageInfo(link).setName(finalPackageName);
+                    getPackageInfo(link).setUniqueId(null);
+                }
+                if (StringUtils.isNotEmpty(destinationFolder)) {
+                    getPackageInfo(link).setDestinationFolder(destinationFolder);
+                    getPackageInfo(link).setUniqueId(null);
+                }
+                DownloadLink dlLink = link.getDownloadLink();
+                if (dlLink != null) {
+                    if (StringUtils.isNotEmpty(downloadPassword)) dlLink.setDownloadPassword(downloadPassword);
+                }
+                if (autostart) {
+                    link.setAutoConfirmEnabled(true);
+                    link.setAutoStartEnabled(true);
+                }
+            }
+        });
         lc.addCrawlerJob(lcj);
         return true;
     }

@@ -39,11 +39,6 @@ public class WaitingSkipReason implements ConditionalSkipReason, TimeOutConditio
         return cause;
     }
 
-    public long getTimeOut() {
-        return timeOut;
-    }
-
-    private final long      timeOut;
     private final long      timeOutTimeStamp;
     private final String    message;
     private final ImageIcon icon;
@@ -55,7 +50,6 @@ public class WaitingSkipReason implements ConditionalSkipReason, TimeOutConditio
 
     public WaitingSkipReason(CAUSE cause, long timeOut, String message) {
         this.cause = cause;
-        this.timeOut = timeOut;
         this.timeOutTimeStamp = System.currentTimeMillis() + timeOut;
         this.message = message;
         switch (cause) {

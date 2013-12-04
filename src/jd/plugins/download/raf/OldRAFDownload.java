@@ -18,12 +18,9 @@ package jd.plugins.download.raf;
 
 import java.awt.Color;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
-import java.security.DigestInputStream;
-import java.security.MessageDigest;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
@@ -32,8 +29,6 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Logger;
-import java.util.zip.CRC32;
-import java.util.zip.CheckedInputStream;
 
 import jd.controlling.downloadcontroller.DownloadController;
 import jd.controlling.downloadcontroller.ExceptionRunnable;
@@ -48,15 +43,12 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
-import jd.plugins.PluginProgress;
 import jd.plugins.download.DownloadInterface;
 import jd.plugins.download.DownloadPluginProgress;
-import jd.plugins.download.HashCheckPluginProgress;
 
 import org.appwork.exceptions.WTFException;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.Exceptions;
-import org.appwork.utils.formatter.HexFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.logging2.LogSource;
 import org.jdownloader.downloadcore.v15.Downloadable;
@@ -88,7 +80,6 @@ public class OldRAFDownload extends DownloadInterface {
 
     protected int                               chunkNum                 = 1;
     private boolean                             resume                   = false;
-    private boolean                             resumable                = false;
 
     protected boolean                           dlAlreadyFinished        = false;
     protected Browser                           browser;
@@ -116,7 +107,7 @@ public class OldRAFDownload extends DownloadInterface {
     }
 
     public boolean isResumable() {
-        return this.resumable;
+        return downloadable.isResumable();
     }
 
     @Override
@@ -129,9 +120,6 @@ public class OldRAFDownload extends DownloadInterface {
      */
     public boolean isRangeRequestSupported() {
         return resume;
-    }
-
-    protected OldRAFDownload() {
     }
 
     public OldRAFDownload(Downloadable downloadLink, Request request) throws IOException, PluginException {
@@ -156,7 +144,6 @@ public class OldRAFDownload extends DownloadInterface {
      */
     public void setResume(boolean value) {
         resume = value;
-        resumable = value;
         if (value && !checkResumabled()) {
             logger.warning("Resumepoint not valid");
         }
@@ -718,68 +705,11 @@ public class OldRAFDownload extends DownloadInterface {
                 /*
                  * we only want one hashcheck running at the same time. many finished downloads can cause heavy diskusage here
                  */
-
                 HashInfo hashInfo = downloadable.getHashInfo();
-                String hash = hashInfo == null ? null : hashInfo.getHash();
-                HashResult.TYPE type = hashInfo == null ? null : hashInfo.getType();
-
-                if (type != null) {
-                    PluginProgress hashProgress = new HashCheckPluginProgress(outputPartFile, Color.YELLOW.darker(), type);
-                    hashProgress.setProgressSource(this);
-                    try {
-                        downloadable.setPluginProgress(hashProgress);
-                        final byte[] b = new byte[32767];
-                        String hashFile = null;
-                        FileInputStream fis = null;
-                        int n = 0;
-                        int cur = 0;
-                        switch (type) {
-                        case MD5:
-                        case SHA1:
-                            try {
-                                DigestInputStream is = new DigestInputStream(fis = new FileInputStream(outputPartFile), MessageDigest.getInstance(type.name()));
-                                while ((n = is.read(b)) >= 0) {
-                                    cur += n;
-                                    hashProgress.setCurrent(cur);
-                                }
-                                hashFile = HexFormatter.byteArrayToHex(is.getMessageDigest().digest());
-                            } catch (final Throwable e) {
-                                LogSource.exception(logger, e);
-                            } finally {
-                                try {
-                                    fis.close();
-                                } catch (final Throwable e) {
-                                }
-                            }
-                            break;
-                        case CRC32:
-                            try {
-                                fis = new FileInputStream(outputPartFile);
-                                CheckedInputStream cis = new CheckedInputStream(fis, new CRC32());
-                                while ((n = cis.read(b)) >= 0) {
-                                    cur += n;
-                                    hashProgress.setCurrent(cur);
-                                }
-                                hashFile = Long.toHexString(cis.getChecksum().getValue());
-                            } catch (final Throwable e) {
-                                LogSource.exception(logger, e);
-                            } finally {
-                                try {
-                                    fis.close();
-                                } catch (final Throwable e) {
-                                }
-                            }
-                            break;
-                        }
-                        result = new HashResult(hash, hashFile, type);
-                        downloadable.setHashResult(result);
-                    } finally {
-                        downloadable.setPluginProgress(null);
-                    }
-                }
+                result = downloadable.getHashResult(hashInfo);
+                downloadable.setHashResult(result);
             }
         }
-
         boolean renameOkay = downloadable.rename(outputPartFile, outputCompleteFile);
 
         if (renameOkay) {
@@ -914,13 +844,13 @@ public class OldRAFDownload extends DownloadInterface {
         try {
             String fileOutput = downloadable.getFileOutput();
             logger.info("createOutputChannel for " + fileOutput);
-            String finalFileOutput = downloadable.getFileOutput(false, true);
+            String finalFileOutput = downloadable.getFinalFileOutput();
             outputCompleteFile = new File(fileOutput);
             outputFinalCompleteFile = outputCompleteFile;
             if (!fileOutput.equals(finalFileOutput)) {
                 outputFinalCompleteFile = new File(finalFileOutput);
             }
-            outputPartFile = new File(fileOutput + ".part");
+            outputPartFile = new File(downloadable.getFileOutputPart());
             outputPartFileRaf = new RandomAccessFile(outputPartFile, "rw");
         } catch (Exception e) {
             LogSource.exception(logger, e);

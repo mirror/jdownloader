@@ -15,12 +15,15 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.util.HashSet;
 import java.util.List;
 import java.util.StringTokenizer;
 
 import jd.controlling.linkcollector.LinkCollectingJob;
 import jd.controlling.linkcollector.LinkCollector;
 import jd.controlling.linkcollector.LinkOrigin;
+import jd.controlling.linkcrawler.CrawledLink;
+import jd.controlling.linkcrawler.CrawledLinkModifier;
 
 import org.appwork.utils.IO;
 import org.appwork.utils.Regex;
@@ -233,7 +236,16 @@ public class ClipboardMonitoring {
                             if (firstRoundDone) {
                                 waitTimeout = minWaitTimeout;
                                 LinkCollectingJob job = new LinkCollectingJob(LinkOrigin.CLIPBOARD, handleThisRound);
-                                job.setExtractPasswords(PasswordUtils.getPasswords(handleThisRound));
+                                final HashSet<String> pws = PasswordUtils.getPasswords(handleThisRound);
+                                if (pws != null && pws.size() > 0) {
+                                    job.setCrawledLinkModifier(new CrawledLinkModifier() {
+
+                                        @Override
+                                        public void modifyCrawledLink(CrawledLink link) {
+                                            link.getArchiveInfo().getExtractionPasswords().addAll(pws);
+                                        }
+                                    });
+                                }
                                 job.setCustomSourceUrl(lastBrowserUrl);
                                 LinkCollector.getInstance().addCrawlerJob(job);
                             } else {
@@ -453,7 +465,16 @@ public class ClipboardMonitoring {
             if (!StringUtils.isEmpty(content)) {
                 LinkCollectingJob job = new LinkCollectingJob(LinkOrigin.CLIPBOARD, content);
                 job.setCustomSourceUrl(browserUrl);
-                job.setExtractPasswords(PasswordUtils.getPasswords(content));
+                final HashSet<String> pws = PasswordUtils.getPasswords(content);
+                if (pws != null && pws.size() > 0) {
+                    job.setCrawledLinkModifier(new CrawledLinkModifier() {
+
+                        @Override
+                        public void modifyCrawledLink(CrawledLink link) {
+                            link.getArchiveInfo().getExtractionPasswords().addAll(pws);
+                        }
+                    });
+                }
                 LinkCollector.getInstance().addCrawlerJob(job);
             }
         } catch (final Throwable e) {

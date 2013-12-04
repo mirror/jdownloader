@@ -17,6 +17,7 @@ import jd.controlling.linkcollector.LinkOrigin;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledLinkModifier;
 import jd.controlling.linkcrawler.LinkCrawler;
+import jd.controlling.linkcrawler.PackageInfo;
 import jd.controlling.linkcrawler.UnknownCrawledLinkHandler;
 import jd.http.Browser;
 import jd.plugins.DownloadLink;
@@ -140,20 +141,49 @@ public class ExternInterfaceImpl implements Cnl2APIBasics, Cnl2APIFlash {
     }
 
     private void clickAndLoad2Add(String urls, RemoteAPIRequest request) throws IOException {
-        String passwords = HttpRequest.getParameterbyKey(request, "passwords");
+        final String finalPasswords = HttpRequest.getParameterbyKey(request, "passwords");
         String source = HttpRequest.getParameterbyKey(request, "source");
-        String comment = HttpRequest.getParameterbyKey(request, "comment");
+        final String finalComment = HttpRequest.getParameterbyKey(request, "comment");
         LinkCollectingJob job = new LinkCollectingJob(LinkOrigin.CNL, urls);
-        String dir = HttpRequest.getParameterbyKey(request, "dir");
-        if (!StringUtils.isEmpty(dir)) {
-            job.setOutputFolder(new File(dir));
-        }
+        final String finalDestination = HttpRequest.getParameterbyKey(request, "dir");
         job.setCustomSourceUrl(source);
-        job.setCustomComment(comment);
-        job.setPackageName(HttpRequest.getParameterbyKey(request, "package"));
-        HashSet<String> pws = new HashSet<String>();
-        pws.add(passwords);
-        job.setExtractPasswords(pws);
+        final String finalPackageName = HttpRequest.getParameterbyKey(request, "package");
+        job.setCrawledLinkModifier(new CrawledLinkModifier() {
+            private HashSet<String> pws = null;
+            {
+                if (StringUtils.isNotEmpty(finalPasswords)) {
+                    pws = new HashSet<String>();
+                    pws.add(finalPasswords);
+                }
+            }
+
+            private PackageInfo getPackageInfo(CrawledLink link) {
+                PackageInfo packageInfo = link.getDesiredPackageInfo();
+                if (packageInfo != null) return packageInfo;
+                packageInfo = new PackageInfo();
+                link.setDesiredPackageInfo(packageInfo);
+                return packageInfo;
+            }
+
+            @Override
+            public void modifyCrawledLink(CrawledLink link) {
+                if (StringUtils.isNotEmpty(finalDestination)) {
+                    getPackageInfo(link).setDestinationFolder(finalDestination);
+                    getPackageInfo(link).setUniqueId(null);
+                }
+                if (StringUtils.isNotEmpty(finalPackageName)) {
+                    getPackageInfo(link).setName(finalPackageName);
+                    getPackageInfo(link).setUniqueId(null);
+                }
+                DownloadLink dlLink = link.getDownloadLink();
+                if (dlLink != null) {
+                    if (StringUtils.isNotEmpty(finalComment)) dlLink.setComment(finalComment);
+                }
+                if (pws != null && pws.size() > 0) {
+                    link.getArchiveInfo().getExtractionPasswords().addAll(pws);
+                }
+            }
+        });
         LinkCollector.getInstance().addCrawlerJob(job);
     }
 
@@ -233,9 +263,20 @@ public class ExternInterfaceImpl implements Cnl2APIBasics, Cnl2APIFlash {
         job.setCustomSourceUrl(source);
         // job.setCustomComment(comment);
         // job.setPackageName(HttpRequest.getParameterbyKey(request, "package"));
-        HashSet<String> pws = new HashSet<String>();
-        pws.add(passwords);
-        job.setExtractPasswords(pws);
+
+        if (StringUtils.isNotEmpty(passwords)) {
+            final HashSet<String> pws = new HashSet<String>();
+            pws.add(passwords);
+            job.setCrawledLinkModifier(new CrawledLinkModifier() {
+
+                @Override
+                public void modifyCrawledLink(CrawledLink link) {
+                    if (pws != null && pws.size() > 0) {
+                        link.getArchiveInfo().getExtractionPasswords().addAll(pws);
+                    }
+                }
+            });
+        }
         LinkCollector.getInstance().addCrawlerJob(job);
     }
 
@@ -346,25 +387,54 @@ public class ExternInterfaceImpl implements Cnl2APIBasics, Cnl2APIFlash {
                 final String post = HttpRequest.getParameterbyKey(request, "postData");
                 final String referer = HttpRequest.getParameterbyKey(request, "referer");
                 final String downloadPasswords[] = Regex.getLines(HttpRequest.getParameterbyKey(request, "dpass"));
-                String archivePasswords[] = Regex.getLines(HttpRequest.getParameterbyKey(request, "apass"));
+                final String archivePasswords[] = Regex.getLines(HttpRequest.getParameterbyKey(request, "apass"));
+                final boolean finalAutostart = "1".equals(HttpRequest.getParameterbyKey(request, "autostart"));
                 /*
                  * create LinkCollectingJob to forward general Information like directory, autostart...
                  */
                 LinkCollectingJob job = new LinkCollectingJob(LinkOrigin.FLASHGOT, null);
-                job.setPackageName(HttpRequest.getParameterbyKey(request, "package"));
-                if (archivePasswords != null) {
-                    HashSet<String> passwords = new HashSet<String>();
-                    for (String p : archivePasswords) {
-                        passwords.add(p);
-                    }
-                    job.setExtractPasswords(passwords);
-                }
+                final String finalPackageName = HttpRequest.getParameterbyKey(request, "package");
+                final String finalDestination = HttpRequest.getParameterbyKey(request, "dir");
 
-                String dir = HttpRequest.getParameterbyKey(request, "dir");
-                if (!StringUtils.isEmpty(dir)) {
-                    job.setOutputFolder(new File(dir));
-                }
-                job.setAutoStart("1".equalsIgnoreCase(HttpRequest.getParameterbyKey(request, "autostart")));
+                job.setCrawledLinkModifier(new CrawledLinkModifier() {
+                    private HashSet<String> pws = null;
+                    {
+                        if (archivePasswords != null) {
+                            pws = new HashSet<String>();
+                            for (String p : archivePasswords) {
+                                if (StringUtils.isNotEmpty(p)) pws.add(p);
+                            }
+                            if (pws.size() == 0) pws = null;
+                        }
+                    }
+
+                    private PackageInfo getPackageInfo(CrawledLink link) {
+                        PackageInfo packageInfo = link.getDesiredPackageInfo();
+                        if (packageInfo != null) return packageInfo;
+                        packageInfo = new PackageInfo();
+                        link.setDesiredPackageInfo(packageInfo);
+                        return packageInfo;
+                    }
+
+                    @Override
+                    public void modifyCrawledLink(CrawledLink link) {
+                        if (StringUtils.isNotEmpty(finalPackageName)) {
+                            getPackageInfo(link).setName(finalPackageName);
+                            getPackageInfo(link).setUniqueId(null);
+                        }
+                        if (StringUtils.isNotEmpty(finalDestination)) {
+                            getPackageInfo(link).setDestinationFolder(finalDestination);
+                            getPackageInfo(link).setUniqueId(null);
+                        }
+                        if (pws != null && pws.size() > 0) {
+                            link.getArchiveInfo().getExtractionPasswords().addAll(pws);
+                        }
+                        if (finalAutostart) {
+                            link.setAutoConfirmEnabled(true);
+                            link.setAutoStartEnabled(true);
+                        }
+                    }
+                });
 
                 LazyHostPlugin lazyp = HostPluginController.getInstance().get("DirectHTTP");
                 final PluginForHost defaultplg = lazyp.getPrototype(null);
@@ -422,7 +492,6 @@ public class ExternInterfaceImpl implements Cnl2APIBasics, Cnl2APIFlash {
                                 Log.exception(e);
                             }
                             link.setDownloadLink(direct);
-                            link.sethPlugin(defaultplg);
                         }
                     });
                     link.setSourceJob(job);

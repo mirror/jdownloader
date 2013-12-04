@@ -1373,32 +1373,22 @@ public class LinkCrawler {
             /* forward dupeAllow info from DownloadLink to CrawledLinkInfo */
             link.getDownloadLink().setProperty("ALLOW_DUPE", Property.NULL);
         }
-        try {
-            /* call the general LinkModifier first */
-            generalCrawledLinkModifier(link);
-        } catch (final Throwable e) {
-            LogController.CL().log(e);
-        }
         /*
          * build history of this crawledlink so we can call each existing LinkModifier in correct order
          */
         java.util.List<CrawledLink> history = new ArrayList<CrawledLink>();
         CrawledLink source = link.getSourceLink();
-        history.add(0, link);
+        CrawledLink origin = source;
+        history.add(link);
         /* build history */
         while (source != null) {
-            history.add(0, source);
+            history.add(source);
             source = source.getSourceLink();
+            if (source != null) origin = source;
         }
-        for (CrawledLink historyLink : history) {
+        for (int index = history.size() - 1; index >= 0; index--) {
             /* call each LinkModifier from the beginning to this link */
-            CrawledLinkModifier customModifier = historyLink.getCustomCrawledLinkModifier();
-            if (link == historyLink) {
-                /*
-                 * remove reference to ModifyHandler, because we never will call it again
-                 */
-                link.setCustomCrawledLinkModifier(null);
-            }
+            CrawledLinkModifier customModifier = history.get(index).getCustomCrawledLinkModifier();
             if (customModifier != null) {
                 try {
                     customModifier.modifyCrawledLink(link);
@@ -1407,8 +1397,10 @@ public class LinkCrawler {
                 }
             }
         }
-        /* check if we already handled this url */
-        CrawledLink origin = link.getOriginLink();
+        /* clean up some references */
+        link.setCustomCrawledLinkModifier(null);
+        link.setBrokenCrawlerHandler(null);
+        link.setUnknownHandler(null);
         /* specialHandling: Crypted A - > B - > Final C , and A equals C */
         boolean specialHandling = (origin != link) && (origin.getLinkID().equals(link.getLinkID()));
         if (isDoDuplicateFinderFinalCheck()) {
@@ -1421,11 +1413,6 @@ public class LinkCrawler {
             crawledLinksCounter.incrementAndGet();
             getHandler().handleFinalLink(link);
         }
-    }
-
-    /* Overwrite this if you want to modify final handled CrawledLinks */
-    protected void generalCrawledLinkModifier(CrawledLink link) {
-
     }
 
     protected boolean isCrawledLinkFiltered(CrawledLink link) {

@@ -95,8 +95,6 @@ public interface Downloadable {
 
     void setFinalFileOutput(String absolutePath);
 
-    public String getFileOutput(boolean ignoreUnsafe, boolean ignoreCustom);
-
     void removeConnectionHandler(ManagedThrottledConnectionHandler managedConnetionHandler);
 
     void waitForNextConnectionAllowed() throws InterruptedException;
@@ -106,5 +104,13 @@ public interface Downloadable {
     String getFileOutput();
 
     int getLinkStatus();
+
+    HashResult getHashResult(HashInfo hashInfo);
+
+    String getFileOutputPart();
+
+    String getFinalFileOutput();
+
+    boolean isResumable();
 
 }

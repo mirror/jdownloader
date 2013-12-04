@@ -57,7 +57,7 @@ public class Account extends Property {
     private transient long tmpDisabledTimeout = -1;
 
     public long getTmpDisabledTimeout() {
-        return tmpDisabledTimeout;
+        return Math.max(-1, tmpDisabledTimeout);
     }
 
     private transient UniqueAlltimeID   id           = new UniqueAlltimeID();
@@ -198,8 +198,8 @@ public class Account extends Property {
 
     public boolean isTempDisabled() {
         synchronized (this) {
-            if (tmpDisabledTimeout < 0) { return false; }
-            if (System.currentTimeMillis() >= tmpDisabledTimeout) {
+            if (getTmpDisabledTimeout() < 0) { return false; }
+            if (System.currentTimeMillis() >= getTmpDisabledTimeout()) {
                 tmpDisabledTimeout = -1;
                 return false;
             }
@@ -252,7 +252,7 @@ public class Account extends Property {
     public void setTempDisabled(final boolean tempDisabled) {
         boolean notify = false;
         synchronized (this) {
-            if ((this.tmpDisabledTimeout > 0 && tempDisabled == false) || tempDisabled == true) {
+            if ((this.getTmpDisabledTimeout() > 0 && tempDisabled == false) || tempDisabled == true) {
                 if (tempDisabled == false) {
                     this.tmpDisabledTimeout = -1;
                 } else {
