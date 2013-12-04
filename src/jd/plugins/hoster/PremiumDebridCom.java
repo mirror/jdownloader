@@ -300,6 +300,7 @@ public class PremiumDebridCom extends PluginForHost {
         br.getPage(server);
         if (br.containsHTML(">Please enter password to login")) {
             synchronized (LOCK) {
+                boolean failed = true;
                 String premiumpass = null;
                 for (int i = 0; i <= 3; i++) {
                     premiumpass = acc.getStringProperty("premiumdebridpremiumpassword", null);
@@ -311,13 +312,17 @@ public class PremiumDebridCom extends PluginForHost {
                         continue;
                     }
                     acc.setProperty("premiumdebridpremiumpassword", premiumpass);
+                    acc.setProperty("timesfailedpremiumdebridcom_premiumpassword", 0);
+                    failed = false;
                     break;
                 }
-                int timesFailed_premiumpass = acc.getIntegerProperty("timesfailedpremiumdebridcom_premiumpassword", 1);
-                if (br.containsHTML("<script>alert\\(\"Wrong password") || timesFailed_premiumpass >= 3) throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPremium password missing or invalid!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                timesFailed_premiumpass++;
-                acc.setProperty("timesfailedpremiumdebridcom_premiumpassword", timesFailed_premiumpass);
-                throw new PluginException(LinkStatus.ERROR_RETRY, "Premium pass retry");
+                if (failed) {
+                    int timesFailed_premiumpass = acc.getIntegerProperty("timesfailedpremiumdebridcom_premiumpassword", 1);
+                    if (br.containsHTML("<script>alert\\(\"Wrong password") || timesFailed_premiumpass >= 3) throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPremium password missing or invalid!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    timesFailed_premiumpass++;
+                    acc.setProperty("timesfailedpremiumdebridcom_premiumpassword", timesFailed_premiumpass);
+                    throw new PluginException(LinkStatus.ERROR_RETRY, "Premium pass retry");
+                }
             }
         }
         br.postPage(server + "/index.php?rand=0." + System.currentTimeMillis(), "urllist=" + url + "&captcha=none&");
