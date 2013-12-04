@@ -1021,6 +1021,7 @@ download_stopped_msg=所有下載已停止或已完成。
 downloadview_all=全部下載
 downloadview_failed=下載失敗
 downloadview_running=執行中的下載
+downloadview_skipped=已略過下載
 downloadview_successful=完成下載
 downloadview_todo=等待下載中
 enabled_os_ballons=已停用氣球通知！
