@@ -850,6 +850,9 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
 
     public void setFinalLinkState(FinalLinkState finalLinkState) {
         if (this.finalLinkState.getAndSet(finalLinkState) == finalLinkState) { return; }
+        if (FinalLinkState.CheckFinished(finalLinkState)) {
+            setResumeable(false);
+        }
         if (finalLinkState == null || !FinalLinkState.CheckFinished(finalLinkState)) {
             setFinishedDate(-1);
         }
