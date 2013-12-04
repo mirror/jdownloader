@@ -82,12 +82,22 @@ public class XxxBunkerCom extends PluginForDecrypt {
             return null;
         }
         filename = Encoding.htmlDecode(filename.trim());
-        String externID = br.getRegex(">localembedcode=\\'([^<>\"]*?)\\'").getMatch(0);
-        if (externID != null) {
-            externID = Encoding.htmlDecode(externID);
-            externID = new Regex(externID, "gateway\\.php%7C(\\d+)%7Cdefault%7C\\&").getMatch(0);
+        String externID = null;
+        String embedcode = br.getRegex(">localembedcode=\\'([^<>\"]*?)\\'").getMatch(0);
+        if (embedcode != null) {
+            embedcode = Encoding.htmlDecode(externID);
+            externID = new Regex(embedcode, "gateway\\.php%7C(\\d+)%7Cdefault%7C\\&").getMatch(0);
             if (externID != null) {
                 decryptedLinks.add(createDownloadlink("http://www.xvideos.com/video" + externID));
+                return decryptedLinks;
+            }
+        }
+        String remoteembedcode = br.getRegex("remoteembedcode=\\'([^<>\"]*?)\\'").getMatch(0);
+        if (remoteembedcode != null) {
+            remoteembedcode = Encoding.htmlDecode(remoteembedcode);
+            externID = new Regex(remoteembedcode, "\"(http://(www\\.)?hardsextube\\.com/[^<>\"]*?)\"").getMatch(0);
+            if (externID != null) {
+                decryptedLinks.add(createDownloadlink(externID));
                 return decryptedLinks;
             }
         }

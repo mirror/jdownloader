@@ -801,6 +801,7 @@ public class DecrypterForRedirectServicesWithoutDirectRedirects extends PluginFo
         } else if (parameter.contains("cli.gs/") || parameter.contains("cl.gs/")) {
             finallink = br.getRegex("<title>Preview Page \\- ([^<>\"]*?)/</title>").getMatch(0);
             if (finallink == null) finallink = br.getRegex("URL redirects to: <a href=\"(http[^<>\"]*?)\"").getMatch(0);
+            if ("http://cli.gs/".equals(br.getRedirectLocation())) offline = true;
         }
         if ("http://adfoc.us/".equals(br.getRedirectLocation())) offline = true;
         if (offline) {

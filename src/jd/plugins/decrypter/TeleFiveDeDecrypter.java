@@ -45,7 +45,7 @@ import org.w3c.dom.NodeList;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "tele5.de" }, urls = { "http://(www\\.)?tele5\\.de/(videos/)?[\\w/\\-]+/(video/)?[\\w/\\-]+\\.html" }, flags = { 0 })
 public class TeleFiveDeDecrypter extends PluginForDecrypt {
-    // we cannot do core updates right now, and should keep this calss internal until we can do core updates
+    // we cannot do core updates right now, and should keep this class internal until we can do core updates
     public class SWFDecompressor {
         public SWFDecompressor() {
             super();

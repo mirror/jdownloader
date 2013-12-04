@@ -36,6 +36,8 @@ public class TumblrComDecrypter extends PluginForDecrypt {
         super(wrapper);
     }
 
+    private static final String GENERALOFFLINE = ">Not found\\.<";
+
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString().replace("www.", "");
@@ -43,6 +45,10 @@ public class TumblrComDecrypter extends PluginForDecrypt {
             if (parameter.matches(".+tumblr\\.com/(audio|video)_file/\\d+/tumblr_[A-Za-z0-9]+")) {
                 br.setFollowRedirects(false);
                 br.getPage(parameter);
+                if (br.containsHTML(GENERALOFFLINE) || br.containsHTML(">Die angeforderte URL konnte auf dem Server")) {
+                    logger.info("Link offline: " + parameter);
+                    return decryptedLinks;
+                }
                 String finallink = br.getRedirectLocation();
                 // if (parameter.matches(".+tumblr\\.com/video_file/\\d+/tumblr_[A-Za-z0-9]+")) {
                 // br.getPage(finallink);
@@ -184,7 +190,7 @@ public class TumblrComDecrypter extends PluginForDecrypt {
                 int counter = 1;
                 boolean decryptSingle = parameter.matches(".+tumblr\\.com/page/\\d+");
                 br.getPage(parameter);
-                if (br.containsHTML(">Not found\\.<")) {
+                if (br.containsHTML(GENERALOFFLINE)) {
                     logger.info("Link offline: " + parameter);
                     return decryptedLinks;
                 }
