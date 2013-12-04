@@ -42,7 +42,7 @@ import jd.utils.JDUtilities;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "yunfile.com" }, urls = { "http://(www|(page\\d)\\.)?(yunfile|filemarkets|yfdisk)\\.com/file/(down/)?[a-z0-9]+/[a-z0-9]+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "yunfile.com" }, urls = { "http://((www|(page\\d)\\.)?(yunfile|filemarkets|yfdisk)\\.com/file/(down/)?[a-z0-9]+/[a-z0-9]+|filemarkets\\.com/fs/[a-z0-9]+/)" }, flags = { 2 })
 public class YunFileCom extends PluginForHost {
 
     private static final String    MAINPAGE = "http://yunfile.com/";
@@ -62,7 +62,7 @@ public class YunFileCom extends PluginForHost {
     }
 
     public void correctDownloadLink(DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replaceAll("(yunfile|filemarkets|yfdisk)\\.com/file/(down/)?", "yunfile.com/file/").replaceFirst("\\.html$", "/"));
+        link.setUrlDownload(link.getDownloadURL().replaceAll("(yunfile|filemarkets|yfdisk)\\.com/(file/(down/)?|fs/)", "yunfile.com/file/").replaceFirst("\\.html$", "/"));
         if (!link.getDownloadURL().endsWith("/")) link.setUrlDownload(link.getDownloadURL() + "/");
     }
 
@@ -107,8 +107,7 @@ public class YunFileCom extends PluginForHost {
 
     // Works like MountFileCom and HowFileCom
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
-        correctDownloadLink(link);
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         prepBrowser(br);
         br.setFollowRedirects(true);
@@ -129,13 +128,25 @@ public class YunFileCom extends PluginForHost {
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
+    public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
+        if (br.containsHTML("您需要下载等待 <")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Wait before starting new downloads", 1 * 60 * 1001l);
         checkErrors();
-        String domain = new Regex(br.getURL(), "(http://.*?\\.?yunfile\\.com)").getMatch(0);
-        String userid = new Regex(downloadLink.getDownloadURL(), "yunfile\\.com/file/(.*?)/").getMatch(0);
+        final Regex siteInfo = br.getRegex("<span style=\"font\\-weight:bold;\">\\&nbsp;\\&nbsp;<a href=\"(http://[a-z0-9]+\\.yunfile.com)/ls/([A-Za-z0-9\\-_]+)/\"");
+        String userid = siteInfo.getMatch(1);
+        if (userid == null) userid = new Regex(downloadLink.getDownloadURL(), "yunfile\\.com/file/(.*?)/").getMatch(0);
         String fileid = new Regex(downloadLink.getDownloadURL(), "yunfile\\.com/file/.*?/([a-z0-9]+)").getMatch(0);
+        if (fileid == null) fileid = new Regex(downloadLink.getDownloadURL(), "yunfile\\.com/file/([A-Za-z0-9]+)/$").getMatch(0);
         if (userid == null || fileid == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        String freeContinueLink = br.getRegex("\"(/file/down/[^<>\"]*?)\"").getMatch(0);
+        String domain = siteInfo.getMatch(0);
+        if (domain == null) domain = new Regex(br.getURL(), "(http://.*?\\.?yunfile\\.com)").getMatch(0);
+        if (freeContinueLink != null) {
+            freeContinueLink = domain + freeContinueLink;
+        } else {
+            freeContinueLink = domain + "/file/down/" + userid + "/" + fileid + ".html";
+        }
+        if (!br.getURL().contains(domain)) br.getPage(domain + "/file/" + fileid + "/");
         // Waittime is still skippable
         // int wait = 30;
         // String shortWaittime = br.getRegex("id=wait_span style=\"font\\-size: 28px; color: green;\">(\\d+)</span>").getMatch(0);
@@ -143,12 +154,12 @@ public class YunFileCom extends PluginForHost {
         // sleep(wait * 1001l, downloadLink);
         // Check if captcha needed
         if (br.containsHTML("verifyimg/getPcv\\.html")) {
-            final String code = getCaptchaCode("http://yunfile.com/verifyimg/getPcv.html", downloadLink);
-            br.getPage("http://yunfile.com/file/down/" + userid + "/" + fileid + "/" + code + ".html");
-            if (br.containsHTML("Not HTML Code")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+            // final String code = getCaptchaCode("http://yunfile.com/verifyimg/getPcv.html", downloadLink);
+            // br.getPage(freeContinueLink);
+            // if (br.containsHTML("Not HTML Code")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+            throw new PluginException(LinkStatus.ERROR_FATAL, "Captcha handling broken");
         } else {
-            // br.getPage("http://yunfile.com/file/down/" + userid + "/" + fileid + ".html");
-            br.getPage(domain + "/file/down/" + userid + "/" + fileid + ".html");
+            br.getPage(freeContinueLink);
         }
 
         /** Check here if the plugin is broken */
@@ -164,6 +175,14 @@ public class YunFileCom extends PluginForHost {
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             checkErrors();
+            // if (!getDomainFromLink(br.getURL()).equals(domain) &&
+            // br.getURL().matches("http://[a-z0-9]+\\.yunfile\\.com/file/[A-Za-z0-9\\-_]+/[A-Za-z0-9]+/")) {
+            // if (downloadLink.getBooleanProperty("domainretried", false)) { throw new PluginException(LinkStatus.ERROR_FATAL,
+            // "Wrong domain error"); }
+            // downloadLink.setUrlDownload(br.getURL());
+            // downloadLink.setProperty("domainretried", true);
+            // throw new PluginException(LinkStatus.ERROR_RETRY, "Retry with correct url");
+            // }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
@@ -201,6 +220,10 @@ public class YunFileCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
+    }
+
+    private String getDomainFromLink(final String inputurl) {
+        return new Regex(inputurl, "(http://[a-z0-9]+\\.yunfile\\.com)").getMatch(0);
     }
 
     @Override
