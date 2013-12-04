@@ -16,6 +16,7 @@
 
 package jd.plugins.hoster;
 
+import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
@@ -30,6 +31,7 @@ import java.util.Map.Entry;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import javax.imageio.ImageIO;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 import javax.swing.JOptionPane;
@@ -58,6 +60,7 @@ import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
+import org.appwork.utils.Application;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.os.CrossSystem;
@@ -76,7 +79,7 @@ public class LetitBitNet extends PluginForHost {
     public final String          APIPAGE                           = "http://api.letitbit.net/";
     private final String         TEMPDISABLED                      = "(api\\.recaptcha\\.net|google\\.com/recaptcha/api/|>File not found<|id=\"videocaptcha_)";
     private String               agent                             = null;
-    private static final boolean PLUGIN_BROKEN                     = true;
+    private static final boolean PLUGIN_BROKEN                     = false;
 
     public LetitBitNet(PluginWrapper wrapper) {
         super(wrapper);
@@ -282,61 +285,6 @@ public class LetitBitNet extends PluginForHost {
         return new Regex(dl.getDownloadURL(), "([^<>\"/]*?)/[^<>\"/]+\\.html").getMatch(0);
     }
 
-    // private AvailableStatus oldAvailableCheck(final DownloadLink
-    // downloadLink) throws IOException, PluginException {
-    // br.setFollowRedirects(true);
-    // br.getPage(downloadLink.getDownloadURL());
-    // br.setFollowRedirects(false);
-    // // br.postPage(downloadLink.getDownloadURL(),
-    // // "en.x=10&en.y=8&vote_cr=en");
-    // String filename =
-    // br.getRegex("\"file-info\">File:: <span>(.*?)</span>").getMatch(0);
-    // if (filename == null) {
-    // filename = br.getRegex("name=\"realname\" value=\"(.*?)\"").getMatch(0);
-    // if (filename == null) {
-    // filename =
-    // br.getRegex("class=\"first\">File:: <span>(.*?)</span></li>").getMatch(0);
-    // if (filename == null) {
-    // filename = br.getRegex("title>(.*?) download for free").getMatch(0);
-    // }
-    // }
-    // }
-    // String filesize =
-    // br.getRegex("name=\"sssize\" value=\"(\\d+)\"").getMatch(0);
-    // if (filesize == null) {
-    // filesize =
-    // br.getRegex("<li>Size of file:: <span>(.*?)</span></li>").getMatch(0);
-    // if (filesize == null) {
-    // filesize = br.getRegex("\\[<span>(.*?)</span>\\]</h1>").getMatch(0);
-    // }
-    // }
-    // if (filesize == null) filesize =
-    // br.getRegex("\\[<span>(.*?)</span>\\]</h1>").getMatch(0);
-    // if (filename == null || filesize == null) {
-    // if
-    // (br.containsHTML("(<title>404</title>|>File not found<|Запрашиваемый файл не найден<br>|>Запрашиваемая вами страница не существует\\!<|Request file .*? Deleted)"))
-    // throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-    // if (br.containsHTML("<p style=\"color:#000\">File not found</p>")) throw
-    // new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-    // if (br.containsHTML("Request file.*?Deleted")) throw new
-    // PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-    // if (br.containsHTML("Forbidden word")) throw new
-    // PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-    // throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-    // }
-    // // Their names often differ from other file hosting services. I noticed
-    // // that when in the filenames from other hosting services there
-    // // are "-"'s, letitbit uses "_"'s so let's correct this here ;)
-    // downloadLink.setFinalFileName(filename.trim().replace("_", "-"));
-    // if (filesize != null)
-    // downloadLink.setDownloadSize(SizeFormatter.getSize(filesize.trim()));
-    // return AvailableStatus.TRUE;
-    // }
-
-    private String getJson(final String parameter) {
-        return br.getRegex("\"" + parameter + "\":\"([^<>\"]*?)\"").getMatch(0);
-    }
-
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         checkShowFreeDialog();
@@ -432,10 +380,9 @@ public class LetitBitNet extends PluginForHost {
         br.getPage(downloadLink.getDownloadURL());
         br.setFollowRedirects(false);
         handleNonApiErrors(downloadLink);
-        experimentalFormHandling();
+        submitFreeForm();// born_iframe.php with encrypted form
 
-        // Russians can get the downloadlink here, they don't have to enter
-        // captchas
+        // Russians can get the downloadlink here, they don't have to enter captchas
         final String finalLinksText = br.getRegex("eval\\(\\'var _direct_links = new Array\\((\".*?)\\);").getMatch(0);
         if (finalLinksText != null) {
             logger.info("Entering russian handling...");
@@ -449,8 +396,15 @@ public class LetitBitNet extends PluginForHost {
             if (urlPrefix == null) urlPrefix = "";
             final String ajaxmainurl = "http://" + urlPrefix + "letitbit.net";
 
-            final String dlFunction = br.getRegex("function getLink\\(\\)(.*?)</script>").getMatch(0);
-            if (dlFunction == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            String dlFunction = getdlFunction();
+            if (dlFunction == null) {
+                if (!submitFreeForm()) logger.info("letitbit.net: plain form processing --> download3.php");
+                if ((dlFunction = getdlFunction()) == null) {
+                    if (!submitFreeForm()) logger.info("letitbit.net: encrypted form processing --> download3.php");
+                    if ((dlFunction = getdlFunction()) == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+            }
+
             String ajaxPostpage = new Regex(dlFunction, "\\$\\.post\\(\"(/ajax/[^<>\"]*?)\"").getMatch(0);
             if (ajaxPostpage == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             ajaxPostpage = ajaxmainurl + ajaxPostpage;
@@ -534,51 +488,29 @@ public class LetitBitNet extends PluginForHost {
         return url.replaceAll("%0D%0A", "").trim().replace("\\", "");
     }
 
-    // private boolean submitFreeForm() throws Exception {
-    // // this finds the form to "click" on the next "free download" button
-    // Form down = null;
-    // for (Form singleform : br.getForms()) {
-    // // id=\"phone_submit_form\" is in the 2nd free form when you have a
-    // // russian IP
-    // if (singleform.getAction() != null) {
-    // if (!"".equals(singleform.getAction())) {
-    // if (singleform.containsHTML("class=\"Instead_parsing_Use_API_Luke\"")) decryptingForm(singleform);
-    // if (singleform.getInputField("md5crypt") != null) {
-    // if (!singleform.containsHTML("/sms/check") && !singleform.containsHTML("id=\"phone_submit_form\"")) {
-    // down = singleform;
-    // break;
-    // }
-    // }
-    // }
-    // }
-    // }
-    // if (down == null) return false;
-    // br.submitForm(down);
-    // return true;
-    // }
+    private String getdlFunction() {
+        return br.getRegex("function getLink\\(\\)(.*?)</script>").getMatch(0);
+    }
 
-    private Form lastForm = null;
-
-    private boolean experimentalFormHandling() throws Exception {
-        final Form[] allforms = br.getForms();
-        Form crypted = allforms[5];
-        this.decryptingForm(crypted);
-        final String currentHost = new Regex(br.getURL(), "http://(www\\.)?(u\\d+)\\.letitbit\\.net/").getMatch(1);
-        Form test = br.getForm(6);
-        if (test == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        test.setAction("http://" + currentHost + ".letitbit.net/born_iframe.php");
-        test.put("tpl_d4", "d4_plain");
-        test.put("tpl_d3", "d3_skymonk");
-        test.put("desc", "none");
-        test.put("ref", "");
-        test.put("__jspcheck", "c1366faef3010fefde66695954cef004114cc45d");
-        test.remove("pass");
-        br.submitForm(test);
-        lastForm = test;
-        if (br.containsHTML("/download3\\.php")) {
-            test.setAction("http://" + currentHost + ".letitbit.net/download3.php");
-            br.submitForm(test);
+    private boolean submitFreeForm() throws Exception {
+        // this finds the form to "click" on the next "free download" button
+        Form down = null;
+        for (Form singleform : br.getForms()) {
+            // id=\"phone_submit_form\" is in the 2nd free form when you have a russian IP
+            if (singleform.getAction() != null) {
+                if (!"".equals(singleform.getAction())) {
+                    if (singleform.containsHTML("class=\"Instead_parsing_Use_API_Luke\"")) decryptingForm(singleform);
+                    if (singleform.getInputField("md5crypt") != null || "/download3.php".equals(singleform.getAction())) {
+                        if (!singleform.containsHTML("/sms/check") && !singleform.containsHTML("id=\"phone_submit_form\"")) {
+                            down = singleform;
+                            break;
+                        }
+                    }
+                }
+            }
         }
+        if (down == null) return false;
+        br.submitForm(down);
         return true;
     }
 
@@ -590,65 +522,98 @@ public class LetitBitNet extends PluginForHost {
         HashMap<String, String> inputFieldMap = new HashMap<String, String>();
 
         String js = encryptedForm.getRegex("(eval.*?)</script>").getMatch(0);
-        String jsFn = new Regex(js, "eval\\((?!function)(.*?)\\)$").getMatch(0);
-        js = js.replace("eval(" + jsFn + ")", "");
-        String packedJs[] = js.split(";;");
+        String jsFn[] = new Regex(js, "eval\\((?!function)(.*?\\))").getColumn(0);
+        for (String s : jsFn) {
+            js = js.replace("eval(" + s + ")", "");
+        }
 
         try {
-            // execute js
-            for (String pJs : packedJs) {
+            /* preload important methods */
+            for (String pJs : js.split(";;")) {
                 engine.eval(pJs);
             }
-            String res = jsbeautifier(engine.eval(jsFn).toString());
-            if (res == null) return;// js processing broken!
-            engine.put("br", br);
+            /* create decrypt method */
+            StringBuilder explainJSPForm = new StringBuilder();
+            explainJSPForm.append("function explainJSPForm(_19, _1a, _1b, _1c, _1d, mus) {\n");
+            explainJSPForm.append("var _1f = function (id) {return String(encValues.get(id));};\n");
+            explainJSPForm.append("var _20 = function (ids) {\n");
+            explainJSPForm.append("var r = [];\n");
+            explainJSPForm.append("for (var i = 0; i < ids.length; ++i) {r.push(_1f(ids[i]));}\n");
+            explainJSPForm.append("return r.join(\"\");};\n");
+            explainJSPForm.append("_1c = _1c.split(\";\");\n");
+            explainJSPForm.append("for (var i = 0; i < _1c.length; ++i) {\n");
+            explainJSPForm.append("var _21 = _1c[i].split(\"=\");\n");
+            explainJSPForm.append("if (_21.length == 1) {_21[1] = \"\";}\n");
+            explainJSPForm.append("var k = _20(_21[0].split(\",\"));\n");
+            explainJSPForm.append("var v = _20(_21[1].split(\",\"));\n");
+            explainJSPForm.append("k = mus(k, _1d);\n");
+            explainJSPForm.append("v = mus(v, _1d);\n");
+            explainJSPForm.append("formMap.put(k,v);\n");
+            explainJSPForm.append("}};\n");
+
+            /* parsing decrypt call function */
+            String callMethod = jsbeautifier(engine.eval(jsFn[jsFn.length - 1]).toString());
+            if (callMethod == null) return;
+
             engine.put("encValues", encValues);
             engine.put("formMap", inputFieldMap);
+            engine.eval(explainJSPForm.toString());
+            engine.put("pass", getFormKey());
+            // engine.put("br", br);
             // $.cookie(key) --> call Java Method br.getCookie(key);
-            engine.eval("var $ = { cookie : function(a) { return String(unescape(br.getCookie(br.getHost(), a))); }}");
-            // decrypting Form
-            engine.eval(res);
-            // remove encrypted Inputfields
+            // engine.eval("var $ = { cookie : function(a) { return String(unescape(br.getCookie(br.getHost(), a))); }}");
+
+            /* decrypting Form */
+            engine.eval(callMethod);
+            /* remove encrypted Inputfields */
             final Iterator<InputField> it = encryptedForm.getInputFields().iterator();
             while (it.hasNext()) {
                 final InputField ipf = it.next();
                 if (ipf.getKey() == null) it.remove();
             }
-            // put decrypted Inputfields
+            /* put decrypted Inputfields into final form */
             for (Entry<String, String> next : inputFieldMap.entrySet()) {
                 encryptedForm.put(next.getKey(), next.getValue());
             }
         } catch (Throwable e) {
+            logger.warning("letitbit: decrypting form --> FAILED!");
             e.printStackTrace();
         }
+        /* done :-) */
+    }
+
+    private String getFormKey() {
+        File image;
+        String fileName = "captchas/letitbit_keyImage_" + System.currentTimeMillis() + new Random().nextInt(1000000);
+        final Browser dlpic = br.cloneBrowser();
+        String key = null;
+        try {
+            try {
+                image = Application.getResource(fileName);
+            } catch (Throwable e) {
+                image = JDUtilities.getResourceFile(fileName);
+            }
+            image.deleteOnExit();
+            Browser.download(image, dlpic.openGetConnection(new Regex(br.getBaseURL(), "(^.*\\.net)").getMatch(0) + "/jspimggen.php?n=jspcid&r=" + Math.random()));
+            BufferedImage img = ImageIO.read(image);
+
+            int w = img.getWidth();
+            int pixels[] = img.getRGB(0, 0, w, 1, null, 0, w);
+            int k[] = new int[pixels.length];
+            for (int i = 0; i < w; i++) {
+                k[i] = (pixels[i] >> 16) & 0xff;// Red
+            }
+            key = new String(k, 0, k.length);
+        } catch (Throwable e) {
+            e.printStackTrace();
+        }
+        return key;
     }
 
     private String jsbeautifier(String s) {
-        String lines[] = s.split("[\r\n]");
-        StringBuilder sb = new StringBuilder();
-        for (int i = 1; i < lines.length - 1; i++) {
-            if (lines[i].contains("alert(")) {
-                String newLine = new Regex(lines[i], "^([^\\(]+\\()").getMatch(0);
-                if (newLine == null) return null;
-                sb.append(newLine + "id){return String(encValues.get(id));};\n");
-                continue;
-            }
-            if (lines[i].contains("form.append")) {
-                String key = new Regex(lines[i], "name:([^,]+),").getMatch(0);
-                String value = new Regex(lines[i], "value:([^,]+),").getMatch(0);
-                if (key == null || value == null) return null;
-                key = key.trim();
-                value = value.trim();
-                sb.append("formMap.put(" + key + "," + value + ");\n");
-                continue;
-            }
-            if ("".equals(lines[i])) continue;
-            if (lines[i].contains("form")) continue;
-            if (lines[i].contains("setTimeout")) continue;
-            sb.append(lines[i] + "\n");
-        }
-        if (sb.length() == 0) return null;
-        return sb.toString();
+        String extract = new Regex(s, "(var jac\\d+.*?\\);)").getMatch(0);
+        if (extract == null) return null;
+        return extract;
     }
 
     private HashMap<String, String> getFormIds(Form encForm) {
