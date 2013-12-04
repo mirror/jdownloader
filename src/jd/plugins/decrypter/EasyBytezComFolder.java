@@ -47,7 +47,10 @@ public class EasyBytezComFolder extends PluginForDecrypt {
         }
         for (int i = 1; i <= lastPage; i++) {
             br.getPage(parameter + "?&page=" + i);
-            final String[] links = br.getRegex("class=\"link\"><a href=\"(http://(www\\.)?easybytez\\.com/[a-z0-9]{12})\"").getColumn(0);
+            String[] links = br.getRegex("class=\"link\"><a href=\"(http://(www\\.)?easybytez\\.com/[a-z0-9]{12})\"").getColumn(0);
+            if (links == null || links.length == 0) {
+                links = br.getRegex("<td><a href=\"(http://(www\\.)?easybytez\\.com/[a-z0-9]{12})\"").getColumn(0);
+            }
             if (links == null || links.length == 0) {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
