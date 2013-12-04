@@ -16,6 +16,7 @@
 
 package jd.controlling.downloadcontroller;
 
+import java.io.File;
 import java.util.HashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -121,6 +122,14 @@ public class SingleDownloadController extends BrowserSettingsThread {
 
     public long getStartTimestamp() {
         return startTimestamp;
+    }
+
+    public void lockFile(File file) throws FileIsLockedException {
+        DownloadWatchDog.getInstance().getSession().getFileAccessManager().lock(file, this);
+    }
+
+    public boolean unlockFile(File file) {
+        return DownloadWatchDog.getInstance().getSession().getFileAccessManager().unlock(file, this);
     }
 
     public DownloadSpeedManager getConnectionHandler() {

@@ -10,6 +10,7 @@ import javax.swing.JComponent;
 
 import jd.PluginWrapper;
 import jd.config.Property;
+import jd.controlling.downloadcontroller.FileIsLockedException;
 import jd.controlling.downloadcontroller.SingleDownloadController;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.http.requests.GetRequest;
@@ -322,6 +323,10 @@ public class YoutubeDash extends Youtube {
             super.handleFree(downloadLink);
             return;
         }
+        handleDownload(downloadLink, null);
+    }
+
+    public void handleDownload(final DownloadLink downloadLink, Account account) throws Exception {
         FFmpeg ffmpeg = new FFmpeg();
         if (!ffmpeg.isAvailable()) {
             FFMpegInstallProgress progress = new FFMpegInstallProgress();
@@ -337,57 +342,62 @@ public class YoutubeDash extends Youtube {
                 throw new PluginException(LinkStatus.ERROR_FATAL, _GUI._.YoutubeDash_handleFree_ffmpegmissing());
             }
         }
-
-        prem = false;
+        if (account != null) {
+            this.login(account, this.br, false, false);
+            prem = true;
+        } else {
+            prem = false;
+        }
         requestFileInformation(downloadLink);
 
-        if (new File(getVideoStreamPath(downloadLink)).exists()) {
-            downloadLink.setProperty(DASH_VIDEO_FINISHED, true);
-        }
-        boolean loadVideo = !downloadLink.getBooleanProperty(DASH_VIDEO_FINISHED, false);
-
-        loadVideo |= !new File(getVideoStreamPath(downloadLink)).exists();
-
-        if (loadVideo) {
-            /* videoStream not finished yet, resume/download it */
-            if (!downloadDashStream(downloadLink, true)) {
-
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
-        }
-
-        if (new File(getAudioStreamPath(downloadLink)).exists()) {
-            downloadLink.setProperty(DASH_AUDIO_FINISHED, true);
-        }
-        /* videoStream is finished */
-        boolean loadAudio = !downloadLink.getBooleanProperty(DASH_AUDIO_FINISHED, false);
-
-        loadAudio |= !new File(getAudioStreamPath(downloadLink)).exists();
-
-        if (loadAudio) {
-            /* audioStream not finished yet, resume/download it */
-            if (!downloadDashStream(downloadLink, false)) {
-
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
-        }
-
-        if (new File(getAudioStreamPath(downloadLink)).exists() && new File(getVideoStreamPath(downloadLink)).exists() && !new File(downloadLink.getFileOutput()).exists()) {
-            /* audioStream also finished */
-            FFMpegProgress progress = new FFMpegProgress();
-            downloadLink.setPluginProgress(progress);
-            try {
-                if (ffmpeg.merge(progress, downloadLink.getFileOutput(), getVideoStreamPath(downloadLink), getAudioStreamPath(downloadLink))) {
-                    downloadLink.getLinkStatus().setStatus(LinkStatus.FINISHED);
-                    new File(getVideoStreamPath(downloadLink)).delete();
-                    new File(getAudioStreamPath(downloadLink)).delete();
-                } else {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, _GUI._.YoutubeDash_handleFree_error_());
-
-                }
-            } finally {
-                downloadLink.setPluginProgress(null);
+        final SingleDownloadController dlc = downloadLink.getDownloadLinkController();
+        final File fileOutput = new File(downloadLink.getFileOutput());
+        try {
+            dlc.lockFile(fileOutput);
+            if (new File(getVideoStreamPath(downloadLink)).exists()) {
+                downloadLink.setProperty(DASH_VIDEO_FINISHED, true);
             }
-        }
+            boolean loadVideo = !downloadLink.getBooleanProperty(DASH_VIDEO_FINISHED, false);
+            loadVideo |= !new File(getVideoStreamPath(downloadLink)).exists();
+            if (loadVideo) {
+                /* videoStream not finished yet, resume/download it */
+                if (!downloadDashStream(downloadLink, true)) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+            }
+            if (new File(getAudioStreamPath(downloadLink)).exists()) {
+                downloadLink.setProperty(DASH_AUDIO_FINISHED, true);
+            }
+            /* videoStream is finished */
+            boolean loadAudio = !downloadLink.getBooleanProperty(DASH_AUDIO_FINISHED, false);
+            loadAudio |= !new File(getAudioStreamPath(downloadLink)).exists();
+            if (loadAudio) {
+                /* audioStream not finished yet, resume/download it */
+                if (!downloadDashStream(downloadLink, false)) {
 
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+            }
+
+            if (new File(getAudioStreamPath(downloadLink)).exists() && new File(getVideoStreamPath(downloadLink)).exists() && !new File(downloadLink.getFileOutput()).exists()) {
+                /* audioStream also finished */
+                FFMpegProgress progress = new FFMpegProgress();
+                downloadLink.setPluginProgress(progress);
+                try {
+                    if (ffmpeg.merge(progress, downloadLink.getFileOutput(), getVideoStreamPath(downloadLink), getAudioStreamPath(downloadLink))) {
+                        downloadLink.getLinkStatus().setStatus(LinkStatus.FINISHED);
+                        new File(getVideoStreamPath(downloadLink)).delete();
+                        new File(getAudioStreamPath(downloadLink)).delete();
+                    } else {
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, _GUI._.YoutubeDash_handleFree_error_());
+
+                    }
+                } finally {
+                    downloadLink.setPluginProgress(null);
+                }
+            }
+        } catch (final FileIsLockedException e) {
+            throw new PluginException(LinkStatus.ERROR_ALREADYEXISTS);
+        } finally {
+            dlc.unlockFile(fileOutput);
+        }
     }
 
     @Override
@@ -396,6 +406,7 @@ public class YoutubeDash extends Youtube {
             super.handlePremium(downloadLink, account);
             return;
         }
+        handleDownload(downloadLink, account);
     }
 
     @Override

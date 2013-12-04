@@ -175,7 +175,7 @@ public class DownloadLinkDownloadable implements Downloadable {
     public void lockFiles(File... files) throws FileIsLockedException {
         final SingleDownloadController dlc = getDownloadLinkController();
         for (File f : files) {
-            DownloadWatchDog.getInstance().getSession().getFileAccessManager().lock(f, dlc);
+            dlc.lockFile(f);
         }
 
     }
@@ -184,7 +184,7 @@ public class DownloadLinkDownloadable implements Downloadable {
     public void unlockFiles(File... files) {
         final SingleDownloadController dlc = getDownloadLinkController();
         for (File f : files) {
-            DownloadWatchDog.getInstance().getSession().getFileAccessManager().unlock(f, dlc);
+            dlc.unlockFile(f);
         }
     }
 
