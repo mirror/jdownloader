@@ -158,6 +158,7 @@ public class YoutubeDash extends Youtube {
 
             @Override
             public void setResumeable(boolean value) {
+                downloadLink.setResumeable(value);
             }
 
             @Override

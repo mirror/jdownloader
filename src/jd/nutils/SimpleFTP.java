@@ -48,6 +48,7 @@ import java.net.SocketException;
 import java.net.SocketTimeoutException;
 import java.net.URL;
 import java.rmi.ConnectException;
+import java.util.Locale;
 import java.util.StringTokenizer;
 import java.util.logging.Logger;
 
@@ -63,14 +64,15 @@ import org.jdownloader.logging.LogController;
  * Based on Work of Paul Mutton http://www.jibble.org/
  */
 public class SimpleFTP {
-    private static final int TIMEOUT    = 20 * 1000;
-    private boolean          binarymode = false;
-    private BufferedReader   reader     = null;
-    private Socket           socket     = null;
-    private BufferedWriter   writer     = null;
-    private String           dir        = "/";
+    private static final int TIMEOUT            = 20 * 1000;
+    private boolean          binarymode         = false;
+    private BufferedReader   reader             = null;
+    private Socket           socket             = null;
+    private BufferedWriter   writer             = null;
+    private String           dir                = "/";
     private String           host;
-    private Logger           logger     = LogController.CL();
+    private Logger           logger             = LogController.CL();
+    private String           latestResponseLine = null;
 
     public Logger getLogger() {
         return logger;
@@ -237,6 +239,16 @@ public class SimpleFTP {
         return line;
     }
 
+    public boolean wasLatestOperationNotPermitted() {
+        String latest = getLastestResponseLine();
+        if (latest != null) return latest.toLowerCase(Locale.ENGLISH).contains("operation not permitted");
+        return false;
+    }
+
+    public String getLastestResponseLine() {
+        return latestResponseLine;
+    }
+
     /* read response and check if it matches expectcode */
     public String readLines(int expectcodes[], String errormsg) throws IOException {
         StringBuilder sb = new StringBuilder();
@@ -246,6 +258,7 @@ public class SimpleFTP {
         int endCodeMultiLine = 0;
         while (true) {
             response = readLine();
+            latestResponseLine = response;
             if (response == null) {
                 if (sb.length() == 0) throw new IOException("no response received, EOF?");
                 return sb.toString();

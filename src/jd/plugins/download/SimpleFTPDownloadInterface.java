@@ -138,13 +138,13 @@ public class SimpleFTPDownloadInterface extends DownloadInterface {
             dataSocket.setSoTimeout(30 * 1000);
             dataSocket.connect(new InetSocketAddress(pasv.getHostName(), pasv.getPort()), 30 * 1000);
             simpleFTP.sendLine("RETR " + filename);
+            simpleFTP.readLines(new int[] { 150, 125 }, null);
             input = new MeteredThrottledInputStream(dataSocket.getInputStream(), new AverageSpeedMeter(10));
             connectionHandler.addThrottledConnection(input);
             if (resumePosition > 0) {
                 /* in case we do resume, reposition the writepointer */
                 raf.seek(resumePosition);
             }
-            simpleFTP.readLines(new int[] { 150, 125 }, null);
             byte[] buffer = new byte[32767];
             int bytesRead = 0;
             totalLinkBytesLoaded = resumePosition;
