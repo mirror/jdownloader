@@ -28,7 +28,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mirrorcreator.com" }, urls = { "http://(www\\.)?(mirrorcreator\\.com/files|mir\\.cr)/[0-9A-Z]{8}" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mirrorcreator.com" }, urls = { "https?://(www\\.)?(mirrorcreator\\.com/files|mir\\.cr)/[0-9A-Z]{8}" }, flags = { 0 })
 public class MirrorCreatorCom extends PluginForDecrypt {
 
     private String userAgent = null;
@@ -46,7 +46,7 @@ public class MirrorCreatorCom extends PluginForDecrypt {
         }
         br.getHeaders().put("User-Agent", userAgent);
         br.setFollowRedirects(false);
-        String parameter = param.toString().replace("mir.cr/", "mirrorcreator.com/files/").replaceAll("(http://|www\\.)", "");
+        String parameter = param.toString().replace("mir.cr/", "mirrorcreator.com/files/").replaceAll("(http://|www\\.)", "").replace("https://", "http://");
         // Those links need a "/" at the end to be valid
         if (!parameter.endsWith("/")) parameter += "/";
         parameter = "http://www." + parameter;
