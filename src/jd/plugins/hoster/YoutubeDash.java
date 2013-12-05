@@ -346,7 +346,7 @@ public class YoutubeDash extends Youtube {
             FFMpegInstallProgress progress = new FFMpegInstallProgress();
             downloadLink.setPluginProgress(progress);
             try {
-                FFmpegProvider.getInstance().install(progress);
+                FFmpegProvider.getInstance().install(progress, _GUI._.YoutubeDash_handleDownload_youtube_dash());
             } finally {
                 downloadLink.setPluginProgress(null);
             }

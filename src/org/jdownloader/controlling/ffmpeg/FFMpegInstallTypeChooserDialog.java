@@ -37,9 +37,11 @@ public class FFMpegInstallTypeChooserDialog extends AbstractDialog<Object> imple
     private MigPanel    p;
     private PathChooser pc;
     private JLabel      iconLbl;
+    private String      task;
 
-    public FFMpegInstallTypeChooserDialog() {
+    public FFMpegInstallTypeChooserDialog(String task) {
         super(0, _GUI._.FFMpegInstallTypeChooserDialog_FFMpegInstallTypeChooserDialog_title(), null, _GUI._.lit_continue(), null);
+        this.task = task;
     }
 
     public static class FoundException extends Exception {
@@ -176,7 +178,7 @@ public class FFMpegInstallTypeChooserDialog extends AbstractDialog<Object> imple
 
         textField.setContentType("text/plain");
 
-        textField.setText(_GUI._.FFMpegInstallTypeChooserDialog_FFMpegInstallTypeChooserDialog_message());
+        textField.setText(_GUI._.FFMpegInstallTypeChooserDialog_FFMpegInstallTypeChooserDialog_message_parameterd(task));
         textField.setEditable(false);
         textField.setBackground(null);
         textField.setOpaque(false);
@@ -220,7 +222,7 @@ public class FFMpegInstallTypeChooserDialog extends AbstractDialog<Object> imple
 
             break;
         case WINDOWS:
-            lbl = new JLabel(_GUI._.FFMpegInstallTypeChooserDialog_FFMpegInstallTypeChooserDialog_message_download_windows());
+            lbl = new JLabel(_GUI._.FFMpegInstallTypeChooserDialog_FFMpegInstallTypeChooserDialog_message_download_windows2());
 
             break;
         default:

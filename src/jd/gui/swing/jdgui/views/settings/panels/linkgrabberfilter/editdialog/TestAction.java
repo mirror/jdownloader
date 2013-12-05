@@ -4,7 +4,6 @@ import java.awt.event.ActionEvent;
 import java.util.regex.Pattern;
 
 import org.appwork.storage.JSonStorage;
-import org.appwork.storage.StorageException;
 import org.appwork.utils.Files;
 import org.appwork.utils.Regex;
 import org.appwork.utils.swing.dialog.Dialog;
@@ -24,14 +23,14 @@ public class TestAction extends AppAction {
     private CompiledRegexFilter    filter;
     private CompiledFiletypeFilter filetypefilter;
     private String                 desc;
+    private RegexFilter            sourceFilter;
 
     public TestAction(RegexFilter sourceFilter, String name) {
         super();
         setName(_GUI._.TestAction_TestAction_object_(name));
         setSmallIcon(NewTheme.I().getIcon("test", 18));
         this.name = name;
-
-        this.filter = new CompiledRegexFilter(sourceFilter);
+        this.sourceFilter = sourceFilter;
         desc = sourceFilter.toString();
     }
 
@@ -49,7 +48,7 @@ public class TestAction extends AppAction {
     public void actionPerformed(ActionEvent e) {
 
         try {
-
+            this.filter = new CompiledRegexFilter(sourceFilter);
             if (filetypefilter == null) {
                 String input = Dialog.getInstance().showInputDialog(0, _GUI._.TestAction_actionPerformed_test_title_(name), _GUI._.TestAction_actionPerformed_msg_(filter.getPattern().pattern(), name), JSonStorage.getPlainStorage("packagizertesturls").get(name, ""), NewTheme.I().getIcon("test", 32), null, null);
                 JSonStorage.getPlainStorage("packagizertesturls").put(name, input);
@@ -143,9 +142,8 @@ public class TestAction extends AppAction {
             e1.printStackTrace();
         } catch (DialogCanceledException e1) {
             e1.printStackTrace();
-        } catch (StorageException e1) {
-            e1.printStackTrace();
+        } catch (Exception e1) {
+            Dialog.getInstance().showExceptionDialog(_GUI._.lit_error_occured(), e1.getMessage(), e1);
         }
-
     }
 }

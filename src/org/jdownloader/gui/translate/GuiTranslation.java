@@ -3796,8 +3796,8 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "FFmpeg is missing!" })
     String FFMpegInstallTypeChooserDialog_FFMpegInstallTypeChooserDialog_title();
 
-    @Default(lngs = { "en" }, values = { "To perform this task, the \"Third party\" application FFmpeg™ is required.\r\nFFmpeg™ is a leading multimedia application that can be started by JDownloader \r\nto merge video and audio streams and vice versa. Unfortunately, JDownloader \r\ncould not find FFmpeg™ installed on your system." })
-    String FFMpegInstallTypeChooserDialog_FFMpegInstallTypeChooserDialog_message();
+    @Default(lngs = { "en" }, values = { "To %s1, the \"Third party\" application FFmpeg™ is required.\r\nFFmpeg™ is a leading multimedia application that can be started by JDownloader \r\nto merge video and audio streams and vice versa. Unfortunately, JDownloader \r\ncould not find FFmpeg™ installed on your system." })
+    String FFMpegInstallTypeChooserDialog_FFMpegInstallTypeChooserDialog_message_parameterd(String str);
 
     @Default(lngs = { "en" }, values = { "Ok, but what now?" })
     String FFMpegInstallTypeChooserDialog_layoutDialogContent_path_chooser();
@@ -3811,8 +3811,8 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Download FFmpeg™. Recommended Version: Offical \"FFmpeg binary for mac\"" })
     String FFMpegInstallTypeChooserDialog_FFMpegInstallTypeChooserDialog_message_download_mac();
 
-    @Default(lngs = { "en" }, values = { "Download FFmpeg™. Recommended Version: Offical \"FFmpeg build for windows\"" })
-    String FFMpegInstallTypeChooserDialog_FFMpegInstallTypeChooserDialog_message_download_windows();
+    @Default(lngs = { "en" }, values = { "Download FFmpeg™. Recommended Version: Offical \"FFmpeg.exe build for windows\"" })
+    String FFMpegInstallTypeChooserDialog_FFMpegInstallTypeChooserDialog_message_download_windows2();
 
     @Default(lngs = { "en" }, values = { "Download FFmpeg™. Recommended Version: Offical \"FFmpeg build for %s1\"" })
     String FFMpegInstallTypeChooserDialog_FFMpegInstallTypeChooserDialog_message_download_others(String osString);
@@ -3885,5 +3885,8 @@ public interface GuiTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Ask me" })
     String ask();
+
+    @Default(lngs = { "en" }, values = { "merge YouTube® Audio & Video streams" })
+    String YoutubeDash_handleDownload_youtube_dash();
 
 }

@@ -1,11 +1,8 @@
 package org.jdownloader.controlling.ffmpeg;
 
-import java.io.File;
 
 import jd.gui.swing.laf.LookAndFeelController;
 
-import org.appwork.storage.config.JsonConfig;
-import org.appwork.uio.UIOManager;
 import org.appwork.utils.Application;
 import org.appwork.utils.logging2.LogSource;
 import org.jdownloader.logging.LogController;
@@ -23,7 +20,7 @@ public class FFmpegProvider {
     }
 
     private boolean       installing = false;
-    private InstallThread installThread;
+    InstallThread installThread;
     private LogSource     logger;
 
     /**
@@ -34,59 +31,21 @@ public class FFmpegProvider {
         logger = LogController.getInstance().getLogger(FFmpeg.class.getName());
     }
 
-    public class InstallThread extends Thread {
-
-        private long    progress = -1;
-
-        private boolean success  = false;
-
-        public boolean isSuccessFul() {
-            return success;
-        }
-
-        public long getProgress() {
-            return progress;
-        }
-
-        @Override
-        public void run() {
-
-            File path = null;
-            // FFMpegInstallTypeChooserDialog.searchFileIn(Application.getTemp().getParentFile(), JDGui.getInstance() == null ?
-            // null : JDGui.getInstance().getMainFrame(), true);
-
-            if (path == null) {
-                FFMPegInstallTypeChooserDialogInterface res = UIOManager.I().show(FFMPegInstallTypeChooserDialogInterface.class, new FFMpegInstallTypeChooserDialog());
-                path = new File(res.getFFmpegBinaryPath());
-            }
-            FFmpeg ff = new FFmpeg();
-            ff.setPath(path.getAbsolutePath());
-            if (ff.validateBinary()) {
-                JsonConfig.create(FFmpegSetup.class).setBinaryPath(path.getAbsolutePath());
-                success = true;
-            }
-            synchronized (FFmpegProvider.this) {
-                installThread = null;
-            }
-
-        }
-    }
-
     public static void main(String[] args) {
         try {
             Application.setApplication(".jd_home");
             LookAndFeelController.getInstance().init();
-            getInstance().install(new FFMpegInstallProgress());
+            getInstance().install(new FFMpegInstallProgress(), "test");
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
     }
 
-    public void install(FFMpegInstallProgress progress) throws InterruptedException {
+    public void install(FFMpegInstallProgress progress, String task) throws InterruptedException {
 
         synchronized (this) {
             if (installThread == null) {
-                installThread = new InstallThread();
+                installThread = new InstallThread(this, task);
                 installThread.start();
                 logger.info("Started Install process");
             }
