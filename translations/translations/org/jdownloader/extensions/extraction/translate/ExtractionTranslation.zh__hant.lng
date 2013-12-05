@@ -1,3 +1,5 @@
+IfFileExistsDialog_layoutDialogContent_archive=壓縮檔：
+IfFileExistsDialog_layoutDialogContent_newName=新名稱：
 ValidateArchiveAction_ValidateArchiveAction=驗證 %s1
 ValidateArchiveAction_ValidateArchiveAction_multi=驗證壓縮檔
 ValidateArchiveAction_ValidateArchiveAction_object_=驗證壓縮檔
@@ -97,6 +99,7 @@ settings_cpupriority_middle=中
 settings_extract_to_archive_folder=解壓縮到下列資料夾
 settings_extract_to_path=解壓縮到
 settings_extractto=解壓縮目的資料夾
+settings_if_file_exists=如果檔案存在...
 settings_multi=特殊設定 (僅用於 rar、7z 和 zip。不適用分割檔)
 settings_multi_use_original_file_date=如果可能，請使用原始檔案日期
 settings_overwrite=覆寫現有的檔案？
