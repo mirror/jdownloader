@@ -1,3 +1,5 @@
+IfFileExistsDialog_layoutDialogContent_archive=Archivo:
+IfFileExistsDialog_layoutDialogContent_newName=Nuevo Nombre:
 ValidateArchiveAction_ValidateArchiveAction=Validar %s1
 ValidateArchiveAction_ValidateArchiveAction_multi=Validar archivos
 ValidateArchiveAction_ValidateArchiveAction_object_=Validar archivo(s)
@@ -97,6 +99,7 @@ settings_cpupriority_middle=Mediana
 settings_extract_to_archive_folder=Extraer a otra carpeta
 settings_extract_to_path=Extraer en
 settings_extractto=Carpeta de extracción
+settings_if_file_exists=Si el archivo existe...
 settings_multi=Ajustes especiales (Solo para .rar, .zip y .7z; no para archivos sueltos)
 settings_multi_use_original_file_date=Usar fecha original del archivo si es posible
 settings_overwrite=Sobreescribir los archivos existentes
