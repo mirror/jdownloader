@@ -366,4 +366,16 @@ public interface ExtractionTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Delete files finally" })
     String final_delete();
 
+    @Default(lngs = { "en" }, values = { "If file exists..." })
+    String settings_if_file_exists();
+
+    @Default(lngs = { "en" }, values = { "Archive:" })
+    String IfFileExistsDialog_layoutDialogContent_archive();
+
+    @Default(lngs = { "en" }, values = { "There is a problem extracting an archive. \r\nThe file to extract already exists on your harddisk. Please choose what to do:" })
+    String file_exists_message();
+
+    @Default(lngs = { "en" }, values = { "New Name:" })
+    String IfFileExistsDialog_layoutDialogContent_newName();
+
 }

@@ -20,12 +20,15 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
+import net.sf.sevenzipjbinding.SevenZipException;
+
 import org.appwork.utils.Regex;
 import org.appwork.utils.formatter.StringFormatter;
 import org.jdownloader.extensions.extraction.Archive;
 import org.jdownloader.extensions.extraction.ArchiveFactory;
 import org.jdownloader.extensions.extraction.ArchiveFile;
 import org.jdownloader.extensions.extraction.DummyArchive;
+import org.jdownloader.extensions.extraction.ExtSevenZipException;
 import org.jdownloader.extensions.extraction.ExtractionController;
 import org.jdownloader.extensions.extraction.ExtractionControllerConstants;
 import org.jdownloader.extensions.extraction.FileSignatures;
@@ -62,19 +65,31 @@ public class HJSplit extends IExtraction {
 
     @Override
     public void extract(ExtractionController ctrl) {
-        File f = archive.getFactory().toFile(archive.getFirstArchiveFile().getFilePath().replaceFirst("\\.[\\d]+$", ""));
-        String extension = SplitUtil.getCutKillerExtension(archive.getFactory().toFile(archive.getFirstArchiveFile().getFilePath()), archive.getArchiveFiles().size());
-        boolean ret;
+        try {
+            File f = archive.getFactory().toFile(archive.getFirstArchiveFile().getFilePath().replaceFirst("\\.[\\d]+$", ""));
+            String extension = SplitUtil.getCutKillerExtension(archive.getFactory().toFile(archive.getFirstArchiveFile().getFilePath()), archive.getArchiveFiles().size());
+            boolean ret;
 
-        if (extension != null) {
-            f = new File(f.getAbsolutePath() + "." + extension);
-            ret = SplitUtil.merge(controller, f, 8, config);
-        } else {
-            ret = SplitUtil.merge(controller, f, 0, config);
-        }
+            if (extension != null) {
 
-        if (ret) {
-            archive.setExitCode(ExtractionControllerConstants.EXIT_CODE_SUCCESS);
+                f = new File(f.getAbsolutePath() + "." + extension);
+                ret = SplitUtil.merge(controller, f, 8, config);
+            } else {
+                ret = SplitUtil.merge(controller, f, 0, config);
+            }
+
+            if (ret) {
+                archive.setExitCode(ExtractionControllerConstants.EXIT_CODE_SUCCESS);
+            }
+        } catch (ExtSevenZipException e) {
+            setException(e);
+            logger.log(e);
+            archive.setExitCode(e.getExitCode());
+        } catch (SevenZipException e) {
+            setException(e);
+            logger.log(e);
+            archive.setExitCode(ExtractionControllerConstants.EXIT_CODE_FATAL_ERROR);
+            return;
         }
     }
 

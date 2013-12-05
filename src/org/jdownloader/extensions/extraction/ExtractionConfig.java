@@ -12,6 +12,7 @@ import org.appwork.storage.config.annotations.DefaultStringValue;
 import org.appwork.storage.config.annotations.DescriptionForConfigEntry;
 import org.appwork.storage.config.annotations.SpinnerValidator;
 import org.jdownloader.controlling.FileCreationManager;
+import org.jdownloader.settings.IfFileExistsAction;
 
 public interface ExtractionConfig extends ExtensionConfigInterface {
     @DefaultStringArrayValue(value = {})
@@ -101,10 +102,6 @@ public interface ExtractionConfig extends ExtensionConfigInterface {
 
     @AboutConfig
     @DefaultBooleanValue(false)
-    boolean isOverwriteExistingFilesEnabled();
-
-    @AboutConfig
-    @DefaultBooleanValue(false)
     boolean isSubpathEnabled();
 
     @AboutConfig
@@ -125,8 +122,6 @@ public interface ExtractionConfig extends ExtensionConfigInterface {
     void setDeepExtractionEnabled(boolean enabled);
 
     void setDeleteInfoFilesAfterExtraction(boolean enabled);
-
-    void setOverwriteExistingFilesEnabled(boolean enabled);
 
     void setSubPath(String path);
 
@@ -214,5 +209,15 @@ public interface ExtractionConfig extends ExtensionConfigInterface {
     void setBubbleContentArchivenameVisible(boolean b);
 
     void setDeleteArchiveFilesAfterExtractionAction(FileCreationManager.DeleteOption selectedItem);
+
+    @AboutConfig
+    @DefaultEnumValue("SKIP_FILE")
+    IfFileExistsAction getIfFileExistsAction();
+
+    void setIfFileExistsAction(IfFileExistsAction action);
+
+    IfFileExistsAction getLatestIfFileExistsAction();
+
+    void setLatestIfFileExistsAction(IfFileExistsAction action);
 
 }

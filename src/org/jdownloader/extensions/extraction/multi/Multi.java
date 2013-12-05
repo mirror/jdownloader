@@ -49,11 +49,13 @@ import org.appwork.utils.ReusableByteArrayOutputStream;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.StringFormatter;
 import org.appwork.utils.os.CrossSystem;
+import org.jdownloader.controlling.FileCreationManager;
 import org.jdownloader.extensions.extraction.Archive;
 import org.jdownloader.extensions.extraction.ArchiveFactory;
 import org.jdownloader.extensions.extraction.ArchiveFile;
 import org.jdownloader.extensions.extraction.DummyArchive;
 import org.jdownloader.extensions.extraction.DummyArchiveFile;
+import org.jdownloader.extensions.extraction.ExtSevenZipException;
 import org.jdownloader.extensions.extraction.ExtractionController;
 import org.jdownloader.extensions.extraction.ExtractionControllerConstants;
 import org.jdownloader.extensions.extraction.ExtractionException;
@@ -63,6 +65,8 @@ import org.jdownloader.extensions.extraction.Item;
 import org.jdownloader.extensions.extraction.Signature;
 import org.jdownloader.extensions.extraction.content.ContentView;
 import org.jdownloader.extensions.extraction.content.PackedFile;
+import org.jdownloader.extensions.extraction.gui.iffileexistsdialog.IfFileExistsDialog;
+import org.jdownloader.settings.IfFileExistsAction;
 
 /**
  * Extracts rar, zip, 7z. tar.gz, tar.bz2.
@@ -714,7 +718,7 @@ public class Multi extends IExtraction {
                         return;
                     }
                     archive.addExtractedFiles(extractTo);
-                    ctrl.setCurrentActiveItem(new Item(item.getPath(), extractTo));
+                    ctrl.setCurrentActiveItem(new Item(item.getPath(), item.getSize(), extractTo));
                     try {
                         MultiCallback call = new MultiCallback(extractTo, controller, config, false) {
 
@@ -782,6 +786,10 @@ public class Multi extends IExtraction {
             logger.log(e);
             archive.setExitCode(e.getExitCode());
             return;
+        } catch (ExtSevenZipException e) {
+            setException(e);
+            logger.log(e);
+            archive.setExitCode(e.getExitCode());
         } catch (SevenZipException e) {
             setException(e);
             logger.log(e);
@@ -866,20 +874,61 @@ public class Multi extends IExtraction {
         if (extractTo.exists()) {
             /* file already exists */
 
-            if (controller.isOverwriteFiles()) {
-                if (!extractTo.delete()) {
+            IfFileExistsAction action = controller.getIfFileExistsAction();
+            while (action == null || action == IfFileExistsAction.ASK_FOR_EACH_FILE) {
+                IfFileExistsDialog d = new IfFileExistsDialog(extractTo, ctrl.getCurrentActiveItem(), archive);
+                d.show();
+
+                try {
+                    d.throwCloseExceptions();
+                } catch (Exception e) {
+                    throw new SevenZipException(e);
+                }
+                action = d.getAction();
+                if (action == null) throw new SevenZipException("Cannot handle if file exists");
+                if (action == IfFileExistsAction.AUTO_RENAME) {
+                    extractTo = new File(extractTo.getParentFile(), d.getNewName());
+                    if (extractTo.exists()) {
+                        action = IfFileExistsAction.ASK_FOR_EACH_FILE;
+                    }
+                }
+            }
+            switch (action) {
+            case OVERWRITE_FILE:
+
+                if (!FileCreationManager.getInstance().delete(extractTo, null)) {
                     setException(new Exception("Could not overwrite(delete) " + extractTo));
                     archive.setExitCode(ExtractionControllerConstants.EXIT_CODE_CREATE_ERROR);
                     return null;
                 }
-            } else {
+                break;
+
+            case SKIP_FILE:
                 /* skip file */
                 archive.addExtractedFiles(extractTo);
                 progressInBytes += item.getSize();
                 ctrl.setProgress(progressInBytes / (double) size2);
                 skipped.set(true);
                 return null;
+            case AUTO_RENAME:
+                String extension = Files.getExtension(extractTo.getName());
+                String name = StringUtils.isEmpty(extension) ? extractTo.getName() : extractTo.getName().substring(0, extractTo.getName().length() - extension.length() - 1);
+                int i = 1;
+                while (extractTo.exists()) {
+                    if (StringUtils.isEmpty(extension)) {
+                        extractTo = new File(extractTo.getParentFile(), name + "_" + i);
+
+                    } else {
+                        extractTo = new File(extractTo.getParentFile(), name + "_" + i + "." + extension);
+
+                    }
+                    i++;
+                }
+
+                break;
+
             }
+
         }
         if ((!extractTo.getParentFile().exists() && !extractTo.getParentFile().mkdirs())) {
             setException(new Exception("Could not create folder for File " + extractTo));

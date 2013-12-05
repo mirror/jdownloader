@@ -3874,4 +3874,16 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Panel is always visible" })
     String LinkgrabberProperties_fillPopup_always_visible_();
 
+    @Default(lngs = { "en" }, values = { "Skip the file" })
+    String skip_file();
+
+    @Default(lngs = { "en" }, values = { "Overwrite the file" })
+    String overwrite();
+
+    @Default(lngs = { "en" }, values = { "Auto-Rename the new File" })
+    String auto_rename();
+
+    @Default(lngs = { "en" }, values = { "Ask me" })
+    String ask();
+
 }

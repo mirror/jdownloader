@@ -28,19 +28,25 @@ import java.util.List;
 import java.util.regex.Pattern;
 
 import jd.utils.JDHexUtils;
+import net.sf.sevenzipjbinding.SevenZipException;
 
+import org.appwork.utils.Files;
 import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
 import org.jdownloader.controlling.FileCreationManager;
 import org.jdownloader.extensions.extraction.Archive;
 import org.jdownloader.extensions.extraction.ArchiveFactory;
 import org.jdownloader.extensions.extraction.ArchiveFile;
 import org.jdownloader.extensions.extraction.CPUPriority;
+import org.jdownloader.extensions.extraction.ExtSevenZipException;
 import org.jdownloader.extensions.extraction.ExtractionConfig;
 import org.jdownloader.extensions.extraction.ExtractionController;
 import org.jdownloader.extensions.extraction.ExtractionControllerConstants;
 import org.jdownloader.extensions.extraction.FileSignatures;
 import org.jdownloader.extensions.extraction.Item;
 import org.jdownloader.extensions.extraction.content.PackedFile;
+import org.jdownloader.extensions.extraction.gui.iffileexistsdialog.IfFileExistsDialog;
+import org.jdownloader.settings.IfFileExistsAction;
 
 /**
  * Utils for the joiner.
@@ -158,8 +164,9 @@ class SplitUtil {
      * @param start
      *            The amount of bytes that should be skipped.
      * @return
+     * @throws SevenZipException
      */
-    static boolean merge(ExtractionController controller, File file, int start, ExtractionConfig config) {
+    static boolean merge(ExtractionController controller, File file, int start, ExtractionConfig config) throws SevenZipException {
         CPUPriority priority = config.getCPUPriority();
         if (priority == null || CPUPriority.HIGH.equals(priority)) {
             priority = null;
@@ -173,7 +180,7 @@ class SplitUtil {
         }
         controller.getArchiv().getContentView().add(new PackedFile(false, archive.getName(), size));
         controller.setProgress(0.0d);
-        controller.setCurrentActiveItem(new Item(file.getName(), file));
+        controller.setCurrentActiveItem(new Item(file.getName(), size, file));
         Collections.sort(files);
         long progressInBytes = 0l;
         BufferedOutputStream bos = null;
@@ -183,18 +190,66 @@ class SplitUtil {
              * write buffer, use same as downloadbuffer, so we have a pool of same sized buffers
              */
             int maxbuffersize = config.getBufferSize() * 1024;
-            /* read buffer, we use 64kb here which should be okay */
+
             if (file.exists()) {
-                if (controller.isOverwriteFiles()) {
-                    if (!FileCreationManager.getInstance().delete(file, null)) {
-                        archive.setExitCode(ExtractionControllerConstants.EXIT_CODE_FATAL_ERROR);
-                        return false;
+
+                /* file already exists */
+
+                IfFileExistsAction action = controller.getIfFileExistsAction();
+                while (action == null || action == IfFileExistsAction.ASK_FOR_EACH_FILE) {
+                    IfFileExistsDialog d = new IfFileExistsDialog(file, controller.getCurrentActiveItem(), archive);
+                    d.show();
+
+                    try {
+                        d.throwCloseExceptions();
+                    } catch (Exception e) {
+                        throw new SevenZipException(e);
                     }
-                } else {
-                    archive.addExtractedFiles(file);
-                    archive.setExitCode(ExtractionControllerConstants.EXIT_CODE_OUTPUTFILE_EXIST);
-                    return false;
+                    action = d.getAction();
+                    if (action == null) throw new SevenZipException("Cannot handle if file exists");
+                    if (action == IfFileExistsAction.AUTO_RENAME) {
+                        file = new File(file.getParentFile(), d.getNewName());
+                        if (file.exists()) {
+                            action = IfFileExistsAction.ASK_FOR_EACH_FILE;
+                        }
+                    }
                 }
+                switch (action) {
+                case OVERWRITE_FILE:
+
+                    if (!FileCreationManager.getInstance().delete(file, null)) {
+
+                    throw new ExtSevenZipException(ExtractionControllerConstants.EXIT_CODE_CREATE_ERROR, "Could not overwrite(delete) " + file);
+
+                    }
+                    break;
+
+                case SKIP_FILE:
+                    /* skip file */
+                    archive.addExtractedFiles(file);
+                    progressInBytes += size;
+                    controller.setProgress(progressInBytes / (double) size);
+                    throw new ExtSevenZipException(ExtractionControllerConstants.EXIT_CODE_OUTPUTFILE_EXIST, "Outputfile exists: " + file);
+
+                case AUTO_RENAME:
+                    String extension = Files.getExtension(file.getName());
+                    String name = StringUtils.isEmpty(extension) ? file.getName() : file.getName().substring(0, file.getName().length() - extension.length() - 1);
+                    int i = 1;
+                    while (file.exists()) {
+                        if (StringUtils.isEmpty(extension)) {
+                            file = new File(file.getParentFile(), name + "_" + i);
+
+                        } else {
+                            file = new File(file.getParentFile(), name + "_" + i + "." + extension);
+
+                        }
+                        i++;
+                    }
+
+                    break;
+
+                }
+
             }
 
             if ((!file.getParentFile().exists() && !FileCreationManager.getInstance().mkdir(file.getParentFile())) || !file.createNewFile()) {

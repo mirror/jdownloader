@@ -216,7 +216,7 @@ public class Seven7ExtractCallback implements IArchiveExtractCallback, ICryptoGe
             try {
                 AtomicBoolean skipped = new AtomicBoolean(false);
                 final File extractTo = multi.getExtractFilePath(item, ctrl, skipped, size2);
-                ctrl.setCurrentActiveItem(new Item(path, extractTo));
+                ctrl.setCurrentActiveItem(new Item(path, item.getSize(), extractTo));
                 if (skipped.get()) { return new ISequentialOutStream() {
 
                     @Override

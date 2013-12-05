@@ -15,10 +15,16 @@ public class Item {
     }
 
     private File file;
+    private long size;
 
-    public Item(String path, File extractTo) {
+    public long getSize() {
+        return size;
+    }
+
+    public Item(String path, long size, File extractTo) {
         this.path = path;
         this.file = extractTo;
+        this.size = size;
     }
 
 }

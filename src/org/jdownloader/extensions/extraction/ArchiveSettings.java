@@ -6,6 +6,7 @@ import java.util.HashSet;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.Storable;
 import org.appwork.storage.TypeRef;
+import org.jdownloader.settings.IfFileExistsAction;
 
 public class ArchiveSettings implements Storable {
     private ArchiveController      archiveController;
@@ -14,7 +15,7 @@ public class ArchiveSettings implements Storable {
     private ExtractionInfo         extractionInfo;
     private String                 extractPath;
     private String                 finalPassword;
-    private BooleanStatus          getOverwriteFiles                  = BooleanStatus.UNSET;
+    private IfFileExistsAction     ifFileExistsAction                 = null;
     private HashSet<String>        passwords;
     private BooleanStatus          removeDownloadLinksAfterExtraction = BooleanStatus.UNSET;
     private BooleanStatus          removeFilesAfterExtraction         = BooleanStatus.UNSET;
@@ -51,8 +52,13 @@ public class ArchiveSettings implements Storable {
         return finalPassword;
     }
 
-    public BooleanStatus getOverwriteFiles() {
-        return getOverwriteFiles;
+    public String getIfFileExistsAction() {
+        if (ifFileExistsAction == null) return null;
+        return ifFileExistsAction.toString();
+    }
+
+    public IfFileExistsAction _getIfFileExistsAction() {
+        return ifFileExistsAction;
     }
 
     public HashSet<String> getPasswords() {
@@ -102,8 +108,16 @@ public class ArchiveSettings implements Storable {
         fireUpdate();
     }
 
-    public void setOverwriteFiles(BooleanStatus overwriteFiles) {
-        this.getOverwriteFiles = overwriteFiles;
+    public void setIfFileExistsAction(String overwriteFiles) {
+        try {
+            if (overwriteFiles == null) return;
+            _setIfFileExistsAction(IfFileExistsAction.valueOf(overwriteFiles));
+        } catch (Exception e) {
+        }
+    }
+
+    public void _setIfFileExistsAction(IfFileExistsAction overwriteFiles) {
+        this.ifFileExistsAction = overwriteFiles;
         fireUpdate();
     }
 

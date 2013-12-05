@@ -3,6 +3,7 @@ package jd.gui.swing.jdgui.views.settings.components;
 import java.awt.Component;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.lang.reflect.Field;
 
 import javax.swing.DefaultComboBoxModel;
 import javax.swing.JComboBox;
@@ -44,15 +45,14 @@ public class ComboBox<ContentType> extends JComboBox implements SettingsComponen
         orgRenderer = getRenderer();
         this.setRenderer(new ListCellRenderer() {
             public Component getListCellRendererComponent(JList list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
+                if (index == -1) index = getSelectedIndex();
+                if (index == -1) return orgRenderer.getListCellRendererComponent(list, null, index, isSelected, cellHasFocus);
                 Component ret;
-                renderComponent(ret = orgRenderer.getListCellRendererComponent(list, valueToString((ContentType) value), index, isSelected, cellHasFocus), list, (ContentType) value, index, isSelected, cellHasFocus);
+
+                renderComponent(ret = orgRenderer.getListCellRendererComponent(list, getLabel(index, (ContentType) value), index, isSelected, cellHasFocus), list, (ContentType) value, index, isSelected, cellHasFocus);
                 return ret;
             }
         });
-    }
-
-    protected String valueToString(ContentType value) {
-        return value.toString();
     }
 
     @SuppressWarnings("unchecked")
@@ -75,27 +75,25 @@ public class ComboBox<ContentType> extends JComboBox implements SettingsComponen
     }
 
     public ComboBox(ContentType[] values, String[] names) {
-        super(values);
-        orgRenderer = getRenderer();
-        this.translations = names;
-        this.setRenderer(new ListCellRenderer() {
-            public Component getListCellRendererComponent(JList list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
-                if (index == -1) index = getSelectedIndex();
-                if (index == -1) return orgRenderer.getListCellRendererComponent(list, null, index, isSelected, cellHasFocus);
-                Component ret;
+        this(values);
 
-                renderComponent(ret = orgRenderer.getListCellRendererComponent(list, getLabel(index, (ContentType) value), index, isSelected, cellHasFocus), list, (ContentType) value, index, isSelected, cellHasFocus);
-                return ret;
-            }
-        });
+        this.translations = names;
+
     }
 
     protected String getLabel(int index, ContentType value) {
         if (translations == null) {
-            try {
-                return value.getClass().getDeclaredField(value.toString()).getAnnotation(EnumLabel.class).value();
-            } catch (Exception e) {
-                e.printStackTrace();
+            if (value instanceof Enum) {
+                try {
+                    Field field = value.getClass().getField(value.toString());
+                    if (field != null) {
+                        EnumLabel ann = field.getAnnotation(EnumLabel.class);
+                        if (ann != null) { return ann.value(); }
+                    }
+                } catch (Exception e) {
+
+                    e.printStackTrace();
+                }
             }
 
             if (value instanceof LabelInterface) { return ((LabelInterface) value).getLabel(); }

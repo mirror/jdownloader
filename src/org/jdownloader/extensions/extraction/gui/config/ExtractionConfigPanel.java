@@ -36,6 +36,7 @@ import org.jdownloader.extensions.extraction.translate.T;
 import org.jdownloader.gui.settings.Pair;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.settings.GeneralSettings;
+import org.jdownloader.settings.IfFileExistsAction;
 import org.jdownloader.settings.staticreferences.CFG_LINKGRABBER;
 import org.jdownloader.utils.JDFileUtils;
 
@@ -48,7 +49,7 @@ public class ExtractionConfigPanel extends ExtensionConfigPanel<ExtractionExtens
 
     private Pair<? extends TextInput>                        subPath;
     private Pair<ComboBox<FileCreationManager.DeleteOption>> toggleDeleteArchives;
-    private Pair<Checkbox>                                   toggleOverwriteExisting;
+    private Pair<ComboBox<IfFileExistsAction>>               toggleOverwriteExisting;
     private Pair<TextArea>                                   blacklist;
     private Pair<Checkbox>                                   toggleUseOriginalFileDate;
     private Pair<ComboBox<String>>                           cpupriority;
@@ -193,6 +194,7 @@ public class ExtractionConfigPanel extends ExtensionConfigPanel<ExtractionExtens
                         }
                     }
                 });
+
                 menu.add(sub);
                 menu.add(new JSeparator());
                 menu.add(cutAction);
@@ -238,7 +240,7 @@ public class ExtractionConfigPanel extends ExtensionConfigPanel<ExtractionExtens
         }
 
         toggleDeleteArchiveDownloadLinks = this.addPair(T._.settings_remove_after_extract_downloadlink(), null, new Checkbox());
-        toggleOverwriteExisting = this.addPair(T._.settings_overwrite(), null, new Checkbox());
+        toggleOverwriteExisting = this.addPair(T._.settings_if_file_exists(), null, (ComboBox<IfFileExistsAction>) new ComboBox<IfFileExistsAction>(IfFileExistsAction.values()));
         cpupriority = this.addPair(T._.settings_cpupriority(), null, new ComboBox<String>(T._.settings_cpupriority_high(), T._.settings_cpupriority_middle(), T._.settings_cpupriority_low()));
 
         this.addHeader(T._.settings_multi(), NewTheme.I().getIcon("settings", 32));
@@ -271,7 +273,7 @@ public class ExtractionConfigPanel extends ExtensionConfigPanel<ExtractionExtens
                         customPath.getComponent().setText(finalPath);
                         toggleDeleteArchives.getComponent().setSelectedItem(s.getDeleteArchiveFilesAfterExtractionAction());
                         toggleDeleteArchiveDownloadLinks.getComponent().setSelected(s.isDeleteArchiveDownloadlinksAfterExtraction());
-                        toggleOverwriteExisting.getComponent().setSelected(s.isOverwriteExistingFilesEnabled());
+                        toggleOverwriteExisting.getComponent().setSelectedItem(s.getIfFileExistsAction());
                         toggleUseSubpath.getComponent().setSelected(s.isSubpathEnabled());
                         subPath.getComponent().setText(s.getSubPath());
                         subPathMinFiles.getComponent().setValue(s.getSubPathMinFilesTreshhold());
@@ -321,7 +323,7 @@ public class ExtractionConfigPanel extends ExtensionConfigPanel<ExtractionExtens
         s.setCustomExtractionPath(customPath.getComponent().getText());
         s.setDeleteArchiveFilesAfterExtractionAction(toggleDeleteArchives.getComponent().getSelectedItem());
         s.setDeleteArchiveDownloadlinksAfterExtraction(toggleDeleteArchiveDownloadLinks.getComponent().isSelected());
-        s.setOverwriteExistingFilesEnabled(toggleOverwriteExisting.getComponent().isSelected());
+        s.setIfFileExistsAction(toggleOverwriteExisting.getComponent().getSelectedItem());
         s.setSubpathEnabled(toggleUseSubpath.getComponent().isSelected());
         s.setSubPath(subPath.getComponent().getText());
         try {

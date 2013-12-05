@@ -179,7 +179,9 @@ public class DownloadLinkArchiveFile implements ArchiveFile {
 
     @Override
     public void onCleanedUp(final ExtractionController controller) {
+
         for (final DownloadLink downloadLink : downloadLinks) {
+            downloadLink.setPluginProgress(null);
             switch (CFG_GENERAL.CFG.getCleanupAfterDownloadAction()) {
             case CLEANUP_IMMEDIATELY:
                 DownloadController.getInstance().getQueue().add(new QueueAction<Void, RuntimeException>() {

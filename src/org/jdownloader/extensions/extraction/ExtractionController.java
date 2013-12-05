@@ -36,6 +36,7 @@ import org.appwork.utils.logging2.LogSource;
 import org.jdownloader.controlling.FileCreationManager;
 import org.jdownloader.extensions.extraction.ExtractionEvent.Type;
 import org.jdownloader.logging.LogController;
+import org.jdownloader.settings.IfFileExistsAction;
 
 /**
  * Responsible for the correct procedure of the extraction process. Contains one IExtraction instance.
@@ -57,7 +58,7 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> {
     private ExtractionExtension              extension;
     private final LogSource                  logger;
     private FileSignatures                   fileSignatures        = null;
-    private boolean                          overwriteFiles;
+    private IfFileExistsAction               ifFileExistsAction;
     private File                             extractToFolder;
     private boolean                          successful            = false;
     private ExtractLogFileWriter             crashLog;
@@ -373,6 +374,7 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> {
             } finally {
                 logger.close();
             }
+
         }
         return null;
     }
@@ -481,12 +483,12 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> {
         return removeDownloadLinksAfterExtraction;
     }
 
-    public void setOverwriteFiles(boolean overwriteFiles) {
-        this.overwriteFiles = overwriteFiles;
+    public void setIfFileExistsAction(IfFileExistsAction ifExistsAction) {
+        this.ifFileExistsAction = ifExistsAction;
     }
 
-    public boolean isOverwriteFiles() {
-        return overwriteFiles;
+    public IfFileExistsAction getIfFileExistsAction() {
+        return ifFileExistsAction;
     }
 
     /**

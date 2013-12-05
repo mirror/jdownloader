@@ -59,14 +59,14 @@ public class CFG_EXTRACTION {
 
     public static final BooleanKeyHandler                BUBBLE_CONTENT_STATUS_VISIBLE                                    = SH.getKeyHandler("BubbleContentStatusVisible", BooleanKeyHandler.class);
 
+    public static final EnumKeyHandler                   IF_FILE_EXISTS_ACTION                                            = SH.getKeyHandler("IfFileExistsAction", EnumKeyHandler.class);
+
     public static final BooleanKeyHandler                BUBBLE_CONTENT_ARCHIVENAME_VISIBLE                               = SH.getKeyHandler("BubbleContentArchivenameVisible", BooleanKeyHandler.class);
 
     /**
      * Only use subfolders if the archive ROOT contains at least *** folders or folders
      **/
     public static final IntegerKeyHandler                SUB_PATH_MIN_FILES_OR_FOLDERS_TRESHHOLD                          = SH.getKeyHandler("SubPathMinFilesOrFoldersTreshhold", IntegerKeyHandler.class);
-
-    public static final BooleanKeyHandler                OVERWRITE_EXISTING_FILES_ENABLED                                 = SH.getKeyHandler("OverwriteExistingFilesEnabled", BooleanKeyHandler.class);
 
     public static final BooleanKeyHandler                SUBPATH_ENABLED                                                  = SH.getKeyHandler("SubpathEnabled", BooleanKeyHandler.class);
 
@@ -90,6 +90,8 @@ public class CFG_EXTRACTION {
     public static final EnumKeyHandler                   DELETE_ARCHIVE_FILES_AFTER_EXTRACTION_ACTION                     = SH.getKeyHandler("DeleteArchiveFilesAfterExtractionAction", EnumKeyHandler.class);
 
     public static final BooleanKeyHandler                ENABLED                                                          = SH.getKeyHandler("Enabled", BooleanKeyHandler.class);
+
+    public static final EnumKeyHandler                   LATEST_IF_FILE_EXISTS_ACTION                                     = SH.getKeyHandler("LatestIfFileExistsAction", EnumKeyHandler.class);
 
     /**
      * max bytes the extractor may test for finding correct password when no signature is found

@@ -21,11 +21,14 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import net.sf.sevenzipjbinding.SevenZipException;
+
 import org.appwork.utils.Regex;
 import org.jdownloader.extensions.extraction.Archive;
 import org.jdownloader.extensions.extraction.ArchiveFactory;
 import org.jdownloader.extensions.extraction.ArchiveFile;
 import org.jdownloader.extensions.extraction.DummyArchive;
+import org.jdownloader.extensions.extraction.ExtSevenZipException;
 import org.jdownloader.extensions.extraction.ExtractionController;
 import org.jdownloader.extensions.extraction.ExtractionControllerConstants;
 import org.jdownloader.extensions.extraction.IExtraction;
@@ -60,19 +63,31 @@ public class Unix extends IExtraction {
 
     @Override
     public void extract(ExtractionController ctrl) {
-        File f = new File(archive.getFirstArchiveFile().getFilePath().replaceFirst("\\.[a-z][a-z]$", ""));
-        String extension = SplitUtil.getCutKillerExtension(new File(archive.getFirstArchiveFile().getFilePath()), archive.getArchiveFiles().size());
-        boolean ret;
+        try {
 
-        if (extension != null) {
-            f = new File(f.getAbsolutePath() + "." + extension);
-            ret = SplitUtil.merge(controller, f, 8, config);
-        } else {
-            ret = SplitUtil.merge(controller, f, 0, config);
-        }
+            File f = new File(archive.getFirstArchiveFile().getFilePath().replaceFirst("\\.[a-z][a-z]$", ""));
+            String extension = SplitUtil.getCutKillerExtension(new File(archive.getFirstArchiveFile().getFilePath()), archive.getArchiveFiles().size());
+            boolean ret;
 
-        if (ret) {
-            archive.setExitCode(ExtractionControllerConstants.EXIT_CODE_SUCCESS);
+            if (extension != null) {
+                f = new File(f.getAbsolutePath() + "." + extension);
+                ret = SplitUtil.merge(controller, f, 8, config);
+            } else {
+                ret = SplitUtil.merge(controller, f, 0, config);
+            }
+
+            if (ret) {
+                archive.setExitCode(ExtractionControllerConstants.EXIT_CODE_SUCCESS);
+            }
+        } catch (ExtSevenZipException e) {
+            setException(e);
+            logger.log(e);
+            archive.setExitCode(e.getExitCode());
+        } catch (SevenZipException e) {
+            setException(e);
+            logger.log(e);
+            archive.setExitCode(ExtractionControllerConstants.EXIT_CODE_FATAL_ERROR);
+            return;
         }
     }
 

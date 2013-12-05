@@ -95,6 +95,7 @@ import org.jdownloader.gui.views.linkgrabber.contextmenu.LinkGrabberMoreSubMenu;
 import org.jdownloader.gui.views.linkgrabber.contextmenu.MenuManagerLinkgrabberTableContext;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.logging.LogController;
+import org.jdownloader.settings.IfFileExistsAction;
 import org.jdownloader.settings.staticreferences.CFG_LINKGRABBER;
 import org.jdownloader.translate._JDT;
 
@@ -238,7 +239,7 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
         archive.getFactory().fireArchiveAddedToQueue(archive);
         ExtractionController controller = new ExtractionController(this, archive, extractor);
         controller.setAskForUnknownPassword(forceAskForUnknownPassword);
-        controller.setOverwriteFiles(isOverwriteFiles(archive));
+        controller.setIfFileExistsAction(getIfFileExistsAction(archive));
         controller.setRemoveAfterExtract(getRemoveFilesAfterExtractAction(archive));
         controller.setRemoveDownloadLinksAfterExtraction(isRemoveDownloadLinksAfterExtractEnabled(archive));
         archive.setActive(true);
@@ -780,16 +781,11 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
 
     }
 
-    public boolean isOverwriteFiles(Archive archive) {
-        switch (archive.getSettings().getOverwriteFiles()) {
-        case FALSE:
-            return false;
-        case TRUE:
-            return true;
-        case UNSET:
-            return getSettings().isOverwriteExistingFilesEnabled();
-        }
-        return false;
+    public IfFileExistsAction getIfFileExistsAction(Archive archive) {
+        IfFileExistsAction ret = archive.getSettings()._getIfFileExistsAction();
+        if (ret != null) return ret;
+        return getSettings().getIfFileExistsAction();
+
     }
 
     public File getFinalExtractToFolder(Archive archive) {
