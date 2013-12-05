@@ -80,6 +80,7 @@ public class LetitBitNet extends PluginForHost {
     private final String         TEMPDISABLED                      = "(api\\.recaptcha\\.net|google\\.com/recaptcha/api/|>File not found<|id=\"videocaptcha_)";
     private String               agent                             = null;
     private static final boolean PLUGIN_BROKEN                     = false;
+    private static Object        PREMIUMLOCK                       = new Object();
 
     public LetitBitNet(PluginWrapper wrapper) {
         super(wrapper);
@@ -216,8 +217,7 @@ public class LetitBitNet extends PluginForHost {
     }
 
     /**
-     * Important: Always sync this code with the vip-file.com, shareflare.net and letitbit.net plugins Limits: 20 * 50 = 1000 links per
-     * minute
+     * Important: Always sync this code with the vip-file.com, shareflare.net and letitbit.net plugins Limits: 20 * 50 = 1000 links per minute
      * */
     @Override
     public boolean checkLinks(final DownloadLink[] urls) {
@@ -654,7 +654,7 @@ public class LetitBitNet extends PluginForHost {
         return finallinksx.peekLast();
     }
 
-    private boolean login(final Account account, final boolean force) throws Exception {
+    private Map<String, String> login(final Account account, final boolean force) throws Exception {
         synchronized (LOCK) {
             // Load cookies
             try {
@@ -671,7 +671,7 @@ public class LetitBitNet extends PluginForHost {
                             final String value = cookieEntry.getValue();
                             this.br.setCookie(COOKIE_HOST, key, value);
                         }
-                        return false;
+                        return cookies;
                     }
                 }
                 /*
@@ -689,7 +689,7 @@ public class LetitBitNet extends PluginForHost {
                 account.setProperty("name", Encoding.urlEncode(account.getUser()));
                 account.setProperty("pass", Encoding.urlEncode(account.getPass()));
                 account.setProperty("cookies", cookies);
-                return true;
+                return cookies;
             } catch (final PluginException e) {
                 account.setProperty("cookies", null);
                 throw e;
@@ -748,12 +748,20 @@ public class LetitBitNet extends PluginForHost {
                 dlUrl = handleOldPremiumPassWay(account, downloadLink);
         } else {
             /* account login */
-            boolean freshLogin = login(account, false);
-            br.setFollowRedirects(true);
-            br.getPage(downloadLink.getDownloadURL());
-            if (br.containsHTML(">Please wait, there is a file search")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Download not possible at the moment", 2 * 60 * 60 * 1000l);
-            handleNonApiErrors(downloadLink);
-            dlUrl = getUrl(account);
+            boolean freshLogin = false;
+            Object currentCookies = null;
+            synchronized (PREMIUMLOCK) {
+                synchronized (LOCK) {
+                    Object latestCookies = account.getProperty("cookies", null);
+                    currentCookies = login(account, false);
+                    freshLogin = currentCookies != latestCookies;
+                }
+                br.setFollowRedirects(true);
+                br.getPage(downloadLink.getDownloadURL());
+                if (br.containsHTML(">Please wait, there is a file search")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Download not possible at the moment", 2 * 60 * 60 * 1000l);
+                handleNonApiErrors(downloadLink);
+                dlUrl = getUrl(account);
+            }
             if (dlUrl == null && br.containsHTML("callback_file_unavailable")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server Error", 15 * 60 * 1000l);
             // Maybe invalid or free account
             if (dlUrl == null && br.containsHTML("If you already have a premium")) {
@@ -762,7 +770,9 @@ public class LetitBitNet extends PluginForHost {
                      * no fresh login, ip could have changed, remove cookies and retry with fresh login
                      */
                     synchronized (LOCK) {
-                        account.setProperty("cookies", null);
+                        if (currentCookies == account.getProperty("cookies", null)) {
+                            account.setProperty("cookies", null);
+                        }
                     }
                     throw new PluginException(LinkStatus.ERROR_RETRY);
                 }

@@ -186,6 +186,20 @@ public class YoutubeDash extends Youtube {
             }
 
             @Override
+            public void lockFiles(File... files) throws FileIsLockedException {
+                /**
+                 * do nothing, handleDownload does all the locking
+                 */
+            }
+
+            @Override
+            public void unlockFiles(File... files) {
+                /**
+                 * do nothing, handleDownload does all the locking
+                 */
+            }
+
+            @Override
             public void waitForNextConnectionAllowed() throws InterruptedException {
                 YoutubeDash.this.waitForNextConnectionAllowed(downloadLink);
             }
@@ -351,9 +365,12 @@ public class YoutubeDash extends Youtube {
         requestFileInformation(downloadLink);
 
         final SingleDownloadController dlc = downloadLink.getDownloadLinkController();
-        final File fileOutput = new File(downloadLink.getFileOutput());
+        List<File> locks = new ArrayList<File>();
+        locks.addAll(deleteDownloadLink(downloadLink));
         try {
-            dlc.lockFile(fileOutput);
+            for (File lock : locks) {
+                dlc.lockFile(lock);
+            }
             if (new File(getVideoStreamPath(downloadLink)).exists()) {
                 downloadLink.setProperty(DASH_VIDEO_FINISHED, true);
             }
@@ -396,7 +413,9 @@ public class YoutubeDash extends Youtube {
         } catch (final FileIsLockedException e) {
             throw new PluginException(LinkStatus.ERROR_ALREADYEXISTS);
         } finally {
-            dlc.unlockFile(fileOutput);
+            for (File lock : locks) {
+                dlc.unlockFile(lock);
+            }
         }
     }
 
@@ -431,7 +450,6 @@ public class YoutubeDash extends Youtube {
     }
 
     public String getAudioStreamPath(DownloadLink link) {
-
         return new File(link.getDownloadDirectory(), getDashAudioFileName(link)).getAbsolutePath();
     }
 
