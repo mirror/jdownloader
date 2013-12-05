@@ -455,6 +455,7 @@ public class FourSharedCom extends PluginForHost {
                     size = br.getRegex("<span title=\"Size: (.*?)\">").getMatch(0);
                     // For mp3 stream- and maybe also normal stream links
                     if (size == null) size = br.getRegex("class=\"fileOwner dark\\-gray lucida f11\">[^<>\"/]*?</a>([^<>\"]*?) \\|").getMatch(0);
+                    if (size == null) size = br.getRegex("fileInfo light-gray f11 floatLeft\">([^<>\"]*?) \\|").getMatch(0);
                 }
             }
             if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
