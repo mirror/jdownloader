@@ -125,7 +125,10 @@ public class VKontakteRuHoster extends PluginForHost {
                     br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
                     br.postPage("http://vk.com/audio", link.getStringProperty("postdata", null));
                     FINALLINK = br.getRegex("\\'" + audioID + "\\',\\'(http://cs\\d+\\.[a-z0-9]+\\.[a-z]{2,4}/u\\d+/audios?/[a-z0-9]+\\.mp3)\\'").getMatch(0);
-                    if (FINALLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    if (FINALLINK == null) {
+                        logger.info("vk.com: FINALLINK is null in availablecheck");
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
                     if (!linkOk(link, finalFilename)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                     link.setProperty("directlink", FINALLINK);
                 }
@@ -145,7 +148,10 @@ public class VKontakteRuHoster extends PluginForHost {
                         br.getPage("http://vk.com/video_ext.php?oid=" + oid + "&id=" + id + "&hash=" + embedhash);
                     }
                     final LinkedHashMap<String, String> availableQualities = findAvailableVideoQualities();
-                    if (availableQualities == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    if (availableQualities == null) {
+                        logger.info("vk.com: Couldn't find any available qualities for videolink");
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
                     FINALLINK = availableQualities.get(link.getStringProperty("selectedquality", null));
                     if (FINALLINK == null) {
                         logger.warning("Could not find new link for selected quality...");
@@ -191,7 +197,10 @@ public class VKontakteRuHoster extends PluginForHost {
                             if (br.containsHTML("Unknown error|Unbekannter Fehler")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                             if (br.containsHTML("Access denied")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                             albumID = br.getRegex("class=\"active_link\">[\t\n\r ]+<a href=\"/(.*?)\"").getMatch(0);
-                            if (albumID == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                            if (albumID == null) {
+                                logger.info("vk.com: albumID is null");
+                                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                            }
                         }
                         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
                         br.getHeaders().put("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8");
@@ -218,7 +227,7 @@ public class VKontakteRuHoster extends PluginForHost {
                     }
                 }
                 if (FINALLINK == null) {
-                    logger.warning("Finallink is null!");
+                    logger.warning("vk.com: Finallink is null!");
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
                 link.setProperty("picturedirectlink", FINALLINK);
@@ -283,6 +292,7 @@ public class VKontakteRuHoster extends PluginForHost {
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, FINALLINK, true, MAXCHUNKS);
         if (dl.getConnection().getContentType().contains("html")) {
+            logger.info("vk.com: Plugin broken after download-try");
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
