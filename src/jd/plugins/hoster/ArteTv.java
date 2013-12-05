@@ -193,6 +193,13 @@ public class ArteTv extends PluginForHost {
                 fileName = paras.get("name" + lang);
                 CLIPURL = paras.get("urlHd");
                 CLIPURL = CLIPURL == null ? paras.get("urlSd") : CLIPURL;
+                if (CLIPURL == null) {
+                    if (paras.get("liveUrl") != null) {
+                        fileName += "__LIVE";
+                        downloadLink.setProperty("ISLIVE", true);
+                        CLIPURL = paras.get("liveUrl");
+                    }
+                }
             } else if (link.startsWith("http://www.arte.tv/guide/")) {
                 expiredBefore = downloadLink.getStringProperty("VRA", null);
                 expiredAfter = downloadLink.getStringProperty("VRU", null);
@@ -232,7 +239,8 @@ public class ArteTv extends PluginForHost {
         }
         if (status != null) {
             logger.warning(status);
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
+            if (fileName != null) downloadLink.setName(fileName);
+            return AvailableStatus.UNCHECKABLE;
         }
 
         if (fileName == null || CLIPURL == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -268,6 +276,10 @@ public class ArteTv extends PluginForHost {
             }
         }
         downloadLink.setFinalFileName(fileName.trim() + ext);
+        if (downloadLink.getBooleanProperty("ISLIVE", false)) {
+            logger.info("arte.live.tv: Live videos not downloadable! --> " + link);
+            return AvailableStatus.FALSE;
+        }
         return AvailableStatus.TRUE;
     }
 
@@ -281,9 +293,21 @@ public class ArteTv extends PluginForHost {
 
         for (int i = 0; i < modules.getLength(); i++) {
             Node node = modules.item(i);
-            if ("postrolls".equalsIgnoreCase(node.getNodeName()) || "categories".equalsIgnoreCase(node.getNodeName())) {
+            if (node.getNodeName().matches("postrolls|categories|partner|live|chapters|video")) {
+                if (node.getNodeName().matches("live")) {
+                    NodeList t = node.getChildNodes();
+                    for (int j = 0; j < t.getLength(); j++) {
+                        Node g = t.item(j);
+                        if ("#text".equals(g.getNodeName())) continue;
+                        if ("liveUrl".equals(g.getNodeName())) {
+                            paras.put(g.getNodeName(), g.getTextContent());
+                        }
+                    }
+                }
                 continue;
             }
+
+            System.out.println(node.getNodeName() + ":" + node.getTextContent());
             paras.put(node.getNodeName(), node.getTextContent());
         }
         return paras;
