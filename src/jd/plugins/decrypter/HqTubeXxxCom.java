@@ -66,6 +66,11 @@ public class HqTubeXxxCom extends PluginForDecrypt {
             decryptedLinks.add(createDownloadlink("http://www.tnaflix.com/cum-videos/" + System.currentTimeMillis() + "/video" + externID));
             return decryptedLinks;
         }
+        externID = br.getRegex("(http://(www\\.)?pornhub\\.com/embed_player\\.php\\?id=\\d+)\"").getMatch(0);
+        if (externID != null) {
+            decryptedLinks.add(createDownloadlink(externID));
+            return decryptedLinks;
+        }
         // filename needed for all IDs below here
         if (filename == null) {
             logger.warning("hqmaturetube decrypter broken(filename regex) for link: " + parameter);

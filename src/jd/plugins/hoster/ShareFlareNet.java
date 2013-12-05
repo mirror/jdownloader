@@ -59,7 +59,7 @@ public class ShareFlareNet extends PluginForHost {
     private static final String  ENABLEUNLIMITEDSIMULTANMAXFREEDLS = "ENABLEUNLIMITEDSIMULTANMAXFREEDLS";
     private static final String  APIKEY                            = "VjR1U3JGUkNx";
     private static final String  APIPAGE                           = "http://api.letitbit.net/";
-    private static final String  TEMPDISABLED                      = "class=\"wrapper\\-centered\">Code from picture<";
+    private final String         TEMPDISABLED                      = "(api\\.recaptcha\\.net|google\\.com/recaptcha/api/|>File not found<|id=\"videocaptcha_)";
     private static String        agent                             = null;
     private String               AJAXMAINURL                       = null;
     // Static reCaptcha ID (API key)

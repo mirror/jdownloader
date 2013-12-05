@@ -44,6 +44,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
+import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
@@ -76,7 +77,7 @@ public class HellUploadCom extends PluginForHost {
     // free account: same as above, not tested
     // premium account: 10 * unlimited (20 possible, locked to 10 to reduce timeouts issues taking down the download)
     // protocol: no https
-    // captchatype: recaptcha
+    // captchatype: solvemedia
     // other: no redirects
     // other: fileserver overloaded, epic lag
 
@@ -263,6 +264,15 @@ public class HellUploadCom extends PluginForHost {
                     dlForm = rc.getForm();
                     /** wait time is often skippable for reCaptcha handling */
                     skipWaittime = true;
+                } else if (br.containsHTML("solvemedia\\.com/papi/")) {
+                    logger.info("Detected captcha method \"solvemedia\" for this host");
+                    final PluginForDecrypt solveplug = JDUtilities.getPluginForDecrypt("linkcrypt.ws");
+                    final jd.plugins.decrypter.LnkCrptWs.SolveMedia sm = ((jd.plugins.decrypter.LnkCrptWs) solveplug).getSolveMedia(br);
+                    final File cf = sm.downloadCaptcha(getLocalCaptchaFile());
+                    final String code = getCaptchaCode(cf, downloadLink);
+                    final String chid = sm.getChallenge(code);
+                    dlForm.put("adcopy_challenge", chid);
+                    dlForm.put("adcopy_response", "manual_challenge");
                 }
                 /* Captcha END */
                 if (password) passCode = handlePassword(passCode, dlForm, downloadLink);

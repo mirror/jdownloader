@@ -207,6 +207,7 @@ public class PremiumizeMe extends PluginForHost {
             handleAPIErrors(br, account, link);
             logger.info("premiumize.me: Unknown error2");
             int timesFailed = link.getIntegerProperty("timesfailedpremiumizeme_unknown2", 0);
+            link.getLinkStatus().setRetryCount(0);
             if (timesFailed <= 2) {
                 timesFailed++;
                 link.setProperty("timesfailedpremiumizeme_unknown2", timesFailed);

@@ -137,11 +137,8 @@ public class TwoDownloadzCom extends PluginForHost {
     }
 
     private String[] scanInfo(final String[] fileInfo) {
-        final String[] info = new Regex(correctedBR, "<font style=\"font\\-size:12px\" color=\"#848484\" face=\"Arial\"><b>([^<>\"]*?)</b></font></div>").getColumn(0);
-        if (info != null && info.length == 2) {
-            fileInfo[0] = info[0];
-            fileInfo[1] = info[1];
-        }
+        fileInfo[0] = new Regex(correctedBR, "width:325px;line\\-height:30px;\"><b>([^<>\"]*?)</b>").getMatch(0);
+        fileInfo[1] = new Regex(correctedBR, "width:70px;line\\-height:50px;\"><b>([^<>\"]*?)</b>").getMatch(0);
         return fileInfo;
     }
 
@@ -162,7 +159,17 @@ public class TwoDownloadzCom extends PluginForHost {
             getPage(continueLink);
 
             continueLink = new Regex(correctedBR, "\\'(download\\.php\\?id=[a-z0-9]+\\&s=\\d+)\\'").getMatch(0);
-            if (continueLink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (continueLink == null) {
+                if (br.containsHTML(">Open a download link<")) {
+                    try {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+                    } catch (final Throwable e) {
+                        if (e instanceof PluginException) throw (PluginException) e;
+                    }
+                    throw new PluginException(LinkStatus.ERROR_FATAL, "This file can only be downloaded by premium users");
+                }
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
             continueLink = "http://www.2downloadz.com/" + continueLink + "&c=";
             getPage(continueLink);
 
@@ -226,19 +233,14 @@ public class TwoDownloadzCom extends PluginForHost {
     }
 
     /**
-     * Prevents more than one free download from starting at a given time. One
-     * step prior to dl.startDownload(), it adds a slot to maxFree which allows
-     * the next singleton download to start, or at least try.
+     * Prevents more than one free download from starting at a given time. One step prior to dl.startDownload(), it adds a slot to maxFree
+     * which allows the next singleton download to start, or at least try.
      * 
-     * This is needed because xfileshare(website) only throws errors after a
-     * final dllink starts transferring or at a given step within pre download
-     * sequence. But this template(XfileSharingProBasic) allows multiple
-     * slots(when available) to commence the download sequence,
-     * this.setstartintival does not resolve this issue. Which results in x(20)
-     * captcha events all at once and only allows one download to start. This
-     * prevents wasting peoples time and effort on captcha solving and|or
-     * wasting captcha trading credits. Users will experience minimal harm to
-     * downloading as slots are freed up soon as current download begins.
+     * This is needed because xfileshare(website) only throws errors after a final dllink starts transferring or at a given step within pre
+     * download sequence. But this template(XfileSharingProBasic) allows multiple slots(when available) to commence the download sequence,
+     * this.setstartintival does not resolve this issue. Which results in x(20) captcha events all at once and only allows one download to
+     * start. This prevents wasting peoples time and effort on captcha solving and|or wasting captcha trading credits. Users will experience
+     * minimal harm to downloading as slots are freed up soon as current download begins.
      * 
      * @param controlFree
      *            (+1|-1)

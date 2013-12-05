@@ -44,19 +44,23 @@ public class LsnTo extends PluginForDecrypt {
     @Override
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, final ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final String parameter = param.toString();
+        final String parameter = param.toString().toLowerCase();
         br.getPage(parameter);
 
-        if (parameter.matches("http://(www\\.)?lesen\\.to/wp/tipp/Download/\\d+/")) {
+        if (parameter.matches("http://(www\\.)?lesen\\.to/wp/tipp/download/\\d+/")) {
             final String redirect = br.getRedirectLocation();
             if (redirect == null) {
                 logger.info("Cannot decrypt link: " + parameter);
                 logger.info("Unsupported link: " + redirect);
                 return decryptedLinks;
             }
-            final String newLink = new Regex(redirect, "(http://(www\\.)?lesen\\.to/protection/folder_\\d+\\.html)").getMatch(0);
+            if (!redirect.contains("lesen.to/")) {
+                decryptedLinks.add(createDownloadlink(redirect));
+                return decryptedLinks;
+            }
+            String newLink = new Regex(redirect, "(http://(www\\.)?lesen\\.to/protection/folder_\\d+\\.html)").getMatch(0);
             if (newLink == null) {
-                if (redirect.contains("lesen.to/download")) {
+                if (redirect.matches("http://(www\\.)?lesen\\.to/(download|firstload)")) {
                     logger.info("Cannot decrypt link: " + parameter);
                     logger.info("Link offline: " + redirect);
                     return decryptedLinks;
@@ -99,7 +103,6 @@ public class LsnTo extends PluginForDecrypt {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
-        progress.setRange(links.length);
         for (final String singleLink : links) {
             if (singleLink.matches("http://(www\\.)?lesen\\.to/protection/.*?")) {
                 br.getPage(singleLink);
@@ -112,7 +115,6 @@ public class LsnTo extends PluginForDecrypt {
             } else {
                 decryptedLinks.add(createDownloadlink(singleLink));
             }
-            progress.increase(1);
         }
         return decryptedLinks;
     }

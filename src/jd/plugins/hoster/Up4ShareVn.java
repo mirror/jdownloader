@@ -17,8 +17,14 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Locale;
+import java.util.Map;
 
 import jd.PluginWrapper;
+import jd.config.Property;
+import jd.http.Cookie;
+import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.Account;
@@ -37,6 +43,8 @@ import org.appwork.utils.formatter.TimeFormatter;
 public class Up4ShareVn extends PluginForHost {
 
     private static final String MAINPAGE = "http://up.4share.vn/";
+    private static Object       LOCK     = new Object();
+    private static final String NOCHUNKS = "NOCHUNKS";
 
     public Up4ShareVn(PluginWrapper wrapper) {
         super(wrapper);
@@ -45,6 +53,7 @@ public class Up4ShareVn extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+        prepBR();
         this.setBrowserExclusive();
         URLConnectionAdapter con = null;
         try {
@@ -70,24 +79,22 @@ public class Up4ShareVn extends PluginForHost {
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
         try {
-            login(account);
+            login(account, true);
         } catch (PluginException e) {
             account.setValid(false);
             throw e;
         }
-        String space = br.getRegex("<br/>\\&#272;\\&#227; s\\&#7917; d\\&#7909;ng: <b>(.*?)  \\(").getMatch(0);
-        if (space != null) ai.setUsedSpace(space.trim());
         account.setValid(true);
         ai.setUnlimitedTraffic();
-        String expire = br.getRegex("Ngày hết hạn.*?(\\d{2}-\\d{2}-\\d{4})").getMatch(0);
+        String expire = br.getRegex("Hạn dùng: ([^<>\"]*?)  \\|").getMatch(0);
         if (expire == null) {
             ai.setExpired(true);
             account.setValid(false);
             return ai;
         } else {
-            ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "dd-MM-yyyy", null));
+            ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "yyyy-MM-dd hh:mm:ss", Locale.ENGLISH));
         }
-        ai.setStatus("Premium User");
+        ai.setStatus("Premium (VIP) User");
         return ai;
     }
 
@@ -126,32 +133,74 @@ public class Up4ShareVn extends PluginForHost {
         }
         if (dllink == null && br.containsHTML("captcha1\\.html")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, -2);
+        int maxChunks = -2;
+        if (downloadLink.getBooleanProperty(NOCHUNKS, false)) maxChunks = 1;
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, maxChunks);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dl.startDownload();
+        try {
+            if (!this.dl.startDownload()) {
+                try {
+                    if (dl.externalDownloadStop()) return;
+                } catch (final Throwable e) {
+                }
+                /* unknown error, we disable multiple chunks */
+                if (downloadLink.getBooleanProperty(Up4ShareVn.NOCHUNKS, false) == false) {
+                    downloadLink.setProperty(Up4ShareVn.NOCHUNKS, Boolean.valueOf(true));
+                    throw new PluginException(LinkStatus.ERROR_RETRY);
+                }
+            }
+        } catch (final PluginException e) {
+            // New V2 chunk errorhandling
+            /* unknown error, we disable multiple chunks */
+            if (e.getLinkStatus() != LinkStatus.ERROR_RETRY && downloadLink.getBooleanProperty(Up4ShareVn.NOCHUNKS, false) == false) {
+                downloadLink.setProperty(Up4ShareVn.NOCHUNKS, Boolean.valueOf(true));
+                throw new PluginException(LinkStatus.ERROR_RETRY);
+            }
+        }
     }
 
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         requestFileInformation(link);
-        login(account);
+        login(account, false);
         br.getPage(link.getDownloadURL());
-        String dllink = br.getRegex("<div id=\"counter\">[\t\n\r ]+</div>[\t\n\r ]+</h3>[\t\n\r ]+<br><a href=\\'(http://.*?)\\'").getMatch(0);
-        if (dllink == null) dllink = br.getRegex("\\'(http://s\\d+\\.4share\\.vn/\\d+/\\?i=[a-z0-9]+\\&f=.*?&l=[a-z0-9]+)\\'").getMatch(0);
+        String dllink = br.getRegex("class=\\'\\'> <a href=\\'(http://.*?)\\'").getMatch(0);
+        if (dllink == null) dllink = br.getRegex("(\\'|\")(http://sv\\d+\\.4share\\.vn/[^<>\"]*?)(\\'|\")").getMatch(1);
         if (dllink == null) {
             logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
+        int maxChunks = 0;
+        if (link.getBooleanProperty(NOCHUNKS, false)) maxChunks = 1;
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, maxChunks);
         if (dl.getConnection().getContentType().contains("html")) {
             logger.warning("The final dllink seems not to be a file!");
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dl.startDownload();
+        try {
+            if (!this.dl.startDownload()) {
+                try {
+                    if (dl.externalDownloadStop()) return;
+                } catch (final Throwable e) {
+                }
+                /* unknown error, we disable multiple chunks */
+                if (link.getBooleanProperty(Up4ShareVn.NOCHUNKS, false) == false) {
+                    link.setProperty(Up4ShareVn.NOCHUNKS, Boolean.valueOf(true));
+                    throw new PluginException(LinkStatus.ERROR_RETRY);
+                }
+            }
+        } catch (final PluginException e) {
+            // New V2 chunk errorhandling
+            /* unknown error, we disable multiple chunks */
+            if (e.getLinkStatus() != LinkStatus.ERROR_RETRY && link.getBooleanProperty(Up4ShareVn.NOCHUNKS, false) == false) {
+                link.setProperty(Up4ShareVn.NOCHUNKS, Boolean.valueOf(true));
+                throw new PluginException(LinkStatus.ERROR_RETRY);
+            }
+        }
     }
 
     // do not add @Override here to keep 0.* compatibility
@@ -159,25 +208,65 @@ public class Up4ShareVn extends PluginForHost {
         return true;
     }
 
-    private void login(final Account account) throws Exception {
-        this.setBrowserExclusive();
-        br.setFollowRedirects(true);
-        br.postPage("http://up.4share.vn/?control=login", "inputUserName=" + Encoding.urlEncode(account.getUser()) + "&inputPassword=" + Encoding.urlEncode(account.getPass()) + "&rememberlogin=on");
-        final String lang = System.getProperty("user.language");
-        if (br.getCookie(MAINPAGE, "userid") == null || br.getCookie(MAINPAGE, "passwd") == null) {
-            if ("de".equalsIgnoreCase(lang)) {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-            } else {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+    @SuppressWarnings("unchecked")
+    private void login(final Account account, final boolean force) throws Exception {
+        synchronized (LOCK) {
+            try {
+                /** Load cookies */
+                this.setBrowserExclusive();
+                prepBR();
+                br.setFollowRedirects(true);
+                final Object ret = account.getProperty("cookies", null);
+                boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
+                if (acmatch) acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
+                if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
+                    final HashMap<String, String> cookies = (HashMap<String, String>) ret;
+                    if (account.isValid()) {
+                        for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
+                            final String key = cookieEntry.getKey();
+                            final String value = cookieEntry.getValue();
+                            this.br.setCookie(MAINPAGE, key, value);
+                        }
+                        return;
+                    }
+                }
+
+                br.getPage("http://up.4share.vn/");
+                br.postPage("http://up.4share.vn/?control=login", "inputUserName=" + Encoding.urlEncode(account.getUser()) + "&inputPassword=" + Encoding.urlEncode(account.getPass()) + "&rememberlogin=on");
+                final String lang = System.getProperty("user.language");
+                if (br.getCookie(MAINPAGE, "userid") == null || br.getCookie(MAINPAGE, "passwd") == null) {
+                    if ("de".equalsIgnoreCase(lang)) {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    } else {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    }
+                }
+                if (!br.containsHTML("\\(<strong>VIP</strong>") && !br.containsHTML("\\[<strong>VIP</strong>\\]")) {
+                    if ("de".equalsIgnoreCase(lang)) {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Account Typ!\r\nDas ist ein kostenloser Account.\r\nJDownloader unterstützt keine kostenlosen Accounts für diesen Hoster!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    } else {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid account type!\r\nThis is a free account. JDownloader only supports premium (VIP) accounts for this host!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    }
+                }
+                /** Save cookies */
+                final HashMap<String, String> cookies = new HashMap<String, String>();
+                final Cookies add = this.br.getCookies(MAINPAGE);
+                for (final Cookie c : add.getCookies()) {
+                    cookies.put(c.getKey(), c.getValue());
+                }
+                account.setProperty("name", Encoding.urlEncode(account.getUser()));
+                account.setProperty("pass", Encoding.urlEncode(account.getPass()));
+                account.setProperty("cookies", cookies);
+            } catch (final PluginException e) {
+                account.setProperty("cookies", Property.NULL);
+                throw e;
             }
         }
-        if (!br.containsHTML("<td> <b>VIP</b>")) {
-            if ("de".equalsIgnoreCase(lang)) {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Account Typ!\r\nDas ist ein kostenloser Account.\r\nJDownloader unterstützt keine kostenlosen Accounts für diesen Hoster!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-            } else {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid account type!\r\nThis is a free account. JDownloader only supports premium (VIP) accounts for this host!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-            }
-        }
+    }
+
+    private void prepBR() {
+        this.br.setReadTimeout(3 * 60 * 1000);
+        this.br.setConnectTimeout(3 * 60 * 1000);
     }
 
     @Override

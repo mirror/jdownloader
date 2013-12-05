@@ -87,7 +87,19 @@ public class FastShareCz extends PluginForHost {
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             if (br.containsHTML("securimage_show")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (br.containsHTML("No htmlCode read")) throw new PluginException(LinkStatus.ERROR_RETRY, "Server error");
+            logger.info("fastshare.cz: Unknown error -> Retrying");
+            int timesFailed = downloadLink.getIntegerProperty("timesfailedfastsharecz_unknown", 0);
+            downloadLink.getLinkStatus().setRetryCount(0);
+            if (timesFailed <= 2) {
+                timesFailed++;
+                downloadLink.setProperty("timesfailedfastsharecz_unknown", timesFailed);
+                throw new PluginException(LinkStatus.ERROR_RETRY, "Unknown error");
+            } else {
+                downloadLink.setProperty("timesfailedfastsharecz_unknown", Property.NULL);
+                logger.info("fastshare.cz: Unknown error -> Plugin is broken");
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
         }
         dl.startDownload();
     }
