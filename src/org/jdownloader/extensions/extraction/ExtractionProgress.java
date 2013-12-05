@@ -60,7 +60,6 @@ public class ExtractionProgress extends PluginProgress {
             }
             if (requestor instanceof ProgressColumn) { return df.format(ExtProgressColumn.getPercentString(getCurrent(), getTotal())) + "%"; }
         }
-
         return message;
     }
 

@@ -2,6 +2,7 @@ package org.jdownloader.extensions.extraction.multi;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import net.sf.sevenzipjbinding.ArchiveFormat;
 import net.sf.sevenzipjbinding.ExtractAskMode;
 import net.sf.sevenzipjbinding.ExtractOperationResult;
 import net.sf.sevenzipjbinding.IArchiveExtractCallback;
@@ -17,18 +18,40 @@ import org.jdownloader.extensions.extraction.FileSignatures;
 
 public class Seven7PWCallback implements IArchiveExtractCallback, ICryptoGetTextPassword {
 
-    private final AtomicBoolean        passwordfound;
-    private final ISevenZipInArchive   inArchive;
-    private final String               password;
-    private SignatureCheckingOutStream signatureOutStream;
-    private boolean                    optimized;
+    private final AtomicBoolean              passwordfound;
+    private final ISevenZipInArchive         inArchive;
+    private final String                     password;
+    private final SignatureCheckingOutStream signatureOutStream;
+    private boolean                          optimized;
+    protected final static long              SLOWDOWNWORKAROUNDTIMEOUT = 100;
 
     public Seven7PWCallback(ISevenZipInArchive inArchive, AtomicBoolean passwordfound, String password, ReusableByteArrayOutputStream buffer, long maxPWCheckSize, FileSignatures filesignatures, boolean optimized) {
         this.passwordfound = passwordfound;
         this.inArchive = inArchive;
-        this.password = password;
+        if (StringUtils.isEmpty(password)) {
+            this.password = "";
+        } else {
+            this.password = password;
+        }
         this.optimized = optimized;
-        signatureOutStream = new SignatureCheckingOutStream(passwordfound, filesignatures, buffer, maxPWCheckSize, optimized);
+        if (ArchiveFormat.SEVEN_ZIP == inArchive.getArchiveFormat()) {
+            signatureOutStream = new SignatureCheckingOutStream(passwordfound, filesignatures, buffer, maxPWCheckSize, optimized) {
+                @Override
+                public int write(byte[] data) throws SevenZipException {
+                    synchronized (this) {
+                        try {
+                            wait(SLOWDOWNWORKAROUNDTIMEOUT);
+                        } catch (InterruptedException e) {
+                            throw new SevenZipException(e);
+                        }
+                    }
+                    return super.write(data);
+                }
+            };
+        } else {
+            signatureOutStream = new SignatureCheckingOutStream(passwordfound, filesignatures, buffer, maxPWCheckSize, optimized);
+        }
+
     }
 
     Boolean skipExtraction = null;

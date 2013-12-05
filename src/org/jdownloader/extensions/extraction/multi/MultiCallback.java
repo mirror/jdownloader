@@ -37,11 +37,11 @@ import org.jdownloader.extensions.extraction.ExtractionControllerConstants;
  * 
  */
 class MultiCallback implements ISequentialOutStream {
-    private FileOutputStream     fos     = null;
-    private CPUPriority          priority;
-    private BufferedOutputStream bos     = null;
-    protected long               written = 0;
-    protected final File         file;
+    protected FileOutputStream     fos     = null;
+    protected CPUPriority          priority;
+    protected BufferedOutputStream bos     = null;
+    protected long                 written = 0;
+    protected final File           file;
 
     MultiCallback(File file, ExtractionController con, ExtractionConfig config, boolean shouldCrc) throws FileNotFoundException {
         priority = config.getCPUPriority();

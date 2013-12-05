@@ -684,17 +684,18 @@ public class Multi extends IExtraction {
                         }
                         round.clear();
                         Seven7ExtractCallback callback = null;
-
                         try {
                             inArchive.extract(items, false, callback = new Seven7ExtractCallback(this, inArchive, ctrl, archive, config));
                         } catch (SevenZipException e) {
                             logger.log(e);
+                            throw e;
                         } finally {
                             ctrl.setCurrentActiveItem(null);
                             if (callback != null) callback.close();
                         }
                         if (callback != null) {
-                            if (callback.hasError()) { return; }
+                            if (callback.hasError()) throw new SevenZipException("callback encountered an error!");
+                            if (callback.isResultMissing()) throw new SevenZipException("callback is missing results!");
                         }
                     }
                 }
@@ -943,6 +944,7 @@ public class Multi extends IExtraction {
                     archive.setExitCode(ExtractionControllerConstants.EXIT_CODE_CREATE_ERROR);
                     return null;
                 }
+                extractTo.delete();
                 break;
             } catch (final IOException e) {
                 logger.log(e);
@@ -975,7 +977,7 @@ public class Multi extends IExtraction {
     @Override
     public boolean findPassword(final ExtractionController ctl, String password, boolean optimized) throws ExtractionException {
         crack++;
-        if (password == null) {
+        if (StringUtils.isEmpty(password)) {
             /* This should never happen */
             password = "";
         }
@@ -1074,8 +1076,7 @@ public class Multi extends IExtraction {
                                 ExtractOperationResult result = item.extractSlow(signatureOutStream, password);
                                 if (ExtractOperationResult.DATAERROR.equals(result)) {
                                     /*
-                                     * 100% wrong password, DO NOT CONTINUE as unrar already might have cleaned up (nullpointer in native ->
-                                     * crash jvm)
+                                     * 100% wrong password, DO NOT CONTINUE as unrar already might have cleaned up (nullpointer in native -> crash jvm)
                                      */
                                     return false;
                                 }

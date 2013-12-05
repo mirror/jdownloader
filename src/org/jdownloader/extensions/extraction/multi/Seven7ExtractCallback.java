@@ -1,10 +1,10 @@
 package org.jdownloader.extensions.extraction.multi;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.util.Date;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import net.sf.sevenzipjbinding.ArchiveFormat;
 import net.sf.sevenzipjbinding.ExtractAskMode;
 import net.sf.sevenzipjbinding.ExtractOperationResult;
 import net.sf.sevenzipjbinding.IArchiveExtractCallback;
@@ -25,26 +25,49 @@ import org.jdownloader.extensions.extraction.Item;
 
 public class Seven7ExtractCallback implements IArchiveExtractCallback, ICryptoGetTextPassword {
 
-    protected final MultiCallback[]          outStreams;
+    protected final ISequentialOutStream[]   outStreams;
     protected final ExtractionController     ctrl;
     protected final ISevenZipInArchive       inArchive;
     protected final String                   password;
-    protected long                           progressInBytes = 0;
+    protected long                           progressInBytes           = 0;
     protected final Archive                  archive;
     protected final long                     size2;
     protected final ExtractionConfig         config;
-    protected int                            lastIndex       = -1;
+    protected int                            lastIndex                 = -1;
     protected final ExtractOperationResult[] results;
     protected final Multi                    multi;
     protected final ISimpleInArchiveItem[]   items;
-    protected final AtomicBoolean            error           = new AtomicBoolean(false);
+    protected final AtomicBoolean            error                     = new AtomicBoolean(false);
     protected final LogSource                logger;
+    protected final boolean                  slowDownWorkaroundNeeded;
+    protected final static long              SLOWDOWNWORKAROUNDTIMEOUT = 100;
+
+    public ExtractOperationResult getResult(int index) {
+        return results[index];
+    }
+
+    public boolean isResultMissing() {
+        for (int index = 0; index < results.length; index++) {
+            ExtractOperationResult result = results[index];
+            if (result == null) {
+                ISimpleInArchiveItem item = items[index];
+                try {
+                    if (item == null || item.isFolder()) continue;
+                } catch (SevenZipException e) {
+                    e.printStackTrace();
+                }
+                return true;
+            }
+        }
+        return false;
+    }
 
     public Seven7ExtractCallback(Multi multi, ISevenZipInArchive inArchive, ExtractionController ctrl, Archive archive, ExtractionConfig config) throws SevenZipException {
-        outStreams = new MultiCallback[inArchive.getNumberOfItems()];
+        outStreams = new ISequentialOutStream[inArchive.getNumberOfItems()];
         results = new ExtractOperationResult[inArchive.getNumberOfItems()];
         items = new ISimpleInArchiveItem[inArchive.getNumberOfItems()];
         this.inArchive = inArchive;
+        slowDownWorkaroundNeeded = ArchiveFormat.SEVEN_ZIP == inArchive.getArchiveFormat();
         this.ctrl = ctrl;
         this.archive = archive;
         if (StringUtils.isEmpty(archive.getFinalPassword())) {
@@ -74,12 +97,13 @@ public class Seven7ExtractCallback implements IArchiveExtractCallback, ICryptoGe
     @Override
     public ISequentialOutStream getStream(final int index, ExtractAskMode extractaskmode) throws SevenZipException {
         if (lastIndex >= 0) {
-            MultiCallback ret = outStreams[lastIndex];
+            ISequentialOutStream ret = outStreams[lastIndex];
+            if (lastIndex == index) return ret;
             if (ret != null) {
                 /* close previous opened MultiCallback */
                 outStreams[lastIndex] = null;
                 try {
-                    ret.close();
+                    if (ret instanceof MultiCallback) ((MultiCallback) ret).close();
                 } catch (final Throwable e) {
                 }
             }
@@ -87,23 +111,13 @@ public class Seven7ExtractCallback implements IArchiveExtractCallback, ICryptoGe
         lastIndex = index;
         if (ctrl.gotKilled()) { throw new SevenZipException("Extraction has been aborted"); }
         if (error.get()) throw new SevenZipException("Extraction error");
-        MultiCallback ret = outStreams[index];
+        ISequentialOutStream ret = outStreams[index];
         if (ret == null) {
             if (extractaskmode != ExtractAskMode.EXTRACT) {
                 /* null is only permitted in non extract mode */
                 return null;
             }
             final Boolean isFolder = (Boolean) inArchive.getProperty(index, PropID.IS_FOLDER);
-            if (Boolean.TRUE.equals(isFolder)) {
-                /* we need dummy outstream, null may crash java */
-                return new ISequentialOutStream() {
-
-                    @Override
-                    public int write(byte[] abyte0) throws SevenZipException {
-                        return abyte0.length;
-                    }
-                };
-            }
             final String path = (String) inArchive.getProperty(index, PropID.PATH);
             if (StringUtils.isEmpty(path)) { throw new SevenZipException("path is null"); }
             final Long itemSize = (Long) inArchive.getProperty(index, PropID.SIZE);
@@ -214,43 +228,94 @@ public class Seven7ExtractCallback implements IArchiveExtractCallback, ICryptoGe
             };
             items[index] = item;
             try {
-                AtomicBoolean skipped = new AtomicBoolean(false);
-                final File extractTo = multi.getExtractFilePath(item, ctrl, skipped, size2);
-                ctrl.setCurrentActiveItem(new Item(path, item.getSize(), extractTo));
-                if (skipped.get()) { return new ISequentialOutStream() {
+                if (Boolean.TRUE.equals(isFolder)) {
+                    /* we need dummy outstream, null may crash java */
+                    ret = getNullOutputStream();
+                } else {
+                    AtomicBoolean skipped = new AtomicBoolean(false);
+                    final File extractTo = multi.getExtractFilePath(item, ctrl, skipped, size2);
+                    ctrl.setCurrentActiveItem(new Item(path, item.getSize(), extractTo));
+                    if (skipped.get()) {
+                        ret = getNullOutputStream();
+                    } else {
+                        if (extractTo == null) throw new SevenZipException("Extraction error, extractTo == null");
+                        archive.addExtractedFiles(extractTo);
+                        ret = new MultiCallback(extractTo, ctrl, config, false) {
+                            {
+                                if (slowDownWorkaroundNeeded) {
+                                    priority = null;
+                                }
+                            }
 
-                    @Override
-                    public int write(byte[] abyte0) throws SevenZipException {
-                        return abyte0.length;
+                            @Override
+                            public int write(byte[] data) throws SevenZipException {
+                                try {
+                                    if (slowDownWorkaroundNeeded) {
+                                        synchronized (this) {
+                                            try {
+                                                wait(SLOWDOWNWORKAROUNDTIMEOUT);
+                                            } catch (InterruptedException e) {
+                                                throw new SevenZipException(e);
+                                            }
+                                        }
+                                    }
+                                    if (ctrl.gotKilled()) throw new SevenZipException("Extraction has been aborted");
+                                    return super.write(data);
+                                } finally {
+                                    progressInBytes += data.length;
+                                    ctrl.setProgress(progressInBytes / (double) size2);
+                                }
+                            }
+
+                        };
                     }
-                }; }
-                if (extractTo == null) {
-                    error.set(true);
-                    throw new SevenZipException("Extraction error");
                 }
-                archive.addExtractedFiles(extractTo);
-
-                ret = new MultiCallback(extractTo, ctrl, config, false) {
-
-                    @Override
-                    public int write(byte[] data) throws SevenZipException {
-                        try {
-                            if (ctrl.gotKilled()) throw new SevenZipException("Extraction has been aborted");
-
-                            return super.write(data);
-                        } finally {
-                            progressInBytes += data.length;
-                            ctrl.setProgress(progressInBytes / (double) size2);
-                        }
-                    }
-
-                };
-            } catch (FileNotFoundException e) {
+                outStreams[index] = ret;
+            } catch (Throwable e) {
+                error.set(true);
+                if (e instanceof SevenZipException) throw (SevenZipException) e;
                 throw new SevenZipException(e);
             }
-            outStreams[index] = ret;
         }
         return ret;
+    }
+
+    protected ISequentialOutStream getNullOutputStream() {
+        if (slowDownWorkaroundNeeded) {
+            return new ISequentialOutStream() {
+                @Override
+                public int write(byte[] data) throws SevenZipException {
+                    try {
+                        synchronized (this) {
+                            try {
+                                wait(SLOWDOWNWORKAROUNDTIMEOUT);
+                            } catch (InterruptedException e) {
+                                throw new SevenZipException(e);
+                            }
+                        }
+                        if (ctrl.gotKilled()) throw new SevenZipException("Extraction has been aborted");
+                        return data.length;
+                    } finally {
+                        progressInBytes += data.length;
+                        ctrl.setProgress(progressInBytes / (double) size2);
+                    }
+                }
+            };
+        } else {
+            return new ISequentialOutStream() {
+                @Override
+                public int write(byte[] data) throws SevenZipException {
+                    try {
+                        if (ctrl.gotKilled()) throw new SevenZipException("Extraction has been aborted");
+                        return data.length;
+                    } finally {
+                        progressInBytes += data.length;
+                        ctrl.setProgress(progressInBytes / (double) size2);
+                    }
+                }
+            };
+        }
+
     }
 
     public boolean hasError() {
@@ -263,71 +328,75 @@ public class Seven7ExtractCallback implements IArchiveExtractCallback, ICryptoGe
 
     @Override
     public void setOperationResult(ExtractOperationResult res) throws SevenZipException {
-        if (lastIndex >= 0) {
-            MultiCallback ret = outStreams[lastIndex];
-            if (ret != null) {
-                /* close previous opened MultiCallback */
-                outStreams[lastIndex] = null;
-                try {
-                    ret.close();
-                } catch (final Throwable e) {
-                }
-            }
-            results[lastIndex] = res;
-            ISimpleInArchiveItem item = items[lastIndex];
-            if (item != null && ret != null) {
-                if (item.getSize() != ret.getWritten()) {
-                    logger.info("Size missmatch for " + item.getPath() + " is " + ret.getWritten() + " but should be " + item.getSize());
-                    if (ExtractOperationResult.OK == res) {
-                        logger.info("Size missmatch for " + item.getPath() + ", but Extraction returned OK?! Archive seems incomplete");
-                        archive.setExitCode(ExtractionControllerConstants.EXIT_CODE_INCOMPLETE_ERROR);
-                        error.set(true);
-                        throw new SevenZipException("Extraction error");
+        try {
+            if (lastIndex >= 0) {
+                ISequentialOutStream ret = outStreams[lastIndex];
+                if (ret != null) {
+                    /* close previous opened MultiCallback */
+                    outStreams[lastIndex] = null;
+                    try {
+                        if (ret instanceof MultiCallback) ((MultiCallback) ret).close();
+                    } catch (final Throwable e) {
                     }
                 }
+                results[lastIndex] = res;
+                ISimpleInArchiveItem item = items[lastIndex];
+                MultiCallback callback = null;
+                if (item != null && ret != null) {
+                    if (ret instanceof MultiCallback) callback = (MultiCallback) ret;
+                    if (callback != null && item.getSize() != callback.getWritten()) {
+                        logger.info("Size missmatch for " + item.getPath() + " is " + callback.getWritten() + " but should be " + item.getSize());
+                        if (ExtractOperationResult.OK == res) {
+                            logger.info("Size missmatch for " + item.getPath() + ", but Extraction returned OK?! Archive seems incomplete");
+                            archive.setExitCode(ExtractionControllerConstants.EXIT_CODE_INCOMPLETE_ERROR);
+                            throw new SevenZipException("Extraction error");
+                        }
+                    }
+                }
+                switch (res) {
+                case OK:
+                    /* extraction successfully ,continue with next file */
+                    if (callback != null) multi.setLastModifiedDate(item, callback.getFile());
+                    break;
+                case CRCERROR:
+                    if (item != null) {
+                        logger.info("CRC Error in " + item.getPath());
+                    }
+                    archive.setExitCode(ExtractionControllerConstants.EXIT_CODE_CRC_ERROR);
+                    if (item != null) {
+                        throw new SevenZipException("CRC-Extraction error in " + item.getPath());
+                    } else {
+                        throw new SevenZipException("CRC-Extraction error");
+                    }
+                case UNSUPPORTEDMETHOD:
+                    if (item != null) {
+                        logger.info("Unsupported Method " + item.getMethod() + " in " + item.getPath());
+                    }
+                    /* seven7binding does not support all compression methods! */
+                    archive.setExitCode(ExtractionControllerConstants.EXIT_CODE_FATAL_ERROR);
+                    if (item != null) {
+                        throw new SevenZipException("Unsupported Method " + item.getMethod() + " in " + item.getPath());
+                    } else {
+                        throw new SevenZipException("Unsupported Method");
+                    }
+                default:
+                    archive.setExitCode(ExtractionControllerConstants.EXIT_CODE_FATAL_ERROR);
+                    throw new SevenZipException("Extraction error");
+                }
             }
-            switch (res) {
-            case OK:
-                /* extraction successfully ,continue with next file */
-                multi.setLastModifiedDate(item, ret.getFile());
-                break;
-            case CRCERROR:
-                if (item != null) {
-                    logger.info("CRC Error in " + item.getPath());
-                }
-                archive.setExitCode(ExtractionControllerConstants.EXIT_CODE_CRC_ERROR);
-                error.set(true);
-                if (item != null) {
-                    throw new SevenZipException("CRC-Extraction error in " + item.getPath());
-                } else {
-                    throw new SevenZipException("CRC-Extraction error");
-                }
-            case UNSUPPORTEDMETHOD:
-                if (item != null) {
-                    logger.info("Unsupported Method " + item.getMethod() + " in " + item.getPath());
-                }
-                /* seven7binding does not support all compression methods! */
-                archive.setExitCode(ExtractionControllerConstants.EXIT_CODE_FATAL_ERROR);
-                error.set(true);
-                if (item != null) {
-                    throw new SevenZipException("Unsupported Method " + item.getMethod() + " in " + item.getPath());
-                } else {
-                    throw new SevenZipException("Unsupported Method");
-                }
-            default:
-                archive.setExitCode(ExtractionControllerConstants.EXIT_CODE_FATAL_ERROR);
-                error.set(true);
-                throw new SevenZipException("Extraction error");
-            }
+        } catch (final Throwable e) {
+            error.set(true);
+            if (e instanceof SevenZipException) throw (SevenZipException) e;
+            throw new SevenZipException(e);
         }
     }
 
     public void close() {
         if (outStreams != null) {
-            for (MultiCallback outStream : outStreams) {
+            for (ISequentialOutStream outStream : outStreams) {
                 if (outStream != null) {
                     try {
-                        outStream.close();
+                        if (outStream instanceof MultiCallback) ((MultiCallback) outStream).close();
                     } catch (Throwable e) {
                     }
                 }
