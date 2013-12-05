@@ -360,16 +360,16 @@ public class InfoPanel extends MigPanel implements ActionListener, Scrollable {
                 if (value.getActionData() == null) return;
                 CustomizableAppAction action = value.createAction();
                 String defaultIconKey = action.getInitialValue("ICONKEY");
-                iconKeyReset.setToolTipText(_GUI._.ManagerFrame_layoutPanel_resettodefault(defaultIconKey));
+                iconKeyReset.setToolTipText(_GUI._.ManagerFrame_layoutPanel_resettodefault_parametered(defaultIconKey));
                 // iconKeyReset.setEnabled(value.getIconKey() != null && !StringUtils.equals(value.getIconKey(), defaultIconKey));
                 iconKeyReset.setEnabled(true);
                 String defaultName = action.getInitialValue(Action.NAME);
-                nameReset.setToolTipText(_GUI._.ManagerFrame_layoutPanel_resettodefault(defaultName));
+                nameReset.setToolTipText(_GUI._.ManagerFrame_layoutPanel_resettodefault_parametered(defaultName));
                 // nameReset.setEnabled(value.getName() != null && !StringUtils.equals(value.getName(), defaultName));
                 nameReset.setEnabled(true);
                 if (shortCutReset != null) {
                     String defaultShortCut = action.getInitialValue(Action.ACCELERATOR_KEY);
-                    shortCutReset.setToolTipText(_GUI._.ManagerFrame_layoutPanel_resettodefault(defaultShortCut));
+                    shortCutReset.setToolTipText(_GUI._.ManagerFrame_layoutPanel_resettodefault_parametered(defaultShortCut));
                     // shortCutReset.setEnabled(value.getShortcut() != null && !StringUtils.equals(value.getShortcut(), defaultShortCut));
                     shortCutReset.setEnabled(true);
                 }

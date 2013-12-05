@@ -2315,7 +2315,7 @@ public interface GuiTranslation extends TranslateInterface {
     String ManagerFrame_layoutPanel_resettodefault();
 
     @Default(lngs = { "en" }, values = { "Reset to Default: %s1" })
-    String ManagerFrame_layoutPanel_resettodefault(String dflt);
+    String ManagerFrame_layoutPanel_resettodefault_parametered(String dflt);
 
     @Default(lngs = { "en" }, values = { "Change Icon" })
     String InfoPanel_changeicon();
