@@ -877,7 +877,7 @@ public class Multi extends IExtraction {
 
             IfFileExistsAction action = controller.getIfFileExistsAction();
             while (action == null || action == IfFileExistsAction.ASK_FOR_EACH_FILE) {
-                IfFileExistsDialog d = new IfFileExistsDialog(extractTo, ctrl.getCurrentActiveItem(), archive);
+                IfFileExistsDialog d = new IfFileExistsDialog(extractTo, new Item(path, item.getSize(), extractTo), archive);
                 d.show();
 
                 try {
@@ -1076,7 +1076,8 @@ public class Multi extends IExtraction {
                                 ExtractOperationResult result = item.extractSlow(signatureOutStream, password);
                                 if (ExtractOperationResult.DATAERROR.equals(result)) {
                                     /*
-                                     * 100% wrong password, DO NOT CONTINUE as unrar already might have cleaned up (nullpointer in native -> crash jvm)
+                                     * 100% wrong password, DO NOT CONTINUE as unrar already might have cleaned up (nullpointer in native ->
+                                     * crash jvm)
                                      */
                                     return false;
                                 }

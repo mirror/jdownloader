@@ -129,10 +129,10 @@ public class IfFileExistsDialog extends AbstractDialog<IfFileExistsAction> imple
         p.add(txt, "spanx");
         p.add(SwingUtils.toBold(new JLabel(_GUI._.IfFileExistsDialog_layoutDialogContent_filename())), "sg 1");
         p.add(new JLabel(new File(path).getName()));
-
-        p.add(SwingUtils.toBold(new JLabel(_GUI._.IfFileExistsDialog_layoutDialogContent_filesize2())), "sg 1");
-        p.add(new JLabel(SizeFormatter.formatBytes(item.getSize())));
-
+        if (item != null) {
+            p.add(SwingUtils.toBold(new JLabel(_GUI._.IfFileExistsDialog_layoutDialogContent_filesize2())), "sg 1");
+            p.add(new JLabel(SizeFormatter.formatBytes(item.getSize())));
+        }
         p.add(SwingUtils.toBold(new JLabel(_GUI._.IfFileExistsDialog_layoutDialogContent_filesize_existing())), "sg 1");
         p.add(new JLabel(SizeFormatter.formatBytes(localFile.length())));
 
