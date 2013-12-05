@@ -239,9 +239,9 @@ public class Account extends Property {
         }
     }
 
-    public void setPass(final String pass) {
-        final String newPass = trim(pass);
-        if (!StringUtils.equals(pass, newPass)) {
+    public void setPass(String newPass) {
+        newPass = trim(newPass);
+        if (!StringUtils.equals(this.pass, newPass)) {
             this.pass = newPass;
             accinfo = null;
             setUpdateTime(0);
@@ -267,9 +267,9 @@ public class Account extends Property {
         if (notify) notifyUpdate(false);
     }
 
-    public void setUser(final String user) {
-        final String newUser = trim(user);
-        if (!StringUtils.equals(user, newUser)) {
+    public void setUser(String newUser) {
+        newUser = trim(newUser);
+        if (!StringUtils.equals(this.user, newUser)) {
             this.user = newUser;
             accinfo = null;
             setUpdateTime(0);
