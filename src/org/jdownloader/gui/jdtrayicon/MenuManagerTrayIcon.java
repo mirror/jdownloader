@@ -5,6 +5,7 @@ import javax.swing.JPopupMenu;
 import jd.gui.swing.jdgui.components.toolbar.actions.AutoReconnectToggleAction;
 import jd.gui.swing.jdgui.components.toolbar.actions.ClipBoardToggleAction;
 import jd.gui.swing.jdgui.components.toolbar.actions.GlobalPremiumSwitchToggleAction;
+import jd.gui.swing.jdgui.components.toolbar.actions.SilentModeToggleAction;
 import jd.gui.swing.jdgui.components.toolbar.actions.StartDownloadsAction;
 import jd.gui.swing.jdgui.components.toolbar.actions.StopDownloadsAction;
 import jd.gui.swing.jdgui.menu.actions.ExitAction;
@@ -27,6 +28,7 @@ import org.jdownloader.gui.jdtrayicon.actions.TrayPauseAction;
 import org.jdownloader.gui.jdtrayicon.actions.TrayReconnectAction;
 import org.jdownloader.gui.jdtrayicon.actions.TrayUpdateAction;
 import org.jdownloader.gui.jdtrayicon.translate._TRAY;
+import org.jdownloader.gui.mainmenu.container.OptionalContainer;
 import org.jdownloader.gui.views.SelectionInfo;
 
 public class MenuManagerTrayIcon extends ContextMenuManager<FilePackage, DownloadLink> {
@@ -87,6 +89,10 @@ public class MenuManagerTrayIcon extends ContextMenuManager<FilePackage, Downloa
 
         mr.add(new SeperatorData());
         mr.add(new MenuItemData(ExitAction.class));
+
+        OptionalContainer opt;
+        mr.add(opt = new OptionalContainer(false));
+        opt.add(SilentModeToggleAction.class);
 
         return mr;
     }
