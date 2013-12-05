@@ -163,7 +163,19 @@ public class XHamsterCom extends PluginForHost {
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (br.containsHTML(">Video not found<")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 5 * 60 * 1000l); }
+            logger.info("xhamster.com: Unknown error -> Retrying!");
+            int timesFailed = downloadLink.getIntegerProperty("timesfailedxhamstercom_unknown", 0);
+            downloadLink.getLinkStatus().setRetryCount(0);
+            if (timesFailed <= 2) {
+                timesFailed++;
+                downloadLink.setProperty("timesfailedxhamstercom_unknown", timesFailed);
+                throw new PluginException(LinkStatus.ERROR_RETRY, "Unknown error");
+            } else {
+                downloadLink.setProperty("timesfailedxhamstercom_unknown", Property.NULL);
+                logger.info("xhamster.com: Unknown error -> Plugin is broken!");
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
         }
         dl.startDownload();
     }
