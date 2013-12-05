@@ -285,33 +285,23 @@ public class Seven7ExtractCallback implements IArchiveExtractCallback, ICryptoGe
             return new ISequentialOutStream() {
                 @Override
                 public int write(byte[] data) throws SevenZipException {
-                    try {
-                        synchronized (this) {
-                            try {
-                                wait(SLOWDOWNWORKAROUNDTIMEOUT);
-                            } catch (InterruptedException e) {
-                                throw new SevenZipException(e);
-                            }
+                    synchronized (this) {
+                        try {
+                            wait(SLOWDOWNWORKAROUNDTIMEOUT);
+                        } catch (InterruptedException e) {
+                            throw new SevenZipException(e);
                         }
-                        if (ctrl.gotKilled()) throw new SevenZipException("Extraction has been aborted");
-                        return data.length;
-                    } finally {
-                        progressInBytes += data.length;
-                        ctrl.setProgress(progressInBytes / (double) size2);
                     }
+                    if (ctrl.gotKilled()) throw new SevenZipException("Extraction has been aborted");
+                    return data.length;
                 }
             };
         } else {
             return new ISequentialOutStream() {
                 @Override
                 public int write(byte[] data) throws SevenZipException {
-                    try {
-                        if (ctrl.gotKilled()) throw new SevenZipException("Extraction has been aborted");
-                        return data.length;
-                    } finally {
-                        progressInBytes += data.length;
-                        ctrl.setProgress(progressInBytes / (double) size2);
-                    }
+                    if (ctrl.gotKilled()) throw new SevenZipException("Extraction has been aborted");
+                    return data.length;
                 }
             };
         }
