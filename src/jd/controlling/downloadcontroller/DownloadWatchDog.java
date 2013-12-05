@@ -74,6 +74,7 @@ import jd.plugins.FilePackageProperty;
 import jd.plugins.LinkStatus;
 import jd.plugins.LinkStatusProperty;
 import jd.plugins.PluginException;
+import jd.plugins.PluginForHost;
 import jd.plugins.download.DownloadInterface;
 import jd.plugins.download.raf.HashResult;
 
@@ -2079,8 +2080,9 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
         PluginException pluginException = null;
         ConditionalSkipReason conditionalSkipReason = null;
         String pluginHost = null;
-        if (result.getLatestPlugin() != null) {
-            pluginHost = result.getLatestPlugin().getLazyP().getHost();
+        PluginForHost latestPlugin = null;
+        if ((latestPlugin = result.getLatestPlugin()) != null) {
+            pluginHost = latestPlugin.getLazyP().getHost();
         }
         if (throwable != null) {
             if (throwable instanceof PluginException) {
@@ -2163,6 +2165,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                 }
                 break;
             case LinkStatus.ERROR_PLUGIN_DEFECT:
+                if (latestPlugin != null) latestPlugin.errLog(throwable, null, link);
                 ret = new DownloadLinkCandidateResult(RESULT.PLUGIN_DEFECT);
                 break;
             case LinkStatus.ERROR_FATAL:
