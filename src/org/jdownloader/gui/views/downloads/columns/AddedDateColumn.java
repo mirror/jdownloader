@@ -7,6 +7,7 @@ import javax.swing.SwingConstants;
 
 import jd.controlling.linkcrawler.CrawledPackage;
 import jd.controlling.packagecontroller.AbstractNode;
+import jd.plugins.FilePackage;
 
 import org.appwork.swing.exttable.columns.ExtDateColumn;
 import org.jdownloader.gui.translate._GUI;
@@ -35,6 +36,7 @@ public class AddedDateColumn extends ExtDateColumn<AbstractNode> {
 
     @Override
     public boolean isEnabled(AbstractNode obj) {
+        if (obj instanceof FilePackage) { return ((FilePackage) obj).getView().isEnabled(); }
         if (obj instanceof CrawledPackage) { return ((CrawledPackage) obj).getView().isEnabled(); }
         return obj.isEnabled();
     }

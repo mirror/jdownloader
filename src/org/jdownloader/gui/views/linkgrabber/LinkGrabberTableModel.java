@@ -16,6 +16,7 @@ import org.jdownloader.gui.views.components.packagetable.PackageControllerTableM
 import org.jdownloader.gui.views.components.packagetable.columns.ChecksumColumn;
 import org.jdownloader.gui.views.components.packagetable.columns.CommentColumn;
 import org.jdownloader.gui.views.components.packagetable.columns.DownloadPasswordColumn;
+import org.jdownloader.gui.views.downloads.columns.AddedDateColumn;
 import org.jdownloader.gui.views.downloads.columns.AvailabilityColumn;
 import org.jdownloader.gui.views.downloads.columns.FileColumn;
 import org.jdownloader.gui.views.downloads.columns.HosterColumn;
@@ -103,7 +104,7 @@ public class LinkGrabberTableModel extends PackageControllerTableModel<CrawledPa
                 return false;
             }
         });
-
+        this.addColumn(new AddedDateColumn());
         this.addColumn(new ChecksumColumn());
 
     }
