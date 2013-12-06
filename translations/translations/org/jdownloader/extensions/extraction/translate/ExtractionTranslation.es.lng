@@ -52,6 +52,7 @@ extractprogress_label=Extraído %s1: %s2 archivos
 failed=Extracción fallida: %s1
 failed_no_details=Ha fallado la extracción
 file_exists=El archivo existe
+file_exists_message=Hay un problema con la extracción de un archivo.\nEl archivo a extraer ya existe en el disco duro. Por favor, elija lo que desea hacer:
 file_exists_not=El archivo no existe
 filename=Nombre del Archivo
 files2=archivo(s)
