@@ -147,12 +147,17 @@ public class MyJDownloaderHttpConnection extends HttpConnection {
         }
     }
 
-    public boolean isJSonRequestValid(JSonRequest aesJsonRequest) {
-        if (aesJsonRequest == null) return false;
-        if (StringUtils.isEmpty(aesJsonRequest.getUrl())) return false;
-        if (!StringUtils.equals(getRequest().getRequestedURL(), aesJsonRequest.getUrl())) { return false; }
-        if (!api.validateRID(aesJsonRequest.getRid(), getRequestConnectToken())) { return false; }
-        logger.info("Go Request " + JSonStorage.serializeToJson(aesJsonRequest));
+    public boolean isJSonRequestValid(JSonRequest aesJsonRequest) throws IOException {
+        try {
+            if (aesJsonRequest == null) throw new IOException("no JSONRequest");
+            if (StringUtils.isEmpty(aesJsonRequest.getUrl())) throw new IOException("JSonRequest URL is empty");
+            if (!StringUtils.equals(getRequest().getRequestedURL(), aesJsonRequest.getUrl())) throw new IOException("JSonRequest URL=" + aesJsonRequest.getUrl() + " does not match " + getRequest().getRequestedURL());
+            if (!api.validateRID(aesJsonRequest.getRid(), getRequestConnectToken())) throw new IOException("JSonRequest URL=" + aesJsonRequest.getUrl() + " has duplicated RID=" + aesJsonRequest.getRid());
+            logger.info("Go Request " + JSonStorage.serializeToJson(aesJsonRequest));
+        } catch (IOException e) {
+            logger.log(e);
+            throw e;
+        }
         return true;
     }
 
