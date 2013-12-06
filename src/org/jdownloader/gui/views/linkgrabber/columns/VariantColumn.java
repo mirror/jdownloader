@@ -136,7 +136,6 @@ public class VariantColumn extends ExtComboColumn<AbstractNode, LinkVariant> {
     // }
 
     protected LinkVariant getSelectedItem(AbstractNode object) {
-
         if (object instanceof CrawledLink) {
             if (!((CrawledLink) object).hasVariantSupport()) return null;
             return ((CrawledLink) object).gethPlugin().getActiveVariantByLink(((CrawledLink) object).getDownloadLink());
@@ -150,26 +149,23 @@ public class VariantColumn extends ExtComboColumn<AbstractNode, LinkVariant> {
     @Override
     protected void setSelectedItem(AbstractNode object, LinkVariant value) {
         if (object instanceof CrawledLink) {
-
             ((CrawledLink) object).gethPlugin().setActiveVariantByLink(((CrawledLink) object).getDownloadLink(), value);
         } else if (object instanceof DownloadLink) {
-
             ((DownloadLink) object).getDefaultPlugin().setActiveVariantByLink(((DownloadLink) object), value);
         }
     }
 
     @Override
     public ComboBoxModel<LinkVariant> updateModel(ComboBoxModel<LinkVariant> dataModel, AbstractNode object) {
-
         List<LinkVariant> variants;
         if (object instanceof CrawledLink) {
             if (!((CrawledLink) object).hasVariantSupport()) return null;
             variants = ((CrawledLink) object).gethPlugin().getVariantsByLink(((CrawledLink) object).getDownloadLink());
-            return VariantsModel.get(variants);
+            return new VariantsModel(variants);
         } else if (object instanceof DownloadLink) {
             if (!((DownloadLink) object).hasVariantSupport()) return null;
             variants = ((DownloadLink) object).getDefaultPlugin().getVariantsByLink(((DownloadLink) object));
-            VariantsModel.get(variants);
+            return new VariantsModel(variants);
         }
         return null;
     }

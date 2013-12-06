@@ -221,6 +221,14 @@ public class Property implements Serializable {
         }
     }
 
+    protected boolean destroyThreadSafeProperties(ConcurrentHashMap<String, Object> map) {
+        if (map != null && map.size() == 0) {
+            threadSafeproperties.compareAndSet(map, null);
+            return true;
+        }
+        return false;
+    }
+
     /**
      * Stores a value. Warning: DO not store other stuff than primitives/lists/maps!!
      * 
@@ -232,8 +240,12 @@ public class Property implements Serializable {
         ConcurrentHashMap<String, Object> lthreadSafeproperties = threadSafeproperties.get();
         if (value == NULL || value == null) {
             /* null values are not allowed in concurrentHashMaps */
-            if (lthreadSafeproperties != null) { return lthreadSafeproperties.remove(key) != null; }
-            return false;
+            boolean ret = false;
+            if (lthreadSafeproperties != null) {
+                ret = lthreadSafeproperties.remove(key) != null;
+                if (lthreadSafeproperties.isEmpty()) destroyThreadSafeProperties(lthreadSafeproperties);
+            }
+            return ret;
         }
         Object old = threadSafeCreateProperties().put(key, value);
         if (old == null && value != null) return true;

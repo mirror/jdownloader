@@ -180,6 +180,21 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
     private transient NullsafeAtomicReference<ExtractionStatus>         extractionStatus                    = new NullsafeAtomicReference<ExtractionStatus>();
     private transient NullsafeAtomicReference<LinkStatus>               currentLinkStatus                   = new NullsafeAtomicReference<LinkStatus>(null);
     private transient PartInfo                                          partInfo;
+    private transient NullsafeAtomicReference<Property>                 tempProperties                      = new NullsafeAtomicReference<Property>(null);
+
+    /**
+     * these properties will not be saved/restored
+     * 
+     * @return
+     */
+    public Property getTempProperties() {
+        while (true) {
+            Property ret = tempProperties.get();
+            if (ret != null) return ret;
+            ret = new Property();
+            if (tempProperties.compareAndSet(null, ret)) { return ret; }
+        }
+    }
 
     /**
      * Erzeugt einen neuen DownloadLink

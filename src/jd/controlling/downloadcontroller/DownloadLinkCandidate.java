@@ -29,7 +29,7 @@ public class DownloadLinkCandidate {
 
     @Override
     public String toString() {
-        return "DownloadCandidate: " + link + " from Host " + link.getHost() + " with Account " + cachedAccount + " over Proxy " + proxy;
+        return "DownloadCandidate:" + link + "|Host " + link.getHost() + "|Account:" + cachedAccount + "|Proxy:" + proxy;
     }
 
     public DownloadLinkCandidate(DownloadLink link, boolean forced) {

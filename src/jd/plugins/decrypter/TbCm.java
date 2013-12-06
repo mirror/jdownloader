@@ -30,6 +30,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map.Entry;
 import java.util.Random;
@@ -117,10 +118,63 @@ public class TbCm extends PluginForDecrypt {
         }
     }
 
+    public static enum ITAG {
+        DASH_VIDEO_1080P_H264(137),
+        DASH_VIDEO_720P_H264(136),
+        DASH_VIDEO_480P_H264(135),
+        MP4_VIDEO_1080P_H264_AUDIO_AAC(37),
+        DASH_VIDEO_240P_H264(133),
+        DASH_VIDEO_144P_H264(160),
+        DASH_VIDEO_360P_H264(134),
+        MP4_VIDEO_AUDIO_ORIGINAL(38),
+        MP4_VIDEO_720P_H264_AUDIO_AAC(22),
+        MP4_VIDEO_360P_H264_AUDIO_AAC(18),
+        DASH_AUDIO_48K_AAC(139),
+        DASH_AUDIO_128K_AAC(140),
+        DASH_AUDIO_128K_WEBM(171),
+        DASH_AUDIO_256K_AAC(141),
+        DASH_AUDIO_192K_WEBM(172),
+        FLV_VIDEO_LOW_240P_H263_AUDIO_MP3(5),
+        FLV_VIDEO_HIGH_240P_H263_AUDIO_MP3(6),
+        FLV_VIDEO_360P_H264_AUDIO_AAC(34),
+        FLV_VIDEO_480P_H264_AUDIO_AAC(35),
+        THREEGP_VIDEO_144P_H264_AUDIO_AAC(17),
+        THREEGP_VIDEO_240P_H263_AUDIO_AAC(13),
+        THREEGP_VIDEO_240P_H264_AUDIO_AAC(36),
+        MP4_VIDEO_240P_H264_AUDIO_AAC_3D(83),
+        MP4_VIDEO_360P_H264_AUDIO_AAC_3D(82),
+        MP4_VIDEO_520P_H264_AUDIO_AAC_3D(85),
+        MP4_VIDEO_720P_H264_AUDIO_AAC_3D(84),
+        WEBM_VIDEO_360P_VP8_AUDIO_128K_VORBIS_3D(100),
+        WEBM_VIDEO_360P_VP8_AUDIO_192K_VORBIS_3D(101),
+        WEBM_VIDEO_720P_VP8_AUDIO_192K_VORBIS_3D(102),
+        WEBM_VIDEO_360P_VP8_AUDIO_VORBIS(43),
+        WEBM_VIDEO_480P_VP8_AUDIO_VORBIS(44),
+        WEBM_VIDEO_720P_VP8_AUDIO_VORBIS(45),
+        WEBM_VIDEO_1080P_VP8_AUDIO_VORBIS(46);
+
+        private final int itag;
+
+        private ITAG(int itag) {
+            this.itag = itag;
+        }
+
+        public int getITAG() {
+            return itag;
+        }
+
+        public static ITAG get(int itag) {
+            for (ITAG tag : values()) {
+                if (tag.getITAG() == itag) return tag;
+            }
+            return null;
+        }
+    }
+
     static class Info {
         public String link;
         public long   size;
-        public int    fmt;
+        public ITAG   itag;
         public String desc;
     }
 
@@ -315,7 +369,7 @@ public class TbCm extends PluginForDecrypt {
         return ip == null || ip.trim().length() == 0;
     }
 
-    private void addtopos(final DestinationFormat mode, final String link, final long size, final String desc, final int fmt) {
+    private void addtopos(final DestinationFormat mode, final String link, final long size, final String desc, final ITAG itag) {
         ArrayList<Info> info = this.possibleconverts.get(mode);
         if (info == null) {
             info = new ArrayList<Info>();
@@ -325,7 +379,7 @@ public class TbCm extends PluginForDecrypt {
         tmp.link = link;
         tmp.size = size;
         tmp.desc = desc;
-        tmp.fmt = fmt;
+        tmp.itag = itag;
         info.add(tmp);
     }
 
@@ -570,7 +624,7 @@ public class TbCm extends PluginForDecrypt {
         final AtomicBoolean mp3 = new AtomicBoolean(cfg.getBooleanProperty("ALLOW_MP3_V2", true));
         final AtomicBoolean flv = new AtomicBoolean(cfg.getBooleanProperty("ALLOW_FLV_V2", true));
         /* http://en.wikipedia.org/wiki/YouTube */
-        final HashMap<Integer, Object[]> ytVideo = new HashMap<Integer, Object[]>() {
+        final HashMap<ITAG, Object[]> allowedItags = new HashMap<ITAG, Object[]>() {
             private static final long serialVersionUID = -3028718522449785181L;
 
             {
@@ -611,24 +665,23 @@ public class TbCm extends PluginForDecrypt {
 
                 // **** FLV *****
                 if (mp3.get()) {
-                    this.put(0, new Object[] { DestinationFormat.AUDIOMP3, "H.263", "MP3", "Mono" });
-                    this.put(5, new Object[] { DestinationFormat.AUDIOMP3, "H.263", "MP3", "Stereo" });
-                    this.put(6, new Object[] { DestinationFormat.AUDIOMP3, "H.263", "MP3", "Mono" });
+                    this.put(ITAG.FLV_VIDEO_LOW_240P_H263_AUDIO_MP3, new Object[] { DestinationFormat.AUDIOMP3, "H.263", "MP3", "Stereo" });
+                    this.put(ITAG.FLV_VIDEO_HIGH_240P_H263_AUDIO_MP3, new Object[] { DestinationFormat.AUDIOMP3, "H.263", "MP3", "Mono" });
                 }
                 if (flv.get()) {
                     if (q240p) {
                         // video bit rate @ 0.25Mbit/second
-                        this.put(5, new Object[] { DestinationFormat.VIDEOFLV, "H.263", "MP3", "Stereo", "240p" });
+                        this.put(ITAG.FLV_VIDEO_LOW_240P_H263_AUDIO_MP3, new Object[] { DestinationFormat.VIDEOFLV, "H.263", "MP3", "Stereo", "240p" });
                     }
                     if (q240p) {
                         // video bit rate @ 0.8Mbit/second
-                        this.put(6, new Object[] { DestinationFormat.VIDEOFLV, "H.263", "MP3", "Stereo", "240p" });
+                        this.put(ITAG.FLV_VIDEO_HIGH_240P_H263_AUDIO_MP3, new Object[] { DestinationFormat.VIDEOFLV, "H.263", "MP3", "Stereo", "240p" });
                     }
                     if (q360p) {
-                        this.put(34, new Object[] { DestinationFormat.VIDEOFLV, "H.264", "AAC", "Stereo", "360p" });
+                        this.put(ITAG.FLV_VIDEO_360P_H264_AUDIO_AAC, new Object[] { DestinationFormat.VIDEOFLV, "H.264", "AAC", "Stereo", "360p" });
                     }
                     if (q480p) {
-                        this.put(35, new Object[] { DestinationFormat.VIDEOFLV, "H.264", "AAC", "Stereo", "480p" });
+                        this.put(ITAG.FLV_VIDEO_480P_H264_AUDIO_AAC, new Object[] { DestinationFormat.VIDEOFLV, "H.264", "AAC", "Stereo", "480p" });
                     }
                 }
 
@@ -636,13 +689,13 @@ public class TbCm extends PluginForDecrypt {
                 if (threegp) {
                     // according to wiki the video format is unknown. we rate this as mono! need to look into 3gp more to confirm.
                     if (q144p) {
-                        this.put(17, new Object[] { DestinationFormat.VIDEO3GP, "H.264", "AAC", "Stereo", "144p" });
+                        this.put(ITAG.THREEGP_VIDEO_144P_H264_AUDIO_AAC, new Object[] { DestinationFormat.VIDEO3GP, "H.264", "AAC", "Stereo", "144p" });
                     }
                     if (q240p) {
-                        this.put(13, new Object[] { DestinationFormat.VIDEO3GP, "H.263", "AAC", "Mono", "240p" });
+                        this.put(ITAG.THREEGP_VIDEO_240P_H263_AUDIO_AAC, new Object[] { DestinationFormat.VIDEO3GP, "H.263", "AAC", "Mono", "240p" });
                     }
                     if (q240p) {
-                        this.put(36, new Object[] { DestinationFormat.VIDEO3GP, "H.264", "AAC", "Stereo", "240p" });
+                        this.put(ITAG.THREEGP_VIDEO_240P_H264_AUDIO_AAC, new Object[] { DestinationFormat.VIDEO3GP, "H.264", "AAC", "Stereo", "240p" });
                     }
                 }
 
@@ -650,47 +703,47 @@ public class TbCm extends PluginForDecrypt {
                 if (mp4) {
                     if (q144p) {
                         if (dashSupported) {
-                            this.put(160, new Object[] { DestinationFormat.VIDEO_DASH, "H.264", "AAC", "Stereo", "144p" });
+                            this.put(ITAG.DASH_VIDEO_144P_H264, new Object[] { DestinationFormat.VIDEO_DASH, "H.264", "AAC", "Stereo", "144p" });
                         }
                     }
                     if (q240p) {
-                        if (dashSupported) this.put(133, new Object[] { DestinationFormat.VIDEO_DASH, "H.264", "AAC", "Stereo", "240p" });
+                        if (dashSupported) this.put(ITAG.DASH_VIDEO_240P_H264, new Object[] { DestinationFormat.VIDEO_DASH, "H.264", "AAC", "Stereo", "240p" });
                     }
                     if (q360p) {
                         // 270p / 360p
-                        if (dashSupported) this.put(134, new Object[] { DestinationFormat.VIDEO_DASH, "H.264", "AAC", "Stereo", "360p" });
-                        this.put(18, new Object[] { DestinationFormat.VIDEOMP4, "H.264", "AAC", "Stereo", "360p" });
+                        if (dashSupported) this.put(ITAG.DASH_VIDEO_360P_H264, new Object[] { DestinationFormat.VIDEO_DASH, "H.264", "AAC", "Stereo", "360p" });
+                        this.put(ITAG.MP4_VIDEO_360P_H264_AUDIO_AAC, new Object[] { DestinationFormat.VIDEOMP4, "H.264", "AAC", "Stereo", "360p" });
                     }
                     if (q480p) {
-                        if (dashSupported) this.put(135, new Object[] { DestinationFormat.VIDEO_DASH, "H.264", "AAC", "Stereo", "480p" });
+                        if (dashSupported) this.put(ITAG.DASH_VIDEO_480P_H264, new Object[] { DestinationFormat.VIDEO_DASH, "H.264", "AAC", "Stereo", "480p" });
                     }
                     if (q720p) {
-                        if (dashSupported) this.put(136, new Object[] { DestinationFormat.VIDEO_DASH, "H.264", "AAC", "Stereo", "720p" });
-                        this.put(22, new Object[] { DestinationFormat.VIDEOMP4, "H.264", "AAC", "Stereo", "720p" });
+                        if (dashSupported) this.put(ITAG.DASH_VIDEO_720P_H264, new Object[] { DestinationFormat.VIDEO_DASH, "H.264", "AAC", "Stereo", "720p" });
+                        this.put(ITAG.MP4_VIDEO_720P_H264_AUDIO_AAC, new Object[] { DestinationFormat.VIDEOMP4, "H.264", "AAC", "Stereo", "720p" });
                     }
                     if (q1080p) {
-                        if (dashSupported) this.put(137, new Object[] { DestinationFormat.VIDEO_DASH, "H.264", "AAC", "Stereo", "1080p" });
-                        this.put(37, new Object[] { DestinationFormat.VIDEOMP4, "H.264", "AAC", "Stereo", "1080p" });
+                        if (dashSupported) this.put(ITAG.DASH_VIDEO_1080P_H264, new Object[] { DestinationFormat.VIDEO_DASH, "H.264", "AAC", "Stereo", "1080p" });
+                        this.put(ITAG.MP4_VIDEO_1080P_H264_AUDIO_AAC, new Object[] { DestinationFormat.VIDEOMP4, "H.264", "AAC", "Stereo", "1080p" });
                     }
                     // maybe this varies?? wiki says 3072p but I've seen less. eg :: 38 2048x1536 9 0 115,
                     if (original) {
-                        this.put(38, new Object[] { DestinationFormat.VIDEOMP4, "H.264", "AAC", "Stereo", "3072p" });
+                        this.put(ITAG.MP4_VIDEO_AUDIO_ORIGINAL, new Object[] { DestinationFormat.VIDEOMP4, "H.264", "AAC", "Stereo", "3072p" });
                     }
                 }
 
                 // **** WebM *****
                 if (webm) {
                     if (q360p) {
-                        this.put(43, new Object[] { DestinationFormat.VIDEOWEBM, "VP8", "Vorbis", "Stereo", "360p" });
+                        this.put(ITAG.WEBM_VIDEO_360P_VP8_AUDIO_VORBIS, new Object[] { DestinationFormat.VIDEOWEBM, "VP8", "Vorbis", "Stereo", "360p" });
                     }
                     if (q480p) {
-                        this.put(44, new Object[] { DestinationFormat.VIDEOWEBM, "VP8", "Vorbis", "Stereo", "480p" });
+                        this.put(ITAG.WEBM_VIDEO_480P_VP8_AUDIO_VORBIS, new Object[] { DestinationFormat.VIDEOWEBM, "VP8", "Vorbis", "Stereo", "480p" });
                     }
                     if (q720p) {
-                        this.put(45, new Object[] { DestinationFormat.VIDEOWEBM, "VP8", "Vorbis", "Stereo", "720p" });
+                        this.put(ITAG.WEBM_VIDEO_720P_VP8_AUDIO_VORBIS, new Object[] { DestinationFormat.VIDEOWEBM, "VP8", "Vorbis", "Stereo", "720p" });
                     }
                     if (q1080p) {
-                        this.put(46, new Object[] { DestinationFormat.VIDEOWEBM, "VP8", "Vorbis", "Stereo", "1080p" });
+                        this.put(ITAG.WEBM_VIDEO_1080P_VP8_AUDIO_VORBIS, new Object[] { DestinationFormat.VIDEOWEBM, "VP8", "Vorbis", "Stereo", "1080p" });
                     }
                 }
 
@@ -698,42 +751,42 @@ public class TbCm extends PluginForDecrypt {
                 if (threeD) {
                     if (webm) {
                         if (q360p) {
-                            this.put(100, new Object[] { DestinationFormat.VIDEOWEBM, "VP8", "Vorbis", "Stereo", "360p" });
+                            this.put(ITAG.WEBM_VIDEO_360P_VP8_AUDIO_128K_VORBIS_3D, new Object[] { DestinationFormat.VIDEOWEBM, "VP8", "Vorbis", "Stereo", "360p" });
                         }
                         if (q360p) {
-                            this.put(101, new Object[] { DestinationFormat.VIDEOWEBM, "VP8", "Vorbis", "Stereo", "360p" });
+                            this.put(ITAG.WEBM_VIDEO_360P_VP8_AUDIO_192K_VORBIS_3D, new Object[] { DestinationFormat.VIDEOWEBM, "VP8", "Vorbis", "Stereo", "360p" });
                         }
                         if (q720p) {
-                            this.put(102, new Object[] { DestinationFormat.VIDEOWEBM, "VP8", "Vorbis", "Stereo", "720p" });
+                            this.put(ITAG.WEBM_VIDEO_720P_VP8_AUDIO_192K_VORBIS_3D, new Object[] { DestinationFormat.VIDEOWEBM, "VP8", "Vorbis", "Stereo", "720p" });
                         }
                     }
                     if (mp4) {
                         if (q240p) {
-                            this.put(83, new Object[] { DestinationFormat.VIDEOMP4, "H.264", "AAC", "Stereo", "240p" });
+                            this.put(ITAG.MP4_VIDEO_240P_H264_AUDIO_AAC_3D, new Object[] { DestinationFormat.VIDEOMP4, "H.264", "AAC", "Stereo", "240p" });
                         }
                         if (q360p) {
-                            this.put(82, new Object[] { DestinationFormat.VIDEOMP4, "H.264", "AAC", "Stereo", "360p" });
+                            this.put(ITAG.MP4_VIDEO_360P_H264_AUDIO_AAC_3D, new Object[] { DestinationFormat.VIDEOMP4, "H.264", "AAC", "Stereo", "360p" });
                         }
                         if (q520p) {
-                            this.put(85, new Object[] { DestinationFormat.VIDEOMP4, "H.264", "AAC", "Stereo", "520p" });
+                            this.put(ITAG.MP4_VIDEO_520P_H264_AUDIO_AAC_3D, new Object[] { DestinationFormat.VIDEOMP4, "H.264", "AAC", "Stereo", "520p" });
                         }
                         if (q720p) {
-                            this.put(84, new Object[] { DestinationFormat.VIDEOMP4, "H.264", "AAC", "Stereo", "720p" });
+                            this.put(ITAG.MP4_VIDEO_720P_H264_AUDIO_AAC_3D, new Object[] { DestinationFormat.VIDEOMP4, "H.264", "AAC", "Stereo", "720p" });
                         }
                     }
                 }
 
                 if (dashSupported) {
                     // 48k mp4
-                    this.put(139, new Object[] { DestinationFormat.AUDIO_DASH, "AAC_48k", "AAC", "Stereo", "low(48k)" });
+                    this.put(ITAG.DASH_AUDIO_48K_AAC, new Object[] { DestinationFormat.AUDIO_DASH, "AAC_48k", "AAC", "Stereo", "low(48k)" });
                     // 128k mp4
-                    this.put(140, new Object[] { DestinationFormat.AUDIO_DASH, "AAC_128k", "AAC", "Stereo", "middle(128k)" });
+                    this.put(ITAG.DASH_AUDIO_128K_AAC, new Object[] { DestinationFormat.AUDIO_DASH, "AAC_128k", "AAC", "Stereo", "middle(128k)" });
                     // 256k mp4
-                    this.put(141, new Object[] { DestinationFormat.AUDIO_DASH, "AAC_256k", "AAC", "Stereo", "high(256k)" });
+                    this.put(ITAG.DASH_AUDIO_256K_AAC, new Object[] { DestinationFormat.AUDIO_DASH, "AAC_256k", "AAC", "Stereo", "high(256k)" });
                     // 128k webm
-                    // this.put(171, new Object[] { DestinationFormat.AUDIO_DASH, "WEBM_128k", "WEBM", "Stereo", "middle(128k)" });
-                    // 256k webm
-                    // this.put(172, new Object[] { DestinationFormat.AUDIO_DASH, "WEBM_256k", "WEBM", "Stereo", "high(256k)" });
+                    // this.put(ITAG.DASH_AUDIO_128K_WEBM, new Object[] { DestinationFormat.AUDIO_DASH, "WEBM_128k", "WEBM", "Stereo", "middle(128k)" });
+                    // 192k webm
+                    // this.put(ITAG.DASH_AUDIO_192K_WEBM, new Object[] { DestinationFormat.AUDIO_DASH, "WEBM_256k", "WEBM", "Stereo", "high(256k)" });
 
                 }
             }
@@ -771,20 +824,20 @@ public class TbCm extends PluginForDecrypt {
                     continue;
                 }
                 verifyAge = false;
-                HashMap<Integer, String[]> LinksFound = this.getLinks(currentVideoUrl, prem, this.br, 0);
+                HashMap<Integer, String[]> foundLinks = this.getLinks(currentVideoUrl, prem, this.br, 0);
                 String error = br.getRegex("<div id=\"unavailable\\-message\" class=\"\">[\t\n\r ]+<span class=\"yt\\-alert\\-vertical\\-trick\"></span>[\t\n\r ]+<div class=\"yt\\-alert\\-message\">([^<>\"]*?)</div>").getMatch(0);
                 // Removed due wrong offline detection
                 // if (error == null) error = br.getRegex("<div class=\"yt\\-alert\\-message\">(.*?)</div>").getMatch(0);
                 if (error == null) error = br.getRegex("reason=([^<>\"/]*?)(\\&|$)").getMatch(0);
                 if (br.containsHTML(UNSUPPORTEDRTMP)) error = "RTMP video download isn't supported yet!";
-                if ((LinksFound == null || LinksFound.isEmpty()) && error != null) {
+                if ((foundLinks == null || foundLinks.isEmpty()) && error != null) {
                     error = Encoding.urlDecode(error, false);
                     logger.info("Video unavailable: " + currentVideoUrl);
                     if (error != null) logger.info("Reason: " + error.trim());
                     continue;
                 }
                 final String videoid = getVideoID(currentVideoUrl);
-                if (LinksFound == null || LinksFound.isEmpty()) {
+                if (foundLinks == null || foundLinks.isEmpty()) {
                     if (linkstodecrypt.size() == 1) {
                         if (verifyAge || this.br.getURL().toLowerCase().indexOf("youtube.com/get_video_info?") != -1 && !prem) { throw new DecrypterException(DecrypterException.ACCOUNT); }
                         final DownloadLink offline = getOfflineLink();
@@ -799,9 +852,16 @@ public class TbCm extends PluginForDecrypt {
 
                 /** FILENAME PART1 START */
                 String YT_FILENAME = "";
-                if (LinksFound.containsKey(-1)) {
-                    YT_FILENAME = LinksFound.get(-1)[0];
-                    LinksFound.remove(-1);
+                if (foundLinks.containsKey(-1)) {
+                    YT_FILENAME = foundLinks.get(-1)[0];
+                    foundLinks.remove(-1);
+                }
+                HashMap<ITAG, String[]> availableItags = new HashMap<TbCm.ITAG, String[]>();
+                Iterator<Entry<Integer, String[]>> it = foundLinks.entrySet().iterator();
+                while (it.hasNext()) {
+                    Entry<Integer, String[]> nextEntry = it.next();
+                    ITAG tag = ITAG.get(nextEntry.getKey());
+                    if (tag != null) availableItags.put(tag, nextEntry.getValue());
                 }
                 // replacing default Locate to be compatible with page language
                 Locale locale = Locale.ENGLISH;
@@ -829,7 +889,6 @@ public class TbCm extends PluginForDecrypt {
                     Date dateStr = formatter.parse(date);
                     formattedDate = formatter.format(dateStr);
                     Date theDate = formatter.parse(formattedDate);
-
                     formatter = new SimpleDateFormat(userDefinedDateFormat);
                     formattedDate = formatter.format(theDate);
                 }
@@ -864,148 +923,72 @@ public class TbCm extends PluginForDecrypt {
                  * We match against users resolution and file encoding type. This allows us to use their upper and lower limits. It will return multiple results
                  * if they are in the same quality rating
                  */
-
+                HashMap<ITAG, String[]> useTags = new HashMap<ITAG, String[]>(availableItags);
                 if (best) {
-                    boolean hasDashAudio = LinksFound.containsKey(139) || LinksFound.containsKey(140) || LinksFound.containsKey(141) || LinksFound.containsKey(171) || LinksFound.containsKey(172);
-                    boolean needsDashAudio = false;
-                    final HashMap<Integer, String[]> bestFound = new HashMap<Integer, String[]>();
-                    if (LinksFound.get(38) != null && ytVideo.containsKey(38)) {
-                        // 3072p mp4
-                        if (LinksFound.containsKey(38) && ytVideo.containsKey(38)) bestFound.put(38, LinksFound.get(38));
-                    } else if ((LinksFound.containsKey(37) && ytVideo.containsKey(37)) || (LinksFound.containsKey(137) && ytVideo.containsKey(137)) || (LinksFound.containsKey(46) && ytVideo.containsKey(46))) {
-                        if (LinksFound.containsKey(37) && ytVideo.containsKey(37)) {
-                            // 1080p mp4
-                            bestFound.put(37, LinksFound.get(37));
-                        } else if (hasDashAudio && LinksFound.containsKey(137) && ytVideo.containsKey(137)) {
-                            // dash 1080p,mp4
-                            needsDashAudio = true;
-                            bestFound.put(137, LinksFound.get(137));
+                    final HashMap<ITAG, String[]> bestFound = new HashMap<ITAG, String[]>();
+                    List<ITAG[]> bestQualityTags = new ArrayList<ITAG[]>();
+                    bestQualityTags.add(new ITAG[] { ITAG.MP4_VIDEO_AUDIO_ORIGINAL });
+                    bestQualityTags.add(new ITAG[] { ITAG.MP4_VIDEO_1080P_H264_AUDIO_AAC, ITAG.DASH_VIDEO_1080P_H264, ITAG.WEBM_VIDEO_1080P_VP8_AUDIO_VORBIS });
+                    bestQualityTags.add(new ITAG[] { ITAG.MP4_VIDEO_720P_H264_AUDIO_AAC, ITAG.MP4_VIDEO_720P_H264_AUDIO_AAC_3D, ITAG.WEBM_VIDEO_720P_VP8_AUDIO_VORBIS, ITAG.WEBM_VIDEO_720P_VP8_AUDIO_192K_VORBIS_3D, ITAG.DASH_VIDEO_720P_H264 });
+                    bestQualityTags.add(new ITAG[] { ITAG.MP4_VIDEO_720P_H264_AUDIO_AAC, ITAG.MP4_VIDEO_720P_H264_AUDIO_AAC_3D, ITAG.WEBM_VIDEO_720P_VP8_AUDIO_VORBIS, ITAG.WEBM_VIDEO_720P_VP8_AUDIO_192K_VORBIS_3D, ITAG.DASH_VIDEO_720P_H264 });
+                    bestQualityTags.add(new ITAG[] { ITAG.MP4_VIDEO_520P_H264_AUDIO_AAC_3D });
+                    bestQualityTags.add(new ITAG[] { ITAG.FLV_VIDEO_480P_H264_AUDIO_AAC, ITAG.WEBM_VIDEO_480P_VP8_AUDIO_VORBIS, ITAG.DASH_VIDEO_480P_H264 });
+                    bestQualityTags.add(new ITAG[] { ITAG.MP4_VIDEO_360P_H264_AUDIO_AAC, ITAG.FLV_VIDEO_360P_H264_AUDIO_AAC, ITAG.WEBM_VIDEO_360P_VP8_AUDIO_VORBIS, ITAG.MP4_VIDEO_360P_H264_AUDIO_AAC_3D, ITAG.WEBM_VIDEO_360P_VP8_AUDIO_128K_VORBIS_3D, ITAG.WEBM_VIDEO_360P_VP8_AUDIO_192K_VORBIS_3D });
+                    bestQualityTags.add(new ITAG[] { ITAG.FLV_VIDEO_LOW_240P_H263_AUDIO_MP3, ITAG.FLV_VIDEO_HIGH_240P_H263_AUDIO_MP3, ITAG.THREEGP_VIDEO_240P_H263_AUDIO_AAC, ITAG.THREEGP_VIDEO_240P_H264_AUDIO_AAC, ITAG.MP4_VIDEO_240P_H264_AUDIO_AAC_3D });
+                    bestQualityTags.add(new ITAG[] { ITAG.THREEGP_VIDEO_144P_H264_AUDIO_AAC, ITAG.DASH_VIDEO_144P_H264 });
+                    for (ITAG[] tags : bestQualityTags) {
+                        for (ITAG tag : tags) {
+                            if (availableItags.containsKey(tag) && allowedItags.containsKey(tag)) bestFound.put(tag, availableItags.get(tag));
                         }
-                        if (LinksFound.containsKey(46) && ytVideo.containsKey(46)) {
-                            // 1080p webm
-                            bestFound.put(46, LinksFound.get(46));
-                        }
-                    } else if ((LinksFound.containsKey(22) && ytVideo.containsKey(22)) || (LinksFound.containsKey(45) && ytVideo.containsKey(45)) || (LinksFound.containsKey(84) && ytVideo.containsKey(84)) || (LinksFound.containsKey(102) && ytVideo.containsKey(102) || LinksFound.containsKey(136) && ytVideo.containsKey(136))) {
-                        if (LinksFound.containsKey(22) && ytVideo.containsKey(22)) {
-                            // 720p mp4
-                            bestFound.put(22, LinksFound.get(22));
-                        } else if (hasDashAudio && LinksFound.containsKey(136) && ytVideo.containsKey(136)) {
-                            // dash 720p,mp4
-                            needsDashAudio = true;
-                            bestFound.put(136, LinksFound.get(136));
-                        }
-                        if (LinksFound.containsKey(45) && ytVideo.containsKey(45)) {
-                            // 720p webm
-                            bestFound.put(45, LinksFound.get(45));
-                        }
-                        if (LinksFound.containsKey(84) && ytVideo.containsKey(84)) {
-                            // 720p(3d) mp4
-                            bestFound.put(84, LinksFound.get(84));
-                        }
-                        if (LinksFound.containsKey(102) && ytVideo.containsKey(102)) {
-                            // 720p(3d) webm
-                            bestFound.put(102, LinksFound.get(102));
-                        }
-                    } else if (LinksFound.containsKey(85) && ytVideo.containsKey(85)) {
-                        // 520p(3d) mp4
-                        if (LinksFound.containsKey(85) && ytVideo.containsKey(85)) bestFound.put(85, LinksFound.get(85));
-                    } else if ((LinksFound.containsKey(35) && ytVideo.containsKey(35)) || (LinksFound.containsKey(44) && ytVideo.containsKey(44) || LinksFound.containsKey(135) && ytVideo.containsKey(135))) {
-                        if (LinksFound.containsKey(35) && ytVideo.containsKey(35)) {
-                            // 480p flv
-                            bestFound.put(35, LinksFound.get(35));
-                        } else if (hasDashAudio && LinksFound.containsKey(135) && ytVideo.containsKey(135)) {
-                            // dash 480p,mp4
-                            needsDashAudio = true;
-                            bestFound.put(135, LinksFound.get(135));
-                        }
-                        if (LinksFound.containsKey(44) && ytVideo.containsKey(44)) {
-                            // 480p webm
-                            bestFound.put(44, LinksFound.get(44));
-                        }
-                    } else if ((LinksFound.containsKey(18) && ytVideo.containsKey(18)) || (LinksFound.containsKey(34) && ytVideo.containsKey(34)) || (LinksFound.containsKey(43) && ytVideo.containsKey(43)) || (LinksFound.containsKey(82) && ytVideo.containsKey(82) || (LinksFound.containsKey(100) && ytVideo.containsKey(100)) || (LinksFound.containsKey(101) && ytVideo.containsKey(101)))) {
-                        // 360p mp4
-                        if (LinksFound.containsKey(18) && ytVideo.containsKey(18)) {
-                            bestFound.put(18, LinksFound.get(18));
-                        } else if (hasDashAudio && LinksFound.containsKey(134) && ytVideo.containsKey(134)) {
-                            // dash 360p,mp4
-                            needsDashAudio = true;
-                            bestFound.put(134, LinksFound.get(134));
-                        }
-                        // 360p flv
-                        if (LinksFound.containsKey(34) && ytVideo.containsKey(34)) bestFound.put(34, LinksFound.get(34));
-                        // 360p webm
-                        if (LinksFound.containsKey(43) && ytVideo.containsKey(43)) bestFound.put(43, LinksFound.get(43));
-                        // 360p(3d) mp4
-                        if (LinksFound.containsKey(82) && ytVideo.containsKey(82)) bestFound.put(82, LinksFound.get(82));
-                        // 360p(3d) webm ** need to figure out which is what,
-                        // could create a dupe when saving .
-                        if (LinksFound.containsKey(100) && ytVideo.containsKey(100)) bestFound.put(100, LinksFound.get(100));
-                        // 360p(3d) webm ** need to figure out which is what, could create a dupe when saving.
-                        if (LinksFound.containsKey(101) && ytVideo.containsKey(101)) bestFound.put(101, LinksFound.get(101));
-                    } else if ((LinksFound.containsKey(5) && ytVideo.containsKey(5)) || (LinksFound.containsKey(6) && ytVideo.containsKey(6)) || (LinksFound.containsKey(13) && ytVideo.containsKey(13)) || (LinksFound.containsKey(36) && ytVideo.containsKey(36)) || (LinksFound.containsKey(83) && ytVideo.containsKey(83))) {
-                        // 240p flv @ video bit rate @ 0.25Mbit/second
-                        if (LinksFound.containsKey(5) && ytVideo.containsKey(5) && !LinksFound.containsKey(6))
-                            bestFound.put(5, LinksFound.get(5));
-                        // 240p flv @ video bit rate @ 0.8Mbit/second
-                        else if (LinksFound.containsKey(6) && ytVideo.containsKey(6)) bestFound.put(6, LinksFound.get(6));
-                        // 240p 3gp mono ** according to wiki this has the highest video rate. but we rate this as mono! need to look into
-                        // 3gp more to confirm
-                        if (LinksFound.containsKey(13) && ytVideo.containsKey(13) && !LinksFound.containsKey(36))
-                            bestFound.put(13, LinksFound.get(13));
-                        // 240p 3gp stereo
-                        else if (LinksFound.containsKey(36) && ytVideo.containsKey(36)) bestFound.put(36, LinksFound.get(36));
-                        // 240p(3d) mp4
-                        if (LinksFound.containsKey(83) && ytVideo.containsKey(83)) bestFound.put(83, LinksFound.get(83));
-                    } else if ((LinksFound.containsKey(17) && ytVideo.containsKey(17))) {
-                        // 144p 3gp
-                        if (LinksFound.containsKey(17) && ytVideo.containsKey(17)) bestFound.put(17, LinksFound.get(17));
                     }
                     if (bestFound.isEmpty()) {
                         logger.warning("You do not have Resolution or Format selected within range! : " + currentVideoUrl);
                         break;
                     } else {
-                        if (needsDashAudio) {
-                            if (LinksFound.containsKey(139) && ytVideo.containsKey(139)) bestFound.put(139, LinksFound.get(139));
-                            if (LinksFound.containsKey(140) && ytVideo.containsKey(140)) bestFound.put(140, LinksFound.get(140));
-                            if (LinksFound.containsKey(141) && ytVideo.containsKey(141)) bestFound.put(141, LinksFound.get(141));
-                            if (LinksFound.containsKey(171) && ytVideo.containsKey(171)) bestFound.put(171, LinksFound.get(171));
-                            if (LinksFound.containsKey(172) && ytVideo.containsKey(172)) bestFound.put(172, LinksFound.get(172));
+                        if (bestFound.containsKey(ITAG.MP4_VIDEO_1080P_H264_AUDIO_AAC)) bestFound.remove(ITAG.DASH_VIDEO_1080P_H264);
+                        if (bestFound.containsKey(ITAG.MP4_VIDEO_720P_H264_AUDIO_AAC)) bestFound.remove(ITAG.DASH_VIDEO_720P_H264);
+                        if (bestFound.containsKey(ITAG.FLV_VIDEO_480P_H264_AUDIO_AAC)) bestFound.remove(ITAG.DASH_VIDEO_480P_H264);
+                        if (bestFound.containsKey(ITAG.MP4_VIDEO_360P_H264_AUDIO_AAC)) bestFound.remove(ITAG.DASH_VIDEO_360P_H264);
+                        if (bestFound.containsKey(ITAG.DASH_VIDEO_1080P_H264) || bestFound.containsKey(ITAG.DASH_VIDEO_720P_H264) || bestFound.containsKey(ITAG.DASH_VIDEO_480P_H264) || bestFound.containsKey(ITAG.DASH_VIDEO_360P_H264)) {
+                            ITAG[] dashAudioTags = new ITAG[] { ITAG.DASH_AUDIO_256K_AAC, ITAG.DASH_AUDIO_128K_AAC, ITAG.DASH_AUDIO_48K_AAC, ITAG.DASH_AUDIO_192K_WEBM, ITAG.DASH_AUDIO_128K_WEBM };
+                            for (ITAG dashAudio : dashAudioTags) {
+                                if (availableItags.containsKey(dashAudio) && allowedItags.containsKey(dashAudio)) {
+                                    /* at the moment we only use the first best audio match */
+                                    bestFound.put(dashAudio, availableItags.get(dashAudio));
+                                    break;
+                                }
+                            }
                         }
-                        LinksFound = bestFound;
+                        useTags = bestFound;
+                    }
+                } else {
+                    Iterator<Entry<ITAG, String[]>> it2 = useTags.entrySet().iterator();
+                    while (it2.hasNext()) {
+                        Entry<ITAG, String[]> next2 = it2.next();
+                        if (!allowedItags.containsKey(next2.getKey())) it2.remove();
                     }
                 }
-
                 /* filter out dash/xy duplicates */
-                if (LinksFound.containsKey(37)) LinksFound.remove(137);
-                if (LinksFound.containsKey(22)) LinksFound.remove(136);
-                if (LinksFound.containsKey(35)) LinksFound.remove(135);
-                if (LinksFound.containsKey(18)) LinksFound.remove(134);
+                if (useTags.containsKey(ITAG.MP4_VIDEO_1080P_H264_AUDIO_AAC)) useTags.remove(ITAG.DASH_VIDEO_1080P_H264);
+                if (useTags.containsKey(ITAG.MP4_VIDEO_720P_H264_AUDIO_AAC)) useTags.remove(ITAG.DASH_VIDEO_720P_H264);
+                if (useTags.containsKey(ITAG.FLV_VIDEO_480P_H264_AUDIO_AAC)) useTags.remove(ITAG.DASH_VIDEO_480P_H264);
+                if (useTags.containsKey(ITAG.MP4_VIDEO_360P_H264_AUDIO_AAC)) useTags.remove(ITAG.DASH_VIDEO_360P_H264);
 
-                String dlLink = "";
-                String vQuality = "";
-                DestinationFormat cMode = null;
                 String TTSURL = br.getRegex("\"ttsurl\": \"(http.*?)\"").getMatch(0);
-                for (final Integer format : LinksFound.keySet()) {
-                    if (ytVideo.containsKey(format)) {
-                        cMode = (DestinationFormat) ytVideo.get(format)[0];
-                        vQuality = "(" + LinksFound.get(format)[1] + "_" + ytVideo.get(format)[1] + "-" + ytVideo.get(format)[2] + ")";
-                    } else {
-                        cMode = DestinationFormat.UNKNOWN;
-                        vQuality = "(" + LinksFound.get(format)[1] + "_" + format + ")";
-                        /*
-                         * we do not want to download unknown formats at the moment
-                         */
-                        continue;
-                    }
-                    dlLink = LinksFound.get(format)[0];
+                for (final Entry<ITAG, String[]> entry : useTags.entrySet()) {
+                    DestinationFormat cMode = (DestinationFormat) allowedItags.get(entry.getKey())[0];
+                    String vQuality = "(" + entry.getValue()[1] + "_" + allowedItags.get(entry.getKey())[1] + "-" + allowedItags.get(entry.getKey())[2] + ")";
+                    String dlLink = entry.getValue()[0];
+                    ITAG itag = entry.getKey();
+                    int format = itag.getITAG();
                     // Skip MP3 but handle 240p flv
                     if (!(format == 5 && mp3.get() && !flv.get())) {
                         try {
                             if (fast) {
-                                this.addtopos(cMode, dlLink, 0, vQuality, format);
+                                this.addtopos(cMode, dlLink, -1, vQuality, itag);
                             } else if (this.br.openGetConnection(dlLink).getResponseCode() == 200) {
-                                Thread.sleep(200);
-                                this.addtopos(cMode, dlLink, this.br.getHttpConnection().getLongContentLength(), vQuality, format);
+                                Thread.sleep(100);
+                                this.addtopos(cMode, dlLink, this.br.getHttpConnection().getLongContentLength(), vQuality, itag);
                             }
                         } catch (final Throwable e) {
                             e.printStackTrace();
@@ -1015,15 +998,15 @@ public class TbCm extends PluginForDecrypt {
                             } catch (final Throwable e) {
                             }
                         }
-                    }
+                    } else
                     // Handle MP3
                     if ((format == 0 || format == 5 || format == 6) && mp3.get()) {
                         try {
                             if (fast) {
-                                this.addtopos(DestinationFormat.AUDIOMP3, dlLink, 0, "", format);
+                                this.addtopos(DestinationFormat.AUDIOMP3, dlLink, -1, "", itag);
                             } else if (this.br.openGetConnection(dlLink).getResponseCode() == 200) {
-                                Thread.sleep(200);
-                                this.addtopos(DestinationFormat.AUDIOMP3, dlLink, this.br.getHttpConnection().getLongContentLength(), "", format);
+                                Thread.sleep(100);
+                                this.addtopos(DestinationFormat.AUDIOMP3, dlLink, this.br.getHttpConnection().getLongContentLength(), "", itag);
                             }
                         } catch (final Throwable e) {
                             e.printStackTrace();
@@ -1035,27 +1018,36 @@ public class TbCm extends PluginForDecrypt {
                         }
                     }
                 }
+
                 Info bestDashAudio = null;
-                ArrayList<Info> dashAudio = possibleconverts.get(DestinationFormat.AUDIO_DASH);
-                if (dashAudio != null) {
-                    for (Info audio : dashAudio) {
-                        if (audio.fmt > 141) {
+                if (possibleconverts.get(DestinationFormat.AUDIO_DASH) != null) {
+                    for (Info audio : possibleconverts.get(DestinationFormat.AUDIO_DASH)) {
+                        if (audio.itag.getITAG() > ITAG.DASH_AUDIO_256K_AAC.getITAG()) {
                             /* ignore webm audio at the moment */
                             continue;
                         }
                         if (bestDashAudio == null) {
                             bestDashAudio = audio;
-                        } else if (audio.fmt > bestDashAudio.fmt) {
+                        } else if (audio.itag.getITAG() > bestDashAudio.itag.getITAG()) {
                             bestDashAudio = audio;
                         }
                     }
                 }
+
+                List<String> dashVariants = new ArrayList<String>();
+                /* build dashVariants for all available formats */
+                if (availableItags.containsKey(ITAG.DASH_VIDEO_1080P_H264)) dashVariants.add("MP4_1080");
+                if (availableItags.containsKey(ITAG.DASH_VIDEO_720P_H264)) dashVariants.add("MP4_720");
+                if (availableItags.containsKey(ITAG.DASH_VIDEO_480P_H264)) dashVariants.add("MP4_480");
+
                 for (final Entry<DestinationFormat, ArrayList<Info>> next : this.possibleconverts.entrySet()) {
                     final DestinationFormat convertTo = next.getKey();
                     if (DestinationFormat.AUDIO_DASH.equals(convertTo)) {
+                        /* at the moment we do not handle audio only */
                         continue;
                     }
                     if (DestinationFormat.VIDEO_DASH.equals(convertTo) && bestDashAudio == null) {
+                        /* at the moment we do not handle video only */
                         continue;
                     }
                     // create a package, for each quality.
@@ -1081,7 +1073,7 @@ public class TbCm extends PluginForDecrypt {
                         if (cfg.getBooleanProperty("FORMATINNAME", true) == false) {
                             desc = "";
                         }
-                        switch (info.fmt) {
+                        switch (info.itag.getITAG()) {
                         case 82:
                         case 83:
                         case 84:
@@ -1104,10 +1096,27 @@ public class TbCm extends PluginForDecrypt {
                             thislink.setProperty("DASH", true);
                             long completeSize = info.size + bestDashAudio.size;
                             thislink.setProperty("size", completeSize);
-                            thislink.setProperty("DASH_AUDIO", bestDashAudio.fmt);
+                            thislink.setProperty("DASH_AUDIO", bestDashAudio.itag.getITAG());
                             thislink.setProperty("DASH_AUDIO_SIZE", bestDashAudio.size);
-                            thislink.setProperty("DASH_VIDEO", info.fmt);
+                            thislink.setProperty("DASH_VIDEO", info.itag.getITAG());
                             thislink.setProperty("DASH_VIDEO_SIZE", info.size);
+                            if (dashVariants.size() > 1) {
+                                /* add dashVariants if available */
+                                switch (info.itag) {
+                                case DASH_VIDEO_1080P_H264:
+                                    thislink.setProperty("VARIANT", "MP4_1080");
+                                    thislink.setProperty("VARIANTS", dashVariants);
+                                    break;
+                                case DASH_VIDEO_720P_H264:
+                                    thislink.setProperty("VARIANT", "MP4_720");
+                                    thislink.setProperty("VARIANTS", dashVariants);
+                                    break;
+                                case DASH_VIDEO_480P_H264:
+                                    thislink.setProperty("VARIANT", "MP4_480");
+                                    thislink.setProperty("VARIANTS", dashVariants);
+                                    break;
+                                }
+                            }
                         } else {
                             /* normal handling */
                             thislink.setFinalFileName(currentFilename);
@@ -1128,9 +1137,9 @@ public class TbCm extends PluginForDecrypt {
                         thislink.setProperty("convertto", convertTo.name());
                         thislink.setProperty("videolink", currentVideoUrl);
                         thislink.setProperty("valid", true);
-                        thislink.setProperty("fmtNew", info.fmt);
+                        thislink.setProperty("fmtNew", info.itag.getITAG());
                         thislink.setProperty("ytID", ytID);
-                        thislink.setProperty("LINKDUPEID", "ytID" + ytID + "." + info.fmt);
+                        thislink.setProperty("LINKDUPEID", "ytID" + ytID + "." + info.itag.getITAG());
                         decryptedLinks.add(thislink);
                     }
                 }

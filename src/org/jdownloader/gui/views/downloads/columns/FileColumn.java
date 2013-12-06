@@ -3,7 +3,6 @@ package org.jdownloader.gui.views.downloads.columns;
 import java.awt.event.FocusEvent;
 import java.awt.event.MouseEvent;
 import java.io.File;
-import java.util.List;
 import java.util.logging.Level;
 
 import javax.swing.BorderFactory;
@@ -35,7 +34,6 @@ import org.appwork.utils.StringUtils;
 import org.appwork.utils.images.IconIO;
 import org.appwork.utils.logging.Log;
 import org.appwork.utils.os.CrossSystem;
-import org.jdownloader.controlling.linkcrawler.LinkVariant;
 import org.jdownloader.extensions.ExtensionController;
 import org.jdownloader.extensions.extraction.ExtractionExtension;
 import org.jdownloader.extensions.extraction.bindings.crawledlink.CrawledLinkFactory;
@@ -253,24 +251,14 @@ public class FileColumn extends ExtTextColumn<AbstractNode> implements GenericCo
         } else if (value instanceof AbstractPackageNode) {
             return (((AbstractPackageNode<?, ?>) value).isExpanded() ? iconPackageOpen : iconPackageClosed);
         } else if (value instanceof DownloadLink) {
-
             if (((DownloadLink) value).hasVariantSupport()) {
-                List<LinkVariant> active = ((DownloadLink) value).getDefaultPlugin().getVariantsByLink(((DownloadLink) value));
-                if (active != null && active.size() > 0) { return new ExtMergedIcon(new AbstractIcon(IconKey.ICON_PACKAGE_OPEN, 16), 0, 3).add(IconIO.getScaledInstance(((DownloadLink) value).getIcon(), 10, 10), 3, -2); }
+                if (((DownloadLink) value).getDefaultPlugin().hasVariantToChooseFrom(((DownloadLink) value))) { return new ExtMergedIcon(new AbstractIcon(IconKey.ICON_PACKAGE_OPEN, 16), 0, 3).add(IconIO.getScaledInstance(((DownloadLink) value).getIcon(), 10, 10), 3, -2); }
             }
             return (((DownloadLink) value).getIcon());
         } else if (value instanceof CrawledLink) {
             if (((CrawledLink) value).hasVariantSupport()) {
-                List<LinkVariant> active = ((CrawledLink) value).gethPlugin().getVariantsByLink(((CrawledLink) value).getDownloadLink());
-                if (active != null && active.size() > 0) {
-
-                    // return new ExtMergedIcon(new AbstractIcon(IconKey.ICON_PACKAGE_CLOSED, 14)).add(IconIO.getScaledInstance(, 14, 14),
-                    // 14, 4);
-                    return new ExtMergedIcon(new AbstractIcon(IconKey.ICON_PACKAGE_OPEN, 16), 0, 3).add(IconIO.getScaledInstance(((CrawledLink) value).getIcon(), 10, 10), 3, -2);
-
-                }
+                if (((CrawledLink) value).gethPlugin().hasVariantToChooseFrom(((CrawledLink) value).getDownloadLink())) { return new ExtMergedIcon(new AbstractIcon(IconKey.ICON_PACKAGE_OPEN, 16), 0, 3).add(IconIO.getScaledInstance(((CrawledLink) value).getIcon(), 10, 10), 3, -2); }
             }
-
             return (((CrawledLink) value).getIcon());
         }
         return null;
