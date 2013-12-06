@@ -17,6 +17,7 @@ import javax.swing.AbstractAction;
 import javax.swing.BorderFactory;
 import javax.swing.Icon;
 import javax.swing.JButton;
+import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
@@ -46,6 +47,7 @@ import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.swing.MigPanel;
+import org.appwork.swing.components.ExtButton;
 import org.appwork.swing.components.ExtCheckBox;
 import org.appwork.swing.components.ExtMergedIcon;
 import org.appwork.swing.components.ExtTextArea;
@@ -63,6 +65,7 @@ import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.appwork.utils.swing.dialog.locator.RememberRelativeDialogLocator;
+import org.jdownloader.actions.AppAction;
 import org.jdownloader.controlling.PasswordUtils;
 import org.jdownloader.controlling.Priority;
 import org.jdownloader.controlling.packagizer.PackagizerController;
@@ -78,6 +81,7 @@ import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.settings.GeneralSettings;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
+import org.jdownloader.settings.staticreferences.CFG_LINKGRABBER;
 import org.jdownloader.updatev2.gui.LAFOptions;
 
 public class AddLinksDialog extends AbstractDialog<LinkCollectingJob> {
@@ -100,8 +104,6 @@ public class AddLinksDialog extends AbstractDialog<LinkCollectingJob> {
 
     private boolean                             deepAnalyse   = false;
 
-    private JLabel                              errorLabel;
-
     private DelayedRunnable                     delayedValidate;
     private WindowListener                      listener      = null;
 
@@ -111,7 +113,9 @@ public class AddLinksDialog extends AbstractDialog<LinkCollectingJob> {
 
     private HashSet<String>                     autoPasswords = new HashSet<String>();
 
-    private ExtTextField                        comment;                               ;
+    private ExtTextField                        comment;
+
+    private JCheckBox                           overwritePackagizer;                   ;
 
     public boolean isDeepAnalyse() {
         return deepAnalyse;
@@ -158,8 +162,32 @@ public class AddLinksDialog extends AbstractDialog<LinkCollectingJob> {
     // }
 
     @Override
+    protected MigPanel createBottomPanel() {
+        MigPanel ret = new MigPanel("ins 0", "[][][][]20[grow,fill][]", "[]");
+        JLabel lbl = new JLabel(_GUI._.AddLinksDialog_getDefaultButtonPanel_overwrite_packagizer());
+        overwritePackagizer = new JCheckBox();
+        overwritePackagizer.setSelected(CFG_LINKGRABBER.CFG.isAddLinksDialogOverwritesPackagizerRulesEnabled());
+        ret.add(new JLabel(new AbstractIcon(IconKey.ICON_UPLOAD, 22)), "gapleft 5");
+        ret.add(overwritePackagizer, "gapleft 0");
+        ret.add(lbl);
+        return ret;
+    }
+
+    public boolean isOverwritePackagizerEnabled() {
+        return overwritePackagizer.isSelected();
+    }
+
+    @Override
+    protected void setReturnmask(boolean b) {
+        super.setReturnmask(b);
+        if (b) {
+            CFG_LINKGRABBER.CFG.setAddLinksDialogOverwritesPackagizerRulesEnabled(overwritePackagizer.isSelected());
+        }
+    }
+
+    @Override
     protected DefaultButtonPanel getDefaultButtonPanel() {
-        final DefaultButtonPanel ret = new DefaultButtonPanel("ins 0 0 0 0", "[grow,fill][]0[][]", "0[fill]0");
+        final DefaultButtonPanel ret = new DefaultButtonPanel("ins 0 0 0 0", "[grow,fill]0[][]", "0[fill]0");
 
         confirmOptions = new JButton(new ConfirmOptionsAction(okButton, this)) {
             public void setBounds(int x, int y, int width, int height) {
@@ -180,10 +208,7 @@ public class AddLinksDialog extends AbstractDialog<LinkCollectingJob> {
                 }
             }
         });
-        errorLabel = new JLabel();
-        errorLabel.setForeground((LAFOptions.getInstance().getColorForErrorForeground()));
-        errorLabel.setHorizontalAlignment(SwingConstants.RIGHT);
-        ret.add(errorLabel, "alignx right");
+
         ret.add(this.okButton, "alignx right,sizegroup confirms,growx,pushx");
         ret.add(confirmOptions, "width 12!");
         return ret;
@@ -527,6 +552,28 @@ public class AddLinksDialog extends AbstractDialog<LinkCollectingJob> {
         return ret.toString();
     }
 
+    protected JButton createOkButton() {
+        return new ExtButton(new AppAction() {
+            {
+                setName(okOption);
+            }
+
+            @Override
+            public void actionPerformed(ActionEvent e) {
+            }
+        }) {
+            @Override
+            public int getTooltipDelay(Point mousePositionOnScreen) {
+                return 500;
+            }
+
+            @Override
+            public boolean isTooltipWithoutFocusEnabled() {
+                return super.isTooltipWithoutFocusEnabled();
+            }
+        };
+    }
+
     protected void validateForm() {
         if (input == null) return;
         final String[] links = jd.parser.html.HTMLParser.getHttpLinks(input.getText());
@@ -536,9 +583,9 @@ public class AddLinksDialog extends AbstractDialog<LinkCollectingJob> {
             protected void runInEDT() {
                 okButton.setEnabled(true);
                 confirmOptions.setEnabled(true);
-                errorLabel.setText("");
+                okButton.setToolTipText("");
                 if (links.length == 0) {
-                    errorLabel.setText(_GUI._.AddLinksDialog_validateForm_input_missing());
+                    okButton.setToolTipText(_GUI._.AddLinksDialog_validateForm_input_missing());
                     input.setToolTipText(_GUI._.AddLinksDialog_validateForm_input_missing());
                     okButton.setEnabled(false);
                     confirmOptions.setEnabled(false);
@@ -546,7 +593,7 @@ public class AddLinksDialog extends AbstractDialog<LinkCollectingJob> {
                     input.setToolTipText(null);
                 }
                 if (!validateFolder(destination.getFile().getAbsolutePath())) {
-                    if (errorLabel.getText().length() == 0) errorLabel.setText(_GUI._.AddLinksDialog_validateForm_folder_invalid_missing());
+                    if (okButton.getToolTipText().length() == 0) okButton.setToolTipText(_GUI._.AddLinksDialog_validateForm_folder_invalid_missing());
                     okButton.setEnabled(false);
                     destination.setToolTipText(_GUI._.AddLinksDialog_validateForm_folder_invalid_missing());
                     confirmOptions.setEnabled(false);

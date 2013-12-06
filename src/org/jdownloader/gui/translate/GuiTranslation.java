@@ -3898,4 +3898,7 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Speedlimiter enabled" })
     String SpeedLimiterToggleAction_getNameWhenDisabled_();
 
+    @Default(lngs = { "en" }, values = { "Information overwrites packagizer rules" })
+    String AddLinksDialog_getDefaultButtonPanel_overwrite_packagizer();
+
 }

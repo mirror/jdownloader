@@ -40,7 +40,7 @@ public interface LinkgrabberSettings extends ConfigInterface {
 
     void setVariousPackageEnabled(boolean b);
 
-    @DefaultIntValue(600)
+    @DefaultIntValue(800)
     int getAddDialogWidth();
 
     void setAddDialogWidth(int width);
@@ -179,4 +179,10 @@ public interface LinkgrabberSettings extends ConfigInterface {
     boolean isAutoFillAddLinksDialogWithClipboardContentEnabled();
 
     void setAutoFillAddLinksDialogWithClipboardContentEnabled(boolean b);
+
+    @DefaultBooleanValue(true)
+    @AboutConfig
+    boolean isAddLinksDialogOverwritesPackagizerRulesEnabled();
+
+    void setAddLinksDialogOverwritesPackagizerRulesEnabled(boolean b);
 }
