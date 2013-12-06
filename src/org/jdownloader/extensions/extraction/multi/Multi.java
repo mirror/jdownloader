@@ -89,7 +89,7 @@ public class Multi extends IExtraction {
      * 
      */
 
-    private static final String      _7Z_D                                                       = "(\\.7z)?\\..?(\\d{1,4})$";
+    private static final String      _7Z_D                                                       = "(\\.7z)?\\.\\D?(\\d{1,4})$";
     private static final String      REGEX_ANY_7ZIP_PART                                         = "(?i).*(\\.7z)?\\.\\d{1,4}$";
 
     private static final String      _7Z$                                                        = "\\.7z$";
@@ -1149,6 +1149,19 @@ public class Multi extends IExtraction {
 
         for (String p : patterns) {
             Pattern pattern = Pattern.compile(p, Pattern.CASE_INSENSITIVE);
+
+            Matcher matcher = pattern.matcher(factory.getName());
+            if (matcher.find()) {
+
+                //
+                //
+                return true;
+
+            }
+        }
+
+        for (String p : patterns) {
+            Pattern pattern = Pattern.compile(".+?" + p, Pattern.CASE_INSENSITIVE);
 
             Matcher matcher = pattern.matcher(factory.getName());
             if (matcher.find()) {
