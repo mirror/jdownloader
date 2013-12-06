@@ -18,6 +18,7 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -41,6 +42,8 @@ public class MultiShareCz extends PluginForHost {
         super(wrapper);
         this.enablePremium("http://www.multishare.cz/cenik/");
     }
+
+    private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap = new HashMap<Account, HashMap<String, Long>>();
 
     @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
@@ -108,7 +111,7 @@ public class MultiShareCz extends PluginForHost {
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
+    public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
         br.setFollowRedirects(false);
         String fileid = new Regex(downloadLink.getDownloadURL(), "/stahnout/(\\d+)/").getMatch(0);
@@ -116,13 +119,24 @@ public class MultiShareCz extends PluginForHost {
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
         if (dl.getConnection().getContentType() != null && dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            int timesFailed = downloadLink.getIntegerProperty("timesfailedmultisharecz_unknowndlerrorfree", 0);
+            downloadLink.getLinkStatus().setRetryCount(0);
+            if (timesFailed <= 2) {
+                logger.info("multishare.cz: Unknown download error -> Retrying");
+                timesFailed++;
+                downloadLink.setProperty("timesfailedmultisharecz_unknowndlerrorfree", timesFailed);
+                throw new PluginException(LinkStatus.ERROR_RETRY, "Unknown download error");
+            } else {
+                logger.info("multishare.cz: Unknown download error -> Plugin is broken");
+                downloadLink.setProperty("timesfailedmultisharecz_unknowndlerrorfree", Property.NULL);
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
         }
         dl.startDownload();
     }
 
     @Override
-    public void handlePremium(DownloadLink link, Account account) throws Exception {
+    public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         requestFileInformation(link);
         login(account);
         br.getPage(link.getDownloadURL());
@@ -131,7 +145,18 @@ public class MultiShareCz extends PluginForHost {
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 1);
         if (dl.getConnection().getContentType() != null && dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            int timesFailed = link.getIntegerProperty("timesfailedmultisharecz_unknowndlerrorpremium", 0);
+            link.getLinkStatus().setRetryCount(0);
+            if (timesFailed <= 2) {
+                logger.info("multishare.cz: Unknown download error -> Retrying");
+                timesFailed++;
+                link.setProperty("timesfailedmultisharecz_unknowndlerrorpremium", timesFailed);
+                throw new PluginException(LinkStatus.ERROR_RETRY, "Unknown download error");
+            } else {
+                logger.info("multishare.cz: Unknown download error -> Plugin is broken");
+                link.setProperty("timesfailedmultisharecz_unknowndlerrorpremium", Property.NULL);
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
         }
         dl.startDownload();
     }
@@ -150,13 +175,16 @@ public class MultiShareCz extends PluginForHost {
         String dllink = getJson("link");
         if (br.containsHTML("ERR: Invalid password\\.")) {
             int timesFailed = link.getIntegerProperty("timesfailedmultisharecz_passwordinvalid", 0);
+            link.getLinkStatus().setRetryCount(0);
             if (timesFailed <= 2) {
+                logger.info("multishare.cz: Strange invalid password message -> Retrying");
                 timesFailed++;
                 link.setProperty("timesfailedmultisharecz_passwordinvalid", timesFailed);
-                throw new PluginException(LinkStatus.ERROR_RETRY, "Server error");
+                throw new PluginException(LinkStatus.ERROR_RETRY, "Server error (server says: ERR: Invalid password)");
             } else {
+                logger.info("multishare.cz: Strange invalid password message -> Disabling current host");
                 link.setProperty("timesfailedmultisharecz_passwordinvalid", Property.NULL);
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                tempUnavailableHoster(acc, link, 1 * 60 * 60 * 1000l);
             }
         }
         if (dllink == null) {
@@ -214,6 +242,41 @@ public class MultiShareCz extends PluginForHost {
         filesize = filesize.replace("&nbsp;", "");
         link.setDownloadSize(SizeFormatter.getSize(filesize));
         return AvailableStatus.TRUE;
+    }
+
+    private void tempUnavailableHoster(final Account account, final DownloadLink downloadLink, final long timeout) throws PluginException {
+        if (downloadLink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unable to handle this errorcode!");
+        synchronized (hostUnavailableMap) {
+            HashMap<String, Long> unavailableMap = hostUnavailableMap.get(account);
+            if (unavailableMap == null) {
+                unavailableMap = new HashMap<String, Long>();
+                hostUnavailableMap.put(account, unavailableMap);
+            }
+            /* wait 30 mins to retry this host */
+            unavailableMap.put(downloadLink.getHost(), (System.currentTimeMillis() + timeout));
+        }
+        throw new PluginException(LinkStatus.ERROR_RETRY);
+    }
+
+    @Override
+    public boolean canHandle(DownloadLink downloadLink, Account account) {
+        if (account == null) {
+            /* without account its not possible to download the link */
+            return false;
+        }
+        synchronized (hostUnavailableMap) {
+            HashMap<String, Long> unavailableMap = hostUnavailableMap.get(account);
+            if (unavailableMap != null) {
+                Long lastUnavailable = unavailableMap.get(downloadLink.getHost());
+                if (lastUnavailable != null && System.currentTimeMillis() < lastUnavailable) {
+                    return false;
+                } else if (lastUnavailable != null) {
+                    unavailableMap.remove(downloadLink.getHost());
+                    if (unavailableMap.size() == 0) hostUnavailableMap.remove(account);
+                }
+            }
+        }
+        return true;
     }
 
     @Override

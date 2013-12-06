@@ -63,8 +63,23 @@ public class OtrDatenkellerAt extends PluginForHost {
         return "http://otr.datenkeller.at";
     }
 
+    @Override
+    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
+        this.setBrowserExclusive();
+        br.setCustomCharset("utf-8");
+        br.getHeaders().put("User-Agent", agent);
+        br.getPage(link.getDownloadURL());
+        if (!br.containsHTML("id=\"reqFileImg\"") && !br.containsHTML("\\(\\'#reqFile\\'\\)\\.hide\\(\\)\\.slideDown") && !br.containsHTML("onclick=\"window\\.open\\(\\'/\\?getFile")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = new Regex(link.getDownloadURL(), "otr\\.datenkeller\\.at/\\?file=(.+)").getMatch(0);
+        String filesize = br.getRegex("Größe: </td><td align=\\'center\\'> (.*?) </td>").getMatch(0);
+        if (filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        link.setName(filename.trim().replaceAll("\\&referer=.*?", ""));
+        if (filesize != null) link.setDownloadSize(SizeFormatter.getSize(filesize.replace("i", "")));
+        return AvailableStatus.TRUE;
+    }
+
     public String getDllink() throws Exception, PluginException {
-        Regex allMatches = br.getRegex("onclick=\"startCount\\(\\d+, +\\d+, +\\'([^<>\"\\']+)\\', +\\'([^<>\"\\']+)\\', +\\'([^<>\"\\']+)\\'\\)");
+        final Regex allMatches = br.getRegex("onclick=\"startCount\\(\\d+ +, +\\d+, +\\'([^<>\"\\']+)\\', +\\'([^<>\"\\']+)\\', +\\'([^<>\"\\']+)\\'\\)");
         String firstPart = allMatches.getMatch(1);
         String secondPart = allMatches.getMatch(0);
         String thirdPart = allMatches.getMatch(2);
@@ -86,35 +101,35 @@ public class OtrDatenkellerAt extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
         String dlPage = getDlpage(downloadLink);
-        br.getPage(dlPage);
+        getPage(dlPage, this.br);
         String dllink = null;
         String lowSpeedLink;
-        Browser br2 = br.cloneBrowser();
+        final Browser br2 = br.cloneBrowser();
         if (br.containsHTML(DOWNLOADAVAILABLE)) {
             dllink = getDllink();
         } else {
             downloadLink.getLinkStatus().setStatusText("Waiting for ticket...");
             for (int i = 0; i <= 410; i++) {
-                br.getPage(dlPage);
+                getPage(dlPage, this.br);
                 String countMe = br.getRegex("\"(otrfuncs/countMe\\.js\\?r=\\d+)\"").getMatch(0);
                 if (countMe != null)
                     countMe = "http://otr.datenkeller.at/" + countMe;
                 else
-                    countMe = "http://otr.datenkeller.at/otrfuncs/countMe.js?r=050210";
-                br2.getPage("http://otr.datenkeller.at/images/style.css");
+                    countMe = "http://staticaws.lastverteiler.net/otrfuncs/countMe.js";
+                br2.getPage("http://staticaws.lastverteiler.net/images/style.css");
                 br2.getPage(countMe);
                 sleep(27 * 1000l, downloadLink);
                 String position = br.getRegex("document\\.title = \"(\\d+/\\d+)").getMatch(0);
                 if (position == null) position = br.getRegex("<td>Deine Position in der Warteschlange: </td><td>~(\\d+)</td></tr>").getMatch(0);
                 if (position != null) downloadLink.getLinkStatus().setStatusText("Waiting for ticket...Position in der Warteschlange: " + position);
                 if (br.containsHTML(DOWNLOADAVAILABLE)) {
-                    br.getPage(dlPage);
+                    getPage(dlPage, this.br);
                     dllink = getDllink();
                     break;
                 }
                 lowSpeedLink = br.getRegex("\"(\\?lowSpeed=[^<>\\'\"]+)\"").getMatch(0);
                 if (i > 400 && lowSpeedLink != null) {
-                    br2.getPage("http://otr.datenkeller.at/" + lowSpeedLink);
+                    getPage("http://otr.datenkeller.at/" + lowSpeedLink, br2);
                     dllink = br2.getRegex(">Dein Download Link:<br>[\t\n\r ]+<a href=\"(http://[^<>\\'\"]+)\"").getMatch(0);
                     if (dllink == null) dllink = br2.getRegex("\"(http://\\d+\\.\\d+\\.\\d+\\.\\d+/low/[a-z0-9]+/[^<>\\'\"]+)\"").getMatch(0);
                     if (dllink != null) {
@@ -135,21 +150,6 @@ public class OtrDatenkellerAt extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
-    }
-
-    @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
-        this.setBrowserExclusive();
-        br.setCustomCharset("utf-8");
-        br.getHeaders().put("User-Agent", agent);
-        br.getPage(link.getDownloadURL());
-        if (!br.containsHTML("id=\"reqFileImg\"") && !br.containsHTML("\\(\\'#reqFile\\'\\)\\.hide\\(\\)\\.slideDown") && !br.containsHTML("onclick=\"window\\.open\\(\\'/\\?getFile")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = new Regex(link.getDownloadURL(), "otr\\.datenkeller\\.at/\\?file=(.+)").getMatch(0);
-        String filesize = br.getRegex("Größe: </td><td align=\\'center\\'> (.*?) </td>").getMatch(0);
-        if (filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        link.setName(filename.trim().replaceAll("\\&referer=.*?", ""));
-        if (filesize != null) link.setDownloadSize(SizeFormatter.getSize(filesize.replace("i", "")));
-        return AvailableStatus.TRUE;
     }
 
     @SuppressWarnings("unchecked")
@@ -226,6 +226,16 @@ public class OtrDatenkellerAt extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
+    }
+
+    private void getPage(final String url, final Browser br) throws IOException {
+        br.getPage(url);
+        // correctBR(br);
+    }
+
+    private void correctBR(final Browser br) {
+        final String remove = br.getRegex("(<a href=\"#\" msgToJD=.*?href=\"#\")").getMatch(0);
+        if (remove != null) br.getRequest().setHtmlCode(br.toString().replace(remove, ""));
     }
 
     @Override

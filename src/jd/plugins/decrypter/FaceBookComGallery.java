@@ -269,7 +269,8 @@ public class FaceBookComGallery extends PluginForDecrypt {
                 final String appcollection = br.getRegex("\"pagelet_timeline_app_collection_(\\d+:\\d+:\\d+)\"").getMatch(0);
                 final String profileowner = br.getRegex("data\\-gt=\"\\&#123;\\&quot;profile_owner\\&quot;:\\&quot;(\\d+)\\&quot;").getMatch(0);
                 final String totalPicCount = br.getRegex("data-medley-id=\"pagelet_timeline_medley_photos\">Photos<span class=\"_gs6\">(\\d+((,|\\.)\\d+)?)</span>").getMatch(0);
-                if (token == null || user == null || profileID == null || appcollection == null || profileowner == null || totalPicCount == null) {
+                final String controller = br.getRegex("\"photos\",\\[\\{\"controller\":\"([^<>\"]*?)\"").getMatch(0);
+                if (token == null || user == null || profileID == null || appcollection == null || profileowner == null) {
                     logger.warning("Decrypter broken for link: " + parameter);
                     return null;
                 }
@@ -278,8 +279,9 @@ public class FaceBookComGallery extends PluginForDecrypt {
                 final FilePackage fp = FilePackage.getInstance();
                 fp.setName(fpName);
                 boolean dynamicLoadAlreadyDecrypted = false;
-                ArrayList<String> allids = new ArrayList<String>();
-                final long totalPicsNum = Long.parseLong(totalPicCount.replaceAll("(\\.|,)", ""));
+                final ArrayList<String> allids = new ArrayList<String>();
+                long totalPicsNum = 100;
+                if (totalPicCount != null) totalPicsNum = Long.parseLong(totalPicCount.replaceAll("(\\.|,)", ""));
                 int lastDecryptedPicsNum = 0;
                 int decryptedPicsNum = 0;
                 int timesNochange = 0;
@@ -290,6 +292,7 @@ public class FaceBookComGallery extends PluginForDecrypt {
                     String[] links;
                     if (i > 1) {
                         if (br.containsHTML("\"TimelineAppCollection\",\"setFullyLoaded\"")) {
+                            logger.info("facebook.com: Server says the set is fully loaded -> Stopping");
                             break;
                         }
                         final String cursor = br.getRegex("\\[\"pagelet_timeline_app_collection_[^<>\"]*?\",\\{\"[^<>\"]*?\":\"[^<>\"]*?\"\\},\"([^<>\"]*?)\"").getMatch(0);
@@ -303,7 +306,7 @@ public class FaceBookComGallery extends PluginForDecrypt {
                             logger.info("Returning already decrypted links anyways...");
                             break;
                         }
-                        final String loadLink = MAINPAGE + "/ajax/pagelet/generic.php/TaggedPhotosAppCollectionPagelet?data=%7B%22collection_token%22%3A%22" + appcollection + "%22%2C%22cursor%22%3A%22" + cursor + "%3D%22%2C%22tab_key%22%3A%22photos%22%2C%22profile_id%22%3A" + profileowner + "%2C%22overview%22%3Afalse%2C%22ftid%22%3Anull%2C%22order%22%3Anull%2C%22sk%22%3A%22photos%22%2C%22importer_state%22%3Anull%7D&__user=" + user + "&__a=1&__dyn=7n8ahyj2qmp5xl2u5Fa9jzy0zCUb8yGg&__rev=1033590" + "&__req=jsonp_" + i + "&__adt=" + i;
+                        final String loadLink = MAINPAGE + "/ajax/pagelet/generic.php/" + controller + "?data=%7B%22collection_token%22%3A%22" + appcollection + "%22%2C%22cursor%22%3A%22" + cursor + "%3D%22%2C%22tab_key%22%3A%22photos%22%2C%22profile_id%22%3A" + profileowner + "%2C%22overview%22%3Afalse%2C%22ftid%22%3Anull%2C%22order%22%3Anull%2C%22sk%22%3A%22photos%22%2C%22importer_state%22%3Anull%7D&__user=" + user + "&__a=1&__dyn=7n8ahyj2qmp5xl2u5Fa9jzy0zCUb8yGg&__rev=1033590" + "&__req=jsonp_" + i + "&__adt=" + i;
                         br.getPage(loadLink);
                         links = br.getRegex("ajax\\\\/photos\\\\/hovercard\\.php\\?fbid=(\\d+)\\&").getColumn(0);
                         currentMaxPicCount = 40;
@@ -320,20 +323,20 @@ public class FaceBookComGallery extends PluginForDecrypt {
                     for (final String picID : links) {
                         if (!allids.contains(picID)) {
                             allids.add(picID);
+                            final DownloadLink dl = createDownloadlink("http://www.facebook.com/photo.php?fbid=" + picID);
+                            if (!loggedIN) dl.setProperty("nologin", true);
+                            if (fastlinkcheck_pictures) dl.setAvailable(true);
+                            // Set temp name, correct name will be set in hosterplugin later
+                            dl.setName(fpName + "_" + picID + ".jpg");
+                            dl._setFilePackage(fp);
+                            try {
+                                distribute(dl);
+                            } catch (final Throwable e) {
+                                // Not supported in old 0.9.581 Stable
+                            }
+                            decryptedLinks.add(dl);
+                            decryptedPicsNum++;
                         }
-                        final DownloadLink dl = createDownloadlink("http://www.facebook.com/photo.php?fbid=" + picID);
-                        if (!loggedIN) dl.setProperty("nologin", true);
-                        if (fastlinkcheck_pictures) dl.setAvailable(true);
-                        // Set temp name, correct name will be set in hosterplugin later
-                        dl.setName(fpName + "_" + picID + ".jpg");
-                        dl._setFilePackage(fp);
-                        try {
-                            distribute(dl);
-                        } catch (final Throwable e) {
-                            // Not supported in old 0.9.581 Stable
-                        }
-                        decryptedLinks.add(dl);
-                        decryptedPicsNum++;
                     }
                     // currentMaxPicCount = max number of links per segment
                     if (links.length < currentMaxPicCount) {
@@ -360,6 +363,10 @@ public class FaceBookComGallery extends PluginForDecrypt {
                     }
                 }
                 fp.addLinks(decryptedLinks);
+                logger.info("facebook.com: Decrypted " + decryptedPicsNum + " of " + totalPicsNum);
+                if (decryptedPicsNum < totalPicsNum && br.containsHTML("\"TimelineAppCollection\",\"setFullyLoaded\"")) {
+                    logger.info("facebook.com: -> Even though it seems like we don't have all images, that's all ;)");
+                }
 
             } else if (parameter.matches(SET_LINK_PHOTO)) {
                 final boolean loggedIN = login();

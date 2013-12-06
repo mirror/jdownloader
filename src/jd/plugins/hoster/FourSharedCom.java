@@ -157,9 +157,15 @@ public class FourSharedCom extends PluginForHost {
     }
 
     private void checkErrors(Browser cbr) throws PluginException {
-        if (cbr.containsHTML("In order to download files bigger that 500MB you need to login at 4shared"))
-        // links too large!
-            throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L(PLUGINS_HOSTER_FOURSHAREDCOM_ONLY4PREMIUM, "Files over 500MB are only downloadable for premiumusers!"));
+        if (cbr.containsHTML("In order to download files bigger that 500MB you need to login at 4shared")) {
+            // links too large!
+            try {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+            } catch (final Throwable e) {
+                if (e instanceof PluginException) throw (PluginException) e;
+            }
+            throw new PluginException(LinkStatus.ERROR_FATAL, "Files over 500MB are only downloadable for registered or premium users!");
+        }
         if (cbr.containsHTML("The file link that you requested is not valid\\.")) {
             // link has been removed
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -271,7 +277,14 @@ public class FourSharedCom extends PluginForHost {
         if (br.containsHTML("(Servers Upgrade|4shared servers are currently undergoing a short\\-time maintenance)")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 60 * 60 * 1000l); }
         String ttt = br.getRegex(" var c = (\\d+);").getMatch(0);
         if (ttt != null) { throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Too many simultan downloads", 5 * 60 * 1000l); }
-        if (br.containsHTML("Sorry, the file link that you requested is not valid")) throw new PluginException(LinkStatus.ERROR_FATAL, "Only downloadable for registered/premium users!");
+        if (br.containsHTML("Sorry, the file link that you requested is not valid")) {
+            try {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+            } catch (final Throwable e) {
+                if (e instanceof PluginException) throw (PluginException) e;
+            }
+            throw new PluginException(LinkStatus.ERROR_FATAL, "Only downloadable for registered/premium users!");
+        }
     }
 
     private String handlePassword(DownloadLink link) throws Exception {
