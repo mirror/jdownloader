@@ -12,6 +12,7 @@ import jd.gui.swing.jdgui.components.toolbar.actions.PauseDownloadsAction;
 import jd.gui.swing.jdgui.components.toolbar.actions.ReconnectAction;
 import jd.gui.swing.jdgui.components.toolbar.actions.ShowSettingsAction;
 import jd.gui.swing.jdgui.components.toolbar.actions.SilentModeToggleAction;
+import jd.gui.swing.jdgui.components.toolbar.actions.SpeedLimiterToggleAction;
 import jd.gui.swing.jdgui.components.toolbar.actions.StartDownloadsAction;
 import jd.gui.swing.jdgui.components.toolbar.actions.StopDownloadsAction;
 import jd.gui.swing.jdgui.components.toolbar.actions.StopDownloadsButFinishRunningOnesAction;
@@ -120,10 +121,12 @@ public class MenuManagerMainToolbar extends ContextMenuManager<FilePackage, Down
         mr.add(new MenuItemData(new ActionData(MoveDownAction.class)));
         mr.add(new MenuItemData(new ActionData(MoveToBottomAction.class)));
         mr.add(new SeperatorData());
+
         mr.add(ClipBoardToggleAction.class);
         mr.add(AutoReconnectToggleAction.class);
         mr.add(GlobalPremiumSwitchToggleAction.class);
         mr.add(SilentModeToggleAction.class);
+        mr.add(setVisible(new MenuItemData(SpeedLimiterToggleAction.class), false));
         mr.add(new SeperatorData());
 
         mr.add(ReconnectAction.class);
@@ -174,6 +177,11 @@ public class MenuManagerMainToolbar extends ContextMenuManager<FilePackage, Down
         ocr.add(CaptchaDialogsToogleAction.class);
         opt.add(CollapseExpandAllAction.class);
         return mr;
+    }
+
+    private MenuItemData setVisible(MenuItemData menuItemData, boolean b) {
+        menuItemData.setVisible(b);
+        return menuItemData;
     }
 
     private MenuItemData optional(MenuItemData menuItemData) {

@@ -3892,4 +3892,10 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Same choice for all affected archives" })
     String ConfirmLinksContextAction_getDontShowAgainLabelText_object_();
 
+    @Default(lngs = { "en" }, values = { "Enable/Disable the global Speed Limiter" })
+    String SpeedLimiterToggleAction_tooltip();
+
+    @Default(lngs = { "en" }, values = { "Speedlimiter enabled" })
+    String SpeedLimiterToggleAction_getNameWhenDisabled_();
+
 }

@@ -91,7 +91,7 @@ public class StartDownloadsAction extends AbstractToolBarAction implements Downl
 
     public static final String HIDE_IF_DOWNLOADS_ARE_RUNNING = "HideIfDownloadsAreRunning";
 
-    @Customizer(name = "Hide if downloads are not running")
+    @Customizer(name = "Hide if downloads are running")
     public boolean isHideIfDownloadsAreRunning() {
         return hideIfDownloadsAreRunning;
     }
