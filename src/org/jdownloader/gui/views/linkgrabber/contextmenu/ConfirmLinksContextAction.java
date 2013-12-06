@@ -14,6 +14,7 @@ import jd.gui.swing.jdgui.interfaces.View;
 
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.storage.config.annotations.EnumLabel;
+import org.appwork.swing.MigPanel;
 import org.appwork.utils.ImageProvider.ImageProvider;
 import org.appwork.utils.event.queue.QueueAction;
 import org.appwork.utils.logging.Log;
@@ -120,10 +121,26 @@ public class ConfirmLinksContextAction extends CustomizableTableContextAppAction
                         final DummyArchive da = ExtractionExtension.getInstance().createDummyArchive(a);
                         if (!da.isComplete()) {
 
-                            ConfirmDialog d = new ConfirmDialog(0, _GUI._.ConfirmAction_run_incomplete_archive_title_(a.getName()), _GUI._.ConfirmAction_run_incomplete_archive_msg(), NewTheme.I().getIcon("stop", 32), _GUI._.ConfirmAction_run_incomplete_archive_continue(), null) {
+                            ConfirmDialog d = new ConfirmDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI._.ConfirmAction_run_incomplete_archive_title_(a.getName()), _GUI._.ConfirmAction_run_incomplete_archive_msg(), NewTheme.I().getIcon("stop", 32), _GUI._.ConfirmAction_run_incomplete_archive_continue(), null) {
+                                public String getDontShowAgainKey() {
+                                    return null;
+
+                                };
+
+                                protected MigPanel createBottomPanel() {
+                                    // TODO Auto-generated method stub
+                                    return new MigPanel("ins 0", "[]20[grow,fill][]", "[]");
+                                }
+
+                                @Override
+                                protected String getDontShowAgainLabelText() {
+                                    return _GUI._.ConfirmLinksContextAction_getDontShowAgainLabelText_object_();
+                                }
+
+                                @Override
                                 protected DefaultButtonPanel createBottomButtonPanel() {
 
-                                    DefaultButtonPanel ret = new DefaultButtonPanel("ins 0", "[]", "0[]0");
+                                    DefaultButtonPanel ret = new DefaultButtonPanel("ins 0", "[][][]", "0[]0");
                                     ret.add(new JButton(new AppAction() {
                                         {
                                             setName(_GUI._.ConfirmAction_run_incomplete_archive_details());
@@ -140,13 +157,16 @@ public class ConfirmLinksContextAction extends CustomizableTableContextAppAction
                                             }
                                         }
 
-                                    }), "gapleft 32");
+                                    }), "");
                                     return ret;
                                 }
 
                             };
 
                             Dialog.getInstance().showDialog(d);
+                            if (d.isDontShowAgainSelected()) {
+                                break;
+                            }
                         }
 
                     }

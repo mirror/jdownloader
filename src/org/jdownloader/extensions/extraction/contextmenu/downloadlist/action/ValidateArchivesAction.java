@@ -37,23 +37,26 @@ public class ValidateArchivesAction extends AbstractExtractionContextAction {
 
     public void actionPerformed(ActionEvent e) {
         if (!isEnabled()) return;
-        for (Archive archive : archives) {
-            try {
-                DummyArchive da = ArchiveValidator.EXTENSION.createDummyArchive(archive);
-
-                DummyArchiveDialog d = new DummyArchiveDialog(da);
-
+        try {
+            for (Archive archive : archives) {
                 try {
-                    Dialog.getInstance().showDialog(d);
-                } catch (DialogClosedException e1) {
-                    e1.printStackTrace();
-                } catch (DialogCanceledException e1) {
-                    e1.printStackTrace();
-                }
+                    DummyArchive da = ArchiveValidator.EXTENSION.createDummyArchive(archive);
 
-            } catch (CheckException e1) {
-                Dialog.getInstance().showExceptionDialog("Error", "Cannot Check Archive", e1);
+                    DummyArchiveDialog d = new DummyArchiveDialog(da);
+
+                    try {
+                        Dialog.getInstance().showDialog(d);
+
+                    } catch (DialogCanceledException e1) {
+                        e1.printStackTrace();
+                    }
+
+                } catch (CheckException e1) {
+                    Dialog.getInstance().showExceptionDialog("Error", "Cannot Check Archive", e1);
+                }
             }
+        } catch (DialogClosedException e1) {
+            e1.printStackTrace();
         }
     }
 

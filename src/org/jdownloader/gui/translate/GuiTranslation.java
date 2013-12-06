@@ -3889,4 +3889,7 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "merge YouTube® Audio & Video streams" })
     String YoutubeDash_handleDownload_youtube_dash();
 
+    @Default(lngs = { "en" }, values = { "Same choice for all affected archives" })
+    String ConfirmLinksContextAction_getDontShowAgainLabelText_object_();
+
 }
