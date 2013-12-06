@@ -133,7 +133,7 @@ public class MyJDownloaderAPI extends AbstractMyJDClient {
 
     /* TODO: add session support, currently all sessions share the same validateRID */
     public synchronized boolean validateRID(long rid, String sessionToken) {
-
+        if (true) return true;
         // TODO CLeanup
         RIDArray ridList = rids.get(sessionToken);
         if (ridList == null) {
@@ -142,6 +142,7 @@ public class MyJDownloaderAPI extends AbstractMyJDClient {
         }
 
         // lowest RID
+        System.out.println("RID " + rid + " " + sessionToken);
         long lowestRid = Long.MIN_VALUE;
         RIDEntry next;
         for (Iterator<RIDEntry> it = ridList.iterator(); it.hasNext();) {
