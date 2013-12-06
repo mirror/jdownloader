@@ -1764,7 +1764,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                 loopCounter = 0;
                 while (abort == false && session.isForcedLinksWaiting() && (getActiveDownloads() < maxConcurrentForced) && loopCounter < session.getForcedLinks().size()) {
                     try {
-                        if (abort || (abort = (!this.newDLStartAllowed(session) || session.isStopMarkReached()))) {
+                        if (abort || (abort = (!this.newDLStartAllowed(session)))) {
                             break;
                         }
                         DownloadLinkCandidate candidate = this.next(selector);
