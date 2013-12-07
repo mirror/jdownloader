@@ -277,9 +277,9 @@ public class VKontakteRu extends PluginForDecrypt {
             sleep(2500l, param);
         }
         if (decryptedLinks != null && decryptedLinks.size() > 0) {
-            logger.info("Done, decrypted: " + decryptedLinks.size() + " links!");
+            logger.info("vk.com: Done, decrypted: " + decryptedLinks.size() + " links!");
         } else if (decryptedLinks == null) {
-            logger.warning("Decrypter broken for link: " + parameter);
+            logger.warning("vk.com: Decrypter broken for link: " + parameter);
             return null;
         }
         return decryptedLinks;
@@ -675,9 +675,11 @@ public class VKontakteRu extends PluginForDecrypt {
         final String[][] regexesPage1 = { { "class=\"photo_row\" id=\"(tag\\d+|album(\\-)?\\d+_\\d+)", "0" } };
         final String[][] regexesAllOthers = { { "class=\"photo(_album)?_row\" id=\"(tag\\d+|album(\\-)?\\d+_\\d+)", "1" } };
         final ArrayList<String> decryptedData = decryptMultiplePages(parameter, type, numberOfEntrys, regexesPage1, regexesAllOthers, Integer.parseInt(startOffset), 12, 18, parameter, "al=1&part=1&offset=");
-        for (String element : decryptedData) {
-            final String decryptedLink = "http://vk.com/" + element;
-            decryptedLinks.add(createDownloadlink(decryptedLink));
+        if (decryptedData != null && decryptedData.size() != 0) {
+            for (String element : decryptedData) {
+                final String decryptedLink = "http://vk.com/" + element;
+                decryptedLinks.add(createDownloadlink(decryptedLink));
+            }
         }
         return decryptedLinks;
     }
@@ -1075,12 +1077,6 @@ public class VKontakteRu extends PluginForDecrypt {
             }
             logger.info("Parsing page " + i + " of " + maxLoops);
         }
-        if (decryptedData == null || decryptedData.size() == 0) {
-            logger.warning("Decrypter couldn't find theData for linktype: " + type + "\n");
-            logger.warning("Decrypter broken for link: " + parameter + "\n");
-            return null;
-        }
-        logger.info("Found " + decryptedData.size() + " links for linktype: " + type);
 
         return decryptedData;
     }
