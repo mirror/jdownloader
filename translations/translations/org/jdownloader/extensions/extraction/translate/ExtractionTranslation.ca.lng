@@ -52,7 +52,6 @@ plugins_optional_extraction_status_extracting2=Extraient
 plugins_optional_extraction_status_extracting_filename=Extraient %s1
 plugins_optional_extraction_status_extractok=Extracció correcta
 plugins_optional_extraction_status_notenoughspace=No hi ha espai per extreure
-plugins_optional_extraction_status_openingarchive=Obrint arxiu...
 plugins_optional_extraction_status_passfound=Contrasenya trobada
 plugins_optional_extraction_status_queued=En cua per extreure
 properties=Propietats del subdirectori
