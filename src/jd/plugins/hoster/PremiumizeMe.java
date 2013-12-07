@@ -172,7 +172,7 @@ public class PremiumizeMe extends PluginForHost {
             logger.info("premiumize.me: SocketTimeoutException on downloadstart");
             int timesFailed = link.getIntegerProperty("timesfailedpremiumizeme_sockettimeout", 1);
             link.getLinkStatus().setRetryCount(0);
-            if (timesFailed <= 5) {
+            if (timesFailed <= 20) {
                 timesFailed++;
                 link.setProperty("timesfailedpremiumizeme_sockettimeout", timesFailed);
                 throw new PluginException(LinkStatus.ERROR_RETRY, "Unknown error");
