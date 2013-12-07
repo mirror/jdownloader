@@ -84,8 +84,9 @@ public class SaveTv extends PluginForHost {
     private static final String PREFERH264MOBILE                                            = "PREFERH264MOBILE";
     private final String        PREFERH264MOBILETEXT                                        = "H.264 Mobile Videos bevorzugen (diese sind kleiner)";
     private static final String USEAPI                                                      = "USEAPI";
-    private static final String GRABARCHIVE                                                 = "GRABARCHIVE";
-    private static final String GRABARCHIVE_FASTER                                          = "GRABARCHIVE_FASTER";
+    private static final String CRAWLER_ACTIVATE                                            = "CRAWLER_ACTIVATE";
+    private static final String CRAWLER_ENABLE_FASTER                                       = "CRAWLER_ENABLE_FASTER";
+    private static final String CRAWLER_DISABLE_DIALOGS                                     = "CRAWLER_DISABLE_DIALOGS";
     private static final String DISABLE_LINKCHECK                                           = "DISABLE_LINKCHECK";
     private static final String DELETE_TELECAST_ID_AFTER_DOWNLOAD                           = "DELETE_TELECAST_ID_AFTER_DOWNLOAD";
 
@@ -132,6 +133,7 @@ public class SaveTv extends PluginForHost {
      * TODO: Known Bugs in API mode: API cannot differ between H.264 Mobile and normal videos -> Cannot show any error in case user chose
      * H.264 but it's not available. --> These are NO FATAL bugs ---> Plugin will work fine with them!
      */
+    // TODO: Remove info-dialogs Feb, 2014 and add a single dialog which only shows up one time, first usage of the plugin
 
     @SuppressWarnings("deprecation")
     @Override
@@ -149,6 +151,7 @@ public class SaveTv extends PluginForHost {
         checkFeatureDialog();
         checkFeatureDialog2();
         checkFeatureDialog3();
+        checkFeatureDialog4();
         if (this.getPluginConfig().getBooleanProperty(DISABLE_LINKCHECK, false) && !FORCE_LINKCHECK) {
             link.getLinkStatus().setStatusText("Linkcheck deaktiviert - korrekter Dateiname erscheint erst beim Downloadstart");
             return AvailableStatus.TRUE;
@@ -972,14 +975,15 @@ public class SaveTv extends PluginForHost {
     private final static String defaultCustomStringForEmptyTags = "-";
 
     private void setConfigElements() {
-        final ConfigEntry useMobileAPI = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), SaveTv.USEAPI, JDL.L("plugins.hoster.SaveTv.UseMobileAPI", "Mobile API verwenden (Benutzerdefinierte Dateinamen werden deaktiviert!)")).setDefaultValue(false);
+        final ConfigEntry useMobileAPI = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), SaveTv.USEAPI, JDL.L("plugins.hoster.SaveTv.UseMobileAPI", "Mobile API verwenden (Benutzerdefinierte Dateinamen und Archiv-Crawler werden deaktiviert!)")).setDefaultValue(false);
         getConfig().addEntry(useMobileAPI);
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), SaveTv.DISABLE_LINKCHECK, JDL.L("plugins.hoster.SaveTv.DisableLinkcheck", "Linkcheck deaktivieren\r\n[Korrekte Dateinamen werden erst zum Downloadstart angezeigt\r\nKann helfen, Links schneller zu sammeln,\r\nwenn die Seite langsam oder offline ist.]")).setDefaultValue(false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
-        final ConfigEntry grabArchives = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), SaveTv.GRABARCHIVE, JDL.L("plugins.hoster.SaveTv.grabArchive", "Komplettes Archiv beim Hinzufügen folgender Adresse im Linkgrabber zeigen:\r\n'save.tv/STV/M/obj/user/usShowVideoArchive.cfm'?")).setDefaultValue(false);
+        final ConfigEntry grabArchives = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), SaveTv.CRAWLER_ACTIVATE, JDL.L("plugins.hoster.SaveTv.grabArchive", "Archiv-Crawler aktivieren:\r\nKomplettes Archiv beim Hinzufügen folgender Adresse im Linkgrabber zeigen:\r\n'save.tv/STV/M/obj/user/usShowVideoArchive.cfm'?")).setDefaultValue(false).setEnabledCondidtion(useMobileAPI, false);
         getConfig().addEntry(grabArchives);
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), SaveTv.GRABARCHIVE_FASTER, JDL.L("plugins.hoster.SaveTv.grabArchiveFaster", "Aktiviere schnellen Linkcheck für Archiv-Parser\r\n[Dateinamen werden erst beim Download korrekt angezeigt]")).setDefaultValue(false).setEnabledCondidtion(grabArchives, true));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), SaveTv.CRAWLER_ENABLE_FASTER, JDL.L("plugins.hoster.SaveTv.grabArchiveFaster", "Aktiviere schnellen Linkcheck für Archiv-Parser\r\n[Dateinamen werden erst beim Download korrekt angezeigt]")).setDefaultValue(false).setEnabledCondidtion(grabArchives, true));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), SaveTv.CRAWLER_DISABLE_DIALOGS, JDL.L("plugins.hoster.SaveTv.crawlerDisableDialogs", "Info Dialoge des Crawlers (Nach dem Crawlen oder im Fehlerfall) deaktivieren?")).setDefaultValue(false).setEnabledCondidtion(grabArchives, true));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         final ConfigEntry preferAdsFree = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), SaveTv.PREFERADSFREE, JDL.L("plugins.hoster.SaveTv.PreferAdFreeVideos", "Aufnahmen mit angewandter Schnittliste bevorzugen")).setDefaultValue(true);
         getConfig().addEntry(preferAdsFree);
@@ -1042,9 +1046,9 @@ public class SaveTv extends PluginForHost {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "Erweiterte Einstellungen:"));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), SaveTv.DELETE_TELECAST_ID_AFTER_DOWNLOAD, JDL.L("plugins.hoster.SaveTv.deleteFromArchiveAfterDownload", "[Kommt bald!] Erfolgreich geladene telecastIDs aus dem save.tv Archiv löschen?\r\n Warnung: Gelöschte telecast-IDs können nicht wiederhergestellt werden!\r\nFalls diese Funktion einen Fehler beinhaltet, ist Datenverlust möglich!\r\nWICHTIG: Bei aktivierter API kann man diese Einstellung nicht verwenden!")).setDefaultValue(false).setEnabled(false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), SaveTv.DELETE_TELECAST_ID_AFTER_DOWNLOAD, JDL.L("plugins.hoster.SaveTv.deleteFromArchiveAfterDownload", "Erfolgreich geladene telecastIDs aus dem save.tv Archiv löschen?\r\n Warnung: Gelöschte telecast-IDs können nicht wiederhergestellt werden!\r\nFalls diese Funktion einen Fehler beinhaltet, ist Datenverlust möglich!\r\nWICHTIG: Bei aktivierter API kann man diese Einstellung nicht verwenden!")).setDefaultValue(false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), CUSTOM_FILENAME_EMPTY_TAG_STRING, JDL.L("plugins.hoster.savetv.customEmptyTagsString", "[Kommt bald!] Zeichen, mit dem leere Tags ersetzt werden sollen:")).setDefaultValue(defaultCustomStringForEmptyTags).setEnabledCondidtion(origName, false).setEnabled(false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), CUSTOM_FILENAME_EMPTY_TAG_STRING, JDL.L("plugins.hoster.savetv.customEmptyTagsString", "Zeichen, mit dem Tags ersetzt werden sollen, deren Daten fehlen:")).setDefaultValue(defaultCustomStringForEmptyTags).setEnabledCondidtion(origName, false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         final StringBuilder sbmore = new StringBuilder();
         sbmore.append("Definiere Filme oder Serien, für die trotz obiger Einstellungen Originaldateinamen die\r\n");
@@ -1150,6 +1154,8 @@ public class SaveTv extends PluginForHost {
         }
     }
 
+    private static final short totalFeatureDialogNum = 4;
+
     private static void showFeatureDialog() {
         try {
             SwingUtilities.invokeAndWait(new Runnable() {
@@ -1159,7 +1165,7 @@ public class SaveTv extends PluginForHost {
                     try {
                         String message = "";
                         String title = null;
-                        title = "Save.tv - neue Features";
+                        title = "Save.tv - neue Features 1/" + totalFeatureDialogNum;
                         message += "Hallo lieber save.tv Nutzer.\r\n";
                         message += "Ab sofort gibt es folgende neue Features für das save.tv Plugin:\r\n";
                         message += "- Die Dateinamen lassen sich individualisieren \r\n";
@@ -1220,7 +1226,7 @@ public class SaveTv extends PluginForHost {
                     try {
                         String message = "";
                         String title = null;
-                        title = "Save.tv - neue Features 2";
+                        title = "Save.tv - neue Features 2/" + totalFeatureDialogNum;
                         message += "Hallo lieber save.tv Nutzer.\r\n";
                         message += "Ab sofort gibt es folgende neue Features für das save.tv Plugin:\r\n";
                         message += "- JDownloader sollte ab sofort das komplette Save.tv Archiv (bei aktivierter Einstellung) korrekt erkennen\r\n";
@@ -1281,7 +1287,7 @@ public class SaveTv extends PluginForHost {
                     try {
                         String message = "";
                         String title = null;
-                        title = "Save.tv - neue Features 3";
+                        title = "Save.tv - neue Features 3/" + totalFeatureDialogNum;
                         message += "Hallo lieber save.tv Nutzer.\r\n";
                         message += "Ab sofort gibt es folgende neue Features für das save.tv Plugin:\r\n";
                         message += "- Über die Plugin Einstellungen lassen sich Filme/Serien bestimmen, bei denen die Original Dateinamen\r\n";
@@ -1330,10 +1336,17 @@ public class SaveTv extends PluginForHost {
                     try {
                         String message = "";
                         String title = null;
-                        title = "Save.tv - neue Features 4";
+                        title = "Save.tv - neue Features 4/" + totalFeatureDialogNum;
                         message += "Hallo lieber save.tv Nutzer.\r\n";
                         message += "Ab sofort gibt es folgende neue Features für das save.tv Plugin:\r\n";
                         message += "- Über die Plugin Einstellungen kann man telecast-IDs nun nach erfolgreichem Download löschen lassen\r\n";
+                        message += "- --> Entsprechende Warnhinweise dazu stehen nochmals in den save.tv Plugin Einstellungen\r\n";
+                        message += "- Neue Einstellungsmöglichkeit: 'Zeichen, mit dem Tags ersetzt werden sollen, deren Daten fehlen'\r\n";
+                        message += "- --> Bisher wurden Tags bei fehlenden Daten mit einem Bindestrich ('-') ersetzt.\r\n";
+                        message += "- --> Dies lässt sich nun nach Belieben anpassen.\r\n";
+                        message += "- Der Archiv Crawler funktioniert ab sofort vollständig und findet alle Links des Archivs.\r\n";
+                        message += "- --> Nach dem Vorgang meldet er sich über ein Info-Dialog und zeigt an, wie viele Links gefunden wurden.\r\n";
+                        message += "- ----> Diese Info-Dialoge lassen sich über 'Info Dialoge des Crawlers (Nach dem Crawlen oder im Fehlerfall) deaktivieren?' abschalten!";
                         message += getMessageEnd();
                         JOptionPane.showConfirmDialog(jd.gui.swing.jdgui.JDGui.getInstance().getMainFrame(), message, title, JOptionPane.PLAIN_MESSAGE, JOptionPane.INFORMATION_MESSAGE, null);
                     } catch (Throwable e) {

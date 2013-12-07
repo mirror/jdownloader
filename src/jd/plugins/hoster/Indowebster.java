@@ -17,6 +17,7 @@
 package jd.plugins.hoster;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
@@ -47,6 +48,7 @@ public class Indowebster extends PluginForHost {
     private static final String NOCHUNKS = "NOCHUNKS";
 
     private String getDLLink() throws Exception {
+        final Browser br2 = br.cloneBrowser();
         final Regex importantStuff = br.getRegex("\\$\\.post\\(\\'(http://[^<>\"]+)\\',\\{(.*?)\\}");
         final String action = importantStuff.getMatch(0);
         final String pagePiece = importantStuff.getMatch(1);
@@ -55,13 +57,15 @@ public class Indowebster extends PluginForHost {
         if (list == null || list.length == 0) { return null; }
         String post = "";
         for (final String str : list) {
-            final Regex strregex = new Regex(str, "(.*?):\\'(.*?)\\'");
-            if (strregex.getMatch(0) == null || strregex.getMatch(1) == null) { return null; }
+            final String[] data = str.split(":");
+            if (data.length != 2) { return null; }
+            final String strg1 = data[0].replace("'", "").trim();
+            final String strg2 = data[1].replace("'", "").trim();
             post += post.equals("") ? post : "&";
-            post += strregex.getMatch(0) + "=" + strregex.getMatch(1);
+            post += strg1 + "=" + strg2.replace("checkCookie1()", "0");
         }
-        br.postPage(action, post);
-        String dllink = br.toString();
+        br2.postPage(action, post);
+        String dllink = br2.toString();
         if (dllink == null || !dllink.startsWith("http") || dllink.length() > 500) { return null; }
         dllink = dllink.replace("[", "%5B").replace("]", "%5D");
         return dllink;
@@ -150,8 +154,7 @@ public class Indowebster extends PluginForHost {
             link.setFinalFileName(Encoding.htmlDecode(realName));
         }
         /**
-         * If we reach this line the password should be correct even if the
-         * download fails
+         * If we reach this line the password should be correct even if the download fails
          */
         if (passCode != null) {
             link.setProperty("pass", passCode);
@@ -163,7 +166,7 @@ public class Indowebster extends PluginForHost {
         }
         sleep(wait * 1001l, link);
         String dllink = getDLLink();
-        if (dllink == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dllink = dllink.trim();
         br.setDebug(true);
         br.setReadTimeout(180 * 1001);

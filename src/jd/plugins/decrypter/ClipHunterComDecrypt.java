@@ -44,7 +44,8 @@ public class ClipHunterComDecrypt extends PluginForDecrypt {
         super(wrapper);
     }
 
-    final public static String[][] qualities = { { "_h.flv", "540p.flv" }, { "_p.mp4", "480p.mp4" }, { "_l.flv", "360pflv.flv" }, { "_i.mp4", "360p.mp4" } };
+    // [0] =
+    final public static String[][] qualities = { { "_h.flv", "540p.flv" }, { "_p.mp4", "_p480.mp4", "480p.mp4" }, { "_l.flv", "_p360.mp4", "360pflv.flv" }, { "_i.mp4", "360p.mp4" } };
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
@@ -156,9 +157,16 @@ public class ClipHunterComDecrypt extends PluginForDecrypt {
                 continue;
             }
             for (final String quality[] : qualities) {
-                if (tmpUrl.contains(quality[0])) {
-                    foundQualities.put(quality[0], tmpUrl);
-                    break;
+                if (quality.length == 3) {
+                    if (tmpUrl.contains(quality[1]) || tmpUrl.contains(quality[2])) {
+                        foundQualities.put(quality[0], tmpUrl);
+                        break;
+                    }
+                } else {
+                    if (tmpUrl.contains(quality[0])) {
+                        foundQualities.put(quality[0], tmpUrl);
+                        break;
+                    }
                 }
             }
         }
